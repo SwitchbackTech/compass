@@ -1,84 +1,79 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { toast } from "react-toastify";
-import { useSession } from "@web/auth/compass/session/useSession";
-import { markUserAsAuthenticated } from "@web/auth/compass/state/auth.state.util";
-import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
-import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
-import { useGoogleLogin } from "@web/auth/google/hooks/useGoogleLogin/useGoogleLogin";
-import {
-  authenticate,
-  syncLocalEvents,
-} from "@web/auth/google/util/google.auth.util";
-import { useAppDispatch } from "@web/store/store.hooks";
 import { type GoogleAuthConfig } from "../googe.auth.types";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock dependencies
-jest.mock("@web/auth/google/util/google.auth.util");
-jest.mock("@web/auth/compass/session/useSession");
-jest.mock("@web/auth/compass/user/util/user-metadata.util");
-jest.mock("@web/auth/google/hooks/useGoogleLogin/useGoogleLogin");
-jest.mock("@web/auth/compass/state/auth.state.util");
-jest.mock("@web/store/store.hooks", () => ({
-  useAppDispatch: jest.fn(),
-}));
-jest.mock("react-router-dom", () => ({
-  useNavigate: () => jest.fn(),
-}));
-jest.mock("react-toastify", () => ({
-  toast: Object.assign(jest.fn(), {
-    dismiss: jest.fn(),
-    error: jest.fn(),
-    success: jest.fn(),
-  }),
+const mockAuthenticate = mock();
+const mockCompleteAuthentication = mock();
+const mockDismissErrorToast = mock();
+const mockDispatch = mock();
+const mockLogin = mock();
+const mockToast = Object.assign(mock(), {
+  dismiss: mock(),
+  error: mock(),
+  success: mock(),
+});
+const mockUseAppDispatch = mock();
+const mockUseCompleteAuthentication = mock();
+const mockUseGoogleLogin = mock();
+
+mock.module("@web/auth/google/util/google.auth.util", () => ({
+  authenticate: mockAuthenticate,
 }));
 
-const mockAuthenticate = authenticate as jest.MockedFunction<
-  typeof authenticate
->;
-const mockSyncLocalEvents = syncLocalEvents as jest.MockedFunction<
-  typeof syncLocalEvents
->;
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
-const mockUseGoogleLogin = useGoogleLogin as jest.MockedFunction<
-  typeof useGoogleLogin
->;
-const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
-  typeof refreshUserMetadata
->;
-const mockToast = jest.mocked(toast);
-const mockUseAppDispatch = jest.mocked(useAppDispatch);
-const mockMarkUserAsAuthenticated =
-  markUserAsAuthenticated as jest.MockedFunction<
-    typeof markUserAsAuthenticated
-  >;
+mock.module("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
+  useCompleteAuthentication: mockUseCompleteAuthentication,
+}));
+
+mock.module("@web/auth/google/hooks/useGoogleLogin/useGoogleLogin", () => ({
+  useGoogleLogin: mockUseGoogleLogin,
+}));
+
+mock.module("@web/common/utils/toast/error-toast.util", () => ({
+  dismissErrorToast: mockDismissErrorToast,
+  SESSION_EXPIRED_TOAST_ID: "session-expired-api",
+}));
+
+mock.module("@web/store/store.hooks", () => ({
+  useAppDispatch: mockUseAppDispatch,
+}));
+
+mock.module("react-toastify", () => ({
+  default: mockToast,
+  toast: mockToast,
+}));
+
+const { useGoogleAuth } =
+  require("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth") as typeof import("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth");
 
 describe("useGoogleAuth", () => {
-  const mockSetAuthenticated = jest.fn();
-  const mockLogin = jest.fn();
   const originalConsoleError = console.error;
-  let mockDispatchFn: jest.Mock;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    // Suppress console.error in tests to avoid EPIPE errors
-    console.error = jest.fn();
-    mockDispatchFn = jest.fn();
-    mockUseAppDispatch.mockReturnValue(mockDispatchFn);
+    mockAuthenticate.mockClear();
+    mockCompleteAuthentication.mockClear();
+    mockDismissErrorToast.mockClear();
+    mockDispatch.mockClear();
+    mockLogin.mockClear();
+    mockToast.mockClear();
+    mockToast.dismiss.mockClear();
+    mockToast.error.mockClear();
+    mockToast.success.mockClear();
+    mockUseAppDispatch.mockClear();
+    mockUseCompleteAuthentication.mockClear();
+    mockUseGoogleLogin.mockClear();
 
-    mockUseSession.mockReturnValue({
-      setAuthenticated: mockSetAuthenticated,
-      authenticated: false,
-    });
+    console.error = mock();
+    mockUseAppDispatch.mockReturnValue(mockDispatch);
+    mockUseCompleteAuthentication.mockReturnValue(mockCompleteAuthentication);
     mockAuthenticate.mockResolvedValue({ success: true });
-    mockSyncLocalEvents.mockResolvedValue({ syncedCount: 0, success: true });
-    mockRefreshUserMetadata.mockResolvedValue();
+    mockCompleteAuthentication.mockResolvedValue(undefined);
   });
 
   afterEach(() => {
     console.error = originalConsoleError;
   });
 
-  it("marks user as authenticated after successful login", async () => {
+  it("completes authentication after successful login", async () => {
     let onSuccessCallback:
       | ((data: GoogleAuthConfig) => Promise<void>)
       | undefined;
@@ -94,7 +89,6 @@ describe("useGoogleAuth", () => {
 
     renderHook(() => useGoogleAuth());
 
-    // Simulate Google login success
     if (onSuccessCallback) {
       await onSuccessCallback({
         clientType: "web",
@@ -111,7 +105,9 @@ describe("useGoogleAuth", () => {
     }
 
     await waitFor(() => {
-      expect(mockSetAuthenticated).toHaveBeenCalledWith(true);
+      expect(mockCompleteAuthentication).toHaveBeenCalledWith({
+        email: undefined,
+      });
     });
   });
 
@@ -131,7 +127,6 @@ describe("useGoogleAuth", () => {
 
     renderHook(() => useGoogleAuth());
 
-    // Simulate Google login success
     if (onSuccessCallback) {
       await onSuccessCallback({
         clientType: "web",
@@ -151,12 +146,10 @@ describe("useGoogleAuth", () => {
       expect(mockAuthenticate).toHaveBeenCalled();
     });
 
-    expect(mockMarkUserAsAuthenticated).toHaveBeenCalled();
-    expect(mockSetAuthenticated).toHaveBeenCalledWith(true);
-    expect(mockRefreshUserMetadata).toHaveBeenCalledTimes(1);
-    expect(mockDispatchFn).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "auth/authSuccess" }),
-    );
+    expect(mockCompleteAuthentication).toHaveBeenCalledTimes(1);
+    expect(mockCompleteAuthentication).toHaveBeenCalledWith({
+      email: undefined,
+    });
   });
 
   describe("onStart callback", () => {
@@ -169,13 +162,12 @@ describe("useGoogleAuth", () => {
 
       const { result } = renderHook(() => useGoogleAuth());
 
-      // Simulate login start
       void result.current.login();
 
-      expect(mockDispatchFn).toHaveBeenCalledWith(
+      expect(mockDispatch).toHaveBeenCalledWith(
         expect.objectContaining({ type: "auth/startAuthenticating" }),
       );
-      expect(mockToast.dismiss).toHaveBeenCalledWith("session-expired-api");
+      expect(mockDismissErrorToast).toHaveBeenCalledWith("session-expired-api");
     });
   });
 
@@ -205,7 +197,7 @@ describe("useGoogleAuth", () => {
     let onSuccessCallback:
       | ((data: GoogleAuthConfig) => Promise<void>)
       | undefined;
-    const customOnSuccess = jest.fn().mockResolvedValue(undefined);
+    const customOnSuccess = mock().mockResolvedValue(undefined);
 
     mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
       onSuccessCallback = onSuccess;
@@ -244,17 +236,17 @@ describe("useGoogleAuth", () => {
 
     expect(customOnSuccess).toHaveBeenCalledWith(payload);
     expect(mockAuthenticate).not.toHaveBeenCalled();
-    expect(mockSetAuthenticated).not.toHaveBeenCalled();
-    expect(mockDispatchFn).toHaveBeenCalledWith(
+    expect(mockCompleteAuthentication).not.toHaveBeenCalled();
+    expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "auth/authSuccess" }),
     );
   });
 
   it("resets auth when a custom success handler returns false", async () => {
     let onSuccessCallback:
-      | ((data: GoogleAuthConfig) => Promise<boolean | void>)
+      | ((data: GoogleAuthConfig) => Promise<boolean | undefined>)
       | undefined;
-    const customOnSuccess = jest.fn().mockResolvedValue(false);
+    const customOnSuccess = mock().mockResolvedValue(false);
 
     mockUseGoogleLogin.mockImplementation(({ onSuccess }) => {
       onSuccessCallback = onSuccess;
@@ -292,10 +284,10 @@ describe("useGoogleAuth", () => {
     await onSuccessCallback(payload);
 
     expect(customOnSuccess).toHaveBeenCalledWith(payload);
-    expect(mockDispatchFn).toHaveBeenCalledWith(
+    expect(mockDispatch).toHaveBeenCalledWith(
       expect.objectContaining({ type: "auth/resetAuth" }),
     );
-    expect(mockDispatchFn).not.toHaveBeenCalledWith(
+    expect(mockDispatch).not.toHaveBeenCalledWith(
       expect.objectContaining({ type: "auth/authSuccess" }),
     );
   });
@@ -317,11 +309,10 @@ describe("useGoogleAuth", () => {
 
       expect(onErrorCallback).toBeDefined();
 
-      // Simulate login error
       const error = new Error("Login failed");
       onErrorCallback?.(error);
 
-      expect(mockDispatchFn).toHaveBeenCalledWith(
+      expect(mockDispatch).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "auth/authError",
         }),
@@ -347,12 +338,12 @@ describe("useGoogleAuth", () => {
       onErrorCallback?.({ type: "popup_closed" });
 
       expect(console.error).not.toHaveBeenCalled();
-      expect(mockDispatchFn).toHaveBeenCalledWith(
+      expect(mockDispatch).toHaveBeenCalledWith(
         expect.objectContaining({
           type: "auth/resetAuth",
         }),
       );
-      expect(mockDispatchFn).not.toHaveBeenCalledWith(
+      expect(mockDispatch).not.toHaveBeenCalledWith(
         expect.objectContaining({
           type: "auth/authError",
         }),
@@ -401,11 +392,8 @@ describe("useGoogleAuth", () => {
         expect(mockAuthenticate).toHaveBeenCalled();
       });
 
-      // Should not proceed with auth flow
-      expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
-      expect(mockSetAuthenticated).not.toHaveBeenCalled();
+      expect(mockCompleteAuthentication).not.toHaveBeenCalled();
 
-      // Should show error toast so user knows what went wrong
       expect(mockToast.error).toHaveBeenCalledWith(
         "Failed to connect Google Calendar. Please try again.",
         expect.anything(),
@@ -448,8 +436,7 @@ describe("useGoogleAuth", () => {
         expect(mockAuthenticate).toHaveBeenCalled();
       });
 
-      expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
-      expect(mockSetAuthenticated).not.toHaveBeenCalled();
+      expect(mockCompleteAuthentication).not.toHaveBeenCalled();
 
       expect(mockToast.error).toHaveBeenCalledWith(
         "Could not link Google Calendar to your account. Please try again.",
@@ -495,9 +482,7 @@ describe("useGoogleAuth", () => {
         expect(mockAuthenticate).toHaveBeenCalled();
       });
 
-      // Should not proceed with auth flow
-      expect(mockMarkUserAsAuthenticated).not.toHaveBeenCalled();
-      expect(mockSetAuthenticated).not.toHaveBeenCalled();
+      expect(mockCompleteAuthentication).not.toHaveBeenCalled();
     });
   });
 });
