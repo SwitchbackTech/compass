@@ -1,20 +1,33 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import {
   selecting$,
   useMainGridSelectionState,
 } from "./useMainGridSelectionState";
 
 describe("useMainGridSelectionState", () => {
+  let setTimeoutSpy: ReturnType<typeof spyOn>;
+  let timeoutCallback: (() => void) | null = null;
+
   beforeEach(() => {
-    jest.useFakeTimers();
+    timeoutCallback = null;
+    setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") {
+        timeoutCallback = callback;
+      }
+      return 1;
+    }) as typeof setTimeout);
+
     act(() => {
       selecting$.next(false);
     });
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    setTimeoutSpy.mockRestore();
   });
 
   it("should return false initially", () => {
@@ -43,7 +56,11 @@ describe("useMainGridSelectionState", () => {
 
     act(() => {
       selecting$.next(false);
-      jest.advanceTimersByTime(10);
+    });
+
+    // Execute the setTimeout callback that was captured
+    act(() => {
+      timeoutCallback?.();
     });
 
     expect(result.current.selecting).toBe(false);

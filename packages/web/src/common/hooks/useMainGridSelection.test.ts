@@ -1,5 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { act, type PointerEvent as IPointerEvent } from "react";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { cursor$, pointerState$ } from "@web/common/context/pointer-position";
 import { isDraggingEvent$ } from "@web/common/hooks/useIsDraggingEvent";
@@ -8,10 +9,10 @@ import { resizing$ } from "@web/common/hooks/useResizing";
 import * as eventUtils from "@web/common/utils/dom/event-emitter.util";
 
 describe("useMainGridSelection", () => {
-  const onSelectionStart = jest.fn();
-  const onSelectionEnd = jest.fn();
-  const onSelection = jest.fn();
-  const getElementAtPointSpy = jest.spyOn(eventUtils, "getElementAtPoint");
+  const onSelectionStart = mock();
+  const onSelectionEnd = mock();
+  const onSelection = mock();
+  const getElementAtPointSpy = spyOn(eventUtils, "getElementAtPoint");
   const mainGrid = document.createElement("div");
 
   mainGrid.setAttribute("id", ID_GRID_MAIN);
@@ -25,7 +26,10 @@ describe("useMainGridSelection", () => {
   }) as unknown as IPointerEvent;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    onSelectionStart.mockClear();
+    onSelectionEnd.mockClear();
+    onSelection.mockClear();
+    getElementAtPointSpy.mockClear();
 
     getElementAtPointSpy.mockReturnValue(mainGrid);
 
@@ -87,9 +91,7 @@ describe("useMainGridSelection", () => {
     );
   });
 
-  it("should call onSelection when moving while selecting", () => {
-    jest.useFakeTimers();
-
+  it("should call onSelection when moving while selecting", async () => {
     renderHook(() =>
       useMainGridSelection({
         onSelectionStart,
@@ -114,10 +116,14 @@ describe("useMainGridSelection", () => {
       });
     });
 
-    // Move
+    // Move - the observable debounces, so we just need to emit and let microtasks flush
     act(() => {
       cursor$.next({ x: 30, y: 30 });
-      jest.advanceTimersByTime(100);
+    });
+
+    // Allow microtasks to flush
+    await act(async () => {
+      await Promise.resolve();
     });
 
     expect(onSelection).toHaveBeenCalled();
@@ -126,7 +132,6 @@ describe("useMainGridSelection", () => {
       { clientX: 10, clientY: 10 },
       { clientX: 30, clientY: 30 },
     );
-    jest.useRealTimers();
   });
 
   it("should end selection when pointer up", () => {
