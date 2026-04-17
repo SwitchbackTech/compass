@@ -1,11 +1,55 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
-import { act } from "react";
+import { act, type ReactNode } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { render } from "@web/__tests__/__mocks__/mock.render";
-import { SyncApi } from "@web/common/apis/sync.api";
-import CmdPalette from "@web/views/CmdPalette/CmdPalette";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("react-cmdk", () => {
+const mockGoToToday = mock();
+const mockImportGCal = mock();
+const mockLogin = mock();
+const mockScrollToNow = mock();
+const mockSuperTokensInit = mock();
+const mockRecipeInit = mock(() => ({}));
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("react-cmdk", () => {
   const React = require("react");
 
   const CommandPalette = ({
@@ -53,22 +97,32 @@ jest.mock("react-cmdk", () => {
   };
 });
 
-jest.mock("@web/common/utils/dom/event-target-visibility.util", () => ({
+mock.module("@web/common/utils/dom/event-target-visibility.util", () => ({
   onEventTargetVisibility: (cb: () => void) => () => cb(),
 }));
 
-const mockLogin = jest.fn();
-jest.mock("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
+mock.module("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   useGoogleAuth: () => ({
     login: mockLogin,
   }),
 }));
 
-jest.mock("@web/common/apis/sync.api", () => ({
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+}));
+
+mock.module("@web/common/apis/sync.api", () => ({
   SyncApi: {
-    importGCal: jest.fn().mockResolvedValue(undefined),
+    importGCal: mockImportGCal,
   },
 }));
+
+const { SyncApi } =
+  require("@web/common/apis/sync.api") as typeof import("@web/common/apis/sync.api");
+const { render } =
+  require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
+const { default: CmdPalette } =
+  require("@web/views/CmdPalette/CmdPalette") as typeof import("@web/views/CmdPalette/CmdPalette");
 
 const baseProps = {
   today: dayjs(),
@@ -76,16 +130,23 @@ const baseProps = {
   startOfView: dayjs(),
   endOfView: dayjs(),
   scrollUtil: {
-    scrollToNow: jest.fn(),
+    scrollToNow: mockScrollToNow,
   },
   util: {
-    goToToday: jest.fn(),
+    goToToday: mockGoToToday,
   },
 } as const;
 
 describe("CmdPalette", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockGoToToday.mockClear();
+    mockImportGCal.mockClear();
+    mockLogin.mockClear();
+    mockRecipeInit.mockClear();
+    mockScrollToNow.mockClear();
+    mockSuperTokensInit.mockClear();
+
+    mockImportGCal.mockResolvedValue(undefined);
   });
 
   it("shows the generic Google action when metadata is missing", () => {
