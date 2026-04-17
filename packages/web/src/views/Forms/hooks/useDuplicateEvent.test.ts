@@ -1,3 +1,4 @@
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn, vi } from "bun:test";
 import { addEntities } from "@ngneat/elf-entities";
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
@@ -28,14 +29,14 @@ describe("useDuplicateEvent Integration", () => {
   } as unknown as WithCompassId<Schema_Event>;
 
   beforeEach(() => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     eventsStore.reset();
     closeFloatingAtCursor();
     document.body.innerHTML = "";
   });
 
   afterEach(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   it("should duplicate event and open form when event and element exist", async () => {
@@ -52,7 +53,7 @@ describe("useDuplicateEvent Integration", () => {
     result.current();
 
     // Advance timer for lastValueFrom(timer(10))
-    jest.advanceTimersByTime(10);
+    vi.advanceTimersByTime(10);
     // Allow promise resolution (then block)
     await Promise.resolve();
 
@@ -71,11 +72,11 @@ describe("useDuplicateEvent Integration", () => {
     await Promise.resolve();
 
     // Advance timer for second timer(10)
-    jest.advanceTimersByTime(10);
+    vi.advanceTimersByTime(10);
     await Promise.resolve();
 
     // Advance timer for openFloatingAtCursor (setTimeout 10ms)
-    jest.advanceTimersByTime(10);
+    vi.advanceTimersByTime(10);
     await Promise.resolve();
 
     // Assert Floating State
@@ -98,7 +99,7 @@ describe("useDuplicateEvent Integration", () => {
     result.current();
 
     // Advance timer for lastValueFrom(timer(10))
-    jest.advanceTimersByTime(10);
+    vi.advanceTimersByTime(10);
     await Promise.resolve();
 
     // Assert Draft (should still be created)
@@ -110,7 +111,7 @@ describe("useDuplicateEvent Integration", () => {
     await Promise.resolve();
 
     // Advance timer for openFloatingAtCursor (setTimeout 10ms)
-    jest.advanceTimersByTime(10);
+    vi.advanceTimersByTime(10);
     await Promise.resolve();
 
     // Assert Floating State (should NOT be open)
@@ -126,7 +127,7 @@ describe("useDuplicateEvent Integration", () => {
     result.current();
 
     // Advance timer
-    jest.advanceTimersByTime(10);
+    vi.advanceTimersByTime(10);
     await Promise.resolve();
 
     // Assert Draft

@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import { type SetStateAction, useCallback, useState } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
@@ -6,7 +7,7 @@ import { type Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { SomedayRecurrenceSection } from "./SomedayRecurrenceSection";
 
-const mockSetEvent = jest.fn();
+const mockSetEvent = mock();
 
 const baseSomedayEvent: Schema_Event = {
   _id: "1",
@@ -22,7 +23,7 @@ const baseSomedayEvent: Schema_Event = {
 
 describe("SomedayRecurrenceSection", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   const renderSection = (eventOverride: Schema_Event = baseSomedayEvent) => {
@@ -202,7 +203,7 @@ describe("SomedayRecurrenceSection", () => {
   });
 
   it("selects highlighted option on enter without submitting form", async () => {
-    const onSubmit = jest.fn();
+    const onSubmit = mock();
     const FormWrapper = () => {
       const [event, setEvent] = useState<Schema_Event>(baseSomedayEvent);
 
@@ -283,7 +284,7 @@ describe("SomedayRecurrenceSection", () => {
   });
 
   it("selects current option on enter without submitting form", async () => {
-    const onSubmit = jest.fn();
+    const onSubmit = mock();
     const FormWrapper = () => {
       const [event, setEvent] = useState<Schema_Event>(baseSomedayEvent);
 

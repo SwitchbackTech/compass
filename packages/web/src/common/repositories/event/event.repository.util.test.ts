@@ -1,10 +1,28 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const hasUserEverAuthenticated = mock();
+const clearAnonymousCalendarChangeSignUpPrompt = mock();
+const clearAuthenticationState = mock();
+const getAuthState = mock();
+const getLastKnownEmail = mock();
+const markAnonymousCalendarChangeForSignUpPrompt = mock();
+const markUserAsAuthenticated = mock();
+const shouldShowAnonymousCalendarChangeSignUpPrompt = mock();
+const subscribeToAuthState = mock();
+const updateAuthState = mock();
 const isGoogleRevoked = mock();
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  clearAnonymousCalendarChangeSignUpPrompt,
+  clearAuthenticationState,
+  getAuthState,
+  getLastKnownEmail,
   hasUserEverAuthenticated,
+  markAnonymousCalendarChangeForSignUpPrompt,
+  markUserAsAuthenticated,
+  shouldShowAnonymousCalendarChangeSignUpPrompt,
+  subscribeToAuthState,
+  updateAuthState,
 }));
 
 mock.module("@web/auth/google/state/google.auth.state", () => ({
@@ -25,6 +43,15 @@ describe("getEventRepository", () => {
     // Default: user has not authenticated, Google not revoked
     hasUserEverAuthenticated.mockClear();
     hasUserEverAuthenticated.mockReturnValue(false);
+    clearAnonymousCalendarChangeSignUpPrompt.mockClear();
+    clearAuthenticationState.mockClear();
+    getAuthState.mockClear();
+    getLastKnownEmail.mockClear();
+    markAnonymousCalendarChangeForSignUpPrompt.mockClear();
+    markUserAsAuthenticated.mockClear();
+    shouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
+    subscribeToAuthState.mockClear();
+    updateAuthState.mockClear();
     isGoogleRevoked.mockClear();
     isGoogleRevoked.mockReturnValue(false);
   });

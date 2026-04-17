@@ -1,11 +1,12 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { LogInForm } from "./LogInForm";
 
-const mockOnSubmit = jest.fn();
-const mockOnForgotPassword = jest.fn();
+const mockOnSubmit = mock();
+const mockOnForgotPassword = mock();
 
 const renderSignInForm = () => {
   render(
@@ -28,7 +29,7 @@ const renderSignInFormWithStatus = (statusMessage: string) => {
 
 describe("LogInForm", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("blur-only validation", () => {

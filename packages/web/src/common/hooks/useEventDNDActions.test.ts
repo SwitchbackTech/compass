@@ -14,12 +14,20 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
+import { BehaviorSubject } from "rxjs";
 
 // Mock definitions
 const mockUpdateEvent = mock();
 const mockDispatch = mock();
 const mockGetSnappedMinutes = mock();
 const mockSelectEventById = mock();
+const openFloatingAtCursor = mock();
+const closeFloatingAtCursor = mock();
+const open$ = new BehaviorSubject(false);
+const nodeId$ = new BehaviorSubject(null);
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
 
 mock.module("@dnd-kit/core", () => ({
   useDndMonitor: mock(),
@@ -48,9 +56,25 @@ mock.module("@web/store", () => ({
 }));
 
 mock.module("@web/common/hooks/useOpenAtCursor", () => ({
+  openFloatingAtCursor,
+  closeFloatingAtCursor,
+  open$,
+  nodeId$,
+  placement$,
+  strategy$,
+  reference$,
   isOpenAtCursor: mock(() => false),
   setFloatingReferenceAtCursor: mock(),
+  setFloatingOpenAtCursor: mock(),
+  setFloatingNodeIdAtCursor: mock(),
+  setFloatingPlacementAtCursor: mock(),
+  setFloatingStrategyAtCursor: mock(),
   CursorItem: { EventForm: "EventForm" },
+  useFloatingOpenAtCursor: mock(),
+  useFloatingNodeIdAtCursor: mock(),
+  useFloatingPlacementAtCursor: mock(),
+  useFloatingStrategyAtCursor: mock(),
+  useFloatingReferenceAtCursor: mock(),
 }));
 
 // Import the hook after mocks

@@ -1,11 +1,12 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { SignUpForm } from "./SignUpForm";
 
-const mockOnSubmit = jest.fn();
-const mockOnNameChange = jest.fn();
+const mockOnSubmit = mock();
+const mockOnNameChange = mock();
 
 const renderSignUpForm = (props?: {
   onNameChange?: (name: string) => void;
@@ -20,7 +21,7 @@ const renderSignUpForm = (props?: {
 
 describe("SignUpForm", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   describe("blur-only validation", () => {

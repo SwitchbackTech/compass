@@ -6,6 +6,15 @@ const useDraggable = mock();
 
 mock.module("@dnd-kit/core", () => ({
   useDraggable,
+  useDndContext: mock(),
+  useDroppable: mock(),
+  DndContext: mock(),
+  DragOverlay: mock(),
+  KeyboardSensor: "KeyboardSensor",
+  MouseSensor: "MouseSensor",
+  TouchSensor: "TouchSensor",
+  useSensor: mock(),
+  useSensors: mock(),
 }));
 
 const { Draggable } =

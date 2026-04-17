@@ -7,6 +7,13 @@ const { cleanup, render, screen, waitFor } =
 const mockGetLastKnownEmail = mock();
 const mockHasUserEverAuthenticated = mock();
 const mockMarkUserAsAuthenticated = mock();
+const mockClearAnonymousCalendarChangeSignUpPrompt = mock();
+const mockClearAuthenticationState = mock();
+const mockGetAuthState = mock();
+const mockMarkAnonymousCalendarChangeForSignUpPrompt = mock();
+const mockShouldShowAnonymousCalendarChangeSignUpPrompt = mock();
+const mockSubscribeToAuthState = mock();
+const mockUpdateAuthState = mock();
 const mockGetProfile = mock();
 const mockUseSession = mock();
 
@@ -15,9 +22,19 @@ mock.module("@web/auth/compass/session/useSession", () => ({
 }));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  clearAnonymousCalendarChangeSignUpPrompt:
+    mockClearAnonymousCalendarChangeSignUpPrompt,
+  clearAuthenticationState: mockClearAuthenticationState,
+  getAuthState: mockGetAuthState,
   getLastKnownEmail: mockGetLastKnownEmail,
   hasUserEverAuthenticated: mockHasUserEverAuthenticated,
   markUserAsAuthenticated: mockMarkUserAsAuthenticated,
+  markAnonymousCalendarChangeForSignUpPrompt:
+    mockMarkAnonymousCalendarChangeForSignUpPrompt,
+  shouldShowAnonymousCalendarChangeSignUpPrompt:
+    mockShouldShowAnonymousCalendarChangeSignUpPrompt,
+  subscribeToAuthState: mockSubscribeToAuthState,
+  updateAuthState: mockUpdateAuthState,
 }));
 
 mock.module("@web/common/apis/user.api", () => ({
@@ -45,8 +62,15 @@ describe("UserProvider", () => {
     mockGetProfile.mockClear();
     mockHasUserEverAuthenticated.mockClear();
     mockMarkUserAsAuthenticated.mockClear();
+    mockClearAnonymousCalendarChangeSignUpPrompt.mockClear();
+    mockClearAuthenticationState.mockClear();
+    mockGetAuthState.mockClear();
     mockUseSession.mockClear();
     isAuthenticated = false;
+    mockMarkAnonymousCalendarChangeForSignUpPrompt.mockClear();
+    mockShouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
+    mockSubscribeToAuthState.mockClear();
+    mockUpdateAuthState.mockClear();
     mockGetProfile.mockResolvedValue({
       userId: "test-user-123",
       email: "test@example.com",

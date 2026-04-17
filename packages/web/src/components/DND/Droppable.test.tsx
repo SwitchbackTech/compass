@@ -5,6 +5,15 @@ const useDroppable = mock();
 
 mock.module("@dnd-kit/core", () => ({
   useDroppable,
+  useDndContext: mock(),
+  useDraggable: mock(),
+  DndContext: mock(),
+  DragOverlay: mock(),
+  KeyboardSensor: "KeyboardSensor",
+  MouseSensor: "MouseSensor",
+  TouchSensor: "TouchSensor",
+  useSensor: mock(),
+  useSensors: mock(),
 }));
 
 const { Droppable } =

@@ -8,6 +8,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
 } from "@web/common/constants/web.constants";
 import { beforeAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { BehaviorSubject } from "rxjs";
 
 const getUserId = mock();
 mock.module("@web/auth/compass/session/session.util", () => ({ getUserId }));
@@ -55,9 +56,32 @@ mock.module("@web/views/Day/util/agenda/focus.util", () => ({
 }));
 
 const openFloatingAtCursor = mock();
+const closeFloatingAtCursor = mock();
+const open$ = new BehaviorSubject(false);
+const nodeId$ = new BehaviorSubject(null);
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
 mock.module("@web/common/hooks/useOpenAtCursor", () => ({
   openFloatingAtCursor,
+  closeFloatingAtCursor,
+  open$,
+  nodeId$,
+  placement$,
+  strategy$,
+  reference$,
+  setFloatingOpenAtCursor: mock(),
+  setFloatingNodeIdAtCursor: mock(),
+  setFloatingPlacementAtCursor: mock(),
+  setFloatingReferenceAtCursor: mock(),
+  setFloatingStrategyAtCursor: mock(),
+  isOpenAtCursor: mock(),
   CursorItem: { EventForm: "EventForm" },
+  useFloatingOpenAtCursor: mock(),
+  useFloatingNodeIdAtCursor: mock(),
+  useFloatingPlacementAtCursor: mock(),
+  useFloatingStrategyAtCursor: mock(),
+  useFloatingReferenceAtCursor: mock(),
 }));
 
 const mockEventsStoreQuery = mock();

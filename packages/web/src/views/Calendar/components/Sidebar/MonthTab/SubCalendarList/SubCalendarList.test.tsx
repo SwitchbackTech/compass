@@ -5,13 +5,22 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseUser = mock();
 const mockUseAuthModal = mock();
+const mockUseAuthModalState = mock();
 
 mock.module("@web/auth/compass/user/hooks/useUser", () => ({
   useUser: mockUseUser,
 }));
 
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
+  AuthModalContext: require("react").createContext({
+    closeModal: mock(),
+    currentView: "login",
+    isOpen: false,
+    openModal: mock(),
+    setView: mock(),
+  }),
   useAuthModal: mockUseAuthModal,
+  useAuthModalState: mockUseAuthModalState,
 }));
 
 const { SubCalendarList } =

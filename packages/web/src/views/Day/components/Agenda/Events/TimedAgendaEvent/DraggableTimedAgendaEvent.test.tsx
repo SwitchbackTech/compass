@@ -7,6 +7,7 @@ import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { BehaviorSubject } from "rxjs";
 
 const CursorItem = {
   EventForm: "EventForm",
@@ -27,6 +28,13 @@ const mockUseEventResizeActions = mock();
 const mockUseFloatingNodeIdAtCursor = mock();
 const mockUseOpenAgendaEventPreview = mock();
 const mockUseOpenEventContextMenu = mock();
+const openFloatingAtCursor = mock();
+const closeFloatingAtCursor = mock();
+const open$ = new BehaviorSubject(false);
+const nodeId$ = new BehaviorSubject(null);
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
 
 mock.module("supertokens-web-js", () => ({
   default: {
@@ -82,7 +90,24 @@ mock.module("@web/views/Day/hooks/events/useOpenEventContextMenu", () => ({
 
 mock.module("@web/common/hooks/useOpenAtCursor", () => ({
   CursorItem,
+  openFloatingAtCursor,
+  closeFloatingAtCursor,
+  open$,
+  nodeId$,
+  placement$,
+  strategy$,
+  reference$,
+  setFloatingOpenAtCursor: mock(),
+  setFloatingNodeIdAtCursor: mock(),
+  setFloatingPlacementAtCursor: mock(),
+  setFloatingReferenceAtCursor: mock(),
+  setFloatingStrategyAtCursor: mock(),
+  isOpenAtCursor: mock(),
   useFloatingNodeIdAtCursor: mockUseFloatingNodeIdAtCursor,
+  useFloatingOpenAtCursor: mock(),
+  useFloatingPlacementAtCursor: mock(),
+  useFloatingStrategyAtCursor: mock(),
+  useFloatingReferenceAtCursor: mock(),
 }));
 
 mock.module("@web/common/hooks/useEventResizeActions", () => ({

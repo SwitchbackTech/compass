@@ -6,9 +6,20 @@ const mockUseSession = mock();
 const mockRefreshUserMetadata = mock();
 const mockClearAnonymousCalendarChangeSignUpPrompt = mock();
 const mockMarkUserAsAuthenticated = mock();
+const mockGetAuthState = mock();
+const mockGetLastKnownEmail = mock();
+const mockHasUserEverAuthenticated = mock();
+const mockMarkAnonymousCalendarChangeForSignUpPrompt = mock();
+const mockShouldShowAnonymousCalendarChangeSignUpPrompt = mock();
+const mockSubscribeToAuthState = mock();
+const mockUpdateAuthState = mock();
 const mockUseAppDispatch = mock();
 
 mock.module("@web/auth/google/util/google.auth.util", () => ({
+  authenticate: mock(),
+  handleGoogleRevoked: mock(),
+  showLocalEventsSyncFailure: mock(),
+  syncLocalEvents: mock(),
   syncPendingLocalEvents: mockSyncPendingLocalEvents,
 }));
 
@@ -23,7 +34,17 @@ mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
   clearAnonymousCalendarChangeSignUpPrompt:
     mockClearAnonymousCalendarChangeSignUpPrompt,
+  clearAuthenticationState: mock(),
+  getAuthState: mockGetAuthState,
+  getLastKnownEmail: mockGetLastKnownEmail,
+  hasUserEverAuthenticated: mockHasUserEverAuthenticated,
   markUserAsAuthenticated: mockMarkUserAsAuthenticated,
+  markAnonymousCalendarChangeForSignUpPrompt:
+    mockMarkAnonymousCalendarChangeForSignUpPrompt,
+  shouldShowAnonymousCalendarChangeSignUpPrompt:
+    mockShouldShowAnonymousCalendarChangeSignUpPrompt,
+  subscribeToAuthState: mockSubscribeToAuthState,
+  updateAuthState: mockUpdateAuthState,
 }));
 
 mock.module("@web/store/store.hooks", () => ({
@@ -52,6 +73,13 @@ describe("useCompleteAuthentication", () => {
     mockRefreshUserMetadata.mockClear();
     mockMarkUserAsAuthenticated.mockClear();
     mockClearAnonymousCalendarChangeSignUpPrompt.mockClear();
+    mockGetAuthState.mockClear();
+    mockGetLastKnownEmail.mockClear();
+    mockHasUserEverAuthenticated.mockClear();
+    mockMarkAnonymousCalendarChangeForSignUpPrompt.mockClear();
+    mockShouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
+    mockSubscribeToAuthState.mockClear();
+    mockUpdateAuthState.mockClear();
     mockUseAppDispatch.mockClear();
     mockDispatch.mockClear();
     mockSetAuthenticated.mockClear();

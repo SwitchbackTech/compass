@@ -15,6 +15,7 @@ import {
   MINUTES_PER_SLOT,
   SLOT_HEIGHT,
 } from "@web/views/Day/constants/day.constants";
+import { BehaviorSubject } from "rxjs";
 
 // Mock definitions
 const mockUpdateEvent = mock();
@@ -22,6 +23,13 @@ const mockSetDraft = mock();
 const mockUpdateDraft = mock();
 const mockNodeIdGetValue = mock();
 const mockOpenGetValue = mock();
+const openFloatingAtCursor = mock();
+const closeFloatingAtCursor = mock();
+const nodeId$ = { getValue: mockNodeIdGetValue, next: mock() };
+const open$ = { getValue: mockOpenGetValue, next: mock() };
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
 
 mock.module("@web/common/hooks/useUpdateEvent", () => ({
   useUpdateEvent: mock(() => mockUpdateEvent),
@@ -33,9 +41,25 @@ mock.module("@web/store/events", () => ({
 }));
 
 mock.module("@web/common/hooks/useOpenAtCursor", () => ({
-  nodeId$: { getValue: mockNodeIdGetValue },
-  open$: { getValue: mockOpenGetValue },
+  openFloatingAtCursor,
+  closeFloatingAtCursor,
+  nodeId$,
+  open$,
+  placement$,
+  strategy$,
+  reference$,
+  setFloatingOpenAtCursor: mock(),
+  setFloatingNodeIdAtCursor: mock(),
+  setFloatingPlacementAtCursor: mock(),
+  setFloatingReferenceAtCursor: mock(),
+  setFloatingStrategyAtCursor: mock(),
+  isOpenAtCursor: mock(),
   CursorItem: { EventForm: "EventForm" },
+  useFloatingOpenAtCursor: mock(),
+  useFloatingNodeIdAtCursor: mock(),
+  useFloatingPlacementAtCursor: mock(),
+  useFloatingStrategyAtCursor: mock(),
+  useFloatingReferenceAtCursor: mock(),
 }));
 
 // Import the hook after mocks

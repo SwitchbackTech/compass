@@ -7,9 +7,17 @@ const useDndContext = mock();
 
 mock.module("@dnd-kit/core", () => ({
   useDndContext,
+  useDraggable: mock(),
+  useDroppable: mock(),
+  DndContext: mock(),
   DragOverlay: ({ children }: { children: ReactNode }) => (
     <div data-testid="drag-overlay">{children}</div>
   ),
+  KeyboardSensor: "KeyboardSensor",
+  MouseSensor: "MouseSensor",
+  TouchSensor: "TouchSensor",
+  useSensor: mock(),
+  useSensors: mock(),
 }));
 
 mock.module("@dnd-kit/modifiers", () => ({

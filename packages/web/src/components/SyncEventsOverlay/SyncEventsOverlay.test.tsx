@@ -1,13 +1,38 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
-import { configureStore } from "@reduxjs/toolkit";
-import { screen } from "@testing-library/react";
-import { render } from "@web/__tests__/__mocks__/mock.render";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { type AuthStatus, resetAuth } from "@web/ducks/auth/slices/auth.slice";
-import { reducers } from "@web/store/reducers";
-import { SyncEventsOverlay } from "./SyncEventsOverlay";
-import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+
+mock.restore();
+
+mock.module("@web/components/OverlayPanel/OverlayPanel", () => ({
+  OverlayPanel: ({
+    title,
+    message,
+  }: {
+    message: string;
+    title: string;
+  }) => (
+    <div role="status">
+      <h1>{title}</h1>
+      <p>{message}</p>
+    </div>
+  ),
+}));
+
+mock.module("@web/common/hooks/useBufferedVisibility", () => ({
+  useBufferedVisibility: (value: boolean) => value,
+}));
+
+let authStatus: "idle" | "authenticating" = "idle";
+
+mock.module("@web/store/store.hooks", () => ({
+  useAppSelector: (selector: (state: { auth: { status: string } }) => unknown) =>
+    selector({ auth: { status: authStatus } }),
+}));
+
+const { SyncEventsOverlay } =
+  require("./SyncEventsOverlay") as typeof import("./SyncEventsOverlay");
 
 describe("SyncEventsOverlay", () => {
   let pendingTimers: Array<() => void> = [];
@@ -44,36 +69,17 @@ describe("SyncEventsOverlay", () => {
     }
   };
 
-  const createStore = (status: AuthStatus = "idle") =>
-    configureStore({
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware({
-          immutableCheck: false,
-          serializableCheck: false,
-          thunk: false,
-        }),
-      preloadedState: createInitialState({
-        auth: {
-          error: null,
-          status,
-        },
-      }),
-      reducer: reducers,
-    });
-
   it("renders nothing when not authenticating", () => {
-    render(<SyncEventsOverlay />, {
-      store: createStore(),
-    });
+    authStatus = "idle";
+    render(<SyncEventsOverlay />);
 
     expect(screen.queryByText("Complete Google sign-in...")).toBeNull();
     expect(document.body.getAttribute("data-app-locked")).toBeNull();
   });
 
   it("renders OAuth message when authenticating", () => {
-    render(<SyncEventsOverlay />, {
-      store: createStore("authenticating"),
-    });
+    authStatus = "authenticating";
+    render(<SyncEventsOverlay />);
 
     expect(screen.getByText("Complete Google sign-in...")).toBeInTheDocument();
     expect(
@@ -83,15 +89,15 @@ describe("SyncEventsOverlay", () => {
   });
 
   it("unlocks app when authentication completes", () => {
-    const store = createStore("authenticating");
-
-    render(<SyncEventsOverlay />, { store });
+    authStatus = "authenticating";
+    const { rerender } = render(<SyncEventsOverlay />);
 
     expect(screen.getByText("Complete Google sign-in...")).toBeInTheDocument();
     expect(document.body.getAttribute("data-app-locked")).toBe("true");
 
     act(() => {
-      store.dispatch(resetAuth());
+      authStatus = "idle";
+      rerender(<SyncEventsOverlay />);
     });
 
     // Wait for buffered visibility to settle

@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
 const mockUseAuthModal = mock();
+const mockUseAuthModalState = mock();
 const mockUseAuthFeatureFlag = mock();
 const mockUseSession = mock();
 
@@ -11,7 +12,15 @@ mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
+  AuthModalContext: require("react").createContext({
+    closeModal: mock(),
+    currentView: "login",
+    isOpen: false,
+    openModal: mock(),
+    setView: mock(),
+  }),
   useAuthModal: mockUseAuthModal,
+  useAuthModalState: mockUseAuthModalState,
 }));
 mock.module("@web/components/AuthModal/hooks/useAuthFeatureFlag", () => ({
   useAuthFeatureFlag: mockUseAuthFeatureFlag,

@@ -7,6 +7,8 @@ const mockCompleteAuthentication = mock();
 const mockDismissErrorToast = mock();
 const mockDispatch = mock();
 const mockLogin = mock();
+const mockShowErrorToast = mock();
+const mockShowSessionExpiredToast = mock();
 const mockToast = Object.assign(mock(), {
   dismiss: mock(),
   error: mock(),
@@ -18,6 +20,10 @@ const mockUseGoogleLogin = mock();
 
 mock.module("@web/auth/google/util/google.auth.util", () => ({
   authenticate: mockAuthenticate,
+  handleGoogleRevoked: mock(),
+  showLocalEventsSyncFailure: mock(),
+  syncLocalEvents: mock(),
+  syncPendingLocalEvents: mock(),
 }));
 
 mock.module("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
@@ -30,7 +36,13 @@ mock.module("@web/auth/google/hooks/useGoogleLogin/useGoogleLogin", () => ({
 
 mock.module("@web/common/utils/toast/error-toast.util", () => ({
   dismissErrorToast: mockDismissErrorToast,
+  ErrorToastSeverity: {
+    CRITICAL: "critical",
+    DEFAULT: "default",
+  },
   SESSION_EXPIRED_TOAST_ID: "session-expired-api",
+  showErrorToast: mockShowErrorToast,
+  showSessionExpiredToast: mockShowSessionExpiredToast,
 }));
 
 mock.module("@web/store/store.hooks", () => ({
@@ -52,6 +64,8 @@ describe("useGoogleAuth", () => {
     mockAuthenticate.mockClear();
     mockCompleteAuthentication.mockClear();
     mockDismissErrorToast.mockClear();
+    mockShowErrorToast.mockClear();
+    mockShowSessionExpiredToast.mockClear();
     mockDispatch.mockClear();
     mockLogin.mockClear();
     mockToast.mockClear();

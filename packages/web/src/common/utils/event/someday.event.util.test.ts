@@ -1,3 +1,4 @@
+import {  describe, expect, it, vi } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { ObjectId } from "bson";
 import {
@@ -324,12 +325,12 @@ describe("computeRelativeEventDateRange", () => {
 
   // Set up fake timers
   beforeAll(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2024-03-15")); // A Friday
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date("2024-03-15")); // A Friday
   });
 
   afterAll(() => {
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   describe("Event IDs", () => {

@@ -6,6 +6,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 const mockDismiss = mock();
 const mockOpenModal = mock();
 const mockUseAuthModal = mock();
+const mockUseAuthModalState = mock();
 
 mock.module("react-toastify", () => ({
   toast: {
@@ -13,7 +14,15 @@ mock.module("react-toastify", () => ({
   },
 }));
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
+  AuthModalContext: require("react").createContext({
+    closeModal: mock(),
+    currentView: "login",
+    isOpen: false,
+    openModal: mock(),
+    setView: mock(),
+  }),
   useAuthModal: mockUseAuthModal,
+  useAuthModalState: mockUseAuthModalState,
 }));
 
 const { SessionExpiredToast } =

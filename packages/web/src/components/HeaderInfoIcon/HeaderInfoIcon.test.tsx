@@ -8,7 +8,7 @@ import {
   type GoogleUiState,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 interface MockConnectGoogleResult {
   commandAction: GoogleUiConfig["commandAction"];
@@ -45,6 +45,14 @@ const mockUseConnectGoogle = mock(
 );
 const mockShouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
 const mockSubscribeToAuthState = mock(() => () => {});
+const mockClearAnonymousCalendarChangeSignUpPrompt = mock();
+const mockClearAuthenticationState = mock();
+const mockGetAuthState = mock();
+const mockGetLastKnownEmail = mock();
+const mockHasUserEverAuthenticated = mock();
+const mockMarkAnonymousCalendarChangeForSignUpPrompt = mock();
+const mockMarkUserAsAuthenticated = mock();
+const mockUpdateAuthState = mock();
 
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: (): CompassSession => mockUseSession(),
@@ -55,16 +63,34 @@ mock.module("@web/auth/google/hooks/useConnectGoogle/useConnectGoogle", () => ({
 }));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  clearAnonymousCalendarChangeSignUpPrompt:
+    mockClearAnonymousCalendarChangeSignUpPrompt,
+  clearAuthenticationState: mockClearAuthenticationState,
+  getAuthState: mockGetAuthState,
+  getLastKnownEmail: mockGetLastKnownEmail,
+  hasUserEverAuthenticated: mockHasUserEverAuthenticated,
+  markAnonymousCalendarChangeForSignUpPrompt:
+    mockMarkAnonymousCalendarChangeForSignUpPrompt,
+  markUserAsAuthenticated: mockMarkUserAsAuthenticated,
   shouldShowAnonymousCalendarChangeSignUpPrompt: (): boolean =>
     mockShouldShowAnonymousCalendarChangeSignUpPrompt(),
   subscribeToAuthState: (listener: () => void): (() => void) =>
     mockSubscribeToAuthState(listener),
+  updateAuthState: mockUpdateAuthState,
 }));
 
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
+  AuthModalContext: require("react").createContext({
+    closeModal: mock(),
+    currentView: "login",
+    isOpen: false,
+    openModal: mock(),
+    setView: mock(),
+  }),
   useAuthModal: () => ({
     openModal: mockOpenModal,
   }),
+  useAuthModalState: mock(),
 }));
 
 mock.module("@phosphor-icons/react", () => ({
@@ -111,6 +137,14 @@ describe("HeaderInfoIcon", () => {
     mockUseConnectGoogle.mockClear();
     mockShouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
     mockSubscribeToAuthState.mockClear();
+    mockClearAnonymousCalendarChangeSignUpPrompt.mockClear();
+    mockClearAuthenticationState.mockClear();
+    mockGetAuthState.mockClear();
+    mockGetLastKnownEmail.mockClear();
+    mockHasUserEverAuthenticated.mockClear();
+    mockMarkAnonymousCalendarChangeForSignUpPrompt.mockClear();
+    mockMarkUserAsAuthenticated.mockClear();
+    mockUpdateAuthState.mockClear();
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: mock(),
@@ -248,4 +282,8 @@ describe("HeaderInfoIcon", () => {
     expect(screen.getByLabelText("spinner-gap")).toBeInTheDocument();
     expect(screen.queryByLabelText("header-info-icon")).not.toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

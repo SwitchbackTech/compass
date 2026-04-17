@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { type Event_Core } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
@@ -8,8 +9,8 @@ import { EventApi } from "@web/ducks/events/event.api";
 import { syncLocalEventsToCloud } from "./local-event-sync.util";
 
 describe("syncLocalEventsToCloud", () => {
-  const mockCreate = jest.spyOn(EventApi, "create");
-  const mockConsoleLog = jest.spyOn(console, "log").mockImplementation();
+  const mockCreate = spyOn(EventApi, "create");
+  const mockConsoleLog = spyOn(console, "log").mockImplementation();
 
   const createMockEvent = (overrides?: Partial<Event_Core>) =>
     createMockStandaloneEvent(overrides) as Event_Core;

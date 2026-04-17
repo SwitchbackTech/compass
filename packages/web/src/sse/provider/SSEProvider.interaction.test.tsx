@@ -23,18 +23,31 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 const closeStream = mock();
 const getStream = mock(() => null);
 const mockHandleGoogleRevoked = mock();
+const mockDismissErrorToast = mock();
 const mockShowErrorToast = mock();
+const mockShowSessionExpiredToast = mock();
 const openStream = mock();
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
 
 mock.module("@web/auth/google/util/google.auth.util", () => ({
+  authenticate: mock(),
   handleGoogleRevoked: mockHandleGoogleRevoked,
+  showLocalEventsSyncFailure: mock(),
+  syncLocalEvents: mock(),
+  syncPendingLocalEvents: mock(),
 }));
 mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
   refreshUserMetadata,
 }));
 mock.module("@web/common/utils/toast/error-toast.util", () => ({
+  dismissErrorToast: mockDismissErrorToast,
+  ErrorToastSeverity: {
+    CRITICAL: "critical",
+    DEFAULT: "default",
+  },
+  SESSION_EXPIRED_TOAST_ID: "session-expired-api",
   showErrorToast: mockShowErrorToast,
+  showSessionExpiredToast: mockShowSessionExpiredToast,
 }));
 mock.module("../client/sse.client", () => {
   const { EventEmitter2 } = require("eventemitter2") as {
@@ -96,7 +109,9 @@ describe("useGcalSSE", () => {
     getStream.mockClear();
     getSseEmitter().removeAllListeners();
     mockHandleGoogleRevoked.mockClear();
+    mockDismissErrorToast.mockClear();
     mockShowErrorToast.mockClear();
+    mockShowSessionExpiredToast.mockClear();
     openStream.mockClear();
     refreshUserMetadata.mockClear();
     resetGoogleSyncUIStateForTests();

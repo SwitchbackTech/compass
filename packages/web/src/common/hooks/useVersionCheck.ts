@@ -15,7 +15,11 @@ function getVersionCheckUrl() {
     return null;
   }
 
-  const url = new URL("/version.json", window.location.origin);
+  const origin =
+    window.location.origin && window.location.origin !== "null"
+      ? window.location.origin
+      : "http://localhost";
+  const url = new URL("/version.json", origin);
   url.searchParams.set("t", Date.now().toString());
   return url.toString();
 }

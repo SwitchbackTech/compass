@@ -15,6 +15,11 @@ const activeEvent$ = new BehaviorSubject<Schema_Event | null>(null);
 const closeFloatingAtCursor = mock();
 const mockEventQuery = mock();
 const resetDraft = mock();
+const open$ = new BehaviorSubject(false);
+const nodeId$ = new BehaviorSubject(null);
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
 
 mock.module("@web/store/events", () => ({
   activeEvent$,
@@ -27,6 +32,24 @@ mock.module("@web/store/events", () => ({
 
 mock.module("@web/common/hooks/useOpenAtCursor", () => ({
   closeFloatingAtCursor,
+  open$,
+  nodeId$,
+  placement$,
+  strategy$,
+  reference$,
+  openFloatingAtCursor: mock(),
+  setFloatingOpenAtCursor: mock(),
+  setFloatingNodeIdAtCursor: mock(),
+  setFloatingPlacementAtCursor: mock(),
+  setFloatingReferenceAtCursor: mock(),
+  setFloatingStrategyAtCursor: mock(),
+  isOpenAtCursor: mock(),
+  CursorItem: { EventContextMenu: "EventContextMenu" },
+  useFloatingOpenAtCursor: mock(),
+  useFloatingNodeIdAtCursor: mock(),
+  useFloatingPlacementAtCursor: mock(),
+  useFloatingStrategyAtCursor: mock(),
+  useFloatingReferenceAtCursor: mock(),
 }));
 
 const { EventContextMenuItems } =

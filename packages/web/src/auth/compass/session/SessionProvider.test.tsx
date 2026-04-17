@@ -12,6 +12,14 @@ const getStream = mock();
 const dispatch = mock();
 const markUserAsAuthenticated = mock();
 const getLastKnownEmail = mock().mockReturnValue("test@example.com");
+const clearAnonymousCalendarChangeSignUpPrompt = mock();
+const clearAuthenticationState = mock();
+const getAuthState = mock();
+const hasUserEverAuthenticated = mock();
+const markAnonymousCalendarChangeForSignUpPrompt = mock();
+const shouldShowAnonymousCalendarChangeSignUpPrompt = mock();
+const subscribeToAuthState = mock();
+const updateAuthState = mock();
 const doesSessionExist = mock();
 const events$ = new Subject<{ action: string }>();
 
@@ -32,8 +40,16 @@ mock.module("@web/store", () => ({
 }));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  clearAnonymousCalendarChangeSignUpPrompt,
+  clearAuthenticationState,
+  getAuthState,
   getLastKnownEmail,
+  hasUserEverAuthenticated,
   markUserAsAuthenticated,
+  markAnonymousCalendarChangeForSignUpPrompt,
+  shouldShowAnonymousCalendarChangeSignUpPrompt,
+  subscribeToAuthState,
+  updateAuthState,
 }));
 
 mock.module("@web/common/classes/Session", () => ({
@@ -70,6 +86,14 @@ describe("SessionProvider sessionInit", () => {
     dispatch.mockClear();
     markUserAsAuthenticated.mockClear();
     getLastKnownEmail.mockClear().mockReturnValue("test@example.com");
+    clearAnonymousCalendarChangeSignUpPrompt.mockClear();
+    clearAuthenticationState.mockClear();
+    getAuthState.mockClear();
+    hasUserEverAuthenticated.mockClear();
+    markAnonymousCalendarChangeForSignUpPrompt.mockClear();
+    shouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
+    subscribeToAuthState.mockClear();
+    updateAuthState.mockClear();
     doesSessionExist.mockClear();
   });
 

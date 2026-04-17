@@ -1,3 +1,4 @@
+import {expect,mock } from "bun:test";
 import { resolveModifier } from "@tanstack/react-hotkeys";
 import { act } from "react";
 import "@testing-library/jest-dom/extend-expect";
@@ -19,11 +20,11 @@ test("start date picker opens and then closes when clicking the end input", asyn
     endDate: "2025-01-02",
     isAllDay: true,
   };
-  const mockOnClose = jest.fn();
-  const mockOnConvert = jest.fn();
-  const mockOnSubmit = jest.fn();
-  const mockSetEvent = jest.fn();
-  const mockOnDelete = jest.fn();
+  const mockOnClose = mock();
+  const mockOnConvert = mock();
+  const mockOnSubmit = mock();
+  const mockSetEvent = mock();
+  const mockOnDelete = mock();
   const user = userEvent.setup({ skipHover: true });
 
   render(
@@ -62,12 +63,12 @@ test("should call onConvert when control+meta+arrowleft keyboard shortcut is use
     endDate: "2025-04-10",
     isAllDay: false,
   };
-  const mockOnClose = jest.fn();
-  const mockOnConvert = jest.fn();
-  const mockOnSubmit = jest.fn();
-  const mockSetEvent = jest.fn();
+  const mockOnClose = mock();
+  const mockOnConvert = mock();
+  const mockOnSubmit = mock();
+  const mockSetEvent = mock();
 
-  const mockOnDelete = jest.fn();
+  const mockOnDelete = mock();
   const user = userEvent.setup({ skipHover: true });
 
   render(
@@ -105,12 +106,12 @@ test("should call onDuplicate when mod+d keyboard shortcut is used", async () =>
     endDate: "2025-04-10",
     isAllDay: false,
   };
-  const mockOnClose = jest.fn();
-  const mockOnConvert = jest.fn();
-  const mockOnSubmit = jest.fn();
-  const mockSetEvent = jest.fn();
-  const mockOnDelete = jest.fn();
-  const mockOnDuplicate = jest.fn();
+  const mockOnClose = mock();
+  const mockOnConvert = mock();
+  const mockOnSubmit = mock();
+  const mockSetEvent = mock();
+  const mockOnDelete = mock();
+  const mockOnDuplicate = mock();
   const user = userEvent.setup({ skipHover: true });
 
   render(
@@ -159,11 +160,11 @@ test("should submit when Enter is pressed while title input is focused", async (
     endDate: "2025-04-10T10:00:00.000Z",
     isAllDay: false,
   };
-  const mockOnClose = jest.fn();
-  const mockOnConvert = jest.fn();
-  const mockOnSubmit = jest.fn();
-  const mockSetEvent = jest.fn();
-  const mockOnDelete = jest.fn();
+  const mockOnClose = mock();
+  const mockOnConvert = mock();
+  const mockOnSubmit = mock();
+  const mockSetEvent = mock();
+  const mockOnDelete = mock();
   const user = userEvent.setup({ skipHover: true });
 
   render(
@@ -202,12 +203,12 @@ test("should call duplicateEvent when duplicate icon btn is clicked", async () =
     endDate: "2025-04-10",
     isAllDay: false,
   };
-  const mockOnClose = jest.fn();
-  const mockOnConvert = jest.fn();
-  const mockOnSubmit = jest.fn();
-  const mockSetEvent = jest.fn();
-  const mockOnDelete = jest.fn();
-  const mockOnDuplicate = jest.fn();
+  const mockOnClose = mock();
+  const mockOnConvert = mock();
+  const mockOnSubmit = mock();
+  const mockSetEvent = mock();
+  const mockOnDelete = mock();
+  const mockOnDuplicate = mock();
 
   render(
     <div>

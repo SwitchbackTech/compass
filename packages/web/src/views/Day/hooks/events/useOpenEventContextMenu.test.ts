@@ -1,9 +1,16 @@
 import { renderHook } from "@testing-library/react";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { BehaviorSubject } from "rxjs";
 
 const CursorItem = { EventContextMenu: "event-context-menu" };
 const openFloatingAtCursor = mock();
+const closeFloatingAtCursor = mock();
+const open$ = new BehaviorSubject(false);
+const nodeId$ = new BehaviorSubject(null);
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
 const eventsStore = {
   query: mock(),
 };
@@ -13,6 +20,23 @@ const getEventClass = mock();
 mock.module("@web/common/hooks/useOpenAtCursor", () => ({
   CursorItem: { EventContextMenu: "event-context-menu" },
   openFloatingAtCursor,
+  closeFloatingAtCursor,
+  open$,
+  nodeId$,
+  placement$,
+  strategy$,
+  reference$,
+  setFloatingOpenAtCursor: mock(),
+  setFloatingNodeIdAtCursor: mock(),
+  setFloatingPlacementAtCursor: mock(),
+  setFloatingReferenceAtCursor: mock(),
+  setFloatingStrategyAtCursor: mock(),
+  isOpenAtCursor: mock(),
+  useFloatingOpenAtCursor: mock(),
+  useFloatingNodeIdAtCursor: mock(),
+  useFloatingPlacementAtCursor: mock(),
+  useFloatingStrategyAtCursor: mock(),
+  useFloatingReferenceAtCursor: mock(),
 }));
 
 mock.module("@web/store/events", () => ({

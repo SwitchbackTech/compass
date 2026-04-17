@@ -22,9 +22,13 @@ mock.module("@web/common/hooks/useIsDraggingEvent", () => ({
 
 mock.module("@dnd-kit/core", () => ({
   DndContext,
+  DragOverlay: ({ children }: { children: ReactNode }) => children,
   KeyboardSensor: "KeyboardSensor",
   MouseSensor: "MouseSensor",
   TouchSensor: "TouchSensor",
+  useDndContext: mock(),
+  useDraggable: mock(),
+  useDroppable: mock(),
   useSensor,
   useSensors,
 }));

@@ -1,3 +1,4 @@
+import { describe, expect, it, mock, vi } from "bun:test";
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { Frequency } from "rrule";
@@ -22,7 +23,7 @@ describe("useRecurrence hook", () => {
 
   it("initializes with no recurrence", () => {
     const event = baseEvent();
-    const setEvent = jest.fn();
+    const setEvent = mock();
     const { result } = renderHook(() => useRecurrence(event, { setEvent }));
 
     expect(result.current.hasRecurrence).toBe(false);
@@ -34,7 +35,7 @@ describe("useRecurrence hook", () => {
 
   it("can toggle recurrence", () => {
     const event = baseEvent();
-    const setEvent = jest.fn();
+    const setEvent = mock();
     const { result } = renderHook(() => useRecurrence(event, { setEvent }));
     act(() => {
       result.current.toggleRecurrence();
@@ -44,7 +45,7 @@ describe("useRecurrence hook", () => {
 
   it("can set interval", () => {
     const event = baseEvent();
-    const setEvent = jest.fn();
+    const setEvent = mock();
     const { result } = renderHook(() => useRecurrence(event, { setEvent }));
 
     act(() => {
@@ -58,7 +59,7 @@ describe("useRecurrence hook", () => {
 
   it("can set frequency", () => {
     const event = baseEvent();
-    const setEvent = jest.fn();
+    const setEvent = mock();
     const { result } = renderHook(() => useRecurrence(event, { setEvent }));
 
     act(() => {
@@ -72,7 +73,7 @@ describe("useRecurrence hook", () => {
 
   it("can set weekDays", () => {
     const event = baseEvent();
-    const setEvent = jest.fn();
+    const setEvent = mock();
     const { result } = renderHook(() => useRecurrence(event, { setEvent }));
 
     act(() => {
@@ -86,7 +87,7 @@ describe("useRecurrence hook", () => {
 
   it("can set until date", () => {
     const event = baseEvent();
-    const setEvent = jest.fn();
+    const setEvent = mock();
     const { result } = renderHook(() => useRecurrence(event, { setEvent }));
     const date = new Date();
 
@@ -105,7 +106,7 @@ describe("useRecurrence hook", () => {
       recurrence: { rule: ["RRULE:FREQ=MONTHLY;INTERVAL=2;COUNT=5"] },
     };
 
-    const setEvent = jest.fn();
+    const setEvent = mock();
     const { result } = renderHook(() => useRecurrence(event, { setEvent }));
 
     expect(result.current.hasRecurrence).toBe(true);

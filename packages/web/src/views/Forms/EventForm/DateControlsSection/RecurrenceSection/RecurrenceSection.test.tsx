@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import "@testing-library/jest-dom";
 import { fireEvent, screen } from "@testing-library/react";
 import { Priorities } from "@core/constants/core.constants";
@@ -5,7 +6,7 @@ import { type Schema_Event } from "@core/types/event.types";
 import { render } from "@web/__tests__/__mocks__/mock.render";
 import { RecurrenceSection } from "./RecurrenceSection";
 
-const mockSetEvent = jest.fn();
+const mockSetEvent = mock();
 
 const baseEvent: Schema_Event = {
   _id: "1",
@@ -21,7 +22,7 @@ const baseEvent: Schema_Event = {
 
 describe("RecurrenceSection", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("renders without recurrence", () => {

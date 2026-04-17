@@ -6,13 +6,32 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 const mockGetLastKnownEmail = mock();
 const mockGetProfile = mock();
 const mockMarkUserAsAuthenticated = mock();
+const mockClearAnonymousCalendarChangeSignUpPrompt = mock();
+const mockClearAuthenticationState = mock();
+const mockGetAuthState = mock();
+const mockHasUserEverAuthenticated = mock();
+const mockMarkAnonymousCalendarChangeForSignUpPrompt = mock();
+const mockShouldShowAnonymousCalendarChangeSignUpPrompt = mock();
+const mockSubscribeToAuthState = mock();
+const mockUpdateAuthState = mock();
 const mockToastDismiss = mock();
 const mockToastError = mock();
 const mockToastIsActive = mock();
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  clearAnonymousCalendarChangeSignUpPrompt:
+    mockClearAnonymousCalendarChangeSignUpPrompt,
+  clearAuthenticationState: mockClearAuthenticationState,
+  getAuthState: mockGetAuthState,
   getLastKnownEmail: mockGetLastKnownEmail,
+  hasUserEverAuthenticated: mockHasUserEverAuthenticated,
   markUserAsAuthenticated: mockMarkUserAsAuthenticated,
+  markAnonymousCalendarChangeForSignUpPrompt:
+    mockMarkAnonymousCalendarChangeForSignUpPrompt,
+  shouldShowAnonymousCalendarChangeSignUpPrompt:
+    mockShouldShowAnonymousCalendarChangeSignUpPrompt,
+  subscribeToAuthState: mockSubscribeToAuthState,
+  updateAuthState: mockUpdateAuthState,
 }));
 
 mock.module("@web/common/apis/user.api", () => ({
@@ -44,9 +63,17 @@ describe("useLoadProfile", () => {
     mockGetLastKnownEmail.mockClear();
     mockGetProfile.mockClear();
     mockMarkUserAsAuthenticated.mockClear();
+    mockClearAnonymousCalendarChangeSignUpPrompt.mockClear();
+    mockClearAuthenticationState.mockClear();
+    mockGetAuthState.mockClear();
     mockToastDismiss.mockClear();
     mockToastError.mockClear();
     mockToastIsActive.mockClear();
+    mockHasUserEverAuthenticated.mockClear();
+    mockMarkAnonymousCalendarChangeForSignUpPrompt.mockClear();
+    mockShouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
+    mockSubscribeToAuthState.mockClear();
+    mockUpdateAuthState.mockClear();
 
     mockGetProfile.mockResolvedValue({
       userId: "test-user-123",

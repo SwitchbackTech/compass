@@ -7,6 +7,7 @@ const mockIdentify = mock();
 const mockUsePostHog = mock();
 
 mock.module("./posthog-react", () => ({
+  PostHogProvider: ({ children }: { children?: unknown }) => children,
   usePostHog: mockUsePostHog,
 }));
 

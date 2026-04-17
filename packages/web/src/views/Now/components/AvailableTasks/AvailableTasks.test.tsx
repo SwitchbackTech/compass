@@ -1,3 +1,4 @@
+import { beforeEach, describe, expect, it, mock, vi } from "bun:test";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -5,14 +6,14 @@ import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { AvailableTasks } from "./AvailableTasks";
 
 describe("AvailableTasks", () => {
-  const mockOnTaskSelect = jest.fn();
+  const mockOnTaskSelect = mock();
 
   const mockTask1 = createMockTask({ _id: "task-1", title: "Test Task" });
 
   const mockTask2 = createMockTask({ _id: "task-2", title: "Another Task" });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   it("renders the heading text", () => {
