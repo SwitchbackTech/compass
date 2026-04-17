@@ -1,48 +1,68 @@
 import { renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
-import {
-  CursorItem,
-  openFloatingAtCursor,
-} from "@web/common/hooks/useOpenAtCursor";
-import { eventsStore, setActiveEvent } from "@web/store/events";
-import { useOpenAgendaEventPreview } from "@web/views/Day/hooks/events/useOpenAgendaEventPreview";
-import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/store/events", () => ({
-  eventsStore: {
-    query: jest.fn(),
-  },
-  setActiveEvent: jest.fn(),
-}));
-
-jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
-  CursorItem: { EventPreview: "event-preview" },
-  openFloatingAtCursor: jest.fn(),
-}));
-
-jest.mock("@web/views/Day/util/agenda/focus.util", () => ({
-  getEventClass: jest.fn(),
-}));
-jest.mock("@web/store/store.hooks", () => ({
-  useAppSelector: jest.fn((selector) => {
-    // Mock pending events - return empty Set by default
-    if (typeof selector === "function") {
-      return selector({
-        events: {
-          pendingEvents: {
-            eventIds: [],
-          },
+const CursorItem = { EventPreview: "event-preview" };
+const eventsStore = {
+  query: mock(),
+};
+const getEventClass = mock();
+const openFloatingAtCursor = mock();
+const setActiveEvent = mock();
+const useAppSelector = mock((selector) => {
+  if (typeof selector === "function") {
+    return selector({
+      events: {
+        pendingEvents: {
+          eventIds: [],
         },
-      });
-    }
-    return selector;
-  }),
+      },
+    });
+  }
+  return selector;
+});
+
+mock.module("@web/store/events", () => ({
+  eventsStore,
+  setActiveEvent,
 }));
+
+mock.module("@web/common/hooks/useOpenAtCursor", () => ({
+  CursorItem: { EventPreview: "event-preview" },
+  openFloatingAtCursor,
+}));
+
+mock.module("@web/views/Day/util/agenda/focus.util", () => ({
+  getEventClass,
+}));
+
+mock.module("@web/store/store.hooks", () => ({
+  useAppSelector,
+}));
+
+const { useOpenAgendaEventPreview } =
+  require("@web/views/Day/hooks/events/useOpenAgendaEventPreview") as typeof import("@web/views/Day/hooks/events/useOpenAgendaEventPreview");
 
 describe("useOpenAgendaEventPreview", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    eventsStore.query.mockClear();
+    getEventClass.mockClear();
+    openFloatingAtCursor.mockClear();
+    setActiveEvent.mockClear();
+    useAppSelector.mockClear();
+    useAppSelector.mockImplementation((selector) => {
+      if (typeof selector === "function") {
+        return selector({
+          events: {
+            pendingEvents: {
+              eventIds: [],
+            },
+          },
+        });
+      }
+      return selector;
+    });
   });
 
   it("should open event preview when event id and reference exist", () => {
@@ -50,19 +70,19 @@ describe("useOpenAgendaEventPreview", () => {
     const eventClass = "event-class";
     const mockEvent = { _id: eventId, title: "Test Event" };
     const mockReference = {
-      getAttribute: jest.fn().mockReturnValue(eventId),
+      getAttribute: mock().mockReturnValue(eventId),
     };
     const mockElement = {
-      closest: jest.fn().mockReturnValue(mockReference),
+      closest: mock().mockReturnValue(mockReference),
     };
     const mockEventObj = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
+      preventDefault: mock(),
+      stopPropagation: mock(),
       currentTarget: mockElement,
     };
 
-    (getEventClass as jest.Mock).mockReturnValue(eventClass);
-    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
+    getEventClass.mockReturnValue(eventClass);
+    eventsStore.query.mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
@@ -88,18 +108,18 @@ describe("useOpenAgendaEventPreview", () => {
   it("should not open event preview if event id is missing", () => {
     const eventClass = "event-class";
     const mockReference = {
-      getAttribute: jest.fn().mockReturnValue(null),
+      getAttribute: mock().mockReturnValue(null),
     };
     const mockElement = {
-      closest: jest.fn().mockReturnValue(mockReference),
+      closest: mock().mockReturnValue(mockReference),
     };
     const mockEventObj = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
+      preventDefault: mock(),
+      stopPropagation: mock(),
       currentTarget: mockElement,
     };
 
-    (getEventClass as jest.Mock).mockReturnValue(eventClass);
+    getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
@@ -113,15 +133,15 @@ describe("useOpenAgendaEventPreview", () => {
   it("should not open event preview if reference is missing", () => {
     const eventClass = "event-class";
     const mockElement = {
-      closest: jest.fn().mockReturnValue(null),
+      closest: mock().mockReturnValue(null),
     };
     const mockEventObj = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
+      preventDefault: mock(),
+      stopPropagation: mock(),
       currentTarget: mockElement,
     };
 
-    (getEventClass as jest.Mock).mockReturnValue(eventClass);
+    getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
@@ -133,7 +153,6 @@ describe("useOpenAgendaEventPreview", () => {
   });
 
   it("should not open event preview if event is pending", () => {
-    const { useAppSelector } = jest.requireMock("@web/store/store.hooks");
     const pendingEventId = new ObjectId().toString();
     const pendingEventIds = [pendingEventId];
 
@@ -155,19 +174,19 @@ describe("useOpenAgendaEventPreview", () => {
     const eventClass = "event-class";
     const mockEvent = { _id: pendingEventId, title: "Pending Event" };
     const mockReference = {
-      getAttribute: jest.fn().mockReturnValue(pendingEventId),
+      getAttribute: mock().mockReturnValue(pendingEventId),
     };
     const mockElement = {
-      closest: jest.fn().mockReturnValue(mockReference),
+      closest: mock().mockReturnValue(mockReference),
     };
     const mockEventObj = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
+      preventDefault: mock(),
+      stopPropagation: mock(),
       currentTarget: mockElement,
     };
 
-    (getEventClass as jest.Mock).mockReturnValue(eventClass);
-    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
+    getEventClass.mockReturnValue(eventClass);
+    eventsStore.query.mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
