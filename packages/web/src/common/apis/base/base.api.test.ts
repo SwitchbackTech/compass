@@ -132,22 +132,13 @@ describe("CompassApi interceptor auth handling", () => {
   });
 
   it("does not redirect if user is already on the day route", async () => {
-    // We mock the util so we can just check if it was called.
-    // The logic in signOut uses window.location.pathname.
-    // If we can't get window.location.pathname to work, we might need to mock signOut itself,
-    // but the test is supposed to test the interceptor which calls signOut.
-
-    const originalLocation = window.location;
-    // @ts-ignore
-    delete window.location;
-    window.location = { ...originalLocation, pathname: ROOT_ROUTES.DAY };
+    // Use setTestWindowUrl to change window.location.pathname via history API
+    setLocationPath(ROOT_ROUTES.DAY);
 
     await triggerErrorResponse(Status.NOT_FOUND);
 
     expect(session.signOut).toHaveBeenCalledTimes(1);
     expect(mockAssignLocation).not.toHaveBeenCalled();
-
-    window.location = originalLocation;
   });
 
   it("shows session-expired toast and signs out on unauthorized", async () => {
