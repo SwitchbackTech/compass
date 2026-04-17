@@ -1,24 +1,75 @@
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
 import { fireEvent, screen } from "@testing-library/react";
 import type React from "react";
-import { act } from "react";
-import { render } from "@web/__tests__/__mocks__/mock.render";
+import { act, type ReactNode } from "react";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
 import { type TaskContext } from "@web/views/Day/context/TaskContext";
+import { describe, expect, it, mock, test } from "bun:test";
 
-jest.mock("@floating-ui/react", () => ({
-  autoUpdate: jest.fn(),
-  inline: jest.fn(() => ({})),
-  offset: jest.fn(() => ({})),
-  useFloating: jest.fn(() => ({
+const mockRecipeInit = mock(() => ({}));
+const mockSuperTokensInit = mock();
+
+mock.module("supertokens-web-js", () => ({
+  default: {
+    init: mockSuperTokensInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailpassword", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/emailverification", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/thirdparty", () => ({
+  default: {
+    init: mockRecipeInit,
+  },
+}));
+
+mock.module("supertokens-web-js/recipe/session", () => ({
+  attemptRefreshingSession: mock(),
+  default: {
+    attemptRefreshingSession: mock(),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({}),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    init: mockRecipeInit,
+    signOut: mock().mockResolvedValue(undefined),
+    validateClaims: mock().mockResolvedValue([]),
+  },
+}));
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children: ReactNode }) => children,
+  useGoogleLogin: () => mock(),
+}));
+
+mock.module("@floating-ui/react", () => ({
+  autoUpdate: mock(),
+  inline: mock(() => ({})),
+  offset: mock(() => ({})),
+  useFloating: mock(() => ({
     refs: {
-      setReference: jest.fn(),
-      setFloating: jest.fn(),
+      setReference: mock(),
+      setFloating: mock(),
     },
     floatingStyles: {},
   })),
 }));
+
+const { render } =
+  require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
+const { DraggableTask } =
+  require("@web/views/Day/components/Task/DraggableTask") as typeof import("@web/views/Day/components/Task/DraggableTask");
 
 const mockTask = createMockTask({ _id: "task-1" });
 
@@ -26,17 +77,17 @@ const defaultTasksProps: NonNullable<React.ContextType<typeof TaskContext>> = {
   tasks: [mockTask, { ...mockTask, _id: "task-2", title: "Another Task" }],
   editingTaskId: null,
   editingTitle: "",
-  setSelectedTaskIndex: jest.fn(),
-  onCheckboxKeyDown: jest.fn(),
-  onInputBlur: jest.fn(),
-  onInputClick: jest.fn(),
-  onInputKeyDown: jest.fn(),
-  onTitleChange: jest.fn(),
-  onStatusToggle: jest.fn(),
-  migrateTask: jest.fn(),
-  deleteTask: jest.fn(),
-  reorderTasks: jest.fn(),
-  addTask: jest.fn(),
+  setSelectedTaskIndex: mock(),
+  onCheckboxKeyDown: mock(),
+  onInputBlur: mock(),
+  onInputClick: mock(),
+  onInputKeyDown: mock(),
+  onTitleChange: mock(),
+  onStatusToggle: mock(),
+  migrateTask: mock(),
+  deleteTask: mock(),
+  reorderTasks: mock(),
+  addTask: mock(),
   // Add missing properties with default values/mocks
   isAddingTask: false,
   isCancellingEdit: false,
@@ -44,15 +95,15 @@ const defaultTasksProps: NonNullable<React.ContextType<typeof TaskContext>> = {
   selectedTaskIndex: -1,
   undoState: null,
   undoToastId: null,
-  restoreTask: jest.fn(),
-  focusOnCheckbox: jest.fn(),
-  focusOnInput: jest.fn(),
-  setEditingTitle: jest.fn(),
-  setEditingTaskId: jest.fn(),
-  setIsAddingTask: jest.fn(),
-  setIsCancellingEdit: jest.fn(),
-  toggleTaskStatus: jest.fn(),
-  updateTaskTitle: jest.fn(),
+  restoreTask: mock(),
+  focusOnCheckbox: mock(),
+  focusOnInput: mock(),
+  setEditingTitle: mock(),
+  setEditingTaskId: mock(),
+  setIsAddingTask: mock(),
+  setIsCancellingEdit: mock(),
+  toggleTaskStatus: mock(),
+  updateTaskTitle: mock(),
 };
 
 const renderDraggableTask = (
@@ -61,7 +112,7 @@ const renderDraggableTask = (
   tasksProps = defaultTasksProps,
 ) => {
   return render(
-    <DragDropContext onDragEnd={jest.fn()}>
+    <DragDropContext onDragEnd={mock()}>
       <Droppable droppableId="test-droppable">
         {(provided) => (
           <div ref={provided.innerRef} {...provided.droppableProps}>
