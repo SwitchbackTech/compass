@@ -1,7 +1,8 @@
-import "@testing-library/jest-dom";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-const { cleanup, render, screen, waitFor } = require("@testing-library/react");
+import { act } from "react";
+const { cleanup, render, screen, waitFor } =
+  require("@testing-library/react") as typeof import("@testing-library/react");
 
 const mockGetLastKnownEmail = mock();
 const mockHasUserEverAuthenticated = mock();
@@ -25,8 +26,10 @@ mock.module("@web/common/apis/user.api", () => ({
   },
 }));
 
-const { UserProvider } = require("@web/auth/compass/user/context/UserProvider");
-const { useUser } = require("@web/auth/compass/user/hooks/useUser");
+const { UserProvider } =
+  require("@web/auth/compass/user/context/UserProvider") as typeof import("@web/auth/compass/user/context/UserProvider");
+const { useUser } =
+  require("@web/auth/compass/user/hooks/useUser") as typeof import("@web/auth/compass/user/hooks/useUser");
 
 const UserEmail = () => <div>{useUser().email ?? "no-email"}</div>;
 
@@ -57,6 +60,8 @@ describe("UserProvider", () => {
   });
 
   it("renders children", () => {
+    mockHasUserEverAuthenticated.mockReturnValue(false);
+
     render(
       <UserProvider>
         <div>Test Child</div>
@@ -81,11 +86,13 @@ describe("UserProvider", () => {
 
     isAuthenticated = true;
 
-    rerender(
-      <UserProvider>
-        <UserEmail />
-      </UserProvider>,
-    );
+    await act(async () => {
+      rerender(
+        <UserProvider>
+          <UserEmail />
+        </UserProvider>,
+      );
+    });
 
     await waitFor(() => {
       expect(screen.getByText("test@example.com")).toBeInTheDocument();
