@@ -1,21 +1,36 @@
 import "@testing-library/jest-dom/extend-expect";
 import { screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { type ReactNode } from "react";
 import { render } from "@web/__tests__/__mocks__/mock.render";
-import { SomedayEventActionMenu } from "./SomedayEventActionMenu";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock the child components
-jest.mock("../ActionsMenu/ActionsMenu", () => ({
-  ActionsMenu: ({ children, id, bgColor }: any) => (
+type ActionsMenuProps = {
+  bgColor: string;
+  children: (close: () => void) => ReactNode;
+  id?: string;
+};
+
+type MenuButtonProps = {
+  bgColor: string;
+  onClick?: () => void;
+  tooltipText?: string;
+};
+
+const closeMenuMock = mock();
+
+mock.module("../ActionsMenu/ActionsMenu", () => ({
+  ActionsMenu: ({ children, id, bgColor }: ActionsMenuProps) => (
     <div data-testid="actions-menu" data-id={id} data-bg-color={bgColor}>
-      {children(() => {})}
+      {children(closeMenuMock)}
     </div>
   ),
 }));
 
-jest.mock("../EventForm/DeleteMenuButton", () => ({
-  DeleteMenuButton: ({ onClick, bgColor }: any) => (
+mock.module("../EventForm/DeleteMenuButton", () => ({
+  DeleteMenuButton: ({ onClick, bgColor }: MenuButtonProps) => (
     <button
+      type="button"
       data-testid="delete-button"
       onClick={onClick}
       data-bg-color={bgColor}
@@ -25,9 +40,10 @@ jest.mock("../EventForm/DeleteMenuButton", () => ({
   ),
 }));
 
-jest.mock("../EventForm/DuplicateMenuButton", () => ({
-  DuplicateMenuButton: ({ onClick, bgColor }: any) => (
+mock.module("../EventForm/DuplicateMenuButton", () => ({
+  DuplicateMenuButton: ({ onClick, bgColor }: MenuButtonProps) => (
     <button
+      type="button"
       data-testid="duplicate-button"
       onClick={onClick}
       data-bg-color={bgColor}
@@ -37,9 +53,14 @@ jest.mock("../EventForm/DuplicateMenuButton", () => ({
   ),
 }));
 
-jest.mock("../EventForm/MigrateAboveMenuButton", () => ({
-  MigrateAboveMenuButton: ({ onClick, bgColor, tooltipText }: any) => (
+mock.module("../EventForm/MigrateAboveMenuButton", () => ({
+  MigrateAboveMenuButton: ({
+    onClick,
+    bgColor,
+    tooltipText,
+  }: MenuButtonProps) => (
     <button
+      type="button"
       data-testid="migrate-above-button"
       onClick={onClick}
       data-bg-color={bgColor}
@@ -50,9 +71,14 @@ jest.mock("../EventForm/MigrateAboveMenuButton", () => ({
   ),
 }));
 
-jest.mock("../EventForm/MigrateBackwardMenuButton", () => ({
-  MigrateBackwardMenuButton: ({ onClick, bgColor, tooltipText }: any) => (
+mock.module("../EventForm/MigrateBackwardMenuButton", () => ({
+  MigrateBackwardMenuButton: ({
+    onClick,
+    bgColor,
+    tooltipText,
+  }: MenuButtonProps) => (
     <button
+      type="button"
       data-testid="migrate-backward-button"
       onClick={onClick}
       data-bg-color={bgColor}
@@ -63,9 +89,14 @@ jest.mock("../EventForm/MigrateBackwardMenuButton", () => ({
   ),
 }));
 
-jest.mock("../EventForm/MigrateBelowMenuButton", () => ({
-  MigrateBelowMenuButton: ({ onClick, bgColor, tooltipText }: any) => (
+mock.module("../EventForm/MigrateBelowMenuButton", () => ({
+  MigrateBelowMenuButton: ({
+    onClick,
+    bgColor,
+    tooltipText,
+  }: MenuButtonProps) => (
     <button
+      type="button"
       data-testid="migrate-below-button"
       onClick={onClick}
       data-bg-color={bgColor}
@@ -76,9 +107,14 @@ jest.mock("../EventForm/MigrateBelowMenuButton", () => ({
   ),
 }));
 
-jest.mock("../EventForm/MigrateForwardMenuButton", () => ({
-  MigrateForwardMenuButton: ({ onClick, bgColor, tooltipText }: any) => (
+mock.module("../EventForm/MigrateForwardMenuButton", () => ({
+  MigrateForwardMenuButton: ({
+    onClick,
+    bgColor,
+    tooltipText,
+  }: MenuButtonProps) => (
     <button
+      type="button"
       data-testid="migrate-forward-button"
       onClick={onClick}
       data-bg-color={bgColor}
@@ -89,20 +125,29 @@ jest.mock("../EventForm/MigrateForwardMenuButton", () => ({
   ),
 }));
 
+const { SomedayEventActionMenu } =
+  require("./SomedayEventActionMenu") as typeof import("./SomedayEventActionMenu");
+
 describe("SomedayEventActionMenu", () => {
   const defaultProps = {
     target: "week",
-    onMigrateBackwardClick: jest.fn(),
-    onMigrateForwardClick: jest.fn(),
-    onMigrateBelowClick: jest.fn(),
-    onMigrateAboveClick: jest.fn(),
-    onDuplicateClick: jest.fn(),
-    onDeleteClick: jest.fn(),
+    onMigrateBackwardClick: mock(),
+    onMigrateForwardClick: mock(),
+    onMigrateBelowClick: mock(),
+    onMigrateAboveClick: mock(),
+    onDuplicateClick: mock(),
+    onDeleteClick: mock(),
     bgColor: "#ffffff",
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    closeMenuMock.mockClear();
+    defaultProps.onMigrateBackwardClick.mockClear();
+    defaultProps.onMigrateForwardClick.mockClear();
+    defaultProps.onMigrateBelowClick.mockClear();
+    defaultProps.onMigrateAboveClick.mockClear();
+    defaultProps.onDuplicateClick.mockClear();
+    defaultProps.onDeleteClick.mockClear();
   });
 
   describe("Basic Rendering", () => {
@@ -216,7 +261,7 @@ describe("SomedayEventActionMenu", () => {
   describe("Callback Functions", () => {
     it("calls onMigrateBackwardClick when migrate backward button is clicked", async () => {
       const user = userEvent.setup();
-      const onMigrateBackwardClick = jest.fn();
+      const onMigrateBackwardClick = mock();
 
       render(
         <SomedayEventActionMenu
@@ -235,7 +280,7 @@ describe("SomedayEventActionMenu", () => {
 
     it("calls onMigrateForwardClick when migrate forward button is clicked", async () => {
       const user = userEvent.setup();
-      const onMigrateForwardClick = jest.fn();
+      const onMigrateForwardClick = mock();
 
       render(
         <SomedayEventActionMenu
@@ -252,7 +297,7 @@ describe("SomedayEventActionMenu", () => {
 
     it("calls onMigrateAboveClick when migrate above button is clicked", async () => {
       const user = userEvent.setup();
-      const onMigrateAboveClick = jest.fn();
+      const onMigrateAboveClick = mock();
 
       render(
         <SomedayEventActionMenu
@@ -270,7 +315,7 @@ describe("SomedayEventActionMenu", () => {
 
     it("calls onMigrateBelowClick when migrate below button is clicked", async () => {
       const user = userEvent.setup();
-      const onMigrateBelowClick = jest.fn();
+      const onMigrateBelowClick = mock();
 
       render(
         <SomedayEventActionMenu
@@ -288,7 +333,7 @@ describe("SomedayEventActionMenu", () => {
 
     it("calls onDuplicateClick when duplicate button is clicked", async () => {
       const user = userEvent.setup();
-      const onDuplicateClick = jest.fn();
+      const onDuplicateClick = mock();
 
       render(
         <SomedayEventActionMenu
@@ -305,7 +350,7 @@ describe("SomedayEventActionMenu", () => {
 
     it("calls onDeleteClick when delete button is clicked", async () => {
       const user = userEvent.setup();
-      const onDeleteClick = jest.fn();
+      const onDeleteClick = mock();
 
       render(
         <SomedayEventActionMenu
@@ -324,14 +369,6 @@ describe("SomedayEventActionMenu", () => {
   describe("Menu Closing Behavior", () => {
     it("calls close function after migrate backward button click", async () => {
       const user = userEvent.setup();
-      const closeMock = jest.fn();
-
-      // Mock ActionsMenu to capture the close function
-      jest.doMock("../ActionsMenu/ActionsMenu", () => ({
-        ActionsMenu: ({ children }: any) => (
-          <div data-testid="actions-menu">{children(closeMock)}</div>
-        ),
-      }));
 
       render(<SomedayEventActionMenu {...defaultProps} />);
 
@@ -340,9 +377,8 @@ describe("SomedayEventActionMenu", () => {
       );
       await user.click(migrateBackwardButton);
 
-      // The close function should be called as part of the onClick handler
-      // Note: In the actual implementation, close() is called after the callback
       expect(defaultProps.onMigrateBackwardClick).toHaveBeenCalledTimes(1);
+      expect(closeMenuMock).toHaveBeenCalledTimes(1);
     });
 
     it("calls close function after migrate forward button click", async () => {
@@ -354,6 +390,7 @@ describe("SomedayEventActionMenu", () => {
       await user.click(migrateForwardButton);
 
       expect(defaultProps.onMigrateForwardClick).toHaveBeenCalledTimes(1);
+      expect(closeMenuMock).toHaveBeenCalledTimes(1);
     });
 
     it("calls close function after duplicate button click", async () => {
@@ -365,6 +402,7 @@ describe("SomedayEventActionMenu", () => {
       await user.click(duplicateButton);
 
       expect(defaultProps.onDuplicateClick).toHaveBeenCalledTimes(1);
+      expect(closeMenuMock).toHaveBeenCalledTimes(1);
     });
 
     it("calls close function after delete button click", async () => {
@@ -376,6 +414,7 @@ describe("SomedayEventActionMenu", () => {
       await user.click(deleteButton);
 
       expect(defaultProps.onDeleteClick).toHaveBeenCalledTimes(1);
+      expect(closeMenuMock).toHaveBeenCalledTimes(1);
     });
   });
 
