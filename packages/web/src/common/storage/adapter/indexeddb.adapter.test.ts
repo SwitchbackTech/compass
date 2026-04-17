@@ -4,6 +4,14 @@
  * Uses fake-indexeddb (see web.test.start.ts) for in-memory IndexedDB support.
  */
 import { type Event_Core } from "@core/types/event.types";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createTestEvent } from "@web/__tests__/utils/repositories/repository.test.factory";
 import { clearCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
@@ -12,12 +20,12 @@ import { LegacyCompassDB } from "./legacy-primary-key.migration";
 
 describe("IndexedDBAdapter", () => {
   let adapter: IndexedDBAdapter;
-  let consoleLogSpy: jest.SpyInstance;
-  let consoleWarnSpy: jest.SpyInstance;
+  let consoleLogSpy: ReturnType<typeof spyOn>;
+  let consoleWarnSpy: ReturnType<typeof spyOn>;
 
   beforeEach(async () => {
-    consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
-    consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+    consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
+    consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
     await clearCompassLocalDb();
     adapter = new IndexedDBAdapter();
   });

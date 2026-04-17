@@ -2,6 +2,14 @@
  * Tests for the storage adapter factory and initialization.
  */
 import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
+import {
   ensureStorageReady,
   getStorageAdapter,
   initializeStorage,
@@ -11,14 +19,15 @@ import {
 import { IndexedDBAdapter } from "@web/common/storage/adapter/indexeddb.adapter";
 
 describe("storage adapter index", () => {
-  let consoleLogSpy: jest.SpyInstance;
-  let consoleWarnSpy: jest.SpyInstance;
+  let consoleLogSpy: ReturnType<typeof spyOn>;
+  let consoleWarnSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
-    consoleLogSpy = jest.spyOn(console, "log").mockImplementation();
-    consoleWarnSpy = jest.spyOn(console, "warn").mockImplementation();
+    consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
+    consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
     resetStorage();
-    jest.clearAllMocks();
+    consoleLogSpy.mockClear();
+    consoleWarnSpy.mockClear();
   });
 
   afterEach(() => {
@@ -91,8 +100,7 @@ describe("storage adapter index", () => {
     });
 
     it("allows retry after initialization failure", async () => {
-      const initializeSpy = jest
-        .spyOn(IndexedDBAdapter.prototype, "initialize")
+      const initializeSpy = spyOn(IndexedDBAdapter.prototype, "initialize")
         .mockRejectedValueOnce(new Error("init failed"))
         .mockResolvedValueOnce(undefined);
 

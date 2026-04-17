@@ -1,5 +1,6 @@
 import { GlobalRegistrator } from "@happy-dom/global-registrator";
 import { mock } from "bun:test";
+import "fake-indexeddb/auto";
 
 GlobalRegistrator.register();
 
