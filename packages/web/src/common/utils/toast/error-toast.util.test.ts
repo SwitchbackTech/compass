@@ -1,31 +1,31 @@
 import { createElement, isValidElement } from "react";
-import { toast } from "react-toastify";
-import {
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+const mockIsActive = mock();
+const mockToastDismiss = mock();
+const mockToastError = mock();
+
+mock.module("react-toastify", () => ({
+  toast: {
+    dismiss: mockToastDismiss,
+    error: mockToastError,
+    isActive: mockIsActive,
+  },
+}));
+
+const {
   dismissErrorToast,
   ErrorToastSeverity,
   showErrorToast,
   showSessionExpiredToast,
-} from "@web/common/utils/toast/error-toast.util";
-
-jest.mock("react-toastify", () => ({
-  toast: {
-    dismiss: jest.fn(),
-    error: jest.fn(),
-    isActive: jest.fn(),
-  },
-}));
-
-const mockToastError = toast.error as jest.MockedFunction<typeof toast.error>;
-const mockToastDismiss = toast.dismiss as jest.MockedFunction<
-  typeof toast.dismiss
->;
-const mockIsActive = toast.isActive as jest.MockedFunction<
-  typeof toast.isActive
->;
+} =
+  require("@web/common/utils/toast/error-toast.util") as typeof import("@web/common/utils/toast/error-toast.util");
 
 describe("error-toast util", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockIsActive.mockClear();
+    mockToastDismiss.mockClear();
+    mockToastError.mockClear();
     mockToastError.mockReturnValue("toast-id");
     mockIsActive.mockReturnValue(false);
   });
