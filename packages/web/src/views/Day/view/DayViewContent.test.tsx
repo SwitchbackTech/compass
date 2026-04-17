@@ -4,25 +4,23 @@ import { screen, waitFor } from "@testing-library/react";
 import { prepareEmptyStorageForTests } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { addTasks } from "@web/__tests__/utils/tasks/task.test.util";
 import { renderWithDayProvidersAsync } from "@web/views/Day/util/day.test-util";
-import { DayViewContent } from "@web/views/Day/view/DayViewContent";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Helper to create a mock matchMedia
 const createMatchMedia = (matches: boolean) => {
   const listeners: Array<(e: MediaQueryListEvent) => void> = [];
   const mediaQuery = {
     matches,
     media: "",
     onchange: null,
-    addListener: jest.fn(),
-    removeListener: jest.fn(),
-    addEventListener: jest.fn(
+    addListener: mock(),
+    removeListener: mock(),
+    addEventListener: mock(
       (_event: string, listener: (e: MediaQueryListEvent) => void) => {
         listeners.push(listener);
       },
     ),
-    removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-    // Helper to simulate resize
+    removeEventListener: mock(),
+    dispatchEvent: mock(),
     _triggerChange: (newMatches: boolean) => {
       mediaQuery.matches = newMatches;
       listeners.forEach((listener) => {
@@ -34,33 +32,48 @@ const createMatchMedia = (matches: boolean) => {
   return mediaQuery;
 };
 
-// Mock the Agenda component
-jest.mock("../components/Agenda/Agenda", () => ({
+mock.module("../components/Agenda/Agenda", () => ({
   Agenda: () => <div className="h-96">Calendar Content</div>,
 }));
 
-// Mock the ShortcutsSidebar component
-jest.mock("../components/ShortcutsSidebar/ShortcutsSidebar", () => ({
+mock.module("@web/views/Day/components/Agenda/Agenda", () => ({
+  Agenda: () => <div className="h-96">Calendar Content</div>,
+}));
+
+mock.module("../components/ShortcutsSidebar/ShortcutsSidebar", () => ({
   ShortcutsSidebar: ({ isOpen }: { isOpen: boolean }) =>
     isOpen ? (
       <aside aria-label="Shortcuts sidebar" data-testid="shortcuts-sidebar" />
     ) : null,
 }));
 
-// Mock the keyboard shortcuts hook
-const mockUseTodayViewShortcuts = jest.fn();
-var actualUseDayViewShortcuts: typeof import("../hooks/shortcuts/useDayViewShortcuts").useDayViewShortcuts;
+mock.module(
+  "@web/views/Day/components/ShortcutsSidebar/ShortcutsSidebar",
+  () => ({
+    ShortcutsSidebar: ({ isOpen }: { isOpen: boolean }) =>
+      isOpen ? (
+        <aside aria-label="Shortcuts sidebar" data-testid="shortcuts-sidebar" />
+      ) : null,
+  }),
+);
 
-jest.mock("../hooks/shortcuts/useDayViewShortcuts", () => {
-  const actual = jest.requireActual("../hooks/shortcuts/useDayViewShortcuts");
-  actualUseDayViewShortcuts = actual.useDayViewShortcuts;
-  return {
-    ...actual,
-    useDayViewShortcuts: (
-      ...args: Parameters<typeof actual.useDayViewShortcuts>
-    ) => mockUseTodayViewShortcuts(...args),
-  };
-});
+const { useDayViewShortcuts: actualUseDayViewShortcuts } =
+  require("../hooks/shortcuts/useDayViewShortcuts") as typeof import("../hooks/shortcuts/useDayViewShortcuts");
+const mockUseTodayViewShortcuts = mock(
+  (...args: Parameters<typeof actualUseDayViewShortcuts>) =>
+    actualUseDayViewShortcuts(...args),
+);
+
+mock.module("../hooks/shortcuts/useDayViewShortcuts", () => ({
+  useDayViewShortcuts: mockUseTodayViewShortcuts,
+}));
+
+mock.module("@web/views/Day/hooks/shortcuts/useDayViewShortcuts", () => ({
+  useDayViewShortcuts: mockUseTodayViewShortcuts,
+}));
+
+const { DayViewContent } =
+  require("@web/views/Day/view/DayViewContent") as typeof import("@web/views/Day/view/DayViewContent");
 
 describe("TodayViewContent", () => {
   beforeEach(async () => {
@@ -99,7 +112,7 @@ describe("TodayViewContent", () => {
     mockUseTodayViewShortcuts.mockImplementation((config) =>
       actualUseDayViewShortcuts({
         ...config,
-        onFocusTasks: config.onFocusTasks || jest.fn(),
+        onFocusTasks: config.onFocusTasks || mock(),
       }),
     );
 
@@ -280,7 +293,7 @@ describe("TodayViewContent", () => {
         value: 1400,
       });
       const mockMediaQuery = createMatchMedia(true);
-      window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+      window.matchMedia = mock().mockReturnValue(mockMediaQuery);
 
       await renderWithDayProvidersAsync(<DayViewContent />);
 
@@ -299,7 +312,7 @@ describe("TodayViewContent", () => {
         value: 1000,
       });
       const mockMediaQuery = createMatchMedia(false);
-      window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+      window.matchMedia = mock().mockReturnValue(mockMediaQuery);
 
       await renderWithDayProvidersAsync(<DayViewContent />);
 
@@ -318,7 +331,7 @@ describe("TodayViewContent", () => {
         value: 1400,
       });
       const mockMediaQuery = createMatchMedia(true);
-      window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+      window.matchMedia = mock().mockReturnValue(mockMediaQuery);
 
       await renderWithDayProvidersAsync(<DayViewContent />);
 
@@ -350,7 +363,7 @@ describe("TodayViewContent", () => {
         value: 1000,
       });
       const mockMediaQuery = createMatchMedia(false);
-      window.matchMedia = jest.fn().mockReturnValue(mockMediaQuery);
+      window.matchMedia = mock().mockReturnValue(mockMediaQuery);
 
       await renderWithDayProvidersAsync(<DayViewContent />);
 
