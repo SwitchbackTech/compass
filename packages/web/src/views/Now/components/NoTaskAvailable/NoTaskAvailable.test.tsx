@@ -1,20 +1,25 @@
-import { MemoryRouter } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { NoTaskAvailable } from "@web/views/Now/components/NoTaskAvailable/NoTaskAvailable";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock useNavigate
-const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+const actualReactRouterDom =
+  require("react-router-dom") as typeof import("react-router-dom");
+const { MemoryRouter } = actualReactRouterDom;
+const mockNavigate = mock();
+
+mock.module("react-router-dom", () => ({
+  ...actualReactRouterDom,
   useNavigate: () => mockNavigate,
 }));
 
+const { NoTaskAvailable } =
+  require("@web/views/Now/components/NoTaskAvailable/NoTaskAvailable") as typeof import("@web/views/Now/components/NoTaskAvailable/NoTaskAvailable");
+
 describe("NoTaskAvailable", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
     mockNavigate.mockClear();
   });
 
