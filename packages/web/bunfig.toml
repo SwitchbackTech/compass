@@ -1,0 +1,4 @@
+[test]
+#preload = ["./src/__tests__/web.preload.ts"]
+preload = ["./src/__tests__/web.preload-minimal.ts"]
+root = "./src"
