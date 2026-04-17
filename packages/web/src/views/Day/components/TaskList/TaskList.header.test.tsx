@@ -1,3 +1,13 @@
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+  spyOn,
+} from "bun:test";
 import "@testing-library/jest-dom";
 import { screen, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
@@ -28,6 +38,10 @@ const createUtcDate = (input: Date | string, dayOffset = 0) => {
 describe("TaskListHeader", () => {
   beforeEach(() => {
     localStorage.clear();
+  });
+
+  afterEach(() => {
+    setSystemTime();
   });
 
   it("should render the today heading with current date", async () => {
@@ -220,8 +234,7 @@ describe("TaskListHeader - Timezone Handling", () => {
 
   it("should correctly identify today in local timezone", async () => {
     // Mock current time to be 11pm local (which might be next day in UTC)
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2025-10-19T23:00:00-05:00"));
+    setSystemTime(new Date("2025-10-19T23:00:00-05:00"));
 
     const todayLocal = dayjs();
     const todayUtc = todayLocal.utc();
@@ -232,7 +245,5 @@ describe("TaskListHeader - Timezone Handling", () => {
     const goToTodayButton = screen.queryByLabelText("Go to today");
 
     expect(goToTodayButton).not.toBeInTheDocument();
-
-    jest.useRealTimers();
   });
 });
