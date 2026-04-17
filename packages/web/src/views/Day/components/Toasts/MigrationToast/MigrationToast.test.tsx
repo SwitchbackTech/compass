@@ -1,12 +1,30 @@
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
-import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+const mockOnNavigate = mock();
+const mockOnUndo = mock();
+const toast = Object.assign(mock(), {
+  dismiss: mock(),
+  update: mock(),
+});
+
+mock.module("react-toastify", () => ({
+  toast,
+}));
+
+const { showMigrationToast } =
+  require("@web/views/Day/components/Toasts/MigrationToast/MigrationToast") as typeof import("@web/views/Day/components/Toasts/MigrationToast/MigrationToast");
 
 describe("MigrationToast", () => {
-  const { toast } = jest.requireMock("react-toastify");
-  const mockOnNavigate = jest.fn();
-  const mockOnUndo = jest.fn();
+  beforeEach(() => {
+    mockOnNavigate.mockClear();
+    mockOnUndo.mockClear();
+    toast.mockClear();
+    toast.dismiss.mockClear();
+    toast.update.mockClear();
+  });
 
   describe("MigrationToastComponent", () => {
     it("renders forward migration message", () => {
