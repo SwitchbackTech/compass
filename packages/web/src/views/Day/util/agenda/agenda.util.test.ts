@@ -15,6 +15,15 @@ import {
   getSnappedMinutes,
   roundToNearestFifteenWithinHour,
 } from "@web/views/Day/util/agenda/agenda.util";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 describe("agenda.util", () => {
   describe("getNowLinePosition", () => {
@@ -221,20 +230,22 @@ describe("agenda.util", () => {
   });
 
   describe("getEventTimeFromPosition", () => {
+    let getElementByIdSpy: ReturnType<typeof spyOn>;
+
     beforeEach(() => {
       // Mock document.getElementById
       const mockElement = {
-        getBoundingClientRect: jest.fn(() => ({
+        getBoundingClientRect: mock(() => ({
           top: 100,
         })),
       };
-      jest
-        .spyOn(document, "getElementById")
-        .mockReturnValue(mockElement as unknown as HTMLElement);
+      getElementByIdSpy = spyOn(document, "getElementById").mockReturnValue(
+        mockElement as unknown as HTMLElement,
+      );
     });
 
     afterEach(() => {
-      jest.restoreAllMocks();
+      getElementByIdSpy.mockRestore();
     });
 
     it("should calculate time from position", () => {
