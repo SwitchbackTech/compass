@@ -1,13 +1,24 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+  spyOn,
+} from "bun:test";
 
 let mockIsDev = false;
+const fetchMock = mock();
 
 const MIN_HIDDEN_DURATION_MS = 30_000;
 const BACKUP_CHECK_INTERVAL_MS = 5 * 60 * 1000;
 
 async function renderVersionCheckHook() {
-  jest.mock("@web/common/constants/env.constants", () => ({
+  mock.module("@web/common/constants/env.constants", () => ({
     IS_DEV: mockIsDev,
   }));
 
@@ -22,6 +33,8 @@ async function renderVersionCheckHook() {
 
 describe("useVersionCheck", () => {
   let visibilityState = "visible";
+  let intervalCallback: (() => void) | undefined;
+  let setIntervalSpy: ReturnType<typeof spyOn>;
 
   /** Lets checkVersion's fetch → json → setState chain finish inside act (microtasks). */
   const flushVersionCheckAsync = async () => {
@@ -34,8 +47,17 @@ describe("useVersionCheck", () => {
 
   beforeEach(() => {
     mockIsDev = false;
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2026-02-05T00:00:00.000Z"));
+    setSystemTime(new Date("2026-02-05T00:00:00.000Z"));
+    intervalCallback = undefined;
+    setIntervalSpy = spyOn(window, "setInterval").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") {
+        intervalCallback = () => callback();
+      }
+
+      return 1;
+    }) as typeof window.setInterval);
 
     visibilityState = "visible";
     Object.defineProperty(document, "visibilityState", {
@@ -43,23 +65,29 @@ describe("useVersionCheck", () => {
       get: () => visibilityState,
     });
 
-    global.fetch = jest.fn().mockResolvedValue({
+    fetchMock.mockClear();
+    fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ version: "dev" }),
-    }) as typeof fetch;
+    });
+    global.fetch = fetchMock as typeof fetch;
   });
 
   afterEach(() => {
-    jest.useRealTimers();
-    jest.clearAllMocks();
+    setSystemTime();
+    setIntervalSpy.mockRestore();
   });
 
   it("checks version on initial mount", async () => {
     await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
-    expect(global.fetch).toHaveBeenCalledWith(
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(setIntervalSpy).toHaveBeenCalledWith(
+      expect.any(Function),
+      BACKUP_CHECK_INTERVAL_MS,
+    );
+    expect(fetchMock).toHaveBeenCalledWith(
       expect.stringMatching(/^http:\/\/localhost\/version\.json\?t=\d+$/),
       expect.objectContaining({
         cache: "no-store",
@@ -70,31 +98,29 @@ describe("useVersionCheck", () => {
 
   it("does not check for updates in development mode", async () => {
     mockIsDev = true;
-    const addEventListenerSpy = jest.spyOn(document, "addEventListener");
-    const setIntervalSpy = jest.spyOn(window, "setInterval");
+    const addEventListenerSpy = spyOn(document, "addEventListener");
 
     await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(addEventListenerSpy).not.toHaveBeenCalled();
     expect(setIntervalSpy).not.toHaveBeenCalled();
 
     act(() => {
-      jest.advanceTimersByTime(BACKUP_CHECK_INTERVAL_MS);
+      intervalCallback?.();
     });
 
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
 
     addEventListenerSpy.mockRestore();
-    setIntervalSpy.mockRestore();
   });
 
   it("sets isUpdateAvailable when server version differs", async () => {
-    global.fetch = jest.fn().mockResolvedValue({
+    fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ version: "1.0.0" }),
-    }) as typeof fetch;
+    });
 
     const { result } = await renderVersionCheckHook();
 
@@ -106,10 +132,10 @@ describe("useVersionCheck", () => {
   });
 
   it("keeps isUpdateAvailable false when versions match", async () => {
-    global.fetch = jest.fn().mockResolvedValue({
+    fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ version: "dev" }),
-    }) as typeof fetch;
+    });
 
     const { result } = await renderVersionCheckHook();
 
@@ -119,13 +145,11 @@ describe("useVersionCheck", () => {
   });
 
   it("handles network failures without crashing", async () => {
-    const consoleErrorSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+    const consoleErrorSpy = spyOn(console, "error").mockImplementation(
+      () => undefined,
+    );
 
-    global.fetch = jest
-      .fn()
-      .mockRejectedValue(new Error("Network down")) as typeof fetch;
+    fetchMock.mockRejectedValue(new Error("Network down"));
 
     const { result } = await renderVersionCheckHook();
 
@@ -141,14 +165,14 @@ describe("useVersionCheck", () => {
   });
 
   it("ignores invalid version payloads", async () => {
-    const consoleErrorSpy = jest
-      .spyOn(console, "error")
-      .mockImplementation(() => undefined);
+    const consoleErrorSpy = spyOn(console, "error").mockImplementation(
+      () => undefined,
+    );
 
-    global.fetch = jest.fn().mockResolvedValue({
+    fetchMock.mockResolvedValue({
       ok: true,
       json: async () => ({ version: 123 }),
-    }) as typeof fetch;
+    });
 
     const { result } = await renderVersionCheckHook();
 
@@ -164,39 +188,39 @@ describe("useVersionCheck", () => {
     await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
-    (global.fetch as jest.Mock).mockClear();
+    fetchMock.mockClear();
 
     act(() => {
       visibilityState = "hidden";
       document.dispatchEvent(new Event("visibilitychange"));
-      jest.advanceTimersByTime(MIN_HIDDEN_DURATION_MS + 1_000);
+      setSystemTime(new Date(Date.now() + MIN_HIDDEN_DURATION_MS + 1_000));
       visibilityState = "visible";
       document.dispatchEvent(new Event("visibilitychange"));
     });
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("does not check when tab becomes visible after a short hide", async () => {
     await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
-    (global.fetch as jest.Mock).mockClear();
+    fetchMock.mockClear();
 
     act(() => {
       visibilityState = "hidden";
       document.dispatchEvent(new Event("visibilitychange"));
-      jest.advanceTimersByTime(MIN_HIDDEN_DURATION_MS - 10_000);
+      setSystemTime(new Date(Date.now() + MIN_HIDDEN_DURATION_MS - 10_000));
       visibilityState = "visible";
       document.dispatchEvent(new Event("visibilitychange"));
     });
 
-    expect(global.fetch).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 
   it("cleans up the visibility listener on unmount", async () => {
-    const addEventListenerSpy = jest.spyOn(document, "addEventListener");
-    const removeEventListenerSpy = jest.spyOn(document, "removeEventListener");
+    const addEventListenerSpy = spyOn(document, "addEventListener");
+    const removeEventListenerSpy = spyOn(document, "removeEventListener");
 
     const { unmount } = await renderVersionCheckHook();
 
@@ -219,13 +243,13 @@ describe("useVersionCheck", () => {
     await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
-    (global.fetch as jest.Mock).mockClear();
+    fetchMock.mockClear();
 
     act(() => {
-      jest.advanceTimersByTime(BACKUP_CHECK_INTERVAL_MS);
+      intervalCallback?.();
     });
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
   it("prevents concurrent checks", async () => {
@@ -237,24 +261,24 @@ describe("useVersionCheck", () => {
     await renderVersionCheckHook();
     await flushVersionCheckAsync();
 
-    global.fetch = jest.fn().mockReturnValue(fetchPromise) as typeof fetch;
-    (global.fetch as jest.Mock).mockClear();
+    fetchMock.mockReturnValue(fetchPromise);
+    fetchMock.mockClear();
 
     act(() => {
       visibilityState = "hidden";
       document.dispatchEvent(new Event("visibilitychange"));
-      jest.advanceTimersByTime(MIN_HIDDEN_DURATION_MS + 1_000);
+      setSystemTime(new Date(Date.now() + MIN_HIDDEN_DURATION_MS + 1_000));
       visibilityState = "visible";
       document.dispatchEvent(new Event("visibilitychange"));
 
       visibilityState = "hidden";
       document.dispatchEvent(new Event("visibilitychange"));
-      jest.advanceTimersByTime(MIN_HIDDEN_DURATION_MS + 1_000);
+      setSystemTime(new Date(Date.now() + MIN_HIDDEN_DURATION_MS + 1_000));
       visibilityState = "visible";
       document.dispatchEvent(new Event("visibilitychange"));
     });
 
-    expect(global.fetch).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(1);
 
     act(() => {
       resolveFetch?.({

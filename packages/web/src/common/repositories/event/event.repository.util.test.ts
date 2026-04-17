@@ -1,21 +1,32 @@
-import * as authStateUtil from "@web/auth/compass/state/auth.state.util";
-import * as googleAuthState from "@web/auth/google/state/google.auth.state";
-import { getEventRepository } from "./event.repository.util";
-import { LocalEventRepository } from "./local.event.repository";
-import { RemoteEventRepository } from "./remote.event.repository";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/common/classes/Session");
-jest.mock("@web/auth/google/state/google.auth.state");
-jest.mock("@web/auth/compass/state/auth.state.util");
+const hasUserEverAuthenticated = mock();
+const isGoogleRevoked = mock();
+
+mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  hasUserEverAuthenticated,
+}));
+
+mock.module("@web/auth/google/state/google.auth.state", () => ({
+  clearGoogleRevokedState: mock(),
+  isGoogleRevoked,
+  markGoogleAsRevoked: mock(),
+}));
+
+const { getEventRepository } =
+  require("./event.repository.util") as typeof import("./event.repository.util");
+const { LocalEventRepository } =
+  require("./local.event.repository") as typeof import("./local.event.repository");
+const { RemoteEventRepository } =
+  require("./remote.event.repository") as typeof import("./remote.event.repository");
 
 describe("getEventRepository", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
     // Default: user has not authenticated, Google not revoked
-    jest
-      .spyOn(authStateUtil, "hasUserEverAuthenticated")
-      .mockReturnValue(false);
-    jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(false);
+    hasUserEverAuthenticated.mockClear();
+    hasUserEverAuthenticated.mockReturnValue(false);
+    isGoogleRevoked.mockClear();
+    isGoogleRevoked.mockReturnValue(false);
   });
 
   describe("without authentication flag", () => {
@@ -32,9 +43,7 @@ describe("getEventRepository", () => {
 
   describe("with authentication flag", () => {
     it("should return RemoteEventRepository when user has authenticated (regardless of session)", () => {
-      jest
-        .spyOn(authStateUtil, "hasUserEverAuthenticated")
-        .mockReturnValue(true);
+      hasUserEverAuthenticated.mockReturnValue(true);
 
       const repository = getEventRepository(false); // session doesn't exist
 
@@ -42,9 +51,7 @@ describe("getEventRepository", () => {
     });
 
     it("should return RemoteEventRepository when user has authenticated and session exists", () => {
-      jest
-        .spyOn(authStateUtil, "hasUserEverAuthenticated")
-        .mockReturnValue(true);
+      hasUserEverAuthenticated.mockReturnValue(true);
 
       const repository = getEventRepository(true);
 
@@ -53,9 +60,7 @@ describe("getEventRepository", () => {
 
     it("should prioritize authentication flag over session state", () => {
       // User authenticated in the past, but session expired
-      jest
-        .spyOn(authStateUtil, "hasUserEverAuthenticated")
-        .mockReturnValue(true);
+      hasUserEverAuthenticated.mockReturnValue(true);
 
       const repository = getEventRepository(false);
 
@@ -66,10 +71,8 @@ describe("getEventRepository", () => {
 
   describe("with Google revoked", () => {
     it("should return LocalEventRepository when Google is revoked (even if authenticated)", () => {
-      jest
-        .spyOn(authStateUtil, "hasUserEverAuthenticated")
-        .mockReturnValue(true);
-      jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(true);
+      hasUserEverAuthenticated.mockReturnValue(true);
+      isGoogleRevoked.mockReturnValue(true);
 
       const repository = getEventRepository(true);
 
@@ -77,7 +80,7 @@ describe("getEventRepository", () => {
     });
 
     it("should return LocalEventRepository when Google is revoked and session exists", () => {
-      jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(true);
+      isGoogleRevoked.mockReturnValue(true);
 
       const repository = getEventRepository(true);
 
@@ -86,10 +89,8 @@ describe("getEventRepository", () => {
 
     it("should prioritize revoked state over authentication flag", () => {
       // User authenticated in the past, but Google was revoked
-      jest
-        .spyOn(authStateUtil, "hasUserEverAuthenticated")
-        .mockReturnValue(true);
-      jest.spyOn(googleAuthState, "isGoogleRevoked").mockReturnValue(true);
+      hasUserEverAuthenticated.mockReturnValue(true);
+      isGoogleRevoked.mockReturnValue(true);
 
       const repository = getEventRepository(true);
 

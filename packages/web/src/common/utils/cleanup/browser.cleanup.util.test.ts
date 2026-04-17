@@ -1,24 +1,31 @@
-/**
- * @jest-environment jsdom
- */
-import { session } from "@web/common/classes/Session";
 import {
-  clearAllBrowserStorage,
-  hasCompassStorage,
-} from "./browser.cleanup.util";
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
-// Mock the session
-jest.mock("@web/common/classes/Session", () => ({
+const signOut = mock();
+
+mock.module("@web/common/classes/Session", () => ({
   session: {
-    signOut: jest.fn(),
+    signOut,
   },
 }));
+
+const { session } =
+  require("@web/common/classes/Session") as typeof import("@web/common/classes/Session");
+const { clearAllBrowserStorage, hasCompassStorage } =
+  require("./browser.cleanup.util") as typeof import("./browser.cleanup.util");
 
 describe("browser.cleanup.util", () => {
   beforeEach(() => {
     // Clear localStorage before each test
     localStorage.clear();
-    jest.clearAllMocks();
+    signOut.mockClear();
   });
 
   describe("hasCompassStorage", () => {
@@ -73,11 +80,10 @@ describe("browser.cleanup.util", () => {
     });
 
     it("continues cleanup when sign out fails", async () => {
-      const warnSpy = jest.spyOn(console, "warn").mockImplementation(() => {});
-      const mockSignOut = session.signOut as jest.Mock;
+      const warnSpy = spyOn(console, "warn").mockImplementation(() => {});
       localStorage.setItem("compass.test", "value");
 
-      mockSignOut.mockRejectedValueOnce(new Error("Sign out failed"));
+      signOut.mockRejectedValueOnce(new Error("Sign out failed"));
 
       await expect(clearAllBrowserStorage()).resolves.toBeUndefined();
       expect(localStorage.getItem("compass.test")).toBeNull();
@@ -117,13 +123,11 @@ describe("browser.cleanup.util", () => {
         };
 
         const mockIndexedDB = {
-          databases: jest
-            .fn()
-            .mockResolvedValue([
-              { name: "compass-local" },
-              { name: "other-db" },
-            ]),
-          deleteDatabase: jest.fn().mockImplementation(() => {
+          databases: mock().mockResolvedValue([
+            { name: "compass-local" },
+            { name: "other-db" },
+          ]),
+          deleteDatabase: mock().mockImplementation(() => {
             setTimeout(() => mockDeleteRequest.onsuccess?.(), 0);
             return mockDeleteRequest;
           }),
@@ -145,8 +149,8 @@ describe("browser.cleanup.util", () => {
 
       it("should not attempt deletion when compass-local database does not exist", async () => {
         const mockIndexedDB = {
-          databases: jest.fn().mockResolvedValue([{ name: "other-db" }]),
-          deleteDatabase: jest.fn(),
+          databases: mock().mockResolvedValue([{ name: "other-db" }]),
+          deleteDatabase: mock(),
         };
 
         Object.defineProperty(window, "indexedDB", {
@@ -173,7 +177,7 @@ describe("browser.cleanup.util", () => {
       });
 
       it("should handle IndexedDB deletion error", async () => {
-        const spy = jest.spyOn(console, "error").mockImplementation();
+        const spy = spyOn(console, "error").mockImplementation(() => {});
         const mockDeleteRequest = {
           onsuccess: null as (() => void) | null,
           onerror: null as (() => void) | null,
@@ -181,8 +185,8 @@ describe("browser.cleanup.util", () => {
         };
 
         const mockIndexedDB = {
-          databases: jest.fn().mockResolvedValue([{ name: "compass-local" }]),
-          deleteDatabase: jest.fn().mockImplementation(() => {
+          databases: mock().mockResolvedValue([{ name: "compass-local" }]),
+          deleteDatabase: mock().mockImplementation(() => {
             setTimeout(() => mockDeleteRequest.onerror?.(), 0);
             return mockDeleteRequest;
           }),
@@ -201,9 +205,9 @@ describe("browser.cleanup.util", () => {
       });
 
       it("should handle IndexedDB deletion blocked gracefully", async () => {
-        const consoleWarnSpy = jest
-          .spyOn(console, "warn")
-          .mockImplementation(() => {});
+        const consoleWarnSpy = spyOn(console, "warn").mockImplementation(
+          () => {},
+        );
 
         const mockDeleteRequest = {
           onsuccess: null as (() => void) | null,
@@ -212,8 +216,8 @@ describe("browser.cleanup.util", () => {
         };
 
         const mockIndexedDB = {
-          databases: jest.fn().mockResolvedValue([{ name: "compass-local" }]),
-          deleteDatabase: jest.fn().mockImplementation(() => {
+          databases: mock().mockResolvedValue([{ name: "compass-local" }]),
+          deleteDatabase: mock().mockImplementation(() => {
             setTimeout(() => mockDeleteRequest.onblocked?.(), 0);
             return mockDeleteRequest;
           }),

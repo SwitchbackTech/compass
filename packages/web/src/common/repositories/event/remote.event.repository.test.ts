@@ -4,30 +4,37 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { EventApi } from "@web/ducks/events/event.api";
-import { RemoteEventRepository } from "./remote.event.repository";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/ducks/events/event.api");
+const mockCreate = mock();
+const mockGet = mock();
+const mockEdit = mock();
+const mockDelete = mock();
+const mockReorder = mock();
+
+mock.module("@web/ducks/events/event.api", () => ({
+  EventApi: {
+    create: mockCreate,
+    get: mockGet,
+    edit: mockEdit,
+    delete: mockDelete,
+    reorder: mockReorder,
+  },
+}));
+
+const { RemoteEventRepository } =
+  require("./remote.event.repository") as typeof import("./remote.event.repository");
 
 describe("RemoteEventRepository", () => {
   let repository: RemoteEventRepository;
-  let mockCreate: jest.SpyInstance;
-  let mockGet: jest.SpyInstance;
-  let mockEdit: jest.SpyInstance;
-  let mockDelete: jest.SpyInstance;
-  let mockReorder: jest.SpyInstance;
 
   beforeEach(() => {
+    mockCreate.mockClear();
+    mockGet.mockClear();
+    mockEdit.mockClear();
+    mockDelete.mockClear();
+    mockReorder.mockClear();
     repository = new RemoteEventRepository();
-    mockCreate = jest.spyOn(EventApi, "create");
-    mockGet = jest.spyOn(EventApi, "get");
-    mockEdit = jest.spyOn(EventApi, "edit");
-    mockDelete = jest.spyOn(EventApi, "delete");
-    mockReorder = jest.spyOn(EventApi, "reorder");
-  });
-
-  afterEach(() => {
-    jest.clearAllMocks();
   });
 
   describe("create", () => {
@@ -37,7 +44,7 @@ describe("RemoteEventRepository", () => {
         title: "Test Event",
       };
 
-      mockCreate.mockResolvedValue({ status: 200 } as any);
+      mockCreate.mockResolvedValue({ status: 200 });
 
       await repository.create(event);
 
@@ -51,7 +58,7 @@ describe("RemoteEventRepository", () => {
         { _id: "event-2", title: "Event 2" },
       ];
 
-      mockCreate.mockResolvedValue({ status: 200 } as any);
+      mockCreate.mockResolvedValue({ status: 200 });
 
       await repository.create(events);
 
@@ -80,7 +87,7 @@ describe("RemoteEventRepository", () => {
         },
       };
 
-      mockGet.mockResolvedValue(mockResponse as any);
+      mockGet.mockResolvedValue(mockResponse);
 
       const result = await repository.get(params);
 
@@ -112,7 +119,7 @@ describe("RemoteEventRepository", () => {
         },
       };
 
-      mockGet.mockResolvedValue(mockResponse as any);
+      mockGet.mockResolvedValue(mockResponse);
 
       const result = await repository.get(params);
 
@@ -133,7 +140,7 @@ describe("RemoteEventRepository", () => {
         applyTo: RecurringEventUpdateScope.THIS_EVENT,
       };
 
-      mockEdit.mockResolvedValue({ status: 200 } as any);
+      mockEdit.mockResolvedValue({ status: 200 });
 
       await repository.edit("event-1", event, params);
 
@@ -147,7 +154,7 @@ describe("RemoteEventRepository", () => {
         title: "Updated Title",
       };
 
-      mockEdit.mockResolvedValue({ status: 200 } as any);
+      mockEdit.mockResolvedValue({ status: 200 });
 
       await repository.edit("event-1", event, {});
 
@@ -158,7 +165,7 @@ describe("RemoteEventRepository", () => {
 
   describe("delete", () => {
     it("should call EventApi.delete with event id and applyTo", async () => {
-      mockDelete.mockResolvedValue({ status: 200 } as any);
+      mockDelete.mockResolvedValue({ status: 200 });
 
       await repository.delete("event-1", RecurringEventUpdateScope.ALL_EVENTS);
 
@@ -170,7 +177,7 @@ describe("RemoteEventRepository", () => {
     });
 
     it("should call EventApi.delete without applyTo param", async () => {
-      mockDelete.mockResolvedValue({ status: 200 } as any);
+      mockDelete.mockResolvedValue({ status: 200 });
 
       await repository.delete("event-1");
 
@@ -186,7 +193,7 @@ describe("RemoteEventRepository", () => {
         { _id: "event-2", order: 1 },
       ];
 
-      mockReorder.mockResolvedValue({ status: 200 } as any);
+      mockReorder.mockResolvedValue({ status: 200 });
 
       await repository.reorder(order);
 
@@ -197,7 +204,7 @@ describe("RemoteEventRepository", () => {
     it("should handle empty order array", async () => {
       const order: Payload_Order[] = [];
 
-      mockReorder.mockResolvedValue({ status: 200 } as any);
+      mockReorder.mockResolvedValue({ status: 200 });
 
       await repository.reorder(order);
 

@@ -10,23 +10,23 @@ import {
   createTestCompassEvent,
   createTestEvent,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
-import * as storageAdapter from "@web/common/storage/adapter/adapter";
-import { LocalEventRepository } from "./local.event.repository";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockEvents = new Map<string, Event_Core>();
+const getStorageAdapter = mock();
 
 function createMockAdapter() {
   return {
-    initialize: jest.fn().mockResolvedValue(undefined),
-    isReady: jest.fn().mockReturnValue(true),
-    getTasks: jest.fn().mockResolvedValue([]),
-    getAllTasks: jest.fn().mockResolvedValue([]),
-    putTasks: jest.fn().mockResolvedValue(undefined),
-    putTask: jest.fn().mockResolvedValue(undefined),
-    deleteTask: jest.fn().mockResolvedValue(undefined),
-    moveTask: jest.fn().mockResolvedValue(undefined),
-    clearAllTasks: jest.fn().mockResolvedValue(undefined),
-    getEvents: jest.fn(
+    initialize: mock().mockResolvedValue(undefined),
+    isReady: mock().mockReturnValue(true),
+    getTasks: mock().mockResolvedValue([]),
+    getAllTasks: mock().mockResolvedValue([]),
+    putTasks: mock().mockResolvedValue(undefined),
+    putTask: mock().mockResolvedValue(undefined),
+    deleteTask: mock().mockResolvedValue(undefined),
+    moveTask: mock().mockResolvedValue(undefined),
+    clearAllTasks: mock().mockResolvedValue(undefined),
+    getEvents: mock(
       async (startDate: string, endDate: string, isSomeday?: boolean) => {
         const allEvents = Array.from(mockEvents.values());
         let filtered = allEvents.filter((event) => {
@@ -45,21 +45,30 @@ function createMockAdapter() {
         return filtered;
       },
     ),
-    getAllEvents: jest.fn(async () => Array.from(mockEvents.values())),
-    putEvent: jest.fn(async (event: Event_Core) => {
-      mockEvents.set(event._id!, event);
+    getAllEvents: mock(async () => Array.from(mockEvents.values())),
+    putEvent: mock(async (event: Event_Core) => {
+      if (!event._id) {
+        throw new Error("Expected event id");
+      }
+
+      mockEvents.set(event._id, event);
     }),
-    putEvents: jest.fn().mockResolvedValue(undefined),
-    deleteEvent: jest.fn(async (id: string) => {
+    putEvents: mock().mockResolvedValue(undefined),
+    deleteEvent: mock(async (id: string) => {
       mockEvents.delete(id);
     }),
-    clearAllEvents: jest.fn().mockResolvedValue(undefined),
-    getMigrationRecords: jest.fn().mockResolvedValue([]),
-    setMigrationRecord: jest.fn().mockResolvedValue(undefined),
+    clearAllEvents: mock().mockResolvedValue(undefined),
+    getMigrationRecords: mock().mockResolvedValue([]),
+    setMigrationRecord: mock().mockResolvedValue(undefined),
   };
 }
 
-jest.mock("@web/common/storage/adapter/adapter");
+mock.module("@web/common/storage/adapter/adapter", () => ({
+  getStorageAdapter,
+}));
+
+const { LocalEventRepository } =
+  require("./local.event.repository") as typeof import("./local.event.repository");
 
 describe("LocalEventRepository", () => {
   let repository: LocalEventRepository;
@@ -68,9 +77,8 @@ describe("LocalEventRepository", () => {
   beforeEach(async () => {
     mockEvents.clear();
     mockAdapter = createMockAdapter();
-    (storageAdapter.getStorageAdapter as jest.Mock).mockReturnValue(
-      mockAdapter,
-    );
+    getStorageAdapter.mockClear();
+    getStorageAdapter.mockReturnValue(mockAdapter);
     repository = new LocalEventRepository();
   });
 
@@ -207,8 +215,12 @@ describe("LocalEventRepository", () => {
 
       await repository.create(event);
 
+      if (!event._id) {
+        throw new Error("Expected event id");
+      }
+
       const updatedEvent = createTestCompassEvent({
-        _id: event._id!,
+        _id: event._id,
         title: "Updated Title",
         startDate: event.startDate,
         origin: event.origin,

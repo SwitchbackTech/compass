@@ -2,42 +2,37 @@ import {
   createTestTask,
   createTestTasks,
 } from "@web/__tests__/utils/repositories/repository.test.factory";
-import * as storageAdapter from "@web/common/storage/adapter/adapter";
-import { LocalTaskRepository } from "./local.task.repository";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock the storage adapter module
-jest.mock("@web/common/storage/adapter/adapter");
+const getStorageAdapter = mock();
+
+function createMockAdapter() {
+  return {
+    getTasks: mock().mockResolvedValue([]),
+    putTasks: mock().mockResolvedValue(undefined),
+    putTask: mock().mockResolvedValue(undefined),
+    deleteTask: mock().mockResolvedValue(undefined),
+    moveTask: mock().mockResolvedValue(undefined),
+  };
+}
+
+mock.module("@web/common/storage/adapter/adapter", () => ({
+  getStorageAdapter,
+}));
+
+const { LocalTaskRepository } =
+  require("./local.task.repository") as typeof import("./local.task.repository");
 
 describe("LocalTaskRepository", () => {
   let repository: LocalTaskRepository;
-  let mockAdapter: {
-    getTasks: jest.Mock;
-    putTasks: jest.Mock;
-    putTask: jest.Mock;
-    deleteTask: jest.Mock;
-    moveTask: jest.Mock;
-  };
+  let mockAdapter: ReturnType<typeof createMockAdapter>;
 
   beforeEach(() => {
-    mockAdapter = {
-      getTasks: jest.fn().mockResolvedValue([]),
-      putTasks: jest.fn().mockResolvedValue(undefined),
-      putTask: jest.fn().mockResolvedValue(undefined),
-      deleteTask: jest.fn().mockResolvedValue(undefined),
-      moveTask: jest.fn().mockResolvedValue(undefined),
-    };
-
-    (storageAdapter.getStorageAdapter as jest.Mock).mockReturnValue(
-      mockAdapter,
-    );
+    mockAdapter = createMockAdapter();
+    getStorageAdapter.mockClear();
+    getStorageAdapter.mockReturnValue(mockAdapter);
 
     repository = new LocalTaskRepository();
-    jest.clearAllMocks();
-
-    // Re-mock after clearing
-    (storageAdapter.getStorageAdapter as jest.Mock).mockReturnValue(
-      mockAdapter,
-    );
   });
 
   describe("get", () => {
