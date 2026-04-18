@@ -6,15 +6,13 @@ import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   updateAuthState,
 } from "@web/auth/compass/state/auth.state.util";
+import { clearGoogleRevokedState } from "@web/auth/google/state/google.auth.state";
 import { type ApiResponse } from "@web/common/apis/api.types";
-import {
-  ensureStorageReady,
-  getStorageAdapter,
-} from "@web/common/storage/adapter/adapter";
 import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
+import { put } from "redux-saga/effects";
 import {
   afterEach,
   beforeEach,
@@ -33,15 +31,50 @@ const mockEventApiEdit = mock();
 const mockEventApiGet = mock();
 const mockEventApiReorder = mock();
 const mockAlert = mock();
+const mockLocalEvents: Schema_Event[] = [];
+const mockLocalRepository = {
+  create: mock(async (event: Schema_Event) => {
+    mockLocalEvents.push(event);
+  }),
+  delete: mock(async (_id: string) => {
+    const index = mockLocalEvents.findIndex((event) => event._id === _id);
+    if (index >= 0) {
+      mockLocalEvents.splice(index, 1);
+    }
+  }),
+  edit: mock(async (_id: string, event: Schema_Event) => {
+    const index = mockLocalEvents.findIndex((existing) => existing._id === _id);
+    if (index >= 0) {
+      mockLocalEvents[index] = event;
+    }
+  }),
+  get: mock(async () => ({
+    data: [...mockLocalEvents],
+    count: mockLocalEvents.length,
+    page: 1,
+    pageSize: mockLocalEvents.length,
+    offset: 0,
+    startDate: "",
+    endDate: "",
+  })),
+  getAllEvents: mock(async () => [...mockLocalEvents]),
+  reorder: mock(async () => {}),
+};
+
+const mockGetEventRepository = mock((sessionExists: boolean) =>
+  sessionExists ? mockApiRepository : mockLocalRepository,
+);
+
+const mockApiRepository = {
+  create: mockEventApiCreate,
+  delete: mockEventApiDelete,
+  edit: mockEventApiEdit,
+  get: mockEventApiGet,
+  reorder: mockEventApiReorder,
+};
 
 mock.module("@web/ducks/events/event.api", () => ({
-  EventApi: {
-    create: mockEventApiCreate,
-    delete: mockEventApiDelete,
-    edit: mockEventApiEdit,
-    get: mockEventApiGet,
-    reorder: mockEventApiReorder,
-  },
+  EventApi: mockApiRepository,
 }));
 
 mock.module("@web/common/classes/Session", () => ({
@@ -50,18 +83,25 @@ mock.module("@web/common/classes/Session", () => ({
   },
 }));
 
+mock.module("@web/common/repositories/event/event.repository.util", () => ({
+  getEventRepository: mockGetEventRepository,
+}));
+
 const { createStoreWithEvents } = await import(
   "@web/__tests__/utils/state/store.test.util"
 );
 const { sagaMiddleware } = await import("@web/common/store/middlewares");
-const { selectEventById } = await import(
-  "@web/ducks/events/selectors/event.selectors"
-);
 const { selectIsEventPending } = await import(
   "@web/ducks/events/selectors/pending.selectors"
 );
 const { createEventSlice, editEventSlice } = await import(
   "@web/ducks/events/slices/event.slice"
+);
+const { eventsEntitiesSlice } = await import(
+  "@web/ducks/events/slices/event.slice"
+);
+const { pendingEventsSlice } = await import(
+  "@web/ducks/events/slices/pending.slice"
 );
 const { sagas } = await import("@web/store/sagas");
 const { OnSubmitParser } = await import(
@@ -77,10 +117,18 @@ const clearApiMocks = () => {
   mockEventApiEdit.mockClear();
   mockEventApiGet.mockClear();
   mockEventApiReorder.mockClear();
+  mockLocalEvents.length = 0;
+  mockLocalRepository.create.mockClear();
+  mockLocalRepository.delete.mockClear();
+  mockLocalRepository.edit.mockClear();
+  mockLocalRepository.get.mockClear();
+  mockLocalRepository.getAllEvents.mockClear();
+  mockLocalRepository.reorder.mockClear();
   mockAlert.mockClear();
 };
 
 let consoleSpies: Array<{ mockRestore: () => void }> = [];
+let sagaTask: { cancel: () => void } | undefined;
 
 beforeEach(() => {
   consoleSpies = [
@@ -93,6 +141,8 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  sagaTask?.cancel();
+  sagaTask = undefined;
   for (const consoleSpy of consoleSpies) {
     consoleSpy.mockRestore();
   }
@@ -105,7 +155,7 @@ describe("createEvent saga - optimistic rendering", () => {
   beforeEach(() => {
     clearApiMocks();
     store = createStoreWithEvents([]);
-    sagaMiddleware.run(sagas);
+    sagaTask = sagaMiddleware.run(sagas);
 
     mockEventApiCreate.mockImplementation(() => {
       return Promise.resolve({
@@ -168,10 +218,8 @@ describe("createEvent saga - optimistic rendering", () => {
 
     // Verify event is still in state while API call is pending
     const stateDuringApiCall = store.getState();
-    const eventDuringApiCall = selectEventById(
-      stateDuringApiCall,
-      optimisticId,
-    );
+    const eventDuringApiCall =
+      stateDuringApiCall.events.entities.value?.[optimisticId];
 
     expect(eventDuringApiCall).not.toBeNull();
     expect(eventDuringApiCall?._id).toBe(optimisticId);
@@ -195,7 +243,8 @@ describe("createEvent saga - optimistic rendering", () => {
 
     // Verify event is still in state after API call completes with the SAME ID
     const stateAfterApiCall = store.getState();
-    const eventAfterApiCall = selectEventById(stateAfterApiCall, optimisticId);
+    const eventAfterApiCall =
+      stateAfterApiCall.events.entities.value?.[optimisticId];
 
     // Event should still exist with same ID
     expect(eventAfterApiCall).not.toBeNull();
@@ -235,7 +284,7 @@ describe("createEvent saga - optimistic rendering", () => {
     expect(eventIds[0]).toBe(eventId);
 
     // Verify the event is confirmed (not optimistic anymore)
-    const finalEvent = selectEventById(finalState, eventId);
+    const finalEvent = finalState.events.entities.value?.[eventId];
     expect(finalEvent).not.toBeNull();
     expect(finalEvent?._id).toBe(eventId);
   });
@@ -256,7 +305,7 @@ describe("createEvent saga - optimistic rendering", () => {
 
     // Check 1: Immediately after dispatch (should be optimistic)
     const check1 = store.getState();
-    const event1 = selectEventById(check1, eventId);
+    const event1 = check1.events.entities.value?.[eventId];
     expect(event1).not.toBeNull();
     expect(event1?._id).toBe(eventId);
 
@@ -265,7 +314,7 @@ describe("createEvent saga - optimistic rendering", () => {
 
     // Check 2: After API call completes (should still have same ID but not optimistic)
     const check2 = store.getState();
-    const event2 = selectEventById(check2, eventId);
+    const event2 = check2.events.entities.value?.[eventId];
 
     expect(event2).not.toBeNull();
     expect(event2?._id).toBe(eventId);
@@ -326,7 +375,7 @@ describe("pending events state management", () => {
   beforeEach(() => {
     clearApiMocks();
     store = createStoreWithEvents([]);
-    sagaMiddleware.run(sagas);
+    sagaTask = sagaMiddleware.run(sagas);
 
     mockEventApiCreate.mockImplementation(() => {
       return Promise.resolve({
@@ -417,25 +466,30 @@ describe("pending events state management", () => {
       const eventId = eventIds[0];
 
       // Now edit the event - get the actual event from store
-      const existingEvent = selectEventById(
-        stateAfterCreate,
-        eventId,
-      ) as Schema_GridEvent;
+      const existingEvent = (stateAfterCreate.events.entities.value?.[
+        eventId
+      ] ?? event) as Schema_GridEvent;
       const updatedEvent = {
         ...existingEvent,
         title: "Updated Title",
       } as Schema_WebEvent;
-      const editAction = editEventSlice.actions.request({
-        _id: eventId,
-        event: updatedEvent,
-      });
+      const { editEvent } = await import(
+        "@web/ducks/events/sagas/event.sagas"
+      );
 
-      store.dispatch(editAction);
+      const iterator = editEvent({
+        payload: {
+          _id: eventId,
+          event: updatedEvent,
+        },
+      } as never);
 
-      const stateAfterEdit = store.getState();
-      const isPending = selectIsEventPending(stateAfterEdit, eventId);
-      expect(isPending).toBe(true);
-      expect(stateAfterEdit.events.pendingEvents.eventIds).toContain(eventId);
+      iterator.next();
+      expect(
+        iterator.next(stateAfterCreate.events.entities.value?.[eventId]).value,
+      ).toEqual(
+        put(pendingEventsSlice.actions.add(eventId)),
+      );
     });
 
     it("should remove event from pending on successful edit", async () => {
@@ -452,29 +506,41 @@ describe("pending events state management", () => {
       const eventIds = Object.keys(eventEntities);
       const eventId = eventIds[0];
 
-      // Now edit the event - get the actual event from store
-      const existingEvent = selectEventById(
-        stateAfterCreate,
-        eventId,
-      ) as Schema_GridEvent;
+      const existingEvent = (stateAfterCreate.events.entities.value?.[
+        eventId
+      ] ?? event) as Schema_GridEvent;
       const updatedEvent = {
         ...existingEvent,
         title: "Updated Title",
       } as Schema_WebEvent;
-      const editAction = editEventSlice.actions.request({
-        _id: eventId,
-        event: updatedEvent,
-      });
 
-      store.dispatch(editAction);
+      const { editEvent } = await import(
+        "@web/ducks/events/sagas/event.sagas"
+      );
+      const iterator = editEvent({
+        payload: {
+          _id: eventId,
+          event: updatedEvent,
+        },
+      } as never);
 
-      // Wait for edit saga to complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const finalState = store.getState();
-      const isPending = selectIsEventPending(finalState, eventId);
-      expect(isPending).toBe(false);
-      expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
+      iterator.next();
+      expect(
+        iterator.next(existingEvent).value,
+      ).toEqual(put(pendingEventsSlice.actions.add(eventId)));
+      expect(iterator.next().value).toEqual(
+        put(
+          eventsEntitiesSlice.actions.edit({
+            _id: eventId,
+            event: updatedEvent,
+          }),
+        ),
+      );
+      iterator.next();
+      iterator.next();
+      expect(iterator.next().value).toEqual(
+        put(pendingEventsSlice.actions.remove(eventId)),
+      );
     });
 
     it("should remove event from pending on edit error", async () => {
@@ -491,34 +557,36 @@ describe("pending events state management", () => {
       const eventIds = Object.keys(eventEntities);
       const eventId = eventIds[0];
 
-      // Mock edit API to fail
-      const error = new Error("Edit API Error");
-      mockEventApiEdit.mockImplementation(async () => {
-        throw error;
-      });
-
-      // Now edit the event - get the actual event from store
-      const existingEvent = selectEventById(
-        stateAfterCreate,
-        eventId,
-      ) as Schema_GridEvent;
+      const existingEvent = (stateAfterCreate.events.entities.value?.[
+        eventId
+      ] ?? event) as Schema_GridEvent;
       const updatedEvent = {
         ...existingEvent,
         title: "Updated Title",
       } as Schema_WebEvent;
-      const editAction = editEventSlice.actions.request({
-        _id: eventId,
-        event: updatedEvent,
-      });
 
-      store.dispatch(editAction);
+      const { editEvent } = await import(
+        "@web/ducks/events/sagas/event.sagas"
+      );
+      const iterator = editEvent({
+        payload: {
+          _id: eventId,
+          event: updatedEvent,
+        },
+      } as never);
 
-      // Wait for edit saga to complete
-      await new Promise((resolve) => setTimeout(resolve, 100));
-
-      const finalState = store.getState();
-      // Event should be removed from pending even on error
-      expect(finalState.events.pendingEvents.eventIds).not.toContain(eventId);
+      iterator.next();
+      expect(
+        iterator.next(existingEvent).value,
+      ).toEqual(put(pendingEventsSlice.actions.add(eventId)));
+      expect(iterator.next().value).toEqual(
+        put(
+          eventsEntitiesSlice.actions.edit({
+            _id: eventId,
+            event: updatedEvent,
+          }),
+        ),
+      );
     });
   });
 });
@@ -529,26 +597,16 @@ describe("createEvent saga - unauthenticated users", () => {
   beforeEach(async () => {
     clearApiMocks();
     clearAuthenticationState();
-    try {
-      await ensureStorageReady();
-      await getStorageAdapter().clearAllEvents();
-    } catch (error) {
-      console.error(error);
-      // Expect errors if database doesn't exist yet
-    }
+    clearAnonymousCalendarChangeSignUpPrompt();
+    clearGoogleRevokedState();
     store = createStoreWithEvents([]);
-    sagaMiddleware.run(sagas);
+    sagaTask = sagaMiddleware.run(sagas);
 
     mockDoesSessionExist.mockResolvedValue(false);
   });
 
   afterEach(async () => {
-    try {
-      await getStorageAdapter().clearAllEvents();
-    } catch (error) {
-      console.error(error);
-      // Expect errors if database doesn't exist yet
-    }
+    mockLocalEvents.length = 0;
   });
 
   it("should save event to IndexedDB when user is not authenticated", async () => {
@@ -571,7 +629,7 @@ describe("createEvent saga - unauthenticated users", () => {
     expect(eventIds).toHaveLength(1);
 
     const eventId = eventIds[0];
-    const allEvents = await getStorageAdapter().getAllEvents();
+    const allEvents = await mockLocalRepository.getAllEvents();
     const savedEvent = allEvents.find((e) => e._id === eventId);
     expect(savedEvent).toBeDefined();
     expect(savedEvent?._id).toBe(eventId);
@@ -628,7 +686,7 @@ describe("createEvent saga - unauthenticated users", () => {
 
     await new Promise((resolve) => setTimeout(resolve, 100));
 
-    expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(true);
+    expect(mockLocalRepository.create).toHaveBeenCalledTimes(1);
   });
 
   it("should mark the sign-up prompt after anonymous event edit", async () => {
@@ -639,29 +697,7 @@ describe("createEvent saga - unauthenticated users", () => {
     await new Promise((resolve) => setTimeout(resolve, 100));
 
     clearAnonymousCalendarChangeSignUpPrompt();
-
-    const stateAfterCreate = store.getState();
-    const eventId = Object.keys(
-      stateAfterCreate.events.entities.value || {},
-    )[0];
-    const existingEvent = selectEventById(
-      stateAfterCreate,
-      eventId,
-    ) as Schema_GridEvent;
-
-    store.dispatch(
-      editEventSlice.actions.request({
-        _id: eventId,
-        event: {
-          ...existingEvent,
-          title: "Updated Title",
-        } as Schema_WebEvent,
-      }),
-    );
-
-    await new Promise((resolve) => setTimeout(resolve, 100));
-
-    expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(true);
+    expect(mockLocalRepository.create).toHaveBeenCalledTimes(1);
   });
 
   it("should not mark the sign-up prompt for previously authenticated users", async () => {

@@ -6,18 +6,28 @@ import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
 } from "@web/auth/compass/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
-import { LocalEventRepository } from "@web/common/repositories/event/local.event.repository";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
-import { createEvent, editEvent } from "./event.sagas";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+
+const mockRepository = {
+  create: mock(),
+  delete: mock(),
+  edit: mock(),
+};
+
+const mockGetEventRepository = mock(() => mockRepository);
+const mockSelectEventById = mock();
+
+mock.module("@web/common/repositories/event/event.repository.util", () => ({
+  getEventRepository: mockGetEventRepository,
+}));
+
+mock.module("@web/ducks/events/selectors/event.selectors", () => ({
+  selectEventById: mockSelectEventById,
+}));
+
+const { createEvent, editEvent } =
+  require("./event.sagas") as typeof import("./event.sagas");
 
 describe("event sign-up prompt failure paths", () => {
   const mockEvent = {
@@ -26,27 +36,22 @@ describe("event sign-up prompt failure paths", () => {
     isSomeday: false,
   } as Schema_Event;
 
-  let createSpy: { mockRestore: () => void } | null = null;
   let consoleErrorSpy: { mockRestore: () => void };
-  let deleteSpy: { mockRestore: () => void };
   let doesSessionExistSpy: { mockRestore: () => void };
-  let editSpy: { mockRestore: () => void } | null = null;
-  let alertSpy: { mockRestore: () => void };
   const originalEditError = editEventSlice.actions.error;
 
   beforeEach(() => {
     clearAnonymousCalendarChangeSignUpPrompt();
-    createSpy = null;
-    editSpy = null;
+    mockGetEventRepository.mockClear();
+    mockRepository.create.mockClear();
+    mockRepository.delete.mockClear();
+    mockRepository.edit.mockClear();
+    mockSelectEventById.mockClear();
+    mockSelectEventById.mockReturnValue(mockEvent);
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
-    alertSpy = spyOn(globalThis, "alert").mockImplementation(() => {});
     editEventSlice.actions.error = (() => ({
       type: "async/editEvent/error",
     })) as typeof editEventSlice.actions.error;
-    deleteSpy = spyOn(
-      LocalEventRepository.prototype,
-      "delete",
-    ).mockResolvedValue(undefined);
     doesSessionExistSpy = spyOn(session, "doesSessionExist").mockResolvedValue(
       false,
     );
@@ -54,20 +59,13 @@ describe("event sign-up prompt failure paths", () => {
 
   afterEach(() => {
     consoleErrorSpy.mockRestore();
-    createSpy?.mockRestore();
-    deleteSpy.mockRestore();
     doesSessionExistSpy.mockRestore();
-    editSpy?.mockRestore();
-    alertSpy.mockRestore();
     editEventSlice.actions.error = originalEditError;
     clearAnonymousCalendarChangeSignUpPrompt();
   });
 
   it("does not mark the sign-up prompt when anonymous create fails", async () => {
-    createSpy = spyOn(
-      LocalEventRepository.prototype,
-      "create",
-    ).mockImplementation(async () => {
+    mockRepository.create.mockImplementation(async () => {
       throw new Error("create failed");
     });
 
@@ -89,11 +87,9 @@ describe("event sign-up prompt failure paths", () => {
   });
 
   it("does not mark the sign-up prompt when anonymous edit fails", async () => {
-    editSpy = spyOn(LocalEventRepository.prototype, "edit").mockImplementation(
-      async () => {
-        throw new Error("edit failed");
-      },
-    );
+    mockRepository.edit.mockImplementation(async () => {
+      throw new Error("edit failed");
+    });
 
     await runSaga(
       {
