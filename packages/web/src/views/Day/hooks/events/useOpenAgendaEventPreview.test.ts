@@ -36,27 +36,31 @@ mock.module("@web/store/events", () => ({
   setActiveEvent,
 }));
 
-mock.module("@web/common/hooks/useOpenAtCursor", () => ({
-  CursorItem: { EventPreview: "event-preview" },
-  openFloatingAtCursor,
-  closeFloatingAtCursor,
-  open$,
-  nodeId$,
-  placement$,
-  strategy$,
-  reference$,
-  setFloatingOpenAtCursor: mock(),
-  setFloatingNodeIdAtCursor: mock(),
-  setFloatingPlacementAtCursor: mock(),
-  setFloatingReferenceAtCursor: mock(),
-  setFloatingStrategyAtCursor: mock(),
-  isOpenAtCursor: mock(),
-  useFloatingOpenAtCursor: mock(),
-  useFloatingNodeIdAtCursor: mock(),
-  useFloatingPlacementAtCursor: mock(),
-  useFloatingStrategyAtCursor: mock(),
-  useFloatingReferenceAtCursor: mock(),
-}));
+mock.module("@web/common/hooks/useOpenAtCursor", () => {
+  const real = require("@web/common/hooks/useOpenAtCursor");
+  return {
+    ...real,
+    CursorItem: { EventPreview: "event-preview" },
+    openFloatingAtCursor,
+    closeFloatingAtCursor,
+    open$: real.open$,
+    nodeId$: real.nodeId$,
+    placement$: real.placement$,
+    strategy$: real.strategy$,
+    reference$: real.reference$,
+    setFloatingOpenAtCursor: mock(),
+    setFloatingNodeIdAtCursor: mock(),
+    setFloatingPlacementAtCursor: mock(),
+    setFloatingReferenceAtCursor: mock(),
+    setFloatingStrategyAtCursor: mock(),
+    isOpenAtCursor: mock(),
+    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
+    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
+    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
+    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
+    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+  };
+});
 
 mock.module("@web/views/Day/util/agenda/focus.util", () => ({
   getEventClass,

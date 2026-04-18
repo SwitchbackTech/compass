@@ -12,27 +12,31 @@ const placement$ = new BehaviorSubject("right-start");
 const strategy$ = new BehaviorSubject("absolute");
 const reference$ = new BehaviorSubject(null);
 
-mock.module("@web/common/hooks/useOpenAtCursor", () => ({
-  closeFloatingAtCursor,
-  open$,
-  nodeId$,
-  placement$,
-  strategy$,
-  reference$,
-  openFloatingAtCursor: mock(),
-  setFloatingOpenAtCursor: mock(),
-  setFloatingNodeIdAtCursor: mock(),
-  setFloatingPlacementAtCursor: mock(),
-  setFloatingReferenceAtCursor: mock(),
-  setFloatingStrategyAtCursor: mock(),
-  isOpenAtCursor: mock(),
-  CursorItem: { EventForm: "EventForm" },
-  useFloatingOpenAtCursor: mock(),
-  useFloatingNodeIdAtCursor: mock(),
-  useFloatingPlacementAtCursor: mock(),
-  useFloatingStrategyAtCursor: mock(),
-  useFloatingReferenceAtCursor: mock(),
-}));
+mock.module("@web/common/hooks/useOpenAtCursor", () => {
+  const real = require("@web/common/hooks/useOpenAtCursor");
+  return {
+    ...real,
+    closeFloatingAtCursor,
+    open$: real.open$,
+    nodeId$: real.nodeId$,
+    placement$: real.placement$,
+    strategy$: real.strategy$,
+    reference$: real.reference$,
+    openFloatingAtCursor: mock(),
+    setFloatingOpenAtCursor: mock(),
+    setFloatingNodeIdAtCursor: mock(),
+    setFloatingPlacementAtCursor: mock(),
+    setFloatingReferenceAtCursor: mock(),
+    setFloatingStrategyAtCursor: mock(),
+    isOpenAtCursor: mock(),
+    CursorItem: { EventForm: "EventForm" },
+    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
+    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
+    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
+    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
+    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+  };
+});
 
 mock.module("@web/store/events", () => ({
   resetActiveEvent,

@@ -1,7 +1,8 @@
 import { render, screen } from "@testing-library/react";
 import { type ReactNode } from "react";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { afterAll } from "bun:test";
+import { BehaviorSubject } from "rxjs";
 
 const DndContext = mock(({ children }: { children: ReactNode }) => (
   <div data-testid="dnd-context">{children}</div>
@@ -9,17 +10,13 @@ const DndContext = mock(({ children }: { children: ReactNode }) => (
 const usePointerPosition = mock();
 const useSensor = mock();
 const useSensors = mock();
-const isDraggingEvent$ = {
-  next: mock(),
-};
+const { isDraggingEvent$ } = require("@web/common/hooks/useIsDraggingEvent");
+let isDraggingNextSpy: any = null;
 
 mock.module("@web/common/hooks/usePointerPosition", () => ({
   usePointerPosition,
 }));
 
-mock.module("@web/common/hooks/useIsDraggingEvent", () => ({
-  isDraggingEvent$,
-}));
 
 mock.module("@dnd-kit/core", () => ({
   DndContext,
@@ -45,7 +42,8 @@ describe("DNDContext", () => {
       togglePointerMovementTracking: mockTogglePointerMovementTracking,
     });
     mockTogglePointerMovementTracking.mockClear();
-    isDraggingEvent$.next.mockClear();
+    if (isDraggingNextSpy) isDraggingNextSpy.mockClear();
+    isDraggingNextSpy = spyOn(isDraggingEvent$, "next");
     useSensor.mockClear();
     useSensors.mockClear();
     DndContext.mockClear();
@@ -83,7 +81,7 @@ describe("DNDContext", () => {
     activationCall[1].onActivation();
 
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(true);
-    expect(isDraggingEvent$.next).toHaveBeenCalledWith(true);
+    expect(isDraggingNextSpy).toHaveBeenCalledWith(true);
   });
 
   it("calls togglePointerMovementTracking(false) and isDraggingEvent$.next(false) on deactivation via onDragEnd", () => {
@@ -97,7 +95,7 @@ describe("DNDContext", () => {
     dndContextProps.onDragEnd();
 
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(false);
-    expect(isDraggingEvent$.next).toHaveBeenCalledWith(false);
+    expect(isDraggingNextSpy).toHaveBeenCalledWith(false);
   });
 
   it("calls togglePointerMovementTracking(false) and isDraggingEvent$.next(false) on deactivation via onDragCancel", () => {
@@ -111,7 +109,7 @@ describe("DNDContext", () => {
     dndContextProps.onDragCancel();
 
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(false);
-    expect(isDraggingEvent$.next).toHaveBeenCalledWith(false);
+    expect(isDraggingNextSpy).toHaveBeenCalledWith(false);
   });
 
   it("calls togglePointerMovementTracking(false) and isDraggingEvent$.next(false) on deactivation via onDragAbort", () => {
@@ -125,7 +123,7 @@ describe("DNDContext", () => {
     dndContextProps.onDragAbort();
 
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(false);
-    expect(isDraggingEvent$.next).toHaveBeenCalledWith(false);
+    expect(isDraggingNextSpy).toHaveBeenCalledWith(false);
   });
 });
 
