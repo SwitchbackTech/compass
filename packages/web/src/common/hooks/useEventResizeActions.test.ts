@@ -31,6 +31,7 @@ const open$ = { getValue: mockOpenGetValue, next: mock() };
 const placement$ = new BehaviorSubject("right-start");
 const strategy$ = new BehaviorSubject("absolute");
 const reference$ = new BehaviorSubject(null);
+const mockSelectEventById = mock();
 
 mock.module("@web/common/hooks/useUpdateEvent", () => ({
   useUpdateEvent: mock(() => mockUpdateEvent),
@@ -41,26 +42,35 @@ mock.module("@web/store/events", () => ({
   updateDraft: mockUpdateDraft,
 }));
 
-mock.module("@web/common/hooks/useOpenAtCursor", () => ({
-  openFloatingAtCursor,
-  closeFloatingAtCursor,
-  nodeId$,
-  open$,
-  placement$,
-  strategy$,
-  reference$,
-  setFloatingOpenAtCursor: mock(),
-  setFloatingNodeIdAtCursor: mock(),
-  setFloatingPlacementAtCursor: mock(),
-  setFloatingReferenceAtCursor: mock(),
-  setFloatingStrategyAtCursor: mock(),
-  isOpenAtCursor: mock(),
-  CursorItem: { EventForm: "EventForm" },
-  useFloatingOpenAtCursor: mock(),
-  useFloatingNodeIdAtCursor: mock(),
-  useFloatingPlacementAtCursor: mock(),
-  useFloatingStrategyAtCursor: mock(),
-  useFloatingReferenceAtCursor: mock(),
+mock.module("@web/common/hooks/useOpenAtCursor", () => {
+  const real = require("@web/common/hooks/useOpenAtCursor");
+  return {
+    ...real,
+    openFloatingAtCursor,
+    closeFloatingAtCursor,
+    nodeId$,
+    open$,
+    placement$,
+    strategy$,
+    reference$,
+    setFloatingOpenAtCursor: mock(),
+    setFloatingNodeIdAtCursor: mock(),
+    setFloatingPlacementAtCursor: mock(),
+    setFloatingReferenceAtCursor: mock(),
+    setFloatingStrategyAtCursor: mock(),
+    isOpenAtCursor: mock(),
+    CursorItem: { EventForm: "EventForm" },
+    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
+    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
+    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
+    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
+    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+  };
+});
+
+// Ensure selectors don't read real store state during this unit test
+mock.module("@web/ducks/events/selectors/event.selectors", () => ({
+  selectEventById: mockSelectEventById,
 }));
 
 // Import the hook after mocks
@@ -86,9 +96,12 @@ describe("useEventResizeActions", () => {
     mockUpdateDraft.mockClear();
     mockNodeIdGetValue.mockClear();
     mockOpenGetValue.mockClear();
+    mockSelectEventById.mockClear();
 
     mockNodeIdGetValue.mockReturnValue(null);
     mockOpenGetValue.mockReturnValue(false);
+    // Ensure selector returns no stored event so saveDraftOnly path is testable
+    mockSelectEventById.mockReturnValue(null);
     mockUpdateDraft.mockImplementation((update: any) => {
       mockSetDraft({ ...mockEvent, ...update });
     });

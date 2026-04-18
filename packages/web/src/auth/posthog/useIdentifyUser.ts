@@ -1,4 +1,4 @@
-import { usePostHog } from "./posthog-react";
+import { usePostHog } from "posthog-js/react";
 import { useEffect } from "react";
 
 /**

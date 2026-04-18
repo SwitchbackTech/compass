@@ -7,6 +7,31 @@ import {
   markGoogleAsRevoked,
 } from "../../google/state/google.auth.state";
 import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+import { readFileSync, writeFileSync } from "node:fs";
+
+mockLocalStorage();
+
+const realAuthStateUtilPath = new URL(
+  "./auth.state.util.real.ts",
+  import.meta.url,
+);
+writeFileSync(
+  realAuthStateUtilPath,
+  readFileSync(new URL("./auth.state.util.ts", import.meta.url), "utf8"),
+);
+
+const authStateUtil = (await import(
+  realAuthStateUtilPath.href
+)) as typeof import("./auth.state.util");
+const {
   clearAnonymousCalendarChangeSignUpPrompt,
   clearAuthenticationState,
   getAuthState,
@@ -17,18 +42,7 @@ import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
   subscribeToAuthState,
   updateAuthState,
-} from "./auth.state.util";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
-
-mockLocalStorage();
+} = authStateUtil;
 
 describe("auth-state.util", () => {
   beforeEach(() => {

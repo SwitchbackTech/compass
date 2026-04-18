@@ -45,7 +45,17 @@ mock.module("@web/store/store.hooks", () => ({
 }));
 
 mock.module("@web/views/Day/util/agenda/agenda.util", () => ({
+  // Provide a focused mock that includes the named export consumers expect.
+  // Keep a safe default for other exports so concurrent tests won't break imports.
   getSnappedMinutes: mockGetSnappedMinutes,
+  getAgendaEventTitle: (event) => `${event?.title || ""} -`,
+  getAgendaEventTime: (d) => (d ? new Date(d).toISOString() : ""),
+  getAgendaEventPosition: (date) => 0,
+  getNowLinePosition: (date) => 0,
+  getEventTimeFromPosition: (_y, dateInView) => dateInView.startOf ? dateInView.startOf('day') : new Date(),
+  roundMinutesToNearestFifteen: (minutes) => Math.round(minutes / 15) * 15,
+  roundToNearestFifteenWithinHour: (minutes) => Math.min(45, Math.round(minutes / 15) * 15),
+  getEventHeight: (_event) => 4,
 }));
 
 mock.module("@web/ducks/events/selectors/event.selectors", () => ({
@@ -58,27 +68,31 @@ mock.module("@web/store", () => ({
   },
 }));
 
-mock.module("@web/common/hooks/useOpenAtCursor", () => ({
-  openFloatingAtCursor,
-  closeFloatingAtCursor,
-  open$,
-  nodeId$,
-  placement$,
-  strategy$,
-  reference$,
-  isOpenAtCursor: mock(() => false),
-  setFloatingReferenceAtCursor: mock(),
-  setFloatingOpenAtCursor: mock(),
-  setFloatingNodeIdAtCursor: mock(),
-  setFloatingPlacementAtCursor: mock(),
-  setFloatingStrategyAtCursor: mock(),
-  CursorItem: { EventForm: "EventForm" },
-  useFloatingOpenAtCursor: mock(),
-  useFloatingNodeIdAtCursor: mock(),
-  useFloatingPlacementAtCursor: mock(),
-  useFloatingStrategyAtCursor: mock(),
-  useFloatingReferenceAtCursor: mock(),
-}));
+mock.module("@web/common/hooks/useOpenAtCursor", () => {
+  const real = require("@web/common/hooks/useOpenAtCursor");
+  return {
+    ...real,
+    openFloatingAtCursor,
+    closeFloatingAtCursor,
+    open$: real.open$,
+    nodeId$: real.nodeId$,
+    placement$: real.placement$,
+    strategy$: real.strategy$,
+    reference$: real.reference$,
+    isOpenAtCursor: mock(() => false),
+    setFloatingReferenceAtCursor: mock(),
+    setFloatingOpenAtCursor: mock(),
+    setFloatingNodeIdAtCursor: mock(),
+    setFloatingPlacementAtCursor: mock(),
+    setFloatingStrategyAtCursor: mock(),
+    CursorItem: { EventForm: "EventForm" },
+    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
+    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
+    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
+    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
+    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+  };
+});
 
 const transpiler = new Bun.Transpiler();
 
