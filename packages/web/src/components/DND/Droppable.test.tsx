@@ -1,10 +1,24 @@
-import { useDroppable } from "@dnd-kit/core";
 import { render, screen } from "@testing-library/react";
-import { Droppable } from "@web/components/DND/Droppable";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
-jest.mock("@dnd-kit/core", () => ({
-  useDroppable: jest.fn(),
+const useDroppable = mock();
+
+mock.module("@dnd-kit/core", () => ({
+  useDroppable,
+  useDndContext: mock(),
+  useDraggable: mock(),
+  DndContext: mock(),
+  DragOverlay: mock(),
+  KeyboardSensor: "KeyboardSensor",
+  MouseSensor: "MouseSensor",
+  TouchSensor: "TouchSensor",
+  useSensor: mock(),
+  useSensors: mock(),
 }));
+
+const { Droppable } =
+  require("@web/components/DND/Droppable") as typeof import("@web/components/DND/Droppable");
 
 describe("Droppable", () => {
   const mockDndProps = {
@@ -13,8 +27,9 @@ describe("Droppable", () => {
   };
 
   beforeEach(() => {
-    (useDroppable as jest.Mock).mockReturnValue({
-      setNodeRef: jest.fn(),
+    useDroppable.mockClear();
+    useDroppable.mockReturnValue({
+      setNodeRef: mock(),
       active: null,
       isOver: false,
       node: { current: null },
@@ -32,4 +47,8 @@ describe("Droppable", () => {
 
     expect(screen.getByText("Child Content")).toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -1,16 +1,29 @@
-import { Route, Routes } from "react-router-dom";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
+import { MemoryRouter, Route, Routes } from "react-router-dom";
 import "@testing-library/jest-dom";
 import { screen } from "@testing-library/react";
-import { renderWithMemoryRouter } from "@web/__tests__/utils/providers/MemoryRouter";
+import { render } from "@testing-library/react";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
+
+mock.module("@web/components/SyncEventsOverlay/SyncEventsOverlay", () => ({
+  SyncEventsOverlay: () => null,
+}));
 
 describe("AuthenticatedLayout", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mock.restore();
   });
 
   it("should render child routes via Outlet", async () => {
-    await renderWithMemoryRouter(
+    render(
+      <MemoryRouter
+        initialEntries={["/"]}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
       <Routes>
         <Route element={<AuthenticatedLayout />}>
           <Route
@@ -19,6 +32,7 @@ describe("AuthenticatedLayout", () => {
           />
         </Route>
       </Routes>,
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("child-route")).toBeInTheDocument();
@@ -26,7 +40,14 @@ describe("AuthenticatedLayout", () => {
   });
 
   it("should render nested routes correctly", async () => {
-    await renderWithMemoryRouter(
+    render(
+      <MemoryRouter
+        initialEntries={["/nested"]}
+        future={{
+          v7_startTransition: true,
+          v7_relativeSplatPath: true,
+        }}
+      >
       <Routes>
         <Route element={<AuthenticatedLayout />}>
           <Route
@@ -35,10 +56,14 @@ describe("AuthenticatedLayout", () => {
           />
         </Route>
       </Routes>,
-      ["/nested"],
+      </MemoryRouter>,
     );
 
     expect(screen.getByTestId("nested-route")).toBeInTheDocument();
     expect(screen.getByText("Nested Content")).toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

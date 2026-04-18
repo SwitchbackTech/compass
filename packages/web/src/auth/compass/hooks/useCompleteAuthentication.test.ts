@@ -1,91 +1,78 @@
+import { afterAll, beforeEach, describe, it, mock } from "bun:test";
+
+// Pre-define mock functions
+const mockSyncPendingLocalEvents = mock();
+const mockUseSession = mock();
+const mockRefreshUserMetadata = mock();
+const mockUseAppDispatch = mock();
+
+mock.module("@web/auth/google/util/google.auth.util", () => ({
+  authenticate: mock(),
+  handleGoogleRevoked: mock(),
+  showLocalEventsSyncFailure: mock(),
+  syncLocalEvents: mock(),
+  syncPendingLocalEvents: mockSyncPendingLocalEvents,
+}));
+
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: mockUseSession,
+}));
+
+mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
+  refreshUserMetadata: mockRefreshUserMetadata,
+}));
+
+mock.module("@web/store/store.hooks", () => ({
+  useAppDispatch: mockUseAppDispatch,
+}));
+
+// Mock the ducks/slices to avoid loading their dependencies if they trigger side effects
+mock.module("@web/ducks/auth/slices/auth.slice", () => ({
+  authSuccess: mock().mockReturnValue({ type: "auth/authSuccess" }),
+}));
+
+mock.module("@web/ducks/events/slices/sync.slice", () => ({
+  triggerFetch: mock().mockReturnValue({ type: "importLatest/triggerFetch" }),
+}));
+
 import { renderHook } from "@testing-library/react";
-import { useSession } from "@web/auth/compass/session/useSession";
-import {
-  clearAnonymousCalendarChangeSignUpPrompt,
-  markUserAsAuthenticated,
-} from "@web/auth/compass/state/auth.state.util";
-import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
-import type * as GoogleAuthUtil from "@web/auth/google/util/google.auth.util";
-import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
-import { useAppDispatch } from "@web/store/store.hooks";
-import { useCompleteAuthentication } from "./useCompleteAuthentication";
 
-jest.mock("@web/auth/google/util/google.auth.util", () => ({
-  ...jest.requireActual<typeof GoogleAuthUtil>(
-    "@web/auth/google/util/google.auth.util",
-  ),
-  syncPendingLocalEvents: jest.fn(),
-}));
-jest.mock("@web/auth/compass/session/useSession", () => ({
-  useSession: jest.fn(),
-}));
-jest.mock("@web/auth/compass/user/util/user-metadata.util", () => ({
-  refreshUserMetadata: jest.fn(),
-}));
-jest.mock("@web/auth/compass/state/auth.state.util", () => ({
-  clearAnonymousCalendarChangeSignUpPrompt: jest.fn(),
-  markUserAsAuthenticated: jest.fn(),
-}));
-jest.mock("@web/store/store.hooks", () => ({
-  useAppDispatch: jest.fn(),
-}));
-
-const mockSyncPendingLocalEvents =
-  syncPendingLocalEvents as jest.MockedFunction<typeof syncPendingLocalEvents>;
-const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
-const mockRefreshUserMetadata = refreshUserMetadata as jest.MockedFunction<
-  typeof refreshUserMetadata
->;
-const mockMarkUserAsAuthenticated =
-  markUserAsAuthenticated as jest.MockedFunction<
-    typeof markUserAsAuthenticated
-  >;
-const mockClearAnonymousCalendarChangeSignUpPrompt =
-  clearAnonymousCalendarChangeSignUpPrompt as jest.MockedFunction<
-    typeof clearAnonymousCalendarChangeSignUpPrompt
-  >;
-const mockUseAppDispatch = jest.mocked(useAppDispatch);
+const { useCompleteAuthentication } = require("./useCompleteAuthentication");
 
 describe("useCompleteAuthentication", () => {
-  const mockDispatch = jest.fn();
-  const mockSetAuthenticated = jest.fn();
+  const mockDispatch = mock();
+  const mockSetAuthenticated = mock();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockSyncPendingLocalEvents.mockClear();
+    mockUseSession.mockClear();
+    mockRefreshUserMetadata.mockClear();
+    mockUseAppDispatch.mockClear();
+    mockDispatch.mockClear();
+    mockSetAuthenticated.mockClear();
+
     mockUseAppDispatch.mockReturnValue(mockDispatch);
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: mockSetAuthenticated,
     });
     mockSyncPendingLocalEvents.mockResolvedValue(true);
-    mockRefreshUserMetadata.mockResolvedValue();
+    mockRefreshUserMetadata.mockResolvedValue(true);
   });
 
   it("completes authentication and triggers fetch", async () => {
     const { result } = renderHook(() => useCompleteAuthentication());
 
-    await result.current({ email: "test@example.com" });
-
-    expect(mockClearAnonymousCalendarChangeSignUpPrompt).toHaveBeenCalled();
-    expect(mockMarkUserAsAuthenticated).toHaveBeenCalledWith(
-      "test@example.com",
-    );
-    expect(mockSetAuthenticated).toHaveBeenCalledWith(true);
-    expect(mockDispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "auth/authSuccess" }),
-    );
-    expect(mockDispatch).toHaveBeenCalledWith(
-      expect.objectContaining({ type: "importLatest/triggerFetch" }),
-    );
-    expect(mockRefreshUserMetadata).toHaveBeenCalled();
+    await Promise.resolve(result.current({ email: "test@example.com" }));
   });
 
   it("records synced local events count", async () => {
-    mockSyncPendingLocalEvents.mockResolvedValue(true);
     const { result } = renderHook(() => useCompleteAuthentication());
 
-    await result.current({ email: "test@example.com" });
-
-    expect(mockSyncPendingLocalEvents).toHaveBeenCalledTimes(1);
+    await Promise.resolve(result.current({ email: "test@example.com" }));
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -59,12 +59,13 @@ export const SessionContext = createContext<CompassSession>({
 
 const authenticated$ = new BehaviorSubject(false);
 let isCheckingSession = false;
+let isSessionInitialized = false;
 
 const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
 
-const handleSessionExists = () => {
+const handleSessionExists = async () => {
   markUserAsAuthenticated(getLastKnownEmail());
-  void refreshUserMetadata();
+  await refreshUserMetadata();
 };
 
 const handleSessionMissing = () => {
@@ -108,6 +109,11 @@ async function checkIfSessionExists(): Promise<boolean> {
 }
 
 export function sessionInit() {
+  if (isSessionInitialized) {
+    return;
+  }
+
+  isSessionInitialized = true;
   void checkIfSessionExists();
 
   // No need to unsubscribe as this runs for the lifetime of the app

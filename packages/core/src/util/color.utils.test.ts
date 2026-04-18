@@ -1,4 +1,5 @@
 import tinycolor from "tinycolor2";
+import { describe, expect, it, spyOn } from "bun:test";
 import {
   brighten,
   darken,
@@ -63,7 +64,7 @@ describe("color.utils", () => {
 
     it("generates color values from random color when not provided", () => {
       const color = tinycolor.random();
-      const randomColorSpy = jest.spyOn(tinycolor, "random");
+      const randomColorSpy = spyOn(tinycolor, "random");
 
       randomColorSpy.mockReturnValue(color);
 
@@ -91,7 +92,7 @@ describe("color.utils", () => {
 
     it("ensures returned colors remain readable for random color", () => {
       const randomColor = tinycolor.random();
-      const randomColorSpy = jest.spyOn(tinycolor, "random");
+      const randomColorSpy = spyOn(tinycolor, "random");
 
       randomColorSpy.mockReturnValue(randomColor);
 

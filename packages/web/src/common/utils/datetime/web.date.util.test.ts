@@ -1,6 +1,14 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  setSystemTime,
+} from "bun:test";
 import { arraysAreEqual } from "@web/__tests__/utils/web.test.util";
 import {
   computeCurrentEventDateRange,
@@ -25,12 +33,11 @@ describe("computeRelativeEventDateRange", () => {
 
   // Set up fake timers
   beforeAll(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2024-03-15")); // A Friday
+    setSystemTime(new Date("2024-03-15")); // A Friday
   });
 
   afterAll(() => {
-    jest.useRealTimers();
+    setSystemTime();
   });
   describe("Week duration", () => {
     it("should set previous week dates", () => {
@@ -124,12 +131,11 @@ describe("computeCurrentEventDateRange", () => {
 
   // Set up fake timers
   beforeAll(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2024-03-15")); // A Friday
+    setSystemTime(new Date("2024-03-15")); // A Friday
   });
 
   afterAll(() => {
-    jest.useRealTimers();
+    setSystemTime();
   });
 
   describe("Week duration", () => {

@@ -10,6 +10,7 @@ import {
   type PropsWithChildren,
   type ReactElement,
 } from "react";
+import { mock } from "bun:test";
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
@@ -19,6 +20,11 @@ import { CompassRequiredProviders } from "@web/components/CompassProvider/Compas
 import { type store as compassStore } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
+
+mock.module("@react-oauth/google", () => ({
+  GoogleOAuthProvider: ({ children }: { children?: unknown }) => children,
+  useGoogleLogin: () => mock(),
+}));
 
 interface CustomRenderOptions extends RenderOptions {
   state?: any;

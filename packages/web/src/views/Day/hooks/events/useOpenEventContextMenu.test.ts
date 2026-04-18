@@ -1,32 +1,67 @@
 import { renderHook } from "@testing-library/react";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
-import {
-  CursorItem,
-  openFloatingAtCursor,
-} from "@web/common/hooks/useOpenAtCursor";
-import { eventsStore, setActiveEvent } from "@web/store/events";
-import { useOpenEventContextMenu } from "@web/views/Day/hooks/events/useOpenEventContextMenu";
-import { getEventClass } from "@web/views/Day/util/agenda/focus.util";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
+import { BehaviorSubject } from "rxjs";
 
-jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
-  CursorItem: { EventContextMenu: "event-context-menu" },
-  openFloatingAtCursor: jest.fn(),
+const CursorItem = { EventContextMenu: "event-context-menu" };
+const openFloatingAtCursor = mock();
+const closeFloatingAtCursor = mock();
+const open$ = new BehaviorSubject(false);
+const nodeId$ = new BehaviorSubject(null);
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
+const eventsStore = {
+  query: mock(),
+};
+const setActiveEvent = mock();
+const getEventClass = mock();
+
+mock.module("@web/common/hooks/useOpenAtCursor", () => {
+  const real = require("@web/common/hooks/useOpenAtCursor");
+  return {
+    ...real,
+    CursorItem: { EventContextMenu: "event-context-menu" },
+    openFloatingAtCursor,
+    closeFloatingAtCursor,
+    open$: real.open$,
+    nodeId$: real.nodeId$,
+    placement$: real.placement$,
+    strategy$: real.strategy$,
+    reference$: real.reference$,
+    setFloatingOpenAtCursor: mock(),
+    setFloatingNodeIdAtCursor: mock(),
+    setFloatingPlacementAtCursor: mock(),
+    setFloatingReferenceAtCursor: mock(),
+    setFloatingStrategyAtCursor: mock(),
+    isOpenAtCursor: mock(),
+    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
+    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
+    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
+    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
+    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+  };
+});
+
+mock.module("@web/store/events", () => ({
+  eventsStore,
+  setActiveEvent,
 }));
 
-jest.mock("@web/store/events", () => ({
-  eventsStore: {
-    query: jest.fn(),
-  },
-  setActiveEvent: jest.fn(),
+mock.module("@web/views/Day/util/agenda/focus.util", () => ({
+  getEventClass,
 }));
 
-jest.mock("@web/views/Day/util/agenda/focus.util", () => ({
-  getEventClass: jest.fn(),
-}));
+const { useOpenEventContextMenu } =
+  require("@web/views/Day/hooks/events/useOpenEventContextMenu") as typeof import("@web/views/Day/hooks/events/useOpenEventContextMenu");
 
 describe("useOpenEventContextMenu", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    eventsStore.query.mockClear();
+    getEventClass.mockClear();
+    openFloatingAtCursor.mockClear();
+    setActiveEvent.mockClear();
   });
 
   it("should open event context menu when event id and reference exist", () => {
@@ -34,19 +69,19 @@ describe("useOpenEventContextMenu", () => {
     const eventClass = "event-class";
     const mockEvent = { _id: eventId, title: "Test Event" };
     const mockReference = {
-      getAttribute: jest.fn().mockReturnValue(eventId),
+      getAttribute: mock().mockReturnValue(eventId),
     };
     const mockElement = {
-      closest: jest.fn().mockReturnValue(mockReference),
+      closest: mock().mockReturnValue(mockReference),
     };
     const mockEventObj = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
+      preventDefault: mock(),
+      stopPropagation: mock(),
       currentTarget: mockElement,
     };
 
-    (getEventClass as jest.Mock).mockReturnValue(eventClass);
-    (eventsStore.query as jest.Mock).mockReturnValue(mockEvent);
+    getEventClass.mockReturnValue(eventClass);
+    eventsStore.query.mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenEventContextMenu());
 
@@ -72,18 +107,18 @@ describe("useOpenEventContextMenu", () => {
   it("should not open event context menu if event id is missing", () => {
     const eventClass = "event-class";
     const mockReference = {
-      getAttribute: jest.fn().mockReturnValue(null),
+      getAttribute: mock().mockReturnValue(null),
     };
     const mockElement = {
-      closest: jest.fn().mockReturnValue(mockReference),
+      closest: mock().mockReturnValue(mockReference),
     };
     const mockEventObj = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
+      preventDefault: mock(),
+      stopPropagation: mock(),
       currentTarget: mockElement,
     };
 
-    (getEventClass as jest.Mock).mockReturnValue(eventClass);
+    getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenEventContextMenu());
 
@@ -97,15 +132,15 @@ describe("useOpenEventContextMenu", () => {
   it("should not open event context menu if reference is missing", () => {
     const eventClass = "event-class";
     const mockElement = {
-      closest: jest.fn().mockReturnValue(null),
+      closest: mock().mockReturnValue(null),
     };
     const mockEventObj = {
-      preventDefault: jest.fn(),
-      stopPropagation: jest.fn(),
+      preventDefault: mock(),
+      stopPropagation: mock(),
       currentTarget: mockElement,
     };
 
-    (getEventClass as jest.Mock).mockReturnValue(eventClass);
+    getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenEventContextMenu());
 
@@ -115,4 +150,8 @@ describe("useOpenEventContextMenu", () => {
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

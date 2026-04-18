@@ -1,9 +1,14 @@
 import { Categories_Event } from "@core/types/event.types";
-import { assembleDefaultEvent } from "../event/event.util";
+import { describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
-jest.mock("@web/auth/compass/session/session.util", () => ({
-  getUserId: jest.fn().mockResolvedValue("mock-user-id"),
+mock.module("@web/auth/compass/session/session.util", () => ({
+  getUserId: mock().mockResolvedValue("mock-user-id"),
 }));
+
+const { assembleDefaultEvent } =
+  require("../event/event.util") as typeof import("../event/event.util");
+
 describe("assembleDefaultEvent", () => {
   it("should include dates for someday event when provided", async () => {
     const startDate = "2024-01-01";
@@ -25,4 +30,8 @@ describe("assembleDefaultEvent", () => {
     expect(eventWithoutDates).toHaveProperty("startDate", undefined);
     expect(eventWithoutDates).toHaveProperty("endDate", undefined);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

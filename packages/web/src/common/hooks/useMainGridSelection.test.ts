@@ -1,17 +1,102 @@
 import { renderHook } from "@testing-library/react";
 import { act, type PointerEvent as IPointerEvent } from "react";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { readFile, writeFile } from "node:fs/promises";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
-import { cursor$, pointerState$ } from "@web/common/context/pointer-position";
-import { isDraggingEvent$ } from "@web/common/hooks/useIsDraggingEvent";
-import { useMainGridSelection } from "@web/common/hooks/useMainGridSelection";
-import { resizing$ } from "@web/common/hooks/useResizing";
-import * as eventUtils from "@web/common/utils/dom/event-emitter.util";
+
+const transpiler = new Bun.Transpiler({
+  autoImportJSX: true,
+  tsconfig: {
+    compilerOptions: {
+      jsx: "react-jsxdev",
+      jsxImportSource: "react",
+    },
+  },
+});
+
+async function loadTempModule(
+  sourceUrl: URL,
+  replacements: Record<string, string> = {},
+  loader: "ts" | "tsx" = "ts",
+) {
+  const source = await readFile(sourceUrl, "utf8");
+  const transformedSource = Object.entries(replacements).reduce(
+    (accumulator, [from, to]) => accumulator.replaceAll(from, to),
+    source,
+  );
+  const tempUrl = new URL(
+    `./.${sourceUrl.pathname.split("/").pop()}-${process.pid}-${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)}.mjs`,
+    sourceUrl,
+  );
+  const transformedJavaScript = transpiler.transformSync(
+    transformedSource,
+    loader,
+  );
+  await writeFile(tempUrl, transformedJavaScript);
+  return tempUrl;
+}
+
+const eventEmitterUrl = await loadTempModule(
+  new URL("../utils/dom/event-emitter.util.ts", import.meta.url),
+  {},
+  "ts",
+);
+const pointerPositionUrl = await loadTempModule(
+  new URL("../context/pointer-position.tsx", import.meta.url),
+  {
+    "@web/common/utils/dom/event-emitter.util": eventEmitterUrl.href,
+  },
+  "tsx",
+);
+const isDraggingUrl = await loadTempModule(
+  new URL("./useIsDraggingEvent.ts", import.meta.url),
+  {},
+  "ts",
+);
+const resizingUrl = await loadTempModule(
+  new URL("./useResizing.ts", import.meta.url),
+  {},
+  "ts",
+);
+const selectionIdUrl = await loadTempModule(
+  new URL("./useMainGridSelectionId.ts", import.meta.url),
+  {},
+  "ts",
+);
+const selectingStateUrl = await loadTempModule(
+  new URL("./useMainGridSelectionState.ts", import.meta.url),
+  {},
+  "ts",
+);
+const mainGridSelectionUrl = await loadTempModule(
+  new URL("./useMainGridSelection.ts", import.meta.url),
+  {
+    "@web/common/context/pointer-position": pointerPositionUrl.href,
+    "@web/common/hooks/useIsDraggingEvent": isDraggingUrl.href,
+    "@web/common/hooks/useMainGridSelectionId": selectionIdUrl.href,
+    "@web/common/hooks/useMainGridSelectionState": selectingStateUrl.href,
+    "@web/common/hooks/useResizing": resizingUrl.href,
+    "@web/common/utils/dom/event-emitter.util": eventEmitterUrl.href,
+  },
+  "ts",
+);
+
+const { cursor$, pointerState$ } = await import(pointerPositionUrl.href);
+const { isDraggingEvent$ } = await import(isDraggingUrl.href);
+const { useMainGridSelection } = await import(mainGridSelectionUrl.href);
+const { selectionId$ } = await import(selectionIdUrl.href);
+const { selecting$ } = await import(selectingStateUrl.href);
+const { resizing$ } = await import(resizingUrl.href);
+const { selectionStart$ } = await import(eventEmitterUrl.href);
+const eventUtils = await import(eventEmitterUrl.href);
 
 describe("useMainGridSelection", () => {
-  const onSelectionStart = jest.fn();
-  const onSelectionEnd = jest.fn();
-  const onSelection = jest.fn();
-  const getElementAtPointSpy = jest.spyOn(eventUtils, "getElementAtPoint");
+  const onSelectionStart = mock();
+  const onSelectionEnd = mock();
+  const onSelection = mock();
+  const getElementAtPointSpy = spyOn(eventUtils, "getElementAtPoint");
   const mainGrid = document.createElement("div");
 
   mainGrid.setAttribute("id", ID_GRID_MAIN);
@@ -25,7 +110,10 @@ describe("useMainGridSelection", () => {
   }) as unknown as IPointerEvent;
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    onSelectionStart.mockClear();
+    onSelectionEnd.mockClear();
+    onSelection.mockClear();
+    getElementAtPointSpy.mockClear();
 
     getElementAtPointSpy.mockReturnValue(mainGrid);
 
@@ -44,6 +132,9 @@ describe("useMainGridSelection", () => {
     cursor$.next({ x: 0, y: 0 });
     isDraggingEvent$.next(false);
     resizing$.next(false);
+    selecting$.next(false);
+    selectionId$.next(null);
+    selectionStart$.next(null);
   });
 
   it("should initialize with selecting as false", () => {
@@ -87,9 +178,7 @@ describe("useMainGridSelection", () => {
     );
   });
 
-  it("should call onSelection when moving while selecting", () => {
-    jest.useFakeTimers();
-
+  it("should call onSelection when moving while selecting", async () => {
     renderHook(() =>
       useMainGridSelection({
         onSelectionStart,
@@ -114,10 +203,14 @@ describe("useMainGridSelection", () => {
       });
     });
 
-    // Move
+    // Move - the observable debounces, so we just need to emit and let microtasks flush
     act(() => {
       cursor$.next({ x: 30, y: 30 });
-      jest.advanceTimersByTime(100);
+    });
+
+    // Allow microtasks to flush
+    await act(async () => {
+      await Promise.resolve();
     });
 
     expect(onSelection).toHaveBeenCalled();
@@ -126,7 +219,6 @@ describe("useMainGridSelection", () => {
       { clientX: 10, clientY: 10 },
       { clientX: 30, clientY: 30 },
     );
-    jest.useRealTimers();
   });
 
   it("should end selection when pointer up", () => {

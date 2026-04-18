@@ -1,29 +1,37 @@
-import { act } from "react";
-import {
-  fireEvent,
-  renderHook,
-  screen,
-} from "@web/__tests__/__mocks__/mock.render";
+import { act, type ReactNode } from "react";
+import { fireEvent, renderHook } from "@testing-library/react";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { ID_MAIN, ID_ROOT } from "@web/common/constants/web.constants";
-import { useMovementEvent } from "@web/common/hooks/useMovementEvent";
+import {
+  useMovementEvent,
+  useSetupMovementEvents,
+} from "@web/common/hooks/useMovementEvent";
 
 describe("useMovementEvent", () => {
-  const mockHandler = jest.fn();
+  const mockHandler = mock();
+  const Wrapper = ({ children }: { children: ReactNode }) => {
+    useSetupMovementEvents();
+    return children;
+  };
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockHandler.mockClear();
+    document.body.innerHTML = "";
   });
 
   it("should call handler when event matches type and selector", () => {
+    const rootDiv = document.createElement("div");
+    rootDiv.id = ID_ROOT;
+    document.body.appendChild(rootDiv);
+
     renderHook(() =>
       useMovementEvent({
         handler: mockHandler,
         eventTypes: ["pointerdown"],
         selectors: [`div#${ID_ROOT}`],
       }),
+      { wrapper: Wrapper },
     );
-
-    const rootDiv = screen.getByTestId(ID_ROOT);
 
     act(() => fireEvent.pointerDown(rootDiv));
 
@@ -31,15 +39,18 @@ describe("useMovementEvent", () => {
   });
 
   it("should not call handler when event type does not match", () => {
+    const rootDiv = document.createElement("div");
+    rootDiv.id = ID_ROOT;
+    document.body.appendChild(rootDiv);
+
     renderHook(() =>
       useMovementEvent({
         handler: mockHandler,
         eventTypes: ["pointerup"],
         selectors: [`div#${ID_ROOT}`],
       }),
+      { wrapper: Wrapper },
     );
-
-    const rootDiv = screen.getByTestId(ID_ROOT);
 
     act(() => fireEvent.pointerDown(rootDiv));
 
@@ -50,6 +61,7 @@ describe("useMovementEvent", () => {
     const mainDiv = document.createElement("div");
 
     mainDiv.setAttribute("id", ID_MAIN);
+    document.body.appendChild(mainDiv);
 
     renderHook(() =>
       useMovementEvent({
@@ -57,26 +69,26 @@ describe("useMovementEvent", () => {
         eventTypes: ["pointerdown"],
         selectors: [`div#${ID_MAIN}`],
       }),
+      { wrapper: Wrapper },
     );
 
-    const rootDiv = screen.getByTestId(ID_ROOT);
-
-    rootDiv.appendChild(mainDiv);
-
-    act(() => fireEvent.pointerDown(rootDiv));
+    act(() => fireEvent.pointerDown(document.body));
 
     expect(mockHandler).not.toHaveBeenCalled();
   });
 
   it("should toggle tracking when togglePointerMovementTracking is called", () => {
+    const rootDiv = document.createElement("div");
+    rootDiv.id = ID_ROOT;
+    document.body.appendChild(rootDiv);
+
     const { result } = renderHook(() =>
       useMovementEvent({
         handler: mockHandler,
         eventTypes: ["pointerdown"],
       }),
+      { wrapper: Wrapper },
     );
-
-    const rootDiv = screen.getByTestId(ID_ROOT);
 
     // Pause tracking
     result.current.togglePointerMovementTracking(true);

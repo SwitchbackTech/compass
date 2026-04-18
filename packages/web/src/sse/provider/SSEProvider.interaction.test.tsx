@@ -16,40 +16,55 @@ import {
   resetGoogleSyncUIStateForTests,
   setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
-import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
-import { useGcalSSE } from "../hooks/useGcalSSE";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
-jest.mock("@web/auth/google/util/google.auth.util", () => ({
-  handleGoogleRevoked: jest.fn(),
+const closeStream = mock();
+const getStream = mock(() => null);
+const mockHandleGoogleRevoked = mock();
+const mockDismissErrorToast = mock();
+const mockShowErrorToast = mock();
+const mockShowSessionExpiredToast = mock();
+const openStream = mock();
+const refreshUserMetadata = mock().mockResolvedValue(undefined);
+
+mock.module("@web/auth/google/util/google.auth.util", () => ({
+  authenticate: mock(),
+  handleGoogleRevoked: mockHandleGoogleRevoked,
+  showLocalEventsSyncFailure: mock(),
+  syncLocalEvents: mock(),
+  syncPendingLocalEvents: mock(),
 }));
-jest.mock("@web/auth/compass/user/util/user-metadata.util", () => ({
-  refreshUserMetadata: jest.fn().mockResolvedValue(undefined),
+mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
+  refreshUserMetadata,
 }));
-jest.mock("@web/common/utils/toast/error-toast.util", () => ({
-  showErrorToast: jest.fn(),
+mock.module("@web/common/utils/toast/error-toast.util", () => ({
+  dismissErrorToast: mockDismissErrorToast,
+  ErrorToastSeverity: {
+    CRITICAL: "critical",
+    DEFAULT: "default",
+  },
+  SESSION_EXPIRED_TOAST_ID: "session-expired-api",
+  showErrorToast: mockShowErrorToast,
+  showSessionExpiredToast: mockShowSessionExpiredToast,
 }));
-jest.mock("../client/sse.client", () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports, @typescript-eslint/no-unsafe-assignment
-  const { EventEmitter2 } = require("eventemitter2");
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-assignment
+mock.module("../client/sse.client", () => {
+  const { EventEmitter2 } = require("eventemitter2") as {
+    EventEmitter2: new (options?: { maxListeners?: number }) => EventEmitter2;
+  };
   const sseEmitter = new EventEmitter2({ maxListeners: 20 });
   return {
-    openStream: jest.fn(),
-    closeStream: jest.fn(),
-    getStream: jest.fn(() => null),
-    sseEmitter: sseEmitter as unknown as EventEmitter2,
+    openStream,
+    closeStream,
+    getStream,
+    sseEmitter,
   };
 });
 
-const mockHandleGoogleRevoked = handleGoogleRevoked as jest.MockedFunction<
-  typeof handleGoogleRevoked
->;
-const mockShowErrorToast = showErrorToast as jest.MockedFunction<
-  typeof showErrorToast
->;
+const { useGcalSSE } =
+  require("../hooks/useGcalSSE") as typeof import("../hooks/useGcalSSE");
 
 const HookHost = () => {
   useGcalSSE();
@@ -57,7 +72,6 @@ const HookHost = () => {
 };
 
 const getSseEmitter = () => {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
   return (require("../client/sse.client") as { sseEmitter: EventEmitter2 })
     .sseEmitter;
 };
@@ -92,7 +106,15 @@ describe("useGcalSSE", () => {
     });
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    closeStream.mockClear();
+    getStream.mockClear();
+    getSseEmitter().removeAllListeners();
+    mockHandleGoogleRevoked.mockClear();
+    mockDismissErrorToast.mockClear();
+    mockShowErrorToast.mockClear();
+    mockShowSessionExpiredToast.mockClear();
+    openStream.mockClear();
+    refreshUserMetadata.mockClear();
     resetGoogleSyncUIStateForTests();
   });
 
@@ -229,4 +251,8 @@ describe("useGcalSSE", () => {
       expect(mockHandleGoogleRevoked).toHaveBeenCalledTimes(1);
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

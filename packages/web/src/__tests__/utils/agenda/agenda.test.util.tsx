@@ -2,12 +2,11 @@ import "@testing-library/jest-dom";
 import { type Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import * as eventSelectors from "@web/ducks/events/selectors/event.selectors";
-import * as reduxStore from "@web/store";
-import { store } from "@web/store";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { renderWithDayProviders } from "@web/views/Day/util/day.test-util";
+import { spyOn } from "bun:test";
 
-export const selectIsDayEventsProcessingSpy = jest.spyOn(
+export const selectIsDayEventsProcessingSpy = spyOn(
   eventSelectors,
   "selectIsDayEventsProcessing",
 );
@@ -19,13 +18,6 @@ export const renderAgenda = (
   selectIsDayEventsProcessingSpy.mockReturnValue(!!options?.isProcessing);
 
   const newStore = createStoreWithEvents(events, options);
-
-  jest.replaceProperty(
-    reduxStore,
-    "store",
-    newStore as unknown as typeof reduxStore.store,
-  );
-
-  const utils = renderWithDayProviders(<Agenda />, { store });
-  return { ...utils, store };
+  const utils = renderWithDayProviders(<Agenda />, { store: newStore });
+  return { ...utils, store: newStore };
 };

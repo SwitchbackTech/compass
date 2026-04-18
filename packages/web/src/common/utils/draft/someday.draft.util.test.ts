@@ -1,31 +1,35 @@
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
-import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 // Mock assembleDefaultEvent since it makes external calls
-jest.mock("../event/event.util", () => ({
-  assembleDefaultEvent: jest
-    .fn()
-    .mockImplementation(async (_, startDate, endDate) => ({
-      _id: "mock-id",
-      user: "mock-user",
-      title: "",
-      startDate,
-      endDate,
-      isAllDay: false,
-      isSomeday: true,
-    })),
+const assembleDefaultEvent = mock(async (_, startDate, endDate) => ({
+  _id: "mock-id",
+  user: "mock-user",
+  title: "",
+  startDate,
+  endDate,
+  isAllDay: false,
+  isSomeday: true,
 }));
 
+mock.module("../event/event.util", () => ({
+  assembleDefaultEvent,
+}));
+
+const { createSomedayDraft } =
+  require("@web/common/utils/draft/someday.draft.util") as typeof import("@web/common/utils/draft/someday.draft.util");
+
 describe("createSomedayDraft", () => {
-  const mockDispatch = jest.fn();
+  const mockDispatch = mock();
   const mockActivity: Activity_DraftEvent = "sidebarClick";
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    assembleDefaultEvent.mockClear();
+    mockDispatch.mockClear();
   });
 
   it("should set correct dates for week category", async () => {
@@ -103,4 +107,8 @@ describe("createSomedayDraft", () => {
       }),
     );
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

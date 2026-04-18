@@ -1,15 +1,16 @@
 import { screen } from "@testing-library/react";
 import { type ReactNode } from "react";
 import { render } from "@web/__tests__/utils/render.test.util";
-import { SidebarIconRow } from "@web/views/Calendar/components/Sidebar/SidebarIconRow";
+import { describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
-jest.mock("@web/common/hooks/useVersionCheck", () => ({
+mock.module("@web/common/hooks/useVersionCheck", () => ({
   useVersionCheck: () => ({
     isUpdateAvailable: false,
   }),
 }));
 
-jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
+mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
   TooltipWrapper: ({
     children,
     description,
@@ -32,6 +33,9 @@ jest.mock("@web/components/Tooltip/TooltipWrapper", () => ({
   ),
 }));
 
+const { SidebarIconRow } =
+  require("@web/views/Calendar/components/Sidebar/SidebarIconRow") as typeof import("@web/views/Calendar/components/Sidebar/SidebarIconRow");
+
 describe("SidebarIconRow", () => {
   it("does not render the background import spinner in the sidebar", () => {
     render(<SidebarIconRow />);
@@ -42,4 +46,8 @@ describe("SidebarIconRow", () => {
       }),
     ).not.toBeInTheDocument();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

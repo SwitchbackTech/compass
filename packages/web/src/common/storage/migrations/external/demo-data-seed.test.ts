@@ -7,6 +7,7 @@ import {
   type Event_Core,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
 import {
@@ -16,16 +17,26 @@ import {
 import { demoDataSeedMigration } from "./demo-data-seed";
 
 describe("demoDataSeedMigration", () => {
+  let consoleLogSpy: ReturnType<typeof spyOn>;
+  let consoleWarnSpy: ReturnType<typeof spyOn>;
+  let consoleErrorSpy: ReturnType<typeof spyOn>;
+  let consoleInfoSpy: ReturnType<typeof spyOn>;
+  let consoleDebugSpy: ReturnType<typeof spyOn>;
+
   beforeEach(() => {
-    jest.spyOn(console, "log").mockImplementation(() => {});
-    jest.spyOn(console, "warn").mockImplementation(() => {});
-    jest.spyOn(console, "error").mockImplementation(() => {});
-    jest.spyOn(console, "info").mockImplementation(() => {});
-    jest.spyOn(console, "debug").mockImplementation(() => {});
+    consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
+    consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
+    consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
+    consoleInfoSpy = spyOn(console, "info").mockImplementation(() => {});
+    consoleDebugSpy = spyOn(console, "debug").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    consoleLogSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
+    consoleInfoSpy.mockRestore();
+    consoleDebugSpy.mockRestore();
   });
 
   it("seeds demo data when storage is empty", async () => {

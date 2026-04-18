@@ -1,4 +1,4 @@
-const lib = jest.requireActual("tabbable");
+const lib = require("tabbable");
 
 /*
 Mocks the 'tabbable' library, used by focus-trap

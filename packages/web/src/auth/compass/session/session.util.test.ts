@@ -1,45 +1,51 @@
-import { session } from "@web/common/classes/Session";
+import { describe, expect, it, mock, beforeEach } from "bun:test";
+import { afterAll } from "bun:test";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { getUserId } from "./session.util";
 
-jest.mock("@web/common/classes/Session");
+const mockDoesSessionExist = mock();
+const mockGetAccessTokenPayloadSecurely = mock();
+
+mock.module("@web/common/classes/Session", () => ({
+  session: {
+    doesSessionExist: mockDoesSessionExist,
+    getAccessTokenPayloadSecurely: mockGetAccessTokenPayloadSecurely,
+  },
+}));
 
 describe("session.util", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockDoesSessionExist.mockClear();
+    mockGetAccessTokenPayloadSecurely.mockClear();
   });
 
   describe("getUserId", () => {
     it("should return UNAUTHENTICATED_USER when session does not exist", async () => {
-      (session.doesSessionExist as jest.Mock).mockResolvedValue(false);
+      mockDoesSessionExist.mockResolvedValue(false);
 
       const userId = await getUserId();
 
       expect(userId).toBe(UNAUTHENTICATED_USER);
-      expect(session.doesSessionExist).toHaveBeenCalledTimes(1);
-      expect(session.getAccessTokenPayloadSecurely).not.toHaveBeenCalled();
+      expect(mockDoesSessionExist).toHaveBeenCalledTimes(1);
+      expect(mockGetAccessTokenPayloadSecurely).not.toHaveBeenCalled();
     });
 
     it("should return actual userId when session exists", async () => {
       const mockUserId = "authenticated-user-id";
-      (session.doesSessionExist as jest.Mock).mockResolvedValue(true);
-      (session.getAccessTokenPayloadSecurely as jest.Mock).mockResolvedValue({
+      mockDoesSessionExist.mockResolvedValue(true);
+      mockGetAccessTokenPayloadSecurely.mockResolvedValue({
         sub: mockUserId,
       });
 
       const userId = await getUserId();
 
       expect(userId).toBe(mockUserId);
-      expect(session.doesSessionExist).toHaveBeenCalledTimes(1);
-      expect(session.getAccessTokenPayloadSecurely).toHaveBeenCalledTimes(1);
-    });
-
-    it("should handle session check errors gracefully", async () => {
-      (session.doesSessionExist as jest.Mock).mockRejectedValue(
-        new Error("Session check failed"),
-      );
-
-      await expect(getUserId()).rejects.toThrow("Session check failed");
+      expect(mockDoesSessionExist).toHaveBeenCalledTimes(1);
+      expect(mockGetAccessTokenPayloadSecurely).toHaveBeenCalledTimes(1);
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

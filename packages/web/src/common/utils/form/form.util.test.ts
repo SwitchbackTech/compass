@@ -8,10 +8,11 @@ import {
   isContextMenuOpen,
   isEventFormOpen,
 } from "./form.util";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock DOM methods
-const mockGetElementsByName = jest.fn();
-const mockGetElementById = jest.fn();
+const mockGetElementsByName = mock();
+const mockGetElementById = mock();
 
 // Mock document
 Object.defineProperty(document, "getElementsByName", {
@@ -27,7 +28,8 @@ Object.defineProperty(document, "getElementById", {
 describe("form.util", () => {
   beforeEach(() => {
     // Reset all mocks before each test
-    jest.clearAllMocks();
+    mockGetElementById.mockClear();
+    mockGetElementsByName.mockClear();
   });
 
   describe("isEventFormOpen", () => {

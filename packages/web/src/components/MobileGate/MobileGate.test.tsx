@@ -1,14 +1,14 @@
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { render } from "@web/__tests__/__mocks__/mock.render";
 import { MobileGate } from "./MobileGate";
 
 describe("MobileGate", () => {
-  const mockWindowOpen = jest.fn();
+  const mockWindowOpen = mock();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mock.restore();
     window.open = mockWindowOpen;
   });
 

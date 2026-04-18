@@ -4,35 +4,34 @@
  * in tests without requiring real layout. We call the real useFloating and
  * only override refs and floatingStyles so other components (SelectView,
  * Tooltip) still receive a valid context. Individual test files may override
- * this mock with their own jest.mock("@floating-ui/react", ...).
+ * this mock with their own mock.module("@floating-ui/react", ...).
  */
-jest.mock("@floating-ui/react", () => {
-  const actual =
-    jest.requireActual<typeof import("@floating-ui/react")>(
-      "@floating-ui/react",
-    );
+import { mock } from "bun:test";
+
+const actual =
+  require("@floating-ui/react") as typeof import("@floating-ui/react");
+
+mock.module("@floating-ui/react", () => {
   return {
     ...actual,
-    useFloating: jest.fn(
-      (options: Parameters<typeof actual.useFloating>[0]) => {
-        const result = actual.useFloating({
-          ...options,
-          whileElementsMounted: options?.whileElementsMounted
-            ? jest.fn(() => jest.fn())
-            : undefined,
-        });
-        return {
-          ...result,
-          refs: {
-            setReference: jest.fn(),
-            setFloating: jest.fn(),
-          },
-          floatingStyles: {},
-        };
-      },
-    ),
-    autoUpdate: jest.fn(() => jest.fn()),
-    inline: jest.fn(() => () => {}),
-    offset: jest.fn(() => () => {}),
+    useFloating: mock((options: Parameters<typeof actual.useFloating>[0]) => {
+      const result = actual.useFloating({
+        ...options,
+        whileElementsMounted: options?.whileElementsMounted
+          ? mock(() => mock())
+          : undefined,
+      });
+      return {
+        ...result,
+        refs: {
+          setReference: mock(),
+          setFloating: mock(),
+        },
+        floatingStyles: {},
+      };
+    }),
+    autoUpdate: mock(() => mock()),
+    inline: mock(() => () => {}),
+    offset: mock(() => () => {}),
   };
 });

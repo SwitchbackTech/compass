@@ -1,54 +1,33 @@
 import { runSaga } from "redux-saga";
 import { type Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import {
+  clearAnonymousCalendarChangeSignUpPrompt,
+  shouldShowAnonymousCalendarChangeSignUpPrompt,
+} from "@web/auth/compass/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
-import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
-import type * as SagaUtil from "@web/ducks/events/sagas/saga.util";
-import { createEvent, editEvent } from "./event.sagas";
+import { editEventSlice } from "@web/ducks/events/slices/event.slice";
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-const mockHandleError = jest.fn<void, [unknown]>();
-const mockMarkAnonymousCalendarChangeForSignUpPrompt = jest.fn<void, []>();
-const mockCreateOptimisticGridEvent = jest.fn<
-  Generator<unknown, Schema_Event, unknown>,
-  unknown[]
->();
+const mockRepository = {
+  create: mock(),
+  delete: mock(),
+  edit: mock(),
+};
 
-jest.mock("@web/common/classes/Session", () => ({
-  session: {
-    doesSessionExist: jest.fn(),
-  },
+const mockGetEventRepository = mock(() => mockRepository);
+const mockSelectEventById = mock();
+
+mock.module("@web/common/repositories/event/event.repository.util", () => ({
+  getEventRepository: mockGetEventRepository,
 }));
 
-jest.mock("@web/common/repositories/event/event.repository.util", () => ({
-  getEventRepository: jest.fn(),
+mock.module("@web/ducks/events/selectors/event.selectors", () => ({
+  selectEventById: mockSelectEventById,
 }));
 
-jest.mock("@web/auth/google/state/google.auth.state", () => ({
-  isGoogleRevoked: jest.fn<boolean, []>(() => false),
-}));
-
-jest.mock("@web/auth/compass/state/auth.state.util", () => ({
-  hasUserEverAuthenticated: jest.fn<boolean, []>(() => false),
-  markAnonymousCalendarChangeForSignUpPrompt: (): void => {
-    mockMarkAnonymousCalendarChangeForSignUpPrompt();
-  },
-}));
-
-jest.mock("@web/common/utils/event/event.util", () => ({
-  handleError: (...args: [unknown]) => mockHandleError(...args),
-}));
-
-jest.mock("@web/ducks/events/sagas/saga.util", () => {
-  const actual: typeof SagaUtil = jest.requireActual(
-    "@web/ducks/events/sagas/saga.util",
-  );
-
-  return {
-    ...actual,
-    _createOptimisticGridEvent: (...args: unknown[]) =>
-      mockCreateOptimisticGridEvent(...args),
-  };
-});
+const { createEvent, editEvent } =
+  require("./event.sagas") as typeof import("./event.sagas");
 
 describe("event sign-up prompt failure paths", () => {
   const mockEvent = {
@@ -57,26 +36,42 @@ describe("event sign-up prompt failure paths", () => {
     isSomeday: false,
   } as Schema_Event;
 
+  let consoleErrorSpy: { mockRestore: () => void };
+  let doesSessionExistSpy: { mockRestore: () => void };
+  const originalEditError = editEventSlice.actions.error;
+
   beforeEach(() => {
-    jest.clearAllMocks();
-    (session.doesSessionExist as jest.Mock).mockResolvedValue(false);
-    // eslint-disable-next-line require-yield
-    mockCreateOptimisticGridEvent.mockImplementation(function* () {
-      return mockEvent;
-    });
+    clearAnonymousCalendarChangeSignUpPrompt();
+    mockGetEventRepository.mockClear();
+    mockRepository.create.mockClear();
+    mockRepository.delete.mockClear();
+    mockRepository.edit.mockClear();
+    mockSelectEventById.mockClear();
+    mockSelectEventById.mockReturnValue(mockEvent);
+    consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
+    editEventSlice.actions.error = (() => ({
+      type: "async/editEvent/error",
+    })) as typeof editEventSlice.actions.error;
+    doesSessionExistSpy = spyOn(session, "doesSessionExist").mockResolvedValue(
+      false,
+    );
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+    doesSessionExistSpy.mockRestore();
+    editEventSlice.actions.error = originalEditError;
+    clearAnonymousCalendarChangeSignUpPrompt();
   });
 
   it("does not mark the sign-up prompt when anonymous create fails", async () => {
-    const repository = {
-      create: jest.fn().mockRejectedValue(new Error("create failed")),
-      delete: jest.fn().mockResolvedValue(undefined),
-      edit: jest.fn(),
-    };
-    (getEventRepository as jest.Mock).mockReturnValue(repository);
+    mockRepository.create.mockImplementation(async () => {
+      throw new Error("create failed");
+    });
 
     await runSaga(
       {
-        dispatch: jest.fn(),
+        dispatch: mock(),
         getState: () => ({
           events: {
             entities: { value: {} },
@@ -88,22 +83,17 @@ describe("event sign-up prompt failure paths", () => {
       { payload: mockEvent } as never,
     ).toPromise();
 
-    expect(
-      mockMarkAnonymousCalendarChangeForSignUpPrompt,
-    ).not.toHaveBeenCalled();
+    expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(false);
   });
 
   it("does not mark the sign-up prompt when anonymous edit fails", async () => {
-    const repository = {
-      create: jest.fn(),
-      delete: jest.fn(),
-      edit: jest.fn().mockRejectedValue(new Error("edit failed")),
-    };
-    (getEventRepository as jest.Mock).mockReturnValue(repository);
+    mockRepository.edit.mockImplementation(async () => {
+      throw new Error("edit failed");
+    });
 
     await runSaga(
       {
-        dispatch: jest.fn(),
+        dispatch: mock(),
         getState: () => ({
           events: {
             entities: {
@@ -127,8 +117,6 @@ describe("event sign-up prompt failure paths", () => {
       } as never,
     ).toPromise();
 
-    expect(
-      mockMarkAnonymousCalendarChangeForSignUpPrompt,
-    ).not.toHaveBeenCalled();
+    expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(false);
   });
 });

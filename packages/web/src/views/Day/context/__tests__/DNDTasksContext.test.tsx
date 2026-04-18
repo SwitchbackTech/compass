@@ -1,15 +1,19 @@
 import { render, screen } from "@testing-library/react";
-import React, { act } from "react";
-import { DNDTasksProvider } from "@web/views/Day/context/DNDTasksContext";
-import { useDNDTasksContext } from "@web/views/Day/hooks/tasks/useDNDTasks";
-import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
+import React from "react";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
 // Mock the useTasks hook
-jest.mock("@web/views/Day/hooks/tasks/useTasks", () => ({
-  useTasks: jest.fn(),
+const mockUseTasks = mock();
+
+mock.module("@web/views/Day/hooks/tasks/useTasks", () => ({
+  useTasks: mockUseTasks,
 }));
 
-const mockUseTasks = useTasks as jest.MockedFunction<typeof useTasks>;
+const { DNDTasksProvider } =
+  require("@web/views/Day/context/DNDTasksContext") as typeof import("@web/views/Day/context/DNDTasksContext");
+const { useDNDTasksContext } =
+  require("@web/views/Day/hooks/tasks/useDNDTasks") as typeof import("@web/views/Day/hooks/tasks/useDNDTasks");
 
 describe("DNDTasksProvider", () => {
   const mockTasks = [
@@ -29,11 +33,13 @@ describe("DNDTasksProvider", () => {
     },
   ];
 
-  const mockSetSelectedTaskIndex = jest.fn();
-  const mockReorderTasks = jest.fn();
+  const mockSetSelectedTaskIndex = mock();
+  const mockReorderTasks = mock();
 
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockReorderTasks.mockClear();
+    mockSetSelectedTaskIndex.mockClear();
+    mockUseTasks.mockClear();
     mockUseTasks.mockReturnValue({
       tasks: mockTasks,
       setSelectedTaskIndex: mockSetSelectedTaskIndex,
@@ -68,7 +74,7 @@ describe("DNDTasksProvider", () => {
   });
 
   it("should call setSelectedTaskIndex and announce on drag start", () => {
-    const mockAnnounce = jest.fn();
+    const mockAnnounce = mock();
 
     // Create a test component that calls the context functions directly
     let capturedContext: any = null;
@@ -104,7 +110,7 @@ describe("DNDTasksProvider", () => {
   });
 
   it("should call reorderTasks and announce on drag end with valid destination", () => {
-    const mockAnnounce = jest.fn();
+    const mockAnnounce = mock();
 
     let capturedContext: any = null;
 
@@ -142,7 +148,7 @@ describe("DNDTasksProvider", () => {
   });
 
   it("should announce on drag update", () => {
-    const mockAnnounce = jest.fn();
+    const mockAnnounce = mock();
 
     let capturedContext: any = null;
 
@@ -180,7 +186,7 @@ describe("DNDTasksProvider", () => {
   });
 
   it("should announce cancellation on drag end", () => {
-    const mockAnnounce = jest.fn();
+    const mockAnnounce = mock();
 
     let capturedContext: any = null;
 
@@ -236,7 +242,7 @@ describe("DNDTasksProvider", () => {
               combine: null,
               mode: "FLUID",
             },
-            { announce: jest.fn() } as any,
+            { announce: mock() } as any,
           );
         }
       }, [capturedContext]);
@@ -271,7 +277,7 @@ describe("DNDTasksProvider", () => {
               combine: null,
               mode: "FLUID",
             },
-            { announce: jest.fn() } as any,
+            { announce: mock() } as any,
           );
         }
       }, [capturedContext]);
@@ -287,4 +293,8 @@ describe("DNDTasksProvider", () => {
 
     expect(mockReorderTasks).not.toHaveBeenCalled();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

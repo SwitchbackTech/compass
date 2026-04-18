@@ -1,3 +1,4 @@
+import { afterAll, beforeAll, describe, expect, it, setSystemTime } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { ObjectId } from "bson";
 import {
@@ -322,14 +323,13 @@ describe("computeRelativeEventDateRange", () => {
     endDate: "2024-03-20",
   };
 
-  // Set up fake timers
+  // Set up fixed time for consistent test results
   beforeAll(() => {
-    jest.useFakeTimers();
-    jest.setSystemTime(new Date("2024-03-15")); // A Friday
+    setSystemTime(new Date("2024-03-15")); // A Friday
   });
 
   afterAll(() => {
-    jest.useRealTimers();
+    setSystemTime(); // Reset to real time
   });
 
   describe("Event IDs", () => {

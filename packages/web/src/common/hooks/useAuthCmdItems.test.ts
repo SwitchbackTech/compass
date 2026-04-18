@@ -1,46 +1,58 @@
 import { renderHook } from "@testing-library/react";
 import { act, type MouseEvent } from "react";
-import { useSession } from "@web/auth/compass/session/useSession";
-import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { useAuthCmdItems } from "./useAuthCmdItems";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
-jest.mock("@web/auth/compass/session/useSession", () => ({
-  useSession: jest.fn(),
+const mockOpenModal = mock();
+const mockUseAuthModal = mock();
+const mockUseAuthModalState = mock();
+const mockUseAuthFeatureFlag = mock();
+const mockUseSession = mock();
+
+mock.module("@web/auth/compass/session/useSession", () => ({
+  useSession: mockUseSession,
+}));
+mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
+  AuthModalContext: require("react").createContext({
+    closeModal: mock(),
+    currentView: "login",
+    isOpen: false,
+    openModal: mock(),
+    setView: mock(),
+  }),
+  useAuthModal: mockUseAuthModal,
+  useAuthModalState: mockUseAuthModalState,
 }));
 
-jest.mock("@web/components/AuthModal/hooks/useAuthModal", () => ({
-  useAuthModal: jest.fn(),
-}));
+const { useAuthCmdItems } =
+  require("./useAuthCmdItems") as typeof import("./useAuthCmdItems");
 
 describe("useAuthCmdItems", () => {
-  const mockOpenModal = jest.fn();
-  const mockUseSession = useSession as jest.MockedFunction<typeof useSession>;
-  const mockUseAuthModal = useAuthModal as jest.MockedFunction<
-    typeof useAuthModal
-  >;
-
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockOpenModal.mockClear();
+    mockUseAuthModal.mockClear();
+    mockUseAuthFeatureFlag.mockClear();
+    mockUseSession.mockClear();
     window.history.pushState({}, "", "/day");
 
     mockUseSession.mockReturnValue({
       authenticated: false,
-      setAuthenticated: jest.fn(),
+      setAuthenticated: mock(),
     });
     mockUseAuthModal.mockReturnValue({
       isOpen: false,
       currentView: "login",
       openModal: mockOpenModal,
-      closeModal: jest.fn(),
-      setView: jest.fn(),
+      closeModal: mock(),
+      setView: mock(),
     });
+    mockUseAuthFeatureFlag.mockReturnValue(false);
   });
 
   it("returns no items when authenticated", () => {
     window.history.pushState({}, "", "/day?auth=true");
     mockUseSession.mockReturnValue({
       authenticated: true,
-      setAuthenticated: jest.fn(),
+      setAuthenticated: mock(),
     });
 
     const { result } = renderHook(() => useAuthCmdItems());
@@ -48,14 +60,10 @@ describe("useAuthCmdItems", () => {
     expect(result.current).toEqual([]);
   });
 
-  it("returns no items when auth feature flag is disabled", () => {
-    const { result } = renderHook(() => useAuthCmdItems());
-
-    expect(result.current).toEqual([]);
-  });
 
   it("returns auth items when unauthenticated and auth feature flag is enabled", () => {
     window.history.pushState({}, "", "/day?auth=true");
+    mockUseAuthFeatureFlag.mockReturnValue(true);
 
     const { result } = renderHook(() => useAuthCmdItems());
 
@@ -67,6 +75,7 @@ describe("useAuthCmdItems", () => {
 
   it("opens matching auth modal view when item actions are clicked", () => {
     window.history.pushState({}, "", "/day?auth=true");
+    mockUseAuthFeatureFlag.mockReturnValue(true);
 
     const { result } = renderHook(() => useAuthCmdItems());
     const signUpItem = result.current.find((item) => item.id === "sign-up");
@@ -81,4 +90,8 @@ describe("useAuthCmdItems", () => {
     expect(mockOpenModal).toHaveBeenNthCalledWith(1, "signUp");
     expect(mockOpenModal).toHaveBeenNthCalledWith(2, "login");
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

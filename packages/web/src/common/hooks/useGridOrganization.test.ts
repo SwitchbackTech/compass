@@ -1,5 +1,13 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { act } from "react";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
@@ -8,36 +16,38 @@ import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
 
 describe("useGridOrganization", () => {
   const rectMap = new Map<HTMLElement, DOMRect>();
+  let getBoundingClientRectSpy: ReturnType<typeof spyOn>;
 
   beforeAll(() => {
-    jest
-      .spyOn(Element.prototype, "getBoundingClientRect")
-      .mockImplementation(function (this: HTMLElement) {
-        const rect = rectMap.get(this);
-        return (
-          rect ||
-          ({
-            x: 0,
-            y: 0,
-            width: 0,
-            height: 0,
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            toJSON: () => {},
-          } as DOMRect)
-        );
-      });
+    getBoundingClientRectSpy = spyOn(
+      Element.prototype,
+      "getBoundingClientRect",
+    ).mockImplementation(function (this: HTMLElement) {
+      const rect = rectMap.get(this);
+      return (
+        rect ||
+        ({
+          x: 0,
+          y: 0,
+          width: 0,
+          height: 0,
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          toJSON: () => {},
+        } as DOMRect)
+      );
+    });
   });
 
   afterEach(() => {
     rectMap.clear();
-    jest.clearAllMocks();
+    getBoundingClientRectSpy.mockClear();
   });
 
   afterAll(() => {
-    jest.restoreAllMocks();
+    getBoundingClientRectSpy.mockRestore();
   });
 
   it("should reorder grid when nodes are added", async () => {

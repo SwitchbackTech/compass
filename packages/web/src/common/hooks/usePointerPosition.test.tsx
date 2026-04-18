@@ -1,34 +1,59 @@
 import { renderHook } from "@testing-library/react";
 import type React from "react";
-import {
-  cursor$,
-  PointerPositionContext,
-  pointerState$,
-} from "@web/common/context/pointer-position";
-import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
+import { readFile, writeFile } from "node:fs/promises";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-// Mock @floating-ui/react
-jest.mock("@floating-ui/react", () => ({
-  useFloating: jest.fn(() => ({
-    context: {},
-    x: 0,
-    y: 0,
-    placement: "right-start",
-    strategy: "fixed",
-    refs: {
-      setFloating: jest.fn(),
-      setReference: jest.fn(),
+const transpiler = new Bun.Transpiler({
+  autoImportJSX: true,
+  tsconfig: {
+    compilerOptions: {
+      jsx: "react-jsxdev",
+      jsxImportSource: "react",
     },
-  })),
-  useDismiss: jest.fn(),
-  useInteractions: jest.fn(() => ({
-    getFloatingProps: jest.fn(),
-  })),
-  autoUpdate: jest.fn(),
-  flip: jest.fn(),
-  offset: jest.fn(),
-  shift: jest.fn(),
-}));
+  },
+});
+
+async function loadTempModule(
+  sourceUrl: URL,
+  replacements: Record<string, string> = {},
+  loader: "ts" | "tsx" = "ts",
+) {
+  const source = await readFile(sourceUrl, "utf8");
+  const transformedSource = Object.entries(replacements).reduce(
+    (accumulator, [from, to]) => accumulator.replaceAll(from, to),
+    source,
+  );
+  const tempUrl = new URL(
+    `./.${sourceUrl.pathname.split("/").pop()}-${process.pid}-${Date.now()}-${Math.random()
+      .toString(16)
+      .slice(2)}.mjs`,
+    sourceUrl,
+  );
+  const transformedJavaScript = transpiler.transformSync(
+    transformedSource,
+    loader,
+  );
+  await writeFile(tempUrl, transformedJavaScript);
+  return tempUrl;
+}
+
+const pointerPositionUrl = await loadTempModule(
+  new URL("../context/pointer-position.tsx", import.meta.url),
+  {},
+  "tsx",
+);
+const pointerPositionHookUrl = await loadTempModule(
+  new URL("./usePointerPosition.ts", import.meta.url),
+  {
+    "@web/common/context/pointer-position": pointerPositionUrl.href,
+  },
+  "ts",
+);
+
+const { cursor$, PointerPositionContext, pointerState$ } = await import(
+  pointerPositionUrl.href
+);
+const { usePointerPosition } = await import(pointerPositionHookUrl.href);
 
 describe("usePointerPosition hooks", () => {
   beforeEach(() => {
@@ -49,9 +74,7 @@ describe("usePointerPosition hooks", () => {
   describe("usePointerPosition", () => {
     it("should throw error when used outside provider", () => {
       // Suppress console.error for the expected error
-      const consoleSpy = jest
-        .spyOn(console, "error")
-        .mockImplementation(() => {});
+      const consoleSpy = spyOn(console, "error").mockImplementation(() => {});
 
       expect(() => {
         renderHook(() => usePointerPosition());
@@ -63,7 +86,7 @@ describe("usePointerPosition hooks", () => {
     });
 
     it("should return context value when used within provider", () => {
-      const mockContext = { togglePointerMovementTracking: jest.fn() };
+      const mockContext = { togglePointerMovementTracking: mock() };
       const wrapper = ({ children }: { children: React.ReactNode }) => (
         <PointerPositionContext.Provider value={mockContext}>
           {children}

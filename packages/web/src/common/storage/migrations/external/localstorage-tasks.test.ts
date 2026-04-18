@@ -1,26 +1,31 @@
 /**
  * Tests for the localStorage tasks migration.
  */
+import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
 import { localStorageTasksMigration } from "./localstorage-tasks";
 
 const TASK_KEY_PREFIX = "compass.today.tasks.";
 
-function createMockAdapter(): jest.Mocked<StorageAdapter> {
+type MockedStorageAdapter = {
+  [K in keyof StorageAdapter]: ReturnType<typeof mock>;
+};
+
+function createMockAdapter(): MockedStorageAdapter {
   const tasksByDate = new Map<string, ReturnType<typeof createMockTask>[]>();
 
   return {
-    initialize: jest.fn().mockResolvedValue(undefined),
-    isReady: jest.fn().mockReturnValue(true),
-    getTasks: jest.fn().mockImplementation(async (dateKey: string) => {
+    initialize: mock().mockResolvedValue(undefined),
+    isReady: mock().mockReturnValue(true),
+    getTasks: mock().mockImplementation(async (dateKey: string) => {
       return tasksByDate.get(dateKey) ?? [];
     }),
-    getAllTasks: jest.fn().mockResolvedValue([]),
-    putTasks: jest.fn().mockImplementation(async (dateKey: string, tasks) => {
+    getAllTasks: mock().mockResolvedValue([]),
+    putTasks: mock().mockImplementation(async (dateKey: string, tasks) => {
       tasksByDate.set(dateKey, tasks);
     }),
-    putTask: jest.fn().mockImplementation(async (dateKey: string, task) => {
+    putTask: mock().mockImplementation(async (dateKey: string, task) => {
       const existing = tasksByDate.get(dateKey) ?? [];
       const index = existing.findIndex((t) => t._id === task._id);
       const updated =
@@ -29,21 +34,24 @@ function createMockAdapter(): jest.Mocked<StorageAdapter> {
           : [...existing, task];
       tasksByDate.set(dateKey, updated);
     }),
-    deleteTask: jest.fn().mockResolvedValue(undefined),
-    moveTask: jest.fn().mockResolvedValue(undefined),
-    clearAllTasks: jest.fn().mockResolvedValue(undefined),
-    getEvents: jest.fn().mockResolvedValue([]),
-    getAllEvents: jest.fn().mockResolvedValue([]),
-    putEvent: jest.fn().mockResolvedValue(undefined),
-    putEvents: jest.fn().mockResolvedValue(undefined),
-    deleteEvent: jest.fn().mockResolvedValue(undefined),
-    clearAllEvents: jest.fn().mockResolvedValue(undefined),
-    getMigrationRecords: jest.fn().mockResolvedValue([]),
-    setMigrationRecord: jest.fn().mockResolvedValue(undefined),
+    deleteTask: mock().mockResolvedValue(undefined),
+    moveTask: mock().mockResolvedValue(undefined),
+    clearAllTasks: mock().mockResolvedValue(undefined),
+    getEvents: mock().mockResolvedValue([]),
+    getAllEvents: mock().mockResolvedValue([]),
+    putEvent: mock().mockResolvedValue(undefined),
+    putEvents: mock().mockResolvedValue(undefined),
+    deleteEvent: mock().mockResolvedValue(undefined),
+    clearAllEvents: mock().mockResolvedValue(undefined),
+    getMigrationRecords: mock().mockResolvedValue([]),
+    setMigrationRecord: mock().mockResolvedValue(undefined),
+    close: mock(),
   };
 }
 
 describe("localStorageTasksMigration", () => {
+  let consoleWarnSpy: ReturnType<typeof spyOn>;
+
   beforeEach(() => {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -51,11 +59,11 @@ describe("localStorageTasksMigration", () => {
         localStorage.removeItem(key);
       }
     }
-    jest.spyOn(console, "warn").mockImplementation(() => {});
+    consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
   });
 
   afterEach(() => {
-    jest.restoreAllMocks();
+    consoleWarnSpy.mockRestore();
   });
 
   it("skips when no task keys exist in localStorage", async () => {
@@ -163,7 +171,7 @@ describe("localStorageTasksMigration", () => {
   });
 
   it("skips invalid JSON entries and keeps them for retry", async () => {
-    jest.spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
 
     const validTask = createMockTask({ _id: "task-1" });
     const dateKey = "2025-01-15";

@@ -1,38 +1,52 @@
-import { DndContext, useSensor } from "@dnd-kit/core";
 import { render, screen } from "@testing-library/react";
-import { isDraggingEvent$ } from "@web/common/hooks/useIsDraggingEvent";
-import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
-import { DNDContext } from "@web/components/DND/DNDContext";
+import { type ReactNode } from "react";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { afterAll } from "bun:test";
+import { BehaviorSubject } from "rxjs";
 
-jest.mock("@web/common/hooks/usePointerPosition");
-jest.mock("@web/common/hooks/useIsDraggingEvent", () => ({
-  isDraggingEvent$: {
-    next: jest.fn(),
-  },
+const DndContext = mock(({ children }: { children: ReactNode }) => (
+  <div data-testid="dnd-context">{children}</div>
+));
+const usePointerPosition = mock();
+const useSensor = mock();
+const useSensors = mock();
+const { isDraggingEvent$ } = require("@web/common/hooks/useIsDraggingEvent");
+let isDraggingNextSpy: any = null;
+
+mock.module("@web/common/hooks/usePointerPosition", () => ({
+  usePointerPosition,
 }));
 
-jest.mock("@dnd-kit/core", () => ({
-  DndContext: jest.fn(({ children }) => (
-    <div data-testid="dnd-context">{children}</div>
-  )),
+
+mock.module("@dnd-kit/core", () => ({
+  DndContext,
+  DragOverlay: ({ children }: { children: ReactNode }) => children,
   KeyboardSensor: "KeyboardSensor",
   MouseSensor: "MouseSensor",
   TouchSensor: "TouchSensor",
-  useSensor: jest.fn(),
-  useSensors: jest.fn(),
+  useDndContext: mock(),
+  useDraggable: mock(),
+  useDroppable: mock(),
+  useSensor,
+  useSensors,
 }));
 
+const { DNDContext } =
+  require("@web/components/DND/DNDContext") as typeof import("@web/components/DND/DNDContext");
+
 describe("DNDContext", () => {
-  const mockTogglePointerMovementTracking = jest.fn();
+  const mockTogglePointerMovementTracking = mock();
 
   beforeEach(() => {
-    (usePointerPosition as jest.Mock).mockReturnValue({
+    usePointerPosition.mockReturnValue({
       togglePointerMovementTracking: mockTogglePointerMovementTracking,
     });
     mockTogglePointerMovementTracking.mockClear();
-    (isDraggingEvent$.next as jest.Mock).mockClear();
-    (useSensor as jest.Mock).mockClear();
-    (DndContext as unknown as jest.Mock).mockClear();
+    if (isDraggingNextSpy) isDraggingNextSpy.mockClear();
+    isDraggingNextSpy = spyOn(isDraggingEvent$, "next");
+    useSensor.mockClear();
+    useSensors.mockClear();
+    DndContext.mockClear();
   });
 
   it("renders children wrapped in DndContext", () => {
@@ -55,18 +69,19 @@ describe("DNDContext", () => {
 
     // Find the call to useSensor that has onActivation
     // useSensor is called multiple times. We need to find one with onActivation in options.
-    const calls = (useSensor as jest.Mock).mock.calls;
-    const activationCall = calls.find(
-      (call) => call[1] && call[1].onActivation,
+    const activationCall = useSensor.mock.calls.find(
+      (call) => call[1]?.onActivation,
     );
 
     expect(activationCall).toBeDefined();
-    const onActivation = activationCall[1].onActivation;
+    if (!activationCall?.[1]?.onActivation) {
+      throw new Error("Expected useSensor to receive onActivation");
+    }
 
-    onActivation();
+    activationCall[1].onActivation();
 
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(true);
-    expect(isDraggingEvent$.next).toHaveBeenCalledWith(true);
+    expect(isDraggingNextSpy).toHaveBeenCalledWith(true);
   });
 
   it("calls togglePointerMovementTracking(false) and isDraggingEvent$.next(false) on deactivation via onDragEnd", () => {
@@ -76,14 +91,11 @@ describe("DNDContext", () => {
       </DNDContext>,
     );
 
-    const dndContextProps = (DndContext as unknown as jest.Mock).mock
-      .calls[0][0];
-    const onDragEnd = dndContextProps.onDragEnd;
-
-    onDragEnd();
+    const dndContextProps = DndContext.mock.calls[0]?.[0];
+    dndContextProps.onDragEnd();
 
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(false);
-    expect(isDraggingEvent$.next).toHaveBeenCalledWith(false);
+    expect(isDraggingNextSpy).toHaveBeenCalledWith(false);
   });
 
   it("calls togglePointerMovementTracking(false) and isDraggingEvent$.next(false) on deactivation via onDragCancel", () => {
@@ -93,14 +105,11 @@ describe("DNDContext", () => {
       </DNDContext>,
     );
 
-    const dndContextProps = (DndContext as unknown as jest.Mock).mock
-      .calls[0][0];
-    const onDragCancel = dndContextProps.onDragCancel;
-
-    onDragCancel();
+    const dndContextProps = DndContext.mock.calls[0]?.[0];
+    dndContextProps.onDragCancel();
 
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(false);
-    expect(isDraggingEvent$.next).toHaveBeenCalledWith(false);
+    expect(isDraggingNextSpy).toHaveBeenCalledWith(false);
   });
 
   it("calls togglePointerMovementTracking(false) and isDraggingEvent$.next(false) on deactivation via onDragAbort", () => {
@@ -110,13 +119,14 @@ describe("DNDContext", () => {
       </DNDContext>,
     );
 
-    const dndContextProps = (DndContext as unknown as jest.Mock).mock
-      .calls[0][0];
-    const onDragAbort = dndContextProps.onDragAbort;
-
-    onDragAbort();
+    const dndContextProps = DndContext.mock.calls[0]?.[0];
+    dndContextProps.onDragAbort();
 
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(false);
-    expect(isDraggingEvent$.next).toHaveBeenCalledWith(false);
+    expect(isDraggingNextSpy).toHaveBeenCalledWith(false);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

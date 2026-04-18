@@ -2,6 +2,14 @@ import { type Placement, type Strategy } from "@floating-ui/react";
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
+import {
   CursorItem,
   closeFloatingAtCursor,
   isOpenAtCursor,
@@ -24,7 +32,20 @@ import {
 } from "./useOpenAtCursor";
 
 describe("useOpenAtCursor", () => {
+  let setTimeoutSpy: ReturnType<typeof spyOn>;
+  let timeoutCallbacks: Array<() => void> = [];
+
   beforeEach(() => {
+    timeoutCallbacks = [];
+    setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+      callback: TimerHandler,
+    ) => {
+      if (typeof callback === "function") {
+        timeoutCallbacks.push(callback);
+      }
+      return timeoutCallbacks.length;
+    }) as typeof setTimeout);
+
     // Reset state before each test
     open$.next(false);
     nodeId$.next(null);
@@ -32,6 +53,17 @@ describe("useOpenAtCursor", () => {
     strategy$.next("absolute");
     reference$.next(null);
   });
+
+  afterEach(() => {
+    setTimeoutSpy.mockRestore();
+  });
+
+  const runAllTimers = () => {
+    for (const callback of timeoutCallbacks) {
+      callback();
+    }
+    timeoutCallbacks = [];
+  };
 
   describe("Hooks", () => {
     it("useFloatingOpenAtCursor should return current open state", () => {
@@ -94,8 +126,7 @@ describe("useOpenAtCursor", () => {
   });
 
   describe("Functions", () => {
-    it("openFloatingAtCursor should set all values correctly after delay", async () => {
-      jest.useFakeTimers();
+    it("openFloatingAtCursor should set all values correctly after delay", () => {
       const element = document.createElement("div");
       const config = {
         nodeId: CursorItem.EventPreview,
@@ -110,19 +141,16 @@ describe("useOpenAtCursor", () => {
       expect(open$.getValue()).toBe(false);
 
       // Fast-forward microtasks and timers
-      jest.runAllTimers();
+      runAllTimers();
 
       expect(nodeId$.getValue()).toBe(config.nodeId);
       expect(placement$.getValue()).toBe(config.placement);
       expect(strategy$.getValue()).toBe(config.strategy);
       expect(reference$.getValue()).toBe(config.reference);
       expect(open$.getValue()).toBe(true);
-
-      jest.useRealTimers();
     });
 
-    it("openFloatingAtCursor should close existing floating before opening new one", async () => {
-      jest.useFakeTimers();
+    it("openFloatingAtCursor should close existing floating before opening new one", () => {
       // Set initial state
       open$.next(true);
       nodeId$.next(CursorItem.EventForm);
@@ -138,12 +166,10 @@ describe("useOpenAtCursor", () => {
       expect(nodeId$.getValue()).toBe(null);
 
       // Then opened after delay
-      jest.runAllTimers();
+      runAllTimers();
 
       expect(open$.getValue()).toBe(true);
       expect(nodeId$.getValue()).toBe(CursorItem.EventPreview);
-
-      jest.useRealTimers();
     });
 
     it("closeFloatingAtCursor should reset all values", () => {

@@ -1,6 +1,14 @@
 /**
  * Tests for the migration runners.
  */
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  spyOn,
+} from "bun:test";
 import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
 import { DEMO_DATA_SEED_FLAG_KEY } from "@web/common/storage/migrations/external/demo-data-seed";
 import {
@@ -13,6 +21,10 @@ describe("storage migrations", () => {
   const localStorageMigrationFlagKey =
     "compass.migration.localstorage-tasks-v1";
   const taskStoragePrefix = "compass.today.tasks.";
+
+  let consoleLogSpy: ReturnType<typeof spyOn>;
+  let consoleErrorSpy: ReturnType<typeof spyOn>;
+  let consoleWarnSpy: ReturnType<typeof spyOn>;
 
   function clearTaskStorageKeys(): void {
     const keysToRemove: string[] = [];
@@ -29,16 +41,18 @@ describe("storage migrations", () => {
     localStorage.removeItem(localStorageMigrationFlagKey);
     localStorage.removeItem(DEMO_DATA_SEED_FLAG_KEY);
     clearTaskStorageKeys();
-    jest.spyOn(console, "log").mockImplementation(() => {});
-    jest.spyOn(console, "error").mockImplementation(() => {});
-    jest.spyOn(console, "warn").mockImplementation(() => {});
+    consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
+    consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
+    consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
   });
 
   afterEach(() => {
     localStorage.removeItem(localStorageMigrationFlagKey);
     localStorage.removeItem(DEMO_DATA_SEED_FLAG_KEY);
     clearTaskStorageKeys();
-    jest.restoreAllMocks();
+    consoleLogSpy.mockRestore();
+    consoleErrorSpy.mockRestore();
+    consoleWarnSpy.mockRestore();
   });
 
   describe("runDataMigrations", () => {
@@ -93,7 +107,7 @@ describe("storage migrations", () => {
 
       const adapter = createMockStorageAdapter();
 
-      await expect(runExternalMigrations(adapter)).resolves.not.toThrow();
+      await expect(runExternalMigrations(adapter)).resolves.toBeUndefined();
       // localStorage migration should not be marked completed due to invalid JSON
       expect(localStorage.getItem(localStorageMigrationFlagKey)).toBeNull();
     });

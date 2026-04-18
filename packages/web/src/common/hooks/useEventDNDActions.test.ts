@@ -1,4 +1,13 @@
-import { useDndMonitor } from "@dnd-kit/core";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
+import { afterAll } from "bun:test";
+import { readFile, writeFile } from "node:fs/promises";
 import { renderHook } from "@testing-library/react";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -6,47 +15,108 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
-import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { useAppDispatch } from "@web/store/store.hooks";
-import { getSnappedMinutes } from "@web/views/Day/util/agenda/agenda.util";
+import { BehaviorSubject } from "rxjs";
 
-jest.mock("@dnd-kit/core", () => ({
-  useDndMonitor: jest.fn(),
+// Mock definitions
+const useDndMonitor = mock();
+const dndKitQuery = "@dnd-kit/core?test=use-event-dnd-actions";
+const mockUpdateEvent = mock();
+const mockDispatch = mock();
+const mockGetSnappedMinutes = mock();
+const mockSelectEventById = mock();
+const openFloatingAtCursor = mock();
+const closeFloatingAtCursor = mock();
+const open$ = new BehaviorSubject(false);
+const nodeId$ = new BehaviorSubject(null);
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
+
+mock.module(dndKitQuery, () => ({
+  useDndMonitor,
 }));
 
-jest.mock("@web/common/hooks/useUpdateEvent", () => ({
-  useUpdateEvent: jest.fn(),
+mock.module("@web/common/hooks/useUpdateEvent", () => ({
+  useUpdateEvent: mock(() => mockUpdateEvent),
 }));
 
-jest.mock("@web/store/store.hooks", () => ({
-  useAppDispatch: jest.fn(),
+mock.module("@web/store/store.hooks", () => ({
+  useAppDispatch: mock(() => mockDispatch),
 }));
 
-jest.mock("@web/views/Day/util/agenda/agenda.util", () => ({
-  getSnappedMinutes: jest.fn(),
+mock.module("@web/views/Day/util/agenda/agenda.util", () => ({
+  // Provide a focused mock that includes the named export consumers expect.
+  // Keep a safe default for other exports so concurrent tests won't break imports.
+  getSnappedMinutes: mockGetSnappedMinutes,
+  getAgendaEventTitle: (event) => `${event?.title || ""} -`,
+  getAgendaEventTime: (d) => (d ? new Date(d).toISOString() : ""),
+  getAgendaEventPosition: (date) => 0,
+  getNowLinePosition: (date) => 0,
+  getEventTimeFromPosition: (_y, dateInView) => dateInView.startOf ? dateInView.startOf('day') : new Date(),
+  roundMinutesToNearestFifteen: (minutes) => Math.round(minutes / 15) * 15,
+  roundToNearestFifteenWithinHour: (minutes) => Math.min(45, Math.round(minutes / 15) * 15),
+  getEventHeight: (_event) => 4,
 }));
 
-jest.mock("@web/ducks/events/selectors/event.selectors", () => ({
-  selectEventById: jest.fn(),
+mock.module("@web/ducks/events/selectors/event.selectors", () => ({
+  selectEventById: mockSelectEventById,
 }));
 
-jest.mock("@web/store", () => ({
+mock.module("@web/store", () => ({
   store: {
-    getState: jest.fn(),
+    getState: mock(),
   },
 }));
 
-jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
-  isOpenAtCursor: jest.fn().mockReturnValue(false),
-  setFloatingReferenceAtCursor: jest.fn(),
-  CursorItem: { EventForm: "EventForm" },
-}));
+mock.module("@web/common/hooks/useOpenAtCursor", () => {
+  const real = require("@web/common/hooks/useOpenAtCursor");
+  return {
+    ...real,
+    openFloatingAtCursor,
+    closeFloatingAtCursor,
+    open$: real.open$,
+    nodeId$: real.nodeId$,
+    placement$: real.placement$,
+    strategy$: real.strategy$,
+    reference$: real.reference$,
+    isOpenAtCursor: mock(() => false),
+    setFloatingReferenceAtCursor: mock(),
+    setFloatingOpenAtCursor: mock(),
+    setFloatingNodeIdAtCursor: mock(),
+    setFloatingPlacementAtCursor: mock(),
+    setFloatingStrategyAtCursor: mock(),
+    CursorItem: { EventForm: "EventForm" },
+    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
+    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
+    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
+    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
+    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+  };
+});
+
+const transpiler = new Bun.Transpiler();
+
+const useEventDNDActionsSource = await readFile(
+  new URL("./useEventDNDActions.ts", import.meta.url),
+  "utf8",
+);
+const useEventDNDActionsJavaScript = transpiler.transformSync(
+  useEventDNDActionsSource.replaceAll(
+    "@dnd-kit/core",
+    "@dnd-kit/core?test=use-event-dnd-actions",
+  ),
+  "ts",
+);
+
+const useEventDNDActionsTempUrl = new URL(
+  `./.useEventDNDActions-${process.pid}-${Date.now()}.mjs`,
+  import.meta.url,
+);
+await writeFile(useEventDNDActionsTempUrl, useEventDNDActionsJavaScript);
+
+const { useEventDNDActions } = await import(useEventDNDActionsTempUrl.href);
 
 describe("useEventDNDActions", () => {
-  const mockDispatch = jest.fn();
-  const mockUpdateEvent = jest.fn();
   const mockEvent = {
     _id: "event-1",
     startDate: "2023-01-01T10:00:00.000Z",
@@ -55,10 +125,12 @@ describe("useEventDNDActions", () => {
   };
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useAppDispatch as jest.Mock).mockReturnValue(mockDispatch);
-    (useUpdateEvent as jest.Mock).mockReturnValue(mockUpdateEvent);
-    (selectEventById as jest.Mock).mockReturnValue(mockEvent);
+    mockUpdateEvent.mockClear();
+    mockDispatch.mockClear();
+    mockGetSnappedMinutes.mockClear();
+    mockSelectEventById.mockClear();
+    
+    mockSelectEventById.mockReturnValue(mockEvent);
   });
 
   it("should register dnd monitor", () => {
@@ -76,11 +148,11 @@ describe("useEventDNDActions", () => {
 
     beforeEach(() => {
       renderHook(() => useEventDNDActions());
-      onDragEnd = (useDndMonitor as jest.Mock).mock.calls[0][0].onDragEnd;
+      onDragEnd = (useDndMonitor as any).mock.calls[0][0].onDragEnd;
     });
 
     it("should handle timed event move in main grid", () => {
-      (getSnappedMinutes as jest.Mock).mockReturnValue(60); // Moved 1 hour
+      mockGetSnappedMinutes.mockReturnValue(60); // Moved 1 hour
 
       const active = {
         data: {
@@ -116,7 +188,7 @@ describe("useEventDNDActions", () => {
     });
 
     it("should handle all-day event move to main grid", () => {
-      (getSnappedMinutes as jest.Mock).mockReturnValue(120); // Moved 2 hours
+      mockGetSnappedMinutes.mockReturnValue(120); // Moved 2 hours
 
       const allDayEvent = { ...mockEvent, isAllDay: true };
       const active = {
@@ -197,4 +269,8 @@ describe("useEventDNDActions", () => {
       expect(mockUpdateEvent).not.toHaveBeenCalled();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

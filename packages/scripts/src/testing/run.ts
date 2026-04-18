@@ -14,6 +14,7 @@ type BunRuntime = {
 
 type ProjectConfig = {
   cmd: string[];
+  cwd?: string;
 };
 
 const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
@@ -35,7 +36,8 @@ const TEST_PROJECTS = {
     cmd: ["./node_modules/.bin/jest", "scripts"],
   },
   web: {
-    cmd: ["./node_modules/.bin/jest", "web"],
+    cmd: ["bun", "test"],
+    cwd: resolve(process.cwd(), "packages/web"),
   },
 } satisfies Record<string, ProjectConfig>;
 
@@ -49,12 +51,10 @@ function assertBackendEnvFile() {
   process.env["BUN_CONFIG_NO_CLEAR_TERMINAL_ON_RELOAD"] = "true";
 }
 
-function runProject(projectName: keyof typeof TEST_PROJECTS) {
-  const project = TEST_PROJECTS[projectName];
-
+function runCommand(cmd: string[], cwd = process.cwd()) {
   const result = bunRuntime.spawnSync({
-    cmd: project.cmd,
-    cwd: process.cwd(),
+    cmd,
+    cwd,
     env: {
       ...process.env,
       NODE_ENV: "test",
@@ -68,6 +68,19 @@ function runProject(projectName: keyof typeof TEST_PROJECTS) {
   if (result.exitCode !== 0) {
     process.exit(result.exitCode);
   }
+}
+
+function runWebProject() {
+  runCommand(TEST_PROJECTS.web.cmd, TEST_PROJECTS.web.cwd);
+}
+
+function runProject(projectName: keyof typeof TEST_PROJECTS) {
+  if (projectName === "web") {
+    runWebProject();
+    return;
+  }
+
+  runCommand(TEST_PROJECTS[projectName].cmd);
 }
 
 function main() {

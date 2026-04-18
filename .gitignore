@@ -13,6 +13,7 @@ credentials.txt
 *.log
 *.mongodb
 *.tsbuildinfo
+*.mjs
 
 ########
 # DIRS #

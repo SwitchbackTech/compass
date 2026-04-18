@@ -1,3 +1,4 @@
+import { describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -59,7 +60,7 @@ describe("TooltipWrapper", () => {
   });
 
   it("calls onClick when tooltip trigger is clicked", () => {
-    const onClick = jest.fn();
+    const onClick = mock();
     render(
       <TooltipWrapper onClick={onClick}>
         <button>ClickMe</button>
@@ -70,7 +71,7 @@ describe("TooltipWrapper", () => {
   });
 
   it("does not call onClick when disabled", () => {
-    const onClick = jest.fn();
+    const onClick = mock();
     render(
       <TooltipWrapper disabled onClick={onClick}>
         <button>Disabled</button>

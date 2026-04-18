@@ -1,31 +1,35 @@
-import { MemoryRouter } from "react-router-dom";
+import { type ReactElement, type ReactNode } from "react";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { SelectView } from "./SelectView";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
-// Mock useNavigate
-const mockNavigate = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+const mockNavigate = mock();
+const actualReactRouterDom = await import("react-router-dom");
+
+mock.module("react-router-dom", () => ({
+  ...actualReactRouterDom,
   useNavigate: () => mockNavigate,
 }));
 
-// Mock ShortcutHint component
-jest.mock("@web/components/Shortcuts/ShortcutHint", () => ({
-  ShortcutHint: ({ children }: { children: React.ReactNode }) => (
+mock.module("@web/components/Shortcuts/ShortcutHint", () => ({
+  ShortcutHint: ({ children }: { children: ReactNode }) => (
     <span data-testid="shortcut-hint">{children}</span>
   ),
 }));
 
+const { MemoryRouter } = await import("react-router-dom");
+const { SelectView } = await import("./SelectView");
+
 describe("SelectView", () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    mockNavigate.mockClear();
   });
 
   const renderWithRouter = (
-    component: React.ReactElement,
+    component: ReactElement,
     initialRoute: string = ROOT_ROUTES.WEEK,
   ) => {
     return render(
@@ -567,4 +571,8 @@ describe("SelectView", () => {
       });
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

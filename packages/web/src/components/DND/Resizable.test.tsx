@@ -1,23 +1,49 @@
 import { fireEvent, render } from "@testing-library/react";
-import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
-import { Resizable } from "./Resizable";
+import { type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll } from "bun:test";
 
-// Mock usePointerPosition
-jest.mock("@web/common/hooks/usePointerPosition");
+const usePointerPosition = mock();
 
-// Mock re-resizable
-jest.mock("re-resizable", () => ({
-  Resizable: ({ children, onResizeStart, onResizeStop }: any) => (
+mock.module("@web/common/hooks/usePointerPosition", () => ({
+  usePointerPosition,
+}));
+
+type MockResizeStart = (
+  event: ReactMouseEvent<HTMLButtonElement>,
+  direction: "right",
+  element: null,
+) => void;
+
+type MockResizeStop = (
+  event: ReactMouseEvent<HTMLButtonElement>,
+  direction: "right",
+  element: null,
+  delta: null,
+) => void;
+
+mock.module("re-resizable", () => ({
+  Resizable: ({
+    children,
+    onResizeStart,
+    onResizeStop,
+  }: {
+    children: ReactNode;
+    onResizeStart?: MockResizeStart;
+    onResizeStop?: MockResizeStop;
+  }) => (
     <div>
       <button
+        type="button"
         data-testid="resize-start"
-        onClick={(e) => onResizeStart && onResizeStart(e, "right", null)}
+        onClick={(e) => onResizeStart?.(e, "right", null)}
       >
         Start
       </button>
       <button
+        type="button"
         data-testid="resize-stop"
-        onClick={(e) => onResizeStop && onResizeStop(e, "right", null, null)}
+        onClick={(e) => onResizeStop?.(e, "right", null, null)}
       >
         Stop
       </button>
@@ -26,11 +52,14 @@ jest.mock("re-resizable", () => ({
   ),
 }));
 
+const { Resizable } = require("./Resizable") as typeof import("./Resizable");
+
 describe("Resizable", () => {
-  const mockTogglePointerMovementTracking = jest.fn();
+  const mockTogglePointerMovementTracking = mock();
 
   beforeEach(() => {
-    (usePointerPosition as jest.Mock).mockReturnValue({
+    usePointerPosition.mockClear();
+    usePointerPosition.mockReturnValue({
       togglePointerMovementTracking: mockTogglePointerMovementTracking,
     });
     mockTogglePointerMovementTracking.mockClear();
@@ -57,4 +86,8 @@ describe("Resizable", () => {
     fireEvent.click(getByTestId("resize-stop"));
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(false);
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

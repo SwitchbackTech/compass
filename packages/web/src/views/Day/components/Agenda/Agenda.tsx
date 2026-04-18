@@ -6,6 +6,7 @@ import {
 } from "@ngneat/elf-entities";
 import classNames from "classnames";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useStore } from "react-redux";
 import { BehaviorSubject, distinctUntilChanged } from "rxjs";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
@@ -21,7 +22,6 @@ import {
   selectDayEvents,
   selectIsDayEventsProcessing,
 } from "@web/ducks/events/selectors/event.selectors";
-import { store } from "@web/store";
 import { eventsStore, resetActiveEvent, resetDraft } from "@web/store/events";
 import { AgendaEventPreview } from "@web/views/Day/components/Agenda/Events/AgendaEventPreview/AgendaEventPreview";
 import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
@@ -33,6 +33,7 @@ import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventCon
 import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
 
 export function Agenda() {
+  const store = useStore();
   const entities = selectDayEvents(store.getState());
   const eventsRef = useRef(new BehaviorSubject<Schema_Event[]>(entities));
   const loadingRef = useRef(new BehaviorSubject<boolean>(false));

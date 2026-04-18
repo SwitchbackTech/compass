@@ -1,16 +1,47 @@
-import { createElement } from "react";
-import { mockModule } from "@core/__tests__/mock.setup";
+import { mock } from "bun:test";
+import * as actualReactToastify from "react-toastify";
+
+type RestorableMock = {
+  mockRestore: () => void;
+};
+
+type MockFn = ReturnType<typeof mock>;
+
+function mockModule<T>(mockPath: string, mockFactory: () => T) {
+  mock.module(mockPath, mockFactory);
+}
+
+function mockNavigatorReadonlyValue(
+  key: "platform" | "userAgent",
+  value: string,
+): RestorableMock {
+  const originalDescriptor =
+    Object.getOwnPropertyDescriptor(window.navigator, key) ??
+    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(window.navigator), key);
+
+  Object.defineProperty(window.navigator, key, {
+    configurable: true,
+    get: () => value,
+  });
+
+  return {
+    mockRestore: () => {
+      if (originalDescriptor) {
+        Object.defineProperty(window.navigator, key, originalDescriptor);
+        return;
+      }
+
+      delete (window.navigator as Record<string, unknown>)[key];
+    },
+  };
+}
 
 export function mockUserAgent(userAgent: string) {
-  return jest
-    .spyOn(window.navigator, "userAgent", "get")
-    .mockReturnValue(userAgent);
+  return mockNavigatorReadonlyValue("userAgent", userAgent);
 }
 
 function mockNavigatorPlatformValue(platform: string) {
-  return jest
-    .spyOn(window.navigator, "platform", "get")
-    .mockReturnValue(platform);
+  return mockNavigatorReadonlyValue("platform", platform);
 }
 
 /**
@@ -58,104 +89,83 @@ export function mockLinuxUserAgent() {
 
 export function mockUseGoogleLogin() {
   mockModule("@web/auth/google/hooks/useGoogleLogin/useGoogleLogin", () => ({
-    useGoogleLogin: jest.fn().mockReturnValue({
-      login: jest.fn(),
+    useGoogleLogin: mock(() => ({
+      login: mock(),
       loading: false,
-    }),
+    })),
   }));
 }
 
 export function mockSuperTokens() {
-  mockModule(
-    "supertokens-web-js/recipe/session",
-    (session: typeof import("supertokens-web-js/recipe/session")) => {
-      const defaultSession = {
-        doesSessionExist: jest.fn().mockResolvedValue(true),
-        getUserId: jest.fn().mockResolvedValue("mock-user-id"),
-        signOut: jest.fn().mockResolvedValue(undefined),
-        getAccessToken: jest.fn().mockResolvedValue("mock-access-token"),
-        validateClaims: jest.fn().mockResolvedValue([]),
-        getClaimValue: jest.fn(),
-        PrimitiveClaim: jest.fn(),
-        BooleanClaim: jest.fn(),
-        PrimitiveArrayClaim: jest.fn(),
-        attemptRefreshingSession: jest.fn().mockResolvedValue(true),
-        getInvalidClaimsFromResponse: jest.fn().mockResolvedValue([]),
-        getAccessTokenPayloadSecurely: jest
-          .fn()
-          .mockResolvedValue({ mockKey: "mockValue" }),
-      };
+  const defaultSession = {
+    init: mock(() => ({})),
+    doesSessionExist: mock().mockResolvedValue(true),
+    getUserId: mock().mockResolvedValue("mock-user-id"),
+    signOut: mock().mockResolvedValue(undefined),
+    getAccessToken: mock().mockResolvedValue("mock-access-token"),
+    validateClaims: mock().mockResolvedValue([]),
+    getClaimValue: mock(),
+    PrimitiveClaim: mock(),
+    BooleanClaim: mock(),
+    PrimitiveArrayClaim: mock(),
+    attemptRefreshingSession: mock().mockResolvedValue(true),
+    getInvalidClaimsFromResponse: mock().mockResolvedValue([]),
+    getAccessTokenPayloadSecurely: mock().mockResolvedValue({
+      mockKey: "mockValue",
+    }),
+  };
 
-      return {
-        ...defaultSession,
-        default: Object.assign({}, session.default, defaultSession),
-      };
-    },
-  );
+  mockModule("supertokens-web-js/recipe/session", () => ({
+    default: defaultSession,
+    ...defaultSession,
+  }));
+
+  const mockRecipe = () => {
+    const recipe = {
+      init: mock(() => ({})),
+    };
+
+    return {
+      default: recipe,
+      ...recipe,
+    };
+  };
+
+  mockModule("supertokens-web-js", () => ({
+    default: { init: mock(() => ({})) },
+    init: mock(() => ({})),
+  }));
+  mockModule("supertokens-web-js/recipe/emailpassword", mockRecipe);
+  mockModule("supertokens-web-js/recipe/emailverification", mockRecipe);
+  mockModule("supertokens-web-js/recipe/thirdparty", mockRecipe);
 }
 
 function mockReactToastify() {
-  jest.mock("react-toastify", () => {
-    const actual =
-      jest.requireActual<typeof import("react-toastify")>("react-toastify");
-    const baseToast = actual.toast;
-    const toastFn = jest
-      .fn()
-      .mockReturnValue("mock-toast-id") as typeof baseToast &
-      jest.MockedFunction<typeof baseToast>;
+  const toastFn = mock(() => "mock-toast-id") as typeof actualReactToastify.toast &
+    MockFn;
 
-    toastFn.POSITION = baseToast.POSITION;
-    toastFn.TYPE = baseToast.TYPE;
-    toastFn.dismiss = jest.fn();
-    toastFn.error = jest.fn();
-    toastFn.info = jest.fn();
-    toastFn.isActive = jest.fn();
-    toastFn.success = jest.fn();
-    toastFn.update = jest.fn();
-    toastFn.warning = jest.fn();
-    toastFn.warn = jest.fn();
-    toastFn.loading = jest.fn();
-    toastFn.promise = jest.fn();
-    toastFn.dark = jest.fn();
-    toastFn.done = jest.fn();
-    toastFn.onChange = jest.fn();
-    toastFn.clearWaitingQueue = jest.fn();
+  toastFn.POSITION = actualReactToastify.toast.POSITION;
+  toastFn.TYPE = actualReactToastify.toast.TYPE;
+  toastFn.dismiss = mock();
+  toastFn.error = mock();
+  toastFn.info = mock();
+  toastFn.isActive = mock();
+  toastFn.success = mock();
+  toastFn.update = mock();
+  toastFn.warning = mock();
+  toastFn.warn = mock();
+  toastFn.loading = mock();
+  toastFn.promise = mock();
+  toastFn.dark = mock();
+  toastFn.done = mock();
+  toastFn.onChange = mock();
+  toastFn.clearWaitingQueue = mock();
 
+  mockModule("react-toastify", () => {
     return {
-      ...actual,
+      ...actualReactToastify,
       default: toastFn,
       toast: toastFn,
-    };
-  });
-}
-
-function mockPhosphorIcons() {
-  mockModule("@phosphor-icons/react", () => {
-    return {
-      Command: ({ size, ...props }: { size: number }) => {
-        return createElement(
-          "svg",
-          {
-            "data-testid": "command-icon",
-            width: size,
-            height: size,
-            ...props,
-          },
-          createElement("title", null, "Command"),
-        );
-      },
-      WindowsLogo: ({ size, ...props }: { size: number }) => {
-        return createElement(
-          "svg",
-          {
-            "data-testid": "windows-logo-icon",
-            width: size,
-            height: size,
-            ...props,
-          },
-          createElement("title", null, "Windows Logo"),
-        );
-      },
     };
   });
 }
@@ -164,5 +174,4 @@ export function mockNodeModules() {
   mockUseGoogleLogin();
   mockSuperTokens();
   mockReactToastify();
-  mockPhosphorIcons();
 }

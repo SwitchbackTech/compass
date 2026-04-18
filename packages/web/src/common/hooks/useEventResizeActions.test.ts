@@ -1,30 +1,83 @@
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+import { afterAll } from "bun:test";
 import { renderHook } from "@testing-library/react";
 import { act, type MouseEvent as ReactMouseEvent } from "react";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { useEventResizeActions } from "@web/common/hooks/useEventResizeActions";
-import { CursorItem, nodeId$, open$ } from "@web/common/hooks/useOpenAtCursor";
-import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { setDraft, updateDraft } from "@web/store/events";
 import {
   MINUTES_PER_SLOT,
   SLOT_HEIGHT,
 } from "@web/views/Day/constants/day.constants";
+import { BehaviorSubject } from "rxjs";
 
-// Mocks
-jest.mock("@web/common/hooks/useUpdateEvent");
-jest.mock("@web/store/events", () => ({
-  setDraft: jest.fn(),
-  updateDraft: jest.fn(),
+// Mock definitions
+const mockUpdateEvent = mock();
+const mockSetDraft = mock();
+const mockUpdateDraft = mock();
+const mockNodeIdGetValue = mock();
+const mockOpenGetValue = mock();
+const openFloatingAtCursor = mock();
+const closeFloatingAtCursor = mock();
+const nodeId$ = { getValue: mockNodeIdGetValue, next: mock() };
+const open$ = { getValue: mockOpenGetValue, next: mock() };
+const placement$ = new BehaviorSubject("right-start");
+const strategy$ = new BehaviorSubject("absolute");
+const reference$ = new BehaviorSubject(null);
+const mockSelectEventById = mock();
+
+mock.module("@web/common/hooks/useUpdateEvent", () => ({
+  useUpdateEvent: mock(() => mockUpdateEvent),
 }));
-jest.mock("@web/common/hooks/useOpenAtCursor", () => ({
-  nodeId$: { getValue: jest.fn() },
-  open$: { getValue: jest.fn() },
-  CursorItem: { EventForm: "EventForm" },
+
+mock.module("@web/store/events", () => ({
+  setDraft: mockSetDraft,
+  updateDraft: mockUpdateDraft,
 }));
+
+mock.module("@web/common/hooks/useOpenAtCursor", () => {
+  const real = require("@web/common/hooks/useOpenAtCursor");
+  return {
+    ...real,
+    openFloatingAtCursor,
+    closeFloatingAtCursor,
+    nodeId$,
+    open$,
+    placement$,
+    strategy$,
+    reference$,
+    setFloatingOpenAtCursor: mock(),
+    setFloatingNodeIdAtCursor: mock(),
+    setFloatingPlacementAtCursor: mock(),
+    setFloatingReferenceAtCursor: mock(),
+    setFloatingStrategyAtCursor: mock(),
+    isOpenAtCursor: mock(),
+    CursorItem: { EventForm: "EventForm" },
+    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
+    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
+    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
+    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
+    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+  };
+});
+
+// Ensure selectors don't read real store state during this unit test
+mock.module("@web/ducks/events/selectors/event.selectors", () => ({
+  selectEventById: mockSelectEventById,
+}));
+
+// Import the hook after mocks
+const { useEventResizeActions } = require("./useEventResizeActions") as typeof import("./useEventResizeActions");
+const { CursorItem } = require("@web/common/hooks/useOpenAtCursor");
 
 describe("useEventResizeActions", () => {
-  const mockUpdateEvent = jest.fn();
   const mockEvent: WithCompassId<Schema_Event> = {
     _id: "event-1",
     title: "Test Event",
@@ -35,27 +88,39 @@ describe("useEventResizeActions", () => {
 
   // Mock bounds element
   const mockBounds = document.createElement("div");
-  // Mock getBoundingClientRect
-  jest.spyOn(mockBounds, "getBoundingClientRect").mockReturnValue({
-    top: 0,
-    bottom: 1000,
-    height: 1000,
-    left: 0,
-    right: 500,
-    width: 500,
-    x: 0,
-    y: 0,
-    toJSON: () => {},
-  });
+  let getBoundingClientRectSpy: any;
 
   beforeEach(() => {
-    jest.clearAllMocks();
-    (useUpdateEvent as jest.Mock).mockReturnValue(mockUpdateEvent);
-    (nodeId$.getValue as jest.Mock).mockReturnValue(null);
-    (open$.getValue as jest.Mock).mockReturnValue(false);
-    (updateDraft as jest.Mock).mockImplementation((update) => {
-      setDraft({ ...mockEvent, ...update });
+    mockUpdateEvent.mockClear();
+    mockSetDraft.mockClear();
+    mockUpdateDraft.mockClear();
+    mockNodeIdGetValue.mockClear();
+    mockOpenGetValue.mockClear();
+    mockSelectEventById.mockClear();
+
+    mockNodeIdGetValue.mockReturnValue(null);
+    mockOpenGetValue.mockReturnValue(false);
+    // Ensure selector returns no stored event so saveDraftOnly path is testable
+    mockSelectEventById.mockReturnValue(null);
+    mockUpdateDraft.mockImplementation((update: any) => {
+      mockSetDraft({ ...mockEvent, ...update });
     });
+
+    getBoundingClientRectSpy = spyOn(mockBounds, "getBoundingClientRect").mockReturnValue({
+      top: 0,
+      bottom: 1000,
+      height: 1000,
+      left: 0,
+      right: 500,
+      width: 500,
+      x: 0,
+      y: 0,
+      toJSON: () => {},
+    } as DOMRect);
+  });
+
+  afterEach(() => {
+    getBoundingClientRectSpy.mockRestore();
   });
 
   describe("onResizeStart", () => {
@@ -72,7 +137,7 @@ describe("useEventResizeActions", () => {
         );
       });
 
-      expect(setDraft).toHaveBeenCalledWith(mockEvent);
+      expect(mockSetDraft).toHaveBeenCalledWith(mockEvent);
     });
   });
 
@@ -107,7 +172,7 @@ describe("useEventResizeActions", () => {
         .subtract(expectedMinutes, "minutes")
         .format();
 
-      expect(setDraft).toHaveBeenLastCalledWith(
+      expect(mockSetDraft).toHaveBeenLastCalledWith(
         expect.objectContaining({
           ...mockEvent,
           startDate: expectedStartDate,
@@ -145,7 +210,7 @@ describe("useEventResizeActions", () => {
         .add(expectedMinutes, "minutes")
         .format();
 
-      expect(setDraft).toHaveBeenLastCalledWith(
+      expect(mockSetDraft).toHaveBeenLastCalledWith(
         expect.objectContaining({
           ...mockEvent,
           endDate: expectedEndDate,
@@ -166,12 +231,6 @@ describe("useEventResizeActions", () => {
         );
       });
 
-      // Try to resize way past the start of the day
-      // Event starts at 10:00 AM. That is 10 * 60 = 600 minutes from start of day.
-      // 600 minutes / 15 min/slot = 40 slots.
-      // 40 slots * 20 px/slot = 800 px.
-      // If we resize up by 1000px, it should be clamped to 800px.
-
       const deltaHeight = 1000;
 
       act(() => {
@@ -187,7 +246,7 @@ describe("useEventResizeActions", () => {
         .startOf("day")
         .format();
 
-      expect(setDraft).toHaveBeenLastCalledWith(
+      expect(mockSetDraft).toHaveBeenLastCalledWith(
         expect.objectContaining({
           ...mockEvent,
           startDate: expectedStartDate,
@@ -208,13 +267,6 @@ describe("useEventResizeActions", () => {
         );
       });
 
-      // Code uses totalDayHeightPx (1920px) not bounds height (1000px).
-      // Max growth = 1920 - 880 - 20 = 1020 px.
-      // Delta is 500 px.
-      // 500 < 1020, so full 500px is used.
-      // 500 * 0.75 = 375 minutes.
-      // End date = 11:00 + 375 min = 17:15.
-
       const deltaHeight = 500; // Try to grow by 500px
 
       act(() => {
@@ -230,7 +282,7 @@ describe("useEventResizeActions", () => {
         .add(375, "minutes")
         .format();
 
-      expect(setDraft).toHaveBeenLastCalledWith(
+      expect(mockSetDraft).toHaveBeenLastCalledWith(
         expect.objectContaining({
           ...mockEvent,
           endDate: expectedEndDate,
@@ -241,9 +293,12 @@ describe("useEventResizeActions", () => {
 
   describe("onResizeStop", () => {
     it("should update event if changed", () => {
-      const { result } = renderHook(() => useEventResizeActions(mockEvent));
+      const { result, rerender } = renderHook(
+        (props) => useEventResizeActions(props),
+        { initialProps: mockEvent },
+      );
 
-      // Simulate start
+      // Start
       act(() => {
         result.current.onResizeStart(
           new MouseEvent(
@@ -254,38 +309,16 @@ describe("useEventResizeActions", () => {
         );
       });
 
-      // Simulate change in props (as if parent updated event from draft)
+      // Rerender with updated event (simulating draft update propagation)
       const updatedEvent = {
         ...mockEvent,
         endDate: dayjs(mockEvent.endDate).add(15, "minutes").format(),
       };
-
-      // We need to make sure the hook instance shares state or we simulate the flow correctly.
-      // Since `originalEvent` is a ref inside the hook, we need to use the SAME hook instance.
-      // But `event` prop changes. `renderHook` allows rerender with new props.
-
-      const { result: resultRerender, rerender } = renderHook(
-        (props) => useEventResizeActions(props),
-        { initialProps: mockEvent },
-      );
-
-      // Start
-      act(() => {
-        resultRerender.current.onResizeStart(
-          new MouseEvent(
-            "mousedown",
-          ) as unknown as ReactMouseEvent<HTMLElement>,
-          "bottom",
-          document.createElement("div"),
-        );
-      });
-
-      // Rerender with updated event (simulating draft update propagation)
       rerender(updatedEvent);
 
       // Stop
       act(() => {
-        resultRerender.current.onResizeStop(
+        result.current.onResizeStop(
           new MouseEvent("mouseup"),
           "bottom",
           document.createElement("div"),
@@ -296,7 +329,7 @@ describe("useEventResizeActions", () => {
       expect(mockUpdateEvent).toHaveBeenCalledWith({
         event: expect.objectContaining({
           _id: mockEvent._id,
-          endDate: updatedEvent.endDate, // Should be snapped/formatted
+          endDate: updatedEvent.endDate,
         }),
       });
     });
@@ -332,7 +365,7 @@ describe("useEventResizeActions", () => {
         );
       });
 
-      // Should snap 08 to 15? roundToNearestFifteenWithinHour(8) -> 15
+      // Should snap 08 to 15
       const expectedEndDate = dayjs(mockEvent.endDate)
         .minute(15)
         .second(0)
@@ -346,8 +379,8 @@ describe("useEventResizeActions", () => {
     });
 
     it("should NOT update redux event if event form is open (saveDraftOnly)", () => {
-      (nodeId$.getValue as jest.Mock).mockReturnValue(CursorItem.EventForm);
-      (open$.getValue as jest.Mock).mockReturnValue(true);
+      mockNodeIdGetValue.mockReturnValue(CursorItem.EventForm);
+      mockOpenGetValue.mockReturnValue(true);
 
       const { result, rerender } = renderHook(
         (props) => useEventResizeActions(props),
@@ -379,7 +412,7 @@ describe("useEventResizeActions", () => {
         );
       });
 
-      expect(setDraft).toHaveBeenCalled(); // Should still update draft
+      expect(mockSetDraft).toHaveBeenCalled(); // Should still update draft
       expect(mockUpdateEvent).not.toHaveBeenCalled();
     });
 
@@ -410,4 +443,8 @@ describe("useEventResizeActions", () => {
       expect(mockUpdateEvent).not.toHaveBeenCalled();
     });
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

@@ -4,17 +4,14 @@ import {
   globalMovementHandler,
   pressKey,
 } from "@web/common/utils/dom/event-emitter.util";
+import { describe, expect, it, mock } from "bun:test";
 
 describe("event-emitter.util", () => {
-  beforeEach(() => {
-    jest.clearAllMocks();
-  });
-
   describe("getElementAtPoint", () => {
     it("should return element at position", () => {
       const mockElement = document.createElement("div");
 
-      document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
+      document.elementFromPoint = mock().mockReturnValue(mockElement);
 
       const element = getElementAtPoint({ clientX: 10, clientY: 10 });
 
@@ -24,36 +21,38 @@ describe("event-emitter.util", () => {
   });
 
   describe("globalMovementHandler", () => {
-    it("should handle pointer movement events", (done) => {
+    it("should handle pointer movement events", () => {
       const mockElement = document.createElement("div");
-      document.elementFromPoint = jest.fn().mockReturnValue(mockElement);
+      document.elementFromPoint = mock().mockReturnValue(mockElement);
 
       const event = new PointerEvent("pointermove", {
         clientX: 100,
         clientY: 100,
       });
 
-      const subscription = domMovement$.subscribe((val) => {
-        expect(val.x).toBe(100);
-        expect(val.y).toBe(100);
-        expect(val.element).toBe(mockElement);
-        expect(val.event).toBe(event);
-        subscription.unsubscribe();
-        done();
-      });
+      return new Promise<void>((resolve) => {
+        const subscription = domMovement$.subscribe((val) => {
+          expect(val.x).toBe(100);
+          expect(val.y).toBe(100);
+          expect(val.element).toBe(mockElement);
+          expect(val.event).toBe(event);
+          subscription.unsubscribe();
+          resolve();
+        });
 
-      globalMovementHandler(
-        event as unknown as Parameters<typeof globalMovementHandler>[0],
-      );
+        globalMovementHandler(
+          event as unknown as Parameters<typeof globalMovementHandler>[0],
+        );
+      });
     });
   });
 
   describe("pressKey", () => {
     it("should dispatch bubbling keydown and keyup events", () => {
       const target = document.createElement("div");
-      const keydownSpy = jest.fn();
-      const keyupSpy = jest.fn();
-      const documentKeydownSpy = jest.fn();
+      const keydownSpy = mock();
+      const keyupSpy = mock();
+      const documentKeydownSpy = mock();
 
       document.body.appendChild(target);
       target.addEventListener("keydown", keydownSpy);
