@@ -1,7 +1,14 @@
 // sort-imports-ignore — side-effect import order matters
 
 import { JSDOM } from "jsdom";
-import { afterAll, afterEach, beforeAll, beforeEach, expect, mock } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  beforeEach,
+  expect,
+  mock,
+} from "bun:test";
 import { createRequire } from "node:module";
 
 import "@core/__tests__/core.test.init";
@@ -78,6 +85,12 @@ globalThis.history = window.history;
 globalThis.localStorage = window.localStorage;
 globalThis.sessionStorage = window.sessionStorage;
 globalThis.HTMLElement = window.HTMLElement;
+Object.defineProperty(window, "HTMLIFrameElement", {
+  configurable: true,
+  value: window.HTMLElement,
+  writable: true,
+});
+globalThis.HTMLIFrameElement = window.HTMLIFrameElement;
 globalThis.HTMLAnchorElement = window.HTMLAnchorElement;
 globalThis.Node = window.Node;
 globalThis.Event = window.Event;
@@ -92,9 +105,6 @@ window.alert = noopAlert;
 globalThis.alert = noopAlert;
 
 class MockObserver<T> implements IntersectionObserver, ResizeObserver {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  constructor(_callback: T, _options?: IntersectionObserverInit) {}
-
   root!: Document | Element | null;
   rootMargin!: string;
   thresholds!: readonly number[];
