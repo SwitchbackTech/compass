@@ -27,6 +27,8 @@ class MockStorage implements Storage {
 }
 
 export function mockLocalStorage(): void {
+  const storage = new MockStorage();
+
   Object.defineProperty(globalThis, "Storage", {
     configurable: true,
     value: MockStorage,
@@ -34,15 +36,13 @@ export function mockLocalStorage(): void {
 
   Object.defineProperty(globalThis, "localStorage", {
     configurable: true,
-    value: new MockStorage(),
+    value: storage,
   });
 
-  Object.defineProperty(globalThis, "window", {
-    configurable: true,
-    value: {
-      addEventListener: () => undefined,
-      localStorage,
-      removeEventListener: () => undefined,
-    },
-  });
+  if (typeof window !== "undefined") {
+    Object.defineProperty(window, "localStorage", {
+      configurable: true,
+      value: storage,
+    });
+  }
 }
