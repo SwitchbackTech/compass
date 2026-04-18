@@ -22,9 +22,6 @@ mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
   useAuthModal: mockUseAuthModal,
   useAuthModalState: mockUseAuthModalState,
 }));
-mock.module("@web/components/AuthModal/hooks/useAuthFeatureFlag", () => ({
-  useAuthFeatureFlag: mockUseAuthFeatureFlag,
-}));
 
 const { useAuthCmdItems } =
   require("./useAuthCmdItems") as typeof import("./useAuthCmdItems");
@@ -63,11 +60,6 @@ describe("useAuthCmdItems", () => {
     expect(result.current).toEqual([]);
   });
 
-  it("returns no items when auth feature flag is disabled", () => {
-    const { result } = renderHook(() => useAuthCmdItems());
-
-    expect(result.current).toEqual([]);
-  });
 
   it("returns auth items when unauthenticated and auth feature flag is enabled", () => {
     window.history.pushState({}, "", "/day?auth=true");
