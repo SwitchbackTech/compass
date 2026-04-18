@@ -21,7 +21,7 @@
     "dev:backend -verbose": "export DEBUG=* && bun run dev:backend",
     "dev:backend": "cd packages/backend && TZ=Etc/UTC bun --env-file=.env.local --watch src/app.ts",
     "dev:update": "git checkout main && git pull && bun install",
-    "dev:web": "cd packages/web && TZ=Etc/UTC bun --env-file=../backend/.env.local run dev.ts",
+    "dev:web": "cd packages/web && bun --env-file=../backend/.env.local run dev.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
