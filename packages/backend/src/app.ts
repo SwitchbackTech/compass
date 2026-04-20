@@ -34,6 +34,7 @@ function onNgrokError(error: Error): void {
 async function start() {
   try {
     await mongoService.start();
+    console.log("hi, demo [backend]")
 
     await new Promise((resolve) =>
       httpServer.listen(ENV.PORT, () => {

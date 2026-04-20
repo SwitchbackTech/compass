@@ -8,6 +8,7 @@ import { CompassRouterProvider } from "@web/routers";
 
 export const App = () => {
   useSetupMovementEvents();
+  console.log("Hi, from app");
 
   return (
     <React.StrictMode>
