@@ -1,8 +1,8 @@
 # Compass Calendar
 
-**A minimalist task manager designed for engineers.**
+**A daily planner for minimalists.**
 
-All your tasks and events in one place. Organize your day, stay on track, and ship more code.
+All your tasks and events in one place. Organize your day, stay on track, and focus.
 
 ## Why Use Compass?
 
@@ -13,7 +13,7 @@ It'll help you focus and ship faster:
 - **Private & Offline**: Runs fully local in your browser, with optional Google Calendar sync.
 - **No bloat**: No AI — just a clean, minimal interface to help you get things done.
 
-Join thousands of engineers who are staying organized and productive with Compass.
+Join thousands of minimalists who are staying organized and productive with Compass.
 
 https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 
@@ -47,11 +47,10 @@ We're actively working on improvements – check out our [roadmap](https://githu
 
 ## Tech Stack
 
-- **Frontend**: React, Redux, Tailwind CSS, TypeScript, Webpack
+- **Frontend**: React, Redux, Tailwind CSS, TypeScript, Bun
 - **Backend**: Node.js, Express, TypeScript, MongoDB
 - **Integrations**: Google Calendar API, Google OAuth2, Socket.io
-- **Testing**: Bun test (core), retained Jest suites (web/backend/scripts), React Testing Library, Playwright
-- **Other**: Bun is the primary install/runtime/build entrypoint; webpack and Playwright are intentionally retained
+- **Testing**: Bun, React Testing Library, Playwright
 
 ## Getting Started
 
@@ -64,8 +63,6 @@ Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_sourc
 Want to poke around or self-host?
 
 [Read the technical docs](https://github.com/SwitchbackTech/compass/tree/main/docs): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
-
-Use Bun for dependency installation and the default repo commands. Bun now runs the CLI, backend dev flow, core tests, and package builds directly. Node.js 24+ is still required for retained tooling such as the web/backend/scripts Jest suites and the production Node build output.
 
 ### Development Workflow
 
@@ -97,7 +94,7 @@ First-time contributors? Look for issues labeled `good first issue.`
 
 ## Community & Resources
 
-- **Handbook**: [compasscalendar.notion.site](https://compasscalendar.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d/?utm_source=github&utm_medium=referral&utm_campaign=readme)
+- **Handbook**: [compasscalendar.notion.site](https://alpaca-ty.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d?utm_source=github&utm_medium=referral&utm_campaign=readme)
 - **Twitter**: [@CompassCalendar](https://x.com/CompassCalendar)
 - **Youtube**: [Playlist](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
 - **LinkedIn**: [Compass Calendar](https://www.linkedin.com/company/compass-calendar)
