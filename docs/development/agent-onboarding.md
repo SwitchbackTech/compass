@@ -54,7 +54,7 @@ Before implementing or modifying features, consult the relevant requirements doc
 - Auth or session behavior:
   [Frontend Runtime Flow](../frontend/frontend-runtime-flow.md),
   [Password Auth Flow](../features/password-auth-flow.md),
-  [Env And Dev Modes](./env-and-dev-modes.md)
+  [Local Development](./local-development.md)
 - Backend endpoints:
   [Backend Request Flow](../backend/backend-request-flow.md),
   [API Documentation](../backend/api-documentation.md)
