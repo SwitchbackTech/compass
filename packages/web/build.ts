@@ -2,8 +2,34 @@ import { execSync } from "child_process";
 import path from "path";
 import { postcssPlugin } from "./plugins/postcss.plugin";
 
-const GIT_HASH = execSync("git rev-parse --short HEAD").toString().trim();
-const BUILD_VERSION = `${Date.now()}-${GIT_HASH}`;
+function getBuildHash(): string {
+  const fallbackBuildRef = process.env["COMPASS_BUILD_REF"] || "self-host";
+  const compassRepoRoot = path.resolve(import.meta.dir, "../..");
+
+  try {
+    const gitWorkTreeRoot = path.resolve(
+      execSync("git rev-parse --show-toplevel", {
+        stdio: ["ignore", "pipe", "ignore"],
+      })
+        .toString()
+        .trim(),
+    );
+
+    if (gitWorkTreeRoot !== compassRepoRoot) {
+      return fallbackBuildRef;
+    }
+  } catch {
+    return fallbackBuildRef;
+  }
+
+  return execSync("git rev-parse --short HEAD", {
+    stdio: ["ignore", "pipe", "inherit"],
+  })
+    .toString()
+    .trim();
+}
+
+const BUILD_VERSION = `${Date.now()}-${getBuildHash()}`;
 const OUTDIR = path.resolve(import.meta.dir, "../../build/web");
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
