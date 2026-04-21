@@ -1,0 +1,29 @@
+FROM oven/bun:1.2.18 AS build
+
+WORKDIR /app
+COPY . .
+
+ARG BASEURL=http://localhost:3000/api
+ARG GOOGLE_CLIENT_ID=compass-self-host-placeholder.apps.googleusercontent.com
+ARG COMPASS_BUILD_REF=self-host
+
+ENV BASEURL=${BASEURL}
+ENV GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+ENV COMPASS_BUILD_REF=${COMPASS_BUILD_REF}
+ENV NODE_ENV=production
+ENV WEB_PORT=9080
+
+RUN bun install --frozen-lockfile
+RUN cd packages/web && bun run build.ts
+
+FROM oven/bun:1.2.18-slim AS runtime
+
+WORKDIR /app
+ENV WEB_PORT=9080
+ENV WEB_ROOT=/app/build/web
+
+COPY --from=build /app/build/web ./build/web
+COPY --from=build /app/self-host/serve-web.ts ./self-host/serve-web.ts
+
+EXPOSE 9080
+CMD ["bun", "self-host/serve-web.ts"]

@@ -1,0 +1,16 @@
+FROM oven/bun:1.2.18 AS build
+
+WORKDIR /app
+COPY . .
+
+RUN bun install --frozen-lockfile
+RUN bun run build:backend --environment local
+
+FROM oven/bun:1.2.18-slim AS runtime
+
+WORKDIR /app
+COPY --from=build /app/build/backend ./
+
+ENV PORT=3000
+EXPOSE 3000
+CMD ["bun", "app.js"]
