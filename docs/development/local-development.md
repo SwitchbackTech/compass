@@ -1,4 +1,4 @@
-# Env And Dev Modes
+# Local Development
 
 Compass has multiple workable development modes. Pick the lightest mode that supports the feature you are changing.
 

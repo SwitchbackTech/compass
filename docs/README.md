@@ -42,7 +42,9 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
 
 ## Development And Operations
 
-- [Env And Dev Modes](./development/env-and-dev-modes.md)
+- [Local Development](./development/local-development.md)
+- [Hosting Modes](./development/hosting-modes.md)
+- [Self-Hosting](./self-hosting.md)
 - [Testing Playbook](./development/testing-playbook.md)
 - [Web State Guide](./development/web-state-guide.md)
 - [Types And Validation](./development/types-and-validation.md)

@@ -59,9 +59,15 @@ We're actively working on improvements – check out our [roadmap](https://githu
 
 Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme). No signup required
 
+### Self-host Compass
+
+Run Compass on your own machine and keep your calendar data on your own infrastructure.
+
+See [docs/self-hosting.md](./docs/self-hosting.md) for the manual self-hosting guide. A one-command installer is planned, but not available yet.
+
 ### Run Locally
 
-Want to poke around or self-host?
+Want to poke around as a developer?
 
 [Read the technical docs](https://github.com/SwitchbackTech/compass/tree/main/docs): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
 
