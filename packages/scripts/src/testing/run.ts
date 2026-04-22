@@ -1,5 +1,5 @@
-import { existsSync } from "node:fs";
-import { resolve } from "node:path";
+import { existsSync, readdirSync, statSync } from "node:fs";
+import { relative, resolve } from "node:path";
 
 type BunRuntime = {
   spawnSync(input: {
@@ -18,6 +18,9 @@ type ProjectConfig = {
 };
 
 const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
+const WEB_ROOT = resolve(process.cwd(), "packages/web");
+const WEB_SRC = resolve(WEB_ROOT, "src");
+const WEB_TEST_FILE_PATTERN = /\.(spec|test)\.[tj]sx?$/;
 
 const TEST_PROJECTS = {
   backend: {
@@ -36,10 +39,28 @@ const TEST_PROJECTS = {
     cmd: ["./node_modules/.bin/jest", "scripts"],
   },
   web: {
-    cmd: ["bun", "test"],
-    cwd: resolve(process.cwd(), "packages/web"),
+    cmd: [],
   },
 } satisfies Record<string, ProjectConfig>;
+
+function findWebTestFiles(dir: string): string[] {
+  return readdirSync(dir)
+    .flatMap((entry) => {
+      const path = resolve(dir, entry);
+      const stats = statSync(path);
+
+      if (stats.isDirectory()) {
+        return findWebTestFiles(path);
+      }
+
+      if (!WEB_TEST_FILE_PATTERN.test(entry)) {
+        return [];
+      }
+
+      return relative(WEB_ROOT, path);
+    })
+    .sort();
+}
 
 function assertBackendEnvFile() {
   const envFilePath = resolve(process.cwd(), "packages/backend/.env.local");
@@ -71,7 +92,9 @@ function runCommand(cmd: string[], cwd = process.cwd()) {
 }
 
 function runWebProject() {
-  runCommand(TEST_PROJECTS.web.cmd, TEST_PROJECTS.web.cwd);
+  for (const testFile of findWebTestFiles(WEB_SRC)) {
+    runCommand([process.execPath, "test", "--cwd", WEB_ROOT, testFile]);
+  }
 }
 
 function runProject(projectName: keyof typeof TEST_PROJECTS) {

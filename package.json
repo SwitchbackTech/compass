@@ -30,7 +30,7 @@
     "test:e2e": "bunx playwright test",
     "test:backend": "bun packages/scripts/src/testing/run.ts backend",
     "test:core": "bun packages/scripts/src/testing/run.ts core",
-    "test:web": "bun packages/scripts/src/testing/run-web.ts",
+    "test:web": "bun packages/scripts/src/testing/run.ts web",
     "test:scripts": "bun packages/scripts/src/testing/run.ts scripts",
     "type-check": "bunx tsc --noEmit",
     "verify": "bun packages/scripts/src/testing/verify.ts",
