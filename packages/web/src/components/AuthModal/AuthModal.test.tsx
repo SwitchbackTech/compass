@@ -1,10 +1,4 @@
-import {
-  type KeyboardEvent,
-  type ReactElement,
-  type ReactNode,
-  useLayoutEffect,
-} from "react";
-import { readFile, writeFile } from "node:fs/promises";
+import { type ReactElement, type ReactNode, useLayoutEffect } from "react";
 import {
   createMemoryRouter,
   MemoryRouter,
@@ -12,10 +6,13 @@ import {
   RouterProvider,
   useLocation,
 } from "react-router-dom";
+import { readFile, writeFile } from "node:fs/promises";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -24,8 +21,6 @@ import {
   mock,
   spyOn,
 } from "bun:test";
-import { afterAll } from "bun:test";
-import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 
 // Mock useSession
 const mockUseSession = mock(() => ({
@@ -74,40 +69,6 @@ mock.module("@web/components/AuthModal/components/GoogleButton", () => ({
   }) => (
     <button type="button" onClick={onClick} aria-label={label}>
       {label}
-    </button>
-  ),
-}));
-
-// Mock TooltipWrapper - no data-testid; use semantic queries (role/name/text)
-mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
-  TooltipWrapper: ({
-    children,
-    onClick,
-    description,
-  }: {
-    children: ReactNode;
-    onClick?: () => void;
-    description?: string;
-  }) => (
-    <button
-      type="button"
-      onClick={onClick}
-      onKeyDown={
-        onClick
-          ? (e: KeyboardEvent) => {
-              if (e.key === "Enter" || e.key === " ") {
-                e.preventDefault();
-                onClick();
-              }
-            }
-          : undefined
-      }
-      tabIndex={onClick ? 0 : undefined}
-      disabled={!onClick}
-      title={description}
-    >
-      {description && <span>{description}</span>}
-      {children}
     </button>
   ),
 }));
