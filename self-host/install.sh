@@ -162,8 +162,7 @@ confirm_refresh() {
   esac
 }
 
-check_fresh_install_volumes() {
-  [ "$IS_REFRESH" -eq 0 ] || return
+check_missing_env_with_existing_volumes() {
   [ ! -f "$ENV_FILE" ] || return
 
   existing_volumes=
@@ -822,9 +821,9 @@ EOF
 check_install_dir
 require_prerequisites
 load_runtime_config
+check_missing_env_with_existing_volumes
 if [ "$IS_REFRESH" -eq 0 ]; then
   check_required_ports
-  check_fresh_install_volumes
 else
   info "Refreshing an existing Compass install; Docker Compose will reuse configured ports $WEB_PORT_VALUE and $PORT_VALUE."
 fi
