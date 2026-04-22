@@ -19,9 +19,11 @@ Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) first 
 
 ### Running the installer from this repo (pre-merge testing)
 
-From the repo root:
+From the repo root, point the installer at your local checkout:
 
 ```bash
+COMPASS_REPO_URL="$PWD" \
+COMPASS_REF="$(git branch --show-current)" \
 sh self-host/install.sh
 ```
 
