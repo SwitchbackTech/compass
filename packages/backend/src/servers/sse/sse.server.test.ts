@@ -62,9 +62,9 @@ describe("SSE Server", () => {
       const userId = new ObjectId().toString();
 
       const stream = baseDriver.openSSEStream({ userId });
-      const eventPromise = stream.waitForEvent(EVENT_CHANGED, 2000);
+      await stream.waitForEvent(USER_METADATA, 2000);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      const eventPromise = stream.waitForEvent(EVENT_CHANGED, 2000);
 
       const { sseServer } = await import("./sse.server");
       sseServer.handleBackgroundCalendarChange(userId);
@@ -78,9 +78,9 @@ describe("SSE Server", () => {
       const userId = new ObjectId().toString();
 
       const stream = baseDriver.openSSEStream({ userId });
-      const eventPromise = stream.waitForEvent(SOMEDAY_EVENT_CHANGED, 2000);
+      await stream.waitForEvent(USER_METADATA, 2000);
 
-      await new Promise((resolve) => setTimeout(resolve, 50));
+      const eventPromise = stream.waitForEvent(SOMEDAY_EVENT_CHANGED, 2000);
 
       const { sseServer } = await import("./sse.server");
       sseServer.handleBackgroundSomedayChange(userId);
@@ -132,10 +132,9 @@ describe("SSE Server", () => {
       const otherUserId = new ObjectId().toString();
 
       const stream = baseDriver.openSSEStream({ userId });
+      await stream.waitForEvent(USER_METADATA, 2000);
 
       const eventPromise = stream.waitForEvent(EVENT_CHANGED, 300);
-
-      await new Promise((resolve) => setTimeout(resolve, 50));
 
       const { sseServer } = await import("./sse.server");
       sseServer.handleBackgroundCalendarChange(otherUserId);
