@@ -19,8 +19,8 @@ ENV_FILE=${COMPASS_ENV_FILE:-"$INSTALL_DIR/.env"}
 COMPOSE_FILE=$APP_DIR/self-host/docker-compose.yml
 ENV_LOADED=0
 PROJECT_NAME=${COMPASS_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:-compass}}
-APP_URL=${FRONTEND_URL:-http://localhost:${WEB_PORT:-9080}}
-HEALTH_URL=${BASEURL:-http://localhost:3000/api}/health
+APP_URL=${FRONTEND_URL:-http://localhost:9080}
+HEALTH_URL=http://localhost:3000/api/health
 
 info() {
   printf '%s\n' "$*"
@@ -54,13 +54,13 @@ load_env() {
 
   [ -f "$ENV_FILE" ] || fail "Missing env file: $ENV_FILE. Rerun the installer or set COMPASS_ENV_FILE."
 
-  set -a
-  . "$ENV_FILE" || fail "Could not read env file: $ENV_FILE"
-  set +a
+  compose_project_name=$(strip_quotes "$(read_env_value COMPOSE_PROJECT_NAME)")
+  frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
+  baseurl=$(strip_quotes "$(read_env_value BASEURL)")
 
-  PROJECT_NAME=${COMPASS_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:-compass}}
-  APP_URL=${FRONTEND_URL:-http://localhost:${WEB_PORT:-9080}}
-  HEALTH_URL=${BASEURL:-http://localhost:3000/api}/health
+  PROJECT_NAME=${COMPASS_PROJECT_NAME:-${compose_project_name:-compass}}
+  APP_URL=${frontend_url:-http://localhost:9080}
+  HEALTH_URL=$(append_health_path "${baseurl:-http://localhost:3000/api}")
   ENV_LOADED=1
 }
 
@@ -156,6 +156,59 @@ rebuild_stack() {
   fi
 }
 
+append_health_path() {
+  base_url=$1
+
+  while :; do
+    case $base_url in
+      */)
+        base_url=${base_url%/}
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  printf '%s/health\n' "$base_url"
+}
+
+read_env_value() {
+  key=$1
+  value=
+  found=0
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    case $line in
+      "$key="*)
+        value=${line#*=}
+        found=1
+        ;;
+    esac
+  done < "$ENV_FILE" || fail "Could not read env file: $ENV_FILE"
+
+  if [ "$found" -eq 1 ]; then
+    printf '%s\n' "$value"
+  fi
+}
+
+strip_quotes() {
+  value=$1
+
+  case $value in
+    \"*\")
+      value=${value#\"}
+      value=${value%\"}
+      ;;
+    \'*\')
+      value=${value#\'}
+      value=${value%\'}
+      ;;
+  esac
+
+  printf '%s\n' "$value"
+}
+
 command_name=${1:-}
 
 case $command_name in
@@ -167,6 +220,11 @@ case $command_name in
     ;;
   restart)
     compose restart || fail "Docker Compose failed to restart Compass."
+    if wait_for_health; then
+      info "Compass is running at $APP_URL"
+    else
+      fail "Compass restarted, but the backend health check did not pass. Run './compass logs' for details."
+    fi
     ;;
   rebuild)
     rebuild_stack
