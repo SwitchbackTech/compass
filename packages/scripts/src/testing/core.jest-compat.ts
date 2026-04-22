@@ -11,3 +11,5 @@ const { applyBunJestCompat } = nodeRequire(
 };
 
 applyBunJestCompat(bunJest, bunMock);
+
+(globalThis as typeof globalThis & { jest: typeof bunJest }).jest = bunJest;
