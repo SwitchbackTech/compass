@@ -9,6 +9,8 @@ This guide has two paths:
 
 The installer is for **local use only** — it runs Compass on your laptop and does not set up a public server. For server deployments, see [Running On A Server](#running-on-a-server).
 
+In this guide, `~/compass` means a `compass` folder in your home folder, such as `/Users/alex/compass` on macOS. It is not a folder inside the Compass source-code repo.
+
 ## Before You Start
 
 You need:

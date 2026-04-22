@@ -4,6 +4,8 @@ This folder holds the files the local self-host installer uses to run Compass on
 
 If you just want to install Compass, follow the full guide in [docs/self-hosting.md](../docs/self-hosting.md). This README is a short command reference for the files in this folder.
 
+Here, `~/compass` means a `compass` folder in your home folder, such as `/Users/alex/compass` on macOS. It is not a folder inside this repo.
+
 ## What's in this folder
 
 - `install.sh` — the installer. Sets up `~/compass`, writes `~/compass/.env`, copies the helper script, and places the app files under `~/compass/app`.
