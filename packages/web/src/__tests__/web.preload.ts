@@ -11,6 +11,7 @@ import {
 } from "bun:test";
 import { createRequire } from "node:module";
 
+import "../../../scripts/src/testing/core.jest-compat";
 import "@core/__tests__/core.test.init";
 import "@core/__tests__/core.test.start";
 import "./web.test.init";
@@ -26,6 +27,7 @@ const jestDomMatchers = requireMatchers(
   "@testing-library/jest-dom/dist/matchers.js",
 ) as Record<string, unknown>;
 expect.extend(jestDomMatchers);
+(globalThis as typeof globalThis & { expect: typeof expect }).expect = expect;
 
 Bun.plugin({
   name: "web-test-asset-stubs",
