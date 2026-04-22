@@ -1,37 +1,182 @@
 # Self-Hosting Compass
 
-Run Compass on your own machine and keep your calendar data on your own infrastructure.
+Run Compass on your own computer with Docker Desktop, so your calendar data stays on your machine.
 
-This guide walks through the manual setup path: what you need to provide, what Compass expects to be running, and what to expect once everything is up. You don't need to be a systems expert, but you should be comfortable running a few commands and editing a config file.
+This guide has two paths:
 
-> **Note:** A one-command installer is planned. Until it ships, use the manual steps below.
+- **Installer (recommended):** one command sets everything up in `~/compass`.
+- **Manual setup (fallback):** run the pieces yourself if the installer does not fit your needs.
 
-## What Compass Needs
+The installer is for **local use only** — it runs Compass on your own computer, not on a server that other people on the internet can reach. For server deployments, see [Running On A Server](#running-on-a-server).
 
-Compass is a web app plus a backend API. It doesn't bundle a database or an auth server — it expects both to exist and to be reachable from the backend.
+In this guide, `~/compass` means a folder named `compass` in your home directory, for example `/Users/alex/compass` on macOS or `/home/alex/compass` on Linux. The installer creates this folder for you.
+
+## Before You Start
+
+You need:
+
+- A Mac or Linux machine.
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed and running. Docker is what runs Compass and its database. If Docker Desktop is not running, the installer will not work.
+
+No account, key, or Google setup is required to get Compass running locally.
+
+## Quick Install
+
+Once Docker Desktop is running, open a terminal and run:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
+```
+
+The installer will:
+
+1. Create a folder at `~/compass` for your install.
+2. Download the Compass code into `~/compass/app`.
+3. Write a configuration file at `~/compass/.env` with sensible defaults.
+4. Copy a helper script to `~/compass/compass` that you use to manage the install.
+5. Start Compass with Docker Compose and wait until it is ready.
+6. Try to open Compass in your browser.
+
+When it finishes, Compass is available at:
+
+- Web app: [http://localhost:9080](http://localhost:9080)
+- Backend API: [http://localhost:3000/api](http://localhost:3000/api)
+
+If your browser does not open automatically, open [http://localhost:9080](http://localhost:9080) manually.
+
+The installer does not collect telemetry and does not call Compass-owned services after installation. It fetches code from GitHub to install or update Compass.
+
+### Prefer To Read The Script First?
+
+If you want to inspect the installer before running it:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh
+less install.sh
+sh install.sh
+```
+
+## Managing Your Install
+
+After install, you manage Compass from the `~/compass` folder using the `./compass` helper:
+
+```bash
+cd ~/compass
+./compass status
+```
+
+Available commands:
+
+| Command              | What it does                                                                 |
+| -------------------- | ---------------------------------------------------------------------------- |
+| `./compass start`    | Start Compass.                                                               |
+| `./compass stop`     | Stop Compass. Your data is not deleted.                                      |
+| `./compass restart`  | Stop and start Compass.                                                      |
+| `./compass status`   | Show whether Compass is running.                                             |
+| `./compass logs`     | Show recent logs from the running containers.                                |
+| `./compass rebuild`  | Rebuild the app (needed after certain config changes — see below).           |
+| `./compass update`   | Pull the latest Compass code and rebuild.                                    |
+| `./compass open`     | Open Compass in your browser.                                                |
+
+### When To Use `rebuild`
+
+A few settings become part of the web app when it is built, so editing them in `~/compass/.env` has no effect until you rebuild. This includes:
+
+- Google OAuth client values (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
+- `FRONTEND_URL`
+- `BASEURL`
+
+After editing any of these, run:
+
+```bash
+cd ~/compass
+./compass rebuild
+```
+
+### When To Use `update`
+
+`./compass update` pulls the latest Compass code and rebuilds the app. It only works if the installer cloned Compass with Git.
+
+If the installer fell back to downloading an archive because `git` was not available on your machine, `./compass update` cannot update you. Install Git, download the installer script, and run `sh install.sh` from your terminal to refresh Compass.
+
+Stopping Compass does not delete your data. Neither does `update` or `rebuild`.
+
+## What The Installer Runs
+
+The installer uses Docker Compose to run a small set of containers:
+
+| Container        | Where it is reachable                                            | What it is for                                   |
+| ---------------- | ---------------------------------------------------------------- | ------------------------------------------------ |
+| Web app          | `http://localhost:9080`                                          | The Compass UI in your browser.                  |
+| Backend API      | `http://localhost:3000/api`                                      | Compass's server.                                |
+| MongoDB          | Internal Docker network only                                     | Stores signed-in Compass events and user profile data. |
+| SuperTokens Core | Internal Docker network only                                     | Handles signup, login, and sessions.             |
+| Postgres         | Internal Docker network only                                     | Durable storage used by SuperTokens.             |
+
+Only the web app and backend are reachable from your browser, and only at `localhost` on your own machine. MongoDB, SuperTokens Core, and Postgres stay on an internal Docker network; nothing outside the Compass containers can connect to them.
+
+### Google Calendar Sync
+
+Google auth and Google Calendar sync are **not** configured by the local installer. Because the backend currently requires Google environment variables to start, the installer writes placeholder values so Compass can boot.
+
+You can add your own Google OAuth client values to `~/compass/.env` and run `./compass rebuild` to try Google sign-in and the Google Calendar connect flow. However, keeping Compass continuously in sync with Google Calendar, so new or changed Google events appear automatically, requires an HTTPS backend that is reachable from the public internet. The local installer does not set that up. For that, see [Running On A Server](#running-on-a-server).
+
+## Where Your Data Lives
+
+Compass stores data in a few different places. What ends up where depends on whether you are signed in.
+
+**Before you sign up:** events and tasks are kept in your browser's local storage (IndexedDB). No data is written to MongoDB until you sign up.
+
+**After you sign up:**
+
+- SuperTokens creates your auth account (stored in Postgres).
+- Events you had in the browser are copied into MongoDB.
+- From then on, event changes go through the backend and are saved in MongoDB.
+- Tasks still live in your browser. There is no backend task storage yet.
+
+### Files On Disk
+
+- `~/compass` — your install folder. Contains the helper command, config, and app files.
+- `~/compass/.env` — local configuration and generated secrets.
+- `~/compass/compass` — the helper script you run as `./compass ...`.
+- `~/compass/app` — the Compass source code used to build the containers.
+
+### Docker Volumes
+
+Inside Docker, Compass stores its data in volumes managed by Docker itself. With the default project name, these volumes are called:
+
+- `compass_compass_mongo_data` — MongoDB data (Compass accounts' calendar data).
+- `compass_compass_supertokens_postgres_data` — Postgres data (SuperTokens auth).
+
+If you set `COMPOSE_PROJECT_NAME` to something else, the volume names will change to match.
+
+Stopping Compass does **not** delete these volumes. To back up your account data, back up these Docker volumes. Browser-only tasks do not have a backup or export path today.
+
+For more on how data flows in each mode, see [Hosting Modes](./development/hosting-modes.md).
+
+## Manual Setup
+
+Use manual setup only if you want to run the services yourself or customize things the installer does not cover.
+
+### What Manual Setup Needs
+
+Compass is a web app and a backend API. In manual setup, you provide the runtime pieces the backend expects.
 
 **You provide:**
 
 - A machine you can run services on. Your laptop is fine for personal use.
-- [Bun](https://bun.sh) for installing dependencies and running the backend and web app.
+- [Bun](https://bun.sh) to install dependencies and run the backend and web app.
 - Node.js 24+ if you plan to make a production build. You can skip this while running in dev mode.
-- A **MongoDB** instance. Stores your events once you sign up. The simplest path is a managed service like MongoDB Atlas (the free tier is plenty for personal use). You can also run MongoDB in Docker or install it directly on your machine.
-- A **SuperTokens** instance. Handles signup, login, and sessions. The simplest path is the managed SuperTokens SaaS (free tier is plenty for personal use). You can also run the SuperTokens core in Docker.
+- A **MongoDB** instance for signed-in event data.
+- A **SuperTokens** setup for signup, login, and sessions. Managed SuperTokens is an option. If you self-host SuperTokens Core, connect it to Postgres for durable auth storage. (The installer handles this Postgres dependency for you; manual setup does not.)
 
 **Optional:**
 
-- A **Google Cloud project**, only if you want Compass to sync with Google Calendar.
+- A **Google Cloud project**, only if you want Google auth or to connect Google Calendar.
 
-> **Heads up:** Google Calendar sync is optional, but the backend currently still requires Google env values to start. Until that's fixed, provide real or placeholder Google values in your env file even if you don't plan to connect Google Calendar.
+The backend currently requires Google environment variables to start, even if you do not plan to use Google. Either provide real credentials from a Google Cloud project, or use placeholder strings until you set one up. Ongoing Google Calendar watch notifications need an HTTPS, publicly reachable backend, which manual local setup does not provide.
 
-**Compass provides:**
-
-- The web app and backend, plus all the logic that reads and writes your events.
-- Local-first storage in the browser before you sign up — you can use Compass immediately without configuring anything else.
-- Migration of your browser-local events into your MongoDB when you create an account.
-- Google Calendar sync once you connect a Google Cloud project.
-
-## Setup Steps
+### Manual Steps
 
 1. **Get the code.**
 
@@ -54,9 +199,9 @@ Compass is a web app plus a backend API. It doesn't bundle a database or an auth
 
    Open `packages/backend/.env.local` and fill in:
 
-   - `MONGO_URI` — connection string for your MongoDB.
-   - SuperTokens values — the URI and key for your SuperTokens instance.
-   - Google credentials (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) — required for the backend to start even if you aren't planning to use Google Calendar. Paste in real credentials if you have a Google Cloud project, or keep the placeholder values from the example file until you do.
+   - `MONGO_URI` for your MongoDB.
+   - SuperTokens values for your managed SuperTokens instance or self-hosted Core. If you self-host Core, connect it to Postgres.
+   - Google credentials (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`). Use real credentials if you have a Google Cloud project, or placeholders until you do.
 
    For the full list and what each variable does, see [Local Development](./development/local-development.md).
 
@@ -76,21 +221,7 @@ Compass is a web app plus a backend API. It doesn't bundle a database or an auth
 
 6. **Open Compass** at [http://localhost:9080](http://localhost:9080).
 
-   You can start using it immediately — no account required.
-
-## What To Expect
-
-Once both commands are running, here's where everything lives by default:
-
-| Piece                | Where it is                                            |
-| -------------------- | ------------------------------------------------------ |
-| Web app              | [http://localhost:9080](http://localhost:9080)         |
-| Backend API          | [http://localhost:3000/api](http://localhost:3000/api) |
-| MongoDB              | Whatever you set `MONGO_URI` to                        |
-| SuperTokens          | Whatever SuperTokens instance you configured           |
-| Google Calendar sync | Off until you configure Google credentials             |
-
-If the web app loads but signup fails, check that your backend is running and that MongoDB and SuperTokens are reachable from it. The backend has a health endpoint for a quick check:
+You can check the backend with:
 
 ```bash
 curl http://localhost:3000/api/health
@@ -98,69 +229,46 @@ curl http://localhost:3000/api/health
 
 A `200` response means the backend is running and can reach MongoDB.
 
-## Accounts And Where Your Data Lives
+### Customizing After Setup
 
-Compass stores data in different places depending on whether you're signed in.
+- **Point at a different MongoDB** by updating `MONGO_URI`.
+- **Use a different SuperTokens instance** by updating the SuperTokens values in your env file.
+- **Use Google OAuth locally** by creating a Google Cloud project, adding real credentials to your env file, and restarting the backend. Ongoing Google Calendar watch notifications also need an HTTPS, publicly reachable backend.
 
-- **Before you sign up:** your events and tasks live in your browser's local storage (IndexedDB). Calendar and task data are not sent to MongoDB.
-- **When you sign up:** SuperTokens creates your account, and any events you already had in the browser are copied into your MongoDB. From then on, event changes go through the backend.
-- **Tasks stay in your browser** before and after signup. Backend task storage is not available yet.
+### Running On A Server
 
-**Backing up your data:**
-
-- **Back up your MongoDB regularly.** Account events are stored there, so any MongoDB backup approach works — `mongodump` for self-hosted Mongo, or the built-in snapshot feature of a managed service like Atlas.
-- **Tasks only live in the browser's IndexedDB** and don't have a backup or export path today. If browser storage is cleared or you move to a new device, those tasks are gone. A proper task export story is still to come.
-
-For a fuller picture of how data flows in each mode, see [Hosting Modes](./development/hosting-modes.md).
-
-## Customizing After Setup
-
-You don't have to change anything past the first run. When you're ready:
-
-- **Point at a different MongoDB** by updating `MONGO_URI`. A managed MongoDB service, a container on your machine, or a remote server all work.
-- **Use a different SuperTokens instance** by updating the SuperTokens values in `.env.local`.
-- **Enable Google Calendar** by creating a Google Cloud project, adding real credentials to `.env.local`, and restarting the backend.
-
-## Running On A Server
-
-Running Compass on a server is the same shape as running it on your laptop. The pieces don't change — a backend process, a built web app, a MongoDB, and a SuperTokens instance. What changes is the wiring: the web app and backend need public URLs, and everything has to be configured with those real URLs instead of `localhost`. MongoDB and SuperTokens only need to be reachable from the backend; they don't have to be public.
+The local installer does not handle server deployments. For a server, run the same basic pieces yourself: a backend process, a built web app, MongoDB, and either managed SuperTokens or self-hosted SuperTokens Core. If you self-host SuperTokens Core, run Postgres for its auth storage. The web app and backend need public URLs; MongoDB, SuperTokens Core, and Postgres only need to be reachable from the backend or each other.
 
 Here's what differs from a laptop setup:
 
-- **A domain and public URLs.** Your web app and backend API need to be reachable from your users' browsers. Point a domain (or two subdomains) at your server so you have stable URLs to use.
-- **HTTPS.** Required in practice, especially if you want Google Calendar sync — Google OAuth only accepts HTTPS redirect URLs (except for `localhost`). Putting a reverse proxy like Caddy, nginx, or Cloudflare in front of Compass is the common pattern, and it handles HTTPS termination for you.
+- **A domain and public URLs.** Your web app and backend API need to be reachable from your users' browsers. Point a domain or subdomains at your server so you have stable URLs.
+- **HTTPS.** Required in practice, especially if you want Google Calendar sync. Google OAuth only accepts HTTPS redirect URLs, except for `localhost`. A reverse proxy like Caddy, nginx, or Cloudflare is the common pattern.
 - **Public URLs in your env file.** Update `FRONTEND_URL`, `BASEURL`, and `CORS` to match your real public URLs. `BASEURL` is baked into the web app at build time, so rebuild the web app after changing it.
-- **Build the web app for production.** In dev mode (`bun run dev:web`) the web app is served live. For a server, build it once from the repo root with `bun run build:web` (this loads the backend env file so `BASEURL` is injected into the bundle correctly) and serve the built files through your reverse proxy or any static web server.
-- **Keep the backend process running.** `bun run dev:backend` is fine for a laptop but isn't meant for long-running use. On a server, run the backend under systemd, a container, pm2, or whatever process manager you're comfortable with, so it restarts on crashes and reboots.
-- **Google Cloud configuration.** If you enable Google Calendar sync, configure your Google Cloud project with your public web origin for OAuth, and make sure your backend API has a public HTTPS URL so Google can deliver Calendar notifications to it.
-- **MongoDB and SuperTokens as backend-only services.** A managed MongoDB service and a managed SuperTokens deployment are the simplest path. If you self-host them, they need to be reachable from the backend — same server, private network, or public internet with access controls — but they don't need to be exposed to the outside world.
+- **Build the web app for production.** In dev mode (`bun run dev:web`) the web app is served live. For a server, build it once from the repo root with `bun run build:web` and serve the built files through your reverse proxy or any static web server.
+- **Keep the backend process running.** `bun run dev:backend` is fine for a laptop but is not meant for long-running use. On a server, run the backend under systemd, a container, pm2, or another process manager.
+- **Google Cloud configuration.** If you configure Google Calendar sync, set up your Google Cloud project with your public web origin and backend HTTPS URL so Google can reach the backend for watch notifications.
+- **Backend-only data services.** MongoDB, SuperTokens Core, and Postgres should not be exposed to the public internet unless you intentionally secure that access.
 
-### Server Deployment Checklist
-
-A short, ordered pass for taking a laptop setup to a server:
+#### Server Deployment Checklist
 
 1. Choose the public URLs you want for the web app and backend API.
 2. Set `FRONTEND_URL`, `BASEURL`, and `CORS` in `packages/backend/.env.local` to match those URLs.
 3. Build the web app from the repo root with `bun run build:web`.
-4. Run the backend under a process manager (systemd, a container, pm2, etc.) so it restarts on crashes and reboots.
-5. Put a reverse proxy (Caddy, nginx, Cloudflare) in front of both and terminate HTTPS there.
+4. Run the backend under a process manager so it restarts on crashes and reboots.
+5. Put a reverse proxy in front of the web app and backend, and terminate HTTPS there.
 6. Verify `/api/health` returns `200` when hit through your public backend URL.
 7. Create an account through your public web URL to confirm signup end-to-end.
-8. (Optional) Configure your Google Cloud project with your public web origin and backend HTTPS URL, then connect Google Calendar from inside Compass.
+8. Optional: configure your Google Cloud project, then connect Google Calendar from inside Compass.
 
-A dedicated server deployment guide is still to be written. Until then, [Local Development](./development/local-development.md) has the full list of environment variables the backend and web build expect.
+See [Local Development](./development/local-development.md) for the full list of environment variables the backend and web build expect.
 
 ## Next Steps
 
-You don't need a dedicated guide for most follow-up work — each one is a small change against your existing setup:
+- **Back up account data** by backing up the Docker volumes above (or your manually managed MongoDB/Postgres storage).
+- **Try Google auth/connect flows locally** by adding your own Google OAuth credentials to `~/compass/.env`, then running `./compass rebuild`.
+- **Deploy on a server** by following the [Server Deployment Checklist](#server-deployment-checklist).
 
-- **Swap MongoDB, SuperTokens, or enable Google sync** — follow the [Customizing After Setup](#customizing-after-setup) section above. Each change is an env-file edit plus a backend restart.
-- **Back up account events** — run `mongodump` against your `MONGO_URI` on a schedule, or turn on your managed MongoDB's built-in backups.
-- **Deploy on a server** — follow the [Server Deployment Checklist](#server-deployment-checklist) above.
+If something is not working or you want to dig deeper:
 
-If something isn't working or you need to dig deeper:
-
-- [Local Development](./development/local-development.md) — full environment variable contract and troubleshooting tips
-- [Hosting Modes](./development/hosting-modes.md) — how data flows in each mode
-
-Dedicated guides for Google Cloud setup, self-hosted MongoDB, self-hosted SuperTokens, and a full backup playbook are on the roadmap.
+- [Local Development](./development/local-development.md) — full environment variable reference and troubleshooting tips.
+- [Hosting Modes](./development/hosting-modes.md) — how data flows in each mode.

@@ -1,0 +1,121 @@
+x-local-bindings:
+  web: &web-port "127.0.0.1:${WEB_PORT:-9080}:9080"
+  backend: &backend-port "127.0.0.1:${PORT:-3000}:3000"
+
+services:
+  web:
+    build:
+      context: ..
+      dockerfile: self-host/Dockerfile.web
+      args:
+        BASEURL: ${BASEURL:-http://localhost:3000/api}
+        GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-compass-self-host-placeholder.apps.googleusercontent.com}
+        COMPASS_BUILD_REF: ${COMPASS_REF:-main}
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - *web-port
+    restart: unless-stopped
+
+  backend:
+    build:
+      context: ..
+      dockerfile: self-host/Dockerfile.backend
+    depends_on:
+      mongo:
+        condition: service_healthy
+      supertokens:
+        condition: service_healthy
+    environment:
+      BASEURL: ${BASEURL:-http://localhost:3000/api}
+      CHANNEL_EXPIRATION_MIN: ${CHANNEL_EXPIRATION_MIN:-10}
+      CORS: ${CORS:-http://localhost:9080,http://localhost:3000}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:9080}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-compass-self-host-placeholder.apps.googleusercontent.com}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-compass-self-host-placeholder-secret}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      MONGO_URI: ${MONGO_URI:-mongodb://compass:change-me-mongo-password-32chars@mongo:27017/prod_calendar?authSource=admin}
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: "3000"
+      SUPERTOKENS_KEY: ${SUPERTOKENS_KEY:-change-me-supertokens-key-32chars}
+      SUPERTOKENS_URI: ${SUPERTOKENS_URI:-http://supertokens:3567}
+      TOKEN_COMPASS_SYNC: ${TOKEN_COMPASS_SYNC:-change-me-compass-sync-token-32chars}
+      TOKEN_GCAL_NOTIFICATION: ${TOKEN_GCAL_NOTIFICATION:-change-me-gcal-notification-token-32chars}
+      TZ: ${TZ:-Etc/UTC}
+    ports:
+      - *backend-port
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bun -e \"fetch('http://127.0.0.1:3000/api/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  mongo:
+    image: mongo:8.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-compass}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-change-me-mongo-password-32chars}
+    volumes:
+      - compass_mongo_data:/data/db
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "mongosh --quiet --username \"$$MONGO_INITDB_ROOT_USERNAME\" --password \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 }).ok'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  supertokens:
+    image: supertokens/supertokens-postgresql:11.0.2
+    depends_on:
+      supertokens-db:
+        condition: service_healthy
+    environment:
+      API_KEYS: ${SUPERTOKENS_KEY:-change-me-supertokens-key-32chars}
+      POSTGRESQL_CONNECTION_URI: postgresql://${SUPERTOKENS_POSTGRES_USER:-supertokens}:${SUPERTOKENS_POSTGRES_PASSWORD:-change-me-supertokens-postgres-pass-32}@supertokens-db:5432/${SUPERTOKENS_POSTGRES_DB:-supertokens}
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "bash -c 'exec 3<>/dev/tcp/localhost/3567 && printf \"GET /hello HTTP/1.1\\r\\nhost: localhost\\r\\nConnection: close\\r\\n\\r\\n\" >&3 && cat <&3 | grep \"Hello\"'",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  supertokens-db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${SUPERTOKENS_POSTGRES_USER:-supertokens}
+      POSTGRES_PASSWORD: ${SUPERTOKENS_POSTGRES_PASSWORD:-change-me-supertokens-postgres-pass-32}
+      POSTGRES_DB: ${SUPERTOKENS_POSTGRES_DB:-supertokens}
+    volumes:
+      - compass_supertokens_postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+volumes:
+  compass_mongo_data:
+  compass_supertokens_postgres_data:

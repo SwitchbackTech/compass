@@ -1,0 +1,296 @@
+#!/bin/sh
+
+script_path=$0
+case $script_path in
+  */*) ;;
+  *)
+    script_path=$(command -v "$script_path" 2>/dev/null || printf '%s\n' "$script_path")
+    ;;
+esac
+
+INSTALL_DIR=$(CDPATH= cd "$(dirname "$script_path")" 2>/dev/null && pwd -P)
+if [ -z "$INSTALL_DIR" ]; then
+  printf '%s\n' "Compass: Could not determine the install directory." >&2
+  exit 1
+fi
+
+if [ "${COMPASS_REF+x}" = x ]; then
+  COMPASS_REF_FROM_SHELL=1
+else
+  COMPASS_REF_FROM_SHELL=0
+fi
+
+APP_DIR=${COMPASS_APP_DIR:-"$INSTALL_DIR/app"}
+ENV_FILE=${COMPASS_ENV_FILE:-"$INSTALL_DIR/.env"}
+COMPOSE_FILE=$APP_DIR/self-host/docker-compose.yml
+ENV_LOADED=0
+PROJECT_NAME=${COMPASS_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:-compass}}
+APP_URL=${FRONTEND_URL:-http://localhost:9080}
+HEALTH_URL=http://localhost:3000/api/health
+
+info() {
+  printf '%s\n' "$*"
+}
+
+fail() {
+  printf 'Compass: %s\n' "$*" >&2
+  exit 1
+}
+
+usage() {
+  cat <<'USAGE'
+Usage: ./compass <command>
+
+Commands:
+  start     Start Compass
+  stop      Stop Compass without deleting data
+  restart   Restart Compass
+  rebuild   Rebuild Compass after env changes
+  logs      Follow Compass logs
+  status    Show container status
+  update    Pull the configured Compass ref, rebuild, and restart
+  open      Open Compass in your browser
+USAGE
+}
+
+load_env() {
+  if [ "$ENV_LOADED" -eq 1 ]; then
+    return
+  fi
+
+  [ -f "$ENV_FILE" ] || fail "Missing env file: $ENV_FILE. Rerun the installer or set COMPASS_ENV_FILE."
+
+  compose_project_name=$(strip_quotes "$(read_env_value COMPOSE_PROJECT_NAME)")
+  compass_ref=$(strip_quotes "$(read_env_value COMPASS_REF)")
+  frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
+  baseurl=$(strip_quotes "$(read_env_value BASEURL)")
+
+  if [ "$COMPASS_REF_FROM_SHELL" -eq 0 ] && [ -n "$compass_ref" ]; then
+    COMPASS_REF=$compass_ref
+  fi
+
+  PROJECT_NAME=${COMPASS_PROJECT_NAME:-${compose_project_name:-compass}}
+  APP_URL=${frontend_url:-http://localhost:9080}
+  HEALTH_URL=$(append_health_path "${baseurl:-http://localhost:3000/api}")
+  ENV_LOADED=1
+}
+
+load_env_if_present() {
+  if [ -f "$ENV_FILE" ]; then
+    load_env
+  fi
+}
+
+require_stack() {
+  load_env
+  [ -f "$COMPOSE_FILE" ] || fail "Missing compose file: $COMPOSE_FILE. Rerun the installer to refresh app files."
+  docker compose version >/dev/null 2>&1 || fail "Docker Compose is not available. Install Docker Desktop or Docker Engine with Compose."
+}
+
+compose() {
+  require_stack
+  docker compose --project-name "$PROJECT_NAME" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+}
+
+check_health() {
+  if command -v curl >/dev/null 2>&1; then
+    curl -fsS "$HEALTH_URL" >/dev/null 2>&1
+    return $?
+  fi
+
+  if command -v wget >/dev/null 2>&1; then
+    wget -q -O /dev/null "$HEALTH_URL" >/dev/null 2>&1
+    return $?
+  fi
+
+  fail "curl or wget is required to check backend health."
+}
+
+wait_for_health() {
+  tries=60
+  while [ "$tries" -gt 0 ]; do
+    if check_health; then
+      return 0
+    fi
+
+    tries=$((tries - 1))
+    sleep 2
+  done
+
+  return 1
+}
+
+open_browser() {
+  load_env_if_present
+
+  if command -v open >/dev/null 2>&1; then
+    open "$APP_URL" >/dev/null 2>&1 || true
+    return
+  fi
+
+  if command -v xdg-open >/dev/null 2>&1; then
+    xdg-open "$APP_URL" >/dev/null 2>&1 || true
+    return
+  fi
+
+  if command -v cmd.exe >/dev/null 2>&1; then
+    cmd.exe /c start "" "$APP_URL" >/dev/null 2>&1 || true
+  fi
+}
+
+update_repo() {
+  ref=${COMPASS_REF:-main}
+
+  if [ ! -d "$APP_DIR/.git" ]; then
+    fail "This install does not include Git metadata. Rerun the installer to refresh Compass."
+  fi
+
+  validate_compass_ref "$ref"
+
+  git -C "$APP_DIR" fetch --depth 1 origin -- "$ref" || fail "Could not fetch Compass ref: $ref"
+  git -C "$APP_DIR" checkout --force FETCH_HEAD || fail "Could not check out Compass ref: $ref"
+}
+
+start_stack() {
+  compose up -d || fail "Docker Compose failed to start Compass."
+  if wait_for_health; then
+    info "Compass is running at $APP_URL"
+  else
+    fail "Compass started, but the backend health check did not pass. Run './compass logs' for details."
+  fi
+}
+
+rebuild_stack() {
+  compose up -d --build || fail "Docker Compose failed to rebuild and start Compass."
+  if wait_for_health; then
+    info "Compass is running at $APP_URL"
+  else
+    fail "Compass rebuilt, but the backend health check did not pass. Run './compass logs' for details."
+  fi
+}
+
+append_health_path() {
+  base_url=$1
+
+  while :; do
+    case $base_url in
+      */)
+        base_url=${base_url%/}
+        ;;
+      *)
+        break
+        ;;
+    esac
+  done
+
+  printf '%s/health\n' "$base_url"
+}
+
+read_env_value() {
+  key=$1
+  value=
+  found=0
+
+  while IFS= read -r line || [ -n "$line" ]; do
+    case $line in
+      "$key="*)
+        value=${line#*=}
+        found=1
+        ;;
+    esac
+  done < "$ENV_FILE" || fail "Could not read env file: $ENV_FILE"
+
+  if [ "$found" -eq 1 ]; then
+    printf '%s\n' "$value"
+  fi
+}
+
+strip_quotes() {
+  value=$1
+
+  case $value in
+    \"*\")
+      value=${value#\"}
+      value=${value%%\"*}
+      ;;
+    \'*\')
+      value=${value#\'}
+      value=${value%%\'*}
+      ;;
+    *" #"*)
+      value=${value%%" #"*}
+      while :; do
+        case $value in
+          *" ")
+            value=${value% }
+            ;;
+          *)
+            break
+            ;;
+        esac
+      done
+      ;;
+  esac
+
+  printf '%s\n' "$value"
+}
+
+validate_compass_ref() {
+  ref=$1
+
+  case $ref in
+    -*)
+      fail "COMPASS_REF must not start with '-'. Found: $ref"
+      ;;
+    '' | *[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._/@+-]*)
+      fail "COMPASS_REF must be non-empty and contain only letters, numbers, '.', '_', '/', '@', '+', or '-'. Found: $ref"
+      ;;
+  esac
+}
+
+command_name=${1:-}
+
+case $command_name in
+  start)
+    start_stack
+    ;;
+  stop)
+    compose stop
+    ;;
+  restart)
+    compose restart || fail "Docker Compose failed to restart Compass."
+    if wait_for_health; then
+      info "Compass is running at $APP_URL"
+    else
+      fail "Compass restarted, but the backend health check did not pass. Run './compass logs' for details."
+    fi
+    ;;
+  rebuild)
+    rebuild_stack
+    ;;
+  logs)
+    shift
+    compose logs -f "$@"
+    ;;
+  status)
+    compose ps
+    ;;
+  update)
+    require_stack
+    update_repo
+    compose up -d --build || fail "Docker Compose failed to rebuild and start Compass."
+    if wait_for_health; then
+      info "Compass updated and running at $APP_URL"
+    else
+      fail "Compass updated, but the backend health check did not pass. Run './compass logs' for details."
+    fi
+    ;;
+  open)
+    open_browser
+    info "$APP_URL"
+    ;;
+  *)
+    usage
+    exit 1
+    ;;
+esac
