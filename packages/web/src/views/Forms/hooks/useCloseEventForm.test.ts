@@ -1,7 +1,6 @@
 import { renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
 import { BehaviorSubject } from "rxjs";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const closeFloatingAtCursor = mock();
 const resetActiveEvent = mock();
@@ -13,15 +12,13 @@ const strategy$ = new BehaviorSubject("absolute");
 const reference$ = new BehaviorSubject(null);
 
 mock.module("@web/common/hooks/useOpenAtCursor", () => {
-  const real = require("@web/common/hooks/useOpenAtCursor");
   return {
-    ...real,
     closeFloatingAtCursor,
-    open$: real.open$,
-    nodeId$: real.nodeId$,
-    placement$: real.placement$,
-    strategy$: real.strategy$,
-    reference$: real.reference$,
+    open$,
+    nodeId$,
+    placement$,
+    strategy$,
+    reference$,
     openFloatingAtCursor: mock(),
     setFloatingOpenAtCursor: mock(),
     setFloatingNodeIdAtCursor: mock(),
@@ -29,12 +26,11 @@ mock.module("@web/common/hooks/useOpenAtCursor", () => {
     setFloatingReferenceAtCursor: mock(),
     setFloatingStrategyAtCursor: mock(),
     isOpenAtCursor: mock(),
-    CursorItem: { EventForm: "EventForm" },
-    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
-    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
-    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
-    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
-    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+    CursorItem: {
+      EventContextMenu: "EventContextMenu",
+      EventForm: "EventForm",
+      EventPreview: "EventPreview",
+    },
   };
 });
 

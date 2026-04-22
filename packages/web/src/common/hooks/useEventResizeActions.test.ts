@@ -1,4 +1,14 @@
+import { renderHook } from "@testing-library/react";
+import { act, type MouseEvent as ReactMouseEvent } from "react";
+import { BehaviorSubject } from "rxjs";
+import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import {
+  MINUTES_PER_SLOT,
+  SLOT_HEIGHT,
+} from "@web/views/Day/constants/day.constants";
+import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -7,16 +17,6 @@ import {
   mock,
   spyOn,
 } from "bun:test";
-import { afterAll } from "bun:test";
-import { renderHook } from "@testing-library/react";
-import { act, type MouseEvent as ReactMouseEvent } from "react";
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
-import {
-  MINUTES_PER_SLOT,
-  SLOT_HEIGHT,
-} from "@web/views/Day/constants/day.constants";
-import { BehaviorSubject } from "rxjs";
 
 // Mock definitions
 const mockUpdateEvent = mock();
@@ -43,9 +43,7 @@ mock.module("@web/store/events", () => ({
 }));
 
 mock.module("@web/common/hooks/useOpenAtCursor", () => {
-  const real = require("@web/common/hooks/useOpenAtCursor");
   return {
-    ...real,
     openFloatingAtCursor,
     closeFloatingAtCursor,
     nodeId$,
@@ -59,12 +57,11 @@ mock.module("@web/common/hooks/useOpenAtCursor", () => {
     setFloatingReferenceAtCursor: mock(),
     setFloatingStrategyAtCursor: mock(),
     isOpenAtCursor: mock(),
-    CursorItem: { EventForm: "EventForm" },
-    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
-    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
-    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
-    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
-    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+    CursorItem: {
+      EventContextMenu: "EventContextMenu",
+      EventForm: "EventForm",
+      EventPreview: "EventPreview",
+    },
   };
 });
 
@@ -74,7 +71,8 @@ mock.module("@web/ducks/events/selectors/event.selectors", () => ({
 }));
 
 // Import the hook after mocks
-const { useEventResizeActions } = require("./useEventResizeActions") as typeof import("./useEventResizeActions");
+const { useEventResizeActions } =
+  require("./useEventResizeActions") as typeof import("./useEventResizeActions");
 const { CursorItem } = require("@web/common/hooks/useOpenAtCursor");
 
 describe("useEventResizeActions", () => {
@@ -106,7 +104,10 @@ describe("useEventResizeActions", () => {
       mockSetDraft({ ...mockEvent, ...update });
     });
 
-    getBoundingClientRectSpy = spyOn(mockBounds, "getBoundingClientRect").mockReturnValue({
+    getBoundingClientRectSpy = spyOn(
+      mockBounds,
+      "getBoundingClientRect",
+    ).mockReturnValue({
       top: 0,
       bottom: 1000,
       height: 1000,
