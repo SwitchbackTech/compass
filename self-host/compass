@@ -14,6 +14,12 @@ if [ -z "$INSTALL_DIR" ]; then
   exit 1
 fi
 
+if [ "${COMPASS_REF+x}" = x ]; then
+  COMPASS_REF_FROM_SHELL=1
+else
+  COMPASS_REF_FROM_SHELL=0
+fi
+
 APP_DIR=${COMPASS_APP_DIR:-"$INSTALL_DIR/app"}
 ENV_FILE=${COMPASS_ENV_FILE:-"$INSTALL_DIR/.env"}
 COMPOSE_FILE=$APP_DIR/self-host/docker-compose.yml
@@ -55,8 +61,13 @@ load_env() {
   [ -f "$ENV_FILE" ] || fail "Missing env file: $ENV_FILE. Rerun the installer or set COMPASS_ENV_FILE."
 
   compose_project_name=$(strip_quotes "$(read_env_value COMPOSE_PROJECT_NAME)")
+  compass_ref=$(strip_quotes "$(read_env_value COMPASS_REF)")
   frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
   baseurl=$(strip_quotes "$(read_env_value BASEURL)")
+
+  if [ "$COMPASS_REF_FROM_SHELL" -eq 0 ] && [ -n "$compass_ref" ]; then
+    COMPASS_REF=$compass_ref
+  fi
 
   PROJECT_NAME=${COMPASS_PROJECT_NAME:-${compose_project_name:-compass}}
   APP_URL=${frontend_url:-http://localhost:9080}
@@ -134,7 +145,9 @@ update_repo() {
     fail "This install does not include Git metadata. Rerun the installer to refresh Compass."
   fi
 
-  git -C "$APP_DIR" fetch --depth 1 origin "$ref" || fail "Could not fetch Compass ref: $ref"
+  validate_compass_ref "$ref"
+
+  git -C "$APP_DIR" fetch --depth 1 origin -- "$ref" || fail "Could not fetch Compass ref: $ref"
   git -C "$APP_DIR" checkout --force FETCH_HEAD || fail "Could not check out Compass ref: $ref"
 }
 
@@ -198,15 +211,41 @@ strip_quotes() {
   case $value in
     \"*\")
       value=${value#\"}
-      value=${value%\"}
+      value=${value%%\"*}
       ;;
     \'*\')
       value=${value#\'}
-      value=${value%\'}
+      value=${value%%\'*}
+      ;;
+    *" #"*)
+      value=${value%%" #"*}
+      while :; do
+        case $value in
+          *" ")
+            value=${value% }
+            ;;
+          *)
+            break
+            ;;
+        esac
+      done
       ;;
   esac
 
   printf '%s\n' "$value"
+}
+
+validate_compass_ref() {
+  ref=$1
+
+  case $ref in
+    -*)
+      fail "COMPASS_REF must not start with '-'. Found: $ref"
+      ;;
+    '' | *[!ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789._/@+-]*)
+      fail "COMPASS_REF must be non-empty and contain only letters, numbers, '.', '_', '/', '@', '+', or '-'. Found: $ref"
+      ;;
+  esac
 }
 
 command_name=${1:-}
