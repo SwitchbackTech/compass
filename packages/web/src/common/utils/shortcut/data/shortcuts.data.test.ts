@@ -14,7 +14,7 @@ describe("shortcuts.data", () => {
         k: "r",
         label: "Edit reminder",
       });
-      expect(shortcuts.globalShortcuts[4]).toEqual({ k: "z", label: "Logout" });
+      expect(shortcuts.globalShortcuts[4]).toEqual({ k: "z", label: "Log in" });
       expect(shortcuts.globalShortcuts[5]).toEqual({
         k: "Mod+k",
         label: "Command Palette",
@@ -35,6 +35,12 @@ describe("shortcuts.data", () => {
         k: "t",
         label: "Go to today",
       });
+    });
+
+    it("shows logout when authenticated", () => {
+      const shortcuts = getShortcuts({ isAuthenticated: true });
+
+      expect(shortcuts.globalShortcuts[4]).toEqual({ k: "z", label: "Logout" });
     });
 
     it("should show 'Scroll to now' when currentDate is today", () => {

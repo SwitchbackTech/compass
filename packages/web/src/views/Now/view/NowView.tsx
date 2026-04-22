@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useSession } from "@web/auth/compass/session/useSession";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 import { useSidebarState } from "@web/common/hooks/useSidebarState";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
@@ -11,9 +12,11 @@ import { useNowShortcuts } from "@web/views/Now/shortcuts/useNowShortcuts";
 import { NowViewContent } from "@web/views/Now/view/NowViewContent";
 
 export const NowView = () => {
+  const { authenticated } = useSession();
   const { togglePointerMovementTracking } = usePointerPosition();
   const { isSidebarOpen, toggleSidebar } = useSidebarState();
   const { globalShortcuts, nowShortcuts } = getShortcuts({
+    isAuthenticated: authenticated,
     isNow: true,
   });
 

@@ -1,5 +1,6 @@
 import { memo, useCallback } from "react";
 import dayjs from "@core/util/date/dayjs";
+import { useSession } from "@web/auth/compass/session/useSession";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
@@ -33,6 +34,7 @@ import {
 
 export const DayViewContent = memo(() => {
   const { isSidebarOpen, toggleSidebar } = useSidebarState();
+  const { authenticated } = useSession();
 
   const selectionActions = useMainGridSelectionActions();
   const { timedEventsGridRef } = useCompassRefs();
@@ -56,7 +58,10 @@ export const DayViewContent = memo(() => {
     undoToastId,
   } = useTasks();
   const dateInView = useDateInView();
-  const shortcuts = getShortcuts({ currentDate: dateInView });
+  const shortcuts = getShortcuts({
+    currentDate: dateInView,
+    isAuthenticated: authenticated,
+  });
 
   const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
     useDateNavigation();

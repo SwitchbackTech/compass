@@ -40,6 +40,13 @@ mock.module("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   }),
 }));
 
+mock.module("@web/common/constants/env.constants", () => ({
+  ENV_WEB: {
+    GOOGLE_CLIENT_ID: "test-client-id",
+  },
+  IS_GOOGLE_AUTH_CONFIGURED: true,
+}));
+
 const mockCompleteAuthentication = mock();
 mock.module("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
   useCompleteAuthentication: () => mockCompleteAuthentication,
