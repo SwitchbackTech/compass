@@ -39,6 +39,7 @@ Commands:
   start     Start Compass
   stop      Stop Compass without deleting data
   restart   Restart Compass
+  rebuild   Rebuild Compass after env changes
   logs      Follow Compass logs
   status    Show container status
   update    Pull the configured Compass ref, rebuild, and restart
@@ -146,6 +147,15 @@ start_stack() {
   fi
 }
 
+rebuild_stack() {
+  compose up -d --build || fail "Docker Compose failed to rebuild and start Compass."
+  if wait_for_health; then
+    info "Compass is running at $APP_URL"
+  else
+    fail "Compass rebuilt, but the backend health check did not pass. Run './compass logs' for details."
+  fi
+}
+
 command_name=${1:-}
 
 case $command_name in
@@ -157,11 +167,9 @@ case $command_name in
     ;;
   restart)
     compose restart || fail "Docker Compose failed to restart Compass."
-    if wait_for_health; then
-      info "Compass is running at $APP_URL"
-    else
-      fail "Compass restarted, but the backend health check did not pass. Run './compass logs' for details."
-    fi
+    ;;
+  rebuild)
+    rebuild_stack
     ;;
   logs)
     shift

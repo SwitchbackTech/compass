@@ -28,11 +28,14 @@ Then use:
 ./compass start
 ./compass stop
 ./compass restart
+./compass rebuild
 ./compass logs
 ./compass status
 ./compass update
 ./compass open
 ```
+
+Use `./compass rebuild` after changing values in `~/compass/.env` that are included in the web app build, such as Google OAuth client values or local URL settings.
 
 `./compass update` works for Git-based installs. For archive installs, rerun the installer from an interactive shell to refresh Compass.
 

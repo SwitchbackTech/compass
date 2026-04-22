@@ -733,17 +733,21 @@ EOF
     || [ -z "$google_client_id" ] \
     || [ -z "$google_client_secret" ]; then
     cat <<EOF
-  Google sync is not configured yet. This install is using temporary placeholder Google OAuth values.
-  To enable Google sign-in and calendar sync, edit:
+  Google auth and Google Calendar sync are not configured by the local installer.
+  This install is using temporary placeholder Google OAuth values.
+  To try Google sign-in or Google connect flows with your own OAuth app, edit:
   $ENV_FILE
-  Then run:
-  $HELPER_FILE restart
+  Then rebuild Compass because Google client values are included in the web app build:
+  $HELPER_FILE rebuild
+  Ongoing Google Calendar watch notifications also require an HTTPS/public backend URL setup outside this local-only installer path.
 EOF
   else
     cat <<EOF
   Custom Google OAuth values are present in:
   $ENV_FILE
-  The installer does not verify them. If Google sign-in or calendar sync does not work, check those credentials in Google Cloud Console.
+  The installer does not verify them. If you change Google or client URL values, run:
+  $HELPER_FILE rebuild
+  Ongoing Google Calendar watch notifications require an HTTPS/public backend URL setup outside this local-only installer path.
 EOF
   fi
 }
@@ -767,6 +771,7 @@ Useful commands:
   ./compass status
   ./compass logs
   ./compass restart
+  ./compass rebuild
   ./compass stop
 EOF
 

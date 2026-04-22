@@ -38,12 +38,15 @@ cd ~/compass
 ./compass logs
 ./compass stop
 ./compass start
+./compass rebuild
 ./compass update
 ```
 
+Use `./compass rebuild` after changing values in `~/compass/.env` that are included in the web app build, such as Google OAuth client values, `FRONTEND_URL`, or `BASEURL`.
+
 `./compass update` works for Git-based installs. If Compass was installed from an archive because `git` was not available, rerun the installer from an interactive shell to refresh Compass.
 
-The installer preserves `~/compass/.env` when you refresh an install. It also does not delete Docker volumes when Compass is stopped, refreshed, or updated.
+If `./compass update` rebuilds the app but the health check fails, it reports the failure and leaves the app files at the updated ref. It does not currently roll back app files. The installer preserves `~/compass/.env` when you refresh an install. It also does not delete Docker volumes when Compass is stopped, refreshed, or updated.
 
 ## What The Installer Runs
 
@@ -59,7 +62,7 @@ The installer uses Docker Desktop / Docker Compose to run:
 
 MongoDB stores signed-in Compass events. SuperTokens handles accounts and sessions. Postgres is internal durable storage for SuperTokens auth data; you do not configure it directly when using the installer.
 
-Google Calendar sync is not configured by the v1 installer. The installer writes temporary Google values because the backend currently requires Google environment variables to start. To enable Google sign-in or calendar sync later, edit `~/compass/.env` with your own Google OAuth values and restart Compass.
+Google auth and Google Calendar sync are not configured by the v1 local installer. The installer writes temporary Google values because the backend currently requires Google environment variables to start. Custom Google OAuth values may let you try Google sign-in or Google connect flows after you edit `~/compass/.env` and run `./compass rebuild`. Ongoing Google Calendar watch notifications require an HTTPS/public backend URL setup and are outside the local-only installer path.
 
 ## Data And Config Locations
 
@@ -103,9 +106,9 @@ Compass is a web app plus a backend API. In manual setup, you provide the runtim
 
 **Optional:**
 
-- A **Google Cloud project**, only if you want Compass to sync with Google Calendar.
+- A **Google Cloud project**, only if you want Compass to use Google auth or connect to Google Calendar.
 
-Google Calendar sync is optional, but the backend currently still requires Google env values to start. Provide real or placeholder Google values in your env file even if you do not plan to connect Google Calendar.
+Google Calendar sync is optional, but the backend currently still requires Google env values to start. Provide real or placeholder Google values in your env file even if you do not plan to connect Google Calendar. Ongoing Google Calendar watch notifications need an HTTPS/public backend URL, so they are not covered by the local-only installer setup.
 
 ### Manual Steps
 
@@ -166,7 +169,7 @@ You do not have to change anything after the first run. When you're ready:
 
 - **Point at a different MongoDB** by updating `MONGO_URI`.
 - **Use a different SuperTokens instance** by updating the SuperTokens values in your env file.
-- **Enable Google Calendar** by creating a Google Cloud project, adding real credentials to your env file, and restarting the backend.
+- **Use Google OAuth locally** by creating a Google Cloud project, adding real credentials to your env file, and restarting the backend. Ongoing Google Calendar watch notifications also need an HTTPS/public backend URL.
 
 ### Running On A Server
 
@@ -179,7 +182,7 @@ Here's what differs from a laptop setup:
 - **Public URLs in your env file.** Update `FRONTEND_URL`, `BASEURL`, and `CORS` to match your real public URLs. `BASEURL` is baked into the web app at build time, so rebuild the web app after changing it.
 - **Build the web app for production.** In dev mode (`bun run dev:web`) the web app is served live. For a server, build it once from the repo root with `bun run build:web` and serve the built files through your reverse proxy or any static web server.
 - **Keep the backend process running.** `bun run dev:backend` is fine for a laptop but is not meant for long-running use. On a server, run the backend under systemd, a container, pm2, or another process manager.
-- **Google Cloud configuration.** If you enable Google Calendar sync, configure your Google Cloud project with your public web origin and backend HTTPS URL.
+- **Google Cloud configuration.** If you configure Google Calendar sync, set up your Google Cloud project with your public web origin and backend HTTPS URL so Google can reach the backend for watch notifications.
 - **Backend-only data services.** MongoDB, SuperTokens Core, and Postgres should not be exposed to the public internet unless you intentionally secure that access.
 
 #### Server Deployment Checklist
@@ -198,7 +201,7 @@ A dedicated server deployment guide is still to be written. Until then, [Local D
 ## Next Steps
 
 - **Back up account events and auth data** by backing up the Docker volumes or your manually managed MongoDB/Postgres storage.
-- **Enable Google sync** by adding your own Google OAuth credentials to your env file.
+- **Try Google auth/connect flows locally** by adding your own Google OAuth credentials to `~/compass/.env`, then running `./compass rebuild`.
 - **Deploy on a server** by following the [Server Deployment Checklist](#server-deployment-checklist).
 
 If something is not working or you need to dig deeper:
