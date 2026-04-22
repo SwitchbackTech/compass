@@ -52,16 +52,6 @@ less install.sh
 sh install.sh
 ```
 
-### Testing From A Clone
-
-If you are trying the installer from this branch before it is published on `main`, run it from the repo root and point the installer at your local checkout:
-
-```bash
-COMPASS_REPO_URL="$PWD" \
-COMPASS_REF="$(git branch --show-current)" \
-sh self-host/install.sh
-```
-
 ## Managing Your Install
 
 After install, you manage Compass from the `~/compass` folder using the `./compass` helper:

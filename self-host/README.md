@@ -17,23 +17,11 @@ If you just want to install Compass, follow the full guide in [docs/self-hosting
 
 Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) first and make sure it is running.
 
-### Running the installer from this repo (pre-merge testing)
-
-From the repo root, point the installer at your local checkout:
-
-```bash
-COMPASS_REPO_URL="$PWD" \
-COMPASS_REF="$(git branch --show-current)" \
-sh self-host/install.sh
-```
-
-### Running the public installer (after merge)
-
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
 ```
 
-Both commands do the same thing: they create `~/compass` and start Compass there.
+This creates `~/compass` and starts Compass there.
 
 ## After install: the helper script
 
