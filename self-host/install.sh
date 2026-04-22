@@ -23,7 +23,7 @@ MARKER_FILE=$COMPASS_HOME/.compass-self-host
 HELPER_FILE=$COMPASS_HOME/compass
 COMPOSE_FILE=$APP_DIR/self-host/docker-compose.yml
 OLD_COMPOSE_FILE=$APP_DIR/self-host/docker-compose.yml
-PROJECT_NAME=compass
+PROJECT_NAME=${COMPOSE_PROJECT_NAME:-compass}
 WEB_PORT_VALUE=9080
 PORT_VALUE=3000
 BASEURL_VALUE=http://localhost:3000/api
@@ -160,6 +160,31 @@ confirm_refresh() {
       exit 0
       ;;
   esac
+}
+
+check_fresh_install_volumes() {
+  [ "$IS_REFRESH" -eq 0 ] || return
+  [ ! -f "$ENV_FILE" ] || return
+
+  existing_volumes=
+  for volume_name in \
+    "${PROJECT_NAME}_compass_mongo_data" \
+    "${PROJECT_NAME}_compass_supertokens_postgres_data"
+  do
+    if docker volume inspect "$volume_name" >/dev/null 2>&1; then
+      existing_volumes="${existing_volumes}
+  $volume_name"
+    fi
+  done
+
+  [ -n "$existing_volumes" ] || return
+
+  cat >&2 <<EOF
+Compass installer: Docker volumes already exist for project "$PROJECT_NAME", but $ENV_FILE is missing.
+Compass installer: Restore the matching .env, choose a different COMPOSE_PROJECT_NAME, or intentionally remove the old Docker volumes yourself.
+Compass installer: Existing volumes:$existing_volumes
+EOF
+  exit 1
 }
 
 check_install_dir() {
@@ -330,7 +355,7 @@ load_runtime_config() {
     COMPASS_ARCHIVE_URL=https://github.com/SwitchbackTech/compass/archive/${COMPASS_REF}.tar.gz
   fi
 
-  PROJECT_NAME=${project_name:-compass}
+  PROJECT_NAME=${project_name:-${COMPOSE_PROJECT_NAME:-compass}}
   WEB_PORT_VALUE=${web_port:-9080}
   PORT_VALUE=${backend_port:-3000}
   validate_port_value WEB_PORT "$WEB_PORT_VALUE"
@@ -433,7 +458,7 @@ write_env_if_missing() {
   TMP_ENV=$COMPASS_HOME/.env.$$
   cat > "$TMP_ENV" <<EOF
 # Compose
-COMPOSE_PROJECT_NAME=compass
+COMPOSE_PROJECT_NAME=$PROJECT_NAME
 COMPASS_REF=$COMPASS_REF
 
 # Local ports
@@ -799,6 +824,7 @@ require_prerequisites
 load_runtime_config
 if [ "$IS_REFRESH" -eq 0 ]; then
   check_required_ports
+  check_fresh_install_volumes
 else
   info "Refreshing an existing Compass install; Docker Compose will reuse configured ports $WEB_PORT_VALUE and $PORT_VALUE."
 fi
