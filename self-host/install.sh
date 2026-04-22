@@ -429,10 +429,73 @@ validate_existing_mongo_uri() {
   esac
 }
 
+ensure_existing_generated_secret() {
+  key=$1
+  label=$2
+  value=$(strip_quotes "$(read_env_value "$key")")
+
+  if [ -n "$value" ]; then
+    return
+  fi
+
+  secret=$(generate_secret "$label") || exit 1
+  printf '\n%s=%s\n' "$key" "$secret" >> "$ENV_FILE" \
+    || fail "Could not add $key to $ENV_FILE."
+  chmod 600 "$ENV_FILE" || fail "Could not secure $ENV_FILE."
+  info "Added missing $key to $ENV_FILE."
+}
+
+ensure_existing_local_mongo_uri_replica_set() {
+  mongo_uri=$(strip_quotes "$(read_env_value MONGO_URI)")
+
+  case $mongo_uri in
+    *mongo:27017*) ;;
+    *)
+      return
+      ;;
+  esac
+
+  case $mongo_uri in
+    *replicaSet=*)
+      return
+      ;;
+  esac
+
+  separator="?"
+  case $mongo_uri in
+    *\?*)
+      separator="&"
+      ;;
+  esac
+
+  TMP_ENV=$COMPASS_HOME/.env.$$
+  while IFS= read -r line || [ -n "$line" ]; do
+    case $line in
+      MONGO_URI=*)
+        printf 'MONGO_URI=%s%sreplicaSet=rs0\n' "$mongo_uri" "$separator"
+        ;;
+      *)
+        printf '%s\n' "$line"
+        ;;
+    esac
+  done < "$ENV_FILE" > "$TMP_ENV" \
+    || fail "Could not update $ENV_FILE with MongoDB replica set settings."
+
+  chmod 600 "$TMP_ENV" || fail "Could not secure temporary env file."
+  mv "$TMP_ENV" "$ENV_FILE" \
+    || fail "Could not update $ENV_FILE with MongoDB replica set settings."
+  TMP_ENV=
+  info "Updated local MONGO_URI to use MongoDB replica set rs0."
+}
+
 validate_existing_env_secrets() {
   [ -f "$ENV_FILE" ] || return
 
+  ensure_existing_generated_secret MONGO_REPLICA_SET_KEY "MongoDB replica set key"
+  ensure_existing_local_mongo_uri_replica_set
+
   validate_existing_secret MONGO_INITDB_ROOT_PASSWORD change-me-mongo-password-32chars
+  validate_existing_secret MONGO_REPLICA_SET_KEY change-me-mongo-replica-set-key-32chars
   validate_existing_secret SUPERTOKENS_POSTGRES_PASSWORD change-me-supertokens-postgres-pass-32
   validate_existing_secret SUPERTOKENS_KEY change-me-supertokens-key-32chars
   validate_existing_secret TOKEN_COMPASS_SYNC change-me-compass-sync-token-32chars
@@ -448,6 +511,7 @@ write_env_if_missing() {
   fi
 
   mongo_password=$(generate_secret "MongoDB password") || exit 1
+  mongo_replica_set_key=$(generate_secret "MongoDB replica set key") || exit 1
   supertokens_postgres_password=$(generate_secret "SuperTokens Postgres password") || exit 1
   supertokens_key=$(generate_secret "SuperTokens API key") || exit 1
   compass_sync_token=$(generate_secret "Compass sync token") || exit 1
@@ -477,7 +541,8 @@ CORS=http://localhost:9080,http://localhost:3000
 # Compass MongoDB
 MONGO_INITDB_ROOT_USERNAME=compass
 MONGO_INITDB_ROOT_PASSWORD=$mongo_password
-MONGO_URI=mongodb://compass:$mongo_password@mongo:27017/prod_calendar?authSource=admin
+MONGO_REPLICA_SET_KEY=$mongo_replica_set_key
+MONGO_URI=mongodb://compass:$mongo_password@mongo:27017/prod_calendar?authSource=admin&replicaSet=rs0
 
 # SuperTokens Postgres
 SUPERTOKENS_POSTGRES_USER=supertokens

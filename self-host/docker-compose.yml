@@ -35,7 +35,7 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-compass-self-host-placeholder.apps.googleusercontent.com}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-compass-self-host-placeholder-secret}
       LOG_LEVEL: ${LOG_LEVEL:-info}
-      MONGO_URI: ${MONGO_URI:-mongodb://compass:change-me-mongo-password-32chars@mongo:27017/prod_calendar?authSource=admin}
+      MONGO_URI: ${MONGO_URI:-mongodb://compass:change-me-mongo-password-32chars@mongo:27017/prod_calendar?authSource=admin&replicaSet=rs0}
       NODE_ENV: ${NODE_ENV:-production}
       PORT: "3000"
       SUPERTOKENS_KEY: ${SUPERTOKENS_KEY:-change-me-supertokens-key-32chars}
@@ -58,10 +58,13 @@ services:
       start_period: 20s
 
   mongo:
-    image: mongo:8.0
+    build:
+      context: ..
+      dockerfile: self-host/Dockerfile.mongo
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-compass}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-change-me-mongo-password-32chars}
+      MONGO_REPLICA_SET_KEY: ${MONGO_REPLICA_SET_KEY:?MONGO_REPLICA_SET_KEY is required}
     volumes:
       - compass_mongo_data:/data/db
     restart: unless-stopped
@@ -69,7 +72,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "mongosh --quiet --username \"$$MONGO_INITDB_ROOT_USERNAME\" --password \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval 'db.adminCommand({ ping: 1 }).ok'",
+          "mongosh --quiet --username \"$$MONGO_INITDB_ROOT_USERNAME\" --password \"$$MONGO_INITDB_ROOT_PASSWORD\" --authenticationDatabase admin --eval 'try { const status = rs.status(); if (status.ok === 1 && status.myState === 1) quit(0); } catch (e) { try { rs.initiate({ _id: \"rs0\", members: [{ _id: 0, host: \"mongo:27017\" }] }); } catch (initError) { if (!String(initError).includes(\"already initialized\")) throw initError; } } const status = rs.status(); quit(status.ok === 1 && status.myState === 1 ? 0 : 1);'",
         ]
       interval: 10s
       timeout: 5s

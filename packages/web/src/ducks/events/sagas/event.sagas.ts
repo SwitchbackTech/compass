@@ -138,10 +138,10 @@ export function* createEvent({ payload }: Action_CreateEvent): Generator {
     yield put(createEventSlice.actions.success());
   } catch (error) {
     yield put(pendingEventsSlice.actions.remove(event._id));
+    yield put(getWeekEventsSlice.actions.delete({ _id: event._id }));
+    yield put(getDayEventsSlice.actions.delete({ _id: event._id }));
+    yield put(eventsEntitiesSlice.actions.delete({ _id: event._id }));
     yield put(createEventSlice.actions.error());
-    yield call(deleteEvent, {
-      payload: { _id: event._id },
-    } as Action_DeleteEvent);
     handleError(error as Error);
   }
 }

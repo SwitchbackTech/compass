@@ -1,0 +1,8 @@
+FROM mongo:8.0
+
+COPY self-host/mongo-entrypoint.sh /usr/local/bin/compass-mongo-entrypoint
+
+RUN chmod +x /usr/local/bin/compass-mongo-entrypoint
+
+ENTRYPOINT ["compass-mongo-entrypoint"]
+CMD ["mongod", "--replSet", "rs0", "--bind_ip_all", "--keyFile", "/data/configdb/mongo-keyfile"]

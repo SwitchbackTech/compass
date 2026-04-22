@@ -11,7 +11,7 @@ Here, `~/compass` means a `compass` folder in your home folder, such as `/Users/
 - `install.sh` — the installer. Sets up `~/compass`, writes `~/compass/.env`, copies the helper script, and places the app files under `~/compass/app`.
 - `compass` — a template of the helper script. The installer copies this to `~/compass/compass`. Don't run it directly from the repo; run the installed copy in `~/compass`.
 - `docker-compose.yml` — the Docker Compose stack used by the installed app.
-- `Dockerfile.web`, `Dockerfile.backend` — images for the web and backend services.
+- `Dockerfile.web`, `Dockerfile.backend`, `Dockerfile.mongo` — images for the web, backend, and local MongoDB services.
 - `serve-web.ts` — the tiny web server that serves the built web app inside the web container.
 - `.env.example` — example environment values that mirror what the installer writes to `~/compass/.env`.
 
