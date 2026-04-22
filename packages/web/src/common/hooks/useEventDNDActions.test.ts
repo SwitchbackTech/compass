@@ -1,4 +1,13 @@
+import { renderHook } from "@testing-library/react";
+import { BehaviorSubject } from "rxjs";
+import { Categories_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import {
+  ID_GRID_ALLDAY_ROW,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
+import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -6,16 +15,7 @@ import {
   it,
   mock,
 } from "bun:test";
-import { afterAll } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
-import { renderHook } from "@testing-library/react";
-import { Categories_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
-import {
-  ID_GRID_ALLDAY_ROW,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
-import { BehaviorSubject } from "rxjs";
 
 // Mock definitions
 const useDndMonitor = mock();
@@ -52,9 +52,11 @@ mock.module("@web/views/Day/util/agenda/agenda.util", () => ({
   getAgendaEventTime: (d) => (d ? new Date(d).toISOString() : ""),
   getAgendaEventPosition: (date) => 0,
   getNowLinePosition: (date) => 0,
-  getEventTimeFromPosition: (_y, dateInView) => dateInView.startOf ? dateInView.startOf('day') : new Date(),
+  getEventTimeFromPosition: (_y, dateInView) =>
+    dateInView.startOf ? dateInView.startOf("day") : new Date(),
   roundMinutesToNearestFifteen: (minutes) => Math.round(minutes / 15) * 15,
-  roundToNearestFifteenWithinHour: (minutes) => Math.min(45, Math.round(minutes / 15) * 15),
+  roundToNearestFifteenWithinHour: (minutes) =>
+    Math.min(45, Math.round(minutes / 15) * 15),
   getEventHeight: (_event) => 4,
 }));
 
@@ -69,28 +71,25 @@ mock.module("@web/store", () => ({
 }));
 
 mock.module("@web/common/hooks/useOpenAtCursor", () => {
-  const real = require("@web/common/hooks/useOpenAtCursor");
   return {
-    ...real,
     openFloatingAtCursor,
     closeFloatingAtCursor,
-    open$: real.open$,
-    nodeId$: real.nodeId$,
-    placement$: real.placement$,
-    strategy$: real.strategy$,
-    reference$: real.reference$,
+    open$,
+    nodeId$,
+    placement$,
+    strategy$,
+    reference$,
     isOpenAtCursor: mock(() => false),
     setFloatingReferenceAtCursor: mock(),
     setFloatingOpenAtCursor: mock(),
     setFloatingNodeIdAtCursor: mock(),
     setFloatingPlacementAtCursor: mock(),
     setFloatingStrategyAtCursor: mock(),
-    CursorItem: { EventForm: "EventForm" },
-    useFloatingOpenAtCursor: real.useFloatingOpenAtCursor,
-    useFloatingNodeIdAtCursor: real.useFloatingNodeIdAtCursor,
-    useFloatingPlacementAtCursor: real.useFloatingPlacementAtCursor,
-    useFloatingStrategyAtCursor: real.useFloatingStrategyAtCursor,
-    useFloatingReferenceAtCursor: real.useFloatingReferenceAtCursor,
+    CursorItem: {
+      EventContextMenu: "EventContextMenu",
+      EventForm: "EventForm",
+      EventPreview: "EventPreview",
+    },
   };
 });
 
@@ -129,7 +128,7 @@ describe("useEventDNDActions", () => {
     mockDispatch.mockClear();
     mockGetSnappedMinutes.mockClear();
     mockSelectEventById.mockClear();
-    
+
     mockSelectEventById.mockReturnValue(mockEvent);
   });
 
