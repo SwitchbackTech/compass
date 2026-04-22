@@ -1,7 +1,6 @@
 import { fireEvent, render } from "@testing-library/react";
 import { type MouseEvent as ReactMouseEvent, type ReactNode } from "react";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const usePointerPosition = mock();
 

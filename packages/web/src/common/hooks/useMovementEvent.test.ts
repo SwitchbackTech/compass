@@ -1,11 +1,11 @@
-import { act, type ReactNode } from "react";
 import { fireEvent, renderHook } from "@testing-library/react";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { act, type ReactNode } from "react";
 import { ID_MAIN, ID_ROOT } from "@web/common/constants/web.constants";
 import {
   useMovementEvent,
   useSetupMovementEvents,
 } from "@web/common/hooks/useMovementEvent";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 describe("useMovementEvent", () => {
   const mockHandler = mock();
@@ -24,12 +24,13 @@ describe("useMovementEvent", () => {
     rootDiv.id = ID_ROOT;
     document.body.appendChild(rootDiv);
 
-    renderHook(() =>
-      useMovementEvent({
-        handler: mockHandler,
-        eventTypes: ["pointerdown"],
-        selectors: [`div#${ID_ROOT}`],
-      }),
+    renderHook(
+      () =>
+        useMovementEvent({
+          handler: mockHandler,
+          eventTypes: ["pointerdown"],
+          selectors: [`div#${ID_ROOT}`],
+        }),
       { wrapper: Wrapper },
     );
 
@@ -43,12 +44,13 @@ describe("useMovementEvent", () => {
     rootDiv.id = ID_ROOT;
     document.body.appendChild(rootDiv);
 
-    renderHook(() =>
-      useMovementEvent({
-        handler: mockHandler,
-        eventTypes: ["pointerup"],
-        selectors: [`div#${ID_ROOT}`],
-      }),
+    renderHook(
+      () =>
+        useMovementEvent({
+          handler: mockHandler,
+          eventTypes: ["pointerup"],
+          selectors: [`div#${ID_ROOT}`],
+        }),
       { wrapper: Wrapper },
     );
 
@@ -63,12 +65,13 @@ describe("useMovementEvent", () => {
     mainDiv.setAttribute("id", ID_MAIN);
     document.body.appendChild(mainDiv);
 
-    renderHook(() =>
-      useMovementEvent({
-        handler: mockHandler,
-        eventTypes: ["pointerdown"],
-        selectors: [`div#${ID_MAIN}`],
-      }),
+    renderHook(
+      () =>
+        useMovementEvent({
+          handler: mockHandler,
+          eventTypes: ["pointerdown"],
+          selectors: [`div#${ID_MAIN}`],
+        }),
       { wrapper: Wrapper },
     );
 
@@ -82,11 +85,12 @@ describe("useMovementEvent", () => {
     rootDiv.id = ID_ROOT;
     document.body.appendChild(rootDiv);
 
-    const { result } = renderHook(() =>
-      useMovementEvent({
-        handler: mockHandler,
-        eventTypes: ["pointerdown"],
-      }),
+    const { result } = renderHook(
+      () =>
+        useMovementEvent({
+          handler: mockHandler,
+          eventTypes: ["pointerdown"],
+        }),
       { wrapper: Wrapper },
     );
 

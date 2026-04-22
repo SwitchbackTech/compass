@@ -3,8 +3,7 @@ import {
   type Schema_GridEvent,
   type Schema_SomedayEvent,
 } from "@web/common/types/web.event.types";
-import { describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
+import { afterAll, describe, expect, it, mock } from "bun:test";
 
 const validateGridEvent = mock(
   (event: Schema_GridEvent): Schema_GridEvent => event,

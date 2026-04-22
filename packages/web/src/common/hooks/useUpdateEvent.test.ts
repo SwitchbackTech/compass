@@ -1,8 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockDispatch = mock();
 const useAppDispatch = mock(() => mockDispatch);

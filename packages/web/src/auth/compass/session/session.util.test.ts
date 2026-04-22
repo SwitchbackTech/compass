@@ -1,7 +1,6 @@
-import { describe, expect, it, mock, beforeEach } from "bun:test";
-import { afterAll } from "bun:test";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { getUserId } from "./session.util";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockDoesSessionExist = mock();
 const mockGetAccessTokenPayloadSecurely = mock();

@@ -1,9 +1,7 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
-import { screen } from "@testing-library/react";
-import { render } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 
 mock.module("@web/components/SyncEventsOverlay/SyncEventsOverlay", () => ({
@@ -24,14 +22,15 @@ describe("AuthenticatedLayout", () => {
           v7_relativeSplatPath: true,
         }}
       >
-      <Routes>
-        <Route element={<AuthenticatedLayout />}>
-          <Route
-            path="/"
-            element={<div data-testid="child-route">Child Content</div>}
-          />
-        </Route>
-      </Routes>,
+        <Routes>
+          <Route element={<AuthenticatedLayout />}>
+            <Route
+              path="/"
+              element={<div data-testid="child-route">Child Content</div>}
+            />
+          </Route>
+        </Routes>
+        ,
       </MemoryRouter>,
     );
 
@@ -48,14 +47,15 @@ describe("AuthenticatedLayout", () => {
           v7_relativeSplatPath: true,
         }}
       >
-      <Routes>
-        <Route element={<AuthenticatedLayout />}>
-          <Route
-            path="/nested"
-            element={<div data-testid="nested-route">Nested Content</div>}
-          />
-        </Route>
-      </Routes>,
+        <Routes>
+          <Route element={<AuthenticatedLayout />}>
+            <Route
+              path="/nested"
+              element={<div data-testid="nested-route">Nested Content</div>}
+            />
+          </Route>
+        </Routes>
+        ,
       </MemoryRouter>,
     );
 

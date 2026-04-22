@@ -1,3 +1,4 @@
+import { put } from "redux-saga/effects";
 import { type Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
@@ -12,8 +13,8 @@ import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { put } from "redux-saga/effects";
 import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -22,7 +23,6 @@ import {
   mock,
   spyOn,
 } from "bun:test";
-import { afterAll } from "bun:test";
 
 const mockDoesSessionExist = mock();
 const mockEventApiCreate = mock();
@@ -473,9 +473,7 @@ describe("pending events state management", () => {
         ...existingEvent,
         title: "Updated Title",
       } as Schema_WebEvent;
-      const { editEvent } = await import(
-        "@web/ducks/events/sagas/event.sagas"
-      );
+      const { editEvent } = await import("@web/ducks/events/sagas/event.sagas");
 
       const iterator = editEvent({
         payload: {
@@ -487,9 +485,7 @@ describe("pending events state management", () => {
       iterator.next();
       expect(
         iterator.next(stateAfterCreate.events.entities.value?.[eventId]).value,
-      ).toEqual(
-        put(pendingEventsSlice.actions.add(eventId)),
-      );
+      ).toEqual(put(pendingEventsSlice.actions.add(eventId)));
     });
 
     it("should remove event from pending on successful edit", async () => {
@@ -514,9 +510,7 @@ describe("pending events state management", () => {
         title: "Updated Title",
       } as Schema_WebEvent;
 
-      const { editEvent } = await import(
-        "@web/ducks/events/sagas/event.sagas"
-      );
+      const { editEvent } = await import("@web/ducks/events/sagas/event.sagas");
       const iterator = editEvent({
         payload: {
           _id: eventId,
@@ -525,9 +519,9 @@ describe("pending events state management", () => {
       } as never);
 
       iterator.next();
-      expect(
-        iterator.next(existingEvent).value,
-      ).toEqual(put(pendingEventsSlice.actions.add(eventId)));
+      expect(iterator.next(existingEvent).value).toEqual(
+        put(pendingEventsSlice.actions.add(eventId)),
+      );
       expect(iterator.next().value).toEqual(
         put(
           eventsEntitiesSlice.actions.edit({
@@ -565,9 +559,7 @@ describe("pending events state management", () => {
         title: "Updated Title",
       } as Schema_WebEvent;
 
-      const { editEvent } = await import(
-        "@web/ducks/events/sagas/event.sagas"
-      );
+      const { editEvent } = await import("@web/ducks/events/sagas/event.sagas");
       const iterator = editEvent({
         payload: {
           _id: eventId,
@@ -576,9 +568,9 @@ describe("pending events state management", () => {
       } as never);
 
       iterator.next();
-      expect(
-        iterator.next(existingEvent).value,
-      ).toEqual(put(pendingEventsSlice.actions.add(eventId)));
+      expect(iterator.next(existingEvent).value).toEqual(
+        put(pendingEventsSlice.actions.add(eventId)),
+      );
       expect(iterator.next().value).toEqual(
         put(
           eventsEntitiesSlice.actions.edit({

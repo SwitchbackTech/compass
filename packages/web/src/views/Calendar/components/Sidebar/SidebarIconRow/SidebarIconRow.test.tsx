@@ -1,8 +1,7 @@
 import { screen } from "@testing-library/react";
 import { type ReactNode } from "react";
 import { render } from "@web/__tests__/utils/render.test.util";
-import { describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
+import { afterAll, describe, expect, it, mock } from "bun:test";
 
 mock.module("@web/common/hooks/useVersionCheck", () => ({
   useVersionCheck: () => ({

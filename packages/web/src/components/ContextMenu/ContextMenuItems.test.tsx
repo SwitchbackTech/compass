@@ -1,15 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { type ReactElement } from "react";
+import { ThemeProvider } from "styled-components";
+import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
   createInitialState,
   type InitialReduxState,
 } from "@web/__tests__/utils/state/store.test.util";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { theme } from "@web/common/styles/theme";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { ThemeProvider } from "styled-components";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockClose = mock();

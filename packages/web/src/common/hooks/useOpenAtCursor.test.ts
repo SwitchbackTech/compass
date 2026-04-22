@@ -2,14 +2,6 @@ import { type Placement, type Strategy } from "@floating-ui/react";
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  spyOn,
-} from "bun:test";
-import {
   CursorItem,
   closeFloatingAtCursor,
   isOpenAtCursor,
@@ -30,6 +22,7 @@ import {
   useFloatingReferenceAtCursor,
   useFloatingStrategyAtCursor,
 } from "./useOpenAtCursor";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 describe("useOpenAtCursor", () => {
   let setTimeoutSpy: ReturnType<typeof spyOn>;

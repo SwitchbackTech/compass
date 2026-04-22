@@ -7,7 +7,15 @@ import {
 } from "@web/auth/compass/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const mockRepository = {
   create: mock(),

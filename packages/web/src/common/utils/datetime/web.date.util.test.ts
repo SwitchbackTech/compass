@@ -1,14 +1,6 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import {
-  afterAll,
-  beforeAll,
-  describe,
-  expect,
-  it,
-  setSystemTime,
-} from "bun:test";
 import { arraysAreEqual } from "@web/__tests__/utils/web.test.util";
 import {
   computeCurrentEventDateRange,
@@ -19,6 +11,14 @@ import {
   getWeekRangeLabel,
   toUTCOffset,
 } from "@web/common/utils/datetime/web.date.util";
+import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  setSystemTime,
+} from "bun:test";
 
 describe("computeRelativeEventDateRange", () => {
   const baseEvent: Schema_Event = {

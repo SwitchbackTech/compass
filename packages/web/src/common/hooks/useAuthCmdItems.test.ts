@@ -60,7 +60,6 @@ describe("useAuthCmdItems", () => {
     expect(result.current).toEqual([]);
   });
 
-
   it("returns auth items when unauthenticated and auth feature flag is enabled", () => {
     window.history.pushState({}, "", "/day?auth=true");
     mockUseAuthFeatureFlag.mockReturnValue(true);

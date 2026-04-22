@@ -1,10 +1,10 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
-import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 import {
   selecting$,
   useMainGridSelectionState,
 } from "./useMainGridSelectionState";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 describe("useMainGridSelectionState", () => {
   let setTimeoutSpy: ReturnType<typeof spyOn>;

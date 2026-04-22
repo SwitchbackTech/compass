@@ -1,14 +1,7 @@
 /**
  * Tests for the migration runners.
  */
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  spyOn,
-} from "bun:test";
+
 import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
 import { DEMO_DATA_SEED_FLAG_KEY } from "@web/common/storage/migrations/external/demo-data-seed";
 import {
@@ -16,6 +9,7 @@ import {
   runDataMigrations,
   runExternalMigrations,
 } from "@web/common/storage/migrations/migrations";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 describe("storage migrations", () => {
   const localStorageMigrationFlagKey =

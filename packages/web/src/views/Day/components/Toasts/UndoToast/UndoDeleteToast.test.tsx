@@ -1,5 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
@@ -13,7 +12,8 @@ mock.module("react-toastify", () => ({
   toast: toastMock,
 }));
 
-const { showUndoDeleteToast, UndoDeleteToast } = require("@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast") as typeof import("@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast");
+const { showUndoDeleteToast, UndoDeleteToast } =
+  require("@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast") as typeof import("@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast");
 
 describe("UndoDeleteToast", () => {
   const mockOnRestore = mock();
@@ -58,7 +58,9 @@ describe("UndoDeleteToast", () => {
     it("should call toast.dismiss with specific toast ID when clicked", () => {
       const testToastId = "test-toast-id";
 
-      render(<UndoDeleteToast onRestore={mockOnRestore} toastId={testToastId} />);
+      render(
+        <UndoDeleteToast onRestore={mockOnRestore} toastId={testToastId} />,
+      );
 
       const toastButton = screen.getByText("Deleted").closest("button");
       fireEvent.click(toastButton!);
