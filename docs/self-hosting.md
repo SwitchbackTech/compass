@@ -7,9 +7,9 @@ This guide has two paths:
 - **Installer (recommended):** one command sets everything up in `~/compass`.
 - **Manual setup (fallback):** run the pieces yourself if the installer does not fit your needs.
 
-The installer is for **local use only** — it runs Compass on your laptop and does not set up a public server. For server deployments, see [Running On A Server](#running-on-a-server).
+The installer is for **local use only** — it runs Compass on your own computer, not on a server that other people on the internet can reach. For server deployments, see [Running On A Server](#running-on-a-server).
 
-In this guide, `~/compass` means a `compass` folder in your home folder, such as `/Users/alex/compass` on macOS. It is not a folder inside the Compass source-code repo.
+In this guide, `~/compass` means a folder named `compass` in your home directory, for example `/Users/alex/compass` on macOS or `/home/alex/compass` on Linux. The installer creates this folder for you.
 
 ## Before You Start
 
@@ -34,7 +34,7 @@ The installer will:
 2. Download the Compass code into `~/compass/app`.
 3. Write a configuration file at `~/compass/.env` with sensible defaults.
 4. Copy a helper script to `~/compass/compass` that you use to manage the install.
-5. Start Compass with Docker Compose and wait for it to become healthy.
+5. Start Compass with Docker Compose and wait until it is ready.
 6. Try to open Compass in your browser.
 
 When it finishes, Compass is available at:
@@ -42,7 +42,9 @@ When it finishes, Compass is available at:
 - Web app: [http://localhost:9080](http://localhost:9080)
 - Backend API: [http://localhost:3000/api](http://localhost:3000/api)
 
-If your browser does not open automatically, visit [http://localhost:9080](http://localhost:9080) yourself.
+If your browser does not open automatically, open [http://localhost:9080](http://localhost:9080) manually.
+
+The installer does not collect telemetry and does not call Compass-owned services after installation. It fetches code from GitHub to install or update Compass.
 
 ### Prefer To Read The Script First?
 
@@ -78,7 +80,7 @@ Available commands:
 
 ### When To Use `rebuild`
 
-Some settings are baked into the web app when it is built, so changing them in `~/compass/.env` requires a rebuild before they take effect. This includes:
+A few settings become part of the web app when it is built, so editing them in `~/compass/.env` has no effect until you rebuild. This includes:
 
 - Google OAuth client values (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
 - `FRONTEND_URL`
@@ -95,7 +97,7 @@ cd ~/compass
 
 `./compass update` pulls the latest Compass code and rebuilds the app. It only works if the installer cloned Compass with Git.
 
-If the installer fell back to downloading an archive (because `git` was not available on your machine), `./compass update` cannot update you. Install Git, then rerun the installer in an interactive terminal to refresh your install.
+If the installer fell back to downloading an archive because `git` was not available on your machine, `./compass update` cannot update you. Install Git, download the installer script, and run `sh install.sh` from your terminal to refresh Compass.
 
 Stopping Compass does not delete your data. Neither does `update` or `rebuild`.
 
@@ -107,23 +109,23 @@ The installer uses Docker Compose to run a small set of containers:
 | ---------------- | ---------------------------------------------------------------- | ------------------------------------------------ |
 | Web app          | `http://localhost:9080`                                          | The Compass UI in your browser.                  |
 | Backend API      | `http://localhost:3000/api`                                      | Compass's server.                                |
-| MongoDB          | Internal Docker network only                                     | Stores Compass app and event data for accounts. |
+| MongoDB          | Internal Docker network only                                     | Stores signed-in Compass events and user profile data. |
 | SuperTokens Core | Internal Docker network only                                     | Handles signup, login, and sessions.             |
 | Postgres         | Internal Docker network only                                     | Durable storage used by SuperTokens.             |
 
-Only the web app and backend are exposed on your machine, and only on `localhost`. MongoDB, SuperTokens Core, and Postgres stay inside the Docker network and are not reachable from outside Compass.
+Only the web app and backend are reachable from your browser, and only at `localhost` on your own machine. MongoDB, SuperTokens Core, and Postgres stay on an internal Docker network; nothing outside the Compass containers can connect to them.
 
 ### Google Calendar Sync
 
 Google auth and Google Calendar sync are **not** configured by the local installer. Because the backend currently requires Google environment variables to start, the installer writes placeholder values so Compass can boot.
 
-You can add your own Google OAuth client values to `~/compass/.env` and run `./compass rebuild` to try Google sign-in and the Google Calendar connect flow. However, ongoing Google Calendar sync (watch notifications from Google) needs an HTTPS backend reachable from the public internet, which the local installer does not set up. For that, see [Running On A Server](#running-on-a-server).
+You can add your own Google OAuth client values to `~/compass/.env` and run `./compass rebuild` to try Google sign-in and the Google Calendar connect flow. However, keeping Compass continuously in sync with Google Calendar, so new or changed Google events appear automatically, requires an HTTPS backend that is reachable from the public internet. The local installer does not set that up. For that, see [Running On A Server](#running-on-a-server).
 
 ## Where Your Data Lives
 
 Compass stores data in a few different places. What ends up where depends on whether you are signed in.
 
-**Before you sign up:** events and tasks are kept in your browser's local storage (IndexedDB). Nothing goes to MongoDB.
+**Before you sign up:** events and tasks are kept in your browser's local storage (IndexedDB). No data is written to MongoDB until you sign up.
 
 **After you sign up:**
 
@@ -141,7 +143,7 @@ Compass stores data in a few different places. What ends up where depends on whe
 
 ### Docker Volumes
 
-Compass data inside Docker lives in named volumes. With the default project name, they are:
+Inside Docker, Compass stores its data in volumes managed by Docker itself. With the default project name, these volumes are called:
 
 - `compass_compass_mongo_data` — MongoDB data (Compass accounts' calendar data).
 - `compass_compass_supertokens_postgres_data` — Postgres data (SuperTokens auth).
@@ -149,8 +151,6 @@ Compass data inside Docker lives in named volumes. With the default project name
 If you set `COMPOSE_PROJECT_NAME` to something else, the volume names will change to match.
 
 Stopping Compass does **not** delete these volumes. To back up your account data, back up these Docker volumes. Browser-only tasks do not have a backup or export path today.
-
-The installer does not collect telemetry and does not call Compass-owned services after installation. It fetches code from GitHub to install or update Compass.
 
 For more on how data flows in each mode, see [Hosting Modes](./development/hosting-modes.md).
 
@@ -174,7 +174,7 @@ Compass is a web app and a backend API. In manual setup, you provide the runtime
 
 - A **Google Cloud project**, only if you want Google auth or to connect Google Calendar.
 
-The backend currently requires Google environment variables to start, even if you do not plan to use Google. Provide real or placeholder values. Ongoing Google Calendar watch notifications need an HTTPS, publicly reachable backend, which manual local setup does not provide.
+The backend currently requires Google environment variables to start, even if you do not plan to use Google. Either provide real credentials from a Google Cloud project, or use placeholder strings until you set one up. Ongoing Google Calendar watch notifications need an HTTPS, publicly reachable backend, which manual local setup does not provide.
 
 ### Manual Steps
 

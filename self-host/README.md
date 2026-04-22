@@ -43,7 +43,7 @@ cd ~/compass
 
 Run `./compass rebuild` after changing values in `~/compass/.env` that are baked into the web build, such as Google OAuth client values, `FRONTEND_URL`, or `BASEURL`. A plain `restart` is not enough for those.
 
-`./compass update` only works for Git-based installs. If your install came from a downloaded archive (because `git` was not available at install time), rerun the installer from an interactive shell to refresh Compass.
+`./compass update` only works for Git-based installs. If your install came from a downloaded archive because `git` was not available at install time, install Git, download the installer script, and run `sh install.sh` from your terminal to refresh Compass.
 
 ## Repo helper vs installed helper
 
@@ -61,7 +61,7 @@ The stack runs with Docker Compose. Only the web and backend are exposed on your
 - Web app: http://localhost:9080
 - Backend API: http://localhost:3000/api
 
-MongoDB, SuperTokens, and Postgres run inside Docker and are not exposed on localhost.
+MongoDB, SuperTokens Core, and Postgres run inside Docker and are not exposed on localhost.
 
 ## Where your data lives
 
@@ -80,4 +80,4 @@ Stopping Compass does not delete these volumes. Your data stays on disk until yo
 
 ## Limitations
 
-This local-only installer is not a full production setup. In particular, it does not configure Google Calendar watch notifications end to end, because ongoing Google watch callbacks require an HTTPS, publicly reachable backend. After adding your own Google OAuth values and running `./compass rebuild`, you can try Google sign-in or Google connect flows locally, but live push sync from Google Calendar needs the server setup described in [docs/self-hosting.md](../docs/self-hosting.md).
+This local-only installer is not a full production setup. In particular, it does not configure Google Calendar watch notifications end to end, because ongoing Google watch callbacks require an HTTPS, publicly reachable backend. After adding your own Google OAuth values and running `./compass rebuild`, you can try Google sign-in or Google connect flows locally, but keeping Compass continuously in sync with Google Calendar needs the server setup described in [docs/self-hosting.md](../docs/self-hosting.md).
