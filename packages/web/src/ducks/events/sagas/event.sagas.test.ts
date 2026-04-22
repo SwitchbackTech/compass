@@ -94,7 +94,7 @@ const { sagaMiddleware } = await import("@web/common/store/middlewares");
 const { selectIsEventPending } = await import(
   "@web/ducks/events/selectors/pending.selectors"
 );
-const { createEventSlice, editEventSlice } = await import(
+const { createEventSlice } = await import(
   "@web/ducks/events/slices/event.slice"
 );
 const { eventsEntitiesSlice } = await import(
@@ -446,6 +446,25 @@ describe("pending events state management", () => {
 
       const state = store.getState();
       // Event should be removed from pending even on error
+      expect(state.events.pendingEvents.eventIds).toHaveLength(0);
+    });
+
+    it("should not delete remotely when authenticated creation fails", async () => {
+      mockDoesSessionExist.mockResolvedValue(true);
+      mockEventApiCreate.mockRejectedValue(new Error("API Error"));
+
+      const gridEvent = createMockStandaloneEvent() as Schema_GridEvent;
+      const event = new OnSubmitParser(gridEvent).parse() as Schema_Event;
+
+      store.dispatch(createEventSlice.actions.request(event));
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const state = store.getState();
+
+      expect(mockEventApiCreate).toHaveBeenCalledTimes(1);
+      expect(mockEventApiDelete).not.toHaveBeenCalled();
+      expect(Object.keys(state.events.entities.value ?? {})).toHaveLength(0);
       expect(state.events.pendingEvents.eventIds).toHaveLength(0);
     });
   });

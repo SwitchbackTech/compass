@@ -1,6 +1,7 @@
 import { DotIcon } from "@phosphor-icons/react";
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
+import { IS_GOOGLE_AUTH_CONFIGURED } from "@web/common/constants/env.constants";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { AuthButton } from "./components/AuthButton";
@@ -97,7 +98,8 @@ export const AuthModal: FC = () => {
   }
 
   const showAuthSwitch = isLoginView || currentView === "signUp";
-  const showGoogleAuth = currentView !== "resetPassword";
+  const showGoogleAuth =
+    currentView !== "resetPassword" && IS_GOOGLE_AUTH_CONFIGURED;
   const showSubmitError =
     submitError !== null && (isLoginView || currentView === "signUp");
   const trimmedName = signUpName.trim();

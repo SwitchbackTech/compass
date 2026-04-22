@@ -4,20 +4,27 @@ import { type Shortcut } from "@web/common/types/global.shortcut.types";
 
 interface ShortcutsConfig {
   isHome?: boolean;
+  isAuthenticated?: boolean;
   isToday?: boolean;
   isNow?: boolean;
   currentDate?: dayjs.Dayjs;
 }
 
 export const getShortcuts = (config: ShortcutsConfig = {}) => {
-  const { isHome = false, isToday = true, isNow = false, currentDate } = config;
+  const {
+    isAuthenticated = false,
+    isHome = false,
+    isToday = true,
+    isNow = false,
+    currentDate,
+  } = config;
 
   const globalShortcuts: Shortcut[] = [
     { k: VIEW_SHORTCUTS.now.key, label: VIEW_SHORTCUTS.now.label },
     { k: VIEW_SHORTCUTS.day.key, label: VIEW_SHORTCUTS.day.label },
     { k: VIEW_SHORTCUTS.week.key, label: VIEW_SHORTCUTS.week.label },
     { k: "r", label: "Edit reminder" },
-    { k: "z", label: "Logout" },
+    { k: "z", label: isAuthenticated ? "Logout" : "Log in" },
     { k: "Mod+k", label: "Command Palette" },
   ];
 

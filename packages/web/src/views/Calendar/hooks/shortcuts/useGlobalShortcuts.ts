@@ -1,8 +1,10 @@
 import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useSession } from "@web/auth/compass/session/useSession";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -13,6 +15,8 @@ import { useAppDispatch } from "@web/store/store.hooks";
  */
 export function useGlobalShortcuts() {
   const dispatch = useAppDispatch();
+  const { authenticated } = useSession();
+  const { openModal } = useAuthModal();
   const navigate = useNavigate();
   const location = useLocation();
   const nowHotkey = VIEW_SHORTCUTS.now.key.toUpperCase() as RegisterableHotkey;
@@ -39,7 +43,12 @@ export function useGlobalShortcuts() {
   });
 
   useAppHotkeyUp("Z", () => {
-    navigate(ROOT_ROUTES.LOGOUT);
+    if (authenticated) {
+      navigate(ROOT_ROUTES.LOGOUT);
+      return;
+    }
+
+    openModal("login");
   });
 
   useAppHotkeyUp("R", () => {

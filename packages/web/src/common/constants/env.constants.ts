@@ -30,3 +30,17 @@ export const ENV_WEB = webEnvSchema.parse({
 });
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);
+
+const GOOGLE_CLIENT_ID_PLACEHOLDER =
+  "compass-self-host-placeholder.apps.googleusercontent.com";
+
+export const isGoogleAuthConfigured = (clientId?: string): boolean =>
+  Boolean(
+    clientId &&
+      clientId !== "undefined" &&
+      clientId !== GOOGLE_CLIENT_ID_PLACEHOLDER,
+  );
+
+export const IS_GOOGLE_AUTH_CONFIGURED = isGoogleAuthConfigured(
+  ENV_WEB.GOOGLE_CLIENT_ID,
+);
