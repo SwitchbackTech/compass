@@ -1,6 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -10,7 +11,6 @@ import {
   setSystemTime,
   spyOn,
 } from "bun:test";
-import { afterAll } from "bun:test";
 
 let mockIsDev = false;
 const fetchMock = mock();

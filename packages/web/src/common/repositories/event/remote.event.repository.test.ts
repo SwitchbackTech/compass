@@ -4,8 +4,7 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockCreate = mock();
 const mockGet = mock();

@@ -1,8 +1,15 @@
 import { render, screen } from "@testing-library/react";
 import { type ReactNode } from "react";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
-import { afterAll } from "bun:test";
 import { BehaviorSubject } from "rxjs";
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const DndContext = mock(({ children }: { children: ReactNode }) => (
   <div data-testid="dnd-context">{children}</div>
@@ -16,7 +23,6 @@ let isDraggingNextSpy: any = null;
 mock.module("@web/common/hooks/usePointerPosition", () => ({
   usePointerPosition,
 }));
-
 
 mock.module("@dnd-kit/core", () => ({
   DndContext,

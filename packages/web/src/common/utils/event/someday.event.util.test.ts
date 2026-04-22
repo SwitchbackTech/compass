@@ -1,4 +1,3 @@
-import { afterAll, beforeAll, describe, expect, it, setSystemTime } from "bun:test";
 import { faker } from "@faker-js/faker";
 import { ObjectId } from "bson";
 import {
@@ -22,6 +21,14 @@ import {
   categorizeSomedayEvents,
   setSomedayEventsOrder,
 } from "@web/common/utils/event/someday.event.util";
+import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  setSystemTime,
+} from "bun:test";
 
 describe("categorizeSomedayEvents", () => {
   const baseEvent: Partial<Omit<Schema_SomedayEvent, "recurrence">> = {

@@ -1,5 +1,6 @@
 import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -8,7 +9,6 @@ import {
   mock,
   spyOn,
 } from "bun:test";
-import { afterAll } from "bun:test";
 
 // Mock the storage adapter
 const mockInitializeStorage = mock();

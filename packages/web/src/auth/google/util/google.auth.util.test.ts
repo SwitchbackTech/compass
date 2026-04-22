@@ -1,4 +1,10 @@
 import {
+  clearGoogleRevokedState,
+  isGoogleRevoked,
+} from "@web/auth/google/state/google.auth.state";
+import { type GoogleAuthConfig } from "../hooks/googe.auth.types";
+import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -7,19 +13,6 @@ import {
   mock,
   spyOn,
 } from "bun:test";
-import { afterAll } from "bun:test";
-import { Origin } from "@core/constants/core.constants";
-import {
-  clearGoogleRevokedState,
-  isGoogleRevoked,
-} from "@web/auth/google/state/google.auth.state";
-import { GOOGLE_REVOKED_TOAST_ID } from "@web/common/constants/toast.constants";
-import { authSlice } from "@web/ducks/auth/slices/auth.slice";
-import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
-import { type GoogleAuthConfig } from "../hooks/googe.auth.types";
 
 // Mock definitions
 const mockAuthApi = {
@@ -64,7 +57,6 @@ mock.module("@web/sse/client/sse.client", () => mockSse);
 const {
   authenticate,
   handleGoogleRevoked,
-  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
   syncLocalEvents,
   syncPendingLocalEvents,
 } = require("./google.auth.util") as typeof import("./google.auth.util");
@@ -147,7 +139,7 @@ describe("google-auth.util", () => {
   });
 
   describe("syncPendingLocalEvents", () => {
-    let consoleSpy: any;
+    let consoleSpy: ReturnType<typeof spyOn>;
 
     beforeEach(() => {
       consoleSpy = spyOn(console, "error").mockImplementation(() => {});

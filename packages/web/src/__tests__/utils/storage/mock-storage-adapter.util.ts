@@ -1,5 +1,5 @@
-import { mock } from "bun:test";
 import { type StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
+import { mock } from "bun:test";
 
 /**
  * Creates a mock StorageAdapter for tests.
@@ -8,7 +8,9 @@ import { type StorageAdapter } from "@web/common/storage/adapter/storage.adapter
  * Override specific methods (e.g., getAllEvents, getAllTasks) as needed per test.
  */
 type MockedStorageAdapter = {
-  [K in keyof StorageAdapter]: StorageAdapter[K] extends (...args: any[]) => any
+  [K in keyof StorageAdapter]: StorageAdapter[K] extends (
+    ...args: infer _Args
+  ) => infer _Return
     ? ReturnType<typeof mock>
     : StorageAdapter[K];
 };

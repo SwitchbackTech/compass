@@ -1,8 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { type ReactNode } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const useDndContext = mock();
 

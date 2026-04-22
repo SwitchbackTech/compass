@@ -1,8 +1,17 @@
 import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
-import { afterAll, afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 mock.restore();
 
@@ -12,13 +21,7 @@ const bufferedVisibilityQuery = `@web/common/hooks/useBufferedVisibility${compon
 const storeHooksQuery = `@web/store/store.hooks${componentQuery}`;
 
 mock.module(overlayPanelQuery, () => ({
-  OverlayPanel: ({
-    title,
-    message,
-  }: {
-    message: string;
-    title: string;
-  }) => (
+  OverlayPanel: ({ title, message }: { message: string; title: string }) => (
     <div role="status">
       <h1>{title}</h1>
       <p>{message}</p>
@@ -33,8 +36,9 @@ mock.module(bufferedVisibilityQuery, () => ({
 let authStatus: "idle" | "authenticating" = "idle";
 
 mock.module(storeHooksQuery, () => ({
-  useAppSelector: (selector: (state: { auth: { status: string } }) => unknown) =>
-    selector({ auth: { status: authStatus } }),
+  useAppSelector: (
+    selector: (state: { auth: { status: string } }) => unknown,
+  ) => selector({ auth: { status: authStatus } }),
 }));
 
 const source = await readFile(
@@ -43,15 +47,12 @@ const source = await readFile(
 );
 
 const transformedSource = source
+  .replaceAll("@web/components/OverlayPanel/OverlayPanel", overlayPanelQuery)
   .replaceAll(
-    '@web/components/OverlayPanel/OverlayPanel',
-    overlayPanelQuery,
-  )
-  .replaceAll(
-    '@web/common/hooks/useBufferedVisibility',
+    "@web/common/hooks/useBufferedVisibility",
     bufferedVisibilityQuery,
   )
-  .replaceAll('@web/store/store.hooks', storeHooksQuery);
+  .replaceAll("@web/store/store.hooks", storeHooksQuery);
 
 const transpiler = new Bun.Transpiler({
   autoImportJSX: true,
@@ -62,7 +63,10 @@ const transpiler = new Bun.Transpiler({
     },
   },
 });
-const transformedJavaScript = transpiler.transformSync(transformedSource, "tsx");
+const transformedJavaScript = transpiler.transformSync(
+  transformedSource,
+  "tsx",
+);
 
 const tempModuleUrl = new URL(
   `./.sync-events-overlay-${process.pid}-${Date.now()}.mjs`,

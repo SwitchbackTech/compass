@@ -1,7 +1,15 @@
-import { afterAll, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { renderHook } from "@testing-library/react";
 import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 import { useAuthUrlParam } from "./useAuthUrlParam";
+import {
+  afterAll,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const originalReplaceState = window.history.replaceState.bind(window.history);
 const replaceStateSpy = spyOn(window.history, "replaceState");
@@ -159,11 +167,7 @@ describe("useAuthUrlParam", () => {
       renderHook(() => useAuthUrlParam(openModal));
 
       expect(openModal).toHaveBeenCalledWith("forgotPassword");
-      expect(replaceStateSpy).toHaveBeenCalledWith(
-        null,
-        "",
-        "/day/2026-02-26",
-      );
+      expect(replaceStateSpy).toHaveBeenCalledWith(null, "", "/day/2026-02-26");
     });
   });
 });

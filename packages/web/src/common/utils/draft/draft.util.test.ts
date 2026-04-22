@@ -1,6 +1,5 @@
 import { Categories_Event } from "@core/types/event.types";
-import { describe, expect, it, mock } from "bun:test";
-import { afterAll } from "bun:test";
+import { afterAll, describe, expect, it, mock } from "bun:test";
 
 mock.module("@web/auth/compass/session/session.util", () => ({
   getUserId: mock().mockResolvedValue("mock-user-id"),

@@ -1,10 +1,19 @@
 /**
  * Tests for the localStorage tasks migration.
  */
-import { afterEach, beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { type StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
 import { localStorageTasksMigration } from "./localstorage-tasks";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
 const TASK_KEY_PREFIX = "compass.today.tasks.";
 
@@ -171,7 +180,9 @@ describe("localStorageTasksMigration", () => {
   });
 
   it("skips invalid JSON entries and keeps them for retry", async () => {
-    const consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
+    const consoleErrorSpy = spyOn(console, "error").mockImplementation(
+      () => {},
+    );
 
     const validTask = createMockTask({ _id: "task-1" });
     const dateKey = "2025-01-15";

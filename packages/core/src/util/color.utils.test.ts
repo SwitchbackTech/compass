@@ -1,11 +1,11 @@
 import tinycolor from "tinycolor2";
-import { describe, expect, it, spyOn } from "bun:test";
 import {
   brighten,
   darken,
   generateCalendarColorScheme,
   isDark,
 } from "./color.utils";
+import { describe, expect, it, spyOn } from "bun:test";
 
 describe("color.utils", () => {
   describe("brighten", () => {

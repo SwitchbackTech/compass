@@ -1,5 +1,5 @@
-import { mock } from "bun:test";
 import * as actualReactToastify from "react-toastify";
+import { mock } from "bun:test";
 
 type RestorableMock = {
   mockRestore: () => void;
@@ -17,7 +17,10 @@ function mockNavigatorReadonlyValue(
 ): RestorableMock {
   const originalDescriptor =
     Object.getOwnPropertyDescriptor(window.navigator, key) ??
-    Object.getOwnPropertyDescriptor(Object.getPrototypeOf(window.navigator), key);
+    Object.getOwnPropertyDescriptor(
+      Object.getPrototypeOf(window.navigator),
+      key,
+    );
 
   Object.defineProperty(window.navigator, key, {
     configurable: true,
@@ -141,8 +144,9 @@ export function mockSuperTokens() {
 }
 
 function mockReactToastify() {
-  const toastFn = mock(() => "mock-toast-id") as typeof actualReactToastify.toast &
-    MockFn;
+  const toastFn = mock(
+    () => "mock-toast-id",
+  ) as typeof actualReactToastify.toast & MockFn;
 
   toastFn.POSITION = actualReactToastify.toast.POSITION;
   toastFn.TYPE = actualReactToastify.toast.TYPE;

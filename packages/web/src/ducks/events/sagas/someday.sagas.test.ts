@@ -3,14 +3,7 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-} from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 mock.restore();
 
@@ -183,9 +176,7 @@ describe("getSomedayEvents saga", () => {
 
       const eventEntities = state.events.entities.value || {};
       expect(eventEntities["local-event-1"]).toBeDefined();
-      expect(eventEntities["local-event-1"].title).toBe(
-        "Local Someday Event",
-      );
+      expect(eventEntities["local-event-1"].title).toBe("Local Someday Event");
     });
 
     it("should return empty array when no events are returned", async () => {

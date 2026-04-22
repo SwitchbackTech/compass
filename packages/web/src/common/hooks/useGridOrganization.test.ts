@@ -1,5 +1,10 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import {
+  CLASS_TIMED_CALENDAR_EVENT,
+  DATA_EVENT_ELEMENT_ID,
+} from "@web/common/constants/web.constants";
+import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
+import {
   afterAll,
   afterEach,
   beforeAll,
@@ -8,11 +13,6 @@ import {
   it,
   spyOn,
 } from "bun:test";
-import {
-  CLASS_TIMED_CALENDAR_EVENT,
-  DATA_EVENT_ELEMENT_ID,
-} from "@web/common/constants/web.constants";
-import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
 
 describe("useGridOrganization", () => {
   const rectMap = new Map<HTMLElement, DOMRect>();
