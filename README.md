@@ -62,7 +62,13 @@ Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_sourc
 
 Run Compass on your own machine and keep your calendar data on your own infrastructure.
 
-See [docs/self-hosting.md](./docs/self-hosting.md) for the manual self-hosting guide. A one-command installer is planned, but not available yet.
+Install the local self-hosted stack with Docker Desktop:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
+```
+
+See [docs/self-hosting.md](./docs/self-hosting.md) for the full guide, including the inspect-before-run install path and manual setup notes.
 
 ### Run Locally
 
