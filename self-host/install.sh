@@ -166,6 +166,7 @@ check_missing_env_with_existing_volumes() {
   [ ! -f "$ENV_FILE" ] || return
 
   existing_volumes=
+  delete_command="docker volume rm"
   for volume_name in \
     "${PROJECT_NAME}_compass_mongo_data" \
     "${PROJECT_NAME}_compass_supertokens_postgres_data"
@@ -173,15 +174,26 @@ check_missing_env_with_existing_volumes() {
     if docker volume inspect "$volume_name" >/dev/null 2>&1; then
       existing_volumes="${existing_volumes}
   $volume_name"
+      delete_command="$delete_command $volume_name"
     fi
   done
 
   [ -n "$existing_volumes" ] || return
 
   cat >&2 <<EOF
-Compass installer: Docker volumes already exist for project "$PROJECT_NAME", but $ENV_FILE is missing.
-Compass installer: Restore the matching .env, choose a different COMPOSE_PROJECT_NAME, or intentionally remove the old Docker volumes yourself.
-Compass installer: Existing volumes:$existing_volumes
+Compass installer: I found existing Compass Docker data, but $ENV_FILE is missing.
+
+This usually means Compass was installed before, then the install folder or .env file was removed.
+The installer stopped before creating a new .env because new database passwords could lock you out of that data.
+
+Existing Docker volumes for "$PROJECT_NAME":$existing_volumes
+
+Next steps:
+  - Keep old data: restore $ENV_FILE, then rerun the installer.
+  - Start a separate fresh install: set both COMPASS_HOME and COMPOSE_PROJECT_NAME.
+    Example: curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | env COMPASS_HOME="$HOME/compass-new" COMPOSE_PROJECT_NAME=compass_new sh
+  - Start over after confirming you do not need the old data:
+    $delete_command
 EOF
   exit 1
 }
