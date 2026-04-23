@@ -64,7 +64,7 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-compass}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-change-me-mongo-password-32chars}
-      MONGO_REPLICA_SET_KEY: ${MONGO_REPLICA_SET_KEY:?MONGO_REPLICA_SET_KEY is required}
+      MONGO_REPLICA_SET_KEY: ${MONGO_REPLICA_SET_KEY:-${MONGO_INITDB_ROOT_PASSWORD:-change-me-mongo-password-32chars}}
     volumes:
       - compass_mongo_data:/data/db
     restart: unless-stopped

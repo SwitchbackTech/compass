@@ -270,5 +270,6 @@ See [Local Development](./development/local-development.md) for the full list of
 
 If something is not working or you want to dig deeper:
 
+- [Self-host runtime README](../self-host/README.md) — quick troubleshooting for the local installer, helper commands, Docker volumes, and `.env` issues.
 - [Local Development](./development/local-development.md) — full environment variable reference and troubleshooting tips.
 - [Hosting Modes](./development/hosting-modes.md) — how data flows in each mode.

@@ -1,83 +1,209 @@
 # Compass Self-Host Runtime
 
-This folder holds the files the local self-host installer uses to run Compass on your own machine with Docker Compose.
+## What This Folder Is
 
-If you just want to install Compass, follow the full guide in [docs/self-hosting.md](../docs/self-hosting.md). This README is a short command reference for the files in this folder.
+This folder contains the files used by the local Compass self-host installer.
 
-Here, `~/compass` means a `compass` folder in your home folder, such as `/Users/alex/compass` on macOS. It is not a folder inside this repo.
+If you are installing Compass for the first time, start with the full guide in
+[Self-Hosting Compass](../docs/self-hosting.md). This README is the quick
+reference for the installer files in this folder and the place to start when a
+local install gets confusing.
 
-## What's in this folder
+In this README, `~/compass` means a `compass` folder in your home folder, such
+as `/Users/alex/compass` on macOS or `/home/alex/compass` on Linux. It is not a
+folder inside this repo.
 
-- `install.sh` — the installer. Sets up `~/compass`, writes `~/compass/.env`, copies the helper script, and places the app files under `~/compass/app`.
-- `compass` — a template of the helper script. The installer copies this to `~/compass/compass`. Don't run it directly from the repo; run the installed copy in `~/compass`.
-- `docker-compose.yml` — the Docker Compose stack used by the installed app.
-- `Dockerfile.web`, `Dockerfile.backend`, `Dockerfile.mongo` — images for the web, backend, and local MongoDB services.
-- `serve-web.ts` — the tiny web server that serves the built web app inside the web container.
-- `.env.example` — example environment values that mirror what the installer writes to `~/compass/.env`.
+## Install Compass
 
-## Install
+Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) first
+and make sure it is running. Docker is what runs Compass and its local
+databases.
 
-Install [Docker Desktop](https://www.docker.com/products/docker-desktop/) first and make sure it is running.
+Then run:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
 ```
 
-This creates `~/compass` and starts Compass there.
+The installer creates `~/compass`, writes `~/compass/.env`, copies the helper
+script to `~/compass/compass`, starts Compass, and tries to open the app in your
+browser.
 
-## After install: the helper script
-
-Once the installer finishes, manage Compass using the helper that lives at `~/compass/compass`:
-
-```bash
-cd ~/compass
-./compass start     # start the stack
-./compass stop      # stop the stack (data is kept)
-./compass restart   # stop then start
-./compass rebuild   # rebuild images, then start
-./compass logs      # tail container logs
-./compass status    # show container status
-./compass update    # pull the latest Compass (Git installs only)
-./compass open      # open Compass in your browser
-```
-
-Run `./compass rebuild` after changing values in `~/compass/.env` that are baked into the web build, such as Google OAuth client values, `FRONTEND_URL`, or `BASEURL`. A plain `restart` is not enough for those.
-
-`./compass update` only works for Git-based installs. If your install came from a downloaded archive because `git` was not available at install time, install Git, download the installer script, and run `sh install.sh` from your terminal to refresh Compass.
-
-## Repo helper vs installed helper
-
-There are two copies of the `compass` helper script, and they are not the same thing:
-
-- `self-host/compass` in this repo is a template. The installer copies it into `~/compass/compass`.
-- `~/compass/compass` is the one you actually use day to day.
-
-Don't run `self-host/compass` directly from the repo.
-
-## Ports and services
-
-The stack runs with Docker Compose. Only the web and backend are exposed on your machine:
+When the install finishes, Compass should be available at:
 
 - Web app: http://localhost:9080
 - Backend API: http://localhost:3000/api
 
-MongoDB, SuperTokens Core, and Postgres run inside Docker and are not exposed on localhost.
+## Manage Compass After Install
 
-## Where your data lives
+After install, use the helper script from the installed folder:
 
-- **MongoDB** stores Compass app and event data.
-- **Postgres** stores SuperTokens auth data (accounts, sessions).
-- Browser-only task data lives in your browser and is not stored in Docker volumes.
+```bash
+cd ~/compass
+./compass status
+```
 
-By default the Docker volumes are named:
+Common commands:
+
+```bash
+./compass start     # start Compass
+./compass stop      # stop Compass without deleting data
+./compass restart   # stop then start
+./compass rebuild   # rebuild images, then start
+./compass logs      # follow container logs
+./compass status    # show container status
+./compass update    # pull the latest Compass, then rebuild
+./compass open      # open Compass in your browser
+```
+
+Use `./compass logs` when something starts but does not behave correctly. It is
+usually the fastest way to see what Docker is unhappy about.
+
+## Troubleshooting
+
+### Docker is not running
+
+Start Docker Desktop, wait until it says Docker is running, then rerun the
+installer or helper command.
+
+### Port `9080` or `3000` is already in use
+
+Compass uses `9080` for the web app and `3000` for the backend API. If another
+app is already using one of those ports, stop that app and rerun the installer.
+
+### Compass is already installed
+
+If `~/compass` already exists, use the installed helper instead of running the
+repo copy:
+
+```bash
+cd ~/compass
+./compass status
+./compass restart
+```
+
+There are two `compass` helper scripts:
+
+- `self-host/compass` in this repo is a template.
+- `~/compass/compass` is the installed helper you should run day to day.
+
+Do not run `self-host/compass` directly from the repo.
+
+### Docker volumes exist but `~/compass/.env` is missing
+
+Docker volumes can remain on your machine even after `~/compass` is deleted.
+Those volumes may contain old Compass data.
+
+If the installer finds those volumes but cannot find `~/compass/.env`, it stops
+before creating a new install. This protects you from creating new database
+passwords that could lock you out of the old data.
+
+Choose one path:
+
+- Keep the old data: restore the matching `~/compass/.env`, then rerun the
+  installer.
+- Start a separate fresh install: use a different `COMPASS_HOME` and
+  `COMPOSE_PROJECT_NAME`.
+- Start over completely: remove the old Docker volumes yourself after confirming
+  you do not need that data.
+
+Example second install:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | env COMPASS_HOME="$HOME/compass-new" COMPOSE_PROJECT_NAME=compass_new sh
+```
+
+### `./compass update` does not work
+
+`./compass update` only works when the installer used Git to download Compass.
+
+If Git was not available during install, the installer used a downloaded archive
+instead. In that case, install Git, download the installer script, and run
+`sh install.sh` from your terminal to refresh Compass.
+
+### Changes to `~/compass/.env` are not showing up
+
+Some settings are baked into the web app when it is built. After changing any of
+these values, run `./compass rebuild`:
+
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `FRONTEND_URL`
+- `BASEURL`
+
+A plain `./compass restart` is not enough for those values.
+
+### Compass starts but the browser does not open
+
+Open http://localhost:9080 manually. You can also run:
+
+```bash
+cd ~/compass
+./compass open
+```
+
+### Google login or Google Calendar sync does not work locally
+
+The local installer writes placeholder Google OAuth values so Compass can start
+without a Google Cloud setup. See
+[Google Calendar Limitations](#google-calendar-limitations) for what works
+locally and what needs a public server.
+
+## Where Your Data Lives
+
+Compass data can live in a few places:
+
+- MongoDB stores signed-in Compass event data.
+- Postgres stores SuperTokens auth data, such as accounts and sessions.
+- Browser-only task data lives in your browser and is not stored in Docker
+  volumes.
+
+By default, Docker creates these volumes:
 
 - `compass_compass_mongo_data`
 - `compass_compass_supertokens_postgres_data`
 
-These names change if you set `COMPOSE_PROJECT_NAME` to something other than the default.
+These names change if you set `COMPOSE_PROJECT_NAME` to something other than the
+default.
 
-Stopping Compass does not delete these volumes. Your data stays on disk until you remove the volumes yourself.
+Stopping Compass does not delete these volumes. Your data stays on disk until
+you remove the volumes yourself.
 
-## Limitations
+## Google Calendar Limitations
 
-This local-only installer is not a full production setup. In particular, it does not configure Google Calendar watch notifications end to end, because ongoing Google watch callbacks require an HTTPS, publicly reachable backend. After adding your own Google OAuth values and running `./compass rebuild`, you can try Google sign-in or Google connect flows locally, but keeping Compass continuously in sync with Google Calendar needs the server setup described in [docs/self-hosting.md](../docs/self-hosting.md).
+Google auth and Google Calendar sync are not fully configured by the local
+installer. The installer writes placeholder Google OAuth values so Compass can
+start without a Google Cloud setup.
+
+You can add your own Google OAuth values to `~/compass/.env` and run
+`./compass rebuild` to try Google sign-in or the Google Calendar connect flow.
+Continuous Google Calendar sync needs an HTTPS backend that Google can reach
+from the public internet. The local installer does not set that up.
+
+For the server setup, see [Self-Hosting Compass](../docs/self-hosting.md).
+
+## Ports and Services
+
+The stack runs with Docker Compose. Only the web app and backend API are exposed
+on your machine:
+
+- Web app: http://localhost:9080
+- Backend API: http://localhost:3000/api
+
+MongoDB, SuperTokens Core, and Postgres run inside Docker and are not exposed on
+localhost.
+
+## Files In This Folder
+
+- `install.sh` is the installer. It sets up `~/compass`, writes
+  `~/compass/.env`, copies the helper script, and places app files under
+  `~/compass/app`.
+- `compass` is the helper script template. The installer copies it to
+  `~/compass/compass`.
+- `docker-compose.yml` is the Docker Compose stack used by the installed app.
+- `Dockerfile.web`, `Dockerfile.backend`, and `Dockerfile.mongo` build the web,
+  backend, and local MongoDB images.
+- `serve-web.ts` is the small web server that serves the built web app inside
+  the web container.
+- `.env.example` shows example environment values that mirror what the
+  installer writes to `~/compass/.env`.
