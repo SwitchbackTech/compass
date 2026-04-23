@@ -39,7 +39,11 @@ export const getEmailFromUrl = (url: string) => {
   const emailMatch = url.match(/\/calendars\/([^/]+)\/events/);
 
   if (emailMatch && emailMatch[1]) {
-    return emailMatch[1].replace("%40", "@");
+    try {
+      return decodeURIComponent(emailMatch[1]);
+    } catch {
+      return null;
+    }
   }
 
   return null;
