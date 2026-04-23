@@ -94,4 +94,17 @@ describe("Gaxios response parsing", () => {
       "https://www.googleapis.com/calendar/v3/calendars/foo%40bar.com/events?syncToken=!!!!!!!!!!!!!!!jqgYQwNWZ_QyyHyycChpiZHJvaGl1aHyyyyyyymxvZmMwaXZodjN2ZxoMCO7Xj6sGEICGncADwD4B";
     expect(getEmailFromUrl(url)).toBe("foo@bar.com");
   });
+  it("decodes additional percent-encoded characters beyond %40", () => {
+    const url =
+      "https://www.googleapis.com/calendar/v3/calendars/foo%2Bbar%40example.com/events";
+    expect(getEmailFromUrl(url)).toBe("foo+bar@example.com");
+  });
+  it("returns null for malformed percent-encoding", () => {
+    const url =
+      "https://www.googleapis.com/calendar/v3/calendars/foo%GGbar%40example.com/events";
+    expect(getEmailFromUrl(url)).toBeNull();
+  });
+  it("returns null when URL has no calendar segment", () => {
+    expect(getEmailFromUrl("https://www.googleapis.com/calendar/v3/events")).toBeNull();
+  });
 });
