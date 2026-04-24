@@ -24,7 +24,10 @@ import calendarService from "@backend/calendar/services/calendar.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import { error } from "@backend/common/errors/handlers/error.handler";
-import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
+import {
+  GcalError,
+  getGoogleRepairErrorMessage,
+} from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
@@ -645,18 +648,16 @@ class SyncService {
 
     const importResults = await this.importFull(gcal, gCalendarIds, user);
 
-    await Promise.resolve(isUsingGcalWebhookHttps()).then((yes) =>
-      yes
-        ? this.startWatchingGcalResources(
-            user,
-            [
-              { gCalendarId: Resource_Sync.CALENDAR },
-              ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
-            ],
-            gcal,
-          )
-        : [],
-    );
+    if (isUsingGcalWebhookHttps()) {
+      await this.startWatchingGcalResources(
+        user,
+        [
+          { gCalendarId: Resource_Sync.CALENDAR },
+          ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
+        ],
+        gcal,
+      );
+    }
 
     const eventsCount = importResults.reduce(
       (sum, result) => sum + result.totalChanged,
@@ -698,6 +699,14 @@ class SyncService {
         channelId,
         expiration,
       });
+      const resourceId = gcalWatch.resourceId;
+
+      if (!resourceId) {
+        throw error(
+          GcalError.Unsure,
+          "Calendar watch response missing resourceId",
+        );
+      }
 
       const watch = await mongoService.watch
         .insertOne(
@@ -705,13 +714,13 @@ class SyncService {
             _id,
             user,
             gCalendarId: Resource_Sync.CALENDAR,
-            resourceId: gcalWatch.resourceId!,
+            resourceId,
             expiration: ExpirationDateSchema.parse(gcalWatch.expiration),
             createdAt: new Date(),
           }),
         )
         .catch(async (error) => {
-          await this.stopWatch(user, channelId, gcalWatch.resourceId!, gcal);
+          await this.stopWatch(user, channelId, resourceId, gcal);
 
           throw error;
         });
@@ -753,6 +762,14 @@ class SyncService {
         channelId,
         expiration,
       });
+      const resourceId = gcalWatch.resourceId;
+
+      if (!resourceId) {
+        throw error(
+          GcalError.Unsure,
+          "Event watch response missing resourceId",
+        );
+      }
 
       const watch = await mongoService.watch
         .insertOne(
@@ -760,13 +777,13 @@ class SyncService {
             _id,
             user,
             gCalendarId: params.gCalendarId,
-            resourceId: gcalWatch.resourceId!,
+            resourceId,
             expiration: ExpirationDateSchema.parse(gcalWatch.expiration),
             createdAt: new Date(),
           }),
         )
         .catch(async (error) => {
-          await this.stopWatch(user, channelId, gcalWatch.resourceId!, gcal);
+          await this.stopWatch(user, channelId, resourceId, gcal);
 
           throw error;
         });

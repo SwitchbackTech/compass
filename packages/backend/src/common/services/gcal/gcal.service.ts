@@ -18,6 +18,9 @@ import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { getGcalWebhookBaseURL } from "@backend/common/util/api-base-url.util";
 import { encodeChannelToken } from "@backend/sync/util/watch.util";
 
+const getGcalNotificationAddress = () =>
+  getGcalWebhookBaseURL() + GCAL_NOTIFICATION_ENDPOINT;
+
 class GCalService {
   private validateGCalResponse<T>(
     response: GaxiosResponse<T> | { status: number; data: T },
@@ -230,7 +233,7 @@ class GCalService {
       quotaUser: params.quotaUser,
       requestBody: {
         // reminder: address always needs to be HTTPS
-        address: getGcalWebhookBaseURL() + GCAL_NOTIFICATION_ENDPOINT,
+        address: getGcalNotificationAddress(),
         expiration: params.expiration,
         id: IDSchemaV4.parse(params.channelId),
         token: encodeChannelToken({ resource: Resource_Sync.CALENDAR }),
@@ -250,7 +253,7 @@ class GCalService {
       quotaUser: params.quotaUser,
       requestBody: {
         // reminder: address always needs to be HTTPS
-        address: getGcalWebhookBaseURL() + GCAL_NOTIFICATION_ENDPOINT,
+        address: getGcalNotificationAddress(),
         expiration: params.expiration,
         id: IDSchemaV4.parse(params.channelId),
         token: encodeChannelToken({ resource: Resource_Sync.EVENTS }),
