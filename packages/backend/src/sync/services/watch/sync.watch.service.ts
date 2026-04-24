@@ -9,7 +9,6 @@ import {
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { WatchSchema } from "@core/types/watch.types";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
-import { Collections } from "@backend/common/constants/collections";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
@@ -31,23 +30,6 @@ import { findCompassUserBy } from "@backend/user/queries/user.queries";
 const logger = Logger("app:sync.watch.service");
 
 class SyncWatchService {
-  deleteAllByGcalId = async (gCalendarId: string, session?: ClientSession) => {
-    return mongoService.sync.deleteMany(
-      { "google.events.gCalendarId": gCalendarId },
-      { session },
-    );
-  };
-
-  deleteAllByUser = async (userId: string, session?: ClientSession) => {
-    return mongoService.sync.deleteMany({ user: userId }, { session });
-  };
-
-  deleteByIntegration = async (integration: "google", userId: string) => {
-    return mongoService.db
-      .collection(Collections.SYNC)
-      .updateOne({ user: userId }, { $unset: { [integration]: "" } });
-  };
-
   deleteWatchesByUser = async (
     user: string,
     session?: ClientSession,

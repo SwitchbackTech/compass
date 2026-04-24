@@ -50,12 +50,13 @@ Key files:
 
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
-- `packages/backend/src/sync/services/sync.service.ts`
+- `packages/backend/src/sync/services/outbound/sync.compass-to-google.ts`
 
 ### Google Notification Ingress
 
 - endpoint: `POST /api/sync/gcal/notifications`
 - source: `packages/backend/src/sync/controllers/sync.controller.ts`
+- handler: `packages/backend/src/sync/services/notify/sync.notification.service.ts`
 
 Observed outcomes include:
 
@@ -72,6 +73,14 @@ Observed outcomes include:
 - `/api/sync/import-gcal` accepts an optional body contract:
   - `{ "force": true }` to force restart when not currently importing
   - omitted or false follows normal metadata guardrails
+
+Sync implementation is split by responsibility:
+
+- imports and repair restarts: `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- Google watch start/stop/refresh: `packages/backend/src/sync/services/watch/sync.watch.service.ts`
+- incoming Google notifications: `packages/backend/src/sync/services/notify/sync.notification.service.ts`
+- watch maintenance: `packages/backend/src/sync/services/maintain`
+- Compass-to-Google backfill after repair: `packages/backend/src/sync/services/outbound/sync.compass-to-google.ts`
 
 ## Related Docs
 

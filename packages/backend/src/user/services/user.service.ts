@@ -20,6 +20,7 @@ import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
+import syncRecords from "@backend/sync/services/records/sync.records";
 import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -213,16 +214,13 @@ class UserService {
         summary.eventWatches = watches.deletedCount;
       }
 
-      const syncs = await syncWatchService.deleteAllByUser(userId, session);
+      const syncs = await syncRecords.deleteAllByUser(userId, session);
       summary.syncs = syncs.deletedCount;
 
       if (user) {
         // delete other users sync with same Google calendar ID (email)
         const gCalId = user.email;
-        const staleSyncs = await syncWatchService.deleteAllByGcalId(
-          gCalId,
-          session,
-        );
+        const staleSyncs = await syncRecords.deleteAllByGcalId(gCalId, session);
         summary.syncs += staleSyncs.deletedCount;
       }
 
@@ -269,7 +267,7 @@ class UserService {
     } else {
       await syncWatchService.stopWatches(userId);
     }
-    await syncWatchService.deleteByIntegration("google", userId);
+    await syncRecords.deleteByIntegration("google", userId);
   };
 
   handleLogoutCleanup = async (

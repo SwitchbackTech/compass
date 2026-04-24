@@ -31,7 +31,7 @@ jest.mock("@backend/sync/util/sync.util", () => {
 });
 /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
 
-describe("SyncImportRunner", () => {
+describe("syncImportRunner", () => {
   beforeAll(initSupertokens);
   beforeEach(async () => {
     await setupTestDb();
