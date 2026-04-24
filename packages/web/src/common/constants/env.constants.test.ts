@@ -4,6 +4,7 @@ import { describe, expect, it } from "bun:test";
 describe("isGoogleAuthConfigured", () => {
   it("rejects missing and placeholder Google client IDs", () => {
     expect(isGoogleAuthConfigured()).toBe(false);
+    expect(isGoogleAuthConfigured("")).toBe(false);
     expect(isGoogleAuthConfigured("undefined")).toBe(false);
     expect(
       isGoogleAuthConfigured(

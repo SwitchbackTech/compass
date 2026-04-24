@@ -33,7 +33,7 @@ https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 - Command palette
 - Event tagging, resizing, duplicating, reordering
 - Drag & drop
-- 2-way sync with Google Calendar (hosted or local via Ngrok)
+- 2-way sync with Google Calendar
 - Google OAuth authentication
 - User session management with Supertokens
 - Email capture via Kit

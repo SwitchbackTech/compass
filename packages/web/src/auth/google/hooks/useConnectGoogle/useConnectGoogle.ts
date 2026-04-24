@@ -30,6 +30,7 @@ import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { type RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useIsGoogleAvailable } from "../useIsGoogleAvailable/useIsGoogleAvailable";
 import {
   type GoogleUiState,
   type UseConnectGoogleResult,
@@ -45,6 +46,7 @@ import {
 
 export const useConnectGoogle = (): UseConnectGoogleResult => {
   const dispatch = useAppDispatch();
+  const isAvailable = useIsGoogleAvailable();
   const connectionState = useAppSelector(
     selectGoogleConnectionState as (state: RootState) => GoogleConnectionState,
   );
@@ -135,6 +137,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
 
   return {
     ...getGoogleConnectionConfig(state, onOpenGoogleAuth, onRepairGoogle),
+    isAvailable,
     isRepairing: state === "repairing",
     state,
   };

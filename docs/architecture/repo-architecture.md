@@ -105,7 +105,6 @@ The web talks to the backend through:
 3. register HTTP routes (SSE is opened per authenticated `GET /api/events/stream`)
 4. start Mongo
 5. listen on the configured port
-6. optionally connect ngrok
 
 ## Main Architectural Patterns
 

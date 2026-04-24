@@ -12,6 +12,7 @@ const backendProject = {
     "^@backend/auth(/(.*)$)?": "<rootDir>/packages/backend/src/auth/$1",
     "^@backend/calendar(/(.*)$)?": "<rootDir>/packages/backend/src/calendar/$1",
     "^@backend/common(/(.*)$)?": "<rootDir>/packages/backend/src/common/$1",
+    "^@backend/config(/(.*)$)?": "<rootDir>/packages/backend/src/config/$1",
     "^@backend/dev(/(.*)$)?": "<rootDir>/packages/backend/src/dev/$1",
     "^@backend/email(/(.*)$)?": "<rootDir>/packages/backend/src/email/$1",
     "^@backend/events(/(.*)$)?": "<rootDir>/packages/backend/src/events/$1",

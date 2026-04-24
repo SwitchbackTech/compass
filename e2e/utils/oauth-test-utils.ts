@@ -38,6 +38,14 @@ export const prepareOAuthTestPage = async (page: Page) => {
       });
     }
 
+    if (url.includes("/config")) {
+      return route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ google: { isConfigured: true } }),
+      });
+    }
+
     // Mock all other API calls
     return route.fulfill({
       status: 200,
