@@ -105,6 +105,8 @@ describe("Gaxios response parsing", () => {
     expect(getEmailFromUrl(url)).toBeNull();
   });
   it("returns null when URL has no calendar segment", () => {
-    expect(getEmailFromUrl("https://www.googleapis.com/calendar/v3/events")).toBeNull();
+    expect(
+      getEmailFromUrl("https://www.googleapis.com/calendar/v3/events"),
+    ).toBeNull();
   });
 });
