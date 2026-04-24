@@ -71,12 +71,13 @@ Optional but behavior-changing:
 
 - `GOOGLE_CLIENT_ID`
 - `GOOGLE_CLIENT_SECRET`
+- `GCAL_WEBHOOK_BASEURL`
 - `TOKEN_GCAL_NOTIFICATION`
 - `EMAILER_API_SECRET`
 - `EMAILER_USER_TAG_ID`
 
 Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
-are set. When Google is enabled and `BASEURL` uses HTTPS,
+are set. When Google is enabled and the effective Google webhook URL uses HTTPS,
 `TOKEN_GCAL_NOTIFICATION` is required for Google Calendar webhook validation.
 
 Derived backend values:
@@ -174,9 +175,38 @@ When testing changes around event loading, explicitly decide which user state yo
 ## Google Calendar Webhook Notes
 
 Compass does not start a local tunnel automatically. Google Calendar webhook
-watch flows use `BASEURL` directly. If `BASEURL` is local HTTP, Google sign-in,
-Google Calendar connect, and initial import can still work, but live
-Google-to-Compass notifications are skipped.
+watch flows use `GCAL_WEBHOOK_BASEURL` when it is set and fall back to
+`BASEURL` when it is not set.
+
+For normal local development:
+
+```bash
+BASEURL=http://localhost:3000/api
+```
+
+Google sign-in, Google Calendar connect, and initial import can still work, but
+live Google-to-Compass notifications are skipped because Google cannot call a
+local HTTP backend.
+
+For local end-to-end Google Watch testing, run a temporary HTTPS tunnel to the
+backend:
+
+```bash
+cloudflared tunnel --url http://localhost:3000
+```
+
+Then set:
+
+```bash
+BASEURL=http://localhost:3000/api
+GCAL_WEBHOOK_BASEURL=https://<generated-host>.trycloudflare.com/api
+```
+
+Keep `BASEURL` local so the browser and Server-Sent Events continue using
+localhost. Only Google's webhook POST requests should use the tunnel.
+
+Stop the tunnel when testing is complete. Do not use personal calendars with
+sensitive data for manual tunnel tests.
 
 ## Common Failure Modes
 
@@ -184,5 +214,8 @@ Google-to-Compass notifications are skipped.
 - backend/web/cli read from `.env.local`; using `.env` instead leaves required variables unset
 - web points at the wrong API base URL
 - session exists but user profile fetch fails
-- sync endpoints work but notification/watch setup is skipped because `BASEURL` is not public HTTPS
+- sync endpoints work but notification/watch setup is skipped because neither
+  `GCAL_WEBHOOK_BASEURL` nor `BASEURL` is public HTTPS
+- `GCAL_WEBHOOK_BASEURL` points to a tunnel without `/api`, so Google posts to
+  the wrong route
 - backend starts but `/api/health` returns `500` because `MONGO_URI` or database reachability is broken
