@@ -20,7 +20,7 @@ import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import syncService from "@backend/sync/services/sync.service";
+import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
@@ -198,7 +198,7 @@ class UserService {
       summary.events = events.deletedCount;
 
       if (gcalAccess) {
-        const watches = await syncService.stopWatches(
+        const watches = await syncWatchService.stopWatches(
           userId,
           undefined,
           new ObjectId().toString(),
@@ -213,13 +213,16 @@ class UserService {
         summary.eventWatches = watches.deletedCount;
       }
 
-      const syncs = await syncService.deleteAllByUser(userId, session);
+      const syncs = await syncWatchService.deleteAllByUser(userId, session);
       summary.syncs = syncs.deletedCount;
 
       if (user) {
         // delete other users sync with same Google calendar ID (email)
         const gCalId = user.email;
-        const staleSyncs = await syncService.deleteAllByGcalId(gCalId, session);
+        const staleSyncs = await syncWatchService.deleteAllByGcalId(
+          gCalId,
+          session,
+        );
         summary.syncs += staleSyncs.deletedCount;
       }
 
@@ -262,11 +265,11 @@ class UserService {
 
     await eventService.deleteByIntegration("google", userId);
     if (skipGoogleWatchStop) {
-      await syncService.deleteWatchesByUser(userId);
+      await syncWatchService.deleteWatchesByUser(userId);
     } else {
-      await syncService.stopWatches(userId);
+      await syncWatchService.stopWatches(userId);
     }
-    await syncService.deleteByIntegration("google", userId);
+    await syncWatchService.deleteByIntegration("google", userId);
   };
 
   handleLogoutCleanup = async (
@@ -293,7 +296,7 @@ class UserService {
     }
 
     if (options.isLastActiveSession) {
-      await syncService.stopWatches(userId);
+      await syncWatchService.stopWatches(userId);
     }
   };
 

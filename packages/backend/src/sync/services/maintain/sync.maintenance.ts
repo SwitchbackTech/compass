@@ -9,7 +9,8 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import syncService from "@backend/sync/services/sync.service";
+import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
+import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
 import { hasUpdatedCompassEventRecently } from "@backend/sync/util/sync.queries";
 import { syncExpired, syncExpiresSoon } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
@@ -74,7 +75,7 @@ export const pruneSync = async (
     try {
       const results = await Promise.all(
         payload.map(({ _id, resourceId }) =>
-          syncService.stopWatch(
+          syncWatchService.stopWatch(
             user,
             _id.toString(),
             resourceId,
@@ -118,7 +119,7 @@ export const refreshWatch = async (
 
       const refreshesByUser = await Promise.all(
         r.payload.map(async ({ _id, user, expiration, ...syncPayload }) => {
-          const _refresh = await syncService.refreshWatch(
+          const _refresh = await syncWatchService.refreshWatch(
             user,
             {
               ...syncPayload,
@@ -144,7 +145,9 @@ export const refreshWatch = async (
       };
     } catch (e) {
       if (isFullSyncRequired(e as Error)) {
-        void syncService.restartGoogleCalendarSync(r.user, { force: true });
+        void syncImportRunner.restartGoogleCalendarSync(r.user, {
+          force: true,
+        });
         resynced = true;
       } else {
         logger.error(

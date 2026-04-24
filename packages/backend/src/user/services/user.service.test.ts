@@ -19,7 +19,8 @@ import * as supertokensMiddleware from "@backend/common/middleware/supertokens.m
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
-import syncService from "@backend/sync/services/sync.service";
+import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
+import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";
@@ -258,7 +259,7 @@ describe("UserService", () => {
 
       await priorityService.createDefaultPriorities(userId);
       await SyncDriver.createSync(storedUser!, true);
-      await syncService.startGoogleCalendarSync(userId);
+      await syncImportRunner.startGoogleCalendarSync(userId);
 
       const summary: Summary_Delete =
         await userService.deleteCompassDataForUser(userId, false);
@@ -535,7 +536,7 @@ describe("UserService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
 
-      await syncService.startGoogleCalendarSync(userId);
+      await syncImportRunner.startGoogleCalendarSync(userId);
 
       const listCalendarsForUser =
         calendarService.getByUser.bind(calendarService);
@@ -574,7 +575,7 @@ describe("UserService", () => {
     it("skips Google metadata updates for email/password-only users", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
       const stopWatchesSpy = jest
-        .spyOn(syncService, "stopWatches")
+        .spyOn(syncWatchService, "stopWatches")
         .mockResolvedValue([]);
       const updateMetadataSpy = jest.spyOn(
         userMetadataService,
@@ -592,7 +593,7 @@ describe("UserService", () => {
     it("updates Google metadata and stops watches for last active Google sessions", async () => {
       const user = await UserDriver.createUser();
       const stopWatchesSpy = jest
-        .spyOn(syncService, "stopWatches")
+        .spyOn(syncWatchService, "stopWatches")
         .mockResolvedValue([]);
       const updateMetadataSpy = jest
         .spyOn(userMetadataService, "updateUserMetadata")
@@ -642,12 +643,15 @@ describe("UserService", () => {
     it("stops sync, clears the Google refresh token, and resets sync metadata", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const stopWatchesSpy = jest.spyOn(syncService, "stopWatches");
-      const deleteWatchesSpy = jest.spyOn(syncService, "deleteWatchesByUser");
+      const stopWatchesSpy = jest.spyOn(syncWatchService, "stopWatches");
+      const deleteWatchesSpy = jest.spyOn(
+        syncWatchService,
+        "deleteWatchesByUser",
+      );
 
       expect(user.google).toBeDefined();
 
-      await syncService.startGoogleCalendarSync(userId);
+      await syncImportRunner.startGoogleCalendarSync(userId);
 
       const eventCountBefore = await mongoService.event.countDocuments({
         user: userId,

@@ -20,7 +20,9 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncService from "@backend/sync/services/sync.service";
+import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
+import syncMaintenanceRunner from "@backend/sync/services/maintain/sync.maintenance-runner";
+import syncNotificationService from "@backend/sync/services/notify/sync.notification.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
@@ -77,7 +79,7 @@ export class SyncController {
     userId: string,
   ): void => {
     // do not await this call
-    syncService
+    syncImportRunner
       .restartGoogleCalendarSync(userId, { force: true })
       .catch((err) => {
         logger.error(
@@ -132,7 +134,7 @@ export class SyncController {
     // When Google returns 410 (sync token invalid), the token may still exist
     // in the database but is no longer valid. assessGoogleMetadata checks token
     // existence, not validity, so we must force-restart directly.
-    syncService
+    syncImportRunner
       .restartGoogleCalendarSync(userId, { force: true })
       .catch((err) => {
         logger.error(
@@ -202,7 +204,8 @@ export class SyncController {
         ),
       });
 
-      const response = await syncService.handleGcalNotification(syncPayload);
+      const response =
+        await syncNotificationService.handleGcalNotification(syncPayload);
 
       res.promise(response);
     } catch (e) {
@@ -259,7 +262,7 @@ export class SyncController {
     try {
       // To avoid 504 timeouts on this long running endpoint
       // to support the reliance of the google cloud function
-      // on the result of the syncService.runMaintenance call for notifications
+      // on the result of the sync maintenance call for notifications
       // we run the underlying sync logic for each user in parallel
       // to speed it up. If some of the syncs fail, investigate
       // Google API quota limits first.
@@ -273,7 +276,7 @@ export class SyncController {
         });
       }); // 5 minutes timeout
 
-      const result = await syncService.runMaintenance();
+      const result = await syncMaintenanceRunner.runMaintenance();
 
       if (!res.headersSent) res.promise(result);
     } catch (e) {
@@ -287,7 +290,7 @@ export class SyncController {
     const { force } = ImportGCalRequestSchema.parse(req.body);
     const isForce = force === true;
 
-    syncService
+    syncImportRunner
       .restartGoogleCalendarSync(userId, { force: isForce })
       .catch((err) => {
         logger.error(

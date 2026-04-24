@@ -15,7 +15,6 @@ import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import * as syncImportService from "@backend/sync/services/import/sync.import";
 import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
-import syncService from "@backend/sync/services/sync.service";
 import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
 import { isUsingHttps } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
@@ -354,9 +353,9 @@ describe("SyncImportRunner", () => {
       const userId = user._id.toString();
       const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
       const stopWatchesSpy = jest
-        .spyOn(syncService, "stopWatches")
+        .spyOn(syncWatchService, "stopWatches")
         .mockImplementation(async (targetUserId) => {
-          await syncService.deleteWatchesByUser(targetUserId);
+          await syncWatchService.deleteWatchesByUser(targetUserId);
           return [];
         });
       const startSpy = jest

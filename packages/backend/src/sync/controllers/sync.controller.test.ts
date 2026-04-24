@@ -30,8 +30,9 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
+import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
-import syncService from "@backend/sync/services/sync.service";
+import syncNotificationService from "@backend/sync/services/notify/sync.notification.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
@@ -139,7 +140,7 @@ describe("SyncController", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(syncService, "restartGoogleCalendarSync")
+        .spyOn(syncImportRunner, "restartGoogleCalendarSync")
         .mockResolvedValue();
 
       const watch = await mongoService.watch.findOne({
@@ -181,7 +182,7 @@ describe("SyncController", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(syncService, "restartGoogleCalendarSync")
+        .spyOn(syncImportRunner, "restartGoogleCalendarSync")
         .mockImplementation(async () => {
           await userMetadataService.updateUserMetadata({
             userId,
@@ -329,7 +330,7 @@ describe("SyncController", () => {
       expect(watch).not.toBeNull();
 
       const handleGcalNotificationSpy = jest
-        .spyOn(syncService, "handleGcalNotification")
+        .spyOn(syncNotificationService, "handleGcalNotification")
         .mockRejectedValue(invalidGrant400Error);
 
       const pruneGoogleDataSpy = jest
@@ -377,7 +378,7 @@ describe("SyncController", () => {
       expect(watch).not.toBeNull();
 
       const handleGcalNotificationSpy = jest
-        .spyOn(syncService, "handleGcalNotification")
+        .spyOn(syncNotificationService, "handleGcalNotification")
         .mockRejectedValue(missingRefreshTokenError);
 
       const pruneGoogleDataSpy = jest
@@ -414,7 +415,7 @@ describe("SyncController", () => {
 
     it("should return GONE status when missing refresh token and no watch record found", async () => {
       const handleGcalNotificationSpy = jest
-        .spyOn(syncService, "handleGcalNotification")
+        .spyOn(syncNotificationService, "handleGcalNotification")
         .mockRejectedValue(missingRefreshTokenError);
 
       const response = await syncDriver.handleGoogleNotification(

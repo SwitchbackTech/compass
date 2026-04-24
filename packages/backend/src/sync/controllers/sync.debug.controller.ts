@@ -7,7 +7,9 @@ import {
   type SReqBody,
 } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncService from "../services/sync.service";
+import syncImportRunner from "../services/import/sync.import-runner";
+import syncMaintenanceRunner from "../services/maintain/sync.maintenance-runner";
+import syncWatchService from "../services/watch/sync.watch.service";
 import { getSync } from "../util/sync.queries";
 
 class SyncDebugController {
@@ -35,7 +37,7 @@ class SyncDebugController {
       res.promise(Promise.reject({ error: "no userId param" }));
       return;
     }
-    const result = await syncService.importIncremental(userId);
+    const result = await syncImportRunner.importIncremental(userId);
 
     res.promise(result);
   };
@@ -54,7 +56,7 @@ class SyncDebugController {
         return;
       }
 
-      const result = await syncService.runMaintenanceByUser(userId, {
+      const result = await syncMaintenanceRunner.runMaintenanceByUser(userId, {
         dry,
       });
 
@@ -90,7 +92,7 @@ class SyncDebugController {
       const calendarId = req.body.calendarId;
       const gcal = await getGcalClient(userId);
 
-      const watchResult = await syncService.startWatchingGcalEvents(
+      const watchResult = await syncWatchService.startWatchingGcalEvents(
         userId,
         {
           gCalendarId: calendarId,
@@ -113,7 +115,7 @@ class SyncDebugController {
         userId = req.session?.getUserId() as string;
       }
 
-      const stopResult = await syncService.stopWatches(userId);
+      const stopResult = await syncWatchService.stopWatches(userId);
       res.promise(stopResult);
     } catch (e) {
       const _e = e as BaseError;
@@ -130,7 +132,7 @@ class SyncDebugController {
       const channelId = req.body.channelId;
       const resourceId = req.body.resourceId;
 
-      const stopResult = await syncService.stopWatch(
+      const stopResult = await syncWatchService.stopWatch(
         userId,
         channelId,
         resourceId,
