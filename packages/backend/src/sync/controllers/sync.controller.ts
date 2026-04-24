@@ -20,9 +20,9 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
 import syncMaintenanceRunner from "@backend/sync/services/maintain/sync.maintenance-runner";
 import syncNotificationService from "@backend/sync/services/notify/sync.notification.service";
+import syncRepairRunner from "@backend/sync/services/repair/sync.repair-runner";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
@@ -79,7 +79,7 @@ export class SyncController {
     userId: string,
   ): void => {
     // do not await this call
-    syncImportRunner
+    syncRepairRunner
       .restartGoogleCalendarSync(userId, { force: true })
       .catch((err) => {
         logger.error(
@@ -134,7 +134,7 @@ export class SyncController {
     // When Google returns 410 (sync token invalid), the token may still exist
     // in the database but is no longer valid. assessGoogleMetadata checks token
     // existence, not validity, so we must force-restart directly.
-    syncImportRunner
+    syncRepairRunner
       .restartGoogleCalendarSync(userId, { force: true })
       .catch((err) => {
         logger.error(
@@ -290,7 +290,7 @@ export class SyncController {
     const { force } = ImportGCalRequestSchema.parse(req.body);
     const isForce = force === true;
 
-    syncImportRunner
+    syncRepairRunner
       .restartGoogleCalendarSync(userId, { force: isForce })
       .catch((err) => {
         logger.error(

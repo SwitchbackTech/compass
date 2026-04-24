@@ -82,7 +82,8 @@ Use this document to find the first files to inspect for common Compass changes.
 - Backend SSE server: `packages/backend/src/servers/sse/sse.server.ts`
 - Events stream route: `packages/backend/src/events/events.routes.config.ts`
 - Backend sync routes: `packages/backend/src/sync/sync.routes.config.ts`
-- Sync import and repair: `packages/backend/src/sync/services/import`
+- Sync import: `packages/backend/src/sync/services/import`
+- Sync repair: `packages/backend/src/sync/services/repair`
 - Sync watch lifecycle: `packages/backend/src/sync/services/watch`
 - Google notification handling: `packages/backend/src/sync/services/notify`
 - Watch maintenance: `packages/backend/src/sync/services/maintain`

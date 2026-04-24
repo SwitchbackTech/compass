@@ -9,7 +9,7 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
+import syncRepairRunner from "@backend/sync/services/repair/sync.repair-runner";
 import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
 import { hasUpdatedCompassEventRecently } from "@backend/sync/util/sync.queries";
 import { syncExpired, syncExpiresSoon } from "@backend/sync/util/sync.util";
@@ -145,7 +145,7 @@ export const refreshWatch = async (
       };
     } catch (e) {
       if (isFullSyncRequired(e as Error)) {
-        void syncImportRunner.restartGoogleCalendarSync(r.user, {
+        void syncRepairRunner.restartGoogleCalendarSync(r.user, {
           force: true,
         });
         resynced = true;

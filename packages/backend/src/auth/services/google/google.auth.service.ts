@@ -15,6 +15,7 @@ import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
 import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
+import syncRepairRunner from "@backend/sync/services/repair/sync.repair-runner";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -47,7 +48,7 @@ class GoogleAuthService {
   };
 
   private restartGoogleCalendarSyncInBackground = (cUserId: string) => {
-    syncImportRunner.restartGoogleCalendarSync(cUserId).catch((err) => {
+    syncRepairRunner.restartGoogleCalendarSync(cUserId).catch((err) => {
       logger.error(
         `Something went wrong with starting calendar sync for user ${cUserId}`,
         err,

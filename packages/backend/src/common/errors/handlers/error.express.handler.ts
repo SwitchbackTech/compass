@@ -24,7 +24,7 @@ import {
 } from "@backend/common/types/error.types";
 import { type SessionResponse } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
+import syncRepairRunner from "@backend/sync/services/repair/sync.repair-runner";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
@@ -131,7 +131,7 @@ const handleGoogleError = async (
   }
 
   if (isFullSyncRequired(e)) {
-    syncImportRunner
+    syncRepairRunner
       .restartGoogleCalendarSync(userId, { force: true })
       .catch((err) => {
         logger.error(

@@ -30,9 +30,9 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncImportRunner from "@backend/sync/services/import/sync.import-runner";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
 import syncNotificationService from "@backend/sync/services/notify/sync.notification.service";
+import syncRepairRunner from "@backend/sync/services/repair/sync.repair-runner";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
@@ -140,7 +140,7 @@ describe("SyncController", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(syncImportRunner, "restartGoogleCalendarSync")
+        .spyOn(syncRepairRunner, "restartGoogleCalendarSync")
         .mockResolvedValue();
 
       const watch = await mongoService.watch.findOne({
@@ -182,7 +182,7 @@ describe("SyncController", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(syncImportRunner, "restartGoogleCalendarSync")
+        .spyOn(syncRepairRunner, "restartGoogleCalendarSync")
         .mockImplementation(async () => {
           await userMetadataService.updateUserMetadata({
             userId,

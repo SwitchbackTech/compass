@@ -77,6 +77,7 @@ Source:
 - `packages/core/src/types/sse.types.ts`
 - `packages/backend/src/user/services/user.service.ts`
 - `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- `packages/backend/src/sync/services/repair/sync.repair-runner.ts`
 
 `IMPORT_GCAL_END` carries an explicit `operation` so the client can distinguish repair completion from incremental completion.
 
@@ -99,8 +100,8 @@ type ImportGCalEndPayload =
 
 Operational constraints:
 
-- repair path (`restartGoogleCalendarSync`) emits `operation: "REPAIR"`
-- incremental path (`importIncremental`) emits `operation: "INCREMENTAL"`
+- repair path (`syncRepairRunner.restartGoogleCalendarSync`) emits `operation: "REPAIR"`
+- incremental path (`syncImportRunner.importIncremental`) emits `operation: "INCREMENTAL"`
 - web listeners should keep a defensive `payload?` handler for compatibility with older emitters/tests
 
 ## Outbound Flow: User Changes An Event In Compass
@@ -143,6 +144,7 @@ Primary files:
 - `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
 - `packages/backend/src/sync/services/sync/google/gcal.sync.processor.ts`
 - `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- `packages/backend/src/sync/services/repair/sync.repair-runner.ts`
 - `packages/backend/src/sync/services/watch/sync.watch.service.ts`
 
 ### Notification Outcomes And Error Semantics
@@ -219,10 +221,11 @@ Primary backend files:
 
 - `packages/backend/src/sync/services/import/sync.import-runner.ts`
 - `packages/backend/src/sync/services/import/sync.import.ts`
+- `packages/backend/src/sync/services/repair/sync.repair-runner.ts`
 - `packages/backend/src/sync/services/watch/sync.watch.service.ts`
 - `packages/backend/src/sync/services/outbound/sync.compass-to-google.ts`
 
-The import runner owns full import, incremental import, repair/restart, Google watch startup, and Compass-to-Google backfill after a restart.
+The import runner owns full import, incremental import, and Google watch startup after import. The repair runner owns repair/restart orchestration and calls the import runner plus Compass-to-Google backfill.
 
 ## Maintenance Flow
 

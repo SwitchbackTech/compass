@@ -42,7 +42,8 @@ sed -n '1,260p' packages/core/src/types/event.types.ts
 - Event routes: `packages/backend/src/event/event.routes.config.ts`
 - Event controller: `packages/backend/src/event/controllers/event.controller.ts`
 - Event service: `packages/backend/src/event/services/event.service.ts`
-- Sync import and repair: `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- Sync imports: `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- Sync repair: `packages/backend/src/sync/services/repair/sync.repair-runner.ts`
 - Sync watches: `packages/backend/src/sync/services/watch/sync.watch.service.ts`
 - Sync notifications: `packages/backend/src/sync/services/notify/sync.notification.service.ts`
 - SSE server: `packages/backend/src/servers/sse/sse.server.ts`

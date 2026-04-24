@@ -76,7 +76,8 @@ Observed outcomes include:
 
 Sync implementation is split by responsibility:
 
-- imports and repair restarts: `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- imports: `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- repair restarts: `packages/backend/src/sync/services/repair/sync.repair-runner.ts`
 - Google watch start/stop/refresh: `packages/backend/src/sync/services/watch/sync.watch.service.ts`
 - incoming Google notifications: `packages/backend/src/sync/services/notify/sync.notification.service.ts`
 - watch maintenance: `packages/backend/src/sync/services/maintain`
