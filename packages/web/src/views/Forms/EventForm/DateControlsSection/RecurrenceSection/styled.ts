@@ -2,9 +2,12 @@ import styled from "styled-components";
 import { darken } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 
-export const StyledRepeatContainer = styled.div`
+export const StyledRepeatContainer = styled.div<{
+  $disabled?: boolean;
+}>`
   margin-bottom: ${({ theme }) => theme.spacing.xs};
-  cursor: pointer;
+  cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
+  opacity: ${({ $disabled }) => ($disabled ? 0.7 : 1)};
 `;
 
 export const StyledRepeatRow = styled(Flex)`
@@ -17,6 +20,7 @@ export const StyledRepeatRow = styled(Flex)`
 `;
 
 export const StyledRepeatText = styled.span<{
+  $disabled?: boolean;
   hasRepeat: boolean;
 }>`
   display: inline-flex;
@@ -37,16 +41,20 @@ export const StyledRepeatText = styled.span<{
   }
 
   &:hover {
-    cursor: pointer;
-    color: ${({ theme }) => theme.color.text.dark};
-    background-color: ${({ theme }) => theme.color.border.primary};
+    cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
+    color: ${({ $disabled, theme }) =>
+      $disabled ? theme.color.text.darkPlaceholder : theme.color.text.dark};
+    background-color: ${({ $disabled, theme }) =>
+      $disabled ? "transparent" : theme.color.border.primary};
   }
   &:focus {
     box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
   }
 `;
 
-export const StyledRepeatTextContainer = styled(Flex)`
+export const StyledRepeatTextContainer = styled(Flex)<{
+  $disabled?: boolean;
+}>`
   align-items: center;
   border-radius: ${({ theme }) => theme.shape.borderRadius};
   gap: ${({ theme }) => theme.spacing.xs};
@@ -56,7 +64,8 @@ export const StyledRepeatTextContainer = styled(Flex)`
   padding: 2px 8px;
   color: ${({ theme }) => theme.color.text.darkPlaceholder};
   font-size: ${({ theme }) => theme.text.size.m};
-  cursor: pointer;
+  cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
+  opacity: ${({ $disabled }) => ($disabled ? 0.7 : 1)};
   transition:
     color ${({ theme }) => theme.transition.default} ease,
     filter ${({ theme }) => theme.transition.default} ease;
@@ -68,13 +77,20 @@ export const StyledRepeatTextContainer = styled(Flex)`
   }
 
   &:hover {
-    color: ${({ theme }) => theme.color.text.dark};
-    background-color: ${({ theme }) => theme.color.border.primary};
+    color: ${({ $disabled, theme }) =>
+      $disabled ? theme.color.text.darkPlaceholder : theme.color.text.dark};
+    background-color: ${({ $disabled, theme }) =>
+      $disabled ? "transparent" : theme.color.border.primary};
   }
 
   &:focus {
     box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
   }
+`;
+
+export const StyledRepeatUnavailableText = styled.span`
+  color: ${({ theme }) => theme.color.text.darkPlaceholder};
+  font-size: ${({ theme }) => theme.text.size.s};
 `;
 
 export const StyledWeekDay = styled.button<{
