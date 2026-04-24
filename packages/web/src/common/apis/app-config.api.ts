@@ -1,4 +1,4 @@
-import { type AppConfig, AppConfigSchema } from "@core/types/auth.types";
+import { type AppConfig, AppConfigSchema } from "@core/types/config.types";
 import { BaseApi } from "@web/common/apis/base/base.api";
 
 const AppConfigApi = {

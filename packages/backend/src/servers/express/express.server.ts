@@ -4,7 +4,7 @@ import {
   errorHandler as supertokensErrorHandler,
   middleware as supertokensMiddleware,
 } from "supertokens-node/framework/express";
-import { AppConfigSchema } from "@core/types/auth.types";
+import { type AppConfig, AppConfigSchema } from "@core/types/config.types";
 import { AuthRoutes } from "@backend/auth/auth.routes.config";
 import { CalendarRoutes } from "@backend/calendar/calendar.routes.config";
 import { type CommonRoutesConfig } from "@backend/common/common.routes.config";
@@ -26,6 +26,13 @@ import { PriorityRoutes } from "@backend/priority/priority.routes.config";
 import { SyncRoutes } from "@backend/sync/sync.routes.config";
 import { UserRoutes } from "@backend/user/user.routes.config";
 
+const getAppConfig = (): AppConfig =>
+  AppConfigSchema.parse({
+    google: {
+      isConfigured: isGoogleConfigured(ENV),
+    },
+  });
+
 export const initExpressServer = () => {
   /* Express Configuration */
   const app: Application = express();
@@ -44,15 +51,7 @@ export const initExpressServer = () => {
 
   const routes: Array<CommonRoutesConfig> = [];
   routes.push(new HealthRoutes(app));
-  app.route("/api/config").get((_req, res) => {
-    res.json(
-      AppConfigSchema.parse({
-        google: {
-          isConfigured: isGoogleConfigured(ENV),
-        },
-      }),
-    );
-  });
+  app.get("/api/config", (_req, res) => res.json(getAppConfig()));
   routes.push(new AuthRoutes(app));
   routes.push(new UserRoutes(app));
   routes.push(new PriorityRoutes(app));

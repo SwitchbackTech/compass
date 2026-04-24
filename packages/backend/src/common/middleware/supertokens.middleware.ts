@@ -1,6 +1,5 @@
 import cors from "cors";
-import SuperTokens from "supertokens-node";
-import { type RecipeListFunction } from "supertokens-node/lib/build/types";
+import SuperTokens, { type RecipeListFunction } from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
