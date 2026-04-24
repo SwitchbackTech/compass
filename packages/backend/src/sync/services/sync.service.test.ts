@@ -1,6 +1,5 @@
 import { faker } from "@faker-js/faker";
 import { ObjectId } from "mongodb";
-import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
 import { WatchSchema } from "@core/types/watch.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
@@ -51,8 +50,10 @@ const createWatch = async (user: string) => {
 
 describe("SyncService", () => {
   beforeAll(initSupertokens);
-  beforeEach(setupTestDb);
-  beforeEach(cleanupCollections);
+  beforeEach(async () => {
+    await setupTestDb();
+    await cleanupCollections();
+  });
   afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
@@ -233,49 +234,6 @@ describe("SyncService", () => {
 
       expect(await mongoService.watch.findOne({ _id: watch._id })).toBeNull();
       expect(getGcalClientSpy).not.toHaveBeenCalled();
-    });
-  });
-
-  describe("handleGcalNotification", () => {
-    it("ignores expired notifications when no local watch record remains", async () => {
-      const cleanupSpy = jest
-        .spyOn(syncService, "cleanupStaleWatchChannel")
-        .mockResolvedValue(false);
-
-      await expect(
-        syncService.handleGcalNotification({
-          resource: Resource_Sync.EVENTS,
-          channelId: new ObjectId(),
-          resourceId: faker.string.uuid(),
-          resourceState: XGoogleResourceState.EXISTS,
-          expiration: faker.date.future(),
-        }),
-      ).resolves.toBe("IGNORED");
-
-      expect(cleanupSpy).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("cleanupStaleWatchChannel", () => {
-    it("ignores stale notifications when no exact watch record exists", async () => {
-      const user = await UserDriver.createUser();
-      const watch = await createWatch(user._id.toString());
-      const stopWatchSpy = jest.spyOn(syncService, "stopWatch");
-
-      await expect(
-        syncService.cleanupStaleWatchChannel({
-          resource: Resource_Sync.EVENTS,
-          channelId: new ObjectId(),
-          resourceId: watch.resourceId,
-          resourceState: XGoogleResourceState.EXISTS,
-          expiration: faker.date.future(),
-        }),
-      ).resolves.toBe(false);
-
-      expect(stopWatchSpy).not.toHaveBeenCalled();
-      expect(await mongoService.watch.findOne({ _id: watch._id })).toEqual(
-        expect.objectContaining({ user: user._id.toString() }),
-      );
     });
   });
 

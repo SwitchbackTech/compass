@@ -6,11 +6,7 @@ import {
   type Schema_Event_Core,
 } from "@core/types/event.types";
 import { type gCalendar } from "@core/types/gcal";
-import {
-  type Payload_Sync_Notif,
-  Resource_Sync,
-  XGoogleResourceState,
-} from "@core/types/sync.types";
+import { Resource_Sync } from "@core/types/sync.types";
 import {
   shouldDoIncrementalGCalSync,
   shouldImportGCal,
@@ -18,9 +14,7 @@ import {
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
-import { error } from "@backend/common/errors/handlers/error.handler";
 import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
-import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { _createGcal } from "@backend/event/services/event.service";
@@ -31,9 +25,9 @@ import {
   pruneSync,
   refreshWatch,
 } from "@backend/sync/services/maintain/sync.maintenance";
-import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
+import syncNotificationService from "@backend/sync/services/notify/sync.notification.service";
 import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
-import { getSync, updateSync } from "@backend/sync/util/sync.queries";
+import { updateSync } from "@backend/sync/util/sync.queries";
 import {
   createConcurrencyLimiter,
   isUsingHttps,
@@ -54,129 +48,9 @@ class SyncService {
 
   deleteWatchesByUser = syncWatchService.deleteWatchesByUser;
 
-  async cleanupStaleWatchChannel({
-    channelId,
-    resourceId,
-  }: Payload_Sync_Notif): Promise<boolean> {
-    const channel = await mongoService.watch.findOne({
-      _id: channelId,
-      resourceId,
-    });
+  cleanupStaleWatchChannel = syncNotificationService.cleanupStaleWatchChannel;
 
-    if (!channel) {
-      logger.warn(
-        `Ignoring stale Google notification because no exact watch exists for channelId: ${channelId.toString()}, resourceId: ${resourceId}`,
-      );
-
-      return false;
-    }
-
-    try {
-      await this.stopWatch(
-        channel.user,
-        channel._id.toString(),
-        channel.resourceId,
-      );
-
-      logger.warn(
-        `Cleaned up stale watch for user: ${channel.user} with channelId: ${channel._id.toString()} with resourceId: ${channel.resourceId}`,
-      );
-
-      return true;
-    } catch (error) {
-      logger.error(
-        `Failed to clean up stale watch for user: ${channel.user} with channelId: ${channel._id.toString()}`,
-        error,
-      );
-
-      return false;
-    }
-  }
-
-  handleGcalNotification = async (payload: Payload_Sync_Notif) => {
-    const { channelId, resourceId, resourceState, resource } = payload;
-    const { expiration } = payload;
-
-    if (resourceState === XGoogleResourceState.SYNC) {
-      logger.info(
-        `${resource} sync initialized for channelId: ${payload.channelId.toString()}`,
-      );
-
-      return "INITIALIZED";
-    }
-
-    const watch = await mongoService.watch.findOne({
-      _id: channelId,
-      resourceId,
-      expiration: { $gte: expiration },
-    });
-
-    if (!watch) {
-      // clean up stale watch channel;
-      const cleanedUp = await this.cleanupStaleWatchChannel(payload);
-
-      if (cleanedUp) return "IGNORED";
-
-      logger.warn(
-        `Ignoring notification because no active watch record exists for channel: ${payload.channelId.toString()}`,
-      );
-
-      return "IGNORED";
-    }
-
-    const sync = await getSync({ userId: watch.user, resource });
-
-    if (!sync) {
-      // clean up stale watch channel;
-      const cleanedUp = await this.cleanupStaleWatchChannel(payload);
-
-      if (cleanedUp) return "IGNORED";
-
-      logger.warn(
-        `Ignoring notification because no sync record exists for channel: ${payload.channelId.toString()}`,
-      );
-
-      return "IGNORED";
-    }
-
-    const userId = sync.user;
-    const { events = [], calendarlist = [] } = sync.google ?? {};
-    const channels = [...events, ...calendarlist];
-    const channel = channels.find((e) => e.gCalendarId === watch.gCalendarId);
-    const calendarId = channel?.gCalendarId;
-    const nextSyncToken = channel?.nextSyncToken;
-
-    if (!nextSyncToken) {
-      throw error(
-        SyncError.NoSyncToken,
-        `Notification not handled because no sync token found for calendarId: ${calendarId}`,
-      );
-    }
-
-    // Get the Google Calendar client
-    const gcal = await getGcalClient(userId);
-
-    // Create and use the notification handler
-    const handler = new GCalNotificationHandler(
-      gcal,
-      resource,
-      userId,
-      watch.gCalendarId,
-      nextSyncToken,
-    );
-
-    await handler.handleNotification();
-
-    sseServer.handleBackgroundCalendarChange(userId);
-
-    const result = "PROCESSED";
-
-    logger.info(
-      `GCal Notification for user: ${userId}, calendarId: ${calendarId} ${result}`,
-    );
-
-    return result;
-  };
+  handleGcalNotification = syncNotificationService.handleGcalNotification;
 
   importFull = async (
     gcal: gCalendar,
