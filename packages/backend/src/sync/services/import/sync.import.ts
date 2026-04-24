@@ -29,7 +29,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { type EventsToModify } from "@backend/sync/services/import/sync.import.types";
 import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
-import syncService from "@backend/sync/services/sync.service";
+import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
 import {
   getGCalEventsSyncPageToken,
   getSync,
@@ -549,7 +549,7 @@ export class SyncImport {
       undefined,
     );
 
-    await syncService.startWatchingGcalResources(
+    await syncWatchService.startWatchingGcalResources(
       userId,
       [
         ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
@@ -668,7 +668,7 @@ export class SyncImport {
         updateOne: {
           filter: {
             user: userId,
-            gEventId: event["gEventId"],
+            gEventId: event.gEventId,
           },
           update: { $set: event },
           upsert: true,
