@@ -4,6 +4,10 @@ import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
+import {
+  EVENT_WIDTH_MINIMUM,
+  GRID_MARGIN_LEFT,
+} from "@web/views/Calendar/layout.constants";
 
 interface Props {
   today: Dayjs;
@@ -42,16 +46,23 @@ export const DayLabels: FC<Props> = ({
   };
 
   return (
-    <div className="mt-[10px] flex w-full">
+    <div
+      className="mt-[10px] flex"
+      style={{
+        paddingLeft: `${GRID_MARGIN_LEFT}px`,
+        width: "100%",
+        boxSizing: "border-box",
+      }}
+    >
       {weekDays.map((day) => {
         const dayNumber = getDayNumber(day);
         const { isToday, color } = getColor(day);
 
         return (
           <div
-            className="flex min-w-[100px] basis-full items-end justify-center"
+            className="flex basis-full items-end justify-center"
             key={getWeekDayLabel(day)}
-            style={{ color }}
+            style={{ color, minWidth: `${EVENT_WIDTH_MINIMUM}px` }}
             title={getWeekDayLabel(day)}
           >
             <Text size="xxl" withGradient={isToday}>

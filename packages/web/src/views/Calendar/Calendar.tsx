@@ -78,7 +78,7 @@ export const CalendarView = () => {
                 />
               )}
             </ContextMenuWrapper>
-            <StyledCalendar>
+            <StyledCalendar isSidebarOpen={isSidebarOpen}>
               <Header
                 rootProps={rootProps}
                 scrollUtil={scrollUtil}
