@@ -8,7 +8,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import syncService from "@backend/sync/services/sync.service";
+import syncRepairRunner from "@backend/sync/services/repair/sync.repair-runner";
 import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual
@@ -121,7 +121,7 @@ describe("UserMetadataService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(syncService, "restartGoogleCalendarSync")
+        .spyOn(syncRepairRunner, "restartGoogleCalendarSync")
         .mockResolvedValue();
 
       const metadata = await driver.fetchUserMetadata(userId);
@@ -150,7 +150,7 @@ describe("UserMetadataService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(syncService, "restartGoogleCalendarSync")
+        .spyOn(syncRepairRunner, "restartGoogleCalendarSync")
         .mockResolvedValue();
 
       await driver.updateUserMetadata({

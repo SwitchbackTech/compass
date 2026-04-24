@@ -29,7 +29,7 @@ import { getGcalWebhookBaseURL } from "@backend/common/util/api-base-url.util";
 import { type EventsToModify } from "@backend/sync/services/import/sync.import.types";
 import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
-import syncService from "@backend/sync/services/sync.service";
+import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
 import {
   getGCalEventsSyncPageToken,
   getSync,
@@ -547,7 +547,7 @@ export class SyncImport {
       undefined,
     );
 
-    await syncService.startWatchingGcalResources(
+    await syncWatchService.startWatchingGcalResources(
       userId,
       [
         ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),

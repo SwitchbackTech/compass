@@ -21,7 +21,7 @@ flowchart LR
   subgraph Backend["packages/backend"]
     Stream[events.controller stream]
     Srv[sse.server]
-    Sync[sync.service]
+    Sync[sync service modules]
     Err[error handler]
   end
   ES -->|GET /api/events/stream| Stream
@@ -76,7 +76,8 @@ Source:
 
 - `packages/core/src/types/sse.types.ts`
 - `packages/backend/src/user/services/user.service.ts`
-- `packages/backend/src/sync/services/sync.service.ts`
+- `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- `packages/backend/src/sync/services/repair/sync.repair-runner.ts`
 
 `IMPORT_GCAL_END` carries an explicit `operation` so the client can distinguish repair completion from incremental completion.
 
@@ -99,8 +100,8 @@ type ImportGCalEndPayload =
 
 Operational constraints:
 
-- repair path (`restartGoogleCalendarSync`) emits `operation: "REPAIR"`
-- incremental path (`importIncremental`) emits `operation: "INCREMENTAL"`
+- repair path (`syncRepairRunner.restartGoogleCalendarSync`) emits `operation: "REPAIR"`
+- incremental path (`syncImportRunner.importIncremental`) emits `operation: "INCREMENTAL"`
 - web listeners should keep a defensive `payload?` handler for compatibility with older emitters/tests
 
 ## Outbound Flow: User Changes An Event In Compass
@@ -121,6 +122,7 @@ Primary files:
 - `packages/web/src/common/repositories/event`
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
+- `packages/backend/src/sync/services/outbound/sync.compass-to-google.ts`
 
 ## Inbound Flow: Google Notifies Compass About Changes
 
@@ -128,7 +130,7 @@ High-level path:
 
 1. Google posts to the notification endpoint in sync routes.
 2. Backend verifies the request origin.
-3. `SyncService.handleGcalNotification()` locates the watch and sync record.
+3. `syncNotificationService.handleGcalNotification()` locates the watch and sync record.
 4. The service builds a Google Calendar client for the user.
 5. `GCalNotificationHandler` fetches incremental changes using the stored sync token.
 6. `GcalSyncProcessor` applies those changes to Compass data.
@@ -137,13 +139,17 @@ High-level path:
 Primary files:
 
 - `packages/backend/src/sync/sync.routes.config.ts`
-- `packages/backend/src/sync/services/sync.service.ts`
+- `packages/backend/src/sync/controllers/sync.controller.ts`
+- `packages/backend/src/sync/services/notify/sync.notification.service.ts`
 - `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
 - `packages/backend/src/sync/services/sync/google/gcal.sync.processor.ts`
+- `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- `packages/backend/src/sync/services/repair/sync.repair-runner.ts`
+- `packages/backend/src/sync/services/watch/sync.watch.service.ts`
 
 ### Notification Outcomes And Error Semantics
 
-Same as before: recoverable `INITIALIZED` / `IGNORED` / `PROCESSED` paths, `GOOGLE_REVOKED` on invalid refresh token, etc. See inline comments in `SyncService` and `SyncController`.
+Recoverable notification paths return `INITIALIZED`, `IGNORED`, or `PROCESSED`. Missing sync tokens and Google full-sync-required responses trigger a forced import restart. Missing or invalid Google refresh tokens prune Google data and publish `GOOGLE_REVOKED`.
 
 ## SSE Server Responsibilities
 
@@ -210,6 +216,32 @@ Auto-import guardrail:
 3. Client reacts to metadata / `USER_METADATA` / `IMPORT_GCAL_END`.
 4. Backend completes import and publishes `IMPORT_GCAL_END`.
 5. Client stores import results and triggers a refetch when appropriate.
+
+Primary backend files:
+
+- `packages/backend/src/sync/services/import/sync.import-runner.ts`
+- `packages/backend/src/sync/services/import/sync.import.ts`
+- `packages/backend/src/sync/services/repair/sync.repair-runner.ts`
+- `packages/backend/src/sync/services/watch/sync.watch.service.ts`
+- `packages/backend/src/sync/services/outbound/sync.compass-to-google.ts`
+
+The import runner owns full import, incremental import, and Google watch startup after import. The repair runner owns repair/restart orchestration and calls the import runner plus Compass-to-Google backfill.
+
+## Maintenance Flow
+
+Google watches are maintained separately from import and notification handling:
+
+1. `/api/sync/maintain-all` calls `syncMaintenanceRunner.runMaintenance()`.
+2. Maintenance classifies each user's watches as active, expiring soon, expired, or inactive.
+3. Expired or inactive watches are pruned.
+4. Expiring watches are refreshed.
+5. If Google reports that a full sync is required during refresh, the user is force-restarted through the import runner.
+
+Primary backend files:
+
+- `packages/backend/src/sync/services/maintain/sync.maintenance-runner.ts`
+- `packages/backend/src/sync/services/maintain/sync.maintenance.ts`
+- `packages/backend/src/sync/services/watch/sync.watch.service.ts`
 
 ### Manual Import Trigger Contract
 

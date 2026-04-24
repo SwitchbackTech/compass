@@ -17,6 +17,9 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
   [Frontend Runtime Flow](./frontend/frontend-runtime-flow.md),
   [Password Auth Flow](./features/password-auth-flow.md),
   [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md)
+- Google sync, watch maintenance, or realtime updates:
+  [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md),
+  [API Documentation](./backend/api-documentation.md)
 - Event shape or recurrence behavior:
   [Event And Task Domain Model](./architecture/event-and-task-domain-model.md),
   [Recurrence Handling](./features/recurring-events-handling.md)

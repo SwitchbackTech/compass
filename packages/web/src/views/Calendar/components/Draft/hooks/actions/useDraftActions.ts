@@ -46,6 +46,11 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  getDraggedEventDateRange,
+  getIsValidResizeMovement,
+} from "@web/views/Calendar/components/Draft/hooks/actions/draft.movement";
+import { getDraftSubmitAction } from "@web/views/Calendar/components/Draft/hooks/actions/draft.submit-decision";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Calendar/components/Draft/hooks/effects/useDraftEffects";
 import {
@@ -240,31 +245,16 @@ export const useDraftActions = (
 
   const determineSubmitAction = useCallback(
     (draft: Schema_WebEvent) => {
-      const isExisting = !!draft._id;
-      if (!isExisting) return "CREATE";
+      const isDirty = reduxDraft
+        ? DirtyParser.isEventDirty(draft, reduxDraft)
+        : true;
 
-      if (isExisting) {
-        // Prevent updates if event is pending (waiting for backend confirmation)
-        const isPending = draft._id
-          ? pendingEventIds.includes(draft._id)
-          : false;
-        if (isPending) {
-          // Event is pending, discard the change and return to original position
-          return "DISCARD";
-        }
-
-        if (isFormOpenBeforeDragging) {
-          return "OPEN_FORM";
-        }
-        const isSame = reduxDraft
-          ? !DirtyParser.isEventDirty(draft, reduxDraft)
-          : false;
-        if (isSame) {
-          // no need to make HTTP request
-          return "DISCARD";
-        }
-      }
-      return "UPDATE";
+      return getDraftSubmitAction({
+        draft,
+        pendingEventIds,
+        isFormOpenBeforeDragging,
+        isDirty,
+      });
     },
     [reduxDraft, isFormOpenBeforeDragging, pendingEventIds],
   );
@@ -391,31 +381,21 @@ export const useDraftActions = (
 
         const y = e.clientY - draft.position.dragOffset.y;
 
-        let eventStart = dateCalcs.getDateByXY(
+        const eventStart = dateCalcs.getDateByXY(
           x,
           y,
           weekProps.component.startOfView,
         );
-
-        let eventEnd = eventStart.add(startEndDurationMin, "minutes");
-
-        if (!draft.isAllDay) {
-          // Edge case: timed events' end times can overflow past midnight at the bottom of the grid.
-          // Below logic prevents that from occurring.
-          if (eventEnd.date() !== eventStart.date()) {
-            eventEnd = eventEnd.hour(0).minute(0);
-            eventStart = eventEnd.subtract(startEndDurationMin, "minutes");
-          }
-        }
+        const { endDate, startDate } = getDraggedEventDateRange({
+          durationMin: startEndDurationMin,
+          eventStart,
+          isAllDay: draft.isAllDay,
+        });
 
         const _draft: Schema_GridEvent = {
           ...draft,
-          startDate: draft.isAllDay
-            ? eventStart.format(YEAR_MONTH_DAY_FORMAT)
-            : eventStart.format(),
-          endDate: draft.isAllDay
-            ? eventEnd.format(YEAR_MONTH_DAY_FORMAT)
-            : eventEnd.format(),
+          startDate,
+          endDate,
           priority: draft.priority || Priorities.UNASSIGNED,
         };
 
@@ -462,22 +442,13 @@ export const useDraftActions = (
     (currTime: dayjs.Dayjs) => {
       if (!draft || !dateBeingChanged) return false;
 
-      if (draft.isAllDay) {
-        return true;
-      }
-
-      const _currTime = currTime.format();
-      const noChange = draft[dateBeingChanged] === _currTime;
-
-      if (noChange) return false;
-
-      const diffDay = currTime.day() !== dayjs(draft.startDate).day();
-      if (diffDay) return false;
-
-      const sameStart = currTime.format() === draft.startDate;
-      if (sameStart) return false;
-
-      return true;
+      return getIsValidResizeMovement({
+        currTime,
+        draftStartDate: draft.startDate,
+        currentValue: draft[dateBeingChanged],
+        dateBeingChanged,
+        isAllDay: draft.isAllDay,
+      });
     },
     [dateBeingChanged, draft],
   );
@@ -673,6 +644,7 @@ export const useDraftActions = (
     reduxDraft,
     startDragging,
     startResizing,
+    openForm,
   ]);
 
   const actions = {
