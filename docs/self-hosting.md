@@ -82,7 +82,7 @@ Available commands:
 
 A few settings become part of the web app when it is built, so editing them in `~/compass/.env` has no effect until you rebuild. This includes:
 
-- Google OAuth client values (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
+- Optional Google OAuth client values (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`)
 - `FRONTEND_URL`
 - `BASEURL`
 
@@ -117,7 +117,7 @@ Only the web app and backend are reachable from your browser, and only at `local
 
 ### Google Calendar Sync
 
-Google auth and Google Calendar sync are **not** configured by the local installer. Because the backend currently requires Google environment variables to start, the installer writes placeholder values so Compass can boot.
+Google auth and Google Calendar sync are **not** configured by the local installer. Compass runs in password-only mode unless you provide Google OAuth credentials.
 
 You can add your own Google OAuth client values to `~/compass/.env` and run `./compass rebuild` to try Google sign-in and the Google Calendar connect flow. However, keeping Compass continuously in sync with Google Calendar, so new or changed Google events appear automatically, requires an HTTPS backend that is reachable from the public internet. The local installer does not set that up. For that, see [Running On A Server](#running-on-a-server).
 
@@ -174,7 +174,7 @@ Compass is a web app and a backend API. In manual setup, you provide the runtime
 
 - A **Google Cloud project**, only if you want Google auth or to connect Google Calendar.
 
-The backend currently requires Google environment variables to start, even if you do not plan to use Google. Either provide real credentials from a Google Cloud project, or use placeholder strings until you set one up. Ongoing Google Calendar watch notifications need an HTTPS, publicly reachable backend, which manual local setup does not provide.
+Leave Google credentials unset for password-only mode. If you provide Google credentials, provide both the client ID and client secret. Ongoing Google Calendar watch notifications need an HTTPS, publicly reachable backend, which manual local setup does not provide.
 
 ### Manual Steps
 
@@ -201,7 +201,7 @@ The backend currently requires Google environment variables to start, even if yo
 
    - `MONGO_URI` for your MongoDB.
    - SuperTokens values for your managed SuperTokens instance or self-hosted Core. If you self-host Core, connect it to Postgres.
-   - Google credentials (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`). Use real credentials if you have a Google Cloud project, or placeholders until you do.
+   - Optional Google credentials (`GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`) if you want Google sign-in and Google Calendar sync. Leave both unset for password-only self-hosted mode.
 
    For the full list and what each variable does, see [Local Development](./development/local-development.md).
 

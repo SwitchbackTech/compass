@@ -6,9 +6,9 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
+import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
@@ -47,8 +47,8 @@ const CmdPalette = ({
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");
-  const { commandAction } = useConnectGoogle();
   const authCmdItems = useAuthCmdItems();
+  const googleCmdItems = useGoogleCmdItems();
 
   const handleCreateSomedayDraft = async (
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
@@ -141,13 +141,7 @@ const CmdPalette = ({
         heading: "Settings",
         id: "settings",
         items: [
-          {
-            id: "connect-google-calendar",
-            children: commandAction.label,
-            icon: commandAction.icon,
-            disabled: commandAction.isDisabled,
-            onClick: commandAction.onSelect,
-          },
+          ...googleCmdItems,
           ...authCmdItems,
           {
             id: "log-out",

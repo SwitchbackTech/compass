@@ -209,6 +209,32 @@ describe("supertokens.middleware", () => {
       ]);
     });
 
+    it("omits the Google third-party provider when Google is not configured", () => {
+      const originalClientId = ENV.GOOGLE_CLIENT_ID;
+      const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
+      ENV.GOOGLE_CLIENT_ID = undefined;
+      ENV.GOOGLE_CLIENT_SECRET = undefined;
+
+      try {
+        initSupertokens();
+      } finally {
+        ENV.GOOGLE_CLIENT_ID = originalClientId;
+        ENV.GOOGLE_CLIENT_SECRET = originalClientSecret;
+      }
+
+      expect(mockedThirdPartyInit).not.toHaveBeenCalled();
+      const initArg = getFirstCallArg<{
+        recipeList: unknown[];
+      }>(mockedSuperTokensInit);
+
+      expect(initArg.recipeList).toEqual([
+        { recipe: "emailpassword" },
+        { recipe: "dashboard" },
+        { recipe: "session" },
+        { recipe: "usermetadata" },
+      ]);
+    });
+
     it("wires EmailPassword name validation", async () => {
       initSupertokens();
 

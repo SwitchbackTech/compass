@@ -1,0 +1,91 @@
+import {
+  ENV,
+  getApiBaseURL,
+  isGoogleConfigured,
+  parseBackendEnv,
+} from "@backend/common/constants/env.constants";
+
+const validEnv = {
+  BASEURL: "http://localhost:3000/api",
+  CHANNEL_EXPIRATION_MIN: "10",
+  CORS: "http://localhost:9080",
+  FRONTEND_URL: "http://localhost:9080",
+  MONGO_URI: "mongodb://localhost:27017/compass",
+  NODE_ENV: "development",
+  PORT: "3000",
+  SUPERTOKENS_KEY: "supertokens-key",
+  SUPERTOKENS_URI: "http://localhost:3567",
+  TOKEN_COMPASS_SYNC: "sync-token",
+  TZ: "Etc/UTC",
+};
+
+describe("env.constants", () => {
+  describe("getApiBaseURL", () => {
+    const originalBaseUrl = ENV.BASEURL;
+
+    afterEach(() => {
+      ENV.BASEURL = originalBaseUrl;
+    });
+
+    it("throws a clear error when ENV.BASEURL is blank", () => {
+      ENV.BASEURL = "   ";
+
+      expect(() => getApiBaseURL()).toThrow("ENV.BASEURL is not set");
+    });
+
+    it("returns the original ENV.BASEURL value when set", () => {
+      ENV.BASEURL = " https://api.example.com/api ";
+
+      expect(getApiBaseURL()).toBe(" https://api.example.com/api ");
+    });
+  });
+
+  it("parses password-only backend env without Google configuration", () => {
+    const env = parseBackendEnv(validEnv);
+
+    expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
+    expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
+    expect(env.TOKEN_GCAL_NOTIFICATION).toBe("");
+    expect(isGoogleConfigured(env)).toBe(false);
+  });
+
+  it("rejects partially configured Google credentials", () => {
+    expect(() =>
+      parseBackendEnv({
+        ...validEnv,
+        GOOGLE_CLIENT_ID: "client-id",
+      }),
+    ).toThrow("Google configuration requires both client ID and secret");
+
+    expect(() =>
+      parseBackendEnv({
+        ...validEnv,
+        GOOGLE_CLIENT_SECRET: "client-secret",
+      }),
+    ).toThrow("Google configuration requires both client ID and secret");
+  });
+
+  it("reports Google as configured only when both credentials are present", () => {
+    const env = parseBackendEnv({
+      ...validEnv,
+      BASEURL: "http://localhost:3000/api",
+      GOOGLE_CLIENT_ID: "client-id",
+      GOOGLE_CLIENT_SECRET: "client-secret",
+    });
+
+    expect(isGoogleConfigured(env)).toBe(true);
+  });
+
+  it("requires a Google notification token for HTTPS Google watch callbacks", () => {
+    expect(() =>
+      parseBackendEnv({
+        ...validEnv,
+        BASEURL: "https://api.example.com/api",
+        GOOGLE_CLIENT_ID: "client-id",
+        GOOGLE_CLIENT_SECRET: "client-secret",
+      }),
+    ).toThrow(
+      "Google Calendar webhook notifications require TOKEN_GCAL_NOTIFICATION",
+    );
+  });
+});

@@ -3,9 +3,8 @@ import { Logger } from "@core/logger/winston.logger";
 import { type Schema_Sync } from "@core/types/sync.types";
 import dayjs from "@core/util/date/dayjs";
 import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
-import { ENV } from "@backend/common/constants/env.constants";
+import { ENV, getApiBaseURL } from "@backend/common/constants/env.constants";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { getBaseURL } from "@backend/servers/ngrok/ngrok.utils";
 
 const logger = Logger("app:sync.helpers");
 
@@ -23,7 +22,7 @@ const logger = Logger("app:sync.helpers");
  * @returns {string} Channel expiration as a string representing a Unix timestamp in milliseconds.
  */
 export const getChannelExpiration = (): string => {
-  const numMin = parseInt(ENV.CHANNEL_EXPIRATION_MIN);
+  const numMin = parseInt(ENV.CHANNEL_EXPIRATION_MIN, 10);
   const expiration = dayjs().add(numMin, "minutes");
 
   logExpirationReminder(numMin);
@@ -110,7 +109,7 @@ export const createConcurrencyLimiter = (
   };
 };
 
-export const isUsingHttps = () => getBaseURL().includes("https");
+export const isUsingHttps = () => getApiBaseURL().startsWith("https://");
 
 export const logExpirationReminder = (min: number) => {
   const hours = Math.round((min / 60) * 100) / 100;

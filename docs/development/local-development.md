@@ -61,21 +61,23 @@ Important variables:
 - `BASEURL`
 - `PORT`
 - `MONGO_URI`
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
 - `SUPERTOKENS_URI`
 - `SUPERTOKENS_KEY`
-- `TOKEN_GCAL_NOTIFICATION`
 - `TOKEN_COMPASS_SYNC`
 - `FRONTEND_URL`
 - `CORS` (parsed into `ENV.ORIGINS_ALLOWED`)
 
 Optional but behavior-changing:
 
-- `NGROK_AUTHTOKEN`
-- `NGROK_DOMAIN`
+- `GOOGLE_CLIENT_ID`
+- `GOOGLE_CLIENT_SECRET`
+- `TOKEN_GCAL_NOTIFICATION`
 - `EMAILER_API_SECRET`
 - `EMAILER_USER_TAG_ID`
+
+Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
+are set. When Google is enabled and `BASEURL` uses HTTPS,
+`TOKEN_GCAL_NOTIFICATION` is required for Google Calendar webhook validation.
 
 Derived backend values:
 
@@ -106,10 +108,12 @@ Source:
 Important variables:
 
 - `API_BASEURL`
-- `GOOGLE_CLIENT_ID`
 - `NODE_ENV`
 - `POSTHOG_KEY`
 - `POSTHOG_HOST`
+
+`GOOGLE_CLIENT_ID` is optional. When it is missing, the web app hides Google
+sign-in and Google Calendar connection actions.
 
 `BACKEND_BASEURL` is derived from `API_BASEURL`.
 
@@ -167,9 +171,13 @@ Compass supports both:
 
 When testing changes around event loading, explicitly decide which user state you are modeling.
 
-## Ngrok Notes
+## Google Calendar Webhook Notes
 
-Ngrok is optional for general local development but relevant for Google notification/watch flows. The backend env schema requires both ngrok auth token and static domain together if ngrok is enabled.
+Compass does not start a local tunnel automatically. Google Calendar webhook
+watch flows use `BASEURL` directly. If `BASEURL` is not a publicly routable
+HTTPS URL, Google sign-in, Google Calendar connect, and initial import can
+still work, but live Google-to-Compass notifications are skipped because the
+base URL is not public HTTPS.
 
 ## Common Failure Modes
 
@@ -177,5 +185,5 @@ Ngrok is optional for general local development but relevant for Google notifica
 - backend/web/cli read from `.env.local`; using `.env` instead leaves required variables unset
 - web points at the wrong API base URL
 - session exists but user profile fetch fails
-- sync endpoints work but notification/watch setup fails due to incomplete Google/ngrok setup
+- sync endpoints work but notification/watch setup is skipped because `BASEURL` is not public HTTPS
 - backend starts but `/api/health` returns `500` because `MONGO_URI` or database reachability is broken

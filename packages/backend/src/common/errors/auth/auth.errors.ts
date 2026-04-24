@@ -5,6 +5,7 @@ interface AuthErrors {
   DevOnly: ErrorMetadata;
   GoogleAccountAlreadyConnected: ErrorMetadata;
   GoogleConnectEmailMismatch: ErrorMetadata;
+  GoogleNotConfigured: ErrorMetadata;
   InadequatePermissions: ErrorMetadata;
   MissingRefreshToken: ErrorMetadata;
   NoUserId: ErrorMetadata;
@@ -28,6 +29,12 @@ export const AuthError: AuthErrors = {
     description:
       "Google account email does not match the signed-in Compass account",
     status: Status.CONFLICT,
+    isOperational: true,
+  },
+  GoogleNotConfigured: {
+    code: "GOOGLE_NOT_CONFIGURED",
+    description: "Google is not configured for this Compass instance",
+    status: Status.SERVICE_UNAVAILABLE,
     isOperational: true,
   },
   InadequatePermissions: {

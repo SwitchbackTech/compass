@@ -23,7 +23,8 @@ const BACKEND_BUILD = path.join(COMPASS_BUILD_DEV, "backend");
 
 // Parse --environment flag; prompt if absent
 const envFlagIdx = process.argv.indexOf("--environment");
-let environment: string = envFlagIdx !== -1 ? process.argv[envFlagIdx + 1] : "";
+let environment: string =
+  envFlagIdx !== -1 ? (process.argv[envFlagIdx + 1] ?? "") : "";
 
 const validEnvs = ["local", "staging", "production"];
 if (!validEnvs.includes(environment)) {
@@ -46,7 +47,6 @@ const result = await Bun.build({
   minify: false,
   external: [
     "saslprep", // MongoDB optional C binding
-    "@ngrok/ngrok", // Rust-based native binary (local dev tunnel)
   ],
 });
 
@@ -82,7 +82,7 @@ const backendPkg = JSON.parse(
 ) as { dependencies?: Record<string, string> };
 
 const externalVersions: Record<string, string> = {};
-for (const name of ["saslprep", "@ngrok/ngrok"]) {
+for (const name of ["saslprep"]) {
   const version = backendPkg.dependencies?.[name];
   if (version) externalVersions[name] = version;
 }

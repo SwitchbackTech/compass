@@ -28,6 +28,7 @@ export type GoogleUiConfig = {
 };
 
 export type UseConnectGoogleResult = GoogleUiConfig & {
+  isAvailable: boolean;
   isRepairing: boolean;
   state: GoogleUiState;
 };
