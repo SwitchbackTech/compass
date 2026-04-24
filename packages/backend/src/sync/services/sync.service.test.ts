@@ -20,10 +20,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import * as syncImportService from "@backend/sync/services/import/sync.import";
 import syncService from "@backend/sync/services/sync.service";
-import {
-  isUsingGcalWebhookHttps,
-  isUsingHttps,
-} from "@backend/sync/util/sync.util";
+import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
@@ -33,7 +30,6 @@ jest.mock("@backend/sync/util/sync.util", () => {
   return {
     ...actual,
     isUsingGcalWebhookHttps: jest.fn(() => actual.isUsingGcalWebhookHttps()),
-    isUsingHttps: jest.fn(() => actual.isUsingHttps()),
   };
 });
 /* eslint-enable @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-return */
@@ -429,7 +425,6 @@ describe("SyncService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(false);
-      (isUsingHttps as jest.Mock).mockReturnValue(false);
 
       await syncService.startGoogleCalendarSync(userId);
 
@@ -445,7 +440,6 @@ describe("SyncService", () => {
       expect(metadata.google?.connectionState).toBe("HEALTHY");
 
       (isUsingGcalWebhookHttps as jest.Mock).mockRestore();
-      (isUsingHttps as jest.Mock).mockRestore();
     });
   });
 

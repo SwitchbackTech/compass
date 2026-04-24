@@ -1,10 +1,10 @@
 import { useState } from "react";
 import _CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
-import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
+import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
@@ -22,19 +22,8 @@ export const NowCmdPalette = () => {
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
-  const { commandAction, isAvailable: isGoogleAvailable } = useConnectGoogle();
   const authCmdItems = useAuthCmdItems();
-  const googleCmdItems = isGoogleAvailable
-    ? [
-        {
-          id: "connect-google-calendar",
-          children: commandAction.label,
-          icon: commandAction.icon,
-          disabled: commandAction.isDisabled,
-          onClick: commandAction.onSelect,
-        },
-      ]
-    : [];
+  const googleCmdItems = useGoogleCmdItems();
 
   const filteredItems = filterItems(
     [

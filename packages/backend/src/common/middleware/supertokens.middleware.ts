@@ -1,9 +1,13 @@
 import cors from "cors";
-import SuperTokens from "supertokens-node";
+import SuperTokens, { type RecipeListFunction } from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
+import {
+  type ProviderInput,
+  type TypeInput as ThirdPartyTypeInput,
+} from "supertokens-node/recipe/thirdparty/types";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
 import {
   APP_NAME,
@@ -29,7 +33,62 @@ const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.events",
 ];
 
-const getThirdPartyRecipes = () => {
+const createGoogleProvider = (
+  clientId: string,
+  clientSecret: string,
+): ProviderInput => ({
+  config: {
+    thirdPartyId: "google",
+    clients: [
+      {
+        clientType: "web",
+        clientId,
+        clientSecret,
+        scope: GOOGLE_SCOPES,
+      },
+    ],
+  },
+});
+
+const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
+  functions(originalImplementation) {
+    return {
+      ...originalImplementation,
+      async manuallyCreateOrUpdateUser(input) {
+        return createGoogleUser(
+          input,
+          originalImplementation.manuallyCreateOrUpdateUser.bind(
+            originalImplementation,
+          ),
+        );
+      },
+    };
+  },
+  apis(originalImplementation) {
+    return {
+      ...originalImplementation,
+      async signInUpPOST(input) {
+        const signInUpPOST = originalImplementation.signInUpPOST;
+
+        if (!signInUpPOST) {
+          throw new BaseError(
+            "signInUpPOST not implemented",
+            "signInUpPOST not implemented",
+            Status.BAD_REQUEST,
+            true,
+          );
+        }
+
+        return handleGoogleSignInUp(
+          input,
+          signInUpPOST.bind(originalImplementation),
+        );
+      },
+    };
+  },
+};
+
+const getThirdPartyRecipes = (): RecipeListFunction[] => {
   const clientId = ENV.GOOGLE_CLIENT_ID;
   const clientSecret = ENV.GOOGLE_CLIENT_SECRET;
 
@@ -40,59 +99,9 @@ const getThirdPartyRecipes = () => {
   return [
     ThirdParty.init({
       signInAndUpFeature: {
-        providers: [
-          {
-            config: {
-              thirdPartyId: "google",
-              clients: [
-                {
-                  clientType: "web",
-                  clientId,
-                  clientSecret,
-                  scope: GOOGLE_SCOPES,
-                },
-              ],
-            },
-          },
-        ],
+        providers: [createGoogleProvider(clientId, clientSecret)],
       },
-      override: {
-        functions(originalImplementation) {
-          return {
-            ...originalImplementation,
-            async manuallyCreateOrUpdateUser(input) {
-              return createGoogleUser(
-                input,
-                originalImplementation.manuallyCreateOrUpdateUser.bind(
-                  originalImplementation,
-                ),
-              );
-            },
-          };
-        },
-        apis(originalImplementation) {
-          return {
-            ...originalImplementation,
-            async signInUpPOST(input) {
-              const signInUpPOST = originalImplementation.signInUpPOST;
-
-              if (!signInUpPOST) {
-                throw new BaseError(
-                  "signInUpPOST not implemented",
-                  "signInUpPOST not implemented",
-                  Status.BAD_REQUEST,
-                  true,
-                );
-              }
-
-              return handleGoogleSignInUp(
-                input,
-                signInUpPOST.bind(originalImplementation),
-              );
-            },
-          };
-        },
-      },
+      override: googleThirdPartyOverride,
     }),
   ];
 };

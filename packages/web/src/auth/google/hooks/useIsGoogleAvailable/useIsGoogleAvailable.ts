@@ -42,7 +42,7 @@ const loadBackendGoogleAvailability = async (): Promise<void> => {
     loadPromise = AppConfigApi.get()
       .then((config) => {
         setBackendGoogleAvailability(
-          config.google.isConfigured ? "available" : "unavailable",
+          config.google?.isConfigured ? "available" : "unavailable",
         );
       })
       .catch(() => {

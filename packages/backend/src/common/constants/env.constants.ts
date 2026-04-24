@@ -44,6 +44,7 @@ const EnvSchema = z
   .superRefine((env, context) => {
     const hasGoogleClientId = Boolean(env.GOOGLE_CLIENT_ID);
     const hasGoogleClientSecret = Boolean(env.GOOGLE_CLIENT_SECRET);
+    const isGoogleConfigComplete = hasGoogleClientId && hasGoogleClientSecret;
 
     if (hasGoogleClientId !== hasGoogleClientSecret) {
       context.addIssue({
@@ -61,7 +62,7 @@ const EnvSchema = z
       env.BASEURL.startsWith("https://");
 
     if (
-      hasGoogleClientId &&
+      isGoogleConfigComplete &&
       usesHttpsGoogleWebhook &&
       !env.TOKEN_GCAL_NOTIFICATION
     ) {
@@ -120,3 +121,11 @@ try {
 
 export const ENV = parsedEnv;
 export const IS_GOOGLE_CONFIGURED = isGoogleConfigured(ENV);
+
+export function getApiBaseURL(): string {
+  if (!ENV.BASEURL?.trim()) {
+    throw new Error("ENV.BASEURL is not set");
+  }
+
+  return ENV.BASEURL;
+}
