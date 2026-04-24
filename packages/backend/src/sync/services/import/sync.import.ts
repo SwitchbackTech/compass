@@ -18,7 +18,6 @@ import { Resource_Sync, type SyncDetails } from "@core/types/sync.types";
 import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { Collections } from "@backend/common/constants/collections";
-import { ENV } from "@backend/common/constants/env.constants";
 import { EventError } from "@backend/common/errors/event/event.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -26,6 +25,7 @@ import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { getGcalWebhookBaseURL } from "@backend/common/util/api-base-url.util";
 import { type EventsToModify } from "@backend/sync/services/import/sync.import.types";
 import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
@@ -35,7 +35,7 @@ import {
   getSync,
   updateSync,
 } from "@backend/sync/util/sync.queries";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
+import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 
 const logger = Logger("app:sync.import");
 
@@ -529,11 +529,9 @@ export class SyncImport {
       );
     }
 
-    if (!isUsingHttps()) {
+    if (!isUsingGcalWebhookHttps()) {
       logger.warn(
-        `Skipped gcal watch during incremental import because BASEURL does not use HTTPS: '${
-          ENV.BASEURL || ""
-        }'`,
+        `Skipped gcal watch during incremental import because Google webhook URL does not use HTTPS: '${getGcalWebhookBaseURL()}'`,
       );
 
       return sync.google?.events;
@@ -668,7 +666,7 @@ export class SyncImport {
         updateOne: {
           filter: {
             user: userId,
-            gEventId: event["gEventId"],
+            gEventId: event.gEventId,
           },
           update: { $set: event },
           upsert: true,

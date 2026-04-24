@@ -45,6 +45,7 @@ describe("env.constants", () => {
 
     expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
     expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
+    expect(env.GCAL_WEBHOOK_BASEURL).toBeUndefined();
     expect(env.TOKEN_GCAL_NOTIFICATION).toBe("");
     expect(isGoogleConfigured(env)).toBe(false);
   });
@@ -81,6 +82,45 @@ describe("env.constants", () => {
       parseBackendEnv({
         ...validEnv,
         BASEURL: "https://api.example.com/api",
+        GOOGLE_CLIENT_ID: "client-id",
+        GOOGLE_CLIENT_SECRET: "client-secret",
+      }),
+    ).toThrow(
+      "Google Calendar webhook notifications require TOKEN_GCAL_NOTIFICATION",
+    );
+  });
+
+  it("accepts an HTTPS Google webhook base URL while BASEURL remains local", () => {
+    const env = parseBackendEnv({
+      ...validEnv,
+      BASEURL: "http://localhost:3000/api",
+      GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api",
+      GOOGLE_CLIENT_ID: "client-id",
+      GOOGLE_CLIENT_SECRET: "client-secret",
+      TOKEN_GCAL_NOTIFICATION: "notification-token",
+    });
+
+    expect(env.BASEURL).toBe("http://localhost:3000/api");
+    expect(env.GCAL_WEBHOOK_BASEURL).toBe(
+      "https://example.trycloudflare.com/api",
+    );
+  });
+
+  it("rejects a non-HTTPS Google webhook base URL", () => {
+    expect(() =>
+      parseBackendEnv({
+        ...validEnv,
+        GCAL_WEBHOOK_BASEURL: "http://localhost:3000/api",
+      }),
+    ).toThrow("GCAL_WEBHOOK_BASEURL must use HTTPS");
+  });
+
+  it("requires a Google notification token when the Google webhook URL uses HTTPS", () => {
+    expect(() =>
+      parseBackendEnv({
+        ...validEnv,
+        BASEURL: "http://localhost:3000/api",
+        GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api",
         GOOGLE_CLIENT_ID: "client-id",
         GOOGLE_CLIENT_SECRET: "client-secret",
       }),

@@ -10,7 +10,7 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import mongoService from "@backend/common/services/mongo.service";
 import { getSync } from "@backend/sync/util/sync.queries";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
+import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
 
@@ -56,7 +56,7 @@ class UserMetadataService {
       return false;
     }
 
-    if (!isUsingHttps()) {
+    if (!isUsingGcalWebhookHttps()) {
       return true;
     }
 

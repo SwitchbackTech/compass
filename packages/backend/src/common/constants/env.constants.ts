@@ -23,6 +23,13 @@ const EnvSchema = z
     EMAILER_SECRET: z.string().nonempty().optional(),
     EMAILER_USER_TAG_ID: z.string().nonempty().optional(),
     FRONTEND_URL: z.string().url(),
+    GCAL_WEBHOOK_BASEURL: z
+      .string()
+      .url()
+      .refine((url) => url.startsWith("https://"), {
+        message: "GCAL_WEBHOOK_BASEURL must use HTTPS",
+      })
+      .optional(),
     MONGO_URI: z.string().nonempty(),
     NODE_ENV: z.nativeEnum(NodeEnv),
     TZ: z.enum(["Etc/UTC", "UTC"]),
@@ -50,16 +57,20 @@ const EnvSchema = z
       });
     }
 
+    const usesHttpsGoogleWebhook =
+      env.GCAL_WEBHOOK_BASEURL?.startsWith("https://") ||
+      env.BASEURL.startsWith("https://");
+
     if (
       isGoogleConfigComplete &&
-      env.BASEURL.startsWith("https://") &&
+      usesHttpsGoogleWebhook &&
       !env.TOKEN_GCAL_NOTIFICATION
     ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         fatal: true,
         message:
-          "Google Calendar webhook notifications require TOKEN_GCAL_NOTIFICATION when BASEURL uses HTTPS",
+          "Google Calendar webhook notifications require TOKEN_GCAL_NOTIFICATION when Google webhook URL uses HTTPS",
         path: ["TOKEN_GCAL_NOTIFICATION"],
       });
     }
@@ -85,6 +96,7 @@ export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
     EMAILER_SECRET: rawEnv["EMAILER_API_SECRET"],
     EMAILER_USER_TAG_ID: rawEnv["EMAILER_USER_TAG_ID"],
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
+    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"],
     MONGO_URI: rawEnv["MONGO_URI"],
     NODE_ENV: nodeEnv,
     TZ: rawEnv["TZ"],

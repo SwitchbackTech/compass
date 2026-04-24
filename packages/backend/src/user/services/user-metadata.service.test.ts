@@ -9,12 +9,12 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import syncService from "@backend/sync/services/sync.service";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
+import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual
 jest.mock("@backend/sync/util/sync.util", () => ({
   ...jest.requireActual("@backend/sync/util/sync.util"),
-  isUsingHttps: jest.fn(),
+  isUsingGcalWebhookHttps: jest.fn(),
 }));
 
 describe("UserMetadataService", () => {
@@ -87,11 +87,11 @@ describe("UserMetadataService", () => {
       expect(metadata.google?.connectionState).toBe("HEALTHY");
     });
 
-    it("returns HEALTHY without active watches when running without https", async () => {
+    it("returns HEALTHY without active watches when running without an HTTPS Google webhook URL", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const isUsingHttpsSpy = isUsingHttps as jest.Mock;
-      isUsingHttpsSpy.mockReturnValue(false);
+      const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as jest.Mock;
+      isUsingGcalWebhookHttpsSpy.mockReturnValue(false);
 
       await WatchDriver.deleteManyByUser(userId);
 
@@ -99,7 +99,22 @@ describe("UserMetadataService", () => {
 
       expect(metadata.google?.connectionState).toBe("HEALTHY");
 
-      isUsingHttpsSpy.mockRestore();
+      isUsingGcalWebhookHttpsSpy.mockRestore();
+    });
+
+    it("returns ATTENTION without active watches when using an HTTPS Google webhook URL", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as jest.Mock;
+      isUsingGcalWebhookHttpsSpy.mockReturnValue(true);
+
+      await WatchDriver.deleteManyByUser(userId);
+
+      const metadata = await driver.fetchUserMetadata(userId);
+
+      expect(metadata.google?.connectionState).toBe("ATTENTION");
+
+      isUsingGcalWebhookHttpsSpy.mockRestore();
     });
 
     it("returns ATTENTION without scheduling repair when connected sync state is broken", async () => {
