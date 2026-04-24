@@ -19,9 +19,9 @@ const define: Record<string, string> = {
   "process.env": JSON.stringify({
     NODE_ENV: process.env.NODE_ENV || "development",
     API_BASEURL: process.env.BASEURL ?? "",
-    GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID || "undefined",
-    POSTHOG_KEY: process.env.POSTHOG_KEY || "undefined",
-    POSTHOG_HOST: process.env.POSTHOG_HOST || "undefined",
+    GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID || "",
+    POSTHOG_KEY: process.env.POSTHOG_KEY || "",
+    POSTHOG_HOST: process.env.POSTHOG_HOST || "",
     PORT: String(PORT),
   }),
   BUILD_VERSION: JSON.stringify("dev"),

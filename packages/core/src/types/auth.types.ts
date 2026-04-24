@@ -55,3 +55,11 @@ export const GoogleConnectErrorResponseSchema = ApiErrorResponseSchema.extend({
 export type GoogleConnectErrorResponse = z.infer<
   typeof GoogleConnectErrorResponseSchema
 >;
+
+export const AppConfigSchema = z.object({
+  google: z.object({
+    isConfigured: z.boolean(),
+  }),
+});
+
+export type AppConfig = z.infer<typeof AppConfigSchema>;
