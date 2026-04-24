@@ -174,9 +174,10 @@ When testing changes around event loading, explicitly decide which user state yo
 ## Google Calendar Webhook Notes
 
 Compass does not start a local tunnel automatically. Google Calendar webhook
-watch flows use `BASEURL` directly. If `BASEURL` is local HTTP, Google sign-in,
-Google Calendar connect, and initial import can still work, but live
-Google-to-Compass notifications are skipped.
+watch flows use `BASEURL` directly. If `BASEURL` is not a publicly routable
+HTTPS URL, Google sign-in, Google Calendar connect, and initial import can
+still work, but live Google-to-Compass notifications are skipped because the
+base URL is not public HTTPS.
 
 ## Common Failure Modes
 
