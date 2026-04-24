@@ -174,6 +174,12 @@ When testing changes around event loading, explicitly decide which user state yo
 
 ## Google Calendar Webhook Notes
 
+Google OAuth and Google Calendar Watch have different local requirements.
+Google sign-in can use localhost redirect URLs, but Calendar Watch
+notifications are server-to-server callbacks from Google to Compass. For those
+callbacks, Google needs an HTTPS backend URL that it can reach from the public
+internet.
+
 Compass does not start a local tunnel automatically. Google Calendar webhook
 watch flows use `GCAL_WEBHOOK_BASEURL` when it is set and fall back to
 `BASEURL` when it is not set.
