@@ -46,6 +46,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { getDraftSubmitAction } from "@web/views/Calendar/components/Draft/hooks/actions/draft.submit-decision";
 import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Calendar/components/Draft/hooks/effects/useDraftEffects";
 import {
@@ -240,31 +241,16 @@ export const useDraftActions = (
 
   const determineSubmitAction = useCallback(
     (draft: Schema_WebEvent) => {
-      const isExisting = !!draft._id;
-      if (!isExisting) return "CREATE";
+      const isDirty = reduxDraft
+        ? DirtyParser.isEventDirty(draft, reduxDraft)
+        : true;
 
-      if (isExisting) {
-        // Prevent updates if event is pending (waiting for backend confirmation)
-        const isPending = draft._id
-          ? pendingEventIds.includes(draft._id)
-          : false;
-        if (isPending) {
-          // Event is pending, discard the change and return to original position
-          return "DISCARD";
-        }
-
-        if (isFormOpenBeforeDragging) {
-          return "OPEN_FORM";
-        }
-        const isSame = reduxDraft
-          ? !DirtyParser.isEventDirty(draft, reduxDraft)
-          : false;
-        if (isSame) {
-          // no need to make HTTP request
-          return "DISCARD";
-        }
-      }
-      return "UPDATE";
+      return getDraftSubmitAction({
+        draft,
+        pendingEventIds,
+        isFormOpenBeforeDragging,
+        isDirty,
+      });
     },
     [reduxDraft, isFormOpenBeforeDragging, pendingEventIds],
   );
@@ -673,6 +659,7 @@ export const useDraftActions = (
     reduxDraft,
     startDragging,
     startResizing,
+    openForm,
   ]);
 
   const actions = {
