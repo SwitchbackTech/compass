@@ -30,29 +30,20 @@ const logger = Logger("app:sync.watch.service");
 
 class SyncWatchService {
   deleteAllByGcalId = async (gCalendarId: string, session?: ClientSession) => {
-    const delRes = await mongoService.sync.deleteMany(
+    return mongoService.sync.deleteMany(
       { "google.events.gCalendarId": gCalendarId },
       { session },
     );
-
-    return delRes;
   };
 
   deleteAllByUser = async (userId: string, session?: ClientSession) => {
-    const delRes = await mongoService.sync.deleteMany(
-      { user: userId },
-      { session },
-    );
-
-    return delRes;
+    return mongoService.sync.deleteMany({ user: userId }, { session });
   };
 
   deleteByIntegration = async (integration: "google", userId: string) => {
-    const response = await mongoService.db
+    return mongoService.db
       .collection(Collections.SYNC)
       .updateOne({ user: userId }, { $unset: { [integration]: "" } });
-
-    return response;
   };
 
   deleteWatchesByUser = async (
@@ -111,18 +102,23 @@ class SyncWatchService {
     payload: Params_WatchEvents,
     gcal?: gCalendar,
   ) => {
-    if (!gcal) gcal = await getGcalClient(userId);
+    const gcalClient = gcal ?? (await getGcalClient(userId));
 
     const watchExists = payload.channelId && payload.resourceId;
 
     if (watchExists) {
-      await this.stopWatch(userId, payload.channelId, payload.resourceId, gcal);
+      await this.stopWatch(
+        userId,
+        payload.channelId,
+        payload.resourceId,
+        gcalClient,
+      );
     }
 
     const watchResult = await this.startWatchingGcalResources(
       userId,
       [{ gCalendarId: payload.gCalendarId, quotaUser: payload.quotaUser }],
-      gcal,
+      gcalClient,
     );
 
     return watchResult[0];
@@ -254,14 +250,14 @@ class SyncWatchService {
     gcal: gCalendar,
   ) => {
     return Promise.all(
-      watchParams.map(async (params) => {
-        if (params.gCalendarId === (Resource_Sync.CALENDAR as string)) {
+      watchParams.map((params) => {
+        if (params.gCalendarId === Resource_Sync.CALENDAR) {
           return this.startWatchingGcalCalendars(userId, params, gcal);
         }
 
         return this.startWatchingGcalEvents(userId, params, gcal);
       }),
-    ).then((results) => results.filter((r) => r !== undefined));
+    );
   };
 
   stopWatch = async (
@@ -275,9 +271,9 @@ class SyncWatchService {
     const filter = { user, _id: new ObjectId(channelId), resourceId };
 
     try {
-      if (!gcal) gcal = await getGcalClient(user);
+      const gcalClient = gcal ?? (await getGcalClient(user));
 
-      await gcalService.stopWatch(gcal, {
+      await gcalService.stopWatch(gcalClient, {
         quotaUser,
         channelId,
         resourceId,

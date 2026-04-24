@@ -263,18 +263,16 @@ class SyncImportRunner {
 
     const importResults = await this.importFull(gcal, gCalendarIds, user);
 
-    await Promise.resolve(isUsingHttps()).then((yes) =>
-      yes
-        ? syncWatchService.startWatchingGcalResources(
-            user,
-            [
-              { gCalendarId: Resource_Sync.CALENDAR },
-              ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
-            ],
-            gcal,
-          )
-        : [],
-    );
+    if (isUsingHttps()) {
+      await syncWatchService.startWatchingGcalResources(
+        user,
+        [
+          { gCalendarId: Resource_Sync.CALENDAR },
+          ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
+        ],
+        gcal,
+      );
+    }
 
     const eventsCount = importResults.reduce(
       (sum, result) => sum + result.totalChanged,
