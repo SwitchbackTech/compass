@@ -20,7 +20,10 @@ import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import * as syncImportService from "@backend/sync/services/import/sync.import";
 import syncService from "@backend/sync/services/sync.service";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
+import {
+  isUsingGcalWebhookHttps,
+  isUsingHttps,
+} from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
@@ -29,6 +32,7 @@ jest.mock("@backend/sync/util/sync.util", () => {
   const actual = jest.requireActual("@backend/sync/util/sync.util");
   return {
     ...actual,
+    isUsingGcalWebhookHttps: jest.fn(() => actual.isUsingGcalWebhookHttps()),
     isUsingHttps: jest.fn(() => actual.isUsingHttps()),
   };
 });
@@ -424,6 +428,7 @@ describe("SyncService", () => {
     it("persists event sync tokens without https so local sync can settle healthy", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
+      (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(false);
       (isUsingHttps as jest.Mock).mockReturnValue(false);
 
       await syncService.startGoogleCalendarSync(userId);
@@ -439,13 +444,14 @@ describe("SyncService", () => {
       ).toBe(true);
       expect(metadata.google?.connectionState).toBe("HEALTHY");
 
+      (isUsingGcalWebhookHttps as jest.Mock).mockRestore();
       (isUsingHttps as jest.Mock).mockRestore();
     });
   });
 
   describe("startWatchingGcalResources", () => {
-    it("skips direct Google watch setup when the API URL is not HTTPS", async () => {
-      (isUsingHttps as jest.Mock).mockReturnValue(false);
+    it("skips direct Google watch setup when the Google webhook URL is not HTTPS", async () => {
+      (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(false);
       const startCalendarWatchSpy = jest.spyOn(
         syncService,
         "startWatchingGcalCalendars",
@@ -465,6 +471,33 @@ describe("SyncService", () => {
 
       expect(startCalendarWatchSpy).not.toHaveBeenCalled();
       expect(startEventWatchSpy).not.toHaveBeenCalled();
+
+      (isUsingGcalWebhookHttps as jest.Mock).mockRestore();
+    });
+
+    it("starts Google watches when the Google webhook URL is HTTPS", async () => {
+      (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(true);
+      const startCalendarWatchSpy = jest
+        .spyOn(syncService, "startWatchingGcalCalendars")
+        .mockResolvedValue({ acknowledged: true } as never);
+      const startEventWatchSpy = jest
+        .spyOn(syncService, "startWatchingGcalEvents")
+        .mockResolvedValue({ acknowledged: true } as never);
+
+      await expect(
+        syncService.startWatchingGcalResources(
+          "507f1f77bcf86cd799439011",
+          [{ gCalendarId: Resource_Sync.CALENDAR }, { gCalendarId: "primary" }],
+          {} as never,
+        ),
+      ).resolves.toHaveLength(2);
+
+      expect(startCalendarWatchSpy).toHaveBeenCalledTimes(1);
+      expect(startEventWatchSpy).toHaveBeenCalledTimes(1);
+
+      (isUsingGcalWebhookHttps as jest.Mock).mockRestore();
+      startCalendarWatchSpy.mockRestore();
+      startEventWatchSpy.mockRestore();
     });
   });
 

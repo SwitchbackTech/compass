@@ -35,7 +35,7 @@ import {
   getSync,
   updateSync,
 } from "@backend/sync/util/sync.queries";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
+import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 
 const logger = Logger("app:sync.import");
 
@@ -529,10 +529,10 @@ export class SyncImport {
       );
     }
 
-    if (!isUsingHttps()) {
+    if (!isUsingGcalWebhookHttps()) {
       logger.warn(
-        `Skipped gcal watch during incremental import because BASEURL does not use HTTPS: '${
-          ENV.BASEURL || ""
+        `Skipped gcal watch during incremental import because Google webhook URL does not use HTTPS: '${
+          ENV.GCAL_WEBHOOK_BASEURL || ENV.BASEURL || ""
         }'`,
       );
 

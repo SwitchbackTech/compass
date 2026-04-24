@@ -52,7 +52,7 @@ import {
   createConcurrencyLimiter,
   getChannelExpiration,
   isMissingGoogleRefreshToken,
-  isUsingHttps,
+  isUsingGcalWebhookHttps,
 } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -645,7 +645,7 @@ class SyncService {
 
     const importResults = await this.importFull(gcal, gCalendarIds, user);
 
-    await Promise.resolve(isUsingHttps()).then((yes) =>
+    await Promise.resolve(isUsingGcalWebhookHttps()).then((yes) =>
       yes
         ? this.startWatchingGcalResources(
             user,
@@ -784,7 +784,7 @@ class SyncService {
     watchParams: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">[],
     gcal: gCalendar,
   ) => {
-    if (!isUsingHttps()) {
+    if (!isUsingGcalWebhookHttps()) {
       return [];
     }
 
