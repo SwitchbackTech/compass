@@ -20,7 +20,7 @@ test("should delete an all-day event using mouse interaction", async ({
 }) => {
   await prepareCalendarPage(page);
 
-  const title = createEventTitle("All-Day Event");
+  const title = createEventTitle("All-Day Delete Event");
   await openAllDayEventFormWithMouse(page);
   await fillTitleAndSaveEventForm(page, title);
   await expectAllDayEventVisible(page, title);

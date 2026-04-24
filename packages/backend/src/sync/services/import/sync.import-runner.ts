@@ -15,7 +15,7 @@ import { createSyncImport } from "@backend/sync/services/import/sync.import";
 import { syncCompassEventsToGoogle } from "@backend/sync/services/outbound/sync.compass-to-google";
 import syncWatchService from "@backend/sync/services/watch/sync.watch.service";
 import { updateSync } from "@backend/sync/util/sync.queries";
-import { isUsingHttps } from "@backend/sync/util/sync.util";
+import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:sync.import-runner");
@@ -263,7 +263,7 @@ class SyncImportRunner {
 
     const importResults = await this.importFull(gcal, gCalendarIds, user);
 
-    if (isUsingHttps()) {
+    if (isUsingGcalWebhookHttps()) {
       await syncWatchService.startWatchingGcalResources(
         user,
         [

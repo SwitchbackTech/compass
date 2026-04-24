@@ -363,17 +363,17 @@ export const openEventForEditingWithMouse = async (
   page: Page,
   eventTitle: string,
 ) => {
-  const eventButton = await findEventButton(page, eventTitle);
-
-  if (!eventButton) {
-    throw new Error(
-      `Unable to locate event "${eventTitle}" for mouse editing.`,
-    );
-  }
-
   await retryUntil(
     page,
     async () => {
+      const eventButton = await findEventButton(page, eventTitle);
+
+      if (!eventButton) {
+        throw new Error(
+          `Unable to locate event "${eventTitle}" for mouse editing.`,
+        );
+      }
+
       await page.waitForTimeout(200);
       await eventButton.click({ force: true });
     },

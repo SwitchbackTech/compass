@@ -5,6 +5,7 @@ import dayjs from "@core/util/date/dayjs";
 import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
 import { ENV, getApiBaseURL } from "@backend/common/constants/env.constants";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import { getGcalWebhookBaseURL } from "@backend/common/util/api-base-url.util";
 
 const logger = Logger("app:sync.helpers");
 
@@ -110,6 +111,9 @@ export const createConcurrencyLimiter = (
 };
 
 export const isUsingHttps = () => getApiBaseURL().startsWith("https://");
+
+export const isUsingGcalWebhookHttps = () =>
+  getGcalWebhookBaseURL().startsWith("https://");
 
 export const logExpirationReminder = (min: number) => {
   const hours = Math.round((min / 60) * 100) / 100;

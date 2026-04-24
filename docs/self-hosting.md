@@ -174,7 +174,7 @@ Compass is a web app and a backend API. In manual setup, you provide the runtime
 
 - A **Google Cloud project**, only if you want Google auth or to connect Google Calendar.
 
-Leave Google credentials unset for password-only mode. If you provide Google credentials, provide both the client ID and client secret. Ongoing Google Calendar watch notifications need an HTTPS, publicly reachable backend, which manual local setup does not provide.
+Leave Google credentials unset for password-only mode. If you provide Google credentials, provide both the client ID and client secret. Ongoing Google Calendar watch notifications need an HTTPS, publicly reachable backend URL. In local development this can be supplied with `GCAL_WEBHOOK_BASEURL`; in production/self-hosting this is usually just the public `BASEURL`.
 
 ### Manual Steps
 
@@ -233,7 +233,7 @@ A `200` response means the backend is running and can reach MongoDB.
 
 - **Point at a different MongoDB** by updating `MONGO_URI`.
 - **Use a different SuperTokens instance** by updating the SuperTokens values in your env file.
-- **Use Google OAuth locally** by creating a Google Cloud project, adding real credentials to your env file, and restarting the backend. Ongoing Google Calendar watch notifications also need an HTTPS, publicly reachable backend.
+- **Use Google OAuth locally** by creating a Google Cloud project, adding real credentials to your env file, and restarting the backend. Ongoing Google Calendar watch notifications also need an HTTPS, publicly reachable backend URL. In local development, use `GCAL_WEBHOOK_BASEURL` for that callback URL while keeping `BASEURL` pointed at localhost.
 
 ### Running On A Server
 

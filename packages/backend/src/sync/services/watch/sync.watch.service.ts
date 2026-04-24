@@ -11,6 +11,7 @@ import { WatchSchema } from "@core/types/watch.types";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { Collections } from "@backend/common/constants/collections";
 import { error } from "@backend/common/errors/handlers/error.handler";
+import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
@@ -23,6 +24,7 @@ import { isWatchingGoogleResource } from "@backend/sync/util/sync.queries";
 import {
   getChannelExpiration,
   isMissingGoogleRefreshToken,
+  isUsingGcalWebhookHttps,
 } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
@@ -156,7 +158,10 @@ class SyncWatchService {
       const resourceId = gcalWatch.resourceId;
 
       if (!resourceId) {
-        return { acknowledged: false };
+        throw error(
+          GcalError.Unsure,
+          "Calendar watch response missing resourceId",
+        );
       }
 
       const watch = await mongoService.watch
@@ -216,7 +221,10 @@ class SyncWatchService {
       const resourceId = gcalWatch.resourceId;
 
       if (!resourceId) {
-        return { acknowledged: false };
+        throw error(
+          GcalError.Unsure,
+          "Event watch response missing resourceId",
+        );
       }
 
       const watch = await mongoService.watch
@@ -249,6 +257,10 @@ class SyncWatchService {
     watchParams: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">[],
     gcal: gCalendar,
   ) => {
+    if (!isUsingGcalWebhookHttps()) {
+      return [];
+    }
+
     return Promise.all(
       watchParams.map((params) => {
         if (params.gCalendarId === Resource_Sync.CALENDAR) {
