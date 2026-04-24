@@ -16,14 +16,11 @@ describe("gcal.service watch callbacks", () => {
       data: { id: "507f1f77bcf86cd799439011", resourceId: "resource-id" },
     });
 
-    await gcalService.watchEvents(
-      { events: { watch } } as never,
-      {
-        channelId: "507f1f77bcf86cd799439011",
-        expiration: new Date("2030-01-01T00:00:00.000Z"),
-        gCalendarId: "primary",
-      },
-    );
+    await gcalService.watchEvents({ events: { watch } } as never, {
+      channelId: "507f1f77bcf86cd799439011",
+      expiration: new Date("2030-01-01T00:00:00.000Z"),
+      gCalendarId: "primary",
+    });
 
     expect(watch).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -44,13 +41,10 @@ describe("gcal.service watch callbacks", () => {
       data: { id: "507f1f77bcf86cd799439011", resourceId: "resource-id" },
     });
 
-    await gcalService.watchCalendars(
-      { calendarList: { watch } } as never,
-      {
-        channelId: "507f1f77bcf86cd799439011",
-        expiration: new Date("2030-01-01T00:00:00.000Z"),
-      },
-    );
+    await gcalService.watchCalendars({ calendarList: { watch } } as never, {
+      channelId: "507f1f77bcf86cd799439011",
+      expiration: new Date("2030-01-01T00:00:00.000Z"),
+    });
 
     expect(watch).toHaveBeenCalledWith(
       expect.objectContaining({

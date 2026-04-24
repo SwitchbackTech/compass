@@ -60,7 +60,11 @@ const EnvSchema = z
       env.GCAL_WEBHOOK_BASEURL?.startsWith("https://") ||
       env.BASEURL.startsWith("https://");
 
-    if (hasGoogleClientId && usesHttpsGoogleWebhook && !env.TOKEN_GCAL_NOTIFICATION) {
+    if (
+      hasGoogleClientId &&
+      usesHttpsGoogleWebhook &&
+      !env.TOKEN_GCAL_NOTIFICATION
+    ) {
       context.addIssue({
         code: z.ZodIssueCode.custom,
         fatal: true,
