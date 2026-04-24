@@ -15,7 +15,7 @@ import { IDSchemaV4 } from "@core/types/type.utils";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
-import { getApiBaseURL } from "@backend/common/util/api-base-url.util";
+import { getGcalWebhookBaseURL } from "@backend/common/util/api-base-url.util";
 import { encodeChannelToken } from "@backend/sync/util/watch.util";
 
 class GCalService {
@@ -230,7 +230,7 @@ class GCalService {
       quotaUser: params.quotaUser,
       requestBody: {
         // reminder: address always needs to be HTTPS
-        address: getApiBaseURL() + GCAL_NOTIFICATION_ENDPOINT,
+        address: getGcalWebhookBaseURL() + GCAL_NOTIFICATION_ENDPOINT,
         expiration: params.expiration,
         id: IDSchemaV4.parse(params.channelId),
         token: encodeChannelToken({ resource: Resource_Sync.CALENDAR }),
@@ -250,7 +250,7 @@ class GCalService {
       quotaUser: params.quotaUser,
       requestBody: {
         // reminder: address always needs to be HTTPS
-        address: getApiBaseURL() + GCAL_NOTIFICATION_ENDPOINT,
+        address: getGcalWebhookBaseURL() + GCAL_NOTIFICATION_ENDPOINT,
         expiration: params.expiration,
         id: IDSchemaV4.parse(params.channelId),
         token: encodeChannelToken({ resource: Resource_Sync.EVENTS }),
