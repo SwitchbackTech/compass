@@ -784,6 +784,10 @@ class SyncService {
     watchParams: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">[],
     gcal: gCalendar,
   ) => {
+    if (!isUsingHttps()) {
+      return [];
+    }
+
     return Promise.all(
       watchParams.map(async (params) => {
         if (params.gCalendarId === (Resource_Sync.CALENDAR as string)) {

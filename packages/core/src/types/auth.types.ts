@@ -45,6 +45,7 @@ export type ApiErrorResponse = z.infer<typeof ApiErrorResponseSchema>;
 const GoogleConnectErrorCodeSchema = z.enum([
   "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
   "GOOGLE_CONNECT_EMAIL_MISMATCH",
+  "GOOGLE_NOT_CONFIGURED",
 ]);
 
 export const GoogleConnectErrorResponseSchema = ApiErrorResponseSchema.extend({

@@ -40,6 +40,14 @@ mock.module("@web/auth/google/hooks/useGoogleAuth/useGoogleAuth", () => ({
   }),
 }));
 
+const mockUseIsGoogleAvailable = mock(() => true);
+mock.module(
+  "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable",
+  () => ({
+    useIsGoogleAvailable: () => mockUseIsGoogleAvailable(),
+  }),
+);
+
 mock.module("@web/common/constants/env.constants", () => ({
   ENV_WEB: {
     GOOGLE_CLIENT_ID: "test-client-id",
@@ -237,6 +245,7 @@ describe("AuthModal", () => {
   beforeEach(() => {
     mockUseSession.mockClear();
     mockGoogleLogin.mockClear();
+    mockUseIsGoogleAvailable.mockClear();
     mockCompleteAuthentication.mockClear();
     mockEmailPassword.signUp.mockClear();
     mockEmailPassword.signIn.mockClear();
@@ -247,6 +256,7 @@ describe("AuthModal", () => {
       authenticated: false,
       setAuthenticated: mock(),
     });
+    mockUseIsGoogleAvailable.mockReturnValue(true);
     mockEmailPassword.signUp.mockResolvedValue({
       status: "OK",
       user: { emails: ["test@example.com"] },
@@ -812,6 +822,20 @@ describe("AuthModal", () => {
       );
 
       expect(mockGoogleLogin).toHaveBeenCalled();
+    });
+
+    it("hides Google sign in when backend Google support is unavailable", async () => {
+      const user = userEvent.setup();
+      mockUseIsGoogleAvailable.mockReturnValue(false);
+      renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("button", { name: /continue with google/i }),
+        ).not.toBeInTheDocument();
+      });
     });
 
     it("keeps consistent button label when switching views", async () => {

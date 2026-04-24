@@ -16,6 +16,13 @@ class GoogleOAuthClient {
   oauthClient: OAuth2Client;
 
   constructor() {
+    if (!ENV.GOOGLE_CLIENT_ID || !ENV.GOOGLE_CLIENT_SECRET) {
+      throw error(
+        AuthError.GoogleNotConfigured,
+        "Google OAuth client unavailable",
+      );
+    }
+
     this.oauthClient = new OAuth2Client(
       ENV.GOOGLE_CLIENT_ID,
       ENV.GOOGLE_CLIENT_SECRET,

@@ -22,8 +22,19 @@ export const NowCmdPalette = () => {
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
-  const { commandAction } = useConnectGoogle();
+  const { commandAction, isAvailable: isGoogleAvailable } = useConnectGoogle();
   const authCmdItems = useAuthCmdItems();
+  const googleCmdItems = isGoogleAvailable
+    ? [
+        {
+          id: "connect-google-calendar",
+          children: commandAction.label,
+          icon: commandAction.icon,
+          disabled: commandAction.isDisabled,
+          onClick: commandAction.onSelect,
+        },
+      ]
+    : [];
 
   const filteredItems = filterItems(
     [
@@ -55,13 +66,7 @@ export const NowCmdPalette = () => {
         heading: "Settings",
         id: "settings",
         items: [
-          {
-            id: "connect-google-calendar",
-            children: commandAction.label,
-            icon: commandAction.icon,
-            disabled: commandAction.isDisabled,
-            onClick: commandAction.onSelect,
-          },
+          ...googleCmdItems,
           ...authCmdItems,
           {
             id: "log-out",

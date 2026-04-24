@@ -117,6 +117,20 @@ describe("parseGoogleConnectError", () => {
     });
   });
 
+  it("parses Google not configured connect errors", () => {
+    const error = createApiError({
+      data: {
+        code: "GOOGLE_NOT_CONFIGURED",
+        message: "Google is not configured for this Compass instance",
+      },
+    });
+
+    expect(parseGoogleConnectError(error)).toEqual({
+      code: "GOOGLE_NOT_CONFIGURED",
+      message: "Google is not configured for this Compass instance",
+    });
+  });
+
   it("returns undefined for non-Google-connect error codes", () => {
     const error = createApiError({
       data: {

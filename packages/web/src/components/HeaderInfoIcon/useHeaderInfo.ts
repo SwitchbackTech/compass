@@ -48,6 +48,19 @@ export const useHeaderInfo = (): HeaderInfo => {
     };
   }
 
+  if (!googleStatus.isAvailable) {
+    return {
+      isAnonymousSignUpPrompt: false,
+      isRepairing: false,
+      sidebarStatus: {
+        iconColor: "muted" as const,
+        isDisabled: true,
+        tooltip: "",
+      },
+      syncTooltip: null,
+    };
+  }
+
   const syncTooltip =
     googleStatus.state === "repairing"
       ? "Repairing Google Calendar in the background."

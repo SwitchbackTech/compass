@@ -23,6 +23,80 @@ import {
   sendPasswordResetEmail,
 } from "@backend/common/middleware/supertokens.middleware.handlers";
 
+const GOOGLE_SCOPES = [
+  "https://www.googleapis.com/auth/userinfo.email",
+  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/calendar.events",
+];
+
+const getThirdPartyRecipes = () => {
+  const clientId = ENV.GOOGLE_CLIENT_ID;
+  const clientSecret = ENV.GOOGLE_CLIENT_SECRET;
+
+  if (!clientId || !clientSecret) {
+    return [];
+  }
+
+  return [
+    ThirdParty.init({
+      signInAndUpFeature: {
+        providers: [
+          {
+            config: {
+              thirdPartyId: "google",
+              clients: [
+                {
+                  clientType: "web",
+                  clientId,
+                  clientSecret,
+                  scope: GOOGLE_SCOPES,
+                },
+              ],
+            },
+          },
+        ],
+      },
+      override: {
+        functions(originalImplementation) {
+          return {
+            ...originalImplementation,
+            async manuallyCreateOrUpdateUser(input) {
+              return createGoogleUser(
+                input,
+                originalImplementation.manuallyCreateOrUpdateUser.bind(
+                  originalImplementation,
+                ),
+              );
+            },
+          };
+        },
+        apis(originalImplementation) {
+          return {
+            ...originalImplementation,
+            async signInUpPOST(input) {
+              const signInUpPOST = originalImplementation.signInUpPOST;
+
+              if (!signInUpPOST) {
+                throw new BaseError(
+                  "signInUpPOST not implemented",
+                  "signInUpPOST not implemented",
+                  Status.BAD_REQUEST,
+                  true,
+                );
+              }
+
+              return handleGoogleSignInUp(
+                input,
+                signInUpPOST.bind(originalImplementation),
+              );
+            },
+          };
+        },
+      },
+    }),
+  ];
+};
+
 export const initSupertokens = () => {
   SuperTokens.init({
     appInfo: {
@@ -41,66 +115,7 @@ export const initSupertokens = () => {
       // see added endpoints
       // https://app.swaggerhub.com/apis/supertokens/FDI/3.0.0
       // https://supertokens.com/docs/references/fdi/introduction
-      ThirdParty.init({
-        signInAndUpFeature: {
-          providers: [
-            {
-              config: {
-                thirdPartyId: "google",
-                clients: [
-                  {
-                    clientType: "web",
-                    clientId: ENV.GOOGLE_CLIENT_ID,
-                    clientSecret: ENV.GOOGLE_CLIENT_SECRET,
-                    scope: [
-                      "https://www.googleapis.com/auth/userinfo.email",
-                      "https://www.googleapis.com/auth/calendar.readonly",
-                      "https://www.googleapis.com/auth/calendar.events",
-                    ],
-                  },
-                ],
-              },
-            },
-          ],
-        },
-        override: {
-          functions(originalImplementation) {
-            return {
-              ...originalImplementation,
-              async manuallyCreateOrUpdateUser(input) {
-                return createGoogleUser(
-                  input,
-                  originalImplementation.manuallyCreateOrUpdateUser.bind(
-                    originalImplementation,
-                  ),
-                );
-              },
-            };
-          },
-          apis(originalImplementation) {
-            return {
-              ...originalImplementation,
-              async signInUpPOST(input) {
-                const signInUpPOST = originalImplementation.signInUpPOST;
-
-                if (!signInUpPOST) {
-                  throw new BaseError(
-                    "signInUpPOST not implemented",
-                    "signInUpPOST not implemented",
-                    Status.BAD_REQUEST,
-                    true,
-                  );
-                }
-
-                return handleGoogleSignInUp(
-                  input,
-                  signInUpPOST.bind(originalImplementation),
-                );
-              },
-            };
-          },
-        },
-      }),
+      ...getThirdPartyRecipes(),
       EmailPassword.init({
         signUpFeature: {
           formFields: [

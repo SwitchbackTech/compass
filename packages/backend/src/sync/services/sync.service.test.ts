@@ -443,6 +443,31 @@ describe("SyncService", () => {
     });
   });
 
+  describe("startWatchingGcalResources", () => {
+    it("skips direct Google watch setup when the API URL is not HTTPS", async () => {
+      (isUsingHttps as jest.Mock).mockReturnValue(false);
+      const startCalendarWatchSpy = jest.spyOn(
+        syncService,
+        "startWatchingGcalCalendars",
+      );
+      const startEventWatchSpy = jest.spyOn(
+        syncService,
+        "startWatchingGcalEvents",
+      );
+
+      await expect(
+        syncService.startWatchingGcalResources(
+          "507f1f77bcf86cd799439011",
+          [{ gCalendarId: Resource_Sync.CALENDAR }, { gCalendarId: "primary" }],
+          {} as never,
+        ),
+      ).resolves.toEqual([]);
+
+      expect(startCalendarWatchSpy).not.toHaveBeenCalled();
+      expect(startEventWatchSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe("restartGoogleCalendarSync", () => {
     it("restarts the import workflow and completes successfully", async () => {
       const { user } = await UtilDriver.setupTestUser();

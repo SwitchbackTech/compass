@@ -12,6 +12,7 @@ import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 interface MockConnectGoogleResult {
   commandAction: GoogleUiConfig["commandAction"];
+  isAvailable: boolean;
   isRepairing: boolean;
   sidebarStatus: GoogleUiConfig["sidebarStatus"];
   state: GoogleUiState;
@@ -33,6 +34,7 @@ const mockUseConnectGoogle = mock(
       label: "Reconnect Google Calendar",
       onSelect: mockGoogleOnSelect,
     },
+    isAvailable: true,
     isRepairing: false,
     sidebarStatus: {
       iconColor: "error",
@@ -156,6 +158,7 @@ describe("HeaderInfoIcon", () => {
         label: "Reconnect Google Calendar",
         onSelect: mockGoogleOnSelect,
       },
+      isAvailable: true,
       isRepairing: false,
       sidebarStatus: {
         iconColor: "error",
@@ -220,6 +223,30 @@ describe("HeaderInfoIcon", () => {
     expect(mockOpenModal).not.toHaveBeenCalled();
   });
 
+  it("hides Google status controls when Google is unavailable", () => {
+    mockUseConnectGoogle.mockReturnValue({
+      commandAction: {
+        icon: "CloudArrowUpIcon",
+        isDisabled: false,
+        label: "Reconnect Google Calendar",
+        onSelect: mockGoogleOnSelect,
+      },
+      isAvailable: false,
+      isRepairing: false,
+      sidebarStatus: {
+        iconColor: "error",
+        isDisabled: false,
+        onSelect: mockGoogleOnSelect,
+        tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
+      },
+      state: "RECONNECT_REQUIRED",
+    });
+
+    render(<HeaderInfoIcon />);
+
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
   it("renders the background import spinner instead of the info icon while importing", () => {
     mockUseConnectGoogle.mockReturnValue({
       commandAction: {
@@ -227,6 +254,7 @@ describe("HeaderInfoIcon", () => {
         isDisabled: true,
         label: "Syncing Google Calendar…",
       },
+      isAvailable: true,
       isRepairing: false,
       sidebarStatus: {
         isDisabled: true,
@@ -258,6 +286,7 @@ describe("HeaderInfoIcon", () => {
         isDisabled: true,
         label: "Repairing Google Calendar…",
       },
+      isAvailable: true,
       isRepairing: true,
       sidebarStatus: {
         iconColor: "warning",

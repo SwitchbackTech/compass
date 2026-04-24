@@ -39,7 +39,7 @@ bun run build:backend --environment staging
 
 The backend build uses `Bun.build()` to produce a single bundled file at `build/backend/app.js`,
 alongside a `.env` file copied from the selected environment and a minimal `node_modules/`
-containing only the required native modules (`saslprep`, `@ngrok/ngrok`).
+containing only required native modules such as `saslprep`.
 
 Runtime entrypoint:
 
@@ -51,6 +51,6 @@ Bun loads `.env` from the working directory, so `cd` into the build dir before r
 
 Deployment notes:
 
-- backend requires MongoDB, SuperTokens, and Google credentials
+- backend requires MongoDB and SuperTokens; Google credentials are optional and only needed for Google auth and Google Calendar sync
 - if you run behind a reverse proxy, configure buffering/timeouts for long-lived `text/event-stream` responses (SSE)
-- ngrok is only relevant for local watch/debug flows, not normal hosted deploys
+- Google Calendar webhook notifications require `BASEURL` to be a public HTTPS API URL
