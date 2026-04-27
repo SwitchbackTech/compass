@@ -20,7 +20,6 @@ export const ArrowButton = ({
       aria-label={label}
       onClick={onClick}
       tabIndex={tabIndex}
-      type="button"
     >
       {direction === "left" ? <ChevronLeftIcon /> : <ChevronRightIcon />}
     </button>

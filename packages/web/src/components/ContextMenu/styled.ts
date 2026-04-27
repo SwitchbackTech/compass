@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { darken } from "@core/util/color.utils";
 
 export const PriorityContainer = styled.div`
   display: flex;

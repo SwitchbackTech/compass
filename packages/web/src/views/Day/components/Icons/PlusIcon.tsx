@@ -1,3 +1,5 @@
+import React from "react";
+
 interface PlusIconProps {
   className?: string;
   "aria-hidden"?: boolean;

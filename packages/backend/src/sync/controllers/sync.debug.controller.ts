@@ -13,7 +13,7 @@ import { getSync } from "../util/sync.queries";
 class SyncDebugController {
   dispatchEventToClient = (_req: Request, res: Response) => {
     try {
-      const userId = process.env.SSE_DEBUG_USER;
+      const userId = process.env["SSE_DEBUG_USER"];
       if (!userId) {
         throw new Error("No demo user");
       }
@@ -30,7 +30,7 @@ class SyncDebugController {
   };
 
   importIncremental = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.params.userId;
+    const userId = req.params["userId"];
     if (!userId) {
       res.promise(Promise.reject({ error: "no userId param" }));
       return;
@@ -42,13 +42,13 @@ class SyncDebugController {
 
   maintainByUser = async (req: Request, res: Res_Promise) => {
     try {
-      const userId = req.params.userId;
+      const userId = req.params["userId"];
       if (!userId) {
         res.promise(Promise.reject({ error: "no userId param" }));
         return;
       }
 
-      const dry = req.query.dry === "true";
+      const dry = req.query["dry"] === "true";
       if (dry === undefined) {
         res.promise(Promise.reject({ error: "missing queries" }));
         return;
@@ -65,7 +65,7 @@ class SyncDebugController {
   };
 
   refreshEventWatch = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.params.userId;
+    const userId = req.params["userId"];
     if (userId === undefined) {
       res.promise({ error: "No userId" });
       return;
@@ -107,8 +107,8 @@ class SyncDebugController {
   stopAllChannelWatches = async (req: SessionRequest, res: Res_Promise) => {
     try {
       let userId: string;
-      if (req.params.userId) {
-        userId = req.params.userId;
+      if (req.params["userId"]) {
+        userId = req.params["userId"];
       } else {
         userId = req.session?.getUserId() as string;
       }

@@ -37,10 +37,10 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
     const collectionInfo = await mongoService.watch.options();
     const $jsonSchema = zodToMongoSchema(WatchSchema);
 
-    expect(collectionInfo.validationLevel).toBe("strict");
-    expect(collectionInfo.validator).toBeDefined();
-    expect(collectionInfo.validator).toHaveProperty("$jsonSchema");
-    expect(collectionInfo.validator.$jsonSchema).toEqual($jsonSchema);
+    expect(collectionInfo["validationLevel"]).toBe("strict");
+    expect(collectionInfo["validator"]).toBeDefined();
+    expect(collectionInfo["validator"]).toHaveProperty("$jsonSchema");
+    expect(collectionInfo["validator"]["$jsonSchema"]).toEqual($jsonSchema);
 
     expect(indexes).toEqual(
       expect.arrayContaining([
@@ -123,8 +123,8 @@ describe("2025.10.13T14.18.20.watch-collection", () => {
       expect.objectContaining({ name: "_id_", key: { _id: 1 } }),
     ]);
 
-    expect(collectionInfo.validationLevel).toBe("off");
-    expect(collectionInfo.validationAction).toBe("error");
+    expect(collectionInfo["validationLevel"]).toBe("off");
+    expect(collectionInfo["validationAction"]).toBe("error");
     expect(collectionInfo).not.toHaveProperty("validator");
   });
 

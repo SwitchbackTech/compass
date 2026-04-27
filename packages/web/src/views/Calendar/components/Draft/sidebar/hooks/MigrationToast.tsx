@@ -28,7 +28,6 @@ const MigrationToastComponent: React.FC<Props> = ({
           borderRadius: "4px",
           cursor: "pointer",
         }}
-        type="button"
       >
         Go to {targetMonthName}
       </button>

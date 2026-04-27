@@ -1,3 +1,4 @@
+import { act } from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { ShortcutsSidebar } from "./ShortcutsSidebar";

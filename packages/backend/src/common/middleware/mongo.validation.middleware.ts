@@ -9,7 +9,7 @@ export const validateIdParam = (
   res: express.Response,
   next: express.NextFunction,
 ) => {
-  const idParam = req.params.id as string;
+  const idParam = req.params["id"] as string;
 
   if (!ObjectId.isValid(idParam)) {
     const err = error(DbError.InvalidId, "Request Failed");

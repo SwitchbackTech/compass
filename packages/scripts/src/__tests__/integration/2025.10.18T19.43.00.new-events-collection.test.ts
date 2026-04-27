@@ -36,10 +36,10 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
   async function validateSchema() {
     const options = await newEventCollection().options();
 
-    expect(options.validationLevel).toBe("strict");
-    expect(options.validator).toBeDefined();
-    expect(options.validator).toHaveProperty("$jsonSchema");
-    expect(options.validator.$jsonSchema).toEqual($jsonSchema);
+    expect(options["validationLevel"]).toBe("strict");
+    expect(options["validator"]).toBeDefined();
+    expect(options["validator"]).toHaveProperty("$jsonSchema");
+    expect(options["validator"]["$jsonSchema"]).toEqual($jsonSchema);
   }
 
   async function validateIndexes() {

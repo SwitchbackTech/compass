@@ -28,7 +28,6 @@ const MigrationToast: React.FC<MigrationToastProps> = ({
       <button
         onClick={handleUndo}
         className="flex cursor-pointer flex-col gap-1 text-left"
-        type="button"
       >
         <span className="text-sm text-white">{message}</span>
         <div className="flex items-center gap-2">
@@ -42,7 +41,6 @@ const MigrationToast: React.FC<MigrationToastProps> = ({
       <button
         onClick={onNavigate}
         className="whitespace-nowrap rounded bg-bg-secondary px-3 py-1 text-text-lighter text-xs transition-colors hover:bg-accent-primary hover:text-text-dark"
-        type="button"
       >
         Go to day
       </button>

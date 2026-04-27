@@ -69,7 +69,7 @@ function assertBackendEnvFile() {
     return;
   }
 
-  process.env.BUN_CONFIG_NO_CLEAR_TERMINAL_ON_RELOAD = "true";
+  process.env["BUN_CONFIG_NO_CLEAR_TERMINAL_ON_RELOAD"] = "true";
 }
 
 function runCommand(cmd: string[], cwd = process.cwd()) {
@@ -79,7 +79,7 @@ function runCommand(cmd: string[], cwd = process.cwd()) {
     env: {
       ...process.env,
       NODE_ENV: "test",
-      TZ: process.env.TZ ?? "Etc/UTC",
+      TZ: process.env["TZ"] ?? "Etc/UTC",
     },
     stderr: "inherit",
     stdin: "inherit",

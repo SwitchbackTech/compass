@@ -59,12 +59,12 @@ export class CliValidator {
     if (deleteCmd) {
       const opts = deleteCmd.opts();
 
-      const user = opts.user as Options_Cli["user"];
+      const user = opts["user"] as Options_Cli["user"];
       if (user) {
         deleteOpts.user = user;
       }
 
-      deleteOpts.force = opts.force === true;
+      deleteOpts.force = opts["force"] === true;
     }
 
     return deleteOpts;
@@ -75,7 +75,7 @@ export class CliValidator {
 
     const seedCmd = this.program.commands.find((cmd) => cmd.name() === "seed");
     if (seedCmd) {
-      const user = seedCmd?.opts().user as Options_Cli["user"];
+      const user = seedCmd?.opts()["user"] as Options_Cli["user"];
       if (user) {
         seedOpts.user = user;
       }

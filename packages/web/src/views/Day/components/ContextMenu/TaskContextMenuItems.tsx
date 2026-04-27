@@ -20,7 +20,6 @@ export function TaskContextMenuItems({ task, close }: Props) {
       <button
         onClick={handleDelete}
         className="flex w-full cursor-pointer items-center gap-2 rounded-sm px-3 py-2.5 text-left text-sm"
-        type="button"
       >
         <TrashIcon size={16} />
         <span>Delete Task</span>

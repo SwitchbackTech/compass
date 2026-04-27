@@ -21,7 +21,6 @@ export const UndoDeleteToast: React.FC<UndoProps> = ({
     <button
       className="flex w-full cursor-pointer flex-col gap-1 p-3 text-left"
       onClick={handleRestore}
-      type="button"
     >
       <div className="font-medium text-sm text-white">Deleted</div>
       <div className="flex items-center gap-2">
