@@ -4,6 +4,10 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
+import {
+  isBackendUnavailable,
+  resetBackendAvailabilityForTests,
+} from "@web/common/apis/util/backend-unavailable-error.util";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockCreate = mock();
@@ -11,6 +15,8 @@ const mockGet = mock();
 const mockEdit = mock();
 const mockDelete = mock();
 const mockReorder = mock();
+const mockPutEvent = mock();
+const mockGetEvents = mock();
 
 mock.module("@web/ducks/events/event.api", () => ({
   EventApi: {
@@ -22,8 +28,21 @@ mock.module("@web/ducks/events/event.api", () => ({
   },
 }));
 
+mock.module("@web/common/storage/adapter/adapter", () => ({
+  getStorageAdapter: () => ({
+    getEvents: mockGetEvents,
+    putEvent: mockPutEvent,
+  }),
+}));
+
 const { RemoteEventRepository } =
   require("./remote.event.repository") as typeof import("./remote.event.repository");
+
+function createBackendUnavailableError(): Error {
+  const error = new Error("Request failed");
+  error.name = "ApiError";
+  return error;
+}
 
 describe("RemoteEventRepository", () => {
   let repository: RemoteEventRepository;
@@ -34,6 +53,9 @@ describe("RemoteEventRepository", () => {
     mockEdit.mockClear();
     mockDelete.mockClear();
     mockReorder.mockClear();
+    mockPutEvent.mockClear();
+    mockGetEvents.mockClear();
+    resetBackendAvailabilityForTests();
     repository = new RemoteEventRepository();
   });
 
@@ -64,6 +86,22 @@ describe("RemoteEventRepository", () => {
 
       expect(mockCreate).toHaveBeenCalledWith(events);
       expect(mockCreate).toHaveBeenCalledTimes(1);
+    });
+
+    it("saves locally when the backend is unavailable", async () => {
+      const event: Schema_Event = {
+        _id: "event-1",
+        title: "Test Event",
+      };
+
+      mockCreate.mockRejectedValue(createBackendUnavailableError());
+      mockPutEvent.mockResolvedValue(undefined);
+
+      await repository.create(event);
+
+      expect(mockCreate).toHaveBeenCalledWith(event);
+      expect(mockPutEvent).toHaveBeenCalledWith(event);
+      expect(isBackendUnavailable()).toBe(true);
     });
   });
 
@@ -126,6 +164,28 @@ describe("RemoteEventRepository", () => {
       expect(result.startDate).toBe(params.startDate);
       expect(result.endDate).toBe(params.endDate);
       expect(result.someday).toBe(params.someday);
+    });
+
+    it("loads local events when the backend is unavailable", async () => {
+      const params: Params_Events = {
+        startDate: "2024-01-01",
+        endDate: "2024-01-31",
+        someday: false,
+      };
+      const localEvents = [{ _id: "event-1", title: "Local Event" }];
+
+      mockGet.mockRejectedValue(createBackendUnavailableError());
+      mockGetEvents.mockResolvedValue(localEvents);
+
+      const result = await repository.get(params);
+
+      expect(mockGet).toHaveBeenCalledWith(params);
+      expect(mockGetEvents).toHaveBeenCalledWith(
+        params.startDate,
+        params.endDate,
+        params.someday,
+      );
+      expect(result.data).toEqual(localEvents);
     });
   });
 

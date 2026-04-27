@@ -1,5 +1,7 @@
-import React, { type Dispatch, type SetStateAction } from "react";
+import { type Dispatch, type SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import { useSession } from "@web/auth/compass/session/useSession";
+import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import {
   type Schema_GridEvent,
@@ -25,19 +27,27 @@ export const RecurrenceSection = ({
   event,
   setEvent,
 }: RecurrenceSectionProps) => {
+  const { authenticated } = useSession();
   const recurrenceHook = useRecurrence(event, { setEvent });
   const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
   const { weekDays, interval, freq, until, toggleRecurrence } = recurrenceHook;
   const { hasRecurrence } = recurrenceHook;
+  const isBackendDown = isBackendUnavailable();
+  const isRecurrenceDisabled = !authenticated || isBackendDown;
+  const disabledMessage = isBackendDown
+    ? "Start the Compass backend and MongoDB to use recurring events."
+    : "Sign in to use recurring events.";
 
   return (
     <StyledRepeatRow direction={FlexDirections.COLUMN}>
       <RecurrenceToggle
+        disabled={isRecurrenceDisabled}
+        disabledMessage={disabledMessage}
         hasRecurrence={hasRecurrence}
         toggleRecurrence={toggleRecurrence}
       />
 
-      <ConditionalRender condition={hasRecurrence}>
+      <ConditionalRender condition={hasRecurrence && !isRecurrenceDisabled}>
         <RecurrenceIntervalSelect
           bgColor={bgColor}
           initialValue={interval}

@@ -1,8 +1,19 @@
 import { z } from "zod";
 import { isDev } from "@core/util/env.util";
 
-const API_BASEURL =
-  process.env["API_BASEURL"] || `http://localhost:${process.env["PORT"]}`;
+export const getApiBaseUrl = (apiBaseUrl?: string, port?: string): string => {
+  if (apiBaseUrl) {
+    return apiBaseUrl;
+  }
+
+  if (!port) {
+    throw new Error("PORT is required when API_BASEURL is not configured");
+  }
+
+  return `http://localhost:${port}/api`;
+};
+
+const API_BASEURL = getApiBaseUrl(process.env.API_BASEURL, process.env.PORT);
 const BACKEND_BASEURL = API_BASEURL.replace(/\/[^/]*$/, "");
 
 const webEnvSchema = z.object({
@@ -23,10 +34,10 @@ const webEnvSchema = z.object({
 export const ENV_WEB = webEnvSchema.parse({
   API_BASEURL,
   BACKEND_BASEURL,
-  GOOGLE_CLIENT_ID: process.env["GOOGLE_CLIENT_ID"],
-  NODE_ENV: process.env["NODE_ENV"],
-  POSTHOG_KEY: process.env["POSTHOG_KEY"],
-  POSTHOG_HOST: process.env["POSTHOG_HOST"],
+  GOOGLE_CLIENT_ID: process.env.GOOGLE_CLIENT_ID,
+  NODE_ENV: process.env.NODE_ENV,
+  POSTHOG_KEY: process.env.POSTHOG_KEY,
+  POSTHOG_HOST: process.env.POSTHOG_HOST,
 });
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);

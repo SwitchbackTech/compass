@@ -4,41 +4,63 @@ import {
   type RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
+import {
+  isBackendUnavailableError,
+  markBackendUnavailable,
+} from "@web/common/apis/util/backend-unavailable-error.util";
 import { EventApi } from "@web/ducks/events/event.api";
 import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
 import { type EventRepository } from "./event.repository.interface";
+import { LocalEventRepository } from "./local.event.repository";
 
 export class RemoteEventRepository implements EventRepository {
+  private readonly localRepository = new LocalEventRepository();
+
+  private async withLocalFallback<RemoteResult, LocalResult = RemoteResult>(
+    remoteOperation: () => Promise<RemoteResult>,
+    localOperation: () => Promise<LocalResult>,
+  ): Promise<RemoteResult | LocalResult> {
+    try {
+      return await remoteOperation();
+    } catch (error) {
+      if (!isBackendUnavailableError(error)) {
+        throw error;
+      }
+
+      markBackendUnavailable();
+      return localOperation();
+    }
+  }
+
   async create(event: Schema_Event | Schema_Event[]): Promise<void> {
-    await EventApi.create(event);
+    await this.withLocalFallback(
+      () => EventApi.create(event),
+      () => this.localRepository.create(event),
+    );
   }
 
   async get(params: Params_Events): Promise<Response_GetEventsSuccess> {
-    const response = await EventApi.get(params);
+    return this.withLocalFallback(
+      async () => {
+        const response = await EventApi.get(params);
 
-    // API responses have a .data property, and the backend returns
-    // the data in the shape of Response_HttpPaginatedSuccess<Schema_Event[]>
-    // We combine it with params to create Response_GetEventsSuccess
-
-    // Handle case where API returns array directly vs wrapped in pagination object
-    const result: Response_GetEventsSuccess = Array.isArray(response.data)
-      ? {
-          // API returned array directly - wrap it in pagination format
-          data: response.data,
-          count: response.data.length,
-          page: 1,
-          pageSize: response.data.length,
-          offset: 0,
-          startDate: params.startDate,
-          endDate: params.endDate,
-        }
-      : {
-          // API returned pagination object - merge with params
-          ...params,
-          ...response.data,
-        };
-
-    return result;
+        return Array.isArray(response.data)
+          ? {
+              data: response.data,
+              count: response.data.length,
+              page: 1,
+              pageSize: response.data.length,
+              offset: 0,
+              startDate: params.startDate,
+              endDate: params.endDate,
+            }
+          : {
+              ...params,
+              ...response.data,
+            };
+      },
+      () => this.localRepository.get(params),
+    );
   }
 
   async edit(
@@ -46,17 +68,26 @@ export class RemoteEventRepository implements EventRepository {
     event: Schema_Event,
     params: { applyTo?: RecurringEventUpdateScope },
   ): Promise<void> {
-    await EventApi.edit(_id, event, params);
+    await this.withLocalFallback(
+      () => EventApi.edit(_id, event, params),
+      () => this.localRepository.edit(_id, event, params),
+    );
   }
 
   async delete(
     _id: string,
     applyTo?: RecurringEventUpdateScope,
   ): Promise<void> {
-    await EventApi.delete(_id, applyTo);
+    await this.withLocalFallback(
+      () => EventApi.delete(_id, applyTo),
+      () => this.localRepository.delete(_id, applyTo),
+    );
   }
 
   async reorder(order: Payload_Order[]): Promise<void> {
-    await EventApi.reorder(order);
+    await this.withLocalFallback(
+      () => EventApi.reorder(order),
+      () => this.localRepository.reorder(order),
+    );
   }
 }

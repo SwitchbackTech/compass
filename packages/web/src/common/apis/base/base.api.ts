@@ -11,6 +11,11 @@ import {
   handleErrorResponse,
   isApiError,
 } from "../util/api.util";
+import {
+  isBackendUnavailableError,
+  markBackendAvailable,
+  markBackendUnavailable,
+} from "../util/backend-unavailable-error.util";
 
 const DEFAULT_HEADERS = {
   "Content-Type": "application/json",
@@ -30,10 +35,12 @@ const request = async <T>(
 
   try {
     if (BaseApi.defaults.adapter) {
-      return await BaseApi.defaults.adapter<T>({
+      const result = await BaseApi.defaults.adapter<T>({
         ...requestConfig,
         body,
       });
+      markBackendAvailable();
+      return result;
     }
 
     const response = await fetch(getRequestUrl(url), {
@@ -45,6 +52,7 @@ const request = async <T>(
       },
       method,
     });
+    markBackendAvailable();
     const data = await getResponseData(response);
     const result = {
       config: requestConfig,
@@ -60,6 +68,10 @@ const request = async <T>(
 
     return result;
   } catch (error) {
+    if (isBackendUnavailableError(error)) {
+      markBackendUnavailable();
+    }
+
     if (isApiError(error)) {
       return handleErrorResponse<ApiResponse<T>>(error);
     }

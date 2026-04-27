@@ -6,6 +6,42 @@ import {
 } from "@web/common/types/web.event.types";
 import { addId, isEventInRange } from "@web/common/utils/event/event.util";
 import { _assembleGridEvent } from "@web/ducks/events/sagas/saga.util";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
+
+const { handleError } = await import("@web/common/utils/event/event.util");
+
+describe("handleError", () => {
+  const alertMock = mock();
+  let consoleErrorSpy: ReturnType<typeof spyOn>;
+
+  beforeEach(() => {
+    global.alert = alertMock as typeof global.alert;
+    alertMock.mockClear();
+    consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    consoleErrorSpy.mockRestore();
+  });
+
+  it("does not log or alert backend-unavailable errors", () => {
+    const error = new Error("Request failed");
+    error.name = "ApiError";
+
+    handleError(error);
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled();
+    expect(alertMock).not.toHaveBeenCalled();
+  });
+});
 
 describe("isEventInRange", () => {
   it("returns true if event is in range", () => {

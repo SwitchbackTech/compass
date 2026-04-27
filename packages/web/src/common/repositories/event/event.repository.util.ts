@@ -8,6 +8,7 @@
  */
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
+import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
 import { type EventRepository } from "./event.repository.interface";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
@@ -19,12 +20,15 @@ import { RemoteEventRepository } from "./remote.event.repository";
  * 1. If Google disconnected Compass: Use LocalEventRepository
  *    - Graceful degradation until user re-authenticates
  *    - Prevents API errors from failed Google token refresh
- * 2. If user has EVER authenticated: Use RemoteEventRepository
+ * 2. If the backend is unavailable: Use LocalEventRepository
+ *    - Keeps frontend-only development and self-hosted UI-only deployments usable
+ *    - Events remain saved in IndexedDB instead of failing remote requests
+ * 3. If user has EVER authenticated: Use RemoteEventRepository
  *    - Prevents remote account events from disappearing when the session is temporarily missing
  *    - Remote requests can surface the auth problem instead of silently saving locally
- * 3. If a session exists: Use RemoteEventRepository
+ * 4. If a session exists: Use RemoteEventRepository
  *    - Newly authenticated users persist through the backend even before remembered auth state updates
- * 4. If user has NEVER authenticated: Use LocalEventRepository (IndexedDB)
+ * 5. If user has NEVER authenticated: Use LocalEventRepository (IndexedDB)
  *    - Events stored locally until user decides to sign in
  *
  * @param sessionExists - Whether a session currently exists (from session.doesSessionExist())
@@ -32,6 +36,10 @@ import { RemoteEventRepository } from "./remote.event.repository";
 export function getEventRepository(sessionExists: boolean): EventRepository {
   // If Google disconnected Compass, use local storage until user re-authenticates
   if (isGoogleRevoked()) {
+    return new LocalEventRepository();
+  }
+
+  if (isBackendUnavailable()) {
     return new LocalEventRepository();
   }
 

@@ -1,8 +1,8 @@
-import { watch } from "fs";
-import path from "path";
 import { postcssPlugin } from "./plugins/postcss.plugin";
+import { watch } from "node:fs";
+import path from "node:path";
 
-const PORT = Number(process.env.WEB_PORT) || 9080;
+const WEB_PORT = Number(process.env.WEB_PORT) || 9080;
 const OUTDIR = path.resolve(import.meta.dir, "../../build/web");
 const SRCDIR = path.resolve(import.meta.dir, "src");
 
@@ -22,7 +22,7 @@ const define: Record<string, string> = {
     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID || "",
     POSTHOG_KEY: process.env.POSTHOG_KEY || "",
     POSTHOG_HOST: process.env.POSTHOG_HOST || "",
-    PORT: String(PORT),
+    PORT: process.env.PORT || "3000",
   }),
   BUILD_VERSION: JSON.stringify("dev"),
 };
@@ -69,7 +69,7 @@ async function build() {
 // Initial build before serving
 console.log("[compass] building...");
 await build();
-console.log(`[compass] dev server → http://localhost:${PORT}`);
+console.log(`[compass] dev server → http://localhost:${WEB_PORT}`);
 
 if (IS_DEV) {
   // Watch src/ and rebuild on changes (debounced) — dev mode only
@@ -93,7 +93,7 @@ const LIVE_RELOAD_SCRIPT = IS_DEV
   : "";
 
 Bun.serve({
-  port: PORT,
+  port: WEB_PORT,
   // Prevent Bun from closing long-lived SSE connections prematurely.
   // Default is 10 s which produces "[Bun.serve]: request timed out" noise in CI.
   idleTimeout: IS_DEV ? 255 : 0,
