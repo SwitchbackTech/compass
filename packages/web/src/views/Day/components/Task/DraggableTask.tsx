@@ -103,9 +103,9 @@ export function DraggableTask({
               onFocus={() => setSelectedTaskIndex(index)}
               className={classNames(
                 "opacity-0",
-                "hover:bg-border-primary hover:cursor-grab",
+                "hover:cursor-grab hover:bg-border-primary",
                 "rounded-xs py-2 transition-colors",
-                "group-hover:opacity-100 hover:opacity-100 focus:opacity-100",
+                "hover:opacity-100 focus:opacity-100 group-hover:opacity-100",
                 "max-w-48 text-white",
                 "focus:bg-white/20 focus:ring-2 focus:ring-white/50",
                 "focus:outline-none disabled:cursor-default disabled:opacity-0",

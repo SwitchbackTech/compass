@@ -25,7 +25,7 @@ export const FocusedTask = ({
   return (
     <div className="flex flex-1 flex-col items-center gap-10">
       <div className="flex items-center gap-3">
-        <h2 className="text-text-lighter text-center text-4xl font-bold drop-shadow-lg">
+        <h2 className="text-center font-bold text-4xl text-text-lighter drop-shadow-lg">
           {task.title}
         </h2>
       </div>

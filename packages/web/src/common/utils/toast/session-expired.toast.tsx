@@ -19,7 +19,7 @@ export const SessionExpiredToast = ({ toastId }: SessionExpiredToastProps) => {
         Session expired. Please sign in again.
       </p>
       <button
-        className="bg-fg-primary-dark text-text-lighter w-full rounded px-3 py-2 text-sm font-medium transition-colors hover:bg-[color-mix(in_srgb,var(--color-fg-primary-dark)_90%,white)]"
+        className="w-full rounded bg-fg-primary-dark px-3 py-2 font-medium text-sm text-text-lighter transition-colors hover:bg-[color-mix(in_srgb,var(--color-fg-primary-dark)_90%,white)]"
         onClick={handleSignIn}
         type="button"
       >

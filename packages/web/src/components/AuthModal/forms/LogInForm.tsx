@@ -38,7 +38,7 @@ export const LogInForm: FC<SignInFormProps> = ({
   return (
     <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
       {statusMessage ? (
-        <p className="text-status-success text-center text-sm" role="status">
+        <p className="text-center text-sm text-status-success" role="status">
           {statusMessage}
         </p>
       ) : null}

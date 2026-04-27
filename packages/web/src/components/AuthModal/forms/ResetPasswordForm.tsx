@@ -28,7 +28,7 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
 
   return (
     <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
-      <p className="text-text-light text-center text-sm">
+      <p className="text-center text-sm text-text-light">
         Enter a new password for your account.
       </p>
 
@@ -45,7 +45,7 @@ export const ResetPasswordForm: FC<ResetPasswordFormProps> = ({
       />
 
       {error ? (
-        <p className="text-status-error text-center text-sm" role="alert">
+        <p className="text-center text-sm text-status-error" role="alert">
           {error}
         </p>
       ) : null}

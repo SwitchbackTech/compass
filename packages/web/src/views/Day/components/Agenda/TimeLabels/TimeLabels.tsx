@@ -10,7 +10,7 @@ export const TimeLabels = () => {
   return (
     <div
       ref={nowLineRef}
-      className="bg-darkBlue-400 relative w-16 flex-shrink-0"
+      className="relative w-16 flex-shrink-0 bg-darkBlue-400"
     >
       {Array.from({ length: 96 }, (_, i) => {
         const hour = Math.floor(i / 4);
@@ -25,7 +25,7 @@ export const TimeLabels = () => {
         return (
           <div
             key={`time-${i}`}
-            className="pointer-events-none absolute flex items-center text-xs text-gray-200 select-none"
+            className="pointer-events-none absolute flex select-none items-center text-gray-200 text-xs"
             style={{
               top: `${i * SLOT_HEIGHT}px`,
               left: "0px",
@@ -34,7 +34,7 @@ export const TimeLabels = () => {
             }}
           >
             {displayTime && (
-              <span className="bg-darkBlue-400 w-full pr-2 text-right">
+              <span className="w-full bg-darkBlue-400 pr-2 text-right">
                 {displayTime}
               </span>
             )}
