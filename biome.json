@@ -59,7 +59,7 @@
         "noDoubleEquals": "warn",
         "noDuplicateTestHooks": "warn",
         "noExportsInTest": "warn",
-        "useIterableCallbackReturn": "warn"
+        "useIterableCallbackReturn": "off"
       },
       "nursery": {
         "useSortedClasses": {
