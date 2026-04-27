@@ -65,7 +65,7 @@ export const isInvalidGoogleToken = (e: unknown) => {
   const responseData = err.response?.data as
     | Record<string, unknown>
     | undefined;
-  const hasInvalidData = responseData?.error === "invalid_grant";
+  const hasInvalidData = responseData?.["error"] === "invalid_grant";
 
   return is400 && (hasInvalidMsg || hasInvalidData);
 };
@@ -74,7 +74,7 @@ export const isGoogleError = (e: unknown) => {
   if (e instanceof GaxiosError) return true;
 
   const errObj = e as Record<string, unknown> | null | undefined;
-  if (errObj?.name === "GaxiosError") return true;
+  if (errObj?.["name"] === "GaxiosError") return true;
 
   // Also detect GaxiosError-like objects by structure, as errors from
   // google-auth-library may not pass instanceof checks due to module versions
@@ -83,9 +83,9 @@ export const isGoogleError = (e: unknown) => {
     errObj !== null &&
     "config" in errObj &&
     "response" in errObj &&
-    typeof errObj.response === "object" &&
-    errObj.response !== null &&
-    "data" in (errObj.response as Record<string, unknown>);
+    typeof errObj["response"] === "object" &&
+    errObj["response"] !== null &&
+    "data" in (errObj["response"] as Record<string, unknown>);
 
   return hasGaxiosShape;
 };

@@ -215,7 +215,7 @@ export const gEventToCompassEvent = (
   const endDate = isAllDay ? event.end?.date : event.end?.dateTime;
 
   const _origin =
-    event.extendedProperties?.private?.origin ?? origin ?? Origin.GOOGLE;
+    event.extendedProperties?.private?.["origin"] ?? origin ?? Origin.GOOGLE;
 
   const compassEvent: Schema_Event = {
     gEventId,
@@ -247,10 +247,10 @@ export const gEventToCompassEvent = (
 
 const getPriority = (gEvent: gSchema$Event): Priorities => {
   const priorityExists =
-    gEvent.extendedProperties?.private?.priority !== undefined &&
-    gEvent.extendedProperties?.private?.priority !== null;
+    gEvent.extendedProperties?.private?.["priority"] !== undefined &&
+    gEvent.extendedProperties?.private?.["priority"] !== null;
   if (priorityExists) {
-    const priority = gEvent.extendedProperties?.private?.priority;
+    const priority = gEvent.extendedProperties?.private?.["priority"];
     if (
       priority &&
       Object.values(Priorities).includes(priority as Priorities)

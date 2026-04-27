@@ -75,7 +75,7 @@ function mockSuperTokens() {
           {} as Record<string, string | undefined>,
         );
 
-        const sessionString = cookies.session;
+        const sessionString = cookies["session"];
         const now = new Date();
         const tId = randomUUID();
         const sessionHandle = randomUUID();
