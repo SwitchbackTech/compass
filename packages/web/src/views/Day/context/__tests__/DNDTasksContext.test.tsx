@@ -93,7 +93,7 @@ describe("DNDTasksProvider", () => {
             { announce: mockAnnounce } as any,
           );
         }
-      }, [capturedContext]);
+      }, []);
 
       return <div>Test</div>;
     };
@@ -131,7 +131,7 @@ describe("DNDTasksProvider", () => {
             { announce: mockAnnounce } as any,
           );
         }
-      }, [capturedContext]);
+      }, []);
 
       return <div>Test</div>;
     };
@@ -168,7 +168,7 @@ describe("DNDTasksProvider", () => {
             { announce: mockAnnounce } as any,
           );
         }
-      }, [capturedContext]);
+      }, []);
 
       return <div>Test</div>;
     };
@@ -207,7 +207,7 @@ describe("DNDTasksProvider", () => {
             { announce: mockAnnounce } as any,
           );
         }
-      }, [capturedContext]);
+      }, []);
 
       return <div>Test</div>;
     };
@@ -244,7 +244,7 @@ describe("DNDTasksProvider", () => {
             { announce: mock() } as any,
           );
         }
-      }, [capturedContext]);
+      }, []);
 
       return <div>Test</div>;
     };
@@ -279,7 +279,7 @@ describe("DNDTasksProvider", () => {
             { announce: mock() } as any,
           );
         }
-      }, [capturedContext]);
+      }, []);
 
       return <div>Test</div>;
     };

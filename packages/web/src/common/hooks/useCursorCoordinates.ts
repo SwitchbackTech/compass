@@ -13,7 +13,7 @@ export function useCursorCoordinates() {
     });
 
     return () => subscription.unsubscribe();
-  }, [setX, setY]);
+  }, []);
 
   return { x, y };
 }

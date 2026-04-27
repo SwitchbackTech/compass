@@ -47,7 +47,18 @@ export const useDraftEffects = (
     setResizeStatus(null);
     setDateBeingChanged(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [weekProps.component.week]);
+  }, [
+    setDraft,
+    setDateBeingChanged,
+    setIsResizing,
+    weekProps.util.getLastNavigationSource,
+    setIsFormOpen,
+    isResizing,
+    setResizeStatus,
+    setIsDragging,
+    setDragStatus,
+    isDragging,
+  ]);
 
   useEffect(() => {
     if (isResizing) {
@@ -91,5 +102,5 @@ export const useDraftEffects = (
         durationMin,
       });
     }
-  }, [isDragging]);
+  }, [isDragging, setDragStatus, draft.endDate, draft, setIsFormOpen]);
 };

@@ -31,7 +31,7 @@ export const useDraftConfirmation = ({
       setRecurrenceUpdateScopeDialogOpen(false);
       discard();
     },
-    [finalDraft, submit, setFinalDraft, discard, deleteEvent],
+    [finalDraft, submit, discard, deleteEvent],
   );
 
   const onSubmit = useCallback(
@@ -60,14 +60,7 @@ export const useDraftConfirmation = ({
       submit(_draft, applyTo);
       discard();
     },
-    [
-      submit,
-      setRecurrenceUpdateScopeDialogOpen,
-      setFinalDraft,
-      isRecurrence,
-      isInstance,
-      discard,
-    ],
+    [submit, isRecurrence, isInstance, discard],
   );
 
   const onDelete = useCallback(async () => {
@@ -85,14 +78,7 @@ export const useDraftConfirmation = ({
 
     deleteEvent(RecurringEventUpdateScope.THIS_EVENT);
     discard();
-  }, [
-    isSomeday,
-    setRecurrenceUpdateScopeDialogOpen,
-    setFinalDraft,
-    deleteEvent,
-    isRecurrence,
-    discard,
-  ]);
+  }, [isSomeday, deleteEvent, isRecurrence, discard]);
 
   return {
     isRecurrenceUpdateScopeDialogOpen,

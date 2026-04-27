@@ -54,7 +54,7 @@ export const TimedAgendaEvents = memo(
     // Center the calendar around the current time when the view mounts
     useEffect(() => {
       compassEventEmitter.emit(CompassDOMEvents.SCROLL_TO_NOW_LINE);
-    }, [pathname]);
+    }, []);
 
     return (
       <Droppable

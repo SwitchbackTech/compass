@@ -10,8 +10,8 @@ import { useAppSelector } from "@web/store/store.hooks";
 
 export type MeasureableElement = "mainGrid" | "allDayRow";
 
-export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
-  const alldayRowsCount = useAppSelector(selectRowCount);
+export const useGridLayout = (_isSidebarOpen: boolean, _week: number) => {
+  const _alldayRowsCount = useAppSelector(selectRowCount);
   const [allDayMeasurements, setAllDayMeasurements] = useState<DOMRect | null>(
     null,
   );
@@ -20,33 +20,27 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
 
   const mainGridRef = useRef<HTMLDivElement | null>(null);
 
-  const _measureAllDayRow = useCallback(
-    (_node?: HTMLDivElement) => {
-      const node = _node ?? getElemById(ID_GRID_ALLDAY_ROW);
+  const _measureAllDayRow = useCallback((_node?: HTMLDivElement) => {
+    const node = _node ?? getElemById(ID_GRID_ALLDAY_ROW);
 
-      if (!node) return;
+    if (!node) return;
 
-      const allDayRect = node.getBoundingClientRect();
+    const allDayRect = node.getBoundingClientRect();
 
-      setAllDayMeasurements(allDayRect);
-    },
-    [setAllDayMeasurements],
-  );
+    setAllDayMeasurements(allDayRect);
+  }, []);
 
-  const _measureColWidths = useCallback(
-    (_node?: HTMLDivElement) => {
-      const node = _node ?? getElemById(ID_ALLDAY_COLUMNS);
-      const daysInView = 7;
+  const _measureColWidths = useCallback((_node?: HTMLDivElement) => {
+    const node = _node ?? getElemById(ID_ALLDAY_COLUMNS);
+    const daysInView = 7;
 
-      if (!node) return;
+    if (!node) return;
 
-      const colWidth = node.clientWidth / daysInView;
-      const colWidths = Array(daysInView).fill(colWidth);
+    const colWidth = node.clientWidth / daysInView;
+    const colWidths = Array(daysInView).fill(colWidth);
 
-      setColWidths(colWidths);
-    },
-    [setColWidths],
-  );
+    setColWidths(colWidths);
+  }, []);
   const allDayRef = useCallback(
     (node: HTMLDivElement) => {
       if (node !== null) {
@@ -57,18 +51,15 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
     [_measureAllDayRow, _measureColWidths],
   );
 
-  const _measureMainGrid = useCallback(
-    (_node?: HTMLDivElement) => {
-      const node = _node ?? getElemById(ID_GRID_MAIN);
+  const _measureMainGrid = useCallback((_node?: HTMLDivElement) => {
+    const node = _node ?? getElemById(ID_GRID_MAIN);
 
-      if (!node) return;
+    if (!node) return;
 
-      const mainRect = node.getBoundingClientRect();
+    const mainRect = node.getBoundingClientRect();
 
-      setMainMeasurements(mainRect);
-    },
-    [setMainMeasurements],
-  );
+    setMainMeasurements(mainRect);
+  }, []);
 
   const remeasure = (elem: MeasureableElement) => {
     switch (elem) {
@@ -90,13 +81,7 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
     _measureMainGrid();
     _measureAllDayRow();
     _measureColWidths();
-  }, [
-    isSidebarOpen,
-    week,
-    _measureColWidths,
-    _measureMainGrid,
-    _measureAllDayRow,
-  ]);
+  }, [_measureColWidths, _measureMainGrid, _measureAllDayRow]);
 
   useEffect(() => {
     const update = () => {
@@ -111,7 +96,7 @@ export const useGridLayout = (isSidebarOpen: boolean, week: number) => {
 
   useEffect(() => {
     _measureAllDayRow();
-  }, [alldayRowsCount, _measureAllDayRow]);
+  }, [_measureAllDayRow]);
 
   useEffect(() => {
     if (mainGridRef.current && !mainMeasurements) {

@@ -1,6 +1,5 @@
 import { render, screen } from "@testing-library/react";
 import { type ReactNode } from "react";
-import { BehaviorSubject } from "rxjs";
 import {
   afterAll,
   beforeEach,

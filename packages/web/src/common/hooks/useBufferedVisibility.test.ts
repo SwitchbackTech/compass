@@ -1,4 +1,4 @@
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { useBufferedVisibility } from "./useBufferedVisibility";
 import {
   afterEach,
@@ -11,7 +11,7 @@ import {
 } from "bun:test";
 
 describe("useBufferedVisibility", () => {
-  let timeoutCallbacks: Array<{ callback: () => void; delay: number }> = [];
+  let _timeoutCallbacks: Array<{ callback: () => void; delay: number }> = [];
   let setTimeoutSpy: ReturnType<typeof spyOn>;
   let clearTimeoutSpy: ReturnType<typeof spyOn>;
   let currentTimeoutId = 0;
@@ -22,7 +22,7 @@ describe("useBufferedVisibility", () => {
 
   beforeEach(() => {
     setSystemTime(new Date("2024-01-01T00:00:00.000Z"));
-    timeoutCallbacks = [];
+    _timeoutCallbacks = [];
     currentTimeoutId = 0;
     activeTimeouts.clear();
 

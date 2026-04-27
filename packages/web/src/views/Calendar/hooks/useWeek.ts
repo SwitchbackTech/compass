@@ -56,6 +56,7 @@ export const useWeek = (today: Dayjs) => {
     dispatch,
     somedayEventsRequestFilter.startDate,
     somedayEventsRequestFilter.endDate,
+    somedayEventsRequestFilter,
   ]);
 
   useEffect(() => {

@@ -1,5 +1,5 @@
 import { DragDropContext } from "@hello-pangea/dnd";
-import React, { type FC, useRef } from "react";
+import { type FC, useRef } from "react";
 import { theme } from "@web/common/styles/theme";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { Divider } from "@web/components/Divider";

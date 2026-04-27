@@ -144,7 +144,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     return () => {
       compassEventEmitter.off(CompassDOMEvents.FOCUS_TASK_DESCRIPTION, handler);
     };
-  }, [isEditing, setIsEditing]);
+  }, [isEditing]);
 
   useEffect(() => {
     if (!isEditing) return;
@@ -156,7 +156,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     return () => {
       compassEventEmitter.off(CompassDOMEvents.SAVE_TASK_DESCRIPTION, handler);
     };
-  }, [isEditing, setIsEditing]);
+  }, [isEditing]);
 
   const handleClick = () => {
     setIsEditing(true);

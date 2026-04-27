@@ -203,13 +203,13 @@ export const useDraftActions = (
 
       const event: WithCompassId<Omit<Schema_WebEvent, "_id">> = {
         ...draft,
-        _id: draft!._id!,
-        user: draft!.user,
+        _id: draft!._id,
+        user: draft?.user,
         isAllDay: false,
         isSomeday: true,
         startDate: start,
         endDate: end,
-        origin: draft!.origin,
+        origin: draft?.origin,
         priority: draft?.priority ?? Priorities.UNASSIGNED,
         order: somedayWeekCount,
       };
@@ -341,7 +341,9 @@ export const useDraftActions = (
 
           const event = new OnSubmitParser(draft).parse();
           const payload = getEditSlicePayload(event, applyTo);
-          dispatch(editEventSlice.actions.request(payload as unknown as void));
+          dispatch(
+            editEventSlice.actions.request(payload as unknown as undefined),
+          );
 
           if (shouldAddToView(event)) {
             dispatch(getWeekEventsSlice.actions.insert(event._id!));
@@ -537,7 +539,7 @@ export const useDraftActions = (
         setDraft((_draft): Schema_GridEvent => {
           return {
             ..._draft!,
-            _id: _draft!._id!,
+            _id: _draft!._id,
             hasFlipped: justFlipped,
             endDate: endDate,
             startDate: startDate,
@@ -673,6 +675,7 @@ export const useDraftActions = (
     reduxDraft,
     startDragging,
     startResizing,
+    openForm,
   ]);
 
   const actions = {

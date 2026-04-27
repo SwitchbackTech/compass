@@ -6,7 +6,6 @@ import {
   TooltipText,
   TooltipWrapper,
 } from "@web/components/ContextMenu/styled";
-import { JustifyContent } from "@web/components/Flex/styled";
 import { type SetEventFormField } from "../types";
 import { StyledPriorityFlex } from "./styled";
 

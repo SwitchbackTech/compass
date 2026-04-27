@@ -108,7 +108,7 @@ export const useGoogleLogin = ({
       setLoading(true);
 
       return login();
-    }, [login, onStart, setData, setLoading]),
+    }, [login, onStart]),
     data,
     loading,
   };
