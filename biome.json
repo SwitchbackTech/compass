@@ -41,6 +41,9 @@
         "useHookAtTopLevel": "warn",
         "useYield": "warn"
       },
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
       "style": {
         "useImportType": {
           "level": "warn",
