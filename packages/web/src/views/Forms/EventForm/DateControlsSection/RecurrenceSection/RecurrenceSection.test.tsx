@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useCallback, useState } from "react";
 import { ThemeProvider } from "styled-components";
@@ -73,10 +73,17 @@ describe("RecurrenceSection", () => {
 
     expect(screen.getByText("Repeat")).toBeInTheDocument();
     expect(
-      screen.getByText("Sign in to use recurring events."),
-    ).toBeInTheDocument();
+      screen.queryByText("Sign in to use recurring events."),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
+
+    await user.hover(screen.getByRole("button", { name: /repeat/i }));
+    await waitFor(() => {
+      expect(
+        screen.getByText("Sign in to use recurring events."),
+      ).toBeInTheDocument();
+    });
 
     await user.click(screen.getByRole("button", { name: /repeat/i }));
 
@@ -87,16 +94,26 @@ describe("RecurrenceSection", () => {
 
   it("shows the backend requirement before sign-in when the backend is unavailable", async () => {
     markBackendUnavailable();
+    const user = userEvent.setup();
     renderRecurrenceSection({ authenticated: false });
 
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Start the Compass backend and MongoDB to use recurring events.",
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText("Sign in to use recurring events."),
     ).not.toBeInTheDocument();
+
+    await user.hover(screen.getByRole("button", { name: /repeat/i }));
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Start the Compass backend and MongoDB to use recurring events.",
+        ),
+      ).toBeInTheDocument();
+    });
   });
 
   it("keeps recurrence settings hidden when a signed-in user's backend is unavailable", async () => {
@@ -106,12 +123,21 @@ describe("RecurrenceSection", () => {
 
     expect(screen.getByText("Repeat")).toBeInTheDocument();
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Start the Compass backend and MongoDB to use recurring events.",
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
+
+    await user.hover(screen.getByRole("button", { name: /repeat/i }));
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Start the Compass backend and MongoDB to use recurring events.",
+        ),
+      ).toBeInTheDocument();
+    });
 
     await user.click(screen.getByRole("button", { name: /repeat/i }));
 

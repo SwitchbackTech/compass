@@ -88,11 +88,6 @@ export const StyledRepeatTextContainer = styled(Flex)<{
   }
 `;
 
-export const StyledRepeatUnavailableText = styled.span`
-  color: ${({ theme }) => theme.color.text.darkPlaceholder};
-  font-size: ${({ theme }) => theme.text.size.s};
-`;
-
 export const StyledWeekDay = styled.button<{
   bgColor: string;
   selected: boolean;

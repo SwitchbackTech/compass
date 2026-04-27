@@ -2,12 +2,12 @@ import type React from "react";
 import { useCallback } from "react";
 import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   StyledRepeatContainer,
   StyledRepeatRow,
   StyledRepeatText,
   StyledRepeatTextContainer,
-  StyledRepeatUnavailableText,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 
 export interface RecurrenceToggleProps {
@@ -38,44 +38,48 @@ export const RecurrenceToggle = ({
     [onToggle],
   );
 
+  const renderWithDisabledTooltip = (children: React.ReactNode) => {
+    if (!disabled || !disabledMessage) return children;
+
+    return (
+      <TooltipWrapper description={disabledMessage}>{children}</TooltipWrapper>
+    );
+  };
+
   return (
     <StyledRepeatRow>
       <ConditionalRender condition={hasRecurrence}>
-        <StyledRepeatContainer $disabled={disabled} onClick={onToggle}>
-          <StyledRepeatText
-            aria-disabled={disabled || undefined}
-            hasRepeat={hasRecurrence}
-            onKeyDown={handleKeyDown}
-            tabIndex={0}
-            title={disabled ? disabledMessage : undefined}
-            $disabled={disabled}
-          >
-            <RepeatIcon size={18} />
-            <span>Repeat</span>
-          </StyledRepeatText>
-        </StyledRepeatContainer>
+        {renderWithDisabledTooltip(
+          <StyledRepeatContainer $disabled={disabled} onClick={onToggle}>
+            <StyledRepeatText
+              aria-disabled={disabled || undefined}
+              hasRepeat={hasRecurrence}
+              onKeyDown={handleKeyDown}
+              tabIndex={0}
+              $disabled={disabled}
+            >
+              <RepeatIcon size={18} />
+              <span>Repeat</span>
+            </StyledRepeatText>
+          </StyledRepeatContainer>,
+        )}
       </ConditionalRender>
 
       <ConditionalRender condition={!hasRecurrence}>
-        <StyledRepeatTextContainer
-          aria-disabled={disabled || undefined}
-          aria-label={disabled ? "Repeat" : "Edit recurrence"}
-          $disabled={disabled}
-          onClick={onToggle}
-          onKeyDown={handleKeyDown}
-          role="button"
-          tabIndex={0}
-          title={disabled ? disabledMessage : undefined}
-        >
-          <RepeatIcon size={18} />
-          <span>Repeat</span>
-        </StyledRepeatTextContainer>
-      </ConditionalRender>
-
-      <ConditionalRender condition={Boolean(disabled && disabledMessage)}>
-        <StyledRepeatUnavailableText>
-          {disabledMessage}
-        </StyledRepeatUnavailableText>
+        {renderWithDisabledTooltip(
+          <StyledRepeatTextContainer
+            aria-disabled={disabled || undefined}
+            aria-label={disabled ? "Repeat" : "Edit recurrence"}
+            $disabled={disabled}
+            onClick={onToggle}
+            onKeyDown={handleKeyDown}
+            role="button"
+            tabIndex={0}
+          >
+            <RepeatIcon size={18} />
+            <span>Repeat</span>
+          </StyledRepeatTextContainer>,
+        )}
       </ConditionalRender>
     </StyledRepeatRow>
   );
