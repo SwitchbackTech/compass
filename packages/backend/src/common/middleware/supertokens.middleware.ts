@@ -1,5 +1,5 @@
 import cors from "cors";
-import SuperTokens, { type RecipeListFunction } from "supertokens-node";
+import SuperTokens from "supertokens-node";
 import Dashboard from "supertokens-node/recipe/dashboard";
 import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
@@ -88,7 +88,7 @@ const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
   },
 };
 
-const getThirdPartyRecipes = (): RecipeListFunction[] => {
+const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
   const clientId = ENV.GOOGLE_CLIENT_ID;
   const clientSecret = ENV.GOOGLE_CLIENT_SECRET;
 

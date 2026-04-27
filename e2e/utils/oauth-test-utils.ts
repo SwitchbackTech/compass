@@ -7,10 +7,17 @@ import "./compass-window";
  * - Mocks API endpoints
  */
 export const prepareOAuthTestPage = async (page: Page) => {
+  page.on("dialog", async (dialog) => {
+    await dialog.dismiss().catch(() => undefined);
+  });
+
   // Enable test mode before app loads
   await page.addInitScript(() => {
     // Enable e2e test mode - this exposes test hooks in the app
     window.__COMPASS_E2E_TEST__ = true;
+    window.alert = () => undefined;
+    window.confirm = () => true;
+    window.prompt = () => null;
   });
 
   // Mock API endpoints to prevent real network calls
