@@ -58,7 +58,6 @@ process.on("SIGQUIT", () => {
   void gracefulShutdown();
 });
 
-// @ts-expect-error -- import.meta.main is Bun-native; tsconfig targets commonjs
 if (import.meta.main) {
   void start();
 }
