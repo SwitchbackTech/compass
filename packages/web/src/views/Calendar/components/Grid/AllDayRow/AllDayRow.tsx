@@ -1,4 +1,4 @@
-import React, { type FC, type MouseEvent, useEffect } from "react";
+import { type FC, type MouseEvent, useEffect } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import {

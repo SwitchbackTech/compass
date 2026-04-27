@@ -84,7 +84,7 @@ function runPackage(pkg: Package): boolean {
     env: {
       ...process.env,
       NODE_ENV: "test",
-      TZ: process.env["TZ"] ?? "Etc/UTC",
+      TZ: process.env.TZ ?? "Etc/UTC",
     },
     stderr: "inherit",
     stdin: "inherit",
@@ -100,7 +100,7 @@ function runTypeCheck(): boolean {
     cwd: process.cwd(),
     env: {
       ...process.env,
-      TZ: process.env["TZ"] ?? "Etc/UTC",
+      TZ: process.env.TZ ?? "Etc/UTC",
     },
     stderr: "inherit",
     stdin: "inherit",

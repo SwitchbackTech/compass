@@ -78,8 +78,8 @@ describe("Jan 2022: Many Formats", () => {
       end,
     });
     const flatFilter = _flatten(filter, {}) as Filter<Schema_Event>;
-    expect(flatFilter["$lte"]).not.toEqual(new Date(start).toISOString());
-    expect(flatFilter["$gte"]).not.toEqual(new Date(end).toISOString());
+    expect(flatFilter.$lte).not.toEqual(new Date(start).toISOString());
+    expect(flatFilter.$gte).not.toEqual(new Date(end).toISOString());
   });
 
   describe("Recurring Events", () => {

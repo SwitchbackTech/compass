@@ -79,7 +79,7 @@ export class BaseDriver {
       const headers: Record<string, string> = {
         Accept: "text/event-stream",
       };
-      if (cookie) headers["Cookie"] = cookie;
+      if (cookie) headers.Cookie = cookie;
 
       try {
         const response = await fetch(`${this.serverUri}/api/events/stream`, {

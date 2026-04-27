@@ -12,7 +12,7 @@ export const AvailableTasks = ({
   return (
     <div className="flex flex-1 flex-col items-center gap-6">
       <div className="flex flex-1 flex-col items-center gap-4">
-        <p className="text-2xl font-semibold text-white">
+        <p className="font-semibold text-2xl text-white">
           Select a task to focus on
         </p>
         <div className="flex flex-col gap-2">
@@ -21,7 +21,8 @@ export const AvailableTasks = ({
               key={task._id}
               onClick={() => onTaskSelect(task._id)}
               aria-label={`Select ${task.title}`}
-              className="rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-white transition-colors hover:bg-white/10 focus:ring-2 focus:ring-white/50 focus:outline-none"
+              className="rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-white transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
+              type="button"
             >
               {task.title}
             </button>

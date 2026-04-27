@@ -28,10 +28,10 @@ describe("2025.10.14T12.24.01.update-calendar-schema migration (integration)", (
     );
 
     // Ensure baseline full validation schema exists
-    expect(collectionInfo["validationLevel"]).toBe("strict");
-    expect(collectionInfo["validator"]).toBeDefined();
-    expect(collectionInfo["validator"]).toHaveProperty("$jsonSchema");
-    expect(collectionInfo["validator"]["$jsonSchema"]).toEqual($oldJsonSchema);
+    expect(collectionInfo.validationLevel).toBe("strict");
+    expect(collectionInfo.validator).toBeDefined();
+    expect(collectionInfo.validator).toHaveProperty("$jsonSchema");
+    expect(collectionInfo.validator.$jsonSchema).toEqual($oldJsonSchema);
 
     // Ensure baseline user primary unique index exists (no partial filter)
     expect(userPrimaryUniqueIndex).toEqual(
@@ -62,10 +62,10 @@ describe("2025.10.14T12.24.01.update-calendar-schema migration (integration)", (
     const userIndex = indexes.find(({ name }) => name === userIndexName);
 
     // Ensure full validation schema exists
-    expect(collectionInfo["validationLevel"]).toBe("strict");
-    expect(collectionInfo["validator"]).toBeDefined();
-    expect(collectionInfo["validator"]).toHaveProperty("$jsonSchema");
-    expect(collectionInfo["validator"]["$jsonSchema"]).toEqual($jsonSchema);
+    expect(collectionInfo.validationLevel).toBe("strict");
+    expect(collectionInfo.validator).toBeDefined();
+    expect(collectionInfo.validator).toHaveProperty("$jsonSchema");
+    expect(collectionInfo.validator.$jsonSchema).toEqual($jsonSchema);
 
     // Ensure baseline user primary unique index exists (no partial filter)
     expect(userPrimaryUniqueIndex).toEqual(

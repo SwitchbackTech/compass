@@ -58,7 +58,7 @@ export const Dedication = () => {
           aria-label="Close dialog"
         />
         <div
-          className={`bg-fg-primary relative w-[59%] rounded p-6 shadow-lg transition-transform duration-300 ease-out ${
+          className={`relative w-[59%] rounded bg-fg-primary p-6 shadow-lg transition-transform duration-300 ease-out ${
             isVisible ? "scale-100" : "scale-95"
           }`}
         >
@@ -86,7 +86,7 @@ export const Dedication = () => {
                 relationships in as much as possible. Time is the biggest enemy
                 we all face."
               </p>
-              <div className="text-s text-text-darkPlaceholder ml-12 pt-8">
+              <div className="ml-12 pt-8 text-s text-text-darkPlaceholder">
                 -Derek&apos;s Facebook post from 12.24.2013
               </div>
             </blockquote>

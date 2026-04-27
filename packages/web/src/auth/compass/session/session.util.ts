@@ -14,6 +14,6 @@ export const getUserId = async () => {
 
   const accessTokenPayload =
     (await session.getAccessTokenPayloadSecurely()) as AccessTokenPayload;
-  const userId = accessTokenPayload["sub"];
+  const userId = accessTokenPayload.sub;
   return userId;
 };

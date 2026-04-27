@@ -26,10 +26,10 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
     const collectionInfo = await mongoService.calendar.options();
     const $jsonSchema = zodToMongoSchema(Migration.CompassCalendarSchema);
 
-    expect(collectionInfo["validationLevel"]).toBe("strict");
-    expect(collectionInfo["validator"]).toBeDefined();
-    expect(collectionInfo["validator"]).toHaveProperty("$jsonSchema");
-    expect(collectionInfo["validator"]["$jsonSchema"]).toEqual($jsonSchema);
+    expect(collectionInfo.validationLevel).toBe("strict");
+    expect(collectionInfo.validator).toBeDefined();
+    expect(collectionInfo.validator).toHaveProperty("$jsonSchema");
+    expect(collectionInfo.validator.$jsonSchema).toEqual($jsonSchema);
 
     expect(indexes).toEqual(
       expect.arrayContaining([
@@ -105,8 +105,8 @@ describe("2025.10.03T01.19.59.calendar-schema", () => {
       expect.objectContaining({ name: "_id_", key: { _id: 1 } }),
     ]);
 
-    expect(collectionInfo["validationLevel"]).toBe("off");
-    expect(collectionInfo["validationAction"]).toBe("error");
+    expect(collectionInfo.validationLevel).toBe("off");
+    expect(collectionInfo.validationAction).toBe("error");
     expect(collectionInfo).not.toHaveProperty("validator");
   });
 

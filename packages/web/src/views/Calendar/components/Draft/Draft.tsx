@@ -1,4 +1,4 @@
-import React, { type FC } from "react";
+import { type FC } from "react";
 import { createPortal } from "react-dom";
 import { Categories_Event } from "@core/types/event.types";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";

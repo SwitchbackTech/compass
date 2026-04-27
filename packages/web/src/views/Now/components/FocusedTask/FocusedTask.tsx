@@ -25,7 +25,7 @@ export const FocusedTask = ({
   return (
     <div className="flex flex-1 flex-col items-center gap-10">
       <div className="flex items-center gap-3">
-        <h2 className="text-text-lighter text-center text-4xl font-bold drop-shadow-lg">
+        <h2 className="text-center font-bold text-4xl text-text-lighter drop-shadow-lg">
           {task.title}
         </h2>
       </div>
@@ -42,6 +42,7 @@ export const FocusedTask = ({
           <button
             aria-label="Mark task as complete"
             className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
+            type="button"
           >
             <CheckCircleIcon size={40} className="text-text-light" />
           </button>
@@ -54,6 +55,7 @@ export const FocusedTask = ({
           <button
             aria-label="Previous task"
             className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
+            type="button"
           >
             <ArrowCircleLeftIcon size={40} className="text-text-light" />
           </button>
@@ -66,6 +68,7 @@ export const FocusedTask = ({
           <button
             aria-label="Next task"
             className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
+            type="button"
           >
             <ArrowCircleRightIcon size={40} className="text-text-light" />
           </button>

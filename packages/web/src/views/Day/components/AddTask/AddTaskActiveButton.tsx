@@ -41,7 +41,7 @@ export function AddTaskActiveButton({
           onBlur={onBlur}
           placeholder="Enter task title..."
           aria-label="Task title"
-          className="text-white-100 w-full bg-transparent text-sm placeholder-gray-200 outline-none"
+          className="w-full bg-transparent text-sm text-white-100 placeholder-gray-200 outline-none"
         />
       </div>
     </div>

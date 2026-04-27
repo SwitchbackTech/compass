@@ -1,4 +1,3 @@
-import React from "react";
 import { type Categories_Event } from "@core/types/event.types";
 import {
   DateTimeSection,

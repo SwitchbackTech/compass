@@ -275,7 +275,7 @@ const jsonSchemaToMongoSchema = (
   if (schema.uniqueItems != null) result.uniqueItems = schema.uniqueItems;
 
   if ("bsonType" in schema) {
-    result.bsonType = schema["bsonType"] as MongoBsonType | MongoBsonType[];
+    result.bsonType = schema.bsonType as MongoBsonType | MongoBsonType[];
   }
 
   if (schema.$ref) {
@@ -301,8 +301,8 @@ export function zodToMongoSchema(
     override: (ctx) => {
       if (ctx.zodSchema === zObjectId || ctx.zodSchema === zObjectIdMini) {
         delete ctx.jsonSchema.type;
-        delete ctx.jsonSchema["format"];
-        ctx.jsonSchema["bsonType"] = "objectId";
+        delete ctx.jsonSchema.format;
+        ctx.jsonSchema.bsonType = "objectId";
         return;
       }
 
@@ -319,14 +319,14 @@ export function zodToMongoSchema(
 
       if (ctx.zodSchema._zod.def.type === "date") {
         delete ctx.jsonSchema.type;
-        delete ctx.jsonSchema["format"];
-        ctx.jsonSchema["bsonType"] = "date";
+        delete ctx.jsonSchema.format;
+        ctx.jsonSchema.bsonType = "date";
       }
     },
   });
 
   return jsonSchemaToMongoSchema(
-    jsonSchemas["root"] as JSONSchema.Schema,
-    jsonSchemas["root"] as JSONSchema.Schema,
+    jsonSchemas.root as JSONSchema.Schema,
+    jsonSchemas.root as JSONSchema.Schema,
   );
 }

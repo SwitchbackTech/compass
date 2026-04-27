@@ -37,7 +37,7 @@ describe("CompassSyncProcessor.getNotificationType", () => {
       category: Categories_Recurrence.STANDALONE,
     };
 
-    expect(CompassSyncProcessor["getNotificationType"](transition)).toEqual([
+    expect(CompassSyncProcessor.getNotificationType(transition)).toEqual([
       EVENT_CHANGED,
       EVENT_CHANGED,
     ]);
@@ -54,7 +54,7 @@ describe("CompassSyncProcessor.getNotificationType", () => {
       category: Categories_Recurrence.STANDALONE_SOMEDAY,
     };
 
-    expect(CompassSyncProcessor["getNotificationType"](transition)).toEqual([
+    expect(CompassSyncProcessor.getNotificationType(transition)).toEqual([
       SOMEDAY_EVENT_CHANGED,
       SOMEDAY_EVENT_CHANGED,
     ]);
@@ -71,7 +71,7 @@ describe("CompassSyncProcessor.getNotificationType", () => {
       category: Categories_Recurrence.STANDALONE_SOMEDAY,
     };
 
-    expect(CompassSyncProcessor["getNotificationType"](transition)).toEqual([
+    expect(CompassSyncProcessor.getNotificationType(transition)).toEqual([
       SOMEDAY_EVENT_CHANGED,
       EVENT_CHANGED,
     ]);
@@ -122,7 +122,7 @@ describe("CompassSyncProcessor.notifyClients", () => {
       },
     ];
 
-    CompassSyncProcessor["notifyClients"](events, summary);
+    CompassSyncProcessor.notifyClients(events, summary);
 
     expect(calendarSpy).toHaveBeenCalledWith(userA);
     expect(somedaySpy).toHaveBeenCalledWith(userB);
@@ -177,7 +177,7 @@ describe("CompassSyncProcessor.handleCompassChange", () => {
       .mockResolvedValueOnce(applyResult);
 
     await expect(
-      CompassSyncProcessor["handleCompassChange"](event),
+      CompassSyncProcessor.handleCompassChange(event),
     ).resolves.toEqual([applyResult.summary]);
 
     expect(findOneSpy).toHaveBeenCalledWith(
@@ -229,7 +229,7 @@ describe("CompassSyncProcessor.handleCompassChange", () => {
     );
 
     await expect(
-      CompassSyncProcessor["handleCompassChange"](event),
+      CompassSyncProcessor.handleCompassChange(event),
     ).resolves.toEqual([
       {
         title: payload.title!,
@@ -286,7 +286,7 @@ describe("CompassSyncProcessor.handleCompassChange", () => {
       .mockRejectedValueOnce(missingRefreshTokenError);
 
     await expect(
-      CompassSyncProcessor["handleCompassChange"](event),
+      CompassSyncProcessor.handleCompassChange(event),
     ).resolves.toEqual([
       {
         title: payload.title!,
