@@ -1,5 +1,5 @@
 import { Draggable } from "@hello-pangea/dnd";
-import React, { type FC } from "react";
+import { type FC } from "react";
 import {
   type Categories_Event,
   type Schema_Event,
@@ -42,22 +42,20 @@ export const DraggableSomedayEvent: FC<Props> = ({
       >
         {(provided, snapshot) => {
           return (
-            <>
-              <SomedayEventContainer
-                category={category}
-                event={event}
-                isDragging={snapshot.isDragging}
-                isDrafting={isDraftingThisEvent}
-                isOverGrid={isOverGrid}
-                duplicateEvent={draftActions.duplicateEvent}
-                deleteEvent={draftActions.deleteEvent}
-                onSubmit={(event) => actions.onSubmit(category, event)}
-                provided={provided}
-                snapshot={snapshot}
-                setEvent={setters.setDraft}
-                weekViewRange={{ startDate: start, endDate: end }}
-              />
-            </>
+            <SomedayEventContainer
+              category={category}
+              event={event}
+              isDragging={snapshot.isDragging}
+              isDrafting={isDraftingThisEvent}
+              isOverGrid={isOverGrid}
+              duplicateEvent={draftActions.duplicateEvent}
+              deleteEvent={draftActions.deleteEvent}
+              onSubmit={(event) => actions.onSubmit(category, event)}
+              provided={provided}
+              snapshot={snapshot}
+              setEvent={setters.setDraft}
+              weekViewRange={{ startDate: start, endDate: end }}
+            />
           );
         }}
       </Draggable>

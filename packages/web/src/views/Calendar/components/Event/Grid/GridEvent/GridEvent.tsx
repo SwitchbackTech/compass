@@ -206,24 +206,22 @@ const _GridEvent = (
                   {getTimesLabel(event.startDate, event.endDate)}
                 </Text>
               )}
-            <>
-              <div
-                role="button"
-                tabIndex={-1}
-                style={scalerStyle({ top: "-0.25px" })}
-                onMouseDown={(e) => {
-                  onScalerMouseDown(event, e, "startDate");
-                }}
-              />
-              <div
-                role="button"
-                tabIndex={-1}
-                style={scalerStyle({ bottom: "-0.25px" })}
-                onMouseDown={(e) => {
-                  onScalerMouseDown(event, e, "endDate");
-                }}
-              />
-            </>
+            <div
+              role="button"
+              tabIndex={-1}
+              style={scalerStyle({ top: "-0.25px" })}
+              onMouseDown={(e) => {
+                onScalerMouseDown(event, e, "startDate");
+              }}
+            />
+            <div
+              role="button"
+              tabIndex={-1}
+              style={scalerStyle({ bottom: "-0.25px" })}
+              onMouseDown={(e) => {
+                onScalerMouseDown(event, e, "endDate");
+              }}
+            />
           </>
         )}
       </Flex>

@@ -199,8 +199,7 @@ export const updateBasePayloadToExpireOneDayAfterFirstInstance = (
   );
   const untilDate = new Date(firstInstanceStart);
   untilDate.setDate(untilDate.getDate() + 1);
-  const untilDateStr =
-    untilDate.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+  const untilDateStr = `${untilDate.toISOString().replace(/[-:]/g, "").split(".")[0]}Z`;
 
   const gBaseWithUntil = {
     ...gEvents.recurring,

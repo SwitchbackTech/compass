@@ -18,7 +18,7 @@ import { GcalEventRRule } from "@backend/event/classes/gcal.event.rrule";
  * @returns A random base32 hex string
  */
 export const generateGcalId = (length: number = 16) => {
-  const allowed = "abcdefghijklmnopqrstuvwxyz".slice(0, 22) + "0123456789"; // a-v and 0-9
+  const allowed = `${"abcdefghijklmnopqrstuvwxyz".slice(0, 22)}0123456789`; // a-v and 0-9
   let id = "";
   for (let i = 0; i < length; i++) {
     id += allowed.charAt(Math.floor(Math.random() * allowed.length));
@@ -51,7 +51,7 @@ const mockGcalCoreEvent = (): WithGcalId<
     htmlLink: `https://www.google.com/calendar/event?eid=${id}`,
     created: faker.date.past().toISOString(),
     updated: faker.date.recent().toISOString(),
-    iCalUID: faker.string.uuid() + "@google.com",
+    iCalUID: `${faker.string.uuid()}@google.com`,
     sequence: 0,
     extendedProperties: {
       private: {

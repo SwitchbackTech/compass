@@ -1,5 +1,5 @@
-import { type IncomingMessage, type ServerResponse } from "http";
 import morgan from "morgan";
+import { type IncomingMessage, type ServerResponse } from "node:http";
 import { styleText } from "node:util";
 
 type HttpLogColor = "cyanBright" | "yellow" | "red" | "magentaBright";
@@ -54,7 +54,7 @@ export const httpLoggingMiddleware = morgan((tokens, req, res) => {
     styleText(["bold", statusColor], status),
     styleText(["bold", "whiteBright"], get("method", tokens, req, res)),
     styleText(["bold", "cyanBright"], get("url", tokens, req, res)),
-    styleText(["bold", "blueBright"], responseTime + "ms"),
+    styleText(["bold", "blueBright"], `${responseTime}ms`),
     styleText(["bold", "magentaBright"], get("date", tokens, req, res)),
   ].join(" ");
 });

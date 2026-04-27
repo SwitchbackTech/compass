@@ -17,7 +17,7 @@ import {
 } from "@scripts/common/cli.constants";
 import { getEnvironmentAnswer, log } from "@scripts/common/cli.utils";
 import { $ } from "bun";
-import path from "path";
+import path from "node:path";
 
 const BACKEND_BUILD = path.join(COMPASS_BUILD_DEV, "backend");
 

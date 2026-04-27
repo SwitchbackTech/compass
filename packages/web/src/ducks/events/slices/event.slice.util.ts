@@ -31,7 +31,7 @@ export const cancel = (
   action: Action_DeleteEvent,
 ): void => {
   // Handle case where state.value or state.value.data might be undefined/null
-  if (!state.value || !state.value.data) {
+  if (!state.value?.data) {
     // If state is not initialized, there's nothing to delete
     return;
   }

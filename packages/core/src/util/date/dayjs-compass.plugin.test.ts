@@ -157,7 +157,7 @@ describe("monthStrFromZeroIndex", () => {
     for (let index = -5; index < 20; index++) {
       const validIndex = index >= 0 && index <= 11;
       const month = dayjs.monthStrFromZeroIndex(index);
-      const intMonth = parseInt(month);
+      const intMonth = parseInt(month, 10);
 
       if (validIndex) expect(intMonth).toStrictEqual(index + 1);
 

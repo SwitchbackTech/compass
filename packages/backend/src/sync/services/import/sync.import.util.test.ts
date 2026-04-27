@@ -15,7 +15,7 @@ describe("categorizeGcalEvents", () => {
 
       // should be array of string numbers
       expect(typeof toDelete[1]).toBe("string");
-      const parsedToInt = parseInt(toDelete[1] ?? "");
+      const parsedToInt = parseInt(toDelete[1] ?? "", 10);
       expect(typeof parsedToInt).toBe("number");
     });
     it("finds deleted/cancelled events", () => {
