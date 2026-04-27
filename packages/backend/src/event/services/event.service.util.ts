@@ -25,7 +25,7 @@ export const getDeleteByIdFilter = (
     return { ...filter, _id };
   }
 
-  if (!event.recurrence || !event.recurrence.eventId) {
+  if (!event.recurrence?.eventId) {
     throw error(
       GenericError.DeveloperError,
       "Failed to get Delete Filter (missing recurrence id)",

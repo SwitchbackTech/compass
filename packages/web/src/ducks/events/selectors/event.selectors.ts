@@ -19,7 +19,7 @@ export const selectAllDayEvents = createSelector(
       (_id: string) => entities[_id],
     );
     const _allDayEvents: Schema_GridEvent_NoPosition[] = weekEvents?.filter(
-      (e: Schema_Event) => e !== undefined && e.isAllDay,
+      (e: Schema_Event) => e?.isAllDay,
     );
     const { allDayEvents } = assignEventsToRow(_allDayEvents);
     return allDayEvents;

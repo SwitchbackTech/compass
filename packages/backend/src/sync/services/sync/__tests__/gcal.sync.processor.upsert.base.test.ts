@@ -168,7 +168,7 @@ describe("GcalSyncProcessor UPSERT: BASE", () => {
     /* Act */
     const updatedGcalBase = {
       ...gcalEvents.recurring,
-      summary: gcalEvents.recurring.summary + " - UPDATED IN GCAL",
+      summary: `${gcalEvents.recurring.summary} - UPDATED IN GCAL`,
       description: "Description adjusted in Gcal",
     };
 

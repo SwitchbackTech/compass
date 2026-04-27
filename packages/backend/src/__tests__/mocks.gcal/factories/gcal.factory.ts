@@ -4,7 +4,11 @@ import {
   type MethodOptions,
   type StreamMethodOptions,
 } from "@googleapis/calendar";
-import { type GaxiosPromise, type GaxiosResponse } from "gaxios";
+import {
+  type GaxiosOptions,
+  type GaxiosPromise,
+  type GaxiosResponse,
+} from "gaxios";
 import { Status } from "@core/errors/status.codes";
 import {
   type gSchema$CalendarList,
@@ -39,7 +43,7 @@ const createMockGaxiosResponse = <T>(
   const url = responseURL || (config.url?.toString() ?? "");
 
   return {
-    config: config as any,
+    config: config as GaxiosOptions,
     data,
     status,
     statusText,
@@ -62,7 +66,7 @@ const createMockGaxiosResponse = <T>(
     formData: async () => {
       throw new Error("Not implemented");
     },
-    json: async () => data as any,
+    json: async () => data,
     text: async () => JSON.stringify(data),
     bytes: async () => {
       throw new Error("Not implemented");
@@ -85,7 +89,7 @@ const generatePaginatedGcalItems = <Item = gSchema$Event>(
   pageSize: number,
   pageToken?: string,
 ): Omit<gSchema$Events, "items"> & { items: Item[] } => {
-  const startIndex = pageToken ? parseInt(pageToken) : 0;
+  const startIndex = pageToken ? parseInt(pageToken, 10) : 0;
   const endIndex = startIndex + pageSize;
   const pageEvents = items.slice(startIndex, endIndex);
   const hasMore = endIndex < items.length;
@@ -166,7 +170,7 @@ export const mockGcal = ({
               options,
               200,
               "OK",
-              params.requestBody!.id!,
+              id,
             ),
           );
         },
@@ -210,13 +214,17 @@ export const mockGcal = ({
             updatedEvent as WithGcalId<gSchema$Event>,
           );
 
+          if (!updatedEvent.id) {
+            throw new Error(`Event with id ${eventId} is missing an id`);
+          }
+
           return Promise.resolve(
             createMockGaxiosResponse(
               updatedEvent,
               options,
               200,
               "OK",
-              updatedEvent.id!,
+              updatedEvent.id,
             ),
           );
         },
@@ -295,7 +303,11 @@ export const mockGcal = ({
             throw new Error(`Event with id ${eventId} not found`);
           }
 
-          const event = events[eventIndex]!;
+          const event = events[eventIndex];
+
+          if (!event) {
+            throw new Error(`Event with id ${eventId} not found`);
+          }
           const isRecurring = isBaseGCalEvent(event);
 
           events.splice(eventIndex, 1);

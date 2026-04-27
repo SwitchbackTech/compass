@@ -31,7 +31,7 @@ import {
 } from "@web/common/hooks/useOpenAtCursor";
 import { theme } from "@web/common/styles/theme";
 
-const themeSpacing = parseInt(theme.spacing.xs);
+const themeSpacing = parseInt(theme.spacing.xs, 10);
 
 const placements: Placement[] = [
   "right-start",

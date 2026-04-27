@@ -79,62 +79,60 @@ export const SomedayEventsContainer: FC<Props> = ({
   };
 
   return (
-    <>
-      <Droppable droppableId={column.id}>
-        {(provided, snapshot) => {
-          return (
-            <DropZone
-              id={colName}
-              ref={provided.innerRef}
-              isActive={
-                snapshot.isDraggingOver ||
-                (state.isDragging && !state.isSomedayFormOpen)
-              }
-              {...provided.droppableProps}
-            >
-              <DraggableSomedayEvents
-                category={category}
-                draft={state.draft}
-                events={events}
-                isOverGrid={state.isOverGrid}
-              />
-              {provided.placeholder}
+    <Droppable droppableId={column.id}>
+      {(provided, snapshot) => {
+        return (
+          <DropZone
+            id={colName}
+            ref={provided.innerRef}
+            isActive={
+              snapshot.isDraggingOver ||
+              (state.isDragging && !state.isSomedayFormOpen)
+            }
+            {...provided.droppableProps}
+          >
+            <DraggableSomedayEvents
+              category={category}
+              draft={state.draft}
+              events={events}
+              isOverGrid={state.isOverGrid}
+            />
+            {provided.placeholder}
 
-              {!isDraftingNew && (
-                <div style={{ opacity: state.isDragging ? 0 : 1 }}>
-                  {state.isDragging ? (
+            {!isDraftingNew && (
+              <div style={{ opacity: state.isDragging ? 0 : 1 }}>
+                {state.isDragging ? (
+                  <AddSomedayEvent
+                    onKeyDown={() =>
+                      context.actions.createSomedayDraft(category)
+                    }
+                  />
+                ) : (
+                  renderWithTooltip(
                     <AddSomedayEvent
                       onKeyDown={() =>
                         context.actions.createSomedayDraft(category)
                       }
-                    />
-                  ) : (
-                    renderWithTooltip(
-                      <AddSomedayEvent
-                        onKeyDown={() =>
-                          context.actions.createSomedayDraft(category)
-                        }
-                      />,
-                    )
-                  )}
-                </div>
-              )}
+                    />,
+                  )
+                )}
+              </div>
+            )}
 
-              {isDraftingThisCategory && state.draft && (
-                <DraggableSomedayEvent
-                  category={category}
-                  draftId={ID_SOMEDAY_DRAFT}
-                  event={state.draft}
-                  index={events.length}
-                  isDrafting={true}
-                  isOverGrid={state.isOverGrid}
-                  key={ID_SOMEDAY_DRAFT}
-                />
-              )}
-            </DropZone>
-          );
-        }}
-      </Droppable>
-    </>
+            {isDraftingThisCategory && state.draft && (
+              <DraggableSomedayEvent
+                category={category}
+                draftId={ID_SOMEDAY_DRAFT}
+                event={state.draft}
+                index={events.length}
+                isDrafting={true}
+                isOverGrid={state.isOverGrid}
+                key={ID_SOMEDAY_DRAFT}
+              />
+            )}
+          </DropZone>
+        );
+      }}
+    </Droppable>
   );
 };

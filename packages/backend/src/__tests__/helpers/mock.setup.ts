@@ -57,7 +57,7 @@ function mockGoogleapis() {
 function mockSuperTokens() {
   const userMetadata = new Map<string, UserMetadata>();
 
-  function verifySession(input: {
+  function verifySession(_input: {
     verifySessionOptions?: VerifySessionOptions;
     options: APIOptions;
     userContext: UserContext;
@@ -118,10 +118,6 @@ function mockSuperTokens() {
         } as SessionContainerInterface;
 
         return next?.();
-
-        if (input?.verifySessionOptions?.sessionRequired) {
-          throw new Error("invalid superToken session");
-        }
       } catch (error) {
         if (next) {
           next(error);
@@ -146,12 +142,12 @@ function mockSuperTokens() {
     data: Partial<UserMetadata>,
   ): Promise<{ status: "OK"; metadata: UserMetadata }> {
     const existingMetadata = userMetadata.get(userId) ?? {};
+    const metadata = { ...existingMetadata, ...data };
+    userMetadata.set(userId, metadata);
 
     return Promise.resolve({
       status: "OK",
-      metadata: userMetadata
-        .set(userId, { ...existingMetadata, ...data })
-        .get(userId)!,
+      metadata,
     });
   }
 
@@ -320,13 +316,16 @@ export function mockEnv(env: Partial<typeof ENV>) {
     [keyof typeof env, (typeof env)[keyof typeof env]]
   >;
 
-  return entries.reduce(
-    (newEnv, [key, value]) => ({
-      ...newEnv,
-      [key]: jest.replaceProperty(ENV, key, value),
-    }),
-    {} as Record<keyof typeof env, jest.ReplaceProperty<keyof typeof env>>,
-  );
+  const newEnv = {} as Record<
+    keyof typeof env,
+    jest.ReplaceProperty<keyof typeof env>
+  >;
+
+  for (const [key, value] of entries) {
+    newEnv[key] = jest.replaceProperty(ENV, key, value);
+  }
+
+  return newEnv;
 }
 
 export function mockNodeModules() {

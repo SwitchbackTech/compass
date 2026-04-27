@@ -38,7 +38,7 @@ export const categorizeGcalEvents = (events: gSchema$Event[]) => {
 export const getEmailFromUrl = (url: string) => {
   const emailMatch = url.match(/\/calendars\/([^/]+)\/events/);
 
-  if (emailMatch && emailMatch[1]) {
+  if (emailMatch?.[1]) {
     try {
       return decodeURIComponent(emailMatch[1]);
     } catch {

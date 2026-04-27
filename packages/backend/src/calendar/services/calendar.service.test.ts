@@ -207,7 +207,7 @@ describe("CalendarService", () => {
       updatedCalendarList.forEach((c) => {
         const toggled = toggledCalendars.find(({ _id }) => c._id.equals(_id));
 
-        expect(c.selected).toBe(toggled ? false : true);
+        expect(c.selected).toBe(!toggled);
       });
     });
   });

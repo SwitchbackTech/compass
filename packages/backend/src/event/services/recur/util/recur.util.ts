@@ -16,11 +16,7 @@ export const assembleInstances = (
   event: Schema_Event_Core,
   baseId?: string,
 ) => {
-  if (
-    !event.recurrence ||
-    !event.recurrence.rule ||
-    !event.recurrence.rule[0]
-  ) {
+  if (!event.recurrence?.rule?.[0]) {
     throw error(
       GenericError.DeveloperError,
       "Failed to assemble recurring events",
@@ -252,10 +248,8 @@ const _getNextStart = (rule: string, startDate: string, endDate: string) => {
   switch (rule) {
     case RRULE.WEEK:
       return dayjs(startDate).startOfNextWeek();
-      break;
     case RRULE.MONTH:
       return dayjs(endDate).startOfNextMonth();
-      break;
     default:
       throw error(GenericError.DeveloperError, "Failed to get next start");
   }
