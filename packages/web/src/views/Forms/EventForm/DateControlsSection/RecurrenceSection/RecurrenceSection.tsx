@@ -34,7 +34,7 @@ export const RecurrenceSection = ({
   const { hasRecurrence } = recurrenceHook;
   const isRecurrenceDisabled = !authenticated || isBackendUnavailable();
   const disabledMessage = authenticated
-    ? "Start the backend to use recurring events."
+    ? "Recurring events need the Compass backend and MongoDB running."
     : "Sign in to use recurring events.";
 
   return (

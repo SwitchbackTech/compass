@@ -92,7 +92,9 @@ describe("RecurrenceSection", () => {
 
     expect(screen.getByText("Repeat")).toBeInTheDocument();
     expect(
-      screen.getByText("Start the backend to use recurring events."),
+      screen.getByText(
+        "Recurring events need the Compass backend and MongoDB running.",
+      ),
     ).toBeInTheDocument();
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
