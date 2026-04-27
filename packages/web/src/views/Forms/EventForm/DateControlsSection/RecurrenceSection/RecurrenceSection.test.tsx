@@ -4,11 +4,15 @@ import { useCallback, useState } from "react";
 import { ThemeProvider } from "styled-components";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { SessionContext } from "@web/auth/compass/session/SessionProvider";
+import {
+  markBackendUnavailable,
+  resetBackendAvailabilityForTests,
+} from "@web/common/apis/util/backend-unavailable-error.util";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { RecurrenceSection } from "./RecurrenceSection";
-import { describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const baseEvent = (): Schema_GridEvent =>
   assembleGridEvent({
@@ -59,6 +63,10 @@ function renderRecurrenceSection({
 }
 
 describe("RecurrenceSection", () => {
+  beforeEach(() => {
+    resetBackendAvailabilityForTests();
+  });
+
   it("keeps recurrence settings hidden for local users", async () => {
     const user = userEvent.setup();
     const { setEventSpy } = renderRecurrenceSection({ authenticated: false });
@@ -66,6 +74,25 @@ describe("RecurrenceSection", () => {
     expect(screen.getByText("Repeat")).toBeInTheDocument();
     expect(
       screen.getByText("Sign in to use recurring events."),
+    ).toBeInTheDocument();
+    expect(screen.queryByText("Every")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: /repeat/i }));
+
+    expect(screen.queryByText("Every")).not.toBeInTheDocument();
+    expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
+    expect(setEventSpy).not.toHaveBeenCalled();
+  });
+
+  it("keeps recurrence settings hidden when a signed-in user's backend is unavailable", async () => {
+    const user = userEvent.setup();
+    markBackendUnavailable();
+    const { setEventSpy } = renderRecurrenceSection({ authenticated: true });
+
+    expect(screen.getByText("Repeat")).toBeInTheDocument();
+    expect(
+      screen.getByText("Start the backend to use recurring events."),
     ).toBeInTheDocument();
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();

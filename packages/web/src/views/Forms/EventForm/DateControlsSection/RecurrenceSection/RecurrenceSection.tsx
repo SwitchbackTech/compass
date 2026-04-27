@@ -1,6 +1,7 @@
 import { type Dispatch, type SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import {
   type Schema_GridEvent,
@@ -31,13 +32,16 @@ export const RecurrenceSection = ({
   const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
   const { weekDays, interval, freq, until, toggleRecurrence } = recurrenceHook;
   const { hasRecurrence } = recurrenceHook;
-  const isRecurrenceDisabled = !authenticated;
+  const isRecurrenceDisabled = !authenticated || isBackendUnavailable();
+  const disabledMessage = authenticated
+    ? "Start the backend to use recurring events."
+    : "Sign in to use recurring events.";
 
   return (
     <StyledRepeatRow direction={FlexDirections.COLUMN}>
       <RecurrenceToggle
         disabled={isRecurrenceDisabled}
-        disabledMessage="Sign in to use recurring events."
+        disabledMessage={disabledMessage}
         hasRecurrence={hasRecurrence}
         toggleRecurrence={toggleRecurrence}
       />
