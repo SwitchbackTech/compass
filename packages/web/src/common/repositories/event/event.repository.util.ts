@@ -4,7 +4,7 @@
  * Google connection state, remembered auth state, and current session state decide the target.
  * Never call this directly from components; always go through sagas.
  * Start debugging "why isn't this event saving?" here.
- * Related: docs/development/web-state-guide.md
+ * Related: docs/frontend/frontend-runtime-flow.md
  */
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";

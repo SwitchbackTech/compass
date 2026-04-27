@@ -222,10 +222,16 @@ Pitfalls:
 
 The web app uses multiple state layers:
 
-- Redux Toolkit reducers and slices for app and async state
-- redux-saga for network/storage side effects
-- Elf for event entity store, active event, and draft state
-- IndexedDB for local persistence
+| Concern | Use | Key files |
+| --- | --- | --- |
+| Loading states, modal visibility, async status | Redux Toolkit slices | `packages/web/src/ducks/events/slices/` |
+| Async sequences and persistence orchestration | redux-saga | `packages/web/src/ducks/events/sagas/event.sagas.ts` |
+| Event entity CRUD, active event, and draft state | Elf store | `packages/web/src/store/events.ts` |
+| Offline persistence | IndexedDB adapter | `packages/web/src/common/storage/adapter/indexeddb.adapter.ts` |
+| Local vs remote persistence choice | Repository factory | `packages/web/src/common/repositories/event/event.repository.util.ts` |
+
+These layers are intentional. Do not collapse event entities into Redux slices
+or call IndexedDB directly from components.
 
 Read these together for event work:
 
@@ -236,15 +242,19 @@ Read these together for event work:
 
 ## Event Flow
 
-The old "frontend data flow" doc is now folded into this section.
-
 Typical event flow:
 
 1. a route view, hook, or component dispatches a Redux action
 2. redux-saga handles the async side effect
 3. the selected repository writes locally or remotely
-4. reducers and/or Elf stores update client state
-5. SSE events can trigger refetch or metadata refresh later
+4. the saga updates the Elf event store
+5. Redux slices update async status
+6. React re-renders from observables/selectors
+7. SSE events can trigger refetch or metadata refresh later
+
+Creation uses optimistic events: the UI may show a temporary `_id` before the
+repository returns the durable event. Do not store optimistic ids in other state
+or treat them as stable.
 
 Important consequence:
 
