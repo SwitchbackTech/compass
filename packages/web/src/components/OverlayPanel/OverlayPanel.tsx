@@ -35,18 +35,18 @@ export const OverlayPanel = ({
   );
 
   const panelClasses = clsx("flex flex-col items-center", {
-    "w-[400px] max-w-[90vw] gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]":
+    "bg-panel-bg w-[400px] max-w-[90vw] gap-6 rounded-xl p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]":
       variant === "modal",
-    "max-w-sm gap-3 rounded-lg border border-border-primary bg-bg-secondary/90 px-6 py-5 shadow-lg":
+    "border-border-primary bg-bg-secondary/90 max-w-sm gap-3 rounded-lg border px-6 py-5 shadow-lg":
       variant === "status",
   });
 
   const titleClasses = clsx(
-    "m-0 line-clamp-2 w-full min-w-0 font-semibold text-lg text-text-lighter",
+    "text-text-lighter m-0 w-full min-w-0 line-clamp-2 text-lg font-semibold",
   );
 
   const messageClasses = clsx(
-    "m-0 whitespace-pre-line text-base text-text-lighter",
+    "text-text-lighter m-0 text-base whitespace-pre-line",
   );
 
   const handleBackdropClick = (e: React.MouseEvent) => {

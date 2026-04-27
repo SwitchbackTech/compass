@@ -1,4 +1,4 @@
-import { type FC } from "react";
+import React, { type FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";

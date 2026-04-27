@@ -35,14 +35,14 @@ export const ShortcutsOverlay = ({
       aria-label={ariaLabel}
       role="complementary"
       className={classNames(
-        "fixed top-24 left-3 border-border-primary bg-bg-secondary",
+        "bg-bg-secondary border-border-primary fixed top-24 left-3",
         "border p-3 shadow-lg backdrop-blur-sm md:block",
         `hidden w-[240px] rounded-lg ${className}`,
       )}
       style={{ zIndex: maxZIndex }}
     >
       {heading && (
-        <div className="mb-2 font-medium text-text-lighter text-xs">
+        <div className="text-text-lighter mb-2 text-xs font-medium">
           {heading}
         </div>
       )}

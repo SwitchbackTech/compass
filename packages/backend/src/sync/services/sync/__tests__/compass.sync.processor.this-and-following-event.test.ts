@@ -645,7 +645,7 @@ describe.each([
                 newInstances.forEach(async (instance) => {
                   const gEvent = await testCompassEventInGcal(instance);
 
-                  expect(gEvent.extendedProperties?.private?.priority).toBe(
+                  expect(gEvent.extendedProperties?.private?.["priority"]).toBe(
                     updatedPayload.priority,
                   );
                 });
@@ -685,7 +685,7 @@ describe.each([
                 updatedInstances.forEach(async (instance) => {
                   const gEvent = await testCompassEventInGcal(instance);
 
-                  expect(gEvent.extendedProperties?.private?.priority).toBe(
+                  expect(gEvent.extendedProperties?.private?.["priority"]).toBe(
                     updatedPayload.priority,
                   );
                 });

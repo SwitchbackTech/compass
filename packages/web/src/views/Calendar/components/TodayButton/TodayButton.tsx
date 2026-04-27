@@ -19,9 +19,8 @@ export const TodayButton = ({
         shortcut="T"
       >
         <button
-          className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20 focus:bg-white/20 focus:outline-none focus:ring-2 focus:ring-white/50"
+          className="flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:bg-white/20 focus:bg-white/20 focus:ring-2 focus:ring-white/50 focus:outline-none"
           aria-label="Go to today"
-          type="button"
         >
           <CircleIcon />
         </button>

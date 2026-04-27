@@ -310,7 +310,7 @@ describe("EventInViewParser", () => {
       const parser = new EventInViewParser(event, startOfView, endOfView);
 
       expect(parser.isEventInView()).toBe(true);
-      expect(parser.isSpanningView).toBe(true);
+      expect(parser["isSpanningView"]).toBe(true);
     });
 
     it("should handle events with missing _id", () => {

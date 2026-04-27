@@ -65,8 +65,7 @@ export const Task = ({
         }}
         onKeyDown={(e) => onCheckboxKeyDown(e, task._id, task.title)}
         onClick={() => onStatusToggle(task._id)}
-        className="mt-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-200"
-        type="button"
+        className="mt-1 rounded-full focus:ring-2 focus:ring-blue-200 focus:outline-none"
       >
         <TaskCircleIcon status={task.status} />
       </button>
@@ -78,8 +77,8 @@ export const Task = ({
           id={`task-input-${task._id}`}
           name={`task-title-${task._id}`}
           className={classNames(
-            "w-full text-sm text-white-100 outline-none",
-            "border-transparent border-b bg-transparent",
+            "text-white-100 w-full text-sm outline-none",
+            "border-b border-transparent bg-transparent",
             { "border-white/20": isEditing },
           )}
           type="text"

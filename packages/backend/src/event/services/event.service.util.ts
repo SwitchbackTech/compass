@@ -58,11 +58,11 @@ export const getReadAllFilter = (
   const filter: Filter<Omit<Schema_Event, "_id">> = { user: userId };
 
   // Add isSomeday condition
-  filter.isSomeday = isSomeday;
+  filter["isSomeday"] = isSomeday;
 
   // Add priorities if specified
   if (priorities) {
-    filter.priorities = { $in: priorities.split(",") };
+    filter["priorities"] = { $in: priorities.split(",") };
   }
 
   // Add date filters if specified

@@ -73,15 +73,15 @@ export const StatusDotPopover = ({
                 ...floatingStyles,
                 zIndex: maxZIndex + ZIndex.LAYER_3,
               }}
-              className="flex max-w-xs flex-col gap-3 rounded-lg border border-border-primary bg-bg-secondary/90 p-4 shadow-lg"
+              className="border-border-primary bg-bg-secondary/90 flex max-w-xs flex-col gap-3 rounded-lg border p-4 shadow-lg"
               aria-label={displayTitle}
               {...getFloatingProps()}
             >
-              <h3 className="m-0 font-semibold text-sm text-text-lighter">
+              <h3 className="text-text-lighter m-0 text-sm font-semibold">
                 {displayTitle}
               </h3>
               {!isRepairing && (
-                <p className="m-0 text-sm text-text-lighter">{description}</p>
+                <p className="text-text-lighter m-0 text-sm">{description}</p>
               )}
               {isRepairing ? (
                 <button
@@ -93,7 +93,7 @@ export const StatusDotPopover = ({
                 </button>
               ) : (
                 <button
-                  className="self-start rounded bg-bg-accent px-3 py-1.5 font-medium text-sm text-text-light hover:bg-bg-accent/80"
+                  className="bg-bg-accent text-text-light hover:bg-bg-accent/80 self-start rounded px-3 py-1.5 text-sm font-medium"
                   onClick={onRepair}
                   type="button"
                 >

@@ -5,7 +5,7 @@ import { isDev } from "@core/util/env.util";
 
 const logger = Logger("app:constants");
 
-const _nodeEnv = process.env.NODE_ENV as NodeEnv;
+const _nodeEnv = process.env["NODE_ENV"] as NodeEnv;
 
 if (!Object.values(NodeEnv).includes(_nodeEnv)) {
   throw new Error(`Invalid NODE_ENV value: '${_nodeEnv}'`);
@@ -85,27 +85,27 @@ export const isGoogleConfigured = (
 ): boolean => Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
 
 export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
-  const nodeEnv = rawEnv.NODE_ENV as NodeEnv;
+  const nodeEnv = rawEnv["NODE_ENV"] as NodeEnv;
 
   return EnvSchema.parse({
-    BASEURL: rawEnv.BASEURL,
-    CHANNEL_EXPIRATION_MIN: rawEnv.CHANNEL_EXPIRATION_MIN,
-    GOOGLE_CLIENT_ID: rawEnv.GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET: rawEnv.GOOGLE_CLIENT_SECRET,
+    BASEURL: rawEnv["BASEURL"],
+    CHANNEL_EXPIRATION_MIN: rawEnv["CHANNEL_EXPIRATION_MIN"],
+    GOOGLE_CLIENT_ID: rawEnv["GOOGLE_CLIENT_ID"],
+    GOOGLE_CLIENT_SECRET: rawEnv["GOOGLE_CLIENT_SECRET"],
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
-    EMAILER_SECRET: rawEnv.EMAILER_API_SECRET,
-    EMAILER_USER_TAG_ID: rawEnv.EMAILER_USER_TAG_ID,
-    FRONTEND_URL: rawEnv.FRONTEND_URL,
-    GCAL_WEBHOOK_BASEURL: rawEnv.GCAL_WEBHOOK_BASEURL,
-    MONGO_URI: rawEnv.MONGO_URI,
+    EMAILER_SECRET: rawEnv["EMAILER_API_SECRET"],
+    EMAILER_USER_TAG_ID: rawEnv["EMAILER_USER_TAG_ID"],
+    FRONTEND_URL: rawEnv["FRONTEND_URL"],
+    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"],
+    MONGO_URI: rawEnv["MONGO_URI"],
     NODE_ENV: nodeEnv,
-    TZ: rawEnv.TZ,
-    ORIGINS_ALLOWED: rawEnv.CORS ? rawEnv.CORS.split(",") : [],
-    PORT: rawEnv.PORT,
-    SUPERTOKENS_URI: rawEnv.SUPERTOKENS_URI,
-    SUPERTOKENS_KEY: rawEnv.SUPERTOKENS_KEY,
-    TOKEN_GCAL_NOTIFICATION: rawEnv.TOKEN_GCAL_NOTIFICATION,
-    TOKEN_COMPASS_SYNC: rawEnv.TOKEN_COMPASS_SYNC,
+    TZ: rawEnv["TZ"],
+    ORIGINS_ALLOWED: rawEnv["CORS"] ? rawEnv["CORS"].split(",") : [],
+    PORT: rawEnv["PORT"],
+    SUPERTOKENS_URI: rawEnv["SUPERTOKENS_URI"],
+    SUPERTOKENS_KEY: rawEnv["SUPERTOKENS_KEY"],
+    TOKEN_GCAL_NOTIFICATION: rawEnv["TOKEN_GCAL_NOTIFICATION"],
+    TOKEN_COMPASS_SYNC: rawEnv["TOKEN_COMPASS_SYNC"],
   });
 }
 

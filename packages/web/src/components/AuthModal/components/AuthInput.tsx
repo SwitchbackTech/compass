@@ -35,7 +35,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
         {showLabel && (
           <label
             htmlFor={inputId}
-            className="font-medium text-sm text-text-lighter"
+            className="text-text-lighter text-sm font-medium"
           >
             {label}
           </label>
@@ -57,7 +57,7 @@ export const AuthInput = forwardRef<HTMLInputElement, AuthInputProps>(
           {...inputProps}
         />
         {showError && (
-          <span id={errorId} className="text-sm text-status-error" role="alert">
+          <span id={errorId} className="text-status-error text-sm" role="alert">
             {error}
           </span>
         )}

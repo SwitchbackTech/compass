@@ -16,11 +16,10 @@ export const ArrowButton = ({
 
   return (
     <button
-      className={`flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:${hoverColor} focus:${hoverColor} focus:outline-none focus:ring-2 focus:ring-white/50`}
+      className={`flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:${hoverColor} focus:${hoverColor} focus:ring-2 focus:ring-white/50 focus:outline-none`}
       aria-label={label}
       onClick={onClick}
       tabIndex={tabIndex}
-      type="button"
     >
       {direction === "left" ? <ChevronLeftIcon /> : <ChevronRightIcon />}
     </button>

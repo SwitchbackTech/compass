@@ -8,7 +8,7 @@ describe("TooltipWrapper", () => {
   it("renders children", () => {
     render(
       <TooltipWrapper>
-        <button type="button">My Button</button>
+        <button>My Button</button>
       </TooltipWrapper>,
     );
     expect(
@@ -20,7 +20,7 @@ describe("TooltipWrapper", () => {
     const user = userEvent.setup();
     render(
       <TooltipWrapper description="Tooltip info">
-        <button type="button">Info</button>
+        <button>Info</button>
       </TooltipWrapper>,
     );
     // Open tooltip by hovering
@@ -35,7 +35,7 @@ describe("TooltipWrapper", () => {
     const user = userEvent.setup();
     render(
       <TooltipWrapper shortcut="Ctrl+S">
-        <button type="button">Save</button>
+        <button>Save</button>
       </TooltipWrapper>,
     );
     const button = screen.getByRole("button", { name: /save/i });
@@ -49,7 +49,7 @@ describe("TooltipWrapper", () => {
     const user = userEvent.setup();
     render(
       <TooltipWrapper shortcut={<span data-testid="shortcut-node">ALT+A</span>}>
-        <button type="button">Action</button>
+        <button>Action</button>
       </TooltipWrapper>,
     );
     const button = screen.getByRole("button", { name: /action/i });
@@ -63,7 +63,7 @@ describe("TooltipWrapper", () => {
     const onClick = mock();
     render(
       <TooltipWrapper onClick={onClick}>
-        <button type="button">ClickMe</button>
+        <button>ClickMe</button>
       </TooltipWrapper>,
     );
     fireEvent.click(screen.getByRole("button", { name: /clickme/i }));
@@ -74,7 +74,7 @@ describe("TooltipWrapper", () => {
     const onClick = mock();
     render(
       <TooltipWrapper disabled onClick={onClick}>
-        <button type="button">Disabled</button>
+        <button>Disabled</button>
       </TooltipWrapper>,
     );
 
@@ -87,7 +87,7 @@ describe("TooltipWrapper", () => {
     const user = userEvent.setup();
     render(
       <TooltipWrapper description="Hidden text">
-        <button type="button">Open</button>
+        <button>Open</button>
       </TooltipWrapper>,
     );
     expect(screen.queryByText("Hidden text")).not.toBeInTheDocument();

@@ -60,8 +60,7 @@ export const CleanupView = () => {
           </div>
           <button
             onClick={handleRedirect}
-            className="rounded-sm bg-accent-primary px-6 py-3 text-white transition-colors hover:bg-accent-primary/90"
-            type="button"
+            className="bg-accent-primary hover:bg-accent-primary/90 rounded-sm px-6 py-3 text-white transition-colors"
           >
             Continue to Home
           </button>
@@ -69,7 +68,7 @@ export const CleanupView = () => {
       )}
 
       {error && (
-        <div className="p-8 text-center text-text-lighter text-xl">{error}</div>
+        <div className="text-text-lighter p-8 text-center text-xl">{error}</div>
       )}
     </div>
   );

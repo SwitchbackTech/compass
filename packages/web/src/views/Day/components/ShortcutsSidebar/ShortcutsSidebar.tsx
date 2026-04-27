@@ -35,13 +35,13 @@ export const ShortcutsSidebar = ({
       aria-label="Shortcuts sidebar"
       className={classNames(
         "fixed top-24 left-3 hidden flex-col xl:flex",
-        "border-border-primary bg-bg-secondary",
+        "bg-bg-secondary border-border-primary",
         "w-[240px] rounded-lg border p-3 shadow-lg backdrop-blur-sm",
         "transition-all duration-300 ease-out",
         isVisible ? "translate-x-0 opacity-100" : "-translate-x-4 opacity-0",
       )}
     >
-      <div className="mb-2 font-medium text-text-lighter text-xs">
+      <div className="text-text-lighter mb-2 text-xs font-medium">
         Shortcuts
       </div>
       {visibleSections.map((section) => (

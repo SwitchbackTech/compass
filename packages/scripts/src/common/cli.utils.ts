@@ -12,7 +12,7 @@ export const getApiBaseUrl = async (
 
   if (category === "local") {
     const baseUrl: string = (
-      process.env.BASEURL || `http://localhost:3000/api`
+      process.env["BASEURL"] || `http://localhost:3000/api`
     ).replace(/\/$/, "");
     return baseUrl;
   }

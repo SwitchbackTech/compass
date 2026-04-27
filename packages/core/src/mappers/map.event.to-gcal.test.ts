@@ -62,7 +62,7 @@ describe("toGcal", () => {
       endDate: "2021-01-02",
       priority: Priorities.WORK,
     });
-    expect(gcalEvent.extendedProperties?.private?.priority).toBe(
+    expect(gcalEvent.extendedProperties?.private?.["priority"]).toBe(
       Priorities.WORK,
     );
   });
@@ -75,7 +75,7 @@ describe("toGcal", () => {
       startDate: "2021-01-01",
       endDate: "2021-01-02",
     });
-    expect(gcalEvent.extendedProperties?.private?.priority).toBe(
+    expect(gcalEvent.extendedProperties?.private?.["priority"]).toBe(
       Priorities.UNASSIGNED,
     );
   });
@@ -88,6 +88,8 @@ describe("toGcal", () => {
       startDate: "2021-01-01",
       endDate: "2021-01-02",
     });
-    expect(gcalEvent.extendedProperties?.private?.origin).toBe(Origin.UNSURE);
+    expect(gcalEvent.extendedProperties?.private?.["origin"]).toBe(
+      Origin.UNSURE,
+    );
   });
 });

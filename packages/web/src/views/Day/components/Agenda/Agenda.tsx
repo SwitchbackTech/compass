@@ -119,23 +119,23 @@ export function Agenda() {
     <>
       <section
         aria-label="Calendar agenda"
-        className="flex h-full min-w-xs flex-1 flex-col gap-2 bg-bg-primary p-0.5"
+        className="bg-bg-primary flex h-full min-w-xs flex-1 flex-col gap-2 p-0.5"
       >
         <AllDayAgendaEvents interactions={interactions} />
 
         {showProgressLine ? (
           <LoadingProgressLine />
         ) : (
-          <div className="h-0.5 border-gray-400/20 border-t" />
+          <div className="h-0.5 border-t border-gray-400/20" />
         )}
 
         <div
           id={ID_GRID_EVENTS_TIMED}
           ref={timedEventsContainerRef}
           className={classNames(
-            "relative mt-1 flex flex-1 overflow-y-auto overflow-x-hidden",
+            "relative mt-1 flex flex-1 overflow-x-hidden overflow-y-auto",
             "focus:outline-none focus-visible:rounded focus-visible:ring-2",
-            "focus-visible:outline-none focus-visible:ring-yellow-200",
+            "focus-visible:ring-yellow-200 focus-visible:outline-none",
             "select-none",
           )}
           data-testid="calendar-scroll"

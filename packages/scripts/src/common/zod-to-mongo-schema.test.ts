@@ -209,7 +209,7 @@ describe("zodToMongoSchema", () => {
         (zInput): JSONSchema.BaseSchema | null => {
           if (zInput === zCustomDate) {
             return {
-              bsonType: "date",
+              ["bsonType"]: "date",
             };
           }
 

@@ -32,17 +32,17 @@ export const AuthButton: FC<AuthButtonProps> = ({
       disabled={isDisabled}
       className={clsx(
         "rounded-3xl text-sm transition-all duration-150",
-        "focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent",
+        "focus:ring-2 focus:ring-offset-2 focus:ring-offset-transparent focus:outline-none",
         isDisabled ? "cursor-not-allowed" : "cursor-pointer",
         {
           // Primary variant
-          "h-10 w-full bg-accent-primary px-4 text-white focus:ring-accent-primary":
+          "bg-accent-primary focus:ring-accent-primary h-10 w-full px-4 text-white":
             variant === "primary",
           "hover:brightness-110": variant === "primary" && !isDisabled,
           "opacity-50": variant === "primary" && isDisabled,
 
           // Secondary variant
-          "h-10 w-full bg-bg-secondary px-4 text-text-lighter":
+          "bg-bg-secondary text-text-lighter h-10 w-full px-4":
             variant === "secondary",
           "hover:bg-bg-tertiary": variant === "secondary" && !isDisabled,
 
@@ -53,7 +53,7 @@ export const AuthButton: FC<AuthButtonProps> = ({
             variant === "outline" && !isDisabled,
 
           // Link variant
-          "px-0 py-0 text-text-light hover:text-text-lighter":
+          "text-text-light hover:text-text-lighter px-0 py-0":
             variant === "link",
           "hover:underline": variant === "link" && !isDisabled,
         },

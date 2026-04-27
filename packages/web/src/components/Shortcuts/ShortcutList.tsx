@@ -10,7 +10,7 @@ export const ShortcutList = ({ shortcuts }: { shortcuts: Shortcut[] }) => {
       {shortcuts.map((it) => (
         <li
           key={it.k}
-          className="flex items-center gap-2 text-text-lighter text-xs"
+          className="text-text-lighter flex items-center gap-2 text-xs"
         >
           <ShortcutHint>
             <ShortCutLabel k={it.k} />

@@ -61,7 +61,7 @@ export function AgendaEventPreview({
         role="dialog"
         aria-labelledby="event-title"
         aria-describedby={event?.description ? "event-description" : undefined}
-        className="min-w-64 max-w-80 rounded-lg p-4 shadow-lg"
+        className="max-w-80 min-w-64 rounded-lg p-4 shadow-lg"
         style={{
           ...floating.context.floatingStyles,
           backgroundColor: darkPriorityColor,
@@ -71,7 +71,7 @@ export function AgendaEventPreview({
         <div className="space-y-2">
           <h3
             id="event-title"
-            className={`font-semibold text-sm ${
+            className={`text-sm font-semibold ${
               shouldUseLightText ? "text-text-lighter" : "text-text-dark"
             }`}
           >
@@ -79,7 +79,7 @@ export function AgendaEventPreview({
           </h3>
           {timeDisplay && (
             <time
-              className={`font-medium text-xs ${
+              className={`text-xs font-medium ${
                 shouldUseLightText ? "text-text-lighter/90" : "text-text-dark"
               }`}
               dateTime={event?.startDate}

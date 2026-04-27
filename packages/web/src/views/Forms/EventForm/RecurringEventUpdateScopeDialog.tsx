@@ -8,7 +8,7 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
-import { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
