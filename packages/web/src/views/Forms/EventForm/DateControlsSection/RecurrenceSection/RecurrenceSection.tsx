@@ -32,9 +32,10 @@ export const RecurrenceSection = ({
   const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
   const { weekDays, interval, freq, until, toggleRecurrence } = recurrenceHook;
   const { hasRecurrence } = recurrenceHook;
-  const isRecurrenceDisabled = !authenticated || isBackendUnavailable();
-  const disabledMessage = authenticated
-    ? "Recurring events need the Compass backend and MongoDB running."
+  const isBackendDown = isBackendUnavailable();
+  const isRecurrenceDisabled = !authenticated || isBackendDown;
+  const disabledMessage = isBackendDown
+    ? "Start the Compass backend and MongoDB to use recurring events."
     : "Sign in to use recurring events.";
 
   return (
