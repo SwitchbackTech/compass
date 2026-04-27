@@ -15,7 +15,7 @@ export const NoTaskAvailable = ({
   return (
     <div className="flex flex-col items-center gap-6">
       <div className="flex flex-col items-center gap-4">
-        <p className="text-2xl font-semibold text-white">
+        <p className="font-semibold text-2xl text-white">
           {allCompleted
             ? "All tasks completed for today!"
             : "You don't have any task scheduled."}
@@ -28,7 +28,8 @@ export const NoTaskAvailable = ({
       </div>
       <button
         onClick={handleNavigateToDay}
-        className="rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-white transition-colors hover:bg-white/10 focus:ring-2 focus:ring-white/50 focus:outline-none"
+        className="rounded-lg border border-white/10 bg-white/5 px-6 py-3 text-white transition-colors hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-white/50"
+        type="button"
       >
         Go to Day view
       </button>

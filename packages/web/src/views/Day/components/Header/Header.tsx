@@ -29,7 +29,7 @@ export const Header: FC<Props> = ({
   useReminderHotkey(handleFocusReminder, [handleFocusReminder], showReminder);
 
   return (
-    <div className="text-text-light relative flex h-20 w-full items-baseline justify-between">
+    <div className="relative flex h-20 w-full items-baseline justify-between text-text-light">
       <TooltipWrapper
         description={isSidebarOpen ? "Hide shortcuts" : "Show shortcuts"}
         onClick={onToggleSidebar}

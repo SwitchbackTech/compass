@@ -1,4 +1,4 @@
-import React, {
+import {
   type ForwardRefRenderFunction,
   forwardRef,
   type HTMLAttributes,

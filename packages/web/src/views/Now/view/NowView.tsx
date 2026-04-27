@@ -38,7 +38,7 @@ export const NowView = () => {
           onToggleSidebar={toggleSidebar}
         />
 
-        <div className="from-bg-bg-primary via-bg-bg-secondary to-bg-bg-primary flex w-full flex-1 justify-center gap-8 overflow-hidden bg-gradient-to-b xl:max-w-3/4 xl:self-center">
+        <div className="flex w-full flex-1 justify-center gap-8 overflow-hidden bg-gradient-to-b from-bg-bg-primary via-bg-bg-secondary to-bg-bg-primary xl:max-w-3/4 xl:self-center">
           <NowViewContent />
         </div>
       </StyledCalendar>

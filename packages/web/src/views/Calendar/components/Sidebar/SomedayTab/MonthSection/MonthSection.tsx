@@ -1,4 +1,4 @@
-import React, { type FC } from "react";
+import { type FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { getMonthListLabel } from "@web/common/utils/event/event.util";
 import { AlignItems, JustifyContent } from "@web/components/Flex/styled";

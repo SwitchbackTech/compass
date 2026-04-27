@@ -42,7 +42,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
 
   return (
     <>
-      <div className="text-text-light relative flex h-20 w-full items-baseline justify-between">
+      <div className="relative flex h-20 w-full items-baseline justify-between text-text-light">
         <TooltipWrapper
           description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
           onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
@@ -57,7 +57,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
           />
         </TooltipWrapper>
         <div className="z-[2] flex items-center justify-between">
-          <div aria-level={1} className="text-text-light pl-5" role="heading">
+          <div aria-level={1} className="pl-5 text-text-light" role="heading">
             <Text size="xl">{headerLabel}</Text>
           </div>
         </div>
@@ -76,7 +76,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
                   shortcut="J"
                 >
                   <Text
-                    className="flex h-[30px] w-[30px] items-center justify-center transition-[filter] duration-[350ms] ease-out select-none hover:rounded-full hover:brightness-[1.6]"
+                    className="flex h-[30px] w-[30px] select-none items-center justify-center transition-[filter] duration-[350ms] ease-out hover:rounded-full hover:brightness-[1.6]"
                     cursor="pointer"
                     role="navigation"
                     size="xxl"
@@ -91,7 +91,7 @@ export const Header: FC<Props> = ({ scrollUtil, today, weekProps }) => {
                   shortcut="K"
                 >
                   <Text
-                    className="flex h-[30px] w-[30px] items-center justify-center transition-[filter] duration-[350ms] ease-out select-none hover:rounded-full hover:brightness-[1.6]"
+                    className="flex h-[30px] w-[30px] select-none items-center justify-center transition-[filter] duration-[350ms] ease-out hover:rounded-full hover:brightness-[1.6]"
                     cursor="pointer"
                     role="navigation"
                     size="xxl"

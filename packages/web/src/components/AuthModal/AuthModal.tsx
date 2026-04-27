@@ -153,7 +153,7 @@ export const AuthModal: FC = () => {
           />
         )}
         {showSubmitError ? (
-          <p className="text-status-error text-center text-sm" role="alert">
+          <p className="text-center text-sm text-status-error" role="alert">
             {submitError}
           </p>
         ) : null}
@@ -161,9 +161,9 @@ export const AuthModal: FC = () => {
         {showAuthSwitch && (
           <>
             <div className="flex items-center gap-3">
-              <div className="bg-border-primary h-px flex-1" />
-              <span className="text-text-light text-sm">or</span>
-              <div className="bg-border-primary h-px flex-1" />
+              <div className="h-px flex-1 bg-border-primary" />
+              <span className="text-sm text-text-light">or</span>
+              <div className="h-px flex-1 bg-border-primary" />
             </div>
             <AuthButton
               type="button"
@@ -178,9 +178,9 @@ export const AuthModal: FC = () => {
         {showGoogleAuth ? (
           <>
             <div className="flex items-center gap-3">
-              <div className="bg-border-primary h-px flex-1" />
-              <span className="text-text-light text-sm">or</span>
-              <div className="bg-border-primary h-px flex-1" />
+              <div className="h-px flex-1 bg-border-primary" />
+              <span className="text-sm text-text-light">or</span>
+              <div className="h-px flex-1 bg-border-primary" />
             </div>
             <GoogleButton
               onClick={handleGoogleSignIn}
@@ -190,7 +190,7 @@ export const AuthModal: FC = () => {
           </>
         ) : null}
         {/* Privacy & Terms links */}
-        <div className="text-text-light-inactive flex items-center justify-center text-center text-xs">
+        <div className="flex items-center justify-center text-center text-text-light-inactive text-xs">
           <a
             href="https://www.compasscalendar.com/terms"
             target="_blank"
