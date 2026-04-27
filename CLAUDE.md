@@ -1,6 +1,6 @@
 # Compass Calendar — Claude Code Instructions
 
-Compass is a React/TypeScript monorepo with four packages: `web` (React frontend), `backend` (Express + MongoDB), `core` (shared types/utils), `scripts` (CLI + build tools). Managed with Bun. Read [AGENTS.md](./AGENTS.md) for the authoritative rules. Read [docs/development/agent-onboarding.md](./docs/development/agent-onboarding.md) for the recommended reading order.
+Compass is a React/TypeScript monorepo with four packages: `web` (React frontend), `backend` (Express + MongoDB), `core` (shared types/utils), `scripts` (CLI + build tools). Managed with Bun. Read [AGENTS.md](./AGENTS.md) for the authoritative rules and [docs/README.md](./docs/README.md) for the docs index.
 
 ## Verify Commands
 
@@ -33,7 +33,7 @@ Things that are easy to get wrong in this codebase:
 
 1. **Never run `bun run test` bare** — in restricted environments it tries to download MongoDB binaries and hangs. Always use `test:core`, `test:web`, `test:backend`, or `test:scripts`.
 
-2. **The 4-layer web state is intentional** — Redux slices + redux-saga + Elf store + IndexedDB are not an inconsistency to fix. See [web-state-guide.md](./docs/development/web-state-guide.md) for when each layer is used.
+2. **The 4-layer web state is intentional** — Redux slices + redux-saga + Elf store + IndexedDB are not an inconsistency to fix. See [frontend-runtime-flow.md](./docs/frontend/frontend-runtime-flow.md) for when each layer is used.
 
 3. **Never create barrel (`index.ts`) files** — explicitly prohibited. Use direct named imports.
 
@@ -63,7 +63,7 @@ The web package has four intentional layers:
 | Offline persistence (events, tasks)              | IndexedDB via adapter         | `packages/web/src/common/storage/adapter/indexeddb.adapter.ts` |
 | Session/auth                                     | SuperTokens + SessionProvider | `packages/web/src/auth/session/SessionProvider.tsx`            |
 
-Full guide: [docs/development/web-state-guide.md](./docs/development/web-state-guide.md)
+Full guide: [docs/frontend/frontend-runtime-flow.md](./docs/frontend/frontend-runtime-flow.md)
 
 ## Docs Map
 
@@ -73,5 +73,5 @@ Full guide: [docs/development/web-state-guide.md](./docs/development/web-state-g
 | How do I safely implement Y?                 | [docs/development/common-change-recipes.md](./docs/development/common-change-recipes.md) |
 | How do I write tests?                        | [docs/development/testing-playbook.md](./docs/development/testing-playbook.md)           |
 | How does the package structure work?         | [docs/architecture/repo-architecture.md](./docs/architecture/repo-architecture.md)       |
-| What are the requirements for feature Z?     | `docs/requirements/<feature>.md`                                                         |
+| What should feature Z satisfy?               | `docs/acceptance/<feature>.md`                                                           |
 | How does Google sync / offline storage work? | `docs/features/`                                                                         |

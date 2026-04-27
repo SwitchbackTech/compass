@@ -1,4 +1,4 @@
-# Auth Manual Testing
+# Auth Acceptance
 
 This runbook covers the auth UX that is currently implemented in Compass.
 

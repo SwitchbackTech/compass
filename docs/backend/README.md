@@ -1,10 +1,12 @@
 # Compass Backend
 
-Backend service for auth/session management, event persistence, Google sync, and SSE notifications.
+Backend service for auth/session management, event persistence, Google sync,
+and SSE notifications.
 
 ## Intent
 
-The current production integration is Google Calendar, but backend code should move toward provider-agnostic boundaries over time.
+The current production integration is Google Calendar, but backend code should
+move toward provider-agnostic boundaries over time.
 
 When changing sync or auth logic:
 
@@ -12,39 +14,45 @@ When changing sync or auth logic:
 - keep Google-specific behavior inside sync/auth service layers
 - preserve Compass-local event behavior when Google credentials are missing
 
-## Source Anchors
+## Route Map
 
-- Entry points:
-  - `packages/backend/src/app.ts`
-  - `packages/backend/src/servers/express/express.server.ts`
-- Route registration:
-  - `packages/backend/src/**/*routes.config.ts`
-- Shared error handling:
-  - `packages/backend/src/common/errors/handlers/error.express.handler.ts`
-- Realtime notifications:
-  - `packages/backend/src/servers/sse/sse.server.ts`
+Backend routes are registered from
+`packages/backend/src/servers/express/express.server.ts`.
 
-## Primary Backend Workflows
+| Area | Source | Notes |
+| --- | --- | --- |
+| Health | `packages/backend/src/health/health.routes.config.ts` | `GET /api/health` is unauthenticated and checks Mongo reachability. |
+| Config | `packages/backend/src/config/config.routes.config.ts` | Public runtime config used by the web app. |
+| Auth | `packages/backend/src/auth/auth.routes.config.ts` | Compass-owned auth helpers and authenticated Google connect. SuperTokens also mounts recipe routes under `/api`. |
+| User | `packages/backend/src/user/user.routes.config.ts` | Profile and metadata for the active session. |
+| Priority | `packages/backend/src/priority/priority.routes.config.ts` | Priority CRUD for authenticated users. |
+| Events | `packages/backend/src/event/event.routes.config.ts` | Event CRUD and reorder/delete helpers. |
+| Event stream | `packages/backend/src/events/events.routes.config.ts` | Authenticated SSE stream at `GET /api/events/stream`. |
+| Sync | `packages/backend/src/sync/sync.routes.config.ts` | Google import, maintenance, debug, and notification routes. |
+| Calendars | `packages/backend/src/calendar/calendar.routes.config.ts` | Calendar list and selection routes. |
 
-### Auth and Session
+Use source files as the exhaustive route list. This page keeps the behavior
+that is easiest to misunderstand.
 
-- SuperTokens recipes are initialized in:
-  - `packages/backend/src/common/middleware/supertokens.middleware.ts`
-- Recipe overrides in:
-  - `packages/backend/src/common/middleware/supertokens.middleware.handlers.ts`
+## Auth And Session Boundaries
+
+SuperTokens recipes are initialized in
+`packages/backend/src/common/middleware/supertokens.middleware.ts`.
 
 Important runtime behavior:
 
 - password sign-up/sign-in upserts Compass users (`userService.upsertUserFromAuth`)
 - sign-out delegates cleanup to `userService.handleLogoutCleanup(...)`
-  - if the user has Google connection data, metadata marks incremental sync as `RESTART`
-  - if this is the last active session, backend stops Google watches for that user
-  - sign-out response still returns even if cleanup logging reports an error
+- sign-out response still returns even if cleanup logging reports an error
+- `GET /api/health` is intentionally unauthenticated
+- most user data routes require `verifySession()`
 
-### Event Writes and Sync
+## Event Writes
 
 - Event writes route through the Compass sync processor and can apply Google side effects.
 - Missing Google refresh token does not block Compass-local event writes; Google side effects are skipped.
+- Controllers use the shared `res.promise(...)` response helper and centralized
+  error handling.
 
 Key files:
 
@@ -52,10 +60,11 @@ Key files:
 - `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
 - `packages/backend/src/sync/services/sync.service.ts`
 
-### Google Notification Ingress
+## Google Notification Ingress
 
 - endpoint: `POST /api/sync/gcal/notifications`
 - source: `packages/backend/src/sync/controllers/sync.controller.ts`
+- middleware: `authMiddleware.verifyIsFromGoogle`
 
 Observed outcomes include:
 
@@ -64,7 +73,19 @@ Observed outcomes include:
 - `204` for missing-sync-token recovery paths
 - `410` revoked/missing-token responses when Google data is pruned
 
-## Operational Notes
+## SSE Stream
+
+The web app opens `GET /api/events/stream` with the active SuperTokens session
+cookie. The backend subscribes that response to per-user fan-out and immediately
+pushes `USER_METADATA`.
+
+Primary files:
+
+- `packages/backend/src/events/controllers/events.controller.ts`
+- `packages/backend/src/servers/sse/sse.server.ts`
+- `packages/core/src/constants/sse.constants.ts`
+
+## Operational Contracts
 
 - Watch shutdown and cleanup are intentionally idempotent:
   - stale/missing Google channels are deleted locally and processing continues
@@ -76,6 +97,5 @@ Observed outcomes include:
 ## Related Docs
 
 - [Backend Request Flow](./backend-request-flow.md)
-- [Compass API Documentation](./api-documentation.md)
 - [Backend Error Handling](./backend-error-handling.md)
 - [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md)

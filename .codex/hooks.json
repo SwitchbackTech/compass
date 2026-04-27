@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bunx biome format --write --changed --since=main --no-errors-on-unmatched",
+            "timeout": 60,
+            "statusMessage": "Formatting branch changes"
+          }
+        ]
+      }
+    ]
+  }
+}

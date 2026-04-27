@@ -1,58 +1,44 @@
 # Glossary
 
-Definition of terms used in the source code and documentation.
+Compass-specific terms used in the source code and docs.
 
 ## Events
 
-**Standalone Event**: An event that has a datetime and is NOT recurring. It represents a single occurrence.
+**Standalone Event**: A single event that is not part of a recurring series.
 
-**Grid Event**: An event that is assigned to a specific time slot on the calendar in the grid view. These events have both a date and time.
+**Grid Event**: An event assigned to a concrete calendar slot in the day/week
+grid. These are different from Someday events.
 
-**Draft Event**: A calendar event that has pending changes that have not yet been persisted to the database. When a user makes changes to an event in the form, drags the event or resizes its times, the user is operating on a draft event. After the user clicks "Save", the draft event is persisted to the database, and the Draft Event goes away and is replaced with the Event.
+**Draft Event**: A pending event shape used while the user edits, drags, or
+resizes before saving.
 
-**Someday Event**: These have `startDate` and `endDate` like regular timed events, but they have not yet been assigned to a specific time slot on the calendar in the grid. Instead, they are stored in the sidebar (Someday/Maybe list). These may be recurring or standalone.
+**Someday Event**: An unscheduled event stored in the sidebar instead of the
+calendar grid. Someday events may be recurring or standalone.
 
-**Base Event**: A _recurring_ event that defines the recurrence pattern. It has the series `RRULE` in the `recurrence` field and serves as a template for generating instances.
+**Base Event**: A recurring event that owns the series `RRULE` and is used to
+generate instances.
 
-**Instance Event**: A _recurring_ event that is an individual occurrence of a base event. Instances are generated based on the base event's recurrence rule.
+**Instance Event**: One occurrence generated from a base event. Instances point
+back to the base with `recurrence.eventId`.
 
-## Calendar Concepts
+**Update Scope**: The user's recurring edit choice: This Event, This and
+Following Events, or All Events.
 
-**Calendar**: A calendar is a collection of events. It is the main object in the application. In Compass, each user has their primary calendar.
+## Google Sync
 
-**Calendar List**: Also known as sub-calendars. A calendar list is a collection of calendars. In Google Calendar, users can have multiple calendars (e.g., "Work", "Personal", "Holidays").
+**Primary Calendar**: The main Google Calendar Compass currently syncs. Compass
+does not yet support choosing multiple Google calendars in the UI.
 
-**Calendar View**: A calendar view is a way to view a calendar. Compass currently centers on:
+**Sync Channel**: A Google Calendar watch channel used to notify Compass when
+Google-side calendar data changes.
 
-- Day view
-- Week view
-- Now mode (focus on current task)
-- sidebar month widget / someday-month workflows
+**nextSyncToken**: Google's cursor for incremental calendar sync.
 
-**Primary Calendar**: The main calendar associated with a user's Google account. Compass currently syncs only the primary calendar.
+**Google Revoked**: Compass shorthand for the state where Google access is no
+longer usable and Google-origin data should be pruned or reconnected.
 
-## Sync & Authentication
+## Runtime
 
-**Sync**: The Compass feature that allows users to sync their calendar data with other calendars like Google Calendar. Sync can be bidirectional (changes in Compass update Google Calendar and vice versa).
-
-**Sync Channel**: A notification channel set up with Google Calendar that notifies Compass when events change. Managed via Google Calendar's watch API.
-
-**nextSyncToken**: A token provided by Google Calendar API that allows incremental syncing. It represents the state of the calendar at a point in time.
-
-**gAccessToken**: Google OAuth access token used to authenticate API requests to Google Calendar.
-
-**gRefreshToken**: Google OAuth refresh token used to obtain new access tokens when they expire. Stored securely in MongoDB.
-
-## Technical Terms
-
-**Redux Store**: The centralized state management store for the React frontend. Contains all application state including events, user data, and UI state.
-
-**Redux Saga**: Middleware for Redux that handles side effects (API calls, async operations) in a declarative way.
-
-**Duck Pattern**: A Redux pattern that co-locates actions, reducers, and selectors in a single file (or directory) for a feature domain.
-
-**Server-Sent Events (SSE)**: An HTTP-based mechanism where the server pushes named events over a long-lived response. Compass uses one `EventSource` per tab to `GET /api/events/stream` for calendar sync and metadata updates.
-
-**Supertokens**: The authentication library used by Compass to manage user sessions, access tokens, and refresh tokens.
-
-**MongoDB Collection**: A collection in MongoDB is similar to a table in a relational database. Compass uses collections for users, events, syncs, etc.
+**Server-Sent Events (SSE)**: The realtime connection Compass uses for
+calendar refreshes, import status, metadata updates, and Google revocation.
+Browsers connect with `GET /api/events/stream`.

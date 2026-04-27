@@ -2,11 +2,11 @@
 
 Internal documentation for engineers and agents working in the Compass repo.
 
-Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. Use the docs below for codebase shape and subsystem behavior.
+Start with [AGENTS.md](../AGENTS.md) for repo rules and command defaults. Use
+this index for codebase shape, subsystem behavior, and acceptance runbooks.
 
 ## Start Here
 
-- [Agent Onboarding](./development/agent-onboarding.md)
 - [Repo Architecture](./architecture/repo-architecture.md)
 - [Feature File Map](./development/feature-file-map.md)
 - [Common Change Recipes](./development/common-change-recipes.md)
@@ -23,8 +23,8 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
 - Local-first or storage behavior:
   [Offline Storage And Migrations](./features/offline-storage-and-migrations.md)
 - Backend routes and API behavior:
+  [Backend Route Map](./backend/README.md),
   [Backend Request Flow](./backend/backend-request-flow.md),
-  [API Documentation](./backend/api-documentation.md),
   [Backend Error Handling](./backend/backend-error-handling.md)
 
 ## Runtime Flows
@@ -38,7 +38,6 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
 - [Repo Architecture](./architecture/repo-architecture.md)
 - [Event And Task Domain Model](./architecture/event-and-task-domain-model.md)
 - [Glossary](./architecture/glossary.md)
-- [Engineering Principles](./principles.md)
 
 ## Development And Operations
 
@@ -46,11 +45,9 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
 - [Hosting Modes](./development/hosting-modes.md)
 - [Self-Hosting](./self-hosting.md)
 - [Testing Playbook](./development/testing-playbook.md)
-- [Web State Guide](./development/web-state-guide.md)
 - [Types And Validation](./development/types-and-validation.md)
 - [CLI And Maintenance Commands](./development/cli-and-maintenance-commands.md)
 - [Deploy](./development/deploy.md)
-- [Coding Conventions](./development/coding-conventions.md)
 
 ## Feature Deep Dives
 
@@ -59,13 +56,13 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules, commands, and conventions. 
 - [Recurrence Handling](./features/recurring-events-handling.md)
 - [Offline Storage And Migrations](./features/offline-storage-and-migrations.md)
 
-## Requirements
+## Acceptance
 
-Product requirements and specifications for each feature area:
+User-visible behavior runbooks for manual verification and expected outcomes:
 
-- [Auth](./requirements/auth.md)
-- [Events](./requirements/events.md)
-- [Google Sync](./requirements/google-sync.md)
-- [Recurring Events](./requirements/recurring-events.md)
-- [Shortcuts](./requirements/shortcuts.md)
-- [Tasks](./requirements/tasks.md)
+- [Auth](./acceptance/auth.md)
+- [Events](./acceptance/events.md)
+- [Google Sync](./acceptance/google-sync.md)
+- [Recurring Events](./acceptance/recurring-events.md)
+- [Shortcuts](./acceptance/shortcuts.md)
+- [Tasks](./acceptance/tasks.md)
