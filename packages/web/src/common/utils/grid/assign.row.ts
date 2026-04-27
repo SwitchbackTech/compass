@@ -21,18 +21,18 @@ export const assignEventsToRow = (
 
     if (i === 0) {
       rows.push(eventDays);
-      event["row"] = 1;
+      event.row = 1;
     } else {
       const { fits, rowNum } = assignEventToRow(eventDays, rows);
 
       if (fits) {
         // add to existing row
         rows[rowNum] = [...rows[rowNum], ...eventDays];
-        event["row"] = rowNum + 1;
+        event.row = rowNum + 1;
       } else {
         // add to new row
         rows[rows.length] = eventDays;
-        event["row"] = rows.length;
+        event.row = rows.length;
       }
     }
   });

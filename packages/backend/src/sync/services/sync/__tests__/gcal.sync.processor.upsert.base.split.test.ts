@@ -142,7 +142,7 @@ describe("GcalSyncProcessor: UPSERT: BASE SPLIT", () => {
 
     // Verify the cancelled instance was removed
     const cancelledInstanceExists = remainingEvents.some(
-      (e) => e["gEventId"] === gcalEvents.cancelled.id,
+      (e) => e.gEventId === gcalEvents.cancelled.id,
     );
     expect(cancelledInstanceExists).toBe(false);
   });

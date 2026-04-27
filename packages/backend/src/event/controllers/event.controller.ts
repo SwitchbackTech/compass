@@ -64,8 +64,8 @@ class EventController {
   delete = (req: SessionRequest, res: Res_Promise) => {
     const { query } = req;
     const user = req.session?.getUserId() as string;
-    const _id = req.params["id"] as string;
-    const applyTo = query["applyTo"] ?? RecurringEventUpdateScope.THIS_EVENT;
+    const _id = req.params.id as string;
+    const applyTo = query.applyTo ?? RecurringEventUpdateScope.THIS_EVENT;
 
     res.promise(
       eventService.readById(user, _id).then((event) =>
@@ -81,7 +81,7 @@ class EventController {
   };
 
   deleteAllByUser = async (req: SessionRequest, res: Res_Promise) => {
-    const userToRemove = req.params["userId"] as string;
+    const userToRemove = req.params.userId as string;
     try {
       const deleteAllRes = await eventService.deleteAllByUser(userToRemove);
       res.promise(deleteAllRes);
@@ -102,7 +102,7 @@ class EventController {
 
   readById = async (req: SessionRequest, res: Res_Promise) => {
     const userId = req.session?.getUserId() as string;
-    const eventId = req.params["id"] as string;
+    const eventId = req.params.id as string;
     try {
       const response = await eventService.readById(userId, eventId);
       res.promise(response);
@@ -135,9 +135,9 @@ class EventController {
   update = (req: SReqBody<Schema_Event>, res: Res_Promise) => {
     const { body, query, params, session } = req;
     const user = session?.getUserId() as string;
-    const _id = params["id"] as string;
+    const _id = params.id as string;
     const payload = { ...body, user, _id } as CompassThisEvent["payload"];
-    const applyTo = query["applyTo"] as RecurringEventUpdateScope.THIS_EVENT;
+    const applyTo = query.applyTo as RecurringEventUpdateScope.THIS_EVENT;
 
     res.promise(
       this.processEvents([

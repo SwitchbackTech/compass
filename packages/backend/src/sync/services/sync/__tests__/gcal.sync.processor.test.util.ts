@@ -31,7 +31,7 @@ export const baseHasRecurrenceRule = async (
   const baseEventsInDb = events.find((e) => isBase(e));
 
   expect(baseEventsInDb).toBeDefined();
-  expect(baseEventsInDb?.["recurrence"]?.["rule"]).toEqual(rule);
+  expect(baseEventsInDb?.recurrence?.rule).toEqual(rule);
 };
 
 export const createCompassSeriesFromGcalBase = async (
