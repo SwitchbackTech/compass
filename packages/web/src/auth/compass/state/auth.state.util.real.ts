@@ -90,7 +90,7 @@ export function updateAuthState(updates: Partial<AuthState>): void {
 
 /**
  * Marks that the user has authenticated at least once.
- * Once set, the app will always use RemoteEventRepository instead of LocalEventRepository.
+ * Once set, the app prefers RemoteEventRepository when the backend is available.
  * This prevents the UX issue where events disappear after login due to cleared IndexedDB.
  * Also clears any revoked state since user is re-authenticating.
  */

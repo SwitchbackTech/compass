@@ -1,9 +1,9 @@
-import { execSync } from "child_process";
-import path from "path";
 import { postcssPlugin } from "./plugins/postcss.plugin";
+import { execSync } from "node:child_process";
+import path from "node:path";
 
 function getBuildHash(): string {
-  const fallbackBuildRef = process.env["COMPASS_BUILD_REF"] || "self-host";
+  const fallbackBuildRef = process.env.COMPASS_BUILD_REF || "self-host";
   const compassRepoRoot = path.resolve(import.meta.dir, "../..");
 
   try {
@@ -43,7 +43,7 @@ const define: Record<string, string> = {
     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID || "",
     POSTHOG_KEY: process.env.POSTHOG_KEY || "",
     POSTHOG_HOST: process.env.POSTHOG_HOST || "",
-    PORT: process.env.WEB_PORT || "9080",
+    PORT: process.env.PORT || "3000",
   }),
   BUILD_VERSION: JSON.stringify(BUILD_VERSION),
 };

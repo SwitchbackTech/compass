@@ -9,6 +9,7 @@ import {
 } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/compass/session/session.util";
+import { isBackendUnavailableError } from "@web/common/apis/util/backend-unavailable-error.util";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
@@ -217,8 +218,12 @@ export const getWeekDayLabel = (day: Dayjs | Date) => {
 };
 
 export const handleError = (error: Error) => {
+  if (isBackendUnavailableError(error)) {
+    return;
+  }
+
   const codesToIgnore = [Status.NOT_FOUND, Status.GONE, Status.UNAUTHORIZED];
-  const code = parseInt(error.message.slice(-3));
+  const code = parseInt(error.message.slice(-3), 10);
   if (codesToIgnore.includes(code)) {
     // api interceptor will handle these
     return;

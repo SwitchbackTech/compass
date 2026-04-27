@@ -6,6 +6,7 @@ import {
   markUserAsAuthenticated,
 } from "@web/auth/compass/state/auth.state.util";
 import { UserApi } from "@web/common/apis/user.api";
+import { isBackendUnavailableError } from "@web/common/apis/util/backend-unavailable-error.util";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
 
 export type UseLoadProfileResult = {
@@ -51,6 +52,10 @@ export function useLoadProfile(
 
         if (isUnauthorized) {
           showSessionExpiredToast();
+          return;
+        }
+
+        if (isBackendUnavailableError(e)) {
           return;
         }
 

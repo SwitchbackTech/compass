@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { clearAuthenticationState } from "@web/auth/compass/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -14,11 +15,13 @@ export const LogoutView = () => {
   const logout = async () => {
     setIsLoggingOut(true);
 
-    await session.signOut();
+    void session.signOut().catch((error) => {
+      console.warn("Failed to complete backend sign-out:", error);
+    });
 
+    clearAuthenticationState();
     setIsLoggingOut(false);
 
-    alert("You logged out - see ya! ✌");
     navigate(ROOT_ROUTES.DAY);
   };
 

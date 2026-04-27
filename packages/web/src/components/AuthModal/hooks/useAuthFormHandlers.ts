@@ -8,6 +8,7 @@ import {
   type ResetPasswordFormData,
   type SignUpFormData,
 } from "@web/auth/compass/schemas/auth.schemas";
+import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
 
 const AUTH_TOKEN_QUERY_SCHEMA = z.object({
@@ -69,6 +70,7 @@ export function useAuthFormHandlers({
     return getAuthTokenQueryParams().token;
   }, [authToken]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: submit errors should clear when the auth modal changes view.
   useEffect(() => {
     setSubmitError(null);
   }, [currentView]);
@@ -102,9 +104,7 @@ export function useAuthFormHandlers({
             return;
         }
       } catch (error) {
-        setSubmitError(
-          error instanceof Error ? error.message : "Unable to sign up",
-        );
+        setSubmitError(getAuthSubmitErrorMessage(error, "Unable to sign up"));
       } finally {
         setIsSubmitting(false);
       }
@@ -144,9 +144,7 @@ export function useAuthFormHandlers({
             return;
         }
       } catch (error) {
-        setSubmitError(
-          error instanceof Error ? error.message : "Unable to log in",
-        );
+        setSubmitError(getAuthSubmitErrorMessage(error, "Unable to log in"));
       } finally {
         setIsSubmitting(false);
       }
@@ -174,9 +172,9 @@ export function useAuthFormHandlers({
             throw new Error(response.reason);
         }
       } catch (error) {
-        throw error instanceof Error
-          ? error
-          : new Error("Unable to send reset email");
+        throw new Error(
+          getAuthSubmitErrorMessage(error, "Unable to send reset email"),
+        );
       } finally {
         setIsSubmitting(false);
       }
@@ -223,7 +221,7 @@ export function useAuthFormHandlers({
         }
       } catch (error) {
         setSubmitError(
-          error instanceof Error ? error.message : "Unable to reset password",
+          getAuthSubmitErrorMessage(error, "Unable to reset password"),
         );
       } finally {
         setIsSubmitting(false);

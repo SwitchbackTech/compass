@@ -1,5 +1,9 @@
 import * as authState from "@web/auth/compass/state/auth.state.util";
 import * as googleAuthState from "@web/auth/google/state/google.auth.state";
+import {
+  markBackendUnavailable,
+  resetBackendAvailabilityForTests,
+} from "@web/common/apis/util/backend-unavailable-error.util";
 import { beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const hasUserEverAuthenticatedSpy = spyOn(
@@ -18,6 +22,7 @@ describe("getEventRepository", () => {
     hasUserEverAuthenticatedSpy.mockReturnValue(false);
     isGoogleRevokedSpy.mockReset();
     isGoogleRevokedSpy.mockReturnValue(false);
+    resetBackendAvailabilityForTests();
   });
 
   it("uses remote storage when a session exists", () => {
@@ -45,5 +50,18 @@ describe("getEventRepository", () => {
     isGoogleRevokedSpy.mockReturnValue(true);
 
     expect(getEventRepository(false)).toBeInstanceOf(LocalEventRepository);
+  });
+
+  it("uses local storage for a returning user when the backend is unavailable", () => {
+    hasUserEverAuthenticatedSpy.mockReturnValue(true);
+    markBackendUnavailable();
+
+    expect(getEventRepository(false)).toBeInstanceOf(LocalEventRepository);
+  });
+
+  it("uses local storage for an active session when the backend is unavailable", () => {
+    markBackendUnavailable();
+
+    expect(getEventRepository(true)).toBeInstanceOf(LocalEventRepository);
   });
 });
