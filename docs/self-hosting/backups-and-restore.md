@@ -74,7 +74,7 @@ docker run --rm \
 
 Keep the whole backup folder together. The `.env` file and volume archives are a set.
 
-Keep at least one backup outside `~/compass`, such as on another disk or in a private backup location. If you delete `~/compass`, any backups stored inside it are deleted too.
+The commands above put backups in `~/compass-backups` so they are not removed if you delete `~/compass`.
 
 If your volume names are different, replace the two `compass_...` volume names in the commands.
 
