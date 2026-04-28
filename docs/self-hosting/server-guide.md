@@ -2,9 +2,7 @@
 
 This guide describes the recommended first server setup for one person hosting Compass on a small VPS.
 
-Use this when you are comfortable SSHing into a server and checking each step yourself. If you want the lowest-risk path, use [Local Quickstart](./local-quickstart.md) instead.
-
-This server path has not yet been proven as a fully beginner-friendly production runbook. The guide keeps to one setup and calls out what still needs careful testing.
+Use this when you are comfortable SSHing into a server and checking each step yourself. If you only want Compass on your own computer, use [Local Quickstart](./local-quickstart.md) instead.
 
 ## Recommended Shape
 
@@ -144,7 +142,7 @@ Your Google Cloud OAuth app must allow the public Compass domain. For the one-do
 
 Google-to-Compass watch notifications need Google to reach the backend over public HTTPS. With this server guide, that means `https://compass.example.com/api`.
 
-Do not claim continuous Google Calendar sync is working until you have tested Google connect, import, webhook delivery, and watch renewal behavior on your server.
+Before relying on continuous Google Calendar sync, test Google connect, import, webhook delivery, and watch renewal behavior on your server.
 
 ## Backups
 
@@ -169,17 +167,15 @@ cd ~/compass
 
 Back up first. `./compass update` rebuilds Compass; it is not a rollback tool.
 
-## Limits Of This Guide
+## What This Guide Leaves To You
 
-This guide gives one coherent server shape, but it is still not a fully verified beginner production runbook.
-
-Known limits:
+This guide gives one coherent server shape. It does not automate everything a production service usually needs.
 
 - HTTPS and Caddy setup are outside the Compass installer.
 - Backups are manual.
 - Restore is manual.
 - Rollback is manual.
-- Google Calendar continuous sync still needs server-specific verification.
+- Google Calendar continuous sync needs server-specific setup and testing.
 - A separate API domain is not the recommended first path.
 
 Avoid exposing MongoDB, SuperTokens, or Postgres to the public internet. A safe server setup keeps those services private and exposes only the web app and API through HTTPS.
