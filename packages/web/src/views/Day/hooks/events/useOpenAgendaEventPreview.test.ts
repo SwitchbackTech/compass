@@ -1,8 +1,7 @@
 import { renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
-import { type FocusEvent, type MouseEvent } from "react";
 import { BehaviorSubject } from "rxjs";
-import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
+import { createAgendaTarget } from "./agenda-event.test-util";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const CursorItem = { EventPreview: "event-preview" };
@@ -66,15 +65,6 @@ mock.module("@web/store/store.hooks", () => ({
 const { useOpenAgendaEventPreview } =
   require("@web/views/Day/hooks/events/useOpenAgendaEventPreview") as typeof import("@web/views/Day/hooks/events/useOpenAgendaEventPreview");
 
-type AgendaPointerEvent = MouseEvent<Element> | FocusEvent<Element>;
-
-const createAgendaEvent = (currentTarget: Element): AgendaPointerEvent =>
-  ({
-    preventDefault: mock(),
-    stopPropagation: mock(),
-    currentTarget,
-  }) as unknown as AgendaPointerEvent;
-
 describe("useOpenAgendaEventPreview", () => {
   beforeEach(() => {
     eventsStore.query.mockClear();
@@ -100,49 +90,39 @@ describe("useOpenAgendaEventPreview", () => {
     const eventId = "123";
     const eventClass = "event-class";
     const mockEvent = { _id: eventId, title: "Test Event" };
-    const mockReference = document.createElement("div");
-    mockReference.className = eventClass;
-    mockReference.setAttribute(DATA_EVENT_ELEMENT_ID, eventId);
-
-    const mockElement = document.createElement("button");
-    mockReference.appendChild(mockElement);
-
-    const mockEventObj = createAgendaEvent(mockElement);
+    const { element, event, reference } = createAgendaTarget({
+      eventClass,
+      eventId,
+    });
 
     getEventClass.mockReturnValue(eventClass);
     eventsStore.query.mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
-    result.current(mockEventObj);
+    result.current(event);
 
-    expect(mockEventObj.preventDefault).toHaveBeenCalled();
-    expect(mockEventObj.stopPropagation).toHaveBeenCalled();
-    expect(getEventClass).toHaveBeenCalledWith(mockElement);
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+    expect(getEventClass).toHaveBeenCalledWith(element);
     expect(eventsStore.query).toHaveBeenCalled();
     expect(setActiveEvent).toHaveBeenCalledWith(mockEvent._id);
     expect(openFloatingAtCursor).toHaveBeenCalledWith({
       nodeId: CursorItem.EventPreview,
       placement: "right",
-      reference: mockReference,
+      reference,
     });
   });
 
   it("should not open event preview if event id is missing", () => {
     const eventClass = "event-class";
-    const mockReference = document.createElement("div");
-    mockReference.className = eventClass;
-
-    const mockElement = document.createElement("button");
-    mockReference.appendChild(mockElement);
-
-    const mockEventObj = createAgendaEvent(mockElement);
+    const { event } = createAgendaTarget({ eventClass });
 
     getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
-    result.current(mockEventObj);
+    result.current(event);
 
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
@@ -150,14 +130,13 @@ describe("useOpenAgendaEventPreview", () => {
 
   it("should not open event preview if reference is missing", () => {
     const eventClass = "event-class";
-    const mockElement = document.createElement("button");
-    const mockEventObj = createAgendaEvent(mockElement);
+    const { event } = createAgendaTarget();
 
     getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
-    result.current(mockEventObj);
+    result.current(event);
 
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
@@ -184,24 +163,20 @@ describe("useOpenAgendaEventPreview", () => {
 
     const eventClass = "event-class";
     const mockEvent = { _id: pendingEventId, title: "Pending Event" };
-    const mockReference = document.createElement("div");
-    mockReference.className = eventClass;
-    mockReference.setAttribute(DATA_EVENT_ELEMENT_ID, pendingEventId);
-
-    const mockElement = document.createElement("button");
-    mockReference.appendChild(mockElement);
-
-    const mockEventObj = createAgendaEvent(mockElement);
+    const { event } = createAgendaTarget({
+      eventClass,
+      eventId: pendingEventId,
+    });
 
     getEventClass.mockReturnValue(eventClass);
     eventsStore.query.mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
-    result.current(mockEventObj);
+    result.current(event);
 
-    expect(mockEventObj.preventDefault).toHaveBeenCalled();
-    expect(mockEventObj.stopPropagation).toHaveBeenCalled();
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
     expect(eventsStore.query).toHaveBeenCalled();
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
