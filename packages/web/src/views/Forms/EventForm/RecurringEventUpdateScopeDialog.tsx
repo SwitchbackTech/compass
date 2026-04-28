@@ -8,7 +8,7 @@ import {
   useInteractions,
   useRole,
 } from "@floating-ui/react";
-import React, { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
@@ -19,6 +19,12 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection";
 import { StyledEventForm } from "@web/views/Forms/EventForm/styled";
+
+const UPDATE_SCOPE_OPTIONS: Array<[string, RecurringEventUpdateScope]> = [
+  ["this", RecurringEventUpdateScope.THIS_EVENT],
+  ["this-and-following", RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS],
+  ["all", RecurringEventUpdateScope.ALL_EVENTS],
+];
 
 export function RecurringEventUpdateScopeDialog() {
   const {
@@ -54,16 +60,10 @@ export function RecurringEventUpdateScopeDialog() {
   const dismiss = useDismiss(context, { outsidePressEvent: "mousedown" });
   const interactions = useInteractions([click, role, dismiss]);
 
-  const _options: Array<[string, RecurringEventUpdateScope]> = [
-    ["this", RecurringEventUpdateScope.THIS_EVENT],
-    ["this-and-following", RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS],
-    ["all", RecurringEventUpdateScope.ALL_EVENTS],
-  ];
-
   const options = useMemo<Array<[string, RecurringEventUpdateScope]>>(() => {
-    if (!recurrenceChanged) return _options;
+    if (!recurrenceChanged) return UPDATE_SCOPE_OPTIONS;
 
-    return _options.slice(1);
+    return UPDATE_SCOPE_OPTIONS.slice(1);
   }, [recurrenceChanged]);
 
   const onSubmitHandler = useCallback(() => {

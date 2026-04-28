@@ -1,4 +1,4 @@
-import React, { type FC, type MouseEvent, useEffect } from "react";
+import { type FC, type MouseEvent, useEffect } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import {
@@ -45,7 +45,7 @@ export const AllDayRow: FC<Props> = ({
   useEffect(() => {
     measurements.remeasure(ID_GRID_MAIN);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rowsCount]);
+  }, [measurements.remeasure]);
 
   const startAlldayDraft = async (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);

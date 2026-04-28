@@ -56,7 +56,7 @@ export const Reminder = forwardRef(
     const cursorPositionRef = useRef<CursorPosition | null>(null);
 
     // Helper functions to save and restore cursor position
-    const saveCursorPosition = () => {
+    const saveCursorPosition = useCallback(() => {
       const selection = window.getSelection();
       if (!selection || selection.rangeCount === 0 || !reminderRef.current)
         return;
@@ -68,9 +68,9 @@ export const Reminder = forwardRef(
           endOffset: range.endOffset,
         };
       }
-    };
+    }, []);
 
-    const restoreCursorPosition = () => {
+    const restoreCursorPosition = useCallback(() => {
       if (!cursorPositionRef.current || !reminderRef.current) return;
 
       const selection = window.getSelection();
@@ -99,7 +99,7 @@ export const Reminder = forwardRef(
       } catch (e) {
         console.error("Failed to restore cursor position", e);
       }
-    };
+    }, []);
 
     // Load from localStorage on mount
     useEffect(() => {
@@ -136,7 +136,7 @@ export const Reminder = forwardRef(
 
       window.addEventListener("resize", handleResize);
       return () => window.removeEventListener("resize", handleResize);
-    }, [reminder, isEditing]);
+    }, []);
 
     // Regenerate underline on hover for a dynamic effect
     const handleMouseEnter = () => {
@@ -177,7 +177,11 @@ export const Reminder = forwardRef(
           restoreCursorPosition();
         }
       }
-    }, [isEditing]);
+    }, [
+      isEditing,
+      reminder, // Restore previously saved cursor position
+      restoreCursorPosition,
+    ]);
 
     // Effect to sync reminder content after state updates
     useEffect(() => {
@@ -197,7 +201,12 @@ export const Reminder = forwardRef(
         // Restore cursor position
         setTimeout(restoreCursorPosition, 0);
       }
-    }, [reminder, isEditing]);
+    }, [
+      reminder,
+      isEditing, // Remember cursor position
+      saveCursorPosition,
+      restoreCursorPosition,
+    ]);
 
     const handleEscKey = useCallback(() => {
       if (isEditing) {
@@ -217,10 +226,10 @@ export const Reminder = forwardRef(
       blurOnTrigger: true,
     });
 
-    const handleReminderClick = () => {
+    const handleReminderClick = useCallback(() => {
       cursorPositionRef.current = null; // Reset cursor position
       setIsEditing(true);
-    };
+    }, []);
 
     useImperativeHandle(
       reminderForwardRef,
@@ -232,7 +241,7 @@ export const Reminder = forwardRef(
       if (reminderFromStore) handleReminderClick();
 
       dispatch(viewSlice.actions.updateReminder(false));
-    }, [reminderFromStore]);
+    }, [reminderFromStore, handleReminderClick, dispatch]);
 
     const handleReminderBlur = () => {
       setIsEditing(false);

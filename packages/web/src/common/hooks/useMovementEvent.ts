@@ -20,6 +20,10 @@ interface Options {
   eventTypes?: Array<"pointerup" | "pointerdown" | "pointermove">;
 }
 
+const DEFAULT_EVENT_TYPES: Array<"pointerup" | "pointerdown" | "pointermove"> =
+  [];
+const DEFAULT_SELECTORS: Array<keyof HTMLElementTagNameMap | string> = [];
+
 /**
  * useMovementEvent
  *
@@ -35,8 +39,8 @@ interface Options {
 export function useMovementEvent({
   handler,
   deps = [],
-  eventTypes = [],
-  selectors = [],
+  eventTypes = DEFAULT_EVENT_TYPES,
+  selectors = DEFAULT_SELECTORS,
 }: Options) {
   const typeFilter = useCallback(
     ({ event }: DomMovement) => {
@@ -44,8 +48,7 @@ export function useMovementEvent({
 
       return eventTypes.some((eventType) => event.type === eventType);
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    eventTypes,
+    [eventTypes],
   );
 
   const elementsFilter = useCallback(
@@ -54,8 +57,7 @@ export function useMovementEvent({
 
       return selectors.some((el) => combination.element?.closest(el));
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    selectors,
+    [selectors],
   );
 
   const pause = useMemo(() => new BehaviorSubject<boolean>(false), []);

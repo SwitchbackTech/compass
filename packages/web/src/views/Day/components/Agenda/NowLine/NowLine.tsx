@@ -27,7 +27,7 @@ export const NowLine = memo(function NowLine() {
       inline: "nearest",
       behavior: "smooth",
     });
-  }, [ref]);
+  }, []);
 
   useEffect(() => {
     const cleanup = setupMinuteSync(() => {

@@ -167,7 +167,15 @@ export const useDragEdgeNavigation = (
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isDragging, mousePosition.x, weekProps.util, currentDraft]);
+  }, [
+    isDragging,
+    mousePosition.x,
+    weekProps.util,
+    currentDraft,
+    mousePosition,
+    mainGridRef.current?.getBoundingClientRect,
+    mainGridRef.current,
+  ]);
 
   // Cleanup on unmount
   useEffect(() => {

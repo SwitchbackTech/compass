@@ -13,7 +13,7 @@ export const useEventListener = (
 
   useEffect(() => {
     savedHandler.current = handler;
-  }, [eventName, handler]);
+  }, [handler]);
 
   useEffect(() => {
     const isSupported = element?.addEventListener;

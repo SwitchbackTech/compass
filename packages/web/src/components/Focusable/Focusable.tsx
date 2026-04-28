@@ -34,7 +34,7 @@ export const Focusable = forwardRef<HTMLElement, Props>(
         setIsFocused(true);
         props.onFocus?.(event);
       },
-      [props.onFocus, setIsFocused],
+      [props.onFocus],
     );
 
     const onBlur = useCallback(
@@ -42,7 +42,7 @@ export const Focusable = forwardRef<HTMLElement, Props>(
         setIsFocused(false);
         props.onBlur?.(event);
       },
-      [props.onBlur, setIsFocused],
+      [props.onBlur],
     );
 
     return (

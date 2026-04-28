@@ -108,18 +108,18 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onSetEventField({ [fieldName]: e.target.value });
       };
 
-    const onClose = () => {
+    const onClose = useCallback(() => {
       setIsFormOpen(false);
 
       setTimeout(() => {
         _onClose();
       }, 1);
-    };
+    }, [_onClose]);
 
     const onDuplicateEvent = useCallback(() => {
       onDuplicate?.(event);
       onClose();
-    }, [onDuplicate, onClose]);
+    }, [onDuplicate, onClose, event]);
 
     const handleIgnoredKeys = (e: KeyboardEvent) => {
       // Ignores certain keys and key combinations to prevent default behavior.
@@ -298,7 +298,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           onChange={onChangeEventTextField("title")}
           onKeyDown={handleIgnoredKeys}
           placeholder="Title"
-          role="textarea"
           name="Event Title"
           underlineColor={priorityColor}
           value={title ?? ""}

@@ -23,7 +23,7 @@ export const useGridMouseMove = () => {
         drag(e);
       }
     },
-    [draft?.isAllDay, drag, isDrafting, isDragging, isResizing, resize],
+    [drag, isDrafting, isDragging, isResizing, resize],
   );
 
   const _onMouseUp = useCallback(() => {

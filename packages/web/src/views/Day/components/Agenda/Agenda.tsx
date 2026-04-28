@@ -65,13 +65,16 @@ export function Agenda() {
     enabled: !dragging && !resizing,
   });
 
-  const onEnterKey = useCallback((e: React.KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      e.stopPropagation();
-      timedEventsGridRef.current?.click();
-    }
-  }, []);
+  const onEnterKey = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        e.stopPropagation();
+        timedEventsGridRef.current?.click();
+      }
+    },
+    [timedEventsGridRef.current?.click],
+  );
 
   useEffect(() => {
     const unsubscribeStore = store.subscribe(() => {
@@ -113,7 +116,14 @@ export function Agenda() {
       eventsSubscription.unsubscribe();
       loadingSubscription.unsubscribe();
     };
-  }, []);
+  }, [
+    store.getState,
+    events$.next,
+    store.subscribe,
+    loading$.next,
+    loading$.pipe,
+    events$.pipe,
+  ]);
 
   return (
     <>
@@ -139,7 +149,6 @@ export function Agenda() {
             "select-none",
           )}
           data-testid="calendar-scroll"
-          tabIndex={0}
           aria-label="Timed events section"
           onKeyDown={onEnterKey}
           {...(hasTimedEvents

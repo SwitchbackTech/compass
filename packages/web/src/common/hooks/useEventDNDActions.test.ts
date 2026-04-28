@@ -6,15 +6,7 @@ import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-} from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 import { readFile, writeFile } from "node:fs/promises";
 
 // Mock definitions
@@ -50,8 +42,8 @@ mock.module("@web/views/Day/util/agenda/agenda.util", () => ({
   getSnappedMinutes: mockGetSnappedMinutes,
   getAgendaEventTitle: (event) => `${event?.title || ""} -`,
   getAgendaEventTime: (d) => (d ? new Date(d).toISOString() : ""),
-  getAgendaEventPosition: (date) => 0,
-  getNowLinePosition: (date) => 0,
+  getAgendaEventPosition: (_date) => 0,
+  getNowLinePosition: (_date) => 0,
   getEventTimeFromPosition: (_y, dateInView) =>
     dateInView.startOf ? dateInView.startOf("day") : new Date(),
   roundMinutesToNearestFifteen: (minutes) => Math.round(minutes / 15) * 15,
