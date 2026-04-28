@@ -50,7 +50,7 @@ Docker volume backups do **not** back up browser IndexedDB data. That includes t
 These docs intentionally do not claim support that has not been verified:
 
 - no beginner public-server hosting guide yet
-- no verified public-domain SuperTokens setup yet
+- no end-to-end verified public-domain SuperTokens setup yet
 - no built-in HTTPS certificate or reverse proxy setup
 - no built-in backup scheduler
 - no automatic restore flow

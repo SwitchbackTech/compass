@@ -4,31 +4,28 @@ Compass does not yet have a verified beginner server-hosting guide.
 
 The local Docker installer is still the supported path. It runs Compass on the same machine at `localhost` and is designed for personal local use.
 
-Server hosting should be possible with a small set of configuration changes, but it should not be documented as a copy-paste setup until authentication has been tested on a real HTTPS domain.
+Server authentication should now be configurable, but server hosting should not be documented as a copy-paste setup until it has been tested on a real HTTPS domain.
 
-## Current Blocker
+## Current Status
 
-The regular backend CORS middleware already reads configured origins from `CORS`. That is not the main server-hosting blocker.
+The backend CORS middleware reads configured origins from `CORS`.
 
-The blocker is the SuperTokens setup in `packages/backend/src/common/middleware/supertokens.middleware.ts`. It currently hardcodes localhost domains:
+The SuperTokens setup in `packages/backend/src/common/middleware/supertokens.middleware.ts` now derives its domains from the configured URLs:
 
-- API domain: `http://localhost:3000`
-- website domain: `http://localhost:9080`
+- API domain: origin of `BASEURL`
+- website domain: origin of `FRONTEND_URL`
 
-The SuperTokens CORS helper also hardcodes the local web origin.
+The SuperTokens CORS helper also uses the configured `CORS` origins, with a fallback to the `FRONTEND_URL` origin.
 
-That means setting `BASEURL=https://compass.example.com/api`, `FRONTEND_URL=https://compass.example.com`, and `CORS=https://compass.example.com` is not enough yet. The app may serve, but auth redirects, cookies, CORS, password reset links, or session behavior can fail.
+For a one-domain server setup, the expected values would look like:
 
-A likely first fix is to derive the SuperTokens domains from the configured URLs:
-
-```ts
-const apiDomain = new URL(ENV.BASEURL).origin;
-const websiteDomain = new URL(ENV.FRONTEND_URL).origin;
+```bash
+BASEURL=https://compass.example.com/api
+FRONTEND_URL=https://compass.example.com
+CORS=https://compass.example.com
 ```
 
-Then the SuperTokens CORS helper should use the configured allowed origins instead of one hardcoded localhost origin.
-
-Until that behavior is implemented and verified with a real public domain, these docs should not claim that public-domain signup, login, or Google auth work on a server.
+That removes the known localhost-only auth configuration issue, but it has not been verified end-to-end on a real public domain yet. Until that happens, these docs should not claim that public-domain signup, login, password reset, sessions, or Google auth work on a server.
 
 ## Target Shape, Not Yet Verified
 
