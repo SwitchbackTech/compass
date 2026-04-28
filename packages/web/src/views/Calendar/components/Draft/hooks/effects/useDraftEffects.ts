@@ -24,6 +24,7 @@ export const useDraftEffects = (
     setDateBeingChanged,
   } = setters;
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: draft state should clear only when the visible week changes.
   useEffect(() => {
     if (isDragging || isResizing) {
       return;
@@ -46,19 +47,7 @@ export const useDraftEffects = (
     setDragStatus(null);
     setResizeStatus(null);
     setDateBeingChanged(null);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    setDraft,
-    setDateBeingChanged,
-    setIsResizing,
-    weekProps.util.getLastNavigationSource,
-    setIsFormOpen,
-    isResizing,
-    setResizeStatus,
-    setIsDragging,
-    setDragStatus,
-    isDragging,
-  ]);
+  }, [weekProps.component.week]);
 
   useEffect(() => {
     if (isResizing) {
@@ -102,5 +91,5 @@ export const useDraftEffects = (
         durationMin,
       });
     }
-  }, [isDragging, setDragStatus, draft.endDate, draft, setIsFormOpen]);
+  }, [isDragging, setDragStatus, draft?.endDate, draft, setIsFormOpen]);
 };

@@ -173,7 +173,7 @@ export const useDragEdgeNavigation = (
     weekProps.util,
     currentDraft,
     mousePosition,
-    mainGridRef.current.getBoundingClientRect,
+    mainGridRef.current?.getBoundingClientRect,
     mainGridRef.current,
   ]);
 
