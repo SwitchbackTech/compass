@@ -16,8 +16,7 @@ export async function waitUntilEvent<
   return new Promise((resolve, reject) => {
     const eventEmitter = emitter as EventEmitter;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const listener = (...payload: any[]) => {
+    const listener = (...payload: unknown[]) => {
       afterEvent(...(payload as Payload))
         .then(resolve)
         .catch(reject);

@@ -1,3 +1,4 @@
+import { type useFloating } from "@floating-ui/react";
 import { renderHook } from "@testing-library/react";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -23,8 +24,7 @@ const { useAgendaInteractionsAtCursor } =
 describe("useAgendaInteractionsAtCursor", () => {
   const mockFloating = {
     context: {},
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  } as any;
+  } as unknown as ReturnType<typeof useFloating>;
 
   beforeEach(() => {
     mockSafePolygonResult.mockClear();

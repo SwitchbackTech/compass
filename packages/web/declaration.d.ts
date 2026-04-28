@@ -35,10 +35,8 @@ interface Window {
   __COMPASS_E2E_TEST__?: boolean;
   /** Redux store exposed for test action dispatch. Set by packages/web/src/store/index.ts. */
   __COMPASS_E2E_STORE__?: {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    dispatch: (action: any) => any;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    getState: () => any;
+    dispatch: import("@web/store").AppDispatch;
+    getState: () => import("@web/store").RootState;
   };
   /** Session test hooks exposed by SessionProvider for e2e auth control. */
   __COMPASS_E2E_HOOKS__?: {

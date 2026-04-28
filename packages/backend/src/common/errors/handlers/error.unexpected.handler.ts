@@ -9,7 +9,9 @@ process.on("uncaughtException", (error: Error) => {
 
 // get the unhandled promise rejections/exceptions and throw it to the
 // `uncaughtException` fallback handler
-//@ts-expect-error
-process.on("unhandledRejection", (reason: Error, promise: Promise<any>) => {
-  throw reason;
-});
+process.on(
+  "unhandledRejection",
+  (reason: unknown, _promise: Promise<unknown>) => {
+    throw reason;
+  },
+);

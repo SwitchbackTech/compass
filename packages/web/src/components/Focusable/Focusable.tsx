@@ -2,18 +2,17 @@ import {
   type FocusEvent,
   forwardRef,
   type HTMLAttributes,
-  type PropsWithChildren,
   useCallback,
   useState,
 } from "react";
-import { type StyledComponent } from "styled-components";
+import { type AnyStyledComponent } from "styled-components";
 import { type UnderlinedInput } from "@web/common/types/component.types";
 import { Divider } from "@web/components/Divider";
 
 export interface Props extends UnderlinedInput, HTMLAttributes<HTMLElement> {
   autoFocus?: boolean;
   underlineColor?: string;
-  Component: StyledComponent<any, any, PropsWithChildren<any>, never>;
+  Component: AnyStyledComponent;
 }
 
 export const Focusable = forwardRef<HTMLElement, Props>(

@@ -5,6 +5,7 @@ import {
   type HTMLProps,
   isValidElement,
   type ReactNode,
+  type Ref,
 } from "react";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
@@ -32,7 +33,9 @@ export const TooltipTrigger = forwardRef<
 >(function TooltipTrigger({ children, asChild = false, ...props }, propRef) {
   const context = useTooltipContext();
 
-  const childrenRef = (children as any).ref;
+  const childrenRef = isValidElement(children)
+    ? (children as { ref?: Ref<HTMLElement> }).ref
+    : undefined;
   const ref = useMergeRefs([context.refs.setReference, propRef, childrenRef]);
 
   // `asChild` allows the user to pass any element as the anchor

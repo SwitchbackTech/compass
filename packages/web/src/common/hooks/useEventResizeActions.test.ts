@@ -86,7 +86,7 @@ describe("useEventResizeActions", () => {
 
   // Mock bounds element
   const mockBounds = document.createElement("div");
-  let getBoundingClientRectSpy: any;
+  let getBoundingClientRectSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
     mockUpdateEvent.mockClear();
@@ -100,7 +100,7 @@ describe("useEventResizeActions", () => {
     mockOpenGetValue.mockReturnValue(false);
     // Ensure selector returns no stored event so saveDraftOnly path is testable
     mockSelectEventById.mockReturnValue(null);
-    mockUpdateDraft.mockImplementation((update: any) => {
+    mockUpdateDraft.mockImplementation((update: Partial<Schema_Event>) => {
       mockSetDraft({ ...mockEvent, ...update });
     });
 

@@ -1,3 +1,4 @@
+import { type DragEndEvent } from "@dnd-kit/core";
 import { renderHook } from "@testing-library/react";
 import { BehaviorSubject } from "rxjs";
 import { Categories_Event } from "@core/types/event.types";
@@ -107,6 +108,11 @@ await writeFile(useEventDNDActionsTempUrl, useEventDNDActionsJavaScript);
 
 const { useEventDNDActions } = await import(useEventDNDActionsTempUrl.href);
 
+type DndMonitorCall = [{ onDragEnd: (event: DragEndEvent) => void }];
+type DndMonitorMock = typeof useDndMonitor & {
+  mock: { calls: DndMonitorCall[] };
+};
+
 describe("useEventDNDActions", () => {
   const mockEvent = {
     _id: "event-1",
@@ -134,12 +140,11 @@ describe("useEventDNDActions", () => {
   });
 
   describe("onDragEnd", () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let onDragEnd: (event: any) => void;
+    let onDragEnd: (event: DragEndEvent) => void;
 
     beforeEach(() => {
       renderHook(() => useEventDNDActions());
-      onDragEnd = (useDndMonitor as any).mock.calls[0][0].onDragEnd;
+      onDragEnd = (useDndMonitor as DndMonitorMock).mock.calls[0][0].onDragEnd;
     });
 
     it("should handle timed event move in main grid", () => {
@@ -156,7 +161,7 @@ describe("useEventDNDActions", () => {
       };
       const over = { id: ID_GRID_MAIN };
 
-      onDragEnd({ active, over });
+      onDragEnd({ active, over } as unknown as DragEndEvent);
 
       const expectedStartDate = dayjs(mockEvent.startDate)
         .startOf("day")
@@ -193,7 +198,7 @@ describe("useEventDNDActions", () => {
       };
       const over = { id: ID_GRID_MAIN };
 
-      onDragEnd({ active, over });
+      onDragEnd({ active, over } as unknown as DragEndEvent);
 
       const expectedStartDate = dayjs(allDayEvent.startDate)
         .startOf("day")
@@ -228,7 +233,7 @@ describe("useEventDNDActions", () => {
       };
       const over = { id: ID_GRID_ALLDAY_ROW };
 
-      onDragEnd({ active, over });
+      onDragEnd({ active, over } as unknown as DragEndEvent);
 
       const expectedStartDate = dayjs(mockEvent.startDate)
         .startOf("day")
@@ -255,7 +260,7 @@ describe("useEventDNDActions", () => {
       const active = { data: { current: null } };
       const over = null;
 
-      onDragEnd({ active, over });
+      onDragEnd({ active, over } as unknown as DragEndEvent);
 
       expect(mockUpdateEvent).not.toHaveBeenCalled();
     });

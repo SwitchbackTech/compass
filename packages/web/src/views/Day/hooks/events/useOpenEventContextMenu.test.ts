@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { BehaviorSubject } from "rxjs";
-import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
+import { createAgendaTarget } from "./agenda-event.test-util";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const CursorItem = { EventContextMenu: "event-context-menu" };
@@ -60,62 +60,39 @@ describe("useOpenEventContextMenu", () => {
     const eventId = "123";
     const eventClass = "event-class";
     const mockEvent = { _id: eventId, title: "Test Event" };
-    const mockReference = {
-      getAttribute: mock().mockReturnValue(eventId),
-    };
-    const mockElement = {
-      closest: mock().mockReturnValue(mockReference),
-    };
-    const mockEventObj = {
-      preventDefault: mock(),
-      stopPropagation: mock(),
-      currentTarget: mockElement,
-    };
+    const { element, event, reference } = createAgendaTarget({
+      eventClass,
+      eventId,
+    });
 
     getEventClass.mockReturnValue(eventClass);
     eventsStore.query.mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenEventContextMenu());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result.current(mockEventObj as any);
+    result.current(event);
 
-    expect(mockEventObj.preventDefault).toHaveBeenCalled();
-    expect(mockEventObj.stopPropagation).toHaveBeenCalled();
-    expect(getEventClass).toHaveBeenCalledWith(mockElement);
-    expect(mockElement.closest).toHaveBeenCalledWith(`.${eventClass}`);
-    expect(mockReference.getAttribute).toHaveBeenCalledWith(
-      DATA_EVENT_ELEMENT_ID,
-    );
+    expect(event.preventDefault).toHaveBeenCalled();
+    expect(event.stopPropagation).toHaveBeenCalled();
+    expect(getEventClass).toHaveBeenCalledWith(element);
     expect(eventsStore.query).toHaveBeenCalled();
     expect(setActiveEvent).toHaveBeenCalledWith(mockEvent._id);
     expect(openFloatingAtCursor).toHaveBeenCalledWith({
       nodeId: CursorItem.EventContextMenu,
       placement: "bottom",
-      reference: mockReference,
+      reference,
     });
   });
 
   it("should not open event context menu if event id is missing", () => {
     const eventClass = "event-class";
-    const mockReference = {
-      getAttribute: mock().mockReturnValue(null),
-    };
-    const mockElement = {
-      closest: mock().mockReturnValue(mockReference),
-    };
-    const mockEventObj = {
-      preventDefault: mock(),
-      stopPropagation: mock(),
-      currentTarget: mockElement,
-    };
+    const { event } = createAgendaTarget({ eventClass });
 
     getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenEventContextMenu());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result.current(mockEventObj as any);
+    result.current(event);
 
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
@@ -123,21 +100,13 @@ describe("useOpenEventContextMenu", () => {
 
   it("should not open event context menu if reference is missing", () => {
     const eventClass = "event-class";
-    const mockElement = {
-      closest: mock().mockReturnValue(null),
-    };
-    const mockEventObj = {
-      preventDefault: mock(),
-      stopPropagation: mock(),
-      currentTarget: mockElement,
-    };
+    const { event } = createAgendaTarget();
 
     getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenEventContextMenu());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result.current(mockEventObj as any);
+    result.current(event);
 
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
