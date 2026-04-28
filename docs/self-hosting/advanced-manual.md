@@ -78,4 +78,4 @@ GCAL_WEBHOOK_BASEURL=https://<public-https-host>/api
 
 ## Public Servers
 
-Do not treat this page as a public production guide. See [Server Hosting Status](./server-guide.md) for the current public-server blocker.
+Do not treat this page as a public production guide. See [Server Hosting Guide](./server-guide.md) for the recommended one-domain server shape.

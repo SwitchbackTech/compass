@@ -14,7 +14,7 @@ You can self-host Compass with only email/password signup. You do not need Googl
 | [Backups And Restore](./self-hosting/backups-and-restore.md) | You want to preserve or restore signed-in event data and auth data. |
 | [Google Calendar](./self-hosting/google-calendar.md) | You want to understand no-Google mode, optional local Google OAuth/import, or public HTTPS Google watch notifications. |
 | [Advanced Manual Setup](./self-hosting/advanced-manual.md) | You want to run the pieces yourself instead of using the installer. |
-| [Server Hosting Status](./self-hosting/server-guide.md) | You are considering a public server. This is not a verified beginner path yet. |
+| [Server Hosting Guide](./self-hosting/server-guide.md) | You want the best current one-domain server shape, with limitations called out. |
 
 ## What The Local Installer Actually Does
 

@@ -156,7 +156,7 @@ Google auth and Google Calendar sync are not fully configured by the local insta
 
 You can add your own Google OAuth values to `~/compass/.env` and run `./compass rebuild` to try Google sign-in or the Google Calendar connect flow. Google-to-Compass watch notifications need a public HTTPS backend that Google can reach, plus verified watch registration and repair behavior for that install. The local installer does not set that up.
 
-For the current public server status, see [Server Hosting Status](../docs/self-hosting/server-guide.md).
+For the current public server guide, see [Server Hosting Guide](../docs/self-hosting/server-guide.md).
 
 ## Ports and Services
 
