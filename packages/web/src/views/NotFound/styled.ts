@@ -1,13 +1,6 @@
 import styled from "styled-components";
 import { darkBlueGradient } from "@web/common/styles/theme.util";
 
-export const StyledNotFoundImg = styled.img`
-  border-radius: 50%;
-  border: ${({ theme }) => `4px solid ${theme.color.bg.primary}`};
-  box-shadow: ${({ theme }) => `0 0 10px ${theme.color.shadow.default}`};
-  max-width: 100%;
-`;
-
 export const StyledNotFoundContainer = styled.div`
   align-items: center;
   background: linear-gradient(

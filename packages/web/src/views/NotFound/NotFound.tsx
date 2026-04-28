@@ -1,12 +1,7 @@
 import { useNavigate } from "react-router-dom";
-import notFoundImg from "@web/assets/png/notFound.png";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Text } from "@web/components/Text";
-import {
-  StyledBackButton,
-  StyledNotFoundContainer,
-  StyledNotFoundImg,
-} from "./styled";
+import { StyledBackButton, StyledNotFoundContainer } from "./styled";
 
 export const NotFoundView = () => {
   const navigate = useNavigate();
@@ -26,8 +21,6 @@ export const NotFoundView = () => {
       <StyledBackButton onClick={goHome}>
         Go back to your booty
       </StyledBackButton>
-
-      <StyledNotFoundImg src={notFoundImg} alt="Ship wrecked" width="600px" />
     </StyledNotFoundContainer>
   );
 };
