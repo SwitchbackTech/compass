@@ -7,8 +7,8 @@ import eventController from "./controllers/event.controller";
 /**
  * Event Routes Configuration
  *
- * Handles calendar event CRUD operations and synchronization with Google Calendar.
- * Most operations require Google Calendar connection for bi-directional sync.
+ * Handles calendar event CRUD operations. When a user has connected Google,
+ * event changes can also trigger Google Calendar sync side effects.
  */
 export class EventRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
@@ -24,11 +24,9 @@ export class EventRoutes extends CommonRoutesConfig {
      * Creates a new calendar event
      *
      * @auth Required - Supertokens session
-     * @auth Required for POST - Google Calendar connection
      * @body {Object} event - Event data (title, start, end, etc.)
      * @returns {Array|Object} All events (GET) or created event (POST)
      * @throws {401} Unauthorized - Invalid session
-     * @throws {403} Forbidden - No Google Calendar connection (POST)
      * @throws {400} Bad Request - Invalid event data (POST)
      */
     this.app
@@ -93,12 +91,10 @@ export class EventRoutes extends CommonRoutesConfig {
      * Deletes a specific event
      *
      * @auth Required - Supertokens session
-     * @auth Required for PUT/DELETE - Google Calendar connection
      * @param {string} id - Event ID
      * @body {Object} event - Updated event data (PUT only)
      * @returns {Object} Event data (GET) or operation result (PUT/DELETE)
      * @throws {401} Unauthorized - Invalid session
-     * @throws {403} Forbidden - No Google Calendar connection (PUT/DELETE)
      * @throws {404} Not Found - Event not found
      * @throws {400} Bad Request - Invalid event data (PUT)
      */

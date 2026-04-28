@@ -70,7 +70,7 @@ A quick read across hosting contexts and account states:
 | Signup / first login         | Local events sync up to the backend               |
 | Authenticated (any mode)     | Backend → configured MongoDB                     |
 | Google connect               | Backend stores Google credentials and starts sync |
-| Google sync running          | Backend ⇄ Google Calendar, pushes updates to the browser via SSE |
+| Google sync running          | Backend ⇄ Google Calendar, pushes updates to the browser via SSE when Google and webhook delivery are configured |
 
 For storage behavior and migration specifics, see [Offline Storage And Migrations](../features/offline-storage-and-migrations.md). For the Google side, see [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md).
 
@@ -80,7 +80,7 @@ A few things that trip up new contributors:
 
 - **SuperTokens ≠ event storage.** SuperTokens stores identity and sessions. Compass events live in MongoDB (or IndexedDB when anonymous).
 - **MongoDB stores events after signup, not before.** Anonymous events never touch the backend.
-- **Google sync is independent from account mode.** Self-hosted account mode supports Google sync, but the backend still requires the Google env values at startup today. See [Local Development](./local-development.md) for the backend env contract.
+- **Google sync is independent from account mode.** Self-hosted account mode can run without Google. Google sign-in/connect requires Google OAuth credentials, and Google-to-Compass watch notifications require a public HTTPS webhook URL. See [Local Development](./local-development.md) for the backend env contract.
 - **Tasks stay local.** Tasks currently live in IndexedDB regardless of account state. Backend task persistence is not wired up yet.
 
 ## Deeper Docs

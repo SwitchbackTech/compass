@@ -7,6 +7,8 @@ Compass sync is bidirectional:
 
 Realtime updates use **Server-Sent Events** (one HTTP connection per tab, server pushes named events). The browser `EventSource` connects to `GET /api/events/stream` with the session cookie.
 
+For local self-hosting, keep one boundary clear: browser API/SSE traffic can use localhost, but Google-to-Compass watch notifications are server-to-server POSTs from Google. Those notification POSTs need a public HTTPS backend URL if you want Google-side changes to arrive without a manual repair/import.
+
 ## High-Level Architecture
 
 ```mermaid
