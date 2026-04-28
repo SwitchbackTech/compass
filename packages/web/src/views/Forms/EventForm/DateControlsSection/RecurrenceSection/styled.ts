@@ -2,14 +2,6 @@ import styled from "styled-components";
 import { darken } from "@core/util/color.utils";
 import { Flex } from "@web/components/Flex";
 
-export const StyledRepeatContainer = styled.div<{
-  $disabled?: boolean;
-}>`
-  margin-bottom: ${({ theme }) => theme.spacing.xs};
-  cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
-  opacity: ${({ $disabled }) => ($disabled ? 0.7 : 1)};
-`;
-
 export const StyledRepeatRow = styled(Flex)`
   align-items: center;
   flex-basis: 100%;
@@ -19,20 +11,26 @@ export const StyledRepeatRow = styled(Flex)`
   width: 100%;
 `;
 
-export const StyledRepeatText = styled.span<{
+export const StyledRepeatButton = styled.button<{
   $disabled?: boolean;
   hasRepeat: boolean;
 }>`
   display: inline-flex;
   align-items: center;
+  background: transparent;
   gap: ${({ theme }) => theme.spacing.xs};
   border: 1px solid transparent;
   border-radius: ${({ theme }) => theme.shape.borderRadius};
+  font: inherit;
   font-size: ${({ theme }) => theme.text.size.m};
-  opacity: ${({ hasRepeat }) => (!hasRepeat ? 0.85 : 1)};
+  margin-bottom: ${({ hasRepeat, theme }) =>
+    hasRepeat ? theme.spacing.xs : 0};
+  opacity: ${({ $disabled, hasRepeat }) =>
+    $disabled ? 0.7 : !hasRepeat ? 0.85 : 1};
   padding: 2px 8px;
   color: ${({ hasRepeat, theme }) =>
     hasRepeat ? theme.color.text.dark : theme.color.text.darkPlaceholder};
+  cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
   transition: ${({ theme }) => theme.transition.default};
 
   svg {
@@ -41,56 +39,14 @@ export const StyledRepeatText = styled.span<{
   }
 
   &:hover {
-    cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
     color: ${({ $disabled, theme }) =>
       $disabled ? theme.color.text.darkPlaceholder : theme.color.text.dark};
     background-color: ${({ $disabled, theme }) =>
       $disabled ? "transparent" : theme.color.border.primary};
   }
-  &:focus {
+  &:focus-visible {
     box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
   }
-`;
-
-export const StyledRepeatTextContainer = styled(Flex)<{
-  $disabled?: boolean;
-}>`
-  align-items: center;
-  border-radius: ${({ theme }) => theme.shape.borderRadius};
-  gap: ${({ theme }) => theme.spacing.xs};
-  border: 1px solid transparent;
-  justify-content: center;
-  margin-right: 8px;
-  padding: 2px 8px;
-  color: ${({ theme }) => theme.color.text.darkPlaceholder};
-  font-size: ${({ theme }) => theme.text.size.m};
-  cursor: ${({ $disabled }) => ($disabled ? "not-allowed" : "pointer")};
-  opacity: ${({ $disabled }) => ($disabled ? 0.7 : 1)};
-  transition:
-    color ${({ theme }) => theme.transition.default} ease,
-    filter ${({ theme }) => theme.transition.default} ease;
-
-  svg {
-    color: currentColor;
-    margin-right: ${({ theme }) => theme.spacing.xs};
-    transition: inherit;
-  }
-
-  &:hover {
-    color: ${({ $disabled, theme }) =>
-      $disabled ? theme.color.text.darkPlaceholder : theme.color.text.dark};
-    background-color: ${({ $disabled, theme }) =>
-      $disabled ? "transparent" : theme.color.border.primary};
-  }
-
-  &:focus {
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.color.border.primaryDark};
-  }
-`;
-
-export const StyledRepeatUnavailableText = styled.span`
-  color: ${({ theme }) => theme.color.text.darkPlaceholder};
-  font-size: ${({ theme }) => theme.text.size.s};
 `;
 
 export const StyledWeekDay = styled.button<{

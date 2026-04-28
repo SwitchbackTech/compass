@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useCallback, useState } from "react";
 import { ThemeProvider } from "styled-components";
@@ -71,14 +71,24 @@ describe("RecurrenceSection", () => {
     const user = userEvent.setup();
     const { setEventSpy } = renderRecurrenceSection({ authenticated: false });
 
+    const repeatButton = screen.getByRole("button", { name: /repeat/i });
+
+    expect(repeatButton).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("Repeat")).toBeInTheDocument();
     expect(
-      screen.getByText("Sign in to use recurring events."),
-    ).toBeInTheDocument();
+      screen.queryByText("Sign in to use recurring events."),
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /repeat/i }));
+    await user.hover(repeatButton);
+    await waitFor(() => {
+      expect(
+        screen.getByText("Sign in to use recurring events."),
+      ).toBeInTheDocument();
+    });
+
+    await user.click(repeatButton);
 
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
@@ -87,33 +97,56 @@ describe("RecurrenceSection", () => {
 
   it("shows the backend requirement before sign-in when the backend is unavailable", async () => {
     markBackendUnavailable();
+    const user = userEvent.setup();
     renderRecurrenceSection({ authenticated: false });
+    const repeatButton = screen.getByRole("button", { name: /repeat/i });
 
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Start the Compass backend and MongoDB to use recurring events.",
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText("Sign in to use recurring events."),
     ).not.toBeInTheDocument();
+    expect(repeatButton).toHaveAttribute("aria-disabled", "true");
+
+    await user.hover(repeatButton);
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Start the Compass backend and MongoDB to use recurring events.",
+        ),
+      ).toBeInTheDocument();
+    });
   });
 
   it("keeps recurrence settings hidden when a signed-in user's backend is unavailable", async () => {
     const user = userEvent.setup();
     markBackendUnavailable();
     const { setEventSpy } = renderRecurrenceSection({ authenticated: true });
+    const repeatButton = screen.getByRole("button", { name: /repeat/i });
 
+    expect(repeatButton).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("Repeat")).toBeInTheDocument();
     expect(
-      screen.getByText(
+      screen.queryByText(
         "Start the Compass backend and MongoDB to use recurring events.",
       ),
-    ).toBeInTheDocument();
+    ).not.toBeInTheDocument();
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: /repeat/i }));
+    await user.hover(repeatButton);
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Start the Compass backend and MongoDB to use recurring events.",
+        ),
+      ).toBeInTheDocument();
+    });
+
+    await user.click(repeatButton);
 
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
@@ -123,10 +156,14 @@ describe("RecurrenceSection", () => {
   it("shows recurrence settings after signed-in users enable repeat", async () => {
     const user = userEvent.setup();
     renderRecurrenceSection({ authenticated: true });
+    const repeatButton = screen.getByRole("button", {
+      name: /edit recurrence/i,
+    });
 
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
+    expect(repeatButton).not.toHaveAttribute("aria-disabled");
 
-    await user.click(screen.getByRole("button", { name: /edit recurrence/i }));
+    await user.click(repeatButton);
 
     expect(await screen.findByText("Every")).toBeInTheDocument();
     expect(screen.getByText("Ends on:")).toBeInTheDocument();

@@ -8,7 +8,7 @@ describe("TooltipWrapper", () => {
   it("renders children", () => {
     render(
       <TooltipWrapper>
-        <button>My Button</button>
+        <button type="button">My Button</button>
       </TooltipWrapper>,
     );
     expect(
@@ -20,7 +20,7 @@ describe("TooltipWrapper", () => {
     const user = userEvent.setup();
     render(
       <TooltipWrapper description="Tooltip info">
-        <button>Info</button>
+        <button type="button">Info</button>
       </TooltipWrapper>,
     );
     // Open tooltip by hovering
@@ -31,11 +31,27 @@ describe("TooltipWrapper", () => {
     });
   });
 
+  it("shows description when focused", async () => {
+    const user = userEvent.setup();
+    render(
+      <TooltipWrapper description="Keyboard info">
+        <button type="button">Info</button>
+      </TooltipWrapper>,
+    );
+
+    await user.tab();
+
+    expect(screen.getByRole("button", { name: /info/i })).toHaveFocus();
+    await waitFor(() => {
+      expect(screen.getByText("Keyboard info")).toBeInTheDocument();
+    });
+  });
+
   it("shows shortcut when string shortcut provided", async () => {
     const user = userEvent.setup();
     render(
       <TooltipWrapper shortcut="Ctrl+S">
-        <button>Save</button>
+        <button type="button">Save</button>
       </TooltipWrapper>,
     );
     const button = screen.getByRole("button", { name: /save/i });
@@ -49,7 +65,7 @@ describe("TooltipWrapper", () => {
     const user = userEvent.setup();
     render(
       <TooltipWrapper shortcut={<span data-testid="shortcut-node">ALT+A</span>}>
-        <button>Action</button>
+        <button type="button">Action</button>
       </TooltipWrapper>,
     );
     const button = screen.getByRole("button", { name: /action/i });
@@ -63,7 +79,7 @@ describe("TooltipWrapper", () => {
     const onClick = mock();
     render(
       <TooltipWrapper onClick={onClick}>
-        <button>ClickMe</button>
+        <button type="button">ClickMe</button>
       </TooltipWrapper>,
     );
     fireEvent.click(screen.getByRole("button", { name: /clickme/i }));
@@ -74,7 +90,7 @@ describe("TooltipWrapper", () => {
     const onClick = mock();
     render(
       <TooltipWrapper disabled onClick={onClick}>
-        <button>Disabled</button>
+        <button type="button">Disabled</button>
       </TooltipWrapper>,
     );
 
@@ -87,7 +103,7 @@ describe("TooltipWrapper", () => {
     const user = userEvent.setup();
     render(
       <TooltipWrapper description="Hidden text">
-        <button>Open</button>
+        <button type="button">Open</button>
       </TooltipWrapper>,
     );
     expect(screen.queryByText("Hidden text")).not.toBeInTheDocument();

@@ -1,5 +1,5 @@
 import type React from "react";
-import { type ReactNode, useState } from "react";
+import { type ReactNode } from "react";
 import { AlignItems } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
 import {
@@ -26,10 +26,8 @@ export const TooltipWrapper: React.FC<Props> = ({
   onClick = () => {},
   shortcut,
 }) => {
-  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
-
   return (
-    <Tooltip open={isTooltipOpen} onOpenChange={setIsTooltipOpen}>
+    <Tooltip>
       <TooltipTrigger
         aria-disabled={disabled || undefined}
         onClick={disabled ? undefined : onClick}
