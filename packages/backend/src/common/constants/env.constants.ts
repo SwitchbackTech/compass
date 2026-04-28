@@ -119,7 +119,7 @@ export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
     EMAILER_SECRET: rawEnv["EMAILER_API_SECRET"],
     EMAILER_USER_TAG_ID: rawEnv["EMAILER_USER_TAG_ID"],
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
-    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"],
+    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"] || undefined,
     MONGO_URI: rawEnv["MONGO_URI"],
     NODE_ENV: nodeEnv,
     TZ: rawEnv["TZ"],

@@ -138,6 +138,15 @@ describe("env.constants", () => {
     );
   });
 
+  it("treats a blank Google webhook base URL as unset", () => {
+    const env = parseBackendEnv({
+      ...validEnv,
+      GCAL_WEBHOOK_BASEURL: "",
+    });
+
+    expect(env.GCAL_WEBHOOK_BASEURL).toBeUndefined();
+  });
+
   it("rejects a non-HTTPS Google webhook base URL", () => {
     expect(() =>
       parseBackendEnv({
