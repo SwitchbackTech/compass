@@ -71,6 +71,9 @@ describe("RecurrenceSection", () => {
     const user = userEvent.setup();
     const { setEventSpy } = renderRecurrenceSection({ authenticated: false });
 
+    const repeatButton = screen.getByRole("button", { name: /repeat/i });
+
+    expect(repeatButton).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("Repeat")).toBeInTheDocument();
     expect(
       screen.queryByText("Sign in to use recurring events."),
@@ -78,14 +81,14 @@ describe("RecurrenceSection", () => {
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
 
-    await user.hover(screen.getByRole("button", { name: /repeat/i }));
+    await user.hover(repeatButton);
     await waitFor(() => {
       expect(
         screen.getByText("Sign in to use recurring events."),
       ).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /repeat/i }));
+    await user.click(repeatButton);
 
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
@@ -96,6 +99,7 @@ describe("RecurrenceSection", () => {
     markBackendUnavailable();
     const user = userEvent.setup();
     renderRecurrenceSection({ authenticated: false });
+    const repeatButton = screen.getByRole("button", { name: /repeat/i });
 
     expect(
       screen.queryByText(
@@ -105,8 +109,9 @@ describe("RecurrenceSection", () => {
     expect(
       screen.queryByText("Sign in to use recurring events."),
     ).not.toBeInTheDocument();
+    expect(repeatButton).toHaveAttribute("aria-disabled", "true");
 
-    await user.hover(screen.getByRole("button", { name: /repeat/i }));
+    await user.hover(repeatButton);
     await waitFor(() => {
       expect(
         screen.getByText(
@@ -120,7 +125,9 @@ describe("RecurrenceSection", () => {
     const user = userEvent.setup();
     markBackendUnavailable();
     const { setEventSpy } = renderRecurrenceSection({ authenticated: true });
+    const repeatButton = screen.getByRole("button", { name: /repeat/i });
 
+    expect(repeatButton).toHaveAttribute("aria-disabled", "true");
     expect(screen.getByText("Repeat")).toBeInTheDocument();
     expect(
       screen.queryByText(
@@ -130,7 +137,7 @@ describe("RecurrenceSection", () => {
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
 
-    await user.hover(screen.getByRole("button", { name: /repeat/i }));
+    await user.hover(repeatButton);
     await waitFor(() => {
       expect(
         screen.getByText(
@@ -139,7 +146,7 @@ describe("RecurrenceSection", () => {
       ).toBeInTheDocument();
     });
 
-    await user.click(screen.getByRole("button", { name: /repeat/i }));
+    await user.click(repeatButton);
 
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
     expect(screen.queryByText("Ends on:")).not.toBeInTheDocument();
@@ -149,10 +156,14 @@ describe("RecurrenceSection", () => {
   it("shows recurrence settings after signed-in users enable repeat", async () => {
     const user = userEvent.setup();
     renderRecurrenceSection({ authenticated: true });
+    const repeatButton = screen.getByRole("button", {
+      name: /edit recurrence/i,
+    });
 
     expect(screen.queryByText("Every")).not.toBeInTheDocument();
+    expect(repeatButton).not.toHaveAttribute("aria-disabled");
 
-    await user.click(screen.getByRole("button", { name: /edit recurrence/i }));
+    await user.click(repeatButton);
 
     expect(await screen.findByText("Every")).toBeInTheDocument();
     expect(screen.getByText("Ends on:")).toBeInTheDocument();

@@ -3,8 +3,8 @@ import { Frequency } from "rrule";
 import { type Schema_Event } from "@core/types/event.types";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import {
+  StyledRepeatButton,
   StyledRepeatRow,
-  StyledRepeatTextContainer,
 } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 import { useRecurrence } from "../../EventForm/DateControlsSection/RecurrenceSection/useRecurrence/useRecurrence";
 import {
@@ -94,21 +94,15 @@ export const SomedayRecurrenceSection = ({
           onCancel={cancelEdit}
         />
       ) : (
-        <StyledRepeatTextContainer
+        <StyledRepeatButton
           aria-label="Edit recurrence"
+          hasRepeat={hasRecurrence}
           onClick={openSelect}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" || event.key === " ") {
-              event.preventDefault();
-              openSelect();
-            }
-          }}
-          role="button"
-          tabIndex={0}
+          type="button"
         >
           <RepeatIcon size={18} />
           <span>Repeat</span>
-        </StyledRepeatTextContainer>
+        </StyledRepeatButton>
       )}
     </StyledRepeatRow>
   );
