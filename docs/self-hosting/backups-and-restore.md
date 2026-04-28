@@ -78,6 +78,12 @@ The commands above put backups in `~/compass-backups` so they are not removed if
 
 If your volume names are different, replace the two `compass_...` volume names in the commands.
 
+To see the Compass volumes on your machine:
+
+```bash
+docker volume ls | grep compass
+```
+
 ## Restore A Backup
 
 Only restore onto a Compass install you are willing to replace.
@@ -118,6 +124,23 @@ docker run --rm \
 ```
 
 If your volume names are different, replace the two `compass_...` volume names in the commands before running them.
+
+## Verify The Restore
+
+After starting Compass again:
+
+```bash
+cd ~/compass
+./compass status
+```
+
+Then open Compass and check:
+
+- you can sign in with the same account
+- your events are present
+- the backend health check works: `http://localhost:3000/api/health`
+
+If sign-in fails after restoring old volumes, make sure you restored the `.env` file from the same backup as the Docker volumes.
 
 ## Missing `.env` With Old Docker Volumes
 

@@ -44,31 +44,6 @@ By default, the stack listens only on the server itself:
 
 That is good for server hosting. Caddy can reach those local ports, but the database containers are not exposed to the public internet.
 
-## Configure Public URLs
-
-Edit the generated env file:
-
-```bash
-cd ~/compass
-nano .env
-```
-
-Set these values:
-
-```bash
-FRONTEND_URL=https://compass.example.com
-BASEURL=https://compass.example.com/api
-CORS=https://compass.example.com
-```
-
-Leave `WEB_PORT=9080` and `PORT=3000` unless you know you need different local ports.
-
-After changing `.env`, rebuild Compass so the web app receives the new backend URL:
-
-```bash
-./compass rebuild
-```
-
 ## Configure Caddy
 
 Put Caddy on the same server as Compass and proxy one domain to the two local Compass ports.
@@ -89,13 +64,49 @@ compass.example.com {
 
 Reload Caddy after changing its config.
 
-Then check:
+Then check that Caddy can reach the local backend:
 
 ```bash
-curl https://compass.example.com/api/health
+curl -f https://compass.example.com/api/health
 ```
 
 A healthy backend returns a JSON response with `"status":"ok"`.
+
+## Configure HTTPS before rebuilding with public URLs
+
+The helper script uses `BASEURL` for its backend health check. Because of that, set up Caddy before changing `BASEURL` to your public HTTPS URL.
+
+After Caddy is working, edit the generated env file:
+
+```bash
+cd ~/compass
+nano .env
+```
+
+Set these values:
+
+```bash
+FRONTEND_URL=https://compass.example.com
+BASEURL=https://compass.example.com/api
+CORS=https://compass.example.com
+```
+
+Leave `WEB_PORT=9080` and `PORT=3000` unless you know you need different local ports.
+
+After changing `.env`, rebuild Compass so the web app receives the new backend URL:
+
+```bash
+cd ~/compass
+./compass rebuild
+```
+
+If you need the helper to check the local backend directly while `BASEURL` stays public, add this optional value to `~/compass/.env`:
+
+```bash
+COMPASS_HEALTH_URL=http://127.0.0.1:3000/api/health
+```
+
+Most one-domain installs should not need that override once Caddy is working.
 
 ## Sign In And Test The Basics
 

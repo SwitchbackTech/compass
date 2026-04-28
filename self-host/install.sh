@@ -374,10 +374,11 @@ load_runtime_config() {
 
   frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
   baseurl=$(strip_quotes "$(read_env_value BASEURL)")
+  health_url=$(strip_quotes "$(read_env_value COMPASS_HEALTH_URL)")
 
   APP_URL=${frontend_url:-http://localhost:$WEB_PORT_VALUE}
   BASEURL_VALUE=${baseurl:-http://localhost:$PORT_VALUE/api}
-  HEALTH_URL=$(append_health_path "$BASEURL_VALUE")
+  HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-$(append_health_path "$BASEURL_VALUE")}}
 }
 
 random_hex() {

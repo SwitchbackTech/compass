@@ -64,6 +64,7 @@ load_env() {
   compass_ref=$(strip_quotes "$(read_env_value COMPASS_REF)")
   frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
   baseurl=$(strip_quotes "$(read_env_value BASEURL)")
+  health_url=$(strip_quotes "$(read_env_value COMPASS_HEALTH_URL)")
 
   if [ "$COMPASS_REF_FROM_SHELL" -eq 0 ] && [ -n "$compass_ref" ]; then
     COMPASS_REF=$compass_ref
@@ -71,7 +72,7 @@ load_env() {
 
   PROJECT_NAME=${COMPASS_PROJECT_NAME:-${compose_project_name:-compass}}
   APP_URL=${frontend_url:-http://localhost:9080}
-  HEALTH_URL=$(append_health_path "${baseurl:-http://localhost:3000/api}")
+  HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-$(append_health_path "${baseurl:-http://localhost:3000/api}")}}
   ENV_LOADED=1
 }
 
