@@ -1,30 +1,26 @@
-# Advanced Manual Setup
+# Run Compass without the installer
 
-Use this only if the local installer does not fit your needs.
+For when the local installer doesn't fit. Most personal self-hosting should use [Local quickstart](./local-quickstart.md) instead.
 
-For most personal self-hosting, use [Local Quickstart](./local-quickstart.md) instead.
+This page assumes you already know what MongoDB, SuperTokens, and Bun are, and you're comfortable wiring them together yourself. It is not a public-server guide. For server hosting, see [Server hosting guide](./server-guide.md).
 
-Manual setup means you run the pieces yourself. It is not a beginner public server guide.
-
-## Pieces You Provide
+## What you provide
 
 Compass needs:
 
 - the Compass web app
 - the Compass backend API
-- MongoDB for signed-in event data
-- SuperTokens for signup, login, and sessions
-- durable SuperTokens storage, usually Postgres
+- MongoDB (for signed-in event data)
+- SuperTokens Core (for signup, login, and sessions)
+- Postgres for SuperTokens
 
 Optional:
 
-- Google OAuth credentials, only if you want Google sign-in or Google Calendar connection
+- Google OAuth credentials, if you want Google sign-in or Google Calendar import
 
 Leave Google credentials unset for password-only mode.
 
-## Local Manual Steps
-
-From the repo root:
+## Local manual setup
 
 ```bash
 git clone https://github.com/SwitchbackTech/compass.git
@@ -33,7 +29,7 @@ bun install
 cp packages/backend/.env.local.example packages/backend/.env.local
 ```
 
-Edit `packages/backend/.env.local` and provide:
+Edit `packages/backend/.env.local` and set at minimum:
 
 - `MONGO_URI`
 - `SUPERTOKENS_URI`
@@ -43,39 +39,26 @@ Edit `packages/backend/.env.local` and provide:
 - `BASEURL`
 - `CORS`
 
-Then start the backend:
+Start the backend:
 
 ```bash
 bun run dev:backend
 ```
 
-In another terminal, start the web app:
+In a second terminal, start the web app:
 
 ```bash
 bun run dev:web
 ```
 
-Open [http://localhost:9080](http://localhost:9080).
-
-Check backend health with:
+Open [http://localhost:9080](http://localhost:9080). Confirm the backend with:
 
 ```bash
 curl http://localhost:3000/api/health
 ```
 
-## Google In Manual Setup
+## Google in manual setup
 
-Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set to real, non-placeholder values.
+Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set to real, non-placeholder values. Watch notifications need a public HTTPS webhook URL Google can reach.
 
-Google sign-in and local import can use localhost during development. Google watch notifications need a public HTTPS webhook URL that Google can reach.
-
-For local watch testing, keep browser traffic local and set only the Google webhook callback base URL to a public HTTPS tunnel:
-
-```bash
-BASEURL=http://localhost:3000/api
-GCAL_WEBHOOK_BASEURL=https://<public-https-host>/api
-```
-
-## Public Servers
-
-Do not treat this page as a public production guide. See [Server Hosting Guide](./server-guide.md) for the recommended one-domain server shape.
+For the three modes (Off, Local sign-in & import, Public watch notifications) and the `GCAL_WEBHOOK_BASEURL` development pattern, see [Google Calendar](./google-calendar.md).

@@ -1,52 +1,62 @@
-# Server Hosting Guide
+# Run Compass on a server
 
-This guide describes the recommended first server setup for one person hosting Compass on a small VPS.
+This guide describes the recommended first server setup for one person hosting Compass on a small VPS. One public domain, Compass on `127.0.0.1`, Caddy in front for HTTPS.
 
-Use this when you are comfortable SSHing into a server and checking each step yourself. If you only want Compass on your own computer, use [Local Quickstart](./local-quickstart.md) instead.
+If you only want Compass on your own computer, use [Local quickstart](./local-quickstart.md) instead.
 
-## Recommended Shape
+## Before you start
 
-Use one public domain:
+This path assumes you're comfortable with:
+
+- SSH and editing files on a remote Linux machine
+- DNS records (pointing a domain at a server's IP)
+- installing Docker on Ubuntu
+- editing config files like `~/compass/.env` and a Caddyfile
+
+Plan for **30 to 60 minutes** end to end, mostly waiting on DNS propagation, image pulls, and Caddy's first certificate fetch.
+
+You'll need:
+
+- an Ubuntu VPS with Docker and Docker Compose installed
+- a domain name pointed at the server's public IP
+- Caddy installed on the same server
+- SSH access
+
+The examples use `compass.example.com`. Replace it with your real domain everywhere.
+
+## The shape
+
+One public domain, two paths:
 
 - Frontend: `https://compass.example.com`
 - Backend API: `https://compass.example.com/api`
 
-Run Compass with Docker Compose on the server, keep the Compass containers bound to `127.0.0.1`, and put Caddy in front of them for HTTPS.
+Compass binds to `127.0.0.1:9080` and `127.0.0.1:3000` on the server. Caddy proxies the public domain to those local ports and handles HTTPS automatically.
 
-This avoids the extra cookie and browser complexity of a separate API domain such as `https://api.compass.example.com`. That can be supported later, but it is a harder beginner path.
+A separate API domain like `https://api.compass.example.com` may be possible, but it adds cookie and CORS complexity. This guide uses one domain for the first server install.
 
-## What You Need
+## Steps in order
 
-- an Ubuntu VPS
-- Docker and Docker Compose on the server
-- a domain name pointed at the server
-- Caddy for HTTPS reverse proxying
-- SSH access to the server
+Order matters. The helper script's health check uses `BASEURL`, so set up Caddy **before** changing `BASEURL` to your public URL. Otherwise the rebuild fails its health check against an HTTPS URL that isn't routed yet.
 
-The examples below use `compass.example.com`. Replace it with your real domain.
+1. SSH into the server and install Compass with the local installer.
+2. Configure Caddy to proxy `compass.example.com` to `127.0.0.1:9080` and `/api/*` to `127.0.0.1:3000`.
+3. Verify Caddy can reach the local backend over HTTPS.
+4. Edit `~/compass/.env` to use your public URLs, then `./compass rebuild`.
+5. Sign in over HTTPS and run the basic tests below.
+6. (Optional) Add Google Calendar.
 
-## Install Compass On The Server
-
-SSH into the server, make sure Docker is running, then install Compass:
+## 1. Install Compass on the server
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
 ```
 
-The installer creates `~/compass`, writes `~/compass/.env`, and starts the local Docker stack.
+The installer creates `~/compass`, writes `~/compass/.env`, and starts the local Docker stack on `127.0.0.1:9080` (web) and `127.0.0.1:3000` (backend). The database containers stay on Docker's internal network and aren't exposed publicly.
 
-By default, the stack listens only on the server itself:
+## 2. Configure Caddy
 
-- web: `127.0.0.1:9080`
-- backend: `127.0.0.1:3000`
-
-That is good for server hosting. Caddy can reach those local ports, but the database containers are not exposed to the public internet.
-
-## Configure Caddy
-
-Put Caddy on the same server as Compass and proxy one domain to the two local Compass ports.
-
-Example Caddyfile:
+Put Caddy on the same server as Compass. Example Caddyfile:
 
 ```caddyfile
 compass.example.com {
@@ -60,28 +70,28 @@ compass.example.com {
 }
 ```
 
-Reload Caddy after changing its config.
+Reload Caddy after saving.
 
-Then check that Caddy can reach the local backend:
+## 3. Verify Caddy can reach the backend
 
 ```bash
 curl -f https://compass.example.com/api/health
 ```
 
-A healthy backend returns a JSON response with `"status":"ok"`.
+A healthy backend returns JSON with `"status":"ok"`. If this fails, Caddy isn't routing to the backend yet. Fix that before moving on.
 
-## Configure HTTPS before rebuilding with public URLs
+## 4. Switch Compass to your public URLs
 
-The helper script uses `BASEURL` for its backend health check. Because of that, set up Caddy before changing `BASEURL` to your public HTTPS URL.
+> **Warning.** Don't change `BASEURL` until step 3 succeeds. The helper script uses `BASEURL` for its own health check during rebuild. If `BASEURL` points at an HTTPS URL Caddy can't serve yet, the rebuild fails.
 
-After Caddy is working, edit the generated env file:
+Edit the env file:
 
 ```bash
 cd ~/compass
 nano .env
 ```
 
-Set these values:
+Set:
 
 ```bash
 FRONTEND_URL=https://compass.example.com
@@ -89,93 +99,60 @@ BASEURL=https://compass.example.com/api
 CORS=https://compass.example.com
 ```
 
-Leave `WEB_PORT=9080` and `PORT=3000` unless you know you need different local ports.
+Leave `WEB_PORT=9080` and `PORT=3000` unless you have a specific reason to change them.
 
-After changing `.env`, rebuild Compass so the web app receives the new backend URL:
+Rebuild so the web app receives the new backend URL:
 
 ```bash
 cd ~/compass
 ./compass rebuild
 ```
 
-If you need the helper to check the local backend directly while `BASEURL` stays public, add this optional value to `~/compass/.env`:
+> **Tip.** If you ever need the helper to check the local backend directly while `BASEURL` stays public, add `COMPASS_HEALTH_URL=http://127.0.0.1:3000/api/health` to `~/compass/.env`. Most one-domain installs don't need this once Caddy is working.
 
-```bash
-COMPASS_HEALTH_URL=http://127.0.0.1:3000/api/health
-```
+## 5. Sign in and test the basics
 
-Most one-domain installs should not need that override once Caddy is working.
+Open `https://compass.example.com` in a browser. Run the password-only path first, before adding Google:
 
-## Sign In And Test The Basics
-
-Open `https://compass.example.com` in your browser.
-
-Test the password-only path first:
-
-1. create an account with email/password
+1. create an account with email and password
 2. sign out
 3. sign back in
 4. create an event
 5. edit the event
 6. delete the event
-7. restart Compass with `./compass restart`
-8. sign in again and confirm events are still there
+7. `./compass restart`
+8. sign in again and confirm the events are still there
 
-Do this before adding Google Calendar. It keeps the first server test focused on Compass, auth, and storage.
+Doing this before Google keeps the first server test focused on Compass, auth, and storage.
 
-## Google Calendar
+## 6. Add Google Calendar (optional)
 
-Google Calendar is optional.
+If you want Google sign-in or Google Calendar watch notifications, see [Google Calendar — Public watch notifications](./google-calendar.md#public-watch-notifications). The short version:
 
-If you want Google sign-in or Google Calendar connect, add real Google OAuth values to `~/compass/.env` and rebuild:
+- add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `TOKEN_GCAL_NOTIFICATION` to `~/compass/.env`
+- in your Google OAuth client, set the authorized JavaScript origin and redirect URI to `https://compass.example.com`
+- `./compass rebuild`
 
-```bash
-GOOGLE_CLIENT_ID=<your-google-client-id>
-GOOGLE_CLIENT_SECRET=<your-google-client-secret>
-TOKEN_GCAL_NOTIFICATION=<long-random-secret>
-```
-
-Your Google Cloud OAuth app must allow the public Compass domain. For the one-domain setup, use:
-
-- authorized JavaScript origin: `https://compass.example.com`
-- authorized redirect URI: `https://compass.example.com`
-
-Google-to-Compass watch notifications need Google to reach the backend over public HTTPS. With this server guide, that means `https://compass.example.com/api`.
-
-Before relying on continuous Google Calendar sync, test Google connect, import, webhook delivery, and watch renewal behavior on your server.
-
-## Backups
-
-Before updating or experimenting with server config, back up:
-
-- `~/compass/.env`
-- the Mongo Docker volume
-- the SuperTokens Postgres Docker volume
-
-Use [Backups And Restore](./backups-and-restore.md).
-
-Docker backups do not include browser IndexedDB data, including tasks and anonymous or pre-signup local data.
+Test Google connect, import, webhook delivery, and watch renewal on this install before relying on continuous sync.
 
 ## Updating
 
-From the installed folder:
+> **Warning: back up before every update.** `./compass update` rebuilds with newer code. There is no rollback. Back up `~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume **together**. See [Backups and restore](./backups-and-restore.md).
+
+Then:
 
 ```bash
 cd ~/compass
 ./compass update
 ```
 
-Back up first. `./compass update` rebuilds Compass; it is not a rollback tool.
+## What this guide leaves to you
 
-## What This Guide Leaves To You
-
-This guide gives one coherent server shape. It does not automate everything a production service usually needs.
+This guide gives one coherent server shape. It doesn't automate everything a production service usually needs.
 
 - HTTPS and Caddy setup are outside the Compass installer.
-- Backups are manual.
-- Restore is manual.
-- Rollback is manual.
+- Backups, restore, and rollback are manual.
 - Google Calendar continuous sync needs server-specific setup and testing.
 - A separate API domain is not the recommended first path.
 
-Avoid exposing MongoDB, SuperTokens, or Postgres to the public internet. A safe server setup keeps those services private and exposes only the web app and API through HTTPS.
+> **Warning.** Don't expose MongoDB, SuperTokens, or Postgres to the public internet. A safe server keeps those private and exposes only the web app and API through HTTPS.

@@ -1,66 +1,71 @@
-# Google Calendar
+# Add Google Calendar (optional)
 
-Google Calendar is optional for self-hosting.
+Google Calendar is optional for self-hosting. Compass works fine with email and password alone. Pick a mode based on what you actually need.
 
-Use the local Docker install without Google first unless you specifically need Google sign-in, Google import, or Google-to-Compass watch notifications.
+## The three modes
 
-## Use Compass without Google
+| Mode | What it does | What you need | Who it's for |
+| --- | --- | --- | --- |
+| **Off (default)** | Google sign-in and connect actions are hidden. Email/password signup works normally. | Nothing. | Everyone who doesn't need Google. |
+| **Local sign-in & import** | Google sign-in works. One-time Google Calendar import works. No continuous sync. | A Google Cloud OAuth client that allows `http://localhost:9080`, plus `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `~/compass/.env`. | Local installs that want Google sign-in or a one-time import. |
+| **Public watch notifications** | Google can notify Compass when calendar events change. | A public HTTPS URL Google can reach, real Google OAuth credentials, `TOKEN_GCAL_NOTIFICATION` set, and verified Google watch registration and repair on this install. | Server installs only. See [Server hosting guide](./server-guide.md). |
 
-This is the default local self-host path.
+Most local self-hosters want **Off** or **Local sign-in & import**. Continuous sync needs a public server because Google sends notifications over the public internet.
 
-The installer writes placeholder Google OAuth values so Compass can start without a Google Cloud project. Compass treats those placeholder values as not configured, so Google sign-in and Google Calendar connect actions are hidden in the normal UI.
+## Off (default)
 
-Use email/password signup. Event create, edit, and delete work without a Google connection.
+The installer writes placeholder Google OAuth values to `~/compass/.env`. Compass treats those placeholders as not configured, so Google sign-in and Google Calendar connect actions stay hidden in the UI.
 
-## Add Google sign-in and import locally
+Sign up with email and password. Event create, edit, and delete all work without a Google connection. Nothing more to do.
 
-This is an optional add-on.
+## Local sign-in & import
 
-This page documents the boundary between local OAuth/import and public webhook delivery. It is not a promise that a specific Google Cloud project is configured correctly until someone tests that project with real credentials.
+This is an optional add-on for the local install. Browser-driven flows (sign-in, one-time import) work. Watch notifications do not, because Google can't reach `localhost`.
 
-You can try Google sign-in or connect Google Calendar from a local install by adding real Google OAuth values to `~/compass/.env`, then rebuilding:
+Add real Google OAuth values to `~/compass/.env`:
+
+```bash
+GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+```
+
+Then rebuild so the web app picks up the new values:
 
 ```bash
 cd ~/compass
-# edit GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env
 ./compass rebuild
 ```
 
-The local web app runs at `http://localhost:9080`, and the backend API runs at `http://localhost:3000/api`.
+In your Google Cloud OAuth client, allow the local origin. The web OAuth flow reports the browser origin as the redirect origin, so the local install needs `http://localhost:9080` configured.
 
-The current web OAuth flow reports the browser origin as the Google redirect origin, so local OAuth setup should allow `http://localhost:9080` in the Google OAuth client configuration.
+This path doesn't make your local backend public. It's for sign-in and one-time import only.
 
-This local path is intended for Google sign-in/connect and initial import when the Google OAuth project is configured correctly. It does not make the local backend public.
+## Public watch notifications
 
-## Receive Google Calendar changes automatically
-
-Google-to-Compass watch notifications are different from browser traffic.
-
-For Google to notify Compass about changes made in Google Calendar, Google must be able to send HTTPS `POST` requests to:
+For Google to notify Compass when something changes in Google Calendar, Google must be able to send HTTPS `POST` requests to:
 
 ```text
 /api/sync/gcal/notifications
 ```
 
-The local installer does not create a public HTTPS URL. On the default local install, Compass can run without registering Google watches.
+The local installer doesn't create a public HTTPS URL, so a default local install can't receive these. You have two paths:
 
-For development testing, the backend supports `GCAL_WEBHOOK_BASEURL` as a separate public HTTPS base URL for Google webhook callbacks. Keep normal app traffic local:
+- **Run Compass on a public server.** The recommended path. See [Server hosting guide](./server-guide.md).
+- **Use a public HTTPS tunnel for webhooks only (development).** The backend supports `GCAL_WEBHOOK_BASEURL` as a separate public HTTPS base URL for Google webhook callbacks. Browser API traffic and Server-Sent Events keep using localhost:
 
-```bash
-BASEURL=http://localhost:3000/api
-GCAL_WEBHOOK_BASEURL=https://<public-https-host>/api
-```
+  ```bash
+  BASEURL=http://localhost:3000/api
+  GCAL_WEBHOOK_BASEURL=https://<public-https-host>/api
+  ```
 
-That setting is for Google webhook POSTs only. Browser API traffic and Server-Sent Events can keep using localhost.
+  This is for Google webhook POSTs only.
 
-## Before calling Google sync continuous
+Before you call continuous Google Calendar sync "working" on any self-host install, verify all of these on that specific install:
 
-Do not claim continuous Google Calendar sync for a self-host install unless the specific install has all of this working:
+- real Google OAuth credentials configured
+- backend reachable by Google over public HTTPS
+- `TOKEN_GCAL_NOTIFICATION` set
+- Google watch registration succeeds
+- watch repair and refresh behavior holds up over time
 
-- real Google OAuth credentials
-- a backend that Google can reach over public HTTPS
-- `TOKEN_GCAL_NOTIFICATION` configured when the webhook URL uses HTTPS
-- Google watch registration succeeding
-- watch repair/refresh behavior verified for that install
-
-The repo has code paths for Google watches and repair, but the local installer does not configure public HTTPS delivery or prove long-running watch maintenance for a personal self-host setup.
+The repo has the code paths for Google watches and repair. The local installer doesn't configure public HTTPS or prove long-running watch maintenance for you.

@@ -1,52 +1,47 @@
-# Backups And Restore
+# Back up and restore your data
 
-This page covers the local Docker self-host install created by `self-host/install.sh`.
+For the local Docker install created by `self-host/install.sh`. Backups are manual today. The installer and `./compass update` do not create them for you.
 
-Backups are manual today. The installer and `./compass update` do not create a backup for you.
+## Why this matters
 
-## What To Back Up
+> **Warning.** If you run `./compass update` without a backup and something goes wrong, there is no rollback. The update command rebuilds Compass with newer code. It does not snapshot your old data or your old app version.
+>
+> If `~/compass/.env` is lost while the Docker volumes still exist, a new install generates fresh database passwords that won't match the old volumes. You'll be locked out of your existing events and accounts.
 
-Back up all three of these together:
+Your three things to keep, **together as a set**:
 
 1. `~/compass/.env`
-2. the Mongo Docker volume
-3. the SuperTokens Postgres Docker volume
+2. the Mongo Docker volume (events)
+3. the SuperTokens Postgres Docker volume (accounts and sessions)
 
-With the default install, the Docker volumes are:
+## What's not in a Docker backup
+
+Browser IndexedDB data is not included. That means:
+
+- tasks
+- anonymous events created before signup
+- any pre-signup local data not yet copied to the backend
+
+There's no repo-supported export for browser-only data yet.
+
+## Find your volume names
+
+The default install creates:
 
 - `compass_compass_mongo_data`
 - `compass_compass_supertokens_postgres_data`
 
-If you changed `COMPOSE_PROJECT_NAME`, the volume names use that project name instead of `compass`.
-
-## What This Does Not Back Up
-
-Docker volume backups do not back up browser IndexedDB data.
-
-That means these are not included:
-
-- tasks
-- anonymous events before signup
-- pre-signup local data that has not been copied to the backend yet
-
-Those browser-only data types do not have a repo-supported export or backup command yet.
-
-## Back Up Before Updating
-
-Before running:
+If you set a custom `COMPOSE_PROJECT_NAME` at install time, the volume names use that prefix instead of `compass`. To list the Compass volumes on your machine:
 
 ```bash
-cd ~/compass
-./compass update
+docker volume ls | grep compass
 ```
 
-make a backup.
+The commands below assume the default names. Replace them if yours differ.
 
-`./compass update` pulls newer Compass code, rebuilds, and restarts the stack. It does not keep a rollback copy of your old data or old app version.
+## Make a backup
 
-## Make A Backup
-
-From the installed Compass folder:
+From `~/compass`:
 
 ```bash
 cd ~/compass
@@ -72,21 +67,11 @@ docker run --rm \
 ./compass start
 ```
 
-Keep the whole backup folder together. The `.env` file and volume archives are a set.
+Backups land in `~/compass-backups`, outside `~/compass`, so they survive if you ever delete the install folder. Keep the whole timestamped folder together. The `.env` file and the two volume archives are useless apart.
 
-The commands above put backups in `~/compass-backups` so they are not removed if you delete `~/compass`.
+## Restore a backup
 
-If your volume names are different, replace the two `compass_...` volume names in the commands.
-
-To see the Compass volumes on your machine:
-
-```bash
-docker volume ls | grep compass
-```
-
-## Restore A Backup
-
-Only restore onto a Compass install you are willing to replace.
+> **Warning: restore replaces existing data.** The commands below wipe both Docker volumes and overwrite `.env`. Only run them on an install you're willing to replace.
 
 Set `BACKUP_DIR` to the folder you created during backup:
 
@@ -123,11 +108,7 @@ docker run --rm \
 ./compass start
 ```
 
-If your volume names are different, replace the two `compass_...` volume names in the commands before running them.
-
-## Verify The Restore
-
-After starting Compass again:
+## Verify the restore
 
 ```bash
 cd ~/compass
@@ -138,14 +119,12 @@ Then open Compass and check:
 
 - you can sign in with the same account
 - your events are present
-- the backend health check works: `http://localhost:3000/api/health`
+- the backend health check responds: `http://localhost:3000/api/health`
 
-If sign-in fails after restoring old volumes, make sure you restored the `.env` file from the same backup as the Docker volumes.
+If sign-in fails, the most likely cause is a `.env` and volume pair from different backups. Restore the matching `.env` from the same backup folder as the volumes.
 
-## Missing `.env` With Old Docker Volumes
+## If `.env` is missing but old volumes exist
 
-If Docker volumes still exist but `~/compass/.env` is missing, the installer stops.
+The installer stops in this case on purpose. A fresh `.env` would have new credentials that don't match the old volumes.
 
-That is intentional. A fresh `.env` would contain new generated credentials, and those credentials may not match the old volumes.
-
-To keep old data, restore the matching `.env` file first.
+To keep the old data, restore the matching `.env` from a backup, then rerun the installer.

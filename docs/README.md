@@ -37,6 +37,8 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules and command defaults. Use th
 - [Self-Hosting Local Quickstart](./self-hosting/local-quickstart.md)
 - [Self-Hosting Backups And Restore](./self-hosting/backups-and-restore.md)
 - [Self-Hosting Google Calendar](./self-hosting/google-calendar.md)
+- [Self-Hosting Server Guide](./self-hosting/server-guide.md)
+- [Self-Hosting Advanced Manual Setup](./self-hosting/advanced-manual.md)
 - [Testing Playbook](./development/testing-playbook.md)
 - [Types And Validation](./development/types-and-validation.md)
 - [CLI And Maintenance Commands](./development/cli-and-maintenance-commands.md)
