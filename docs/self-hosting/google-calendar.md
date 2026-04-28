@@ -4,7 +4,7 @@ Google Calendar is optional for self-hosting.
 
 Use the local Docker install without Google first unless you specifically need Google sign-in, Google import, or Google-to-Compass watch notifications.
 
-## Path 1: No Google
+## Use Compass without Google
 
 This is the default local self-host path.
 
@@ -12,7 +12,7 @@ The installer writes placeholder Google OAuth values so Compass can start withou
 
 Use email/password signup. Event create, edit, and delete work without a Google connection.
 
-## Path 2: Local Google OAuth And Import
+## Add Google sign-in and import locally
 
 This is an optional add-on.
 
@@ -32,7 +32,7 @@ The current web OAuth flow reports the browser origin as the Google redirect ori
 
 This local path is intended for Google sign-in/connect and initial import when the Google OAuth project is configured correctly. It does not make the local backend public.
 
-## Path 3: Public HTTPS Watch Notifications
+## Receive Google Calendar changes automatically
 
 Google-to-Compass watch notifications are different from browser traffic.
 
@@ -53,7 +53,7 @@ GCAL_WEBHOOK_BASEURL=https://<public-https-host>/api
 
 That setting is for Google webhook POSTs only. Browser API traffic and Server-Sent Events can keep using localhost.
 
-## Continuous Sync Claim
+## Before calling Google sync continuous
 
 Do not claim continuous Google Calendar sync for a self-host install unless the specific install has all of this working:
 

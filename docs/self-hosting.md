@@ -45,11 +45,11 @@ Docker volume backups do **not** back up browser IndexedDB data. That includes t
 
 `./compass update` pulls newer Compass code and rebuilds the stack. It is not a rollback tool.
 
-## What Is Not Promised Here
+## What this guide does not set up yet
 
 These docs intentionally do not claim support that has not been verified:
 
-- no beginner public-server hosting guide yet
+- no fully verified beginner public-server runbook yet
 - no end-to-end verified public-domain SuperTokens setup yet
 - no built-in HTTPS certificate or reverse proxy setup
 - no built-in backup scheduler
