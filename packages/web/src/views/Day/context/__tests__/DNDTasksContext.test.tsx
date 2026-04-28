@@ -1,5 +1,12 @@
+import {
+  type DragStart,
+  type DragUpdate,
+  type DropResult,
+  type ResponderProvided,
+} from "@hello-pangea/dnd";
 import { render, screen } from "@testing-library/react";
 import React from "react";
+import { type useTasks as useTasksFn } from "@web/views/Day/hooks/tasks/useTasks";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock the useTasks hook
@@ -13,6 +20,12 @@ const { DNDTasksProvider } =
   require("@web/views/Day/context/DNDTasksContext") as typeof import("@web/views/Day/context/DNDTasksContext");
 const { useDNDTasksContext } =
   require("@web/views/Day/hooks/tasks/useDNDTasks") as typeof import("@web/views/Day/hooks/tasks/useDNDTasks");
+
+type DNDTasksContextValue = ReturnType<typeof useDNDTasksContext>;
+type MinimalTasksContext = Pick<
+  ReturnType<typeof useTasksFn>,
+  "tasks" | "setSelectedTaskIndex" | "reorderTasks"
+>;
 
 describe("DNDTasksProvider", () => {
   const mockTasks = [
@@ -39,23 +52,59 @@ describe("DNDTasksProvider", () => {
     mockReorderTasks.mockClear();
     mockSetSelectedTaskIndex.mockClear();
     mockUseTasks.mockClear();
-    mockUseTasks.mockReturnValue({
+    const mockTasksContext: MinimalTasksContext = {
       tasks: mockTasks,
       setSelectedTaskIndex: mockSetSelectedTaskIndex,
       reorderTasks: mockReorderTasks,
-    } as any);
+    };
+
+    mockUseTasks.mockReturnValue(mockTasksContext);
+  });
+
+  const provided = (announce = mock()): ResponderProvided => ({ announce });
+
+  const dragStart = (index: number): DragStart => ({
+    draggableId: `task-${index + 1}`,
+    type: "task",
+    source: { droppableId: "task-list", index },
+    mode: "FLUID",
+  });
+
+  const dragUpdate = (
+    sourceIndex: number,
+    destinationIndex: number,
+  ): DragUpdate => ({
+    draggableId: `task-${sourceIndex + 1}`,
+    type: "task",
+    source: { droppableId: "task-list", index: sourceIndex },
+    destination: { droppableId: "task-list", index: destinationIndex },
+    combine: null,
+    mode: "FLUID",
+  });
+
+  const dropResult = (
+    sourceIndex: number,
+    destinationIndex: number | null,
+    reason: DropResult["reason"] = "DROP",
+  ): DropResult => ({
+    draggableId: `task-${sourceIndex + 1}`,
+    type: "task",
+    source: { droppableId: "task-list", index: sourceIndex },
+    destination:
+      destinationIndex == null
+        ? null
+        : { droppableId: "task-list", index: destinationIndex },
+    reason,
+    combine: null,
+    mode: "FLUID",
   });
 
   it("should provide DND context to children", async () => {
-    let contextValue: any = null;
+    let contextValue: DNDTasksContextValue | null = null;
 
     const TestComponent = () => {
-      try {
-        contextValue = useDNDTasksContext();
-        return <div data-testid="context-value">has-context</div>;
-      } catch {
-        return <div data-testid="context-value">no-context</div>;
-      }
+      contextValue = useDNDTasksContext();
+      return <div data-testid="context-value">has-context</div>;
     };
 
     render(
@@ -76,22 +125,14 @@ describe("DNDTasksProvider", () => {
     const mockAnnounce = mock();
 
     // Create a test component that calls the context functions directly
-    let capturedContext: any = null;
+    let capturedContext: DNDTasksContextValue | null = null;
 
     const TestComponent = () => {
       capturedContext = useDNDTasksContext();
 
       React.useEffect(() => {
         if (capturedContext) {
-          capturedContext.onDragStart(
-            {
-              draggableId: "task-1",
-              type: "task",
-              source: { droppableId: "task-list", index: 0 },
-              mode: "FLUID",
-            },
-            { announce: mockAnnounce } as any,
-          );
+          capturedContext.onDragStart(dragStart(0), provided(mockAnnounce));
         }
       }, []);
 
@@ -111,25 +152,14 @@ describe("DNDTasksProvider", () => {
   it("should call reorderTasks and announce on drag end with valid destination", () => {
     const mockAnnounce = mock();
 
-    let capturedContext: any = null;
+    let capturedContext: DNDTasksContextValue | null = null;
 
     const TestComponent = () => {
       capturedContext = useDNDTasksContext();
 
       React.useEffect(() => {
         if (capturedContext) {
-          capturedContext.onDragEnd(
-            {
-              draggableId: "task-1",
-              type: "task",
-              source: { droppableId: "task-list", index: 0 },
-              destination: { droppableId: "task-list", index: 1 },
-              reason: "DROP",
-              combine: null,
-              mode: "FLUID",
-            },
-            { announce: mockAnnounce } as any,
-          );
+          capturedContext.onDragEnd(dropResult(0, 1), provided(mockAnnounce));
         }
       }, []);
 
@@ -149,7 +179,7 @@ describe("DNDTasksProvider", () => {
   it("should announce on drag update", () => {
     const mockAnnounce = mock();
 
-    let capturedContext: any = null;
+    let capturedContext: DNDTasksContextValue | null = null;
 
     const TestComponent = () => {
       capturedContext = useDNDTasksContext();
@@ -157,15 +187,8 @@ describe("DNDTasksProvider", () => {
       React.useEffect(() => {
         if (capturedContext) {
           capturedContext.onDragUpdate(
-            {
-              draggableId: "task-1",
-              type: "task",
-              source: { droppableId: "task-list", index: 0 },
-              destination: { droppableId: "task-list", index: 1 },
-              combine: null,
-              mode: "FLUID",
-            },
-            { announce: mockAnnounce } as any,
+            dragUpdate(0, 1),
+            provided(mockAnnounce),
           );
         }
       }, []);
@@ -187,7 +210,7 @@ describe("DNDTasksProvider", () => {
   it("should announce cancellation on drag end", () => {
     const mockAnnounce = mock();
 
-    let capturedContext: any = null;
+    let capturedContext: DNDTasksContextValue | null = null;
 
     const TestComponent = () => {
       capturedContext = useDNDTasksContext();
@@ -195,16 +218,8 @@ describe("DNDTasksProvider", () => {
       React.useEffect(() => {
         if (capturedContext) {
           capturedContext.onDragEnd(
-            {
-              draggableId: "task-1",
-              type: "task",
-              source: { droppableId: "task-list", index: 0 },
-              destination: null,
-              reason: "CANCEL",
-              combine: null,
-              mode: "FLUID",
-            },
-            { announce: mockAnnounce } as any,
+            dropResult(0, null, "CANCEL"),
+            provided(mockAnnounce),
           );
         }
       }, []);
@@ -224,25 +239,14 @@ describe("DNDTasksProvider", () => {
   });
 
   it("should not call reorderTasks when destination is null", () => {
-    let capturedContext: any = null;
+    let capturedContext: DNDTasksContextValue | null = null;
 
     const TestComponent = () => {
       capturedContext = useDNDTasksContext();
 
       React.useEffect(() => {
         if (capturedContext) {
-          capturedContext.onDragEnd(
-            {
-              draggableId: "task-1",
-              type: "task",
-              source: { droppableId: "task-list", index: 0 },
-              destination: null,
-              reason: "DROP",
-              combine: null,
-              mode: "FLUID",
-            },
-            { announce: mock() } as any,
-          );
+          capturedContext.onDragEnd(dropResult(0, null), provided());
         }
       }, []);
 
@@ -259,25 +263,14 @@ describe("DNDTasksProvider", () => {
   });
 
   it("should not call reorderTasks when destination index equals source index", () => {
-    let capturedContext: any = null;
+    let capturedContext: DNDTasksContextValue | null = null;
 
     const TestComponent = () => {
       capturedContext = useDNDTasksContext();
 
       React.useEffect(() => {
         if (capturedContext) {
-          capturedContext.onDragEnd(
-            {
-              draggableId: "task-1",
-              type: "task",
-              source: { droppableId: "task-list", index: 0 },
-              destination: { droppableId: "task-list", index: 0 },
-              reason: "DROP",
-              combine: null,
-              mode: "FLUID",
-            },
-            { announce: mock() } as any,
-          );
+          capturedContext.onDragEnd(dropResult(0, 0), provided());
         }
       }, []);
 

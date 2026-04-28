@@ -17,7 +17,7 @@ const usePointerPosition = mock();
 const useSensor = mock();
 const useSensors = mock();
 const { isDraggingEvent$ } = require("@web/common/hooks/useIsDraggingEvent");
-let isDraggingNextSpy: any = null;
+let isDraggingNextSpy: ReturnType<typeof spyOn> | null = null;
 
 mock.module("@web/common/hooks/usePointerPosition", () => ({
   usePointerPosition,

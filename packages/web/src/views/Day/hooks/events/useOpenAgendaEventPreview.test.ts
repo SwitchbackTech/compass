@@ -1,5 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
+import { type FocusEvent, type MouseEvent } from "react";
 import { BehaviorSubject } from "rxjs";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -65,6 +66,15 @@ mock.module("@web/store/store.hooks", () => ({
 const { useOpenAgendaEventPreview } =
   require("@web/views/Day/hooks/events/useOpenAgendaEventPreview") as typeof import("@web/views/Day/hooks/events/useOpenAgendaEventPreview");
 
+type AgendaPointerEvent = MouseEvent<Element> | FocusEvent<Element>;
+
+const createAgendaEvent = (currentTarget: Element): AgendaPointerEvent =>
+  ({
+    preventDefault: mock(),
+    stopPropagation: mock(),
+    currentTarget,
+  }) as unknown as AgendaPointerEvent;
+
 describe("useOpenAgendaEventPreview", () => {
   beforeEach(() => {
     eventsStore.query.mockClear();
@@ -90,33 +100,25 @@ describe("useOpenAgendaEventPreview", () => {
     const eventId = "123";
     const eventClass = "event-class";
     const mockEvent = { _id: eventId, title: "Test Event" };
-    const mockReference = {
-      getAttribute: mock().mockReturnValue(eventId),
-    };
-    const mockElement = {
-      closest: mock().mockReturnValue(mockReference),
-    };
-    const mockEventObj = {
-      preventDefault: mock(),
-      stopPropagation: mock(),
-      currentTarget: mockElement,
-    };
+    const mockReference = document.createElement("div");
+    mockReference.className = eventClass;
+    mockReference.setAttribute(DATA_EVENT_ELEMENT_ID, eventId);
+
+    const mockElement = document.createElement("button");
+    mockReference.appendChild(mockElement);
+
+    const mockEventObj = createAgendaEvent(mockElement);
 
     getEventClass.mockReturnValue(eventClass);
     eventsStore.query.mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result.current(mockEventObj as any);
+    result.current(mockEventObj);
 
     expect(mockEventObj.preventDefault).toHaveBeenCalled();
     expect(mockEventObj.stopPropagation).toHaveBeenCalled();
     expect(getEventClass).toHaveBeenCalledWith(mockElement);
-    expect(mockElement.closest).toHaveBeenCalledWith(`.${eventClass}`);
-    expect(mockReference.getAttribute).toHaveBeenCalledWith(
-      DATA_EVENT_ELEMENT_ID,
-    );
     expect(eventsStore.query).toHaveBeenCalled();
     expect(setActiveEvent).toHaveBeenCalledWith(mockEvent._id);
     expect(openFloatingAtCursor).toHaveBeenCalledWith({
@@ -128,24 +130,19 @@ describe("useOpenAgendaEventPreview", () => {
 
   it("should not open event preview if event id is missing", () => {
     const eventClass = "event-class";
-    const mockReference = {
-      getAttribute: mock().mockReturnValue(null),
-    };
-    const mockElement = {
-      closest: mock().mockReturnValue(mockReference),
-    };
-    const mockEventObj = {
-      preventDefault: mock(),
-      stopPropagation: mock(),
-      currentTarget: mockElement,
-    };
+    const mockReference = document.createElement("div");
+    mockReference.className = eventClass;
+
+    const mockElement = document.createElement("button");
+    mockReference.appendChild(mockElement);
+
+    const mockEventObj = createAgendaEvent(mockElement);
 
     getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result.current(mockEventObj as any);
+    result.current(mockEventObj);
 
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
@@ -153,21 +150,14 @@ describe("useOpenAgendaEventPreview", () => {
 
   it("should not open event preview if reference is missing", () => {
     const eventClass = "event-class";
-    const mockElement = {
-      closest: mock().mockReturnValue(null),
-    };
-    const mockEventObj = {
-      preventDefault: mock(),
-      stopPropagation: mock(),
-      currentTarget: mockElement,
-    };
+    const mockElement = document.createElement("button");
+    const mockEventObj = createAgendaEvent(mockElement);
 
     getEventClass.mockReturnValue(eventClass);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result.current(mockEventObj as any);
+    result.current(mockEventObj);
 
     expect(setActiveEvent).not.toHaveBeenCalled();
     expect(openFloatingAtCursor).not.toHaveBeenCalled();
@@ -194,25 +184,21 @@ describe("useOpenAgendaEventPreview", () => {
 
     const eventClass = "event-class";
     const mockEvent = { _id: pendingEventId, title: "Pending Event" };
-    const mockReference = {
-      getAttribute: mock().mockReturnValue(pendingEventId),
-    };
-    const mockElement = {
-      closest: mock().mockReturnValue(mockReference),
-    };
-    const mockEventObj = {
-      preventDefault: mock(),
-      stopPropagation: mock(),
-      currentTarget: mockElement,
-    };
+    const mockReference = document.createElement("div");
+    mockReference.className = eventClass;
+    mockReference.setAttribute(DATA_EVENT_ELEMENT_ID, pendingEventId);
+
+    const mockElement = document.createElement("button");
+    mockReference.appendChild(mockElement);
+
+    const mockEventObj = createAgendaEvent(mockElement);
 
     getEventClass.mockReturnValue(eventClass);
     eventsStore.query.mockReturnValue(mockEvent);
 
     const { result } = renderHook(() => useOpenAgendaEventPreview());
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    result.current(mockEventObj as any);
+    result.current(mockEventObj);
 
     expect(mockEventObj.preventDefault).toHaveBeenCalled();
     expect(mockEventObj.stopPropagation).toHaveBeenCalled();
