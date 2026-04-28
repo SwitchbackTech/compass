@@ -50,22 +50,22 @@ From the installed Compass folder:
 
 ```bash
 cd ~/compass
-backup_dir="$PWD/backups/$(date +%Y%m%d-%H%M%S)"
-mkdir -p "$backup_dir"
+BACKUP_DIR="$HOME/compass-backups/$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$BACKUP_DIR"
 
 ./compass stop
 
-cp -p .env "$backup_dir/compass.env"
+cp -p .env "$BACKUP_DIR/compass.env"
 
 docker run --rm \
   -v compass_compass_mongo_data:/volume \
-  -v "$backup_dir":/backup \
+  -v "$BACKUP_DIR":/backup \
   alpine \
   sh -c 'cd /volume && tar czf /backup/mongo-volume.tgz .'
 
 docker run --rm \
   -v compass_compass_supertokens_postgres_data:/volume \
-  -v "$backup_dir":/backup \
+  -v "$BACKUP_DIR":/backup \
   alpine \
   sh -c 'cd /volume && tar czf /backup/supertokens-postgres-volume.tgz .'
 
@@ -74,21 +74,23 @@ docker run --rm \
 
 Keep the whole backup folder together. The `.env` file and volume archives are a set.
 
+Keep at least one backup outside `~/compass`, such as on another disk or in a private backup location. If you delete `~/compass`, any backups stored inside it are deleted too.
+
 If your volume names are different, replace the two `compass_...` volume names in the commands.
 
 ## Restore A Backup
 
 Only restore onto a Compass install you are willing to replace.
 
-Set `backup_dir` to the folder you created during backup:
+Set `BACKUP_DIR` to the folder you created during backup:
 
 ```bash
 cd ~/compass
-backup_dir="$PWD/backups/YYYYMMDD-HHMMSS"
+BACKUP_DIR="$HOME/compass-backups/YYYYMMDD-HHMMSS"
 
 ./compass stop
 
-cp -p "$backup_dir/compass.env" .env
+cp -p "$BACKUP_DIR/compass.env" .env
 
 docker run --rm \
   -v compass_compass_mongo_data:/volume \
@@ -97,7 +99,7 @@ docker run --rm \
 
 docker run --rm \
   -v compass_compass_mongo_data:/volume \
-  -v "$backup_dir":/backup \
+  -v "$BACKUP_DIR":/backup \
   alpine \
   sh -c 'cd /volume && tar xzf /backup/mongo-volume.tgz'
 
@@ -108,7 +110,7 @@ docker run --rm \
 
 docker run --rm \
   -v compass_compass_supertokens_postgres_data:/volume \
-  -v "$backup_dir":/backup \
+  -v "$BACKUP_DIR":/backup \
   alpine \
   sh -c 'cd /volume && tar xzf /backup/supertokens-postgres-volume.tgz'
 
