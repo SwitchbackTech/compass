@@ -1,8 +1,10 @@
 # Server Hosting Status
 
-This is not a supported beginner server-hosting guide yet.
+Compass does not yet have a verified beginner server-hosting guide.
 
-The path supported by these docs is local Docker self-hosting on one computer. Public server hosting needs more runtime work and testing before the docs should present it as a copy-paste path.
+The local Docker installer is still the supported path. It runs Compass on the same machine at `localhost` and is designed for personal local use.
+
+Server hosting should be possible with a small set of configuration changes, but it should not be documented as a copy-paste setup until authentication has been tested on a real HTTPS domain.
 
 ## Current Blocker
 
@@ -31,4 +33,4 @@ That path still needs implementation and verification before it becomes a beginn
 
 The local installer binds web and backend ports to `127.0.0.1`. That is good for personal local use, but it is not a public server setup.
 
-Do not work around that by exposing Docker database ports or copying random reverse-proxy snippets into production. The public server path needs explicit auth-domain, HTTPS, proxy, backup, and restore testing first.
+Avoid exposing MongoDB, SuperTokens, or Postgres to the public internet. A safe server setup should keep those services private and expose only the web app and API through HTTPS.
