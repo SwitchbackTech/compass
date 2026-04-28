@@ -8,7 +8,7 @@ Use the local Docker install without Google first unless you specifically need G
 
 This is the default local self-host path.
 
-The installer writes placeholder Google OAuth values so Compass can start without a Google Cloud project. The web app treats those placeholder values as not configured, so Google sign-in and Google Calendar connect actions are hidden in the normal UI.
+The installer writes placeholder Google OAuth values so Compass can start without a Google Cloud project. Compass treats those placeholder values as not configured, so Google sign-in and Google Calendar connect actions are hidden in the normal UI.
 
 Use email/password signup. Event create, edit, and delete work without a Google connection.
 

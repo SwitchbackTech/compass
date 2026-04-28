@@ -66,7 +66,7 @@ describe("env.constants", () => {
     ).toThrow("Google configuration requires both client ID and secret");
   });
 
-  it("reports Google as configured only when both credentials are present", () => {
+  it("reports Google as configured only when both usable credentials are present", () => {
     const env = parseBackendEnv({
       ...validEnv,
       BASEURL: "http://localhost:3000/api",
@@ -75,6 +75,36 @@ describe("env.constants", () => {
     });
 
     expect(isGoogleConfigured(env)).toBe(true);
+  });
+
+  it("treats self-host Google placeholders as not configured", () => {
+    const env = parseBackendEnv({
+      ...validEnv,
+      GOOGLE_CLIENT_ID:
+        "compass-self-host-placeholder.apps.googleusercontent.com",
+      GOOGLE_CLIENT_SECRET: "compass-self-host-placeholder-secret",
+    });
+
+    expect(isGoogleConfigured(env)).toBe(false);
+  });
+
+  it("rejects mixed real and placeholder Google credentials", () => {
+    expect(() =>
+      parseBackendEnv({
+        ...validEnv,
+        GOOGLE_CLIENT_ID: "client-id",
+        GOOGLE_CLIENT_SECRET: "compass-self-host-placeholder-secret",
+      }),
+    ).toThrow("Google configuration requires both client ID and secret");
+
+    expect(() =>
+      parseBackendEnv({
+        ...validEnv,
+        GOOGLE_CLIENT_ID:
+          "compass-self-host-placeholder.apps.googleusercontent.com",
+        GOOGLE_CLIENT_SECRET: "client-secret",
+      }),
+    ).toThrow("Google configuration requires both client ID and secret");
   });
 
   it("requires a Google notification token for HTTPS Google watch callbacks", () => {

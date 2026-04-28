@@ -76,7 +76,7 @@ Optional but behavior-changing:
 - `EMAILER_API_SECRET`
 - `EMAILER_USER_TAG_ID`
 
-Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set. When Google is enabled and the effective Google webhook URL uses HTTPS, `TOKEN_GCAL_NOTIFICATION` is required for Google Calendar webhook validation.
+Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set to real, non-placeholder values. When Google is enabled and the effective Google webhook URL uses HTTPS, `TOKEN_GCAL_NOTIFICATION` is required for Google Calendar webhook validation.
 
 Derived backend values:
 

@@ -37,5 +37,33 @@ describe("auth.controller", () => {
         description: AuthError.GoogleNotConfigured.description,
       });
     });
+
+    it("rejects Google connect when self-host placeholder credentials are configured", async () => {
+      const originalClientId = ENV.GOOGLE_CLIENT_ID;
+      const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
+      ENV.GOOGLE_CLIENT_ID =
+        "compass-self-host-placeholder.apps.googleusercontent.com";
+      ENV.GOOGLE_CLIENT_SECRET = "compass-self-host-placeholder-secret";
+      const promise = jest.fn();
+
+      try {
+        authController.connectGoogle(
+          {
+            body: {},
+            session: { getUserId: () => "507f1f77bcf86cd799439011" },
+          } as never,
+          { promise } as never,
+        );
+      } finally {
+        ENV.GOOGLE_CLIENT_ID = originalClientId;
+        ENV.GOOGLE_CLIENT_SECRET = originalClientSecret;
+      }
+
+      expect(promise).toHaveBeenCalledTimes(1);
+      await expect(promise.mock.calls[0][0]).rejects.toMatchObject({
+        code: AuthError.GoogleNotConfigured.code,
+        description: AuthError.GoogleNotConfigured.description,
+      });
+    });
   });
 });

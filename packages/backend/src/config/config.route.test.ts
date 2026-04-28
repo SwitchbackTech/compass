@@ -27,4 +27,28 @@ describe("GET /api/config", () => {
       ENV.GOOGLE_CLIENT_SECRET = originalClientSecret;
     }
   });
+
+  it("reports Google unavailable for self-host placeholder credentials", async () => {
+    const originalClientId = ENV.GOOGLE_CLIENT_ID;
+    const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
+    ENV.GOOGLE_CLIENT_ID =
+      "compass-self-host-placeholder.apps.googleusercontent.com";
+    ENV.GOOGLE_CLIENT_SECRET = "compass-self-host-placeholder-secret";
+
+    try {
+      const response = await baseDriver
+        .getServer()
+        .get("/api/config")
+        .expect(Status.OK);
+
+      expect(response.body).toEqual({
+        google: {
+          isConfigured: false,
+        },
+      });
+    } finally {
+      ENV.GOOGLE_CLIENT_ID = originalClientId;
+      ENV.GOOGLE_CLIENT_SECRET = originalClientSecret;
+    }
+  });
 });

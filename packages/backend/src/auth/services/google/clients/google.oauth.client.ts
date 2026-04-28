@@ -8,7 +8,10 @@ import {
 } from "@core/types/auth.types";
 import { type gCalendar } from "@core/types/gcal";
 import { StringV4Schema } from "@core/types/type.utils";
-import { ENV } from "@backend/common/constants/env.constants";
+import {
+  ENV,
+  isGoogleConfigured,
+} from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
@@ -16,7 +19,11 @@ class GoogleOAuthClient {
   oauthClient: OAuth2Client;
 
   constructor() {
-    if (!ENV.GOOGLE_CLIENT_ID || !ENV.GOOGLE_CLIENT_SECRET) {
+    if (
+      !ENV.GOOGLE_CLIENT_ID ||
+      !ENV.GOOGLE_CLIENT_SECRET ||
+      !isGoogleConfigured(ENV)
+    ) {
       throw error(
         AuthError.GoogleNotConfigured,
         "Google OAuth client unavailable",

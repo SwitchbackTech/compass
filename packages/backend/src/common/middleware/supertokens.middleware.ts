@@ -12,7 +12,10 @@ import UserMetadata from "supertokens-node/recipe/usermetadata";
 import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { ENV } from "@backend/common/constants/env.constants";
+import {
+  ENV,
+  isGoogleConfigured,
+} from "@backend/common/constants/env.constants";
 import {
   createEmailPasswordUser,
   createGoogleUser,
@@ -88,7 +91,7 @@ const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
   const clientId = ENV.GOOGLE_CLIENT_ID;
   const clientSecret = ENV.GOOGLE_CLIENT_SECRET;
 
-  if (!clientId || !clientSecret) {
+  if (!clientId || !clientSecret || !isGoogleConfigured(ENV)) {
     return [];
   }
 

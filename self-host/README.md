@@ -128,7 +128,7 @@ cd ~/compass
 
 ### Google login or Google Calendar sync does not work locally
 
-The local installer writes placeholder Google OAuth values so Compass can start without a Google Cloud setup. See [Google Calendar](../docs/self-hosting/google-calendar.md) for the difference between no-Google mode, local Google OAuth/import, and public HTTPS Google watch notifications.
+The local installer writes placeholder Google OAuth values so Compass can start without a Google Cloud setup. Compass treats those placeholders as not configured. See [Google Calendar](../docs/self-hosting/google-calendar.md) for the difference between no-Google mode, local Google OAuth/import, and public HTTPS Google watch notifications.
 
 ## Where Your Data Lives
 

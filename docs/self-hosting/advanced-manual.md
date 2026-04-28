@@ -65,7 +65,7 @@ curl http://localhost:3000/api/health
 
 ## Google In Manual Setup
 
-Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set.
+Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set to real, non-placeholder values.
 
 Google sign-in and local import can use localhost during development. Google watch notifications need a public HTTPS webhook URL that Google can reach.
 

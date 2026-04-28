@@ -4,6 +4,9 @@ import { Logger } from "@core/logger/winston.logger";
 import { isDev } from "@core/util/env.util";
 
 const logger = Logger("app:constants");
+const GOOGLE_CLIENT_ID_PLACEHOLDER =
+  "compass-self-host-placeholder.apps.googleusercontent.com";
+const GOOGLE_CLIENT_SECRET_PLACEHOLDER = "compass-self-host-placeholder-secret";
 
 const _nodeEnv = process.env["NODE_ENV"] as NodeEnv;
 
@@ -42,8 +45,10 @@ const EnvSchema = z
   })
   .strict()
   .superRefine((env, context) => {
-    const hasGoogleClientId = Boolean(env.GOOGLE_CLIENT_ID);
-    const hasGoogleClientSecret = Boolean(env.GOOGLE_CLIENT_SECRET);
+    const hasGoogleClientId = isUsableGoogleClientId(env.GOOGLE_CLIENT_ID);
+    const hasGoogleClientSecret = isUsableGoogleClientSecret(
+      env.GOOGLE_CLIENT_SECRET,
+    );
     const isGoogleConfigComplete = hasGoogleClientId && hasGoogleClientSecret;
 
     if (hasGoogleClientId !== hasGoogleClientSecret) {
@@ -80,9 +85,25 @@ type RawBackendEnv = Record<string, string | undefined>;
 
 export type BackendEnv = z.infer<typeof EnvSchema>;
 
+const isUsableGoogleClientId = (clientId?: string): boolean =>
+  Boolean(
+    clientId &&
+      clientId !== "undefined" &&
+      clientId !== GOOGLE_CLIENT_ID_PLACEHOLDER,
+  );
+
+const isUsableGoogleClientSecret = (clientSecret?: string): boolean =>
+  Boolean(
+    clientSecret &&
+      clientSecret !== "undefined" &&
+      clientSecret !== GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+  );
+
 export const isGoogleConfigured = (
   env: Pick<BackendEnv, "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET">,
-): boolean => Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+): boolean =>
+  isUsableGoogleClientId(env.GOOGLE_CLIENT_ID) &&
+  isUsableGoogleClientSecret(env.GOOGLE_CLIENT_SECRET);
 
 export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
   const nodeEnv = rawEnv["NODE_ENV"] as NodeEnv;
