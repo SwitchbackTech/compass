@@ -1,5 +1,9 @@
 import { faker } from "@faker-js/faker";
 import { calendar } from "@googleapis/calendar";
+import {
+  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+} from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { ENV } from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
@@ -62,9 +66,8 @@ describe("GoogleOAuthClient", () => {
   it("throws when self-host placeholder credentials are configured", () => {
     const originalClientId = ENV.GOOGLE_CLIENT_ID;
     const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
-    ENV.GOOGLE_CLIENT_ID =
-      "compass-self-host-placeholder.apps.googleusercontent.com";
-    ENV.GOOGLE_CLIENT_SECRET = "compass-self-host-placeholder-secret";
+    ENV.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
+    ENV.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
 
     try {
       expect(() => new GoogleOAuthClient()).toThrow(

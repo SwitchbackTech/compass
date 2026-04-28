@@ -6,7 +6,11 @@ import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
-import { APP_NAME } from "@core/constants/core.constants";
+import {
+  APP_NAME,
+  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+} from "@core/constants/core.constants";
 import googleAuthService from "@backend/auth/services/google/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
@@ -258,9 +262,8 @@ describe("supertokens.middleware", () => {
     it("omits the Google third-party provider for self-host placeholder credentials", () => {
       const originalClientId = ENV.GOOGLE_CLIENT_ID;
       const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
-      ENV.GOOGLE_CLIENT_ID =
-        "compass-self-host-placeholder.apps.googleusercontent.com";
-      ENV.GOOGLE_CLIENT_SECRET = "compass-self-host-placeholder-secret";
+      ENV.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
+      ENV.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
 
       try {
         initSupertokens();

@@ -1,4 +1,8 @@
 import {
+  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+} from "@core/constants/core.constants";
+import {
   ENV,
   getApiBaseURL,
   isGoogleConfigured,
@@ -80,9 +84,8 @@ describe("env.constants", () => {
   it("treats self-host Google placeholders as not configured", () => {
     const env = parseBackendEnv({
       ...validEnv,
-      GOOGLE_CLIENT_ID:
-        "compass-self-host-placeholder.apps.googleusercontent.com",
-      GOOGLE_CLIENT_SECRET: "compass-self-host-placeholder-secret",
+      GOOGLE_CLIENT_ID: SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+      GOOGLE_CLIENT_SECRET: SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
     });
 
     expect(isGoogleConfigured(env)).toBe(false);
@@ -93,15 +96,14 @@ describe("env.constants", () => {
       parseBackendEnv({
         ...validEnv,
         GOOGLE_CLIENT_ID: "client-id",
-        GOOGLE_CLIENT_SECRET: "compass-self-host-placeholder-secret",
+        GOOGLE_CLIENT_SECRET: SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
       }),
     ).toThrow("Google configuration requires both client ID and secret");
 
     expect(() =>
       parseBackendEnv({
         ...validEnv,
-        GOOGLE_CLIENT_ID:
-          "compass-self-host-placeholder.apps.googleusercontent.com",
+        GOOGLE_CLIENT_ID: SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
         GOOGLE_CLIENT_SECRET: "client-secret",
       }),
     ).toThrow("Google configuration requires both client ID and secret");

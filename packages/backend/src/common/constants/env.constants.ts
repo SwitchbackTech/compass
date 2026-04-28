@@ -1,12 +1,14 @@
 import { z } from "zod";
-import { NodeEnv, PORT_DEFAULT_BACKEND } from "@core/constants/core.constants";
+import {
+  NodeEnv,
+  PORT_DEFAULT_BACKEND,
+  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+} from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { isDev } from "@core/util/env.util";
 
 const logger = Logger("app:constants");
-const GOOGLE_CLIENT_ID_PLACEHOLDER =
-  "compass-self-host-placeholder.apps.googleusercontent.com";
-const GOOGLE_CLIENT_SECRET_PLACEHOLDER = "compass-self-host-placeholder-secret";
 
 const _nodeEnv = process.env["NODE_ENV"] as NodeEnv;
 
@@ -89,14 +91,14 @@ const isUsableGoogleClientId = (clientId?: string): boolean =>
   Boolean(
     clientId &&
       clientId !== "undefined" &&
-      clientId !== GOOGLE_CLIENT_ID_PLACEHOLDER,
+      clientId !== SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
   );
 
 const isUsableGoogleClientSecret = (clientSecret?: string): boolean =>
   Boolean(
     clientSecret &&
       clientSecret !== "undefined" &&
-      clientSecret !== GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+      clientSecret !== SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
   );
 
 export const isGoogleConfigured = (
