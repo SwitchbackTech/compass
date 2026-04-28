@@ -8,12 +8,27 @@ Server hosting should be possible with a small set of configuration changes, but
 
 ## Current Blocker
 
-The backend SuperTokens setup currently hardcodes localhost domains in `packages/backend/src/common/middleware/supertokens.middleware.ts`:
+The regular backend CORS middleware already reads configured origins from `CORS`. That is not the main server-hosting blocker.
+
+The blocker is the SuperTokens setup in `packages/backend/src/common/middleware/supertokens.middleware.ts`. It currently hardcodes localhost domains:
 
 - API domain: `http://localhost:3000`
 - website domain: `http://localhost:9080`
 
-Until that behavior is made configurable and verified with a real public domain, these docs should not claim that public-domain signup, login, or Google auth work on a server.
+The SuperTokens CORS helper also hardcodes the local web origin.
+
+That means setting `BASEURL=https://compass.example.com/api`, `FRONTEND_URL=https://compass.example.com`, and `CORS=https://compass.example.com` is not enough yet. The app may serve, but auth redirects, cookies, CORS, password reset links, or session behavior can fail.
+
+A likely first fix is to derive the SuperTokens domains from the configured URLs:
+
+```ts
+const apiDomain = new URL(ENV.BASEURL).origin;
+const websiteDomain = new URL(ENV.FRONTEND_URL).origin;
+```
+
+Then the SuperTokens CORS helper should use the configured allowed origins instead of one hardcoded localhost origin.
+
+Until that behavior is implemented and verified with a real public domain, these docs should not claim that public-domain signup, login, or Google auth work on a server.
 
 ## Target Shape, Not Yet Verified
 
@@ -26,6 +41,13 @@ If public server hosting is supported later, use one coherent path instead of se
 - proxy `/api/*` to the backend
 - proxy all other paths to the web app
 - keep MongoDB, SuperTokens Core, and Postgres private to the server or Docker network
+
+Start with one domain first:
+
+- Frontend: `https://compass.example.com`
+- Backend: `https://compass.example.com/api`
+
+That avoids extra cross-site cookie complexity. A separate domain such as `https://api.compass.example.com` can be supported later, but it is a harder beginner path.
 
 That path still needs implementation and verification before it becomes a beginner guide.
 
