@@ -19,7 +19,7 @@ export function AddTaskPreviewButton({
     <button
       id={ID_ADD_TASK_BUTTON}
       type="button"
-      className="group flex w-full cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 text-left transition-colors hover:border-blue-200/30 hover:bg-blue-200/5 focus:border-blue-200/50 focus:bg-blue-200/10 focus:ring-2 focus:ring-blue-200/30 focus:outline-none"
+      className="group flex w-full cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 text-left transition-colors hover:border-blue-200/30 hover:bg-blue-200/5 focus:border-blue-200/50 focus:bg-blue-200/10 focus:outline-none focus:ring-2 focus:ring-blue-200/30"
       onClick={onBeginAddingTask}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
@@ -30,7 +30,7 @@ export function AddTaskPreviewButton({
         aria-hidden={true}
       />
       <div className="flex flex-1 items-center justify-between">
-        <span className="group-hover:text-white-100 group-focus:text-white-100 text-sm text-gray-200 transition-colors">
+        <span className="text-gray-200 text-sm transition-colors group-hover:text-white-100 group-focus:text-white-100">
           Create task
         </span>
         {isHoveringAddBlock && (

@@ -22,7 +22,7 @@ export function EventContextMenuItems({ id }: { id: string }) {
       onKeyDown={handleKeyDown}
       role="menuitem"
       tabIndex={0}
-      className="flex cursor-pointer items-center gap-2 border-b border-gray-600 px-3 py-2.5 text-sm text-gray-200 last:border-b-0 hover:bg-gray-700"
+      className="flex cursor-pointer items-center gap-2 border-gray-600 border-b px-3 py-2.5 text-gray-200 text-sm last:border-b-0 hover:bg-gray-700"
     >
       <TrashIcon size={16} className="text-gray-300" />
       <span>Delete Event</span>

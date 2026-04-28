@@ -50,10 +50,16 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
       const watchDocuments: Array<Schema_Watch> = [];
 
-      const syncDocs = (syncDoc.google?.events ?? [])
-        .map((doc) => Migration.OldSyncDetailsSchema.safeParse(doc).data)
-        .filter((d) => ExpirationDateSchema.safeParse(d?.expiration).success)
-        .filter((doc) => doc !== undefined);
+      const syncDocs = (syncDoc.google?.events ?? []).flatMap((doc) => {
+        const parsed = Migration.OldSyncDetailsSchema.safeParse(doc);
+
+        if (!parsed.success) return [];
+        if (!ExpirationDateSchema.safeParse(parsed.data.expiration).success) {
+          return [];
+        }
+
+        return [parsed.data];
+      });
 
       const gcal = await getGcalClient(syncDoc.user).catch((err) => {
         logger.error(

@@ -58,7 +58,7 @@ export function TaskList() {
   return (
     <section
       aria-label="daily-tasks"
-      className="bg-darkBlue-400 flex h-full min-w-xs flex-1 flex-col border-r border-gray-400/20 text-white"
+      className="flex h-full min-w-xs flex-1 flex-col border-gray-400/20 border-r bg-darkBlue-400 text-white"
     >
       <TaskListHeader />
 

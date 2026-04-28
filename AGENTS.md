@@ -1,322 +1,77 @@
-# Compass Calendar Development Instructions
+# Compass
 
-Primary instructions for AI agents and developers in the Compass monorepo.
+## Defaults
 
-## Quick Start
+- Frontend-only work usually starts with `bun run dev:web`; it does not require
+  backend services.
+- Backend, auth, MongoDB, Google sync, and SSE work require
+  `packages/backend/.env.local`. Bootstrap with:
 
-1. `bun install`
-2. `cp packages/backend/.env.local.example packages/backend/.env.local`
-3. `bun run dev:web` (frontend on http://localhost:9080/)
-
-## Table of Contents
-
-- [Compass Calendar Development Instructions](#compass-calendar-development-instructions)
-  - [Quick Start](#quick-start)
-  - [Table of Contents](#table-of-contents)
-  - [Principles](#principles)
-  - [Module Aliases](#module-aliases)
-  - [Working Effectively](#working-effectively)
-    - [Initial Setup](#initial-setup)
-    - [Development Servers](#development-servers)
-    - [Testing](#testing)
-      - [Writing Tests in `@compass/web`](#writing-tests-in-compassweb)
-      - [Running Tests](#running-tests)
-    - [Building](#building)
-    - [Linting](#linting)
-  - [Validation](#validation)
-  - [Project Structure](#project-structure)
-    - [Packages Overview](#packages-overview)
-    - [Documentation](#documentation)
-    - [Key Files \& Directories](#key-files--directories)
-  - [Common Tasks \& Timing](#common-tasks--timing)
-    - [Repository Operations](#repository-operations)
-    - [Development Workflow](#development-workflow)
-  - [Cursor Cloud specific instructions](#cursor-cloud-specific-instructions)
-    - [Styling](#styling)
-    - [CI/CD Integration](#cicd-integration)
-  - [Troubleshooting](#troubleshooting)
-    - [Common Issues](#common-issues)
-    - [Network Limitations](#network-limitations)
-    - [Workarounds](#workarounds)
-  - [Package Scripts Reference](#package-scripts-reference)
-    - [Root Level Commands](#root-level-commands)
-  - [Naming Conventions](#naming-conventions)
-  - [Branch Naming \& Commit Message Conventions](#branch-naming--commit-message-conventions)
-    - [Semantic Branch Naming](#semantic-branch-naming)
-    - [Semantic Commit Messages](#semantic-commit-messages)
-    - [Pre-commit Validation](#pre-commit-validation)
-
-## Principles
-
-1. **Simplicity**. Prefer the simplest solution to a problem over the more complex solutions.
-2. **Avoid Dependencies**. Prefer built-ins and stable, minimal dependencies. This project will be around for decades, so we want to avoid dependencies that will become obsolete.
-
-## Module Aliases
-
-Use these aliases instead of relative paths:
-
-- **Backend, scripts, core** (see root `package.json` `_moduleAliases`):
-  - `@compass/backend` → `packages/backend/src`
-  - `@compass/core` → `packages/core/src`
-  - `@compass/scripts` → `packages/scripts/src`
-- **Web** (see `packages/web/tsconfig.json` paths):
-  - `@web/*` → `packages/web/src/*`
-  - `@core/*` → `packages/core/src/*`
-
-Example: `import { foo } from '@compass/core'` not `import { foo } from '../../../core'`
-
-## Working Effectively
-
-### Initial Setup
-
-- Install dependencies: `bun install`
-  - Takes ~3.5 minutes. Set timeout to 10+ minutes.
-  - Bun is the primary install/runtime entrypoint. `bun run cli`, `bun run dev:backend`, core tests, and build packaging now execute through Bun directly.
-  - Node 24+ is still required for retained tooling: the web/backend/scripts Jest suites and the production Node build output.
-- Copy environment template: `cp packages/backend/.env.local.example packages/backend/.env.local`
-
-### Development Servers
-
-- **Web Development**:
-  - bun run dev:web - Takes ~10 seconds to build. Serves on http://localhost:9080/
-  - Frontend works standalone without backend services
-- **Backend Development**:
-  - `bun run dev:backend` - Fails without proper .env.local configuration
-
-### Testing
-
-Run `bun run test:core`, `bun run test:web`, and `bun run test:backend` after making changes. Use `bun run test:scripts` for scripts package tests. The current test strategy is hybrid: `test:core` uses `bun test`, while `test:web`, `test:backend`, and `test:scripts` still route to the retained Jest harness. Avoid `bun run test` (full suite) in restricted network environments—MongoDB binary download may fail.
-
-#### Writing Tests in `@compass/web`
-
-- Write tests the way a user would use the application by using the DOM and user interactions with `@testing-library/user-event` rather than internal implementation details of React components.
-- Do NOT use `data-` attributes or CSS selectors to locate elements. Use semantic locators and roles instead.
-- When writing tests, avoid mocking as much as possible.
-- Where mocking is inevitable, use spies to sub out specific module functions before attempting to mock the whole module.
-- **DO NOT** attempt to test login functionality without proper backend setup.
-
-#### Running Tests
-
-- **Core tests**: `bun run test:core`
-- **Web tests**: `bun run test:web`
-- **Backend tests**: `bun run test:backend`
-- **Scripts tests**: `bun run test:scripts`
-- **Full test suite**: `bun run test`
-- `test:core` is Bun-native; the other package test commands intentionally retain Jest for now.
-
-### Building
-
-- **Web Build**: `bun run cli build web --environment staging --clientId "test-client-id"`
-- **Node Build**: `bun run cli build nodePckgs --environment staging`
-
-### Linting
-
-- Run `bun run lint` before finishing. Treat Biome lint and format checks as required validation for changed implementation files, not an optional follow-up.
-- Run `bun run lint:fix` to apply safe Biome fixes and formatting.
-
-## Validation
-
-- Use zod for all validation
-- Define return types with zod schemas
-- Export types generated from schemas
-
-## Project Structure
-
-This is a Typescript project with a monorepo structure.
-
-### Packages Overview
-
-- `@compass/backend` - Express.js REST API with MongoDB, Google Calendar sync, Server-Sent Events (SSE)
-- `@compass/web` - React/TypeScript frontend with Redux, styled-components, webpack bundling
-- `@compass/core` - Shared utilities, types, and business logic
-- `@compass/scripts` - CLI tools for building, database operations, user management
-
-### Documentation
-
-Additional documentation lives in the `docs/` directory (e.g. API docs, workflow examples). Update these documents as you make changes when relevant.
-
-- **Requirements**: `docs/requirements/` contains product requirements and specifications for each feature area (auth, events, google-sync, recurring-events, shortcuts, tasks). Consult these when implementing or modifying features to understand expected behavior.
-
-### Key Files & Directories
-
-```text
-packages/backend/src/
-├── auth/           # Google OAuth integration
-├── calendar/       # Google Calendar API
-├── event/          # Event CRUD operations
-├── sync/           # Calendar synchronization
-├── user/           # User management
-└── common/         # Shared backend utilities
-
-packages/web/src/
-├── views/          # React components and pages
-├── store/          # Redux state management
-├── common/         # Frontend utilities
-└── assets/         # Images and static files
-
-packages/core/src/
-├── types/          # TypeScript type definitions
-├── constants/      # Shared constants
-├── util/           # Utility functions
-└── mappers/        # Data transformation logic
+```bash
+cp packages/backend/.env.local.example packages/backend/.env.local
 ```
 
-## Common Tasks & Timing
+- Avoid defaulting to `bun run test`; use the focused package test first.
+- Formatting is handled by the repo-local Codex Stop hook after each agent turn.
+- Use `bun run lint` and relevant verification before push or handoff.
 
-### Repository Operations
+## Commands
 
-- `bun install` - 3.5 minutes
-- `bun run test:core` - ~2 seconds (Bun test, all pass)
-- `bun run test:web` - ~15 seconds (retained Jest suite, all pass)
-- `bun run test:backend` - ~15 seconds (all pass)
-- `bun run test:scripts` - scripts package tests
-- `bun run dev:web` - ~10 seconds to start
-- `bun run cli --help` - ~3 seconds (shows available commands)
+```bash
+bun install
+bun run dev:web
+bun run dev:backend
+bun run test:core
+bun run test:web
+bun run test:backend
+bun run test:scripts
+bun run type-check
+bun run lint
+bun run lint:fix
+```
 
-### Development Workflow
+Validation defaults:
 
-1. **Start Development**: `bun run dev:web` (frontend only, always works)
-2. **Run Tests**: `bun run test:core && bun run test:web` (add `&& bun run test:backend` when credentials available)
-3. **Run Biome Lint and Format Checks**: `bun run lint`
-4. **Apply Safe Fixes When Needed**: `bun run lint:fix`
-5. **Manual Validation**: Open <http://localhost:9080/> and verify login page loads
+- Core: `bun run test:core`
+- Web: `bun run test:web`
+- Backend: `bun run test:backend`
+- Scripts: `bun run test:scripts`
+- Shared contracts/cross-package behavior: affected package tests plus
+  `bun run type-check`
 
-## Cursor Cloud specific instructions
+## Lookups
 
-- Prefer running scoped checks for changed areas: `bun run test:core`, `bun run test:web`, `bun run test:backend`, or `bun run test:scripts` as applicable.
-- Run `bun run lint` before handing off work.
-- Do not run `bun run test` in restricted environments unless explicitly required.
-- For UI-affecting changes in `packages/web`, validate with `bun run dev:web` and confirm behavior in the web dev server.
-- If backend work is required, ensure `packages/backend/.env.local` exists by copying `packages/backend/.env.local.example`.
-- Keep test runs reproducible by recording exact commands and outcomes in your handoff notes.
+- Docs index: `docs/README.md`
+- Edit-location map: `docs/development/feature-file-map.md`
+- Common change paths: `docs/development/common-change-recipes.md`
+- Testing details: `docs/development/testing-playbook.md`
+- Local env/runtime modes: `docs/development/local-development.md`
+- Troubleshooting: `docs/development/troubleshoot.md`
+- Feature acceptance runbooks: `docs/acceptance/`
+- Feature docs: `docs/features/`
+- `docs/self-hosting.md`
+- `self-host/README.md`
 
-### Styling
+## Compass-Specific Rules
 
-- Use tailwind for styling.
-- Use the semantic colors defined in `packages/web/src/index.css` using the `@theme` directive.
-- Do NOT use raw tailwind colors like `bg-blue-300` or `text-gray-100`. Use the semantic colors like `bg-bg-primary` or `text-text-light` instead.
+- Use aliases instead of deep relative imports:
+  - `@compass/backend` -> `packages/backend/src`
+  - `@compass/core` -> `packages/core/src`
+  - `@compass/scripts` -> `packages/scripts/src`
+  - `@web/*` -> `packages/web/src/*`
+  - `@core/*` -> `packages/core/src/*`
+- Shared web/backend contracts belong in `packages/core` and should use Zod.
+- Web tests should use React Testing Library, semantic role/name/text queries,
+  and `user-event`; avoid CSS selectors and `data-*` locators.
+- New web styles should use Tailwind semantic colors from
+  `packages/web/src/index.css`, not raw colors like `bg-blue-300`.
+- Do not test login flows without the required backend setup.
+- Keep React components in their own files.
+- Do not add barrel `index.ts` files.
+- Use `is` prefixes for boolean names.
 
-### CI/CD Integration
+## Git
 
-- GitHub Actions unit tests run in `.github/workflows/test-unit.yml` as a matrix (`core`, `web`, `backend`, `scripts`) using `bun run test:<project>` on `push`.
-- The root test dispatcher keeps the current hybrid model: core runs through `bun test`, and web/backend/scripts use the retained Jest harness.
-- End-to-end tests run separately in `.github/workflows/test-e2e.yml` on pull requests to `main`.
-
-## Troubleshooting
-
-### Common Issues
-
-- **Test failures**: Run `bun run test:core`, `bun run test:web`, `bun run test:backend`, and `bun run test:scripts` individually to narrow the scope of the failure
-- **Backend won't start**: Missing environment variables in `packages/backend/.env.local`, use web-only development (`bun run dev:web`)
-- Environment: Copy from `packages/backend/.env.local.example` to `packages/backend/.env.local` (there is no `.env.example`).
-- Webpack dev server warns about a missing `.env.local` file; this is harmless—it falls back to `process.env`.
-- Biome can modify files when run with `bun run lint:fix`. Review the diff before pushing.
-
-### Network Limitations
-
-- MongoDB binary downloads blocked in some environments
-- Google Fonts and external resources may be blocked
-- Backend services require internet connectivity for OAuth and database
-
-### Workarounds
-
-- Use individual test commands instead of full test suite
-- Mock external services for backend development when credentials unavailable
-
-## Package Scripts Reference
-
-### Root Level Commands
-
-- `bun run cli [command]` - Access CLI tools for build, seed, delete operations
-- `bun run dev:web` - Start the Bun-wrapped webpack dev server
-- `bun run dev:backend` - Start the backend directly with Bun watch mode (requires full environment)
-- `bun run test` - Run all tests (fails in restricted environments)
-- `bun run test:core` - Run core package tests only
-- `bun run test:web` - Run web package tests only
-- `bun run test:backend` - Run backend package tests only
-- `bun run test:scripts` - Run scripts package tests only
-
-## Naming Conventions
-
-- Use `is` prefix for boolean variables. For example, `isLoading`, `isError`, `isSuccess`
-- Do not use barrel (`index.ts`) files. Use named exports instead.
-- When creating constants, use uppercase and underscores. Example: `SIGNIN_INCREMENTAL`
-- When adding a new function to an existing file, order the function alphabetically.
-
-## Branch Naming & Commit Message Conventions
-
-### Semantic Branch Naming
-
-**ALWAYS** create branches following this pattern:
-
-- `type/action[-issue-number]` (e.g., `feature/add-form`, `bug/fix-auth`, `bug/fix-auth-123`)
-
-**Branch Type Prefixes:**
-
-- `feature/` - New features or enhancements
-- `bug/` - Bug fixes
-- `hotfix/` - Critical production fixes
-- `refactor/` - Code refactoring without functional changes
-- `docs/` - Documentation updates
-
-**Action Keywords:**
-
-- `add-` - Adding new functionality
-- `fix-` - Fixing bugs or issues
-- `update-` - Updating existing features
-- `remove-` - Removing code or features
-- `refactor-` - Restructuring code
-
-**Examples:**
-
-- `feature/add-form` - Adding a form
-- `bug/fix-auth` - Fixing authentication issue
-
-### Semantic Commit Messages
-
-**ALWAYS**:
-
-- use conventional commit format: `type(scope): description`
-- use lower-case for the commit message
-
-**Commit Types:**
-
-- `feat` - New features
-- `fix` - Bug fixes
-- `docs` - Documentation changes
-- `style` - Code style changes (formatting, semicolons, etc.)
-- `refactor` - Code refactoring
-- `test` - Adding or updating tests
-- `chore` - Maintenance tasks, dependency updates
-
-**Scope Examples:**
-
-- `web` - Frontend/React changes
-- `backend` - Server/API changes
-- `core` - Shared utilities/types
-- `scripts` - CLI tools and build scripts
-- `config` - Configuration files
-
-**Message Format Rules:**
-
-- Use present tense: "add feature" not "added feature"
-- Keep description under 72 characters
-- Include issue number when applicable
-- Be specific and descriptive
-
-**Examples:**
-
-- `feat(web): add calendar event creation modal`
-- `fix(backend): resolve authentication timeout issue`
-- `docs(readme): update installation instructions`
-- `refactor(core): simplify date utility functions`
-- `test(web): add unit tests for login component`
-
-### Pre-commit Validation
-
-Before committing or pushing:
-
-- Run `bun run lint` to check lint, formatting, and import organization with Biome.
-- Run `bun run lint:fix` when you want Biome to apply safe fixes.
-
-**ALWAYS** ensure your commits pass these checks before pushing.
+- Branches: `type/action[-issue-number]`, for example `feature/add-form`.
+- Commits: conventional, lower-case, present tense, for example
+  `fix(web): handle disconnected google state`.

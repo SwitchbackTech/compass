@@ -41,6 +41,9 @@
         "useHookAtTopLevel": "warn",
         "useYield": "warn"
       },
+      "complexity": {
+        "useLiteralKeys": "off"
+      },
       "style": {
         "useImportType": {
           "level": "warn",
@@ -56,7 +59,7 @@
         "noDoubleEquals": "warn",
         "noDuplicateTestHooks": "warn",
         "noExportsInTest": "warn",
-        "useIterableCallbackReturn": "warn"
+        "useIterableCallbackReturn": "off"
       },
       "nursery": {
         "useSortedClasses": {

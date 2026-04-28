@@ -11,7 +11,7 @@ export const ShortcutSection = ({
   if (!shortcuts.length) return null;
   return (
     <div className="mb-3">
-      <div className="text-text-light mb-1 text-[10px] tracking-wide uppercase">
+      <div className="mb-1 text-[10px] text-text-light uppercase tracking-wide">
         {title}
       </div>
       <ShortcutList shortcuts={shortcuts} />

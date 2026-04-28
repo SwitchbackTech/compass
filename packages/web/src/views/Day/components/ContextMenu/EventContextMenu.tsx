@@ -36,7 +36,7 @@ export function EventContextMenu({
         ref={floating.refs.setFloating}
         role="menu"
         className={classNames(
-          "bg-bg-secondary absolute z-[1000] min-w-[160px] list-none rounded",
+          "absolute z-[1000] min-w-[160px] list-none rounded bg-bg-secondary",
           "border border-gray-600 shadow-md",
         )}
         style={{

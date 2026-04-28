@@ -3,7 +3,7 @@
  * Orchestrates: Redux action → repository call (API or IndexedDB) → Elf store update.
  * All async event operations (create, edit, delete, fetch) go through here.
  * Do not update the Elf store from reducers or components — only sagas do this.
- * Related: docs/development/web-state-guide.md
+ * Related: docs/frontend/frontend-runtime-flow.md
  */
 
 import { call, put, select } from "@redux-saga/core/effects";

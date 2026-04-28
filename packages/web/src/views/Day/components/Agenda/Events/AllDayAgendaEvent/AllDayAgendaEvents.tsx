@@ -52,8 +52,8 @@ const AllDayAgendaEventsComponent = ({
       {...(events.length > 0 ? {} : { title: "All-day events section" })}
       className={classNames(
         "group flex max-h-36 min-h-8 flex-col gap-1 pt-2",
-        "overflow-x-hidden overflow-y-auto",
-        "border-t border-gray-400/20",
+        "overflow-y-auto overflow-x-hidden",
+        "border-gray-400/20 border-t",
         "focus-visible:rounded focus-visible:ring-2",
         "focus:outline-none focus-visible:ring-yellow-200",
       )}

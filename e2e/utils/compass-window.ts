@@ -42,10 +42,8 @@ declare global {
   interface Window {
     __COMPASS_E2E_TEST__?: boolean;
     __COMPASS_E2E_STORE__?: {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      dispatch: (action: any) => any;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      getState: () => any;
+      dispatch: (action: unknown) => unknown;
+      getState: () => unknown;
     };
     __COMPASS_E2E_HOOKS__?: {
       setAuthenticated: (value: boolean) => void;

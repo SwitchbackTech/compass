@@ -66,7 +66,7 @@ describe("GcalSyncProcessor UPSERT: STANDALONE", () => {
     const origStandalone = gcalEvents.regular;
     const updatedStandalone = {
       ...origStandalone,
-      summary: origStandalone.summary + " - Changed in GCal",
+      summary: `${origStandalone.summary} - Changed in GCal`,
     };
 
     const origEventsCount = (await getEventsInDb({ user: user._id.toString() }))

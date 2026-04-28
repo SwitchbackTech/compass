@@ -31,8 +31,8 @@ const MigrationToast: React.FC<MigrationToastProps> = ({
       >
         <span className="text-sm text-white">{message}</span>
         <div className="flex items-center gap-2">
-          <span className="text-xs text-gray-300">Undo</span>
-          <div className="flex items-center gap-1 rounded bg-gray-700 px-1.5 py-0.5 text-xs text-gray-200">
+          <span className="text-gray-300 text-xs">Undo</span>
+          <div className="flex items-center gap-1 rounded bg-gray-700 px-1.5 py-0.5 text-gray-200 text-xs">
             {getModifierKeyIcon({ size: 12 })}
             <span>+ Z</span>
           </div>
@@ -40,7 +40,7 @@ const MigrationToast: React.FC<MigrationToastProps> = ({
       </button>
       <button
         onClick={onNavigate}
-        className="bg-bg-secondary text-text-lighter hover:bg-accent-primary hover:text-text-dark rounded px-3 py-1 text-xs whitespace-nowrap transition-colors"
+        className="whitespace-nowrap rounded bg-bg-secondary px-3 py-1 text-text-lighter text-xs transition-colors hover:bg-accent-primary hover:text-text-dark"
       >
         Go to day
       </button>

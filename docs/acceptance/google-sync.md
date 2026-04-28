@@ -17,8 +17,8 @@ Use this guide to validate:
 
 Do not use this guide to validate:
 
-- first-time Google sign-in from a logged-out state (see `docs/manual-testing/auth-testing.md`, Scenario 5)
-- connecting Google during initial signup (see `docs/manual-testing/auth-testing.md`, Scenario 7)
+- first-time Google sign-in from a logged-out state (see `docs/acceptance/auth.md`, Scenario 5)
+- connecting Google during initial signup (see `docs/acceptance/auth.md`, Scenario 7)
 
 ## Setup
 

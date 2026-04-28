@@ -112,15 +112,18 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       if (recurrence) {
         const { eventId } = recurrence;
         if (eventId) {
-          const rule =
-            rrules.get(eventId) ??
-            (await mongoService.event
-              .findOne({ _id: new ObjectId(eventId) })
-              .then((e) => {
-                if (!Array.isArray(e?.recurrence?.rule)) return undefined;
+          let rule = rrules.get(eventId);
+          if (!rule) {
+            const baseEvent = await mongoService.event.findOne({
+              _id: new ObjectId(eventId),
+            });
 
-                return rrules.set(eventId, e?.recurrence?.rule).get(eventId);
-              }));
+            const baseRule = baseEvent?.recurrence?.rule;
+            if (Array.isArray(baseRule)) {
+              rule = baseRule;
+              rrules.set(eventId, rule);
+            }
+          }
 
           if (!Array.isArray(rule)) {
             logger.warn(

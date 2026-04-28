@@ -56,8 +56,8 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
     return (
       <div className="flex w-full flex-col gap-4 text-center">
         <div className="text-text-lighter">
-          <p className="mb-2 text-base font-medium">Check your email</p>
-          <p className="text-text-light text-sm">
+          <p className="mb-2 font-medium text-base">Check your email</p>
+          <p className="text-sm text-text-light">
             If an account exists for {form.values.email}, you will receive a
             password reset link shortly.
           </p>
@@ -71,7 +71,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
 
   return (
     <form onSubmit={form.handleSubmit} className="flex w-full flex-col gap-4">
-      <p className="text-text-light text-center text-sm">
+      <p className="text-center text-sm text-text-light">
         Enter your email address and we&apos;ll send you a link to reset your
         password.
       </p>
@@ -88,7 +88,7 @@ export const ForgotPasswordForm: FC<ForgotPasswordFormProps> = ({
         autoComplete="email"
       />
       {submitError ? (
-        <p className="text-status-error text-center text-sm" role="alert">
+        <p className="text-center text-sm text-status-error" role="alert">
           {submitError}
         </p>
       ) : null}

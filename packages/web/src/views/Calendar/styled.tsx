@@ -13,7 +13,7 @@ export function StyledCalendar({ children }: PropsWithChildren) {
   return (
     <div
       id={ID_MAIN}
-      className="bg-bg-primary flex h-screen flex-1 flex-col items-center justify-center overflow-hidden p-8"
+      className="flex h-screen flex-1 flex-col items-center justify-center overflow-hidden bg-bg-primary p-8"
     >
       {children}
     </div>

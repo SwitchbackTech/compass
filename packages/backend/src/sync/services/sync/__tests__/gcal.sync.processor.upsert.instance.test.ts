@@ -29,7 +29,7 @@ describe("GcalSyncProcessor UPSERT: INSTANCE", () => {
 
     const instance = {
       ...origInstance,
-      summary: origTitle + " - Changed in GCal",
+      summary: `${origTitle} - Changed in GCal`,
     };
 
     const instanceTitle = instance.summary;

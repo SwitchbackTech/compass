@@ -166,7 +166,7 @@ const _GridEvent = (
       ref={ref}
       role="button"
       tabIndex={0}
-      className={`absolute min-h-2.5 overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear select-none hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
+      className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
       style={eventStyle}
       onMouseDown={(e: MouseEvent) => {
         if (isRightClick(e)) {
@@ -206,24 +206,22 @@ const _GridEvent = (
                   {getTimesLabel(event.startDate, event.endDate)}
                 </Text>
               )}
-            <>
-              <div
-                role="button"
-                tabIndex={-1}
-                style={scalerStyle({ top: "-0.25px" })}
-                onMouseDown={(e) => {
-                  onScalerMouseDown(event, e, "startDate");
-                }}
-              />
-              <div
-                role="button"
-                tabIndex={-1}
-                style={scalerStyle({ bottom: "-0.25px" })}
-                onMouseDown={(e) => {
-                  onScalerMouseDown(event, e, "endDate");
-                }}
-              />
-            </>
+            <div
+              role="button"
+              tabIndex={-1}
+              style={scalerStyle({ top: "-0.25px" })}
+              onMouseDown={(e) => {
+                onScalerMouseDown(event, e, "startDate");
+              }}
+            />
+            <div
+              role="button"
+              tabIndex={-1}
+              style={scalerStyle({ bottom: "-0.25px" })}
+              onMouseDown={(e) => {
+                onScalerMouseDown(event, e, "endDate");
+              }}
+            />
           </>
         )}
       </Flex>

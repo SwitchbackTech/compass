@@ -32,7 +32,7 @@ export const SyncEventsOverlay = () => {
     <OverlayPanel
       icon={
         <div
-          className="border-border-primary border-t-text-lighter h-10 w-10 animate-spin rounded-full border-2"
+          className="h-10 w-10 animate-spin rounded-full border-2 border-border-primary border-t-text-lighter"
           aria-hidden="true"
         />
       }

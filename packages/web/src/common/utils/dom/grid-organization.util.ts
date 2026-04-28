@@ -27,7 +27,7 @@ export const maxGridZIndex$ = new BehaviorSubject<number>(0);
 
 const borderRingSpace = 2;
 const fullWidthFactorThreshold = 1.75;
-const themeSpacing = parseInt(theme.spacing.s);
+const themeSpacing = parseInt(theme.spacing.s, 10);
 const canvas = document.createElement("canvas");
 const canvasContext = canvas.getContext("2d");
 const selector = `.${CLASS_TIMED_CALENDAR_EVENT}`;

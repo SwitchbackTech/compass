@@ -16,6 +16,6 @@
   "devDependencies": {
     "@types/inquirer": "^9.0.1",
     "@types/node": "^24.7.2",
-    "typescript": "^5.1.6"
+    "typescript": "^6.0.3"
   }
 }

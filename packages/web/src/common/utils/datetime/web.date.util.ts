@@ -154,7 +154,7 @@ export const getWeekRangeLabel = (weekStart: Dayjs, weekEnd: Dayjs) => {
   const isSameMonth = weekStart.month() === weekEnd.month();
   const start = weekStart.format("M.D");
   const end = weekEnd.format(isSameMonth ? "D" : "M.D");
-  const label = start + " - " + end;
+  const label = `${start} - ${end}`;
   return label;
 };
 

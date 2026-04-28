@@ -47,14 +47,14 @@ export const NowLine = memo(function NowLine() {
     <div
       ref={ref}
       data-now-marker="true"
-      className={"text-accent-primary absolute right-0 left-0 border-t"}
+      className={"absolute right-0 left-0 border-t text-accent-primary"}
       style={{
         top: `${getNowLinePosition(currentTime)}px`,
         zIndex: maxZIndex + 1,
       }}
     >
       <div className="now-line absolute -top-1 -left-2 h-2 w-4 rounded-full"></div>
-      <div className="pointer-events-none absolute -top-2 left-0 w-16 rounded-sm bg-[#0c0f17] px-1 text-[11px] leading-none font-medium shadow-sm">
+      <div className="pointer-events-none absolute -top-2 left-0 w-16 rounded-sm bg-[#0c0f17] px-1 font-medium text-[11px] leading-none shadow-sm">
         {getAgendaEventTime(currentTime)}
       </div>
     </div>

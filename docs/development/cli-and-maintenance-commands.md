@@ -1,22 +1,22 @@
 # CLI And Maintenance Commands
 
-Compass ships a repo CLI for builds and database maintenance.
+Compass ships a repo CLI for database maintenance and a few legacy build paths.
+Prefer this doc for safety context; use `bun run cli --help` for exhaustive
+command syntax.
 
 ## Entry Point
-
-Primary file:
-
-- `packages/scripts/src/cli.ts`
-
-Root command:
 
 ```bash
 bun run cli <command>
 ```
 
+Primary file:
+
+- `packages/scripts/src/cli.ts`
+
 Environment loading:
 
-- `bun run cli` runs the TypeScript entrypoint directly through Bun with `--env-file=packages/backend/.env.local`.
+- `bun run cli` loads `packages/backend/.env.local`.
 - Keep local development variables in `packages/backend/.env.local` (bootstrap from `.env.local.example`).
 
 ## CLI URL Resolution Contract
@@ -36,28 +36,13 @@ Fallback behavior:
 - if `FRONTEND_URL` is already a non-localhost URL, CLI uses that hostname directly
 - local mode does not prompt for a domain; it depends on `BASEURL`
 
-## Supported Commands
+## Commands To Know
 
-### Build
-
-Examples:
-
-```bash
-bun run cli build web --environment staging --clientId "test-client-id"
-bun run cli build nodePckgs --environment staging
-```
+### Delete
 
 Implementation:
 
-- `packages/scripts/src/commands/build.ts`
-
-Use for:
-
-- production-style web builds
-- compiled Node package output
-- Bun-managed production dependency installation in `build/node`
-
-### Delete
+- `packages/scripts/src/commands/delete.ts`
 
 Example:
 
@@ -65,18 +50,12 @@ Example:
 bun run cli delete --user <id-or-email> --force
 ```
 
-Implementation:
-
-- `packages/scripts/src/commands/delete.ts`
-
 Use with care; this is full user purge logic. It removes Compass Mongo data,
 SuperTokens auth identities, user-id mappings, and SuperTokens metadata.
 Browser cleanup is still a separate local-only step for cookies, localStorage,
 and IndexedDB.
 
 ### Migrate
-
-Example shape:
 
 ```bash
 bun run cli migrate <umzug-subcommand>
@@ -86,44 +65,33 @@ Implementation:
 
 - `packages/scripts/src/commands/migrate.ts`
 
-This command wraps Umzug and uses Mongo-backed migration storage.
+Use `pending`, `executed`, `up`, `down`, and `create` through the wrapped Umzug
+CLI. For bounded execution, inspect `bun run cli migrate --help` before running.
 
-Verified subcommands (`bun run cli migrate --help`):
-
-- `up` - apply pending migrations
-- `down` - revert migrations
-- `pending` - list pending migrations
-- `executed` - list already applied migrations
-- `create` - scaffold a new migration file
-
-Common examples:
+Common inspection commands:
 
 ```bash
-# inspect migration state
 bun run cli migrate pending
 bun run cli migrate executed
-
-# apply everything pending
-bun run cli migrate up
-
-# apply a specific migration only
-bun run cli migrate up --name 2025.10.13T14.22.21.migrate-sync-watch-data
-
-# revert the most recent migration
-bun run cli migrate down
 ```
 
-`up` and `down` also support `--to` and `--step` for bounded execution.
-
 ### Seed
-
-Example shape:
 
 ```bash
 bun run cli seed <umzug-subcommand>
 ```
 
-Use for database seeder flows built on the same migration framework.
+Seeders use the same migration framework and Mongo-backed execution state.
+
+### Build
+
+Builds usually use direct package scripts:
+
+- `bun run build:web`
+- `bun run build:backend --environment [local|staging|production]`
+
+Use CLI build commands only when you specifically need their legacy packaging
+behavior.
 
 ## Migration Internals
 
@@ -166,13 +134,8 @@ Operational constraints:
 Recommended execution pattern:
 
 ```bash
-# verify target migration is pending
 bun run cli migrate pending
-
-# run only the watch migration
 bun run cli migrate up --name 2025.10.13T14.22.21.migrate-sync-watch-data
-
-# confirm it is now recorded as executed
 bun run cli migrate executed
 ```
 
@@ -182,15 +145,7 @@ bun run cli migrate executed
 - Treat delete flows as destructive unless proven otherwise.
 - For migration work, inspect existing migration naming and ordering first.
 - For build work, use `bun run build:web` or `bun run build:backend` directly (not the CLI).
-- `bun run cli` always loads `packages/backend/.env.local` through the root Bun script.
+- There is no waitlist invite CLI command in the current codebase.
 
-## Quick Reference
-
-- General help: `bun run cli --help`
-- Web production build: `bun run build:web` (outputs to `build/web/`)
-- Backend production build: `bun run build:backend --environment [local|staging|production]` (outputs to `build/backend/`)
-- Database migration framework: `bun run cli migrate ...`
-- Seeder framework: `bun run cli seed ...`
-- User-data maintenance: `bun run cli delete ...`
-
-There is no waitlist invite CLI command in the current codebase. Mobile waitlist signup is handled in the web app via `packages/web/src/components/MobileGate/MobileGate.tsx`.
+Mobile waitlist signup is handled in the web app via
+`packages/web/src/components/MobileGate/MobileGate.tsx`.

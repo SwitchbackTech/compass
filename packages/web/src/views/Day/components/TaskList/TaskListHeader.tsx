@@ -19,7 +19,7 @@ export const TaskListHeader = () => {
   const isToday = dateInView.isSame(dayjs(), "day");
 
   return (
-    <div className="border-b border-gray-400/20 p-4">
+    <div className="border-gray-400/20 border-b p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 aria-live="polite">
@@ -31,7 +31,7 @@ export const TaskListHeader = () => {
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <h3 className="text-white-100 text-sm font-medium" aria-live="polite">
+        <h3 className="font-medium text-sm text-white-100" aria-live="polite">
           {subheader}
         </h3>
         <div className="flex items-center gap-2">

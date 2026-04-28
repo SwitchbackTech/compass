@@ -163,7 +163,7 @@ export const SelectView = ({
           })}
           id={dropdownId}
           data-testid="view-select-dropdown"
-          className="inset-inline-end-0 bg-bg-secondary border-border-primary absolute top-full z-50 mt-1 min-w-[140px] rounded border py-1 shadow-lg"
+          className="absolute inset-inline-end-0 top-full z-50 mt-1 min-w-[140px] rounded border border-border-primary bg-bg-secondary py-1 shadow-lg"
           role="listbox"
         >
           {options.map((option, index) => {
@@ -189,7 +189,7 @@ export const SelectView = ({
                     : "text-fg-primary hover:bg-fg-primary-dark"
                 } ${
                   isActive && !isSelected
-                    ? "bg-fg-primary-dark ring-fg-primary-dark ring-1"
+                    ? "bg-fg-primary-dark ring-1 ring-fg-primary-dark"
                     : ""
                 }`}
               >
