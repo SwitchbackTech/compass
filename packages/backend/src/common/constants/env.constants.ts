@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { NodeEnv, PORT_DEFAULT_BACKEND } from "@core/constants/core.constants";
+import {
+  NodeEnv,
+  PORT_DEFAULT_BACKEND,
+  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+} from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { isDev } from "@core/util/env.util";
 
@@ -42,8 +47,10 @@ const EnvSchema = z
   })
   .strict()
   .superRefine((env, context) => {
-    const hasGoogleClientId = Boolean(env.GOOGLE_CLIENT_ID);
-    const hasGoogleClientSecret = Boolean(env.GOOGLE_CLIENT_SECRET);
+    const hasGoogleClientId = isUsableGoogleClientId(env.GOOGLE_CLIENT_ID);
+    const hasGoogleClientSecret = isUsableGoogleClientSecret(
+      env.GOOGLE_CLIENT_SECRET,
+    );
     const isGoogleConfigComplete = hasGoogleClientId && hasGoogleClientSecret;
 
     if (hasGoogleClientId !== hasGoogleClientSecret) {
@@ -80,9 +87,25 @@ type RawBackendEnv = Record<string, string | undefined>;
 
 export type BackendEnv = z.infer<typeof EnvSchema>;
 
+const isUsableGoogleClientId = (clientId?: string): boolean =>
+  Boolean(
+    clientId &&
+      clientId !== "undefined" &&
+      clientId !== SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+  );
+
+const isUsableGoogleClientSecret = (clientSecret?: string): boolean =>
+  Boolean(
+    clientSecret &&
+      clientSecret !== "undefined" &&
+      clientSecret !== SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+  );
+
 export const isGoogleConfigured = (
   env: Pick<BackendEnv, "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET">,
-): boolean => Boolean(env.GOOGLE_CLIENT_ID && env.GOOGLE_CLIENT_SECRET);
+): boolean =>
+  isUsableGoogleClientId(env.GOOGLE_CLIENT_ID) &&
+  isUsableGoogleClientSecret(env.GOOGLE_CLIENT_SECRET);
 
 export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
   const nodeEnv = rawEnv["NODE_ENV"] as NodeEnv;
@@ -96,7 +119,7 @@ export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
     EMAILER_SECRET: rawEnv["EMAILER_API_SECRET"],
     EMAILER_USER_TAG_ID: rawEnv["EMAILER_USER_TAG_ID"],
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
-    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"],
+    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"] || undefined,
     MONGO_URI: rawEnv["MONGO_URI"],
     NODE_ENV: nodeEnv,
     TZ: rawEnv["TZ"],

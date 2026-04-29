@@ -14,14 +14,21 @@ Interpret the result like this:
 - `500`: the backend is running but database connectivity failed
 - connection refused or timeout: the backend is not listening yet, or the port/base URL is wrong
 
+For the local self-host installer, the same backend health check is:
+
+```bash
+curl -i http://localhost:3000/api/health
+```
+
+The self-host web app is served at `http://localhost:9080`.
+
 ## SSE Stream Not Connected Or Not Receiving Events
 
 Compass realtime updates now use Server-Sent Events over:
 
 - `GET /api/events/stream`
 
-If UI data is stale after backend writes or sync activity, verify transport before
-digging into business logic.
+If UI data is stale after backend writes or sync activity, verify transport before digging into business logic.
 
 Quick checks:
 
@@ -29,8 +36,7 @@ Quick checks:
 2. open browser Network tab and verify `/api/events/stream` stays open with `200`
 3. verify response headers include `content-type: text/event-stream`
 4. confirm periodic `: keepalive` frames are visible (roughly every 25 seconds)
-5. trigger a known publish path (for example event write or import) and verify
-   named events appear (`EVENT_CHANGED`, `IMPORT_GCAL_*`, `USER_METADATA`)
+5. trigger a known publish path (for example event write or import) and verify named events appear (`EVENT_CHANGED`, `IMPORT_GCAL_*`, `USER_METADATA`)
 
 If the stream does not open:
 
@@ -65,9 +71,7 @@ When you encounter a mismatch user id, the user in your mongo collection is not 
 bun run cli delete -u <email>
 ```
 
-The delete flow removes both Compass data and SuperTokens auth state. The
-browser cleanup screen only clears local browser storage after the server-side
-purge is complete.
+The delete flow removes both Compass data and SuperTokens auth state. The browser cleanup screen only clears local browser storage after the server-side purge is complete.
 
 See [CLI And Maintenance Commands](./cli-and-maintenance-commands.md) for the current delete flow.
 
@@ -84,9 +88,7 @@ To fix this:
 
 ## Google Calendar Repair Fails Or Stops Unexpectedly
 
-When a user triggers repair from the UI (`Repair Google Calendar`) and the flow
-does not complete as expected, first classify the failure mode from the message
-and SSE behavior.
+When a user triggers repair from the UI (`Repair Google Calendar`) and the flow does not complete as expected, first classify the failure mode from the message and SSE behavior.
 
 ### Quota / rate-limit during repair
 
@@ -94,8 +96,7 @@ If the user sees:
 
 - `Google Calendar repair hit a Google API limit. Please wait a few minutes and try again.`
 
-then backend detected a Google quota/rate-limit response (`403`/`429`), and this
-is usually transient.
+then backend detected a Google quota/rate-limit response (`403`/`429`), and this is usually transient.
 
 Recommended action:
 
@@ -105,25 +106,19 @@ Recommended action:
 
 ### Revoked token during repair
 
-If access was revoked (for example Google returns `invalid_grant`), backend
-prunes Google data and emits `GOOGLE_REVOKED`.
+If access was revoked (for example Google returns `invalid_grant`), backend prunes Google data and emits `GOOGLE_REVOKED`.
 
 Operational notes:
 
-- this path does **not** end with an `IMPORT_GCAL_END` payload with
-  `status: "ERRORED"`
-- UI should transition to reconnect-required behavior rather than repeatedly
-  retrying repair
+- this path does **not** end with an `IMPORT_GCAL_END` payload with `status: "ERRORED"`
+- UI should transition to reconnect-required behavior rather than repeatedly retrying repair
 - user action is to reconnect Google, then allow sync/import restart
 
 ## Google Connect Aborts With Local Events Sync Error
 
-When a password-authenticated user connects Google from an existing session, the
-client now attempts to sync IndexedDB-only Compass events **before**
-`POST /api/auth/google/connect`.
+When a password-authenticated user connects Google from an existing session, the client now attempts to sync IndexedDB-only Compass events **before** `POST /api/auth/google/connect`.
 
-If that pre-connect local sync fails, connect is intentionally aborted and the
-user sees:
+If that pre-connect local sync fails, connect is intentionally aborted and the user sees:
 
 - `We could not sync your local events. Your changes are still saved on this device.`
 

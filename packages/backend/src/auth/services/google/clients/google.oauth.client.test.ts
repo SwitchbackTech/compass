@@ -1,6 +1,11 @@
 import { faker } from "@faker-js/faker";
 import { calendar } from "@googleapis/calendar";
+import {
+  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+} from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
+import { ENV } from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
 
@@ -56,6 +61,22 @@ describe("GoogleOAuthClient", () => {
       version: "v3",
       auth: client.oauthClient,
     });
+  });
+
+  it("throws when self-host placeholder credentials are configured", () => {
+    const originalClientId = ENV.GOOGLE_CLIENT_ID;
+    const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
+    ENV.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
+    ENV.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
+
+    try {
+      expect(() => new GoogleOAuthClient()).toThrow(
+        AuthError.GoogleNotConfigured.description,
+      );
+    } finally {
+      ENV.GOOGLE_CLIENT_ID = originalClientId;
+      ENV.GOOGLE_CLIENT_SECRET = originalClientSecret;
+    }
   });
 
   it("throws when getGoogleUserInfo is called without an id token", async () => {

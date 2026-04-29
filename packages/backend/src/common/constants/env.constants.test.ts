@@ -1,4 +1,8 @@
 import {
+  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+} from "@core/constants/core.constants";
+import {
   ENV,
   getApiBaseURL,
   isGoogleConfigured,
@@ -66,7 +70,7 @@ describe("env.constants", () => {
     ).toThrow("Google configuration requires both client ID and secret");
   });
 
-  it("reports Google as configured only when both credentials are present", () => {
+  it("reports Google as configured only when both usable credentials are present", () => {
     const env = parseBackendEnv({
       ...validEnv,
       BASEURL: "http://localhost:3000/api",
@@ -75,6 +79,34 @@ describe("env.constants", () => {
     });
 
     expect(isGoogleConfigured(env)).toBe(true);
+  });
+
+  it("treats self-host Google placeholders as not configured", () => {
+    const env = parseBackendEnv({
+      ...validEnv,
+      GOOGLE_CLIENT_ID: SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+      GOOGLE_CLIENT_SECRET: SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+    });
+
+    expect(isGoogleConfigured(env)).toBe(false);
+  });
+
+  it("rejects mixed real and placeholder Google credentials", () => {
+    expect(() =>
+      parseBackendEnv({
+        ...validEnv,
+        GOOGLE_CLIENT_ID: "client-id",
+        GOOGLE_CLIENT_SECRET: SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+      }),
+    ).toThrow("Google configuration requires both client ID and secret");
+
+    expect(() =>
+      parseBackendEnv({
+        ...validEnv,
+        GOOGLE_CLIENT_ID: SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+        GOOGLE_CLIENT_SECRET: "client-secret",
+      }),
+    ).toThrow("Google configuration requires both client ID and secret");
   });
 
   it("requires a Google notification token for HTTPS Google watch callbacks", () => {
@@ -104,6 +136,15 @@ describe("env.constants", () => {
     expect(env.GCAL_WEBHOOK_BASEURL).toBe(
       "https://example.trycloudflare.com/api",
     );
+  });
+
+  it("treats a blank Google webhook base URL as unset", () => {
+    const env = parseBackendEnv({
+      ...validEnv,
+      GCAL_WEBHOOK_BASEURL: "",
+    });
+
+    expect(env.GCAL_WEBHOOK_BASEURL).toBeUndefined();
   });
 
   it("rejects a non-HTTPS Google webhook base URL", () => {

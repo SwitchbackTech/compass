@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER } from "@core/constants/core.constants";
 import { isDev } from "@core/util/env.util";
 
 export const getApiBaseUrl = (apiBaseUrl?: string, port?: string): string => {
@@ -42,14 +43,11 @@ export const ENV_WEB = webEnvSchema.parse({
 
 export const IS_DEV = isDev(ENV_WEB.NODE_ENV);
 
-const GOOGLE_CLIENT_ID_PLACEHOLDER =
-  "compass-self-host-placeholder.apps.googleusercontent.com";
-
 export const isGoogleAuthConfigured = (clientId?: string): boolean =>
   Boolean(
     clientId &&
       clientId !== "undefined" &&
-      clientId !== GOOGLE_CLIENT_ID_PLACEHOLDER,
+      clientId !== SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
   );
 
 export const IS_GOOGLE_AUTH_CONFIGURED = isGoogleAuthConfigured(

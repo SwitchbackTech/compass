@@ -76,9 +76,7 @@ Optional but behavior-changing:
 - `EMAILER_API_SECRET`
 - `EMAILER_USER_TAG_ID`
 
-Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`
-are set. When Google is enabled and the effective Google webhook URL uses HTTPS,
-`TOKEN_GCAL_NOTIFICATION` is required for Google Calendar webhook validation.
+Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set to real, non-placeholder values. When Google is enabled and the effective Google webhook URL uses HTTPS, `TOKEN_GCAL_NOTIFICATION` is required for Google Calendar webhook validation.
 
 Derived backend values:
 
@@ -91,7 +89,8 @@ Primary files:
 
 - `packages/scripts/src/common/cli.constants.ts`
 - `packages/scripts/src/common/cli.utils.ts`
-- `packages/web/webpack.config.mjs`
+- `packages/web/build.ts`
+- `packages/web/dev.ts`
 
 Variables used by CLI/build flows:
 
@@ -113,16 +112,16 @@ Important variables:
 - `POSTHOG_KEY`
 - `POSTHOG_HOST`
 
-`GOOGLE_CLIENT_ID` is optional. When it is missing, the web app hides Google
-sign-in and Google Calendar connection actions.
+`GOOGLE_CLIENT_ID` is optional. When it is missing, the web app hides Google sign-in and Google Calendar connection actions.
 
 `BACKEND_BASEURL` is derived from `API_BASEURL`.
 
-Webpack behavior (`packages/web/webpack.config.mjs`):
+Bun build/dev behavior:
 
-- local/staging/production builds load `packages/backend/.env.local`, `.env.staging`, or `.env.production`
-- missing env files are a warning, not a hard failure; values can come from `process.env`
-- test mode skips env-file loading entirely
+- `packages/web/build.ts` injects `BASEURL` as `API_BASEURL` for production builds
+- `packages/web/dev.ts` does the same for the local web dev server
+- `GOOGLE_CLIENT_ID` is injected when present
+- if `API_BASEURL` is not injected, the web app falls back to `PORT` and builds `http://localhost:<PORT>/api`
 
 ## Practical Mode Matrix
 
@@ -174,15 +173,9 @@ When testing changes around event loading, explicitly decide which user state yo
 
 ## Google Calendar Webhook Notes
 
-Google OAuth and Google Calendar Watch have different local requirements.
-Google sign-in can use localhost redirect URLs, but Calendar Watch
-notifications are server-to-server callbacks from Google to Compass. For those
-callbacks, Google needs an HTTPS backend URL that it can reach from the public
-internet.
+Google OAuth and Google Calendar Watch have different local requirements. Google sign-in can use localhost redirect URLs, but Calendar Watch notifications are server-to-server callbacks from Google to Compass. For those callbacks, Google needs an HTTPS backend URL that it can reach from the public internet.
 
-Compass does not start a local tunnel automatically. Google Calendar webhook
-watch flows use `GCAL_WEBHOOK_BASEURL` when it is set and fall back to
-`BASEURL` when it is not set.
+Compass does not start a local tunnel automatically. Google Calendar webhook watch flows use `GCAL_WEBHOOK_BASEURL` when it is set and fall back to `BASEURL` when it is not set.
 
 For normal local development:
 
@@ -190,12 +183,9 @@ For normal local development:
 BASEURL=http://localhost:3000/api
 ```
 
-Google sign-in, Google Calendar connect, and initial import can still work, but
-live Google-to-Compass notifications are skipped because Google cannot call a
-local HTTP backend.
+Google sign-in, Google Calendar connect, and initial import can still work, but live Google-to-Compass notifications are skipped because Google cannot call a local HTTP backend.
 
-For local end-to-end Google Watch testing, run a temporary HTTPS tunnel to the
-backend:
+For local end-to-end Google Watch testing, run a temporary HTTPS tunnel to the backend:
 
 ```bash
 cloudflared tunnel --url http://localhost:3000
@@ -208,11 +198,9 @@ BASEURL=http://localhost:3000/api
 GCAL_WEBHOOK_BASEURL=https://<generated-host>.trycloudflare.com/api
 ```
 
-Keep `BASEURL` local so the browser and Server-Sent Events continue using
-localhost. Only Google's webhook POST requests should use the tunnel.
+Keep `BASEURL` local so the browser and Server-Sent Events continue using localhost. Only Google's webhook POST requests should use the tunnel.
 
-Stop the tunnel when testing is complete. Do not use personal calendars with
-sensitive data for manual tunnel tests.
+Stop the tunnel when testing is complete. Do not use personal calendars with sensitive data for manual tunnel tests.
 
 ## Common Failure Modes
 
@@ -220,8 +208,6 @@ sensitive data for manual tunnel tests.
 - backend/web/cli read from `.env.local`; using `.env` instead leaves required variables unset
 - web points at the wrong API base URL
 - session exists but user profile fetch fails
-- sync endpoints work but notification/watch setup is skipped because neither
-  `GCAL_WEBHOOK_BASEURL` nor `BASEURL` is public HTTPS
-- `GCAL_WEBHOOK_BASEURL` points to a tunnel without `/api`, so Google posts to
-  the wrong route
+- sync endpoints work but notification/watch setup is skipped because neither `GCAL_WEBHOOK_BASEURL` nor `BASEURL` is public HTTPS
+- `GCAL_WEBHOOK_BASEURL` points to a tunnel without `/api`, so Google posts to the wrong route
 - backend starts but `/api/health` returns `500` because `MONGO_URI` or database reachability is broken

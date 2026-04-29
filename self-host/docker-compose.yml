@@ -32,6 +32,7 @@ services:
       CHANNEL_EXPIRATION_MIN: ${CHANNEL_EXPIRATION_MIN:-10}
       CORS: ${CORS:-http://localhost:9080,http://localhost:3000}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:9080}
+      GCAL_WEBHOOK_BASEURL: ${GCAL_WEBHOOK_BASEURL:-}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-compass-self-host-placeholder.apps.googleusercontent.com}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-compass-self-host-placeholder-secret}
       LOG_LEVEL: ${LOG_LEVEL:-info}

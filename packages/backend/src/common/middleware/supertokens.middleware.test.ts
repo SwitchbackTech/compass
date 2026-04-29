@@ -8,8 +8,8 @@ import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
 import {
   APP_NAME,
-  PORT_DEFAULT_BACKEND,
-  PORT_DEFAULT_WEB,
+  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
+  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
 } from "@core/constants/core.constants";
 import googleAuthService from "@backend/auth/services/google/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
@@ -188,9 +188,9 @@ describe("supertokens.middleware", () => {
       expect(initArg.appInfo).toMatchObject({
         appName: APP_NAME,
         apiBasePath: "/api",
-        apiDomain: `http://localhost:${PORT_DEFAULT_BACKEND}`,
+        apiDomain: new URL(ENV.BASEURL).origin,
         websiteBasePath: "/login",
-        websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
+        websiteDomain: new URL(ENV.FRONTEND_URL).origin,
       });
 
       expect(initArg.supertokens).toMatchObject({
@@ -209,11 +209,61 @@ describe("supertokens.middleware", () => {
       ]);
     });
 
+    it("uses configured public URLs for SuperTokens domains", () => {
+      const originalBaseUrl = ENV.BASEURL;
+      const originalFrontendUrl = ENV.FRONTEND_URL;
+
+      ENV.BASEURL = "https://compass.example.com/api";
+      ENV.FRONTEND_URL = "https://compass.example.com";
+
+      try {
+        initSupertokens();
+
+        const initArg = getFirstCallArg<{
+          appInfo: Record<string, unknown>;
+        }>(mockedSuperTokensInit);
+
+        expect(initArg.appInfo).toMatchObject({
+          apiDomain: "https://compass.example.com",
+          websiteDomain: "https://compass.example.com",
+        });
+      } finally {
+        ENV.BASEURL = originalBaseUrl;
+        ENV.FRONTEND_URL = originalFrontendUrl;
+      }
+    });
+
     it("omits the Google third-party provider when Google is not configured", () => {
       const originalClientId = ENV.GOOGLE_CLIENT_ID;
       const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
       ENV.GOOGLE_CLIENT_ID = undefined;
       ENV.GOOGLE_CLIENT_SECRET = undefined;
+
+      try {
+        initSupertokens();
+      } finally {
+        ENV.GOOGLE_CLIENT_ID = originalClientId;
+        ENV.GOOGLE_CLIENT_SECRET = originalClientSecret;
+      }
+
+      expect(mockedThirdPartyInit).not.toHaveBeenCalled();
+      const initArg = getFirstCallArg<{
+        recipeList: unknown[];
+      }>(mockedSuperTokensInit);
+
+      expect(initArg.recipeList).toEqual([
+        { recipe: "emailpassword" },
+        { recipe: "dashboard" },
+        { recipe: "session" },
+        { recipe: "usermetadata" },
+      ]);
+    });
+
+    it("omits the Google third-party provider for self-host placeholder credentials", () => {
+      const originalClientId = ENV.GOOGLE_CLIENT_ID;
+      const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
+      ENV.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
+      ENV.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
 
       try {
         initSupertokens();
@@ -834,16 +884,39 @@ describe("supertokens.middleware", () => {
       const arg = getFirstCallArg<{
         allowedHeaders: string[];
         credentials: boolean;
-        origin: string;
+        origin: string[];
       }>(mockedCors);
       expect(arg.credentials).toBe(true);
-      expect(arg.origin).toBe("http://localhost:9080");
+      expect(arg.origin).toEqual(ENV.ORIGINS_ALLOWED);
 
       expect(arg.allowedHeaders).toEqual([
         "content-type",
         "st-auth-mode",
         "st-auth-mode",
       ]);
+    });
+
+    it("falls back to the configured frontend origin when allowed origins are empty", () => {
+      const originalAllowedOrigins = ENV.ORIGINS_ALLOWED;
+      const originalFrontendUrl = ENV.FRONTEND_URL;
+      const corsReturn = jest.fn();
+      mockedCors.mockReturnValue(corsReturn);
+
+      ENV.ORIGINS_ALLOWED = [];
+      ENV.FRONTEND_URL = "https://compass.example.com/day";
+
+      try {
+        supertokensCors();
+
+        const arg = getFirstCallArg<{
+          origin: string[];
+        }>(mockedCors);
+
+        expect(arg.origin).toEqual(["https://compass.example.com"]);
+      } finally {
+        ENV.ORIGINS_ALLOWED = originalAllowedOrigins;
+        ENV.FRONTEND_URL = originalFrontendUrl;
+      }
     });
   });
 });

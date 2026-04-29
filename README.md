@@ -33,14 +33,14 @@ https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 - Command palette
 - Event tagging, resizing, duplicating, reordering
 - Drag & drop
-- 2-way sync with Google Calendar
+- Google Calendar sync when configured
 - Google OAuth authentication
 - User session management with Supertokens
 - Email capture via Kit
 
 ### Current Limitations
 
-- Only supports primary Google Calendar (no sub-calendars)
+- No UI to choose which Google calendars sync
 - No sharing, locations, reminders, or mobile app
 
 We're actively working on improvements – check out our [roadmap](https://github.com/orgs/SwitchbackTech/projects/4).
@@ -49,7 +49,7 @@ We're actively working on improvements – check out our [roadmap](https://githu
 
 - **Frontend**: React, Redux, Tailwind CSS, TypeScript, Bun
 - **Backend**: Node.js, Express, TypeScript, MongoDB
-- **Integrations**: Google Calendar API, Google OAuth2, Socket.io
+- **Integrations**: Google Calendar API, Google OAuth2, Server-Sent Events
 - **Testing**: Bun, React Testing Library, Playwright
 
 ## Getting Started
@@ -60,7 +60,7 @@ Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_sourc
 
 ### Self-host Compass
 
-Run Compass on your own machine and keep your calendar data on your own infrastructure.
+Run Compass on your own machine with the local Docker installer. Password-only self-hosting is supported; Google Calendar is optional.
 
 With Docker Desktop installed and running, install the local self-hosted stack:
 
@@ -68,7 +68,7 @@ With Docker Desktop installed and running, install the local self-hosted stack:
 curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
 ```
 
-See [docs/self-hosting.md](./docs/self-hosting.md) for the full guide, including the inspect-before-run install path and manual setup notes.
+See [docs/self-hosting.md](./docs/self-hosting.md) to choose the right self-hosting guide and read the local install, backup, Google Calendar, and server-hosting notes.
 
 ### Run Locally
 

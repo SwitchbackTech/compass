@@ -9,14 +9,13 @@ import {
   type TypeInput as ThirdPartyTypeInput,
 } from "supertokens-node/recipe/thirdparty/types";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
-import {
-  APP_NAME,
-  PORT_DEFAULT_BACKEND,
-  PORT_DEFAULT_WEB,
-} from "@core/constants/core.constants";
+import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { ENV } from "@backend/common/constants/env.constants";
+import {
+  ENV,
+  isGoogleConfigured,
+} from "@backend/common/constants/env.constants";
 import {
   createEmailPasswordUser,
   createGoogleUser,
@@ -92,7 +91,7 @@ const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
   const clientId = ENV.GOOGLE_CLIENT_ID;
   const clientSecret = ENV.GOOGLE_CLIENT_SECRET;
 
-  if (!clientId || !clientSecret) {
+  if (!clientId || !clientSecret || !isGoogleConfigured(ENV)) {
     return [];
   }
 
@@ -106,14 +105,23 @@ const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
   ];
 };
 
+const getSupertokensApiDomain = () => new URL(ENV.BASEURL).origin;
+
+const getSupertokensWebsiteDomain = () => new URL(ENV.FRONTEND_URL).origin;
+
+const getSupertokensAllowedOrigins = () =>
+  ENV.ORIGINS_ALLOWED.length > 0
+    ? ENV.ORIGINS_ALLOWED
+    : [getSupertokensWebsiteDomain()];
+
 export const initSupertokens = () => {
   SuperTokens.init({
     appInfo: {
       appName: APP_NAME,
       apiBasePath: "/api",
-      apiDomain: `http://localhost:${PORT_DEFAULT_BACKEND}`,
+      apiDomain: getSupertokensApiDomain(),
       websiteBasePath: "/login",
-      websiteDomain: `http://localhost:${PORT_DEFAULT_WEB}`,
+      websiteDomain: getSupertokensWebsiteDomain(),
     },
     supertokens: {
       connectionURI: ENV.SUPERTOKENS_URI,
@@ -234,7 +242,7 @@ export const initSupertokens = () => {
 
 export const supertokensCors = () =>
   cors({
-    origin: `http://localhost:${PORT_DEFAULT_WEB}`,
+    origin: getSupertokensAllowedOrigins(),
     allowedHeaders: [
       "content-type",
       "st-auth-mode",
