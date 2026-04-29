@@ -34,34 +34,22 @@ Important notes:
 
 Pick based on where you want Compass to live and whether you want Google Calendar.
 
-- **On your laptop, no Google.** The default. Run the installer, open `localhost:9080`, sign up with email and password. This is the recommended path.
+- **On your laptop, no Google.** Run the installer, open `localhost:9080`, sign up with email and password.
 - **On your laptop, with Google sign-in or import.** Same install, plus your own Google OAuth client added to `~/compass/.env`. Continuous Google Calendar sync (Google pushing changes to Compass) needs a public HTTPS URL, so it isn't part of this path.
 - **On a public server.** A VPS with Docker, your own domain, and Caddy in front for HTTPS. More setup and responsibility. Use this when you want Compass reachable from anywhere or want full Google Calendar sync.
 
-## Choose a guide
+## Next steps
+
+For the local guide, including what to expect, how to manage the install,
+and troubleshooting, read [Local quickstart](./local-quickstart.md).
+
+If you want Compass on a VPS with your own domain, read
+[Server hosting guide](./server-guide.md).
+
+## Other docs
 
 | Guide | Use it when |
 | --- | --- |
-| [Local quickstart](./local-quickstart.md) | You want the recommended local Docker install on your own Mac or Linux machine. |
 | [Backups and restore](./backups-and-restore.md) | You want to preserve or restore signed-in event data and auth data. |
 | [Google Calendar](./google-calendar.md) | You want to understand no-Google mode, optional local Google OAuth/import, or public HTTPS Google watch notifications. |
-| [Server hosting guide](./server-guide.md) | You want to serve Compass from a public domain with Docker Compose and Caddy. |
 | [Advanced manual setup](./advanced-manual.md) | You want to run the pieces yourself instead of using the installer. |
-
-## What this guide does not set up yet
-
-These docs keep the default path focused on local Docker self-hosting. They do not set up:
-
-- a built-in HTTPS certificate or reverse proxy (the [server guide](./server-guide.md) covers this manually with Caddy)
-- a built-in backup scheduler
-- an automatic restore flow
-- a rollback command for `./compass update`
-- Docker backups for browser IndexedDB data
-- continuous Google Calendar sync on the local-only install (see [Google Calendar](./google-calendar.md) for why)
-
-## Start here
-
-For the full local guide, including what to expect, how to manage the install,
-and troubleshooting, read [Local quickstart](./local-quickstart.md).
-If you want Compass on a VPS with your own domain, read
-[Server hosting guide](./server-guide.md).
