@@ -1,12 +1,12 @@
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { type RootProps } from "@web/views/Calendar/calendarView.types";
 import { Dedication } from "@web/views/Calendar/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Calendar/components/Draft/context/DraftProvider";
 import { Draft } from "@web/views/Calendar/components/Draft/Draft";
 import { SidebarDraftProvider } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftProvider";
 import { Grid } from "@web/views/Calendar/components/Grid/";
+import { DayLabels } from "@web/views/Calendar/components/Header/DayLabels";
 import { Header } from "@web/views/Calendar/components/Header/Header";
 import { Shortcuts } from "@web/views/Calendar/components/Shortcuts";
 import { Sidebar } from "@web/views/Calendar/components/Sidebar/Sidebar";
@@ -16,7 +16,12 @@ import { useScroll } from "@web/views/Calendar/hooks/grid/useScroll";
 import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
 import { useToday } from "@web/views/Calendar/hooks/useToday";
 import { useWeek } from "@web/views/Calendar/hooks/useWeek";
-import { Styled, StyledCalendar } from "@web/views/Calendar/styled";
+import {
+  Styled,
+  StyledCalendar,
+  WeekGridScroller,
+  WeekGridTrack,
+} from "@web/views/Calendar/styled";
 import { CmdPalette } from "@web/views/CmdPalette";
 import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
 
@@ -51,10 +56,6 @@ export const CalendarView = () => {
     scrollUtil,
   };
 
-  const rootProps: RootProps = {
-    component: { today: today },
-  };
-
   return (
     <Styled id="cal">
       <CmdPalette {...shortcutProps} />
@@ -79,23 +80,29 @@ export const CalendarView = () => {
               )}
             </ContextMenuWrapper>
             <StyledCalendar>
-              <Header
-                rootProps={rootProps}
-                scrollUtil={scrollUtil}
-                today={today}
-                weekProps={weekProps}
-              />
+              <Header scrollUtil={scrollUtil} weekProps={weekProps} />
 
-              <ContextMenuWrapper id="grid-context-menu">
-                <Grid
-                  dateCalcs={dateCalcs}
-                  isSidebarOpen={isSidebarOpen}
-                  gridRefs={gridRefs}
-                  measurements={measurements}
-                  today={today}
-                  weekProps={weekProps}
-                />
-              </ContextMenuWrapper>
+              <WeekGridScroller>
+                <WeekGridTrack>
+                  <DayLabels
+                    startOfView={weekProps.component.startOfView}
+                    today={today}
+                    week={weekProps.component.week}
+                    weekDays={weekProps.component.weekDays}
+                  />
+
+                  <ContextMenuWrapper id="grid-context-menu">
+                    <Grid
+                      dateCalcs={dateCalcs}
+                      isSidebarOpen={isSidebarOpen}
+                      gridRefs={gridRefs}
+                      measurements={measurements}
+                      today={today}
+                      weekProps={weekProps}
+                    />
+                  </ContextMenuWrapper>
+                </WeekGridTrack>
+              </WeekGridScroller>
             </StyledCalendar>
           </Shortcuts>
 
