@@ -255,4 +255,8 @@ This guide gives one coherent server shape. It doesn't automate everything a pro
 - Google Calendar continuous sync needs server-specific setup and testing.
 - A separate API domain is not the recommended first path.
 
-> **Warning.** Don't expose MongoDB, SuperTokens, or Postgres to the public internet. A safe server keeps those private and exposes only the web app and API through HTTPS.
+The default compose file keeps MongoDB, SuperTokens, and Postgres off the public
+internet. Keep it that way. Don't add public port mappings for those services,
+don't open their ports in your firewall, and don't move them to public database
+hosts unless you know how you want to secure them. For this guide, only Caddy
+should be public, and Caddy should proxy only the web app and `/api`.

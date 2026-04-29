@@ -8,13 +8,10 @@ This README is a quick reference for what each file in this folder does. For ins
 
 ## Install Compass
 
-With Docker Desktop running:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
-```
-
-Compass will be available at `http://localhost:9080` (web) and `http://localhost:3000/api` (backend). The compose stack binds those ports to `127.0.0.1` and is not a public-server installer.
+For install steps, start with [Local quickstart](../docs/self-hosting/local-quickstart.md).
+Compass will be available at `http://localhost:9080` (web) and
+`http://localhost:3000/api` (backend). The compose stack binds those ports to
+`127.0.0.1` and is not a public-server installer.
 
 ## Files in this folder
 

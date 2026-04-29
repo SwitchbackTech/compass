@@ -55,13 +55,16 @@ Most people want the first one. Pick based on where you want Compass to live and
 | [Server hosting guide](./self-hosting/server-guide.md) | You want to serve Compass from a public domain with Docker Compose and Caddy. |
 | [Advanced manual setup](./self-hosting/advanced-manual.md) | You want to run the pieces yourself instead of using the installer. |
 
-## The one warning that matters
+## Keep `.env` with your data
 
-> **Warning: keep `~/compass/.env`.**
->
-> That file holds the generated passwords and tokens that match your Docker volumes. If the volumes stay but `.env` is gone, a new install creates different credentials and locks you out of the old data.
->
-> Before `./compass update` or anything that touches the install, back up `~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume together. They're a set. See [Backups and restore](./self-hosting/backups-and-restore.md). Browser IndexedDB data (tasks, pre-signup events) is not included.
+`~/compass/.env` holds the generated passwords and tokens that match your
+Docker volumes. If the volumes stay but `.env` is gone, a new install creates
+different credentials and can lock you out of the old data.
+
+Before `./compass update` or anything that touches the install, back up
+`~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume together.
+They're a set. See [Backups and restore](./self-hosting/backups-and-restore.md).
+Browser IndexedDB data (tasks, pre-signup events) is not included.
 
 ## What this guide does not set up yet
 
@@ -74,12 +77,9 @@ These docs keep the default path focused on local Docker self-hosting. They do n
 - Docker backups for browser IndexedDB data
 - continuous Google Calendar sync on the local-only install (see [Google Calendar](./self-hosting/google-calendar.md) for why)
 
-## Quick install
+## Start here
 
-If you're ready to use the local Docker path, install Docker Desktop, make sure it's running, then run:
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
-```
-
-For the full local guide, including what to expect, how to manage the install, and troubleshooting, read [Local quickstart](./self-hosting/local-quickstart.md).
+For the full local guide, including what to expect, how to manage the install,
+and troubleshooting, read [Local quickstart](./self-hosting/local-quickstart.md).
+If you want Compass on a VPS with your own domain, read
+[Server hosting guide](./self-hosting/server-guide.md).
