@@ -24,17 +24,7 @@ You'll need:
 
 The examples use `compass.example.com`. Replace it with your real domain everywhere.
 
-If you're starting from a fresh VPS, install Docker Engine, Docker Compose, and
-Caddy before continuing. Prefer the official apt packages over Snap packages:
-
-- [Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
-- [Caddy on Debian, Ubuntu, Raspbian](https://caddyserver.com/docs/install#debian-ubuntu-raspbian)
-
-If the server has been used for other projects, do the checks in the next
-section before you install Compass. Existing web servers, private-network tools,
-or firewall rules can block Caddy even when the Compass containers are healthy.
-
-## The shape
+## What to expect
 
 One public domain, two paths:
 
@@ -45,7 +35,57 @@ Compass binds to `127.0.0.1:9080` and `127.0.0.1:3000` on the server. Caddy prox
 
 A separate API domain like `https://api.compass.example.com` may be possible, but it adds cookie and CORS complexity. This guide uses one domain for the first server install.
 
-## 0. Point DNS and check the server
+### High-level steps
+
+1. Get a VPS with Ubuntu, then install Docker, Docker Compose, and Caddy.
+2. Point DNS at the server and confirm the server has Docker, Compose, Caddy, and open `80`/`443`.
+3. SSH into the server and install Compass with the local installer.
+4. Configure Caddy to proxy `compass.example.com` to `127.0.0.1:9080` and `/api/*` to `127.0.0.1:3000`.
+5. Verify Caddy can reach the local backend over HTTPS.
+6. Edit `~/compass/.env` to use your public URLs, then `./compass rebuild`.
+7. Sign in over HTTPS and run the basic tests below.
+8. (Optional) Add Google Calendar.
+
+## 0. Get a VPS
+
+If you already have an Ubuntu VPS with Docker, Docker Compose, and Caddy installed, skip to [step 1](#1-point-dns-and-check-the-server).
+
+### Pick a provider
+
+Any provider will do, but here are two simple options.
+
+**[DigitalOcean Droplets](https://docs.digitalocean.com/products/droplets/getting-started/).** Their [Initial Server Setup with Ubuntu](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu) guide walks you through region, size, SSH key upload, and firewall setup. A Basic Droplet at $6/month (1 vCPU, 1 GB RAM) is enough for a personal Compass instance.
+
+**[Hetzner Cloud](https://docs.hetzner.com/cloud/servers/getting-started/creating-a-server/)** is a strong low-cost alternative. Their CX22 starts at around $4/month for 2 vCPU and 2 GB RAM.
+
+### Minimum specs
+
+| Resource | Minimum |
+|---|---|
+| RAM | 1 GB (2 GB recommended) |
+| Storage | 20 GB SSD |
+| OS | Ubuntu 22.04 LTS or 24.04 LTS |
+| Network | 1 static public IPv4 address |
+
+### Initial server setup
+
+After the server is created, SSH in and run your provider's initial setup steps (create a non-root sudo user, etc.), then open the ports Caddy needs:
+
+```bash
+sudo ufw allow OpenSSH
+sudo ufw allow 80/tcp
+sudo ufw allow 443/tcp
+sudo ufw enable
+```
+
+Then install Docker Engine, Docker Compose, and Caddy using the official apt packages:
+
+- [Docker Engine on Ubuntu](https://docs.docker.com/engine/install/ubuntu/)
+- [Caddy on Ubuntu](https://caddyserver.com/docs/install#debian-ubuntu-raspbian)
+
+Once those are installed, continue to step 1.
+
+## 1. Point DNS and check the server
 
 Create a DNS record for the subdomain you want to use:
 
@@ -80,6 +120,9 @@ sudo ss -tulpn | grep -E ':(80|443|3000|9080)\b' || true
 sudo ufw status verbose || true
 ```
 
+If the server has been used for other projects, existing web servers, private-network tools,
+or firewall rules can block Caddy even when the Compass containers are healthy.
+
 For the recommended setup:
 
 - Caddy should run as a system service.
@@ -90,19 +133,7 @@ For the recommended setup:
 Caddy needs port `80` for the first certificate setup and HTTP-to-HTTPS
 redirects. It needs port `443` for the final HTTPS site.
 
-## Steps in order
-
-Order matters. The helper script's health check uses `BASEURL`, so set up Caddy **before** changing `BASEURL` to your public URL. Otherwise the rebuild fails its health check against an HTTPS URL that isn't routed yet.
-
-1. Point DNS at the server and confirm the server has Docker, Compose, Caddy, and open `80`/`443`.
-2. SSH into the server and install Compass with the local installer.
-3. Configure Caddy to proxy `compass.example.com` to `127.0.0.1:9080` and `/api/*` to `127.0.0.1:3000`.
-4. Verify Caddy can reach the local backend over HTTPS.
-5. Edit `~/compass/.env` to use your public URLs, then `./compass rebuild`.
-6. Sign in over HTTPS and run the basic tests below.
-7. (Optional) Add Google Calendar.
-
-## 1. Install Compass on the server
+## 2. Install Compass on the server
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
@@ -110,7 +141,7 @@ curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-ho
 
 The installer creates `~/compass`, writes `~/compass/.env`, and starts the local Docker stack on `127.0.0.1:9080` (web) and `127.0.0.1:3000` (backend). The database containers stay on Docker's internal network and aren't exposed publicly.
 
-## 2. Configure Caddy
+## 3. Configure Caddy
 
 Put Caddy on the same server as Compass. Example Caddyfile:
 
@@ -136,7 +167,7 @@ sudo systemctl reload caddy
 If this is the first real HTTPS site on the server, Caddy will fetch a
 certificate after the reload. That can take a few seconds.
 
-## 3. Verify Caddy can reach the backend
+## 4. Verify Caddy can reach the backend
 
 ```bash
 curl -f https://compass.example.com/api/health
@@ -162,9 +193,9 @@ sudo systemctl reset-failed caddy
 sudo systemctl restart caddy
 ```
 
-## 4. Switch Compass to your public URLs
+## 5. Switch Compass to your public URLs
 
-> **Warning.** Don't change `BASEURL` until step 3 succeeds. The helper script uses `BASEURL` for its own health check during rebuild. If `BASEURL` points at an HTTPS URL Caddy can't serve yet, the rebuild fails.
+> **Warning.** Don't change `BASEURL` until step 4 succeeds. The helper script uses `BASEURL` for its own health check during rebuild. If `BASEURL` points at an HTTPS URL Caddy can't serve yet, the rebuild fails.
 
 Edit the env file:
 
@@ -198,7 +229,7 @@ curl -f https://compass.example.com/api/health
 
 > **Tip.** If you ever need the helper to check the local backend directly while `BASEURL` stays public, add `COMPASS_HEALTH_URL=http://127.0.0.1:3000/api/health` to `~/compass/.env`. Most one-domain installs don't need this once Caddy is working.
 
-## 5. Sign in and test the basics
+## 6. Sign in and test the basics
 
 Open `https://compass.example.com` in a browser. Run the password-only path first, before adding Google:
 
@@ -225,7 +256,7 @@ curl -f https://compass.example.com/api/health
 You want the Compass containers healthy, Caddy listening on public `80` and
 `443`, and the Compass backend/web containers still bound only to `127.0.0.1`.
 
-## 6. Add Google Calendar (optional)
+## 7. Add Google Calendar (optional)
 
 If you want Google sign-in or Google Calendar watch notifications, see [Google Calendar — Public watch notifications](./google-calendar.md#public-watch-notifications). The short version:
 
@@ -248,15 +279,16 @@ cd ~/compass
 
 ## What this guide leaves to you
 
-This guide gives one coherent server shape. It doesn't automate everything a production service usually needs.
+This guide gives one coherent server setup. It doesn't automate everything a production service usually needs.
 
-- HTTPS and Caddy setup are outside the Compass installer.
 - Backups, restore, and rollback are manual.
 - Google Calendar continuous sync needs server-specific setup and testing.
-- A separate API domain is not the recommended first path.
+- A separate API domain (possible, but more complex)
 
 The default compose file keeps MongoDB, SuperTokens, and Postgres off the public
 internet. Keep it that way. Don't add public port mappings for those services,
 don't open their ports in your firewall, and don't move them to public database
 hosts unless you know how you want to secure them. For this guide, only Caddy
 should be public, and Caddy should proxy only the web app and `/api`.
+
+Have an idea on how this guide can be improved? Let us know in [this GitHub Discussion](https://github.com/SwitchbackTech/compass/discussions/1694)
