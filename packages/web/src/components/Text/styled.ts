@@ -45,7 +45,7 @@ export const StyledText = styled.span<Props>`
     &:hover {
       &::after {
         content: ' ';
-        background: ${getGradient(color)};
+        background: ${getGradient(color ?? "")};
         position: absolute;
         width: 100%;
         height: 2px;

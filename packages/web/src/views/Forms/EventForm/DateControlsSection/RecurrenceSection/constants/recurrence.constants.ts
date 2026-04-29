@@ -12,13 +12,18 @@ export const FREQUENCY_MAP: Record<FrequencyValues, string> = {
   [Frequency.YEARLY]: "Year",
 };
 
+const RECURRENCE_FREQUENCIES: FrequencyValues[] = [
+  Frequency.DAILY,
+  Frequency.WEEKLY,
+  Frequency.MONTHLY,
+  Frequency.YEARLY,
+];
+
 export const FREQUENCY_OPTIONS = (suffix = "") =>
-  [Frequency.DAILY, Frequency.WEEKLY, Frequency.MONTHLY, Frequency.YEARLY].map(
-    (frequency) => ({
-      label: `${FREQUENCY_MAP[frequency as FrequencyValues]}${suffix}`,
-      value: frequency,
-    }),
-  );
+  RECURRENCE_FREQUENCIES.map((frequency) => ({
+    label: `${FREQUENCY_MAP[frequency as FrequencyValues]}${suffix}`,
+    value: frequency,
+  }));
 
 export const WEEKDAYS: Array<keyof typeof WEEKDAY_RRULE_MAP> = [
   "sunday",

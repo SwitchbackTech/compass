@@ -1,11 +1,15 @@
-import { type MouseEvent, useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
+
+type MouseEventHandler = {
+  bivarianceHack(event: MouseEvent): void;
+}["bivarianceHack"];
 
 export const useEventListener = (
   eventName: "mouseup" | "mousemove",
-  handler: (e: MouseEvent) => void,
-  element = window,
+  handler: MouseEventHandler,
+  element: HTMLElement | Window = window,
 ) => {
-  const savedHandler = useRef<(e: MouseEvent) => void>();
+  const savedHandler = useRef<(e: MouseEvent) => void>(handler);
   // Update ref.current value if handler changes.
   // This allows our effect below to always get latest handler ...
   // ... without us needing to pass it in effect deps array ...
@@ -20,11 +24,10 @@ export const useEventListener = (
 
     if (!isSupported) return;
 
-    const listener = (event: MouseEvent) => savedHandler.current(event);
+    const listener = (event: Event) => {
+      savedHandler.current(event as MouseEvent);
+    };
 
-    if (element === null) {
-      return;
-    }
     element.addEventListener(eventName, listener);
 
     return () => {

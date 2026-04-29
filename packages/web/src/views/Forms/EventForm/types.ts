@@ -1,4 +1,4 @@
-import { type Dispatch, type SetStateAction } from "react";
+import { type SetStateAction } from "react";
 import { type Priority } from "@core/constants/core.constants";
 import {
   type Categories_Event,
@@ -25,9 +25,7 @@ export interface FormProps {
   onSubmit: (event: Schema_Event | null) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
-  setEvent:
-    | Dispatch<SetStateAction<Schema_Event | null>>
-    | ((event: Schema_Event | null) => void);
+  setEvent: (event: SetStateAction<Schema_Event | null>) => void;
 }
 
 type EventField =

@@ -103,6 +103,9 @@ const { eventsEntitiesSlice } = await import(
 const { pendingEventsSlice } = await import(
   "@web/ducks/events/slices/pending.slice"
 );
+const { getWeekEventsSlice } = await import(
+  "@web/ducks/events/slices/week.slice"
+);
 const { sagas } = await import("@web/store/sagas");
 const { OnSubmitParser } = await import(
   "@web/views/Calendar/components/Draft/hooks/actions/submit.parser"
@@ -147,6 +150,52 @@ afterEach(() => {
     consoleSpy.mockRestore();
   }
   clearAuthenticationState();
+});
+
+describe("getWeekEvents saga", () => {
+  let store: ReturnType<typeof createStoreWithEvents>;
+
+  beforeEach(() => {
+    clearApiMocks();
+    mockDoesSessionExist.mockResolvedValue(false);
+    store = createStoreWithEvents([]);
+    sagaTask = sagaMiddleware.run(sagas);
+  });
+
+  it("filters repository results by the requested date range", async () => {
+    const previousDayEvent = createMockStandaloneEvent({
+      _id: "previous-day-event",
+      startDate: "2026-04-05T15:00:00.000Z",
+      endDate: "2026-04-05T16:00:00.000Z",
+      isAllDay: false,
+    } as Partial<Schema_Event>);
+    const requestedRangeEvent = createMockStandaloneEvent({
+      _id: "requested-range-event",
+      startDate: "2026-04-06T15:00:00.000Z",
+      endDate: "2026-04-06T16:00:00.000Z",
+      isAllDay: false,
+    } as Partial<Schema_Event>);
+    mockLocalEvents.push(previousDayEvent, requestedRangeEvent);
+
+    store.dispatch(
+      getWeekEventsSlice.actions.request({
+        startDate: "2026-04-06T00:00:00.000Z",
+        endDate: "2026-04-13T00:00:00.000Z",
+      }),
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockLocalRepository.get).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: "2026-04-05T00:00:00+00:00",
+        endDate: "2026-04-13T00:00:00.000Z",
+      }),
+    );
+    expect(store.getState().events.getWeekEvents.value?.data).toEqual([
+      "requested-range-event",
+    ]);
+  });
 });
 
 describe("createEvent saga - optimistic rendering", () => {

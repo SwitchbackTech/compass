@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import { Frequency, type Options, RRule, type Weekday } from "rrule";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
@@ -69,9 +70,7 @@ export const useRecurrence = (
   {
     setEvent,
   }: {
-    setEvent: Dispatch<
-      SetStateAction<Schema_GridEvent | Schema_WebEvent | null>
-    >;
+    setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
   },
 ) => {
   const { recurrence, endDate: _endDate, isSomeday } = event ?? {};
@@ -155,7 +154,7 @@ export const useRecurrence = (
   const rule = useMemo(() => JSON.stringify(rrule.toRecurrence()), [rrule]);
 
   const toggleRecurrence = useCallback(() => {
-    setEvent((gridEvent): Schema_GridEvent | Schema_WebEvent | null => {
+    setEvent((gridEvent): Schema_Event | null => {
       if (!gridEvent) return gridEvent;
 
       const { recurrence, ...event } = gridEvent;
@@ -181,7 +180,7 @@ export const useRecurrence = (
   useEffect(() => {
     if (!hasRecurrence) return;
 
-    setEvent((gridEvent): Schema_GridEvent | Schema_WebEvent | null => {
+    setEvent((gridEvent): Schema_Event | null => {
       if (!gridEvent) return gridEvent;
 
       return {

@@ -5,5 +5,5 @@ import { iconStyles } from "./styled";
 
 export const SpinnerIcon = styled(SpinnerGapIcon)`
   ${iconStyles}
-  animation: ${rotateAnimation};
+  animation: ${rotateAnimation({})};
 `;

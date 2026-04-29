@@ -1,4 +1,5 @@
 import {
+  type ChangeEventHandler,
   type FocusEvent,
   forwardRef,
   type HTMLAttributes,
@@ -9,10 +10,17 @@ import { type AnyStyledComponent } from "styled-components";
 import { type UnderlinedInput } from "@web/common/types/component.types";
 import { Divider } from "@web/components/Divider";
 
-export interface Props extends UnderlinedInput, HTMLAttributes<HTMLElement> {
+export interface Props
+  extends UnderlinedInput,
+    Omit<HTMLAttributes<HTMLElement>, "onChange"> {
   autoFocus?: boolean;
-  underlineColor?: string;
+  bgColor?: string;
   Component: AnyStyledComponent;
+  name?: string;
+  onChange?: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
+  placeholder?: string;
+  underlineColor?: string;
+  value?: string | number | readonly string[];
 }
 
 export const Focusable = forwardRef<HTMLElement, Props>(

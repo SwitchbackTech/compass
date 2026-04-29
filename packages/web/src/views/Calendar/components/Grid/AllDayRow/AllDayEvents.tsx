@@ -11,6 +11,7 @@ import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors"
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { type RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { AllDayEventMemo } from "@web/views/Calendar/components/Grid/AllDayRow/AllDayEvent";
 import { StyledEvents } from "@web/views/Calendar/components/Grid/AllDayRow/styled";
@@ -35,7 +36,7 @@ export const AllDayEvents = ({
 
   const draftId = useAppSelector(selectDraftId);
   const dispatch = useAppDispatch();
-  const store = useStore();
+  const store = useStore<RootState>();
 
   const handleClick = (event: Schema_GridEvent) => {
     // Prevent opening form for pending events (being created)

@@ -11,9 +11,11 @@ export function sortTasksByStatus(tasks: Task[]): Task[] {
   const incompleteTasks = tasks.filter((task) => task.status !== "completed");
   const completedTasks = tasks.filter((task) => task.status === "completed");
   const sortedIncomplete = [...incompleteTasks].sort(
-    (a, b) => a.order - b.order,
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
   );
-  const sortedCompleted = [...completedTasks].sort((a, b) => a.order - b.order);
+  const sortedCompleted = [...completedTasks].sort(
+    (a, b) => (a.order ?? 0) - (b.order ?? 0),
+  );
   return [...sortedIncomplete, ...sortedCompleted];
 }
 

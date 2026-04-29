@@ -1,4 +1,7 @@
-import { useGoogleLogin as useGoogleLoginBase } from "@react-oauth/google";
+import {
+  type UseGoogleLoginOptionsAuthCodeFlow,
+  useGoogleLogin as useGoogleLoginBase,
+} from "@react-oauth/google";
 import { useCallback, useRef, useState } from "react";
 import { isGooglePopupClosedError } from "@web/auth/google/util/google.oauth.error.util";
 import { type GoogleAuthConfig } from "../googe.auth.types";
@@ -36,7 +39,9 @@ export const useGoogleLogin = ({
 
   const antiCsrfToken = useRef(crypto.randomUUID()).current;
 
-  const login = useGoogleLoginBase({
+  const loginOptions: UseGoogleLoginOptionsAuthCodeFlow & {
+    prompt?: "consent" | "none" | "select_account";
+  } = {
     flow: "auth-code",
     scope: SCOPES_REQUIRED.join(" "),
     prompt,
@@ -99,7 +104,9 @@ export const useGoogleLogin = ({
       console.error(error);
       onError?.(error);
     },
-  });
+  };
+
+  const login = useGoogleLoginBase(loginOptions);
 
   return {
     login: useCallback(() => {

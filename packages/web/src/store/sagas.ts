@@ -29,27 +29,36 @@ export function* sagas() {
 }
 
 function* eventSagas() {
-  yield takeLatest(getDayEventsSlice.actions.request, getDayEvents);
-  yield takeLatest(getWeekEventsSlice.actions.request, getWeekEvents);
+  yield takeLatest(getDayEventsSlice.actions.request.type, getDayEvents);
+  yield takeLatest(getWeekEventsSlice.actions.request.type, getWeekEvents);
   yield takeLatest(
-    getWeekEventsSlice.actions.convert,
+    getWeekEventsSlice.actions.convert.type,
     convertCalendarToSomedayEvent,
   );
   yield takeLatest(
-    getCurrentMonthEventsSlice.actions.request,
+    getCurrentMonthEventsSlice.actions.request.type,
     getCurrentMonthEvents,
   );
-  yield takeLatest(createEventSlice.actions.request, createEvent);
-  yield takeLatest(editEventSlice.actions.request, editEvent);
-  yield takeLatest(deleteEventSlice.actions.request, deleteEvent);
+  yield takeLatest(createEventSlice.actions.request.type, createEvent);
+  yield takeLatest(editEventSlice.actions.request.type, editEvent);
+  yield takeLatest(deleteEventSlice.actions.request.type, deleteEvent);
 }
 
 function* somedayEventSagas() {
   yield takeLatest(
-    getSomedayEventsSlice.actions.convert,
+    getSomedayEventsSlice.actions.convert.type,
     convertSomedayToCalendarEvent,
   );
-  yield takeLatest(getSomedayEventsSlice.actions.request, getSomedayEvents);
-  yield takeLatest(getSomedayEventsSlice.actions.delete, deleteSomedayEvent);
-  yield takeLatest(getSomedayEventsSlice.actions.reorder, reorderSomedayEvents);
+  yield takeLatest(
+    getSomedayEventsSlice.actions.request.type,
+    getSomedayEvents,
+  );
+  yield takeLatest(
+    getSomedayEventsSlice.actions.delete.type,
+    deleteSomedayEvent,
+  );
+  yield takeLatest(
+    getSomedayEventsSlice.actions.reorder.type,
+    reorderSomedayEvents,
+  );
 }

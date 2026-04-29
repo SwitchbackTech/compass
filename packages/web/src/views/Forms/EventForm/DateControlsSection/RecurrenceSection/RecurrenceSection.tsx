@@ -1,5 +1,6 @@
 import { type Dispatch, type SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import { type Schema_Event } from "@core/types/event.types";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
@@ -19,7 +20,7 @@ import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/Re
 export interface RecurrenceSectionProps {
   bgColor: string;
   event: Schema_WebEvent | Schema_GridEvent;
-  setEvent: Dispatch<SetStateAction<Schema_WebEvent | Schema_GridEvent | null>>;
+  setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
 }
 
 export const RecurrenceSection = ({

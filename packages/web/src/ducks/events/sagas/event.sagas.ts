@@ -219,6 +219,7 @@ export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
       ...payload,
       startDate,
       endDate,
+      someday: false,
     })) as Response_GetEventsSaga;
 
     yield put(getCurrentMonthEventsSlice.actions.success(data));
@@ -228,9 +229,11 @@ export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
   }
 }
 
-function* getEvents(
-  payload: Params_Events & Response_HttpPaginatedSuccess<Entities_Event>,
-) {
+type GetEventsPayload =
+  | Params_Events
+  | (Partial<Params_Events> & Response_HttpPaginatedSuccess<Entities_Event>);
+
+function* getEvents(payload: GetEventsPayload) {
   try {
     if (!payload.startDate && !payload.endDate && "data" in payload) {
       yield put(eventsEntitiesSlice.actions.insert(payload.data));
@@ -243,7 +246,13 @@ function* getEvents(
     ])) as boolean;
     const repository = getEventRepository(sessionExists);
 
-    const _payload = EventDateUtils.adjustStartEndDate(payload);
+    if (!payload.startDate || !payload.endDate) {
+      throw new Error("Event query requires startDate and endDate");
+    }
+
+    const _payload = EventDateUtils.adjustStartEndDate(
+      payload as Params_Events,
+    );
 
     const res = (yield call(
       [repository, "get"],

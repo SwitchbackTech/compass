@@ -94,6 +94,8 @@ export const roundToNearestFifteenWithinHour = (minutes: number) => {
 export const getEventHeight = (
   event: Pick<Schema_GridEvent, "startDate" | "endDate">,
 ) => {
+  if (!event.startDate || !event.endDate) return 0;
+
   const startDate = new Date(event.startDate);
   const endDate = new Date(event.endDate);
   const startPosition = getAgendaEventPosition(startDate);

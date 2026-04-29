@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { type MouseEvent, useCallback } from "react";
+import { useCallback } from "react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -199,8 +199,8 @@ export const useDraftActions = (
 
       const event: WithCompassId<Omit<Schema_WebEvent, "_id">> = {
         ...draft,
-        _id: draft!._id,
-        user: draft?.user,
+        _id: draft!._id!,
+        user: draft?.user ?? "",
         isAllDay: false,
         isSomeday: true,
         startDate: start,
@@ -337,9 +337,7 @@ export const useDraftActions = (
 
           const event = new OnSubmitParser(draft).parse();
           const payload = getEditSlicePayload(event, applyTo);
-          dispatch(
-            editEventSlice.actions.request(payload as unknown as undefined),
-          );
+          dispatch(editEventSlice.actions.request(payload));
 
           if (shouldAddToView(event)) {
             dispatch(getWeekEventsSlice.actions.insert(event._id!));

@@ -6,12 +6,6 @@ import {
 } from "@web/common/context/pointer-position";
 import { usePointerState } from "@web/common/hooks/usePointerState";
 
-const excludeEvent = (state: PointerState): Omit<PointerState, "event"> => {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { event, ...rest } = state;
-  return rest;
-};
-
 describe("usePointerState", () => {
   const mockEvent = new MouseEvent("none", {
     button: 1,
@@ -37,7 +31,7 @@ describe("usePointerState", () => {
 
   it("should return the initial state", () => {
     const { result } = renderHook(() => usePointerState());
-    expect(result.current).toEqual(excludeEvent(initialState));
+    expect(result.current).toEqual(initialState);
   });
 
   it("should update when mouseState$ emits new values", () => {
@@ -53,7 +47,7 @@ describe("usePointerState", () => {
       pointerState$.next(newState);
     });
 
-    expect(result.current).toEqual(excludeEvent(newState));
+    expect(result.current).toEqual(newState);
   });
 
   it("should handle updates to all properties", () => {
@@ -75,6 +69,6 @@ describe("usePointerState", () => {
       pointerState$.next(allTrueState);
     });
 
-    expect(result.current).toEqual(excludeEvent(allTrueState));
+    expect(result.current).toEqual(allTrueState);
   });
 });

@@ -28,7 +28,7 @@ export interface Props {
   isDrafting: boolean;
   isDragging: boolean;
   isOverGrid: boolean;
-  onSubmit: (event?: Schema_Event) => void;
+  onSubmit: (event: Schema_Event | null) => void;
   deleteEvent: (applyTo?: RecurringEventUpdateScope) => void;
   duplicateEvent: () => void;
   provided: DraggableProvided;
@@ -131,6 +131,8 @@ export const SomedayEventContainer = ({
               <SomedayEventForm
                 event={event}
                 category={category}
+                isDraft={!event._id}
+                isExistingEvent={!!event._id}
                 onClose={() => {
                   actions.closeForm();
                   actions.close();

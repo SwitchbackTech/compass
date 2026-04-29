@@ -40,11 +40,27 @@ export const SomedayEventSchema = WebCoreEventSchema.extend({
   order: z.number(),
 });
 
-export type Schema_WebEvent = z.infer<typeof WebCoreEventSchema>;
+export interface Schema_WebEvent extends Schema_Event {}
 
-export type Schema_SomedayEvent = z.infer<typeof SomedayEventSchema>;
+export interface Schema_SomedayEvent extends Schema_Event {
+  isSomeday: true;
+  order: number;
+}
 
-export type Schema_GridEvent = z.infer<typeof GridEventSchema>;
+export interface Schema_GridEvent extends Schema_Event {
+  hasFlipped?: boolean;
+  isOpen?: boolean;
+  row?: number;
+  position: {
+    isOverlapping: boolean;
+    totalEventsInGroup: number;
+    widthMultiplier: number;
+    horizontalOrder: number;
+    dragOffset: { x: number; y: number };
+    initialX: number | null;
+    initialY: number | null;
+  };
+}
 
 export interface Schema_OptimisticEvent extends Schema_GridEvent {
   _id: string; // We guarantee that we have an _id for optimistic events, unlike `Schema_Event`

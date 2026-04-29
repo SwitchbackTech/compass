@@ -17,6 +17,7 @@ export type Activity_DraftEvent =
   | "dragging"
   | "eventRightClick"
   | "gridClick"
+  | "keyboardEdit"
   | "resizing"
   | "sidebarClick";
 

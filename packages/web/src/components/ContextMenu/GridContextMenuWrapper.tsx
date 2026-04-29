@@ -69,7 +69,7 @@ export const ContextMenuWrapper = ({
 
   const handleDiscard = () => {
     closeMenu();
-    dispatch(draftSlice.actions.discard({}));
+    dispatch(draftSlice.actions.discard());
   };
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {

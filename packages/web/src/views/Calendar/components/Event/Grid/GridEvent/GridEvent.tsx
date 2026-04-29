@@ -203,7 +203,9 @@ const _GridEvent = (
             {(isDraft || !isInPast) &&
               position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL && (
                 <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
-                  {getTimesLabel(event.startDate, event.endDate)}
+                  {event.startDate &&
+                    event.endDate &&
+                    getTimesLabel(event.startDate, event.endDate)}
                 </Text>
               )}
             <div

@@ -25,7 +25,7 @@ export const assignEventsToRow = (
     } else {
       const { fits, rowNum } = assignEventToRow(eventDays, rows);
 
-      if (fits) {
+      if (fits && rowNum !== undefined) {
         // add to existing row
         rows[rowNum] = [...rows[rowNum], ...eventDays];
         event["row"] = rowNum + 1;

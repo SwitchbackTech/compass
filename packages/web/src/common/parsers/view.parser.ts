@@ -18,11 +18,14 @@ export class EventInViewParser {
     this.isEndInView = this.isWithinView(this.event.endDate);
 
     this.isSpanningView =
+      !!this.event.startDate &&
+      !!this.event.endDate &&
       dayjs(this.event.startDate).isBefore(this.startOfView) &&
       dayjs(this.event.endDate).isAfter(this.endOfView);
   }
 
-  private isWithinView = (date: string) =>
+  private isWithinView = (date?: string) =>
+    !!date &&
     dayjs(date).isBetween(this.startOfView, this.endOfView, null, "[]");
 
   public isEventInView() {

@@ -308,11 +308,11 @@ export const useSidebarActions = (
       });
     }
 
-    const isExisting = _event._id;
-    if (isExisting) {
+    if (_event._id) {
+      const eventId = _event._id;
       dispatch(
         editEventSlice.actions.request({
-          _id: _event._id,
+          _id: eventId,
           event: _event,
         }),
       );
@@ -393,8 +393,8 @@ export const useSidebarActions = (
     const userId = await getUserId();
     _event = parseSomedayEventBeforeSubmit(_event, userId);
 
-    const isExisting = _event._id;
-    if (isExisting) {
+    if (_event._id) {
+      const eventId = _event._id;
       const recurrenceChanged = DirtyParser.recurrenceChanged(
         _event as Schema_WebEvent,
         reduxDraft!,
@@ -408,7 +408,7 @@ export const useSidebarActions = (
 
       dispatch(
         editEventSlice.actions.request({
-          _id: _event._id,
+          _id: eventId,
           event: _event,
           applyTo,
         }),
@@ -490,6 +490,8 @@ export const useSidebarActions = (
     }
 
     const newOrder = destEventIds.indexOf(draggableId);
+
+    if (!draggedEvent?._id) return;
 
     draggedEvent.order = newOrder;
 

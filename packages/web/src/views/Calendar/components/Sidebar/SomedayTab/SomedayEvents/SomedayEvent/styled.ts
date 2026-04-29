@@ -1,7 +1,6 @@
 import {
   type DraggableStateSnapshot,
   type DraggableStyle,
-  type DroppableProvided,
 } from "@hello-pangea/dnd";
 import styled from "styled-components";
 import { type Priorities } from "@core/constants/core.constants";
@@ -39,7 +38,7 @@ export function getStyle(
 
 export const SOMEDAY_EVENT_HEIGHT = 32;
 
-export interface Props extends DroppableProvided {
+export interface Props {
   priority: Priorities;
   isDrafting: boolean;
   isDragging?: boolean;

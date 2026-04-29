@@ -52,7 +52,9 @@ export const selectGridEvents = createSelector(
 export const selectRowCount = createSelector(
   selectAllDayEvents,
   (allDayEvents: Schema_GridEvent[]) => {
-    const _rowVals = allDayEvents?.map((e) => e.row);
+    const _rowVals = allDayEvents
+      .map((e) => e.row)
+      .filter((row): row is number => row !== undefined);
     const rowsCount = (_rowVals ?? []).length === 0 ? 1 : Math.max(..._rowVals);
     return rowsCount;
   },

@@ -1,4 +1,5 @@
 import { type PayloadAction } from "@reduxjs/toolkit";
+import { type Payload_Order } from "@core/types/event.types";
 import { type AsyncState, createAsyncSlice } from "@web/common/store/helpers";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
@@ -13,7 +14,10 @@ const replace = (
   insert(state, { payload: action.payload.newSomedayId, type: "" });
 };
 
-const reorder = () => {};
+const reorder = (
+  _state: AsyncState<Response_HttpPaginatedSuccess<string[]>, unknown>,
+  _action: PayloadAction<Payload_Order[]>,
+) => {};
 
 const reducers = {
   convert,

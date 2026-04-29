@@ -1,4 +1,5 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { type Schema_Event } from "@core/types/event.types";
 import {
   type Schema_GridEvent,
   type Schema_SomedayEvent,
@@ -19,20 +20,22 @@ export class OnSubmitParser {
     if (this.event.isSomeday) {
       return parseSomedayEventBeforeSubmit(
         this.event as Schema_SomedayEvent,
-        this.event.user,
+        this.event.user ?? "",
       );
     }
-    return prepEventBeforeSubmit(this.event, this.event.user);
+    return prepEventBeforeSubmit(this.event, this.event.user ?? "");
   }
 }
 
 export const parseSomedayEventBeforeSubmit = (
-  draft: Schema_SomedayEvent,
+  draft: Schema_Event,
   userId: string,
 ): Schema_SomedayEvent => {
   const _event: Omit<Schema_SomedayEvent, "recurrence"> = {
     ...draft,
     origin: Origin.COMPASS,
+    isSomeday: true,
+    order: draft.order ?? 0,
     user: userId,
     _id: draft._id,
     startDate: draft.startDate,
