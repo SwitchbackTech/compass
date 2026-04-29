@@ -11,6 +11,7 @@ When you run the installer, you get a stack of small services on your machine. O
 ```mermaid
 flowchart TD
     browser[Your browser]
+    indexeddb[(Browser IndexedDB<br/>tasks)]
     web[web container<br/>localhost:9080]
     backend[backend container<br/>localhost:3000/api]
     mongo[(MongoDB<br/>events)]
@@ -18,15 +19,15 @@ flowchart TD
     postgres[(Postgres<br/>auth data)]
 
     browser -->|loads UI| web
+    browser -->|stores tasks locally| indexeddb
     browser -->|API calls| backend
-    backend --> mongo
+    backend -->|Docker volume| mongo
     backend --> supertokens
-    supertokens --> postgres
+    supertokens -->|Docker volume| postgres
 ```
 
 Important notes:
 
-- **Your tasks live in your browser**, not in Mongo. They're stored in IndexedDB. Docker volume backups do not include them.
 - **The installer creates a folder at `~/compass`** to hold your `.env` file, the helper script, and the app source. That folder is the only thing on your machine the installer touches outside Docker.
 
 ## Three flavors of self-hosting
