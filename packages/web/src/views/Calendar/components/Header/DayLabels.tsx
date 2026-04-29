@@ -4,11 +4,8 @@ import { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { Text } from "@web/components/Text";
-import {
-  EVENT_WIDTH_MINIMUM,
-  GRID_MARGIN_LEFT,
-  SCROLLBAR_WIDTH,
-} from "../../layout.constants";
+import { EVENT_WIDTH_MINIMUM } from "../../layout.constants";
+import { Columns } from "../Grid/Columns/styled";
 
 interface Props {
   today: Dayjs;
@@ -48,35 +45,35 @@ export const DayLabels: FC<Props> = ({
 
   return (
     <StyledDayLabels>
-      <div aria-hidden="true" />
-      {weekDays.map((day) => {
-        const dayNumber = getDayNumber(day);
-        const { isToday, color } = getColor(day);
+      <StyledDayLabelColumns>
+        {weekDays.map((day) => {
+          const dayNumber = getDayNumber(day);
+          const { isToday, color } = getColor(day);
 
-        return (
-          <StyledDayLabel
-            key={getWeekDayLabel(day)}
-            style={{ color }}
-            title={getWeekDayLabel(day)}
-          >
-            <Text className="week-day-number" withGradient={isToday}>
-              {dayNumber}
-            </Text>
-            <Text className="week-day-name">{day.format("ddd")}</Text>
-          </StyledDayLabel>
-        );
-      })}
-      <div aria-hidden="true" />
+          return (
+            <StyledDayLabel
+              key={getWeekDayLabel(day)}
+              style={{ color }}
+              title={getWeekDayLabel(day)}
+            >
+              <Text className="week-day-number" withGradient={isToday}>
+                {dayNumber}
+              </Text>
+              <Text className="week-day-name">{day.format("ddd")}</Text>
+            </StyledDayLabel>
+          );
+        })}
+      </StyledDayLabelColumns>
     </StyledDayLabels>
   );
 };
 
 const StyledDayLabels = styled.div`
-  display: grid;
-  grid-template-columns:
-    ${GRID_MARGIN_LEFT}px repeat(7, minmax(${EVENT_WIDTH_MINIMUM}px, 1fr))
-    ${SCROLLBAR_WIDTH}px;
+  // min-height (not height) so the box grows when clamp() resolves
+  // .week-day-number to xxl at wide viewports.
+  min-height: 32px;
   margin-top: 10px;
+  position: relative;
   width: 100%;
 
   .week-day-number {
@@ -90,6 +87,11 @@ const StyledDayLabels = styled.div`
       `clamp(${theme.text.size.m}, 2cqw, ${theme.text.size.l})`};
     line-height: 1;
   }
+`;
+
+const StyledDayLabelColumns = styled(Columns)`
+  align-items: end;
+  height: 100%;
 `;
 
 const StyledDayLabel = styled.div`

@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import { Flex } from "@web/components/Flex";
 import {
   DIVIDER_GRID,
   EVENT_WIDTH_MINIMUM,
@@ -7,17 +6,20 @@ import {
   SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 
-export const Columns = styled(Flex)`
-  position: absolute;
-  width: calc(100% - ${GRID_MARGIN_LEFT}px - ${SCROLLBAR_WIDTH}px);
+export const Columns = styled.div`
+  display: grid;
+  grid-template-columns: repeat(7, minmax(${EVENT_WIDTH_MINIMUM}px, 1fr));
   left: ${GRID_MARGIN_LEFT}px;
+  position: absolute;
+  top: 0;
+  width: calc(100% - ${GRID_MARGIN_LEFT}px - ${SCROLLBAR_WIDTH}px);
 `;
 
 export const StyledGridCol = styled.div<{ color: string }>`
   border-left: ${({ theme }) =>
     `${DIVIDER_GRID}px solid ${theme.color.gridLine.primary}`};
+  box-sizing: border-box;
   background: ${({ color }) => color};
-  flex-basis: 100%;
   height: 100%;
   min-width: ${EVENT_WIDTH_MINIMUM}px;
   position: relative;

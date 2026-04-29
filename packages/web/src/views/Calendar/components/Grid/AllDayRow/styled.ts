@@ -14,10 +14,10 @@ const interval = 60 / GRID_TIME_STEP;
 const allDayRowHeight = `${gridRowHeight} / ${interval}`;
 
 export const StyledAllDayColumns = styled(Columns)`
+  border-bottom: ${({ theme }) => `2px solid ${theme.color.gridLine.primary}`};
   height: 100%;
 `;
 export const StyledAllDayRow = styled(Flex)<{ rowsCount: number }>`
-  border-bottom: ${({ theme }) => `2px solid ${theme.color.gridLine.primary}`};
   flex-shrink: 0;
   height: ${({ rowsCount }) =>
     `calc(${allDayRowHeight} * 2 + ${
