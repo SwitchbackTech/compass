@@ -138,24 +138,32 @@ test.describe("Week view layout", () => {
       }
     }
 
-    // The all-day band's bottom border must hug the day-column track, not
-    // the full mainGrid (which is 50px wider on the left and 8px on the
-    // right due to the time gutter and scrollbar reservation).
-    const borderEdges = await page.evaluate(() => {
-      const cs = (sel: string) => {
+    // The all-day band's divider must hug the day-column track, not the full
+    // mainGrid (which is 50px wider on the left and 8px on the right due to
+    // the time gutter and scrollbar reservation). It is drawn as a pseudo
+    // element so vertical grid lines remain visible at the intersection.
+    const allDayDivider = await page.evaluate(() => {
+      const borderWidth = (sel: string) => {
         const el = document.querySelector(sel);
         if (!(el instanceof HTMLElement)) {
           throw new Error(`Missing ${sel}`);
         }
         return Number.parseFloat(getComputedStyle(el).borderBottomWidth || "0");
       };
+      const allDayColumns = document.querySelector("#allDayColumns");
+      if (!(allDayColumns instanceof HTMLElement)) {
+        throw new Error("Missing #allDayColumns");
+      }
+      const dividerStyle = getComputedStyle(allDayColumns, "::before");
       return {
-        rowBorder: cs("#allDayRow"),
-        columnsBorder: cs("#allDayColumns"),
+        columnsBorder: borderWidth("#allDayColumns"),
+        dividerHeight: Number.parseFloat(dividerStyle.height || "0"),
+        rowBorder: borderWidth("#allDayRow"),
       };
     });
-    expect(borderEdges.rowBorder).toBe(0);
-    expect(borderEdges.columnsBorder).toBeGreaterThan(0);
+    expect(allDayDivider.rowBorder).toBe(0);
+    expect(allDayDivider.columnsBorder).toBe(0);
+    expect(allDayDivider.dividerHeight).toBeGreaterThan(0);
   });
 
   test("uses compact day-header type when the week track is narrow", async ({
