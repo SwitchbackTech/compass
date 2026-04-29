@@ -66,14 +66,14 @@ export const CalendarView = () => {
           <Shortcuts shortcutsProps={shortcutProps}>
             <ContextMenuWrapper id="sidebar-context-menu">
               <Draft measurements={measurements} weekProps={weekProps} />
-              {isSidebarOpen && (
+              {isSidebarOpen ? (
                 <Sidebar
                   dateCalcs={dateCalcs}
                   measurements={measurements}
                   weekProps={weekProps}
                   gridRefs={gridRefs}
                 />
-              )}
+              ) : null}
             </ContextMenuWrapper>
             <StyledCalendar>
               <Header scrollUtil={scrollUtil} weekProps={weekProps} />

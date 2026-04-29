@@ -14,6 +14,9 @@ import { type Util_Scroll } from "../../hooks/grid/useScroll";
 import { type WeekProps } from "../../hooks/useWeek";
 import { TodayButton } from "../TodayButton/TodayButton";
 
+const weekNavButtonClassName =
+  "flex h-[30px] w-[30px] cursor-pointer select-none items-center justify-center rounded-full border-0 bg-transparent p-0 text-text-light transition-[filter] duration-[350ms] ease-out hover:brightness-[1.6] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/50";
+
 interface Props {
   scrollUtil: Util_Scroll;
   weekProps: WeekProps;
@@ -66,34 +69,28 @@ export const Header: FC<Props> = ({ scrollUtil, weekProps }) => {
               isToday={weekProps.component.isCurrentWeek}
             />
             <div className="flex items-center gap-3 pl-5">
-              <TooltipWrapper
-                onClick={() => weekProps.util.decrementWeek()}
-                shortcut="J"
-              >
-                <Text
-                  className="flex h-[30px] w-[30px] select-none items-center justify-center transition-[filter] duration-[350ms] ease-out hover:rounded-full hover:brightness-[1.6]"
-                  cursor="pointer"
-                  role="navigation"
-                  size="xxl"
+              <TooltipWrapper shortcut="J">
+                <button
+                  aria-label="Previous week"
+                  className={weekNavButtonClassName}
+                  type="button"
                   title="previous week"
+                  onClick={() => weekProps.util.decrementWeek()}
                 >
-                  {"<"}
-                </Text>
+                  <Text size="xxl">{"<"}</Text>
+                </button>
               </TooltipWrapper>
 
-              <TooltipWrapper
-                onClick={() => weekProps.util.incrementWeek()}
-                shortcut="K"
-              >
-                <Text
-                  className="flex h-[30px] w-[30px] select-none items-center justify-center transition-[filter] duration-[350ms] ease-out hover:rounded-full hover:brightness-[1.6]"
-                  cursor="pointer"
-                  role="navigation"
-                  size="xxl"
+              <TooltipWrapper shortcut="K">
+                <button
+                  aria-label="Next week"
+                  className={weekNavButtonClassName}
+                  type="button"
                   title="next week"
+                  onClick={() => weekProps.util.incrementWeek()}
                 >
-                  {">"}
-                </Text>
+                  <Text size="xxl">{">"}</Text>
+                </button>
               </TooltipWrapper>
             </div>
           </div>

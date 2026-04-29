@@ -14,7 +14,7 @@ export const Columns = styled.div`
   width: calc(100% - ${GRID_MARGIN_LEFT}px);
 `;
 
-export const StyledGridCol = styled.div<{ color: string }>`
+export const StyledGridCol = styled.div<{ color: string | null }>`
   border-left: ${({ theme }) =>
     `${DIVIDER_GRID}px solid ${theme.color.gridLine.primary}`};
   box-sizing: border-box;

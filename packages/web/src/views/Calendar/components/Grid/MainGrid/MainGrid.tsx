@@ -9,7 +9,7 @@ import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { MainGridColumns } from "@web/views/Calendar/components/Grid//Columns/MainGridColumns";
+import { MainGridColumns } from "@web/views/Calendar/components/Grid/Columns/MainGridColumns";
 import { MainGridEvents } from "@web/views/Calendar/components/Grid/MainGrid/MainGridEvents";
 import {
   StyledGridRow,
@@ -80,12 +80,7 @@ export const MainGrid: FC<Props> = ({
   };
 
   return (
-    <StyledMainGrid
-      id={ID_GRID_MAIN}
-      ref={mainGridElementRef}
-      tabIndex={-1}
-      className="overflow-y-auto focus:outline-none"
-    >
+    <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridElementRef} tabIndex={-1}>
       <MainGridColumns
         isCurrentWeek={isCurrentWeek}
         today={today}

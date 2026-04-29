@@ -56,10 +56,14 @@ const getWeekColumnLayout = async (page: Page) =>
     const getColumns = (selector: string) =>
       [...document.querySelectorAll(selector)]
         .filter((node): node is HTMLElement => node instanceof HTMLElement)
-        .map((node) => ({
-          ...roundRect(node.getBoundingClientRect()),
-          height: node.getBoundingClientRect().height,
-        }))
+        .map((node) => {
+          const rect = node.getBoundingClientRect();
+
+          return {
+            ...roundRect(rect),
+            height: rect.height,
+          };
+        })
         .filter((rect) => rect.height > 20)
         .slice(0, titles.length);
 

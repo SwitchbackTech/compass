@@ -56,11 +56,11 @@ export const MainGridColumns: FC<Props> = ({
     <>
       <TimesColumn />
       <StyledGridCols id={ID_GRID_COLUMNS_TIMED}>
-        {isCurrentWeek && <NowLine width={100} />}
+        {isCurrentWeek ? <NowLine width={100} /> : null}
 
         {weekDays.map((day, i) => (
           <StyledGridCol
-            color={colColors[i]!}
+            color={colColors[i] ?? null}
             key={day.format(YEAR_MONTH_DAY_FORMAT)}
           />
         ))}
