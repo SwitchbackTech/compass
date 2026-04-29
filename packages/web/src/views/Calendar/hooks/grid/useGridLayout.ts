@@ -1,120 +1,138 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  ID_ALLDAY_COLUMNS,
-  ID_GRID_ALLDAY_ROW,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
-import { getElemById } from "@web/common/utils/grid/grid.util";
+import { useCallback, useRef, useState } from "react";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 
-export type MeasureableElement = "mainGrid" | "allDayRow";
+type MeasurementSnapshot = Pick<
+  DOMRectReadOnly,
+  "bottom" | "height" | "left" | "right" | "top" | "width" | "x" | "y"
+>;
+
+const DAYS_IN_VIEW = 7;
+
+const toMeasurementSnapshot = (rect: DOMRectReadOnly): MeasurementSnapshot => ({
+  bottom: rect.bottom,
+  height: rect.height,
+  left: rect.left,
+  right: rect.right,
+  top: rect.top,
+  width: rect.width,
+  x: rect.x,
+  y: rect.y,
+});
+
+const areMeasurementsEqual = (
+  current: MeasurementSnapshot | null | undefined,
+  next: MeasurementSnapshot,
+) => {
+  return (
+    current?.bottom === next.bottom &&
+    current.height === next.height &&
+    current.left === next.left &&
+    current.right === next.right &&
+    current.top === next.top &&
+    current.width === next.width &&
+    current.x === next.x &&
+    current.y === next.y
+  );
+};
 
 export const useGridLayout = (_isSidebarOpen: boolean, _week: number) => {
   const _alldayRowsCount = useAppSelector(selectRowCount);
-  const [allDayMeasurements, setAllDayMeasurements] = useState<DOMRect | null>(
-    null,
-  );
-  const [mainMeasurements, setMainMeasurements] = useState<DOMRect | null>();
-  const [colWidths, setColWidths] = useState<number[]>([]);
+  const [allDayMeasurements, setAllDayMeasurements] =
+    useState<MeasurementSnapshot | null>(null);
+  const [allDayColumnsMeasurements, setAllDayColumnsMeasurements] =
+    useState<MeasurementSnapshot | null>(null);
+  const [mainMeasurements, setMainMeasurements] =
+    useState<MeasurementSnapshot | null>(null);
 
   const mainGridRef = useRef<HTMLDivElement | null>(null);
+  const observersRef = useRef(new Map<string, ResizeObserver>());
 
-  const _measureAllDayRow = useCallback((_node?: HTMLDivElement) => {
-    const node = _node ?? getElemById(ID_GRID_ALLDAY_ROW);
-
-    if (!node) return;
-
-    const allDayRect = node.getBoundingClientRect();
-
-    setAllDayMeasurements(allDayRect);
+  const updateAllDayRowMeasurement = useCallback((node: HTMLDivElement) => {
+    const next = toMeasurementSnapshot(node.getBoundingClientRect());
+    setAllDayMeasurements((current) =>
+      areMeasurementsEqual(current, next) ? current : next,
+    );
   }, []);
 
-  const _measureColWidths = useCallback((_node?: HTMLDivElement) => {
-    const node = _node ?? getElemById(ID_ALLDAY_COLUMNS);
-    const daysInView = 7;
-
-    if (!node) return;
-
-    const colWidth = node.clientWidth / daysInView;
-    const colWidths = Array(daysInView).fill(colWidth);
-
-    setColWidths(colWidths);
+  const updateAllDayColumnsMeasurement = useCallback((node: HTMLDivElement) => {
+    const next = toMeasurementSnapshot(node.getBoundingClientRect());
+    setAllDayColumnsMeasurements((current) =>
+      areMeasurementsEqual(current, next) ? current : next,
+    );
   }, []);
-  const allDayRef = useCallback(
-    (node: HTMLDivElement) => {
-      if (node !== null) {
-        _measureAllDayRow(node);
-        _measureColWidths(node);
+
+  const updateMainGridMeasurement = useCallback((node: HTMLDivElement) => {
+    const next = toMeasurementSnapshot(node.getBoundingClientRect());
+    setMainMeasurements((current) =>
+      areMeasurementsEqual(current, next) ? current : next,
+    );
+  }, []);
+
+  const observeElement = useCallback(
+    (
+      key: string,
+      node: HTMLDivElement | null,
+      measure: (node: HTMLDivElement) => void,
+    ) => {
+      observersRef.current.get(key)?.disconnect();
+      observersRef.current.delete(key);
+
+      if (!node) {
+        return;
       }
+
+      measure(node);
+
+      if (typeof ResizeObserver === "undefined") {
+        return;
+      }
+
+      const observer = new ResizeObserver(() => measure(node));
+      observer.observe(node);
+      observersRef.current.set(key, observer);
     },
-    [_measureAllDayRow, _measureColWidths],
+    [],
   );
 
-  const _measureMainGrid = useCallback((_node?: HTMLDivElement) => {
-    const node = _node ?? getElemById(ID_GRID_MAIN);
+  const allDayRowRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      observeElement("allDayRow", node, updateAllDayRowMeasurement);
+    },
+    [observeElement, updateAllDayRowMeasurement],
+  );
 
-    if (!node) return;
+  const allDayRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      observeElement("allDayColumns", node, updateAllDayColumnsMeasurement);
+    },
+    [observeElement, updateAllDayColumnsMeasurement],
+  );
 
-    const mainRect = node.getBoundingClientRect();
+  const mainGridElementRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      mainGridRef.current = node;
+      observeElement("mainGrid", node, updateMainGridMeasurement);
+    },
+    [observeElement, updateMainGridMeasurement],
+  );
 
-    setMainMeasurements(mainRect);
-  }, []);
-
-  const remeasure = (elem: MeasureableElement) => {
-    switch (elem) {
-      case "mainGrid": {
-        _measureMainGrid();
-        break;
-      }
-      case "allDayRow": {
-        break;
-      }
-      default: {
-        console.error("failed to specify which element to measure");
-        break;
-      }
-    }
-  };
-
-  useEffect(() => {
-    _measureMainGrid();
-    _measureAllDayRow();
-    _measureColWidths();
-  }, [_measureColWidths, _measureMainGrid, _measureAllDayRow]);
-
-  useEffect(() => {
-    const update = () => {
-      _measureAllDayRow();
-      _measureColWidths();
-      _measureMainGrid();
-    };
-
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, [_measureAllDayRow, _measureColWidths, _measureMainGrid]);
-
-  useEffect(() => {
-    _measureAllDayRow();
-  }, [_measureAllDayRow]);
-
-  useEffect(() => {
-    if (mainGridRef.current && !mainMeasurements) {
-      _measureMainGrid(mainGridRef.current);
-    }
-  }, [_measureMainGrid, mainMeasurements]);
+  const colWidths = allDayColumnsMeasurements?.width
+    ? Array(DAYS_IN_VIEW).fill(allDayColumnsMeasurements.width / DAYS_IN_VIEW)
+    : [];
 
   return {
     gridRefs: {
       allDayRef,
+      allDayRowRef,
+      mainGridElementRef,
       mainGridRef,
     },
     measurements: {
       allDayRow: allDayMeasurements,
       colWidths,
       mainGrid: mainMeasurements,
-      hourHeight: mainMeasurements?.height ? mainMeasurements?.height / 11 : 0,
-      remeasure,
+      hourHeight: mainMeasurements?.height ? mainMeasurements.height / 11 : 0,
     },
   };
 };

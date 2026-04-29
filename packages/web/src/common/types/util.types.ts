@@ -44,7 +44,7 @@ export interface WidthPixels {
   };
 }
 
-export type Ref_Callback = (node: HTMLDivElement) => void;
+export type Ref_Callback = (node: HTMLDivElement | null) => void;
 
 export type PartialMouseEvent = Pick<
   MouseEvent,

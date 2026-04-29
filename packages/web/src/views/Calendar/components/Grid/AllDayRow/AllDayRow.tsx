@@ -1,10 +1,9 @@
-import { type FC, type MouseEvent, useEffect } from "react";
+import { type FC, type MouseEvent } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
-  ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type Ref_Callback } from "@web/common/types/util.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
@@ -24,6 +23,7 @@ import { StyledAllDayColumns, StyledAllDayRow } from "./styled";
 interface Props {
   dateCalcs: DateCalcs;
   allDayRef: Ref_Callback;
+  allDayRowRef: Ref_Callback;
   isSidebarOpen: boolean;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
@@ -31,6 +31,7 @@ interface Props {
 
 export const AllDayRow: FC<Props> = ({
   allDayRef,
+  allDayRowRef,
   dateCalcs,
   isSidebarOpen,
   measurements,
@@ -41,11 +42,6 @@ export const AllDayRow: FC<Props> = ({
   const { startOfView, weekDays } = weekProps.component;
   const rowsCount = useAppSelector(selectRowCount);
   const isDrafting = useAppSelector(selectIsDrafting);
-
-  useEffect(() => {
-    measurements.remeasure(ID_GRID_MAIN);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [measurements.remeasure]);
 
   const startAlldayDraft = async (e: MouseEvent) => {
     const x = getX(e, isSidebarOpen);
@@ -86,6 +82,7 @@ export const AllDayRow: FC<Props> = ({
   return (
     <StyledAllDayRow
       id={ID_GRID_ALLDAY_ROW}
+      ref={allDayRowRef}
       rowsCount={rowsCount}
       onMouseDown={onMouseDown}
     >
