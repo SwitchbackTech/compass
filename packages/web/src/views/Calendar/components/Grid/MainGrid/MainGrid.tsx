@@ -2,6 +2,7 @@ import { type FC, type MouseEvent, type MutableRefObject } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
+import { type Ref_Callback } from "@web/common/types/util.types";
 import { getHourLabels } from "@web/common/utils/datetime/web.date.util";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { getX } from "@web/common/utils/grid/grid.util";
@@ -25,6 +26,7 @@ import { DRAFT_DURATION_MIN } from "@web/views/Calendar/layout.constants";
 interface Props {
   dateCalcs: DateCalcs;
   isSidebarOpen: boolean;
+  mainGridElementRef: Ref_Callback;
   mainGridRef: MutableRefObject<HTMLDivElement | null>;
   measurements: Measurements_Grid;
   today: Dayjs;
@@ -34,6 +36,7 @@ interface Props {
 export const MainGrid: FC<Props> = ({
   dateCalcs,
   isSidebarOpen,
+  mainGridElementRef,
   mainGridRef,
   measurements,
   today,
@@ -79,7 +82,7 @@ export const MainGrid: FC<Props> = ({
   return (
     <StyledMainGrid
       id={ID_GRID_MAIN}
-      ref={mainGridRef}
+      ref={mainGridElementRef}
       tabIndex={-1}
       className="overflow-y-auto focus:outline-none"
     >
@@ -91,11 +94,8 @@ export const MainGrid: FC<Props> = ({
       />
 
       <StyledGridWithTimeLabels>
-        {getHourLabels(true).map((dayTime, index) => (
-          <StyledGridRow
-            key={`${dayTime}-${index}:dayTimes`}
-            onMouseDown={onMouseDown}
-          />
+        {getHourLabels(true).map((dayTime) => (
+          <StyledGridRow key={dayTime} onMouseDown={onMouseDown} />
         ))}
       </StyledGridWithTimeLabels>
 
