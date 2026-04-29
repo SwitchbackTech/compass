@@ -15,13 +15,6 @@ This path assumes you're comfortable with:
 
 Plan for **30 to 60 minutes** end to end, mostly waiting on DNS propagation, image pulls, and Caddy's first certificate fetch.
 
-You'll need:
-
-- an Ubuntu VPS with Docker and Docker Compose installed
-- a domain name pointed at the server's public IP
-- Caddy installed on the same server
-- SSH access
-
 The examples use `compass.example.com`. Replace it with your real domain everywhere.
 
 ## What to expect
@@ -89,7 +82,9 @@ Once those are installed, continue to step 1.
 
 ### Get a domain name
 
-You'll need a domain name to get HTTPS working. Two good options:
+You'll need a domain name to get HTTPS working. If you already have one (me.dev) and are OK with adding a subdomain (calendar.me.dev), you can skip this step.
+
+Two good options for new domains:
 
 **[Namecheap](https://www.namecheap.com)** — straightforward UI, `.com` domains ~$9–11/year, free WHOIS privacy included.
 
@@ -99,22 +94,20 @@ You'll need a domain name to get HTTPS working. Two good options:
 
 ```text
 Type: A
-Name: compass
+Name: <subdomain>       # example: 'cal', 'calendar', 'compass', 'app'
 Value: <your-vps-ipv4-address>
 ```
 
-That example makes `compass.example.com` point at the server's public IPv4
-address. DNS is managed wherever your domain's nameservers point. That may be
+That makes the subdomain point at the server's public IPv4 address. DNS is managed wherever your domain's nameservers point. That may be
 your registrar, but it may also be another host such as Cloudflare or Vercel.
 
-You can confirm the record from your own computer:
+Say you have a domain `example.com` and create the A record for the subdomain `compass`. You can confirm the record from your own computer:
 
 ```bash
 dig +short A compass.example.com
 ```
 
-It should print your VPS IPv4 address. Don't add an `AAAA` record unless the
-server's IPv6 is configured and reachable.
+It should print your VPS IPv4 address. It might take a few minutes for your DNS record to propagate.
 
 ### Sanity-check
 
