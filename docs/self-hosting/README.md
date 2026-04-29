@@ -39,3 +39,5 @@ If you want Compass on a VPS with your own domain, read
 | [Backups and restore](./backups-and-restore.md) | You want to preserve or restore signed-in event data and auth data. |
 | [Google Calendar](./google-calendar.md) | You want to understand no-Google mode, optional local Google OAuth/import, or public HTTPS Google watch notifications. |
 | [Advanced manual setup](./advanced-manual.md) | You want to run the pieces yourself instead of using the installer. |
+
+Have an idea on how we can make self-hosting easier? Let us know in [this GitHub Discussion](https://github.com/SwitchbackTech/compass/discussions/1694).

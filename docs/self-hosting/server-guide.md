@@ -46,7 +46,7 @@ A separate API domain like `https://api.compass.example.com` may be possible, bu
 7. Sign in over HTTPS and run the basic tests below.
 8. (Optional) Add Google Calendar.
 
-## 0. Get a VPS
+## 0. Setup your VPS
 
 If you already have an Ubuntu VPS with Docker, Docker Compose, and Caddy installed, skip to [step 1](#1-point-dns-and-check-the-server).
 
@@ -87,7 +87,15 @@ Once those are installed, continue to step 1.
 
 ## 1. Point DNS and check the server
 
-Create a DNS record for the subdomain you want to use:
+### Get a domain name
+
+You'll need a domain name to get HTTPS working. Two good options:
+
+**[Namecheap](https://www.namecheap.com)** — straightforward UI, `.com` domains ~$9–11/year, free WHOIS privacy included.
+
+**[Cloudflare Registrar](https://www.cloudflare.com/products/registrar/)** — sells domains at cost. A good choice if you want fast DNS management in one place.
+
+### Create a DNS record for the subdomain you want to use
 
 ```text
 Type: A
@@ -107,6 +115,8 @@ dig +short A compass.example.com
 
 It should print your VPS IPv4 address. Don't add an `AAAA` record unless the
 server's IPv6 is configured and reachable.
+
+### Sanity-check
 
 On the server, confirm the basic tools and ports:
 
@@ -291,4 +301,4 @@ don't open their ports in your firewall, and don't move them to public database
 hosts unless you know how you want to secure them. For this guide, only Caddy
 should be public, and Caddy should proxy only the web app and `/api`.
 
-Have an idea on how this guide can be improved? Let us know in [this GitHub Discussion](https://github.com/SwitchbackTech/compass/discussions/1694)
+Have an idea on how this guide can be improved? Let us know in [this GitHub Discussion](https://github.com/SwitchbackTech/compass/discussions/1694).
