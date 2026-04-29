@@ -65,91 +65,83 @@ export const getColumnWidthPercentages = (
 
   const pastFutureWeek: number[] = new Array(daysInView).fill(FLEX_EQUAL);
 
-  let currentWeek = pastFutureWeek;
   const { afterTmrw, beforeToday } = getRelativePercentages(todayIndex);
-
-  switch (todayIndex) {
-    case 0:
-      currentWeek = [
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-      ];
-      break;
-    case 1:
-      currentWeek = [
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-      ];
-      break;
-    case 2:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-      ];
-      break;
-    case 3:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-        afterTmrw,
-      ];
-      break;
-    case 4:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-      ];
-      break;
-    case 5:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-      ];
-      break;
-    case 6:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-      ];
-      break;
-
-    default:
-      break;
-  }
+  const currentWeek = (() => {
+    switch (todayIndex) {
+      case 0:
+        return [
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+        ];
+      case 1:
+        return [
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+        ];
+      case 2:
+        return [
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+        ];
+      case 3:
+        return [
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+          afterTmrw,
+        ];
+      case 4:
+        return [
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+        ];
+      case 5:
+        return [
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+        ];
+      case 6:
+        return [
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+        ];
+      default:
+        return pastFutureWeek;
+    }
+  })();
 
   return { pastFuture: pastFutureWeek, current: currentWeek };
 };
