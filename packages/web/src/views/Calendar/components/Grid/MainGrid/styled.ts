@@ -27,6 +27,7 @@ export const StyledGridWithTimeLabels = styled.div`
   left: ${GRID_MARGIN_LEFT}px;
 `;
 export const StyledMainGrid = styled.div`
+  --scrollbar-width: 0px;
   flex: 1;
   margin-bottom: ${GRID_PADDING_BOTTOM}px;
   min-height: 0;
