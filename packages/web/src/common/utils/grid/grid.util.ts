@@ -65,7 +65,7 @@ export const getColumnWidthPercentages = (
 
   const pastFutureWeek: number[] = new Array(daysInView).fill(FLEX_EQUAL);
 
-  let currentWeek: number[];
+  let currentWeek = pastFutureWeek;
   const { afterTmrw, beforeToday } = getRelativePercentages(todayIndex);
 
   switch (todayIndex) {
@@ -148,7 +148,7 @@ export const getColumnWidthPercentages = (
       break;
 
     default:
-      [];
+      break;
   }
 
   return { pastFuture: pastFutureWeek, current: currentWeek };
