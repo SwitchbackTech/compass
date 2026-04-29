@@ -37,7 +37,10 @@ export const Grid: FC<Props> = ({
   return (
     <div
       style={{
-        height: "100%",
+        display: "flex",
+        flex: 1,
+        flexDirection: "column",
+        minHeight: 0,
         width: "100%",
         position: "relative",
         paddingBottom: GRID_PADDING_BOTTOM,

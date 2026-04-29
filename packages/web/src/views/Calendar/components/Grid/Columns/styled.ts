@@ -4,11 +4,12 @@ import {
   DIVIDER_GRID,
   EVENT_WIDTH_MINIMUM,
   GRID_MARGIN_LEFT,
+  SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 
 export const Columns = styled(Flex)`
   position: absolute;
-  width: calc(100% - ${GRID_MARGIN_LEFT}px);
+  width: calc(100% - ${GRID_MARGIN_LEFT}px - ${SCROLLBAR_WIDTH}px);
   left: ${GRID_MARGIN_LEFT}px;
 `;
 
