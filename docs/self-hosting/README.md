@@ -47,17 +47,6 @@ Pick based on where you want Compass to live and whether you want Google Calenda
 | [Server hosting guide](./server-guide.md) | You want to serve Compass from a public domain with Docker Compose and Caddy. |
 | [Advanced manual setup](./advanced-manual.md) | You want to run the pieces yourself instead of using the installer. |
 
-## Keep `.env` with your data
-
-`~/compass/.env` holds the generated passwords and tokens that match your
-Docker volumes. If the volumes stay but `.env` is gone, a new install creates
-different credentials and can lock you out of the old data.
-
-Before `./compass update` or anything that touches the install, back up
-`~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume together.
-They're a set. See [Backups and restore](./backups-and-restore.md).
-Browser IndexedDB data (tasks, pre-signup events) is not included.
-
 ## What this guide does not set up yet
 
 These docs keep the default path focused on local Docker self-hosting. They do not set up:
