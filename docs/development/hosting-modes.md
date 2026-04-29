@@ -39,7 +39,7 @@ This is the same story everywhere: on [app.compasscalendar.com](https://app.comp
 
 ## Self-Hosted Account Mode
 
-The operator runs their own backend with their own infrastructure. This is the path that [docs/self-hosting.md](../self-hosting.md) walks through.
+The operator runs their own backend with their own infrastructure. This is the path that [docs/self-hosting/README.md](../self-hosting/README.md) walks through.
 
 - operator runs the Compass backend
 - signup and login go through SuperTokens (either operator-configured or a default local instance)
