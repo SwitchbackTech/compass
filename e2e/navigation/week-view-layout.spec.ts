@@ -69,6 +69,76 @@ test.describe("Week view layout", () => {
     });
   }
 
+  test("keeps day headers aligned with all-day and timed grid columns on wide desktop", async ({
+    page,
+  }) => {
+    await page.setViewportSize({ width: 1728, height: 1426 });
+    await page.goto("/week");
+    await page.locator("#mainGrid").waitFor();
+    await page.locator("#allDayColumns").waitFor();
+
+    const layout = await page.evaluate((titles) => {
+      const roundRect = (rect: DOMRect) => ({
+        height: Math.round(rect.height * 100) / 100,
+        right: Math.round(rect.right * 100) / 100,
+        width: Math.round(rect.width * 100) / 100,
+        x: Math.round(rect.x * 100) / 100,
+      });
+
+      const dayLabels = titles.map((title) => {
+        const node = document.querySelector(`[title="${title}"]`);
+        if (!(node instanceof HTMLElement)) {
+          throw new Error(`Missing day label ${title}`);
+        }
+        return roundRect(node.getBoundingClientRect());
+      });
+
+      // #allDayColumns must have exactly the 7 day-column <div>s as direct
+      // children. The toHaveLength(7) assertion below catches wrapper drift.
+      const allDayColumns = [
+        ...document.querySelectorAll("#allDayColumns > div"),
+      ]
+        .map((node) => roundRect(node.getBoundingClientRect()))
+        .filter((rect) => rect.width > 0);
+
+      // Note: #mainGrid > div:nth-of-type(2) is fragile — any structural
+      // change inside MainGrid will silently change which container this
+      // matches. If this selector breaks, prefer adding a stable id over
+      // guessing nth-of-type indices.
+      const timedColumnContainer = document.querySelector(
+        "#mainGrid > div:nth-of-type(2)",
+      );
+      if (!(timedColumnContainer instanceof HTMLElement)) {
+        throw new Error("Missing timed grid column container");
+      }
+
+      const timedColumns = [...timedColumnContainer.children]
+        .map((node) => roundRect(node.getBoundingClientRect()))
+        .filter((rect) => rect.height > 100)
+        .slice(0, titles.length);
+
+      return { allDayColumns, dayLabels, timedColumns };
+    }, weekDayTitles);
+
+    expect(layout.allDayColumns).toHaveLength(weekDayTitles.length);
+    expect(layout.timedColumns).toHaveLength(weekDayTitles.length);
+
+    for (const [index, dayLabel] of layout.dayLabels.entries()) {
+      for (const gridColumn of [
+        layout.allDayColumns[index],
+        layout.timedColumns[index],
+      ]) {
+        expect(Math.abs(dayLabel.x - gridColumn.x)).toBeLessThanOrEqual(1);
+        expect(Math.abs(dayLabel.right - gridColumn.right)).toBeLessThanOrEqual(
+          1,
+        );
+        expect(Math.abs(dayLabel.width - gridColumn.width)).toBeLessThanOrEqual(
+          1,
+        );
+      }
+    }
+  });
+
   test("uses compact day-header type when the week track is narrow", async ({
     page,
   }) => {
