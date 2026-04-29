@@ -14,22 +14,14 @@ interface DraftProviderProps {
   children: React.ReactNode;
   dateCalcs: DateCalcs;
   weekProps: WeekProps;
-  isSidebarOpen: boolean;
 }
 export const DraftProvider = ({
   children,
   dateCalcs,
   weekProps,
-  isSidebarOpen,
 }: DraftProviderProps) => {
   const { state: originalState, setters } = useDraftState();
-  const actions = useDraftActions(
-    originalState,
-    setters,
-    dateCalcs,
-    weekProps,
-    isSidebarOpen,
-  );
+  const actions = useDraftActions(originalState, setters, dateCalcs, weekProps);
   const { discard, reset } = actions;
   const { isFormOpen } = originalState;
   const { setIsFormOpen } = setters;

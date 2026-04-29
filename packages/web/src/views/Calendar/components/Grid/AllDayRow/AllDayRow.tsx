@@ -7,7 +7,6 @@ import {
 } from "@web/common/constants/web.constants";
 import { type Ref_Callback } from "@web/common/types/util.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
-import { getX } from "@web/common/utils/grid/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
@@ -24,7 +23,6 @@ interface Props {
   dateCalcs: DateCalcs;
   allDayRef: Ref_Callback;
   allDayRowRef: Ref_Callback;
-  isSidebarOpen: boolean;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
 }
@@ -33,7 +31,6 @@ export const AllDayRow: FC<Props> = ({
   allDayRef,
   allDayRowRef,
   dateCalcs,
-  isSidebarOpen,
   measurements,
   weekProps,
 }) => {
@@ -44,9 +41,8 @@ export const AllDayRow: FC<Props> = ({
   const isDrafting = useAppSelector(selectIsDrafting);
 
   const startAlldayDraft = async (e: MouseEvent) => {
-    const x = getX(e, isSidebarOpen);
     const startDate = dateCalcs.getDateStrByXY(
-      x,
+      e.clientX,
       e.clientY,
       startOfView,
       YEAR_MONTH_DAY_FORMAT,

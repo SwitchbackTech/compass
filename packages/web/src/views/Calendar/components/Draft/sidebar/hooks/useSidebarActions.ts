@@ -29,7 +29,6 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
-import { getX } from "@web/common/utils/grid/grid.util";
 import {
   selectDraft,
   selectDraftActivity,
@@ -158,7 +157,7 @@ export const useSidebarActions = (
 
   const getDatesAfterDroppingOn = (target: "mainGrid" | "alldayRow") => {
     const cursor = getPointerPosition();
-    const x = getX(cursor.clientX, true);
+    const x = cursor.clientX;
     const y = cursor.clientY;
 
     if (target === "mainGrid") {

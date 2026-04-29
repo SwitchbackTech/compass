@@ -61,11 +61,7 @@ export const CalendarView = () => {
       <CmdPalette {...shortcutProps} />
       <Dedication />
 
-      <DraftProvider
-        dateCalcs={dateCalcs}
-        weekProps={weekProps}
-        isSidebarOpen={isSidebarOpen}
-      >
+      <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
         <SidebarDraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
           <Shortcuts shortcutsProps={shortcutProps}>
             <ContextMenuWrapper id="sidebar-context-menu">
@@ -94,7 +90,6 @@ export const CalendarView = () => {
                   <ContextMenuWrapper id="grid-context-menu">
                     <Grid
                       dateCalcs={dateCalcs}
-                      isSidebarOpen={isSidebarOpen}
                       gridRefs={gridRefs}
                       measurements={measurements}
                       today={today}

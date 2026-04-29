@@ -15,7 +15,6 @@ import { GRID_PADDING_BOTTOM } from "../../layout.constants";
 interface Props {
   dateCalcs: DateCalcs;
   gridRefs: Refs_Grid;
-  isSidebarOpen: boolean;
   measurements: Measurements_Grid;
   today: Dayjs;
   weekProps: WeekProps;
@@ -24,7 +23,6 @@ interface Props {
 export const Grid: FC<Props> = ({
   dateCalcs,
   gridRefs,
-  isSidebarOpen,
   measurements,
   today,
   weekProps,
@@ -50,14 +48,12 @@ export const Grid: FC<Props> = ({
         allDayRef={allDayRef}
         allDayRowRef={allDayRowRef}
         dateCalcs={dateCalcs}
-        isSidebarOpen={isSidebarOpen}
         measurements={measurements}
         weekProps={weekProps}
       />
 
       <MainGrid
         dateCalcs={dateCalcs}
-        isSidebarOpen={isSidebarOpen}
         mainGridElementRef={mainGridElementRef}
         mainGridRef={mainGridRef}
         measurements={measurements}
