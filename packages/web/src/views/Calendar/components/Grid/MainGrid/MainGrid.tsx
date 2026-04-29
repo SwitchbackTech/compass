@@ -80,7 +80,12 @@ export const MainGrid: FC<Props> = ({
   };
 
   return (
-    <StyledMainGrid id={ID_GRID_MAIN} ref={mainGridElementRef} tabIndex={-1}>
+    <StyledMainGrid
+      id={ID_GRID_MAIN}
+      ref={mainGridElementRef}
+      tabIndex={-1}
+      className="compass-scroll"
+    >
       <MainGridColumns
         isCurrentWeek={isCurrentWeek}
         today={today}

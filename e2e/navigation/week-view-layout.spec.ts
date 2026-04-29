@@ -23,10 +23,16 @@ test.describe("Week view layout", () => {
       await page.locator("#timedColumns").waitFor();
 
       const layout = await getWeekColumnLayout(page);
+      const mainGridScrollbarWidth = await page
+        .locator("#mainGrid")
+        .evaluate(
+          (node) => getComputedStyle(node, "::-webkit-scrollbar").width,
+        );
 
       expect(layout.allDayColumns).toHaveLength(weekDayTitles.length);
       expect(layout.dayLabels).toHaveLength(weekDayTitles.length);
       expect(layout.timedColumns).toHaveLength(weekDayTitles.length);
+      expect(mainGridScrollbarWidth).toBe("0px");
 
       for (const [index, dayLabel] of layout.dayLabels.entries()) {
         expectColumnsToAlign(dayLabel, layout.allDayColumns[index]);
