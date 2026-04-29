@@ -116,13 +116,13 @@ Put Caddy on the same server as Compass. Example Caddyfile:
 
 ```caddyfile
 compass.example.com {
-	handle /api/* {
-		reverse_proxy 127.0.0.1:3000
-	}
+ handle /api/* {
+  reverse_proxy 127.0.0.1:3000
+ }
 
-	handle {
-		reverse_proxy 127.0.0.1:9080
-	}
+ handle {
+  reverse_proxy 127.0.0.1:9080
+ }
 }
 ```
 
@@ -170,7 +170,7 @@ Edit the env file:
 
 ```bash
 cd ~/compass
-nano .env
+vi .env
 ```
 
 Set:
