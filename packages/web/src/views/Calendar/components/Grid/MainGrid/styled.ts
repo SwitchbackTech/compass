@@ -4,7 +4,6 @@ import {
   DIVIDER_GRID,
   GRID_MARGIN_LEFT,
   GRID_PADDING_BOTTOM,
-  SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 
 export const StyledGridRow = styled(Flex)`
@@ -22,7 +21,7 @@ export const StyledGridRow = styled(Flex)`
 `;
 export const StyledGridWithTimeLabels = styled.div`
   position: absolute;
-  width: calc(100% - ${GRID_MARGIN_LEFT}px - ${SCROLLBAR_WIDTH}px);
+  width: calc(100% - ${GRID_MARGIN_LEFT}px);
   height: 100%;
   left: ${GRID_MARGIN_LEFT}px;
 `;

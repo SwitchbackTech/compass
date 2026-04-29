@@ -3,7 +3,6 @@ import {
   DIVIDER_GRID,
   EVENT_WIDTH_MINIMUM,
   GRID_MARGIN_LEFT,
-  SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 
 export const Columns = styled.div`
@@ -12,7 +11,7 @@ export const Columns = styled.div`
   left: ${GRID_MARGIN_LEFT}px;
   position: absolute;
   top: 0;
-  width: calc(100% - ${GRID_MARGIN_LEFT}px - ${SCROLLBAR_WIDTH}px);
+  width: calc(100% - ${GRID_MARGIN_LEFT}px);
 `;
 
 export const StyledGridCol = styled.div<{ color: string }>`
