@@ -28,11 +28,20 @@ test.describe("Week view layout", () => {
         .evaluate(
           (node) => getComputedStyle(node, "::-webkit-scrollbar").width,
         );
+      const horizontalScrollState = await getHorizontalScrollState(page);
 
       expect(layout.allDayColumns).toHaveLength(weekDayTitles.length);
       expect(layout.dayLabels).toHaveLength(weekDayTitles.length);
       expect(layout.timedColumns).toHaveLength(weekDayTitles.length);
       expect(mainGridScrollbarWidth).toBe("0px");
+      expect(horizontalScrollState.scrollbarHeight).toBe("0px");
+      if (width === 900) {
+        expect(horizontalScrollState.isScrollable).toBe(true);
+        expect(horizontalScrollState.railOpacity).toBeGreaterThan(0);
+        await expectWeekGridCanScrollHorizontally(page);
+      } else {
+        expect(horizontalScrollState.railOpacity).toBe(0);
+      }
 
       for (const [index, dayLabel] of layout.dayLabels.entries()) {
         expectColumnsToAlign(dayLabel, layout.allDayColumns[index]);
@@ -79,6 +88,30 @@ const getWeekColumnLayout = async (page: Page) =>
       timedColumns: getColumns("#timedColumns > div"),
     };
   }, weekDayTitles);
+
+const getHorizontalScrollState = async (page: Page) =>
+  page.locator("#weekGridScroller").evaluate((node) => {
+    const rail = node.nextElementSibling;
+    const railOpacity =
+      rail instanceof HTMLElement ? Number(getComputedStyle(rail).opacity) : 0;
+
+    return {
+      isScrollable: node.scrollWidth > node.clientWidth,
+      railOpacity,
+      scrollbarHeight: getComputedStyle(node, "::-webkit-scrollbar").height,
+    };
+  });
+
+const expectWeekGridCanScrollHorizontally = async (page: Page) => {
+  const scrollLeft = await page
+    .locator("#weekGridScroller")
+    .evaluate((node) => {
+      node.scrollLeft = node.scrollWidth;
+      return node.scrollLeft;
+    });
+
+  expect(scrollLeft).toBeGreaterThan(0);
+};
 
 const expectColumnsToAlign = (
   dayLabel: { right: number; width: number; x: number },

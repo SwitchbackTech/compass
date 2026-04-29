@@ -21,12 +21,56 @@ export function StyledCalendar({ children }: PropsWithChildren) {
   );
 }
 
-export const WeekGridScroller = styled.div`
+export const WeekGridScrollFrame = styled.div`
   flex: 1;
   min-height: 0;
+  position: relative;
+  width: 100%;
+`;
+
+export const WeekGridScroller = styled.div`
+  height: 100%;
   overflow-x: auto;
   overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
   width: 100%;
+
+  &::-webkit-scrollbar {
+    display: none;
+    height: 0;
+    width: 0;
+  }
+
+  &:focus-visible {
+    outline: ${({ theme }) => `1px solid ${theme.color.text.accent}`};
+    outline-offset: -1px;
+  }
+`;
+
+export const WeekGridScrollRail = styled.div<{ $isVisible: boolean }>`
+  background: ${({ theme }) => theme.color.gridLine.primary};
+  border-radius: 999px;
+  bottom: 8px;
+  height: 2px;
+  left: 50%;
+  opacity: ${({ $isVisible }) => ($isVisible ? 0.9 : 0)};
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  transform: translateX(-50%);
+  transition: opacity 160ms ease;
+  width: min(184px, calc(100% - 84px));
+  z-index: 4;
+`;
+
+export const WeekGridScrollThumb = styled.div`
+  background: ${({ theme }) =>
+    `linear-gradient(90deg, ${theme.color.gradient.accentLight.start}, ${theme.color.gradient.accentLight.end})`};
+  border-radius: inherit;
+  height: 100%;
+  position: absolute;
+  top: 0;
 `;
 
 export const WeekGridTrack = styled.div`

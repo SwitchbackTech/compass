@@ -6,6 +6,7 @@ import { DraftProvider } from "@web/views/Calendar/components/Draft/context/Draf
 import { Draft } from "@web/views/Calendar/components/Draft/Draft";
 import { SidebarDraftProvider } from "@web/views/Calendar/components/Draft/sidebar/context/SidebarDraftProvider";
 import { Grid } from "@web/views/Calendar/components/Grid/";
+import { WeekGridScrollArea } from "@web/views/Calendar/components/Grid/WeekGridScrollArea";
 import { DayLabels } from "@web/views/Calendar/components/Header/DayLabels";
 import { Header } from "@web/views/Calendar/components/Header/Header";
 import { Shortcuts } from "@web/views/Calendar/components/Shortcuts";
@@ -19,7 +20,6 @@ import { useWeek } from "@web/views/Calendar/hooks/useWeek";
 import {
   Styled,
   StyledCalendar,
-  WeekGridScroller,
   WeekGridTrack,
 } from "@web/views/Calendar/styled";
 import { CmdPalette } from "@web/views/CmdPalette";
@@ -78,7 +78,7 @@ export const CalendarView = () => {
             <StyledCalendar>
               <Header scrollUtil={scrollUtil} weekProps={weekProps} />
 
-              <WeekGridScroller>
+              <WeekGridScrollArea>
                 <WeekGridTrack>
                   <DayLabels
                     startOfView={weekProps.component.startOfView}
@@ -97,7 +97,7 @@ export const CalendarView = () => {
                     />
                   </ContextMenuWrapper>
                 </WeekGridTrack>
-              </WeekGridScroller>
+              </WeekGridScrollArea>
             </StyledCalendar>
           </Shortcuts>
 
