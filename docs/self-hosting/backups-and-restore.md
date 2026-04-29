@@ -26,9 +26,9 @@ They're a set.
 
 ## What's not in a Docker backup
 
-Browser IndexedDB data is not included. That means:
+Browser IndexedDB data is not included in Docker volume backups. That means:
 
-- tasks
+- tasks, which live in your browser and not in Mongo
 - anonymous events created before signup
 - any pre-signup local data not yet copied to the backend
 
