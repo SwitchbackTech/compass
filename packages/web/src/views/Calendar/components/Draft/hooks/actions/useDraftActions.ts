@@ -56,6 +56,7 @@ import {
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import { getDragDurationMinutes } from "./drag-duration.util";
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
@@ -389,7 +390,7 @@ export const useDraftActions = (
 
         const rawX = getX(e as MouseEvent, isSidebarOpen);
         const x = draft.isAllDay ? rawX - draft.position.dragOffset.x : rawX;
-        const startEndDurationMin = dragStatus?.durationMin || 0;
+        const startEndDurationMin = getDragDurationMinutes(draft, dragStatus);
 
         const y = e.clientY - draft.position.dragOffset.y;
 
@@ -453,8 +454,7 @@ export const useDraftActions = (
       dateCalcs,
       weekProps.component.startOfView,
       draft,
-      dragStatus?.hasMoved,
-      dragStatus?.durationMin,
+      dragStatus,
       setDraft,
       setDragStatus,
     ],
