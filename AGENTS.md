@@ -41,6 +41,7 @@ Validation defaults:
 
 ## Lookups
 
+- Domain context: `CONTEXT.md`
 - Docs index: `docs/README.md`
 - Edit-location map: `docs/development/feature-file-map.md`
 - Common change paths: `docs/development/common-change-recipes.md`
@@ -51,6 +52,22 @@ Validation defaults:
 - Feature docs: `docs/features/`
 - `docs/self-hosting/README.md`
 - `self-host/README.md`
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in GitHub Issues for `SwitchbackTech/compass`. See
+`.agents/config/issue-tracker.md`.
+
+### Triage labels
+
+Use the default triage label vocabulary. See
+`.agents/config/triage-labels.md`.
+
+### Domain docs
+
+Use a single-context domain-doc layout. See `.agents/config/domain.md`.
 
 ## Compass-Specific Rules
 
