@@ -2,7 +2,7 @@
 
 This folder contains the files used by the local Compass self-host installer.
 
-If you're installing Compass for the first time, **start with [Local quickstart](../docs/self-hosting/local-quickstart.md)**. The [Self-Hosting Compass](../docs/self-hosting.md) page helps you choose the right guide and explains what runs where.
+If you're installing Compass for the first time, **start with [Local quickstart](../docs/self-hosting/local-quickstart.md)**. The [Self-Hosting Compass](../docs/self-hosting/README.md) page helps you choose the right guide and explains what runs where.
 
 This README is a quick reference for what each file in this folder does. For install steps, troubleshooting, backups, Google Calendar, and server hosting, see the docs above.
 

@@ -62,7 +62,7 @@ Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_sourc
 
 Run Compass on your own machine with the local Docker installer. Password-only self-hosting is supported; Google Calendar is optional.
 
-See [docs/self-hosting.md](./docs/self-hosting.md) to choose the right self-hosting guide and read the local install, backup, Google Calendar, and server-hosting notes.
+See [docs/self-hosting/README.md](./docs/self-hosting/README.md) to choose the right self-hosting guide and read the local install, backup, Google Calendar, and server-hosting notes.
 
 ### Run Locally
 
