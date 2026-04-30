@@ -11,6 +11,7 @@ import {
   EVENT_ALLDAY_ROW_HEIGHT,
   EVENT_PADDING_RIGHT,
   GRID_MARGIN_LEFT,
+  TIMED_EVENT_COLUMN_INSET,
 } from "@web/views/Calendar/layout.constants";
 
 export const getAbsoluteLeftPosition = (
@@ -268,7 +269,7 @@ const getRelativeLeftPosition = (
 
   const isTimedEvent = event?.isAllDay === false;
   if (isTimedEvent) {
-    adjustment += GRID_MARGIN_LEFT;
+    adjustment += GRID_MARGIN_LEFT + TIMED_EVENT_COLUMN_INSET;
   }
 
   const relativeLeft = initialLeft + adjustment;
@@ -287,7 +288,7 @@ export const getTimedEventWidth = (
     : // Else, we want the width to be whatever the event's width multiplier is
       colWidths[startIndex] * widthMultiplier;
 
-  const BUFFER_WIDTH = 11;
+  const BUFFER_WIDTH = TIMED_EVENT_COLUMN_INSET * 2;
   width -= BUFFER_WIDTH;
   return width;
 };

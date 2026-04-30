@@ -11,6 +11,7 @@ export const EVENT_ALLDAY_GAP = 3;
 /** Height of the row containing the all-day event. Not to be confused with `EVENT_ALLDAY_HEIGHT` */
 export const EVENT_ALLDAY_ROW_HEIGHT = EVENT_ALLDAY_HEIGHT + EVENT_ALLDAY_GAP;
 export const EVENT_PADDING_RIGHT = 10;
+export const TIMED_EVENT_COLUMN_INSET = 5;
 /** Minimum rendered event height (px) to show the time label below the title.
  *  Below this the label is suppressed to prevent overflow on short events.
  *  At typical hourHeight (~65px/hr): 30-min ≈ 33px (hidden), 45-min ≈ 49px (shown). */
