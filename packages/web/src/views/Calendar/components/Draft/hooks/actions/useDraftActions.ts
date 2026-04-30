@@ -27,7 +27,6 @@ import {
   addId,
   assembleDefaultEvent,
 } from "@web/common/utils/event/event.util";
-import { getX } from "@web/common/utils/grid/grid.util";
 import { type Payload_EditEvent } from "@web/ducks/events/event.types";
 import {
   selectDraft,
@@ -63,7 +62,6 @@ export const useDraftActions = (
   setters: Setters_Draft,
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
-  isSidebarOpen: boolean,
 ) => {
   const dispatch = useAppDispatch();
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
@@ -388,7 +386,7 @@ export const useDraftActions = (
       ) => {
         if (!draft) return;
 
-        const rawX = getX(e as MouseEvent, isSidebarOpen);
+        const rawX = e.clientX;
         const x = draft.isAllDay ? rawX - draft.position.dragOffset.x : rawX;
         const startEndDurationMin = getDragDurationMinutes(draft, dragStatus);
 
@@ -429,9 +427,8 @@ export const useDraftActions = (
         return;
       }
 
-      const x = getX(e as MouseEvent, isSidebarOpen);
       const currTime = dateCalcs.getDateStrByXY(
-        x,
+        e.clientX,
         e.clientY,
         weekProps.component.startOfView,
       );
@@ -450,7 +447,6 @@ export const useDraftActions = (
     },
     [
       isDragging,
-      isSidebarOpen,
       dateCalcs,
       weekProps.component.startOfView,
       draft,
@@ -555,11 +551,10 @@ export const useDraftActions = (
 
       if (!isResizing) return;
 
-      const x = getX(e, isSidebarOpen);
       // For all-day events, use a fixed Y coordinate (0) because Y positioning is irrelevant:
       const y = draft.isAllDay ? 0 : e.clientY;
       const currTime = dateCalcs.getDateByXY(
-        x,
+        e.clientX,
         y,
         weekProps.component.startOfView,
       );
@@ -608,7 +603,6 @@ export const useDraftActions = (
       draft,
       reduxDraft,
       isResizing,
-      isSidebarOpen,
       isValidMovement,
       resizeStatus?.hasMoved,
       setDateBeingChanged,

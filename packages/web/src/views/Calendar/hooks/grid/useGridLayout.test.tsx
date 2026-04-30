@@ -54,7 +54,7 @@ const GridLayoutHarness: FC = () => {
   const renderCountRef = useRef(0);
   renderCountRef.current += 1;
 
-  const { gridRefs, measurements } = useGridLayout(false, 18);
+  const { gridRefs, measurements } = useGridLayout();
 
   return (
     <div>

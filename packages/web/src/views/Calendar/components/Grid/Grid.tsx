@@ -10,12 +10,10 @@ import {
   type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { GRID_PADDING_BOTTOM } from "../../layout.constants";
 
 interface Props {
   dateCalcs: DateCalcs;
   gridRefs: Refs_Grid;
-  isSidebarOpen: boolean;
   measurements: Measurements_Grid;
   today: Dayjs;
   weekProps: WeekProps;
@@ -24,7 +22,6 @@ interface Props {
 export const Grid: FC<Props> = ({
   dateCalcs,
   gridRefs,
-  isSidebarOpen,
   measurements,
   today,
   weekProps,
@@ -37,24 +34,24 @@ export const Grid: FC<Props> = ({
   return (
     <div
       style={{
-        height: "100%",
+        display: "flex",
+        flex: 1,
+        flexDirection: "column",
+        minHeight: 0,
         width: "100%",
         position: "relative",
-        paddingBottom: GRID_PADDING_BOTTOM,
       }}
     >
       <AllDayRow
         allDayRef={allDayRef}
         allDayRowRef={allDayRowRef}
         dateCalcs={dateCalcs}
-        isSidebarOpen={isSidebarOpen}
         measurements={measurements}
         weekProps={weekProps}
       />
 
       <MainGrid
         dateCalcs={dateCalcs}
-        isSidebarOpen={isSidebarOpen}
         mainGridElementRef={mainGridElementRef}
         mainGridRef={mainGridRef}
         measurements={measurements}

@@ -13,7 +13,6 @@ import { useToday } from "@web/views/Calendar/hooks/useToday";
 import { useWeek } from "@web/views/Calendar/hooks/useWeek";
 
 export function setupDraftState(event: Schema_WebEvent) {
-  const isSidebarOpen = true;
   const draft = assembleGridEvent(event);
 
   const state = {
@@ -32,10 +31,9 @@ export function setupDraftState(event: Schema_WebEvent) {
 
   const weekHook = renderHook(() => useWeek(useToday().today), { state });
   const weekProps = weekHook.result.current;
-  const { week } = weekProps.component;
   const dispatch = renderHook(useDispatch, { state }).result.current;
 
-  const gridHook = renderHook(() => useGridLayout(isSidebarOpen, week), {
+  const gridHook = renderHook(() => useGridLayout(), {
     state,
   });
 
@@ -67,7 +65,6 @@ export function setupDraftState(event: Schema_WebEvent) {
         setters,
         dateCalcs,
         weekProps,
-        isSidebarOpen,
       ),
     { state },
   );
@@ -82,7 +79,6 @@ export function setupDraftState(event: Schema_WebEvent) {
     dateCalcs,
     deleteEvent,
     dispatch,
-    isSidebarOpen,
     submit,
     draft,
     rerenderActions: actions.rerender,

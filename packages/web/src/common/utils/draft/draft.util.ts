@@ -8,7 +8,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
-import { getElemById, getX } from "@web/common/utils/grid/grid.util";
+import { getElemById } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
@@ -21,11 +21,9 @@ import {
 export const assembleAlldayDraft = async (
   e: MouseEvent,
   dateCalcs: DateCalcs,
-  isSidebarOpen: boolean,
   startOfView: Dayjs,
 ): Promise<Schema_GridEvent> => {
-  const x = getX(e, isSidebarOpen);
-  const _start = dateCalcs.getDateByXY(x, e.clientY, startOfView);
+  const _start = dateCalcs.getDateByXY(e.clientX, e.clientY, startOfView);
   const startDate = _start.format();
   const endDate = _start.add(1, "day").format();
 
@@ -40,11 +38,9 @@ export const assembleAlldayDraft = async (
 export const assembleTimedDraft = async (
   e: MouseEvent,
   dateCalcs: DateCalcs,
-  isSidebarOpen: boolean,
   startOfView: Dayjs,
 ): Promise<Schema_GridEvent> => {
-  const x = getX(e, isSidebarOpen);
-  const _start = dateCalcs.getDateByXY(x, e.clientY, startOfView);
+  const _start = dateCalcs.getDateByXY(e.clientX, e.clientY, startOfView);
   const startDate = _start.format();
   const endDate = _start.add(DRAFT_DURATION_MIN, "minutes").format();
 

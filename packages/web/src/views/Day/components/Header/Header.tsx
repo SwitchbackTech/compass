@@ -47,7 +47,7 @@ export const Header: FC<Props> = ({
 
       {showReminder && <Reminder ref={reminderRef} />}
 
-      <div className="z-2 flex h-full items-center justify-between">
+      <div className="z-2 flex h-full items-center justify-between pr-5">
         <HeaderInfoIcon />
         <SelectView />
       </div>

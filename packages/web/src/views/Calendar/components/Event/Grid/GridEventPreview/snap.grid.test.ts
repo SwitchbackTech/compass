@@ -1,9 +1,7 @@
 import { type Coordinates } from "@web/common/types/util.types";
-import {
-  type MeasureableElement,
-  type Measurements_Grid,
-} from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { MAIN_GRID_TIME_COLUMN_WIDTH, snapToGrid } from "./snap.grid";
+import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { GRID_MARGIN_LEFT } from "@web/views/Calendar/layout.constants";
+import { snapToGrid } from "./snap.grid";
 
 // 7 day main grid
 describe("snapToGrid", () => {
@@ -24,10 +22,9 @@ describe("snapToGrid", () => {
     hourHeight: 60,
     colWidths: Array(7).fill(100) as number[],
     allDayRow: null,
-    remeasure: (elem: MeasureableElement) => {},
   };
 
-  const DEFAULT_X = 105;
+  const DEFAULT_X = 100;
   const DEFAULT_Y = 160;
   const mouseCoords: Coordinates = { x: DEFAULT_X, y: DEFAULT_Y };
 
@@ -38,8 +35,7 @@ describe("snapToGrid", () => {
   // Override main grid
   const mainGrid = {
     ...measurementsMainGrid,
-    // Real "left" for main grid. See comment for MAIN_GRID_TIME_COLUMN_WIDTH in snap.grid.ts for why we do this
-    left: measurementsMainGrid.left + MAIN_GRID_TIME_COLUMN_WIDTH,
+    left: measurementsMainGrid.left + GRID_MARGIN_LEFT,
   };
 
   afterEach(() => {
@@ -58,7 +54,6 @@ describe("snapToGrid", () => {
           allDayRow: null,
           colWidths: [],
           hourHeight: 0,
-          remeasure: (elem: MeasureableElement) => {},
         },
         0,
       );
@@ -70,6 +65,7 @@ describe("snapToGrid", () => {
     });
 
     it("Returns the cursor position if cursor is not within the grid", () => {
+      mouseCoords.y = measurementsMainGrid.top - 1;
       const result = snapToGrid(mouseCoords.x, mouseCoords.y, measurements, 0);
 
       expect(result).toEqual({

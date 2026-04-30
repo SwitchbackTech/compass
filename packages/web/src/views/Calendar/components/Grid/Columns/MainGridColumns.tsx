@@ -1,6 +1,7 @@
 import { type FC } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { ID_GRID_COLUMNS_TIMED } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { NowLine } from "@web/views/Calendar/components/NowLine";
 import { StyledGridCol, StyledGridCols } from "./styled";
@@ -54,12 +55,12 @@ export const MainGridColumns: FC<Props> = ({
   return (
     <>
       <TimesColumn />
-      <StyledGridCols>
-        {isCurrentWeek && <NowLine width={100} />}
+      <StyledGridCols id={ID_GRID_COLUMNS_TIMED}>
+        {isCurrentWeek ? <NowLine width={100} /> : null}
 
         {weekDays.map((day, i) => (
           <StyledGridCol
-            color={colColors[i]!}
+            color={colColors[i] ?? null}
             key={day.format(YEAR_MONTH_DAY_FORMAT)}
           />
         ))}

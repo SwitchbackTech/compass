@@ -1,6 +1,4 @@
 import { useCallback, useRef, useState } from "react";
-import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 
 type MeasurementSnapshot = Pick<
   DOMRectReadOnly,
@@ -36,8 +34,7 @@ const areMeasurementsEqual = (
   );
 };
 
-export const useGridLayout = (_isSidebarOpen: boolean, _week: number) => {
-  const _alldayRowsCount = useAppSelector(selectRowCount);
+export const useGridLayout = () => {
   const [allDayMeasurements, setAllDayMeasurements] =
     useState<MeasurementSnapshot | null>(null);
   const [allDayColumnsMeasurements, setAllDayColumnsMeasurements] =

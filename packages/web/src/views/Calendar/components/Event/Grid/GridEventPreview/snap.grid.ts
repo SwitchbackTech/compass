@@ -1,18 +1,14 @@
 import { roundToPrev } from "@web/common/utils/round/round.util";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import {
+  GRID_MARGIN_LEFT,
+  GRID_TIME_STEP,
+} from "@web/views/Calendar/layout.constants";
 
 export interface SnappedCoords {
   x: number;
   y: number;
 }
-
-// `measurements.mainGrid.left` includes half the width of time column. It does not start at the first day column.
-// due to that, we need to account for its width, otherwise snappedX will be off.
-// Ideally we should fix how `mainGrid.left` is calculated to not include half the width of time column and
-// include only the grid interactivity area (i.e. day columns).
-// For now, we estimate the width of the time column to be 55px
-export const MAIN_GRID_TIME_COLUMN_WIDTH = 55;
 
 const snapYToGrid = (
   cursorY: number,
@@ -46,8 +42,7 @@ const snapXToGrid = (
   if (!measurements.mainGrid) return cursorX; // TS guard
 
   // Calculate the cursor's X position relative to the grid's left and account for scrolling
-  const gridX =
-    cursorX - MAIN_GRID_TIME_COLUMN_WIDTH - measurements.mainGrid.left;
+  const gridX = cursorX - GRID_MARGIN_LEFT - measurements.mainGrid.left;
 
   // Width of a single grid column (right now it appears the width is the same for across all columns, even in
   // different view ports, so we can reliably use the first column width)
@@ -63,7 +58,7 @@ const snapXToGrid = (
 
   // Adjust snappedX to position the event relative to the grid's left
   const snappedX =
-    measurements.mainGrid.left + MAIN_GRID_TIME_COLUMN_WIDTH + snappedRelativeX;
+    measurements.mainGrid.left + GRID_MARGIN_LEFT + snappedRelativeX;
 
   return snappedX;
 };

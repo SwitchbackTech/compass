@@ -5,6 +5,7 @@ import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { roundToPrev } from "@web/common/utils/round/round.util";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import {
+  GRID_MARGIN_LEFT,
   GRID_TIME_STEP,
   GRID_X_START,
 } from "@web/views/Calendar/layout.constants";
@@ -14,7 +15,11 @@ export const useDateCalcs = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
 ) => {
   const getDateByX = (x: number, firstDayInView: Dayjs) => {
-    const gridX = x - GRID_X_START;
+    const gridLeft =
+      mainGridRef.current?.getBoundingClientRect().left ??
+      measurements.mainGrid?.left ??
+      GRID_X_START - GRID_MARGIN_LEFT;
+    const gridX = x - gridLeft - GRID_MARGIN_LEFT;
     const dayIndex = getDayNumberByX(gridX);
     const date = firstDayInView.add(dayIndex, "day");
 

@@ -5,7 +5,6 @@ import {
   GRID_PADDING_BOTTOM,
   GRID_TIME_STEP,
   GRID_Y_START,
-  SCROLLBAR_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 import { Columns } from "../Columns/styled";
 
@@ -14,19 +13,28 @@ const gridRowHeight = `(${gridHeight}) / 11`;
 const interval = 60 / GRID_TIME_STEP;
 const allDayRowHeight = `${gridRowHeight} / ${interval}`;
 
-const gridWidth = `100% - ${SCROLLBAR_WIDTH}px`;
-
 export const StyledAllDayColumns = styled(Columns)`
   height: 100%;
+
+  &::before {
+    background: ${({ theme }) => theme.color.gridLine.primary};
+    bottom: 0;
+    content: "";
+    height: 2px;
+    left: 0;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
+  }
 `;
 export const StyledAllDayRow = styled(Flex)<{ rowsCount: number }>`
-  border-bottom: ${({ theme }) => `2px solid ${theme.color.gridLine.primary}`};
+  flex-shrink: 0;
   height: ${({ rowsCount }) =>
     `calc(${allDayRowHeight} * 2 + ${
       rowsCount * 2 || 1
     } * ${allDayRowHeight})`};
   position: relative;
-  width: calc(${gridWidth});
+  width: 100%;
 `;
 
 export const StyledEvents = styled.div`

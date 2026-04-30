@@ -1,9 +1,10 @@
 import { type FC } from "react";
+import styled from "styled-components";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
-import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
+import { Columns } from "../Grid/Columns/styled";
 
 interface Props {
   today: Dayjs;
@@ -42,26 +43,59 @@ export const DayLabels: FC<Props> = ({
   };
 
   return (
-    <div className="mt-[10px] flex w-full">
-      {weekDays.map((day) => {
-        const dayNumber = getDayNumber(day);
-        const { isToday, color } = getColor(day);
+    <StyledDayLabels>
+      <StyledDayLabelColumns>
+        {weekDays.map((day) => {
+          const dayNumber = getDayNumber(day);
+          const { isToday, color } = getColor(day);
 
-        return (
-          <div
-            className="flex min-w-[100px] basis-full items-end justify-center"
-            key={getWeekDayLabel(day)}
-            style={{ color }}
-            title={getWeekDayLabel(day)}
-          >
-            <Text size="xxl" withGradient={isToday}>
-              {dayNumber}
-            </Text>
-            <SpaceCharacter />
-            <Text size="l">{day.format("ddd")}</Text>
-          </div>
-        );
-      })}
-    </div>
+          return (
+            <StyledDayLabel
+              key={getWeekDayLabel(day)}
+              style={{ color }}
+              title={getWeekDayLabel(day)}
+            >
+              <Text className="week-day-number" withGradient={isToday}>
+                {dayNumber}
+              </Text>
+              <Text className="week-day-name">{day.format("ddd")}</Text>
+            </StyledDayLabel>
+          );
+        })}
+      </StyledDayLabelColumns>
+    </StyledDayLabels>
   );
 };
+
+const StyledDayLabels = styled.div`
+  // min-height (not height) so the box grows when clamp() resolves
+  // .week-day-number to xxl at wide viewports.
+  min-height: 32px;
+  margin-top: 10px;
+  position: relative;
+  width: 100%;
+
+  .week-day-number {
+    font-size: ${({ theme }) =>
+      `clamp(${theme.text.size.xl}, 2.7cqw, ${theme.text.size.xxl})`};
+    line-height: 1;
+  }
+
+  .week-day-name {
+    font-size: ${({ theme }) =>
+      `clamp(${theme.text.size.m}, 2cqw, ${theme.text.size.l})`};
+    line-height: 1;
+  }
+`;
+
+const StyledDayLabelColumns = styled(Columns)`
+  align-items: end;
+  height: 100%;
+`;
+
+const StyledDayLabel = styled.div`
+  align-items: end;
+  display: flex;
+  gap: 4px;
+  justify-content: center;
+`;

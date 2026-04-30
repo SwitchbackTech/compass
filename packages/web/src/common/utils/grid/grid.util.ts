@@ -1,4 +1,3 @@
-import { type MouseEvent } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   type AssignResult,
@@ -10,7 +9,6 @@ import {
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
-  SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 
 export const assignEventToRow = (
@@ -67,91 +65,83 @@ export const getColumnWidthPercentages = (
 
   const pastFutureWeek: number[] = new Array(daysInView).fill(FLEX_EQUAL);
 
-  let currentWeek: number[];
   const { afterTmrw, beforeToday } = getRelativePercentages(todayIndex);
-
-  switch (todayIndex) {
-    case 0:
-      currentWeek = [
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-      ];
-      break;
-    case 1:
-      currentWeek = [
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-      ];
-      break;
-    case 2:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-        afterTmrw,
-        afterTmrw,
-      ];
-      break;
-    case 3:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-        afterTmrw,
-      ];
-      break;
-    case 4:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-        afterTmrw,
-      ];
-      break;
-    case 5:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-        FLEX_TMRW,
-      ];
-      break;
-    case 6:
-      currentWeek = [
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        beforeToday,
-        FLEX_TODAY,
-      ];
-      break;
-
-    default:
-      [];
-  }
+  const currentWeek = (() => {
+    switch (todayIndex) {
+      case 0:
+        return [
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+        ];
+      case 1:
+        return [
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+        ];
+      case 2:
+        return [
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+          afterTmrw,
+          afterTmrw,
+        ];
+      case 3:
+        return [
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+          afterTmrw,
+        ];
+      case 4:
+        return [
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+          afterTmrw,
+        ];
+      case 5:
+        return [
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+          FLEX_TMRW,
+        ];
+      case 6:
+        return [
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          beforeToday,
+          FLEX_TODAY,
+        ];
+      default:
+        return pastFutureWeek;
+    }
+  })();
 
   return { pastFuture: pastFutureWeek, current: currentWeek };
 };
@@ -166,7 +156,13 @@ export const getBeforeTodayDiff = (
   return diff;
 };
 export const getElemById = (id: string): HTMLDivElement => {
-  return document.querySelector(`#${id}`);
+  const element = document.getElementById(id);
+
+  if (!(element instanceof HTMLDivElement)) {
+    throw new Error(`Expected #${id} to be an HTMLDivElement.`);
+  }
+
+  return element;
 };
 
 export const getRelativePercentages = (todayIndex: number) => {
@@ -305,15 +301,6 @@ export const getPrevDayWidth = (today: Dayjs) => {
 
 export const getWidthBuffer = (startIndex: number) =>
   startIndex * (DIVIDER_GRID * 2);
-
-export const getX = (e: MouseEvent | number, isSidebarOpen: boolean) => {
-  const x = typeof e === "number" ? e : e.clientX;
-
-  if (isSidebarOpen) {
-    return x - SIDEBAR_OPEN_WIDTH;
-  }
-  return x;
-};
 
 const normalizeDayNums = (days: number[]) => {
   // doesn't support events longer than 365/6 days
