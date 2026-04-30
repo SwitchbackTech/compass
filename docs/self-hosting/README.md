@@ -68,7 +68,7 @@ Before `./compass update` or anything that touches the install, back up
 They're a set. See [Backups and restore](./backups-and-restore.md).
 Browser IndexedDB data (tasks, pre-signup events) is not included.
 
-## What these guides do not set up yet
+## What you still need to handle yourself
 
 These docs keep the default path focused on local Docker self-hosting. They do not set up:
 
