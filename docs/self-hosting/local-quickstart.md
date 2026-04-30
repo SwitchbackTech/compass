@@ -116,7 +116,7 @@ cd ~/compass
 
 `./compass update` rebuilds Compass with newer code. It is not a rollback tool, and it does not back up your data. Back up `~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume **together** before you run it. See [Backups and restore](./backups-and-restore.md).
 
-The `.env` warning matters: see [Keep `.env` with your data](../self-hosting.md#keep-env-with-your-data) if you haven't already.
+The `.env` warning matters: see [Keep `.env` with your data](./README.md#keep-env-with-your-data) if you haven't already.
 
 ## Troubleshooting
 

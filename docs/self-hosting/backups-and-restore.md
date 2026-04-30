@@ -14,11 +14,21 @@ Your three things to keep, **together as a set**:
 2. the Mongo Docker volume (events)
 3. the SuperTokens Postgres Docker volume (accounts and sessions)
 
+## Keep `.env` with your data
+
+`~/compass/.env` holds the generated passwords and tokens that match your
+Docker volumes. If the volumes stay but `.env` is gone, a new install creates
+different credentials and can lock you out of the old data.
+
+Before `./compass update` or anything that touches the install, back up
+`~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume together.
+They're a set.
+
 ## What's not in a Docker backup
 
-Browser IndexedDB data is not included. That means:
+Browser IndexedDB data is not included in Docker volume backups. That means:
 
-- tasks
+- tasks, which live in your browser and not in Mongo
 - anonymous events created before signup
 - any pre-signup local data not yet copied to the backend
 
