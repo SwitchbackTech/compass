@@ -4,7 +4,7 @@ This is the recommended self-host path for one person running Compass on their o
 
 ## What to expect
 
-About 5 to 10 minutes, mostly waiting for Docker to download images. The installer creates a single folder at `~/compass`, generates secrets, and starts a Docker Compose stack. Nothing else on your machine is touched.
+About 5 to 10 minutes, mostly waiting for Docker to download images. The installer creates a single folder at `~/compass`, generates secrets, and starts a Docker Compose stack. Outside Docker, the installer only creates `~/compass`. Docker will also create the containers, images, network, and volumes Compass needs to run.
 
 When it finishes, you'll have:
 
@@ -116,6 +116,8 @@ cd ~/compass
 
 `./compass update` rebuilds Compass with newer code. It is not a rollback tool, and it does not back up your data. Back up `~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume **together** before you run it. See [Backups and restore](./backups-and-restore.md).
 
+The `.env` warning matters: see [Keep `.env` with your data](./README.md#keep-env-with-your-data) if you haven't already.
+
 ## Troubleshooting
 
 ### Docker is not running
@@ -179,3 +181,7 @@ cd ~/compass
 ### Google sign-in or Google Calendar doesn't work locally
 
 Expected on the default install. The placeholder OAuth values are treated as "not configured." See [Google Calendar](./google-calendar.md) for how to add real credentials and what limits the local install has.
+
+## What to read next
+
+Before your first update, read [Backups and restore](./backups-and-restore.md). If you want Google later, read [Google Calendar](./google-calendar.md).

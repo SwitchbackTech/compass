@@ -20,7 +20,7 @@ Sign up with email and password. Event create, edit, and delete all work without
 
 ## Local sign-in & import
 
-This is an optional add-on for the local install. Browser-driven flows (sign-in, one-time import) work. Watch notifications do not, because Google can't reach `localhost`.
+This is an optional add-on for the local install. Browser-driven flows (sign-in, one-time import) work. Watch notifications do not, because Google can't reach `localhost`. After the import, changes made later in Google Calendar will not reliably arrive in Compass unless you also set up public HTTPS watch notifications.
 
 Add real Google OAuth values to `~/compass/.env`:
 
@@ -36,7 +36,17 @@ cd ~/compass
 ./compass rebuild
 ```
 
-In your Google Cloud OAuth client, allow the local origin. The web OAuth flow reports the browser origin as the redirect origin, so the local install needs `http://localhost:9080` configured.
+In your Google Cloud OAuth client, use **Web application** as the client type and allow the local origin:
+
+```text
+Authorized JavaScript origins:
+  http://localhost:9080
+
+Authorized redirect URIs:
+  http://localhost:9080
+```
+
+Compass sends the browser origin as the OAuth redirect URI. That means the redirect URI is the app origin itself, not a longer callback path.
 
 This path doesn't make your local backend public. It's for sign-in and one-time import only.
 
@@ -60,6 +70,68 @@ The local installer doesn't create a public HTTPS URL, so a default local instal
 
   This is for Google webhook POSTs only.
 
+### Google Cloud setup
+
+For a public server install, create a Google OAuth client with **Web application** as the client type.
+
+Use your public Compass origin for both OAuth fields:
+
+```text
+Authorized JavaScript origins:
+  https://cal.example.com
+
+Authorized redirect URIs:
+  https://cal.example.com
+```
+
+Replace `https://cal.example.com` with your own Compass URL. Do not add `/api`, `/auth/callback`, or another path to the redirect URI.
+
+Also check these in Google Cloud:
+
+- The Google Calendar API is enabled for the same project as the OAuth client.
+- The OAuth consent screen is configured.
+- If the app is in Testing mode, the Google account you use in Compass is listed under **Audience -> Test users**.
+
+If Google shows `Error 403: access_denied` and says the app has not completed verification, the account is usually missing from the test-user list. Add it there, then retry the Compass connect flow.
+
+### Configure Compass
+
+On the server, add the real Google OAuth values to `~/compass/.env`:
+
+```bash
+GOOGLE_CLIENT_ID=<your-google-client-id>
+GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+```
+
+Keep `TOKEN_GCAL_NOTIFICATION` set. Then rebuild:
+
+```bash
+cd ~/compass
+./compass rebuild
+```
+
+After the rebuild, check that the public app sees Google as configured:
+
+```bash
+curl -fsS https://cal.example.com/api/config
+```
+
+The response should include:
+
+```json
+{"google":{"isConfigured":true}}
+```
+
+### Compass account match
+
+When you connect Google Calendar to an existing email/password Compass account, choose the same email address in Google that you used for the signed-in Compass account.
+
+If the emails do not match, Compass rejects the connection and shows:
+
+```text
+Google account email does not match the signed-in Compass account
+```
+
 Before you call continuous Google Calendar sync "working" on any self-host install, verify all of these on that specific install:
 
 - real Google OAuth credentials configured
@@ -69,3 +141,7 @@ Before you call continuous Google Calendar sync "working" on any self-host insta
 - watch repair and refresh behavior holds up over time
 
 The repo has the code paths for Google watches and repair. The local installer doesn't configure public HTTPS or prove long-running watch maintenance for you.
+
+## What to read next
+
+If you are staying local, return to [Local quickstart](./local-quickstart.md). If you need public Google watch notifications, continue with [Server hosting guide](./server-guide.md).

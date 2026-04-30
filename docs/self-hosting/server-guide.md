@@ -303,7 +303,7 @@ If you want Google sign-in or Google Calendar watch notifications, see [Google C
 - in your Google OAuth client, set the authorized JavaScript origin and redirect URI to `https://compass.example.com`
 - `./compass rebuild`
 
-Test Google connect, import, webhook delivery, and watch renewal on this install before relying on continuous sync.
+Test Google connect, import, webhook delivery, and watch renewal on this install before relying on continuous sync. Create or edit one event directly in Google Calendar and confirm it appears in Compass without reconnecting Google. Then restart Compass and confirm the connection still works.
 
 ## Updating
 
@@ -329,5 +329,9 @@ internet. Keep it that way. Don't add public port mappings for those services,
 don't open their ports in your firewall, and don't move them to public database
 hosts unless you know how you want to secure them. For this guide, only Caddy
 should be public, and Caddy should proxy only the web app and `/api`.
+
+## What to read next
+
+Before your first update, read [Backups and restore](./backups-and-restore.md). If you are adding Google, keep [Google Calendar](./google-calendar.md) open while you test it.
 
 Have an idea on how this guide can be improved? Let us know in [this GitHub Discussion](https://github.com/SwitchbackTech/compass/discussions/1694).

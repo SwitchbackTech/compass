@@ -1,6 +1,6 @@
 # Back up and restore your data
 
-For the local Docker install created by `self-host/install.sh`. Backups are manual today. The installer and `./compass update` do not create them for you.
+For the Docker install created by `self-host/install.sh`, whether you run it on your own computer or on a small server using the same self-host stack. Backups are manual today. The installer and `./compass update` do not create them for you.
 
 ## Why this matters
 
@@ -138,3 +138,7 @@ If sign-in fails, the most likely cause is a `.env` and volume pair from differe
 The installer stops in this case on purpose. A fresh `.env` would have new credentials that don't match the old volumes.
 
 To keep the old data, restore the matching `.env` from a backup, then rerun the installer.
+
+## What to read next
+
+After you have a backup you trust, return to [Local quickstart](./local-quickstart.md) for normal updates or [Server hosting guide](./server-guide.md) for VPS-specific checks.
