@@ -35,7 +35,8 @@ A separate API domain like `https://api.compass.example.com` may be possible, bu
 3. SSH into the server and install Compass with the local installer.
 4. Configure Caddy to proxy `compass.example.com` to `127.0.0.1:9080` and `/api/*` to `127.0.0.1:3000`.
 5. Verify Caddy can reach the local backend over HTTPS.
-6. Edit `~/compass/.env` to use your public URLs, then `./compass rebuild`.
+6. Edit `~/compass/.env` to use your public URLs, then recreate the backend
+   container and rebuild the web container.
 7. Sign in over HTTPS and run the basic tests below.
 8. (Optional) Add Google Calendar.
 
@@ -214,7 +215,9 @@ sudo systemctl restart caddy
 
 ## 5. Switch Compass to your public URLs
 
-> **Warning.** Don't change `BASEURL` until step 4 succeeds. The helper script uses `BASEURL` for its own health check during rebuild. If `BASEURL` points at an HTTPS URL Caddy can't serve yet, the rebuild fails.
+> **Warning.** Don't change `BASEURL` until step 4 succeeds. Compass uses
+> `BASEURL` for health checks. If `BASEURL` points at an HTTPS URL Caddy can't
+> serve yet, the health check fails even if the containers are running.
 
 Edit the env file:
 
@@ -233,14 +236,23 @@ CORS=https://compass.example.com
 
 Leave `WEB_PORT=9080` and `PORT=3000` unless you have a specific reason to change them.
 
-Rebuild so the web app receives the new backend URL:
+Apply the env changes.
 
 ```bash
 cd ~/compass
-./compass rebuild
+docker compose --project-name compass --env-file .env \
+  -f app/self-host/docker-compose.yml \
+  up -d --no-deps --force-recreate backend
+
+docker compose --project-name compass --env-file .env \
+  -f app/self-host/docker-compose.yml \
+  up -d --build --no-deps web
 ```
 
-Confirm the public health check still works after the rebuild:
+`./compass rebuild` also works, but it rebuilds every Compass image and can be
+slow on a small VPS.
+
+Confirm the public health check still works after applying the env changes:
 
 ```bash
 curl -f https://compass.example.com/api/health
