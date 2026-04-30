@@ -258,6 +258,14 @@ Confirm the public health check still works after applying the env changes:
 curl -f https://compass.example.com/api/health
 ```
 
+Then tail the backend logs while you open Compass in a browser. This lets you
+see successful requests and spot backend errors immediately:
+
+```bash
+cd ~/compass
+./compass logs backend
+```
+
 > **Tip.** If you ever need the helper to check the local backend directly while `BASEURL` stays public, add `COMPASS_HEALTH_URL=http://127.0.0.1:3000/api/health` to `~/compass/.env`. Most one-domain installs don't need this once Caddy is working.
 
 ## 6. Sign in and test the basics
