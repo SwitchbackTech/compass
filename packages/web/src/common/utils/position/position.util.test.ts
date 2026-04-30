@@ -1,10 +1,40 @@
 import dayjs from "@core/util/date/dayjs";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   getAllDayEventWidth,
   getEventCategory,
   getLeftPosition,
+  getTimedEventPosition,
   widthMinusPadding,
 } from "@web/common/utils/position/position.util";
+import {
+  GRID_MARGIN_LEFT,
+  TIMED_EVENT_COLUMN_INSET,
+} from "@web/views/Calendar/layout.constants";
+
+const createTimedEvent = (
+  overrides: Partial<Schema_GridEvent> = {},
+): Schema_GridEvent =>
+  ({
+    _id: "timed-event",
+    endDate: "2022-02-22T16:00:00.000Z",
+    isAllDay: false,
+    isSomeday: false,
+    position: {
+      dragOffset: { x: 0, y: 0 },
+      horizontalOrder: 1,
+      initialX: null,
+      initialY: null,
+      isOverlapping: false,
+      totalEventsInGroup: 1,
+      widthMultiplier: 1,
+    },
+    recurrence: undefined,
+    startDate: "2022-02-22T15:00:00.000Z",
+    title: "Timed event",
+    user: "user",
+    ...overrides,
+  }) as Schema_GridEvent;
 
 describe("getAllDayEventWidth", () => {
   it("is never wider than 1 week", () => {
@@ -152,6 +182,32 @@ describe("getAllDayEventWidth", () => {
         [1, 1, 1, 1, 1, 1, 1],
       ),
     ).toBe(7);
+  });
+});
+
+describe("getTimedEventPosition", () => {
+  it("keeps a timed event inset inside its day column", () => {
+    const colWidth = 100;
+    const startIndex = 2;
+    const columnLeft = GRID_MARGIN_LEFT + colWidth * startIndex;
+    const columnRight = columnLeft + colWidth;
+    const position = getTimedEventPosition(
+      createTimedEvent(),
+      dayjs("2022-02-20"),
+      dayjs("2022-02-26"),
+      {
+        allDayRow: null,
+        colWidths: Array(7).fill(colWidth),
+        hourHeight: 60,
+        mainGrid: null,
+      },
+      false,
+    );
+
+    expect(position.left).toBe(columnLeft + TIMED_EVENT_COLUMN_INSET);
+    expect(position.width).toBe(colWidth - TIMED_EVENT_COLUMN_INSET * 2);
+    expect(position.left).toBeGreaterThan(columnLeft);
+    expect(position.left + position.width).toBeLessThan(columnRight);
   });
 });
 
