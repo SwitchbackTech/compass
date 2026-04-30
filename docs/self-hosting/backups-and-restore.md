@@ -89,6 +89,11 @@ Set `BACKUP_DIR` to the folder you created during backup:
 cd ~/compass
 BACKUP_DIR="$HOME/compass-backups/YYYYMMDD-HHMMSS"
 
+# Only continue if these three files are from the backup you want to restore.
+ls -lh "$BACKUP_DIR/compass.env" \
+  "$BACKUP_DIR/mongo-volume.tgz" \
+  "$BACKUP_DIR/supertokens-postgres-volume.tgz"
+
 ./compass stop
 
 cp -p "$BACKUP_DIR/compass.env" .env

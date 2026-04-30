@@ -110,13 +110,24 @@ cd ~/compass
 
 **How do I update?** Back up first (see below), then `./compass update`. There's no rollback.
 
-**How do I uninstall?** `./compass stop`, then `docker volume rm compass_compass_mongo_data compass_compass_supertokens_postgres_data`, then `rm -rf ~/compass`. This wipes your data. Make a backup first if you want to keep it.
+**How do I uninstall?** Stop Compass with `./compass stop`. If you also want to delete your saved events and accounts, see [Uninstall and delete all data](#uninstall-and-delete-all-data).
 
 ## Before updating
 
 `./compass update` rebuilds Compass with newer code. It is not a rollback tool, and it does not back up your data. Back up `~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume **together** before you run it. See [Backups and restore](./backups-and-restore.md).
 
 The `.env` warning matters: see [Keep `.env` with your data](./README.md#keep-env-with-your-data) if you haven't already.
+
+## Uninstall and delete all data
+
+Only run these commands if you are sure you no longer need the events and accounts stored in this install. Make a backup first if you want to keep them.
+
+```bash
+cd ~/compass
+./compass stop
+docker volume rm compass_compass_mongo_data compass_compass_supertokens_postgres_data
+rm -rf ~/compass
+```
 
 ## Troubleshooting
 

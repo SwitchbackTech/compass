@@ -103,7 +103,15 @@ GOOGLE_CLIENT_ID=<your-google-client-id>
 GOOGLE_CLIENT_SECRET=<your-google-client-secret>
 ```
 
-Keep `TOKEN_GCAL_NOTIFICATION` set. Then rebuild:
+Next, check the notification secret Compass uses to verify Google webhook calls.
+Keep `TOKEN_GCAL_NOTIFICATION` set:
+
+- If you installed with the self-host installer, leave the generated value in place.
+- If you are creating `.env` manually, set it to a long random secret.
+
+This is a Compass webhook secret, not a Google credential.
+
+Then rebuild:
 
 ```bash
 cd ~/compass
@@ -140,7 +148,7 @@ Before you call continuous Google Calendar sync "working" on any self-host insta
 - Google watch registration succeeds
 - watch repair and refresh behavior holds up over time
 
-The repo has the code paths for Google watches and repair. The local installer doesn't configure public HTTPS or prove long-running watch maintenance for you.
+The repo has the code paths for Google watches and repair. The local installer doesn't configure public HTTPS or prove long-running watch maintenance for you. The self-host Docker stack also does not schedule watch renewal, so you need to verify and wire up maintenance separately before treating ongoing Google sync as dependable.
 
 ## What to read next
 

@@ -145,6 +145,8 @@ curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-ho
 
 The installer creates `~/compass`, writes `~/compass/.env`, and starts the local Docker stack on `127.0.0.1:9080` (web) and `127.0.0.1:3000` (backend). The database containers stay on Docker's internal network and aren't exposed publicly.
 
+From this point on, `localhost` means the VPS you are SSH'd into. You won't open `http://localhost:9080` from your own laptop unless you use SSH port forwarding. For normal server use, continue to Caddy and open the public HTTPS URL.
+
 ## 3. Configure Caddy
 
 Put Caddy on the same server as Compass. Its config file is usually `/etc/caddy/Caddyfile`.
@@ -303,7 +305,9 @@ If you want Google sign-in or Google Calendar watch notifications, see [Google C
 - in your Google OAuth client, set the authorized JavaScript origin and redirect URI to `https://compass.example.com`
 - `./compass rebuild`
 
-Test Google connect, import, webhook delivery, and watch renewal on this install before relying on continuous sync. Create or edit one event directly in Google Calendar and confirm it appears in Compass without reconnecting Google. Then restart Compass and confirm the connection still works.
+Test Google connect, import, and webhook delivery on this install before relying on Google sync. Create or edit one event directly in Google Calendar and confirm it appears in Compass without reconnecting Google. Then restart Compass and confirm the connection still works.
+
+Long-running Google watch renewal is not scheduled by the self-host Docker stack. If you rely on ongoing Google sync, you still need to verify renewal on your server and wire up maintenance separately.
 
 ## Updating
 

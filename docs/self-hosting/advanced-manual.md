@@ -2,7 +2,9 @@
 
 For when the local installer doesn't fit. Most personal self-hosting should use [Local quickstart](./local-quickstart.md) instead.
 
-This page assumes you already know what MongoDB, SuperTokens, and Bun are, and you're comfortable wiring them together yourself. It is not a public-server guide. For server hosting, see [Server hosting guide](./server-guide.md).
+This is not a longer version of the quickstart. It assumes you already have MongoDB, SuperTokens Core, and Postgres running somewhere and know their connection URLs.
+
+It also assumes you already know what MongoDB, SuperTokens, and Bun are, and you're comfortable wiring them together yourself. It is not a public-server guide. For server hosting, see [Server hosting guide](./server-guide.md).
 
 ## What you provide
 
