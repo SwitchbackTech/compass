@@ -14,7 +14,7 @@ export function StyledCalendar({ children }: PropsWithChildren) {
   return (
     <div
       id={ID_MAIN}
-      className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary p-8"
+      className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-8 pr-0 pb-0 pl-8"
     >
       {children}
     </div>
@@ -46,31 +46,6 @@ export const WeekGridScroller = styled.div`
     outline: ${({ theme }) => `1px solid ${theme.color.text.accent}`};
     outline-offset: -1px;
   }
-`;
-
-export const WeekGridScrollRail = styled.div<{ $isVisible: boolean }>`
-  background: ${({ theme }) => theme.color.gridLine.primary};
-  border-radius: 999px;
-  bottom: 8px;
-  height: 2px;
-  left: 50%;
-  opacity: ${({ $isVisible }) => ($isVisible ? 0.9 : 0)};
-  overflow: hidden;
-  pointer-events: none;
-  position: absolute;
-  transform: translateX(-50%);
-  transition: opacity 160ms ease;
-  width: min(184px, calc(100% - 84px));
-  z-index: 4;
-`;
-
-export const WeekGridScrollThumb = styled.div`
-  background: ${({ theme }) =>
-    `linear-gradient(90deg, ${theme.color.gradient.accentLight.start}, ${theme.color.gradient.accentLight.end})`};
-  border-radius: inherit;
-  height: 100%;
-  position: absolute;
-  top: 0;
 `;
 
 export const WeekGridTrack = styled.div`

@@ -3,7 +3,6 @@ import { Flex } from "@web/components/Flex";
 import {
   DIVIDER_GRID,
   GRID_MARGIN_LEFT,
-  GRID_PADDING_BOTTOM,
 } from "@web/views/Calendar/layout.constants";
 
 export const StyledGridRow = styled(Flex)`
@@ -28,7 +27,6 @@ export const StyledGridWithTimeLabels = styled.div`
 export const StyledMainGrid = styled.div`
   --scrollbar-width: 0px;
   flex: 1;
-  margin-bottom: ${GRID_PADDING_BOTTOM}px;
   min-height: 0;
   width: 100%;
   position: relative;

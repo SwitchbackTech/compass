@@ -10,7 +10,6 @@ import {
   type Refs_Grid,
 } from "@web/views/Calendar/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
-import { GRID_PADDING_BOTTOM } from "../../layout.constants";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -41,7 +40,6 @@ export const Grid: FC<Props> = ({
         minHeight: 0,
         width: "100%",
         position: "relative",
-        paddingBottom: GRID_PADDING_BOTTOM,
       }}
     >
       <AllDayRow
