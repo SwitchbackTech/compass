@@ -62,3 +62,7 @@ curl http://localhost:3000/api/health
 Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set to real, non-placeholder values. Watch notifications need a public HTTPS webhook URL Google can reach.
 
 For the three modes (Off, Local sign-in & import, Public watch notifications) and the `GCAL_WEBHOOK_BASEURL` development pattern, see [Google Calendar](./google-calendar.md).
+
+## What to read next
+
+For the recommended installer path, see [Local quickstart](./local-quickstart.md). For public HTTPS hosting, see [Server hosting guide](./server-guide.md).

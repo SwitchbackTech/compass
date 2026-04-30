@@ -20,7 +20,7 @@ Sign up with email and password. Event create, edit, and delete all work without
 
 ## Local sign-in & import
 
-This is an optional add-on for the local install. Browser-driven flows (sign-in, one-time import) work. Watch notifications do not, because Google can't reach `localhost`.
+This is an optional add-on for the local install. Browser-driven flows (sign-in, one-time import) work. Watch notifications do not, because Google can't reach `localhost`. After the import, changes made later in Google Calendar will not reliably arrive in Compass unless you also set up public HTTPS watch notifications.
 
 Add real Google OAuth values to `~/compass/.env`:
 
@@ -141,3 +141,7 @@ Before you call continuous Google Calendar sync "working" on any self-host insta
 - watch repair and refresh behavior holds up over time
 
 The repo has the code paths for Google watches and repair. The local installer doesn't configure public HTTPS or prove long-running watch maintenance for you.
+
+## What to read next
+
+If you are staying local, return to [Local quickstart](./local-quickstart.md). If you need public Google watch notifications, continue with [Server hosting guide](./server-guide.md).

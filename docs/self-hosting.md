@@ -43,7 +43,7 @@ Most people want the first one. Pick based on where you want Compass to live and
 
 - **On your laptop, no Google.** The default. Run the installer, open `localhost:9080`, sign up with email and password. This is the recommended path.
 - **On your laptop, with Google sign-in or import.** Same install, plus your own Google OAuth client added to `~/compass/.env`. Continuous Google Calendar sync (Google pushing changes to Compass) needs a public HTTPS URL, so it isn't part of this path.
-- **On a public server.** A VPS with Docker, your own domain, and Caddy in front for HTTPS. More setup, more responsibility. Use this when you want Compass reachable from anywhere or want full Google Calendar sync.
+- **On a public server.** A VPS with Docker, your own domain, and Caddy in front for HTTPS. More setup, more responsibility. Use this when you want Compass reachable from anywhere or want to set up Google Calendar sync.
 
 ## Choose a guide
 
