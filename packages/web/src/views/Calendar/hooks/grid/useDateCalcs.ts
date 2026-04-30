@@ -16,8 +16,8 @@ export const useDateCalcs = (
 ) => {
   const getDateByX = (x: number, firstDayInView: Dayjs) => {
     const gridLeft =
-      measurements.mainGrid?.left ??
       mainGridRef.current?.getBoundingClientRect().left ??
+      measurements.mainGrid?.left ??
       GRID_X_START - GRID_MARGIN_LEFT;
     const gridX = x - gridLeft - GRID_MARGIN_LEFT;
     const dayIndex = getDayNumberByX(gridX);

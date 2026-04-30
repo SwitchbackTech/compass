@@ -4,7 +4,6 @@ import { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { Text } from "@web/components/Text";
-import { EVENT_WIDTH_MINIMUM } from "../../layout.constants";
 import { Columns } from "../Grid/Columns/styled";
 
 interface Props {
@@ -99,5 +98,4 @@ const StyledDayLabel = styled.div`
   display: flex;
   gap: 4px;
   justify-content: center;
-  min-width: ${EVENT_WIDTH_MINIMUM}px;
 `;

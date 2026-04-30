@@ -25,14 +25,17 @@ test("should create a timed event using mouse interaction", async ({
   await expectTimedEventVisible(page, title);
 });
 
-test("starts the timed draft in the day column under the pointer", async ({
+test("starts the timed draft in the day column under the pointer after horizontal scroll", async ({
   page,
 }) => {
-  await page.setViewportSize({ width: 1400, height: 1000 });
+  await page.setViewportSize({ width: 900, height: 1000 });
   await prepareCalendarPage(page);
   await ensureSidebarOpen(page);
+  await page.locator("#weekGridScroller").evaluate((node) => {
+    node.scrollLeft = node.scrollWidth;
+  });
 
-  const targetDayLabel = page.locator('[title="20260501"]');
+  const targetDayLabel = page.locator("#weekGridScroller [title]").nth(6);
   const mainGrid = page.locator("#mainGrid");
   const targetBox = await targetDayLabel.boundingBox();
   const gridBox = await mainGrid.boundingBox();
@@ -46,7 +49,6 @@ test("starts the timed draft in the day column under the pointer", async ({
 
   await page.mouse.move(x, y);
   await page.mouse.down();
-  await page.waitForTimeout(200);
   await page.mouse.move(x, y + 80);
 
   const draftEvent = page.locator(

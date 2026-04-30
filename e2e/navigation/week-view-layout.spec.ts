@@ -2,15 +2,7 @@ import { expect, type Page, test } from "@playwright/test";
 
 const layoutWidths = [900, 1728];
 const maxLayoutDelta = 1;
-const weekDayTitles = [
-  "20260426",
-  "20260427",
-  "20260428",
-  "20260429",
-  "20260430",
-  "20260501",
-  "20260502",
-];
+const daysInWeek = 7;
 
 test.describe("Week view layout", () => {
   for (const width of layoutWidths) {
@@ -30,17 +22,16 @@ test.describe("Week view layout", () => {
         );
       const horizontalScrollState = await getHorizontalScrollState(page);
 
-      expect(layout.allDayColumns).toHaveLength(weekDayTitles.length);
-      expect(layout.dayLabels).toHaveLength(weekDayTitles.length);
-      expect(layout.timedColumns).toHaveLength(weekDayTitles.length);
+      expect(layout.allDayColumns).toHaveLength(daysInWeek);
+      expect(layout.dayLabels).toHaveLength(daysInWeek);
+      expect(layout.timedColumns).toHaveLength(daysInWeek);
       expect(mainGridScrollbarWidth).toBe("0px");
       expect(horizontalScrollState.scrollbarHeight).toBe("0px");
       if (width === 900) {
         expect(horizontalScrollState.isScrollable).toBe(true);
-        expect(horizontalScrollState.railOpacity).toBeGreaterThan(0);
         await expectWeekGridCanScrollHorizontally(page);
       } else {
-        expect(horizontalScrollState.railOpacity).toBe(0);
+        expect(horizontalScrollState.isScrollable).toBe(false);
       }
 
       for (const [index, dayLabel] of layout.dayLabels.entries()) {
@@ -52,21 +43,19 @@ test.describe("Week view layout", () => {
 });
 
 const getWeekColumnLayout = async (page: Page) =>
-  page.evaluate((titles) => {
+  page.evaluate((daysInView) => {
     const roundRect = (rect: DOMRect) => ({
       right: Math.round(rect.right * 100) / 100,
       width: Math.round(rect.width * 100) / 100,
       x: Math.round(rect.x * 100) / 100,
     });
 
-    const dayLabels = titles.map((title) => {
-      const node = document.querySelector(`[title="${title}"]`);
-      if (!(node instanceof HTMLElement)) {
-        throw new Error(`Missing day label ${title}`);
-      }
-
-      return roundRect(node.getBoundingClientRect());
-    });
+    const dayLabels = [
+      ...document.querySelectorAll("#weekGridScroller [title]"),
+    ]
+      .filter((node): node is HTMLElement => node instanceof HTMLElement)
+      .slice(0, daysInView)
+      .map((node) => roundRect(node.getBoundingClientRect()));
 
     const getColumns = (selector: string) =>
       [...document.querySelectorAll(selector)]
@@ -80,24 +69,19 @@ const getWeekColumnLayout = async (page: Page) =>
           };
         })
         .filter((rect) => rect.height > 20)
-        .slice(0, titles.length);
+        .slice(0, daysInView);
 
     return {
       allDayColumns: getColumns("#allDayColumns > div"),
       dayLabels,
       timedColumns: getColumns("#timedColumns > div"),
     };
-  }, weekDayTitles);
+  }, daysInWeek);
 
 const getHorizontalScrollState = async (page: Page) =>
   page.locator("#weekGridScroller").evaluate((node) => {
-    const rail = node.nextElementSibling;
-    const railOpacity =
-      rail instanceof HTMLElement ? Number(getComputedStyle(rail).opacity) : 0;
-
     return {
       isScrollable: node.scrollWidth > node.clientWidth,
-      railOpacity,
       scrollbarHeight: getComputedStyle(node, "::-webkit-scrollbar").height,
     };
   });

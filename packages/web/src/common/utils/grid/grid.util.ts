@@ -156,7 +156,7 @@ export const getBeforeTodayDiff = (
   return diff;
 };
 export const getElemById = (id: string): HTMLDivElement => {
-  const element = document.querySelector(`#${id}`);
+  const element = document.getElementById(id);
 
   if (!(element instanceof HTMLDivElement)) {
     throw new Error(`Expected #${id} to be an HTMLDivElement.`);
