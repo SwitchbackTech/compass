@@ -4,7 +4,7 @@ This is the recommended self-host path for one person running Compass on their o
 
 ## What to expect
 
-About 5 to 10 minutes, mostly waiting for Docker to download images. The installer creates a single folder at `~/compass`, generates secrets, and starts a Docker Compose stack. Nothing else on your machine is touched.
+About 5 to 10 minutes, mostly waiting for Docker to download images. The installer creates a single folder at `~/compass`, generates secrets, and starts a Docker Compose stack. Outside Docker, the installer only creates `~/compass`. Docker will also create the containers, images, network, and volumes Compass needs to run.
 
 When it finishes, you'll have:
 
@@ -110,13 +110,24 @@ cd ~/compass
 
 **How do I update?** Back up first (see below), then `./compass update`. There's no rollback.
 
-**How do I uninstall?** `./compass stop`, then `docker volume rm compass_compass_mongo_data compass_compass_supertokens_postgres_data`, then `rm -rf ~/compass`. This wipes your data. Make a backup first if you want to keep it.
+**How do I uninstall?** Stop Compass with `./compass stop`. If you also want to delete your saved events and accounts, see [Uninstall and delete all data](#uninstall-and-delete-all-data).
 
 ## Before updating
 
 `./compass update` rebuilds Compass with newer code. It is not a rollback tool, and it does not back up your data. Back up `~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume **together** before you run it. See [Backups and restore](./backups-and-restore.md).
 
-The `.env` warning matters: see [the warning on the landing page](../self-hosting.md#the-one-warning-that-matters) if you haven't already.
+The `.env` warning matters: see [Keep `.env` with your data](./README.md#keep-env-with-your-data) if you haven't already.
+
+## Uninstall and delete all data
+
+Only run these commands if you are sure you no longer need the events and accounts stored in this install. Make a backup first if you want to keep them.
+
+```bash
+cd ~/compass
+./compass stop
+docker volume rm compass_compass_mongo_data compass_compass_supertokens_postgres_data
+rm -rf ~/compass
+```
 
 ## Troubleshooting
 
@@ -181,3 +192,7 @@ cd ~/compass
 ### Google sign-in or Google Calendar doesn't work locally
 
 Expected on the default install. The placeholder OAuth values are treated as "not configured." See [Google Calendar](./google-calendar.md) for how to add real credentials and what limits the local install has.
+
+## What to read next
+
+Before your first update, read [Backups and restore](./backups-and-restore.md). If you want Google later, read [Google Calendar](./google-calendar.md).

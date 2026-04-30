@@ -49,7 +49,7 @@ Validation defaults:
 - Troubleshooting: `docs/development/troubleshoot.md`
 - Feature acceptance runbooks: `docs/acceptance/`
 - Feature docs: `docs/features/`
-- `docs/self-hosting.md`
+- `docs/self-hosting/README.md`
 - `self-host/README.md`
 
 ## Compass-Specific Rules

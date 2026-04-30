@@ -2,7 +2,7 @@
 
 This folder contains the files used by the local Compass self-host installer.
 
-If you're installing Compass for the first time, **start with [Local quickstart](../docs/self-hosting/local-quickstart.md)**. The [Self-Hosting Compass](../docs/self-hosting.md) page helps you choose the right guide and explains what runs where.
+If you're installing Compass for the first time, **start with [Local quickstart](../docs/self-hosting/local-quickstart.md)**. The [Self-Hosting Compass](../docs/self-hosting/README.md) page helps you choose the right guide and explains what runs where.
 
 This README is a quick reference for what each file in this folder does. For install steps, troubleshooting, backups, Google Calendar, and server hosting, see the docs above.
 
@@ -12,6 +12,15 @@ For install steps, start with [Local quickstart](../docs/self-hosting/local-quic
 Compass will be available at `http://localhost:9080` (web) and
 `http://localhost:3000/api` (backend). The compose stack binds those ports to
 `127.0.0.1` and is not a public-server installer.
+
+## Common places to go
+
+- First install: [Local quickstart](../docs/self-hosting/local-quickstart.md)
+- Back up before updating: [Backups and restore](../docs/self-hosting/backups-and-restore.md)
+- Missing `.env` with old Docker volumes: [Backups and restore](../docs/self-hosting/backups-and-restore.md#if-env-is-missing-but-old-volumes-exist)
+- Google setup or no-Google mode: [Google Calendar](../docs/self-hosting/google-calendar.md)
+- Public domain or VPS setup: [Server hosting guide](../docs/self-hosting/server-guide.md)
+- Helper command issues: [Local quickstart troubleshooting](../docs/self-hosting/local-quickstart.md#troubleshooting)
 
 ## Files in this folder
 

@@ -1,7 +1,7 @@
 name: Bug Report
 description: You found something wrong
-labels: [bug]
-projects: [SwitchbackTech/4]
+labels: [ bug ]
+projects: [ SwitchbackTech/4 ]
 
 body:
   - type: markdown
@@ -15,7 +15,8 @@ body:
       multiple: true
       options:
         - Hosted (app.compasscalendar.com)
-        - Local code with an up-to-date main branch
+        - Local code on main
+        - Self-hosted (app.yourdomain.com)
 
   - type: textarea
     attributes:
@@ -32,7 +33,8 @@ body:
   - type: textarea
     attributes:
       label: Steps to Reproduce
-      description: Include a step-by-step guide, along with any stack traces, screenshots, or screen recordings.
+      description: Include a step-by-step guide, along with any stack traces,
+        screenshots, or screen recordings.
       placeholder: |
         1. Go to calendar view
         2. Click on an event
@@ -48,5 +50,6 @@ body:
   - type: textarea
     attributes:
       label: Context
-      description: How has this issue affected you as a user? What were you trying to accomplish? Any workarounds?
+      description: How has this issue affected you as a user? What were you trying to
+        accomplish? Any workarounds?
       placeholder: Describe the context...

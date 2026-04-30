@@ -87,9 +87,10 @@ export const useDraftEffects = (
       setIsFormOpen(false);
       const durationMin = dayjs(draft.endDate).diff(draft.startDate, "minutes");
 
-      setDragStatus({
+      setDragStatus((dragStatus) => ({
         durationMin,
-      });
+        hasMoved: dragStatus?.hasMoved,
+      }));
     }
   }, [isDragging, setDragStatus, draft?.endDate, draft, setIsFormOpen]);
 };

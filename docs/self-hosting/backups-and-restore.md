@@ -1,6 +1,6 @@
 # Back up and restore your data
 
-For the local Docker install created by `self-host/install.sh`. Backups are manual today. The installer and `./compass update` do not create them for you.
+For the Docker install created by `self-host/install.sh`, whether you run it on your own computer or on a small server using the same self-host stack. Backups are manual today. The installer and `./compass update` do not create them for you.
 
 ## Why this matters
 
@@ -14,11 +14,21 @@ Your three things to keep, **together as a set**:
 2. the Mongo Docker volume (events)
 3. the SuperTokens Postgres Docker volume (accounts and sessions)
 
+## Keep `.env` with your data
+
+`~/compass/.env` holds the generated passwords and tokens that match your
+Docker volumes. If the volumes stay but `.env` is gone, a new install creates
+different credentials and can lock you out of the old data.
+
+Before `./compass update` or anything that touches the install, back up
+`~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume together.
+They're a set.
+
 ## What's not in a Docker backup
 
-Browser IndexedDB data is not included. That means:
+Browser IndexedDB data is not included in Docker volume backups. That means:
 
-- tasks
+- tasks, which live in your browser and not in Mongo
 - anonymous events created before signup
 - any pre-signup local data not yet copied to the backend
 
@@ -79,6 +89,11 @@ Set `BACKUP_DIR` to the folder you created during backup:
 cd ~/compass
 BACKUP_DIR="$HOME/compass-backups/YYYYMMDD-HHMMSS"
 
+# Only continue if these three files are from the backup you want to restore.
+ls -lh "$BACKUP_DIR/compass.env" \
+  "$BACKUP_DIR/mongo-volume.tgz" \
+  "$BACKUP_DIR/supertokens-postgres-volume.tgz"
+
 ./compass stop
 
 cp -p "$BACKUP_DIR/compass.env" .env
@@ -128,3 +143,7 @@ If sign-in fails, the most likely cause is a `.env` and volume pair from differe
 The installer stops in this case on purpose. A fresh `.env` would have new credentials that don't match the old volumes.
 
 To keep the old data, restore the matching `.env` from a backup, then rerun the installer.
+
+## What to read next
+
+After you have a backup you trust, return to [Local quickstart](./local-quickstart.md) for normal updates or [Server hosting guide](./server-guide.md) for VPS-specific checks.
