@@ -47,7 +47,7 @@ If you already have an Ubuntu VPS with Docker, Docker Compose, and Caddy install
 
 Any provider will do, but here are two simple options.
 
-**[DigitalOcean Droplets](https://docs.digitalocean.com/products/droplets/getting-started/).** Their [Initial Server Setup with Ubuntu](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu) guide walks you through region, size, SSH key upload, and firewall setup. A Basic Droplet at $6/month (1 vCPU, 1 GB RAM) is enough for a personal Compass instance.
+**[DigitalOcean Droplets](https://docs.digitalocean.com/products/droplets/getting-started/).** Their [Initial Server Setup with Ubuntu](https://www.digitalocean.com/community/tutorials/initial-server-setup-with-ubuntu) guide walks you through region, size, SSH key upload, and firewall setup. A Droplet at $12/month (1 vCPU, 2 GB RAM) is enough for a personal Compass instance.
 
 **[Hetzner Cloud](https://docs.hetzner.com/cloud/servers/getting-started/creating-a-server/)** is a strong low-cost alternative. Their CX22 starts at around $4/month for 2 vCPU and 2 GB RAM.
 
@@ -55,7 +55,7 @@ Any provider will do, but here are two simple options.
 
 | Resource | Minimum |
 |---|---|
-| RAM | 1 GB (2 GB recommended) |
+| RAM | 2 GB (4 GB recommended) |
 | Storage | 20 GB SSD |
 | OS | Ubuntu 22.04 LTS or 24.04 LTS |
 | Network | 1 static public IPv4 address |
@@ -146,7 +146,16 @@ The installer creates `~/compass`, writes `~/compass/.env`, and starts the local
 
 ## 3. Configure Caddy
 
-Put Caddy on the same server as Compass. Example Caddyfile:
+Put Caddy on the same server as Compass. Its config file is usually `/etc/caddy/Caddyfile`.
+
+Open it on the server:
+
+```bash
+sudo vi /etc/caddy/Caddyfile
+```
+
+Replace the file contents with this Caddyfile, using your real domain instead
+of `compass.example.com`:
 
 ```caddyfile
 compass.example.com {
@@ -160,7 +169,14 @@ compass.example.com {
 }
 ```
 
-Validate and reload Caddy after saving:
+This tells Caddy to serve your public domain over HTTPS, send `/api/*` requests
+to the Compass backend on `127.0.0.1:3000`, and send everything else to the web
+app on `127.0.0.1:9080`.
+
+If you want to understand the Caddyfile format before editing it, read Caddy's
+[Caddyfile tutorial](https://caddyserver.com/docs/caddyfile-tutorial).
+
+Save the file, then validate and reload Caddy:
 
 ```bash
 sudo caddy validate --config /etc/caddy/Caddyfile
