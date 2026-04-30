@@ -5,14 +5,14 @@ import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constant
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
-import { resolveCommandPalette } from "@web/common/utils/command-palette/resolve-command-palette.util";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
+import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
-const CommandPalette = resolveCommandPalette(_CommandPalette);
+const CommandPalette = resolveDefaultExport(_CommandPalette);
 
 export const NowCmdPalette = () => {
   const dispatch = useAppDispatch();

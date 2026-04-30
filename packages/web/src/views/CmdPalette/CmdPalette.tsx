@@ -9,7 +9,6 @@ import { Categories_Event } from "@core/types/event.types";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
-import { resolveCommandPalette } from "@web/common/utils/command-palette/resolve-command-palette.util";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
@@ -18,6 +17,7 @@ import {
 } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
@@ -28,7 +28,7 @@ import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { type ShortcutProps } from "@web/views/Calendar/hooks/shortcuts/useWeekShortcuts";
 
-const CommandPalette = resolveCommandPalette(_CommandPalette);
+const CommandPalette = resolveDefaultExport(_CommandPalette);
 
 const CmdPalette = ({
   today,
