@@ -2,7 +2,7 @@
 
 This guide describes the recommended first server setup for one person hosting Compass on a small VPS. One public domain, Compass on `127.0.0.1`, Caddy in front for HTTPS.
 
-If you only want Compass on your own computer, use [Local quickstart](./local-quickstart.md) instead.
+If you only want Compass on your own computer, use the normal Bun-based local setup instead of this self-hosting guide. See [Run Compass without the installer](./advanced-manual.md).
 
 ## Before you start
 
@@ -32,7 +32,7 @@ A separate API domain like `https://api.compass.example.com` may be possible, bu
 
 1. Get a VPS with Ubuntu, then install Docker, Docker Compose, and Caddy.
 2. Point DNS at the server and confirm the server has Docker, Compose, Caddy, and open `80`/`443`.
-3. SSH into the server and install Compass with the local installer.
+3. SSH into the server and install Compass with the self-host installer.
 4. Configure Caddy to proxy `compass.example.com` to `127.0.0.1:9080` and `/api/*` to `127.0.0.1:3000`.
 5. Verify Caddy can reach the local backend over HTTPS.
 6. Edit `~/compass/.env` to use your public URLs, then recreate the backend
@@ -143,7 +143,7 @@ redirects. It needs port `443` for the final HTTPS site.
 curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
 ```
 
-The installer creates `~/compass`, writes `~/compass/.env`, and starts the local Docker stack on `127.0.0.1:9080` (web) and `127.0.0.1:3000` (backend). The database containers stay on Docker's internal network and aren't exposed publicly.
+The installer creates `~/compass`, writes `~/compass/.env`, and starts the Docker stack on `127.0.0.1:9080` (web) and `127.0.0.1:3000` (backend). The database containers stay on Docker's internal network and aren't exposed publicly.
 
 From this point on, `localhost` means the VPS you are SSH'd into. You won't open `http://localhost:9080` from your own laptop unless you use SSH port forwarding. For normal server use, continue to Caddy and open the public HTTPS URL.
 

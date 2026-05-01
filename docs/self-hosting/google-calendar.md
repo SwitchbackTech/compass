@@ -7,10 +7,10 @@ Google Calendar is optional for self-hosting. Compass works fine with email and 
 | Mode | What it does | What you need | Who it's for |
 | --- | --- | --- | --- |
 | **Off (default)** | Google sign-in and connect actions are hidden. Email/password signup works normally. | Nothing. | Everyone who doesn't need Google. |
-| **Local sign-in & import** | Google sign-in works. One-time Google Calendar import works. No continuous sync. | A Google Cloud OAuth client that allows `http://localhost:9080`, plus `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in `~/compass/.env`. | Local installs that want Google sign-in or a one-time import. |
+| **Local development sign-in & import** | Google sign-in works. One-time Google Calendar import works. No continuous sync. | A Google Cloud OAuth client that allows `http://localhost:9080`, plus `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in your local env file. | Bun-based local setups that want Google sign-in or a one-time import. |
 | **Public watch notifications** | Google can notify Compass when calendar events change. | A public HTTPS URL Google can reach, real Google OAuth credentials, `TOKEN_GCAL_NOTIFICATION` set, and verified Google watch registration and repair on this install. | Server installs only. See [Server hosting guide](./server-guide.md). |
 
-Most local self-hosters want **Off** or **Local sign-in & import**. Continuous sync needs a public server because Google sends notifications over the public internet.
+Most self-hosters should start with **Off** or a public server setup. Continuous sync needs a public server because Google sends notifications over the public internet.
 
 ## Off (default)
 
@@ -18,11 +18,11 @@ The installer writes placeholder Google OAuth values to `~/compass/.env`. Compas
 
 Sign up with email and password. Event create, edit, and delete all work without a Google connection. Nothing more to do.
 
-## Local sign-in & import
+## Local development sign-in & import
 
-This is an optional add-on for the local install. Browser-driven flows (sign-in, one-time import) work. Watch notifications do not, because Google can't reach `localhost`. After the import, changes made later in Google Calendar will not reliably arrive in Compass unless you also set up public HTTPS watch notifications.
+This is an optional add-on for a Bun-based local setup. Browser-driven flows (sign-in, one-time import) work. Watch notifications do not, because Google can't reach `localhost`. After the import, changes made later in Google Calendar will not reliably arrive in Compass unless you also set up public HTTPS watch notifications.
 
-Add real Google OAuth values to `~/compass/.env`:
+Add real Google OAuth values to your local environment file:
 
 ```bash
 GOOGLE_CLIENT_ID=<your-google-client-id>
@@ -58,7 +58,7 @@ For Google to notify Compass when something changes in Google Calendar, Google m
 /api/sync/gcal/notifications
 ```
 
-The local installer doesn't create a public HTTPS URL, so a default local install can't receive these. You have two paths:
+Local setups do not create a public HTTPS URL, so they can't receive these. You have two paths:
 
 - **Run Compass on a public server.** The recommended path. See [Server hosting guide](./server-guide.md).
 - **Use a public HTTPS tunnel for webhooks only (development).** The backend supports `GCAL_WEBHOOK_BASEURL` as a separate public HTTPS base URL for Google webhook callbacks. Browser API traffic and Server-Sent Events keep using localhost:
@@ -148,8 +148,8 @@ Before you call continuous Google Calendar sync "working" on any self-host insta
 - Google watch registration succeeds
 - watch repair and refresh behavior holds up over time
 
-The repo has the code paths for Google watches and repair. The local installer doesn't configure public HTTPS or prove long-running watch maintenance for you. The self-host Docker stack also does not schedule watch renewal, so you need to verify and wire up maintenance separately before treating ongoing Google sync as dependable.
+The repo has the code paths for Google watches and repair. The self-host Docker stack does not schedule watch renewal, so you need to verify and wire up maintenance separately before treating ongoing Google sync as dependable.
 
 ## What to read next
 
-If you are staying local, return to [Local quickstart](./local-quickstart.md). If you need public Google watch notifications, continue with [Server hosting guide](./server-guide.md).
+If you are using local development, use [Run Compass without the installer](./advanced-manual.md). If you need public Google watch notifications, continue with [Server hosting guide](./server-guide.md).
