@@ -21,13 +21,16 @@ import {
 } from "@web/common/constants/web.constants";
 import { getPointerPosition } from "@web/common/context/pointer-position";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
-import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
   getDatesByCategory,
 } from "@web/common/utils/datetime/web.date.util";
-import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import {
+  assembleDefaultEvent,
+  assembleWebEvent,
+  hasEventDates,
+} from "@web/common/utils/event/event.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import {
   selectDraft,
@@ -309,11 +312,13 @@ export const useSidebarActions = (
     }
 
     if (_event._id) {
+      if (!hasEventDates(_event)) return;
+
       const eventId = _event._id;
       dispatch(
         editEventSlice.actions.request({
           _id: eventId,
-          event: _event,
+          event: assembleWebEvent(_event),
         }),
       );
     } else {
@@ -391,25 +396,25 @@ export const useSidebarActions = (
     }
 
     const userId = await getUserId();
-    _event = parseSomedayEventBeforeSubmit(_event, userId);
+    const parsedEvent = parseSomedayEventBeforeSubmit(_event, userId);
 
-    if (_event._id) {
-      const eventId = _event._id;
+    if (parsedEvent._id) {
+      const eventId = parsedEvent._id;
       const recurrenceChanged = DirtyParser.recurrenceChanged(
-        _event as Schema_WebEvent,
+        parsedEvent,
         reduxDraft!,
       );
 
       // For someday events, always use THIS_EVENT scope to allow individual customization
       const applyTo =
-        isInstance && recurrenceChanged && !_event.isSomeday
+        isInstance && recurrenceChanged && !parsedEvent.isSomeday
           ? RecurringEventUpdateScope.ALL_EVENTS
           : RecurringEventUpdateScope.THIS_EVENT;
 
       dispatch(
         editEventSlice.actions.request({
           _id: eventId,
-          event: _event,
+          event: parsedEvent,
           applyTo,
         }),
       );
@@ -420,7 +425,7 @@ export const useSidebarActions = (
           : state.somedayMonthIds.length;
 
       const eventWithOrder = {
-        ..._event,
+        ...parsedEvent,
         order,
       };
       dispatch(createEventSlice.actions.request(eventWithOrder));
@@ -495,10 +500,12 @@ export const useSidebarActions = (
 
     draggedEvent.order = newOrder;
 
+    if (!hasEventDates(draggedEvent)) return;
+
     dispatch(
       editEventSlice.actions.request({
         _id: draggedEvent._id,
-        event: draggedEvent,
+        event: assembleWebEvent(draggedEvent),
       }),
     );
   };

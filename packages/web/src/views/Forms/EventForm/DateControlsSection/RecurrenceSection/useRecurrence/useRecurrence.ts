@@ -13,10 +13,6 @@ import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import {
-  type Schema_GridEvent,
-  type Schema_WebEvent,
-} from "@web/common/types/web.event.types";
-import {
   type FrequencyValues,
   type WEEKDAY_RRULE_MAP,
   type WEEKDAYS,
@@ -62,10 +58,7 @@ const WEEKDAY_MAP: Record<
 
 export const useRecurrence = (
   event: Partial<
-    Pick<
-      Schema_GridEvent | Schema_WebEvent,
-      "startDate" | "endDate" | "recurrence" | "isSomeday"
-    >
+    Pick<Schema_Event, "startDate" | "endDate" | "recurrence" | "isSomeday">
   > | null,
   {
     setEvent,

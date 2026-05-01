@@ -1,10 +1,10 @@
-import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type EventWithDates } from "@web/common/utils/event/event.util";
 import { assignEventToRow } from "./grid.util";
 
 export const assignEventsToRow = (
-  allDayEvents: Schema_Event[],
+  allDayEvents: EventWithDates[],
 ): {
   rowsCount: number;
   allDayEvents: Schema_GridEvent[];
@@ -40,7 +40,7 @@ export const assignEventsToRow = (
   return { rowsCount: rows.length, allDayEvents: orderedAllDayEvents };
 };
 
-const _getEventDayNumbers = (event: Schema_Event) => {
+const _getEventDayNumbers = (event: EventWithDates) => {
   const startDayOfYear = dayjs(event.startDate).dayOfYear();
   const endDayOfYear = dayjs(event.endDate).dayOfYear();
   const eventDays = _range(startDayOfYear, endDayOfYear);

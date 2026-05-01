@@ -3,10 +3,7 @@ import {
   type Categories_Event,
   type Schema_Event,
 } from "@core/types/event.types";
-import {
-  type Schema_GridEvent,
-  type Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export interface Action_DraftEvent extends Action {
   payload: Payload_DraftEvent;
@@ -54,7 +51,7 @@ interface Payload_Draft_Swap {
 }
 export interface State_DraftEvent {
   status: Status_DraftEvent | null;
-  event: Schema_WebEvent | null;
+  event: Schema_Event | null;
 }
 export interface Status_DraftEvent {
   activity: Activity_DraftEvent | null;

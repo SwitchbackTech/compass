@@ -14,7 +14,7 @@ export interface UseAppHotkeyOptions {
 }
 
 export function useAppHotkey(
-  hotkey: RegisterableHotkey | string,
+  hotkey: RegisterableHotkey,
   handler: (event: KeyboardEvent) => void,
   options: UseAppHotkeyOptions = {},
 ) {
@@ -27,7 +27,7 @@ export function useAppHotkey(
   } = options;
 
   useHotkey(
-    hotkey as RegisterableHotkey,
+    hotkey,
     (event) => {
       if (document.body.dataset.appLocked === "true") {
         return;
@@ -49,7 +49,7 @@ export function useAppHotkey(
 }
 
 export const useAppHotkeyUp = (
-  hotkey: RegisterableHotkey | string,
+  hotkey: RegisterableHotkey,
   handler: (event: KeyboardEvent) => void,
   options?: Omit<UseAppHotkeyOptions, "eventType">,
 ) => useAppHotkey(hotkey, handler, { ...options, eventType: "keyup" });

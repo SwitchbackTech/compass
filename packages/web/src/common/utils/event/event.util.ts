@@ -50,6 +50,24 @@ export const addId = (event: Schema_GridEvent): WithId<Schema_GridEvent> => {
   return _event;
 };
 
+export type EventWithDates = Schema_Event & {
+  startDate: string;
+  endDate: string;
+};
+
+export const hasEventDates = (event: Schema_Event): event is EventWithDates =>
+  typeof event.startDate === "string" && typeof event.endDate === "string";
+
+export const assembleWebEvent = (event: EventWithDates): Schema_WebEvent => ({
+  ...event,
+  startDate: event.startDate,
+  endDate: event.endDate,
+  origin: event.origin ?? Origin.COMPASS,
+  priority: event.priority ?? Priorities.UNASSIGNED,
+  user: event.user ?? "",
+  recurrence: event.recurrence as Schema_WebEvent["recurrence"],
+});
+
 export const assembleDefaultEvent = async (
   draftType?: Categories_Event | null,
   startDate?: string,
@@ -104,17 +122,11 @@ export const assembleDefaultEvent = async (
   }
 };
 
-export const assembleGridEvent = (event: Schema_WebEvent): Schema_GridEvent => {
+export const assembleGridEvent = (event: EventWithDates): Schema_GridEvent => {
   const gridEvent: Schema_GridEvent = {
-    ...event,
+    ...assembleWebEvent(event),
     position: gridEventDefaultPosition,
     _id: event._id!,
-    startDate: event.startDate,
-    endDate: event.endDate,
-    origin: event.origin ?? Origin.COMPASS,
-    priority: event.priority ?? Priorities.UNASSIGNED,
-    user: event.user,
-    recurrence: event.recurrence,
   };
 
   return gridEvent;

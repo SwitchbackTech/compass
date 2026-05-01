@@ -1,7 +1,6 @@
 import { z } from "zod";
 import {
   CompassCoreEventSchema,
-  CompassEventRecurrence,
   type Schema_Event,
 } from "@core/types/event.types";
 import { IDSchema } from "@core/types/type.utils";
@@ -9,8 +8,10 @@ import { type SelectOption } from "@web/common/types/component.types";
 
 const WebEventRecurrence = z.union([
   z.undefined(),
-  CompassEventRecurrence.omit({ rule: true }).extend({ rule: z.null() }),
-  CompassEventRecurrence,
+  z.object({
+    rule: z.union([z.array(z.string()), z.null()]).optional(),
+    eventId: z.string().optional(),
+  }),
 ]);
 
 const WebCoreEventSchema = CompassCoreEventSchema.extend({
@@ -40,27 +41,11 @@ export const SomedayEventSchema = WebCoreEventSchema.extend({
   order: z.number(),
 });
 
-export interface Schema_WebEvent extends Schema_Event {}
+export type Schema_WebEvent = z.infer<typeof WebCoreEventSchema>;
 
-export interface Schema_SomedayEvent extends Schema_Event {
-  isSomeday: true;
-  order: number;
-}
+export type Schema_SomedayEvent = z.infer<typeof SomedayEventSchema>;
 
-export interface Schema_GridEvent extends Schema_Event {
-  hasFlipped?: boolean;
-  isOpen?: boolean;
-  row?: number;
-  position: {
-    isOverlapping: boolean;
-    totalEventsInGroup: number;
-    widthMultiplier: number;
-    horizontalOrder: number;
-    dragOffset: { x: number; y: number };
-    initialX: number | null;
-    initialY: number | null;
-  };
-}
+export type Schema_GridEvent = z.infer<typeof GridEventSchema>;
 
 export interface Schema_OptimisticEvent extends Schema_GridEvent {
   _id: string; // We guarantee that we have an _id for optimistic events, unlike `Schema_Event`

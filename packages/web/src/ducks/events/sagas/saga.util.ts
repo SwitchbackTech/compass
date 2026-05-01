@@ -13,7 +13,11 @@ import {
   type Schema_WebEvent,
   type WithId,
 } from "@web/common/types/web.event.types";
-import { addId, assembleGridEvent } from "@web/common/utils/event/event.util";
+import {
+  addId,
+  assembleGridEvent,
+  hasEventDates,
+} from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
 import { type Payload_ConvertEvent } from "@web/ducks/events/event.types";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
@@ -27,8 +31,8 @@ export function* getEventById(
   _id: string,
 ): Generator<
   ReturnType<typeof select>,
-  Schema_GridEvent | Schema_WebEvent,
-  Schema_GridEvent | Schema_WebEvent
+  Schema_Event | null,
+  Schema_Event | null
 > {
   const currEvent = yield select((state: RootState) =>
     selectEventById(state, _id),
@@ -75,12 +79,16 @@ export function* _assembleGridEvent({
 }: Payload_ConvertEvent["event"]): Generator<
   SelectEffect,
   Schema_GridEvent,
-  Schema_WebEvent
+  Schema_Event | null
 > {
   const currEvent = yield* getEventById(_id);
 
   // First merge the current event with updated fields
   const eventWithUpdates = { ...currEvent, ...updatedFields, _id };
+
+  if (!hasEventDates(eventWithUpdates)) {
+    throw new Error("Event conversion requires startDate and endDate");
+  }
 
   // Use assembleGridEvent to ensure position field is properly set
   const gridEventWithDefaults = assembleGridEvent(eventWithUpdates);

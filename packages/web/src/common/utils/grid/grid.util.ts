@@ -9,7 +9,6 @@ import {
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
-  SIDEBAR_OPEN_WIDTH,
 } from "@web/views/Calendar/layout.constants";
 
 export const assignEventToRow = (
@@ -302,18 +301,6 @@ export const getPrevDayWidth = (today: Dayjs) => {
 
 export const getWidthBuffer = (startIndex: number) =>
   startIndex * (DIVIDER_GRID * 2);
-
-export const getX = (
-  e: Pick<MouseEvent, "clientX"> | number,
-  isSidebarOpen: boolean,
-) => {
-  const x = typeof e === "number" ? e : e.clientX;
-
-  if (isSidebarOpen) {
-    return x - SIDEBAR_OPEN_WIDTH;
-  }
-  return x;
-};
 
 const normalizeDayNums = (days: number[]) => {
   // doesn't support events longer than 365/6 days

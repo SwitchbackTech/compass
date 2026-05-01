@@ -64,7 +64,7 @@ export const AllDayRow: FC<Props> = ({
 
   const onMouseDown = async (e: MouseEvent) => {
     if (isDrafting) {
-      dispatch(draftSlice.actions.discard());
+      dispatch(draftSlice.actions.discard(undefined));
       return;
     }
 
