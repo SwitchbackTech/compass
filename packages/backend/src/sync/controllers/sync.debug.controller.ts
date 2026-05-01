@@ -7,7 +7,9 @@ import {
   type SReqBody,
 } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncService from "../services/sync.service";
+import syncChannelService from "../services/channel/sync-channel.service";
+import syncChannelMaintenanceService from "../services/channel/sync-channel-maintenance.service";
+import googleSyncLifecycleService from "../services/lifecycle/google-sync-lifecycle.service";
 import { getSync } from "../util/sync.queries";
 
 class SyncDebugController {
@@ -35,7 +37,7 @@ class SyncDebugController {
       res.promise(Promise.reject({ error: "no userId param" }));
       return;
     }
-    const result = await syncService.importIncremental(userId);
+    const result = await googleSyncLifecycleService.importIncremental(userId);
 
     res.promise(result);
   };
@@ -54,9 +56,12 @@ class SyncDebugController {
         return;
       }
 
-      const result = await syncService.runMaintenanceByUser(userId, {
-        dry,
-      });
+      const result = await syncChannelMaintenanceService.runMaintenanceByUser(
+        userId,
+        {
+          dry,
+        },
+      );
 
       res.promise(result);
     } catch (e) {
@@ -90,7 +95,7 @@ class SyncDebugController {
       const calendarId = req.body.calendarId;
       const gcal = await getGcalClient(userId);
 
-      const watchResult = await syncService.startWatchingGcalEvents(
+      const watchResult = await syncChannelService.startWatchingGcalEvents(
         userId,
         {
           gCalendarId: calendarId,
@@ -113,7 +118,7 @@ class SyncDebugController {
         userId = req.session?.getUserId() as string;
       }
 
-      const stopResult = await syncService.stopWatches(userId);
+      const stopResult = await syncChannelService.stopWatches(userId);
       res.promise(stopResult);
     } catch (e) {
       const _e = e as BaseError;
@@ -130,7 +135,7 @@ class SyncDebugController {
       const channelId = req.body.channelId;
       const resourceId = req.body.resourceId;
 
-      const stopResult = await syncService.stopWatch(
+      const stopResult = await syncChannelService.stopWatch(
         userId,
         channelId,
         resourceId,

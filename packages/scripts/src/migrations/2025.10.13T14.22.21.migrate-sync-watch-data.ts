@@ -9,7 +9,7 @@ import { getGcalClient } from "@backend/auth/services/google/clients/google.cale
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import syncService from "@backend/sync/services/sync.service";
+import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
 import { getChannelExpiration } from "@backend/sync/util/sync.util";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
@@ -76,7 +76,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
       await Promise.allSettled([
         ...syncDocs.map(async (s) => {
-          await syncService
+          await syncChannelService
             .stopWatch(syncDoc.user, s.channelId, s.resourceId, gcal, quotaUser)
             .catch(logger.error);
 

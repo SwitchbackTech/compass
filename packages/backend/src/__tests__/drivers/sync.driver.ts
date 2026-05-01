@@ -6,7 +6,7 @@ import dayjs from "@core/util/date/dayjs";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import mongoService from "@backend/common/services/mongo.service";
-import syncService from "@backend/sync/services/sync.service";
+import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
 import { updateSync } from "@backend/sync/util/sync.queries";
 
 export class SyncDriver {
@@ -24,7 +24,7 @@ export class SyncDriver {
     await updateSync(Resource_Sync.EVENTS, user._id.toString(), gCalendarId, {
       nextSyncToken: faker.string.ulid(),
     });
-    await syncService.startWatchingGcalResources(
+    await syncChannelService.startWatchingGcalResources(
       user._id.toString(),
       [{ gCalendarId }, { gCalendarId: Resource_Sync.CALENDAR }], // Watch all selected calendars and calendar list
       gcal,
