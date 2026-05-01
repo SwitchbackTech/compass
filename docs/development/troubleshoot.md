@@ -14,13 +14,13 @@ Interpret the result like this:
 - `500`: the backend is running but database connectivity failed
 - connection refused or timeout: the backend is not listening yet, or the port/base URL is wrong
 
-For the local self-host installer, the same backend health check is:
+For the self-host Docker stack, the backend health check is:
 
 ```bash
 curl -i http://localhost:3000/api/health
 ```
 
-The self-host web app is served at `http://localhost:9080`.
+On a server install, these localhost URLs are checked from the server itself. Public browser traffic should go through the HTTPS domain from the server guide.
 
 ## SSE Stream Not Connected Or Not Receiving Events
 

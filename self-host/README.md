@@ -1,26 +1,23 @@
 # Compass Self-Host Runtime
 
-This folder contains the files used by the local Compass self-host installer.
+This folder contains the files used by the Compass self-host installer.
 
-If you're installing Compass for the first time, **start with [Local quickstart](../docs/self-hosting/local-quickstart.md)**. The [Self-Hosting Compass](../docs/self-hosting/README.md) page helps you choose the right guide and explains what runs where.
+If you're installing Compass for the first time, start with [Self-Hosting Compass](../docs/self-hosting/README.md).
 
-This README is a quick reference for what each file in this folder does. For install steps, troubleshooting, backups, Google Calendar, and server hosting, see the docs above.
+This README is a quick reference for what each file in this folder does. For install steps, backups, Google Calendar, and server hosting, see the docs above.
 
 ## Install Compass
 
-For install steps, start with [Local quickstart](../docs/self-hosting/local-quickstart.md).
-Compass will be available at `http://localhost:9080` (web) and
-`http://localhost:3000/api` (backend). The compose stack binds those ports to
-`127.0.0.1` and is not a public-server installer.
+For install steps, start with [Run Compass on a server](../docs/self-hosting/server-guide.md).
+The compose stack binds the web and backend containers to `127.0.0.1`; the server guide puts Caddy in front so users reach Compass through your HTTPS domain.
 
 ## Common places to go
 
-- First install: [Local quickstart](../docs/self-hosting/local-quickstart.md)
+- First install: [Run Compass on a server](../docs/self-hosting/server-guide.md)
 - Back up before updating: [Backups and restore](../docs/self-hosting/backups-and-restore.md)
 - Missing `.env` with old Docker volumes: [Backups and restore](../docs/self-hosting/backups-and-restore.md#if-env-is-missing-but-old-volumes-exist)
 - Google setup or no-Google mode: [Google Calendar](../docs/self-hosting/google-calendar.md)
-- Public domain or VPS setup: [Server hosting guide](../docs/self-hosting/server-guide.md)
-- Helper command issues: [Local quickstart troubleshooting](../docs/self-hosting/local-quickstart.md#troubleshooting)
+- Manual Bun setup: [Run Compass without the installer](../docs/self-hosting/advanced-manual.md)
 
 ## Files in this folder
 
