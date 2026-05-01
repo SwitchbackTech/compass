@@ -69,7 +69,7 @@ export interface Entities_Event {
 }
 
 export interface Payload_ConvertEvent {
-  event: WithCompassId<Omit<Schema_WebEvent, "_id">>;
+  event: WithCompassId<Partial<Omit<Schema_WebEvent, "_id">>>;
 }
 
 export interface Payload_DeleteEvent {

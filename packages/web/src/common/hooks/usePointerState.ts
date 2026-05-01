@@ -13,6 +13,7 @@ export function usePointerState(): PointerState {
   const [isOverWeek, setWeek] = useState<boolean>(state.isOverSomedayWeek);
   const [isOverMonth, setMonth] = useState<boolean>(state.isOverSomedayMonth);
   const [isOverAllDayRow, setDay] = useState<boolean>(state.isOverAllDayRow);
+  const [event, setEvent] = useState<PointerState["event"]>(state.event);
   const [selectionStart, setSelectionStart] = useState<
     PointerState["selectionStart"]
   >(state.selectionStart);
@@ -20,6 +21,7 @@ export function usePointerState(): PointerState {
   useEffect(() => {
     const subscription = pointerState$.subscribe((value) => {
       setPointerdown(value.pointerdown);
+      setEvent(value.event);
       setSelectionStart(value.selectionStart);
       setIsOverGrid(value.isOverGrid);
       setOverSide(value.isOverSidebar);
@@ -34,6 +36,7 @@ export function usePointerState(): PointerState {
 
   return {
     pointerdown,
+    event,
     selectionStart,
     isOverGrid,
     isOverSidebar,

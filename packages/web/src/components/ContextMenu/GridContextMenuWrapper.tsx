@@ -11,6 +11,7 @@ import { Categories_Event } from "@core/types/event.types";
 import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
+  hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import {
@@ -69,7 +70,7 @@ export const ContextMenuWrapper = ({
 
   const handleDiscard = () => {
     closeMenu();
-    dispatch(draftSlice.actions.discard({}));
+    dispatch(draftSlice.actions.discard(undefined));
   };
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -121,7 +122,11 @@ export const ContextMenuWrapper = ({
       {isOpen && (
         <ContextMenu
           ref={refs.setFloating}
-          event={draftEvent ? assembleGridEvent(draftEvent) : undefined}
+          event={
+            draftEvent && hasEventDates(draftEvent)
+              ? assembleGridEvent(draftEvent)
+              : undefined
+          }
           style={{
             position: "absolute",
             top: `${y}px`,

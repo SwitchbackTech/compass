@@ -90,7 +90,7 @@ export interface Schema_Event {
   origin?: Origin;
   priority?: Priority;
   recurrence?: {
-    rule?: string[];
+    rule?: string[] | null;
     eventId?: string;
   };
   startDate?: string;

@@ -4,7 +4,8 @@ import {
   type RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { type ApiResponse, BaseApi } from "@web/common/apis/base/base.api";
+import { type ApiResponse } from "@web/common/apis/api.types";
+import { BaseApi } from "@web/common/apis/base/base.api";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 
 const EventApi = {

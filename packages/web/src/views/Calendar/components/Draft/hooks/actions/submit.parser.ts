@@ -1,4 +1,5 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { type Schema_Event } from "@core/types/event.types";
 import {
   type Schema_GridEvent,
   type Schema_SomedayEvent,
@@ -19,20 +20,26 @@ export class OnSubmitParser {
     if (this.event.isSomeday) {
       return parseSomedayEventBeforeSubmit(
         this.event as Schema_SomedayEvent,
-        this.event.user,
+        this.event.user ?? "",
       );
     }
-    return prepEventBeforeSubmit(this.event, this.event.user);
+    return prepEventBeforeSubmit(this.event, this.event.user ?? "");
   }
 }
 
 export const parseSomedayEventBeforeSubmit = (
-  draft: Schema_SomedayEvent,
+  draft: Schema_Event,
   userId: string,
 ): Schema_SomedayEvent => {
+  if (!draft.startDate || !draft.endDate) {
+    throw new Error("Someday event requires startDate and endDate");
+  }
+
   const _event: Omit<Schema_SomedayEvent, "recurrence"> = {
     ...draft,
     origin: Origin.COMPASS,
+    isSomeday: true,
+    order: draft.order ?? 0,
     user: userId,
     _id: draft._id,
     startDate: draft.startDate,
@@ -40,7 +47,11 @@ export const parseSomedayEventBeforeSubmit = (
     priority: draft.priority ?? Priorities.UNASSIGNED,
   };
 
-  if (draft.recurrence) Object.assign(_event, { recurrence: draft.recurrence });
+  if (draft.recurrence) {
+    Object.assign(_event, {
+      recurrence: draft.recurrence as Schema_SomedayEvent["recurrence"],
+    });
+  }
 
   const event = validateSomedayEvent(_event);
 
@@ -51,13 +62,21 @@ export const prepEventBeforeSubmit = (
   draft: Schema_GridEvent,
   userId: string,
 ): Schema_WebEvent => {
+  if (!draft.startDate || !draft.endDate) {
+    throw new Error("Event requires startDate and endDate");
+  }
+
   const _event = {
     ...draft,
     origin: draft.origin ?? Origin.COMPASS,
     user: userId,
   };
 
-  if (draft.recurrence) Object.assign(_event, { recurrence: draft.recurrence });
+  if (draft.recurrence) {
+    Object.assign(_event, {
+      recurrence: draft.recurrence as Schema_WebEvent["recurrence"],
+    });
+  }
 
   // Ensure the event has a position field for grid validation
   // If it doesn't have one (e.g., all-day events), convert it to a grid event first

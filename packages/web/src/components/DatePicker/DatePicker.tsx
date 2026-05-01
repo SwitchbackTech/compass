@@ -2,10 +2,14 @@ import classNames from "classnames";
 import type React from "react";
 import { useEffect, useRef } from "react";
 import * as ReactDatePickerModule from "react-datepicker";
-import { type ReactDatePickerProps } from "react-datepicker";
+import {
+  type ReactDatePicker as ReactDatePickerInstance,
+  type ReactDatePickerProps,
+} from "react-datepicker";
 import { darken, isDark } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
+import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import {
   ChangeDayButtonsStyledFlex,
@@ -36,11 +40,15 @@ export interface CalendarRef extends HTMLDivElement {
   input: HTMLInputElement;
 }
 
-const ReactDatePicker = (
-  typeof ReactDatePickerModule.default === "function"
-    ? ReactDatePickerModule.default
-    : ReactDatePickerModule.default.default
-) as React.ComponentType<ReactDatePickerProps>;
+type ReactDatePickerRef = ReactDatePickerInstance & {
+  input?: HTMLInputElement;
+};
+
+type ReactDatePickerComponent = typeof ReactDatePickerModule.default;
+
+const ReactDatePicker = resolveDefaultExport<ReactDatePickerComponent>(
+  ReactDatePickerModule.default,
+);
 
 export const DatePicker: React.FC<Props> = (datePickerProps) => {
   const {
@@ -55,7 +63,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     withTodayButton = true,
     ...props
   } = datePickerProps;
-  const datepickerRef = useRef<CalendarRef>(null);
+  const datepickerRef = useRef<ReactDatePickerRef | null>(null);
   const headerColor =
     view === "sidebar"
       ? theme.color.text.light
@@ -66,8 +74,8 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
   useEffect(() => {
     if (_autoFocus) {
       setTimeout(() => {
-        datepickerRef.current?.input.click();
-        datepickerRef.current?.input.focus();
+        datepickerRef.current?.input?.click();
+        datepickerRef.current?.input?.focus();
       });
     }
   }, [_autoFocus]);
@@ -114,9 +122,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
         datePickerProps.onSelect?.(date, event);
       }}
       portalId={portalId}
-      ref={(instance) => {
-        datepickerRef.current = instance as unknown as CalendarRef | null;
-      }}
+      ref={datepickerRef}
       showPopperArrow={false}
       renderCustomHeader={(headerProps) => {
         const { customHeaderCount, monthDate } = headerProps;

@@ -1,7 +1,7 @@
 import {
   type ForwardRefRenderFunction,
   forwardRef,
-  type HTMLAttributes,
+  type InputHTMLAttributes,
   type Ref,
 } from "react";
 import {
@@ -15,7 +15,7 @@ export interface Props
   extends ClassNamedComponent,
     UnderlinedInput,
     StyledProps,
-    HTMLAttributes<HTMLInputElement> {
+    InputHTMLAttributes<HTMLInputElement> {
   autoFocus?: boolean;
   bgColor?: string;
 }

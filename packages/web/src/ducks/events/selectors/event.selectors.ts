@@ -2,7 +2,11 @@ import { createSelector } from "@reduxjs/toolkit";
 import { type Schema_Event } from "@core/types/event.types";
 import { isProcessing } from "@web/common/store/helpers";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event/event.util";
+import {
+  assembleGridEvent,
+  type EventWithDates,
+  hasEventDates,
+} from "@web/common/utils/event/event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 import { type RootState } from "@web/store";
@@ -15,12 +19,13 @@ export const selectAllDayEvents = createSelector(
   (entities, weekIds) => {
     if (!("data" in weekIds) || weekIds.data?.length === 0) return [];
 
-    const weekEvents: Schema_GridEvent_NoPosition[] = weekIds.data?.map(
-      (_id: string) => entities[_id],
-    );
-    const _allDayEvents: Schema_GridEvent_NoPosition[] = weekEvents?.filter(
-      (e: Schema_Event) => e?.isAllDay,
-    );
+    const weekEvents = weekIds.data?.map((_id: string) => entities[_id]);
+    const _allDayEvents: Schema_GridEvent_NoPosition[] = weekEvents
+      ?.filter(
+        (event): event is EventWithDates =>
+          Boolean(event?.isAllDay) && hasEventDates(event),
+      )
+      .map(assembleGridEvent);
     const { allDayEvents } = assignEventsToRow(_allDayEvents);
     return allDayEvents;
   },
@@ -42,7 +47,10 @@ export const selectGridEvents = createSelector(
     const weekEventsMapped = weekIds.data.map((_id: string) => entities[_id]);
 
     const weekEvents: Schema_GridEvent[] = weekEventsMapped
-      .filter((e: Schema_Event) => e !== undefined && !e.isAllDay)
+      .filter(
+        (event): event is EventWithDates =>
+          event !== undefined && !event.isAllDay && hasEventDates(event),
+      )
       .map(assembleGridEvent);
 
     return weekEvents;
@@ -52,7 +60,9 @@ export const selectGridEvents = createSelector(
 export const selectRowCount = createSelector(
   selectAllDayEvents,
   (allDayEvents: Schema_GridEvent[]) => {
-    const _rowVals = allDayEvents?.map((e) => e.row);
+    const _rowVals = allDayEvents
+      .map((e) => e.row)
+      .filter((row): row is number => row !== undefined);
     const rowsCount = (_rowVals ?? []).length === 0 ? 1 : Math.max(..._rowVals);
     return rowsCount;
   },
@@ -84,7 +94,10 @@ export const selectTimedDayEvents = createSelector(
   selectDayEvents,
   (events) => {
     const timedEvents: Schema_GridEvent[] = events
-      .filter((event) => !event.isAllDay)
+      .filter(
+        (event): event is EventWithDates =>
+          !event.isAllDay && hasEventDates(event),
+      )
       .map(assembleGridEvent);
 
     return adjustOverlappingEvents(timedEvents);

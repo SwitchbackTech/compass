@@ -42,7 +42,7 @@ SuperTokens.init({
     EmailPassword.init(),
     EmailVerification.init(),
     Session.init({
-      postAPIHook: (context) => {
+      postAPIHook: async (context) => {
         session.emit(context.action, context);
       },
       onHandleEvent: (event) => {

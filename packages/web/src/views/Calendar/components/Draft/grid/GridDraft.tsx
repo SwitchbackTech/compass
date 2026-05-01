@@ -112,8 +112,16 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
                 onDuplicate={duplicateEvent}
                 isDraft={!draft._id}
                 isExistingEvent={!!draft._id}
-                onSubmit={onSubmit}
-                setEvent={setDraft}
+                onSubmit={(event) => {
+                  if (event) void onSubmit(event as Schema_GridEvent);
+                }}
+                setEvent={(nextEvent) => {
+                  const event =
+                    typeof nextEvent === "function"
+                      ? nextEvent(draft)
+                      : nextEvent;
+                  setDraft(event as Schema_GridEvent | null);
+                }}
               />
             </StyledFloatContainer>
           </FloatingFocusManager>

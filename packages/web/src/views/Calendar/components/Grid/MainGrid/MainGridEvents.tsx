@@ -11,6 +11,7 @@ import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { type RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useGridEventMouseDown } from "@web/views/Calendar/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
@@ -24,7 +25,7 @@ interface Props {
 
 export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const dispatch = useAppDispatch();
-  const store = useStore();
+  const store = useStore<RootState>();
 
   const timedEvents = useAppSelector(selectGridEvents);
   const { isProcessing, reason } = useAppSelector(

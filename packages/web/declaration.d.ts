@@ -6,6 +6,10 @@ declare module "*.scss" {
   export = classNames;
 }
 
+declare module "*.css" {
+  export = classNames;
+}
+
 declare const imageUrl: string;
 declare module "*.png" {
   export = imageUrl;

@@ -64,7 +64,7 @@ export const AllDayRow: FC<Props> = ({
 
   const onMouseDown = async (e: MouseEvent) => {
     if (isDrafting) {
-      dispatch(draftSlice.actions.discard({}));
+      dispatch(draftSlice.actions.discard(undefined));
       return;
     }
 
@@ -84,7 +84,10 @@ export const AllDayRow: FC<Props> = ({
     >
       <StyledAllDayColumns id={ID_ALLDAY_COLUMNS} ref={allDayRef}>
         {weekDays.map((day) => (
-          <StyledGridCol color={null} key={day.format(YEAR_MONTH_DAY_FORMAT)} />
+          <StyledGridCol
+            $color="transparent"
+            key={day.format(YEAR_MONTH_DAY_FORMAT)}
+          />
         ))}
       </StyledAllDayColumns>
       <AllDayEvents

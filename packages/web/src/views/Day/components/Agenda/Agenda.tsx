@@ -22,6 +22,7 @@ import {
   selectDayEvents,
   selectIsDayEventsProcessing,
 } from "@web/ducks/events/selectors/event.selectors";
+import { type RootState } from "@web/store";
 import { eventsStore, resetActiveEvent, resetDraft } from "@web/store/events";
 import { AgendaEventPreview } from "@web/views/Day/components/Agenda/Events/AgendaEventPreview/AgendaEventPreview";
 import { AllDayAgendaEvents } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/AllDayAgendaEvents";
@@ -33,7 +34,7 @@ import { EventContextMenu } from "@web/views/Day/components/ContextMenu/EventCon
 import { useAgendaInteractionsAtCursor } from "@web/views/Day/hooks/events/useAgendaInteractionsAtCursor";
 
 export function Agenda() {
-  const store = useStore();
+  const store = useStore<RootState>();
   const entities = selectDayEvents(store.getState());
   const eventsRef = useRef(new BehaviorSubject<Schema_Event[]>(entities));
   const loadingRef = useRef(new BehaviorSubject<boolean>(false));

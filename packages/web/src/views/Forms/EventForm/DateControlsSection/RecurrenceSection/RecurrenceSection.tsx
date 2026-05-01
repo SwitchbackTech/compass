@@ -1,12 +1,9 @@
 import { type Dispatch, type SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import { type Schema_Event } from "@core/types/event.types";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
-import {
-  type Schema_GridEvent,
-  type Schema_WebEvent,
-} from "@web/common/types/web.event.types";
 import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
 import { FlexDirections } from "@web/components/Flex/styled";
 import { EndsOnDate } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate";
@@ -18,8 +15,8 @@ import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/Re
 
 export interface RecurrenceSectionProps {
   bgColor: string;
-  event: Schema_WebEvent | Schema_GridEvent;
-  setEvent: Dispatch<SetStateAction<Schema_WebEvent | Schema_GridEvent | null>>;
+  event: Schema_Event;
+  setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
 }
 
 export const RecurrenceSection = ({

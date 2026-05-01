@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { type MouseEvent, useCallback } from "react";
+import { useCallback } from "react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -11,7 +11,6 @@ import {
   type Recurrence,
   RecurringEventUpdateScope,
   type Schema_Event,
-  type WithCompassId,
 } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
 import { devAlert } from "@core/util/app.util";
@@ -19,12 +18,15 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import {
+  type Payload_ConvertEvent,
+  type Payload_EditEvent,
+} from "@web/ducks/events/event.types";
 import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
-import { type Payload_EditEvent } from "@web/ducks/events/event.types";
 import {
   selectDraft,
   selectDraftStatus,
@@ -197,10 +199,10 @@ export const useDraftActions = (
         return;
       }
 
-      const event: WithCompassId<Omit<Schema_WebEvent, "_id">> = {
+      const event: Payload_ConvertEvent["event"] = {
         ...draft,
-        _id: draft!._id,
-        user: draft?.user,
+        _id: draft!._id!,
+        user: draft?.user ?? "",
         isAllDay: false,
         isSomeday: true,
         startDate: start,
@@ -337,9 +339,7 @@ export const useDraftActions = (
 
           const event = new OnSubmitParser(draft).parse();
           const payload = getEditSlicePayload(event, applyTo);
-          dispatch(
-            editEventSlice.actions.request(payload as unknown as undefined),
-          );
+          dispatch(editEventSlice.actions.request(payload));
 
           if (shouldAddToView(event)) {
             dispatch(getWeekEventsSlice.actions.insert(event._id!));
