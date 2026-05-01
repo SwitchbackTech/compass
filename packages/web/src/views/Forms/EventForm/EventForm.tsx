@@ -229,10 +229,11 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
     useAppHotkey(
       "Mod+D",
-      () => {
+      (keyboardEvent) => {
+        keyboardEvent.preventDefault();
         onDuplicate?.(event);
       },
-      { enabled: true },
+      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
     useAppHotkey(
