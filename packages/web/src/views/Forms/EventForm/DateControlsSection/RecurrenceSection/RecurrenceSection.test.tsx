@@ -95,7 +95,7 @@ describe("RecurrenceSection", () => {
     expect(setEventSpy).not.toHaveBeenCalled();
   });
 
-  it("shows the backend requirement before sign-in when the backend is unavailable", async () => {
+  it("shows the sign-in requirement before sign-in when the backend is unavailable", async () => {
     markBackendUnavailable();
     const user = userEvent.setup();
     renderRecurrenceSection({ authenticated: false });
@@ -114,14 +114,12 @@ describe("RecurrenceSection", () => {
     await user.hover(repeatButton);
     await waitFor(() => {
       expect(
-        screen.getByText(
-          "Start the Compass backend and MongoDB to use recurring events.",
-        ),
+        screen.getByText("Sign in to use recurring events."),
       ).toBeInTheDocument();
     });
   });
 
-  it("keeps recurrence settings hidden when a signed-in user's backend is unavailable", async () => {
+  it("keeps recurrence settings hidden with the sign-in message when a signed-in user's backend is unavailable", async () => {
     const user = userEvent.setup();
     markBackendUnavailable();
     const { setEventSpy } = renderRecurrenceSection({ authenticated: true });
@@ -140,9 +138,7 @@ describe("RecurrenceSection", () => {
     await user.hover(repeatButton);
     await waitFor(() => {
       expect(
-        screen.getByText(
-          "Start the Compass backend and MongoDB to use recurring events.",
-        ),
+        screen.getByText("Sign in to use recurring events."),
       ).toBeInTheDocument();
     });
 
