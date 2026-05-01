@@ -137,7 +137,8 @@ const clearClientAuthState = async (page: Page) => {
   });
 };
 
-export const createEventTitle = (prefix: string) => `${prefix} ${Date.now()}`;
+export const createEventTitle = (prefix: string) =>
+  `${prefix} ${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 export const updateEventTitle = (prefix: string) =>
   `${prefix} Updated ${Date.now()}`;
@@ -363,27 +364,56 @@ export const openEventForEditingWithMouse = async (
   page: Page,
   eventTitle: string,
 ) => {
-  await retryUntil(
-    page,
-    async () => {
-      const eventButton = await findEventButton(page, eventTitle);
+  const eventButton = await findEventButton(page, eventTitle, "first");
+  const titleInput = getFormTitleInput(page);
 
-      if (!eventButton) {
-        throw new Error(
-          `Unable to locate event "${eventTitle}" for mouse editing.`,
-        );
-      }
+  if (!eventButton) {
+    throw new Error(
+      `Unable to locate event "${eventTitle}" for mouse editing.`,
+    );
+  }
 
-      await page.waitForTimeout(200);
-      await eventButton.click({ force: true });
-    },
-    getFormTitleInput(page),
-  );
+  await clickEventButton(page, eventButton, eventTitle);
+
+  const openedFromFirstClick = await titleInput
+    .waitFor({ state: "visible", timeout: 500 })
+    .then(() => true)
+    .catch(() => false);
+
+  if (!openedFromFirstClick) {
+    const selectedButton = await findEventButton(page, eventTitle, "last");
+    if (!selectedButton) {
+      throw new Error(
+        `Unable to locate selected event "${eventTitle}" for mouse editing.`,
+      );
+    }
+    await clickEventButton(page, selectedButton, eventTitle);
+  }
+
+  await expect(titleInput).toHaveValue(eventTitle, { timeout: FORM_TIMEOUT });
+};
+
+const clickEventButton = async (
+  page: Page,
+  eventButton: Locator,
+  eventTitle: string,
+) => {
+  await eventButton.scrollIntoViewIfNeeded();
+  const box = await eventButton.boundingBox();
+  if (!box) {
+    throw new Error(`Unable to click event "${eventTitle}" for mouse editing.`);
+  }
+
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+  await page.waitForTimeout(200);
+  await page.mouse.down();
+  await page.mouse.up();
 };
 
 const findEventButton = async (
   page: Page,
   eventTitle: string,
+  match: "first" | "last" = "first",
 ): Promise<Locator | null> => {
   const containers = [
     page.locator("#mainGrid"),
@@ -398,7 +428,7 @@ const findEventButton = async (
     const buttonCount = await eventButtons.count();
 
     if (buttonCount > 0) {
-      return eventButtons.nth(buttonCount - 1);
+      return match === "first" ? eventButtons.first() : eventButtons.last();
     }
   }
 
@@ -413,14 +443,14 @@ const findEventButton = async (
     .locator("#allDayRow")
     .getByRole("button", { name: eventTitle });
   if ((await allDayButton.count()) > 0) {
-    return allDayButton.last();
+    return match === "first" ? allDayButton.first() : allDayButton.last();
   }
 
   const timedButton = page.locator("#mainGrid").getByRole("button", {
     name: eventTitle,
   });
   if ((await timedButton.count()) > 0) {
-    return timedButton.last();
+    return match === "first" ? timedButton.first() : timedButton.last();
   }
 
   const activeButton = page.locator(".active", { hasText: eventTitle });

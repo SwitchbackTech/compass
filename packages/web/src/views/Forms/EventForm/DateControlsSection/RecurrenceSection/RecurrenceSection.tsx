@@ -31,9 +31,7 @@ export const RecurrenceSection = ({
   const { hasRecurrence } = recurrenceHook;
   const isBackendDown = isBackendUnavailable();
   const isRecurrenceDisabled = !authenticated || isBackendDown;
-  const disabledMessage = isBackendDown
-    ? "Start the Compass backend and MongoDB to use recurring events."
-    : "Sign in to use recurring events.";
+  const disabledMessage = "Sign in to use recurring events.";
 
   return (
     <StyledRepeatRow direction={FlexDirections.COLUMN}>
