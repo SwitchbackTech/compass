@@ -41,33 +41,35 @@ Helpful notes:
 
 ## Shortcut Reference
 
-| Shortcut               | View      | Action                            |
-| ---------------------- | --------- | --------------------------------- |
-| `D`                    | Global    | Navigate to Day view              |
-| `W`                    | Global    | Navigate to Week view             |
-| `N`                    | Global    | Navigate to Now view              |
-| `R`                    | Global    | Edit personal reminder note       |
-| `Z`                    | Global    | Log out                           |
-| `Cmd+K` / `Ctrl+K`     | Global    | Open command palette              |
-| `[`                    | Global    | Toggle sidebar                    |
-| `J`                    | Day view  | Previous day                      |
-| `K`                    | Day view  | Next day                          |
-| `T`                    | Day view  | Go to today                       |
-| `U`                    | Day view  | Focus task list                   |
-| `C`                    | Day view  | Create task                       |
-| `E`                    | Day view  | Edit focused task                 |
-| `Delete` / `Backspace` | Day view  | Delete focused task               |
-| `Enter`                | Day view  | Mark focused task complete        |
-| `Ctrl+Meta+ArrowRight` | Day view  | Move focused task to next day     |
-| `Ctrl+Meta+ArrowLeft`  | Day view  | Move focused task to previous day |
-| `Cmd+Z` / `Ctrl+Z`     | Day view  | Undo last action                  |
-| `J`                    | Week view | Previous week                     |
-| `K`                    | Week view | Next week                         |
-| `T`                    | Week view | Go to today                       |
-| `C`                    | Week view | Create timed event                |
-| `A`                    | Week view | Create all-day event              |
-| `Shift+W`              | Week view | Create Someday Week event         |
-| `Shift+M`              | Week view | Create Someday Month event        |
+| Shortcut                    | View      | Action                            |
+| --------------------------- | --------- | --------------------------------- |
+| `D`                         | Global    | Navigate to Day view              |
+| `W`                         | Global    | Navigate to Week view             |
+| `N`                         | Global    | Navigate to Now view              |
+| `R`                         | Global    | Edit personal reminder note       |
+| `Z`                         | Global    | Log out                           |
+| `Cmd+K` / `Ctrl+K`          | Global    | Open command palette              |
+| `[`                         | Global    | Toggle sidebar                    |
+| `J`                         | Day view  | Previous day                      |
+| `K`                         | Day view  | Next day                          |
+| `T`                         | Day view  | Go to today                       |
+| `U`                         | Day view  | Focus task list                   |
+| `C`                         | Day view  | Create task                       |
+| `E`                         | Day view  | Edit focused task                 |
+| `Delete` / `Backspace`      | Day view  | Delete focused task               |
+| `Enter`                     | Day view  | Mark focused task complete        |
+| `Ctrl+Meta+ArrowRight`      | Day view  | Move focused task to next day     |
+| `Ctrl+Meta+ArrowLeft`       | Day view  | Move focused task to previous day |
+| `Cmd+Z` / `Ctrl+Z`          | Day view  | Undo last action                  |
+| `E`                         | Now view  | Edit focused task description     |
+| `Cmd+Enter` / `Ctrl+Enter`  | Now view  | Save focused task description     |
+| `J`                         | Week view | Previous week                     |
+| `K`                         | Week view | Next week                         |
+| `T`                         | Week view | Go to today                       |
+| `C`                         | Week view | Create timed event                |
+| `A`                         | Week view | Create all-day event              |
+| `Shift+W`                   | Week view | Create Someday Week event         |
+| `Shift+M`                   | Week view | Create Someday Month event        |
 
 ---
 
@@ -76,6 +78,8 @@ Helpful notes:
 ### UX
 
 Pressing `D`, `W`, or `N` from anywhere in the app (while not focused in an input) navigates to Day view, Week view, or Now view respectively.
+
+View shortcuts keep the same meaning in Now mode. `D` still navigates to Day view.
 
 ### Steps
 

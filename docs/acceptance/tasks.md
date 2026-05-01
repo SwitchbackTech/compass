@@ -284,12 +284,12 @@ Pressing Enter in Now mode marks the focused task complete and automatically mov
 
 ### UX
 
-Pressing `D` while a task is focused in Now mode opens an inline description editor (max 255 characters). Pressing Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) saves the description.
+Pressing `E` while a task is focused in Now mode opens an inline description editor (max 255 characters). Pressing Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) saves the description.
 
 ### Steps
 
 1. Enter Now mode and select a task.
-2. Press `D`.
+2. Press `E`.
 3. Type a description (keep it under 255 characters).
 4. Press Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) to save.
 

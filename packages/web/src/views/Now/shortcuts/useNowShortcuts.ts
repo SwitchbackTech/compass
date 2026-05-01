@@ -1,6 +1,4 @@
 import { useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { type Task } from "@web/common/types/task.types";
@@ -18,10 +16,6 @@ interface Props {
   onToggleSidebar?: () => void;
 }
 
-/**
- * Hook to handle keyboard shortcuts for the Now view
- * Handles both global navigation shortcuts (n, d, w) and task-specific shortcuts (j, k)
- */
 export function useNowShortcuts(props?: Props) {
   const {
     focusedTask = null,
@@ -32,8 +26,6 @@ export function useNowShortcuts(props?: Props) {
     onToggleSidebar,
   } = props || {};
 
-  const navigate = useNavigate();
-
   const handleTaskNavigation = useCallback(
     (handler?: () => void) => {
       if (!focusedTask || availableTasks.length === 0) return;
@@ -43,7 +35,7 @@ export function useNowShortcuts(props?: Props) {
     [focusedTask, availableTasks.length],
   );
 
-  useAppHotkeyUp("D", () => {
+  useAppHotkeyUp("E", () => {
     compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
   });
 
@@ -67,7 +59,6 @@ export function useNowShortcuts(props?: Props) {
   });
 
   const handleEnterKey = useCallback(() => {
-    // Don't trigger if the reminder input is focused
     const activeElement = document.activeElement as HTMLElement | null;
     if (activeElement?.id === ID_REMINDER_INPUT) {
       return;
@@ -77,18 +68,6 @@ export function useNowShortcuts(props?: Props) {
 
   useAppHotkeyUp("Enter", handleEnterKey);
 
-  useAppHotkey(
-    "Escape",
-    () => {
-      navigate(ROOT_ROUTES.DAY);
-    },
-    {
-      ignoreInputs: false,
-      blurOnTrigger: true,
-    },
-  );
-
-  // Sidebar shortcut
   useAppHotkeyUp("[", () => {
     onToggleSidebar?.();
   });

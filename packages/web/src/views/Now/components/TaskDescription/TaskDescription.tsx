@@ -1,12 +1,13 @@
-import { Pencil } from "@phosphor-icons/react";
+import { FloppyDisk, Pencil } from "@phosphor-icons/react";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
 import { Textarea } from "@web/components/Textarea";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 const MAX_DESCRIPTION_LENGTH = 255;
 const NEAR_LIMIT_THRESHOLD = Math.floor(MAX_DESCRIPTION_LENGTH * 0.9); // 90% of max
@@ -107,8 +108,36 @@ const CharacterCount = styled.div<{ isNearLimit: boolean }>`
   font-size: ${({ theme }) => theme.text.size.s};
   color: ${({ isNearLimit, theme }) =>
     isNearLimit ? theme.color.status.error : theme.color.text.lighter};
-  text-align: right;
+`;
+
+const EditorActions = styled.div`
+  align-items: center;
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
   margin-top: 4px;
+`;
+
+const SaveButton = styled.button`
+  align-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: ${({ theme }) => theme.shape.borderRadius};
+  color: ${({ theme }) => theme.color.text.light};
+  cursor: pointer;
+  display: inline-flex;
+  height: 28px;
+  justify-content: center;
+  padding: 4px;
+  width: 28px;
+  transition: ${({ theme }) => theme.transition.default};
+
+  &:hover,
+  &:focus {
+    background-color: ${({ theme }) => theme.color.border.primary};
+    filter: brightness(110%);
+    outline: none;
+  }
 `;
 
 export const TaskDescription: React.FC<TaskDescriptionProps> = ({
@@ -146,28 +175,36 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     };
   }, [isEditing]);
 
+  const saveDescription = useCallback(() => {
+    setIsEditing(false);
+    if (value !== originalValueRef.current) {
+      onSave(value);
+      originalValueRef.current = value;
+    }
+  }, [onSave, value]);
+
   useEffect(() => {
     if (!isEditing) return;
 
-    const handler = () => textareaRef.current?.blur();
-
-    compassEventEmitter.on(CompassDOMEvents.SAVE_TASK_DESCRIPTION, handler);
+    compassEventEmitter.on(
+      CompassDOMEvents.SAVE_TASK_DESCRIPTION,
+      saveDescription,
+    );
 
     return () => {
-      compassEventEmitter.off(CompassDOMEvents.SAVE_TASK_DESCRIPTION, handler);
+      compassEventEmitter.off(
+        CompassDOMEvents.SAVE_TASK_DESCRIPTION,
+        saveDescription,
+      );
     };
-  }, [isEditing]);
+  }, [isEditing, saveDescription]);
 
   const handleClick = () => {
     setIsEditing(true);
   };
 
   const handleBlur = () => {
-    setIsEditing(false);
-    if (value !== originalValueRef.current) {
-      onSave(value);
-      originalValueRef.current = value;
-    }
+    saveDescription();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -201,9 +238,21 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
             id={TASK_DESCRIPTION_ID}
             className="overflow-y-auto"
           />
-          <CharacterCount isNearLimit={isNearLimit}>
-            {value.length}/{MAX_DESCRIPTION_LENGTH}
-          </CharacterCount>
+          <EditorActions>
+            <CharacterCount isNearLimit={isNearLimit}>
+              {value.length}/{MAX_DESCRIPTION_LENGTH}
+            </CharacterCount>
+            <TooltipWrapper description="Save description" shortcut="Mod+Enter">
+              <SaveButton
+                aria-label="Save description"
+                onClick={saveDescription}
+                onMouseDown={(event) => event.preventDefault()}
+                type="button"
+              >
+                <FloppyDisk size={18} weight="regular" />
+              </SaveButton>
+            </TooltipWrapper>
+          </EditorActions>
         </>
       ) : (
         <DescriptionText
