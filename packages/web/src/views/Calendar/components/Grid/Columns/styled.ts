@@ -14,11 +14,11 @@ export const Columns = styled.div`
   width: calc(100% - ${GRID_MARGIN_LEFT}px);
 `;
 
-export const StyledGridCol = styled.div<{ color: string | null }>`
+export const StyledGridCol = styled.div<{ $color: string | null }>`
   border-left: ${({ theme }) =>
     `${DIVIDER_GRID}px solid ${theme.color.gridLine.primary}`};
   box-sizing: border-box;
-  background: ${({ color }) => color};
+  background: ${({ $color }) => $color};
   height: 100%;
   min-width: ${EVENT_WIDTH_MINIMUM}px;
   position: relative;

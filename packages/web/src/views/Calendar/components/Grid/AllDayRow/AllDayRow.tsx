@@ -85,7 +85,7 @@ export const AllDayRow: FC<Props> = ({
       <StyledAllDayColumns id={ID_ALLDAY_COLUMNS} ref={allDayRef}>
         {weekDays.map((day) => (
           <StyledGridCol
-            color="transparent"
+            $color="transparent"
             key={day.format(YEAR_MONTH_DAY_FORMAT)}
           />
         ))}

@@ -60,7 +60,7 @@ export const MainGridColumns: FC<Props> = ({
 
         {weekDays.map((day, i) => (
           <StyledGridCol
-            color={colColors[i] ?? null}
+            $color={colColors[i] ?? null}
             key={day.format(YEAR_MONTH_DAY_FORMAT)}
           />
         ))}
