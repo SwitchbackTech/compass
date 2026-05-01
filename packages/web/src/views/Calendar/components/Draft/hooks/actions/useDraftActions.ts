@@ -23,10 +23,7 @@ import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import {
-  addId,
-  assembleDefaultEvent,
-} from "@web/common/utils/event/event.util";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { type Payload_EditEvent } from "@web/ducks/events/event.types";
 import {
   selectDraft,
@@ -374,8 +371,9 @@ export const useDraftActions = (
     const draft = MapEvent.removeProviderData({
       ...(reduxDraft as Schema_Event),
     }) as Schema_GridEvent;
+    const { _id: _duplicatedEventId, ...duplicateDraft } = draft;
 
-    submit(addId(draft));
+    submit(duplicateDraft);
     discard();
   }, [reduxDraft, submit, discard]);
 
