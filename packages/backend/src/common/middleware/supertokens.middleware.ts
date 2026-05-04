@@ -67,6 +67,8 @@ const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
     return {
       ...originalImplementation,
       async signInUpPOST(input) {
+        // Keep this at the API layer: Compass may need to replace the session
+        // SuperTokens creates before Google sync/auth work runs.
         const signInUpPOST = originalImplementation.signInUpPOST;
 
         if (!signInUpPOST) {
