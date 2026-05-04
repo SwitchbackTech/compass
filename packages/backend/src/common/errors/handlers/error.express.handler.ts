@@ -24,7 +24,7 @@ import {
 } from "@backend/common/types/error.types";
 import { type SessionResponse } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import googleSyncLifecycleService from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
 import { getSyncByToken } from "@backend/sync/util/sync.queries";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";

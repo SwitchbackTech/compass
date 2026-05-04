@@ -268,7 +268,10 @@ async function startWatchingGcalCalendars(
     const resourceId = gcalWatch.resourceId;
 
     if (!resourceId) {
-      throw error(GcalError.Unsure, "Calendar watch response missing resourceId");
+      throw error(
+        GcalError.Unsure,
+        "Calendar watch response missing resourceId",
+      );
     }
 
     const watch = await mongoService.watch
@@ -408,7 +411,9 @@ async function stopWatch(
     if (status === 404) {
       await mongoService.watch.deleteOne(filter, { session });
 
-      logger.warn("Channel no longer exists. Corresponding sync record deleted");
+      logger.warn(
+        "Channel no longer exists. Corresponding sync record deleted",
+      );
 
       return undefined;
     }
@@ -493,5 +498,3 @@ export const syncChannelService = {
   stopWatch,
   stopWatches,
 };
-
-export default syncChannelService;

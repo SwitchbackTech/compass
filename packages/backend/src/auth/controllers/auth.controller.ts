@@ -7,7 +7,7 @@ import {
 } from "@core/types/auth.types";
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
-import googleAuthService from "@backend/auth/services/google/google.auth.service";
+import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
 import {
   ENV,
   isGoogleConfigured,

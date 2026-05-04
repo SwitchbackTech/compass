@@ -6,7 +6,7 @@ import dayjs from "@core/util/date/dayjs";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import mongoService from "@backend/common/services/mongo.service";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
 import { updateSync } from "@backend/sync/util/sync.queries";
 
 export class SyncDriver {

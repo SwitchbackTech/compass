@@ -20,9 +20,9 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
-import syncChannelMaintenanceService from "@backend/sync/services/channel/sync-channel-maintenance.service";
-import googleSyncLifecycleService from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
+import { syncChannelMaintenanceService } from "@backend/sync/services/channel/sync-channel-maintenance.service";
+import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";

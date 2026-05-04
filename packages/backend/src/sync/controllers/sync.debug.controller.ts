@@ -7,9 +7,9 @@ import {
   type SReqBody,
 } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncChannelService from "../services/channel/sync-channel.service";
-import syncChannelMaintenanceService from "../services/channel/sync-channel-maintenance.service";
-import googleSyncLifecycleService from "../services/lifecycle/google-sync-lifecycle.service";
+import { syncChannelService } from "../services/channel/sync-channel.service";
+import { syncChannelMaintenanceService } from "../services/channel/sync-channel-maintenance.service";
+import { googleSyncLifecycleService } from "../services/lifecycle/google-sync-lifecycle.service";
 import { getSync } from "../util/sync.queries";
 
 class SyncDebugController {

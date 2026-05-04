@@ -30,8 +30,8 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
-import googleSyncLifecycleService from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
+import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";

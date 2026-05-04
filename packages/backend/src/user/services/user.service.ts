@@ -20,7 +20,7 @@ import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
 import syncRecords from "@backend/sync/services/records/sync.records";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";

@@ -12,10 +12,10 @@ import { determineGoogleAuthMode } from "@backend/auth/services/google/util/goog
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
-import googleSyncLifecycleService from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import googleAuthService from "./google.auth.service";
+import { googleAuthService } from "./google.auth.service";
 import {
   type AuthDecision,
   type GoogleSignInSuccess,
@@ -32,7 +32,7 @@ jest.mock("@backend/auth/services/google/util/google.auth.util", () => {
   };
 });
 
-describe("GoogleAuthService", () => {
+describe("googleAuthService", () => {
   beforeEach(setupTestDb);
   beforeEach(cleanupCollections);
   afterAll(cleanupTestDb);

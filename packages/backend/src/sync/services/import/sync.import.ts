@@ -26,7 +26,7 @@ import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { getGcalWebhookBaseURL } from "@backend/common/util/api-base-url.util";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
 import { type EventsToModify } from "@backend/sync/services/import/sync.import.types";
 import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";

@@ -13,7 +13,7 @@ import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 
 jest.mock("@backend/sync/util/sync.util", () => {

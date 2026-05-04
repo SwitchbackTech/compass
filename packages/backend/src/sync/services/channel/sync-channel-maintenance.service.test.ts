@@ -7,7 +7,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
-import syncChannelMaintenanceService from "@backend/sync/services/channel/sync-channel-maintenance.service";
+import { syncChannelMaintenanceService } from "@backend/sync/services/channel/sync-channel-maintenance.service";
 
 describe("syncChannelMaintenanceService", () => {
   beforeAll(initSupertokens);

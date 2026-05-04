@@ -19,8 +19,8 @@ import * as supertokensMiddleware from "@backend/common/middleware/supertokens.m
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
-import googleSyncLifecycleService from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
+import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { type Summary_Delete } from "@backend/user/types/user.types";

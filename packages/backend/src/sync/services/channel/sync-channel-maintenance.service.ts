@@ -138,5 +138,3 @@ export const syncChannelMaintenanceService = {
   runMaintenance,
   runMaintenanceByUser,
 };
-
-export default syncChannelMaintenanceService;

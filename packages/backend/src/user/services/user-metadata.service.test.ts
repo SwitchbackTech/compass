@@ -8,7 +8,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import googleSyncLifecycleService from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual

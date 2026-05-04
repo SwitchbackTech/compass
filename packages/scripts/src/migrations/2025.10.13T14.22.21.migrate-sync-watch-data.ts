@@ -9,7 +9,7 @@ import { getGcalClient } from "@backend/auth/services/google/clients/google.cale
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
 import { getChannelExpiration } from "@backend/sync/util/sync.util";
 
 export default class Migration implements RunnableMigration<MigrationContext> {

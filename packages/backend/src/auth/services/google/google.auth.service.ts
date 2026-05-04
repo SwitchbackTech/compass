@@ -14,7 +14,7 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
-import googleSyncLifecycleService from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -78,14 +78,12 @@ async function persistStoredGoogleConnection(
 }
 
 function restartGoogleCalendarSyncInBackground(cUserId: string) {
-  googleSyncLifecycleService
-    .restartGoogleCalendarSync(cUserId)
-    .catch((err) => {
-      logger.error(
-        `Something went wrong with starting calendar sync for user ${cUserId}`,
-        err,
-      );
-    });
+  googleSyncLifecycleService.restartGoogleCalendarSync(cUserId).catch((err) => {
+    logger.error(
+      `Something went wrong with starting calendar sync for user ${cUserId}`,
+      err,
+    );
+  });
 }
 
 async function googleSignup(
@@ -323,7 +321,7 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
   }
 }
 
-const googleAuthService = {
+export const googleAuthService = {
   googleSignup,
   repairGoogleConnection,
   getConnectedCompassUserId,
@@ -331,5 +329,3 @@ const googleAuthService = {
   googleSignin,
   handleGoogleAuth,
 };
-
-export default googleAuthService;

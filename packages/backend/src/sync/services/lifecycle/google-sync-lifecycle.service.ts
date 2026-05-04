@@ -11,7 +11,7 @@ import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 import compassGoogleMirrorService from "@backend/sync/services/outbound/compass-google-mirror.service";
 import { updateSync } from "@backend/sync/util/sync.queries";
@@ -295,5 +295,3 @@ export const googleSyncLifecycleService = {
   restartGoogleCalendarSync,
   startGoogleCalendarSync,
 };
-
-export default googleSyncLifecycleService;

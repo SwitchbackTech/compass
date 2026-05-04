@@ -7,9 +7,9 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncChannelService from "@backend/sync/services/channel/sync-channel.service";
+import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
 import * as syncImportService from "@backend/sync/services/import/sync.import";
-import googleSyncLifecycleService from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
@@ -65,11 +65,8 @@ describe("googleSyncLifecycleService", () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const callOrder: string[] = [];
-      const importFull = googleSyncLifecycleService.importFull.bind(
-        googleSyncLifecycleService,
-      );
-      const startWatching =
-        syncChannelService.startWatchingGcalResources.bind(syncChannelService);
+      const importFull = googleSyncLifecycleService.importFull;
+      const startWatching = syncChannelService.startWatchingGcalResources;
 
       jest
         .spyOn(googleSyncLifecycleService, "importFull")
