@@ -13,7 +13,7 @@ import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 
 jest.mock("@backend/sync/util/sync.util", () => {
@@ -39,7 +39,7 @@ const createWatch = async (user: string) => {
   return watch;
 };
 
-describe("syncChannelService", () => {
+describe("googleWatchService", () => {
   beforeAll(initSupertokens);
   beforeEach(setupTestDb);
   beforeEach(cleanupCollections);
@@ -52,7 +52,7 @@ describe("syncChannelService", () => {
     const firstUserWatch = await createWatch(firstUser._id.toString());
     const secondUserWatch = await createWatch(secondUser._id.toString());
 
-    const deleted = await syncChannelService.deleteWatchesByUser(
+    const deleted = await googleWatchService.deleteWatchesByUser(
       firstUser._id.toString(),
     );
 
@@ -79,7 +79,7 @@ describe("syncChannelService", () => {
       .mockRejectedValue(invalidGrant400Error);
 
     await expect(
-      syncChannelService.stopWatch(
+      googleWatchService.stopWatch(
         user._id.toString(),
         watch._id.toString(),
         watch.resourceId,
@@ -100,7 +100,7 @@ describe("syncChannelService", () => {
       );
 
     await expect(
-      syncChannelService.stopWatch(
+      googleWatchService.stopWatch(
         user._id.toString(),
         watch._id.toString(),
         watch.resourceId,
@@ -114,11 +114,11 @@ describe("syncChannelService", () => {
 
   it("ignores expired notifications when no local watch record remains", async () => {
     const cleanupSpy = jest
-      .spyOn(syncChannelService, "cleanupStaleWatchChannel")
+      .spyOn(googleWatchService, "cleanupStaleWatch")
       .mockResolvedValue(false);
 
     await expect(
-      syncChannelService.handleGcalNotification({
+      googleWatchService.handleGoogleWatchNotification({
         resource: Resource_Sync.EVENTS,
         channelId: new ObjectId(),
         resourceId: faker.string.uuid(),
@@ -133,16 +133,16 @@ describe("syncChannelService", () => {
   it("skips direct Google watch setup when the Google webhook URL is not HTTPS", async () => {
     (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(false);
     const startCalendarWatchSpy = jest.spyOn(
-      syncChannelService,
-      "startWatchingGcalCalendars",
+      googleWatchService,
+      "startCalendarListWatch",
     );
     const startEventWatchSpy = jest.spyOn(
-      syncChannelService,
-      "startWatchingGcalEvents",
+      googleWatchService,
+      "startEventWatch",
     );
 
     await expect(
-      syncChannelService.startWatchingGcalResources(
+      googleWatchService.startGoogleWatches(
         "507f1f77bcf86cd799439011",
         [{ gCalendarId: Resource_Sync.CALENDAR }, { gCalendarId: "primary" }],
         {} as never,

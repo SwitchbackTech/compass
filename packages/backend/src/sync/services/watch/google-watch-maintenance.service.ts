@@ -6,11 +6,11 @@ import {
   prepWatchMaintenanceForUser,
   pruneSync,
   refreshWatch,
-} from "@backend/sync/services/maintain/sync.maintenance";
+} from "@backend/sync/services/watch/google-watch-maintenance.planner";
 import { createConcurrencyLimiter } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
-const logger = Logger("app:sync-channel-maintenance.service");
+const logger = Logger("app:google-watch-maintenance.service");
 
 async function runMaintenance() {
   const cursor = mongoService.user.find().batchSize(MONGO_BATCH_SIZE);
@@ -33,7 +33,7 @@ async function runMaintenance() {
   const run = await Promise.all(
     users.map((user) =>
       limit(() =>
-        syncChannelMaintenanceService
+        googleWatchMaintenanceService
           .runMaintenanceByUser(user.toString(), {
             log: false,
           })
@@ -134,7 +134,7 @@ async function runMaintenanceByUser(
   };
 }
 
-export const syncChannelMaintenanceService = {
+export const googleWatchMaintenanceService = {
   runMaintenance,
   runMaintenanceByUser,
 };

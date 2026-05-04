@@ -12,7 +12,7 @@ import { determineGoogleAuthMode } from "@backend/auth/services/google/util/goog
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
-import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { googleAuthService } from "./google.auth.service";
@@ -314,7 +314,7 @@ describe("googleAuthService", () => {
         refresh_token: faker.string.uuid(),
       };
       const restartSpy = jest
-        .spyOn(googleSyncLifecycleService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
 
       await userService.pruneGoogleData(compassUserId);
@@ -357,7 +357,7 @@ describe("googleAuthService", () => {
       };
       const restartError = new Error("sync failed");
       const restartSpy = jest
-        .spyOn(googleSyncLifecycleService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockRejectedValue(restartError);
 
       await userService.pruneGoogleData(compassUserId);
@@ -387,7 +387,7 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       });
       const restartSpy = jest
-        .spyOn(googleSyncLifecycleService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
 
       mockDetermineGoogleAuthMode.mockResolvedValue({
@@ -434,7 +434,7 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       });
       const importSpy = jest
-        .spyOn(googleSyncLifecycleService, "importIncremental")
+        .spyOn(googleCalendarSyncService, "importLatestGoogleCalendarChanges")
         .mockResolvedValue(undefined);
 
       await expect(
@@ -469,7 +469,7 @@ describe("googleAuthService", () => {
       });
       const refreshToken = faker.string.uuid();
       const restartSpy = jest
-        .spyOn(googleSyncLifecycleService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
       const exchangeSpy = jest
         .spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
@@ -514,7 +514,7 @@ describe("googleAuthService", () => {
         withGoogle: false,
       });
       const restartSpy = jest
-        .spyOn(googleSyncLifecycleService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
       const exchangeSpy = jest
         .spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
@@ -553,7 +553,7 @@ describe("googleAuthService", () => {
     it("rejects when the Google account email does not match the current Compass user", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
       const restartSpy = jest
-        .spyOn(googleSyncLifecycleService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
       const exchangeSpy = jest
         .spyOn(GoogleOAuthClient.prototype, "exchangeAuthCode")
@@ -603,7 +603,7 @@ describe("googleAuthService", () => {
         .spyOn(EmailService, "tagNewUserIfEnabled")
         .mockResolvedValue();
       const restartSpy = jest
-        .spyOn(googleSyncLifecycleService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
 
       const result = await googleAuthService.googleSignup(
@@ -636,7 +636,7 @@ describe("googleAuthService", () => {
       } as TokenPayload;
       const refreshToken = faker.string.uuid();
       const restartSpy = jest
-        .spyOn(googleSyncLifecycleService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
       const tagNewUserSpy = jest
         .spyOn(EmailService, "tagNewUserIfEnabled")

@@ -20,8 +20,8 @@ import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
 import syncRecords from "@backend/sync/services/records/sync.records";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
@@ -199,7 +199,7 @@ class UserService {
       summary.events = events.deletedCount;
 
       if (gcalAccess) {
-        const watches = await syncChannelService.stopWatches(
+        const watches = await googleWatchService.stopWatches(
           userId,
           undefined,
           new ObjectId().toString(),
@@ -263,9 +263,9 @@ class UserService {
 
     await eventService.deleteByIntegration("google", userId);
     if (skipGoogleWatchStop) {
-      await syncChannelService.deleteWatchesByUser(userId);
+      await googleWatchService.deleteWatchesByUser(userId);
     } else {
-      await syncChannelService.stopWatches(userId);
+      await googleWatchService.stopWatches(userId);
     }
     await syncRecords.deleteByIntegration("google", userId);
   };
@@ -294,7 +294,7 @@ class UserService {
     }
 
     if (options.isLastActiveSession) {
-      await syncChannelService.stopWatches(userId);
+      await googleWatchService.stopWatches(userId);
     }
   };
 

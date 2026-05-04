@@ -20,9 +20,9 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
-import { syncChannelMaintenanceService } from "@backend/sync/services/channel/sync-channel-maintenance.service";
-import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
+import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
@@ -79,14 +79,12 @@ export class SyncController {
     userId: string,
   ): void => {
     // do not await this call
-    googleSyncLifecycleService
-      .restartGoogleCalendarSync(userId, { force: true })
-      .catch((err) => {
-        logger.error(
-          `Something went wrong with resyncing google calendars for user: ${userId}`,
-          err,
-        );
-      });
+    googleCalendarSyncService.repairGoogleCalendarSync(userId).catch((err) => {
+      logger.error(
+        `Something went wrong with resyncing google calendars for user: ${userId}`,
+        err,
+      );
+    });
 
     res.status(Status.OK).send({ message: "Full sync in progress." });
   };
@@ -134,14 +132,12 @@ export class SyncController {
     // When Google returns 410 (sync token invalid), the token may still exist
     // in the database but is no longer valid. assessGoogleMetadata checks token
     // existence, not validity, so we must force-restart directly.
-    googleSyncLifecycleService
-      .restartGoogleCalendarSync(userId, { force: true })
-      .catch((err) => {
-        logger.error(
-          `Something went wrong with recovering google calendars for user: ${userId}`,
-          err,
-        );
-      });
+    googleCalendarSyncService.repairGoogleCalendarSync(userId).catch((err) => {
+      logger.error(
+        `Something went wrong with recovering google calendars for user: ${userId}`,
+        err,
+      );
+    });
 
     res.status(Status.NO_CONTENT).send();
   };
@@ -205,7 +201,7 @@ export class SyncController {
       });
 
       const response =
-        await syncChannelService.handleGcalNotification(syncPayload);
+        await googleWatchService.handleGoogleWatchNotification(syncPayload);
 
       res.promise(response);
     } catch (e) {
@@ -276,7 +272,7 @@ export class SyncController {
         });
       }); // 5 minutes timeout
 
-      const result = await syncChannelMaintenanceService.runMaintenance();
+      const result = await googleWatchMaintenanceService.runMaintenance();
 
       if (!res.headersSent) res.promise(result);
     } catch (e) {
@@ -290,14 +286,16 @@ export class SyncController {
     const { force } = ImportGCalRequestSchema.parse(req.body);
     const isForce = force === true;
 
-    googleSyncLifecycleService
-      .restartGoogleCalendarSync(userId, { force: isForce })
-      .catch((err) => {
-        logger.error(
-          `Something went wrong starting Google Calendar import for user: ${userId}`,
-          err,
-        );
-      });
+    const importPromise = isForce
+      ? googleCalendarSyncService.repairGoogleCalendarSync(userId)
+      : googleCalendarSyncService.startGoogleCalendarSyncIfNeeded(userId);
+
+    importPromise.catch((err) => {
+      logger.error(
+        `Something went wrong starting Google Calendar import for user: ${userId}`,
+        err,
+      );
+    });
 
     res.status(Status.NO_CONTENT).send();
   };

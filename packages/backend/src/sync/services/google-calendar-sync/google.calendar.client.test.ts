@@ -2,8 +2,8 @@ import { faker } from "@faker-js/faker";
 import { GaxiosError } from "gaxios";
 import { ObjectId } from "mongodb";
 import { type Schema_User } from "@core/types/user.types";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 jest.mock("@backend/user/queries/user.queries", () => ({

@@ -29,8 +29,9 @@ Following Events, or All Events.
 **Primary Calendar**: The main Google Calendar Compass currently syncs. Compass
 does not yet support choosing multiple Google calendars in the UI.
 
-**Sync Channel**: A Google Calendar watch channel used to notify Compass when
-Google-side calendar data changes.
+**Google Watch**: A Google Calendar watch subscription used to notify Compass
+when Google-side calendar data changes. Use "channel" only for Google API
+fields such as `channelId`.
 
 **nextSyncToken**: Google's cursor for incremental calendar sync.
 

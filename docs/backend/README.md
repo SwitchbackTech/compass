@@ -65,9 +65,9 @@ Key files:
 - endpoint: `POST /api/sync/gcal/notifications`
 - source: `packages/backend/src/sync/controllers/sync.controller.ts`
 - middleware: `authMiddleware.verifyIsFromGoogle`
-- notification owner: `packages/backend/src/sync/services/channel/sync-channel.service.ts`
-- import/repair owner: `packages/backend/src/sync/services/lifecycle/google-sync-lifecycle.service.ts`
-- maintenance owner: `packages/backend/src/sync/services/channel/sync-channel-maintenance.service.ts`
+- notification owner: `packages/backend/src/sync/services/watch/google-watch.service.ts`
+- import/repair owner: `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- maintenance owner: `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
 
 Observed outcomes include:
 

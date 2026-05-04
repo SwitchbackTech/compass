@@ -5,20 +5,20 @@ import {
   shouldDoIncrementalGCalSync,
   shouldImportGCal,
 } from "@core/util/event/event.util";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
+import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
 import { createSyncImport } from "@backend/sync/services/import/sync.import";
 import compassGoogleMirrorService from "@backend/sync/services/outbound/compass-google-mirror.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { updateSync } from "@backend/sync/util/sync.queries";
 import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
-const logger = Logger("app:google-sync-lifecycle.service");
+const logger = Logger("app:google-calendar-sync.service");
 
 const activeFullSyncRestarts = new Set<string>();
 
@@ -66,7 +66,7 @@ async function importFull(
   }
 }
 
-async function importIncremental(
+async function importLatestGoogleCalendarChanges(
   userId: string,
   gcal?: gCalendar,
   perPage = 1000,
@@ -139,7 +139,7 @@ async function importIncremental(
   }
 }
 
-async function restartGoogleCalendarSync(
+async function runGoogleCalendarSyncSetup(
   userId: string,
   options: { force?: boolean } = {},
 ) {
@@ -188,7 +188,7 @@ async function restartGoogleCalendarSync(
 
     await userService.stopGoogleCalendarSync(userId);
     const importResults =
-      await googleSyncLifecycleService.startGoogleCalendarSync(userId);
+      await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
     await compassGoogleMirrorService
       .syncCompassEventsToGoogle(userId)
@@ -247,7 +247,7 @@ async function restartGoogleCalendarSync(
   }
 }
 
-async function startGoogleCalendarSync(
+async function initializeGoogleCalendarSync(
   user: string,
 ): Promise<{ eventsCount: number; calendarsCount: number }> {
   const gcal = await getGcalClient(user);
@@ -261,14 +261,10 @@ async function startGoogleCalendarSync(
     .map(({ id }) => id)
     .filter((id): id is string => id !== undefined && id !== null);
 
-  const importResults = await googleSyncLifecycleService.importFull(
-    gcal,
-    gCalendarIds,
-    user,
-  );
+  const importResults = await importFull(gcal, gCalendarIds, user);
 
   if (isUsingGcalWebhookHttps()) {
-    await syncChannelService.startWatchingGcalResources(
+    await googleWatchService.startGoogleWatches(
       user,
       [
         { gCalendarId: Resource_Sync.CALENDAR },
@@ -289,9 +285,17 @@ async function startGoogleCalendarSync(
   };
 }
 
-export const googleSyncLifecycleService = {
-  importFull,
-  importIncremental,
-  restartGoogleCalendarSync,
-  startGoogleCalendarSync,
+async function repairGoogleCalendarSync(userId: string) {
+  return runGoogleCalendarSyncSetup(userId, { force: true });
+}
+
+async function startGoogleCalendarSyncIfNeeded(userId: string) {
+  return runGoogleCalendarSyncSetup(userId);
+}
+
+export const googleCalendarSyncService = {
+  importLatestGoogleCalendarChanges,
+  initializeGoogleCalendarSync,
+  repairGoogleCalendarSync,
+  startGoogleCalendarSyncIfNeeded,
 };

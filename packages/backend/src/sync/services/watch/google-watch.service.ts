@@ -10,7 +10,6 @@ import {
 } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { WatchSchema } from "@core/types/watch.types";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
@@ -23,6 +22,7 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
+import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
 import {
   getSync,
@@ -35,7 +35,7 @@ import {
 } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
-const logger = Logger("app:sync-channel.service");
+const logger = Logger("app:google-watch.service");
 
 async function deleteWatchesByUser(
   user: string,
@@ -88,7 +88,7 @@ async function prepareStopWatches(
   };
 }
 
-async function cleanupStaleWatchChannel({
+async function cleanupStaleWatch({
   channelId,
   resourceId,
 }: Payload_Sync_Notif): Promise<boolean> {
@@ -106,7 +106,7 @@ async function cleanupStaleWatchChannel({
   }
 
   try {
-    await syncChannelService.stopWatch(
+    await googleWatchService.stopWatch(
       channel.user,
       channel._id.toString(),
       channel.resourceId,
@@ -127,7 +127,7 @@ async function cleanupStaleWatchChannel({
   }
 }
 
-async function handleGcalNotification(payload: Payload_Sync_Notif) {
+async function handleGoogleWatchNotification(payload: Payload_Sync_Notif) {
   const { channelId, resourceId, resourceState, resource } = payload;
   const { expiration } = payload;
 
@@ -146,8 +146,7 @@ async function handleGcalNotification(payload: Payload_Sync_Notif) {
   });
 
   if (!watch) {
-    const cleanedUp =
-      await syncChannelService.cleanupStaleWatchChannel(payload);
+    const cleanedUp = await googleWatchService.cleanupStaleWatch(payload);
 
     if (cleanedUp) return "IGNORED";
 
@@ -161,8 +160,7 @@ async function handleGcalNotification(payload: Payload_Sync_Notif) {
   const sync = await getSync({ userId: watch.user, resource });
 
   if (!sync) {
-    const cleanedUp =
-      await syncChannelService.cleanupStaleWatchChannel(payload);
+    const cleanedUp = await googleWatchService.cleanupStaleWatch(payload);
 
     if (cleanedUp) return "IGNORED";
 
@@ -219,7 +217,7 @@ async function refreshWatch(
   const watchExists = payload.channelId && payload.resourceId;
 
   if (watchExists) {
-    await syncChannelService.stopWatch(
+    await googleWatchService.stopWatch(
       userId,
       payload.channelId,
       payload.resourceId,
@@ -227,7 +225,7 @@ async function refreshWatch(
     );
   }
 
-  const watchResult = await syncChannelService.startWatchingGcalResources(
+  const watchResult = await googleWatchService.startGoogleWatches(
     userId,
     [{ gCalendarId: payload.gCalendarId, quotaUser: payload.quotaUser }],
     gcal,
@@ -236,7 +234,7 @@ async function refreshWatch(
   return watchResult[0];
 }
 
-async function startWatchingGcalCalendars(
+async function startCalendarListWatch(
   user: string,
   params: Pick<Params_WatchEvents, "quotaUser">,
   gcal: gCalendar,
@@ -286,7 +284,7 @@ async function startWatchingGcalCalendars(
         }),
       )
       .catch(async (error) => {
-        await syncChannelService.stopWatch(user, channelId, resourceId, gcal);
+        await googleWatchService.stopWatch(user, channelId, resourceId, gcal);
 
         throw error;
       });
@@ -299,7 +297,7 @@ async function startWatchingGcalCalendars(
   }
 }
 
-async function startWatchingGcalEvents(
+async function startEventWatch(
   user: string,
   params: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">,
   gcal: gCalendar,
@@ -346,7 +344,7 @@ async function startWatchingGcalEvents(
         }),
       )
       .catch(async (error) => {
-        await syncChannelService.stopWatch(user, channelId, resourceId, gcal);
+        await googleWatchService.stopWatch(user, channelId, resourceId, gcal);
 
         throw error;
       });
@@ -359,7 +357,7 @@ async function startWatchingGcalEvents(
   }
 }
 
-async function startWatchingGcalResources(
+async function startGoogleWatches(
   userId: string,
   watchParams: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">[],
   gcal: gCalendar,
@@ -371,14 +369,10 @@ async function startWatchingGcalResources(
   return Promise.all(
     watchParams.map(async (params) => {
       if (params.gCalendarId === (Resource_Sync.CALENDAR as string)) {
-        return syncChannelService.startWatchingGcalCalendars(
-          userId,
-          params,
-          gcal,
-        );
+        return googleWatchService.startCalendarListWatch(userId, params, gcal);
       }
 
-      return syncChannelService.startWatchingGcalEvents(userId, params, gcal);
+      return googleWatchService.startEventWatch(userId, params, gcal);
     }),
   ).then((results) => results.filter((r) => r !== undefined));
 }
@@ -459,7 +453,7 @@ async function stopWatches(
   );
   const result = await Promise.all(
     prepared.watches.map(async ({ _id, resourceId }) =>
-      syncChannelService
+      googleWatchService
         .stopWatch(
           user,
           _id.toString(),
@@ -487,14 +481,14 @@ async function stopWatches(
   return stopped;
 }
 
-export const syncChannelService = {
+export const googleWatchService = {
   deleteWatchesByUser,
-  cleanupStaleWatchChannel,
-  handleGcalNotification,
+  cleanupStaleWatch,
+  handleGoogleWatchNotification,
   refreshWatch,
-  startWatchingGcalCalendars,
-  startWatchingGcalEvents,
-  startWatchingGcalResources,
+  startCalendarListWatch,
+  startEventWatch,
+  startGoogleWatches,
   stopWatch,
   stopWatches,
 };

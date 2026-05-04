@@ -7,9 +7,9 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
-import { syncChannelMaintenanceService } from "@backend/sync/services/channel/sync-channel-maintenance.service";
+import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
 
-describe("syncChannelMaintenanceService", () => {
+describe("googleWatchMaintenanceService", () => {
   beforeAll(initSupertokens);
   beforeEach(setupTestDb);
   beforeEach(cleanupCollections);
@@ -28,7 +28,7 @@ describe("syncChannelMaintenanceService", () => {
     };
     await mongoService.watch.insertOne(watch);
 
-    const result = await syncChannelMaintenanceService.runMaintenanceByUser(
+    const result = await googleWatchMaintenanceService.runMaintenanceByUser(
       userId,
       { dry: true },
     );

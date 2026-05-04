@@ -53,7 +53,7 @@ export class SyncRoutes extends CommonRoutesConfig {
       .post([
         authMiddleware.verifyIsFromCompass,
         requireGoogleConnectionFrom("userId"),
-        syncDebugController.importIncremental,
+        syncDebugController.importLatestGoogleCalendarChanges,
       ]);
 
     this.app

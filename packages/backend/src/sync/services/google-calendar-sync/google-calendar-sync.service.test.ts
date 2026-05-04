@@ -7,20 +7,20 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { syncChannelService } from "@backend/sync/services/channel/sync-channel.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
 import * as syncImportService from "@backend/sync/services/import/sync.import";
-import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
-describe("googleSyncLifecycleService", () => {
+describe("googleCalendarSyncService", () => {
   beforeAll(initSupertokens);
   beforeEach(setupTestDb);
   beforeEach(cleanupCollections);
   afterEach(() => jest.restoreAllMocks());
   afterAll(cleanupTestDb);
 
-  describe("importIncremental", () => {
+  describe("importLatestGoogleCalendarChanges", () => {
     it("emits INCREMENTAL operation when incremental import is ignored", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
@@ -31,7 +31,7 @@ describe("googleSyncLifecycleService", () => {
         data: { sync: { incrementalGCalSync: "COMPLETED" } },
       });
 
-      await googleSyncLifecycleService.importIncremental(userId);
+      await googleCalendarSyncService.importLatestGoogleCalendarChanges(userId);
 
       expect(importEndSpy).toHaveBeenCalledWith(userId, {
         operation: "INCREMENTAL",
@@ -51,7 +51,7 @@ describe("googleSyncLifecycleService", () => {
         ReturnType<typeof syncImportService.createSyncImport>
       >);
 
-      await googleSyncLifecycleService.importIncremental(userId);
+      await googleCalendarSyncService.importLatestGoogleCalendarChanges(userId);
 
       expect(importEndSpy).toHaveBeenCalledWith(userId, {
         operation: "INCREMENTAL",
@@ -60,35 +60,41 @@ describe("googleSyncLifecycleService", () => {
     });
   });
 
-  describe("startGoogleCalendarSync", () => {
+  describe("initializeGoogleCalendarSync", () => {
     it("starts Google watches only after full import succeeds", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const callOrder: string[] = [];
-      const importFull = googleSyncLifecycleService.importFull;
-      const startWatching = syncChannelService.startWatchingGcalResources;
+      const startWatching = googleWatchService.startGoogleWatches;
 
-      jest
-        .spyOn(googleSyncLifecycleService, "importFull")
-        .mockImplementation(async (...args) => {
+      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+        importAllEvents: jest.fn().mockImplementation(async () => {
           callOrder.push("importFull");
-          return importFull(...args);
-        });
+          return {
+            nextSyncToken: "next-sync-token",
+            totalChanged: 0,
+            totalProcessed: 0,
+            totalSaved: 0,
+          };
+        }),
+      } as unknown as Awaited<
+        ReturnType<typeof syncImportService.createSyncImport>
+      >);
       jest
-        .spyOn(syncChannelService, "startWatchingGcalResources")
+        .spyOn(googleWatchService, "startGoogleWatches")
         .mockImplementation(async (...args) => {
           callOrder.push("startWatching");
           return startWatching(...args);
         });
 
-      await googleSyncLifecycleService.startGoogleCalendarSync(userId);
+      await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
       expect(callOrder).toEqual(["importFull", "startWatching"]);
     });
   });
 
-  describe("restartGoogleCalendarSync", () => {
-    it("skips restart when import is completed and not forced", async () => {
+  describe("startGoogleCalendarSyncIfNeeded", () => {
+    it("skips sync setup when import is completed", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
@@ -100,11 +106,11 @@ describe("googleSyncLifecycleService", () => {
 
       const stopSpy = jest.spyOn(userService, "stopGoogleCalendarSync");
       const startSpy = jest.spyOn(
-        googleSyncLifecycleService,
-        "startGoogleCalendarSync",
+        googleCalendarSyncService,
+        "initializeGoogleCalendarSync",
       );
 
-      await googleSyncLifecycleService.restartGoogleCalendarSync(userId);
+      await googleCalendarSyncService.startGoogleCalendarSyncIfNeeded(userId);
 
       expect(stopSpy).not.toHaveBeenCalled();
       expect(startSpy).not.toHaveBeenCalled();
@@ -114,8 +120,10 @@ describe("googleSyncLifecycleService", () => {
         message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
       });
     });
+  });
 
-    it("forces restart when import is completed", async () => {
+  describe("repairGoogleCalendarSync", () => {
+    it("forces sync setup when import is completed", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
 
@@ -128,12 +136,10 @@ describe("googleSyncLifecycleService", () => {
         .spyOn(userService, "stopGoogleCalendarSync")
         .mockResolvedValue();
       const startSpy = jest
-        .spyOn(googleSyncLifecycleService, "startGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "initializeGoogleCalendarSync")
         .mockResolvedValue({ eventsCount: 0, calendarsCount: 0 });
 
-      await googleSyncLifecycleService.restartGoogleCalendarSync(userId, {
-        force: true,
-      });
+      await googleCalendarSyncService.repairGoogleCalendarSync(userId);
 
       expect(stopSpy).toHaveBeenCalledWith(userId);
       expect(startSpy).toHaveBeenCalledWith(userId);

@@ -15,7 +15,7 @@ import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import EmailService from "@backend/email/email.service";
-import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/google-sync-lifecycle.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -95,7 +95,7 @@ async function persistGoogleConnection(
     },
   });
 
-  restartGoogleCalendarSyncInBackground(compassUserId);
+  startGoogleCalendarSyncIfNeededInBackground(compassUserId);
 
   return { cUserId: compassUserId };
 }
@@ -127,18 +127,20 @@ async function persistStoredGoogleConnection(
     },
   });
 
-  restartGoogleCalendarSyncInBackground(cUserId);
+  startGoogleCalendarSyncIfNeededInBackground(cUserId);
 
   return { cUserId };
 }
 
-function restartGoogleCalendarSyncInBackground(cUserId: string) {
-  googleSyncLifecycleService.restartGoogleCalendarSync(cUserId).catch((err) => {
-    logger.error(
-      `Something went wrong with starting calendar sync for user ${cUserId}`,
-      err,
-    );
-  });
+function startGoogleCalendarSyncIfNeededInBackground(cUserId: string) {
+  googleCalendarSyncService
+    .startGoogleCalendarSyncIfNeeded(cUserId)
+    .catch((err) => {
+      logger.error(
+        `Something went wrong with starting calendar sync for user ${cUserId}`,
+        err,
+      );
+    });
 }
 
 async function googleSignup(
@@ -177,7 +179,7 @@ async function googleSignup(
     return { cUserId: cUser.user.userId };
   });
 
-  restartGoogleCalendarSyncInBackground(user.cUserId);
+  startGoogleCalendarSyncIfNeededInBackground(user.cUserId);
 
   return user;
 }
@@ -279,8 +281,11 @@ async function googleSignin(
   const googleOAuthClient = new GoogleOAuthClient();
   googleOAuthClient.oauthClient.setCredentials(oAuthTokens);
 
-  googleSyncLifecycleService
-    .importIncremental(cUserId, googleOAuthClient.getGcalClient())
+  googleCalendarSyncService
+    .importLatestGoogleCalendarChanges(
+      cUserId,
+      googleOAuthClient.getGcalClient(),
+    )
     .catch(async (err) => {
       if (
         err instanceof Error &&
@@ -295,7 +300,7 @@ async function googleSignin(
           data: { sync: { importGCal: "RESTART" } },
         });
 
-        restartGoogleCalendarSyncInBackground(cUserId);
+        startGoogleCalendarSyncIfNeededInBackground(cUserId);
         return;
       }
 
