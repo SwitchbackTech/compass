@@ -66,9 +66,11 @@ mock.module("@web/common/validators/grid.event.validator", () => ({
 
 mock.module("@web/common/validators/someday.event.validator", () => ({
   validateSomedayEvent,
+  validateSomedayEvents: mock((events: Schema_SomedayEvent[]) => events),
 }));
 
 mock.module("@web/common/utils/event/event.util", () => ({
+  assembleDefaultEvent: mock(async () => createMockGridEvent()),
   assembleGridEvent,
 }));
 
