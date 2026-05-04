@@ -1,4 +1,4 @@
-# Self-Hosting Compass
+# Self-Hosting
 
 Self-hosting Compass means running it on a server you control instead of using `app.compasscalendar.com`.
 
