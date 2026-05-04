@@ -4,10 +4,6 @@ Internal documentation for engineers and agents working in the Compass repo.
 
 Start with [AGENTS.md](../AGENTS.md) for repo rules and command defaults. Use this index for codebase shape, subsystem behavior, and acceptance runbooks.
 
-## How docs get published
-
-Markdown files in this `docs/` directory are automatically mirrored to [docs.compasscalendar.com](https://docs.compasscalendar.com). A GitHub Action detects any push to `main` that touches `docs/**` and syncs the changes to the doc site. Just edit any of the markdown in `docs/` and the doc site will update itself upon merge.
-
 ## Start Here
 
 - [Repo Architecture](./architecture/repo-architecture.md)
@@ -60,3 +56,9 @@ User-visible behavior runbooks for manual verification and expected outcomes:
 - [Recurring Events](./acceptance/recurring-events.md)
 - [Shortcuts](./acceptance/shortcuts.md)
 - [Tasks](./acceptance/tasks.md)
+
+## How docs get published
+
+Markdown files in this `docs/` directory are automatically mirrored to [docs.compasscalendar.com](https://docs.compasscalendar.com). A GitHub Action detects any push to `main` that touches `docs/**` and syncs the changes to the doc site. Just edit any of the markdown in `docs/` and the doc site will update itself upon merge.
+
+
