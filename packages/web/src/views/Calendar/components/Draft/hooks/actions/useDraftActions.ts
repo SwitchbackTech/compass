@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { type MouseEvent, useCallback } from "react";
+import { useCallback } from "react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -11,7 +11,6 @@ import {
   type Recurrence,
   RecurringEventUpdateScope,
   type Schema_Event,
-  type WithCompassId,
 } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
 import { devAlert } from "@core/util/app.util";
@@ -19,12 +18,15 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import {
+  type Payload_ConvertEvent,
+  type Payload_EditEvent,
+} from "@web/ducks/events/event.types";
 import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
-import { type Payload_EditEvent } from "@web/ducks/events/event.types";
 import {
   selectDraft,
   selectDraftStatus,
@@ -52,11 +54,6 @@ import {
 import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Calendar/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
-import {
-  getDraggedEventDateRange,
-  getIsValidResizeMovement,
-} from "./draft.movement";
-import { getDraftSubmitAction } from "./draft.submit-decision";
 import { getDragDurationMinutes } from "./drag-duration.util";
 
 export const useDraftActions = (
@@ -202,10 +199,10 @@ export const useDraftActions = (
         return;
       }
 
-      const event: WithCompassId<Omit<Schema_WebEvent, "_id">> = {
+      const event: Payload_ConvertEvent["event"] = {
         ...draft,
-        _id: draft!._id,
-        user: draft?.user,
+        _id: draft!._id!,
+        user: draft?.user ?? "",
         isAllDay: false,
         isSomeday: true,
         startDate: start,
@@ -241,16 +238,31 @@ export const useDraftActions = (
 
   const determineSubmitAction = useCallback(
     (draft: Schema_WebEvent) => {
-      const isDirty = reduxDraft
-        ? DirtyParser.isEventDirty(draft, reduxDraft)
-        : true;
+      const isExisting = !!draft._id;
+      if (!isExisting) return "CREATE";
 
-      return getDraftSubmitAction({
-        draft,
-        pendingEventIds,
-        isFormOpenBeforeDragging,
-        isDirty,
-      });
+      if (isExisting) {
+        // Prevent updates if event is pending (waiting for backend confirmation)
+        const isPending = draft._id
+          ? pendingEventIds.includes(draft._id)
+          : false;
+        if (isPending) {
+          // Event is pending, discard the change and return to original position
+          return "DISCARD";
+        }
+
+        if (isFormOpenBeforeDragging) {
+          return "OPEN_FORM";
+        }
+        const isSame = reduxDraft
+          ? !DirtyParser.isEventDirty(draft, reduxDraft)
+          : false;
+        if (isSame) {
+          // no need to make HTTP request
+          return "DISCARD";
+        }
+      }
+      return "UPDATE";
     },
     [reduxDraft, isFormOpenBeforeDragging, pendingEventIds],
   );
@@ -327,9 +339,7 @@ export const useDraftActions = (
 
           const event = new OnSubmitParser(draft).parse();
           const payload = getEditSlicePayload(event, applyTo);
-          dispatch(
-            editEventSlice.actions.request(payload as unknown as undefined),
-          );
+          dispatch(editEventSlice.actions.request(payload));
 
           if (shouldAddToView(event)) {
             dispatch(getWeekEventsSlice.actions.insert(event._id!));
@@ -380,22 +390,31 @@ export const useDraftActions = (
 
         const y = e.clientY - draft.position.dragOffset.y;
 
-        const eventStart = dateCalcs.getDateByXY(
+        let eventStart = dateCalcs.getDateByXY(
           x,
           y,
           weekProps.component.startOfView,
         );
 
-        const { startDate, endDate } = getDraggedEventDateRange({
-          eventStart,
-          durationMin: startEndDurationMin,
-          isAllDay: draft.isAllDay,
-        });
+        let eventEnd = eventStart.add(startEndDurationMin, "minutes");
+
+        if (!draft.isAllDay) {
+          // Edge case: timed events' end times can overflow past midnight at the bottom of the grid.
+          // Below logic prevents that from occurring.
+          if (eventEnd.date() !== eventStart.date()) {
+            eventEnd = eventEnd.hour(0).minute(0);
+            eventStart = eventEnd.subtract(startEndDurationMin, "minutes");
+          }
+        }
 
         const _draft: Schema_GridEvent = {
           ...draft,
-          startDate,
-          endDate,
+          startDate: draft.isAllDay
+            ? eventStart.format(YEAR_MONTH_DAY_FORMAT)
+            : eventStart.format(),
+          endDate: draft.isAllDay
+            ? eventEnd.format(YEAR_MONTH_DAY_FORMAT)
+            : eventEnd.format(),
           priority: draft.priority || Priorities.UNASSIGNED,
         };
 
@@ -439,13 +458,22 @@ export const useDraftActions = (
     (currTime: dayjs.Dayjs) => {
       if (!draft || !dateBeingChanged) return false;
 
-      return getIsValidResizeMovement({
-        currTime,
-        draftStartDate: draft.startDate,
-        currentValue: draft[dateBeingChanged],
-        dateBeingChanged,
-        isAllDay: draft.isAllDay,
-      });
+      if (draft.isAllDay) {
+        return true;
+      }
+
+      const _currTime = currTime.format();
+      const noChange = draft[dateBeingChanged] === _currTime;
+
+      if (noChange) return false;
+
+      const diffDay = currTime.day() !== dayjs(draft.startDate).day();
+      if (diffDay) return false;
+
+      const sameStart = currTime.format() === draft.startDate;
+      if (sameStart) return false;
+
+      return true;
     },
     [dateBeingChanged, draft],
   );

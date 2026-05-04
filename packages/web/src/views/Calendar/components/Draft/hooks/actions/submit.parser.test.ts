@@ -29,11 +29,9 @@ mock.module("@web/common/validators/grid.event.validator", () => ({
 
 mock.module("@web/common/validators/someday.event.validator", () => ({
   validateSomedayEvent,
-  validateSomedayEvents: mock((events: Schema_SomedayEvent[]) => events),
 }));
 
 mock.module("@web/common/utils/event/event.util", () => ({
-  assembleDefaultEvent: mock(async () => createMockGridEvent()),
   assembleGridEvent,
 }));
 
@@ -325,26 +323,26 @@ describe("submit.parser", () => {
       expect(result._id).toBeUndefined();
     });
 
-    it("should handle someday event with missing startDate", () => {
+    it("should reject someday event with missing startDate", () => {
       const draft = createMockSomedayEvent({
         startDate: undefined,
       });
       const userId = "test-user-id";
 
-      // The function uses non-null assertion, so it will pass undefined
-      const result = parseSomedayEventBeforeSubmit(draft, userId);
-      expect(result.startDate).toBeUndefined();
+      expect(() => parseSomedayEventBeforeSubmit(draft, userId)).toThrow(
+        "Someday event requires startDate and endDate",
+      );
     });
 
-    it("should handle someday event with missing endDate", () => {
+    it("should reject someday event with missing endDate", () => {
       const draft = createMockSomedayEvent({
         endDate: undefined,
       });
       const userId = "test-user-id";
 
-      // The function uses non-null assertion, so it will pass undefined
-      const result = parseSomedayEventBeforeSubmit(draft, userId);
-      expect(result.endDate).toBeUndefined();
+      expect(() => parseSomedayEventBeforeSubmit(draft, userId)).toThrow(
+        "Someday event requires startDate and endDate",
+      );
     });
 
     it("should handle grid event with missing _id", () => {
@@ -358,26 +356,26 @@ describe("submit.parser", () => {
       expect(result._id).toBeUndefined();
     });
 
-    it("should handle grid event with missing startDate", () => {
+    it("should reject grid event with missing startDate", () => {
       const draft = createMockGridEvent({
         startDate: undefined,
       });
       const userId = "test-user-id";
 
-      // The function uses non-null assertion, so it will pass undefined
-      const result = prepEventBeforeSubmit(draft, userId);
-      expect(result.startDate).toBeUndefined();
+      expect(() => prepEventBeforeSubmit(draft, userId)).toThrow(
+        "Event requires startDate and endDate",
+      );
     });
 
-    it("should handle grid event with missing endDate", () => {
+    it("should reject grid event with missing endDate", () => {
       const draft = createMockGridEvent({
         endDate: undefined,
       });
       const userId = "test-user-id";
 
-      // The function uses non-null assertion, so it will pass undefined
-      const result = prepEventBeforeSubmit(draft, userId);
-      expect(result.endDate).toBeUndefined();
+      expect(() => prepEventBeforeSubmit(draft, userId)).toThrow(
+        "Event requires startDate and endDate",
+      );
     });
 
     it("should handle grid event with missing user", () => {
