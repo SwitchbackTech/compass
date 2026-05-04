@@ -7,6 +7,7 @@ import {
   determineGoogleAuthMode,
   parseReconnectGoogleParams,
 } from "@backend/auth/services/google/util/google.auth.util";
+import { ENV } from "@backend/common/constants/env.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
@@ -18,9 +19,63 @@ import { googleSyncLifecycleService } from "@backend/sync/services/lifecycle/goo
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
-import { type GoogleSignInSuccess } from "./google.auth.types";
+import {
+  type AuthDecision,
+  type GoogleSignInSuccess,
+} from "./google.auth.types";
+import { createHmac } from "node:crypto";
 
 const logger = Logger("app:auth.google.service");
+const AUTH_TRACE_ID_LENGTH = 16;
+
+// Keep auth traces searchable without putting raw user identifiers in production logs.
+function getTraceId(value: string | null | undefined): string | undefined {
+  const normalizedValue = value?.trim();
+
+  if (!normalizedValue) {
+    return undefined;
+  }
+
+  return createHmac("sha256", ENV.TOKEN_COMPASS_SYNC)
+    .update(normalizedValue)
+    .digest("hex")
+    .slice(0, AUTH_TRACE_ID_LENGTH);
+}
+
+function getGoogleAuthDecisionTrace({
+  createdNewRecipeUser,
+  decision,
+  googleUserId,
+  loginMethodsLength,
+  providerEmail,
+}: {
+  createdNewRecipeUser: boolean;
+  decision: AuthDecision;
+  googleUserId: string;
+  loginMethodsLength: number;
+  providerEmail: string | null | undefined;
+}) {
+  const providerEmailTraceId = providerEmail
+    ? getTraceId(normalizeEmail(providerEmail))
+    : undefined;
+  const googleUserTraceId = getTraceId(googleUserId);
+  const compassUserTraceId = getTraceId(decision.compassUserId);
+
+  return {
+    event: "google_auth_decision",
+    authMode: decision.authMode,
+    createdNewRecipeUser,
+    hasCompassUserId: Boolean(decision.compassUserId),
+    hasGoogleUserId: Boolean(googleUserId),
+    hasHealthySync: decision.hasHealthySync,
+    hasProviderEmail: Boolean(providerEmail),
+    hasStoredRefreshToken: decision.hasStoredRefreshToken,
+    loginMethodsLength,
+    ...(compassUserTraceId ? { compassUserTraceId } : {}),
+    ...(googleUserTraceId ? { googleUserTraceId } : {}),
+    ...(providerEmailTraceId ? { providerEmailTraceId } : {}),
+  };
+}
 
 async function persistGoogleConnection(
   compassUserId: string,
@@ -269,6 +324,17 @@ async function handleGoogleAuth(success: GoogleSignInSuccess): Promise<void> {
     googleUserId,
     providerUser.email,
     createdNewRecipeUser,
+  );
+
+  logger.info(
+    "google_auth_decision",
+    getGoogleAuthDecisionTrace({
+      createdNewRecipeUser,
+      decision,
+      googleUserId,
+      loginMethodsLength,
+      providerEmail: providerUser.email,
+    }),
   );
 
   switch (decision.authMode) {

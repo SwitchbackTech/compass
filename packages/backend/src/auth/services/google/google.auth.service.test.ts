@@ -21,6 +21,31 @@ import {
   type GoogleSignInSuccess,
 } from "./google.auth.types";
 
+type MockLoggerModule = {
+  __mockLogger: {
+    debug: jest.Mock;
+    error: jest.Mock;
+    info: jest.Mock;
+    verbose: jest.Mock;
+    warn: jest.Mock;
+  };
+};
+
+jest.mock("@core/logger/winston.logger", () => {
+  const mockLogger: MockLoggerModule["__mockLogger"] = {
+    debug: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    verbose: jest.fn(),
+    warn: jest.fn(),
+  };
+
+  return {
+    __mockLogger: mockLogger,
+    Logger: jest.fn(() => mockLogger),
+  };
+});
+
 jest.mock("@backend/auth/services/google/util/google.auth.util", () => {
   const actual = jest.requireActual<typeof GoogleAuthUtilModule>(
     "@backend/auth/services/google/util/google.auth.util",
@@ -61,6 +86,9 @@ describe("googleAuthService", () => {
       ({
         access_token: faker.internet.jwt(),
       }) as Pick<Credentials, "refresh_token" | "access_token">;
+    const getMockLogger = () =>
+      (jest.requireMock("@core/logger/winston.logger") as MockLoggerModule)
+        .__mockLogger;
 
     beforeEach(() => {
       mockDetermineGoogleAuthMode.mockReset();
@@ -203,6 +231,67 @@ describe("googleAuthService", () => {
         providerUser,
         oAuthTokens,
       );
+    });
+
+    it("logs a production-safe auth decision trace without raw identifiers", async () => {
+      const providerUser = makeProviderUser({
+        email: "Trace.Person@example.com",
+        sub: "google-user-123",
+      });
+      const recipeUserId = faker.database.mongodbObjectId();
+      const compassUserId = faker.database.mongodbObjectId();
+      const oAuthTokens = makeOAuthTokens();
+
+      const success: GoogleSignInSuccess = {
+        providerUser,
+        oAuthTokens,
+        createdNewRecipeUser: false,
+        recipeUserId,
+        loginMethodsLength: 2,
+      };
+
+      const decision: AuthDecision = {
+        authMode: "SIGNIN_INCREMENTAL",
+        compassUserId,
+        hasStoredRefreshToken: true,
+        hasHealthySync: true,
+        createdNewRecipeUser: false,
+      };
+
+      mockDetermineGoogleAuthMode.mockResolvedValue(decision);
+
+      await googleAuthService.handleGoogleAuth(success);
+
+      const mockLogger = getMockLogger();
+
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        "google_auth_decision",
+        expect.objectContaining({
+          authMode: "SIGNIN_INCREMENTAL",
+          compassUserTraceId: expect.any(String),
+          createdNewRecipeUser: false,
+          googleUserTraceId: expect.any(String),
+          hasCompassUserId: true,
+          hasGoogleUserId: true,
+          hasHealthySync: true,
+          hasProviderEmail: true,
+          hasStoredRefreshToken: true,
+          loginMethodsLength: 2,
+          providerEmailTraceId: expect.any(String),
+        }),
+      );
+
+      const tracePayload = mockLogger.info.mock.calls.find(
+        ([message]) => message === "google_auth_decision",
+      )?.[1];
+      const serializedTrace = JSON.stringify(tracePayload);
+
+      expect(tracePayload).not.toHaveProperty("compassUserId");
+      expect(tracePayload).not.toHaveProperty("googleUserId");
+      expect(tracePayload).not.toHaveProperty("providerEmail");
+      expect(serializedTrace).not.toContain(compassUserId);
+      expect(serializedTrace).not.toContain(providerUser.email);
+      expect(serializedTrace).not.toContain(providerUser.sub);
     });
   });
 
