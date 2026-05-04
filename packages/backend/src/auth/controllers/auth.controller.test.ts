@@ -8,7 +8,7 @@ import authController from "./auth.controller";
 
 jest.mock("@backend/auth/services/google/google.auth.service", () => ({
   __esModule: true,
-  default: {
+  googleAuthService: {
     connectGoogleToCurrentUser: jest.fn(),
   },
 }));

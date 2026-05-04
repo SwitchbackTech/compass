@@ -5,11 +5,11 @@ import { z } from "zod/v4";
 import { Resource_Sync } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import syncService from "@backend/sync/services/sync.service";
+import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { getChannelExpiration } from "@backend/sync/util/sync.util";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
@@ -61,7 +61,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         return [parsed.data];
       });
 
-      const gcal = await getGcalClient(syncDoc.user).catch((err) => {
+      const gcal = await getGcalClient(syncDoc.user).catch((err: unknown) => {
         logger.error(
           `Failed to get gcal client for user ${syncDoc.user}: ${err}`,
         );
@@ -76,7 +76,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
       await Promise.allSettled([
         ...syncDocs.map(async (s) => {
-          await syncService
+          await googleWatchService
             .stopWatch(syncDoc.user, s.channelId, s.resourceId, gcal, quotaUser)
             .catch(logger.error);
 

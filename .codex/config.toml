@@ -1,3 +1,5 @@
 [features]
 codex_hooks = true
+goals = true
+
 

@@ -251,6 +251,13 @@ The auth-mode decision is server-side and depends on:
 - whether a refresh token is stored
 - whether sync health is good enough for incremental sync
 
+Backend logs this decision as `google_auth_decision`. To keep sensitive account
+details out of logs, it uses the chosen mode and safe trace ids instead of raw
+emails, Google ids, or Compass user ids.
+
+If repair has a stored refresh token, it can reuse that token even when Google
+does not return a new one.
+
 ### Google connect from an authenticated password session
 
 When a logged-in password user chooses `Connect Google Calendar`:

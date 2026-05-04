@@ -58,13 +58,16 @@ Key files:
 
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
-- `packages/backend/src/sync/services/sync.service.ts`
+- `packages/backend/src/sync/services/outbound/compass-google-mirror.service.ts`
 
 ## Google Notification Ingress
 
 - endpoint: `POST /api/sync/gcal/notifications`
 - source: `packages/backend/src/sync/controllers/sync.controller.ts`
 - middleware: `authMiddleware.verifyIsFromGoogle`
+- notification owner: `packages/backend/src/sync/services/watch/google-watch.service.ts`
+- import/repair owner: `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- maintenance owner: `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
 
 Observed outcomes include:
 

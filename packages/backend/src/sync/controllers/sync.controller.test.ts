@@ -30,8 +30,9 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
+import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
-import syncService from "@backend/sync/services/sync.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import * as syncQueries from "@backend/sync/util/sync.queries";
 import { updateSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
@@ -139,7 +140,7 @@ describe("SyncController", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(syncService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")
         .mockResolvedValue();
 
       const watch = await mongoService.watch.findOne({
@@ -172,7 +173,7 @@ describe("SyncController", () => {
       );
 
       expect(response.text).toEqual("");
-      expect(restartSpy).toHaveBeenCalledWith(userId, { force: true });
+      expect(restartSpy).toHaveBeenCalledWith(userId);
 
       restartSpy.mockRestore();
     });
@@ -181,7 +182,7 @@ describe("SyncController", () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
       const restartSpy = jest
-        .spyOn(syncService, "restartGoogleCalendarSync")
+        .spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")
         .mockImplementation(async () => {
           await userMetadataService.updateUserMetadata({
             userId,
@@ -224,7 +225,7 @@ describe("SyncController", () => {
       );
 
       expect(restartSpy).toHaveBeenCalledTimes(1);
-      expect(restartSpy).toHaveBeenCalledWith(userId, { force: true });
+      expect(restartSpy).toHaveBeenCalledWith(userId);
 
       restartSpy.mockRestore();
     });
@@ -328,8 +329,8 @@ describe("SyncController", () => {
       expect(watch).toBeDefined();
       expect(watch).not.toBeNull();
 
-      const handleGcalNotificationSpy = jest
-        .spyOn(syncService, "handleGcalNotification")
+      const handleGoogleWatchNotificationSpy = jest
+        .spyOn(googleWatchService, "handleGoogleWatchNotification")
         .mockRejectedValue(invalidGrant400Error);
 
       const pruneGoogleDataSpy = jest
@@ -359,7 +360,7 @@ describe("SyncController", () => {
       expect(pruneGoogleDataSpy).toHaveBeenCalledWith(userId);
       expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId);
 
-      handleGcalNotificationSpy.mockRestore();
+      handleGoogleWatchNotificationSpy.mockRestore();
       pruneGoogleDataSpy.mockRestore();
       handleGoogleRevokedSpy.mockRestore();
     });
@@ -376,8 +377,8 @@ describe("SyncController", () => {
       expect(watch).toBeDefined();
       expect(watch).not.toBeNull();
 
-      const handleGcalNotificationSpy = jest
-        .spyOn(syncService, "handleGcalNotification")
+      const handleGoogleWatchNotificationSpy = jest
+        .spyOn(googleWatchService, "handleGoogleWatchNotification")
         .mockRejectedValue(missingRefreshTokenError);
 
       const pruneGoogleDataSpy = jest
@@ -407,14 +408,14 @@ describe("SyncController", () => {
       expect(pruneGoogleDataSpy).toHaveBeenCalledWith(userId);
       expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId);
 
-      handleGcalNotificationSpy.mockRestore();
+      handleGoogleWatchNotificationSpy.mockRestore();
       pruneGoogleDataSpy.mockRestore();
       handleGoogleRevokedSpy.mockRestore();
     });
 
     it("should return GONE status when missing refresh token and no watch record found", async () => {
-      const handleGcalNotificationSpy = jest
-        .spyOn(syncService, "handleGcalNotification")
+      const handleGoogleWatchNotificationSpy = jest
+        .spyOn(googleWatchService, "handleGoogleWatchNotification")
         .mockRejectedValue(missingRefreshTokenError);
 
       const response = await syncDriver.handleGoogleNotification(
@@ -430,7 +431,7 @@ describe("SyncController", () => {
 
       expect(response.text).toBe("Missing refresh token");
 
-      handleGcalNotificationSpy.mockRestore();
+      handleGoogleWatchNotificationSpy.mockRestore();
     });
   });
 

@@ -5,10 +5,10 @@ import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar } from "@core/types/gcal";
 import { type Schema_User } from "@core/types/user.types";
+import GoogleOAuthClient from "@backend/auth/services/google/clients/google.oauth.client";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import GoogleOAuthClient from "./google.oauth.client";
 
 const logger = Logger("app:google.calendar.service");
 

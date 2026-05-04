@@ -20,7 +20,9 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncService from "@backend/sync/services/sync.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
+import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
 import { getSync } from "@backend/sync/util/sync.queries";
 import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
@@ -77,14 +79,12 @@ export class SyncController {
     userId: string,
   ): void => {
     // do not await this call
-    syncService
-      .restartGoogleCalendarSync(userId, { force: true })
-      .catch((err) => {
-        logger.error(
-          `Something went wrong with resyncing google calendars for user: ${userId}`,
-          err,
-        );
-      });
+    googleCalendarSyncService.repairGoogleCalendarSync(userId).catch((err) => {
+      logger.error(
+        `Something went wrong with resyncing google calendars for user: ${userId}`,
+        err,
+      );
+    });
 
     res.status(Status.OK).send({ message: "Full sync in progress." });
   };
@@ -132,14 +132,12 @@ export class SyncController {
     // When Google returns 410 (sync token invalid), the token may still exist
     // in the database but is no longer valid. assessGoogleMetadata checks token
     // existence, not validity, so we must force-restart directly.
-    syncService
-      .restartGoogleCalendarSync(userId, { force: true })
-      .catch((err) => {
-        logger.error(
-          `Something went wrong with recovering google calendars for user: ${userId}`,
-          err,
-        );
-      });
+    googleCalendarSyncService.repairGoogleCalendarSync(userId).catch((err) => {
+      logger.error(
+        `Something went wrong with recovering google calendars for user: ${userId}`,
+        err,
+      );
+    });
 
     res.status(Status.NO_CONTENT).send();
   };
@@ -202,7 +200,8 @@ export class SyncController {
         ),
       });
 
-      const response = await syncService.handleGcalNotification(syncPayload);
+      const response =
+        await googleWatchService.handleGoogleWatchNotification(syncPayload);
 
       res.promise(response);
     } catch (e) {
@@ -259,7 +258,7 @@ export class SyncController {
     try {
       // To avoid 504 timeouts on this long running endpoint
       // to support the reliance of the google cloud function
-      // on the result of the syncService.runMaintenance call for notifications
+      // on the result of the sync maintenance call for notifications
       // we run the underlying sync logic for each user in parallel
       // to speed it up. If some of the syncs fail, investigate
       // Google API quota limits first.
@@ -273,7 +272,7 @@ export class SyncController {
         });
       }); // 5 minutes timeout
 
-      const result = await syncService.runMaintenance();
+      const result = await googleWatchMaintenanceService.runMaintenance();
 
       if (!res.headersSent) res.promise(result);
     } catch (e) {
@@ -287,14 +286,16 @@ export class SyncController {
     const { force } = ImportGCalRequestSchema.parse(req.body);
     const isForce = force === true;
 
-    syncService
-      .restartGoogleCalendarSync(userId, { force: isForce })
-      .catch((err) => {
-        logger.error(
-          `Something went wrong starting Google Calendar import for user: ${userId}`,
-          err,
-        );
-      });
+    const importPromise = isForce
+      ? googleCalendarSyncService.repairGoogleCalendarSync(userId)
+      : googleCalendarSyncService.startGoogleCalendarSyncIfNeeded(userId);
+
+    importPromise.catch((err) => {
+      logger.error(
+        `Something went wrong starting Google Calendar import for user: ${userId}`,
+        err,
+      );
+    });
 
     res.status(Status.NO_CONTENT).send();
   };

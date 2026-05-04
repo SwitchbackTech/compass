@@ -11,7 +11,7 @@ import {
   SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
   SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
 } from "@core/constants/core.constants";
-import googleAuthService from "@backend/auth/services/google/google.auth.service";
+import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
 import { ENV } from "@backend/common/constants/env.constants";
 import {
   initSupertokens,
@@ -83,7 +83,7 @@ jest.mock("supertokens-node/recipe/usermetadata", () => ({
 
 jest.mock("@backend/auth/services/google/google.auth.service", () => ({
   __esModule: true,
-  default: {
+  googleAuthService: {
     getConnectedCompassUserId: jest.fn(),
     handleGoogleAuth: jest.fn(),
   },

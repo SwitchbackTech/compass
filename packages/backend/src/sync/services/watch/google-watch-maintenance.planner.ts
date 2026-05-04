@@ -3,18 +3,19 @@ import { Logger } from "@core/logger/winston.logger";
 import { type Result_Watch_Stop } from "@core/types/sync.types";
 import { type Schema_Watch } from "@core/types/watch.types";
 import dayjs from "@core/util/date/dayjs";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import syncService from "@backend/sync/services/sync.service";
+import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
+import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { hasUpdatedCompassEventRecently } from "@backend/sync/util/sync.queries";
 import { syncExpired, syncExpiresSoon } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
 
-const logger = Logger("app:sync.maintenance");
+const logger = Logger("app:google-watch-maintenance.planner");
 
 const getActiveDeadline = () => {
   const deadlineDays = 14;
@@ -74,7 +75,7 @@ export const pruneSync = async (
     try {
       const results = await Promise.all(
         payload.map(({ _id, resourceId }) =>
-          syncService.stopWatch(
+          googleWatchService.stopWatch(
             user,
             _id.toString(),
             resourceId,
@@ -118,7 +119,7 @@ export const refreshWatch = async (
 
       const refreshesByUser = await Promise.all(
         r.payload.map(async ({ _id, user, expiration, ...syncPayload }) => {
-          const _refresh = await syncService.refreshWatch(
+          const _refresh = await googleWatchService.refreshWatch(
             user,
             {
               ...syncPayload,
@@ -144,7 +145,7 @@ export const refreshWatch = async (
       };
     } catch (e) {
       if (isFullSyncRequired(e as Error)) {
-        void syncService.restartGoogleCalendarSync(r.user, { force: true });
+        void googleCalendarSyncService.repairGoogleCalendarSync(r.user);
         resynced = true;
       } else {
         logger.error(

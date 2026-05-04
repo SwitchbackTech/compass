@@ -5,7 +5,7 @@ import { type RecipeInterface as ThirdPartyRecipeInterface } from "supertokens-n
 import { NodeEnv } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { zObjectId } from "@core/types/type.utils";
-import googleAuthService from "@backend/auth/services/google/google.auth.service";
+import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
 import { ENV } from "@backend/common/constants/env.constants";
 import {

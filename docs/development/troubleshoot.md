@@ -90,6 +90,14 @@ To fix this:
 
 When a user triggers repair from the UI (`Repair Google Calendar`) and the flow does not complete as expected, first classify the failure mode from the message and SSE behavior.
 
+For Google sign-in or reconnect repair, check the backend
+`google_auth_decision` log. It shows the selected mode, token/sync health
+flags, and safe trace ids. To keep sensitive account details out of logs, it
+should not show raw emails, Google ids, or Compass user ids.
+
+If the mode is `RECONNECT_REPAIR` and a stored refresh token exists, backend can
+repair with that token even when Google does not return a new one.
+
 ### Quota / rate-limit during repair
 
 If the user sees:

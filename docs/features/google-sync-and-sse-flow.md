@@ -23,7 +23,7 @@ flowchart LR
   subgraph Backend["packages/backend"]
     Stream[events.controller stream]
     Srv[sse.server]
-    Sync[sync.service]
+    Sync[Google sync modules]
     Err[error handler]
   end
   ES -->|GET /api/events/stream| Stream
@@ -78,7 +78,7 @@ Source:
 
 - `packages/core/src/types/sse.types.ts`
 - `packages/backend/src/user/services/user.service.ts`
-- `packages/backend/src/sync/services/sync.service.ts`
+- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
 
 `IMPORT_GCAL_END` carries an explicit `operation` so the client can distinguish repair completion from incremental completion.
 
@@ -101,8 +101,8 @@ type ImportGCalEndPayload =
 
 Operational constraints:
 
-- repair path (`restartGoogleCalendarSync`) emits `operation: "REPAIR"`
-- incremental path (`importIncremental`) emits `operation: "INCREMENTAL"`
+- repair path (`repairGoogleCalendarSync`) emits `operation: "REPAIR"`
+- incremental path (`importLatestGoogleCalendarChanges`) emits `operation: "INCREMENTAL"`
 - web listeners should keep a defensive `payload?` handler for compatibility with older emitters/tests
 
 ## Outbound Flow: User Changes An Event In Compass
@@ -130,7 +130,7 @@ High-level path:
 
 1. Google posts to the notification endpoint in sync routes.
 2. Backend verifies the request origin.
-3. `SyncService.handleGcalNotification()` locates the watch and sync record.
+3. `googleWatchService.handleGoogleWatchNotification()` locates the watch and sync record.
 4. The service builds a Google Calendar client for the user.
 5. `GCalNotificationHandler` fetches incremental changes using the stored sync token.
 6. `GcalSyncProcessor` applies those changes to Compass data.
@@ -139,13 +139,21 @@ High-level path:
 Primary files:
 
 - `packages/backend/src/sync/sync.routes.config.ts`
-- `packages/backend/src/sync/services/sync.service.ts`
+- `packages/backend/src/sync/services/watch/google-watch.service.ts`
+- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- `packages/backend/src/sync/services/records/sync.records.ts`
 - `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
 - `packages/backend/src/sync/services/sync/google/gcal.sync.processor.ts`
 
+Lifecycle and outbound repair paths live in:
+
+- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- `packages/backend/src/sync/services/outbound/compass-google-mirror.service.ts`
+- `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
+
 ### Notification Outcomes And Error Semantics
 
-Same as before: recoverable `INITIALIZED` / `IGNORED` / `PROCESSED` paths, `GOOGLE_REVOKED` on invalid refresh token, etc. See inline comments in `SyncService` and `SyncController`.
+Same as before: recoverable `INITIALIZED` / `IGNORED` / `PROCESSED` paths, `GOOGLE_REVOKED` on invalid refresh token, etc. See inline comments in `googleWatchService`, `googleCalendarSyncService`, and `SyncController`.
 
 ## SSE Server Responsibilities
 

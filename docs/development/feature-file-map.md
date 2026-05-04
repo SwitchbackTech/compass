@@ -81,7 +81,13 @@ Use this document to find the first files to inspect for common Compass changes.
 - Shared SSE event names: `packages/core/src/constants/sse.constants.ts`
 - Backend SSE server: `packages/backend/src/servers/sse/sse.server.ts`
 - Events stream route: `packages/backend/src/events/events.routes.config.ts`
-- Backend sync routes/services: `packages/backend/src/sync/sync.routes.config.ts`, `packages/backend/src/sync/services`
+- Backend sync routes: `packages/backend/src/sync/sync.routes.config.ts`
+- Google Watch lifecycle and notifications: `packages/backend/src/sync/services/watch`
+- Google Calendar sync import and repair: `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- Compass-to-Google repair mirroring: `packages/backend/src/sync/services/outbound/compass-google-mirror.service.ts`
+- Sync record persistence: `packages/backend/src/sync/services/records/sync.records.ts`
+- Google import internals: `packages/backend/src/sync/services/import`
+- Google/Compass event processors: `packages/backend/src/sync/services/sync`
 
 ## Users / Metadata / Priority
 

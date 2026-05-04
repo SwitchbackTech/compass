@@ -16,7 +16,6 @@ import {
 } from "@core/types/gcal";
 import { Resource_Sync, type SyncDetails } from "@core/types/sync.types";
 import { isBaseGCalEvent } from "@core/util/event/gcal.event.util";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import { Collections } from "@backend/common/constants/collections";
 import { EventError } from "@backend/common/errors/event/event.errors";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
@@ -26,10 +25,11 @@ import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { getGcalWebhookBaseURL } from "@backend/common/util/api-base-url.util";
+import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
 import { type EventsToModify } from "@backend/sync/services/import/sync.import.types";
 import { organizeGcalEventsByType } from "@backend/sync/services/import/sync.import.util";
 import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
-import syncService from "@backend/sync/services/sync.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import {
   getGCalEventsSyncPageToken,
   getSync,
@@ -547,7 +547,7 @@ export class SyncImport {
       undefined,
     );
 
-    await syncService.startWatchingGcalResources(
+    await googleWatchService.startGoogleWatches(
       userId,
       [
         ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),

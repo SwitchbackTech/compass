@@ -1,14 +1,16 @@
 import { type Request, type Response } from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { type BaseError } from "@core/errors/errors.base";
-import { getGcalClient } from "@backend/auth/services/google/clients/google.calendar.client";
 import {
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import syncService from "../services/sync.service";
-import { getSync } from "../util/sync.queries";
+import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
+import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
+import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
+import { getSync } from "@backend/sync/util/sync.queries";
 
 class SyncDebugController {
   dispatchEventToClient = (_req: Request, res: Response) => {
@@ -29,13 +31,17 @@ class SyncDebugController {
     }
   };
 
-  importIncremental = async (req: SessionRequest, res: Res_Promise) => {
+  importLatestGoogleCalendarChanges = async (
+    req: SessionRequest,
+    res: Res_Promise,
+  ) => {
     const userId = req.params["userId"];
     if (!userId) {
       res.promise(Promise.reject({ error: "no userId param" }));
       return;
     }
-    const result = await syncService.importIncremental(userId);
+    const result =
+      await googleCalendarSyncService.importLatestGoogleCalendarChanges(userId);
 
     res.promise(result);
   };
@@ -54,9 +60,12 @@ class SyncDebugController {
         return;
       }
 
-      const result = await syncService.runMaintenanceByUser(userId, {
-        dry,
-      });
+      const result = await googleWatchMaintenanceService.runMaintenanceByUser(
+        userId,
+        {
+          dry,
+        },
+      );
 
       res.promise(result);
     } catch (e) {
@@ -90,7 +99,7 @@ class SyncDebugController {
       const calendarId = req.body.calendarId;
       const gcal = await getGcalClient(userId);
 
-      const watchResult = await syncService.startWatchingGcalEvents(
+      const watchResult = await googleWatchService.startEventWatch(
         userId,
         {
           gCalendarId: calendarId,
@@ -113,7 +122,7 @@ class SyncDebugController {
         userId = req.session?.getUserId() as string;
       }
 
-      const stopResult = await syncService.stopWatches(userId);
+      const stopResult = await googleWatchService.stopWatches(userId);
       res.promise(stopResult);
     } catch (e) {
       const _e = e as BaseError;
@@ -130,7 +139,7 @@ class SyncDebugController {
       const channelId = req.body.channelId;
       const resourceId = req.body.resourceId;
 
-      const stopResult = await syncService.stopWatch(
+      const stopResult = await googleWatchService.stopWatch(
         userId,
         channelId,
         resourceId,

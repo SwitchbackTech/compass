@@ -20,7 +20,8 @@ import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import syncService from "@backend/sync/services/sync.service";
+import syncRecords from "@backend/sync/services/records/sync.records";
+import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import {
@@ -198,7 +199,7 @@ class UserService {
       summary.events = events.deletedCount;
 
       if (gcalAccess) {
-        const watches = await syncService.stopWatches(
+        const watches = await googleWatchService.stopWatches(
           userId,
           undefined,
           new ObjectId().toString(),
@@ -213,13 +214,13 @@ class UserService {
         summary.eventWatches = watches.deletedCount;
       }
 
-      const syncs = await syncService.deleteAllByUser(userId, session);
+      const syncs = await syncRecords.deleteAllByUser(userId, session);
       summary.syncs = syncs.deletedCount;
 
       if (user) {
         // delete other users sync with same Google calendar ID (email)
         const gCalId = user.email;
-        const staleSyncs = await syncService.deleteAllByGcalId(gCalId, session);
+        const staleSyncs = await syncRecords.deleteAllByGcalId(gCalId, session);
         summary.syncs += staleSyncs.deletedCount;
       }
 
@@ -262,11 +263,11 @@ class UserService {
 
     await eventService.deleteByIntegration("google", userId);
     if (skipGoogleWatchStop) {
-      await syncService.deleteWatchesByUser(userId);
+      await googleWatchService.deleteWatchesByUser(userId);
     } else {
-      await syncService.stopWatches(userId);
+      await googleWatchService.stopWatches(userId);
     }
-    await syncService.deleteByIntegration("google", userId);
+    await syncRecords.deleteByIntegration("google", userId);
   };
 
   handleLogoutCleanup = async (
@@ -293,8 +294,33 @@ class UserService {
     }
 
     if (options.isLastActiveSession) {
-      await syncService.stopWatches(userId);
+      await googleWatchService.stopWatches(userId);
     }
+  };
+
+  private updateGoogleConnection = async (
+    cUserId: string,
+    gUser: TokenPayload,
+    refreshToken?: string,
+  ): Promise<WithId<Schema_User>> => {
+    const googleUpdate: Record<string, unknown> = {
+      "google.googleId": gUser.sub ?? "",
+      "google.picture": gUser.picture ?? "",
+      lastLoggedInAt: new Date(),
+    };
+
+    if (refreshToken !== undefined) {
+      googleUpdate["google.gRefreshToken"] = refreshToken;
+    }
+
+    const user = await mongoService.user.findOneAndUpdate(
+      { _id: zObjectId.parse(cUserId) },
+      { $set: googleUpdate },
+      { returnDocument: "after" },
+    );
+
+    zObjectId.parse(user?._id, { error: () => "Invalid credentials" });
+    return user as WithId<Schema_User>;
   };
 
   reconnectGoogleCredentials = async (
@@ -302,21 +328,14 @@ class UserService {
     gUser: TokenPayload,
     refreshToken: string,
   ): Promise<WithId<Schema_User>> => {
-    const user = await mongoService.user.findOneAndUpdate(
-      { _id: zObjectId.parse(cUserId) },
-      {
-        $set: {
-          "google.googleId": gUser.sub ?? "",
-          "google.picture": gUser.picture ?? "",
-          "google.gRefreshToken": refreshToken,
-          lastLoggedInAt: new Date(),
-        },
-      },
-      { returnDocument: "after" },
-    );
+    return this.updateGoogleConnection(cUserId, gUser, refreshToken);
+  };
 
-    zObjectId.parse(user?._id, { error: () => "Invalid credentials" });
-    return user as WithId<Schema_User>;
+  refreshGoogleProfile = async (
+    cUserId: string,
+    gUser: TokenPayload,
+  ): Promise<WithId<Schema_User>> => {
+    return this.updateGoogleConnection(cUserId, gUser);
   };
 
   pruneGoogleData = async (userId: string): Promise<void> => {

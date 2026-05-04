@@ -1,6 +1,10 @@
 {
   "extends": "../../tsconfig.json",
+  "include": ["src/**/*.ts"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.spec.ts", "src/**/__tests__/**"],
   "compilerOptions": {
+    "composite": false,
+    "declarationMap": false,
     "sourceMap": false,
     "inlineSourceMap": true
   }
