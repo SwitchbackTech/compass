@@ -67,8 +67,9 @@ describe("_assembleGridEvent", () => {
   it("should successfully convert Someday event to Grid event by adding position field", () => {
     // Create a mock Someday event (without position field)
     const somedayEvent = createMockStandaloneEvent({
+      _id: new ObjectId().toString(),
       isSomeday: true,
-    }) as Schema_WebEvent;
+    }) as Schema_WebEvent & { _id: string };
 
     const generator = _assembleGridEvent(somedayEvent);
 
@@ -93,7 +94,10 @@ describe("_assembleGridEvent", () => {
 
 describe("addId", () => {
   it("should add a raw MongoID", () => {
-    const event = createMockStandaloneEvent() as Schema_GridEvent;
+    const event = {
+      ...createMockStandaloneEvent(),
+      _id: "existing-id",
+    } as Schema_GridEvent;
     const result = addId(event);
 
     expect(result._id).toBeDefined();

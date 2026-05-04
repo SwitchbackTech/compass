@@ -116,9 +116,12 @@ describe("DNDTasksProvider", () => {
     expect(screen.getByTestId("context-value")).toHaveTextContent(
       "has-context",
     );
-    expect(contextValue).toBeDefined();
-    expect(typeof contextValue.onDragStart).toBe("function");
-    expect(typeof contextValue.onDragEnd).toBe("function");
+    const value = contextValue as DNDTasksContextValue | null;
+    if (!value) {
+      throw new Error("Expected DND tasks context to be available");
+    }
+    expect(typeof value.onDragStart).toBe("function");
+    expect(typeof value.onDragEnd).toBe("function");
   });
 
   it("should call setSelectedTaskIndex and announce on drag start", () => {

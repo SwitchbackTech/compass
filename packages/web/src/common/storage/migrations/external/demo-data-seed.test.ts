@@ -12,6 +12,7 @@ import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-stor
 import {
   GridEventSchema,
   type Schema_GridEvent,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { demoDataSeedMigration } from "./demo-data-seed";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
@@ -48,7 +49,7 @@ describe("demoDataSeedMigration", () => {
     expect(adapter.putTasks).toHaveBeenCalled();
 
     // Verify events were created (7 total: 5 today + 2 someday)
-    const eventsCall = adapter.putEvents.mock.calls[0][0];
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Schema_WebEvent[];
     expect(eventsCall).toHaveLength(7);
 
     // Verify tasks were created for 3 days
@@ -91,7 +92,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0];
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Schema_WebEvent[];
     const today = dayjs().toYearMonthDayString();
 
     // Check that at least one timed event starts today
@@ -110,7 +111,9 @@ describe("demoDataSeedMigration", () => {
     const yesterday = dayjs().subtract(1, "day").toYearMonthDayString();
     const tomorrow = dayjs().add(1, "day").toYearMonthDayString();
 
-    const putTasksCalls = adapter.putTasks.mock.calls;
+    const putTasksCalls = adapter.putTasks.mock.calls as Array<
+      [string, ReturnType<typeof createMockTask>[]]
+    >;
     const dateKeys = putTasksCalls.map((call) => call[0]);
 
     expect(dateKeys).toContain(today);
@@ -124,11 +127,15 @@ describe("demoDataSeedMigration", () => {
     await demoDataSeedMigration.migrate(adapter);
 
     const yesterday = dayjs().subtract(1, "day").toYearMonthDayString();
-    const putTasksCalls = adapter.putTasks.mock.calls;
+    const putTasksCalls = adapter.putTasks.mock.calls as Array<
+      [string, ReturnType<typeof createMockTask>[]]
+    >;
     const yesterdayCall = putTasksCalls.find((call) => call[0] === yesterday);
 
-    expect(yesterdayCall).toBeDefined();
-    const yesterdayTasks = yesterdayCall![1];
+    if (!yesterdayCall) {
+      throw new Error("Expected yesterday tasks to be seeded");
+    }
+    const yesterdayTasks = yesterdayCall[1];
     expect(yesterdayTasks.every((t) => t.status === "completed")).toBe(true);
   });
 
@@ -137,7 +144,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0];
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Schema_WebEvent[];
     const priorities = new Set(eventsCall.map((e) => e.priority));
 
     expect(priorities.has(Priorities.WORK)).toBe(true);
@@ -151,7 +158,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0];
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Schema_WebEvent[];
     const somedayEvents = eventsCall.filter((e) => e.isSomeday);
 
     expect(somedayEvents).toHaveLength(2);
@@ -162,7 +169,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0];
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Schema_WebEvent[];
     const allDayEvents = eventsCall.filter((e) => e.isAllDay);
 
     expect(allDayEvents).toHaveLength(1);
@@ -174,7 +181,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0];
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Schema_WebEvent[];
     const timedEvents = eventsCall.filter((e) => !e.isSomeday && !e.isAllDay);
 
     // RFC3339 offset format: "2026-02-19T16:30:00-08:00" (no milliseconds, offset instead of Z)
@@ -193,7 +200,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0];
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Schema_WebEvent[];
     const timedEvents = eventsCall.filter(
       (e) => !e.isSomeday && !e.isAllDay,
     ) as Schema_GridEvent[];
@@ -219,7 +226,7 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(adapter);
 
-    const eventsCall = adapter.putEvents.mock.calls[0][0];
+    const eventsCall = adapter.putEvents.mock.calls[0][0] as Schema_WebEvent[];
 
     for (const event of eventsCall) {
       if (!event.isSomeday && !event.isAllDay) {

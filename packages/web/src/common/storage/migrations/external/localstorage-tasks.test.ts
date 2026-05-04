@@ -54,7 +54,6 @@ function createMockAdapter(): MockedStorageAdapter {
     clearAllEvents: mock().mockResolvedValue(undefined),
     getMigrationRecords: mock().mockResolvedValue([]),
     setMigrationRecord: mock().mockResolvedValue(undefined),
-    close: mock(),
   };
 }
 
@@ -199,6 +198,7 @@ describe("localStorageTasksMigration", () => {
 
     expect(localStorage.getItem(validKey)).toBeNull();
     expect(localStorage.getItem(invalidKey)).toBe("invalid json {{{");
+    consoleErrorSpy.mockRestore();
   });
 
   it("skips non-array parsed values and does not remove key", async () => {

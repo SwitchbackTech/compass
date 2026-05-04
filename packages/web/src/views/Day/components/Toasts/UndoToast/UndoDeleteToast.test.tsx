@@ -3,7 +3,12 @@ import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
 import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 
-const toastMock = mock(() => "test-toast-id");
+type ToastMock = ReturnType<typeof mock> & {
+  dismiss: ReturnType<typeof mock>;
+  update: ReturnType<typeof mock>;
+};
+
+const toastMock = mock(() => "test-toast-id") as ToastMock;
 toastMock.dismiss = mock();
 toastMock.update = mock();
 
@@ -50,7 +55,10 @@ describe("UndoDeleteToast", () => {
       );
 
       const toastButton = screen.getByText("Deleted").closest("button");
-      fireEvent.click(toastButton!);
+      if (!toastButton) {
+        throw new Error("Expected toast button");
+      }
+      fireEvent.click(toastButton);
 
       expect(mockOnRestore).toHaveBeenCalledTimes(1);
     });
@@ -63,7 +71,10 @@ describe("UndoDeleteToast", () => {
       );
 
       const toastButton = screen.getByText("Deleted").closest("button");
-      fireEvent.click(toastButton!);
+      if (!toastButton) {
+        throw new Error("Expected toast button");
+      }
+      fireEvent.click(toastButton);
 
       expect(toastMock.dismiss).toHaveBeenCalledWith(testToastId);
     });

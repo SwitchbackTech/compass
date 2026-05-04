@@ -34,7 +34,7 @@ describe("setupMinuteSync", () => {
         intervalCallback = () => callback();
       }
       return intervalId;
-    }) as typeof setInterval);
+    }) as unknown as typeof setInterval);
     setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
       callback: TimerHandler,
     ) => {
@@ -42,7 +42,7 @@ describe("setupMinuteSync", () => {
         timeoutCallback = () => callback();
       }
       return timeoutId;
-    }) as typeof setTimeout);
+    }) as unknown as typeof setTimeout);
   });
 
   afterEach(() => {

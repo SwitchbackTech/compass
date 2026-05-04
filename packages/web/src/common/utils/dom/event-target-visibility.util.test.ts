@@ -7,7 +7,8 @@ const mockIntersectionObserver = mock();
 const mockObserve = mock();
 const mockDisconnect = mock();
 
-global.IntersectionObserver = mockIntersectionObserver;
+global.IntersectionObserver =
+  mockIntersectionObserver as unknown as typeof IntersectionObserver;
 
 describe("onEventTargetVisibility", () => {
   beforeEach(() => {
@@ -40,7 +41,9 @@ describe("onEventTargetVisibility", () => {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
 
-    let observerCallback: (entries: IntersectionObserverEntry[]) => void;
+    let observerCallback:
+      | ((entries: IntersectionObserverEntry[]) => void)
+      | undefined;
 
     mockIntersectionObserver.mockImplementation((callback) => {
       observerCallback = callback;
@@ -53,8 +56,11 @@ describe("onEventTargetVisibility", () => {
     const eventHandler = onEventTargetVisibility(mockCallback, true);
     eventHandler(mockEvent);
 
+    if (!observerCallback) {
+      throw new Error("Expected IntersectionObserver callback");
+    }
     // Simulate intersection observer callback with isIntersecting = true
-    observerCallback!([{ isIntersecting: true } as IntersectionObserverEntry]);
+    observerCallback([{ isIntersecting: true } as IntersectionObserverEntry]);
 
     expect(mockCallback).toHaveBeenCalledTimes(1);
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
@@ -66,7 +72,9 @@ describe("onEventTargetVisibility", () => {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
 
-    let observerCallback: (entries: IntersectionObserverEntry[]) => void;
+    let observerCallback:
+      | ((entries: IntersectionObserverEntry[]) => void)
+      | undefined;
 
     mockIntersectionObserver.mockImplementation((callback) => {
       observerCallback = callback;
@@ -79,8 +87,11 @@ describe("onEventTargetVisibility", () => {
     const eventHandler = onEventTargetVisibility(mockCallback, false);
     eventHandler(mockEvent);
 
+    if (!observerCallback) {
+      throw new Error("Expected IntersectionObserver callback");
+    }
     // Simulate intersection observer callback with isIntersecting = false
-    observerCallback!([{ isIntersecting: false } as IntersectionObserverEntry]);
+    observerCallback([{ isIntersecting: false } as IntersectionObserverEntry]);
 
     expect(mockCallback).toHaveBeenCalledTimes(1);
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
@@ -92,7 +103,9 @@ describe("onEventTargetVisibility", () => {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
 
-    let observerCallback: (entries: IntersectionObserverEntry[]) => void;
+    let observerCallback:
+      | ((entries: IntersectionObserverEntry[]) => void)
+      | undefined;
 
     mockIntersectionObserver.mockImplementation((callback) => {
       observerCallback = callback;
@@ -105,8 +118,11 @@ describe("onEventTargetVisibility", () => {
     const eventHandler = onEventTargetVisibility(mockCallback, true);
     eventHandler(mockEvent);
 
+    if (!observerCallback) {
+      throw new Error("Expected IntersectionObserver callback");
+    }
     // Simulate intersection observer callback with isIntersecting = false (doesn't match expected true)
-    observerCallback!([{ isIntersecting: false } as IntersectionObserverEntry]);
+    observerCallback([{ isIntersecting: false } as IntersectionObserverEntry]);
 
     expect(mockCallback).not.toHaveBeenCalled();
     expect(mockDisconnect).not.toHaveBeenCalled();
@@ -118,7 +134,9 @@ describe("onEventTargetVisibility", () => {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
 
-    let observerCallback: (entries: IntersectionObserverEntry[]) => void;
+    let observerCallback:
+      | ((entries: IntersectionObserverEntry[]) => void)
+      | undefined;
 
     mockIntersectionObserver.mockImplementation((callback) => {
       observerCallback = callback;
@@ -131,8 +149,11 @@ describe("onEventTargetVisibility", () => {
     const eventHandler = onEventTargetVisibility(mockCallback);
     eventHandler(mockEvent);
 
+    if (!observerCallback) {
+      throw new Error("Expected IntersectionObserver callback");
+    }
     // Simulate intersection observer callback with isIntersecting = false (matches default)
-    observerCallback!([{ isIntersecting: false } as IntersectionObserverEntry]);
+    observerCallback([{ isIntersecting: false } as IntersectionObserverEntry]);
 
     expect(mockCallback).toHaveBeenCalledTimes(1);
     expect(mockDisconnect).toHaveBeenCalledTimes(1);
@@ -144,7 +165,9 @@ describe("onEventTargetVisibility", () => {
       currentTarget: document.createElement("div"),
     } as SyntheticEvent<HTMLDivElement>;
 
-    let observerCallback: (entries: IntersectionObserverEntry[]) => void;
+    let observerCallback:
+      | ((entries: IntersectionObserverEntry[]) => void)
+      | undefined;
 
     mockIntersectionObserver.mockImplementation((callback) => {
       observerCallback = callback;
@@ -157,8 +180,11 @@ describe("onEventTargetVisibility", () => {
     const eventHandler = onEventTargetVisibility(mockCallback, true);
     eventHandler(mockEvent);
 
+    if (!observerCallback) {
+      throw new Error("Expected IntersectionObserver callback");
+    }
     // Simulate intersection observer callback with multiple entries
-    observerCallback!([
+    observerCallback([
       { isIntersecting: true } as IntersectionObserverEntry,
       { isIntersecting: false } as IntersectionObserverEntry,
     ]);

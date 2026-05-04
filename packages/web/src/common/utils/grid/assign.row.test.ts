@@ -116,7 +116,9 @@ describe("case: 10 multi-week events with identical times", () => {
 });
 
 describe("case: March 13-19", () => {
-  const { rowsCount, allDayEvents } = assignEventsToRow(mar13To19);
+  const { rowsCount, allDayEvents } = assignEventsToRow(
+    mar13To19 as Parameters<typeof assignEventsToRow>[0],
+  );
   it("uses 5 rows", () => {
     expect(rowsCount).toBe(5);
   });

@@ -35,7 +35,7 @@ describe("event-emitter.util", () => {
           expect(val.x).toBe(100);
           expect(val.y).toBe(100);
           expect(val.element).toBe(mockElement);
-          expect(val.event).toBe(event);
+          expect(val.event as unknown).toBe(event);
           subscription.unsubscribe();
           resolve();
         });

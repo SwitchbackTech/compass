@@ -23,7 +23,7 @@ describe("BaseApi backend availability", () => {
   it("marks the backend unavailable when fetch cannot reach it", async () => {
     globalThis.fetch = mock(() =>
       Promise.reject(new TypeError("Failed to fetch")),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     await expect(BaseApi.get("/event")).rejects.toMatchObject({
       name: "ApiError",
@@ -36,7 +36,7 @@ describe("BaseApi backend availability", () => {
     markBackendUnavailable();
     globalThis.fetch = mock(() =>
       Promise.resolve(new Response("{}", { status: 200 })),
-    ) as typeof fetch;
+    ) as unknown as typeof fetch;
 
     await BaseApi.get("/config");
 

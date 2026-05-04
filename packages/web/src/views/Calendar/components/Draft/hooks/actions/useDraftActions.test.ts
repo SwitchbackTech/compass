@@ -50,9 +50,10 @@ const createDraft = (
   user: "user-1",
   position: {
     isOverlapping: false,
+    totalEventsInGroup: 1,
     widthMultiplier: 1,
     horizontalOrder: 1,
-    dragOffset: { y: 0 },
+    dragOffset: { x: 0, y: 0 },
     initialX: null,
     initialY: null,
   },
@@ -134,7 +135,7 @@ describe("useDraftActions", () => {
       reason: null,
       value: {
         count: 1,
-        data: [draft._id],
+        data: ["event-1"],
         offset: 0,
         page: 1,
         pageSize: 1,

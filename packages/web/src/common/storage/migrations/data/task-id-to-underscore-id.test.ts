@@ -26,7 +26,6 @@ function createMockAdapter(): MockedStorageAdapter {
     clearAllEvents: mock().mockResolvedValue(undefined),
     getMigrationRecords: mock().mockResolvedValue([]),
     setMigrationRecord: mock().mockResolvedValue(undefined),
-    close: mock(),
   };
 }
 

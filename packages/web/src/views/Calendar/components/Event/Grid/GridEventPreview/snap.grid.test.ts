@@ -15,9 +15,6 @@ describe("snapToGrid", () => {
       y: 0,
       bottom: 0,
       right: 0,
-      toJSON: () => {
-        throw new Error("Function not implemented.");
-      },
     },
     hourHeight: 60,
     colWidths: Array(7).fill(100) as number[],

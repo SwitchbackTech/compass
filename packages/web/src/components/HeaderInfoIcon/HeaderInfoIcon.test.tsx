@@ -46,7 +46,7 @@ const mockUseConnectGoogle = mock(
   }),
 );
 const mockShouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
-const mockSubscribeToAuthState = mock(() => () => {});
+const mockSubscribeToAuthState = mock((_listener: () => void) => () => {});
 const mockClearAnonymousCalendarChangeSignUpPrompt = mock();
 const mockClearAuthenticationState = mock();
 const mockGetAuthState = mock();

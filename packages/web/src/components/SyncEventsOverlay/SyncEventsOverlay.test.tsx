@@ -89,10 +89,10 @@ describe("SyncEventsOverlay", () => {
       if (typeof callback === "function") {
         pendingTimers.push(() => callback());
       }
-      return 1 as ReturnType<typeof setTimeout>;
-    }) as typeof setTimeout);
+      return 1;
+    }) as unknown as typeof setTimeout);
     clearTimeoutSpy = spyOn(globalThis, "clearTimeout").mockImplementation(
-      (() => undefined) as typeof clearTimeout,
+      (() => undefined) as unknown as typeof clearTimeout,
     );
     document.body.removeAttribute("data-app-locked");
   });

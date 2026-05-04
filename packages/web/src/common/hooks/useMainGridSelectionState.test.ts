@@ -16,10 +16,10 @@ describe("useMainGridSelectionState", () => {
       callback: TimerHandler,
     ) => {
       if (typeof callback === "function") {
-        timeoutCallback = callback;
+        timeoutCallback = () => callback();
       }
       return 1;
-    }) as typeof setTimeout);
+    }) as unknown as typeof setTimeout);
 
     act(() => {
       selecting$.next(false);
