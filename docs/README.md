@@ -6,7 +6,7 @@ Start with [AGENTS.md](../AGENTS.md) for repo rules and command defaults. Use th
 
 ## How docs get published
 
-Markdown files in this `docs/` directory are automatically mirrored to [docs.compasscalendar.com](https://docs.compasscalendar.com). A GitHub Action detects any push to `main` that touches `docs/**` and syncs the changes to the doc site — no manual steps needed. Just edit the markdown here and the live site updates itself.
+Markdown files in this `docs/` directory are automatically mirrored to [docs.compasscalendar.com](https://docs.compasscalendar.com). A GitHub Action detects any push to `main` that touches `docs/**` and syncs the changes to the doc site. Just edit any of the markdown in `docs/` and the doc site will update itself upon merge.
 
 ## Start Here
 
