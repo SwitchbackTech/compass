@@ -207,6 +207,11 @@ describe("GoogleAuthService", () => {
   });
 
   describe("repairGoogleConnection", () => {
+    const mockDetermineGoogleAuthMode =
+      determineGoogleAuthMode as unknown as jest.MockedFunction<
+        typeof determineGoogleAuthMode
+      >;
+
     it("relinks Google to the Compass user and schedules a full reimport", async () => {
       const user = await UserDriver.createUser();
       const compassUserId = user._id.toString();
@@ -281,6 +286,81 @@ describe("GoogleAuthService", () => {
       expect(restartSpy).toHaveBeenCalledWith(compassUserId);
 
       restartSpy.mockRestore();
+    });
+
+    it("repairs sync with the stored refresh token when Google sign-in does not return a new one", async () => {
+      const user = await UserDriver.createUser();
+      const compassUserId = user._id.toString();
+      const storedRefreshToken = user.google?.gRefreshToken;
+      const providerUser = UserDriver.generateGoogleUser({
+        email: user.email,
+        sub: user.google?.googleId,
+        picture: faker.image.url(),
+      });
+      const restartSpy = jest
+        .spyOn(googleSyncLifecycleService, "restartGoogleCalendarSync")
+        .mockResolvedValue();
+
+      mockDetermineGoogleAuthMode.mockResolvedValue({
+        authMode: "RECONNECT_REPAIR",
+        compassUserId,
+        hasStoredRefreshToken: true,
+        hasHealthySync: false,
+        createdNewRecipeUser: false,
+      });
+
+      await expect(
+        googleAuthService.handleGoogleAuth({
+          providerUser,
+          oAuthTokens: {
+            access_token: faker.internet.jwt(),
+          },
+          createdNewRecipeUser: false,
+          recipeUserId: compassUserId,
+          loginMethodsLength: 1,
+        }),
+      ).resolves.toBeUndefined();
+
+      const updatedUser = await mongoService.user.findOne({ _id: user._id });
+      const metadata =
+        await userMetadataService.fetchUserMetadata(compassUserId);
+
+      expect(updatedUser?.google?.gRefreshToken).toBe(storedRefreshToken);
+      expect(updatedUser?.google?.picture).toBe(providerUser.picture);
+      expect(metadata.sync?.importGCal).toBe("RESTART");
+      expect(metadata.sync?.incrementalGCalSync).toBe("RESTART");
+      expect(restartSpy).toHaveBeenCalledWith(compassUserId);
+
+      restartSpy.mockRestore();
+    });
+  });
+
+  describe("googleSignin", () => {
+    it("preserves the stored refresh token when Google does not return a new one", async () => {
+      const user = await UserDriver.createUser();
+      const compassUserId = user._id.toString();
+      const storedRefreshToken = user.google?.gRefreshToken;
+      const providerUser = UserDriver.generateGoogleUser({
+        sub: user.google?.googleId,
+        picture: faker.image.url(),
+      });
+      const importSpy = jest
+        .spyOn(googleSyncLifecycleService, "importIncremental")
+        .mockResolvedValue(undefined);
+
+      await expect(
+        googleAuthService.googleSignin(providerUser, {
+          access_token: faker.internet.jwt(),
+        }),
+      ).resolves.toEqual({ cUserId: compassUserId });
+
+      const updatedUser = await mongoService.user.findOne({ _id: user._id });
+
+      expect(updatedUser?.google?.gRefreshToken).toBe(storedRefreshToken);
+      expect(updatedUser?.google?.picture).toBe(providerUser.picture);
+      expect(importSpy).toHaveBeenCalledWith(compassUserId, expect.any(Object));
+
+      importSpy.mockRestore();
     });
   });
 

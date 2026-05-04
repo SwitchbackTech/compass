@@ -46,6 +46,38 @@ class GoogleAuthService {
     return { cUserId: compassUserId };
   };
 
+  private persistStoredGoogleConnection = async (
+    compassUserId: string,
+    gUser: TokenPayload,
+  ) => {
+    const cUserId = zObjectId.parse(compassUserId).toString();
+    StringV4Schema.parse(gUser.sub, {
+      error: () => "Invalid Google user ID",
+    });
+
+    const existingUser = await findCompassUserBy("_id", cUserId);
+
+    if (!existingUser?.google?.gRefreshToken) {
+      throw error(
+        UserError.MissingGoogleRefreshToken,
+        "User has not connected Google Calendar",
+      );
+    }
+
+    await userService.refreshGoogleProfile(cUserId, gUser);
+
+    await userMetadataService.updateUserMetadata({
+      userId: cUserId,
+      data: {
+        sync: { importGCal: "RESTART", incrementalGCalSync: "RESTART" },
+      },
+    });
+
+    this.restartGoogleCalendarSyncInBackground(cUserId);
+
+    return { cUserId };
+  };
+
   private restartGoogleCalendarSyncInBackground = (cUserId: string) => {
     googleSyncLifecycleService
       .restartGoogleCalendarSync(cUserId)
@@ -103,6 +135,10 @@ class GoogleAuthService {
     gUser: TokenPayload,
     oAuthTokens: Pick<Credentials, "refresh_token" | "access_token">,
   ) {
+    if (!oAuthTokens.refresh_token) {
+      return this.persistStoredGoogleConnection(compassUserId, gUser);
+    }
+
     const {
       cUserId,
       gUser: validatedGUser,
@@ -168,19 +204,23 @@ class GoogleAuthService {
     const gUserId = StringV4Schema.parse(gUser.sub, {
       error: () => "Invalid Google user ID",
     });
-    const refreshToken = StringV4Schema.parse(oAuthTokens.refresh_token, {
-      error: () => "Invalid or missing Google refresh token",
-    });
+    const refreshToken = oAuthTokens.refresh_token
+      ? StringV4Schema.parse(oAuthTokens.refresh_token, {
+          error: () => "Invalid or missing Google refresh token",
+        })
+      : undefined;
+    const update: Record<string, unknown> = {
+      "google.picture": gUser.picture || "not provided",
+      lastLoggedInAt: new Date(),
+    };
+
+    if (refreshToken) {
+      update["google.gRefreshToken"] = refreshToken;
+    }
 
     const user = await mongoService.user.findOneAndUpdate(
       { "google.googleId": gUserId },
-      {
-        $set: {
-          "google.gRefreshToken": refreshToken,
-          "google.picture": gUser.picture || "not provided",
-          lastLoggedInAt: new Date(),
-        },
-      },
+      { $set: update },
       { returnDocument: "after" },
     );
 
@@ -263,8 +303,13 @@ class GoogleAuthService {
 
       case "RECONNECT_REPAIR": {
         // User exists but needs repair (missing refresh token or unhealthy sync)
+        const compassUserId = decision.compassUserId;
+        if (!compassUserId) {
+          throw new Error("Compass user ID expected for Google repair");
+        }
+
         await this.repairGoogleConnection(
-          decision.compassUserId!,
+          compassUserId,
           providerUser,
           oAuthTokens,
         );

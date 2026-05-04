@@ -298,26 +298,44 @@ class UserService {
     }
   };
 
-  reconnectGoogleCredentials = async (
+  private updateGoogleConnection = async (
     cUserId: string,
     gUser: TokenPayload,
-    refreshToken: string,
+    refreshToken?: string,
   ): Promise<WithId<Schema_User>> => {
+    const googleUpdate: Record<string, unknown> = {
+      "google.googleId": gUser.sub ?? "",
+      "google.picture": gUser.picture ?? "",
+      lastLoggedInAt: new Date(),
+    };
+
+    if (refreshToken !== undefined) {
+      googleUpdate["google.gRefreshToken"] = refreshToken;
+    }
+
     const user = await mongoService.user.findOneAndUpdate(
       { _id: zObjectId.parse(cUserId) },
-      {
-        $set: {
-          "google.googleId": gUser.sub ?? "",
-          "google.picture": gUser.picture ?? "",
-          "google.gRefreshToken": refreshToken,
-          lastLoggedInAt: new Date(),
-        },
-      },
+      { $set: googleUpdate },
       { returnDocument: "after" },
     );
 
     zObjectId.parse(user?._id, { error: () => "Invalid credentials" });
     return user as WithId<Schema_User>;
+  };
+
+  reconnectGoogleCredentials = async (
+    cUserId: string,
+    gUser: TokenPayload,
+    refreshToken: string,
+  ): Promise<WithId<Schema_User>> => {
+    return this.updateGoogleConnection(cUserId, gUser, refreshToken);
+  };
+
+  refreshGoogleProfile = async (
+    cUserId: string,
+    gUser: TokenPayload,
+  ): Promise<WithId<Schema_User>> => {
+    return this.updateGoogleConnection(cUserId, gUser);
   };
 
   pruneGoogleData = async (userId: string): Promise<void> => {
