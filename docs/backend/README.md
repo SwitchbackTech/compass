@@ -1,4 +1,4 @@
-# Compass Backend
+# Backend
 
 Backend service for auth/session management, event persistence, Google sync,
 and SSE notifications.
