@@ -71,12 +71,11 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   }
   if (isNow) {
     nowShortcuts = [
-      { k: "d", label: "Edit description" },
+      { k: "e", label: "Edit description" },
       { k: "Mod+Enter", label: "Save description" },
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },
       { k: "Enter", label: "Mark complete" },
-      { k: "Esc", label: "Back to Today" },
     ];
   }
 

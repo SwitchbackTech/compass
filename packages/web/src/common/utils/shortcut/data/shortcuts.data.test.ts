@@ -120,9 +120,13 @@ describe("shortcuts.data", () => {
         isNow: true,
       });
 
-      expect(shortcuts.nowShortcuts).toHaveLength(6);
-      expect(shortcuts.nowShortcuts[0]).toEqual({
+      expect(shortcuts.globalShortcuts).toContainEqual({
         k: "d",
+        label: "Day",
+      });
+      expect(shortcuts.nowShortcuts).toHaveLength(5);
+      expect(shortcuts.nowShortcuts[0]).toEqual({
+        k: "e",
         label: "Edit description",
       });
       expect(shortcuts.nowShortcuts[1]).toEqual({
@@ -138,7 +142,7 @@ describe("shortcuts.data", () => {
         k: "Enter",
         label: "Mark complete",
       });
-      expect(shortcuts.nowShortcuts[5]).toEqual({
+      expect(shortcuts.nowShortcuts).not.toContainEqual({
         k: "Esc",
         label: "Back to Today",
       });

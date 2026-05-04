@@ -1,6 +1,7 @@
 import { useState } from "react";
 import _CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
+import { useNavigate } from "react-router-dom";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
@@ -16,6 +17,7 @@ const CommandPalette = resolveDefaultExport(_CommandPalette);
 
 export const NowCmdPalette = () => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
@@ -32,13 +34,13 @@ export const NowCmdPalette = () => {
             id: "go-to-day",
             children: `Go to Day [${VIEW_SHORTCUTS.day.key}]`,
             icon: "CalendarDaysIcon",
-            onClick: () => pressKey(VIEW_SHORTCUTS.day.key),
+            onClick: () => navigate(VIEW_SHORTCUTS.day.route),
           },
           {
             id: "go-to-week",
             children: `Go to Week [${VIEW_SHORTCUTS.week.key}]`,
             icon: "CalendarIcon",
-            onClick: () => pressKey(VIEW_SHORTCUTS.week.key),
+            onClick: () => navigate(VIEW_SHORTCUTS.week.route),
           },
           {
             id: "edit-reminder",
