@@ -8,7 +8,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual

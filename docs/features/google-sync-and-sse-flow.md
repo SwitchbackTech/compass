@@ -78,7 +78,7 @@ Source:
 
 - `packages/core/src/types/sse.types.ts`
 - `packages/backend/src/user/services/user.service.ts`
-- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
 
 `IMPORT_GCAL_END` carries an explicit `operation` so the client can distinguish repair completion from incremental completion.
 
@@ -141,14 +141,14 @@ Primary files:
 - `packages/backend/src/sync/sync.routes.config.ts`
 - `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`
 - `packages/backend/src/sync/services/watch/google-watch.service.ts`
-- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
 - `packages/backend/src/sync/services/records/sync-records.repository.ts`
 - `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
 - `packages/backend/src/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation.ts`
 
 Lifecycle and outbound repair paths live in:
 
-- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
 - `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
 - `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
 
@@ -207,7 +207,7 @@ Redux reasons for refetch (`Sync_AsyncStateContextReason`) reuse the same string
 Source files:
 
 - `packages/backend/src/user/services/user-metadata.service.ts`
-- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.health.ts`
+- `packages/backend/src/sync/services/google-sync/google-sync.health.ts`
 - `packages/core/src/types/user.types.ts`
 - `packages/web/src/sse/hooks/useGcalSSE.ts`
 

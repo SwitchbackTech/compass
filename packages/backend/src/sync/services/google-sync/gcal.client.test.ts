@@ -3,7 +3,7 @@ import { GaxiosError } from "gaxios";
 import { ObjectId } from "mongodb";
 import { type Schema_User } from "@core/types/user.types";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google-calendar.client";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 jest.mock("@backend/user/queries/user.queries", () => ({

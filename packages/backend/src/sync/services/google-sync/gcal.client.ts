@@ -10,7 +10,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
-const logger = Logger("app:google.calendar.service");
+const logger = Logger("app:gcal.client");
 
 export const getGAuthClientForUser = async (
   user: WithId<Schema_User> | { _id: string },

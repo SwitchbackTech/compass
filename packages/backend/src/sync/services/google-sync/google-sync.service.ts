@@ -11,14 +11,14 @@ import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import compassToGoogleBackfill from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google-backfill";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google-calendar.client";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { createSyncImport } from "@backend/sync/services/import/google-import.service";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
-const logger = Logger("app:google-calendar-sync.service");
+const logger = Logger("app:google-sync.service");
 
 const activeFullSyncRestarts = new Set<string>();
 

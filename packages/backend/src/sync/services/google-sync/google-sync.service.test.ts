@@ -7,7 +7,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";

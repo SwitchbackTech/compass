@@ -84,8 +84,8 @@ Use this document to find the first files to inspect for common Compass changes.
 - Backend sync routes: `packages/backend/src/sync/sync.routes.config.ts`
 - Public watch notification ingress: `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`
 - Google Watch lifecycle and notifications: `packages/backend/src/sync/services/watch`
-- Google Calendar sync import and repair: `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
-- Google sync health diagnosis: `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.health.ts`
+- Google Calendar sync import and repair: `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
+- Google sync health diagnosis: `packages/backend/src/sync/services/google-sync/google-sync.health.ts`
 - Compass-to-Google repair mirroring: `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
 - Sync record persistence: `packages/backend/src/sync/services/records/sync-records.repository.ts`
 - Google import internals: `packages/backend/src/sync/services/import`

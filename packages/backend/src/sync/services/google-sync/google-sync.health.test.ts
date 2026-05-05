@@ -10,7 +10,7 @@ import {
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
-import { isGoogleCalendarSyncHealthy } from "./google-calendar-sync.health";
+import { isGoogleCalendarSyncHealthy } from "./google-sync.health";
 
 jest.mock("@backend/sync/services/watch/google-watch-config", () => ({
   ...jest.requireActual("@backend/sync/services/watch/google-watch-config"),

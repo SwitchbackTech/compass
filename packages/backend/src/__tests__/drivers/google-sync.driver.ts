@@ -5,7 +5,7 @@ import { type Schema_User } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google-calendar.client";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 

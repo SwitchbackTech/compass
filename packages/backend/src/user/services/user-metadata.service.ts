@@ -6,7 +6,7 @@ import {
   type GoogleConnectionState,
   type UserMetadata,
 } from "@core/types/user.types";
-import { isGoogleCalendarSyncHealthy } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.health";
+import { isGoogleCalendarSyncHealthy } from "@backend/sync/services/google-sync/google-sync.health";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
 

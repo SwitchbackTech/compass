@@ -13,8 +13,8 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.errors";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { publicWatchNotificationIngress } from "@backend/sync/services/public-watch-notifications/public-watch-notification.ingress";
 import { getSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";

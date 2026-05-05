@@ -8,7 +8,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import gcalService from "@backend/common/services/gcal/gcal.service";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google-calendar.client";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { getCalendarsToSync } from "@backend/sync/services/init/google-sync-init";
 
 describe("getCalendarsToSync", () => {

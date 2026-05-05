@@ -8,8 +8,8 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google-calendar.client";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { hasUpdatedCompassEventRecently } from "@backend/sync/services/watch/google-watch-activity";
 import {

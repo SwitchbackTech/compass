@@ -19,7 +19,7 @@ import * as supertokensMiddleware from "@backend/common/middleware/supertokens.m
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";

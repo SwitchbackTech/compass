@@ -20,7 +20,7 @@ import {
   _updateGcal,
 } from "@backend/event/services/event.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.errors";
+import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 import { type Event_Transition } from "@backend/sync/sync.types";
 import {
   isPersistedCoreEvent,
