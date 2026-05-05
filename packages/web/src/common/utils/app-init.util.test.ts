@@ -44,7 +44,7 @@ describe("app-init.util", () => {
         timeoutCallback = () => callback();
       }
       return timeoutId;
-    }) as typeof setTimeout);
+    }) as unknown as typeof setTimeout);
   });
 
   afterEach(() => {

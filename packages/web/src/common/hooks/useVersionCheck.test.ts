@@ -71,7 +71,7 @@ describe("useVersionCheck", () => {
       ok: true,
       json: async () => ({ version: "dev" }),
     });
-    global.fetch = fetchMock as typeof fetch;
+    global.fetch = fetchMock as unknown as typeof fetch;
   });
 
   afterEach(() => {

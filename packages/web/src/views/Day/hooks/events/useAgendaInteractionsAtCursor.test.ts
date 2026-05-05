@@ -1,4 +1,7 @@
-import { type useFloating } from "@floating-ui/react";
+import {
+  type useFloating,
+  type useInteractions as useFloatingInteractions,
+} from "@floating-ui/react";
 import { renderHook } from "@testing-library/react";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -40,7 +43,11 @@ describe("useAgendaInteractionsAtCursor", () => {
     const mockHover = {};
     const mockFocus = {};
     const mockDismiss = {};
-    const mockInteractions = { getReferenceProps: mock() };
+    const mockInteractions = {
+      getFloatingProps: mock(),
+      getItemProps: mock(),
+      getReferenceProps: mock(),
+    } as ReturnType<typeof useFloatingInteractions>;
 
     useClick.mockReturnValue(mockClick);
     useHover.mockReturnValue(mockHover);

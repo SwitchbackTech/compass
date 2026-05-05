@@ -1,8 +1,8 @@
 import { type DragEndEvent } from "@dnd-kit/core";
 import { renderHook } from "@testing-library/react";
 import { BehaviorSubject } from "rxjs";
-import { Categories_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
@@ -41,16 +41,18 @@ mock.module("@web/views/Day/util/agenda/agenda.util", () => ({
   // Provide a focused mock that includes the named export consumers expect.
   // Keep a safe default for other exports so concurrent tests won't break imports.
   getSnappedMinutes: mockGetSnappedMinutes,
-  getAgendaEventTitle: (event) => `${event?.title || ""} -`,
-  getAgendaEventTime: (d) => (d ? new Date(d).toISOString() : ""),
-  getAgendaEventPosition: (_date) => 0,
-  getNowLinePosition: (_date) => 0,
-  getEventTimeFromPosition: (_y, dateInView) =>
-    dateInView.startOf ? dateInView.startOf("day") : new Date(),
-  roundMinutesToNearestFifteen: (minutes) => Math.round(minutes / 15) * 15,
-  roundToNearestFifteenWithinHour: (minutes) =>
+  getAgendaEventTitle: (event: Schema_Event) => `${event.title ?? ""} -`,
+  getAgendaEventTime: (date: Date | string) =>
+    date ? new Date(date).toISOString() : "",
+  getAgendaEventPosition: (_date: Date) => 0,
+  getNowLinePosition: (_date: Date) => 0,
+  getEventTimeFromPosition: (_y: number, dateInView: Dayjs) =>
+    dateInView.startOf("day"),
+  roundMinutesToNearestFifteen: (minutes: number) =>
+    Math.round(minutes / 15) * 15,
+  roundToNearestFifteenWithinHour: (minutes: number) =>
     Math.min(45, Math.round(minutes / 15) * 15),
-  getEventHeight: (_event) => 4,
+  getEventHeight: (_event: Pick<Schema_Event, "startDate" | "endDate">) => 4,
 }));
 
 mock.module("@web/ducks/events/selectors/event.selectors", () => ({

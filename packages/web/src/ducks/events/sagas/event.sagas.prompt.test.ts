@@ -38,9 +38,10 @@ const { createEvent, editEvent } =
   require("./event.sagas") as typeof import("./event.sagas");
 
 describe("event sign-up prompt failure paths", () => {
+  const mockEventId = "event-1";
   const mockEvent = {
     ...createMockStandaloneEvent(),
-    _id: "event-1",
+    _id: mockEventId,
     isSomeday: false,
   } as Schema_Event;
 
@@ -106,7 +107,7 @@ describe("event sign-up prompt failure paths", () => {
           events: {
             entities: {
               value: {
-                [mockEvent._id]: mockEvent,
+                [mockEventId]: mockEvent,
               },
             },
             pendingEvents: { eventIds: [] },

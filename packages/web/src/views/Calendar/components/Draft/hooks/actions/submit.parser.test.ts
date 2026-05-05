@@ -5,23 +5,60 @@ import {
 } from "@web/common/types/web.event.types";
 import { afterAll, describe, expect, it, mock } from "bun:test";
 
+const createMockGridPosition = (): Schema_GridEvent["position"] => ({
+  isOverlapping: false,
+  totalEventsInGroup: 1,
+  widthMultiplier: 1,
+  horizontalOrder: 1,
+  dragOffset: { x: 0, y: 0 },
+  initialX: null,
+  initialY: null,
+});
+
+const createMockGridEvent = (
+  overrides: Partial<Schema_GridEvent> = {},
+): Schema_GridEvent => ({
+  _id: "test-grid-event-id",
+  title: "Test Grid Event",
+  startDate: "2024-01-15T10:00:00Z",
+  endDate: "2024-01-15T11:00:00Z",
+  isAllDay: false,
+  isSomeday: false,
+  origin: Origin.COMPASS,
+  priority: Priorities.UNASSIGNED,
+  user: "test-user",
+  position: createMockGridPosition(),
+  ...overrides,
+});
+
+const createMockSomedayEvent = (
+  overrides: Partial<Schema_SomedayEvent> = {},
+): Schema_SomedayEvent => ({
+  _id: "test-someday-event-id",
+  title: "Test Someday Event",
+  startDate: "2024-01-15T10:00:00Z",
+  endDate: "2024-01-15T11:00:00Z",
+  isAllDay: false,
+  isSomeday: true,
+  origin: Origin.COMPASS,
+  priority: Priorities.UNASSIGNED,
+  user: "test-user",
+  order: 1,
+  ...overrides,
+});
+
 const validateGridEvent = mock(
   (event: Schema_GridEvent): Schema_GridEvent => event,
 );
 const validateSomedayEvent = mock(
   (event: Schema_SomedayEvent): Schema_SomedayEvent => event,
 );
-const assembleGridEvent = mock((event: Partial<Schema_GridEvent>) => ({
-  ...event,
-  position: {
-    isOverlapping: false,
-    widthMultiplier: 1,
-    horizontalOrder: 1,
-    dragOffset: { y: 0 },
-    initialX: null,
-    initialY: null,
-  },
-}));
+const assembleGridEvent = mock((event: Partial<Schema_GridEvent>) =>
+  createMockGridEvent({
+    ...event,
+    position: event.position ?? createMockGridPosition(),
+  }),
+);
 
 mock.module("@web/common/validators/grid.event.validator", () => ({
   validateGridEvent,
@@ -39,45 +76,6 @@ const { OnSubmitParser, parseSomedayEventBeforeSubmit, prepEventBeforeSubmit } =
   require("./submit.parser") as typeof import("./submit.parser");
 
 describe("submit.parser", () => {
-  const createMockGridEvent = (
-    overrides: Partial<Schema_GridEvent> = {},
-  ): Schema_GridEvent => ({
-    _id: "test-grid-event-id",
-    title: "Test Grid Event",
-    startDate: "2024-01-15T10:00:00Z",
-    endDate: "2024-01-15T11:00:00Z",
-    isAllDay: false,
-    isSomeday: false,
-    origin: Origin.COMPASS,
-    priority: Priorities.UNASSIGNED,
-    user: "test-user",
-    position: {
-      isOverlapping: false,
-      widthMultiplier: 1,
-      horizontalOrder: 1,
-      dragOffset: { y: 0 },
-      initialX: null,
-      initialY: null,
-    },
-    ...overrides,
-  });
-
-  const createMockSomedayEvent = (
-    overrides: Partial<Schema_SomedayEvent> = {},
-  ): Schema_SomedayEvent => ({
-    _id: "test-someday-event-id",
-    title: "Test Someday Event",
-    startDate: "2024-01-15T10:00:00Z",
-    endDate: "2024-01-15T11:00:00Z",
-    isAllDay: false,
-    isSomeday: true,
-    origin: Origin.COMPASS,
-    priority: Priorities.UNASSIGNED,
-    user: "test-user",
-    order: 1,
-    ...overrides,
-  });
-
   describe("OnSubmitParser", () => {
     describe("constructor", () => {
       it("should initialize with a grid event", () => {
@@ -276,9 +274,10 @@ describe("submit.parser", () => {
       const draft = createMockGridEvent({
         position: {
           isOverlapping: true,
+          totalEventsInGroup: 2,
           widthMultiplier: 0.5,
           horizontalOrder: 2,
-          dragOffset: { y: 10 },
+          dragOffset: { x: 0, y: 10 },
           initialX: 100,
           initialY: 200,
         },

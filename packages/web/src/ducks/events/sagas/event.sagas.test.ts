@@ -244,7 +244,7 @@ describe("createEvent saga - optimistic rendering", () => {
 
   it("should keep event in state during API call", async () => {
     // Create a promise that we can control
-    let resolveApiCall: (value: ApiResponse<void>) => void;
+    let resolveApiCall!: (value: ApiResponse<void>) => void;
     const apiPromise = new Promise<ApiResponse<void>>((resolve) => {
       resolveApiCall = resolve;
     });
@@ -283,7 +283,7 @@ describe("createEvent saga - optimistic rendering", () => {
     expect(dayEventIdsDuringCall).toContain(optimisticId);
 
     // Resolve the API call
-    resolveApiCall?.({
+    resolveApiCall({
       status: 200,
     } as ApiResponse<void>);
 
@@ -552,7 +552,9 @@ describe("pending events state management", () => {
 
       iterator.next();
       expect(
-        iterator.next(stateAfterCreate.events.entities.value?.[eventId]).value,
+        iterator.next(
+          stateAfterCreate.events.entities.value?.[eventId] as never,
+        ).value,
       ).toEqual(put(pendingEventsSlice.actions.add(eventId)));
     });
 
@@ -587,7 +589,7 @@ describe("pending events state management", () => {
       } as never);
 
       iterator.next();
-      expect(iterator.next(existingEvent).value).toEqual(
+      expect(iterator.next(existingEvent as never).value).toEqual(
         put(pendingEventsSlice.actions.add(eventId)),
       );
       expect(iterator.next().value).toEqual(
@@ -636,7 +638,7 @@ describe("pending events state management", () => {
       } as never);
 
       iterator.next();
-      expect(iterator.next(existingEvent).value).toEqual(
+      expect(iterator.next(existingEvent as never).value).toEqual(
         put(pendingEventsSlice.actions.add(eventId)),
       );
       expect(iterator.next().value).toEqual(

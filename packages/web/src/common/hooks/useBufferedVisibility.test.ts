@@ -32,10 +32,13 @@ describe("useBufferedVisibility", () => {
     ) => {
       const id = ++currentTimeoutId;
       if (typeof callback === "function") {
-        activeTimeouts.set(id, { callback, delay: delay ?? 0 });
+        activeTimeouts.set(id, {
+          callback: () => callback(),
+          delay: delay ?? 0,
+        });
       }
       return id;
-    }) as typeof setTimeout);
+    }) as unknown as typeof setTimeout);
 
     clearTimeoutSpy = spyOn(globalThis, "clearTimeout").mockImplementation(((
       id?: number,
@@ -43,7 +46,7 @@ describe("useBufferedVisibility", () => {
       if (id !== undefined) {
         activeTimeouts.delete(id);
       }
-    }) as typeof clearTimeout);
+    }) as unknown as typeof clearTimeout);
   });
 
   afterEach(() => {

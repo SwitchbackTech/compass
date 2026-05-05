@@ -3,6 +3,7 @@ import userEvent from "@testing-library/user-event";
 import { useCallback, useState } from "react";
 import { ThemeProvider } from "styled-components";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { type Schema_Event } from "@core/types/event.types";
 import { SessionContext } from "@web/auth/compass/session/SessionProvider";
 import {
   markBackendUnavailable,
@@ -36,7 +37,7 @@ function renderRecurrenceSection({
   const setEventSpy = mock();
 
   function Harness() {
-    const [event, setEvent] = useState<Schema_GridEvent | null>(baseEvent());
+    const [event, setEvent] = useState<Schema_Event | null>(baseEvent());
     const handleSetEvent = useCallback<typeof setEvent>((nextEvent) => {
       setEventSpy(nextEvent);
       setEvent(nextEvent);

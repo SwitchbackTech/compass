@@ -34,10 +34,10 @@ describe("useOpenAtCursor", () => {
       callback: TimerHandler,
     ) => {
       if (typeof callback === "function") {
-        timeoutCallbacks.push(callback);
+        timeoutCallbacks.push(() => callback());
       }
       return timeoutCallbacks.length;
-    }) as typeof setTimeout);
+    }) as unknown as typeof setTimeout);
 
     // Reset state before each test
     open$.next(false);

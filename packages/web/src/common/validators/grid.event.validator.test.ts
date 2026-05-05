@@ -73,6 +73,6 @@ describe("validateGridEvent", () => {
       },
     };
 
-    expect(() => validateGridEvent(event)).toThrow();
+    expect(() => validateGridEvent(event as Schema_GridEvent)).toThrow();
   });
 });

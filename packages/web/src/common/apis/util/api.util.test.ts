@@ -2,7 +2,7 @@ import {
   ApiErrorResponseSchema,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
-import { type ApiError } from "../api.types";
+import { type ApiError, type ApiResponse } from "../api.types";
 import {
   getApiErrorCode,
   parseApiError,

@@ -10,7 +10,14 @@ import {
   spyOn,
 } from "bun:test";
 
-const DndContext = mock(({ children }: { children: ReactNode }) => (
+type MockDndContextProps = {
+  children: ReactNode;
+  onDragAbort: () => void;
+  onDragCancel: () => void;
+  onDragEnd: () => void;
+};
+
+const DndContext = mock(({ children }: MockDndContextProps) => (
   <div data-testid="dnd-context">{children}</div>
 ));
 const usePointerPosition = mock();

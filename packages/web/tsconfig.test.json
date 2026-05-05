@@ -1,0 +1,28 @@
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "./declaration.d.ts",
+    "./src/**/*.d.ts",
+    "./src/**/*.test.ts",
+    "./src/**/*.test.tsx",
+    "./src/**/*.test.utils.ts",
+    "./src/**/*.test.utils.tsx",
+    "./src/**/*.spec.ts",
+    "./src/**/*.spec.tsx",
+    "./src/**/*.test-util.ts",
+    "./src/**/*.test-util.tsx"
+  ],
+  "compilerOptions": {
+    "noEmit": true,
+    "target": "ES2022",
+    "module": "ES2022",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "paths": {
+      "@web/*": ["./src/*"],
+      "@core/*": ["../core/src/*"],
+      "@backend/*": ["../backend/src/*"]
+    }
+  }
+}

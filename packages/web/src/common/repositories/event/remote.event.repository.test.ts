@@ -37,6 +37,7 @@ mock.module("@web/common/storage/adapter/adapter", () => ({
 
 const { RemoteEventRepository } =
   require("./remote.event.repository") as typeof import("./remote.event.repository");
+type RemoteEventRepositoryInstance = InstanceType<typeof RemoteEventRepository>;
 
 function createBackendUnavailableError(): Error {
   const error = new Error("Request failed");
@@ -45,7 +46,7 @@ function createBackendUnavailableError(): Error {
 }
 
 describe("RemoteEventRepository", () => {
-  let repository: RemoteEventRepository;
+  let repository: RemoteEventRepositoryInstance;
 
   beforeEach(() => {
     mockCreate.mockClear();
