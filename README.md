@@ -1,21 +1,21 @@
 # Compass Calendar
 
-**A daily planner for minimalists.**
+**A daily planner for minimalists. Organize your day and lock-in.**
 
-All your tasks and events in one place. Organize your day, stay on track, and focus.
+<https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31>
 
-## Why Use Compass?
+## Why Try Compass?
 
-It'll help you focus and ship faster:
+It'll help you get things done:
 
-- **Plan faster**: Organize your Month → Week → Day → Now in minutes.
-- **Keyboard-first**: Shortcuts and command palette for lightning-fast navigation.
-- **Private & Offline**: Runs fully local in your browser, with optional Google Calendar sync.
-- **No bloat**: No AI — just a clean, minimal interface to help you get things done.
+- **Plan faster**: Organize your Month → Week → Day in minutes.
+- **Keyboard-first**: Shortcuts and command palette for lightning-fast planning.
+- **No bloat**: A clean UI that does a few things well.
 
-Join thousands of minimalists who are staying organized and productive with Compass.
+It'll be around for the long-term:
 
-https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
+- **Bootstrapped**: VC-backed teams think in terms of months and funding rounds. We think in terms of decades and profit. We don't need to make $1B in 5 years or impress investors. As long as we keep users like you happy, we'll be fine.
+- **Vision**: We have [an ambitious vision](https://alpaca-ty.notion.site/about-us) and a practical [roadmap](https://github.com/orgs/SwitchbackTech/projects/4) that'll keep us busy for a long time.
 
 ## Features
 
@@ -23,7 +23,7 @@ https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 
 - **Day Mode**: See your tasks and events side-by-side
 - **Now Mode**: Lock-in on a single task
-- **Custom Note**: Display a personal note-to-self for motivation or reminders
+- **Custom Note**: Display a note-to-self for motivation or reminders
 - **Someday/Maybe List**: Organize future tasks without cluttering your schedule
 - **One-Click Adjustments**: Move events forwards or back effortlessly
 
@@ -33,17 +33,13 @@ https://github.com/user-attachments/assets/ba7b91b9-1984-49f2-afc6-7fcda1100b31
 - Command palette
 - Event tagging, resizing, duplicating, reordering
 - Drag & drop
-- Google Calendar sync when configured
-- Google OAuth authentication
-- User session management with Supertokens
-- Email capture via Kit
+- Google Calendar sync
+- User sessions
 
-### Current Limitations
+### The Limitations
 
-- No UI to choose which Google calendars sync
+- No UI to choose which Google calendars sync (only `primary`)
 - No sharing, locations, reminders, or mobile app
-
-We're actively working on improvements – check out our [roadmap](https://github.com/orgs/SwitchbackTech/projects/4).
 
 ## Tech Stack
 
@@ -54,55 +50,47 @@ We're actively working on improvements – check out our [roadmap](https://githu
 
 ## Getting Started
 
-### Try It Online
+### Option 1: Try Compass Online
 
-Head over to [app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme). No signup required
+[app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) ← No signup required.
 
-### Self-host Compass
-
-Run Compass on a small server you control. Password-only self-hosting is supported; Google Calendar is optional.
-
-See [docs/self-hosting/README.md](./docs/self-hosting/README.md) for the server guide, backups, Google Calendar notes, and manual setup options.
-
-### Run Locally
-
-Want to poke around as a developer?
-
-[Read the technical docs](https://github.com/SwitchbackTech/compass/tree/main/docs): All the info you'd need to get started, including guides on how to install, test, build, deploy, and contribute.
-
-### Development Workflow
+### Option 2: Run Compass Locally
 
 ```bash
 # Quick start
 bun install
-cp packages/backend/.env.local.example packages/backend/.env.local
-bun run dev:web  # Frontend on http://localhost:9080
-bun run dev:backend # Backend on http://localhost:3000
+cp packages/backend/.env.local.example packages/backend/.env.local 
+bun run dev:web      # Frontend on http://localhost:9080
+bun run dev:backend  # Backend on http://localhost:3000
 
 # Testing
 bun run test:core && bun run test:web && bun run test:backend
 bun run test:e2e
-
-# Type checking and linting
-bun run type-check
-bun run lint
 ```
 
-## Contributing
+[Checkout the technical docs](./docs/README.md) for all our developer guides.
+
+### Option 3: Self-host Compass
+
+Run Compass on a server you control to keep everything on your infrastructure.
+
+See [the self-hosting guide](./docs/self-hosting/README.md) for instructions.
+
+### Contributing
 
 We love contributions! Whether it's bug fixes, new features, or documentation improvements, your help makes Compass better for everyone.
 
-Issues: Check open issues or create a new one.
-Pull Requests: Fork the repo, make your changes, and submit a PR. Follow our [Contribution Guidelines](https://docs.compasscalendar.com/docs/contribute).
-Discussions: Join the conversation on GitHub Discussions.
+**Issues**: Create an issue to document a bug or feature request.
 
-First-time contributors? Look for issues labeled `good first issue.`
+**Pull Requests**: Fork the repo, follow the the [Contribution Guidelines](./CONTRIBUTING.md), submit PR.
 
-## Community & Resources
+**Feedback**: Join the conversation on [GitHub Discussions](https://github.com/SwitchbackTech/compass/discussions).
+
+## Resources
 
 - **Handbook**: [compasscalendar.notion.site](https://alpaca-ty.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d?utm_source=github&utm_medium=referral&utm_campaign=readme)
 - **Twitter**: [@CompassCalendar](https://x.com/CompassCalendar)
 - **Youtube**: [Playlist](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
 - **LinkedIn**: [Compass Calendar](https://www.linkedin.com/company/compass-calendar)
 
-Star the repo for good luck.
+Star the repo for good luck =]
