@@ -146,7 +146,8 @@ Before you call continuous Google Calendar sync "working" on any self-host insta
 - backend reachable by Google over public HTTPS
 - `TOKEN_GCAL_NOTIFICATION` set
 - Google watch registration succeeds
-- watch repair and refresh behavior holds up over time
+- Google Watch refresh renews still-valid watches before expiration
+- Google Watch repair can rebuild missing, expired, stale, duplicate, or incomplete watches and catch up missed changes
 
 The repo has the code paths for Google watches and repair. The self-host Docker stack does not schedule watch renewal, so you need to verify and wire up maintenance separately before treating ongoing Google sync as dependable.
 

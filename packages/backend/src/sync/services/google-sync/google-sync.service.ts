@@ -70,6 +70,7 @@ async function importLatestGoogleCalendarChanges(
   userId: string,
   gcal?: gCalendar,
   perPage = 1000,
+  options: { force?: boolean } = {},
 ) {
   logger.info(`Starting incremental Google Calendar sync for user: ${userId}`);
 
@@ -83,7 +84,10 @@ async function importLatestGoogleCalendarChanges(
         skipAssessment: true,
       },
     );
-    const proceed = shouldDoIncrementalGCalSync(userMeta);
+    const isImporting = userMeta.sync?.incrementalGCalSync === "IMPORTING";
+    const proceed = options.force
+      ? !isImporting
+      : shouldDoIncrementalGCalSync(userMeta);
 
     if (!proceed) {
       sseServer.handleImportGCalEnd(userId, {

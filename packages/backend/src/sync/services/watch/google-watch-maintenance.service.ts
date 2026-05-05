@@ -8,6 +8,7 @@ import {
   pruneSync,
   refreshWatch,
 } from "@backend/sync/services/watch/google-watch-maintenance.planner";
+import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:google-watch-maintenance.service");
@@ -20,6 +21,7 @@ async function runMaintenance() {
     refreshed: 0,
     ignored: 0,
     pruned: 0,
+    repaired: 0,
     revoked: 0,
     resynced: 0,
   };
@@ -46,6 +48,7 @@ async function runMaintenance() {
             return {
               ignore: [{ user: user.toString(), payload: [] }],
               prune: [{ user: user.toString(), payload: [] }],
+              repair: [{ user: user.toString(), payload: [] }],
               refresh: [{ user: user.toString(), payload: [] }],
               ...result,
             };
@@ -60,6 +63,7 @@ async function runMaintenance() {
       refreshed: acc.refreshed + res.refreshed,
       ignored: acc.ignored + res.ignored,
       pruned: acc.pruned + res.pruned,
+      repaired: acc.repaired + res.repaired,
       revoked: acc.revoked + res.revoked,
       resynced: acc.resynced + res.resynced,
     }),
@@ -70,6 +74,7 @@ async function runMaintenance() {
     IGNORED: ${results.ignored}
     PRUNED: ${results.pruned}
     REFRESHED: ${results.refreshed}
+    REPAIRED: ${results.repaired}
 
     DELETED DURING PRUNE: ${results.deleted}
     REVOKED SESSION DURING REFRESH: ${results.revoked}
@@ -87,15 +92,18 @@ async function runMaintenanceByUser(
   const maintenance = await prepWatchMaintenanceForUser(userId);
   const ignore = [{ user: userId, payload: maintenance.ignore }];
   const prune = [{ user: userId, payload: maintenance.prune }];
+  const repair = [{ user: userId, payload: maintenance.repair }];
   const refresh = [{ user: userId, payload: maintenance.refresh }];
 
   const result = {
     ignore,
     prune,
+    repair,
     refresh,
     user: user?.email || "Not found",
     ignored: 0,
     pruned: 0,
+    repaired: 0,
     refreshed: 0,
     revoked: 0,
     deleted: 0,
@@ -104,6 +112,11 @@ async function runMaintenanceByUser(
 
   if (params?.dry) return result;
 
+  const repairResult = await Promise.all(
+    maintenance.repair.map((state) =>
+      googleWatchRepairService.ensureGoogleWatches(userId, { state }),
+    ),
+  );
   const pruneResult = await pruneSync(prune);
   const pruned = pruneResult.filter((p) => !p.deletedUserData);
   const deletedDuringPrune = pruneResult.filter((p) => p.deletedUserData);
@@ -116,6 +129,7 @@ async function runMaintenanceByUser(
       IGNORED: ${ignore.length}
       PRUNED: ${pruned.flatMap((p) => p.results).length}
       REFRESHED: ${refreshed.flatMap((r) => r.results.filter((r) => r.success)).length}
+      REPAIRED: ${repairResult.length}
 
       DELETED DURING PRUNE: ${deletedDuringPrune.map((r) => r.user).toString()}
       RESYNCED DURING REFRESH: ${resynced.map((r) => r.user).toString()}
@@ -128,6 +142,9 @@ async function runMaintenanceByUser(
     pruned: pruned.flatMap(({ results }) => results).length,
     refreshed: refreshed.flatMap(({ results }) =>
       results.filter((r) => r.success),
+    ).length,
+    repaired: repairResult.filter(({ action }) =>
+      ["REPAIRED", "FULL_REPAIR_STARTED"].includes(action),
     ).length,
     deleted: deletedDuringPrune.length,
     resynced: resynced.length,

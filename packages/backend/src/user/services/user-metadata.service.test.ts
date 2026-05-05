@@ -10,6 +10,7 @@ import {
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual
 jest.mock("@backend/sync/services/watch/google-watch-config", () => ({
@@ -20,8 +21,10 @@ jest.mock("@backend/sync/services/watch/google-watch-config", () => ({
 describe("UserMetadataService", () => {
   const driver = new UserMetadataServiceDriver();
 
-  beforeAll(initSupertokens);
-  beforeAll(setupTestDb);
+  beforeAll(async () => {
+    initSupertokens();
+    await setupTestDb();
+  });
   beforeEach(cleanupCollections);
   afterAll(cleanupTestDb);
 
@@ -117,19 +120,22 @@ describe("UserMetadataService", () => {
       isUsingGcalWebhookHttpsSpy.mockRestore();
     });
 
-    it("returns ATTENTION without scheduling repair when connected sync state is broken", async () => {
+    it("returns ATTENTION and schedules watch recovery when connected sync state is broken", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const restartSpy = jest
-        .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
-        .mockResolvedValue();
+      const recoverySpy = jest
+        .spyOn(googleWatchRepairService, "ensureGoogleWatches")
+        .mockResolvedValue({
+          action: "FULL_REPAIR_STARTED",
+          reason: "SYNC_RECORD_MISSING",
+        });
 
       const metadata = await driver.fetchUserMetadata(userId);
 
       expect(metadata.google?.connectionState).toBe("ATTENTION");
-      expect(restartSpy).not.toHaveBeenCalled();
+      expect(recoverySpy).toHaveBeenCalledWith(userId);
 
-      restartSpy.mockRestore();
+      recoverySpy.mockRestore();
     });
 
     it("returns ATTENTION after a repair failed", async () => {

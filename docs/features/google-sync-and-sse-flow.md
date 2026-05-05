@@ -152,6 +152,26 @@ Lifecycle and outbound repair paths live in:
 - `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
 - `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
 
+### Google Watch Refresh And Repair
+
+Compass treats Google Watch refresh and Google Watch repair as different paths:
+
+- **Google Watch refresh** renews a still-valid watch before it expires.
+- **Google Watch repair** rebuilds broken watch state: missing, expired, stale,
+  duplicate, or incomplete watches.
+
+The shared repair path first inspects Compass-owned sync and watch records. A
+healthy check does not call Google. If the stored sync tokens are usable, repair
+recreates the watches and runs an incremental import to catch up Google-side
+changes missed while notifications were unavailable. If the sync tokens are
+missing or invalid, Compass falls back to full Google sync repair.
+
+Scheduled maintenance remains the proactive path. User metadata and SSE startup
+also trigger the same repair coordinator as a defensive path for local,
+self-hosted, or missed-maintenance cases. That path has a short per-user
+cooldown so repeated browser refreshes or multiple tabs do not repeatedly call
+Google.
+
 ### Notification Outcomes And Error Semantics
 
 Same as before: recoverable `INITIALIZED` / `IGNORED` / `PROCESSED` paths, `GOOGLE_REVOKED` on invalid refresh token, etc. See inline comments in `googleWatchService`, `googleCalendarSyncService`, and `SyncController`.

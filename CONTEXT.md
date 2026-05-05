@@ -123,8 +123,12 @@ status, user metadata, and Google revocation.
 A Google Calendar import into Compass.
 
 **Repair**:
-A Google sync recovery path that refreshes or restarts Google data when metadata
-says the existing sync needs repair.
+A Google sync recovery path that restarts Google data when metadata says the
+existing sync cannot be trusted.
+
+**Google Watch refresh**:
+A maintenance path that renews a still-valid **Google Watch** before it expires.
+_Avoid_: repair
 
 **Google Watch repair**:
 A repair path that recreates missing, expired, stale, or incomplete **Google
@@ -164,6 +168,8 @@ during Import or Public watch notification handling.
   **Events** without becoming a **Google-connected user**.
 - A **Google-connected user** can import from Google and mirror eligible Compass
   event changes to Google.
+- **Google Watch refresh** renews a still-working **Google Watch**; **Google
+  Watch repair** rebuilds watch state that is already broken or incomplete.
 - **Public watch notifications** are separate from browser API and **SSE**
   traffic; browser traffic can be local, but Google webhook posts need public
   HTTPS when continuous sync is expected.
@@ -201,6 +207,10 @@ during Import or Public watch notification handling.
   Use the exact term for the layer being discussed.
 - "Sync" can mean local IndexedDB persistence, backend event persistence, Google
   import, Google incremental sync, or SSE refresh. Name the specific flow.
+- "Repair" and "refresh" are not interchangeable for Google Watches. Use
+  **Google Watch refresh** for renewal before expiration and **Google Watch
+  repair** for broken, expired, missing, stale, duplicate, or incomplete watch
+  state.
 - "Local" can mean browser IndexedDB, local Docker self-hosting, local backend
   development, or Compass-local event ownership. Use the precise phrase.
 - "Recurring event" can mean a **Base Event**, an **Instance Event**, or the

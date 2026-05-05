@@ -7,6 +7,7 @@ import {
   type UserMetadata,
 } from "@core/types/user.types";
 import { isGoogleCalendarSyncHealthy } from "@backend/sync/services/google-sync/google-sync.health";
+import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
 
@@ -61,6 +62,10 @@ class UserMetadataService {
     if (isHealthy) {
       return { connectionState: "HEALTHY" };
     }
+
+    googleWatchRepairService.ensureGoogleWatches(userId).catch(() => {
+      // Metadata reads should never fail because a background repair did.
+    });
 
     return { connectionState: "ATTENTION" };
   };

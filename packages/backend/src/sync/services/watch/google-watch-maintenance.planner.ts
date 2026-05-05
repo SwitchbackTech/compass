@@ -13,6 +13,11 @@ import { googleCalendarSyncService } from "@backend/sync/services/google-sync/go
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { hasUpdatedCompassEventRecently } from "@backend/sync/services/watch/google-watch-activity";
 import {
+  type GoogleWatchStateInspection,
+  GoogleWatchStateStatus,
+  inspectGoogleWatchState,
+} from "@backend/sync/services/watch/google-watch-state";
+import {
   syncExpired,
   syncExpiresSoon,
 } from "@backend/sync/services/watch/google-watch-timing";
@@ -53,15 +58,47 @@ const getWatchesToRefresh = async (user: string) => {
 
 export const prepWatchMaintenanceForUser = async (
   userId: string,
-): Promise<Record<"prune" | "ignore" | "refresh", Schema_Watch[]>> => {
+): Promise<
+  Record<"prune" | "ignore" | "refresh", Schema_Watch[]> & {
+    repair: GoogleWatchStateInspection[];
+  }
+> => {
   const deadline = getActiveDeadline();
   const isUserActive = await hasUpdatedCompassEventRecently(userId, deadline);
   const { active, expired, refresh } = await getWatchesToRefresh(userId);
+
+  if (isUserActive) {
+    const watchState = await inspectGoogleWatchState(userId);
+
+    if (
+      watchState.status === GoogleWatchStateStatus.REPAIR_REQUIRED ||
+      watchState.status === GoogleWatchStateStatus.FULL_REPAIR_REQUIRED
+    ) {
+      return {
+        refresh: [],
+        prune: [],
+        ignore: watchState.activeWatches,
+        repair: [watchState],
+      };
+    }
+
+    if (watchState.status === GoogleWatchStateStatus.REFRESH_REQUIRED) {
+      return {
+        refresh: watchState.watchesToRefresh,
+        prune: [],
+        ignore: watchState.activeWatches.filter(
+          (watch) => !watchState.watchesToRefresh.includes(watch),
+        ),
+        repair: [],
+      };
+    }
+  }
 
   return {
     refresh: isUserActive ? refresh : [],
     prune: expired.concat(isUserActive ? [] : [...active, ...refresh]),
     ignore: isUserActive ? active : [],
+    repair: [],
   };
 };
 

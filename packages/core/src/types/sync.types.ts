@@ -84,4 +84,7 @@ export interface Schema_Sync {
     calendarlist: SyncDetails[];
     events: SyncDetails[];
   };
+  googleWatchRepair?: {
+    lastAttemptAt?: Date;
+  };
 }
