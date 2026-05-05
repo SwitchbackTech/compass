@@ -8,7 +8,7 @@ import {
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
-import * as syncImportService from "@backend/sync/services/import/sync.import";
+import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";

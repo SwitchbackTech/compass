@@ -129,6 +129,14 @@ says the existing sync needs repair.
 **Public watch notifications**:
 Google-to-Compass webhook posts at `/api/sync/gcal/notifications`.
 
+**Compass-to-Google event propagation**:
+The backend flow that applies Compass Event writes and mirrors eligible Google
+side effects.
+
+**Google-to-Compass event propagation**:
+The backend flow that applies Google Calendar event changes to Compass data
+during Import or Public watch notification handling.
+
 ## Relationships
 
 - An **Anonymous user** stores **Events** and **Tasks** in browser IndexedDB.

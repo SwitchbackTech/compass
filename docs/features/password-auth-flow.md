@@ -378,7 +378,7 @@ Password-only users can now mutate Compass events without a Google connection at
 Relevant changes:
 
 - `event.routes.config.ts` no longer requires route-level Google connection middleware for create/update/delete
-- `CompassSyncProcessor` applies the Compass mutation first
+- `CompassToGoogleEventPropagation` applies the Compass mutation first
 - if the Google side effect fails only because the user has no Google refresh token, the processor keeps the Compass mutation and skips the Google effect
 
 That lets password-auth users use Compass without blocking on Google connectivity.

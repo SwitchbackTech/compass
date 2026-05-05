@@ -28,7 +28,7 @@ Rule: never treat event shape as web-only unless the field is strictly presentat
 3. Read `packages/backend/src/event/classes/compass.event.generator.ts`.
 4. Read `packages/backend/src/event/classes/compass.event.parser.ts`.
 5. Read `packages/backend/src/event/classes/compass.event.executor.ts`.
-6. Read `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`.
+6. Read `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`.
 7. Update the planner, executor, or scope-expansion path that actually owns the behavior.
 8. Add focused tests for the exact recurrence transition you changed.
 
@@ -49,7 +49,7 @@ Do not edit recurring behavior from one layer only.
 4. Confirm planned `steps` and `googleEffect` match expected behavior.
 5. Confirm executor step mapping in `packages/backend/src/event/classes/compass.event.executor.ts`.
 6. Run focused tests:
-   - `bun run test:backend --runTestsByPath packages/backend/src/event/classes/compass.event.parser.test.ts packages/backend/src/event/classes/compass.event.executor.test.ts packages/backend/src/sync/services/sync/__tests__/compass.sync.processor.test.ts --runInBand`
+   - `bun run test:backend --runTestsByPath packages/backend/src/event/classes/compass.event.parser.test.ts packages/backend/src/event/classes/compass.event.executor.test.ts packages/backend/src/sync/services/event-propagation/__tests__/compass-to-google.event-propagation.test.ts --runInBand`
 
 ## Add An SSE Event
 

@@ -31,7 +31,7 @@ import {
   mongoDateAggregation,
   stripReadonlyEventProps,
 } from "@backend/event/services/recur/util/recur.util";
-import { createSyncImport } from "@backend/sync/services/import/sync.import";
+import { createSyncImport } from "@backend/sync/services/import/google-import.service";
 import {
   type Event_Transition,
   type Operation_Sync,

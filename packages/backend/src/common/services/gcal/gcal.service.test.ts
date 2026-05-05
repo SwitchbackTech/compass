@@ -2,7 +2,7 @@ jest.mock("@backend/common/util/api-base-url.util", () => ({
   getGcalWebhookBaseURL: jest.fn(() => "https://example.trycloudflare.com/api"),
 }));
 
-jest.mock("@backend/sync/util/watch.util", () => ({
+jest.mock("@backend/sync/services/watch/google-watch-token", () => ({
   encodeChannelToken: jest.fn(() => "encoded-token"),
 }));
 

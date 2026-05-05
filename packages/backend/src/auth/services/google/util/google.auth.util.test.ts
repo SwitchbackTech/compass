@@ -1,8 +1,7 @@
 import { faker } from "@faker-js/faker";
 import { type Credentials, type TokenPayload } from "google-auth-library";
 import { ObjectId } from "mongodb";
-import * as syncQueries from "@backend/sync/util/sync.queries";
-import * as syncUtil from "@backend/sync/util/sync.util";
+import * as syncRecords from "@backend/sync/services/records/sync-records.repository";
 import * as userQueries from "@backend/user/queries/user.queries";
 import {
   determineGoogleAuthMode,
@@ -10,13 +9,12 @@ import {
 } from "./google.auth.util";
 
 jest.mock("@backend/user/queries/user.queries");
-jest.mock("@backend/sync/util/sync.queries");
-jest.mock("@backend/sync/util/sync.util");
+jest.mock("@backend/sync/services/records/sync-records.repository");
 
 const mockFindCanonicalCompassUser =
   userQueries.findCanonicalCompassUser as jest.Mock;
-const mockGetSync = syncQueries.getSync as jest.Mock;
-const mockCanDoIncrementalSync = syncUtil.canDoIncrementalSync as jest.Mock;
+const mockGetSync = syncRecords.getSync as jest.Mock;
+const mockCanDoIncrementalSync = syncRecords.canDoIncrementalSync as jest.Mock;
 
 function makeCompassUser(overrides?: {
   googleId?: string;

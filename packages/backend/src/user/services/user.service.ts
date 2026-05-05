@@ -20,7 +20,7 @@ import { normalizeEmail } from "@backend/common/helpers/email.util";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
 import priorityService from "@backend/priority/services/priority.service";
-import syncRecords from "@backend/sync/services/records/sync.records";
+import syncRecords from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { findCanonicalCompassUser } from "@backend/user/queries/user.queries";
 import userMetadataService from "@backend/user/services/user-metadata.service";

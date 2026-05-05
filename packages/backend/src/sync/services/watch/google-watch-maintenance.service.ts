@@ -2,12 +2,12 @@ import { type ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import mongoService from "@backend/common/services/mongo.service";
+import { createConcurrencyLimiter } from "@backend/common/util/concurrency-limiter.util";
 import {
   prepWatchMaintenanceForUser,
   pruneSync,
   refreshWatch,
 } from "@backend/sync/services/watch/google-watch-maintenance.planner";
-import { createConcurrencyLimiter } from "@backend/sync/util/sync.util";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:google-watch-maintenance.service");

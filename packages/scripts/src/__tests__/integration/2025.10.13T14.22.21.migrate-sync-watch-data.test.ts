@@ -6,7 +6,7 @@ import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { Resource_Sync } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
-import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
+import { GoogleSyncDriver } from "@backend/__tests__/drivers/google-sync.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -38,7 +38,9 @@ describe.each([
   };
 
   beforeAll(setupTestDb);
-  beforeEach(() => SyncDriver.generateV0Data(count, generateExpiredWatches));
+  beforeEach(() =>
+    GoogleSyncDriver.generateLegacySyncWatchData(count, generateExpiredWatches),
+  );
   beforeEach(WatchMigration.prototype.up);
   afterEach(cleanupCollections);
   afterEach(() => mongoService.sync.deleteMany());

@@ -58,7 +58,7 @@ Use the generic base schema with `parseApiError(error, ApiErrorResponseSchema)` 
 
 - `packages/backend/src/common/constants/env.constants.ts`
 - `packages/backend/src/common/validators`
-- feature-specific query validators such as `packages/backend/src/sync/util/sync.queries.ts`
+- feature-specific query validators such as `packages/backend/src/sync/services/records/sync-records.repository.ts`
 
 ### Web form/client validation
 

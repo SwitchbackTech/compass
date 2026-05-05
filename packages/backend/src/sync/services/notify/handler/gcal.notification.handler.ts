@@ -2,9 +2,9 @@ import { Logger } from "@core/logger/winston.logger";
 import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import gcalService from "@backend/common/services/gcal/gcal.service";
-import { GcalSyncProcessor } from "@backend/sync/services/sync/google/gcal.sync.processor";
+import { GoogleToCompassEventPropagation } from "@backend/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation";
+import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { type Summary_Sync } from "@backend/sync/sync.types";
-import { updateSync } from "@backend/sync/util/sync.queries";
 
 const logger = Logger("app:gcal.notification.handler");
 
@@ -29,7 +29,7 @@ export class GCalNotificationHandler {
     const { hasChanges, changes } = await this.getLatestChanges();
 
     if (hasChanges) {
-      const processor = new GcalSyncProcessor(this.userId);
+      const processor = new GoogleToCompassEventPropagation(this.userId);
       const changeSummary = await processor.processEvents(changes);
       console.log("PROCESSED:", changeSummary);
       return { summary: "PROCESSED", changes: changeSummary };

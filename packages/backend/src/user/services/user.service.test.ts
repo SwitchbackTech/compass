@@ -4,7 +4,7 @@ import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 import { CompassCalendarSchema } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
 import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
-import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
+import { GoogleSyncDriver } from "@backend/__tests__/drivers/google-sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -258,7 +258,7 @@ describe("UserService", () => {
       expect(storedUser).not.toBeNull();
 
       await priorityService.createDefaultPriorities(userId);
-      await SyncDriver.createSync(storedUser!, true);
+      await GoogleSyncDriver.createHealthyGoogleSync(storedUser!, true);
       await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
       const summary: Summary_Delete =

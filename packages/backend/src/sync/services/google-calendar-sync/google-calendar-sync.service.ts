@@ -10,12 +10,12 @@ import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
-import { createSyncImport } from "@backend/sync/services/import/sync.import";
-import compassGoogleMirrorService from "@backend/sync/services/outbound/compass-google-mirror.service";
+import compassToGoogleBackfill from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google-backfill";
+import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google-calendar.client";
+import { createSyncImport } from "@backend/sync/services/import/google-import.service";
+import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import { updateSync } from "@backend/sync/util/sync.queries";
-import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
+import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:google-calendar-sync.service");
@@ -190,7 +190,7 @@ async function runGoogleCalendarSyncSetup(
     const importResults =
       await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
-    await compassGoogleMirrorService
+    await compassToGoogleBackfill
       .syncCompassEventsToGoogle(userId)
       .catch((err) => {
         logger.error(

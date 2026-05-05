@@ -23,7 +23,7 @@ import {
 import mongoService from "@backend/common/services/mongo.service";
 import { testCompassSeries } from "@backend/event/classes/compass.event.parser.test.util";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
+import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
 
 describe("Jan 2022: Many Formats", () => {
   const gBase = mockRecurringGcalBaseEvent({}, false, { count: 10 });
@@ -370,7 +370,7 @@ describe("Jan 2022: Many Formats", () => {
       const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
       const payload = createMockBaseEvent({ isSomeday, user, recurrence });
 
-      const changes = await CompassSyncProcessor.processEvents([
+      const changes = await CompassToGoogleEventPropagation.processEvents([
         {
           payload: payload as CompassThisEvent["payload"],
           applyTo: RecurringEventUpdateScope.THIS_EVENT,
