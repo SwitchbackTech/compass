@@ -1,5 +1,16 @@
 import { z } from "zod";
 
+type CompassE2EState = {
+  userMetadata?: {
+    current?: {
+      google?: {
+        connectionState?: string;
+      };
+    };
+    status?: string;
+  };
+};
+
 /**
  * Zod schema for the Redux store subset exposed on window for e2e testing.
  * Validates that the store is available and has the expected dispatch/getState surface.
@@ -43,7 +54,7 @@ declare global {
     __COMPASS_E2E_TEST__?: boolean;
     __COMPASS_E2E_STORE__?: {
       dispatch: (action: unknown) => unknown;
-      getState: () => unknown;
+      getState: () => CompassE2EState;
     };
     __COMPASS_E2E_HOOKS__?: {
       setAuthenticated: (value: boolean) => void;

@@ -2,7 +2,7 @@ import { expect, type Page } from "@playwright/test";
 import "./compass-window";
 
 /**
- * Sets up the page for OAuth overlay testing.
+ * Sets up the page for OAuth connection-state testing.
  * - Exposes test hooks for session state manipulation
  * - Mocks API endpoints
  */
@@ -97,100 +97,6 @@ export const waitForAppReady = async (page: Page) => {
     },
     { timeout: 10000 },
   );
-};
-
-/**
- * Set the authenticating state via Redux (triggers OAuth overlay when true).
- * Dispatches to the store and waits for the UI to reflect the change.
- * SessionProvider skips real session checks in e2e mode, so the store state
- * is stable after dispatch — no retry loop needed.
- */
-export const setIsSyncing = async (page: Page, value: boolean) => {
-  await page.evaluate((syncValue) => {
-    const store = window.__COMPASS_E2E_STORE__;
-    if (!store) return;
-    if (syncValue) {
-      store.dispatch({ type: "auth/startAuthenticating" });
-    } else {
-      store.dispatch({ type: "auth/resetAuth" });
-    }
-  }, value);
-
-  if (value) {
-    await expect(page.locator(OVERLAY_SELECTORS.statusPanel)).toBeVisible();
-  } else {
-    await expect(page.locator(OVERLAY_SELECTORS.statusPanel)).toHaveCount(0);
-  }
-};
-
-/**
- * Selectors for OAuth overlay elements.
- */
-export const OVERLAY_SELECTORS = {
-  /** The status overlay panel (specific to SyncEventsOverlay) */
-  statusPanel: '[role="status"][aria-busy="true"][aria-live="polite"]',
-  /** Spinner element */
-  spinner: ".animate-spin",
-};
-
-/**
- * Text content for OAuth overlay phase.
- * Note: Import phase overlay was removed - import now happens in background.
- */
-export const OVERLAY_TEXT = {
-  oauthTitle: "Complete Google sign-in...",
-  oauthMessage: "Please complete authorization in the popup window",
-};
-
-/**
- * Wait for body locked state to match expected value (with retry).
- */
-export const expectBodyLocked = async (page: Page, locked: boolean) => {
-  if (locked) {
-    await expect(page.locator("body")).toHaveAttribute(
-      "data-app-locked",
-      "true",
-    );
-  } else {
-    // When unlocked, the attribute is removed entirely
-    await expect(page.locator("body")).not.toHaveAttribute(
-      "data-app-locked",
-      "true",
-    );
-  }
-};
-
-/**
- * Wait for overlay phase to match expected value (with retry).
- * Note: Import phase overlay was removed - import now happens in background.
- */
-export const expectOverlayPhase = async (
-  page: Page,
-  phase: "oauth" | "none",
-) => {
-  if (phase === "oauth") {
-    await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).toBeVisible();
-  } else {
-    await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
-  }
-};
-
-/**
- * Assert that the OAuth phase overlay is visible.
- */
-export const expectOAuthOverlayVisible = async (page: Page) => {
-  await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).toBeVisible();
-  await expect(page.getByText(OVERLAY_TEXT.oauthMessage)).toBeVisible();
-  await expect(page.locator(OVERLAY_SELECTORS.spinner)).toBeVisible();
-  await expectBodyLocked(page, true);
-};
-
-/**
- * Assert that no overlay is visible.
- */
-export const expectNoOverlay = async (page: Page) => {
-  await expect(page.getByText(OVERLAY_TEXT.oauthTitle)).not.toBeVisible();
-  await expectBodyLocked(page, false);
 };
 
 /**
