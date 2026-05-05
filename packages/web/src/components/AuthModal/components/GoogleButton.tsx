@@ -1,3 +1,4 @@
+import clsx from "clsx";
 import type React from "react";
 
 /**
@@ -49,34 +50,15 @@ export const GoogleButton = ({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
+      className={clsx(
+        "inline-flex h-10 items-center justify-center gap-2.5 whitespace-nowrap rounded-full border border-[#1f1f1f] bg-white px-3 font-medium text-[#1f1f1f] text-sm transition-colors duration-200",
+        disabled
+          ? "cursor-not-allowed opacity-60"
+          : "cursor-pointer hover:bg-[#f8f8f8]",
+      )}
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "10px", // Google guideline: 10px between icon and text
-        height: "40px",
-        paddingLeft: "12px", // Google guideline: 12px left padding
-        paddingRight: "12px", // Google guideline: 12px right padding
-        backgroundColor: "#ffffff",
-        border: "1px solid #1f1f1f",
-        borderRadius: "9999px", // Pill shape
-        cursor: disabled ? "not-allowed" : "pointer",
-        opacity: disabled ? 0.6 : 1,
         fontFamily: "'Roboto', sans-serif",
-        fontSize: "14px",
-        fontWeight: 500,
-        color: "#1f1f1f",
-        whiteSpace: "nowrap",
-        transition: "background-color 0.2s ease",
         ...style,
-      }}
-      onMouseEnter={(e) => {
-        if (!disabled) {
-          e.currentTarget.style.backgroundColor = "#f8f8f8";
-        }
-      }}
-      onMouseLeave={(e) => {
-        e.currentTarget.style.backgroundColor = "#ffffff";
       }}
     >
       <GoogleGLogo size={18} />

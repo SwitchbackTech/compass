@@ -1,7 +1,8 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
+import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/redirect/google-auth-redirect.constants";
 import {
   clearGoogleAuthorizationIntent,
   readGoogleAuthorizationIntent,
@@ -24,6 +25,8 @@ import { useAppDispatch } from "@web/store/store.hooks";
 
 const GENERIC_GOOGLE_AUTH_ERROR =
   "Google authorization could not be completed. Please try again.";
+const MISSING_GOOGLE_SCOPES_ERROR =
+  "Missing Google Calendar permissions. Please grant all requested permissions.";
 
 type CompleteAuthentication = ReturnType<typeof useCompleteAuthentication>;
 
@@ -43,10 +46,13 @@ export async function completeGoogleAuthCallback({
   const params = new URLSearchParams(search);
   const state = params.get("state");
   const fallbackPath = ROOT_ROUTES.DAY;
+  const fail = (message = GENERIC_GOOGLE_AUTH_ERROR, path = fallbackPath) => {
+    showErrorToast(message);
+    navigate(path, { replace: true });
+  };
 
   if (!state) {
-    showErrorToast(GENERIC_GOOGLE_AUTH_ERROR);
-    navigate(fallbackPath, { replace: true });
+    fail();
     return;
   }
 
@@ -55,16 +61,24 @@ export async function completeGoogleAuthCallback({
   const returnPath = savedIntent?.returnPath ?? fallbackPath;
 
   if (!savedIntent || params.get("error")) {
-    showErrorToast(GENERIC_GOOGLE_AUTH_ERROR);
-    navigate(returnPath, { replace: true });
+    fail(GENERIC_GOOGLE_AUTH_ERROR, returnPath);
     return;
   }
 
   const code = params.get("code");
 
   if (!code) {
-    showErrorToast(GENERIC_GOOGLE_AUTH_ERROR);
-    navigate(returnPath, { replace: true });
+    fail(GENERIC_GOOGLE_AUTH_ERROR, returnPath);
+    return;
+  }
+
+  const grantedScopes = new Set((params.get("scope") ?? "").split(" "));
+  const isMissingRequiredScope = GOOGLE_AUTH_SCOPES_REQUIRED.some(
+    (scope) => !grantedScopes.has(scope),
+  );
+
+  if (isMissingRequiredScope) {
+    fail(MISSING_GOOGLE_SCOPES_ERROR, returnPath);
     return;
   }
 
@@ -93,19 +107,18 @@ export async function completeGoogleAuthCallback({
       const parsed = parseGoogleConnectError(error);
 
       if (parsed?.message) {
-        showErrorToast(parsed.message);
-        navigate(returnPath, { replace: true });
+        fail(parsed.message, returnPath);
         return;
       }
     }
 
-    showErrorToast(GENERIC_GOOGLE_AUTH_ERROR);
-    navigate(returnPath, { replace: true });
+    fail(GENERIC_GOOGLE_AUTH_ERROR, returnPath);
   }
 }
 
 export function GoogleAuthCallbackView() {
   const didRun = useRef(false);
+  const location = useLocation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const completeAuthentication = useCompleteAuthentication();
@@ -121,9 +134,9 @@ export function GoogleAuthCallbackView() {
       completeAuthentication,
       dispatch,
       navigate,
-      search: window.location.search,
+      search: location.search,
     });
-  }, [completeAuthentication, dispatch, navigate]);
+  }, [completeAuthentication, dispatch, location.search, navigate]);
 
   return (
     <OverlayPanel

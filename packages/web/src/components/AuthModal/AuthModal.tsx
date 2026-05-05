@@ -45,16 +45,18 @@ function getInitialAuthToken(): string | undefined {
 export const AuthModal: FC = () => {
   const { isOpen, currentView, openModal, closeModal, setView } =
     useAuthModal();
+  const handleGoogleAuthStart = useCallback(() => {
+    dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
+  }, []);
   const googleAuth = useGoogleLogin({
     intent: "signIn",
-    onStart: () => {
-      dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
-    },
+    onStart: handleGoogleAuthStart,
   });
+  const { loading: isGoogleAuthLoading, login: startGoogleSignIn } = googleAuth;
   const isGoogleAvailable = useIsGoogleAvailable();
   const isLoginView =
     currentView === "login" || currentView === "loginAfterReset";
-  const authToken = useRef(getInitialAuthToken()).current;
+  const [authToken] = useState(getInitialAuthToken);
   const {
     isSubmitting,
     submitError,
@@ -87,9 +89,9 @@ export const AuthModal: FC = () => {
   );
 
   const handleGoogleSignIn = useCallback(() => {
-    void googleAuth.login();
+    void startGoogleSignIn();
     closeModal();
-  }, [googleAuth, closeModal]);
+  }, [closeModal, startGoogleSignIn]);
 
   const navigateToForgotPassword = useCallback(() => {
     setView("forgotPassword");
@@ -193,6 +195,7 @@ export const AuthModal: FC = () => {
             </div>
             <GoogleButton
               onClick={handleGoogleSignIn}
+              disabled={isGoogleAuthLoading}
               label="Continue with Google"
               style={{ width: "100%" }}
             />
