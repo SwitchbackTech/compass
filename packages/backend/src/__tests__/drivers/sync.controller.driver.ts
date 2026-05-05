@@ -3,7 +3,7 @@ import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { type Payload_Sync_Notif } from "@core/types/sync.types";
 import { type BaseDriver } from "@backend/__tests__/drivers/base.driver";
-import { encodeChannelToken } from "@backend/sync/util/watch.util";
+import { encodeChannelToken } from "@backend/sync/services/watch/google-watch-token";
 
 export class SyncControllerDriver {
   constructor(private readonly baseDriver: BaseDriver) {}

@@ -8,9 +8,9 @@ import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import { getChannelExpiration } from "@backend/sync/util/sync.util";
+import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.13T14.22.21.migrate-sync-watch-data";

@@ -37,7 +37,7 @@ import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { reorderEvents } from "@backend/event/queries/event.queries";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 
 class EventService {
   /*

@@ -4,7 +4,7 @@ import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
 import { CompassCalendarSchema } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
 import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
-import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
+import { GoogleSyncDriver } from "@backend/__tests__/drivers/google-sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
   cleanupCollections,
@@ -19,7 +19,7 @@ import * as supertokensMiddleware from "@backend/common/middleware/supertokens.m
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import priorityService from "@backend/priority/services/priority.service";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -258,7 +258,7 @@ describe("UserService", () => {
       expect(storedUser).not.toBeNull();
 
       await priorityService.createDefaultPriorities(userId);
-      await SyncDriver.createSync(storedUser!, true);
+      await GoogleSyncDriver.createHealthyGoogleSync(storedUser!, true);
       await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
       const summary: Summary_Delete =

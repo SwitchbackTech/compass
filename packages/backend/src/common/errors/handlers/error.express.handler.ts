@@ -24,8 +24,8 @@ import {
 } from "@backend/common/types/error.types";
 import { type SessionResponse } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
-import { getSyncByToken } from "@backend/sync/util/sync.queries";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
+import { getSyncByToken } from "@backend/sync/services/records/sync-records.repository";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
 

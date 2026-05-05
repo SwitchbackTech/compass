@@ -1,0 +1,141 @@
+40 |     }
+41 |   }
+42 |   let er;
+43 |   if (args.length > 0)
+44 |     er = args[0];
+45 |     throw er;
+                 ^
+error: Failed to start server. Is port 3000 in use?
+      at emitError (node:http:350:13)
+26-05-05 16:47:10 [[32minfo[39m] app:root: Server running on port: 3000 
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/health[39m[22m [1m[94m27.943ms[39m[22m [1m[95mTue, 05 May 2026 16:47:12 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/config[39m[22m [1m[94m1.189ms[39m[22m [1m[95mTue, 05 May 2026 16:48:27 GMT[39m[22m
+26-05-05 16:48:27 [[34mdebug[39m] app:sse.server: SSE connection opened for user: 69f8d418b4fe08f399f1ee11 (total: 1) 
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m131.479ms[39m[22m [1m[95mTue, 05 May 2026 16:48:27 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/profile[39m[22m [1m[94m424.844ms[39m[22m [1m[95mTue, 05 May 2026 16:48:28 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/metadata[39m[22m [1m[94m748.787ms[39m[22m [1m[95mTue, 05 May 2026 16:48:28 GMT[39m[22m
+26-05-05 16:48:49 [[34mdebug[39m] app:sse.server: SSE dead connection removed for user: 69f8d418b4fe08f399f1ee11 
+26-05-05 16:48:49 [[34mdebug[39m] app:sse.server: SSE connection closed for user: 69f8d418b4fe08f399f1ee11 
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/config[39m[22m [1m[94m0.679ms[39m[22m [1m[95mTue, 05 May 2026 16:48:49 GMT[39m[22m
+26-05-05 16:48:49 [[34mdebug[39m] app:sse.server: SSE connection opened for user: 69f8d418b4fe08f399f1ee11 (total: 1) 
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/profile[39m[22m [1m[94m32.407ms[39m[22m [1m[95mTue, 05 May 2026 16:48:49 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m82.540ms[39m[22m [1m[95mTue, 05 May 2026 16:48:49 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/metadata[39m[22m [1m[94m140.929ms[39m[22m [1m[95mTue, 05 May 2026 16:48:50 GMT[39m[22m
+26-05-05 16:48:51 [[34mdebug[39m] app:sse.server: SSE dead connection removed for user: 69f8d418b4fe08f399f1ee11 
+26-05-05 16:48:51 [[34mdebug[39m] app:sse.server: SSE connection closed for user: 69f8d418b4fe08f399f1ee11 
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/config[39m[22m [1m[94m0.240ms[39m[22m [1m[95mTue, 05 May 2026 16:48:51 GMT[39m[22m
+26-05-05 16:48:51 [[34mdebug[39m] app:sse.server: SSE connection opened for user: 69f8d418b4fe08f399f1ee11 (total: 1) 
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/profile[39m[22m [1m[94m38.515ms[39m[22m [1m[95mTue, 05 May 2026 16:48:51 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m87.519ms[39m[22m [1m[95mTue, 05 May 2026 16:48:51 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/metadata[39m[22m [1m[94m206.690ms[39m[22m [1m[95mTue, 05 May 2026 16:48:51 GMT[39m[22m
+26-05-05 16:48:54 [[34mdebug[39m] app:sse.server: SSE dead connection removed for user: 69f8d418b4fe08f399f1ee11 
+26-05-05 16:48:54 [[34mdebug[39m] app:sse.server: SSE connection closed for user: 69f8d418b4fe08f399f1ee11 
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/config[39m[22m [1m[94m0.242ms[39m[22m [1m[95mTue, 05 May 2026 16:48:55 GMT[39m[22m
+26-05-05 16:48:55 [[34mdebug[39m] app:sse.server: SSE connection opened for user: 69f8d418b4fe08f399f1ee11 (total: 1) 
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/profile[39m[22m [1m[94m35.480ms[39m[22m [1m[95mTue, 05 May 2026 16:48:55 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m70.288ms[39m[22m [1m[95mTue, 05 May 2026 16:48:55 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/metadata[39m[22m [1m[94m153.772ms[39m[22m [1m[95mTue, 05 May 2026 16:48:55 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m79.333ms[39m[22m [1m[95mTue, 05 May 2026 16:49:29 GMT[39m[22m
+26-05-05 16:49:29 [[34mdebug[39m] app:sse.server: SSE dead connection removed for user: 69f8d418b4fe08f399f1ee11 
+26-05-05 16:49:29 [[34mdebug[39m] app:sse.server: SSE connection closed for user: 69f8d418b4fe08f399f1ee11 
+[1m[31m401[39m[22m [1m[97mGET[39m[22m [1m[96m/api/events/stream[39m[22m [1m[94m2.334ms[39m[22m [1m[95mTue, 05 May 2026 16:49:29 GMT[39m[22m
+26-05-05 16:49:40 [[32minfo[39m] app:auth.google.service: google_auth_decision {
+  "event": "google_auth_decision",
+  "authMode": "SIGNIN_INCREMENTAL",
+  "createdNewRecipeUser": false,
+  "hasCompassUserId": true,
+  "hasGoogleUserId": true,
+  "hasHealthySync": true,
+  "hasProviderEmail": true,
+  "hasStoredRefreshToken": true,
+  "loginMethodsLength": 1,
+  "compassUserTraceId": "4e2b9966754580e1",
+  "googleUserTraceId": "4e4a0791a7272e76",
+  "providerEmailTraceId": "fd70f10a68324d8a"
+}
+26-05-05 16:49:40 [[32minfo[39m] app:google-sync.service: Starting incremental Google Calendar sync for user: 69f8d418b4fe08f399f1ee11 
+26-05-05 16:49:40 [[34mdebug[39m] app:sse.server: SSE connection opened for user: 69f8d418b4fe08f399f1ee11 (total: 1) 
+26-05-05 16:49:40 [[34mdebug[39m] app:compass-to-google.event-propagation: Processing 7 event(s)... 
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/metadata[39m[22m [1m[94m246.707ms[39m[22m [1m[95mTue, 05 May 2026 16:49:40 GMT[39m[22m
+26-05-05 16:49:40 [[32minfo[39m] app:compass-to-google.event-propagation: Handle Compass event(69f8e0916e516f3f35ce92f1): NIL->>STANDALONE_SOMEDAY_CONFIRMED 
+26-05-05 16:49:40 [[32minfo[39m] app:compass-to-google.event-propagation: Handle Compass event(69f8e0916e516f3f35ce92f2): NIL->>STANDALONE_SOMEDAY_CONFIRMED 
+26-05-05 16:49:41 [[32minfo[39m] app:compass-to-google.event-propagation: Handle Compass event(69f8e0916e516f3f35ce92f3): NIL->>STANDALONE_CONFIRMED 
+26-05-05 16:49:41 [[31merror[39m] app:google-watch.service: Skipped Start Watch for calendarlist {
+  "description": "Calendar watch already exists",
+  "status": 400,
+  "isOperational": true
+}
+26-05-05 16:49:41 [[31merror[39m] app:google-watch.service: Skipped Start Watch for ugurarmagan93@gmail.com events {
+  "description": "Event watch already exists",
+  "status": 400,
+  "isOperational": true
+}
+26-05-05 16:49:41 [[32minfo[39m] app:compass-to-google.event-propagation: Handle Compass event(69f8e0916e516f3f35ce92f4): NIL->>STANDALONE_CONFIRMED 
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m77.976ms[39m[22m [1m[95mTue, 05 May 2026 16:49:41 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/user/metadata[39m[22m [1m[94m148.779ms[39m[22m [1m[95mTue, 05 May 2026 16:49:42 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m78.555ms[39m[22m [1m[95mTue, 05 May 2026 16:49:42 GMT[39m[22m
+26-05-05 16:49:42 [[32minfo[39m] app:compass-to-google.event-propagation: Handle Compass event(69f8e0916e516f3f35ce92f5): NIL->>STANDALONE_CONFIRMED 
+26-05-05 16:49:43 [[32minfo[39m] app:compass-to-google.event-propagation: Handle Compass event(69f8e0916e516f3f35ce92f6): NIL->>STANDALONE_CONFIRMED 
+26-05-05 16:49:43 [[32minfo[39m] app:compass-to-google.event-propagation: Handle Compass event(69f8e0916e516f3f35ce92f7): NIL->>STANDALONE_CONFIRMED 
+[1m[96m204[39m[22m [1m[97mPOST[39m[22m [1m[96m/api/event[39m[22m [1m[94m3969.863ms[39m[22m [1m[95mTue, 05 May 2026 16:49:44 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?someday=true&start=2026-04-30T23:59:59-05:00&end=2026-05-31T23:59:59-05:00[39m[22m [1m[94m143.231ms[39m[22m [1m[95mTue, 05 May 2026 16:49:44 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m162.736ms[39m[22m [1m[95mTue, 05 May 2026 16:49:44 GMT[39m[22m
+[1m[33m304[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m77.707ms[39m[22m [1m[95mTue, 05 May 2026 16:49:44 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/health[39m[22m [1m[94m44.635ms[39m[22m [1m[95mTue, 05 May 2026 16:51:58 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/health[39m[22m [1m[94m104.498ms[39m[22m [1m[95mTue, 05 May 2026 16:52:14 GMT[39m[22m
+[1m[31m403[39m[22m [1m[97mPOST[39m[22m [1m[96m/api/sync/gcal/notifications[39m[22m [1m[94m1.285ms[39m[22m [1m[95mTue, 05 May 2026 16:52:40 GMT[39m[22m
+26-05-05 16:55:02 [[32minfo[39m] app:google-watch.service: calendarlist sync initialized for channelId: 69fa20e5e77014be764ffa0f 
+[1m[96m200[39m[22m [1m[97mPOST[39m[22m [1m[96m/api/sync/gcal/notifications[39m[22m [1m[94m3.552ms[39m[22m [1m[95mTue, 05 May 2026 16:55:02 GMT[39m[22m
+26-05-05 16:55:02 [[32minfo[39m] app:google-watch.service: events sync initialized for channelId: 69fa20e5e77014be764ffa0e 
+[1m[96m200[39m[22m [1m[97mPOST[39m[22m [1m[96m/api/sync/gcal/notifications[39m[22m [1m[94m0.377ms[39m[22m [1m[95mTue, 05 May 2026 16:55:02 GMT[39m[22m
+26-05-05 16:55:30 [[34mdebug[39m] app:google-to-compass.event-propagation: Processing 6 event(s)... 
+26-05-05 16:55:30 [[32minfo[39m] app:google-to-compass.event-propagation: Handle Gcal event(69f8e0916e516f3f35ce92f3): STANDALONE->>STANDALONE_CONFIRMED 
+26-05-05 16:55:30 [[32minfo[39m] app.event.classes.gcal.parser: UPSERTING STANDALONE->>STANDALONE_CONFIRMED: 69f8e0916e516f3f35ce92f3 (Gcal) 
+26-05-05 16:55:30 [[32minfo[39m] app:google-to-compass.event-propagation: Handle Gcal event(69f8e0916e516f3f35ce92f4): STANDALONE->>STANDALONE_CONFIRMED 
+26-05-05 16:55:30 [[32minfo[39m] app.event.classes.gcal.parser: UPSERTING STANDALONE->>STANDALONE_CONFIRMED: 69f8e0916e516f3f35ce92f4 (Gcal) 
+26-05-05 16:55:31 [[32minfo[39m] app:google-to-compass.event-propagation: Handle Gcal event(69f8e0916e516f3f35ce92f5): STANDALONE->>STANDALONE_CONFIRMED 
+26-05-05 16:55:31 [[32minfo[39m] app.event.classes.gcal.parser: UPSERTING STANDALONE->>STANDALONE_CONFIRMED: 69f8e0916e516f3f35ce92f5 (Gcal) 
+26-05-05 16:55:31 [[32minfo[39m] app:google-to-compass.event-propagation: Handle Gcal event(69f8e0916e516f3f35ce92f6): STANDALONE->>STANDALONE_CONFIRMED 
+26-05-05 16:55:31 [[32minfo[39m] app.event.classes.gcal.parser: UPSERTING STANDALONE->>STANDALONE_CONFIRMED: 69f8e0916e516f3f35ce92f6 (Gcal) 
+26-05-05 16:55:31 [[32minfo[39m] app:google-to-compass.event-propagation: Handle Gcal event(69f8e0916e516f3f35ce92f7): STANDALONE->>STANDALONE_CONFIRMED 
+26-05-05 16:55:31 [[32minfo[39m] app.event.classes.gcal.parser: UPSERTING STANDALONE->>STANDALONE_CONFIRMED: 69f8e0916e516f3f35ce92f7 (Gcal) 
+26-05-05 16:55:31 [[32minfo[39m] app:google-to-compass.event-propagation: Handle Gcal event(7sv7i5o5lvq6lvpqq709s3obta): STANDALONE->>STANDALONE_CONFIRMED 
+26-05-05 16:55:31 [[32minfo[39m] app.event.classes.gcal.parser: UPSERTING STANDALONE->>STANDALONE_CONFIRMED: 7sv7i5o5lvq6lvpqq709s3obta (Gcal) 
+PROCESSED: [
+  {
+    title: "Morning standup",
+    transition: [ "STANDALONE", "STANDALONE_CONFIRMED" ],
+    category: "STANDALONE",
+    operation: "STANDALONE_UPDATED",
+  }, {
+    title: "Try Compass",
+    transition: [ "STANDALONE", "STANDALONE_CONFIRMED" ],
+    category: "STANDALONE",
+    operation: "STANDALONE_UPDATED",
+  }, {
+    title: "Exercise",
+    transition: [ "STANDALONE", "STANDALONE_CONFIRMED" ],
+    category: "STANDALONE",
+    operation: "STANDALONE_UPDATED",
+  }, {
+    title: "Call a friend",
+    transition: [ "STANDALONE", "STANDALONE_CONFIRMED" ],
+    category: "STANDALONE",
+    operation: "STANDALONE_UPDATED",
+  }, {
+    title: "Deep work day",
+    transition: [ "STANDALONE", "STANDALONE_CONFIRMED" ],
+    category: "STANDALONE",
+    operation: "STANDALONE_UPDATED",
+  }, {
+    title: "test",
+    transition: [ "STANDALONE", "STANDALONE_CONFIRMED" ],
+    category: "STANDALONE",
+    operation: "STANDALONE_UPDATED",
+  }
+]
+26-05-05 16:55:31 [[32minfo[39m] app:google-watch.service: GCal Notification for user: 69f8d418b4fe08f399f1ee11, calendarId: ugurarmagan93@gmail.com PROCESSED 
+[1m[96m200[39m[22m [1m[97mPOST[39m[22m [1m[96m/api/sync/gcal/notifications[39m[22m [1m[94m1260.910ms[39m[22m [1m[95mTue, 05 May 2026 16:55:31 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/event?start=2026-05-05T00:00:00Z&end=2026-05-05T23:59:59Z[39m[22m [1m[94m80.666ms[39m[22m [1m[95mTue, 05 May 2026 16:55:31 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/health[39m[22m [1m[94m28.211ms[39m[22m [1m[95mTue, 05 May 2026 16:55:51 GMT[39m[22m
+[1m[96m200[39m[22m [1m[97mGET[39m[22m [1m[96m/api/health[39m[22m [1m[94m31.178ms[39m[22m [1m[95mTue, 05 May 2026 16:55:51 GMT[39m[22m

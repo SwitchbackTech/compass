@@ -19,7 +19,7 @@ Primary files:
 
 ## Recurrence Categories
 
-Compass sync logic classifies event shape using `Categories_Recurrence`:
+Compass-to-Google event propagation classifies event shape using `Categories_Recurrence`:
 
 - `STANDALONE`
 - `RECURRENCE_BASE`
@@ -28,7 +28,7 @@ Compass sync logic classifies event shape using `Categories_Recurrence`:
 - `RECURRENCE_BASE_SOMEDAY`
 - `RECURRENCE_INSTANCE_SOMEDAY`
 
-The Compass sync path treats recurrence handling as a transition problem:
+The Compass-to-Google path treats recurrence handling as a transition problem:
 
 1. build a transition context from the incoming Compass payload plus the current DB event
 2. analyze that transition into a plain `CompassOperationPlan`
@@ -39,7 +39,7 @@ Primary files:
 
 - `packages/backend/src/event/classes/compass.event.parser.ts`
 - `packages/backend/src/event/classes/compass.event.executor.ts`
-- `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
+- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
 
 ## Update Scopes
 
@@ -95,7 +95,7 @@ Useful heuristics during Google sync:
 - cancelled instances should be handled as instance-level deletions
 - payload ordering is not reliable enough to infer user intent by itself
 
-This is why Compass sync logic keys off persisted state plus event properties instead of trying to reconstruct a single high-level Google UI action.
+This is why Compass-to-Google event propagation keys off persisted state plus event properties instead of trying to reconstruct a single high-level Google UI action.
 
 ## Someday And Provider Semantics
 
@@ -114,7 +114,7 @@ Instead:
 
 - `analyzeCompassTransition(...)` describes the implied Google effect
 - `applyCompassPlan(...)` performs only Compass DB mutations
-- `CompassSyncProcessor` executes Google create/update/delete after Compass persistence succeeds
+- `CompassToGoogleEventPropagation` executes Google create/update/delete after Compass persistence succeeds
 
 Delete-oriented Google effects should prefer the persisted DB `gEventId` when available, then fall back to the incoming payload `gEventId`.
 
@@ -143,7 +143,7 @@ Concrete examples from current tests:
 - last persisted Compass event when a step returns one
 - `googleDeleteEventId` resolved from persisted event first, otherwise planner fallback
 
-The processor executes Google effects only after Compass persistence succeeds.
+Compass-to-Google event propagation executes Google effects only after Compass persistence succeeds.
 
 ## Recurrence Sync Triage Runbook
 
@@ -155,7 +155,7 @@ Use this sequence when recurring edits behave unexpectedly:
 3. Verify the planned `steps` order and `googleEffect` in unit tests:
    - `compass.event.parser.test.ts`
    - `compass.event.executor.test.ts`
-   - `compass.sync.processor.test.ts`
+   - `compass-to-google.event-propagation.test.ts`
 4. Map each step to persistence calls in `executeStep(...)`:
    - `create` -> `_createCompassEvent`
    - `update` -> `_updateCompassEvent`
@@ -183,5 +183,5 @@ Good test anchors:
 
 - `packages/backend/src/event/classes/compass.event.parser.test.ts`
 - `packages/backend/src/event/classes/compass.event.executor.test.ts`
-- `packages/backend/src/sync/services/sync/__tests__/compass.sync.processor.all-event.test.ts`
-- `packages/backend/src/sync/services/sync/__tests__/compass-sync-processor-this-event/*.test.ts`
+- `packages/backend/src/sync/services/event-propagation/__tests__/compass-to-google.all-event.test.ts`
+- `packages/backend/src/sync/services/event-propagation/__tests__/compass-to-google-this-event/*.test.ts`

@@ -126,8 +126,24 @@ A Google Calendar import into Compass.
 A Google sync recovery path that refreshes or restarts Google data when metadata
 says the existing sync needs repair.
 
+**Google Watch repair**:
+A repair path that recreates missing, expired, stale, or incomplete **Google
+Watches** for a **Google-connected user**. Repair should happen only when watch
+state is broken; regular health checks should not repeatedly call Google when
+watches are already healthy. When sync tokens are usable, watch repair should
+also catch up missed Google-side changes through incremental import; when sync
+tokens are missing or invalid, fall back to full **Repair**.
+
 **Public watch notifications**:
 Google-to-Compass webhook posts at `/api/sync/gcal/notifications`.
+
+**Compass-to-Google event propagation**:
+The backend flow that applies Compass Event writes and mirrors eligible Google
+side effects.
+
+**Google-to-Compass event propagation**:
+The backend flow that applies Google Calendar event changes to Compass data
+during Import or Public watch notification handling.
 
 ## Relationships
 

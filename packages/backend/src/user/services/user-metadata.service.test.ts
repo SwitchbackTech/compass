@@ -1,19 +1,19 @@
+import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
-import { WatchDriver } from "@backend/__tests__/drivers/watch.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
-import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
+import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 
 // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- mock factory spreads requireActual
-jest.mock("@backend/sync/util/sync.util", () => ({
-  ...jest.requireActual("@backend/sync/util/sync.util"),
+jest.mock("@backend/sync/services/watch/google-watch-config", () => ({
+  ...jest.requireActual("@backend/sync/services/watch/google-watch-config"),
   isUsingGcalWebhookHttps: jest.fn(),
 }));
 
@@ -93,7 +93,7 @@ describe("UserMetadataService", () => {
       const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as jest.Mock;
       isUsingGcalWebhookHttpsSpy.mockReturnValue(false);
 
-      await WatchDriver.deleteManyByUser(userId);
+      await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
       const metadata = await driver.fetchUserMetadata(userId);
 
@@ -108,7 +108,7 @@ describe("UserMetadataService", () => {
       const isUsingGcalWebhookHttpsSpy = isUsingGcalWebhookHttps as jest.Mock;
       isUsingGcalWebhookHttpsSpy.mockReturnValue(true);
 
-      await WatchDriver.deleteManyByUser(userId);
+      await GoogleWatchDriver.removeActiveGoogleWatchesForUser(userId);
 
       const metadata = await driver.fetchUserMetadata(userId);
 

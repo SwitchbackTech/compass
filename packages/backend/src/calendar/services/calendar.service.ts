@@ -10,8 +10,8 @@ import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { getCalendarsToSync } from "@backend/sync/services/init/sync.init";
-import { updateSync } from "@backend/sync/util/sync.queries";
+import { getCalendarsToSync } from "@backend/sync/services/init/google-sync-init";
+import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 
 class CalendarService {
   private static readonly calendarSelectionToggleSchema = z

@@ -12,8 +12,8 @@ import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
 import { isBase, isInstance } from "@core/util/event/event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
+import { GoogleSyncDriver } from "@backend/__tests__/drivers/google-sync.driver";
 import { SyncControllerDriver } from "@backend/__tests__/drivers/sync.controller.driver";
-import { SyncDriver } from "@backend/__tests__/drivers/sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
@@ -30,11 +30,11 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
+import * as syncQueries from "@backend/sync/services/records/sync-records.repository";
+import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import * as syncQueries from "@backend/sync/util/sync.queries";
-import { updateSync } from "@backend/sync/util/sync.queries";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { randomUUID } from "node:crypto";
@@ -669,7 +669,7 @@ describe("SyncController", () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await GoogleSyncDriver.createHealthyGoogleSync(user);
 
         await userMetadataService.updateUserMetadata({
           userId,
@@ -710,7 +710,7 @@ describe("SyncController", () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await GoogleSyncDriver.createHealthyGoogleSync(user);
 
         await userMetadataService.updateUserMetadata({
           userId,
@@ -751,7 +751,7 @@ describe("SyncController", () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await GoogleSyncDriver.createHealthyGoogleSync(user);
 
         await userMetadataService.updateUserMetadata({
           userId,
@@ -789,7 +789,7 @@ describe("SyncController", () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await GoogleSyncDriver.createHealthyGoogleSync(user);
 
         const importStartSpy = jest.spyOn(sseServer, "handleImportGCalStart");
 
@@ -807,7 +807,7 @@ describe("SyncController", () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await GoogleSyncDriver.createHealthyGoogleSync(user);
 
         const stream = baseDriver.openSSEStream({
           userId,
@@ -831,7 +831,7 @@ describe("SyncController", () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
-        await SyncDriver.createSync(user);
+        await GoogleSyncDriver.createHealthyGoogleSync(user);
 
         const backgroundChangeSpy = jest.spyOn(
           sseServer,

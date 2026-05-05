@@ -13,7 +13,7 @@ import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { ENV } from "@backend/common/constants/env.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
+import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 export default class Seeder implements RunnableMigration<MigrationContext> {
@@ -136,7 +136,7 @@ export default class Seeder implements RunnableMigration<MigrationContext> {
     const userId = (await this.#findUserOrThrow(user!))._id.toString();
     const events = this.#generateEvents(userId);
 
-    await CompassSyncProcessor.processEvents(
+    await CompassToGoogleEventPropagation.processEvents(
       events.map((payload) => ({
         payload,
         applyTo: RecurringEventUpdateScope.THIS_EVENT,
@@ -153,7 +153,7 @@ export default class Seeder implements RunnableMigration<MigrationContext> {
     const userId = (await this.#findUserOrThrow(user!))._id.toString();
     const events = this.#generateEvents(userId);
 
-    await CompassSyncProcessor.processEvents(
+    await CompassToGoogleEventPropagation.processEvents(
       events.map((payload) => ({
         payload,
         applyTo: RecurringEventUpdateScope.THIS_EVENT,

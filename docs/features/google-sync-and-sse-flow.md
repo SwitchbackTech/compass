@@ -1,6 +1,6 @@
 # Google Sync And Server-Sent Events (SSE)
 
-Compass sync is bidirectional:
+Compass Google Calendar integration is bidirectional:
 
 - Compass-originated event changes can propagate to Google and then notify web clients.
 - Google-originated changes can flow back into Compass and then notify web clients.
@@ -78,7 +78,7 @@ Source:
 
 - `packages/core/src/types/sse.types.ts`
 - `packages/backend/src/user/services/user.service.ts`
-- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
 
 `IMPORT_GCAL_END` carries an explicit `operation` so the client can distinguish repair completion from incremental completion.
 
@@ -114,7 +114,7 @@ High-level path:
 3. The selected repository writes locally or remotely.
 4. Remote event writes hit backend event routes.
 5. `EventController` packages the change as a `CompassEvent`.
-6. `CompassSyncProcessor.processEvents()` loads the DB event, plans work, applies persistence, and runs Google side effects.
+6. `CompassToGoogleEventPropagation.processEvents()` loads the DB event, plans work, applies persistence, and runs Google side effects.
 7. After commit, the backend calls `sseServer` to publish notifications based on whether the change affected normal or someday events (`EVENT_CHANGED` vs `SOMEDAY_EVENT_CHANGED`).
 
 Primary files:
@@ -122,33 +122,34 @@ Primary files:
 - `packages/web/src/ducks/events/sagas/event.sagas.ts`
 - `packages/web/src/common/repositories/event`
 - `packages/backend/src/event/controllers/event.controller.ts`
-- `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
+- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
 
 ## Inbound Flow: Google Notifies Compass About Changes
 
 High-level path:
 
 1. Google posts to the notification endpoint in sync routes.
-2. Backend verifies the request origin.
+2. `publicWatchNotificationIngress` validates and parses the Google headers.
 3. `googleWatchService.handleGoogleWatchNotification()` locates the watch and sync record.
 4. The service builds a Google Calendar client for the user.
 5. `GCalNotificationHandler` fetches incremental changes using the stored sync token.
-6. `GcalSyncProcessor` applies those changes to Compass data.
+6. `GoogleToCompassEventPropagation` applies those changes to Compass data.
 7. The backend publishes `EVENT_CHANGED` (or someday equivalent) so clients refetch.
 
 Primary files:
 
 - `packages/backend/src/sync/sync.routes.config.ts`
+- `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`
 - `packages/backend/src/sync/services/watch/google-watch.service.ts`
-- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
-- `packages/backend/src/sync/services/records/sync.records.ts`
+- `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
+- `packages/backend/src/sync/services/records/sync-records.repository.ts`
 - `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
-- `packages/backend/src/sync/services/sync/google/gcal.sync.processor.ts`
+- `packages/backend/src/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation.ts`
 
 Lifecycle and outbound repair paths live in:
 
-- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
-- `packages/backend/src/sync/services/outbound/compass-google-mirror.service.ts`
+- `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
+- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
 - `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
 
 ### Notification Outcomes And Error Semantics
@@ -206,8 +207,14 @@ Redux reasons for refetch (`Sync_AsyncStateContextReason`) reuse the same string
 Source files:
 
 - `packages/backend/src/user/services/user-metadata.service.ts`
+- `packages/backend/src/sync/services/google-sync/google-sync.health.ts`
 - `packages/core/src/types/user.types.ts`
 - `packages/web/src/sse/hooks/useGcalSSE.ts`
+
+The sidebar Google connection state is derived from user metadata. The backend
+metadata service delegates HEALTHY vs ATTENTION diagnosis to Google sync health,
+which checks stored sync tokens and, when public HTTPS watch notifications are
+enabled, active Google watches.
 
 Auto-import guardrail:
 

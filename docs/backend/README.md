@@ -49,7 +49,7 @@ Important runtime behavior:
 
 ## Event Writes
 
-- Event writes route through the Compass sync processor and can apply Google side effects.
+- Event writes route through Compass-to-Google event propagation and can apply Google side effects.
 - Missing Google refresh token does not block Compass-local event writes; Google side effects are skipped.
 - Controllers use the shared `res.promise(...)` response helper and centralized
   error handling.
@@ -57,16 +57,18 @@ Important runtime behavior:
 Key files:
 
 - `packages/backend/src/event/controllers/event.controller.ts`
-- `packages/backend/src/sync/services/sync/compass/compass.sync.processor.ts`
-- `packages/backend/src/sync/services/outbound/compass-google-mirror.service.ts`
+- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
+- `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
 
 ## Google Notification Ingress
 
 - endpoint: `POST /api/sync/gcal/notifications`
 - source: `packages/backend/src/sync/controllers/sync.controller.ts`
-- middleware: `authMiddleware.verifyIsFromGoogle`
+- middleware: `publicWatchNotificationIngress.verify`
+- ingress owner: `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`
 - notification owner: `packages/backend/src/sync/services/watch/google-watch.service.ts`
-- import/repair owner: `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- repair/setup owner: `packages/backend/src/sync/services/google-sync/google-sync.service.ts`
+- import owner: `packages/backend/src/sync/services/import/google-import.service.ts`
 - maintenance owner: `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
 
 Observed outcomes include:

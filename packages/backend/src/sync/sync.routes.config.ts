@@ -12,6 +12,7 @@ import {
 } from "@backend/common/middleware/google.required.middleware";
 import { SyncController } from "@backend/sync/controllers/sync.controller";
 import syncDebugController from "@backend/sync/controllers/sync.debug.controller";
+import { publicWatchNotificationIngress } from "@backend/sync/services/public-watch-notifications/public-watch-notification.ingress";
 
 export class SyncRoutes extends CommonRoutesConfig {
   constructor(app: express.Application) {
@@ -25,7 +26,7 @@ export class SyncRoutes extends CommonRoutesConfig {
     this.app
       .route(`/api${GCAL_NOTIFICATION_ENDPOINT}`)
       .post([
-        authMiddleware.verifyIsFromGoogle,
+        publicWatchNotificationIngress.verify,
         SyncController.handleGoogleNotification,
       ]);
 

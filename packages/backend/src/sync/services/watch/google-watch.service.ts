@@ -22,17 +22,13 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
+import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
-import {
-  getSync,
-  isWatchingGoogleResource,
-} from "@backend/sync/util/sync.queries";
-import {
-  getChannelExpiration,
-  isMissingGoogleRefreshToken,
-  isUsingGcalWebhookHttps,
-} from "@backend/sync/util/sync.util";
+import { getSync } from "@backend/sync/services/records/sync-records.repository";
+import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import { isWatchingGoogleResource } from "@backend/sync/services/watch/google-watch-state";
+import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:google-watch.service");

@@ -6,11 +6,11 @@ import {
   type SReqBody,
 } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
+import { getSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
-import { getSync } from "@backend/sync/util/sync.queries";
 
 class SyncDebugController {
   dispatchEventToClient = (_req: Request, res: Response) => {

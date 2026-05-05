@@ -92,9 +92,9 @@ For `POST /api/event`:
 1. route requires `verifySession()`
 2. controller adds the authenticated user id
 3. controller normalizes single vs array payloads
-4. controller forwards the change set to `CompassSyncProcessor`
+4. controller forwards the change set to `CompassToGoogleEventPropagation`
 5. controller returns a status-only payload (`{ statusCode: 204 }`) through `res.promise(...)`
-6. processor:
+6. Compass-to-Google event propagation:
    - loads current Compass DB state
    - analyzes the transition into a persistence plan
    - applies Compass DB mutations first
@@ -118,7 +118,8 @@ Frequently used middleware:
 - `requireGoogleConnectionSession`: active Google connection required for routes that call Google directly (for example `/api/sync/import-gcal`)
 - `authMiddleware.verifyIsDev`: development-only route
 - `authMiddleware.verifyIsFromCompass`: trusted internal caller
-- `authMiddleware.verifyIsFromGoogle`: trusted Google notification source
+- `publicWatchNotificationIngress.verify`: trusted Google notification source
+- `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`: Public watch notification header validation and payload parsing
 
 Intentional unauthenticated route:
 

@@ -17,7 +17,7 @@ import {
   type SReqBody,
 } from "@backend/common/types/express.types";
 import eventService from "@backend/event/services/event.service";
-import { CompassSyncProcessor } from "@backend/sync/services/sync/compass/compass.sync.processor";
+import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
 
 /**
  * Event controller for CRUD operations on Compass events.
@@ -39,7 +39,7 @@ class EventController {
       }),
     })) as CompassEvent[];
 
-    await CompassSyncProcessor.processEvents(events);
+    await CompassToGoogleEventPropagation.processEvents(events);
   }
 
   create = (

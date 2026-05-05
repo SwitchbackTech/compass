@@ -14,7 +14,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 
 describe("CalendarService", () => {
   beforeEach(setupTestDb);

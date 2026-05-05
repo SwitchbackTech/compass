@@ -6,7 +6,7 @@ import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import calendarService from "@backend/calendar/services/calendar.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcalClient } from "@backend/sync/services/google-calendar-sync/google.calendar.client";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 
 export class EventDriver {
   static async generateV0Data(count = 3) {

@@ -1,15 +1,8 @@
 import { type NextFunction, type Request, type Response } from "express";
 import { ObjectId } from "mongodb";
-import { ZodError } from "zod/v4";
-import { COMPASS_RESOURCE_HEADER } from "@core/constants/core.constants";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import {
-  GcalNotificationSchema,
-  type Payload_Sync_Notif,
-  type Resource_Sync,
-} from "@core/types/sync.types";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
@@ -20,11 +13,12 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { googleCalendarSyncService } from "@backend/sync/services/google-calendar-sync/google-calendar-sync.service";
+import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
+import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
+import { publicWatchNotificationIngress } from "@backend/sync/services/public-watch-notifications/public-watch-notification.ingress";
+import { getSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
-import { getSync } from "@backend/sync/util/sync.queries";
-import { isMissingGoogleRefreshToken } from "@backend/sync/util/sync.util";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { ImportGCalRequestSchema } from "../sync.types";
@@ -179,38 +173,17 @@ export class SyncController {
     res: Response,
     next: NextFunction,
   ) => {
-    const resource = res.getHeader(COMPASS_RESOURCE_HEADER) as Exclude<
-      Resource_Sync,
-      Resource_Sync.SETTINGS
-    >;
-
     const channelId = req.headers["x-goog-channel-id"] as string;
     const resourceId = req.headers["x-goog-resource-id"] as string;
 
-    res.removeHeader(COMPASS_RESOURCE_HEADER);
-
     try {
-      const syncPayload: Payload_Sync_Notif = GcalNotificationSchema.parse({
-        resource,
-        channelId,
-        resourceId,
-        resourceState: req.headers["x-goog-resource-state"] as string,
-        expiration: new Date(
-          req.headers["x-goog-channel-expiration"] as string,
-        ),
-      });
-
-      const response =
-        await googleWatchService.handleGoogleWatchNotification(syncPayload);
+      const response = await googleWatchService.handleGoogleWatchNotification(
+        publicWatchNotificationIngress.getNotification(res),
+      );
 
       res.promise(response);
     } catch (e) {
       logger.error(e);
-
-      if (e instanceof ZodError) {
-        res.status(Status.FORBIDDEN).send("Invalid notification payload");
-        return;
-      }
 
       if (isMissingGoogleRefreshToken(e)) {
         await SyncController.handleMissingRefreshToken(

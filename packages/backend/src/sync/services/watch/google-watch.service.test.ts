@@ -14,10 +14,12 @@ import { initSupertokens } from "@backend/common/middleware/supertokens.middlewa
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import { isUsingGcalWebhookHttps } from "@backend/sync/util/sync.util";
+import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 
-jest.mock("@backend/sync/util/sync.util", () => {
-  const actual = jest.requireActual("@backend/sync/util/sync.util");
+jest.mock("@backend/sync/services/watch/google-watch-config", () => {
+  const actual = jest.requireActual(
+    "@backend/sync/services/watch/google-watch-config",
+  );
   return {
     ...actual,
     isUsingGcalWebhookHttps: jest.fn(() => actual.isUsingGcalWebhookHttps()),
