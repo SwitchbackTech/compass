@@ -49,13 +49,13 @@ A password-authenticated user can connect Google Calendar from inside the app us
 1. Sign up or log in with email/password. Do not connect Google.
 2. Create at least one Compass event so there is pre-existing data.
 3. Open the command palette (Cmd+K) and select Connect Google Calendar, or click the Google status icon in the sidebar.
-4. Complete the Google OAuth popup with the intended Google account.
+4. Complete the Google authorization redirect with the intended Google account.
 5. Return to Compass and observe the sidebar status icon.
 6. Reload the page.
 
 ### Expected Results
 
-- The OAuth popup opens and closes cleanly without redirecting away from the app shell.
+- The Google authorization redirect returns to Compass through `/auth/google/callback`.
 - The sidebar status transitions away from NOT_CONNECTED into an importing state.
 - Pre-existing Compass events remain visible on the calendar.
 - The network flow uses `POST /api/auth/google/connect`, not the logged-out sign-in path.
@@ -72,7 +72,7 @@ After connecting Google, Compass imports all events from the user's Google calen
 ### Steps
 
 1. Connect Google Calendar (see Scenario 1), or start with an account that has `importGCal` flagged for restart.
-2. Observe the header immediately after the OAuth popup closes.
+2. Observe the header immediately after the Google authorization redirect returns.
 3. Continue using the app normally while the import runs (navigate to different dates, create a Compass event).
 4. Wait for the header spinner to disappear.
 5. Check the calendar for newly imported Google events.
@@ -207,12 +207,12 @@ After revocation, the user can reconnect Google using the same flow as the initi
 
 1. Complete Scenario 7 so the connection is in the NOT_CONNECTED state.
 2. Open the command palette and select Connect Google Calendar.
-3. Complete the Google OAuth popup.
+3. Complete the Google authorization redirect.
 4. Wait for the import to complete.
 
 ### Expected Results
 
-- The OAuth popup opens and closes without error.
+- The Google authorization redirect returns to Compass without error.
 - The import spinner appears in the header.
 - Google events repopulate the calendar after import completes.
 - The sidebar status returns to HEALTHY.

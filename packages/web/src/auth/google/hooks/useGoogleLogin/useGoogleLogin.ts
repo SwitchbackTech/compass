@@ -3,105 +3,46 @@ import {
   useGoogleLogin as useGoogleLoginBase,
 } from "@react-oauth/google";
 import { useCallback, useRef, useState } from "react";
-import { isGooglePopupClosedError } from "@web/auth/google/util/google.oauth.error.util";
-import { type GoogleAuthConfig } from "../googe.auth.types";
-
-const SCOPES_REQUIRED = [
-  "https://www.googleapis.com/auth/userinfo.email",
-  "https://www.googleapis.com/auth/calendar.readonly",
-  "https://www.googleapis.com/auth/calendar.events",
-];
-
-const isMissingPermissions = (scope: string) => {
-  const scopesGranted = scope.split(" ");
-  return SCOPES_REQUIRED.some((s) => !scopesGranted.includes(s));
-};
+import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/redirect/google-auth-redirect.constants";
+import {
+  type GoogleAuthorizationIntent,
+  writeGoogleAuthorizationIntent,
+} from "@web/auth/google/redirect/google-auth-redirect.storage";
+import {
+  buildGoogleAuthCallbackUrl,
+  getSafeGoogleAuthReturnPath,
+} from "@web/auth/google/redirect/google-auth-redirect.util";
 
 export const useGoogleLogin = ({
+  intent,
   onStart,
-  onSuccess,
   onError,
   prompt,
-  shouldTryLinkingWithSessionUser,
 }: {
+  intent: GoogleAuthorizationIntent["intent"];
   onStart?: () => void;
-  onSuccess?: (res: GoogleAuthConfig) => Promise<void>;
   onError?: (error: unknown) => void;
   prompt?: "consent" | "none" | "select_account";
-  shouldTryLinkingWithSessionUser?: boolean;
 }) => {
-  const [data, setData] = useState<{
-    code: string;
-    scope: string;
-    state: string | undefined;
-  } | null>(null);
   const [loading, setLoading] = useState(false);
-
-  const antiCsrfToken = useRef(crypto.randomUUID()).current;
+  const state = useRef(crypto.randomUUID()).current;
+  const redirectUri = buildGoogleAuthCallbackUrl();
 
   const loginOptions: UseGoogleLoginOptionsAuthCodeFlow & {
     prompt?: "consent" | "none" | "select_account";
   } = {
     flow: "auth-code",
-    scope: SCOPES_REQUIRED.join(" "),
+    scope: GOOGLE_AUTH_SCOPES_REQUIRED.join(" "),
     prompt,
-    state: antiCsrfToken,
-    onNonOAuthError(nonOAuthError) {
+    state,
+    ux_mode: "redirect",
+    redirect_uri: redirectUri,
+    onNonOAuthError(error) {
       setLoading(false);
-
-      if (isGooglePopupClosedError(nonOAuthError)) {
-        onError?.(nonOAuthError);
-        return;
-      }
-
-      console.error(nonOAuthError);
-      onError?.(nonOAuthError);
+      onError?.(error);
     },
-    onSuccess({ code, scope, state }) {
-      const isFromHacker = state !== antiCsrfToken;
-      if (isFromHacker) {
-        alert("Nice try, hacker");
-        return;
-      }
-
-      if (isMissingPermissions(scope)) {
-        alert("Missing permissions, please click all the checkboxes");
-        return;
-      }
-
-      const loginResult = onSuccess?.({
-        thirdPartyId: "google",
-        clientType: "web",
-        shouldTryLinkingWithSessionUser,
-        redirectURIInfo: {
-          redirectURIOnProviderDashboard: window.location.origin,
-          redirectURIQueryParams: { code, state, scope },
-        },
-      });
-
-      void (loginResult ?? Promise.resolve())
-        .then(() => {
-          setData({ code, scope, state });
-        })
-        .catch((e) => {
-          console.error(e);
-          alert("Login failed. Please try again.");
-          onError?.(e);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    },
-    onError: (error) => {
+    onError(error) {
       setLoading(false);
-
-      if (isGooglePopupClosedError(error)) {
-        onError?.(error);
-        return;
-      }
-
-      alert(`Login failed because: ${error.error}`);
-      console.error(error);
       onError?.(error);
     },
   };
@@ -111,12 +52,15 @@ export const useGoogleLogin = ({
   return {
     login: useCallback(() => {
       onStart?.();
-      setData(null);
       setLoading(true);
-
+      writeGoogleAuthorizationIntent(state, {
+        intent,
+        returnPath: getSafeGoogleAuthReturnPath(),
+        createdAt: Date.now(),
+      });
       return login();
-    }, [login, onStart]),
-    data,
+    }, [intent, login, onStart, state]),
+    data: null,
     loading,
   };
 };

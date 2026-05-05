@@ -2,6 +2,10 @@ import {
   ensureStorageReady,
   getStorageAdapter,
 } from "@web/common/storage/adapter/adapter";
+import {
+  isLocalDemoEvent,
+  stripLocalOnlyEventFields,
+} from "@web/common/storage/types/local-event.types";
 import { EventApi } from "@web/ducks/events/event.api";
 
 export async function syncLocalEventsToCloud(): Promise<number> {
@@ -13,8 +17,15 @@ export async function syncLocalEventsToCloud(): Promise<number> {
     return 0;
   }
 
-  await EventApi.create(events);
+  const eventsToSync = events
+    .filter((event) => !isLocalDemoEvent(event))
+    .map(stripLocalOnlyEventFields);
+
+  if (eventsToSync.length > 0) {
+    await EventApi.create(eventsToSync);
+  }
+
   await adapter.clearAllEvents();
 
-  return events.length;
+  return eventsToSync.length;
 }

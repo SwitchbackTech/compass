@@ -43,10 +43,11 @@ Authorized JavaScript origins:
   http://localhost:9080
 
 Authorized redirect URIs:
-  http://localhost:9080
+  http://localhost:9080/auth/google/callback
 ```
 
-Compass sends the browser origin as the OAuth redirect URI. That means the redirect URI is the app origin itself, not a longer callback path.
+Compass sends the dedicated Google callback page as the OAuth redirect URI.
+That means the redirect URI includes `/auth/google/callback`.
 
 This path doesn't make your local backend public. It's for sign-in and one-time import only.
 
@@ -74,17 +75,19 @@ Local setups do not create a public HTTPS URL, so they can't receive these. You 
 
 For a public server install, create a Google OAuth client with **Web application** as the client type.
 
-Use your public Compass origin for both OAuth fields:
+Use your public Compass origin for JavaScript origins and the Compass callback
+page for redirect URIs:
 
 ```text
 Authorized JavaScript origins:
   https://cal.example.com
 
 Authorized redirect URIs:
-  https://cal.example.com
+  https://cal.example.com/auth/google/callback
 ```
 
-Replace `https://cal.example.com` with your own Compass URL. Do not add `/api`, `/auth/callback`, or another path to the redirect URI.
+Replace `https://cal.example.com` with your own Compass URL. Do not add `/api`
+to the redirect URI.
 
 Also check these in Google Cloud:
 

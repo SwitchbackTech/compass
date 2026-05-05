@@ -43,6 +43,16 @@ _Avoid_: non-Google user
 **Google-connected user**:
 An authenticated user with usable Google credentials stored by the backend.
 
+**Google authorization**:
+The Google approval step that lets Compass sign a user in with Google or connect
+Google Calendar to an existing Compass session.
+_Avoid_: Google login mode
+
+**Google authorization intent**:
+The user's Compass purpose for a Google authorization: Google sign-in/up or
+Google Calendar connect/reconnect.
+_Avoid_: auth mode
+
 **Google revoked**:
 The state where Google access is no longer usable and Google-origin data should
 be pruned, ignored, or reconnected.
@@ -164,6 +174,8 @@ during Import or Public watch notification handling.
   **Events** without becoming a **Google-connected user**.
 - A **Google-connected user** can import from Google and mirror eligible Compass
   event changes to Google.
+- A **Google authorization** must preserve its **Google authorization intent**
+  instead of inferring the user's goal from the later session state.
 - **Public watch notifications** are separate from browser API and **SSE**
   traffic; browser traffic can be local, but Google webhook posts need public
   HTTPS when continuous sync is expected.

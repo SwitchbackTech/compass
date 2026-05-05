@@ -1,7 +1,11 @@
 import { DotIcon } from "@phosphor-icons/react";
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
-import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
+import { useGoogleLogin } from "@web/auth/google/hooks/useGoogleLogin/useGoogleLogin";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
+import {
+  dismissErrorToast,
+  SESSION_EXPIRED_TOAST_ID,
+} from "@web/common/utils/toast/error-toast.util";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { AuthButton } from "./components/AuthButton";
@@ -33,7 +37,7 @@ function getInitialAuthToken(): string | undefined {
  *
  * Features:
  * - Tab navigation between Sign In and Sign Up
- * - Google OAuth integration via existing useGoogleAuth hook
+ * - Google OAuth integration via redirect-based Google login hook
  * - Email/password forms with Zod validation
  * - Forgot password flow with generic success message
  * - Accessible modal with proper ARIA attributes
@@ -41,7 +45,12 @@ function getInitialAuthToken(): string | undefined {
 export const AuthModal: FC = () => {
   const { isOpen, currentView, openModal, closeModal, setView } =
     useAuthModal();
-  const googleAuth = useGoogleAuth();
+  const googleAuth = useGoogleLogin({
+    intent: "signIn",
+    onStart: () => {
+      dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
+    },
+  });
   const isGoogleAvailable = useIsGoogleAvailable();
   const isLoginView =
     currentView === "login" || currentView === "loginAfterReset";

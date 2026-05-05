@@ -132,21 +132,21 @@ The forgot-password flow should avoid leaking whether an email exists. The reset
 
 ### UX
 
-The auth modal should still allow Google sign in from a logged-out state. A successful Google flow should authenticate the user. Closing the popup should behave like cancellation, not like a hard auth failure.
+The auth modal should still allow Google sign in from a logged-out state. A successful Google redirect flow should authenticate the user and return to Compass.
 
 ### Steps
 
 1. Open the auth modal from `/day?auth=login`.
 2. Select `Continue with Google`.
-3. Complete Google OAuth successfully.
+3. Complete the Google authorization redirect with the intended Google account.
 4. Log out.
-5. Start Google sign in again, but close the popup before finishing.
+5. Start Google sign in again, but cancel at Google before finishing.
 
 ### Expected Results
 
-- A successful Google sign-in authenticates the user and returns them to the app.
-- Closing the popup clears the loading state.
-- Popup cancellation does not leave the app stuck in an auth error state.
+- The Google authorization redirect returns to Compass through `/auth/google/callback`.
+- A successful Google sign-in authenticates the user and returns them to the saved app path.
+- A canceled Google redirect returns to Compass and shows a recoverable auth error.
 
 ## Scenario 6: Password-Only Compass Usage Before Google Connect
 

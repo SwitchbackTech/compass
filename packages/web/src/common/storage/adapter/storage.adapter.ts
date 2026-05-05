@@ -1,4 +1,4 @@
-import { type Event_Core } from "@core/types/event.types";
+import { type LocalStoredEvent } from "@web/common/storage/types/local-event.types";
 import { type Task } from "@web/common/types/task.types";
 
 /**
@@ -87,22 +87,22 @@ export interface StorageAdapter {
     startDate: string,
     endDate: string,
     isSomeday?: boolean,
-  ): Promise<Event_Core[]>;
+  ): Promise<LocalStoredEvent[]>;
 
   /**
    * Get all events without filtering.
    */
-  getAllEvents(): Promise<Event_Core[]>;
+  getAllEvents(): Promise<LocalStoredEvent[]>;
 
   /**
    * Save or update a single event.
    */
-  putEvent(event: Event_Core): Promise<void>;
+  putEvent(event: LocalStoredEvent): Promise<void>;
 
   /**
    * Save or update multiple events.
    */
-  putEvents(events: Event_Core[]): Promise<void>;
+  putEvents(events: LocalStoredEvent[]): Promise<void>;
 
   /**
    * Delete an event by ID.

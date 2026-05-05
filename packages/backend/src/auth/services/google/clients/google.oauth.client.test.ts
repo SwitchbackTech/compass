@@ -1,5 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { calendar } from "@googleapis/calendar";
+import { OAuth2Client } from "google-auth-library";
 import {
   SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
   SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
@@ -56,6 +57,11 @@ describe("GoogleOAuthClient", () => {
 
     const client = new GoogleOAuthClient();
 
+    expect(OAuth2Client).toHaveBeenCalledWith(
+      ENV.GOOGLE_CLIENT_ID,
+      ENV.GOOGLE_CLIENT_SECRET,
+      "http://localhost:9080/auth/google/callback",
+    );
     expect(client.getGcalClient()).toBe(gcalClient);
     expect(mockCalendar).toHaveBeenCalledWith({
       version: "v3",
@@ -136,7 +142,8 @@ describe("GoogleOAuthClient", () => {
         clientType: "web",
         thirdPartyId: "google",
         redirectURIInfo: {
-          redirectURIOnProviderDashboard: "http://localhost:9080",
+          redirectURIOnProviderDashboard:
+            "http://localhost:9080/auth/google/callback",
           redirectURIQueryParams: { code: "auth-code" },
         },
       }),
@@ -150,6 +157,27 @@ describe("GoogleOAuthClient", () => {
       codeVerifier: undefined,
     });
     expect(mockOAuthClient.setCredentials).toHaveBeenCalledWith(tokens);
+  });
+
+  it("rejects auth code exchange from an unexpected redirect URI", async () => {
+    const client = new GoogleOAuthClient();
+    const mockOAuthClient = getMockOAuthClient(client);
+
+    await expect(
+      client.exchangeAuthCode({
+        clientType: "web",
+        thirdPartyId: "google",
+        redirectURIInfo: {
+          redirectURIOnProviderDashboard:
+            "https://evil.example/auth/google/callback",
+          redirectURIQueryParams: { code: "auth-code" },
+        },
+      }),
+    ).rejects.toMatchObject({
+      description: AuthError.GoogleRedirectUriMismatch.description,
+    });
+
+    expect(mockOAuthClient.getToken).not.toHaveBeenCalled();
   });
 
   it("returns the access token when refreshAccessToken receives a non-empty token", async () => {

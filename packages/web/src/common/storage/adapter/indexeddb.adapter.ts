@@ -1,6 +1,6 @@
 import Dexie, { type Table } from "dexie";
-import { type Event_Core } from "@core/types/event.types";
 import { isDateRangeOverlapping } from "@core/util/date/date.util";
+import { type LocalStoredEvent } from "@web/common/storage/types/local-event.types";
 import {
   normalizeTask,
   normalizeTasks,
@@ -23,7 +23,7 @@ import {
  * Schema versioning is handled by Dexie's built-in version() method.
  */
 class CompassDB extends Dexie {
-  events!: Table<Event_Core, string>;
+  events!: Table<LocalStoredEvent, string>;
   tasks!: Table<StoredTask, string>;
   _migrations!: Table<MigrationRecord, string>;
 
@@ -194,7 +194,7 @@ export class IndexedDBAdapter implements StorageAdapter {
     startDate: string,
     endDate: string,
     isSomeday?: boolean,
-  ): Promise<Event_Core[]> {
+  ): Promise<LocalStoredEvent[]> {
     const allEvents = await this.db.events.toArray();
 
     return allEvents.filter((event) => {
@@ -212,18 +212,18 @@ export class IndexedDBAdapter implements StorageAdapter {
     });
   }
 
-  async getAllEvents(): Promise<Event_Core[]> {
+  async getAllEvents(): Promise<LocalStoredEvent[]> {
     return this.db.events.toArray();
   }
 
-  async putEvent(event: Event_Core): Promise<void> {
+  async putEvent(event: LocalStoredEvent): Promise<void> {
     if (!event._id) {
       throw new Error("Event must have an _id to save");
     }
     await this.db.events.put(event);
   }
 
-  async putEvents(events: Event_Core[]): Promise<void> {
+  async putEvents(events: LocalStoredEvent[]): Promise<void> {
     const validEvents = events.filter((e) => e._id);
     if (validEvents.length > 0) {
       await this.db.events.bulkPut(validEvents);

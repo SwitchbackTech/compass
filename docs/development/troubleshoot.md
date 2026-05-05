@@ -132,7 +132,7 @@ If that pre-connect local sync fails, connect is intentionally aborted and the u
 
 What this means operationally:
 
-- this is a local-to-cloud event migration failure, not an OAuth popup failure
+- this is a local-to-cloud event migration failure, not a Google redirect failure
 - backend `connectGoogleToCurrentUser` is not called for that attempt
 - no Google import restart should be observed from that click
 

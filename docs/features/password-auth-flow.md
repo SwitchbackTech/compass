@@ -77,6 +77,33 @@ Design intent:
 - logged-in Google attach is an authenticated Compass backend flow
 - logout is decoupled from Google state and succeeds even when no Google account
   is linked
+- Google authorization uses a full-page redirect. Both Google sign-in/up and
+  Google Calendar connect/reconnect return to `/auth/google/callback`.
+- Before leaving for Google, the web app stores a short-lived Google
+  authorization intent and same-origin return path in `sessionStorage`, keyed by
+  the OAuth `state` value. The callback validates that state, finishes the saved
+  intent, removes it, and then returns the user to the page that started the
+  flow. If the saved return path is missing or unsafe, the callback falls back
+  to `/day`.
+- The backend accepts only the configured Compass Google callback URL as the
+  OAuth redirect URI when exchanging a Google code. The callback URL is derived
+  from backend `FRONTEND_URL` plus `/auth/google/callback`.
+- The callback page is intentionally transitional: it shows a simple completion
+  status, finishes or fails the saved Google authorization intent, and navigates
+  back into the app.
+- Google authorization no longer uses a blocking overlay. The callback page is
+  the only Google authorization loading surface.
+- When a user first signs up or signs in, Compass should sync local events the
+  user created themselves, but should not sync seeded demo events such as
+  "Morning standup" or "Try Compass" into the new account.
+- Seeded demo events should be marked only in browser IndexedDB. The marker is
+  used to skip demo events during local-event sync and must not be sent to the
+  backend or stored as account event data.
+- Editing a seeded demo event does not make it a user-created event for sync
+  purposes; it should still be skipped.
+- Logged-out Google sign-in keeps the shared post-auth completion behavior for
+  now: after the session is created, Compass syncs local events to the account
+  and warns if those events remain device-local.
 
 ## Web Entry Points
 
@@ -262,18 +289,30 @@ does not return a new one.
 
 When a logged-in password user chooses `Connect Google Calendar`:
 
-1. the web client completes the Google popup flow
-2. `useConnectGoogle()` sends the auth-code payload to
+1. the web client syncs pending local events to the server
+2. if local-event sync succeeds, the web client redirects through Google and
+   returns to
+   `/auth/google/callback`
+3. the callback sends the auth-code payload to
    `POST /api/auth/google/connect`
-3. `connectGoogleToCurrentUser()` exchanges the code for Google tokens
-4. backend verifies the Google account is not already owned by a different
+4. `connectGoogleToCurrentUser()` exchanges the code for Google tokens
+5. backend verifies the Google account is not already owned by a different
    Compass user
-5. backend persists Google credentials onto the current Compass user
-6. backend marks metadata sync flags as `"RESTART"` and restarts sync in the
+6. backend persists Google credentials onto the current Compass user
+7. backend marks metadata sync flags as `"RESTART"` and restarts sync in the
    background
 
 This path does not call SuperTokens `signInUpPOST` and does not depend on
 SuperTokens account linking.
+
+Redirect implementation should include focused tests for:
+
+- matching OAuth `state` before completing the callback
+- routing Google sign-in/up and Google Calendar connect/reconnect to the correct
+  backend endpoint
+- rejecting unsafe return paths and falling back to `/day`
+- using the configured `/auth/google/callback` URL when exchanging Google codes
+- syncing user-created local events while skipping demo-marked local events
 
 ### Google connect conflict contract
 
@@ -403,3 +442,6 @@ session-linking failure mode.
 - A Google account can belong to only one Compass user. In-session connect
   returns a conflict if the Google account is already attached elsewhere.
 - Dated-route redirects preserve existing query params (including `auth=verify`), but `useAuthUrlParam()` only handles `login`, `signup`, `forgot`, and `reset`.
+- Future UX question: first-time Google sign-in may need a choice before syncing
+  anonymous local events into the account, especially when those events are demo
+  or placeholder data.

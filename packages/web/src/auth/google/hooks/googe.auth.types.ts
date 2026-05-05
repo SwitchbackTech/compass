@@ -1,7 +1,7 @@
 import { type CodeResponse } from "@react-oauth/google";
 
 export interface GoogleAuthConfig {
-  thirdPartyId: string;
+  thirdPartyId: "google";
   clientType: "web";
   shouldTryLinkingWithSessionUser?: boolean;
   redirectURIInfo: {

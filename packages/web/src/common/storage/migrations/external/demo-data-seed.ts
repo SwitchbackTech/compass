@@ -9,6 +9,7 @@ import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { getModifierKeyLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { type StorageAdapter } from "../../adapter/storage.adapter";
+import { markLocalDemoEvent } from "../../types/local-event.types";
 import { type ExternalMigration } from "../migration.types";
 
 type Event_WithPosition = Event_Core & Pick<Schema_GridEvent, "position">;
@@ -196,12 +197,14 @@ function generateDemoData() {
 
   return {
     events: [...somedayEvents, ...todayEvents].map((event): Event_Seeded => {
-      if (event.isSomeday || event.isAllDay) {
-        return event;
+      const localDemoEvent = markLocalDemoEvent(event);
+
+      if (localDemoEvent.isSomeday || localDemoEvent.isAllDay) {
+        return localDemoEvent;
       }
 
       return {
-        ...event,
+        ...localDemoEvent,
         position: {
           ...gridEventDefaultPosition,
           dragOffset: { ...gridEventDefaultPosition.dragOffset },

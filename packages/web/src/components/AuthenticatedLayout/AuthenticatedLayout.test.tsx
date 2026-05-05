@@ -4,10 +4,6 @@ import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 
-mock.module("@web/components/SyncEventsOverlay/SyncEventsOverlay", () => ({
-  SyncEventsOverlay: () => null,
-}));
-
 describe("AuthenticatedLayout", () => {
   beforeEach(() => {
     mock.restore();

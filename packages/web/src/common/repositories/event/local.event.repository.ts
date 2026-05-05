@@ -6,6 +6,7 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
+import { preserveLocalEventMarker } from "@web/common/storage/types/local-event.types";
 import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
 import { type EventRepository } from "./event.repository.interface";
 
@@ -66,9 +67,15 @@ export class LocalEventRepository implements EventRepository {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _params: { applyTo?: RecurringEventUpdateScope },
   ): Promise<void> {
-    // For local repository, we just save the updated event
-    // The applyTo parameter is not relevant for local storage
-    await this.adapter.putEvent(event as Event_Core);
+    const existingEvent = (await this.adapter.getAllEvents()).find(
+      (storedEvent) => storedEvent._id === _id,
+    );
+    const eventToSave = preserveLocalEventMarker(
+      existingEvent,
+      event as Event_Core,
+    );
+
+    await this.adapter.putEvent(eventToSave);
   }
 
   async delete(
