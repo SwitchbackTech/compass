@@ -67,7 +67,8 @@ Key files:
 - middleware: `publicWatchNotificationIngress.verify`
 - ingress owner: `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`
 - notification owner: `packages/backend/src/sync/services/watch/google-watch.service.ts`
-- import/repair owner: `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- repair/setup owner: `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
+- import owner: `packages/backend/src/sync/services/import/google-import.service.ts`
 - maintenance owner: `packages/backend/src/sync/services/watch/google-watch-maintenance.service.ts`
 
 Observed outcomes include:

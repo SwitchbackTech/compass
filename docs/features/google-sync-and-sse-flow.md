@@ -142,7 +142,6 @@ Primary files:
 - `packages/backend/src/sync/services/public-watch-notifications/public-watch-notification.ingress.ts`
 - `packages/backend/src/sync/services/watch/google-watch.service.ts`
 - `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.service.ts`
-- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.health.ts`
 - `packages/backend/src/sync/services/records/sync-records.repository.ts`
 - `packages/backend/src/sync/services/notify/handler/gcal.notification.handler.ts`
 - `packages/backend/src/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation.ts`
@@ -208,8 +207,14 @@ Redux reasons for refetch (`Sync_AsyncStateContextReason`) reuse the same string
 Source files:
 
 - `packages/backend/src/user/services/user-metadata.service.ts`
+- `packages/backend/src/sync/services/google-calendar-sync/google-calendar-sync.health.ts`
 - `packages/core/src/types/user.types.ts`
 - `packages/web/src/sse/hooks/useGcalSSE.ts`
+
+The sidebar Google connection state is derived from user metadata. The backend
+metadata service delegates HEALTHY vs ATTENTION diagnosis to Google sync health,
+which checks stored sync tokens and, when public HTTPS watch notifications are
+enabled, active Google watches.
 
 Auto-import guardrail:
 

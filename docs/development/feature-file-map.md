@@ -89,7 +89,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Compass-to-Google repair mirroring: `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google-backfill.ts`
 - Sync record persistence: `packages/backend/src/sync/services/records/sync-records.repository.ts`
 - Google import internals: `packages/backend/src/sync/services/import`
-- Google/Compass event processors: `packages/backend/src/sync/services/event-propagation`
+- Google/Compass event propagation: `packages/backend/src/sync/services/event-propagation`
 
 ## Users / Metadata / Priority
 

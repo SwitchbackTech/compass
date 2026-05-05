@@ -143,7 +143,7 @@ Concrete examples from current tests:
 - last persisted Compass event when a step returns one
 - `googleDeleteEventId` resolved from persisted event first, otherwise planner fallback
 
-The processor executes Google effects only after Compass persistence succeeds.
+Compass-to-Google event propagation executes Google effects only after Compass persistence succeeds.
 
 ## Recurrence Sync Triage Runbook
 

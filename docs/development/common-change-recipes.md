@@ -43,7 +43,7 @@ Do not edit recurring behavior from one layer only.
 ## Triage A Recurrence Sync Regression
 
 1. Reproduce with one event and one expected transition outcome.
-2. Capture processor logs for the transition key:
+2. Capture Compass-to-Google event propagation logs for the transition key:
    - `Handle Compass event(<id>): <transitionKey>`
 3. Find the key in `PLAN_BUILDERS` in `packages/backend/src/event/classes/compass.event.parser.ts`.
 4. Confirm planned `steps` and `googleEffect` match expected behavior.

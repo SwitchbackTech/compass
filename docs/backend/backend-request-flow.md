@@ -94,7 +94,7 @@ For `POST /api/event`:
 3. controller normalizes single vs array payloads
 4. controller forwards the change set to `CompassToGoogleEventPropagation`
 5. controller returns a status-only payload (`{ statusCode: 204 }`) through `res.promise(...)`
-6. processor:
+6. Compass-to-Google event propagation:
    - loads current Compass DB state
    - analyzes the transition into a persistence plan
    - applies Compass DB mutations first
