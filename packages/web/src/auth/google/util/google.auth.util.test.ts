@@ -2,7 +2,6 @@ import {
   clearGoogleRevokedState,
   isGoogleRevoked,
 } from "@web/auth/google/state/google.auth.state";
-import { type GoogleAuthConfig } from "../hooks/googe.auth.types";
 import {
   afterAll,
   afterEach,
@@ -54,12 +53,8 @@ mock.module("@web/store", () => ({
 mock.module("@web/sse/client/sse.client", () => mockSse);
 
 // Import the module under test after mocking
-const {
-  authenticate,
-  handleGoogleRevoked,
-  syncLocalEvents,
-  syncPendingLocalEvents,
-} = require("./google.auth.util") as typeof import("./google.auth.util");
+const { handleGoogleRevoked, syncLocalEvents, syncPendingLocalEvents } =
+  require("./google.auth.util") as typeof import("./google.auth.util");
 
 describe("google-auth.util", () => {
   beforeEach(() => {
@@ -78,46 +73,6 @@ describe("google-auth.util", () => {
 
   afterEach(() => {
     clearGoogleRevokedState();
-  });
-
-  describe("authenticate", () => {
-    const mockGoogleAuthConfig: GoogleAuthConfig = {
-      clientType: "web",
-      thirdPartyId: "google",
-      redirectURIInfo: {
-        redirectURIOnProviderDashboard: "http://localhost",
-        redirectURIQueryParams: {
-          code: "test-code",
-          scope: "email profile",
-          state: "test-state",
-        },
-      },
-    };
-
-    it("returns success when authentication succeeds", async () => {
-      mockAuthApi.loginOrSignup.mockResolvedValue({
-        createdNewRecipeUser: false,
-        status: "OK",
-        user: {
-          id: "user-id",
-          isPrimaryUser: false,
-          emails: ["test@example.com"],
-          tenantIds: ["public"],
-          phoneNumbers: [],
-          thirdParty: [{ id: "google", userId: "google-user-id" }],
-          webauthn: { credentialIds: [] },
-          loginMethods: [],
-          timeJoined: Date.now(),
-          toJson: mock(),
-        },
-      });
-
-      await authenticate(mockGoogleAuthConfig);
-    });
-
-    it("returns error when authentication fails", async () => {
-      expect(mockAuthApi.loginOrSignup).toBeDefined();
-    });
   });
 
   describe("syncLocalEvents", () => {

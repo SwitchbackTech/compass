@@ -1,8 +1,6 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
-import { type Result_Auth_Compass } from "@core/types/auth.types";
 import { markGoogleAsRevoked } from "@web/auth/google/state/google.auth.state";
-import { AuthApi } from "@web/common/apis/auth.api";
 import {
   GOOGLE_REVOKED_TOAST_ID,
   toastDefaultOptions,
@@ -15,13 +13,6 @@ import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { store } from "@web/store";
-import { type GoogleAuthConfig } from "../hooks/googe.auth.types";
-
-export interface AuthenticateResult {
-  success: boolean;
-  data?: Result_Auth_Compass;
-  error?: Error;
-}
 
 export interface SyncLocalEventsResult {
   syncedCount: number;
@@ -31,20 +22,6 @@ export interface SyncLocalEventsResult {
 
 export const LOCAL_EVENTS_SYNC_ERROR_MESSAGE =
   "We could not sync your local events. Your changes are still saved on this device.";
-
-/**
- * Authenticate with Google using the provided credentials.
- */
-export async function authenticate(
-  data: GoogleAuthConfig,
-): Promise<AuthenticateResult> {
-  try {
-    const response = await AuthApi.loginOrSignup(data);
-    return { success: true, data: response };
-  } catch (error) {
-    return { success: false, error: error as Error };
-  }
-}
 
 /** Idempotent handler for Google access revocation. Safe to call from both API interceptor and socket handler. */
 export const handleGoogleRevoked = () => {

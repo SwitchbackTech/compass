@@ -1,7 +1,11 @@
 import { DotIcon } from "@phosphor-icons/react";
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
-import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
+import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
+import {
+  dismissErrorToast,
+  SESSION_EXPIRED_TOAST_ID,
+} from "@web/common/utils/toast/error-toast.util";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { AuthButton } from "./components/AuthButton";
@@ -33,7 +37,7 @@ function getInitialAuthToken(): string | undefined {
  *
  * Features:
  * - Tab navigation between Sign In and Sign Up
- * - Google OAuth integration via existing useGoogleAuth hook
+ * - Google OAuth integration via redirect-based Google login hook
  * - Email/password forms with Zod validation
  * - Forgot password flow with generic success message
  * - Accessible modal with proper ARIA attributes
@@ -41,11 +45,21 @@ function getInitialAuthToken(): string | undefined {
 export const AuthModal: FC = () => {
   const { isOpen, currentView, openModal, closeModal, setView } =
     useAuthModal();
-  const googleAuth = useGoogleAuth();
+  const handleGoogleAuthStart = useCallback(() => {
+    dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
+  }, []);
+  const googleAuth = useStartGoogleAuthorization({
+    intent: "signIn",
+    onStart: handleGoogleAuthStart,
+  });
+  const {
+    loading: isGoogleAuthLoading,
+    startGoogleAuthorization: startGoogleSignIn,
+  } = googleAuth;
   const isGoogleAvailable = useIsGoogleAvailable();
   const isLoginView =
     currentView === "login" || currentView === "loginAfterReset";
-  const authToken = useRef(getInitialAuthToken()).current;
+  const [authToken] = useState(getInitialAuthToken);
   const {
     isSubmitting,
     submitError,
@@ -78,9 +92,9 @@ export const AuthModal: FC = () => {
   );
 
   const handleGoogleSignIn = useCallback(() => {
-    void googleAuth.login();
+    void startGoogleSignIn();
     closeModal();
-  }, [googleAuth, closeModal]);
+  }, [closeModal, startGoogleSignIn]);
 
   const navigateToForgotPassword = useCallback(() => {
     setView("forgotPassword");
@@ -184,6 +198,7 @@ export const AuthModal: FC = () => {
             </div>
             <GoogleButton
               onClick={handleGoogleSignIn}
+              disabled={isGoogleAuthLoading}
               label="Continue with Google"
               style={{ width: "100%" }}
             />

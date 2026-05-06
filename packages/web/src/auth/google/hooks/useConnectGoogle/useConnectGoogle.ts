@@ -2,23 +2,16 @@ import { useCallback, useSyncExternalStore } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
-import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
-import { useGoogleAuth } from "@web/auth/google/hooks/useGoogleAuth/useGoogleAuth";
+import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   clearGoogleSyncIndicatorOverride,
   getGoogleSyncIndicatorOverride,
   setRepairingSyncIndicatorOverride,
-  setSyncingSyncIndicatorOverride,
   subscribeToGoogleSyncUIState,
 } from "@web/auth/google/state/google.sync.state";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
-import { AuthApi } from "@web/common/apis/auth.api";
 import { SyncApi } from "@web/common/apis/sync.api";
-import {
-  getApiErrorCode,
-  isApiError,
-  parseGoogleConnectError,
-} from "@web/common/apis/util/api.util";
+import { getApiErrorCode, isApiError } from "@web/common/apis/util/api.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
@@ -26,7 +19,6 @@ import {
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
 import { type UserMetadataStatus } from "@web/ducks/auth/slices/user-metadata.slice";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { type RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -35,10 +27,7 @@ import {
   type GoogleUiState,
   type UseConnectGoogleResult,
 } from "./useConnectGoogle.types";
-import {
-  buildGoogleConnectRequest,
-  getGoogleConnectionConfig,
-} from "./useConnectGoogle.util";
+import { getGoogleConnectionConfig } from "./useConnectGoogle.util";
 
 // Merges Redux-derived Google connection state with transient UI overrides from
 // google.sync.ui.state.ts; the override is read via useSyncExternalStore so React
@@ -58,42 +47,25 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
     getGoogleSyncIndicatorOverride,
     getGoogleSyncIndicatorOverride,
   );
-  const { login } = useGoogleAuth({
-    onSuccess: async (data) => {
-      const didSyncLocalEvents = await syncPendingLocalEvents();
-      if (!didSyncLocalEvents) {
-        return false;
-      }
-
-      const googleConnectRequest = buildGoogleConnectRequest(
-        data.redirectURIInfo,
-      );
-      try {
-        await AuthApi.connectGoogle(googleConnectRequest);
-      } catch (error) {
-        if (isApiError(error)) {
-          const message = parseGoogleConnectError(error)?.message;
-
-          if (message) {
-            showErrorToast(message);
-            return false;
-          }
-        }
-
-        throw error;
-      }
-
-      setSyncingSyncIndicatorOverride();
-      await refreshUserMetadata();
-      dispatch(triggerFetch());
-    },
+  const { startGoogleAuthorization } = useStartGoogleAuthorization({
+    intent: "connectCalendar",
     prompt: "consent",
   });
 
   const onOpenGoogleAuth = useCallback(() => {
-    void login();
-    dispatch(settingsSlice.actions.closeCmdPalette());
-  }, [dispatch, login]);
+    const start = async () => {
+      const didSyncLocalEvents = await syncPendingLocalEvents();
+
+      if (!didSyncLocalEvents) {
+        return;
+      }
+
+      dispatch(settingsSlice.actions.closeCmdPalette());
+      void startGoogleAuthorization();
+    };
+
+    void start();
+  }, [dispatch, startGoogleAuthorization]);
 
   const onRepairGoogle = useCallback(() => {
     const startRepair = async () => {
@@ -121,8 +93,8 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   }, [dispatch]);
 
   // "checking" is a UI-only state until we have loaded metadata from the server.
-  // Covers both "idle" (before refreshUserMetadata dispatches setLoading) and
-  // "loading" so returning users do not briefly see NOT_CONNECTED from the selector default.
+  // Covers both "idle" and "loading" so returning users do not briefly see
+  // NOT_CONNECTED from the selector default.
   const isCheckingStatus =
     hasUserEverAuthenticated() && userMetadataStatus !== "loaded";
 

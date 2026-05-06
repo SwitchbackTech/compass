@@ -10,6 +10,10 @@ import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
 import {
+  isLocalDemoEvent,
+  LOCAL_DEMO_EVENT_FIELD,
+} from "@web/common/storage/types/local-event.types";
+import {
   GridEventSchema,
   type Schema_GridEvent,
   type Schema_WebEvent,
@@ -51,6 +55,10 @@ describe("demoDataSeedMigration", () => {
     // Verify events were created (7 total: 5 today + 2 someday)
     const eventsCall = adapter.putEvents.mock.calls[0][0] as Schema_WebEvent[];
     expect(eventsCall).toHaveLength(7);
+    expect(
+      eventsCall.every((event) => isLocalDemoEvent(event as Event_Core)),
+    ).toBe(true);
+    expect(eventsCall[0]).toHaveProperty(LOCAL_DEMO_EVENT_FIELD, true);
 
     // Verify tasks were created for 3 days
     expect(adapter.putTasks).toHaveBeenCalledTimes(3);

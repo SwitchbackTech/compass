@@ -6,6 +6,7 @@ interface AuthErrors {
   GoogleAccountAlreadyConnected: ErrorMetadata;
   GoogleConnectEmailMismatch: ErrorMetadata;
   GoogleNotConfigured: ErrorMetadata;
+  GoogleRedirectUriMismatch: ErrorMetadata;
   InadequatePermissions: ErrorMetadata;
   MissingRefreshToken: ErrorMetadata;
   NoUserId: ErrorMetadata;
@@ -35,6 +36,11 @@ export const AuthError: AuthErrors = {
     code: "GOOGLE_NOT_CONFIGURED",
     description: "Google is not configured for this Compass instance",
     status: Status.SERVICE_UNAVAILABLE,
+    isOperational: true,
+  },
+  GoogleRedirectUriMismatch: {
+    description: "Google redirect URI does not match this Compass instance",
+    status: Status.BAD_REQUEST,
     isOperational: true,
   },
   InadequatePermissions: {

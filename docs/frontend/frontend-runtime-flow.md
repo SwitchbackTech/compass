@@ -73,29 +73,13 @@ Once a user has ever authenticated, the app records that fact in local auth-stat
 
 When a user re-authenticates with Google, auth-state utilities also clear any in-memory "Google revoked" flag so normal remote sync can resume.
 
-## Google OAuth Popup Cancellation Semantics
+## Google Authorization Redirect
 
-Files:
+Google sign-in/up and Google Calendar connect/reconnect leave Compass through a full-page Google redirect and return through `/auth/google/callback`.
 
-- `packages/web/src/auth/hooks/google/useGoogleAuth/useGoogleAuth.ts`
-- `packages/web/src/auth/hooks/google/useGoogleLogin/useGoogleLogin.ts`
-- `packages/web/src/auth/google/google-oauth-error.util.ts`
+Before redirecting, the web app stores a short-lived authorization intent in `sessionStorage` keyed by OAuth `state`. The callback validates that state, finishes the saved intent, removes it, and returns the user to the original same-origin path or `/day`.
 
-The web auth flow intentionally treats popup-close outcomes as cancellation, not authentication failure.
-
-Cancellation detection (`isGooglePopupClosedError`) returns true when any of these match:
-
-- `type === "popup_closed"`
-- `error`, `error_description`, or `message` equals `"popup_closed"` (case-insensitive)
-- `error`, `error_description`, or `message` contains `"popup window closed"` (case-insensitive)
-
-When cancellation is detected in the auth hooks:
-
-- auth state is reset (`resetAuth`)
-- OAuth overlay closes because `selectIsAuthenticating` becomes false
-- generic auth failure state is not dispatched for that event
-
-For non-cancellation errors, normal auth-failure handling still applies.
+The old blocking overlay is not used for Google authorization.
 
 ## User Bootstrap
 

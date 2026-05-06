@@ -9,6 +9,10 @@ import {
 import { type gCalendar } from "@core/types/gcal";
 import { StringV4Schema } from "@core/types/type.utils";
 import {
+  assertGoogleRedirectUri,
+  getGoogleAuthCallbackUrl,
+} from "@backend/auth/services/google/util/google.redirect-uri.util";
+import {
   ENV,
   isGoogleConfigured,
 } from "@backend/common/constants/env.constants";
@@ -33,7 +37,7 @@ class GoogleOAuthClient {
     this.oauthClient = new OAuth2Client(
       ENV.GOOGLE_CLIENT_ID,
       ENV.GOOGLE_CLIENT_SECRET,
-      "postmessage",
+      getGoogleAuthCallbackUrl(),
     );
   }
 
@@ -64,6 +68,10 @@ class GoogleOAuthClient {
   async exchangeAuthCode(
     input: GoogleAuthCodeRequest,
   ): Promise<UserInfo_Google> {
+    assertGoogleRedirectUri(
+      input.redirectURIInfo.redirectURIOnProviderDashboard,
+    );
+
     const response = await this.oauthClient.getToken({
       code: input.redirectURIInfo.redirectURIQueryParams.code,
       codeVerifier: input.redirectURIInfo.pkceCodeVerifier,

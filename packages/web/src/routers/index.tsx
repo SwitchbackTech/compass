@@ -96,6 +96,15 @@ export const router = createBrowserRouter(
     },
     ...devOnlyRoutes,
     {
+      path: ROOT_ROUTES.GOOGLE_AUTH_CALLBACK,
+      lazy: async () =>
+        import(
+          /* webpackChunkName: "google-auth-callback" */ "@web/views/GoogleAuthCallback"
+        ).then((module) => ({
+          Component: module.GoogleAuthCallbackView,
+        })),
+    },
+    {
       path: "*",
       lazy: async () =>
         import(/* webpackChunkName: "not-found" */ "@web/views/NotFound").then(

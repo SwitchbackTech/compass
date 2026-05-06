@@ -1,4 +1,3 @@
-import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
 import {
   type CommandActionIcon,
   type GoogleUiConfig,
@@ -7,14 +6,6 @@ import {
 
 const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
 type RepairDialog = NonNullable<GoogleUiConfig["sidebarStatus"]["dialog"]>;
-
-export const buildGoogleConnectRequest = (
-  redirectURIInfo: GoogleAuthCodeRequest["redirectURIInfo"],
-): GoogleAuthCodeRequest => ({
-  thirdPartyId: "google",
-  clientType: "web",
-  redirectURIInfo,
-});
 
 const buildRepairDialog = (onRepairGoogle: () => void): RepairDialog => ({
   title: "Calendar sync needs repair",
