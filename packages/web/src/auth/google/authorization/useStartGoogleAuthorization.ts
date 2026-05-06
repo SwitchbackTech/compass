@@ -3,17 +3,17 @@ import {
   useGoogleLogin as useGoogleLoginBase,
 } from "@react-oauth/google";
 import { useCallback, useMemo, useState } from "react";
-import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/redirect/google-auth-redirect.constants";
+import { GOOGLE_AUTH_SCOPES_REQUIRED } from "./google-authorization.constants";
 import {
   type GoogleAuthorizationIntent,
   writeGoogleAuthorizationIntent,
-} from "@web/auth/google/redirect/google-auth-redirect.storage";
+} from "./google-authorization.storage";
 import {
   buildGoogleAuthCallbackUrl,
   getSafeGoogleAuthReturnPath,
-} from "@web/auth/google/redirect/google-auth-redirect.util";
+} from "./google-authorization.util";
 
-export const useGoogleLogin = ({
+export const useStartGoogleAuthorization = ({
   intent,
   onStart,
   onError,
@@ -52,10 +52,11 @@ export const useGoogleLogin = ({
     [onError, prompt, redirectUri, state],
   );
 
-  const login = useGoogleLoginBase(loginOptions);
+  const startGoogleAuthorization = useGoogleLoginBase(loginOptions);
 
   return {
-    login: useCallback(() => {
+    loading,
+    startGoogleAuthorization: useCallback(() => {
       onStart?.();
       setLoading(true);
       writeGoogleAuthorizationIntent(state, {
@@ -63,8 +64,7 @@ export const useGoogleLogin = ({
         returnPath: getSafeGoogleAuthReturnPath(),
         createdAt: Date.now(),
       });
-      return login();
-    }, [intent, login, onStart, state]),
-    loading,
+      return startGoogleAuthorization();
+    }, [intent, onStart, startGoogleAuthorization, state]),
   };
 };

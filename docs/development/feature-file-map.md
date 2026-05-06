@@ -16,9 +16,9 @@ Use this document to find the first files to inspect for common Compass changes.
 
 - Session initialization and SuperTokens wiring: `packages/web/src/auth/session/SessionProvider.tsx`
 - User profile bootstrap: `packages/web/src/auth/context/UserProvider.tsx`
-- Google OAuth app flow: `packages/web/src/auth/google/hooks/useGoogleLogin/useGoogleLogin.ts`
+- Google authorization app flow: `packages/web/src/auth/google/authorization`
 - Google redirect callback: `packages/web/src/views/GoogleAuthCallback/GoogleAuthCallback.tsx`
-- Google redirect intent storage: `packages/web/src/auth/google/redirect`
+- Google authorization intent storage: `packages/web/src/auth/google/authorization/google-authorization.storage.ts`
 - Auth schemas: `packages/web/src/auth/schemas/auth.schemas.ts`
 - Backend auth routes: `packages/backend/src/auth/auth.routes.config.ts`
 - Backend auth controllers/services: `packages/backend/src/auth/controllers`, `packages/backend/src/auth/services`

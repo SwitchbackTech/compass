@@ -1,6 +1,6 @@
 import { DotIcon } from "@phosphor-icons/react";
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
-import { useGoogleLogin } from "@web/auth/google/hooks/useGoogleLogin/useGoogleLogin";
+import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
 import {
   dismissErrorToast,
@@ -48,11 +48,14 @@ export const AuthModal: FC = () => {
   const handleGoogleAuthStart = useCallback(() => {
     dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
   }, []);
-  const googleAuth = useGoogleLogin({
+  const googleAuth = useStartGoogleAuthorization({
     intent: "signIn",
     onStart: handleGoogleAuthStart,
   });
-  const { loading: isGoogleAuthLoading, login: startGoogleSignIn } = googleAuth;
+  const {
+    loading: isGoogleAuthLoading,
+    startGoogleAuthorization: startGoogleSignIn,
+  } = googleAuth;
   const isGoogleAvailable = useIsGoogleAvailable();
   const isLoginView =
     currentView === "login" || currentView === "loginAfterReset";

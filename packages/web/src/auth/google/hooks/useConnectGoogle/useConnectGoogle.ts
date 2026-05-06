@@ -2,7 +2,7 @@ import { useCallback, useSyncExternalStore } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { type GoogleConnectionState } from "@core/types/user.types";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
-import { useGoogleLogin } from "@web/auth/google/hooks/useGoogleLogin/useGoogleLogin";
+import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
   clearGoogleSyncIndicatorOverride,
   getGoogleSyncIndicatorOverride,
@@ -47,7 +47,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
     getGoogleSyncIndicatorOverride,
     getGoogleSyncIndicatorOverride,
   );
-  const { login } = useGoogleLogin({
+  const { startGoogleAuthorization } = useStartGoogleAuthorization({
     intent: "connectCalendar",
     prompt: "consent",
   });
@@ -61,11 +61,11 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
       }
 
       dispatch(settingsSlice.actions.closeCmdPalette());
-      void login();
+      void startGoogleAuthorization();
     };
 
     void start();
-  }, [dispatch, login]);
+  }, [dispatch, startGoogleAuthorization]);
 
   const onRepairGoogle = useCallback(() => {
     const startRepair = async () => {

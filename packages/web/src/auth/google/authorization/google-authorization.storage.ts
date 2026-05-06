@@ -2,11 +2,14 @@ import { z } from "zod";
 import {
   GOOGLE_AUTH_INTENT_MAX_AGE_MS,
   GOOGLE_AUTH_INTENT_STORAGE_PREFIX,
-} from "./google-auth-redirect.constants";
+} from "./google-authorization.constants";
 
 export const GoogleAuthorizationIntentSchema = z.object({
   intent: z.enum(["signIn", "connectCalendar"]),
-  returnPath: z.string().startsWith("/"),
+  returnPath: z
+    .string()
+    .startsWith("/")
+    .refine((path) => !path.startsWith("//")),
   createdAt: z.number(),
 });
 
@@ -34,7 +37,16 @@ export function readGoogleAuthorizationIntent(
     return null;
   }
 
-  const parsed = GoogleAuthorizationIntentSchema.safeParse(JSON.parse(stored));
+  let storedIntent: unknown;
+
+  try {
+    storedIntent = JSON.parse(stored);
+  } catch {
+    sessionStorage.removeItem(key);
+    return null;
+  }
+
+  const parsed = GoogleAuthorizationIntentSchema.safeParse(storedIntent);
 
   if (!parsed.success) {
     sessionStorage.removeItem(key);

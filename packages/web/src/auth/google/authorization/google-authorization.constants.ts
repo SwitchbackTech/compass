@@ -10,3 +10,8 @@ export const GOOGLE_AUTH_SCOPES_REQUIRED = [
   "https://www.googleapis.com/auth/calendar.readonly",
   "https://www.googleapis.com/auth/calendar.events",
 ];
+
+export const GOOGLE_AUTHORIZATION_ERROR_MESSAGE =
+  "Google authorization could not be completed. Please try again.";
+export const MISSING_GOOGLE_SCOPES_ERROR_MESSAGE =
+  "Missing Google Calendar permissions. Please grant all requested permissions.";

@@ -90,13 +90,16 @@ export function mockLinuxUserAgent() {
   return uaSpy;
 }
 
-export function mockUseGoogleLogin() {
-  mockModule("@web/auth/google/hooks/useGoogleLogin/useGoogleLogin", () => ({
-    useGoogleLogin: mock(() => ({
-      login: mock(),
-      loading: false,
-    })),
-  }));
+export function mockUseStartGoogleAuthorization() {
+  mockModule(
+    "@web/auth/google/authorization/useStartGoogleAuthorization",
+    () => ({
+      useStartGoogleAuthorization: mock(() => ({
+        loading: false,
+        startGoogleAuthorization: mock(),
+      })),
+    }),
+  );
 }
 
 export function mockSuperTokens() {
@@ -175,7 +178,7 @@ function mockReactToastify() {
 }
 
 export function mockNodeModules() {
-  mockUseGoogleLogin();
+  mockUseStartGoogleAuthorization();
   mockSuperTokens();
   mockReactToastify();
 }

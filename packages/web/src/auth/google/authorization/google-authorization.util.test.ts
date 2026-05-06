@@ -2,10 +2,10 @@ import {
   buildGoogleAuthCallbackUrl,
   buildGoogleAuthCodePayload,
   getSafeGoogleAuthReturnPath,
-} from "./google-auth-redirect.util";
+} from "./google-authorization.util";
 import { describe, expect, it } from "bun:test";
 
-describe("google-auth-redirect.util", () => {
+describe("google-authorization.util", () => {
   it("builds the callback URL from the current origin", () => {
     expect(buildGoogleAuthCallbackUrl("http://localhost:9080")).toBe(
       "http://localhost:9080/auth/google/callback",

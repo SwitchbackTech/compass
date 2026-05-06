@@ -32,13 +32,16 @@ mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: () => mockUseSession(),
 }));
 
-// Mock useGoogleLogin
+// Mock Google authorization start hook
 const mockGoogleLogin = mock();
-mock.module("@web/auth/google/hooks/useGoogleLogin/useGoogleLogin", () => ({
-  useGoogleLogin: () => ({
-    login: mockGoogleLogin,
+mock.module(
+  "@web/auth/google/authorization/useStartGoogleAuthorization",
+  () => ({
+    useStartGoogleAuthorization: () => ({
+      startGoogleAuthorization: mockGoogleLogin,
+    }),
   }),
-}));
+);
 
 const mockUseIsGoogleAvailable = mock(() => true);
 mock.module(

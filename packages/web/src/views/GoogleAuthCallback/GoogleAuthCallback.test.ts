@@ -1,5 +1,5 @@
-import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/redirect/google-auth-redirect.constants";
-import { writeGoogleAuthorizationIntent } from "@web/auth/google/redirect/google-auth-redirect.storage";
+import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/authorization/google-authorization.constants";
+import { writeGoogleAuthorizationIntent } from "@web/auth/google/authorization/google-authorization.storage";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockLoginOrSignup = mock();

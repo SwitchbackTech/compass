@@ -1,5 +1,5 @@
 import { type GoogleAuthCodeRequest } from "@core/types/auth.types";
-import { GOOGLE_AUTH_CALLBACK_PATH } from "./google-auth-redirect.constants";
+import { GOOGLE_AUTH_CALLBACK_PATH } from "./google-authorization.constants";
 
 export function buildGoogleAuthCallbackUrl(origin = window.location.origin) {
   return `${origin}${GOOGLE_AUTH_CALLBACK_PATH}`;
