@@ -66,6 +66,7 @@ export function useTaskState({
     tasks,
     setTasks,
     isLoadingTasks,
+    hasLoadedTasksOnce: loadedDateKey !== null,
     didLoadFail,
     editingTitle,
     setEditingTitle,

@@ -36,8 +36,6 @@ export function useLoadTasksByDateEffect({
     loadRequestIdRef.current = requestId;
 
     isDirtyRef.current = false;
-    setTasksState([]);
-    setLoadedDateKey(null);
     setDidLoadFail(false);
     setIsLoadingTasks(true);
 

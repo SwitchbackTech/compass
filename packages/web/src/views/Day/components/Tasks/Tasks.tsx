@@ -7,6 +7,8 @@ import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 export const Tasks = () => {
   const tasksProps = useTasks();
   const { onDragStart, onDragUpdate, onDragEnd } = useDNDTasksContext();
+  const isInitialLoad =
+    tasksProps.isLoadingTasks && !tasksProps.hasLoadedTasksOnce;
 
   return (
     <DragDropContext
@@ -27,7 +29,7 @@ export const Tasks = () => {
             {...droppableProvider.droppableProps}
             style={{ scrollbarGutter: "stable both-edges" }}
           >
-            {tasksProps.isLoadingTasks ? (
+            {isInitialLoad ? (
               <p className="px-2 py-1 text-gray-100/70 text-sm" role="status">
                 Loading tasks...
               </p>

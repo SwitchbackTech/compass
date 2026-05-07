@@ -144,7 +144,11 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
             justifyContent={JustifyContent.LEFT}
           >
             <MonthContainerStyled className={monthContainerClassName}>
-              <Text className={monthTextClassName} color={headerColor} size="xl">
+              <Text
+                className={monthTextClassName}
+                color={headerColor}
+                size="xl"
+              >
                 {selectedMonth}
               </Text>
             </MonthContainerStyled>

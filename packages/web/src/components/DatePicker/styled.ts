@@ -77,11 +77,6 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
       flex-basis: calc(100% / 6);
       width: 100%;
 
-      &:hover {
-        ${({ view, theme }) =>
-          view === "sidebar" &&
-          `background-color: ${theme.color.fg.primaryDark}`};
-      }
     }
 
     &__header {

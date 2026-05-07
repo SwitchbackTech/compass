@@ -187,6 +187,8 @@ during Import or Public watch notification handling.
   modes.
 - Date navigation from the **Planner Sidebar** keeps the user in their current
   main view.
+- Date navigation from the **Planner Sidebar** keeps the sidebar stable; current
+  planning items stay visible while refreshed items load in the background.
 - **Someday Events** in the **Planner Sidebar** should remain editable outside
   Week view, while drag-to-grid scheduling can be added per view.
 - The **Planner Sidebar** uses calendar language for **Calendar Visibility**;

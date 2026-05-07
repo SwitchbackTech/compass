@@ -1,10 +1,7 @@
 import { DragDropContext } from "@hello-pangea/dnd";
 import { type FC, useRef } from "react";
-import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { useWeekLabel } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayWeekSection/useWeekLabel";
-import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import {
   type Measurements_Grid,
@@ -29,7 +26,6 @@ export const SomedayEventSections: FC<Props> = ({
   viewStart,
   gridRefs,
 }) => {
-  const isProcessing = useAppSelector(selectIsGetSomedayEventsProcessing);
   const context = useSidebarContext();
   const somedayRef = useRef<HTMLDivElement>(null);
   const weekLabel = useWeekLabel(viewStart, viewEnd);
@@ -40,7 +36,6 @@ export const SomedayEventSections: FC<Props> = ({
 
   return (
     <div className="flex flex-col gap-5" ref={somedayRef}>
-      {isProcessing && <AbsoluteOverflowLoader />}
       <DragDropContext
         onDragEnd={actions.onDragEnd}
         onDragStart={actions.onDragStart}
