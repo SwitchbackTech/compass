@@ -30,8 +30,12 @@ export interface Props extends ReactDatePickerProps {
   animationOnToggle?: boolean;
   bgColor?: string;
   displayDate?: Date;
+  headerActionsClassName?: string;
+  headerClassName?: string;
   inputColor?: string;
   isOpen?: boolean;
+  monthContainerClassName?: string;
+  monthTextClassName?: string;
   view: "sidebar" | "grid";
   withTodayButton?: boolean;
 }
@@ -56,8 +60,12 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     autoFocus: _autoFocus = false,
     bgColor = theme.color.bg.primary,
     calendarClassName,
+    headerActionsClassName,
+    headerClassName,
     inputColor,
     isOpen = true,
+    monthContainerClassName,
+    monthTextClassName,
     portalId = "root",
     view,
     withTodayButton = true,
@@ -132,16 +140,20 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
         return (
           <StyledHeaderFlex
             alignItems={AlignItems.CENTER}
+            className={headerClassName}
             justifyContent={JustifyContent.LEFT}
           >
-            <MonthContainerStyled>
-              <Text color={headerColor} size="xl">
+            <MonthContainerStyled className={monthContainerClassName}>
+              <Text className={monthTextClassName} color={headerColor} size="xl">
                 {selectedMonth}
               </Text>
             </MonthContainerStyled>
 
             {!customHeaderCount && (
-              <Flex alignItems={AlignItems.CENTER}>
+              <Flex
+                alignItems={AlignItems.CENTER}
+                className={headerActionsClassName}
+              >
                 <ChangeDayButtonsStyledFlex>
                   <MonthNavButton
                     ariaLabel="Previous month"

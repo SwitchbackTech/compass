@@ -80,6 +80,7 @@ Use a single-context domain-doc layout. See `.agents/config/domain.md`.
 - Shared web/backend contracts belong in `packages/core` and should use Zod.
 - Web tests should use React Testing Library, semantic role/name/text queries,
   and `user-event`; avoid CSS selectors and `data-*` locators.
+- Default to Tailwind for frontend styling.
 - New web styles should use Tailwind semantic colors from
   `packages/web/src/index.css`, not raw colors like `bg-blue-300`.
 - Do not test login flows without the required backend setup.

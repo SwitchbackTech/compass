@@ -39,7 +39,7 @@ export const SomedayEventSections: FC<Props> = ({
   const { actions } = context;
 
   return (
-    <div className="flex flex-col gap-6" ref={somedayRef}>
+    <div className="flex flex-col gap-5" ref={somedayRef}>
       {isProcessing && <AbsoluteOverflowLoader />}
       <DragDropContext
         onDragEnd={actions.onDragEnd}

@@ -1,3 +1,5 @@
+import { ID_SIDEBAR } from "@web/common/constants/web.constants";
+
 export const AFTER_TMRW_MULTIPLE = 1.5;
 
 export const DIVIDER_GRID = 1;
@@ -39,5 +41,14 @@ export const WEEK_GRID_TRACK_MIN_WIDTH =
   GRID_MARGIN_LEFT + EVENT_WIDTH_MINIMUM * 7;
 
 export const SIDEBAR_MONTH_HEIGHT = 275;
-export const SIDEBAR_OPEN_WIDTH = 320;
+export const SIDEBAR_OPEN_WIDTH = 285;
 export const SIDEBAR_X_START = SIDEBAR_OPEN_WIDTH + GRID_X_START;
+
+export function getSidebarOpenWidth() {
+  if (typeof document === "undefined") return SIDEBAR_OPEN_WIDTH;
+
+  return (
+    document.getElementById(ID_SIDEBAR)?.getBoundingClientRect().width ??
+    SIDEBAR_OPEN_WIDTH
+  );
+}

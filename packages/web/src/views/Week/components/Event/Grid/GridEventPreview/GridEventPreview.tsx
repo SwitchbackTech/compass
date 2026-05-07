@@ -27,7 +27,7 @@ import {
   EVENT_ALLDAY_GAP,
   EVENT_ALLDAY_HEIGHT,
   GRID_X_START,
-  SIDEBAR_OPEN_WIDTH,
+  getSidebarOpenWidth,
 } from "@web/views/Week/layout.constants";
 
 interface Props {
@@ -54,7 +54,7 @@ const _GridEventPreview: FC<Props> = ({
   const { getDayNumberByX, getMinuteByY } = dateCalcs;
   const { colWidths } = measurements;
   const { x: clientX, y: clientY } = useCursorCoordinates();
-  const gridX = clientX - (SIDEBAR_OPEN_WIDTH + GRID_X_START);
+  const gridX = clientX - (getSidebarOpenWidth() + GRID_X_START);
   const dayIndex = getDayNumberByX(gridX);
 
   /* Helpers */

@@ -20,7 +20,7 @@ import { SomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSection
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useDraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
-import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
+import { getSidebarOpenWidth } from "@web/views/Week/layout.constants";
 
 export interface Props {
   category: Categories_Event;
@@ -126,7 +126,7 @@ export const SomedayEventContainer = ({
               ref={formProps.refs.setFloating}
               strategy={formProps.strategy}
               top={formProps.y}
-              left={SIDEBAR_OPEN_WIDTH}
+              left={getSidebarOpenWidth()}
             >
               <SomedayEventForm
                 event={event}

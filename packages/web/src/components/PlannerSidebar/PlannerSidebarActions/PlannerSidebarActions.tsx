@@ -37,24 +37,24 @@ export const PlannerSidebarActions = ({
   };
 
   return (
-    <div className="flex h-11 shrink-0 items-center justify-between border-border-primary border-t px-6">
-      <div className="flex items-center gap-4">
+    <div className="flex h-10 shrink-0 items-center justify-between border-border-primary border-t px-4">
+      <div className="flex items-center gap-3">
         <TooltipWrapper description="Open shortcuts" onClick={onOpenShortcuts}>
           <button
             aria-label="Open shortcuts"
-            className="flex h-7 w-7 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            className="flex h-6 w-6 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             type="button"
           >
             <KeyboardIcon
               aria-hidden="true"
-              size={18}
+              size={16}
               weight={isShortcutsOpen ? "fill" : "regular"}
             />
           </button>
         </TooltipWrapper>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-3">
         <TooltipWrapper
           description="Open command palette"
           shortcut={
@@ -66,12 +66,12 @@ export const PlannerSidebarActions = ({
         >
           <button
             aria-label="Open command palette"
-            className="flex h-7 w-7 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            className="flex h-6 w-6 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             type="button"
           >
             <CommandIcon
               aria-hidden="true"
-              size={18}
+              size={16}
               weight={isCmdPaletteOpen ? "fill" : "regular"}
             />
           </button>
@@ -84,10 +84,10 @@ export const PlannerSidebarActions = ({
           >
             <button
               aria-label="Get latest version"
-              className="flex h-7 w-7 items-center justify-center rounded-default text-accent-primary transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              className="flex h-6 w-6 items-center justify-center rounded-default text-accent-primary transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
               type="button"
             >
-              <ArrowClockwiseIcon aria-hidden="true" size={18} />
+              <ArrowClockwiseIcon aria-hidden="true" size={16} />
             </button>
           </TooltipWrapper>
         ) : null}

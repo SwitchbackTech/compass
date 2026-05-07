@@ -16,15 +16,20 @@ export const PlannerMonthPicker: FC<Props> = ({
 }) => {
   return (
     <fieldset
-      className="[&_.calendar]:!w-full [&_.calendar]:!bg-transparent [&_.calendar]:!shadow-none [&_.react-datepicker]:!border-0 [&_.react-datepicker]:!bg-transparent [&_.react-datepicker]:!shadow-none [&_.react-datepicker__header.react-datepicker__header>div]:!px-0 [&_.react-datepicker__header.react-datepicker__header]:!px-0 [&_.react-datepicker__month-container.react-datepicker__month-container]:!bg-transparent [&_.react-datepicker__month-container.react-datepicker__month-container]:!px-0"
+      className="[&_.calendar]:!w-full [&_.calendar]:!bg-transparent [&_.calendar]:!shadow-none [&_.react-datepicker]:!border-0 [&_.react-datepicker]:!bg-transparent [&_.react-datepicker]:!shadow-none [&_.react-datepicker\\_\\_day-names]:!mb-0 [&_.react-datepicker__header.react-datepicker__header]:!px-0 [&_.react-datepicker__month-container.react-datepicker__month-container]:!bg-transparent [&_.react-datepicker__month-container.react-datepicker__month-container]:!px-0"
       data-testid="Planner month picker"
       aria-label="Date navigation"
     >
       <DatePicker
         animationOnToggle={false}
         calendarClassName={ID_DATEPICKER_SIDEBAR}
+        dayClassName={() => "!rounded-default !font-light"}
+        headerActionsClassName="!absolute !inset-x-11 !justify-between [&>div:first-child]:!w-full [&>div:first-child]:!justify-between [&>span]:!hidden"
+        headerClassName="!relative !justify-center !px-0 !pb-3"
         inline
         isOpen={true}
+        monthContainerClassName="!w-auto"
+        monthTextClassName="!text-xs"
         monthsShown={monthsShown}
         onChange={(date) => {
           if (!date) return;

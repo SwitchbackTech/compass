@@ -9,7 +9,6 @@ import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
-import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
 
 export function getStyle(
   snapshot: DraggableStateSnapshot,
@@ -36,7 +35,7 @@ export function getStyle(
   return style;
 }
 
-export const SOMEDAY_EVENT_HEIGHT = 32;
+export const SOMEDAY_EVENT_HEIGHT = 28;
 
 export interface Props {
   priority: Priorities;
@@ -67,11 +66,12 @@ export const StyledNewSomedayEvent = styled.div<Props>`
     if (isDragging && isOverGrid) return 0;
     return 1;
   }};
-  padding: 5px;
+  font-size: 12px;
+  padding: 4px;
   transition:
     background-color 0.2s,
     box-shadow 0.2s;
-  width: calc(${SIDEBAR_OPEN_WIDTH}-5) px;
+  width: 100%;
 
   &:hover {
     background: ${({ priority }) => hoverColorByPriority[priority]};
