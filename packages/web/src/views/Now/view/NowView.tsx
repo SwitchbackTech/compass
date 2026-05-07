@@ -3,12 +3,12 @@ import { useSession } from "@web/auth/compass/session/useSession";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
 import { useSidebarState } from "@web/common/hooks/useSidebarState";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { ShortcutsSidebar } from "@web/views/Day/components/ShortcutsSidebar/ShortcutsSidebar";
 import { NowCmdPalette } from "@web/views/Now/components/NowCmdPalette";
 import { NowViewProvider } from "@web/views/Now/context/NowViewProvider";
 import { NowViewContent } from "@web/views/Now/view/NowViewContent";
+import { StyledCalendar } from "@web/views/Week/styled";
 
 export const NowView = () => {
   const { authenticated } = useSession();

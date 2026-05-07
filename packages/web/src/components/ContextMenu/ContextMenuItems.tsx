@@ -18,8 +18,8 @@ import {
 import IconButton from "@web/components/IconButton/IconButton";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
-import { useSidebarContext } from "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext";
+import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
+import { useSidebarContext } from "@web/views/Week/components/Draft/sidebar/context/useSidebarContext";
 
 export interface ContextMenuAction {
   id: string;

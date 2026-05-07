@@ -13,9 +13,6 @@ import {
 } from "@web/common/utils/dom/event-emitter.util";
 import { openEventFormEditEvent } from "@web/common/utils/event/event.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { Dedication } from "@web/views/Calendar/components/Dedication/Dedication";
-import { useRefetch } from "@web/views/Calendar/hooks/useRefetch";
-import { StyledCalendar } from "@web/views/Calendar/styled";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
@@ -31,6 +28,9 @@ import {
   focusOnAddTaskInput,
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
+import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
+import { useRefetch } from "@web/views/Week/hooks/useRefetch";
+import { StyledCalendar } from "@web/views/Week/styled";
 
 export const DayViewContent = memo(() => {
   const { isSidebarOpen, toggleSidebar } = useSidebarState();

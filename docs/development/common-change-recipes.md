@@ -85,11 +85,11 @@ Do not edit recurring behavior from one layer only.
 
 ## Change A Shared Hotkey Dialog (Day + Week)
 
-Use this for overlays mounted in both `CalendarView` and `DayViewContent` (for example Dedication).
+Use this for overlays mounted in both `WeekView` and `DayViewContent` (for example Dedication).
 
-1. Update the shared dialog component in `packages/web/src/views/Calendar/components/Dedication/Dedication.tsx`.
+1. Update the shared dialog component in `packages/web/src/views/Week/components/Dedication/Dedication.tsx`.
 2. Confirm both mount points still render it:
-   - `packages/web/src/views/Calendar/Calendar.tsx`
+   - `packages/web/src/views/Week/WeekView.tsx`
    - `packages/web/src/views/Day/view/DayViewContent.tsx`
 3. Keep keyboard behavior aligned:
    - toggle hotkey (`ctrl+shift+0`)

@@ -4,7 +4,7 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Category } from "@web/ducks/events/event.types";
-import { type Measurements_Grid } from "@web/views/Calendar/hooks/grid/useGridLayout";
+import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
   DRAFT_PADDING_BOTTOM,
   EVENT_ALLDAY_HEIGHT,
@@ -12,7 +12,7 @@ import {
   EVENT_PADDING_RIGHT,
   GRID_MARGIN_LEFT,
   TIMED_EVENT_COLUMN_INSET,
-} from "@web/views/Calendar/layout.constants";
+} from "@web/views/Week/layout.constants";
 
 export const getAbsoluteLeftPosition = (
   category: Category,

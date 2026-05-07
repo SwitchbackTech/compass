@@ -5,12 +5,12 @@ import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useDraftActions } from "@web/views/Calendar/components/Draft/hooks/actions/useDraftActions";
-import { useDraftState } from "@web/views/Calendar/components/Draft/hooks/state/useDraftState";
-import { useDateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
-import { useGridLayout } from "@web/views/Calendar/hooks/grid/useGridLayout";
-import { useToday } from "@web/views/Calendar/hooks/useToday";
-import { useWeek } from "@web/views/Calendar/hooks/useWeek";
+import { useDraftActions } from "@web/views/Week/components/Draft/hooks/actions/useDraftActions";
+import { useDraftState } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
+import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
+import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
+import { useToday } from "@web/views/Week/hooks/useToday";
+import { useWeek } from "@web/views/Week/hooks/useWeek";
 
 export function setupDraftState(event: Schema_WebEvent) {
   const draft = assembleGridEvent(event);

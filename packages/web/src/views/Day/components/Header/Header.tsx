@@ -4,8 +4,8 @@ import { HeaderInfoIcon } from "@web/components/HeaderInfoIcon/HeaderInfoIcon";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { Reminder } from "@web/views/Calendar/components/Header/Reminder/Reminder";
-import { useReminderHotkey } from "@web/views/Calendar/hooks/shortcuts/useFocusHotkey";
+import { Reminder } from "@web/views/Week/components/Header/Reminder/Reminder";
+import { useReminderHotkey } from "@web/views/Week/hooks/shortcuts/useFocusHotkey";
 
 interface Props {
   showReminder?: boolean;

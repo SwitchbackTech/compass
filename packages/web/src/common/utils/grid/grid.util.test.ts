@@ -4,7 +4,7 @@ import {
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
-} from "@web/views/Calendar/layout.constants";
+} from "@web/views/Week/layout.constants";
 import { getFlexBasis, getLineClamp, getPrevDayWidth } from "./grid.util";
 
 describe("getLineClamp", () => {

@@ -10,7 +10,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Router config: `packages/web/src/routers/index.tsx`
 - Router loaders: `packages/web/src/routers/loaders.ts`
 - Client version polling: `packages/web/src/common/hooks/useVersionCheck.ts`
-- Update CTA wiring: `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- Update CTA wiring: `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 
 ## Authentication And Session
 
@@ -50,21 +50,24 @@ Use this document to find the first files to inspect for common Compass changes.
 - Shared responsive sidebar state hook (`xl` breakpoint behavior): `packages/web/src/common/hooks/useSidebarState.ts`
 - Day keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
 - Day view hooks: `packages/web/src/views/Day/hooks`
-- Week/calendar view: `packages/web/src/views/Calendar`
+- Week view: `packages/web/src/views/Week`
 - Now view: `packages/web/src/views/Now`
 - Now keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Now/shortcuts/useNowShortcuts.ts`
-- Dedication dialog implementation (native `dialog` + hotkeys): `packages/web/src/views/Calendar/components/Dedication/Dedication.tsx`
+- Dedication dialog implementation (native `dialog` + hotkeys): `packages/web/src/views/Week/components/Dedication/Dedication.tsx`
 - Dedication dialog mount points:
-  - week view: `packages/web/src/views/Calendar/Calendar.tsx`
+  - week view: `packages/web/src/views/Week/WeekView.tsx`
   - day view: `packages/web/src/views/Day/view/DayViewContent.tsx`
 
-## Calendar Sidebar
+## Week Sidebar
 
-- Sidebar shell and tab rendering: `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
-- Footer icon row actions (tasks/month, command palette, sync/update): `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
-- Sidebar layout constants and icon group styling: `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
+- Sidebar shell and tab rendering: `packages/web/src/views/Week/components/Sidebar/Sidebar.tsx`
+- Someday tab rendering: `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayTab.tsx`
+- Someday week section: `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayWeekSection/SomedayWeekSection.tsx`
+- Someday month section: `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayMonthSection/SomedayMonthSection.tsx`
+- Footer icon row actions (tasks/month, command palette, sync/update): `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- Sidebar layout constants and icon group styling: `packages/web/src/views/Week/components/Sidebar/styled.ts`
 - Google connection/status UI contract for sidebar + command palette: `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
-- Sidebar icon row behavior tests: `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.test.tsx`
+- Sidebar icon row behavior tests: `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.test.tsx`
 
 ## Offline Storage
 

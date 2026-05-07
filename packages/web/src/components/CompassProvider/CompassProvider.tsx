@@ -18,7 +18,7 @@ import { DNDContext } from "@web/components/DND/DNDContext";
 import { DNDOverlay } from "@web/components/DND/DNDOverlay";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { store } from "@web/store";
-import { useGlobalShortcuts } from "@web/views/Calendar/hooks/shortcuts/useGlobalShortcuts";
+import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
 
 /**
  * Mount once under {@link HotkeysProvider} and inside React Router so

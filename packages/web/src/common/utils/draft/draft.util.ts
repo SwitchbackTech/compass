@@ -12,11 +12,11 @@ import { getElemById } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
-import { type DateCalcs } from "@web/views/Calendar/hooks/grid/useDateCalcs";
+import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import {
   DRAFT_DURATION_MIN,
   GRID_TIME_STEP,
-} from "@web/views/Calendar/layout.constants";
+} from "@web/views/Week/layout.constants";
 
 export const assembleAlldayDraft = async (
   e: MouseEvent,

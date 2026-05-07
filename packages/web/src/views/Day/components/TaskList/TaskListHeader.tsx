@@ -2,9 +2,9 @@ import dayjs from "@core/util/date/dayjs";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { TodayButton } from "@web/views/Calendar/components/TodayButton/TodayButton";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
+import { TodayButton } from "@web/views/Week/components/TodayButton/TodayButton";
 
 export const DAY_HEADING_FORMAT = "dddd";
 export const DAY_SUBHEADING_FORMAT = "MMMM D";

@@ -26,7 +26,7 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { type ShortcutProps } from "@web/views/Calendar/hooks/shortcuts/useWeekShortcuts";
+import { type ShortcutProps } from "@web/views/Week/hooks/shortcuts/useWeekShortcuts";
 
 const CommandPalette = resolveDefaultExport(_CommandPalette);
 
