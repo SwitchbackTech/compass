@@ -66,7 +66,7 @@ Wire format uses the `event:` field (uppercase identifiers). Backend and web bot
 | Constant                | Role                                              |
 | ----------------------- | ------------------------------------------------- |
 | `EVENT_CHANGED`         | Calendar grid data should be refetched            |
-| `SOMEDAY_EVENT_CHANGED` | Someday sidebar data should be refetched          |
+| `SOMEDAY_EVENT_CHANGED` | Planner Sidebar Someday data should be refetched |
 | `USER_METADATA`         | Replay / push SuperTokens + sync metadata         |
 | `IMPORT_GCAL_START`     | Full or repair import started                     |
 | `IMPORT_GCAL_END`       | Import finished (see payload contract below)      |

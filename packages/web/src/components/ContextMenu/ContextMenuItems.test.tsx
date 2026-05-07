@@ -36,7 +36,7 @@ mock.module("@web/views/Week/components/Draft/context/useDraftContext", () => ({
 }));
 
 mock.module(
-  "@web/views/Week/components/Draft/sidebar/context/useSidebarContext",
+  "@web/components/PlannerSidebar/draft/context/useSidebarContext",
   () => ({
     useSidebarContext: () => null,
   }),

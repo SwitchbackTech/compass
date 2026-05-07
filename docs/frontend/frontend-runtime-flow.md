@@ -99,7 +99,7 @@ Responsibilities:
 Files:
 
 - `packages/web/src/common/hooks/useVersionCheck.ts`
-- `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
 
 Runtime behavior:
 
@@ -111,41 +111,39 @@ Runtime behavior:
 
 When the server version differs from `BUILD_VERSION`, `isUpdateAvailable` becomes `true` and the sidebar shows a refresh action that triggers `window.location.reload()`.
 
-## Week Sidebar Footer Controls
+## Planner Sidebar Runtime
 
 Files:
 
-- `packages/web/src/views/Week/components/Sidebar/Sidebar.tsx`
-- `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayTab.tsx`
-- `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayWeekSection/SomedayWeekSection.tsx`
-- `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayMonthSection/SomedayMonthSection.tsx`
-- `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
-- `packages/web/src/views/Week/components/Sidebar/styled.ts`
+- `packages/web/src/components/PlannerSidebar/PlannerSidebar.tsx`
+- `packages/web/src/components/PlannerSidebar/PlannerMonthPicker/PlannerMonthPicker.tsx`
+- `packages/web/src/components/PlannerSidebar/CalendarVisibilitySection/CalendarVisibilitySection.tsx`
+- `packages/web/src/components/PlannerSidebar/SomedayEventSections/SomedayEventSections.tsx`
+- `packages/web/src/components/PlannerSidebar/SomedayEventSections/SomedayWeekSection/SomedayWeekSection.tsx`
+- `packages/web/src/components/PlannerSidebar/SomedayEventSections/SomedayMonthSection/SomedayMonthSection.tsx`
+- `packages/web/src/components/PlannerSidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
+- `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
+- `packages/web/src/components/PlannerSidebar/draft`
 - `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 
 Layout contract:
 
-- the footer control row is pinned to the bottom of the sidebar (`ICON_ROW_HEIGHT = 40`)
-- `SidebarTabContainer` reserves space with `height: calc(100% - 40px)` so tab content does not overlap the footer row
-- the row uses `justify-content: space-between` and two explicit groups:
-  - `LeftIconGroup`: sidebar tab navigation actions
-  - `RightIconGroup`: utility and status actions
+- Day view and Week view both use the shared Planner Sidebar as the left-side planning surface.
+- The Planner Sidebar renders date navigation, calendar visibility, and Someday Events together instead of switching between sidebar tabs.
+- The footer action row is pinned to the bottom of the Planner Sidebar.
+- The shortcuts action opens a `ShortcutsOverlay` dialog that covers the Planner Sidebar; it does not replace the sidebar mode.
+- Date selection is view-local: Day view navigates to the selected day, while Week view navigates to the week containing the selected day.
 
 Control mapping:
 
-- Left group:
-  - Tasks tab (`SHIFT + 1`) dispatches `viewSlice.actions.updateSidebarTab("tasks")`
-  - Month tab (`SHIFT + 2`) dispatches `viewSlice.actions.updateSidebarTab("monthWidget")`
-- Right group:
-  - Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`
-  - Google status action is derived from `useConnectGoogle().sidebarStatus`
-  - background import spinner is shown while `selectImportGCalState(...).importing` is true
-  - update action (refresh icon) is shown when `useVersionCheck().isUpdateAvailable` is true and reloads the page
+- Header sidebar toggle (`[`) opens/closes the Planner Sidebar in Day view and Week view.
+- Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`.
+- Update action is shown when `useVersionCheck().isUpdateAvailable` is true and reloads the page.
 
 Icon state constraints:
 
-- tab icons and command icon use `theme.color.text.light` when active and `theme.color.text.darkPlaceholder` when inactive
-- Google status icon tooltips and disabled/clickable behavior come from `useConnectGoogle` and should not be hardcoded in the row component
+- Planner Sidebar actions should use utility-action semantics, not tab semantics.
+- Google status icon tooltips and disabled/clickable behavior come from `useConnectGoogle` and should not be hardcoded in the row component.
 
 ## Dedication Dialog Runtime
 
@@ -173,16 +171,13 @@ Pitfalls:
 - do not call `dialog.close()` directly in new close handlers unless you intentionally want to bypass the fade/scale exit animation
 - keep imports pointed at `.../Dedication/Dedication` (no barrel file in this folder)
 
-## Day/Now Shortcuts Sidebar Runtime
+## Now Shortcuts Sidebar Runtime
 
 Files:
 
 - `packages/web/src/common/hooks/useSidebarState.ts`
 - `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
-- `packages/web/src/views/Day/components/Header/Header.tsx`
-- `packages/web/src/views/Day/view/DayViewContent.tsx`
 - `packages/web/src/views/Now/view/NowView.tsx`
-- `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
 - `packages/web/src/views/Now/shortcuts/useNowShortcuts.ts`
 
 Runtime behavior:
@@ -191,7 +186,7 @@ Runtime behavior:
 - breakpoint transitions are authoritative: crossing the `xl` boundary re-syncs the sidebar state even if the user manually toggled it earlier
 - users can toggle via:
   - header sidebar button (`Header` tooltip + `SidebarIcon`)
-  - `[` keyboard shortcut in both Day and Now views
+  - `[` keyboard shortcut in Now view
 - the sidebar is desktop-only in layout (`hidden xl:flex`), so on sub-`xl` widths toggling updates state but the sidebar content remains visually hidden
 - `ShortcutsSidebar` filters out empty sections and returns `null` when no section has shortcuts
 
@@ -329,7 +324,7 @@ Files:
 
 - `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 - `packages/web/src/auth/google/google.auth.util.ts`
-- `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
 
 UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only loading state:
 

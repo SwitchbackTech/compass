@@ -14,7 +14,7 @@ Use this guide to validate:
 - deleting standalone events
 - dragging events to a new time slot
 - resizing events
-- moving events to the Someday sidebar by drag
+- moving events to the Planner Sidebar by drag
 - scheduling Someday events onto the grid by drag
 - duplicating events (Cmd+D)
 - undoing an event deletion (Cmd+Z / Ctrl+Z)
@@ -35,7 +35,7 @@ Helpful notes:
 
 - All event interactions require a loaded calendar grid. If the grid is blank, reload and wait for events to fetch.
 - The right-click context menu on an event opens a small overlay. It closes if you click elsewhere.
-- The Someday sidebar must be open (toggle with `[`) for sidebar drag scenarios.
+- The Planner Sidebar must be open (toggle with `[`) for sidebar drag scenarios.
 
 ---
 
@@ -86,11 +86,11 @@ Clicking the all-day row at the top of the week grid should open a new event for
 
 ### UX
 
-The Someday sidebar holds unscheduled events not tied to a specific date. Users can create a Someday Week event from the sidebar or command palette. The sidebar enforces a limit of 9 Someday Week events at a time.
+The Planner Sidebar holds unscheduled events not tied to a specific date. Users can create a Someday Week event from the Planner Sidebar or command palette. The sidebar enforces a limit of 9 Someday Week events at a time.
 
 ### Steps
 
-1. Open the sidebar with `[` if it is not already open.
+1. Open the Planner Sidebar with `[` if it is not already open.
 2. Press `Shift+W` (or use the command palette → Create Week Event).
 3. Enter a title in the form and submit.
 4. Repeat until you have 9 Someday Week events.
@@ -98,7 +98,7 @@ The Someday sidebar holds unscheduled events not tied to a specific date. Users 
 
 ### Expected Results
 
-- Each new event appears in the Week section of the Someday sidebar.
+- Each new event appears in the Week section of the Planner Sidebar.
 - On the 10th attempt, an error message appears: "Sorry, you can only have 9 unscheduled events per week."
 - No 10th event is created.
 
@@ -108,18 +108,18 @@ The Someday sidebar holds unscheduled events not tied to a specific date. Users 
 
 ### UX
 
-Someday Month events appear in the Month section of the Someday sidebar. The same 9-event limit applies per month.
+Someday Month events appear in the Month section of the Planner Sidebar. The same 9-event limit applies per month.
 
 ### Steps
 
-1. Open the sidebar with `[`.
+1. Open the Planner Sidebar with `[`.
 2. Press `Shift+M` (or use the command palette → Create Month Event).
 3. Enter a title and submit.
-4. Confirm the event appears in the Month section of the sidebar (below the Week section).
+4. Confirm the event appears in the Month section of the Planner Sidebar (below the Week section).
 
 ### Expected Results
 
-- The new event appears in the Month section of the Someday sidebar.
+- The new event appears in the Month section of the Planner Sidebar.
 - The event does not appear on the calendar grid.
 
 ---
@@ -235,17 +235,17 @@ Hovering near the top or bottom edge of an event reveals a resize cursor. Draggi
 
 ### UX
 
-Someday events can be dragged from the sidebar onto a specific day and time on the calendar grid, converting them into scheduled events.
+Someday events can be dragged from the Planner Sidebar onto a specific day and time on the calendar grid, converting them into scheduled events.
 
 ### Steps
 
-1. Open the sidebar with `[`.
-2. Locate a Someday event in the sidebar.
-3. Drag it from the sidebar and drop it onto a specific time slot on the calendar grid.
+1. Open the Planner Sidebar with `[`.
+2. Locate a Someday event in the Planner Sidebar.
+3. Drag it from the Planner Sidebar and drop it onto a specific time slot on the calendar grid.
 
 ### Expected Results
 
-- The event disappears from the sidebar.
+- The event disappears from the Planner Sidebar.
 - The event appears on the grid at the dropped time.
 - The event is now a regular scheduled event and persists after a page reload.
 
@@ -302,6 +302,6 @@ If time is limited, run these checks before shipping event-related changes:
 7. Deleting a standalone event shows no scope dialog.
 8. Dragging an event to a new slot moves it and persists after reload.
 9. Resizing an event updates the duration and persists after reload.
-10. Dragging to/from the Someday sidebar correctly converts events between scheduled and unscheduled states.
+10. Dragging to/from the Planner Sidebar correctly converts events between scheduled and unscheduled states.
 11. Cmd+D duplicates an event with the same properties.
 12. Cmd+Z / Ctrl+Z after deletion restores the event.

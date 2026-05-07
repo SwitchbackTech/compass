@@ -54,7 +54,7 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
   & .react-datepicker {
     &__month-container {
       width: 100%;
-      padding: 0 15px 0 15px;
+      padding: ${({ view }) => (view === "sidebar" ? "0" : "0 15px")};
       height: 285px;
       display: flex;
       flex-direction: column;
@@ -85,7 +85,7 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
       align-items: left;
       background: unset;
       border-bottom: none;
-      padding: 8px 0 0 2px;
+      padding: ${({ view }) => (view === "sidebar" ? "8px 0 0" : "8px 0 0 2px")};
     }
 
     &__day-name {
@@ -134,7 +134,8 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
       }
 
       &--keyboard-selected {
-        background-color: ${theme.color.bg.primary};
+        background-color: ${({ view }) =>
+          view === "sidebar" ? "transparent" : theme.color.bg.primary};
       }
 
       &--outside-month {

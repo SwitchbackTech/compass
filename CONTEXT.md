@@ -111,10 +111,24 @@ The storage-level date association for tasks.
 The `/now` view that focuses on today's incomplete tasks and lets the user lock
 in on one task.
 
+**Planner Sidebar**:
+The shared left-side workspace for date navigation, calendar visibility, and
+unscheduled planning items.
+_Avoid_: Week sidebar, Calendar sidebar
+
+**Shortcuts Overlay**:
+A temporary help surface for keyboard commands that can cover the Planner
+Sidebar without replacing it.
+_Avoid_: Shortcuts sidebar
+
 ### Google Sync And Realtime
 
 **Primary Calendar**:
 The main Google Calendar Compass currently syncs.
+
+**Calendar Visibility**:
+The user's choice of which calendars appear in the main calendar surface.
+_Avoid_: account selection
 
 **Google Watch**:
 A Google Calendar watch subscription used to notify Compass when Google-side
@@ -163,6 +177,25 @@ during Import or Public watch notification handling.
 - A **Task** belongs to a **Date key** and stays local today, even when the user
   is authenticated.
 - A **Someday Event** is an **Event**, not a **Task**.
+- The **Planner Sidebar** should stay consistent between Day view and Week view.
+- **Someday Events** keep their planning buckets in the **Planner Sidebar**
+  regardless of whether the main view is Day view or Week view.
+- The bottom planning area of the **Planner Sidebar** is for **Someday Events**,
+  not **Tasks**.
+- The **Planner Sidebar** presents date navigation, calendar visibility, and
+  **Someday Events** together instead of switching between separate sidebar
+  modes.
+- Date navigation from the **Planner Sidebar** keeps the user in their current
+  main view.
+- **Someday Events** in the **Planner Sidebar** should remain editable outside
+  Week view, while drag-to-grid scheduling can be added per view.
+- The **Planner Sidebar** uses calendar language for **Calendar Visibility**;
+  account identifiers such as email addresses are source context, not the
+  selected thing.
+- The **Shortcuts Overlay** may cover the **Planner Sidebar**, but it is not the
+  left-side planning surface.
+- The **Shortcuts Overlay** is opened from a utility action in the
+  **Planner Sidebar**, not by switching the sidebar into a shortcuts mode.
 - A **Recurring Series** has exactly one **Base Event** and zero or more
   **Instance Events**.
 - An **Instance Event** belongs to exactly one **Base Event** through

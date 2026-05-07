@@ -175,13 +175,12 @@ await act(async () => {
 });
 ```
 
-### Testing Responsive Sidebar State (`useSidebarState`)
+### Testing Now Shortcuts Sidebar State (`useSidebarState`)
 
 Files:
 
 - `packages/web/src/common/hooks/useSidebarState.ts`
 - `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
-- `packages/web/src/views/Day/view/DayViewContent.tsx`
 - `packages/web/src/views/Now/view/NowView.tsx`
 
 Reliable setup pattern:
@@ -197,6 +196,21 @@ Assertions to prefer:
 - verify both pathways for toggle behavior:
   - user interaction (header toggle button)
   - keyboard interaction (`[` shortcut via view shortcut hooks)
+
+### Testing Planner Sidebar Overlays
+
+Files:
+
+- `packages/web/src/components/PlannerSidebar/PlannerSidebar.tsx`
+- `packages/web/src/components/PlannerSidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
+- `packages/web/src/views/Day/view/DayViewContent.tsx`
+- `packages/web/src/views/Week/WeekView.tsx`
+
+Assertions to prefer:
+
+- query the Planner Sidebar by landmark role and label (`role="complementary"`, `name: "Planner sidebar"`)
+- query the shortcuts overlay by dialog role and label (`role="dialog"`, `name: "Keyboard shortcuts"`)
+- verify `Escape` closes the overlay, and verify the overlay filters empty shortcut sections
 
 ### Route-Aware Component Tests
 

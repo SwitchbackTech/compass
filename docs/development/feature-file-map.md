@@ -10,7 +10,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Router config: `packages/web/src/routers/index.tsx`
 - Router loaders: `packages/web/src/routers/loaders.ts`
 - Client version polling: `packages/web/src/common/hooks/useVersionCheck.ts`
-- Update CTA wiring: `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- Update CTA wiring: `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
 
 ## Authentication And Session
 
@@ -45,29 +45,31 @@ Use this document to find the first files to inspect for common Compass changes.
 ## Day / Week / Now Views
 
 - Day view route and content: `packages/web/src/views/Day/view`
-- Day view header (includes shortcuts toggle control): `packages/web/src/views/Day/components/Header/Header.tsx`
-- Day shortcuts sidebar component: `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
-- Shared responsive sidebar state hook (`xl` breakpoint behavior): `packages/web/src/common/hooks/useSidebarState.ts`
+- Day view header (includes Planner Sidebar toggle control): `packages/web/src/views/Day/components/Header/Header.tsx`
 - Day keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
 - Day view hooks: `packages/web/src/views/Day/hooks`
 - Week view: `packages/web/src/views/Week`
 - Now view: `packages/web/src/views/Now`
+- Now shortcuts sidebar component: `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
 - Now keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Now/shortcuts/useNowShortcuts.ts`
 - Dedication dialog implementation (native `dialog` + hotkeys): `packages/web/src/views/Week/components/Dedication/Dedication.tsx`
 - Dedication dialog mount points:
   - week view: `packages/web/src/views/Week/WeekView.tsx`
   - day view: `packages/web/src/views/Day/view/DayViewContent.tsx`
 
-## Week Sidebar
+## Planner Sidebar
 
-- Sidebar shell and tab rendering: `packages/web/src/views/Week/components/Sidebar/Sidebar.tsx`
-- Someday tab rendering: `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayTab.tsx`
-- Someday week section: `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayWeekSection/SomedayWeekSection.tsx`
-- Someday month section: `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayMonthSection/SomedayMonthSection.tsx`
-- Footer icon row actions (tasks/month, command palette, sync/update): `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
-- Sidebar layout constants and icon group styling: `packages/web/src/views/Week/components/Sidebar/styled.ts`
+- Shared Planner Sidebar shell: `packages/web/src/components/PlannerSidebar/PlannerSidebar.tsx`
+- Planner Sidebar draft context: `packages/web/src/components/PlannerSidebar/draft`
+- Date navigation picker: `packages/web/src/components/PlannerSidebar/PlannerMonthPicker/PlannerMonthPicker.tsx`
+- Calendar visibility section: `packages/web/src/components/PlannerSidebar/CalendarVisibilitySection/CalendarVisibilitySection.tsx`
+- Someday event rendering: `packages/web/src/components/PlannerSidebar/SomedayEventSections/SomedayEventSections.tsx`
+- Someday week section: `packages/web/src/components/PlannerSidebar/SomedayEventSections/SomedayWeekSection/SomedayWeekSection.tsx`
+- Someday month section: `packages/web/src/components/PlannerSidebar/SomedayEventSections/SomedayMonthSection/SomedayMonthSection.tsx`
+- Shortcuts overlay: `packages/web/src/components/PlannerSidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
+- Footer utility actions (shortcuts, command palette, sync/update): `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
 - Google connection/status UI contract for sidebar + command palette: `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
-- Sidebar icon row behavior tests: `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.test.tsx`
+- Planner Sidebar action tests: `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.test.tsx`
 
 ## Offline Storage
 

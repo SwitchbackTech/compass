@@ -12,7 +12,7 @@ Use this guide to validate:
 - opening and using the command palette (Cmd+K)
 - creating events with keyboard shortcuts (C, A, Shift+W, Shift+M in Week view)
 - creating tasks with the keyboard (C in Day view)
-- toggling the sidebar ([)
+- toggling the Planner Sidebar ([)
 - completing tasks with the keyboard (Enter on checkbox)
 - deleting tasks with the keyboard (Delete/Backspace)
 - undoing with the keyboard (Cmd+Z / Ctrl+Z)
@@ -214,7 +214,7 @@ Pressing `A` in Week view opens a new event form pre-configured as an all-day ev
 ### Steps
 
 1. Navigate to `/week`.
-2. Open the sidebar with `[` if it is not open.
+2. Open the Planner Sidebar with `[` if it is not open.
 3. Press `Shift+W`.
 4. Enter a title and submit.
 5. Press `Shift+M`.
@@ -222,8 +222,8 @@ Pressing `A` in Week view opens a new event form pre-configured as an all-day ev
 
 ### Expected Results
 
-- `Shift+W` opens an event form for a Someday Week event; the saved event appears in the sidebar Week section.
-- `Shift+M` opens an event form for a Someday Month event; the saved event appears in the sidebar Month section.
+- `Shift+W` opens an event form for a Someday Week event; the saved event appears in the Planner Sidebar Week section.
+- `Shift+M` opens an event form for a Someday Month event; the saved event appears in the Planner Sidebar Month section.
 
 ---
 
@@ -251,19 +251,19 @@ Pressing `C` in Day view opens an inline task input — distinct from `C` in Wee
 
 ### UX
 
-Pressing `[` toggles the sidebar open or closed from any view.
+Pressing `[` toggles the Planner Sidebar open or closed from any view.
 
 ### Steps
 
 1. Navigate to `/week`.
-2. Press `[` to close the sidebar (if open).
+2. Press `[` to close the Planner Sidebar (if open).
 3. Press `[` again to reopen it.
 4. Navigate to `/day` and repeat.
 
 ### Expected Results
 
-- `[` toggles the sidebar in both Week view and Day view.
-- The calendar grid expands to fill the space when the sidebar is closed.
+- `[` toggles the Planner Sidebar in both Week view and Day view.
+- The calendar grid expands to fill the space when the Planner Sidebar is closed.
 
 ---
 
@@ -358,7 +358,7 @@ If time is limited, run these checks before shipping shortcut-related changes:
 5. `C` in Week view opens an event form; `C` in Day view opens a task input.
 6. `A` in Week view opens an all-day event form.
 7. `Shift+W` and `Shift+M` create Someday events in the correct sidebar sections.
-8. `[` toggles the sidebar in both Week and Day view.
+8. `[` toggles the Planner Sidebar in both Week and Day view.
 9. Enter on a focused task checkbox marks the task complete.
 10. Delete/Backspace on a focused task checkbox removes the task.
 11. Cmd+Z / Ctrl+Z restores the last deleted task or event.

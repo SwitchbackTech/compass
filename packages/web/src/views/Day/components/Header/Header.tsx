@@ -31,7 +31,7 @@ export const Header: FC<Props> = ({
   return (
     <div className="relative flex h-20 w-full items-baseline justify-between text-text-light">
       <TooltipWrapper
-        description={isSidebarOpen ? "Hide shortcuts" : "Show shortcuts"}
+        description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
         onClick={onToggleSidebar}
         shortcut="["
       >

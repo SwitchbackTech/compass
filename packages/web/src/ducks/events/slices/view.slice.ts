@@ -8,7 +8,6 @@ interface State_View {
     end: string;
   };
   sidebar: {
-    tab: "monthWidget" | "tasks";
     isOpen: boolean;
   };
   header: {
@@ -20,10 +19,6 @@ interface Action_DatesChange extends Action {
   payload: State_View["dates"];
 }
 
-interface Action_SidebarViewChange extends Action {
-  payload: State_View["sidebar"]["tab"];
-}
-
 interface Action_ReminderChange extends Action {
   payload: State_View["header"]["reminder"];
 }
@@ -33,7 +28,7 @@ const initialState: State_View = {
     start: dayjs().startOf("week").format(),
     end: dayjs().endOf("week").format(),
   },
-  sidebar: { tab: "tasks", isOpen: true },
+  sidebar: { isOpen: true },
   header: { reminder: "" },
 };
 
@@ -46,9 +41,6 @@ export const viewSlice = createSlice({
     },
     updateDates: (state, action: Action_DatesChange) => {
       state.dates = action.payload;
-    },
-    updateSidebarTab: (state, action: Action_SidebarViewChange) => {
-      state.sidebar.tab = action.payload;
     },
     updateReminder: (state, action: Action_ReminderChange) => {
       state.header.reminder = action?.payload ?? !state.header.reminder;
