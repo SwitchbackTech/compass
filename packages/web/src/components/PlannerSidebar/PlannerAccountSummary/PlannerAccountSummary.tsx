@@ -17,10 +17,13 @@ export const PlannerAccountSummary: FC = () => {
 
   return (
     <div
-      className="flex min-w-0 items-center gap-1.5 text-text-light-inactive text-xs"
+      className="flex min-w-0 items-center gap-1.5 border-border-primary border-b pb-3 text-text-light-inactive"
       title={accountLabel}
     >
-      <span className="min-w-0 truncate" translate="no">
+      <span
+        className="min-w-0 flex-1 truncate text-[11px] leading-tight"
+        translate="no"
+      >
         {accountLabel}
       </span>
 
