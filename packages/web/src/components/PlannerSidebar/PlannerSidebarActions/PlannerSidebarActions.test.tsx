@@ -1,6 +1,5 @@
-import { screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { type ReactNode } from "react";
-import { render } from "@web/__tests__/utils/render.test.util";
 import { afterAll, describe, expect, it, mock } from "bun:test";
 
 mock.module("@web/common/hooks/useVersionCheck", () => ({
@@ -11,6 +10,11 @@ mock.module("@web/common/hooks/useVersionCheck", () => ({
 
 mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
   TooltipWrapper: ({ children }: { children: ReactNode }) => <>{children}</>,
+}));
+
+mock.module("@web/store/store.hooks", () => ({
+  useAppDispatch: () => mock(),
+  useAppSelector: () => false,
 }));
 
 const { PlannerSidebarActions } =
