@@ -17,7 +17,7 @@ export const PlannerAccountSummary: FC = () => {
 
   return (
     <div
-      className="flex min-w-0 items-center gap-1.5 border-border-primary border-b pb-3 text-text-light-inactive"
+      className="flex min-w-0 items-center gap-2 border-border-primary border-b px-1 pb-3 text-text-light-inactive"
       title={accountLabel}
     >
       <span
@@ -34,7 +34,7 @@ export const PlannerAccountSummary: FC = () => {
         >
           <button
             aria-label="Temporary account info"
-            className="inline-flex cursor-pointer items-center rounded-default p-0 text-text-light-inactive transition-colors hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-default text-text-light-inactive transition-colors hover:bg-bg-secondary hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             type="button"
           >
             <InfoIcon aria-hidden="true" size={14} />

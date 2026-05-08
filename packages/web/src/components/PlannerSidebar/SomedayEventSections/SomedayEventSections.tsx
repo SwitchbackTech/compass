@@ -35,7 +35,7 @@ export const SomedayEventSections: FC<Props> = ({
   const { actions } = context;
 
   return (
-    <div className="flex flex-col gap-5" ref={somedayRef}>
+    <div className="flex flex-col gap-6" ref={somedayRef}>
       <DragDropContext
         onDragEnd={actions.onDragEnd}
         onDragStart={actions.onDragStart}

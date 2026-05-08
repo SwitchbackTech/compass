@@ -30,8 +30,8 @@ export const SomedayMonthSection: FC<Props> = ({
 
   return (
     <div className="flex flex-col">
-      <div className="mb-2 flex items-center justify-between">
-        <h2 className="font-medium text-text-lighter text-xs">
+      <div className="mb-2.5 flex items-center justify-between">
+        <h2 className="font-semibold text-text-lighter/85 text-xs leading-none">
           {isCurrentMonth ? "This Month" : monthLabel}
         </h2>
       </div>

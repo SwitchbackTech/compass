@@ -58,16 +58,16 @@ export const SomedayEventsContainer: FC<Props> = ({
   const events = getSomedayEvents(category, state.somedayEvents);
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;
+  const addLabel =
+    category === Categories_Event.SOMEDAY_MONTH
+      ? "Add to month"
+      : "Add to week";
 
   // Render add someday event tooltip
   const renderWithTooltip = (children: React.ReactNode) => {
     return (
       <TooltipWrapper
-        description={
-          category === Categories_Event.SOMEDAY_MONTH
-            ? "Add to month"
-            : "Add to week"
-        }
+        description={addLabel}
         shortcut={
           category === Categories_Event.SOMEDAY_MONTH ? "Shift+M" : "Shift+W"
         }
@@ -102,6 +102,7 @@ export const SomedayEventsContainer: FC<Props> = ({
               <div style={{ opacity: state.isDragging ? 0 : 1 }}>
                 {state.isDragging ? (
                   <AddSomedayEvent
+                    ariaLabel={addLabel}
                     onCreate={() =>
                       context.actions.createSomedayDraft(category)
                     }
@@ -109,6 +110,7 @@ export const SomedayEventsContainer: FC<Props> = ({
                 ) : (
                   renderWithTooltip(
                     <AddSomedayEvent
+                      ariaLabel={addLabel}
                       onCreate={() =>
                         context.actions.createSomedayDraft(category)
                       }

@@ -43,10 +43,10 @@ export function PlannerSidebar({
     <aside
       {...props}
       aria-label="Planner sidebar"
-      className="relative flex h-full w-[285px] min-w-[285px] flex-col overflow-hidden bg-panel-bg pt-6 text-panel-text"
+      className="relative flex h-full w-[285px] min-w-[285px] flex-col overflow-hidden border-border-primary border-r bg-panel-bg pt-5 text-panel-text"
       id={ID_SIDEBAR}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto px-4 pb-4">
+      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 pb-5 [scrollbar-gutter:stable]">
         <PlannerMonthPicker
           monthsShown={monthsShown}
           onSelectDate={onSelectDate}
@@ -55,7 +55,7 @@ export function PlannerSidebar({
 
         <PlannerAccountSummary />
 
-        <section aria-label="Unscheduled events" className="space-y-3">
+        <section aria-label="Unscheduled events" className="space-y-4">
           <SomedayEventSections
             dateCalcs={dateCalcs}
             gridRefs={gridRefs}
