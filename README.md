@@ -94,3 +94,5 @@ We love contributions! Whether it's bug fixes, new features, or documentation im
 - **LinkedIn**: [Compass Calendar](https://www.linkedin.com/company/compass-calendar)
 
 Star the repo for good luck =]
+
+[![Star History Chart](https://api.star-history.com/chart?repos=SwitchbackTech/compass&type=date&legend=top-left)](https://www.star-history.com/?repos=SwitchbackTech%2Fcompass&type=date&legend=top-left)
