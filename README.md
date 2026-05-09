@@ -92,5 +92,3 @@ We love contributions! Whether it's bug fixes, new features, or documentation im
 - **Twitter**: [@CompassCalendar](https://x.com/CompassCalendar)
 - **Youtube**: [Playlist](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
 - **LinkedIn**: [Compass Calendar](https://www.linkedin.com/company/compass-calendar)
-
-Star the repo for good luck =]
