@@ -87,8 +87,8 @@ We love contributions! Whether it's bug fixes, new features, or documentation im
 **Feedback**: Join the conversation on [GitHub Discussions](https://github.com/SwitchbackTech/compass/discussions).
 
 ## Resources
-
-- **Handbook**: [compasscalendar.notion.site](https://alpaca-ty.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d?utm_source=github&utm_medium=referral&utm_campaign=readme)
+- **Changelog**: [compasscalendar.com](https://changelog.compasscalendar.com)
+- **Handbook**: [notion.site](https://alpaca-ty.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d?utm_source=github&utm_medium=referral&utm_campaign=readme)
 - **Twitter**: [@CompassCalendar](https://x.com/CompassCalendar)
 - **Youtube**: [Playlist](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
 - **LinkedIn**: [Compass Calendar](https://www.linkedin.com/company/compass-calendar)
