@@ -1,0 +1,292 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-05-08T15:30:00.000Z",
+  "title": "Design System: Compass Calendar",
+  "extensions": {
+    "colorMeta": {
+      "accent-primary": {
+        "role": "primary",
+        "displayName": "Instrument Blue",
+        "canonical": "hsl(202 100 67)",
+        "tonalRamp": [
+          "oklch(15% 0.12 239)",
+          "oklch(27% 0.14 239)",
+          "oklch(39% 0.15 239)",
+          "oklch(51% 0.16 239)",
+          "oklch(63% 0.15 239)",
+          "oklch(75% 0.12 239)",
+          "oklch(86% 0.08 239)",
+          "oklch(95% 0.03 239)"
+        ]
+      },
+      "bg-primary": {
+        "role": "neutral",
+        "displayName": "Midnight Canvas",
+        "canonical": "hsl(222 28 7)",
+        "tonalRamp": [
+          "oklch(12% 0.02 260)",
+          "oklch(20% 0.02 260)",
+          "oklch(30% 0.02 260)",
+          "oklch(42% 0.02 260)",
+          "oklch(55% 0.018 260)",
+          "oklch(68% 0.014 260)",
+          "oklch(82% 0.01 260)",
+          "oklch(95% 0.006 260)"
+        ]
+      },
+      "bg-secondary": {
+        "role": "neutral",
+        "displayName": "Deep Panel",
+        "canonical": "hsl(218 24 9)",
+        "tonalRamp": [
+          "oklch(14% 0.02 255)",
+          "oklch(22% 0.02 255)",
+          "oklch(32% 0.02 255)",
+          "oklch(44% 0.018 255)",
+          "oklch(56% 0.016 255)",
+          "oklch(70% 0.012 255)",
+          "oklch(84% 0.008 255)",
+          "oklch(96% 0.005 255)"
+        ]
+      },
+      "panel-bg": {
+        "role": "neutral",
+        "displayName": "Smoke Panel",
+        "canonical": "hsl(219 8 46 / 20%)",
+        "tonalRamp": [
+          "oklch(15% 0.01 255)",
+          "oklch(27% 0.012 255)",
+          "oklch(39% 0.012 255)",
+          "oklch(51% 0.01 255)",
+          "oklch(63% 0.009 255)",
+          "oklch(75% 0.008 255)",
+          "oklch(87% 0.006 255)",
+          "oklch(96% 0.004 255)"
+        ]
+      },
+      "text-light": {
+        "role": "neutral",
+        "displayName": "Warm Ash Text",
+        "canonical": "hsl(47 7 73)",
+        "tonalRamp": [
+          "oklch(16% 0.01 88)",
+          "oklch(28% 0.012 88)",
+          "oklch(40% 0.012 88)",
+          "oklch(52% 0.012 88)",
+          "oklch(64% 0.01 88)",
+          "oklch(76% 0.008 88)",
+          "oklch(88% 0.006 88)",
+          "oklch(96% 0.004 88)"
+        ]
+      },
+      "status-success": {
+        "role": "tertiary",
+        "displayName": "Status Green",
+        "canonical": "hsl(105 61 62)",
+        "tonalRamp": [
+          "oklch(17% 0.07 135)",
+          "oklch(29% 0.09 135)",
+          "oklch(41% 0.11 135)",
+          "oklch(53% 0.12 135)",
+          "oklch(65% 0.11 135)",
+          "oklch(77% 0.08 135)",
+          "oklch(88% 0.05 135)",
+          "oklch(96% 0.02 135)"
+        ]
+      },
+      "status-warning": {
+        "role": "tertiary",
+        "displayName": "Status Amber",
+        "canonical": "hsl(25 100 63)",
+        "tonalRamp": [
+          "oklch(16% 0.08 55)",
+          "oklch(28% 0.11 55)",
+          "oklch(40% 0.14 55)",
+          "oklch(52% 0.16 55)",
+          "oklch(64% 0.14 55)",
+          "oklch(76% 0.1 55)",
+          "oklch(88% 0.06 55)",
+          "oklch(96% 0.025 55)"
+        ]
+      },
+      "status-error": {
+        "role": "tertiary",
+        "displayName": "Status Red",
+        "canonical": "hsl(0 63 60)",
+        "tonalRamp": [
+          "oklch(16% 0.07 25)",
+          "oklch(28% 0.09 25)",
+          "oklch(40% 0.12 25)",
+          "oklch(52% 0.14 25)",
+          "oklch(64% 0.12 25)",
+          "oklch(76% 0.09 25)",
+          "oklch(88% 0.05 25)",
+          "oklch(96% 0.02 25)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Rare focus surfaces and important empty states."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section emphasis in focused views and overlays."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Sidebar sections, modal headings, and major form labels."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Readable interface text, form content, and messages."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Calendar labels, menu items, compact controls, and metadata."
+      }
+    },
+    "shadows": [
+      {
+        "name": "floating-menu",
+        "value": "0px 4px 6px rgba(0, 0, 0, 0.25)",
+        "purpose": "Context menus and dropdowns above dense surfaces."
+      },
+      {
+        "name": "floating-form",
+        "value": "0px 5px 5px rgba(0, 0, 0, 0.25)",
+        "purpose": "Event forms and edit surfaces over calendar content."
+      },
+      {
+        "name": "modal-lift",
+        "value": "0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)",
+        "purpose": "Centered confirmation and status panels."
+      }
+    ],
+    "motion": [
+      {
+        "name": "transition-default",
+        "value": "0.3s",
+        "purpose": "Default state transitions for controls."
+      },
+      {
+        "name": "transition-quick",
+        "value": "0.2s ease-out",
+        "purpose": "Small interaction feedback for buttons and drag surfaces."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "mobile-gate",
+        "value": "current mobile view shows a gate instead of adapting the full calendar"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Decisive action button for isolated actions and gates.",
+      "html": "<button class=\"ds-btn-primary\">Join Mobile Waitlist</button>",
+      "css": ".ds-btn-primary { min-height: 44px; cursor: pointer; border: none; border-radius: 4px; background: var(--color-accent-primary, #57c1ff); color: var(--color-text-dark, #0d1017); padding: 8px 32px; font-family: Rubik, ui-sans-serif, system-ui, sans-serif; font-size: 1rem; font-weight: 500; transition: opacity 0.3s ease, background-color 0.3s ease; } .ds-btn-primary:hover { opacity: 0.9; } .ds-btn-primary:focus-visible { outline: 2px solid var(--color-accent-primary, #57c1ff); outline-offset: 2px; }"
+    },
+    {
+      "name": "Icon Button",
+      "kind": "button",
+      "refersTo": "button-ghost",
+      "description": "Compact circular control for header and planning actions.",
+      "html": "<button class=\"ds-icon-btn\" aria-label=\"Next\"><svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M9 6l6 6-6 6\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button>",
+      "css": ".ds-icon-btn { display: inline-flex; width: 34px; height: 34px; align-items: center; justify-content: center; cursor: pointer; border: 2px solid transparent; border-radius: 999px; background: transparent; color: var(--color-text-light, #bfbdb5); padding: 0; transition: transform 0.2s ease-out, background-color 0.3s ease; } .ds-icon-btn svg { width: 20px; height: 20px; } .ds-icon-btn:hover { transform: scale(1.05); background: var(--color-border-primary, #47526633); } .ds-icon-btn:active { transform: scale(0.95); } .ds-icon-btn:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-accent-primary, #57c1ff); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Transparent planning input that stays visually quiet until interaction.",
+      "html": "<label class=\"ds-input-wrap\"><span class=\"ds-input-label\">Event</span><input class=\"ds-input\" placeholder=\"Plan the next thing\" /></label>",
+      "css": ".ds-input-wrap { display: grid; gap: 6px; color: var(--color-text-light, #bfbdb5); font-family: Rubik, ui-sans-serif, system-ui, sans-serif; } .ds-input-label { font-size: 0.8125rem; font-weight: 500; } .ds-input { height: 34px; width: 100%; border: none; border-radius: 4px; outline: none; background: transparent; color: var(--color-text-lighter, #fff); padding: 0 8px; font-size: 1rem; transition: background-color 0.3s ease, box-shadow 0.3s ease; } .ds-input::placeholder { color: var(--color-text-dark-placeholder, #6c727fe6); } .ds-input:hover { background: var(--color-border-primary, #47526633); } .ds-input:focus-visible { box-shadow: 0 0 0 2px var(--color-accent-primary, #57c1ff); }"
+    },
+    {
+      "name": "Planner Panel",
+      "kind": "card",
+      "refersTo": "panel",
+      "description": "A compact planning surface for sidebar content, not a decorative card.",
+      "html": "<section class=\"ds-panel\" aria-label=\"Planner sidebar\"><h2>Someday</h2><p>Capture future work without cluttering the calendar.</p></section>",
+      "css": ".ds-panel { width: 285px; min-height: 180px; border-radius: 4px; background: var(--color-panel-bg, #6c727f33); color: var(--color-panel-text, #fafafa); padding: 16px; font-family: Rubik, ui-sans-serif, system-ui, sans-serif; } .ds-panel h2 { margin: 0 0 12px; font-size: 0.8125rem; font-weight: 500; color: var(--color-text-lighter, #fff); } .ds-panel p { margin: 0; color: var(--color-text-light-inactive, #abb6bf8c); font-size: 0.8125rem; line-height: 1.5; }"
+    },
+    {
+      "name": "View Select",
+      "kind": "nav",
+      "refersTo": "button-ghost",
+      "description": "Compact view navigation with a quiet dropdown and strong active state.",
+      "html": "<div class=\"ds-view-select\"><button class=\"ds-view-trigger\">Week <svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><path d=\"M19 9l-7 7-7-7\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg></button><div class=\"ds-view-menu\"><button class=\"ds-view-option\">Now</button><button class=\"ds-view-option\">Day</button><button class=\"ds-view-option ds-selected\">Week</button></div></div>",
+      "css": ".ds-view-select { display: inline-grid; gap: 4px; font-family: Rubik, ui-sans-serif, system-ui, sans-serif; } .ds-view-trigger { display: inline-flex; align-items: center; gap: 8px; border: none; border-radius: 4px; background: transparent; color: rgba(255,255,255,0.9); padding: 6px 12px; font-size: 0.8125rem; cursor: pointer; transition: background-color 0.3s ease; } .ds-view-trigger svg { width: 16px; height: 16px; } .ds-view-trigger:hover, .ds-view-trigger:focus-visible { background: rgba(255,255,255,0.1); outline: none; } .ds-view-menu { min-width: 140px; border: 1px solid var(--color-border-primary, #47526633); border-radius: 4px; background: var(--color-bg-secondary, #11151c); padding: 4px 0; box-shadow: 0px 4px 6px rgba(0,0,0,0.25); } .ds-view-option { display: flex; width: 100%; border: none; background: transparent; color: var(--color-text-light, #bfbdb5); padding: 8px 12px; text-align: left; font-size: 0.8125rem; cursor: pointer; } .ds-view-option:hover, .ds-view-option:focus-visible { background: var(--color-text-light-inactive, #abb6bf8c); outline: none; } .ds-view-option.ds-selected { background: var(--color-text-light, #bfbdb5); color: var(--color-text-dark, #0d1017); }"
+    },
+    {
+      "name": "Event Block",
+      "kind": "custom",
+      "refersTo": "panel",
+      "description": "Compact calendar item that preserves grid density and stays easy to scan.",
+      "html": "<article class=\"ds-event-block\"><strong>Focus block</strong><span>9:00-10:30</span></article>",
+      "css": ".ds-event-block { display: flex; min-height: 32px; flex-direction: column; justify-content: center; overflow: hidden; border-radius: 4px; background: var(--color-accent-primary, #57c1ff); color: var(--color-text-dark, #0d1017); padding: 4px 8px; font-family: Rubik, ui-sans-serif, system-ui, sans-serif; transition: background-color 0.35s linear, box-shadow 0.2s ease-out; } .ds-event-block strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; font-weight: 600; } .ds-event-block span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.6875rem; opacity: 0.8; } .ds-event-block:hover { filter: brightness(1.08); } .ds-event-block:focus-visible { outline: none; box-shadow: 0 0 0 2px var(--color-accent-primary, #57c1ff); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Quiet Instrument",
+    "overview": "Compass should feel like a precise instrument kept on a working desk: dark, quiet, responsive, and always ready. The interface is intentionally restrained because the user's attention belongs on the day, the week, and the next action, not on the product calling attention to itself.\n\nThe system is dense enough for real planning, but it should never feel cramped or corporate. Panels, calendar grids, command surfaces, and form controls should favor quick scanning, low motion, and stable placement. The visual language rejects bloated productivity suites, gamified habit apps, corporate SaaS dashboards, and slow calendar clones packed with secondary features.",
+    "keyCharacteristics": [
+      "Dark, low-glare surfaces built for long planning sessions.",
+      "One clear blue accent used for action, focus, and current selection.",
+      "Compact type and small radii that keep the calendar feeling fast.",
+      "Flat surfaces with tonal layering before shadows.",
+      "Keyboard-first affordances with visible focus states."
+    ],
+    "rules": [
+      {
+        "name": "The One Signal Rule",
+        "body": "Instrument Blue is the only everyday accent. If a screen needs more than one attention color, the hierarchy is unclear.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dark Surface Rule",
+        "body": "The calendar lives on Midnight Canvas. New surfaces should layer with Deep Panel or Smoke Panel, not introduce new background families.",
+        "section": "colors"
+      },
+      {
+        "name": "The Calendar Density Rule",
+        "body": "Use small type intentionally in grids, menus, and sidebar lists. Increase size only when the user is in a focus surface, not as a default polish move.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Decorative Type Rule",
+        "body": "Do not add display fonts or novelty lettering to the product shell. Personal touches can exist in isolated moments, not in core planning controls.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Until Floating Rule",
+        "body": "Resting surfaces are flat. A shadow means the surface is temporary, interactive, or above the calendar layer.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do keep new app surfaces grounded in Midnight Canvas, Deep Panel, and Smoke Panel.",
+      "Do use Instrument Blue for current selection, focus, and primary action.",
+      "Do preserve compact calendar density with stable dimensions and small type.",
+      "Do make keyboard focus visible on every actionable control.",
+      "Do use semantic Tailwind color tokens from `packages/web/src/index.css`.",
+      "Do treat local-first and no-account flows as first-class states."
+    ],
+    "donts": [
+      "Don't make Compass feel like a bloated productivity suite.",
+      "Don't make Compass feel like a gamified habit app.",
+      "Don't make Compass feel like a corporate SaaS dashboard.",
+      "Don't make Compass feel like a slow calendar clone packed with secondary features.",
+      "Don't add marketing-heavy product surfaces inside the app.",
+      "Don't use decorative complexity, glassmorphism, generic card grids, hero metrics, or colored side-stripe borders.",
+      "Don't add gradient text. Existing legacy helpers should not become a new pattern.",
+      "Don't introduce raw colors for new styling when a semantic token exists."
+    ]
+  }
+}
