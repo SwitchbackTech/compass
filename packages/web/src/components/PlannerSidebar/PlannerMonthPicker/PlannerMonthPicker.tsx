@@ -1,4 +1,5 @@
 import { type FC, useEffect, useRef, useState } from "react";
+import styled from "styled-components";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
@@ -10,12 +11,57 @@ interface Props {
 }
 
 const plannerMonthPickerClassName =
-  "[&_.calendar]:!w-full [&_.calendar]:!bg-transparent [&_.calendar]:!shadow-none [&_.react-datepicker]:!border-0 [&_.react-datepicker]:!bg-transparent [&_.react-datepicker]:!shadow-none [&_.react-datepicker\\_\\_day-names]:!mb-0 [&_.react-datepicker\\_\\_day--selected]:!isolate [&_.react-datepicker\\_\\_day--selected]:!bg-transparent [&_.react-datepicker\\_\\_day--selected]:!relative [&_.react-datepicker\\_\\_day--selected]:!text-text-lighter [&_.react-datepicker\\_\\_day--selected]:before:!absolute [&_.react-datepicker\\_\\_day--selected]:before:!-inset-0.5 [&_.react-datepicker\\_\\_day--selected]:before:!-z-10 [&_.react-datepicker\\_\\_day--selected]:before:!rounded-default [&_.react-datepicker\\_\\_day--selected]:before:!bg-accent-primary [&_.react-datepicker\\_\\_day--selected]:before:!content-[''] [&_.react-datepicker\\_\\_month-container]:!overflow-visible [&_.react-datepicker\\_\\_month]:!overflow-visible [&_.react-datepicker\\_\\_week:has(.react-datepicker\\_\\_day--selected)]:!relative [&_.react-datepicker\\_\\_week:has(.react-datepicker\\_\\_day--selected)]:before:!absolute [&_.react-datepicker\\_\\_week:has(.react-datepicker\\_\\_day--selected)]:before:!-inset-x-[3px] [&_.react-datepicker\\_\\_week:has(.react-datepicker\\_\\_day--selected)]:before:!inset-y-0 [&_.react-datepicker\\_\\_week:has(.react-datepicker\\_\\_day--selected)]:before:!rounded-default [&_.react-datepicker\\_\\_week:has(.react-datepicker\\_\\_day--selected)]:before:!bg-panel-scrollbar-active/50 [&_.react-datepicker\\_\\_week:has(.react-datepicker\\_\\_day--selected)]:before:!content-[''] [&_.react-datepicker\\_\\_week:has(.react-datepicker\\_\\_day--selected)_.react-datepicker\\_\\_day]:!relative [&_.react-datepicker\\_\\_week:has(.react-datepicker\\_\\_day--selected)_.react-datepicker\\_\\_day]:!z-10 [&_.react-datepicker\\_\\_header.react-datepicker\\_\\_header]:!px-0 [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!bg-transparent [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!px-0";
+  "[&_.calendar]:!w-full [&_.calendar]:!bg-transparent [&_.calendar]:!shadow-none [&_.react-datepicker]:!border-0 [&_.react-datepicker]:!bg-transparent [&_.react-datepicker]:!shadow-none [&_.react-datepicker\\_\\_day-names]:!mb-0 [&_.react-datepicker\\_\\_header.react-datepicker\\_\\_header]:!px-0 [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!bg-transparent [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!px-0";
 
 const headerActionsClassName =
   "!absolute !inset-x-11 !justify-between [&>div:first-child]:!w-full [&>div:first-child]:!justify-between [&>span]:!hidden";
 
 const getPlannerDayClassName = () => "!rounded-default !font-light";
+
+const PlannerMonthPickerFieldset = styled.fieldset`
+  .react-datepicker__month-container,
+  .react-datepicker__month {
+    overflow: visible !important;
+  }
+
+  .react-datepicker__day--selected {
+    isolation: isolate !important;
+    background-color: transparent !important;
+    position: relative !important;
+    color: var(--color-text-lighter) !important;
+  }
+
+  .react-datepicker__day--selected::before {
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    border-radius: var(--radius-default);
+    background-color: var(--color-accent-primary);
+    content: "";
+  }
+
+  .react-datepicker__week:has(.react-datepicker__day--selected) {
+    position: relative !important;
+  }
+
+  .react-datepicker__week:has(.react-datepicker__day--selected)::before {
+    position: absolute;
+    inset: 0 -3px;
+    border-radius: var(--radius-default);
+    background-color: color-mix(
+      in srgb,
+      var(--color-panel-scrollbar-active) 50%,
+      transparent
+    );
+    content: "";
+  }
+
+  .react-datepicker__week:has(.react-datepicker__day--selected)
+    .react-datepicker__day {
+    position: relative !important;
+    z-index: 10 !important;
+  }
+`;
 
 export const PlannerMonthPicker: FC<Props> = ({
   monthsShown,
@@ -40,7 +86,7 @@ export const PlannerMonthPicker: FC<Props> = ({
   }, [selectedDateKey]);
 
   return (
-    <fieldset
+    <PlannerMonthPickerFieldset
       className={plannerMonthPickerClassName}
       data-testid="Planner month picker"
       aria-label="Date navigation"
@@ -69,6 +115,6 @@ export const PlannerMonthPicker: FC<Props> = ({
         view="sidebar"
         withTodayButton={true}
       />
-    </fieldset>
+    </PlannerMonthPickerFieldset>
   );
 };
