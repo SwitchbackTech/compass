@@ -7,12 +7,12 @@ import {
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
+import { DropZone } from "@web/components/DND/DropZone";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type State_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
 import { DraggableSomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/DraggableSomedayEvent/DraggableSomedayEvent";
 import { DraggableSomedayEvents } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/DraggableSomedayEvent/DraggableSomedayEvents";
 import { AddSomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
-import { DropZone } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/Dropzone";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";

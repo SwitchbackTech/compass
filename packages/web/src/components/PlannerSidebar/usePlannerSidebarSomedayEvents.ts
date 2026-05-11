@@ -5,13 +5,18 @@ import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { updateDates } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 
-export function usePlannerSidebarSomedayEvents(viewStart: Dayjs) {
+export function usePlannerSidebarSomedayEvents(
+  viewStart: Dayjs,
+  { isEnabled = true }: { isEnabled?: boolean } = {},
+) {
   const dispatch = useAppDispatch();
   const viewStartValue = viewStart.format();
   const viewEndValue = viewStart.endOf("week").format();
   const monthEndValue = viewStart.endOf("month").format();
 
   useEffect(() => {
+    if (!isEnabled) return;
+
     const somedayEventsRequestFilter = computeSomedayEventsRequestFilter(
       dayjs(viewStartValue),
       dayjs(monthEndValue),
@@ -29,5 +34,5 @@ export function usePlannerSidebarSomedayEvents(viewStart: Dayjs) {
         ...somedayEventsRequestFilter,
       }),
     );
-  }, [dispatch, monthEndValue, viewEndValue, viewStartValue]);
+  }, [dispatch, isEnabled, monthEndValue, viewEndValue, viewStartValue]);
 }

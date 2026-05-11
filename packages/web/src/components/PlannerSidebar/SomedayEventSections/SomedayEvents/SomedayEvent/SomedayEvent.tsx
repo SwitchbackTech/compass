@@ -9,10 +9,11 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
+import { getDraggableStyle } from "@web/components/DND/draggable-style.util";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
 import { SomedayEventRectangle } from "../SomedayEventContainer/SomedayEventRectangle";
-import { getStyle, StyledNewSomedayEvent } from "./styled";
+import { StyledNewSomedayEvent } from "./styled";
 
 interface Props {
   category: Categories_Event;
@@ -46,7 +47,11 @@ export const SomedayEvent = ({
   snapshot,
 }: Props) => {
   const { isDrafting, isDragging, isFocused, isOverGrid } = status;
-  const style = getStyle(snapshot, isOverGrid, provided.draggableProps.style);
+  const style = getDraggableStyle(
+    snapshot,
+    isOverGrid,
+    provided.draggableProps.style,
+  );
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || event.key !== "Enter") {
       return;

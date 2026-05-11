@@ -1,8 +1,4 @@
 import { useCallback } from "react";
-import {
-  SOMEDAY_MONTH_LIMIT_MSG,
-  SOMEDAY_WEEK_LIMIT_MSG,
-} from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
@@ -12,10 +8,6 @@ import {
 } from "@web/common/utils/draft/draft.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import {
-  selectIsAtMonthlyLimit,
-  selectIsAtWeeklyLimit,
-} from "@web/ducks/events/selectors/someday.selectors";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
@@ -44,8 +36,6 @@ export const useWeekShortcuts = ({
   const dispatch = useAppDispatch();
   const context = useSidebarContext(true);
 
-  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
-  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
   const { decrementWeek, incrementWeek, goToToday } = util;
   const { scrollToNow } = scrollUtil;
@@ -54,15 +44,6 @@ export const useWeekShortcuts = ({
     (
       category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
     ) => {
-      if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
-        alert(SOMEDAY_WEEK_LIMIT_MSG);
-        return;
-      }
-      if (category === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
-        alert(SOMEDAY_MONTH_LIMIT_MSG);
-        return;
-      }
-
       void context?.actions.createSomedayDraft(category, "createShortcut");
 
       // If sidebar is closed, open it first
@@ -70,7 +51,7 @@ export const useWeekShortcuts = ({
         dispatch(viewSlice.actions.toggleSidebar());
       }
     },
-    [context, isAtMonthlyLimit, isAtWeeklyLimit, isSidebarOpen, dispatch],
+    [context, isSidebarOpen, dispatch],
   );
 
   const _discardDraft = useCallback(() => {

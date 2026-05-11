@@ -4,7 +4,7 @@ import { DotsSixVerticalIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
 import { useLayoutEffect, useRef } from "react";
 import { type Task as ITask } from "@web/common/types/task.types";
-import { getStyle } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/styled";
+import { getDraggableStyle } from "@web/components/DND/draggable-style.util";
 import { Task } from "@web/views/Day/components/Task/Task";
 import { type useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 
@@ -79,7 +79,7 @@ export function DraggableTask({
           {...draggableProvider.draggableProps}
           id={task._id}
           className={`group relative mr-2 select-none`}
-          style={getStyle(
+          style={getDraggableStyle(
             draggableSnapshot,
             false,
             draggableProvider.draggableProps.style,

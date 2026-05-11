@@ -142,16 +142,6 @@ export const useSidebarActions = (
     openForm();
   }, [openForm, reduxDraft, setDraft, setIsDrafting]);
 
-  const createDefaultSomeday = useCallback(async () => {
-    const somedayDefault = await assembleDefaultEvent(
-      Categories_Event.SOMEDAY_WEEK,
-    );
-
-    setDraft(somedayDefault);
-    setIsSomedayFormOpen(true);
-    setIsDrafting(true);
-  }, [setDraft, setIsDrafting, setIsSomedayFormOpen]);
-
   const discard = useCallback(() => {
     if (state.draft) {
       setDraft(null);
@@ -399,7 +389,7 @@ export const useSidebarActions = (
       return;
     }
 
-    const event = await assembleDefaultEvent(Categories_Event.SOMEDAY_WEEK);
+    const event = (await assembleDefaultEvent(category)) as Schema_Event;
 
     dispatch(
       draftSlice.actions.start({
@@ -410,12 +400,14 @@ export const useSidebarActions = (
     );
 
     // For keyboard shortcuts, let handleChange() open the form from redux draft.
-    // This avoids opening the form through two different paths and makes "w" deterministic.
+    // This keeps shortcut-created drafts on one path.
     if (activity === "createShortcut") {
       return;
     }
 
-    void createDefaultSomeday();
+    setDraft(event);
+    setIsSomedayFormOpen(true);
+    setIsDrafting(true);
   };
 
   const onSubmit = async (

@@ -34,6 +34,7 @@ export const CLASS_ALL_DAY_CALENDAR_EVENT = "all-day-calendar-event";
 export const CLASS_TIMED_CALENDAR_EVENT = "timed-calendar-event";
 export const CLASS_WEEK_SOMEDAY_EVENT = "week-someday-event";
 export const CLASS_MONTH_SOMEDAY_EVENT = "month-someday-event";
+export const SOMEDAY_EVENT_HEIGHT = 28;
 
 export enum ZIndex {
   LAYER_1 = 1,

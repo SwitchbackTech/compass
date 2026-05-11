@@ -1,5 +1,5 @@
 import { DragDropContext, Droppable } from "@hello-pangea/dnd";
-import { DropZone } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/Dropzone";
+import { DropZone } from "@web/components/DND/DropZone";
 import { DraggableTask } from "@web/views/Day/components/Task/DraggableTask";
 import { useDNDTasksContext } from "@web/views/Day/hooks/tasks/useDNDTasks";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";

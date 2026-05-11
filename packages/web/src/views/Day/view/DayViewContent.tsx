@@ -78,7 +78,9 @@ export const DayViewContent = memo(() => {
 
   const plannerViewStart = dateInView.startOf("week");
   const plannerViewEnd = dateInView.endOf("week");
-  usePlannerSidebarSomedayEvents(plannerViewStart);
+  usePlannerSidebarSomedayEvents(plannerViewStart, {
+    isEnabled: isSidebarOpen,
+  });
 
   const toggleSidebar = useCallback(() => {
     dispatch(viewSlice.actions.toggleSidebar());
@@ -174,12 +176,12 @@ export const DayViewContent = memo(() => {
       <DayCmdPalette onGoToToday={handleGoToToday} />
       <Dedication />
 
-      <SidebarDraftProvider
-        onGoToDate={navigateToDate}
-        viewEnd={plannerViewEnd}
-        viewStart={plannerViewStart}
-      >
-        {isSidebarOpen ? (
+      {isSidebarOpen ? (
+        <SidebarDraftProvider
+          onGoToDate={navigateToDate}
+          viewEnd={plannerViewEnd}
+          viewStart={plannerViewStart}
+        >
           <PlannerSidebar
             calendarDate={dateInView}
             onSelectDate={navigateToDate}
@@ -187,22 +189,22 @@ export const DayViewContent = memo(() => {
             viewEnd={plannerViewEnd}
             viewStart={plannerViewStart}
           />
-        ) : null}
+        </SidebarDraftProvider>
+      ) : null}
 
-        <StyledCalendar>
-          <Header
-            showReminder={false}
-            isSidebarOpen={isSidebarOpen}
-            onToggleSidebar={toggleSidebar}
-          />
+      <StyledCalendar>
+        <Header
+          showReminder={false}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={toggleSidebar}
+        />
 
-          <div className="flex w-full max-w-[960px] flex-1 justify-center gap-8 self-center overflow-hidden">
-            <TaskList />
+        <div className="flex w-full max-w-[960px] flex-1 justify-center gap-8 self-center overflow-hidden">
+          <TaskList />
 
-            <Agenda />
-          </div>
-        </StyledCalendar>
-      </SidebarDraftProvider>
+          <Agenda />
+        </div>
+      </StyledCalendar>
     </Styled>
   );
 });

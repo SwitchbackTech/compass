@@ -1,41 +1,11 @@
-import {
-  type DraggableStateSnapshot,
-  type DraggableStyle,
-} from "@hello-pangea/dnd";
 import styled from "styled-components";
 import { type Priorities } from "@core/constants/core.constants";
 import { brighten } from "@core/util/color.utils";
+import { SOMEDAY_EVENT_HEIGHT } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
-
-export function getStyle(
-  snapshot: DraggableStateSnapshot,
-  isOverGrid: boolean,
-  style?: DraggableStyle,
-) {
-  if (!snapshot.isDropAnimating) {
-    return style;
-  }
-
-  const disableDropAnimationStyles = {
-    ...style,
-    // cannot be 0, but make it super tiny. See https://github.com/atlassian/react-beautiful-dnd/blob/master/docs/guides/drop-animation.md#skipping-the-drop-animation
-    transitionDuration: `0.001s`,
-  };
-
-  // Drop animation adds delay to the `onDragEnd` event, causes bad UX when
-  // dragging events to the grid. Disable drop animation when dragging events
-  // to the grid.
-  if (isOverGrid) {
-    return disableDropAnimationStyles;
-  }
-
-  return style;
-}
-
-export const SOMEDAY_EVENT_HEIGHT = 28;
 
 export interface Props {
   priority: Priorities;
