@@ -1,5 +1,4 @@
-import type React from "react";
-import { type FC } from "react";
+import { type FC, type SetStateAction } from "react";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type SelectOption } from "@web/common/types/component.types";
 import { AlignItems } from "@web/components/Flex/styled";
@@ -27,7 +26,7 @@ export interface Props {
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
   setStartTime: (value: SelectOption<string>) => void;
-  setEvent: (event: Schema_Event) => React.SetStateAction<Schema_Event> | void;
+  setEvent: (event: SetStateAction<Schema_Event | null>) => void;
   startTime: SelectOption<string>;
 }
 

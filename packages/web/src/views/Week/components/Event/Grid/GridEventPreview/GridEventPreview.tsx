@@ -40,7 +40,7 @@ interface Props {
   mainGridRef: Refs_Grid["mainGridRef"];
 }
 
-const _GridEventPreview: FC<Props> = ({
+const GridEventPreviewComponent: FC<Props> = ({
   dateCalcs,
   event,
   isOverAllDayRow,
@@ -49,7 +49,6 @@ const _GridEventPreview: FC<Props> = ({
   startOfView,
   mainGridRef,
 }) => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const allDayRowCount = useAppSelector(selectRowCount);
   const { getDayNumberByX, getMinuteByY } = dateCalcs;
   const { colWidths } = measurements;
@@ -147,4 +146,4 @@ const _GridEventPreview: FC<Props> = ({
   );
 };
 
-export const GridEventPreview = memo(_GridEventPreview);
+export const GridEventPreview = memo(GridEventPreviewComponent);

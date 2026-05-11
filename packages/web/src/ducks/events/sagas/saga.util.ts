@@ -10,7 +10,6 @@ import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import {
   type Schema_GridEvent,
-  type Schema_WebEvent,
   type WithId,
 } from "@web/common/types/web.event.types";
 import {

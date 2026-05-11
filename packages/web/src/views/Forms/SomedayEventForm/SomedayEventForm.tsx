@@ -182,7 +182,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         onChange={onChangeEventTextField("title")}
         onKeyDown={ignoreDelete}
         placeholder="Title"
-        role="input"
         title="title"
         underlineColor={colorByPriority[priority]}
         value={title}

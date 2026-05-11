@@ -80,7 +80,7 @@ export const SomedayEventsContainer: FC<Props> = ({
         return (
           <DropZone
             id={colName}
-            ref={provided.innerRef}
+            innerRef={provided.innerRef}
             isActive={
               snapshot.isDraggingOver ||
               (state.isDragging && !state.isSomedayFormOpen)

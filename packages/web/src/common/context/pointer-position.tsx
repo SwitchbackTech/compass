@@ -129,7 +129,7 @@ export function isOverCalendarGrid(element = getElementAtPointer()) {
   return isOverAllDayRow(element) || isOverMainGrid(element);
 }
 
-export function PointerPositionProvider({ children }: PropsWithChildren<{}>) {
+export function PointerPositionProvider({ children }: PropsWithChildren) {
   const handler = useCallback(
     ({ x, y, element, pointerdown, selectionStart, event }: DomMovement) => {
       cursor$.next({ x, y });

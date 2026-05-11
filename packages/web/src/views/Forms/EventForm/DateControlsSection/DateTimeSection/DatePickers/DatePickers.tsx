@@ -179,6 +179,7 @@ export const DatePickers: FC<Props> = ({
   return (
     <>
       <StyledDateFlex alignItems={AlignItems.CENTER}>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker
             bgColor={darken(bgColor, 15)}
@@ -206,6 +207,7 @@ export const DatePickers: FC<Props> = ({
       </StyledDateFlex>
 
       <StyledDateFlex alignItems={AlignItems.CENTER}>
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker
             bgColor={darken(bgColor, 15)}

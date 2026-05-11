@@ -45,7 +45,7 @@ export function ShortcutsOverlay({ isOpen, onClose, sections }: Props) {
 
         <button
           aria-label="Close shortcuts"
-          className="flex h-8 w-8 items-center justify-center rounded-default border border-border-primary bg-panel-bg text-text-light transition hover:border-accent-primary hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+          className="flex size-8 items-center justify-center rounded-default border border-border-primary bg-panel-bg text-text-light transition hover:border-accent-primary hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
           onClick={onClose}
           type="button"
         >

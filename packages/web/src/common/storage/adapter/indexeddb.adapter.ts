@@ -103,9 +103,6 @@ export class IndexedDBAdapter implements StorageAdapter {
           }
         },
       );
-      console.log(
-        `[Migration] Migrated ${events.length} events and ${tasks.length} tasks from legacy primary key schema`,
-      );
     }
   }
 

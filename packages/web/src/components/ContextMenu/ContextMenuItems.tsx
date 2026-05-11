@@ -1,6 +1,5 @@
 import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import type React from "react";
-import { useState } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
@@ -44,8 +43,6 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     eventId ? selectIsEventPending(state, eventId) : false,
   );
 
-  const [selectedPriority, setSelectedPriority] = useState(event.priority);
-
   const priorities = [
     {
       id: "work",
@@ -69,7 +66,6 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
 
   const handleEditPriority = (priority: Priorities) => {
     if (isPending) return;
-    setSelectedPriority(priority);
     submit({ ...event, priority });
     close();
   };
@@ -135,7 +131,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
           <TooltipWrapper key={priority.id}>
             <PriorityCircle
               color={priority.color}
-              selected={selectedPriority === priority.value}
+              selected={event.priority === priority.value}
               onClick={() => handleEditPriority(priority.value)}
               style={{
                 opacity: isPending ? 0.5 : 1,

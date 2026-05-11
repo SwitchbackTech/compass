@@ -48,8 +48,6 @@ const define: Record<string, string> = {
   BUILD_VERSION: JSON.stringify(BUILD_VERSION),
 };
 
-console.log(`Building version ${BUILD_VERSION}...`);
-
 const result = await Bun.build({
   entrypoints: [path.resolve(import.meta.dir, "src/index.html")],
   outdir: OUTDIR,
@@ -74,6 +72,3 @@ await Bun.write(
   path.join(OUTDIR, "version.json"),
   JSON.stringify({ version: BUILD_VERSION }, null, 2),
 );
-
-console.log(`Build complete → ${OUTDIR}`);
-console.log(`  ${result.outputs.length} files written`);

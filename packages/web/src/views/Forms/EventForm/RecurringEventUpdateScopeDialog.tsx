@@ -90,8 +90,8 @@ export function RecurringEventUpdateScopeDialog() {
               <fieldset style={{ borderRadius: theme.shape.borderRadius }}>
                 <legend>Apply Changes To</legend>
 
-                {options.map(([id, option], key) => (
-                  <div key={key}>
+                {options.map(([id, option]) => (
+                  <div key={id}>
                     <input
                       type="radio"
                       name="recurring-event-update-scope"

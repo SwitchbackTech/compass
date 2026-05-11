@@ -1,11 +1,7 @@
 import classNames from "classnames";
 import type React from "react";
-import { useEffect, useRef } from "react";
 import * as ReactDatePickerModule from "react-datepicker";
-import {
-  type ReactDatePicker as ReactDatePickerInstance,
-  type ReactDatePickerProps,
-} from "react-datepicker";
+import { type ReactDatePickerProps } from "react-datepicker";
 import { darken, isDark } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
@@ -26,10 +22,9 @@ import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon
 import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
 import { Focusable } from "../Focusable/Focusable";
 
-export interface Props extends ReactDatePickerProps {
+export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   animationOnToggle?: boolean;
   bgColor?: string;
-  displayDate?: Date;
   headerActionsClassName?: string;
   headerClassName?: string;
   inputColor?: string;
@@ -40,14 +35,6 @@ export interface Props extends ReactDatePickerProps {
   withTodayButton?: boolean;
 }
 
-export interface CalendarRef extends HTMLDivElement {
-  input: HTMLInputElement;
-}
-
-type ReactDatePickerRef = ReactDatePickerInstance & {
-  input?: HTMLInputElement;
-};
-
 type ReactDatePickerComponent = typeof ReactDatePickerModule.default;
 
 const ReactDatePicker = resolveDefaultExport<ReactDatePickerComponent>(
@@ -57,7 +44,6 @@ const ReactDatePicker = resolveDefaultExport<ReactDatePickerComponent>(
 export const DatePicker: React.FC<Props> = (datePickerProps) => {
   const {
     animationOnToggle = true,
-    autoFocus: _autoFocus = false,
     bgColor = theme.color.bg.primary,
     calendarClassName,
     headerActionsClassName,
@@ -71,22 +57,12 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     withTodayButton = true,
     ...props
   } = datePickerProps;
-  const datepickerRef = useRef<ReactDatePickerRef | null>(null);
   const headerColor =
     view === "sidebar"
       ? theme.color.text.light
       : isDark(bgColor || "")
         ? theme.color.text.lighter
         : theme.color.text.dark;
-
-  useEffect(() => {
-    if (_autoFocus) {
-      setTimeout(() => {
-        datepickerRef.current?.input?.click();
-        datepickerRef.current?.input?.focus();
-      });
-    }
-  }, [_autoFocus]);
 
   return (
     <ReactDatePicker
@@ -100,7 +76,6 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
           {...containerProps}
           bgColor={bgColor}
           selectedColor={theme.color.text.accent}
-          role="combobox"
           aria-label="datepicker"
           view={view}
         />
@@ -130,7 +105,6 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
         datePickerProps.onSelect?.(date, event);
       }}
       portalId={portalId}
-      ref={datepickerRef}
       showPopperArrow={false}
       renderCustomHeader={(headerProps) => {
         const { customHeaderCount, monthDate } = headerProps;

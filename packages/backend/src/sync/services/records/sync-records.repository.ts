@@ -118,15 +118,16 @@ export const updateSync = async (
       },
     };
   } else {
+    const fieldUpdates = Object.fromEntries(
+      Object.entries(update).map(([key, value]) => [
+        `google.${resource}.${index}.${key}`,
+        value,
+      ]),
+    );
+
     operation.$set = {
       [`google.${resource}.${index}.gCalendarId`]: gCalendarId,
-      ...Object.entries(update).reduce(
-        (acc, [key, value]) => ({
-          ...acc,
-          [`google.${resource}.${index}.${key}`]: value,
-        }),
-        {},
-      ),
+      ...fieldUpdates,
       [`google.${resource}.${index}.lastSyncedAt`]: new Date(),
     };
   }

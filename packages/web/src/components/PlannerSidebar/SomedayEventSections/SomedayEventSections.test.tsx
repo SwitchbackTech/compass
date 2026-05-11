@@ -14,7 +14,7 @@ mock.module("@hello-pangea/dnd", () => ({
 
 mock.module("@web/components/AbsoluteOverflowLoader", () => ({
   AbsoluteOverflowLoader: () => (
-    <div data-testid="sidebar-loading-overlay">Loading...</div>
+    <div data-testid="sidebar-loading-overlay">Loading&hellip;</div>
   ),
 }));
 

@@ -26,9 +26,6 @@ export const StyledMigrateArrow = styled.button.attrs({ type: "button" })`
     outline-offset: 2px;
   }
 `;
-export const StyledMigrateArrowInForm = styled(StyledMigrateArrow)`
-  font-size: 27px;
-`;
 export const StyledRecurrenceText = styled.button.attrs({ type: "button" })`
   background: transparent;
   border: 1px solid ${({ theme }) => theme.color.border.primary};

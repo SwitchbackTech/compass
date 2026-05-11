@@ -17,7 +17,7 @@ interface UsePlannerSidebarCalendarDateArgs {
 
 const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
-export function resolvePlannerSidebarCalendarDate({
+function resolvePlannerSidebarCalendarDate({
   currentDate,
   today,
   viewEnd,

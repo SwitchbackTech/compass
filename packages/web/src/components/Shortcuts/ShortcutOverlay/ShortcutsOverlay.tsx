@@ -33,7 +33,6 @@ export const ShortcutsOverlay = ({
   return (
     <aside
       aria-label={ariaLabel}
-      role="complementary"
       className={classNames(
         "fixed top-24 left-3 border-border-primary bg-bg-secondary",
         "border p-3 shadow-lg backdrop-blur-sm md:block",

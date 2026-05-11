@@ -19,6 +19,7 @@ export const UndoDeleteToast: React.FC<UndoProps> = ({
 
   return (
     <button
+      type="button"
       className="flex w-full cursor-pointer flex-col gap-1 p-3 text-left"
       onClick={handleRestore}
     >

@@ -24,7 +24,7 @@ export const Tasks = () => {
             role="list"
             aria-label="Task list"
             className="flex flex-col gap-2 overflow-y-auto overscroll-contain"
-            ref={droppableProvider.innerRef}
+            innerRef={droppableProvider.innerRef}
             isActive={droppableSnapshot.isDraggingOver}
             {...droppableProvider.droppableProps}
             style={{ scrollbarGutter: "stable both-edges" }}
@@ -34,7 +34,7 @@ export const Tasks = () => {
                 className="px-2 py-1 text-sm text-text-light-inactive"
                 role="status"
               >
-                Loading tasks...
+                Loading tasks&hellip;
               </p>
             ) : tasksProps.tasks.length === 0 ? (
               <p className="px-2 py-1 text-sm text-text-light-inactive">

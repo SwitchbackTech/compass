@@ -23,13 +23,13 @@ export const EVENT_WIDTH_MINIMUM = 80;
 export const FLEX_TODAY = 21.4;
 export const FLEX_TMRW = 18.6;
 export const FLEX_EQUAL = 14.285714285714286; // 100 / 7
-export const HEADER_HEIGHT = 40;
+const HEADER_HEIGHT = 40;
 
-export const PAGE_MARGIN_TOP = 35;
-export const PAGE_MARGIN_X = 25;
+const PAGE_MARGIN_TOP = 35;
+const PAGE_MARGIN_X = 25;
 
-export const WEEK_DAYS_HEIGHT = 26;
-export const WEEK_DAYS_MARGIN_Y = 22;
+const WEEK_DAYS_HEIGHT = 26;
+const WEEK_DAYS_MARGIN_Y = 22;
 
 export const GRID_PADDING_BOTTOM = 20;
 export const GRID_MARGIN_LEFT = 50;
@@ -42,7 +42,6 @@ export const WEEK_GRID_TRACK_MIN_WIDTH =
 
 export const SIDEBAR_MONTH_HEIGHT = 275;
 export const SIDEBAR_OPEN_WIDTH = 285;
-export const SIDEBAR_X_START = SIDEBAR_OPEN_WIDTH + GRID_X_START;
 
 export function getSidebarOpenWidth() {
   if (typeof document === "undefined") return SIDEBAR_OPEN_WIDTH;

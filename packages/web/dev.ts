@@ -65,11 +65,7 @@ async function build() {
   }
   return true;
 }
-
-// Initial build before serving
-console.log("[compass] building...");
 await build();
-console.log(`[compass] dev server → http://localhost:${WEB_PORT}`);
 
 if (IS_DEV) {
   // Watch src/ and rebuild on changes (debounced) — dev mode only
@@ -78,7 +74,6 @@ if (IS_DEV) {
     if (!filename || filename.includes(".test.")) return;
     if (rebuildTimer) clearTimeout(rebuildTimer);
     rebuildTimer = setTimeout(async () => {
-      console.log(`[rebuild] ${filename}`);
       const ok = await build();
       if (ok) notifyReload();
     }, 80);

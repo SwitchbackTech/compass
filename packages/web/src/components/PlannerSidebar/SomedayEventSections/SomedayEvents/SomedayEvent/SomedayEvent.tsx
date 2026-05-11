@@ -17,10 +17,12 @@ import { getStyle, StyledNewSomedayEvent } from "./styled";
 interface Props {
   category: Categories_Event;
   event: Schema_Event;
-  isDrafting: boolean;
-  isDragging: boolean;
-  isOverGrid: boolean;
-  isFocused: boolean;
+  status: {
+    isDrafting: boolean;
+    isDragging: boolean;
+    isFocused: boolean;
+    isOverGrid: boolean;
+  };
   onBlur: () => void;
   onClick: () => void;
   onFocus: () => void;
@@ -33,10 +35,7 @@ interface Props {
 export const SomedayEvent = ({
   category,
   event,
-  isDrafting,
-  isDragging,
-  isOverGrid,
-  isFocused,
+  status,
   onBlur,
   onClick,
   onFocus,
@@ -46,6 +45,7 @@ export const SomedayEvent = ({
   formProps,
   snapshot,
 }: Props) => {
+  const { isDrafting, isDragging, isFocused, isOverGrid } = status;
   const style = getStyle(snapshot, isOverGrid, provided.draggableProps.style);
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.defaultPrevented || event.key !== "Enter") {

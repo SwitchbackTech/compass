@@ -1,26 +1,28 @@
 import classNames from "classnames";
-import { forwardRef, type HTMLAttributes } from "react";
+import { type HTMLAttributes, type Ref } from "react";
 
 interface Props extends HTMLAttributes<HTMLDivElement> {
+  innerRef?: Ref<HTMLDivElement>;
   isActive: boolean;
 }
 
-export const DropZone = forwardRef<HTMLDivElement, Props>(
-  ({ className, isActive, ...props }, ref) => {
-    return (
-      <div
-        {...props}
-        className={classNames(
-          "relative rounded-default border-2 border-dashed transition-[background-color,border-color] duration-200",
-          isActive
-            ? "border-border-primary bg-bg-secondary"
-            : "border-transparent bg-transparent",
-          className,
-        )}
-        ref={ref}
-      />
-    );
-  },
-);
-
-DropZone.displayName = "DropZone";
+export const DropZone = ({
+  className,
+  innerRef,
+  isActive,
+  ...props
+}: Props) => {
+  return (
+    <div
+      {...props}
+      className={classNames(
+        "relative rounded-default border-2 border-dashed transition-[background-color,border-color] duration-200",
+        isActive
+          ? "border-border-primary bg-bg-secondary"
+          : "border-transparent bg-transparent",
+        className,
+      )}
+      ref={innerRef}
+    />
+  );
+};

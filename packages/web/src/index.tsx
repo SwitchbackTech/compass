@@ -25,9 +25,6 @@ const root = createRoot(container);
  */
 async function initializeApp() {
   const { dbInitError } = await initializeDatabaseWithErrorHandling();
-  console.debug(
-    "aHR0cHM6Ly9jb21wYXNzY2FsZW5kYXIubm90aW9uLnNpdGUvaDNsbDAtZGF0LTMwYzIzN2JkZThmNDgwNTdhZmYxZDRiODU0YjAzMjYz",
-  );
   sagaMiddleware.run(sagas);
   sessionInit();
 

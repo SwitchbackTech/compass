@@ -97,8 +97,6 @@ export const shouldImportGCal = (metadata: UserMetadata): boolean => {
     case "IMPORTING":
     case "COMPLETED":
       return false;
-    case "RESTART":
-    case "ERRORED":
     default:
       return true;
   }
@@ -113,8 +111,6 @@ export const shouldDoIncrementalGCalSync = (
     case "IMPORTING":
     case "COMPLETED":
       return false;
-    case "RESTART":
-    case "ERRORED":
     default:
       return true;
   }

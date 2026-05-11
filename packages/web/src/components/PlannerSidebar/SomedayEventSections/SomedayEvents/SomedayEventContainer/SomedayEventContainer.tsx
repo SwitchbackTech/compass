@@ -101,10 +101,12 @@ export const SomedayEventContainer = ({
       <SomedayEvent
         category={category}
         event={event}
-        isDrafting={isDrafting}
-        isDragging={isDragging}
-        isOverGrid={isOverGrid}
-        isFocused={isFocused}
+        status={{
+          isDrafting,
+          isDragging,
+          isFocused,
+          isOverGrid,
+        }}
         onBlur={() => setIsFocused(false)}
         onClick={() => {
           actions.onDraft(event, category);

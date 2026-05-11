@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useReducer, useState } from "react";
 import { type Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
@@ -7,13 +7,31 @@ import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 
+type SidebarSomedayEvents = ReturnType<typeof selectCategorizedEvents>;
+
+interface ReplaceSomedayEventsAction {
+  somedayEvents: SidebarSomedayEvents;
+}
+
+const replaceSomedayEvents = (
+  _state: SidebarSomedayEvents,
+  action: ReplaceSomedayEventsAction,
+) => action.somedayEvents;
+
 export const useSidebarState = () => {
   const categorizedEvents = useAppSelector(selectCategorizedEvents);
-  const [somedayEvents, setSomedayEvents] = useState(categorizedEvents);
+  const [somedayEvents, replaceSomedayEventsState] = useReducer(
+    replaceSomedayEvents,
+    categorizedEvents,
+  );
 
   useEffect(() => {
-    setSomedayEvents(categorizedEvents);
+    replaceSomedayEventsState({ somedayEvents: categorizedEvents });
   }, [categorizedEvents]);
+
+  const setSomedayEvents = useCallback((nextEvents: SidebarSomedayEvents) => {
+    replaceSomedayEventsState({ somedayEvents: nextEvents });
+  }, []);
 
   const isDNDing = useAppSelector(selectIsDNDing);
 

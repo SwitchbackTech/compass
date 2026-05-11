@@ -34,7 +34,6 @@ export function EventContextMenu({
       <ul
         {...interactions.getFloatingProps()}
         ref={floating.refs.setFloating}
-        role="menu"
         className={classNames(
           "absolute z-[1000] min-w-[160px] list-none rounded bg-bg-secondary",
           "border border-gray-600 shadow-md",

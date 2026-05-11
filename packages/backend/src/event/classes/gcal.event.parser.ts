@@ -125,7 +125,7 @@ export class GcalEventParser {
     const timeZone = this.#event.start?.timeZone;
 
     const transitionStatus: TransitionStatus =
-      status == "cancelled" ? "CANCELLED" : "CONFIRMED";
+      status === "cancelled" ? "CANCELLED" : "CONFIRMED";
 
     const cEvent = await mongoService.event.findOne({ gEventId }, { session });
 

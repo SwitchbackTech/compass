@@ -502,15 +502,14 @@ describe("computeRelativeEventDateRange", () => {
         order: 0,
       });
 
-      const events: Schema_SomedayEventsColumn["events"] = instances.reduce(
-        (acc, instance) => ({
-          ...acc,
-          [instance._id]: {
+      const events: Schema_SomedayEventsColumn["events"] = Object.fromEntries(
+        instances.map((instance) => [
+          instance._id,
+          {
             ...instance,
             recurrence: { ...recurrence, ...instance.recurrence },
           },
-        }),
-        {},
+        ]),
       );
 
       const result = categorizeSomedayEvents(events, weekDates);

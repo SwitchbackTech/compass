@@ -34,7 +34,7 @@ export const PlannerAccountSummary: FC = () => {
         >
           <button
             aria-label="Temporary account info"
-            className="inline-flex h-7 w-7 shrink-0 cursor-pointer items-center justify-center rounded-default text-text-light-inactive transition-colors hover:bg-bg-secondary hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            className="inline-flex size-7 shrink-0 cursor-pointer items-center justify-center rounded-default text-text-light-inactive transition-colors hover:bg-bg-secondary hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             type="button"
           >
             <InfoIcon aria-hidden="true" size={14} />

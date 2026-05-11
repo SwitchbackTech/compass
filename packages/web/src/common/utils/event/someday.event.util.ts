@@ -115,7 +115,8 @@ export const setSomedayEventsOrder = (
   const existingOrders = events
     .map((e) => e.order)
     .filter(
-      (order): order is number => typeof order === "number" && !isNaN(order),
+      (order): order is number =>
+        typeof order === "number" && !Number.isNaN(order),
     )
     .sort((a, b) => a - b);
 
@@ -142,7 +143,7 @@ export const setSomedayEventsOrder = (
   let nextNewOrder = highestOrder + 1;
   return events.map((event) => {
     // Keep existing valid orders
-    if (typeof event.order === "number" && !isNaN(event.order)) {
+    if (typeof event.order === "number" && !Number.isNaN(event.order)) {
       return event;
     }
 

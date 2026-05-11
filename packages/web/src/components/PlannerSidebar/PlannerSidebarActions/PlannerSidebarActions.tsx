@@ -42,7 +42,7 @@ export const PlannerSidebarActions = ({
         <TooltipWrapper description="Open shortcuts" onClick={onOpenShortcuts}>
           <button
             aria-label="Open shortcuts"
-            className="flex h-9 w-9 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            className="flex size-9 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             type="button"
           >
             <KeyboardIcon
@@ -66,7 +66,7 @@ export const PlannerSidebarActions = ({
         >
           <button
             aria-label="Open command palette"
-            className="flex h-9 w-9 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+            className="flex size-9 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             type="button"
           >
             <CommandIcon
@@ -84,7 +84,7 @@ export const PlannerSidebarActions = ({
           >
             <button
               aria-label="Get latest version"
-              className="flex h-9 w-9 items-center justify-center rounded-default text-accent-primary transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              className="flex size-9 items-center justify-center rounded-default text-accent-primary transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
               type="button"
             >
               <ArrowClockwiseIcon aria-hidden="true" size={16} />

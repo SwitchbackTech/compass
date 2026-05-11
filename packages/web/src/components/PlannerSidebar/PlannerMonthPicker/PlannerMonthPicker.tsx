@@ -26,7 +26,7 @@ export const PlannerMonthPicker: FC<Props> = ({
     dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
   );
   const previousSelectedDateKeyRef = useRef(selectedDateKey);
-  const [focusedDate, setFocusedDate] = useState(selectedDate);
+  const [focusedDate, setFocusedDate] = useState(() => selectedDate);
 
   useEffect(() => {
     if (previousSelectedDateKeyRef.current === selectedDateKey) {

@@ -74,6 +74,7 @@ export const StatusDotPopover = ({
                 zIndex: maxZIndex + ZIndex.LAYER_3,
               }}
               className="flex max-w-xs flex-col gap-3 rounded-lg border border-border-primary bg-bg-secondary/90 p-4 shadow-lg"
+              role="dialog"
               aria-label={displayTitle}
               {...getFloatingProps()}
             >
