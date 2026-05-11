@@ -56,7 +56,9 @@ export const useSidebarState = () => {
   const shouldPreviewOnGrid = isDNDing && isOverGrid;
 
   useEffect(() => {
-    togglePointerMovementTracking(!isDNDing);
+    if (isDNDing) {
+      togglePointerMovementTracking(false);
+    }
 
     return () => togglePointerMovementTracking(false);
   }, [isDNDing, togglePointerMovementTracking]);
