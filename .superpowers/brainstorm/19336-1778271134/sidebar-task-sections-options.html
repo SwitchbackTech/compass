@@ -1,0 +1,338 @@
+<style>
+  .context-note {
+    margin: 0 0 24px;
+    color: #8f96a3;
+    font-size: 15px;
+    line-height: 1.5;
+  }
+
+  .sidebar-options {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 18px;
+  }
+
+  .sidebar-card {
+    cursor: pointer;
+  }
+
+  .mini-app {
+    min-height: 520px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #2d3440;
+    background: #0d1118;
+    color: #f4f6fb;
+    display: grid;
+    grid-template-columns: 156px 1fr;
+    box-shadow: 0 18px 44px rgba(0, 0, 0, 0.25);
+  }
+
+  .mini-sidebar {
+    background: #202632;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    border-right: 1px solid #303847;
+  }
+
+  .mini-month {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 5px;
+    color: #b7bdc8;
+    font-size: 10px;
+    text-align: center;
+  }
+
+  .mini-day {
+    border-radius: 4px;
+    padding: 4px 0;
+  }
+
+  .mini-day.hot {
+    background: #55bdfb;
+    color: #07121d;
+    font-weight: 700;
+  }
+
+  .mini-day.range {
+    background: #394250;
+  }
+
+  .mini-account {
+    color: #8891a0;
+    font-size: 10px;
+    padding-top: 12px;
+    border-top: 1px solid #323b49;
+  }
+
+  .mini-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .mini-heading {
+    color: #f5f6fb;
+    font-size: 11px;
+    font-weight: 800;
+  }
+
+  .mini-subheading {
+    color: #8f97a6;
+    font-size: 9px;
+    line-height: 1.3;
+    margin-top: -4px;
+  }
+
+  .mini-add {
+    min-height: 28px;
+    border: 1px dashed #394250;
+    border-radius: 5px;
+    display: grid;
+    place-items: center;
+    color: #778193;
+    font-size: 15px;
+  }
+
+  .mini-item {
+    border: 1px solid #3a4455;
+    background: #252d3a;
+    border-radius: 5px;
+    padding: 7px;
+    font-size: 10px;
+    color: #d8dce5;
+  }
+
+  .mini-main {
+    display: grid;
+    grid-template-columns: 42% 58%;
+    padding: 36px 28px;
+    gap: 24px;
+  }
+
+  .mini-task-pane {
+    border-right: 1px solid #232936;
+    padding-right: 20px;
+  }
+
+  .mini-title {
+    font-weight: 800;
+    font-size: 18px;
+    margin-bottom: 4px;
+  }
+
+  .mini-date {
+    font-weight: 700;
+    font-size: 12px;
+    margin-bottom: 24px;
+  }
+
+  .mini-empty {
+    color: #a0a7b4;
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .mini-task-add {
+    border: 1px solid #2b3342;
+    border-radius: 5px;
+    padding: 10px;
+    color: #717b8d;
+    font-size: 11px;
+  }
+
+  .mini-agenda {
+    color: #767f91;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    gap: 42px;
+    padding-top: 56px;
+  }
+
+  .now-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 28px;
+  }
+
+  .focus-card {
+    border: 1px solid #303848;
+    background: #151a23;
+    border-radius: 8px;
+    padding: 18px;
+    width: 100%;
+    max-width: 260px;
+  }
+
+  .focus-label {
+    color: #8e98a8;
+    font-size: 10px;
+    margin-bottom: 8px;
+  }
+
+  .focus-title {
+    color: #f5f6fb;
+    font-size: 15px;
+    line-height: 1.3;
+    font-weight: 800;
+  }
+
+  .focus-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 16px;
+  }
+
+  .pill {
+    border: 1px solid #3a4557;
+    border-radius: 999px;
+    padding: 5px 8px;
+    color: #b9c1cf;
+    font-size: 9px;
+  }
+
+  .section-divider {
+    border-top: 1px solid #323b49;
+    padding-top: 14px;
+  }
+
+  @media (max-width: 1100px) {
+    .sidebar-options {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
+
+<h2>What should the sidebar task sections become?</h2>
+<p class="context-note">
+  I mocked three directions around the rough issue: today's tasks live in the day view,
+  Now only cares about today's incomplete tasks, and the sidebar's "This Week" and
+  "This Month" buckets are actually unscheduled planning buckets.
+</p>
+
+<div class="sidebar-options">
+  <div class="card sidebar-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mini-app">
+        <div class="mini-sidebar">
+          <div class="mini-month">
+            <span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>1</span><span>2</span>
+            <span class="mini-day range">3</span><span class="mini-day range">4</span><span class="mini-day range">5</span><span class="mini-day range">6</span><span class="mini-day range">7</span><span class="mini-day hot">8</span><span class="mini-day range">9</span>
+            <span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span>
+          </div>
+          <div class="mini-account">Temporary account</div>
+          <div class="mini-section section-divider">
+            <div class="mini-heading">This week</div>
+            <div class="mini-subheading">Unscheduled events to place this week</div>
+            <div class="mini-add">+</div>
+          </div>
+          <div class="mini-section">
+            <div class="mini-heading">This month</div>
+            <div class="mini-subheading">Bigger unscheduled plans</div>
+            <div class="mini-add">+</div>
+          </div>
+        </div>
+        <div class="mini-main">
+          <div class="mini-task-pane">
+            <div class="mini-title">Friday</div>
+            <div class="mini-date">May 8</div>
+            <div class="mini-empty">No tasks yet</div>
+            <div class="mini-task-add">+ Create task</div>
+          </div>
+          <div class="mini-agenda">
+            <span>11am</span><span>12pm</span><span>1pm</span><span>2pm</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A. Keep the buckets, rename the job</h3>
+      <p>Make these clearly planning buckets, not task lists. The labels can stay friendly only when the selected date is inside the real current week or month.</p>
+    </div>
+  </div>
+
+  <div class="card sidebar-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mini-app">
+        <div class="mini-sidebar">
+          <div class="mini-month">
+            <span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>1</span><span>2</span>
+            <span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span class="mini-day hot">8</span><span>9</span>
+            <span class="mini-day range">10</span><span class="mini-day range">11</span><span class="mini-day range">12</span><span class="mini-day range">13</span><span class="mini-day range">14</span><span class="mini-day range">15</span><span class="mini-day range">16</span>
+          </div>
+          <div class="mini-account">Temporary account</div>
+          <div class="mini-section section-divider">
+            <div class="mini-heading">Selected week</div>
+            <div class="mini-subheading">May 10-16</div>
+            <div class="mini-add">+</div>
+          </div>
+          <div class="mini-section">
+            <div class="mini-heading">Selected month</div>
+            <div class="mini-subheading">May</div>
+            <div class="mini-add">+</div>
+          </div>
+        </div>
+        <div class="mini-main">
+          <div class="mini-task-pane">
+            <div class="mini-title">Friday</div>
+            <div class="mini-date">May 8</div>
+            <div class="mini-empty">No tasks yet</div>
+            <div class="mini-task-add">+ Create task</div>
+          </div>
+          <div class="mini-agenda">
+            <span>11am</span><span>12pm</span><span>1pm</span><span>2pm</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B. Make the sections follow selection</h3>
+      <p>Stop saying "This Week" once you navigate away. The buckets become "Selected week" and "Selected month," with the actual dates underneath.</p>
+    </div>
+  </div>
+
+  <div class="card sidebar-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="card-image">
+      <div class="mini-app">
+        <div class="mini-sidebar">
+          <div class="mini-month">
+            <span>26</span><span>27</span><span>28</span><span>29</span><span>30</span><span>1</span><span>2</span>
+            <span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span class="mini-day hot">8</span><span>9</span>
+            <span>10</span><span>11</span><span>12</span><span>13</span><span>14</span><span>15</span><span>16</span>
+          </div>
+          <div class="mini-account">Temporary account</div>
+          <div class="mini-section section-divider">
+            <div class="mini-heading">Today</div>
+            <div class="mini-subheading">Tasks waiting for Now</div>
+            <div class="mini-item">Write follow-up note</div>
+            <div class="mini-item">Review May plan</div>
+          </div>
+          <div class="mini-section">
+            <div class="mini-heading">Later</div>
+            <div class="mini-subheading">Unscheduled plans</div>
+            <div class="mini-add">+</div>
+          </div>
+        </div>
+        <div class="now-main">
+          <div class="focus-card">
+            <div class="focus-label">Now</div>
+            <div class="focus-title">Write follow-up note</div>
+            <div class="focus-actions">
+              <span class="pill">Done</span>
+              <span class="pill">Next</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>C. Give Now a different sidebar</h3>
+      <p>Day and Week keep planning buckets. Now switches the sidebar to today's task queue, with a lighter "Later" place for unscheduled ideas.</p>
+    </div>
+  </div>
+</div>
