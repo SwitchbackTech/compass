@@ -9,7 +9,7 @@ import {
   FLEX_EQUAL,
   FLEX_TMRW,
   FLEX_TODAY,
-} from "@web/views/Calendar/layout.constants";
+} from "@web/views/Week/layout.constants";
 
 export const assignEventToRow = (
   eventDays: number[],

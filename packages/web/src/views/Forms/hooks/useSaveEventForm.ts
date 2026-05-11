@@ -10,8 +10,8 @@ import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { store } from "@web/store";
 import { useAppDispatch } from "@web/store/store.hooks";
-import { OnSubmitParser } from "@web/views/Calendar/components/Draft/hooks/actions/submit.parser";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
+import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
 export function useSaveEventForm() {
   const dispatch = useAppDispatch();

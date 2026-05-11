@@ -20,10 +20,10 @@ import {
 import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
 import { timedEvents$ } from "@web/store/events";
 import { useAppSelector } from "@web/store/store.hooks";
-import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { AgendaSkeleton } from "@web/views/Day/components/Agenda/AgendaSkeleton/AgendaSkeleton";
 import { DraggableTimedAgendaEvent } from "@web/views/Day/components/Agenda/Events/TimedAgendaEvent/DraggableTimedAgendaEvent";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
+import { useDraft } from "@web/views/Week/components/Draft/context/useDraft";
 
 export const TimedAgendaEvents = memo(
   ({ interactions }: { interactions: UseInteractionsReturn }) => {

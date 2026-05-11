@@ -10,9 +10,9 @@ import { Droppable } from "@web/components/DND/Droppable";
 import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
 import { allDayEvents$ } from "@web/store/events";
 import { useAppSelector } from "@web/store/store.hooks";
-import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { DraggableAllDayAgendaEvent } from "@web/views/Day/components/Agenda/Events/AllDayAgendaEvent/DraggableAllDayAgendaEvent";
 import { useOpenEventForm } from "@web/views/Forms/hooks/useOpenEventForm";
+import { useDraft } from "@web/views/Week/components/Draft/context/useDraft";
 
 const AllDayAgendaEventsComponent = ({
   interactions,

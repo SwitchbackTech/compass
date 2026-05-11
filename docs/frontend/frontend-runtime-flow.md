@@ -99,7 +99,7 @@ Responsibilities:
 Files:
 
 - `packages/web/src/common/hooks/useVersionCheck.ts`
-- `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 
 Runtime behavior:
 
@@ -111,13 +111,16 @@ Runtime behavior:
 
 When the server version differs from `BUILD_VERSION`, `isUpdateAvailable` becomes `true` and the sidebar shows a refresh action that triggers `window.location.reload()`.
 
-## Calendar Sidebar Footer Controls
+## Week Sidebar Footer Controls
 
 Files:
 
-- `packages/web/src/views/Calendar/components/Sidebar/Sidebar.tsx`
-- `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
-- `packages/web/src/views/Calendar/components/Sidebar/styled.ts`
+- `packages/web/src/views/Week/components/Sidebar/Sidebar.tsx`
+- `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayTab.tsx`
+- `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayWeekSection/SomedayWeekSection.tsx`
+- `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayMonthSection/SomedayMonthSection.tsx`
+- `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/views/Week/components/Sidebar/styled.ts`
 - `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 
 Layout contract:
@@ -148,8 +151,8 @@ Icon state constraints:
 
 Files:
 
-- `packages/web/src/views/Calendar/components/Dedication/Dedication.tsx`
-- `packages/web/src/views/Calendar/Calendar.tsx`
+- `packages/web/src/views/Week/components/Dedication/Dedication.tsx`
+- `packages/web/src/views/Week/WeekView.tsx`
 - `packages/web/src/views/Day/view/DayViewContent.tsx`
 
 Runtime behavior:
@@ -326,7 +329,7 @@ Files:
 
 - `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 - `packages/web/src/auth/google/google.auth.util.ts`
-- `packages/web/src/views/Calendar/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
 
 UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only loading state:
 

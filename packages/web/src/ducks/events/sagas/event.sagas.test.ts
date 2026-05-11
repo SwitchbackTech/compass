@@ -108,7 +108,7 @@ const { getWeekEventsSlice } = await import(
 );
 const { sagas } = await import("@web/store/sagas");
 const { OnSubmitParser } = await import(
-  "@web/views/Calendar/components/Draft/hooks/actions/submit.parser"
+  "@web/views/Week/components/Draft/hooks/actions/submit.parser"
 );
 
 global.alert = mockAlert as typeof global.alert;

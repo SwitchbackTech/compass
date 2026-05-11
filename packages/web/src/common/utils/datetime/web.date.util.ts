@@ -12,7 +12,7 @@ import { theme } from "@web/common/styles/theme";
 import { type Option_Time } from "@web/common/types/util.types";
 import { type Schema_SelectedDates } from "@web/common/types/web.event.types";
 import { roundToNext } from "@web/common/utils/round/round.util";
-import { GRID_TIME_STEP } from "@web/views/Calendar/layout.constants";
+import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 
 export const dateIsValid = (date: string) => {
   const notNaN = !Number.isNaN(new Date(date).getTime());

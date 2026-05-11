@@ -14,12 +14,12 @@ import {
   useFloatingOpenAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { eventsStore, setDraft } from "@web/store/events";
-import { useDraft } from "@web/views/Calendar/components/Draft/context/useDraft";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
+import { useDraft } from "@web/views/Week/components/Draft/context/useDraft";
 
 export function FloatingEventForm({
   floating,

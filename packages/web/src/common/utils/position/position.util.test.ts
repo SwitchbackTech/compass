@@ -10,7 +10,7 @@ import {
 import {
   GRID_MARGIN_LEFT,
   TIMED_EVENT_COLUMN_INSET,
-} from "@web/views/Calendar/layout.constants";
+} from "@web/views/Week/layout.constants";
 
 const createTimedEvent = (
   overrides: Partial<Schema_GridEvent> = {},

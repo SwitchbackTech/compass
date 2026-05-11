@@ -1,0 +1,100 @@
+import { type FC, type MouseEvent } from "react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { Categories_Event } from "@core/types/event.types";
+import {
+  ID_ALLDAY_COLUMNS,
+  ID_GRID_ALLDAY_ROW,
+} from "@web/common/constants/web.constants";
+import { type Ref_Callback } from "@web/common/types/util.types";
+import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { isRightClick } from "@web/common/utils/mouse/mouse.util";
+import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
+import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
+import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
+import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { StyledGridCol } from "../Columns/styled";
+import { AllDayEvents } from "./AllDayEvents";
+import { StyledAllDayColumns, StyledAllDayRow } from "./styled";
+
+interface Props {
+  dateCalcs: DateCalcs;
+  allDayRef: Ref_Callback;
+  allDayRowRef: Ref_Callback;
+  measurements: Measurements_Grid;
+  weekProps: WeekProps;
+}
+
+export const AllDayRow: FC<Props> = ({
+  allDayRef,
+  allDayRowRef,
+  dateCalcs,
+  measurements,
+  weekProps,
+}) => {
+  const dispatch = useAppDispatch();
+
+  const { startOfView, weekDays } = weekProps.component;
+  const rowsCount = useAppSelector(selectRowCount);
+  const isDrafting = useAppSelector(selectIsDrafting);
+
+  const startAlldayDraft = async (e: MouseEvent) => {
+    const startDate = dateCalcs.getDateStrByXY(
+      e.clientX,
+      e.clientY,
+      startOfView,
+      YEAR_MONTH_DAY_FORMAT,
+    );
+
+    const event = await assembleDefaultEvent(
+      Categories_Event.ALLDAY,
+      startDate,
+    );
+
+    dispatch(
+      draftSlice.actions.start({
+        activity: "gridClick",
+        eventType: Categories_Event.ALLDAY,
+        event,
+      }),
+    );
+  };
+
+  const onMouseDown = async (e: MouseEvent) => {
+    if (isDrafting) {
+      dispatch(draftSlice.actions.discard(undefined));
+      return;
+    }
+
+    if (isRightClick(e)) {
+      return;
+    }
+
+    await startAlldayDraft(e);
+  };
+
+  return (
+    <StyledAllDayRow
+      id={ID_GRID_ALLDAY_ROW}
+      ref={allDayRowRef}
+      rowsCount={rowsCount}
+      onMouseDown={onMouseDown}
+    >
+      <StyledAllDayColumns id={ID_ALLDAY_COLUMNS} ref={allDayRef}>
+        {weekDays.map((day) => (
+          <StyledGridCol
+            $color="transparent"
+            key={day.format(YEAR_MONTH_DAY_FORMAT)}
+          />
+        ))}
+      </StyledAllDayColumns>
+      <AllDayEvents
+        measurements={measurements}
+        startOfView={weekProps.component.startOfView}
+        endOfView={weekProps.component.endOfView}
+      />
+    </StyledAllDayRow>
+  );
+};

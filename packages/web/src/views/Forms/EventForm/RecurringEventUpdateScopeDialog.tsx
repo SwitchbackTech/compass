@@ -15,9 +15,9 @@ import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { theme } from "@web/common/styles/theme";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { useDraftContext } from "@web/views/Calendar/components/Draft/context/useDraftContext";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection";
 import { StyledEventForm } from "@web/views/Forms/EventForm/styled";
+import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const UPDATE_SCOPE_OPTIONS: Array<[string, RecurringEventUpdateScope]> = [
   ["this", RecurringEventUpdateScope.THIS_EVENT],

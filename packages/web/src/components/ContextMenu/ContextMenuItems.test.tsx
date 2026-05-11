@@ -19,27 +19,24 @@ const mockSetDraft = mock();
 const mockSubmit = mock();
 const mockOnDelete = mock();
 
-mock.module(
-  "@web/views/Calendar/components/Draft/context/useDraftContext",
-  () => ({
-    useDraftContext: () => ({
-      actions: {
-        openForm: mockOpenForm,
-        duplicateEvent: mockDuplicateEvent,
-        submit: mockSubmit,
-      },
-      setters: {
-        setDraft: mockSetDraft,
-      },
-      confirmation: {
-        onDelete: mockOnDelete,
-      },
-    }),
+mock.module("@web/views/Week/components/Draft/context/useDraftContext", () => ({
+  useDraftContext: () => ({
+    actions: {
+      openForm: mockOpenForm,
+      duplicateEvent: mockDuplicateEvent,
+      submit: mockSubmit,
+    },
+    setters: {
+      setDraft: mockSetDraft,
+    },
+    confirmation: {
+      onDelete: mockOnDelete,
+    },
   }),
-);
+}));
 
 mock.module(
-  "@web/views/Calendar/components/Draft/sidebar/context/useSidebarContext",
+  "@web/views/Week/components/Draft/sidebar/context/useSidebarContext",
   () => ({
     useSidebarContext: () => null,
   }),

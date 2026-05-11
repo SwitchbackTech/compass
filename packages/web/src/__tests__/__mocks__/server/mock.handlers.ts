@@ -11,7 +11,7 @@ import {
 } from "@core/__mocks__/v1/events/events.misc";
 import { Status } from "@core/errors/status.codes";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { freshenEventStartEndDate } from "@web/views/Calendar/calendar.render.test.utils";
+import { freshenEventStartEndDate } from "@web/views/Week/week-view.render.test.utils";
 
 export const globalHandlers = [
   rest.get("http://localhost/version.json", (_req, res, ctx) => {
