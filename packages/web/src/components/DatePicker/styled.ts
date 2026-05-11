@@ -5,6 +5,8 @@ import { Flex } from "@web/components/Flex";
 import { Text } from "@web/components/Text";
 import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Week/layout.constants";
 
+const SIDEBAR_COMPACT_MONTH_HEIGHT = 252;
+
 const _hoverStyle = `
   background-color: ${theme.color.fg.primary}; 
   color: ${theme.color.text.dark};
@@ -48,14 +50,15 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
   border-radius: 2px;
   box-shadow: 0px 4px 4px ${({ theme }) => theme.color.shadow.default};
   font-weight: 500;
-  font-size: 12px;
+  font-size: ${({ view }) => (view === "sidebar" ? "11px" : "12px")};
   user-select: none;
 
   & .react-datepicker {
     &__month-container {
       width: 100%;
-      padding: 0 15px 0 15px;
-      height: 285px;
+      padding: ${({ view }) => (view === "sidebar" ? "0" : "0 15px")};
+      height: ${({ view }) =>
+        view === "sidebar" ? `${SIDEBAR_COMPACT_MONTH_HEIGHT}px` : "285px"};
       display: flex;
       flex-direction: column;
     }
@@ -73,26 +76,21 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
       justify-content: space-between;
       flex-basis: calc(100% / 6);
       width: 100%;
-
-      &:hover {
-        ${({ view, theme }) =>
-          view === "sidebar" &&
-          `background-color: ${theme.color.fg.primaryDark}`};
-      }
     }
 
     &__header {
       align-items: left;
       background: unset;
       border-bottom: none;
-      padding: 8px 0 0 2px;
+      padding: ${({ view }) =>
+        view === "sidebar" ? "8px 0 0" : "8px 0 0 2px"};
     }
 
     &__day-name {
       opacity: 0.8;
       color: ${({ theme, isDark }) =>
         isDark ? theme.color.text.light : theme.color.text.dark};
-      font-size: 11px;
+      font-size: ${({ view }) => (view === "sidebar" ? "10px" : "11px")};
       margin: 0;
     }
 
@@ -101,7 +99,10 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
       border-radius: 50% !important;
       color: ${({ theme, isDark }) =>
         isDark ? theme.color.text.lighter : theme.color.text.dark};
+      height: ${({ view }) => (view === "sidebar" ? "1.55rem" : "1.7rem")};
+      line-height: ${({ view }) => (view === "sidebar" ? "1.55rem" : "1.7rem")};
       margin: 0;
+      width: ${({ view }) => (view === "sidebar" ? "1.55rem" : "1.7rem")};
 
       &:hover {
         ${_hoverStyle}
@@ -117,7 +118,7 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
 
       &--selected {
         background-color: ${({ selectedColor }) => selectedColor};
-        color: white;
+        color: ${({ theme }) => theme.color.text.lighter};
       }
 
       &--today:not(.react-datepicker__day--selected) {
@@ -134,7 +135,8 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
       }
 
       &--keyboard-selected {
-        background-color: ${theme.color.bg.primary};
+        background-color: ${({ view }) =>
+          view === "sidebar" ? "transparent" : theme.color.bg.primary};
       }
 
       &--outside-month {
@@ -152,7 +154,10 @@ export const StyledDatePicker = styled.div.attrs<Props>((props) => ({
       overflow: hidden;
 
       &--open {
-        height: ${SIDEBAR_MONTH_HEIGHT}px;
+        height: ${({ view }) =>
+          view === "sidebar"
+            ? `${SIDEBAR_COMPACT_MONTH_HEIGHT}px`
+            : `${SIDEBAR_MONTH_HEIGHT}px`};
       }
 
       &--animation {

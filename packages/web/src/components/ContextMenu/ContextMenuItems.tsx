@@ -16,10 +16,10 @@ import {
   TooltipWrapper,
 } from "@web/components/ContextMenu/styled";
 import IconButton from "@web/components/IconButton/IconButton";
+import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
-import { useSidebarContext } from "@web/views/Week/components/Draft/sidebar/context/useSidebarContext";
 
 export interface ContextMenuAction {
   id: string;
@@ -39,8 +39,9 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const { setDraft } = setters;
 
   const sidebarContext = useSidebarContext(true);
+  const eventId = event._id;
   const isPending = useAppSelector((state) =>
-    selectIsEventPending(state, event._id!),
+    eventId ? selectIsEventPending(state, eventId) : false,
   );
 
   const [selectedPriority, setSelectedPriority] = useState(event.priority);
@@ -81,7 +82,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
       close();
     } else {
       const sidebarActions = sidebarContext?.actions;
-      if (!sidebarActions) return; // TS Guard
+      if (!sidebarActions) return;
       const category = getSomedayEventCategory(event);
       sidebarActions.onDraft(event, category);
       close();

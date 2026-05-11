@@ -6,6 +6,7 @@ import { useCursorCoordinates } from "@web/common/hooks/useCursorCoordinates";
 import { getWidthBuffer } from "@web/common/utils/grid/grid.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexWrap } from "@web/components/Flex/styled";
+import { SOMEDAY_EVENT_HEIGHT } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
@@ -16,7 +17,6 @@ import {
   layerStyles,
   StyledGridEventPreview,
 } from "@web/views/Week/components/Event/Grid/GridEventPreview/styled";
-import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Week/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import {
   type Measurements_Grid,

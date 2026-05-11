@@ -1,9 +1,8 @@
 import { type MutableRefObject, useEffect, useRef, useState } from "react";
+import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
-import { type SidebarDraftContextValue } from "@web/views/Week/components/Draft/sidebar/context/SidebarDraftContext";
-import { useSidebarContext } from "@web/views/Week/components/Draft/sidebar/context/useSidebarContext";
 import { type WeekProps } from "../useWeek";
 
 const EDGE_THRESHOLD = 50; // pixels from edge to trigger navigation
@@ -22,8 +21,7 @@ export const useDragEdgeNavigation = (
 ): DragEdgeNavigationState => {
   const { state: draftState } = useDraftContext();
   const isDNDing = useAppSelector(selectIsDNDing);
-  const { state: sidebarState } =
-    useSidebarContext() as SidebarDraftContextValue;
+  const { state: sidebarState } = useSidebarContext();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);

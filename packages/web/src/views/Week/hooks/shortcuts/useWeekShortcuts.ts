@@ -5,24 +5,21 @@ import {
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import {
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
 } from "@web/ducks/events/selectors/someday.selectors";
-import {
-  selectIsSidebarOpen,
-  selectSidebarTab,
-} from "@web/ducks/events/selectors/view.selectors";
+import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { useSidebarContext } from "@web/views/Week/components/Draft/sidebar/context/useSidebarContext";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -49,7 +46,6 @@ export const useWeekShortcuts = ({
 
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
-  const tab = useAppSelector(selectSidebarTab);
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
   const { decrementWeek, incrementWeek, goToToday } = util;
   const { scrollToNow } = scrollUtil;
@@ -73,26 +69,14 @@ export const useWeekShortcuts = ({
       if (!isSidebarOpen) {
         dispatch(viewSlice.actions.toggleSidebar());
       }
-
-      if (tab !== "tasks") {
-        dispatch(viewSlice.actions.updateSidebarTab("tasks"));
-      }
     },
-    [context, isAtMonthlyLimit, isAtWeeklyLimit, isSidebarOpen, tab, dispatch],
+    [context, isAtMonthlyLimit, isAtWeeklyLimit, isSidebarOpen, dispatch],
   );
 
   const _discardDraft = useCallback(() => {
     if (isEventFormOpen()) {
       dispatch(draftSlice.actions.discard(undefined));
     }
-  }, [dispatch]);
-
-  const openTasks = useCallback(() => {
-    dispatch(viewSlice.actions.updateSidebarTab("tasks"));
-  }, [dispatch]);
-
-  const openMonthWidget = useCallback(() => {
-    dispatch(viewSlice.actions.updateSidebarTab("monthWidget"));
   }, [dispatch]);
 
   const goToPreviousWeek = useCallback(() => {
@@ -137,8 +121,6 @@ export const useWeekShortcuts = ({
     _createSomedayDraft(Categories_Event.SOMEDAY_WEEK);
   }, [_createSomedayDraft]);
 
-  useAppHotkey("Shift+1", openTasks);
-  useAppHotkey("Shift+2", openMonthWidget);
   useAppHotkeyUp("[", openSidebar);
   useAppHotkeyUp("J", goToPreviousWeek);
   useAppHotkeyUp("K", goToNextWeek);
