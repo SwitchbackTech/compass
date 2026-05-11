@@ -1,5 +1,4 @@
-import { useCallback, useMemo } from "react";
-import { type Dayjs } from "@core/util/date/dayjs";
+import { useMemo } from "react";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
@@ -18,6 +17,7 @@ import { Shortcuts } from "@web/views/Week/components/Shortcuts";
 import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
+import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useRefetch } from "@web/views/Week/hooks/useRefetch";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
@@ -86,12 +86,12 @@ export const WeekView = () => {
     [isCurrentWeek],
   );
 
-  const goToDateFromSidebar = useCallback(
-    (date: Dayjs) => {
-      weekProps.state.setStartOfView(date.startOf("week"));
-    },
-    [weekProps.state.setStartOfView],
-  );
+  const { calendarDate, goToDateFromSidebar } = usePlannerSidebarCalendarDate({
+    setStartOfView: weekProps.state.setStartOfView,
+    today,
+    viewEnd: weekProps.component.endOfView,
+    viewStart: weekProps.component.startOfView,
+  });
 
   return (
     <Styled id="cal">
@@ -110,9 +110,7 @@ export const WeekView = () => {
               <Draft measurements={measurements} weekProps={weekProps} />
               {isSidebarOpen ? (
                 <PlannerSidebar
-                  calendarDate={
-                    isCurrentWeek ? today : weekProps.component.startOfView
-                  }
+                  calendarDate={calendarDate}
                   dateCalcs={dateCalcs}
                   gridRefs={gridRefs}
                   measurements={measurements}
