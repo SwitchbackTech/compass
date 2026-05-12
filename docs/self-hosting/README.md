@@ -33,9 +33,14 @@ flowchart TD
 ## Start here
 
 - New self-host install: [Run Compass on a server](./server-guide.md)
+- Environment variables reference: [Environment Variables](./environment-variables.md)
 - Backups and restore: [Back up and restore your data](./backups-and-restore.md)
 - Google Calendar: [Add Google Calendar](./google-calendar.md)
 - Manual Bun setup: [Run Compass without the installer](./advanced-manual.md)
+
+## Health endpoint
+
+The backend exposes a health check at `GET /api/health` (no authentication required). It returns `{"status":"ok","timestamp":"..."}` with HTTP 200 when MongoDB is reachable, or `{"status":"error","timestamp":"..."}` with HTTP 500 when it is not. Use this for monitoring probes, load balancer checks, or readiness scripts — call it on whatever schedule makes sense for your setup.
 
 ## What you still need to handle yourself
 
