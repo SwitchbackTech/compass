@@ -5,15 +5,6 @@ x-local-bindings:
 services:
   web:
     image: switchbacktech/compass-web:${COMPASS_VERSION:-latest}
-    # To build locally instead of pulling from Docker Hub, comment the image line
-    # above and uncomment the build block below, then run: docker compose up -d --build
-    # build:
-    #   context: ..
-    #   dockerfile: self-host/Dockerfile.web
-    #   args:
-    #     BASEURL: ${BASEURL:-http://localhost:3000/api}
-    #     GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-compass-self-host-placeholder.apps.googleusercontent.com}
-    #     COMPASS_BUILD_REF: ${COMPASS_VERSION:-local}
     depends_on:
       backend:
         condition: service_healthy
@@ -24,9 +15,6 @@ services:
 
   backend:
     image: switchbacktech/compass-backend:${COMPASS_VERSION:-latest}
-    # build:
-    #   context: ..
-    #   dockerfile: self-host/Dockerfile.backend
     depends_on:
       mongo:
         condition: service_healthy
@@ -70,9 +58,6 @@ services:
 
   mongo:
     image: switchbacktech/compass-mongo:${COMPASS_VERSION:-latest}
-    # build:
-    #   context: ..
-    #   dockerfile: self-host/Dockerfile.mongo
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-compass}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-change-me-mongo-password-32chars}

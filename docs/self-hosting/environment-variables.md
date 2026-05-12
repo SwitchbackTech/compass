@@ -104,7 +104,7 @@ See [google-calendar.md](./google-calendar.md) for step-by-step OAuth credential
 
 ## Email (Optional)
 
-Email integration uses [Kit](https://kit.com) (formerly ConvertKit). These variables are not included in `.env.example`. Set them only if you are connecting Compass to a Kit account.
+Email integration uses [Kit](https://kit.com) (formerly ConvertKit). These variables are commented out in `packages/backend/.env.local.example`. Set them only if you are connecting Compass to a Kit account.
 
 | Variable | Required | Description |
 |---|---|---|
