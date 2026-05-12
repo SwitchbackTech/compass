@@ -102,7 +102,9 @@ export function* _createOptimisticGridEvent(
   gridEvent: Schema_GridEvent,
   isSomeday = false,
 ) {
-  const optimisticGridEvent = addId(gridEvent);
+  const optimisticGridEvent = gridEvent._id
+    ? (gridEvent as WithId<Schema_GridEvent>)
+    : addId(gridEvent);
 
   yield* insertOptimisticEvent(optimisticGridEvent, isSomeday);
 

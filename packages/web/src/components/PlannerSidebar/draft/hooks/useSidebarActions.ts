@@ -17,7 +17,7 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import {
   COLUMN_MONTH,
-  type COLUMN_WEEK,
+  COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
 } from "@web/common/constants/web.constants";
 import { getPointerPosition } from "@web/common/context/pointer-position";
@@ -33,6 +33,7 @@ import {
   hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { showMigrationToast } from "@web/components/PlannerSidebar/draft/hooks/MigrationToast";
 import {
   type Setters_Sidebar,
@@ -77,6 +78,31 @@ interface SomedayEventsColumns {
     eventIds: string[];
   };
 }
+
+const getSomedayColumnName = (category: Categories_Event) =>
+  category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
+
+const getNextSomedayOrder = (
+  category: Categories_Event,
+  somedayEvents: State_Sidebar["somedayEvents"],
+) => {
+  const columnName = getSomedayColumnName(category);
+  const events = somedayEvents.columns[columnName].eventIds
+    .map((eventId) => somedayEvents.events[eventId])
+    .filter(Boolean);
+  const orders = events
+    .map((event) => event.order)
+    .filter(
+      (order): order is number =>
+        typeof order === "number" && !Number.isNaN(order),
+    );
+
+  if (orders.length === 0) {
+    return events.length;
+  }
+
+  return Math.max(...orders) + 1;
+};
 
 export const useSidebarActions = (
   view: SidebarActionViewProps,
@@ -456,15 +482,32 @@ export const useSidebarActions = (
         }),
       );
     } else {
-      const order =
-        category === Categories_Event.SOMEDAY_WEEK
-          ? state.somedayWeekIds.length
-          : state.somedayMonthIds.length;
+      const columnName = getSomedayColumnName(category);
+      const column = state.somedayEvents.columns[columnName];
+      const eventId = createObjectIdString();
+      const order = getNextSomedayOrder(category, state.somedayEvents);
 
       const eventWithOrder = {
         ...parsedEvent,
+        _id: eventId,
         order,
       };
+
+      setSomedayEvents({
+        ...state.somedayEvents,
+        columns: {
+          ...state.somedayEvents.columns,
+          [columnName]: {
+            ...column,
+            eventIds: [...column.eventIds, eventId],
+          },
+        },
+        events: {
+          ...state.somedayEvents.events,
+          [eventId]: eventWithOrder,
+        },
+      });
+
       dispatch(createEventSlice.actions.request(eventWithOrder));
     }
 
