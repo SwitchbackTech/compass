@@ -433,6 +433,9 @@ write_env_if_missing() {
   umask 077
   TMP_ENV=$COMPASS_HOME/.env.$$
   cat > "$TMP_ENV" <<EOF
+# See for a detailed description of each variable here:
+# https://docs.compasscalendar.com/docs/self-hosting/environment-variables
+
 # Compose
 COMPASS_VERSION=$COMPASS_VERSION
 
@@ -446,9 +449,9 @@ TZ=Etc/UTC
 LOG_LEVEL=info
 
 # Local URLs
-FRONTEND_URL=http://localhost:9080
-BASEURL=http://localhost:3000/api
-CORS=http://localhost:9080,http://localhost:3000
+FRONTEND_URL=https://cal.yourdomain.com
+BASEURL=https://cal.yourdomain.com/api
+CORS=https://cal.yourdomain.com
 
 # Compass MongoDB
 MONGO_INITDB_ROOT_USERNAME=compass
@@ -579,7 +582,7 @@ EOF
     $ENV_FILE
   Then rebuild the web image (BASEURL and GOOGLE_CLIENT_ID are baked in at build time):
     $HELPER_FILE rebuild
-  See docs/Self-Hosting/google-calendar.md for setup instructions.
+  See https://docs.compasscalendar.com/docs/self-hosting/google-calendar
 EOF
   else
     cat <<EOF
