@@ -16,8 +16,6 @@ const plannerMonthPickerClassName =
 const headerActionsClassName =
   "!absolute !inset-x-11 !justify-between [&>div:first-child]:!w-full [&>div:first-child]:!justify-between [&>span]:!hidden";
 
-const getPlannerDayClassName = () => "!rounded-default !font-light";
-
 const PlannerMonthPickerFieldset = styled.fieldset`
   .react-datepicker__month-container,
   .react-datepicker__month {
@@ -28,7 +26,7 @@ const PlannerMonthPickerFieldset = styled.fieldset`
     isolation: isolate !important;
     background-color: transparent !important;
     position: relative !important;
-    color: var(--color-text-lighter) !important;
+    color: var(--color-text-dark) !important;
   }
 
   .react-datepicker__day--selected::before {
@@ -84,6 +82,15 @@ export const PlannerMonthPicker: FC<Props> = ({
       dayjs(selectedDateKey, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
     );
   }, [selectedDateKey]);
+
+  const getPlannerDayClassName = (date: Date) => {
+    const dateKey = dayjs(date).format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
+
+    return dateKey ===
+      focusedDate.format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT)
+      ? "!rounded-default !font-bold"
+      : "!rounded-default !font-light";
+  };
 
   return (
     <PlannerMonthPickerFieldset
