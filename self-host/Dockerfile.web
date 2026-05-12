@@ -19,11 +19,17 @@ RUN cd packages/web && bun run build.ts
 FROM oven/bun:1.2.18-slim AS runtime
 
 WORKDIR /app
+
+RUN addgroup --system --gid 1001 compass \
+ && adduser --system --uid 1001 --ingroup compass --no-create-home compass
+
 ENV WEB_PORT=9080
 ENV WEB_ROOT=/app/build/web
 
-COPY --from=build /app/build/web ./build/web
-COPY --from=build /app/self-host/serve-web.ts ./self-host/serve-web.ts
+COPY --from=build --chown=compass:compass /app/build/web ./build/web
+COPY --from=build --chown=compass:compass /app/self-host/serve-web.ts ./self-host/serve-web.ts
+
+USER compass
 
 EXPOSE 9080
 CMD ["bun", "self-host/serve-web.ts"]

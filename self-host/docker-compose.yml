@@ -4,24 +4,17 @@ x-local-bindings:
 
 services:
   web:
-    build:
-      context: ..
-      dockerfile: self-host/Dockerfile.web
-      args:
-        BASEURL: ${BASEURL:-http://localhost:3000/api}
-        GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-compass-self-host-placeholder.apps.googleusercontent.com}
-        COMPASS_BUILD_REF: ${COMPASS_REF:-main}
+    image: switchbacktech/compass-web:${COMPASS_VERSION:-latest}
     depends_on:
       backend:
         condition: service_healthy
     ports:
       - *web-port
+    read_only: true
     restart: unless-stopped
 
   backend:
-    build:
-      context: ..
-      dockerfile: self-host/Dockerfile.backend
+    image: switchbacktech/compass-backend:${COMPASS_VERSION:-latest}
     depends_on:
       mongo:
         condition: service_healthy
@@ -46,6 +39,11 @@ services:
       TZ: ${TZ:-Etc/UTC}
     ports:
       - *backend-port
+    read_only: true
+    tmpfs:
+      - /tmp
+    volumes:
+      - compass_backend_logs:/app/logs
     restart: unless-stopped
     healthcheck:
       test:
@@ -59,15 +57,14 @@ services:
       start_period: 20s
 
   mongo:
-    build:
-      context: ..
-      dockerfile: self-host/Dockerfile.mongo
+    image: switchbacktech/compass-mongo:${COMPASS_VERSION:-latest}
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-compass}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-change-me-mongo-password-32chars}
       MONGO_REPLICA_SET_KEY: ${MONGO_REPLICA_SET_KEY:-${MONGO_INITDB_ROOT_PASSWORD:-change-me-mongo-password-32chars}}
     volumes:
       - compass_mongo_data:/data/db
+      - compass_mongo_configdb:/data/configdb
     restart: unless-stopped
     healthcheck:
       test:
@@ -121,5 +118,7 @@ services:
       start_period: 20s
 
 volumes:
+  compass_backend_logs:
+  compass_mongo_configdb:
   compass_mongo_data:
   compass_supertokens_postgres_data:

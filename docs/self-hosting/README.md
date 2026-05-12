@@ -36,6 +36,7 @@ flowchart TD
 - Backups and restore: [Back up and restore your data](./backups-and-restore.md)
 - Google Calendar: [Add Google Calendar](./google-calendar.md)
 - Manual Bun setup: [Run Compass without the installer](./advanced-manual.md)
+- Monitoring: [Monitoring](./monitoring.md)
 
 ## What you still need to handle yourself
 

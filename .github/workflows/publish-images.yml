@@ -1,0 +1,76 @@
+name: Publish Docker images
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Derive semver tags from git tag
+        id: version
+        run: |
+          TAG="${GITHUB_REF_NAME}"        # e.g. v1.2.3
+          VERSION="${TAG#v}"              # 1.2.3
+          MINOR="${VERSION%.*}"           # 1.2
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "minor=${MINOR}"    >> "$GITHUB_OUTPUT"
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push compass-backend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: self-host/Dockerfile.backend
+          push: true
+          tags: |
+            switchbacktech/compass-backend:${{ steps.version.outputs.version }}
+            switchbacktech/compass-backend:${{ steps.version.outputs.minor }}
+            switchbacktech/compass-backend:latest
+
+      - name: Build and push compass-mongo
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: self-host/Dockerfile.mongo
+          push: true
+          tags: |
+            switchbacktech/compass-mongo:${{ steps.version.outputs.version }}
+            switchbacktech/compass-mongo:${{ steps.version.outputs.minor }}
+            switchbacktech/compass-mongo:latest
+
+      - name: Build and push compass-web
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: self-host/Dockerfile.web
+          push: true
+          # BASEURL and GOOGLE_CLIENT_ID are baked into the web bundle at build time.
+          # The published image ships with localhost defaults, which work for local installs.
+          # Users who need a custom API domain or real Google credentials must rebuild
+          # the web image locally using the build: blocks in docker-compose.yml.
+          build-args: |
+            BASEURL=http://localhost:3000/api
+            GOOGLE_CLIENT_ID=compass-self-host-placeholder.apps.googleusercontent.com
+            COMPASS_BUILD_REF=${{ steps.version.outputs.version }}
+          tags: |
+            switchbacktech/compass-web:${{ steps.version.outputs.version }}
+            switchbacktech/compass-web:${{ steps.version.outputs.minor }}
+            switchbacktech/compass-web:latest

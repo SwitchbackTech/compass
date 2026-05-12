@@ -40,8 +40,8 @@ Markdown files in this `docs/` directory are automatically mirrored to [docs.com
 - [Self-Hosting](./self-hosting/README.md)
 - [Testing Playbook](./development/testing-playbook.md)
 - [Types And Validation](./development/types-and-validation.md)
-- [CLI And Maintenance Commands](./development/cli-and-maintenance-commands.md)
-- [Deploy](./development/deploy.md)
+- [CI/CD](./ci-cd/README.md)
+- [CLI And Maintenance Commands](./ci-cd/cli-and-maintenance-commands.md)
 
 ## Feature Deep Dives
 

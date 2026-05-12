@@ -9,7 +9,14 @@ RUN bun run build:backend --environment local
 FROM oven/bun:1.2.18-slim AS runtime
 
 WORKDIR /app
-COPY --from=build /app/build/backend ./
+
+RUN addgroup --system --gid 1001 compass \
+ && adduser --system --uid 1001 --ingroup compass --no-create-home compass
+
+COPY --from=build --chown=compass:compass /app/build/backend ./
+RUN mkdir -p /app/logs && chown compass:compass /app/logs
+
+USER compass
 
 ENV PORT=3000
 EXPOSE 3000
