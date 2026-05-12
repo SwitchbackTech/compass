@@ -12,6 +12,7 @@ import { SomedayMonthSection } from "./SomedayMonthSection/SomedayMonthSection";
 import { SomedayWeekSection } from "./SomedayWeekSection/SomedayWeekSection";
 
 interface Props {
+  calendarDate: WeekProps["component"]["startOfView"];
   dateCalcs?: DateCalcs;
   measurements?: Measurements_Grid;
   viewStart: WeekProps["component"]["startOfView"];
@@ -20,6 +21,7 @@ interface Props {
 }
 
 export const SomedayEventSections: FC<Props> = ({
+  calendarDate,
   dateCalcs,
   measurements,
   viewEnd,
@@ -46,6 +48,7 @@ export const SomedayEventSections: FC<Props> = ({
 
         <SomedayMonthSection
           dateCalcs={dateCalcs}
+          monthDate={calendarDate}
           measurements={measurements}
           viewStart={viewStart}
           gridRefs={gridRefs}

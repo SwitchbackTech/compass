@@ -50,6 +50,7 @@ describe("SomedayEventSections", () => {
   it("keeps the planner sidebar stable while someday events refresh", () => {
     render(
       <SomedayEventSections
+        calendarDate={dayjs("2026-05-17")}
         viewStart={dayjs("2026-05-17")}
         viewEnd={dayjs("2026-05-23")}
       />,

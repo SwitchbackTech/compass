@@ -1,6 +1,5 @@
 import { type FC } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import { getMonthListLabel } from "@web/common/utils/event/event.util";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import {
   type Measurements_Grid,
@@ -8,10 +7,12 @@ import {
 } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { SomedayEvents } from "../SomedayEvents/SomedayEvents";
+import { useMonthLabel } from "./useMonthLabel";
 
 interface Props {
   dateCalcs?: DateCalcs;
   measurements?: Measurements_Grid;
+  monthDate: WeekProps["component"]["startOfView"];
   viewStart: WeekProps["component"]["startOfView"];
   gridRefs?: Refs_Grid;
 }
@@ -19,20 +20,17 @@ interface Props {
 export const SomedayMonthSection: FC<Props> = ({
   dateCalcs,
   measurements,
+  monthDate,
   viewStart,
   gridRefs,
 }) => {
-  const monthLabel = getMonthListLabel(viewStart);
-
-  const currentMonth = new Date().toLocaleString("default", { month: "long" });
-
-  const isCurrentMonth = monthLabel === currentMonth;
+  const monthLabel = useMonthLabel(monthDate);
 
   return (
     <div className="flex flex-col">
       <div className="mb-2.5 flex items-center justify-between">
         <h2 className="font-semibold text-text-lighter/85 text-xs leading-none">
-          {isCurrentMonth ? "This Month" : monthLabel}
+          {monthLabel}
         </h2>
       </div>
 

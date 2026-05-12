@@ -57,6 +57,7 @@ export function PlannerSidebar({
 
         <section aria-label="Unscheduled events" className="space-y-4">
           <SomedayEventSections
+            calendarDate={calendarDate}
             dateCalcs={dateCalcs}
             gridRefs={gridRefs}
             measurements={measurements}

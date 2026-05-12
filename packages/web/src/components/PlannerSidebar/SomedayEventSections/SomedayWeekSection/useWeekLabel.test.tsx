@@ -1,12 +1,9 @@
 import "@testing-library/jest-dom";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import dayjs from "@core/util/date/dayjs";
 import {
   getSomedayWeekLabel,
   isCurrentWeek,
 } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayWeekSection/useWeekLabel";
-
-const makeLabel = (start: Dayjs, end: Dayjs): string =>
-  `${start.format("M.D")} - ${end.format("M.D")}`;
 
 describe("isCurrentWeek()", () => {
   it("returns true when today is inside the selected week", () => {
@@ -55,23 +52,17 @@ describe("getSomedayWeekLabel()", () => {
     const viewStart = dayjs("2025-01-08");
     const viewEnd = dayjs("2025-01-12");
 
-    expect(
-      getSomedayWeekLabel(
-        makeLabel(viewStart, viewEnd),
-        viewStart,
-        viewEnd,
-        dayjs("2025-01-10"),
-      ),
-    ).toBe("This Week");
+    expect(getSomedayWeekLabel(viewStart, viewEnd, dayjs("2025-01-10"))).toBe(
+      "This Week",
+    );
   });
 
-  it("returns the date label when today is outside the selected week", () => {
-    const viewStart = dayjs("2025-01-08");
-    const viewEnd = dayjs("2025-01-12");
-    const label = makeLabel(viewStart, viewEnd);
+  it("labels a past or future week by its start date", () => {
+    const viewStart = dayjs("2026-04-26");
+    const viewEnd = dayjs("2026-05-02");
 
-    expect(
-      getSomedayWeekLabel(label, viewStart, viewEnd, dayjs("2025-01-20")),
-    ).toBe(label);
+    expect(getSomedayWeekLabel(viewStart, viewEnd, dayjs("2026-05-12"))).toBe(
+      "Week of Apr 26",
+    );
   });
 });
