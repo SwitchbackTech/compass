@@ -29,12 +29,9 @@ Source: [`.github/workflows/publish-images.yml`](../../.github/workflows/publish
    - `switchbacktech/compass-web`
 4. Each image gets all three tags: `1.2.3`, `1.2`, and `latest`.
 
-### Tag pattern rules
+### Manually publishing a release
 
-- The trigger only fires on clean semver tags: `v1.2.3`. Tags with suffixes (e.g. `v1.2.3-test`) do not match and will not trigger the workflow.
-- Do not tag from the GitHub Releases UI unless you intend to publish a release — that sends notifications to watchers. Tag from the CLI instead.
-
-### Publishing a release
+Although tags are created automatically as part of the release flow, you can also create them manually to publish images from a local branch.
 
 ```sh
 git tag v1.2.3
@@ -58,20 +55,3 @@ Two secrets must be set in **GitHub → Settings → Secrets and variables → A
 |---|---|
 | `DOCKERHUB_USERNAME` | Docker Hub username for the `switchbacktech` org |
 | `DOCKERHUB_TOKEN` | Docker Hub personal access token (Read & Write) |
-
-### Web image build-args
-
-`BASEURL` and `GOOGLE_CLIENT_ID` are baked into the web bundle at compile time. The published image ships with localhost defaults:
-
-- `BASEURL=http://localhost:3000/api`
-- `GOOGLE_CLIENT_ID=compass-self-host-placeholder.apps.googleusercontent.com`
-
-This works for local installs. Users who need a different API domain or real Google credentials must rebuild the web image locally using the commented-out `build:` blocks in `docker-compose.yml`.
-
----
-
-## CLI and Maintenance Commands
-
-Internal tooling for database operations during development and production maintenance.
-
-See [cli-and-maintenance-commands.md](./cli-and-maintenance-commands.md).
