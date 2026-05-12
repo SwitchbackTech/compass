@@ -73,7 +73,7 @@ bun run cli delete -u <email>
 
 The delete flow removes both Compass data and SuperTokens auth state. The browser cleanup screen only clears local browser storage after the server-side purge is complete.
 
-See [CLI And Maintenance Commands](./cli-and-maintenance-commands.md) for the current delete flow.
+See [CLI And Maintenance Commands](../ci-cd/cli-and-maintenance-commands.md) for the current delete flow.
 
 ### Invalid domain name
 
