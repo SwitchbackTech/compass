@@ -1,4 +1,4 @@
-# Back up and restore your data
+# Back up and Restore
 
 For the Docker install created by `self-host/install.sh` on your server. Backups are manual today. The installer and `./compass update` do not create them for you.
 
