@@ -1,4 +1,4 @@
-# Add Google Calendar (optional)
+# Add Google Calendar
 
 Google Calendar is optional for self-hosting. Compass works fine with email and password alone. Pick a mode based on what you actually need.
 

@@ -1,4 +1,4 @@
-# Run Compass on a server
+# Setup Compass On A Server
 
 This guide describes the recommended first server setup for one person hosting Compass on a small VPS. One public domain, Compass on `127.0.0.1`, Caddy in front for HTTPS.
 

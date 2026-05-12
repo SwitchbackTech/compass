@@ -1,6 +1,6 @@
 # CI/CD
 
-Compass uses GitHub Actions for continuous integration, Docker Hub for image distribution, and a Hetzner VPS for staging.
+Compass uses GitHub Actions for continuous integration, Docker Hub for image distribution, and a VPS for staging.
 
 ## Workflows
 
@@ -22,7 +22,7 @@ Every PR merge to `main` triggers a fully automated chain:
 PR merged to main
   └─► bump-and-tag.yml        — reads latest tag, pushes v1.2.X+1
         └─► publish-images.yml — builds & pushes images to Docker Hub
-              └─► deploy-staging  — SSHes into Hetzner VPS, runs ./compass update
+              └─► deploy-staging  — SSHes into VPS, runs ./compass update
 ```
 
 **Monthly minor/major releases** remain manual: a maintainer pushes a tag like `v1.3.0` or `v2.0.0`, which skips the bump step and goes straight to publish + deploy.
@@ -67,27 +67,33 @@ Only clean semver tags trigger the workflow. Tags with suffixes (e.g. `v1.2.3-te
 
 Source: `deploy-staging` job in [`.github/workflows/publish-images.yml`](../../.github/workflows/publish-images.yml)
 
-The deploy job SSHes into the Hetzner staging VPS and runs `./compass update`, which pulls the latest Docker Hub images and restarts the stack. This mirrors exactly what self-hosters do to update their installations — intentionally, so we catch any issues early.
+The deploy job SSHes into the staging VPS and runs `./compass update`, which pulls the latest Docker Hub images and restarts the stack. This mirrors exactly what self-hosters do to update their installations — intentionally, so we catch any issues early.
 
 ### One-time VPS setup
 
 These steps run once by a maintainer. After this, all deploys are automated.
 
-1. **Provision** a Hetzner VPS and SSH in as root
+1. **Provision** a VPS and SSH in as root
 2. **Install Docker**: follow [docs.docker.com/engine/install](https://docs.docker.com/engine/install/)
 3. **Run the Compass installer**:
+
    ```sh
    curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
    ```
+
 4. **Edit `~/compass/.env`** — set staging-specific values (domain, Google OAuth creds, secrets)
 5. **Generate a deploy SSH keypair** (run locally, not on the VPS):
+
    ```sh
    ssh-keygen -t ed25519 -C "compass-staging-deploy" -f compass-staging-deploy
    ```
+
 6. **Add the public key** to `~/.ssh/authorized_keys` on the VPS:
+
    ```sh
    ssh-copy-id -i compass-staging-deploy.pub <user>@<vps-ip>
    ```
+
 7. **Add the private key** as `STAGING_SSH_KEY` in GitHub secrets (see table below)
 
 ### Required secrets
@@ -98,6 +104,6 @@ All secrets go in **GitHub → Settings → Secrets and variables → Actions**:
 |---|---|
 | `DOCKERHUB_USERNAME` | Docker Hub username for the `switchbacktech` org |
 | `DOCKERHUB_TOKEN` | Docker Hub personal access token (Read & Write) |
-| `STAGING_SSH_HOST` | Hetzner VPS IP address or hostname |
+| `STAGING_SSH_HOST` | VPS IP address or hostname |
 | `STAGING_SSH_USER` | Linux user on the VPS that owns `~/compass` |
 | `STAGING_SSH_KEY` | Private key from the deploy keypair (the `compass-staging-deploy` file, not `.pub`) |
