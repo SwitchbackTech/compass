@@ -27,6 +27,7 @@ export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   bgColor?: string;
   headerActionsClassName?: string;
   headerClassName?: string;
+  headerEndContent?: React.ReactNode;
   inputColor?: string;
   isOpen?: boolean;
   monthContainerClassName?: string;
@@ -48,6 +49,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
     calendarClassName,
     headerActionsClassName,
     headerClassName,
+    headerEndContent,
     inputColor,
     isOpen = true,
     monthContainerClassName,
@@ -108,7 +110,9 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       showPopperArrow={false}
       renderCustomHeader={(headerProps) => {
         const { customHeaderCount, monthDate } = headerProps;
-        const selectedMonth = dayjs(monthDate).format("MMM YYYY");
+        const selectedMonth = dayjs(monthDate).format(
+          view === "sidebar" ? "MMMM YYYY" : "MMM YYYY",
+        );
         const currentMonth = dayjs().format("MMM YYYY");
 
         return (
@@ -136,6 +140,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   <MonthNavButton
                     ariaLabel="Previous month"
                     color={headerColor}
+                    isSidebarStyle={view === "sidebar"}
                     onClick={() => {
                       headerProps.decreaseMonth();
                     }}
@@ -145,6 +150,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   <MonthNavButton
                     ariaLabel="Next month"
                     color={headerColor}
+                    isSidebarStyle={view === "sidebar"}
                     onClick={() => {
                       headerProps.increaseMonth();
                     }}
@@ -168,6 +174,11 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                 )}
               </Flex>
             )}
+            {!customHeaderCount && headerEndContent ? (
+              <div className="ml-auto flex items-center">
+                {headerEndContent}
+              </div>
+            ) : null}
           </StyledHeaderFlex>
         );
       }}

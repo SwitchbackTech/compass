@@ -13,18 +13,7 @@ const _hoverStyle = `
 `;
 
 export const ChangeDayButtonsStyledFlex = styled(Flex)`
-  & span {
-    padding: 0 9px;
-    border-radius: 50%;
-
-    &:hover {
-      ${_hoverStyle}
-    }
-
-    &:first-child {
-      margin-right: 10px;
-    }
-  }
+  gap: 4px;
 `;
 
 export const MonthContainerStyled = styled(Flex)`

@@ -20,6 +20,7 @@ interface Props extends HTMLAttributes<HTMLDivElement> {
   measurements?: Measurements_Grid;
   monthsShown?: number;
   onSelectDate: (date: Dayjs) => void;
+  onToggleSidebar?: () => void;
   shortcutSections: ShortcutOverlaySection[];
   showSomedayEventSections?: boolean;
   viewEnd: Dayjs;
@@ -33,6 +34,7 @@ export function PlannerSidebar({
   measurements,
   monthsShown = 1,
   onSelectDate,
+  onToggleSidebar,
   shortcutSections,
   showSomedayEventSections = true,
   viewEnd,
@@ -52,6 +54,7 @@ export function PlannerSidebar({
         <PlannerMonthPicker
           monthsShown={monthsShown}
           onSelectDate={onSelectDate}
+          onToggleSidebar={onToggleSidebar}
           selectedDate={calendarDate}
         />
 

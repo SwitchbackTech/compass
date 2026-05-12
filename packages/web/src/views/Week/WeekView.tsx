@@ -1,9 +1,10 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { CmdPalette } from "@web/views/CmdPalette";
 import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
@@ -26,7 +27,11 @@ import { Styled, StyledCalendar, WeekGridTrack } from "@web/views/Week/styled";
 export const WeekView = () => {
   useRefetch();
 
+  const dispatch = useAppDispatch();
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+  const toggleSidebar = useCallback(() => {
+    dispatch(viewSlice.actions.toggleSidebar());
+  }, [dispatch]);
 
   const { today } = useToday();
 
@@ -115,6 +120,7 @@ export const WeekView = () => {
                   gridRefs={gridRefs}
                   measurements={measurements}
                   onSelectDate={goToDateFromSidebar}
+                  onToggleSidebar={toggleSidebar}
                   shortcutSections={shortcutSections}
                   viewEnd={weekProps.component.endOfView}
                   viewStart={weekProps.component.startOfView}

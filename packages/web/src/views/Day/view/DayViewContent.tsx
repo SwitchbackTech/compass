@@ -175,6 +175,7 @@ export const DayViewContent = memo(() => {
         <PlannerSidebar
           calendarDate={dateInView}
           onSelectDate={navigateToDate}
+          onToggleSidebar={toggleSidebar}
           shortcutSections={shortcutSections}
           showSomedayEventSections={false}
           viewEnd={plannerViewEnd}
