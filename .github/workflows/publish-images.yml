@@ -74,3 +74,16 @@ jobs:
             switchbacktech/compass-web:${{ steps.version.outputs.version }}
             switchbacktech/compass-web:${{ steps.version.outputs.minor }}
             switchbacktech/compass-web:latest
+
+  deploy-staging:
+    needs: publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to staging
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.STAGING_SSH_HOST }}
+          username: ${{ secrets.STAGING_SSH_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script: cd ~/compass && ./compass update
