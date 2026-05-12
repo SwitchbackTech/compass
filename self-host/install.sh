@@ -9,7 +9,7 @@ MARKER_FILE=$COMPASS_HOME/.compass-self-host
 HELPER_FILE=$COMPASS_HOME/compass
 COMPOSE_FILE=$COMPASS_HOME/docker-compose.yml
 
-PROJECT_NAME=${COMPOSE_PROJECT_NAME:-compass}
+PROJECT_NAME=$(basename "$COMPASS_HOME")
 WEB_PORT_VALUE=9080
 PORT_VALUE=3000
 APP_URL=http://localhost:9080
@@ -107,8 +107,8 @@ Existing Docker volumes for "$PROJECT_NAME":$existing_volumes
 
 Next steps:
   - Keep old data: restore $ENV_FILE, then rerun the installer.
-  - Start fresh with a new name: set both COMPASS_HOME and COMPOSE_PROJECT_NAME.
-    Example: curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | env COMPASS_HOME="$HOME/compass-new" COMPOSE_PROJECT_NAME=compass_new sh
+  - Start fresh with a different name: set COMPASS_HOME to a new directory (the directory name becomes the project name).
+    Example: curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | env COMPASS_HOME="$HOME/compass-new" sh
   - Start over after confirming you do not need the old data:
     $delete_command
 EOF
@@ -266,11 +266,9 @@ append_health_path() {
 }
 
 load_runtime_config() {
-  project_name=$(strip_quotes "$(read_env_value COMPOSE_PROJECT_NAME)")
   web_port=$(strip_quotes "$(read_env_value WEB_PORT)")
   backend_port=$(strip_quotes "$(read_env_value PORT)")
 
-  PROJECT_NAME=${project_name:-${COMPOSE_PROJECT_NAME:-compass}}
   WEB_PORT_VALUE=${web_port:-9080}
   PORT_VALUE=${backend_port:-3000}
   validate_port_value WEB_PORT "$WEB_PORT_VALUE"
@@ -431,7 +429,6 @@ write_env_if_missing() {
   TMP_ENV=$COMPASS_HOME/.env.$$
   cat > "$TMP_ENV" <<EOF
 # Compose
-COMPOSE_PROJECT_NAME=$PROJECT_NAME
 COMPASS_VERSION=$COMPASS_VERSION
 
 # Local ports

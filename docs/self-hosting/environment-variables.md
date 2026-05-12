@@ -13,7 +13,6 @@ All environment variables for the Compass self-host stack, grouped by category.
 
 | Variable | Default | Description |
 |---|---|---|
-| `COMPOSE_PROJECT_NAME` | `compass` | Docker Compose project name. All Docker resources (containers, volumes, networks) are prefixed with this value. Change only if you need multiple isolated Compass installs on the same host. |
 | `COMPASS_VERSION` | `latest` | Docker Hub image tag to pull for the `compass-web`, `compass-backend`, and `compass-mongo` images. Pin to a specific semver (e.g. `1.2.3`) for reproducible installs. The `./compass update` command pulls the tag set here. |
 
 ---

@@ -17,7 +17,7 @@ fi
 ENV_FILE=${COMPASS_ENV_FILE:-"$INSTALL_DIR/.env"}
 COMPOSE_FILE=$INSTALL_DIR/docker-compose.yml
 ENV_LOADED=0
-PROJECT_NAME=${COMPASS_PROJECT_NAME:-${COMPOSE_PROJECT_NAME:-compass}}
+PROJECT_NAME=$(basename "$INSTALL_DIR")
 APP_URL=${FRONTEND_URL:-http://localhost:9080}
 HEALTH_URL=http://localhost:3000/api/health
 
@@ -119,12 +119,10 @@ load_env() {
 
   [ -f "$ENV_FILE" ] || fail "Missing env file: $ENV_FILE. Rerun the installer or set COMPASS_ENV_FILE."
 
-  compose_project_name=$(strip_quotes "$(read_env_value COMPOSE_PROJECT_NAME)")
   frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
   baseurl=$(strip_quotes "$(read_env_value BASEURL)")
   health_url=$(strip_quotes "$(read_env_value COMPASS_HEALTH_URL)")
 
-  PROJECT_NAME=${COMPASS_PROJECT_NAME:-${compose_project_name:-compass}}
   APP_URL=${frontend_url:-http://localhost:9080}
   HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-$(append_health_path "${baseurl:-http://localhost:3000/api}")}}
   ENV_LOADED=1
