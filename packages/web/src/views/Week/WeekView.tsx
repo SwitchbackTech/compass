@@ -1,4 +1,7 @@
+import { useMemo } from "react";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
+import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
+import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { CmdPalette } from "@web/views/CmdPalette";
@@ -6,16 +9,15 @@ import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/Recu
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
 import { Draft } from "@web/views/Week/components/Draft/Draft";
-import { SidebarDraftProvider } from "@web/views/Week/components/Draft/sidebar/context/SidebarDraftProvider";
 import { Grid } from "@web/views/Week/components/Grid/";
 import { WeekGridScrollArea } from "@web/views/Week/components/Grid/WeekGridScrollArea";
 import { DayLabels } from "@web/views/Week/components/Header/DayLabels";
 import { Header } from "@web/views/Week/components/Header/Header";
 import { Shortcuts } from "@web/views/Week/components/Shortcuts";
-import { Sidebar } from "@web/views/Week/components/Sidebar/Sidebar";
 import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
+import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useRefetch } from "@web/views/Week/hooks/useRefetch";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
@@ -49,22 +51,73 @@ export const WeekView = () => {
     scrollUtil,
   };
 
+  const shortcutSections = useMemo(
+    () => [
+      {
+        title: "Week",
+        shortcuts: [
+          { k: "j", label: "Previous week" },
+          { k: "k", label: "Next week" },
+          {
+            k: "t",
+            label: isCurrentWeek ? "Scroll to now" : "Go to current week",
+          },
+        ],
+      },
+      {
+        title: "Create",
+        shortcuts: [
+          { k: "c", label: "Create timed event" },
+          { k: "a", label: "Create all-day event" },
+          { k: "Shift+w", label: "Create Someday week event" },
+          { k: "Shift+m", label: "Create Someday month event" },
+        ],
+      },
+      {
+        title: "Global",
+        shortcuts: [
+          { k: "d", label: "Day" },
+          { k: "w", label: "Week" },
+          { k: "n", label: "Now" },
+          { k: "Mod+k", label: "Command Palette" },
+        ],
+      },
+    ],
+    [isCurrentWeek],
+  );
+
+  const { calendarDate, goToDateFromSidebar } = usePlannerSidebarCalendarDate({
+    setStartOfView: weekProps.state.setStartOfView,
+    today,
+    viewEnd: weekProps.component.endOfView,
+    viewStart: weekProps.component.startOfView,
+  });
+
   return (
     <Styled id="cal">
       <CmdPalette {...shortcutProps} />
       <Dedication />
 
       <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
-        <SidebarDraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
+        <SidebarDraftProvider
+          dateCalcs={dateCalcs}
+          onGoToDate={goToDateFromSidebar}
+          viewEnd={weekProps.component.endOfView}
+          viewStart={weekProps.component.startOfView}
+        >
           <Shortcuts shortcutsProps={shortcutProps}>
             <ContextMenuWrapper id="sidebar-context-menu">
               <Draft measurements={measurements} weekProps={weekProps} />
               {isSidebarOpen ? (
-                <Sidebar
+                <PlannerSidebar
+                  calendarDate={calendarDate}
                   dateCalcs={dateCalcs}
-                  measurements={measurements}
-                  weekProps={weekProps}
                   gridRefs={gridRefs}
+                  measurements={measurements}
+                  onSelectDate={goToDateFromSidebar}
+                  shortcutSections={shortcutSections}
+                  viewEnd={weekProps.component.endOfView}
+                  viewStart={weekProps.component.startOfView}
                 />
               ) : null}
             </ContextMenuWrapper>

@@ -10,6 +10,7 @@ export const TaskCircleIcon = ({
           className="h-4 w-4 text-green"
           fill="currentColor"
           viewBox="0 0 20 20"
+          aria-hidden="true"
         >
           <path
             fillRule="evenodd"
@@ -23,6 +24,7 @@ export const TaskCircleIcon = ({
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
+          aria-hidden="true"
         >
           <circle cx="12" cy="12" r="10" strokeWidth="2" />
         </svg>

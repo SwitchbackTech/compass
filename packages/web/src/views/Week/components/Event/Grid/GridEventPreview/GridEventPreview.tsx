@@ -2,6 +2,7 @@ import { type FC, memo, useCallback, useMemo } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { DAY_COMPACT, DAY_HOUR_MIN_M } from "@core/constants/date.constants";
 import { type Schema_Event } from "@core/types/event.types";
+import { SOMEDAY_EVENT_HEIGHT } from "@web/common/constants/web.constants";
 import { useCursorCoordinates } from "@web/common/hooks/useCursorCoordinates";
 import { getWidthBuffer } from "@web/common/utils/grid/grid.util";
 import { Flex } from "@web/components/Flex";
@@ -16,7 +17,6 @@ import {
   layerStyles,
   StyledGridEventPreview,
 } from "@web/views/Week/components/Event/Grid/GridEventPreview/styled";
-import { SOMEDAY_EVENT_HEIGHT } from "@web/views/Week/components/Sidebar/SomedayTab/SomedayEvents/SomedayEvent/styled";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import {
   type Measurements_Grid,
@@ -40,7 +40,7 @@ interface Props {
   mainGridRef: Refs_Grid["mainGridRef"];
 }
 
-const _GridEventPreview: FC<Props> = ({
+const GridEventPreviewComponent: FC<Props> = ({
   dateCalcs,
   event,
   isOverAllDayRow,
@@ -49,7 +49,6 @@ const _GridEventPreview: FC<Props> = ({
   startOfView,
   mainGridRef,
 }) => {
-  // eslint-disable-next-line react-hooks/rules-of-hooks
   const allDayRowCount = useAppSelector(selectRowCount);
   const { getDayNumberByX, getMinuteByY } = dateCalcs;
   const { colWidths } = measurements;
@@ -147,4 +146,4 @@ const _GridEventPreview: FC<Props> = ({
   );
 };
 
-export const GridEventPreview = memo(_GridEventPreview);
+export const GridEventPreview = memo(GridEventPreviewComponent);

@@ -26,6 +26,7 @@ const MigrationToast: React.FC<MigrationToastProps> = ({
   return (
     <div className="flex items-center justify-between gap-3">
       <button
+        type="button"
         onClick={handleUndo}
         className="flex cursor-pointer flex-col gap-1 text-left"
       >
@@ -39,6 +40,7 @@ const MigrationToast: React.FC<MigrationToastProps> = ({
         </div>
       </button>
       <button
+        type="button"
         onClick={onNavigate}
         className="whitespace-nowrap rounded bg-bg-secondary px-3 py-1 text-text-lighter text-xs transition-colors hover:bg-accent-primary hover:text-text-dark"
       >

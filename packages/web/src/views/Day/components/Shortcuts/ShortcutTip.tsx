@@ -15,7 +15,7 @@ const ShortcutBadge = ({
 }) => (
   <span
     className="rounded bg-gray-400 px-1.5 py-0.5 text-gray-300 text-xs"
-    aria-label={ariaLabel}
+    title={ariaLabel}
   >
     {displayShortcut}
   </span>
@@ -33,6 +33,7 @@ export const ShortcutTip = ({
 
   if (children != null) {
     return (
+      // biome-ignore lint/a11y/noStaticElementInteractions: Hover only reveals the visible shortcut hint for nearby controls.
       <span
         className="inline-flex items-center gap-2"
         onMouseEnter={() => setIsHovered(true)}

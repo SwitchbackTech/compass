@@ -2,7 +2,6 @@ import { type UseInteractionsReturn } from "@floating-ui/react";
 import { useObservable } from "@ngneat/use-observable";
 import fastDeepEqual from "fast-deep-equal/react";
 import { type MouseEvent, memo, useCallback, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useHasLoadedOnce } from "@web/common/hooks/useHasLoadedOnce";
@@ -27,7 +26,6 @@ import { useDraft } from "@web/views/Week/components/Draft/context/useDraft";
 
 export const TimedAgendaEvents = memo(
   ({ interactions }: { interactions: UseInteractionsReturn }) => {
-    const { pathname } = useLocation();
     const [events] = useObservable(timedEvents$);
     const openEventForm = useOpenEventForm();
     const { timedEventsContainerRef, timedEventsGridRef } = useCompassRefs();

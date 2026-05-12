@@ -59,6 +59,7 @@ export const CleanupView = () => {
             Browser data cleared successfully!
           </div>
           <button
+            type="button"
             onClick={handleRedirect}
             className="rounded-sm bg-accent-primary px-6 py-3 text-white transition-colors hover:bg-accent-primary/90"
           >

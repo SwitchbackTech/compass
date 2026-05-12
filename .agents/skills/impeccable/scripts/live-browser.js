@@ -9,8 +9,7 @@
  * configure (pick action + go), generating (progressive dots), and cycling
  * (prev/next + accept/discard). Feels like Spotlight, not a modal.
  */
-(function () {
-  "use strict";
+(() => {
   if (typeof window === "undefined") return;
 
   // Guard against double-init. Bun's HTML loader may process the <script> tag
@@ -73,8 +72,7 @@
     ", height 140ms " +
     EASE +
     ", opacity 150ms ease";
-  const TOOLTIP_TRANSITION =
-    "top 140ms " + EASE + ", left 140ms " + EASE + ", opacity 150ms ease";
+  const TOOLTIP_TRANSITION = `top 140ms ${EASE}, left 140ms ${EASE}, opacity 150ms ease`;
 
   const SKIP_TAGS = new Set([
     "html",
@@ -204,8 +202,7 @@
 
   function own(el) {
     return (
-      el &&
-      (el.id?.startsWith(PREFIX) || el.closest?.('[id^="' + PREFIX + '"]'))
+      el && (el.id?.startsWith(PREFIX) || el.closest?.(`[id^="${PREFIX}"]`))
     );
   }
 
@@ -220,9 +217,9 @@
   function desc(el) {
     if (!el) return "";
     let s = el.tagName.toLowerCase();
-    if (el.id) s += "#" + el.id;
+    if (el.id) s += `#${el.id}`;
     else if (el.classList.length)
-      s += "." + [...el.classList].slice(0, 2).join(".");
+      s += `.${[...el.classList].slice(0, 2).join(".")}`;
     return s;
   }
 
@@ -275,14 +272,14 @@
 
   function initHighlight() {
     highlightEl = document.createElement("div");
-    highlightEl.id = PREFIX + "-highlight";
+    highlightEl.id = `${PREFIX}-highlight`;
     Object.assign(highlightEl.style, {
       position: "fixed",
       top: "0",
       left: "0",
       width: "0",
       height: "0",
-      border: "2px solid " + C.brand,
+      border: `2px solid ${C.brand}`,
       borderRadius: "3px",
       pointerEvents: "none",
       zIndex: Z.highlight,
@@ -294,7 +291,7 @@
     document.body.appendChild(highlightEl);
 
     tooltipEl = document.createElement("div");
-    tooltipEl.id = PREFIX + "-tooltip";
+    tooltipEl.id = `${PREFIX}-tooltip`;
     Object.assign(tooltipEl.style, {
       position: "fixed",
       background: C.ink,
@@ -317,13 +314,13 @@
   function showHighlight(el) {
     if (!el || !highlightEl) return;
     const r = el.getBoundingClientRect();
-    const top = r.top - 2 + "px",
-      left = r.left - 2 + "px";
-    const width = r.width + 4 + "px",
-      height = r.height + 4 + "px";
+    const top = `${r.top - 2}px`,
+      left = `${r.left - 2}px`;
+    const width = `${r.width + 4}px`,
+      height = `${r.height + 4}px`;
     const tipTop = r.top - 20;
-    const tipY = (tipTop < 4 ? r.bottom + 4 : tipTop) + "px";
-    const tipX = Math.max(4, r.left) + "px";
+    const tipY = `${tipTop < 4 ? r.bottom + 4 : tipTop}px`;
+    const tipX = `${Math.max(4, r.left)}px`;
     tooltipEl.textContent = desc(el);
 
     const hiWasHidden =
@@ -394,7 +391,7 @@
   let annotSvgEl = null;
   let annotPinsEl = null;
   let annotClearChipEl = null;
-  let annotState = { comments: [], strokes: [] };
+  const annotState = { comments: [], strokes: [] };
   let annotActive = false;
   // `annotPointer` is either:
   //   { kind: 'new',   x0, y0, moved, strokeEl, strokePoints }   creating a stroke/pin
@@ -405,7 +402,7 @@
 
   function initAnnotOverlay() {
     annotOverlayEl = document.createElement("div");
-    annotOverlayEl.id = PREFIX + "-annot";
+    annotOverlayEl.id = `${PREFIX}-annot`;
     Object.assign(annotOverlayEl.style, {
       position: "fixed",
       top: "0",
@@ -421,7 +418,7 @@
     });
 
     annotSvgEl = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    annotSvgEl.id = PREFIX + "-annot-svg";
+    annotSvgEl.id = `${PREFIX}-annot-svg`;
     Object.assign(annotSvgEl.style, {
       position: "absolute",
       top: "0",
@@ -436,7 +433,7 @@
     annotOverlayEl.appendChild(annotSvgEl);
 
     annotPinsEl = document.createElement("div");
-    annotPinsEl.id = PREFIX + "-annot-pins";
+    annotPinsEl.id = `${PREFIX}-annot-pins`;
     Object.assign(annotPinsEl.style, {
       position: "absolute",
       inset: "0",
@@ -445,7 +442,7 @@
     annotOverlayEl.appendChild(annotPinsEl);
 
     annotClearChipEl = document.createElement("div");
-    annotClearChipEl.id = PREFIX + "-annot-clear";
+    annotClearChipEl.id = `${PREFIX}-annot-clear`;
     annotClearChipEl.dataset.annotClear = "true";
     annotClearChipEl.textContent = "Clear";
     Object.assign(annotClearChipEl.style, {
@@ -507,12 +504,12 @@
     if (!annotOverlayEl || !el) return;
     const r = el.getBoundingClientRect();
     Object.assign(annotOverlayEl.style, {
-      top: r.top + "px",
-      left: r.left + "px",
-      width: r.width + "px",
-      height: r.height + "px",
+      top: `${r.top}px`,
+      left: `${r.left}px`,
+      width: `${r.width}px`,
+      height: `${r.height}px`,
     });
-    annotSvgEl.setAttribute("viewBox", "0 0 " + r.width + " " + r.height);
+    annotSvgEl.setAttribute("viewBox", `0 0 ${r.width} ${r.height}`);
   }
 
   function clearAnnotations() {
@@ -758,9 +755,9 @@
 
   function pointsToPath(points) {
     if (!points || points.length === 0) return "";
-    let d = "M" + points[0][0].toFixed(1) + " " + points[0][1].toFixed(1);
+    let d = `M${points[0][0].toFixed(1)} ${points[0][1].toFixed(1)}`;
     for (let i = 1; i < points.length; i++) {
-      d += " L" + points[i][0].toFixed(1) + " " + points[i][1].toFixed(1);
+      d += ` L${points[i][0].toFixed(1)} ${points[i][1].toFixed(1)}`;
     }
     return d;
   }
@@ -779,8 +776,8 @@
     if (interactive) wrap.dataset.annotPin = String(idx);
     Object.assign(wrap.style, {
       position: "absolute",
-      left: comment.x - 7 + "px",
-      top: comment.y - 7 + "px",
+      left: `${comment.x - 7}px`,
+      top: `${comment.y - 7}px`,
       pointerEvents: interactive ? "auto" : "none",
       display: "flex",
       alignItems: "flex-start",
@@ -794,7 +791,7 @@
       height: "14px",
       borderRadius: "50%",
       background: C.brand,
-      border: "2px solid " + C.white,
+      border: `2px solid ${C.white}`,
       boxShadow: "0 1px 3px rgba(0,0,0,0.25)",
       flexShrink: "0",
     });
@@ -823,7 +820,7 @@
   }
 
   function beginEditPin(idx) {
-    const wrapEl = annotPinsEl.querySelector('[data-annot-pin="' + idx + '"]');
+    const wrapEl = annotPinsEl.querySelector(`[data-annot-pin="${idx}"]`);
     if (!wrapEl) return;
     // Strip any existing bubble (but keep the dot)
     wrapEl.querySelectorAll("div:not(:first-child)").forEach((n) => n.remove());
@@ -838,7 +835,7 @@
       lineHeight: "1.4",
       padding: "4px 8px",
       borderRadius: "3px",
-      border: "1px solid " + C.brand,
+      border: `1px solid ${C.brand}`,
       outline: "none",
       marginTop: "-2px",
       width: "220px",
@@ -913,14 +910,14 @@
       position: "absolute",
       top: "0",
       left: "0",
-      width: rect.width + "px",
-      height: rect.height + "px",
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
       pointerEvents: "none",
       overflow: "visible",
     });
     if (strokes.length > 0) {
       const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-      svg.setAttribute("viewBox", "0 0 " + rect.width + " " + rect.height);
+      svg.setAttribute("viewBox", `0 0 ${rect.width} ${rect.height}`);
       Object.assign(svg.style, {
         position: "absolute",
         top: "0",
@@ -1001,9 +998,9 @@
       parentContext: el.parentElement
         ? "<" +
           el.parentElement.tagName.toLowerCase() +
-          (el.parentElement.id ? ' id="' + el.parentElement.id + '"' : "") +
+          (el.parentElement.id ? ` id="${el.parentElement.id}"` : "") +
           (el.parentElement.className
-            ? ' class="' + el.parentElement.className + '"'
+            ? ` class="${el.parentElement.className}"`
             : "") +
           ">"
         : null,
@@ -1036,18 +1033,17 @@
   function initBar() {
     BP = barPaletteForTheme(detectPageTheme());
     barEl = document.createElement("div");
-    barEl.id = PREFIX + "-bar";
+    barEl.id = `${PREFIX}-bar`;
     Object.assign(barEl.style, {
       position: "fixed",
       zIndex: Z.bar,
       display: "none",
       opacity: "0",
       transform: "translateY(6px)",
-      transition: "opacity 0.25s " + EASE + ", transform 0.3s " + EASE,
       background: BP.surface,
       backdropFilter: "blur(16px)",
       WebkitBackdropFilter: "blur(16px)",
-      border: "1px solid " + BP.hairline,
+      border: `1px solid ${BP.hairline}`,
       borderRadius: "10px",
       boxShadow: BAR_SHADOW_DEFAULT,
       transition:
@@ -1092,7 +1088,7 @@
     if (left < GAP) left = GAP;
     if (left + barW > window.innerWidth - GAP)
       left = window.innerWidth - barW - GAP;
-    Object.assign(barEl.style, { top: top + "px", left: left + "px" });
+    Object.assign(barEl.style, { top: `${top}px`, left: `${left}px` });
   }
 
   function showBar(mode) {
@@ -1124,7 +1120,7 @@
     barEl.innerHTML = "";
     // Reset bar styling to the theme-aware palette
     barEl.style.background = BP.surface;
-    barEl.style.border = "1px solid " + BP.hairline;
+    barEl.style.border = `1px solid ${BP.hairline}`;
     if (mode === "configure") barEl.appendChild(buildConfigureRow());
     else if (mode === "generating") barEl.appendChild(buildGeneratingRow());
     else if (mode === "cycling") barEl.appendChild(buildCyclingRow());
@@ -1163,7 +1159,7 @@
       whiteSpace: "nowrap",
       flexShrink: "0",
     });
-    pill.textContent = actionLabel() + " \u25BE";
+    pill.textContent = `${actionLabel()} \u25BE`;
     pill.addEventListener(
       "mouseenter",
       () => (pill.style.background = BP.accent),
@@ -1190,7 +1186,7 @@
     // is set explicitly via a one-shot stylesheet keyed off this input's id
     // so it picks up the bar's `textDim` token in both themes.
     const input = document.createElement("input");
-    input.id = PREFIX + "-input";
+    input.id = `${PREFIX}-input`;
     input.type = "text";
     input.placeholder =
       selectedAction === "impeccable"
@@ -1209,9 +1205,9 @@
       outline: "none",
       transition: "border-color 0.15s ease",
     });
-    if (!document.getElementById(PREFIX + "-input-style")) {
+    if (!document.getElementById(`${PREFIX}-input-style`)) {
       const s = document.createElement("style");
-      s.id = PREFIX + "-input-style";
+      s.id = `${PREFIX}-input-style`;
       s.textContent =
         "#" +
         PREFIX +
@@ -1252,7 +1248,7 @@
     const count = el("button", {
       padding: "4px 6px",
       borderRadius: "5px",
-      border: "1px solid " + BP.hairline,
+      border: `1px solid ${BP.hairline}`,
       background: "transparent",
       fontFamily: MONO,
       fontSize: "11px",
@@ -1263,7 +1259,7 @@
       flexShrink: "0",
       whiteSpace: "nowrap",
     });
-    count.textContent = "\u00D7" + selectedCount;
+    count.textContent = `\u00D7${selectedCount}`;
     count.title = "Variants: click to change";
     count.addEventListener("mouseenter", () => {
       count.style.color = BP.text;
@@ -1276,7 +1272,7 @@
     count.addEventListener("click", (e) => {
       e.stopPropagation();
       selectedCount = selectedCount >= 4 ? 2 : selectedCount + 1;
-      count.textContent = "\u00D7" + selectedCount;
+      count.textContent = `\u00D7${selectedCount}`;
     });
     row.appendChild(count);
 
@@ -1352,7 +1348,7 @@
     // per-variant counter would lie. Say what's true.
     status.textContent =
       arrivedVariants < expectedVariants
-        ? "Generating " + expectedVariants + " variants..."
+        ? `Generating ${expectedVariants} variants...`
         : "Done";
     row.appendChild(status);
 
@@ -1393,7 +1389,7 @@
       minWidth: "24px",
       textAlign: "center",
     });
-    counter.textContent = visibleVariant + "/" + arrivedVariants;
+    counter.textContent = `${visibleVariant}/${arrivedVariants}`;
     row.appendChild(counter);
 
     // Next
@@ -1514,7 +1510,7 @@
     const discard = el("button", {
       padding: "4px 6px",
       borderRadius: "5px",
-      border: "1px solid " + BP.hairline,
+      border: `1px solid ${BP.hairline}`,
       background: "transparent",
       fontFamily: FONT,
       fontSize: "11px",
@@ -1556,7 +1552,7 @@
       width: "14px",
       height: "14px",
       borderRadius: "50%",
-      border: "2px solid " + BP.hairline,
+      border: `2px solid ${BP.hairline}`,
       borderTopColor: BP.accent,
       animation: "impeccable-spin 0.6s linear infinite",
       flexShrink: "0",
@@ -1571,9 +1567,9 @@
     row.appendChild(label);
 
     // Inject the keyframes if not already present
-    if (!document.getElementById(PREFIX + "-keyframes")) {
+    if (!document.getElementById(`${PREFIX}-keyframes`)) {
       const style = document.createElement("style");
-      style.id = PREFIX + "-keyframes";
+      style.id = `${PREFIX}-keyframes`;
       style.textContent =
         "@keyframes impeccable-spin { to { transform: rotate(360deg); } }";
       document.head.appendChild(style);
@@ -1625,7 +1621,7 @@
       // magenta chips, especially when all variants had arrived and every
       // dot wore an accent ring.
       const dotBg = active ? C.brand : arrived ? BP.textDim : "transparent";
-      const dotBorder = arrived ? "none" : "1.5px solid " + BP.hairline;
+      const dotBorder = arrived ? "none" : `1.5px solid ${BP.hairline}`;
       const dot = el("div", {
         width: active ? "8px" : "6px",
         height: active ? "8px" : "6px",
@@ -1633,7 +1629,7 @@
         background: dotBg,
         border: dotBorder,
         boxSizing: "border-box",
-        transition: "all 0.2s " + EASE,
+        transition: `all 0.2s ${EASE}`,
         cursor: clickable && arrived ? "pointer" : "default",
         transform: arrived ? "scale(1)" : "scale(0.85)",
         opacity: arrived ? (active ? "1" : "0.6") : "0.4",
@@ -1658,7 +1654,7 @@
       width: "26px",
       height: "26px",
       borderRadius: "5px",
-      border: "1px solid " + BP.hairline,
+      border: `1px solid ${BP.hairline}`,
       background: "transparent",
       color: BP.text,
       fontFamily: FONT,
@@ -1699,7 +1695,7 @@
   function initActionPicker() {
     const P = barPaletteForTheme(detectPageTheme());
     pickerEl = document.createElement("div");
-    pickerEl.id = PREFIX + "-picker";
+    pickerEl.id = `${PREFIX}-picker`;
     Object.assign(pickerEl.style, {
       position: "fixed",
       zIndex: Z.picker,
@@ -1707,9 +1703,9 @@
       opacity: "0",
       transform: "scale(0.96) translateY(4px)",
       transformOrigin: "bottom left",
-      transition: "opacity 0.18s " + EASE + ", transform 0.2s " + EASE,
+      transition: `opacity 0.18s ${EASE}, transform 0.2s ${EASE}`,
       background: P.surface,
-      border: "1px solid " + P.hairline,
+      border: `1px solid ${P.hairline}`,
       borderRadius: "10px",
       boxShadow:
         "0 8px 30px oklch(0% 0 0 / 0.10), 0 2px 6px oklch(0% 0 0 / 0.06)",
@@ -1803,8 +1799,8 @@
     let top = barRect.top - pickerH - 6;
     if (top < 8) top = barRect.bottom + 6;
     Object.assign(pickerEl.style, {
-      top: top + "px",
-      left: barRect.left + "px",
+      top: `${top}px`,
+      left: `${barRect.left}px`,
       display: "block",
     });
     requestAnimationFrame(() => {
@@ -1844,7 +1840,7 @@
   // ---------------------------------------------------------------------------
 
   let paramsPanelEl = null; // outer wrapper (overflow:hidden, clips the slide)
-  let paramsPanelInner = null; // translating content (carries bg, padding, knobs)
+  let _paramsPanelInner = null; // translating content (carries bg, padding, knobs)
   let paramsPanelBody = null; // grid holding the knob cells
   let paramsCurrentValues = {}; // {paramId: value} — mirror of the visible variant's live values
   let tuneOpen = false; // whether the Tune popover is open right now
@@ -1866,7 +1862,7 @@
     // hides everything initially; as it grows, content is revealed from
     // the bar edge outward.
     paramsPanelEl = document.createElement("div");
-    paramsPanelEl.id = PREFIX + "-params-panel";
+    paramsPanelEl.id = `${PREFIX}-params-panel`;
     Object.assign(paramsPanelEl.style, {
       position: "fixed",
       zIndex: String(Z.bar - 1),
@@ -1884,7 +1880,7 @@
       // transition support across engines. Closed state clips from the far
       // edge; open = inset(0) shows everything.
       clipPath: "inset(0 0 100% 0)",
-      transition: "clip-path 0.44s " + EASE,
+      transition: `clip-path 0.44s ${EASE}`,
 
       // Park off-screen until positionParamsPanel places it. These are NOT
       // in the transition list, so they snap instantly — no fly-in from the
@@ -1906,17 +1902,17 @@
     // click-through) and 'auto' (open) on its own. Just silence the host's
     // outside-interaction listeners while the panel is open.
     defangOutsideHandlers(paramsPanelEl, { setPointerEvents: false });
-    paramsPanelInner = paramsPanelEl; // compatibility alias for the rest of the code
+    _paramsPanelInner = paramsPanelEl; // compatibility alias for the rest of the code
   }
 
   function getVisibleVariantEl() {
     if (!currentSessionId) return null;
     const wrapper = document.querySelector(
-      '[data-impeccable-variants="' + currentSessionId + '"]',
+      `[data-impeccable-variants="${currentSessionId}"]`,
     );
     if (!wrapper) return null;
     return wrapper.querySelector(
-      '[data-impeccable-variant="' + visibleVariant + '"]',
+      `[data-impeccable-variant="${visibleVariant}"]`,
     );
   }
 
@@ -1938,12 +1934,12 @@
 
   function applyParamValue(variantEl, param, value) {
     if (!variantEl) return;
-    const attr = "data-p-" + param.id;
+    const attr = `data-p-${param.id}`;
     if (param.kind === "range") {
-      variantEl.style.setProperty("--p-" + param.id, String(value));
+      variantEl.style.setProperty(`--p-${param.id}`, String(value));
     } else if (param.kind === "toggle") {
       const on = !!value;
-      variantEl.style.setProperty("--p-" + param.id, on ? "1" : "0");
+      variantEl.style.setProperty(`--p-${param.id}`, on ? "1" : "0");
       if (on) variantEl.setAttribute(attr, "on");
       else variantEl.removeAttribute(attr);
     } else if (param.kind === "steps") {
@@ -1963,7 +1959,7 @@
     const max = parseFloat(input.max),
       min = parseFloat(input.min);
     const v = parseFloat(input.value);
-    if (!isFinite(v)) return input.value;
+    if (!Number.isFinite(v)) return input.value;
     return max - min <= 2 ? v.toFixed(2) : String(Math.round(v));
   }
 
@@ -2043,7 +2039,7 @@
           height: "16px",
           borderRadius: "50%",
           background: "oklch(98% 0 0)",
-          transition: "left 0.18s " + EASE,
+          transition: `left 0.18s ${EASE}`,
           boxShadow: "0 1px 2px oklch(0% 0 0 / 0.2)",
         });
         track.appendChild(knob);
@@ -2066,7 +2062,7 @@
         readout.textContent = activeOpt ? activeOpt.label : String(p.default);
         const segRow = el("div", {
           display: "grid",
-          gridTemplateColumns: "repeat(" + opts.length + ", 1fr)",
+          gridTemplateColumns: `repeat(${opts.length}, 1fr)`,
           gap: "1px",
           padding: "2px",
           background: P.hairline,
@@ -2151,20 +2147,20 @@
     const prevDirection = paramsPanelEl.dataset.tuneDirection;
 
     // top/left/width are NOT in the transition list, so they snap instantly.
-    paramsPanelEl.style.left = br.left + "px";
-    paramsPanelEl.style.width = br.width + "px";
+    paramsPanelEl.style.left = `${br.left}px`;
+    paramsPanelEl.style.width = `${br.width}px`;
 
     if (direction === "below") {
-      paramsPanelEl.style.top = br.bottom - TUNE_OVERLAP + "px";
+      paramsPanelEl.style.top = `${br.bottom - TUNE_OVERLAP}px`;
       paramsPanelEl.style.borderRadius = "0 0 10px 10px";
-      paramsPanelEl.style.paddingTop = 14 + TUNE_OVERLAP + "px";
+      paramsPanelEl.style.paddingTop = `${14 + TUNE_OVERLAP}px`;
       paramsPanelEl.style.paddingBottom = "14px";
     } else {
       const ih = paramsPanelEl.offsetHeight || 80;
-      paramsPanelEl.style.top = br.top - ih + TUNE_OVERLAP + "px";
+      paramsPanelEl.style.top = `${br.top - ih + TUNE_OVERLAP}px`;
       paramsPanelEl.style.borderRadius = "10px 10px 0 0";
       paramsPanelEl.style.paddingTop = "14px";
-      paramsPanelEl.style.paddingBottom = 14 + TUNE_OVERLAP + "px";
+      paramsPanelEl.style.paddingBottom = `${14 + TUNE_OVERLAP}px`;
     }
     paramsPanelEl.dataset.tuneDirection = direction;
 
@@ -2270,7 +2266,7 @@
 
   function showVariantInDOM(sessionId, num) {
     const wrapper = document.querySelector(
-      '[data-impeccable-variants="' + sessionId + '"]',
+      `[data-impeccable-variants="${sessionId}"]`,
     );
     if (!wrapper) return;
     for (const child of wrapper.children) {
@@ -2289,7 +2285,7 @@
    * parse it, extract the variant wrapper, and inject it into the live DOM.
    * This works even when the dev server caches HTML (Bun, static servers).
    */
-  function injectVariantsFromSource(filePath, sessionId) {
+  function _injectVariantsFromSource(filePath, sessionId) {
     const url =
       "http://localhost:" +
       PORT +
@@ -2307,7 +2303,7 @@
         const parser = new DOMParser();
         const doc = parser.parseFromString(html, "text/html");
         const srcWrapper = doc.querySelector(
-          '[data-impeccable-variants="' + sessionId + '"]',
+          `[data-impeccable-variants="${sessionId}"]`,
         );
         if (!srcWrapper) {
           console.error(
@@ -2333,7 +2329,7 @@
         } else if (cls) {
           // Find by tag + exact class match
           const candidates = document.querySelectorAll(
-            tag + "." + cls.split(" ")[0],
+            `${tag}.${cls.split(" ")[0]}`,
           );
           for (const c of candidates) {
             if (c.className === cls && !own(c)) {
@@ -2365,6 +2361,7 @@
         arrivedVariants = variants.length;
         expectedVariants = parseInt(
           wrapper.dataset.impeccableVariantCount || arrivedVariants,
+          10,
         );
         const saved = loadSession();
         const savedVisibleVariant =
@@ -2413,7 +2410,7 @@
   function updateSelectedElement() {
     if (!currentSessionId) return;
     const wrapper = document.querySelector(
-      '[data-impeccable-variants="' + currentSessionId + '"]',
+      `[data-impeccable-variants="${currentSessionId}"]`,
     );
     if (!wrapper) return;
     const visEl = pickVariantContent(wrapper, visibleVariant);
@@ -2422,7 +2419,7 @@
 
   function readVisibleVariantFromDOM(sessionId) {
     const wrapper = document.querySelector(
-      '[data-impeccable-variants="' + sessionId + '"]',
+      `[data-impeccable-variants="${sessionId}"]`,
     );
     if (!wrapper) return 0;
     const variants = wrapper.querySelectorAll(
@@ -2445,7 +2442,7 @@
   function pickVariantContent(wrapper, index) {
     if (!wrapper) return null;
     const variantDiv = wrapper.querySelector(
-      '[data-impeccable-variant="' + index + '"]',
+      `[data-impeccable-variant="${index}"]`,
     );
     if (!variantDiv) return null;
     const NON_VISUAL = new Set(["STYLE", "SCRIPT", "LINK", "META", "TEMPLATE"]);
@@ -2462,7 +2459,7 @@
   function startScrollLock(sessionId, initialTargetY) {
     stopScrollLock();
     scrollLockTargetY =
-      typeof initialTargetY === "number" && isFinite(initialTargetY)
+      typeof initialTargetY === "number" && Number.isFinite(initialTargetY)
         ? initialTargetY
         : window.scrollY;
     console.log("[impeccable.scroll] startScrollLock", {
@@ -2514,15 +2511,13 @@
 
     scrollLockObserver = new MutationObserver((mutations) => {
       for (const m of mutations) {
-        if (
-          m.target?.closest?.('[data-impeccable-variants="' + sessionId + '"]')
-        ) {
+        if (m.target?.closest?.(`[data-impeccable-variants="${sessionId}"]`)) {
           const childAdds = Array.from(m.addedNodes)
             .map((n) =>
               n.nodeType === 1
                 ? n.tagName +
                   (n.dataset?.impeccableVariant
-                    ? "[variant=" + n.dataset.impeccableVariant + "]"
+                    ? `[variant=${n.dataset.impeccableVariant}]`
                     : "")
                 : n.nodeType,
             )
@@ -2540,10 +2535,8 @@
         for (const n of m.addedNodes) {
           if (
             n.nodeType === 1 &&
-            (n.matches?.('[data-impeccable-variants="' + sessionId + '"]') ||
-              n.querySelector?.(
-                '[data-impeccable-variants="' + sessionId + '"]',
-              ))
+            (n.matches?.(`[data-impeccable-variants="${sessionId}"]`) ||
+              n.querySelector?.(`[data-impeccable-variants="${sessionId}"]`))
           ) {
             console.log("[impeccable.scroll] wrapper node added", {
               tag: n.tagName,
@@ -2622,7 +2615,7 @@
             "ArrowUp",
           ].includes(e.key)
         )
-          markGesture("key:" + e.key);
+          markGesture(`key:${e.key}`);
       },
       sig,
     );
@@ -2736,7 +2729,7 @@
       if (!dominated) return;
 
       const wrapper = document.querySelector(
-        '[data-impeccable-variants="' + sessionId + '"]',
+        `[data-impeccable-variants="${sessionId}"]`,
       );
       if (!wrapper) return;
 
@@ -2773,7 +2766,10 @@
         if (visEl) selectedElement = visEl;
       }
 
-      const expected = parseInt(wrapper.dataset.impeccableVariantCount || "0");
+      const expected = parseInt(
+        wrapper.dataset.impeccableVariantCount || "0",
+        10,
+      );
       if (expected > 0) expectedVariants = expected;
 
       if (arrivedVariants >= expectedVariants && expectedVariants > 0) {
@@ -2837,7 +2833,7 @@
 
   function connectSSE() {
     evtSource = new EventSource(
-      "http://localhost:" + PORT + "/events?token=" + TOKEN,
+      `http://localhost:${PORT}/events?token=${TOKEN}`,
     );
 
     evtSource.onopen = () => {
@@ -2892,7 +2888,7 @@
           break;
         case "error":
           console.error("[impeccable] Error:", msg.message);
-          showToast("Error: " + msg.message, 5000);
+          showToast(`Error: ${msg.message}`, 5000);
           hideBar();
           state = "PICKING";
           break;
@@ -2949,19 +2945,17 @@
     msg.token = TOKEN;
     function handleFailure(err) {
       console.error("[impeccable] Failed to send event:", err);
-      if (opts && opts.throwOnError) throw err;
+      if (opts?.throwOnError) throw err;
       return null;
     }
-    return fetch("http://localhost:" + PORT + "/events", {
+    return fetch(`http://localhost:${PORT}/events`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(msg),
     })
       .then((res) => {
         if (res.ok) return res;
-        return handleFailure(
-          new Error("HTTP " + res.status + " " + res.statusText),
-        );
+        return handleFailure(new Error(`HTTP ${res.status} ${res.statusText}`));
       })
       .catch(handleFailure);
   }
@@ -3148,8 +3142,7 @@
 
   function handleKeyDown(e) {
     // When the annotation input is focused, let it handle its own keys.
-    if (annotEditing && annotEditing.input && e.target === annotEditing.input)
-      return;
+    if (annotEditing?.input && e.target === annotEditing.input) return;
     if (e.key === "Escape") {
       e.preventDefault();
       if (pickerEl?.style.display !== "none") {
@@ -3254,7 +3247,7 @@
 
   function handleGo() {
     if (!selectedElement || state !== "CONFIGURING") return;
-    const input = document.getElementById(PREFIX + "-input");
+    const input = document.getElementById(`${PREFIX}-input`);
     const prompt = input ? input.value.trim() : "";
 
     // Commit any pending pin edit BEFORE we snapshot annotations.
@@ -3324,7 +3317,7 @@
     if (msLoadPromise) return msLoadPromise;
     msLoadPromise = new Promise((resolve, reject) => {
       const s = document.createElement("script");
-      s.src = "http://localhost:" + PORT + "/modern-screenshot.js";
+      s.src = `http://localhost:${PORT}/modern-screenshot.js`;
       s.onload = () => resolve(window.modernScreenshot);
       s.onerror = () => {
         msLoadPromise = null;
@@ -3364,9 +3357,10 @@
   async function inlineFontUrls(cssText) {
     const urlRe = /url\((['"]?)(https?:\/\/[^'")\s]+)\1\)/g;
     const urls = new Set();
-    let m;
-    while ((m = urlRe.exec(cssText))) {
+    let m = urlRe.exec(cssText);
+    while (m) {
       if (FONT_EXT_RE.test(m[2])) urls.add(m[2]);
+      m = urlRe.exec(cssText);
     }
     const map = new Map();
     await Promise.all(
@@ -3377,7 +3371,7 @@
           const buf = await res.arrayBuffer();
           const ext = url.toLowerCase().match(FONT_EXT_RE)?.[1] || "woff2";
           const mime = FONT_MIME[ext] || "application/octet-stream";
-          map.set(url, "data:" + mime + ";base64," + bufferToBase64(buf));
+          map.set(url, `data:${mime};base64,${bufferToBase64(buf)}`);
         } catch {
           /* skip; fall through to URL */
         }
@@ -3385,7 +3379,7 @@
     );
     return cssText.replace(urlRe, (orig, q, url) => {
       const data = map.get(url);
-      return data ? "url(" + q + data + q + ")" : orig;
+      return data ? `url(${q}${data}${q})` : orig;
     });
   }
   async function collectFontCssText() {
@@ -3408,8 +3402,11 @@
           const res = await fetch(sheet.href);
           if (!res.ok) continue;
           const text = await res.text();
-          let m2;
-          while ((m2 = fontFaceRe.exec(text))) chunks.push(m2[0]);
+          let m2 = fontFaceRe.exec(text);
+          while (m2) {
+            chunks.push(m2[0]);
+            m2 = fontFaceRe.exec(text);
+          }
         } catch {
           /* ignore; capture is best-effort */
         }
@@ -3620,7 +3617,7 @@ void main() {
     if (!gl.getShaderParameter(sh, gl.COMPILE_STATUS)) {
       const info = gl.getShaderInfoLog(sh);
       gl.deleteShader(sh);
-      throw new Error("shader compile failed: " + info);
+      throw new Error(`shader compile failed: ${info}`);
     }
     return sh;
   }
@@ -3629,10 +3626,10 @@ void main() {
     if (!shaderState || !selectedElement) return;
     const r = selectedElement.getBoundingClientRect();
     Object.assign(shaderState.canvas.style, {
-      top: r.top + "px",
-      left: r.left + "px",
-      width: r.width + "px",
-      height: r.height + "px",
+      top: `${r.top}px`,
+      left: `${r.left}px`,
+      width: `${r.width}px`,
+      height: `${r.height}px`,
     });
   }
 
@@ -3651,16 +3648,16 @@ void main() {
     hideShaderOverlay();
     if (!blob || !el) return;
     const canvas = document.createElement("canvas");
-    canvas.id = PREFIX + "-shader";
+    canvas.id = `${PREFIX}-shader`;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.max(1, Math.floor(rect.width * dpr));
     canvas.height = Math.max(1, Math.floor(rect.height * dpr));
     Object.assign(canvas.style, {
       position: "fixed",
-      top: rect.top + "px",
-      left: rect.left + "px",
-      width: rect.width + "px",
-      height: rect.height + "px",
+      top: `${rect.top}px`,
+      left: `${rect.left}px`,
+      width: `${rect.width}px`,
+      height: `${rect.height}px`,
       pointerEvents: "none",
       zIndex: Z.bar - 1,
     });
@@ -3677,13 +3674,13 @@ void main() {
       canvas.remove();
       const img = document.createElement("img");
       img.src = URL.createObjectURL(blob);
-      img.id = PREFIX + "-shader";
+      img.id = `${PREFIX}-shader`;
       // Copy positioning via cssText. Object.assign across CSSStyleDeclaration
       // throws in modern Chromium because the source's indexed properties
       // (style[0], [1], ...) are read-only and the engine forbids writing
       // them on the destination.
       img.style.cssText = canvas.style.cssText;
-      img.style.outline = "2px dashed " + C.brand;
+      img.style.outline = `2px dashed ${C.brand}`;
       img.style.outlineOffset = "-2px";
       document.body.appendChild(img);
       shaderState = {
@@ -3707,7 +3704,7 @@ void main() {
       gl.linkProgram(program);
       if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
         throw new Error(
-          "program link failed: " + gl.getProgramInfoLog(program),
+          `program link failed: ${gl.getProgramInfoLog(program)}`,
         );
       }
       // Full-screen quad
@@ -3781,6 +3778,7 @@ void main() {
       const elapsed = (performance.now() - shaderState.startTime) / 1000;
       const t = shaderState.reduced ? 0.0 : elapsed;
       gl.viewport(0, 0, canvas.width, canvas.height);
+      // biome-ignore lint/correctness/useHookAtTopLevel: WebGL's useProgram method is not a React hook.
       gl.useProgram(program);
       gl.activeTexture(gl.TEXTURE0);
       gl.bindTexture(gl.TEXTURE_2D, texture);
@@ -3844,7 +3842,7 @@ void main() {
     }
 
     function scheduleAcceptCleanup() {
-      setTimeout(function () {
+      setTimeout(() => {
         hideBar();
         hideHighlight();
         stopScrollTracking();
@@ -3866,15 +3864,15 @@ void main() {
       // on or the app isn't React at all. Preserve the `data-impeccable-variant="N"`
       // div (with display:contents) so @scope rules anchored to the variant
       // attribute keep matching until reload replaces it with the carbonize block.
-      setTimeout(function () {
+      setTimeout(() => {
         const wrapper = document.querySelector(
-          '[data-impeccable-variants="' + acceptedSessionId + '"]',
+          `[data-impeccable-variants="${acceptedSessionId}"]`,
         );
         if (!wrapper) return;
         const accepted = wrapper.querySelector(
-          '[data-impeccable-variant="' + acceptedVariant + '"]',
+          `[data-impeccable-variant="${acceptedVariant}"]`,
         );
-        if (accepted && accepted.firstElementChild) {
+        if (accepted?.firstElementChild) {
           const parent = wrapper.parentElement;
           if (!parent) return;
           accepted.style.display = "contents";
@@ -3953,14 +3951,14 @@ void main() {
     const cleanupSessionId = currentSessionId;
     if (cleanupSessionId) {
       const wrapper = document.querySelector(
-        '[data-impeccable-variants="' + cleanupSessionId + '"]',
+        `[data-impeccable-variants="${cleanupSessionId}"]`,
       );
       if (wrapper) wrapper.style.display = "none";
     }
-    setTimeout(function () {
+    setTimeout(() => {
       if (!cleanupSessionId) return;
       const wrapper = document.querySelector(
-        '[data-impeccable-variants="' + cleanupSessionId + '"]',
+        `[data-impeccable-variants="${cleanupSessionId}"]`,
       );
       if (!wrapper) return;
       const orig = wrapper.querySelector(
@@ -4008,7 +4006,7 @@ void main() {
         : 16;
     toastEl = el("div", {
       position: "fixed",
-      bottom: barTopFromBottom + "px",
+      bottom: `${barTopFromBottom}px`,
       left: "50%",
       transform: "translateX(-50%) translateY(8px)",
       background: C.ink,
@@ -4019,12 +4017,12 @@ void main() {
       borderRadius: "8px",
       zIndex: Z.toast,
       opacity: "0",
-      transition: "opacity 0.25s " + EASE + ", transform 0.25s " + EASE,
+      transition: `opacity 0.25s ${EASE}, transform 0.25s ${EASE}`,
       pointerEvents: "none",
       maxWidth: "420px",
       textAlign: "center",
     });
-    toastEl.id = PREFIX + "-toast";
+    toastEl.id = `${PREFIX}-toast`;
     toastEl.textContent = message;
     document.body.appendChild(toastEl);
     requestAnimationFrame(() => {
@@ -4066,7 +4064,10 @@ void main() {
     if (isSessionHandled(sessionId)) return false;
 
     currentSessionId = sessionId;
-    expectedVariants = parseInt(wrapper.dataset.impeccableVariantCount || "0");
+    expectedVariants = parseInt(
+      wrapper.dataset.impeccableVariantCount || "0",
+      10,
+    );
     const variants = wrapper.querySelectorAll(
       '[data-impeccable-variant]:not([data-impeccable-variant="original"])',
     );
@@ -4227,7 +4228,7 @@ void main() {
   }
 
   // Impeccable logo mark — matches the site-header SVG (rounded square + "/").
-  function brandMarkSvg(fill, ink, size = 18) {
+  function _brandMarkSvg(fill, ink, size = 18) {
     return `<svg width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">
       <rect width="32" height="32" rx="7" fill="${fill}"/>
       <text x="16" y="24" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="500" fill="${ink}" text-anchor="middle">/</text>
@@ -4241,9 +4242,9 @@ void main() {
     // Custom focus-visible for bar buttons. Browser default is a heavy
     // blue ring that looks jarring on the dark capsule. Replace with a
     // soft accent-tinted inner ring that respects the bar's palette.
-    if (!document.getElementById(PREFIX + "-bar-focus-style")) {
+    if (!document.getElementById(`${PREFIX}-bar-focus-style`)) {
       const s = document.createElement("style");
-      s.id = PREFIX + "-bar-focus-style";
+      s.id = `${PREFIX}-bar-focus-style`;
       s.textContent =
         "#" +
         PREFIX +
@@ -4273,7 +4274,7 @@ void main() {
       background: P.surface,
       backdropFilter: "blur(16px)",
       WebkitBackdropFilter: "blur(16px)",
-      border: "1px solid " + P.hairline,
+      border: `1px solid ${P.hairline}`,
       borderRadius: "10px",
       boxShadow:
         "0 4px 20px oklch(0% 0 0 / 0.12), 0 1px 3px oklch(0% 0 0 / 0.08)",
@@ -4282,9 +4283,9 @@ void main() {
       lineHeight: "1",
       opacity: "0",
       overflow: "hidden", // clip the full-bleed brand mark to the bar radius
-      transition: "opacity 0.3s " + EASE + ", transform 0.3s " + EASE,
+      transition: `opacity 0.3s ${EASE}, transform 0.3s ${EASE}`,
     });
-    globalBarEl.id = PREFIX + "-global-bar";
+    globalBarEl.id = `${PREFIX}-global-bar`;
     globalBarEl.dataset.theme = theme;
 
     // Brand mark — fills bar height on the left. Left side inherits the bar's
@@ -4314,7 +4315,7 @@ void main() {
       padding: "4px 5px",
       gap: "2px",
     });
-    inner.id = PREFIX + "-global-bar-inner";
+    inner.id = `${PREFIX}-global-bar-inner`;
     globalBarEl.appendChild(inner);
 
     // --- button factory: icon-only at rest, label slides in on hover/active ---
@@ -4375,7 +4376,7 @@ void main() {
 
     // Pick toggle — starts active (primary intent when entering live mode).
     const pickBtn = makeIconBtn({
-      id: PREFIX + "-pick-toggle",
+      id: `${PREFIX}-pick-toggle`,
       svg: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="22" y1="12" x2="18" y2="12"/><line x1="6" y1="12" x2="2" y2="12"/><line x1="12" y1="6" x2="12" y2="2"/><line x1="12" y1="22" x2="12" y2="18"/></svg>',
       label: "Pick",
       ariaLabel: "Pick element",
@@ -4389,7 +4390,7 @@ void main() {
 
     // Detect toggle
     const detectBtn = makeIconBtn({
-      id: PREFIX + "-detect-toggle",
+      id: `${PREFIX}-detect-toggle`,
       svg: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>',
       label: "Detect",
       ariaLabel: "Detect anti-patterns",
@@ -4407,13 +4408,13 @@ void main() {
       fontFamily: MONO,
       marginLeft: "4px",
     });
-    detectBadge.id = PREFIX + "-detect-badge";
+    detectBadge.id = `${PREFIX}-detect-badge`;
     detectBtn.appendChild(detectBadge);
     inner.appendChild(detectBtn);
 
     // DESIGN.md panel toggle — quartet of color squares as the mark.
     const designBtn = makeIconBtn({
-      id: PREFIX + "-design-toggle",
+      id: `${PREFIX}-design-toggle`,
       svg: `<span style="display:inline-grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;width:14px;height:14px;border-radius:3px;overflow:hidden;box-shadow:inset 0 0 0 1px ${P.hairline};flex-shrink:0">
         <span style="background:oklch(60% 0.25 350)"></span>
         <span style="background:oklch(60% 0.15 45)"></span>
@@ -4484,10 +4485,10 @@ void main() {
     // Buttons with dataset.active="true" ignore collapse (their label stays).
     const toggles = [pickBtn, detectBtn, designBtn];
     globalBarEl.addEventListener("mouseenter", () => {
-      toggles.forEach((t) => t._expandLabel && t._expandLabel());
+      toggles.forEach((t) => t._expandLabel?.());
     });
     globalBarEl.addEventListener("mouseleave", () => {
-      toggles.forEach((t) => t._collapseLabel && t._collapseLabel());
+      toggles.forEach((t) => t._collapseLabel?.());
     });
 
     document.body.appendChild(globalBarEl);
@@ -4503,10 +4504,10 @@ void main() {
   }
 
   function updateGlobalBarState() {
-    const detectToggle = document.getElementById(PREFIX + "-detect-toggle");
-    const detectBadge = document.getElementById(PREFIX + "-detect-badge");
-    const pickToggle = document.getElementById(PREFIX + "-pick-toggle");
-    const designToggle = document.getElementById(PREFIX + "-design-toggle");
+    const detectToggle = document.getElementById(`${PREFIX}-detect-toggle`);
+    const detectBadge = document.getElementById(`${PREFIX}-detect-badge`);
+    const pickToggle = document.getElementById(`${PREFIX}-pick-toggle`);
+    const designToggle = document.getElementById(`${PREFIX}-design-toggle`);
     const theme = globalBarEl?.dataset.theme || "light";
     const P = barPaletteForTheme(theme);
 
@@ -4526,7 +4527,7 @@ void main() {
     // If the bar is currently under the cursor, keep all labels expanded —
     // otherwise clicking a toggle that deactivates (e.g. closing DESIGN.md)
     // would collapse its label while the user's mouse is still on the bar.
-    if (globalBarEl && globalBarEl.matches(":hover")) {
+    if (globalBarEl?.matches(":hover")) {
       [pickToggle, detectToggle, designToggle].forEach((t) =>
         t?._expandLabel?.(),
       );
@@ -4595,7 +4596,7 @@ void main() {
     if (detectScriptLoaded) return;
     detectScriptLoaded = true;
     const s = document.createElement("script");
-    s.src = "http://localhost:" + PORT + "/detect.js";
+    s.src = `http://localhost:${PORT}/detect.js`;
     s.dataset.impeccableExtension = "true";
     document.head.appendChild(s);
   }
@@ -4650,7 +4651,7 @@ void main() {
     if (paramsPanelEl) {
       paramsPanelEl.remove();
       paramsPanelEl = null;
-      paramsPanelInner = null;
+      _paramsPanelInner = null;
       paramsPanelBody = null;
     }
     if (evtSource) {
@@ -4677,7 +4678,7 @@ void main() {
 
   let designHost = null;
   let designShadow = null;
-  let designState = {
+  const designState = {
     open: false,
     tab: "visual", // 'visual' | 'raw'
     parsed: null, // parseDesignMd output (frontmatter + body sections)
@@ -4730,7 +4731,7 @@ void main() {
 
   function initDesignPanel() {
     designHost = document.createElement("div");
-    designHost.id = PREFIX + "-design-host";
+    designHost.id = `${PREFIX}-design-host`;
     Object.assign(designHost.style, {
       position: "fixed",
       top: "0",
@@ -5340,7 +5341,7 @@ void main() {
   }
 
   function findProseDescription(proseColors, key, displayName) {
-    if (!proseColors || !proseColors.groups) return null;
+    if (!proseColors?.groups) return null;
     const needles = [key, displayName]
       .filter(Boolean)
       .map((s) => s.toLowerCase());
@@ -5610,7 +5611,7 @@ void main() {
     const groups = [];
     for (const c of components) {
       const last = groups[groups.length - 1];
-      if (last && last[0].kind && c.kind === last[0].kind) {
+      if (last?.[0].kind && c.kind === last[0].kind) {
         last.push(c);
       } else {
         groups.push([c]);
@@ -5619,7 +5620,7 @@ void main() {
     return groups;
   }
 
-  function titleForKind(kind, count) {
+  function titleForKind(kind, _count) {
     const labels = {
       button: "Buttons",
       input: "Inputs",
@@ -5630,7 +5631,7 @@ void main() {
     };
     return (
       labels[kind] ||
-      (kind ? kind.charAt(0).toUpperCase() + kind.slice(1) + "s" : "Components")
+      (kind ? `${kind.charAt(0).toUpperCase() + kind.slice(1)}s` : "Components")
     );
   }
 
@@ -5718,7 +5719,7 @@ void main() {
     if (n.northStar) {
       const star = document.createElement("span");
       star.className = "north-star";
-      star.textContent = "“" + n.northStar + "”";
+      star.textContent = `“${n.northStar}”`;
       ov.appendChild(star);
     }
     if (n.overview) {
@@ -5876,7 +5877,7 @@ void main() {
     return s;
   }
 
-  function highlightBold(text) {
+  function _highlightBold(text) {
     return inlineMd(text);
   }
 
@@ -5893,7 +5894,7 @@ void main() {
     if (!text) return;
     try {
       navigator.clipboard.writeText(text);
-      showToast("Copied: " + text);
+      showToast(`Copied: ${text}`);
     } catch {
       /* ignore */
     }

@@ -248,7 +248,6 @@ export class CompassEventFactory {
         return CompassEventFactory.genAllEvents(event, session);
       case RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS:
         return CompassEventFactory.genThisAndFollowingEvents(event, session);
-      case RecurringEventUpdateScope.THIS_EVENT:
       default:
         return CompassEventFactory.genThisEvent(event);
     }

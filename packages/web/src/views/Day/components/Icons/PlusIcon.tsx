@@ -15,6 +15,7 @@ export function PlusIcon({
       viewBox="0 0 24 24"
       aria-hidden={ariaHidden}
     >
+      <title>Plus</title>
       <path
         strokeLinecap="round"
         strokeLinejoin="round"

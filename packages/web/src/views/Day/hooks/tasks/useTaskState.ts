@@ -41,13 +41,34 @@ export function useTaskState({
     [],
   );
 
+  const startTaskLoad = useCallback(() => {
+    setDidLoadFail(false);
+    setIsLoadingTasks(true);
+  }, []);
+
+  const finishTaskLoad = useCallback(
+    (loadedTasks: Task[], nextDateKey: string) => {
+      setTasksState(loadedTasks);
+      setLoadedDateKey(nextDateKey);
+      setDidLoadFail(false);
+      setIsLoadingTasks(false);
+    },
+    [],
+  );
+
+  const failTaskLoad = useCallback((nextDateKey: string) => {
+    setTasksState([]);
+    setLoadedDateKey(nextDateKey);
+    setDidLoadFail(true);
+    setIsLoadingTasks(false);
+  }, []);
+
   useLoadTasksByDateEffect({
     dateKey,
     taskRepository,
-    setTasksState,
-    setIsLoadingTasks,
-    setDidLoadFail,
-    setLoadedDateKey,
+    onTaskLoadFailure: failTaskLoad,
+    onTaskLoadStart: startTaskLoad,
+    onTaskLoadSuccess: finishTaskLoad,
     isDirtyRef,
     loadRequestIdRef,
   });
@@ -66,6 +87,7 @@ export function useTaskState({
     tasks,
     setTasks,
     isLoadingTasks,
+    hasLoadedTasksOnce: loadedDateKey !== null,
     didLoadFail,
     editingTitle,
     setEditingTitle,

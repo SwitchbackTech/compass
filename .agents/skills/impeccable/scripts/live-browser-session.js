@@ -5,20 +5,14 @@
  * booting the full overlay UI. Served before live-browser.js and attached to
  * window.__IMPECCABLE_LIVE_SESSION__.
  */
-(function (root) {
-  "use strict";
-
+((root) => {
   function createLiveBrowserSessionState({ prefix, storage, idFactory }) {
     if (!prefix) throw new Error("prefix required");
     const store = storage || root.localStorage;
-    const makeId =
-      idFactory ||
-      function () {
-        return Math.random().toString(16).slice(2, 10);
-      };
-    const sessionKey = prefix + "-session";
-    const handledKey = sessionKey + "-handled";
-    const scrollKey = sessionKey + "-scroll";
+    const makeId = idFactory || (() => Math.random().toString(16).slice(2, 10));
+    const sessionKey = `${prefix}-session`;
+    const handledKey = `${sessionKey}-handled`;
+    const scrollKey = `${sessionKey}-scroll`;
     let checkpointRevision = 0;
     const owner = makeId();
 
@@ -64,7 +58,7 @@
     }
 
     function saveSession(session) {
-      if (!session || !session.id) return;
+      if (!session?.id) return;
       const payload = {
         ...session,
         checkpointRevision,
@@ -114,7 +108,7 @@
       const raw = safeRead(scrollKey);
       if (raw == null) return null;
       const n = parseFloat(raw);
-      return isFinite(n) ? n : null;
+      return Number.isFinite(n) ? n : null;
     }
 
     function clearScrollY() {

@@ -118,10 +118,10 @@ export const AllDayEvents = ({
       return null;
     }
 
-    return allDayEvents.map((event: Schema_GridEvent, i) => {
+    return allDayEvents.map((event: Schema_GridEvent) => {
       return (
         <AllDayEventMemo
-          key={`${event.title}-${i}`}
+          key={event._id}
           isPlaceholder={event._id === draftId}
           event={event}
           startOfView={startOfView}

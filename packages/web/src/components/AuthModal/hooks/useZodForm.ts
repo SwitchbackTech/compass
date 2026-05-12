@@ -107,10 +107,9 @@ export function useZodForm<TValues extends Record<string, string>>({
     (e: FormEvent): void => {
       e.preventDefault();
 
-      const allTouched = Object.keys(initialValues).reduce(
-        (acc, key) => ({ ...acc, [key]: true }),
-        {} as Partial<Record<keyof TValues & string, boolean>>,
-      );
+      const allTouched = Object.fromEntries(
+        Object.keys(initialValues).map((key) => [key, true]),
+      ) as Partial<Record<keyof TValues & string, boolean>>;
       setTouched(allTouched);
 
       const result = schema.safeParse(values);

@@ -1,9 +1,4 @@
-import {
-  type Dispatch,
-  type MutableRefObject,
-  type SetStateAction,
-  useEffect,
-} from "react";
+import { type MutableRefObject, useEffect } from "react";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
 import { type Task } from "@web/common/types/task.types";
@@ -12,10 +7,9 @@ import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 interface UseLoadTasksByDateEffectProps {
   dateKey: string;
   taskRepository: TaskRepository;
-  setTasksState: Dispatch<SetStateAction<Task[]>>;
-  setIsLoadingTasks: Dispatch<SetStateAction<boolean>>;
-  setDidLoadFail: Dispatch<SetStateAction<boolean>>;
-  setLoadedDateKey: Dispatch<SetStateAction<string | null>>;
+  onTaskLoadStart: () => void;
+  onTaskLoadSuccess: (tasks: Task[], dateKey: string) => void;
+  onTaskLoadFailure: (dateKey: string) => void;
   isDirtyRef: MutableRefObject<boolean>;
   loadRequestIdRef: MutableRefObject<number>;
 }
@@ -23,10 +17,9 @@ interface UseLoadTasksByDateEffectProps {
 export function useLoadTasksByDateEffect({
   dateKey,
   taskRepository,
-  setTasksState,
-  setIsLoadingTasks,
-  setDidLoadFail,
-  setLoadedDateKey,
+  onTaskLoadFailure,
+  onTaskLoadStart,
+  onTaskLoadSuccess,
   isDirtyRef,
   loadRequestIdRef,
 }: UseLoadTasksByDateEffectProps) {
@@ -36,10 +29,7 @@ export function useLoadTasksByDateEffect({
     loadRequestIdRef.current = requestId;
 
     isDirtyRef.current = false;
-    setTasksState([]);
-    setLoadedDateKey(null);
-    setDidLoadFail(false);
-    setIsLoadingTasks(true);
+    onTaskLoadStart();
 
     void (async () => {
       await ensureStorageReady();
@@ -48,19 +38,13 @@ export function useLoadTasksByDateEffect({
       .then((loadedTasks) => {
         if (isCancelled || requestId !== loadRequestIdRef.current) return;
 
-        setTasksState(sortTasksByStatus(loadedTasks));
-        setLoadedDateKey(dateKey);
-        setDidLoadFail(false);
-        setIsLoadingTasks(false);
+        onTaskLoadSuccess(sortTasksByStatus(loadedTasks), dateKey);
       })
       .catch((error) => {
         if (isCancelled || requestId !== loadRequestIdRef.current) return;
 
         console.error("Failed to load tasks from storage:", error);
-        setTasksState([]);
-        setLoadedDateKey(dateKey);
-        setDidLoadFail(true);
-        setIsLoadingTasks(false);
+        onTaskLoadFailure(dateKey);
       });
 
     return () => {
@@ -71,9 +55,8 @@ export function useLoadTasksByDateEffect({
     taskRepository,
     isDirtyRef,
     loadRequestIdRef,
-    setDidLoadFail,
-    setIsLoadingTasks,
-    setLoadedDateKey,
-    setTasksState,
+    onTaskLoadFailure,
+    onTaskLoadStart,
+    onTaskLoadSuccess,
   ]);
 }

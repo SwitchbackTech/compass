@@ -1,4 +1,4 @@
-import { memo, useCallback } from "react";
+import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
@@ -6,17 +6,21 @@ import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
 import { useMainGridSelection } from "@web/common/hooks/useMainGridSelection";
 import { useMainGridSelectionActions } from "@web/common/hooks/useMainGridSelectionActions";
-import { useSidebarState } from "@web/common/hooks/useSidebarState";
 import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
 import { openEventFormEditEvent } from "@web/common/utils/event/event.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
+import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
+import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
+import { usePlannerSidebarSomedayEvents } from "@web/components/PlannerSidebar/usePlannerSidebarSomedayEvents";
+import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
-import { ShortcutsSidebar } from "@web/views/Day/components/ShortcutsSidebar/ShortcutsSidebar";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -30,10 +34,11 @@ import {
 } from "@web/views/Day/util/day.shortcut.util";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { useRefetch } from "@web/views/Week/hooks/useRefetch";
-import { StyledCalendar } from "@web/views/Week/styled";
+import { Styled, StyledCalendar } from "@web/views/Week/styled";
 
 export const DayViewContent = memo(() => {
-  const { isSidebarOpen, toggleSidebar } = useSidebarState();
+  const dispatch = useAppDispatch();
+  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
   const { authenticated } = useSession();
 
   const selectionActions = useMainGridSelectionActions();
@@ -63,9 +68,38 @@ export const DayViewContent = memo(() => {
     isAuthenticated: authenticated,
   });
 
-  const { navigateToNextDay, navigateToPreviousDay, navigateToToday } =
-    useDateNavigation();
+  const {
+    navigateToDate,
+    navigateToNextDay,
+    navigateToPreviousDay,
+    navigateToToday,
+  } = useDateNavigation();
   useDayEvents(dateInView);
+
+  const plannerViewStart = dateInView.startOf("week");
+  const plannerViewEnd = dateInView.endOf("week");
+  usePlannerSidebarSomedayEvents(plannerViewStart, {
+    isEnabled: isSidebarOpen,
+  });
+
+  const toggleSidebar = useCallback(() => {
+    dispatch(viewSlice.actions.toggleSidebar());
+  }, [dispatch]);
+
+  const shortcutSections = useMemo(
+    () => [
+      { title: "Day", shortcuts: shortcuts.dayShortcuts },
+      { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
+      { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
+      { title: "Global", shortcuts: shortcuts.globalShortcuts },
+    ],
+    [
+      shortcuts.dayAgendaShortcuts,
+      shortcuts.dayShortcuts,
+      shortcuts.dayTaskShortcuts,
+      shortcuts.globalShortcuts,
+    ],
+  );
 
   const hasFocusedTask =
     selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
@@ -138,9 +172,25 @@ export const DayViewContent = memo(() => {
   });
 
   return (
-    <>
+    <Styled id="day">
       <DayCmdPalette onGoToToday={handleGoToToday} />
       <Dedication />
+
+      {isSidebarOpen ? (
+        <SidebarDraftProvider
+          onGoToDate={navigateToDate}
+          viewEnd={plannerViewEnd}
+          viewStart={plannerViewStart}
+        >
+          <PlannerSidebar
+            calendarDate={dateInView}
+            onSelectDate={navigateToDate}
+            shortcutSections={shortcutSections}
+            viewEnd={plannerViewEnd}
+            viewStart={plannerViewStart}
+          />
+        </SidebarDraftProvider>
+      ) : null}
 
       <StyledCalendar>
         <Header
@@ -149,23 +199,13 @@ export const DayViewContent = memo(() => {
           onToggleSidebar={toggleSidebar}
         />
 
-        <div className="flex w-full flex-1 justify-center gap-8 overflow-hidden xl:max-w-4/7 xl:self-center">
+        <div className="flex w-full max-w-[960px] flex-1 justify-center gap-8 self-center overflow-hidden">
           <TaskList />
 
           <Agenda />
         </div>
       </StyledCalendar>
-
-      <ShortcutsSidebar
-        isOpen={isSidebarOpen}
-        sections={[
-          { title: "Day", shortcuts: shortcuts.dayShortcuts },
-          { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
-          { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
-          { title: "Global", shortcuts: shortcuts.globalShortcuts },
-        ]}
-      />
-    </>
+    </Styled>
   );
 });
 

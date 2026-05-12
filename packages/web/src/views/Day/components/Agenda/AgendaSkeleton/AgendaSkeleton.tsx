@@ -50,9 +50,9 @@ export function AgendaSkeleton() {
       data-testid="agenda-skeleton"
       className="pointer-events-none absolute inset-0"
     >
-      {skeletonBars.map((bar, index) => (
+      {skeletonBars.map((bar) => (
         <div
-          key={index}
+          key={`${bar.top}-${bar.height}-${bar.width}`}
           className="absolute right-2 left-2 animate-pulse rounded bg-gray-300"
           style={{
             top: `${bar.top}px`,

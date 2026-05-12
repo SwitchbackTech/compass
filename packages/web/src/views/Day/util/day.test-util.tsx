@@ -70,7 +70,7 @@ export const renderWithDayProviders = (
   const store = opts?.store ?? defaultStore;
   const router = createDayRouter(component, opts);
 
-  return { user: createUser(), ...render(<></>, { store, router }) };
+  return { user: createUser(), ...render(<div />, { store, router }) };
 };
 
 export const renderWithDayProvidersAsync = async (
@@ -81,7 +81,7 @@ export const renderWithDayProvidersAsync = async (
   const router = createDayRouter(component, opts);
   const user = createUser();
 
-  const rtlResult = render(<></>, { store, router });
+  const rtlResult = render(<div />, { store, router });
 
   // Poll router + task UI with waitFor (RTL act) instead of await act(async () => …) around
   // router.subscribe, which can trip React 18’s act warning in JSDOM.

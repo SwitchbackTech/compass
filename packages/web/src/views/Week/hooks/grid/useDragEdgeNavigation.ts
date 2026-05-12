@@ -1,13 +1,21 @@
-import { type MutableRefObject, useEffect, useRef, useState } from "react";
+import {
+  type MutableRefObject,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from "react";
+import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
-import { type SidebarDraftContextValue } from "@web/views/Week/components/Draft/sidebar/context/SidebarDraftContext";
-import { useSidebarContext } from "@web/views/Week/components/Draft/sidebar/context/useSidebarContext";
 import { type WeekProps } from "../useWeek";
 
 const EDGE_THRESHOLD = 50; // pixels from edge to trigger navigation
 const NAVIGATION_DELAY = 500; // milliseconds to hold before navigating
+
+const replaceProgress = (_currentProgress: number, nextProgress: number) =>
+  nextProgress;
 
 export interface DragEdgeNavigationState {
   isDragging: boolean;
@@ -22,13 +30,12 @@ export const useDragEdgeNavigation = (
 ): DragEdgeNavigationState => {
   const { state: draftState } = useDraftContext();
   const isDNDing = useAppSelector(selectIsDNDing);
-  const { state: sidebarState } =
-    useSidebarContext() as SidebarDraftContextValue;
+  const { state: sidebarState } = useSidebarContext();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const lastEdgeRef = useRef<"left" | "right" | null>(null);
-  const [progress, setProgress] = useState(0);
+  const [progress, updateProgress] = useReducer(replaceProgress, 0);
   const timerStartTimeRef = useRef<number | null>(null);
 
   const isGridEventDragging = draftState.isDragging;
@@ -53,7 +60,7 @@ export const useDragEdgeNavigation = (
         progressIntervalRef.current = null;
       }
       lastEdgeRef.current = null;
-      setProgress(0);
+      updateProgress(0);
       timerStartTimeRef.current = null;
 
       return;
@@ -117,7 +124,7 @@ export const useDragEdgeNavigation = (
         clearInterval(progressIntervalRef.current);
         progressIntervalRef.current = null;
       }
-      setProgress(0);
+      updateProgress(0);
       timerStartTimeRef.current = null;
       lastEdgeRef.current = currentEdge;
     }
@@ -134,7 +141,7 @@ export const useDragEdgeNavigation = (
             (elapsed / NAVIGATION_DELAY) * 100,
             100,
           );
-          setProgress(progressPercent);
+          updateProgress(progressPercent);
         }
       }, 16);
 
@@ -150,7 +157,7 @@ export const useDragEdgeNavigation = (
           clearInterval(progressIntervalRef.current);
           progressIntervalRef.current = null;
         }
-        setProgress(0);
+        updateProgress(0);
         timerStartTimeRef.current = null;
         navigationTimeoutRef.current = null;
       }, NAVIGATION_DELAY);

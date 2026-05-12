@@ -228,21 +228,23 @@ export const clickGridCenter = async (page: Page, locator: Locator) => {
 };
 
 /**
- * Fills the event form title and submits via the Save control (role=tab, name Save).
+ * Fills the event form title and submits via the Save control (role=button, name Save).
  * Keyboard shortcuts for submit (Enter / Mod+Enter) are not driven here: Playwright’s
  * synthesized keyboard events are unreliable in headless Chromium on Linux CI; the Save
- * tab matches the accessible UI and stays stable. Shortcut submit is covered in
+ * button matches the accessible UI and stays stable. Shortcut submit is covered in
  * EventForm unit tests.
  */
 export const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
   const titleInput = getFormTitleInput(page);
   await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
-  const saveTab = page.getByRole("form").getByRole("tab", { name: "Save" });
-  await saveTab.scrollIntoViewIfNeeded();
-  // Save often sits below the fold; Playwright click() can still refuse when the tab is
-  // outside the viewport (CI). Dispatch the DOM click so React handlers run reliably.
-  await saveTab.evaluate((el) => {
+  const saveButton = page.getByRole("form").getByRole("button", {
+    name: "Save",
+  });
+  // Save often sits in floating form UI that can re-render while Playwright is
+  // performing pointer actionability checks. Dispatch a DOM click so React
+  // handlers run against the currently mounted control.
+  await saveButton.evaluate((el) => {
     (el as HTMLElement).click();
   });
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
@@ -284,11 +286,11 @@ export const openSomedayEventFormWithMouse = async (
   section: SomedaySection,
 ) => {
   await ensureSidebarOpen(page);
-  const plusButtons = page
+  const addButtonName = section === "week" ? "Add to week" : "Add to month";
+  await page
     .locator("#sidebar")
-    .getByRole("button", { name: "+" });
-  const targetIndex = section === "week" ? 0 : 1;
-  await plusButtons.nth(targetIndex).click();
+    .getByRole("button", { name: addButtonName })
+    .click();
 };
 
 export const openTimedEventFormWithKeyboard = async (page: Page) => {
@@ -331,12 +333,8 @@ export const openEventForEditingWithKeyboard = async (
   page: Page,
   eventTitle: string,
 ) => {
-  const eventButton = await findEventButton(page, eventTitle);
-  if (!eventButton) {
-    throw new Error(
-      `Unable to locate event "${eventTitle}" for keyboard editing.`,
-    );
-  }
+  const eventButton = page.getByRole("button", { name: eventTitle }).last();
+  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
   await eventButton.scrollIntoViewIfNeeded();
   await eventButton.focus();
   const box = await eventButton.boundingBox();
@@ -364,97 +362,34 @@ export const openEventForEditingWithMouse = async (
   page: Page,
   eventTitle: string,
 ) => {
-  const eventButton = await findEventButton(page, eventTitle, "first");
   const titleInput = getFormTitleInput(page);
+  const eventButton = page.getByRole("button", { name: eventTitle }).last();
+  let lastOpenError: unknown;
 
-  if (!eventButton) {
-    throw new Error(
-      `Unable to locate event "${eventTitle}" for mouse editing.`,
-    );
-  }
-
-  await clickEventButton(page, eventButton, eventTitle);
-
-  const openedFromFirstClick = await titleInput
-    .waitFor({ state: "visible", timeout: 500 })
-    .then(() => true)
-    .catch(() => false);
-
-  if (!openedFromFirstClick) {
-    const selectedButton = await findEventButton(page, eventTitle, "last");
-    if (!selectedButton) {
-      throw new Error(
-        `Unable to locate selected event "${eventTitle}" for mouse editing.`,
-      );
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      await eventButton.waitFor({ state: "visible", timeout: 2500 });
+    } catch (error) {
+      lastOpenError = error;
+      await page.waitForTimeout(500);
+      continue;
     }
-    await clickEventButton(page, selectedButton, eventTitle);
-  }
 
-  await expect(titleInput).toHaveValue(eventTitle, { timeout: FORM_TIMEOUT });
-};
+    await eventButton.click({ force: true });
 
-const clickEventButton = async (
-  page: Page,
-  eventButton: Locator,
-  eventTitle: string,
-) => {
-  await eventButton.scrollIntoViewIfNeeded();
-  const box = await eventButton.boundingBox();
-  if (!box) {
-    throw new Error(`Unable to click event "${eventTitle}" for mouse editing.`);
-  }
-
-  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
-  await page.waitForTimeout(200);
-  await page.mouse.down();
-  await page.mouse.up();
-};
-
-const findEventButton = async (
-  page: Page,
-  eventTitle: string,
-  match: "first" | "last" = "first",
-): Promise<Locator | null> => {
-  const containers = [
-    page.locator("#mainGrid"),
-    page.locator("#allDayRow"),
-    page.locator("#sidebar"),
-  ];
-
-  for (const container of containers) {
-    const eventButtons = container
-      .locator('[data-event-id][role="button"]')
-      .filter({ hasText: eventTitle });
-    const buttonCount = await eventButtons.count();
-
-    if (buttonCount > 0) {
-      return match === "first" ? eventButtons.first() : eventButtons.last();
+    try {
+      await expect(titleInput).toHaveValue(eventTitle, { timeout: 2500 });
+      return;
+    } catch (error) {
+      lastOpenError = error;
+      await page.keyboard.press("Escape").catch(() => undefined);
+      await page.waitForTimeout(200);
     }
   }
 
-  const sidebarButton = page
-    .locator("#sidebar")
-    .getByRole("button", { name: eventTitle });
-  if ((await sidebarButton.count()) > 0) {
-    return sidebarButton.first();
-  }
-
-  const allDayButton = page
-    .locator("#allDayRow")
-    .getByRole("button", { name: eventTitle });
-  if ((await allDayButton.count()) > 0) {
-    return match === "first" ? allDayButton.first() : allDayButton.last();
-  }
-
-  const timedButton = page.locator("#mainGrid").getByRole("button", {
-    name: eventTitle,
-  });
-  if ((await timedButton.count()) > 0) {
-    return match === "first" ? timedButton.first() : timedButton.last();
-  }
-
-  const activeButton = page.locator(".active", { hasText: eventTitle });
-  return (await activeButton.count()) > 0 ? activeButton.first() : null;
+  throw lastOpenError instanceof Error
+    ? lastOpenError
+    : new Error(`Unable to open event "${eventTitle}" for mouse editing.`);
 };
 
 export const deleteEventWithMouse = async (page: Page) => {

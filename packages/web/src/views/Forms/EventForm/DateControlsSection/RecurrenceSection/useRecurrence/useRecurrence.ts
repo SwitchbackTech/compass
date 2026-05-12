@@ -28,13 +28,9 @@ const WEEKDAY_LABELS_MAP: Record<keyof typeof WEEKDAY_RRULE_MAP, string> = {
   friday: RRule.FR.toString(),
   saturday: RRule.SA.toString(),
 };
-const REVERSE_WEEKDAY_LABELS_MAP: Record<
-  string,
-  keyof typeof WEEKDAY_RRULE_MAP
-> = Object.entries(WEEKDAY_LABELS_MAP).reduce(
-  (acc, [key, value]) => ({ ...acc, [value]: key }),
-  {},
-);
+const REVERSE_WEEKDAY_LABELS_MAP = Object.fromEntries(
+  Object.entries(WEEKDAY_LABELS_MAP).map(([key, value]) => [value, key]),
+) as Record<string, keyof typeof WEEKDAY_RRULE_MAP>;
 const WEEKDAY_MAP: Record<
   number | string | keyof typeof WEEKDAY_RRULE_MAP,
   Weekday
@@ -47,13 +43,13 @@ const WEEKDAY_MAP: Record<
   RRule.FR,
   RRule.SA,
 ].reduce(
-  (acc, day) => ({
-    ...acc,
-    [day.weekday]: day,
-    [day.toString()]: day,
-    [REVERSE_WEEKDAY_LABELS_MAP[day.toString()]]: day,
-  }),
-  {},
+  (acc, day) => {
+    acc[day.weekday] = day;
+    acc[day.toString()] = day;
+    acc[REVERSE_WEEKDAY_LABELS_MAP[day.toString()]] = day;
+    return acc;
+  },
+  {} as Record<number | string | keyof typeof WEEKDAY_RRULE_MAP, Weekday>,
 );
 
 export const useRecurrence = (

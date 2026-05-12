@@ -40,6 +40,7 @@ export const FocusedTask = ({
           onClick={onCompleteTask}
         >
           <button
+            type="button"
             aria-label="Mark task as complete"
             className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
           >
@@ -52,6 +53,7 @@ export const FocusedTask = ({
           onClick={onPreviousTask}
         >
           <button
+            type="button"
             aria-label="Previous task"
             className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
           >
@@ -64,6 +66,7 @@ export const FocusedTask = ({
           onClick={onNextTask}
         >
           <button
+            type="button"
             aria-label="Next task"
             className="cursor-pointer rounded-full p-1 transition-all duration-200 hover:brightness-125 focus:brightness-125"
           >

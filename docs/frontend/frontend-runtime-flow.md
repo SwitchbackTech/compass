@@ -99,7 +99,7 @@ Responsibilities:
 Files:
 
 - `packages/web/src/common/hooks/useVersionCheck.ts`
-- `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
 
 Runtime behavior:
 
@@ -109,43 +109,37 @@ Runtime behavior:
 - requests use an absolute URL built from `window.location.origin` (`/version.json?t=<timestamp>`) with no-store/no-cache fetch options
 - checks are de-duplicated so concurrent visibility/interval triggers do not issue overlapping fetches
 
-When the server version differs from `BUILD_VERSION`, `isUpdateAvailable` becomes `true` and the sidebar shows a refresh action that triggers `window.location.reload()`.
+When the server version differs from `BUILD_VERSION`, `isUpdateAvailable` becomes `true` and the Planner Sidebar shows a refresh action that triggers `window.location.reload()`.
 
-## Week Sidebar Footer Controls
+## Planner Sidebar Footer Controls
 
 Files:
 
-- `packages/web/src/views/Week/components/Sidebar/Sidebar.tsx`
-- `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayTab.tsx`
-- `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayWeekSection/SomedayWeekSection.tsx`
-- `packages/web/src/views/Week/components/Sidebar/SomedayTab/SomedayMonthSection/SomedayMonthSection.tsx`
-- `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
-- `packages/web/src/views/Week/components/Sidebar/styled.ts`
-- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/components/PlannerSidebar/PlannerSidebar.tsx`
+- `packages/web/src/components/PlannerSidebar/PlannerMonthPicker/PlannerMonthPicker.tsx`
+- `packages/web/src/components/PlannerSidebar/SomedayEventSections/SomedayEventSections.tsx`
+- `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
+- `packages/web/src/components/PlannerSidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
 
 Layout contract:
 
-- the footer control row is pinned to the bottom of the sidebar (`ICON_ROW_HEIGHT = 40`)
-- `SidebarTabContainer` reserves space with `height: calc(100% - 40px)` so tab content does not overlap the footer row
-- the row uses `justify-content: space-between` and two explicit groups:
-  - `LeftIconGroup`: sidebar tab navigation actions
-  - `RightIconGroup`: utility and status actions
+- the Planner Sidebar is fixed at 285px wide and fills the viewport height
+- the scrollable planning content reserves its own scrollbar gutter so the footer stays fixed
+- the footer control row is pinned to the bottom of the sidebar
+- footer actions are grouped into shortcut access on the left and utility actions on the right
 
 Control mapping:
 
-- Left group:
-  - Tasks tab (`SHIFT + 1`) dispatches `viewSlice.actions.updateSidebarTab("tasks")`
-  - Month tab (`SHIFT + 2`) dispatches `viewSlice.actions.updateSidebarTab("monthWidget")`
-- Right group:
-  - Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`
-  - Google status action is derived from `useConnectGoogle().sidebarStatus`
-  - background import spinner is shown while `selectImportGCalState(...).importing` is true
-  - update action (refresh icon) is shown when `useVersionCheck().isUpdateAvailable` is true and reloads the page
+- Open shortcuts opens an in-sidebar keyboard shortcuts overlay.
+- Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`.
+- Refresh appears only when `useVersionCheck()` reports an available update.
+- The account row shows temporary-account or signed-in account context above the Someday sections.
+- Background Google import state is not shown in the Planner Sidebar footer.
 
 Icon state constraints:
 
-- tab icons and command icon use `theme.color.text.light` when active and `theme.color.text.darkPlaceholder` when inactive
-- Google status icon tooltips and disabled/clickable behavior come from `useConnectGoogle` and should not be hardcoded in the row component
+- shortcut and command icons use filled weight when their related overlay/palette is open
+- shortcut overlay state should not replace the Planner Sidebar conceptually; closing the overlay returns to the same sidebar
 
 ## Dedication Dialog Runtime
 
@@ -173,16 +167,13 @@ Pitfalls:
 - do not call `dialog.close()` directly in new close handlers unless you intentionally want to bypass the fade/scale exit animation
 - keep imports pointed at `.../Dedication/Dedication` (no barrel file in this folder)
 
-## Day/Now Shortcuts Sidebar Runtime
+## Now Shortcuts Sidebar Runtime
 
 Files:
 
 - `packages/web/src/common/hooks/useSidebarState.ts`
 - `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
-- `packages/web/src/views/Day/components/Header/Header.tsx`
-- `packages/web/src/views/Day/view/DayViewContent.tsx`
 - `packages/web/src/views/Now/view/NowView.tsx`
-- `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
 - `packages/web/src/views/Now/shortcuts/useNowShortcuts.ts`
 
 Runtime behavior:
@@ -190,8 +181,8 @@ Runtime behavior:
 - sidebar state is responsive-first: `useSidebarState` sets open/closed from `window.innerWidth >= 1280` (`xl`) and subscribes to `matchMedia("(min-width: 1280px)")`
 - breakpoint transitions are authoritative: crossing the `xl` boundary re-syncs the sidebar state even if the user manually toggled it earlier
 - users can toggle via:
-  - header sidebar button (`Header` tooltip + `SidebarIcon`)
-  - `[` keyboard shortcut in both Day and Now views
+  - Now header sidebar button (`Header` tooltip + `SidebarIcon`)
+  - `[` keyboard shortcut in Now view
 - the sidebar is desktop-only in layout (`hidden xl:flex`), so on sub-`xl` widths toggling updates state but the sidebar content remains visually hidden
 - `ShortcutsSidebar` filters out empty sections and returns `null` when no section has shortcuts
 
@@ -203,7 +194,7 @@ Animation and visibility contract:
 Pitfalls:
 
 - `useSidebarState` reads `window` during state initialization and uses `window.matchMedia`; browser-like globals must exist in tests/non-browser runtimes
-- when adding sidebar-driven interactions, verify both Day and Now routes to keep keyboard behavior aligned (`[` should work in both)
+- when adding shortcuts sidebar interactions, verify Now view because Day uses the Planner Sidebar instead
 
 ## State Systems
 
@@ -329,7 +320,8 @@ Files:
 
 - `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
 - `packages/web/src/auth/google/google.auth.util.ts`
-- `packages/web/src/views/Week/components/Sidebar/SidebarIconRow/SidebarIconRow.tsx`
+- `packages/web/src/components/HeaderInfoIcon/HeaderInfoIcon.tsx`
+- `packages/web/src/common/hooks/useGoogleCmdItems.ts`
 
 UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only loading state:
 

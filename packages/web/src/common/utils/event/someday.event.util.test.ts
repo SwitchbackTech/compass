@@ -254,12 +254,12 @@ describe("setSomedayEventsOrder", () => {
     expect(result).toEqual(events);
   });
 
-  it("should fill gaps in order sequence", () => {
+  it("should append missing orders after the highest existing order", () => {
     const events = [
       createEvent("1", 0),
-      createEvent("2"), // Should get order 1
+      createEvent("2"),
       createEvent("3", 3),
-      createEvent("4"), // Should get order 2
+      createEvent("4"),
       createEvent("5", 5),
     ];
 
@@ -267,9 +267,9 @@ describe("setSomedayEventsOrder", () => {
 
     expect(result).toEqual([
       { ...events[0], order: 0 },
-      { ...events[1], order: 1 },
+      { ...events[1], order: 6 },
       { ...events[2], order: 3 },
-      { ...events[3], order: 2 },
+      { ...events[3], order: 7 },
       { ...events[4], order: 5 },
     ]);
   });
@@ -297,20 +297,20 @@ describe("setSomedayEventsOrder", () => {
   it("should handle mix of valid and invalid order values", () => {
     const events = [
       createEvent("1", 1),
-      { ...createEvent("2"), order: Number.NaN }, // Should get order 0
-      { ...createEvent("3"), order: undefined }, // Should get order 2
+      { ...createEvent("2"), order: Number.NaN }, // Should get order 5
+      { ...createEvent("3"), order: undefined }, // Should get order 6
       createEvent("4", 4),
-      { ...createEvent("5"), order: undefined }, // Should get order 3
+      { ...createEvent("5"), order: undefined }, // Should get order 7
     ];
 
     const result = setSomedayEventsOrder(events);
 
     expect(result).toEqual([
       { ...events[0], order: 1 },
-      { ...events[1], order: 0 },
-      { ...events[2], order: 2 },
+      { ...events[1], order: 5 },
+      { ...events[2], order: 6 },
       { ...events[3], order: 4 },
-      { ...events[4], order: 3 },
+      { ...events[4], order: 7 },
     ]);
   });
 
@@ -443,7 +443,7 @@ describe("computeRelativeEventDateRange", () => {
       ]);
     });
 
-    it("should fill gaps in order sequence for events", () => {
+    it("should append missing order values for events", () => {
       const eventIdA = new ObjectId().toString();
       const eventIdB = new ObjectId().toString();
       const eventIdC = new ObjectId().toString();
@@ -465,7 +465,7 @@ describe("computeRelativeEventDateRange", () => {
           origin: Origin.COMPASS,
           priority: Priorities.UNASSIGNED,
           user: "test-user",
-        }, // Should get order 1
+        }, // Should get order 4
         {
           ...baseEvent,
           _id: eventIdC,
@@ -481,7 +481,7 @@ describe("computeRelativeEventDateRange", () => {
 
       expect(result).toEqual([
         { ...events[0], order: 0 },
-        { ...events[1], order: 1 },
+        { ...events[1], order: 4 },
         { ...events[2], order: 3 },
       ]);
     });
@@ -502,15 +502,14 @@ describe("computeRelativeEventDateRange", () => {
         order: 0,
       });
 
-      const events: Schema_SomedayEventsColumn["events"] = instances.reduce(
-        (acc, instance) => ({
-          ...acc,
-          [instance._id]: {
+      const events: Schema_SomedayEventsColumn["events"] = Object.fromEntries(
+        instances.map((instance) => [
+          instance._id,
+          {
             ...instance,
             recurrence: { ...recurrence, ...instance.recurrence },
           },
-        }),
-        {},
+        ]),
       );
 
       const result = categorizeSomedayEvents(events, weekDates);

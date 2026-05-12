@@ -53,7 +53,7 @@ interface Props {
   weekProps: WeekProps;
 }
 
-const _GridEvent = (
+const GridEventBase = (
   {
     event: _event,
 
@@ -161,6 +161,7 @@ const _GridEvent = (
   });
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
       ref={ref}
@@ -195,9 +196,7 @@ const _GridEvent = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <span role="textbox" style={titleStyle}>
-          {event.title}
-        </span>
+        <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
             {(isDraft || !isInPast) &&
@@ -208,17 +207,15 @@ const _GridEvent = (
                     getTimesLabel(event.startDate, event.endDate)}
                 </Text>
               )}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
             <div
-              role="button"
-              tabIndex={-1}
               style={scalerStyle({ top: "-0.25px" })}
               onMouseDown={(e) => {
                 onScalerMouseDown(event, e, "startDate");
               }}
             />
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
             <div
-              role="button"
-              tabIndex={-1}
               style={scalerStyle({ bottom: "-0.25px" })}
               onMouseDown={(e) => {
                 onScalerMouseDown(event, e, "endDate");
@@ -231,7 +228,7 @@ const _GridEvent = (
   );
 };
 
-export const GridEvent = forwardRef(_GridEvent);
+export const GridEvent = forwardRef(GridEventBase);
 export const GridEventMemo = memo(GridEvent, (prev, next) => {
   return (
     prev.event === next.event &&

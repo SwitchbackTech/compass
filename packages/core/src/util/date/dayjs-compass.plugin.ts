@@ -22,8 +22,8 @@ enum DateFormatEnum {
   YEAR_MONTH_DAY_FORMAT = "YYYY-MM-DD",
   YEAR_MONTH_DAY_COMPACT_FORMAT = "YYYYMMDD",
 
-  YMDHM_FORMAT = `${DateFormatEnum.YEAR_MONTH_DAY_FORMAT} ${DateFormatEnum.HOURS_MINUTES_FORMAT}`,
-  YMDHAM_FORMAT = `${DateFormatEnum.YEAR_MONTH_DAY_FORMAT} ${DateFormatEnum.HOURS_AM_FORMAT}`,
+  YMDHM_FORMAT = "YYYY-MM-DD HH:mm",
+  YMDHAM_FORMAT = "YYYY-MM-DD h:mm A",
 }
 
 type YearMonthDayFormat = string; // syntactic sugar for dev recognition

@@ -43,6 +43,23 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   const bgColor = colorByPriority[priority];
 
   const origRecurrence = useRef(event?.recurrence).current;
+  const latestEventRef = useRef(event);
+
+  const setLatestEvent = useCallback(
+    (nextEvent: Parameters<typeof setEvent>[0]) => {
+      const resolvedEvent =
+        typeof nextEvent === "function"
+          ? nextEvent(latestEventRef.current)
+          : nextEvent;
+
+      if (resolvedEvent) {
+        latestEventRef.current = resolvedEvent;
+      }
+
+      setEvent(resolvedEvent);
+    },
+    [setEvent],
+  );
 
   const ignoreDelete = (e: KeyboardEvent) => {
     if (e.key === "Backspace") {
@@ -78,28 +95,26 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
   const onSetEventField: SetEventFormField = useCallback(
     (field) => {
-      const newEvent = { ...event, ...field };
-
-      if (field === null) {
-        delete newEvent[field];
-      }
-
-      setEvent(newEvent);
+      setLatestEvent({ ...latestEventRef.current, ...field });
     },
-    [event, setEvent],
+    [setLatestEvent],
   );
 
   const _onSubmit = useCallback(() => {
+    let eventToSubmit = latestEventRef.current;
     const hasInstances = origRecurrence?.eventId !== undefined;
     const removedRecurrence =
-      hasInstances && event.recurrence?.rule?.length === 0;
+      hasInstances && eventToSubmit.recurrence?.rule?.length === 0;
 
     if (removedRecurrence) {
-      onSetEventField({ recurrence: { ...event.recurrence, rule: [] } });
+      eventToSubmit = {
+        ...eventToSubmit,
+        recurrence: { ...eventToSubmit.recurrence, rule: [] },
+      };
     }
 
-    onSubmit(event);
-  }, [origRecurrence?.eventId, event, onSubmit, onSetEventField]);
+    onSubmit(eventToSubmit);
+  }, [origRecurrence?.eventId, onSubmit]);
 
   const onChangeEventTextField =
     <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
@@ -182,7 +197,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         onChange={onChangeEventTextField("title")}
         onKeyDown={ignoreDelete}
         placeholder="Title"
-        role="input"
         title="title"
         underlineColor={colorByPriority[priority]}
         value={title}
@@ -193,7 +207,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       <SomedayRecurrenceSection
         bgColor={bgColor}
         event={event}
-        setEvent={setEvent}
+        setEvent={setLatestEvent}
       />
 
       <StyledDescription

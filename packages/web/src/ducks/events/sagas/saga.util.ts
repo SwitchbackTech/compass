@@ -10,7 +10,6 @@ import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import {
   type Schema_GridEvent,
-  type Schema_WebEvent,
   type WithId,
 } from "@web/common/types/web.event.types";
 import {
@@ -103,7 +102,9 @@ export function* _createOptimisticGridEvent(
   gridEvent: Schema_GridEvent,
   isSomeday = false,
 ) {
-  const optimisticGridEvent = addId(gridEvent);
+  const optimisticGridEvent = gridEvent._id
+    ? (gridEvent as WithId<Schema_GridEvent>)
+    : addId(gridEvent);
 
   yield* insertOptimisticEvent(optimisticGridEvent, isSomeday);
 

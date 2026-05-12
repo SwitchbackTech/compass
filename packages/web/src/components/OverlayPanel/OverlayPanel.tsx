@@ -62,6 +62,7 @@ export const OverlayPanel = ({
   };
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the panel.
     <div
       className={backdropClasses}
       onClick={handleBackdropClick}
@@ -69,6 +70,7 @@ export const OverlayPanel = ({
       role="presentation"
       tabIndex={-1}
     >
+      {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-modal is only set when the panel role is dialog. */}
       <div
         className={panelClasses}
         role={role}

@@ -48,6 +48,7 @@ const define: Record<string, string> = {
   BUILD_VERSION: JSON.stringify(BUILD_VERSION),
 };
 
+// biome-ignore lint/suspicious/noConsole: Preserve build progress output.
 console.log(`Building version ${BUILD_VERSION}...`);
 
 const result = await Bun.build({
@@ -75,5 +76,7 @@ await Bun.write(
   JSON.stringify({ version: BUILD_VERSION }, null, 2),
 );
 
+// biome-ignore lint/suspicious/noConsole: Preserve build progress output.
 console.log(`Build complete → ${OUTDIR}`);
+// biome-ignore lint/suspicious/noConsole: Preserve build progress output.
 console.log(`  ${result.outputs.length} files written`);

@@ -66,7 +66,7 @@ describe("GcalEventParser", () => {
         faker.database.mongodbObjectId().toString(),
       );
       const developerError = GenericError.DeveloperError.description;
-      const status = event.status == "cancelled" ? "CANCELLED" : "CONFIRMED";
+      const status = event.status === "cancelled" ? "CANCELLED" : "CONFIRMED";
 
       await parser.init();
 

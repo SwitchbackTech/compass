@@ -65,10 +65,10 @@ async function build() {
   }
   return true;
 }
-
-// Initial build before serving
+// biome-ignore lint/suspicious/noConsole: Preserve dev-server progress output.
 console.log("[compass] building...");
 await build();
+// biome-ignore lint/suspicious/noConsole: Preserve dev-server progress output.
 console.log(`[compass] dev server → http://localhost:${WEB_PORT}`);
 
 if (IS_DEV) {
@@ -78,6 +78,7 @@ if (IS_DEV) {
     if (!filename || filename.includes(".test.")) return;
     if (rebuildTimer) clearTimeout(rebuildTimer);
     rebuildTimer = setTimeout(async () => {
+      // biome-ignore lint/suspicious/noConsole: Preserve dev-server rebuild output.
       console.log(`[rebuild] ${filename}`);
       const ok = await build();
       if (ok) notifyReload();

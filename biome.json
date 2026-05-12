@@ -42,9 +42,11 @@
         "useYield": "warn"
       },
       "complexity": {
+        "noStaticOnlyClass": "off",
         "useLiteralKeys": "off"
       },
       "style": {
+        "noNonNullAssertion": "off",
         "useImportType": {
           "level": "warn",
           "options": {
@@ -57,7 +59,7 @@
         "noAssignInExpressions": "warn",
         "noConsole": "off",
         "noDoubleEquals": "warn",
-        "noDuplicateTestHooks": "warn",
+        "noDuplicateTestHooks": "off",
         "noExportsInTest": "warn",
         "useIterableCallbackReturn": "off"
       },
@@ -140,6 +142,7 @@
       "**",
       "!build",
       "!coverage",
+      "!.agents/skills/impeccable/scripts/modern-screenshot.umd.js",
       "!logs",
       "!node_modules",
       "!*.min.js",

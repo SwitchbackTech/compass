@@ -1,3 +1,4 @@
+// biome-ignore-all lint/correctness/useHookAtTopLevel: These hooks run at the top of the React.forwardRef render function.
 import {
   type UniqueIdentifier,
   type UseDroppableArguments,

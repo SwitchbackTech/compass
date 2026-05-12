@@ -1,6 +1,5 @@
 import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import type React from "react";
-import { useState } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
@@ -16,10 +15,10 @@ import {
   TooltipWrapper,
 } from "@web/components/ContextMenu/styled";
 import IconButton from "@web/components/IconButton/IconButton";
+import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
-import { useSidebarContext } from "@web/views/Week/components/Draft/sidebar/context/useSidebarContext";
 
 export interface ContextMenuAction {
   id: string;
@@ -39,11 +38,10 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const { setDraft } = setters;
 
   const sidebarContext = useSidebarContext(true);
+  const eventId = event._id;
   const isPending = useAppSelector((state) =>
-    selectIsEventPending(state, event._id!),
+    eventId ? selectIsEventPending(state, eventId) : false,
   );
-
-  const [selectedPriority, setSelectedPriority] = useState(event.priority);
 
   const priorities = [
     {
@@ -68,7 +66,6 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
 
   const handleEditPriority = (priority: Priorities) => {
     if (isPending) return;
-    setSelectedPriority(priority);
     submit({ ...event, priority });
     close();
   };
@@ -81,7 +78,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
       close();
     } else {
       const sidebarActions = sidebarContext?.actions;
-      if (!sidebarActions) return; // TS Guard
+      if (!sidebarActions) return;
       const category = getSomedayEventCategory(event);
       sidebarActions.onDraft(event, category);
       close();
@@ -134,7 +131,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
           <TooltipWrapper key={priority.id}>
             <PriorityCircle
               color={priority.color}
-              selected={selectedPriority === priority.value}
+              selected={event.priority === priority.value}
               onClick={() => handleEditPriority(priority.value)}
               style={{
                 opacity: isPending ? 0.5 : 1,

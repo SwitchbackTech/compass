@@ -80,6 +80,7 @@ export const TaskContextMenuWrapper = ({ children }: TaskItemsWrapperProps) => {
   };
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: The display-contents wrapper only forwards right-clicks from task rows.
     <div style={{ display: "contents" }} onContextMenu={handleContextMenu}>
       {children}
       {isOpen && selectedTask && (

@@ -18,6 +18,7 @@ export const AvailableTasks = ({
         <div className="flex flex-col gap-2">
           {tasks.map((task) => (
             <button
+              type="button"
               key={task._id}
               onClick={() => onTaskSelect(task._id)}
               aria-label={`Select ${task.title}`}

@@ -29,8 +29,8 @@ export const SaveSection: React.FC<Props> = ({
       {onCancel && (
         <TooltipWrapper onClick={onCancel} description={cancelText}>
           <Btn
-            role="tab"
-            tabIndex={1}
+            role="button"
+            tabIndex={0}
             title={cancelText}
             style={{ marginRight: 18 }}
           >
@@ -50,7 +50,7 @@ export const SaveSection: React.FC<Props> = ({
         <StyledSaveBtn
           minWidth={110}
           priority={priority!}
-          role="tab"
+          role="button"
           tabIndex={0}
           aria-keyshortcuts="Meta+Enter"
         >

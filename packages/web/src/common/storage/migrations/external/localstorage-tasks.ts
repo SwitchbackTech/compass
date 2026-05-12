@@ -75,7 +75,7 @@ export const localStorageTasksMigration: ExternalMigration = {
     }
 
     const keysToRemove: string[] = [];
-    let totalMigrated = 0;
+    let _totalMigrated = 0;
 
     for (const key of keys) {
       const dateKey = key.replace(TASK_KEY_PREFIX, "");
@@ -105,7 +105,7 @@ export const localStorageTasksMigration: ExternalMigration = {
 
           if (newTasks.length > 0) {
             await adapter.putTasks(dateKey, [...existingTasks, ...newTasks]);
-            totalMigrated += newTasks.length;
+            _totalMigrated += newTasks.length;
           }
         }
 

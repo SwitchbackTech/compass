@@ -36,7 +36,7 @@ mock.module("@web/views/Week/components/Draft/context/useDraftContext", () => ({
 }));
 
 mock.module(
-  "@web/views/Week/components/Draft/sidebar/context/useSidebarContext",
+  "@web/components/PlannerSidebar/draft/context/useSidebarContext",
   () => ({
     useSidebarContext: () => null,
   }),
@@ -72,6 +72,7 @@ let currentState = createStateWithPendingEvents();
 currentState.auth.status = "authenticating";
 
 mock.module("@web/store/store.hooks", () => ({
+  useAppDispatch: () => mock(),
   useAppSelector: (selector: (state: InitialReduxState) => unknown) =>
     selector(currentState),
 }));

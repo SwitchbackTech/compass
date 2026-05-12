@@ -141,6 +141,7 @@
     }
 
     /* scrollbar styling */
+    /* biome-ignore lint/style/noDescendingSpecificity: Keep the scrollbar pseudo-elements grouped inside this utility. */
     &::-webkit-scrollbar {
       /* Always reserve scrollbar space */
       width: var(--scrollbar-width, 6px);
@@ -164,7 +165,7 @@
     &:hover::-webkit-scrollbar-thumb,
     &:focus::-webkit-scrollbar-thumb,
     &:active::-webkit-scrollbar-thumb {
-      background-color: var(--color-panel-scrollbar) !important;
+      background-color: var(--color-panel-scrollbar);
     }
 
     @-moz-document url-prefix() {

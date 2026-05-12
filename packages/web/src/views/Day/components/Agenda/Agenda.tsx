@@ -140,6 +140,8 @@ export function Agenda() {
           <div className="h-0.5 border-gray-400/20 border-t" />
         )}
 
+        {/* biome-ignore lint/a11y/noStaticElementInteractions: This scroll container handles calendar keyboard shortcuts. */}
+        {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: The named scroll container preserves existing calendar semantics. */}
         <div
           id={ID_GRID_EVENTS_TIMED}
           ref={timedEventsContainerRef}

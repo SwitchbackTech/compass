@@ -122,7 +122,7 @@ describe("HealthController", () => {
           .getServer()
           .get("/api/health")
           .expect(Status.OK)
-          .catch((error) => {
+          .catch((_error) => {
             // Retry once on connection error
             return baseDriver.getServer().get("/api/health").expect(Status.OK);
           }),

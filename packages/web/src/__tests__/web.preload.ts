@@ -106,7 +106,7 @@ const noopAlert = () => {};
 window.alert = noopAlert;
 globalThis.alert = noopAlert;
 
-class MockObserver<T> implements IntersectionObserver, ResizeObserver {
+class MockObserver<_T> implements IntersectionObserver, ResizeObserver {
   root!: Document | Element | null;
   rootMargin!: string;
   thresholds!: readonly number[];

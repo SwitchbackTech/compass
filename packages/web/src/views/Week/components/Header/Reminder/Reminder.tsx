@@ -199,7 +199,8 @@ export const Reminder = forwardRef(
         }
 
         // Restore cursor position
-        setTimeout(restoreCursorPosition, 0);
+        const timeoutId = setTimeout(restoreCursorPosition, 0);
+        return () => clearTimeout(timeoutId);
       }
     }, [
       reminder,

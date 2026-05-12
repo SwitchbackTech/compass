@@ -103,6 +103,7 @@ export class IndexedDBAdapter implements StorageAdapter {
           }
         },
       );
+      // biome-ignore lint/suspicious/noConsole: Preserve local migration summary output.
       console.log(
         `[Migration] Migrated ${events.length} events and ${tasks.length} tasks from legacy primary key schema`,
       );

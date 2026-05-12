@@ -439,7 +439,7 @@ const _flatten = (
   out: Record<string, unknown>,
 ) => {
   Object.keys(obj).forEach((key) => {
-    if (typeof obj[key] == "object") {
+    if (typeof obj[key] === "object") {
       out = _flatten(obj[key] as Record<string, unknown>, out); // recursive call for nested
     } else {
       out[key] = obj[key]; // direct assign for values

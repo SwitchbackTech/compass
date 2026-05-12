@@ -31,9 +31,6 @@ const { createStoreWithEvents } = await import(
   "@web/__tests__/utils/state/store.test.util"
 );
 const { sagaMiddleware } = await import("@web/common/store/middlewares");
-const { deleteSomedayEvent } = await import(
-  "@web/ducks/events/sagas/someday.sagas"
-);
 const { getSomedayEventsSlice } = await import(
   "@web/ducks/events/slices/someday.slice"
 );

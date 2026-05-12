@@ -113,6 +113,7 @@ export const ContextMenuWrapper = ({
   };
 
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: The display-contents wrapper only forwards right-clicks from its children.
     <div
       id={id}
       style={{ display: "contents" }}

@@ -91,7 +91,7 @@ export const convertRfc5545ToIso = (orig: string) => {
 export const formatAsIso8601 = (orig: string) => {
   // Try native Date/ISO parse first
   const d = new Date(orig);
-  if (!isNaN(d.getTime())) {
+  if (!Number.isNaN(d.getTime())) {
     return d.toISOString();
   }
 
@@ -105,7 +105,7 @@ export const formatAsIso8601 = (orig: string) => {
       // Z: treat as UTC
       const norm = `${y}-${m}-${d}T${h}:${min}:${s}Z`;
       const d2 = new Date(norm);
-      if (!isNaN(d2.getTime())) {
+      if (!Number.isNaN(d2.getTime())) {
         return d2.toISOString();
       }
     } else {

@@ -6,7 +6,7 @@ import { useDraftContext } from "../../context/useDraftContext";
 
 export const useGridMouseMove = () => {
   const { actions, state } = useDraftContext();
-  const { draft, isDragging, isResizing } = state;
+  const { isDragging, isResizing } = state;
   const { drag, resize } = actions;
 
   const isDrafting = useAppSelector(selectIsDrafting);

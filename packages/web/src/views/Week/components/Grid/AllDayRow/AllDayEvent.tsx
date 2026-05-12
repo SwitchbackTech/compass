@@ -108,6 +108,7 @@ const AllDayEvent = ({
   });
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
       role="button"
@@ -141,18 +142,16 @@ const AllDayEvent = ({
       </Flex>
       {onScalerMouseDown && (
         <>
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
           <div
-            role="button"
-            tabIndex={-1}
             style={scalerStyle({ left: "-0.25px" })}
             onMouseDown={(e) => {
               e.stopPropagation();
               onScalerMouseDown(event, e, "startDate");
             }}
           />
+          {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
           <div
-            role="button"
-            tabIndex={-1}
             style={scalerStyle({ right: "-0.25px" })}
             onMouseDown={(e) => {
               e.stopPropagation();

@@ -16,6 +16,7 @@ export const ArrowButton = ({
 
   return (
     <button
+      type="button"
       className={`flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:${hoverColor} focus:${hoverColor} focus:outline-none focus:ring-2 focus:ring-white/50`}
       aria-label={label}
       onClick={onClick}

@@ -9,6 +9,7 @@ import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
 interface TaskContextValue {
   tasks: Task[];
   isLoadingTasks: boolean;
+  hasLoadedTasksOnce: boolean;
   editingTitle: string;
   editingTaskId: string | null;
   isAddingTask: boolean;
@@ -80,6 +81,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
   const value: TaskContextValue = {
     tasks: state.tasks,
     isLoadingTasks: state.isLoadingTasks,
+    hasLoadedTasksOnce: state.hasLoadedTasksOnce,
     editingTitle: state.editingTitle,
     editingTaskId: state.editingTaskId,
     selectedTaskIndex: state.selectedTaskIndex,
