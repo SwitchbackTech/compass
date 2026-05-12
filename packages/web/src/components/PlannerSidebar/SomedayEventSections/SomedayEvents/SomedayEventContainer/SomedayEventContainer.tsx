@@ -95,6 +95,7 @@ export const SomedayEventContainer = ({
 
   const isDraftingThisEvent =
     state.isDrafting && state.draft?._id === event._id;
+  const formEvent = isDraftingThisEvent && state.draft ? state.draft : event;
 
   return (
     <>
@@ -129,10 +130,10 @@ export const SomedayEventContainer = ({
               left={getSidebarOpenWidth()}
             >
               <SomedayEventForm
-                event={event}
+                event={formEvent}
                 category={category}
-                isDraft={!event._id}
-                isExistingEvent={!!event._id}
+                isDraft={!formEvent._id}
+                isExistingEvent={!!formEvent._id}
                 onClose={() => {
                   actions.closeForm();
                   actions.close();

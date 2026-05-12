@@ -21,7 +21,7 @@ const _DraggableSomedayEvents: FC<{
           <DraggableSomedayEvent
             category={category}
             draftId={draft?._id || ID_SOMEDAY_DRAFT}
-            event={isDrafting && draft ? draft : event}
+            event={event}
             index={index}
             isDrafting={isDrafting}
             isOverGrid={isOverGrid}

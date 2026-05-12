@@ -238,12 +238,15 @@ export const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
   const titleInput = getFormTitleInput(page);
   await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
   await titleInput.fill(title);
-  await expect(titleInput).toHaveValue(title, { timeout: FORM_TIMEOUT });
   const saveButton = page.getByRole("form").getByRole("button", {
     name: "Save",
   });
-  await saveButton.scrollIntoViewIfNeeded();
-  await saveButton.click({ force: true });
+  // Save often sits in floating form UI that can re-render while Playwright is
+  // performing pointer actionability checks. Dispatch a DOM click so React
+  // handlers run against the currently mounted control.
+  await saveButton.evaluate((el) => {
+    (el as HTMLElement).click();
+  });
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
 };
 

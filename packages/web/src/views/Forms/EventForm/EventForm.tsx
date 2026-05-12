@@ -60,6 +60,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     const priority = event.priority || Priorities.UNASSIGNED;
     const priorityColor = colorByPriority[priority];
     const category = getCategory(event);
+    const latestEventRef = useRef(event);
 
     /********
      * State
@@ -81,8 +82,24 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
     const descriptionRef = useRef<HTMLTextAreaElement>(null);
 
+    const setLatestEvent = useCallback(
+      (nextEvent: Parameters<typeof setEvent>[0]) => {
+        const resolvedEvent =
+          typeof nextEvent === "function"
+            ? nextEvent(latestEventRef.current)
+            : nextEvent;
+
+        if (resolvedEvent) {
+          latestEventRef.current = resolvedEvent;
+        }
+
+        setEvent(resolvedEvent);
+      },
+      [setEvent],
+    );
+
     useEffect(() => {
-      setEvent(event || {});
+      setLatestEvent(event || {});
 
       const dt = getFormDates(
         event.startDate as string,
@@ -95,7 +112,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setSelectedEndDate(dt.endDate);
 
       setIsFormOpen(true);
-    }, [event, setEvent]);
+    }, [event, setLatestEvent]);
 
     /***********
      * Handlers
@@ -144,12 +161,13 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     };
 
     const onSubmitForm = () => {
+      const eventToSubmit = latestEventRef.current;
       const selectedDateTimes = {
         startDate: selectedStartDate,
         startTime,
         endDate: selectedEndDate,
         endTime,
-        isAllDay: event.isAllDay || false,
+        isAllDay: eventToSubmit.isAllDay || false,
       };
 
       const { startDate, endDate } = mapToBackend(selectedDateTimes);
@@ -160,8 +178,8 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       }
 
       const finalEvent = {
-        ...event,
-        priority: event.priority || Priorities.UNASSIGNED,
+        ...eventToSubmit,
+        priority: eventToSubmit.priority || Priorities.UNASSIGNED,
         startDate,
         endDate,
       };
@@ -170,7 +188,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     };
 
     const onSetEventField: SetEventFormField = (field) => {
-      setEvent({ ...event, ...field });
+      setLatestEvent({ ...latestEventRef.current, ...field });
     };
 
     const dateTimeSectionProps = {
@@ -193,13 +211,13 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setDisplayEndDate,
       setIsEndDatePickerOpen,
       setIsStartDatePickerOpen,
-      setEvent,
+      setEvent: setLatestEvent,
     };
 
     const recurrenceSectionProps = {
       bgColor: priorityColor,
       event,
-      setEvent,
+      setEvent: setLatestEvent,
     };
 
     useAppHotkey(
