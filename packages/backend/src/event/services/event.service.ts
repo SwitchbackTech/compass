@@ -1,5 +1,6 @@
 import { type GaxiosError } from "gaxios";
 import {
+  type AnyBulkWriteOperation,
   type ClientSession,
   type Document,
   type Filter,
@@ -38,6 +39,65 @@ import mongoService from "@backend/common/services/mongo.service";
 import { reorderEvents } from "@backend/event/queries/event.queries";
 import { getReadAllFilter } from "@backend/event/services/event.service.util";
 import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
+
+const SOMEDAY_LIMIT = SOMEDAY_WEEKLY_LIMIT + SOMEDAY_MONTHLY_LIMIT;
+
+const hasValidOrder = (event: Pick<Schema_Event, "order">): boolean =>
+  typeof event.order === "number" && !Number.isNaN(event.order);
+
+const sortBySomedayOrder = (
+  a: WithId<Omit<Schema_Event, "_id">>,
+  b: WithId<Omit<Schema_Event, "_id">>,
+) => {
+  const orderDifference =
+    (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER);
+  if (orderDifference !== 0) return orderDifference;
+
+  return a._id.toString().localeCompare(b._id.toString());
+};
+
+const repairMissingSomedayOrders = async (
+  userId: string,
+  events: Array<WithId<Omit<Schema_Event, "_id">>>,
+): Promise<Array<WithId<Omit<Schema_Event, "_id">>>> => {
+  const usedOrders = new Set<number>();
+
+  events.forEach((event) => {
+    if (hasValidOrder(event)) {
+      usedOrders.add(event.order as number);
+    }
+  });
+
+  let nextOrder = 0;
+  const updates: AnyBulkWriteOperation[] = [];
+
+  const repairedEvents = events.map((event) => {
+    if (hasValidOrder(event)) {
+      return event;
+    }
+
+    while (usedOrders.has(nextOrder)) {
+      nextOrder += 1;
+    }
+
+    const order = nextOrder;
+    usedOrders.add(order);
+    updates.push({
+      updateOne: {
+        filter: { _id: event._id, user: userId },
+        update: { $set: { order } },
+      },
+    });
+
+    return { ...event, order };
+  });
+
+  if (updates.length > 0) {
+    await mongoService.event.bulkWrite(updates);
+  }
+
+  return repairedEvents;
+};
 
 class EventService {
   /*
@@ -102,9 +162,11 @@ class EventService {
     if (query.someday) {
       events = await mongoService.event
         .find(filter)
-        .limit(SOMEDAY_WEEKLY_LIMIT + SOMEDAY_MONTHLY_LIMIT)
-        .sort({ startDate: 1 })
+        .sort({ startDate: 1, _id: 1 })
         .toArray();
+      events = (await repairMissingSomedayOrders(userId, events))
+        .sort(sortBySomedayOrder)
+        .slice(0, SOMEDAY_LIMIT);
     } else {
       events = await mongoService.event.find(filter).toArray();
     }

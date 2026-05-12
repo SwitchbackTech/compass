@@ -9,11 +9,13 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const putEvent = mock();
 const getAllEvents = mock();
+const getEvents = mock();
 
 mock.module("@web/common/storage/adapter/adapter", () => ({
   getStorageAdapter: () => ({
-    putEvent,
     getAllEvents,
+    getEvents,
+    putEvent,
   }),
 }));
 
@@ -32,6 +34,7 @@ describe("LocalEventRepository", () => {
   beforeEach(() => {
     putEvent.mockClear();
     getAllEvents.mockClear();
+    getEvents.mockClear();
   });
 
   it("preserves the demo marker when editing a seeded demo event", async () => {
@@ -45,5 +48,43 @@ describe("LocalEventRepository", () => {
     );
 
     expect(isLocalDemoEvent(putEvent.mock.calls[0][0])).toBe(true);
+  });
+
+  it("repairs missing someday event order values when loading someday events", async () => {
+    getEvents.mockResolvedValue([
+      makeEvent({
+        _id: "event-1",
+        isSomeday: true,
+        title: "Learn a new shortcut",
+      }),
+      makeEvent({
+        _id: "event-2",
+        isSomeday: true,
+        order: 1,
+        title: "zz smoke week",
+      }),
+      makeEvent({
+        _id: "event-3",
+        isSomeday: true,
+        order: 2,
+        title: "aa smoke week",
+      }),
+    ]);
+
+    const result = await new LocalEventRepository().get({
+      endDate: "2026-05-16",
+      someday: true,
+      startDate: "2026-05-10",
+    });
+
+    expect(result.data.map((event) => event.title)).toEqual([
+      "Learn a new shortcut",
+      "zz smoke week",
+      "aa smoke week",
+    ]);
+    expect(putEvent).toHaveBeenCalledTimes(1);
+    expect(putEvent.mock.calls[0][0]).toEqual(
+      expect.objectContaining({ _id: "event-1", order: 0 }),
+    );
   });
 });

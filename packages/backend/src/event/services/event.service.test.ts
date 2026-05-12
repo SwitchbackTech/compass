@@ -1,5 +1,9 @@
 import { ObjectId } from "mongodb";
-import { CalendarProvider } from "@core/types/event.types";
+import {
+  CalendarProvider,
+  CompassCoreEventSchema,
+  type Query_Event,
+} from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
   createMockBaseEvent,
@@ -15,6 +19,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import {
   _createCompassEvent,
   _deleteSeries,
+  default as eventService,
 } from "@backend/event/services/event.service";
 
 // Use real services, no mocks
@@ -25,6 +30,25 @@ describe("Compass Event Service", () => {
   afterAll(cleanupTestDb);
 
   describe("_createCompassEvent", () => {
+    it("preserves someday event order after request validation", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const baseEvent = createMockStandaloneEvent({
+        isSomeday: true,
+        order: 3,
+        user: userId,
+      });
+      const parsedEvent = CompassCoreEventSchema.parse(baseEvent);
+      const _id = new ObjectId(parsedEvent._id);
+
+      const result = await _createCompassEvent(
+        { ...parsedEvent, _id, user: userId },
+        CalendarProvider.GOOGLE,
+      );
+
+      expect(result.order).toBe(3);
+    });
+
     it("creates a compass standalone event if it does not exist", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
@@ -154,6 +178,102 @@ describe("Compass Event Service", () => {
       );
 
       expect(result.gEventId).toBeUndefined();
+    });
+  });
+
+  describe("readAll someday order", () => {
+    const somedayQuery: Query_Event = {
+      end: "2026-05-31",
+      someday: "true",
+      start: "2026-05-01",
+    };
+
+    const createSomedayEvent = (
+      userId: string,
+      title: string,
+      order?: number,
+      _id = new ObjectId().toString(),
+    ) => ({
+      ...createMockStandaloneEvent({
+        _id,
+        isSomeday: true,
+        order,
+        startDate: "2026-05-10",
+        title,
+        user: userId,
+      }),
+      _id: new ObjectId(_id),
+    });
+
+    it("returns someday events by saved order", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      await mongoService.event.insertMany([
+        createSomedayEvent(userId, "Alpha", 1),
+        createSomedayEvent(userId, "Bravo", 2),
+        createSomedayEvent(userId, "Zebra", 0),
+      ]);
+
+      const result = await eventService.readAll(userId, somedayQuery);
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(
+        (result as Array<{ title?: string }>).map((event) => event.title),
+      ).toEqual(["Zebra", "Alpha", "Bravo"]);
+    });
+
+    it("repairs missing someday event order values on read", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const missingFirstId = "507f1f77bcf86cd799439012";
+      const missingSecondId = "507f1f77bcf86cd799439014";
+
+      await mongoService.event.insertMany([
+        createSomedayEvent(
+          userId,
+          "Existing zero",
+          0,
+          "507f1f77bcf86cd799439011",
+        ),
+        createSomedayEvent(userId, "Missing first", undefined, missingFirstId),
+        createSomedayEvent(
+          userId,
+          "Existing two",
+          2,
+          "507f1f77bcf86cd799439013",
+        ),
+        createSomedayEvent(
+          userId,
+          "Missing second",
+          undefined,
+          missingSecondId,
+        ),
+      ]);
+
+      const result = await eventService.readAll(userId, somedayQuery);
+
+      expect(Array.isArray(result)).toBe(true);
+      expect(
+        (result as Array<{ title?: string }>).map((event) => event.title),
+      ).toEqual([
+        "Existing zero",
+        "Missing first",
+        "Existing two",
+        "Missing second",
+      ]);
+
+      const repairedEvents = await mongoService.event
+        .find({
+          _id: {
+            $in: [new ObjectId(missingFirstId), new ObjectId(missingSecondId)],
+          },
+          user: userId,
+        })
+        .sort({ _id: 1 })
+        .toArray();
+
+      expect(repairedEvents.map((event) => event.order)).toEqual([1, 3]);
     });
   });
 

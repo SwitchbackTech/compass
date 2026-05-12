@@ -6,9 +6,23 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
-import { preserveLocalEventMarker } from "@web/common/storage/types/local-event.types";
+import {
+  type LocalStoredEvent,
+  preserveLocalEventMarker,
+} from "@web/common/storage/types/local-event.types";
 import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
 import { type EventRepository } from "./event.repository.interface";
+
+const hasValidOrder = (event: Pick<Schema_Event, "order">): boolean =>
+  typeof event.order === "number" && !Number.isNaN(event.order);
+
+const sortBySomedayOrder = (a: LocalStoredEvent, b: LocalStoredEvent) => {
+  const orderDifference =
+    (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER);
+  if (orderDifference !== 0) return orderDifference;
+
+  return (a._id ?? "").localeCompare(b._id ?? "");
+};
 
 /**
  * Local event repository implementation using the storage adapter.
@@ -49,12 +63,15 @@ export class LocalEventRepository implements EventRepository {
       params.endDate,
       params.someday,
     );
+    const orderedEvents = params.someday
+      ? await this.repairMissingSomedayOrders(events)
+      : events;
 
     return {
-      data: events as Schema_Event[],
-      count: events.length,
+      data: orderedEvents as Schema_Event[],
+      count: orderedEvents.length,
       page: 1,
-      pageSize: events.length || 1,
+      pageSize: orderedEvents.length || 1,
       offset: 0,
       startDate: params.startDate,
       endDate: params.endDate,
@@ -112,5 +129,38 @@ export class LocalEventRepository implements EventRepository {
     if (errors.length > 0) {
       throw new Error(`Failed to reorder ${errors.length} events`);
     }
+  }
+
+  private async repairMissingSomedayOrders(
+    events: LocalStoredEvent[],
+  ): Promise<LocalStoredEvent[]> {
+    const usedOrders = new Set<number>();
+
+    events.forEach((event) => {
+      if (hasValidOrder(event)) {
+        usedOrders.add(event.order as number);
+      }
+    });
+
+    let nextOrder = 0;
+    const repairedEvents: LocalStoredEvent[] = [];
+
+    for (const event of events) {
+      if (hasValidOrder(event)) {
+        repairedEvents.push(event);
+        continue;
+      }
+
+      while (usedOrders.has(nextOrder)) {
+        nextOrder += 1;
+      }
+
+      const repairedEvent = { ...event, order: nextOrder };
+      usedOrders.add(nextOrder);
+      repairedEvents.push(repairedEvent);
+      await this.adapter.putEvent(repairedEvent);
+    }
+
+    return repairedEvents.sort(sortBySomedayOrder);
   }
 }
