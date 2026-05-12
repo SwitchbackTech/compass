@@ -3,6 +3,11 @@
 COMPASS_HOME=${COMPASS_HOME:-$HOME/compass}
 COMPASS_VERSION=${COMPASS_VERSION:-latest}
 COMPASS_RAW_URL=https://raw.githubusercontent.com/SwitchbackTech/compass
+# 'latest' is a Docker Hub tag, not a git ref. Map it to 'main' for raw file downloads.
+case $COMPASS_VERSION in
+  latest) COMPASS_GIT_REF=main ;;
+  *)      COMPASS_GIT_REF=$COMPASS_VERSION ;;
+esac
 
 ENV_FILE=$COMPASS_HOME/.env
 MARKER_FILE=$COMPASS_HOME/.compass-self-host
@@ -479,7 +484,7 @@ EOF
 download_compose_file() {
   tmp_compose=$COMPASS_HOME/docker-compose.yml.$$
   info "Downloading docker-compose.yml for Compass ${COMPASS_VERSION}."
-  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_VERSION}/self-host/docker-compose.yml" -o "$tmp_compose" \
+  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/docker-compose.yml" -o "$tmp_compose" \
     || fail "Could not download docker-compose.yml for version ${COMPASS_VERSION}. Check that the version exists."
 
   if [ -f "$COMPOSE_FILE" ]; then
@@ -491,7 +496,7 @@ download_compose_file() {
 
 download_helper() {
   info "Downloading compass helper for Compass ${COMPASS_VERSION}."
-  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_VERSION}/self-host/compass" -o "$HELPER_FILE" \
+  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compass" -o "$HELPER_FILE" \
     || fail "Could not download compass helper for version ${COMPASS_VERSION}."
   chmod +x "$HELPER_FILE" || fail "Could not make $HELPER_FILE executable."
 }
