@@ -37,16 +37,17 @@ It'll be around for the long-term:
 - User sessions
 
 ### The Limitations
-
-- No UI to choose which Google calendars sync (only `primary`)
-- No sharing, locations, reminders, or mobile app
+Current things we don't support (yet):
+- Subcalendar sync (only primary calendar)
+- Sharing, reminders, locations
+- Mobile app
 
 ## Tech Stack
 
-- **Frontend**: React, Redux, Tailwind CSS, TypeScript, Bun
+- **Frontend**: React, Redux, Tailwind CSS, TypeScript
 - **Backend**: Node.js, Express, TypeScript, MongoDB
-- **Integrations**: Google Calendar API, Google OAuth2, Server-Sent Events
-- **Testing**: Bun, React Testing Library, Playwright
+- **Integrations**: Google Calendar API, Google OAuth2
+- **Testing**: React Testing Library, Playwright
 
 ## Getting Started
 
@@ -68,15 +69,13 @@ bun run test:core && bun run test:web && bun run test:backend
 bun run test:e2e
 ```
 
-[Checkout the technical docs](./docs/README.md) for all our developer guides.
-
 ### Option 3: Self-host Compass
 
 Run Compass on a server you control to keep everything on your infrastructure.
 
 See [the self-hosting guide](./docs/self-hosting/README.md) for instructions.
 
-### Contributing
+## Contributing
 
 We love contributions! Whether it's bug fixes, new features, or documentation improvements, your help makes Compass better for everyone.
 
@@ -84,9 +83,10 @@ We love contributions! Whether it's bug fixes, new features, or documentation im
 
 **Pull Requests**: Fork the repo, follow the the [Contribution Guidelines](./CONTRIBUTING.md), submit PR.
 
-**Feedback**: Join the conversation on [GitHub Discussions](https://github.com/SwitchbackTech/compass/discussions).
+**Feedback**: Share your ideas on [GitHub Discussions](https://github.com/SwitchbackTech/compass/discussions).
 
 ## Resources
+- **Docsite**: [docs.compasscalendar.com](https://docs.compasscalendar.com/docs)
 - **Changelog**: [compasscalendar.com](https://changelog.compasscalendar.com)
 - **Handbook**: [notion.site](https://alpaca-ty.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d?utm_source=github&utm_medium=referral&utm_campaign=readme)
 - **Twitter**: [@CompassCalendar](https://x.com/CompassCalendar)
