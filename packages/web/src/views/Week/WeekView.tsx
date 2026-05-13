@@ -1,4 +1,5 @@
-import { useMemo } from "react";
+import { type FC, useMemo } from "react";
+import { type Dayjs } from "@core/util/date/dayjs";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
@@ -15,27 +16,38 @@ import { DayLabels } from "@web/views/Week/components/Header/DayLabels";
 import { Header } from "@web/views/Week/components/Header/Header";
 import { Shortcuts } from "@web/views/Week/components/Shortcuts";
 import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
-import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
-import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
+import {
+  type Measurements_Grid,
+  type Refs_Grid,
+  useGridLayout,
+} from "@web/views/Week/hooks/grid/useGridLayout";
+import {
+  type Util_Scroll,
+  useScroll,
+} from "@web/views/Week/hooks/grid/useScroll";
 import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useRefetch } from "@web/views/Week/hooks/useRefetch";
 import { useToday } from "@web/views/Week/hooks/useToday";
-import { useWeek } from "@web/views/Week/hooks/useWeek";
+import { useWeek, type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { Styled, StyledCalendar, WeekGridTrack } from "@web/views/Week/styled";
 
-export const WeekView = () => {
-  useRefetch();
+interface WeekGridInteractionProps {
+  gridRefs: Refs_Grid;
+  isSidebarOpen: boolean;
+  measurements: Measurements_Grid;
+  scrollUtil: Util_Scroll;
+  today: Dayjs;
+  weekProps: WeekProps;
+}
 
-  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
-
-  const { today } = useToday();
-
-  const weekProps = useWeek(today);
-
-  const { gridRefs, measurements } = useGridLayout();
-
-  const scrollUtil = useScroll(gridRefs.mainGridRef);
-
+const WeekGridInteraction: FC<WeekGridInteractionProps> = ({
+  gridRefs,
+  isSidebarOpen,
+  measurements,
+  scrollUtil,
+  today,
+  weekProps,
+}) => {
   const dateCalcs = useDateCalcs(measurements, gridRefs.mainGridRef);
 
   const isCurrentWeek = weekProps.component.isCurrentWeek;
@@ -94,7 +106,7 @@ export const WeekView = () => {
   });
 
   return (
-    <Styled id="cal">
+    <>
       <CmdPalette {...shortcutProps} />
       <Dedication />
 
@@ -150,6 +162,33 @@ export const WeekView = () => {
           <RecurringEventUpdateScopeDialog />
         </SidebarDraftProvider>
       </DraftProvider>
+    </>
+  );
+};
+
+export const WeekView = () => {
+  useRefetch();
+
+  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+
+  const { today } = useToday();
+
+  const weekProps = useWeek(today);
+
+  const { gridRefs, measurements } = useGridLayout();
+
+  const scrollUtil = useScroll(gridRefs.mainGridRef);
+
+  return (
+    <Styled id="cal">
+      <WeekGridInteraction
+        gridRefs={gridRefs}
+        isSidebarOpen={isSidebarOpen}
+        measurements={measurements}
+        scrollUtil={scrollUtil}
+        today={today}
+        weekProps={weekProps}
+      />
     </Styled>
   );
 };
