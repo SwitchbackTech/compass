@@ -407,14 +407,28 @@ export const useDraftActions = (
           }
         }
 
+        const nextStartDate = draft.isAllDay
+          ? eventStart.format(YEAR_MONTH_DAY_FORMAT)
+          : eventStart.format();
+        const nextEndDate = draft.isAllDay
+          ? eventEnd.format(YEAR_MONTH_DAY_FORMAT)
+          : eventEnd.format();
+
+        const isSameStart = draft.isAllDay
+          ? draft.startDate === nextStartDate
+          : dayjs(draft.startDate).isSame(nextStartDate);
+        const isSameEnd = draft.isAllDay
+          ? draft.endDate === nextEndDate
+          : dayjs(draft.endDate).isSame(nextEndDate);
+
+        if (isSameStart && isSameEnd) {
+          return;
+        }
+
         const _draft: Schema_GridEvent = {
           ...draft,
-          startDate: draft.isAllDay
-            ? eventStart.format(YEAR_MONTH_DAY_FORMAT)
-            : eventStart.format(),
-          endDate: draft.isAllDay
-            ? eventEnd.format(YEAR_MONTH_DAY_FORMAT)
-            : eventEnd.format(),
+          startDate: nextStartDate,
+          endDate: nextEndDate,
           priority: draft.priority || Priorities.UNASSIGNED,
         };
 
