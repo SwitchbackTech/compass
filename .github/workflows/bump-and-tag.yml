@@ -20,7 +20,7 @@ jobs:
 
       - name: Bump patch version and push tag
         env:
-          COMPASS_PAT: ${{ secrets.COMPASS_CI_TOKEN }}
+          COMPASS_CI_TOKEN: ${{ secrets.COMPASS_CI_TOKEN }}
         run: |
           LATEST=$(git tag --sort=-v:refname | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
           [ -z "$LATEST" ] && LATEST="v0.0.0"
