@@ -28,16 +28,16 @@ export const PlannerAccountSummary: FC = () => {
             <InfoIcon aria-hidden="true" size={15} weight="bold" />
           </span>
           <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
-            <span className="truncate font-medium text-[11px] text-text-lighter leading-tight">
+            <span className="truncate font-normal text-text-light text-xs leading-tight">
               {accountLabel}
             </span>
             <span
               aria-hidden="true"
-              className="shrink-0 text-[10px] text-text-light-inactive"
+              className="shrink-0 text-text-light-inactive text-xs"
             >
               ·
             </span>
-            <span className="shrink-0 font-medium text-[11px] text-accent-primary leading-tight transition-colors duration-150 group-hover:text-text-lighter">
+            <span className="shrink-0 font-medium text-accent-primary text-xs leading-tight transition-colors duration-150 group-hover:text-text-lighter">
               Sign up
             </span>
           </span>
@@ -52,7 +52,7 @@ export const PlannerAccountSummary: FC = () => {
       title={accountLabel}
     >
       <span
-        className="min-w-0 flex-1 truncate font-medium text-[11px] text-text-lighter leading-tight"
+        className="min-w-0 flex-1 truncate font-normal text-text-light text-xs leading-tight"
         translate="no"
       >
         {accountLabel}
