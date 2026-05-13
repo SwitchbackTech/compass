@@ -28,13 +28,20 @@ export const SomedayEventRectangle = ({
     !event.recurrence?.rule || event.recurrence?.rule.length === 0;
 
   return (
-    <div ref={formProps.refs.setReference} {...formProps.getReferenceProps()}>
+    <div
+      className="h-full"
+      ref={formProps.refs.setReference}
+      {...formProps.getReferenceProps()}
+    >
       <Flex
         alignItems={AlignItems.CENTER}
+        className="h-full"
         direction={FlexDirections.ROW}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <Text size="l">{event.title}</Text>
+        <Text lineHeight={16} size="m">
+          {event.title}
+        </Text>
 
         {canMigrate ? (
           <Flex>

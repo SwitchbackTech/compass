@@ -1,11 +1,12 @@
 import styled from "styled-components";
 import { type Priorities } from "@core/constants/core.constants";
 import { brighten } from "@core/util/color.utils";
-import { SOMEDAY_EVENT_HEIGHT } from "@web/common/constants/web.constants";
 import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
+
+const SOMEDAY_EVENT_ROW_HEIGHT = 32;
 
 export interface Props {
   priority: Priorities;
@@ -29,9 +30,9 @@ export const StyledNewSomedayEvent = styled.div<Props>`
 
   border-radius: 2px;
   color: ${({ theme }) => theme.color.text.dark};
-  height: ${SOMEDAY_EVENT_HEIGHT}px;
+  height: ${SOMEDAY_EVENT_ROW_HEIGHT}px;
   filter: brightness(${({ isFocused }) => (isFocused ? "160%" : "100%")});
-  margin-bottom: 2px;
+  margin: 4px 0;
   opacity: ${({ isDragging, isOverGrid }) => {
     if (isDragging && isOverGrid) return 0;
     return 1;

@@ -26,7 +26,8 @@ export const DraggableSomedayEvent: FC<Props> = ({
   isOverGrid,
   index,
 }) => {
-  const isDraftingThisEvent = isDrafting && draftId === event._id;
+  const isDraftingThisEvent =
+    isDrafting && (draftId === event._id || !event._id);
   const { actions, setters } = useSidebarContext();
   const { start, end } = useAppSelector(selectDatesInView);
 

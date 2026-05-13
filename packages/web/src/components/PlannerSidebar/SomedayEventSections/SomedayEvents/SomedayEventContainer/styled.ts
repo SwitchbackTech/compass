@@ -5,6 +5,9 @@ export const StyledMigrateArrow = styled.button.attrs({ type: "button" })`
   border: 0;
   color: inherit;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  height: 100%;
   font: inherit;
   padding-left: 7px;
   padding-right: 7px;
