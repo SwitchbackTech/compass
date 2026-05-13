@@ -26,6 +26,7 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "format:check": "biome format .",
+    "perf:week": "bun packages/scripts/src/performance/week-view.perf.ts",
     "test": "bun packages/scripts/src/testing/run.ts",
     "test:e2e": "bunx playwright test",
     "test:backend": "bun packages/scripts/src/testing/run.ts backend",
