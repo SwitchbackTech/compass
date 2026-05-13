@@ -1,4 +1,20 @@
-import { type Browser, chromium, type Page } from "playwright";
+import {
+  type Browser,
+  type BrowserContext,
+  chromium,
+  type Page,
+} from "playwright";
+import {
+  type BrowserMetricSummary,
+  buildComparison,
+  getLatestPath,
+  type PerfRunResult,
+  type RunContext,
+  resolveComparePath,
+  type ScenarioResult,
+  type ScenarioSample,
+  validateLatestComparison,
+} from "./week-view.perf-results";
 import { type ChildProcess, execFileSync, spawn } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -19,41 +35,6 @@ type StoredPerfEvent = {
   user: string;
 };
 
-type BrowserMetricSummary = {
-  longTaskCount: number;
-  maxFrameGapMs: number;
-  maxLongTaskMs: number;
-};
-
-type ScenarioSample = BrowserMetricSummary & {
-  durationMs: number;
-};
-
-type ScenarioResult = BrowserMetricSummary & {
-  averageMs: number;
-  maxMs: number;
-  medianMs: number;
-  minMs: number;
-  name: string;
-  p95Ms: number;
-  samples: ScenarioSample[];
-};
-
-type PerfRunResult = {
-  baseUrl: string;
-  git: {
-    branch: string;
-    commit: string;
-    dirty: boolean;
-  };
-  label: string;
-  note?: string;
-  outputPath: string;
-  runAt: string;
-  runsPerScenario: number;
-  scenarios: ScenarioResult[];
-};
-
 type CliOptions = {
   baseUrl?: string;
   compare?: string;
@@ -64,9 +45,11 @@ type CliOptions = {
   port: number;
   runs: number;
   scenarios: Set<string>;
+  warmups: number;
 };
 
 type ScenarioDefinition = {
+  isolateSamples?: boolean;
   name: string;
   run: (page: Page, baseUrl: string) => Promise<ScenarioSample>;
 };
@@ -76,14 +59,32 @@ type ServerHandle = {
   stop: () => Promise<void>;
 };
 
+type ScenarioPage = {
+  page: Page;
+};
+
 const REPO_ROOT = path.resolve(import.meta.dir, "../../../..");
 const WEB_ROOT = path.join(REPO_ROOT, "packages/web");
 const DEFAULT_OUTPUT_DIR = path.join(REPO_ROOT, "tmp/perf/week-view");
 const LOCAL_DB_NAME = "compass-local";
 const DEFAULT_RUNS = 5;
+const DEFAULT_WARMUPS = 1;
 const DEFAULT_PORT = 9160;
 const FORM_TIMEOUT_MS = 10_000;
+const FORM_OPEN_ATTEMPT_TIMEOUT_MS = 1_000;
 const SERVER_TIMEOUT_MS = 120_000;
+const VIEWPORT = { width: 1440, height: 1000 };
+
+function getWeekStart(date = new Date()) {
+  const weekStart = new Date(date);
+  weekStart.setHours(0, 0, 0, 0);
+  weekStart.setDate(weekStart.getDate() - weekStart.getDay());
+
+  return weekStart;
+}
+
+const RUN_WEEK_START = getWeekStart();
+const RUN_WEEK_START_LABEL = RUN_WEEK_START.toISOString().slice(0, 10);
 
 const writeOut = (message = "") => {
   process.stdout.write(`${message}\n`);
@@ -124,6 +125,23 @@ const parsePositiveInteger = (
   return parsed;
 };
 
+const parseNonNegativeInteger = (
+  value: string | undefined,
+  fallback: number,
+  optionName: string,
+) => {
+  if (!value) {
+    return fallback;
+  }
+
+  const parsed = Number(value);
+  if (!Number.isInteger(parsed) || parsed < 0) {
+    throw new Error(`${optionName} must be a non-negative integer.`);
+  }
+
+  return parsed;
+};
+
 const parseOptions = (): CliOptions => {
   const args = process.argv.slice(2);
   const scenarioNames = getArgValue(args, "--scenario")
@@ -151,11 +169,27 @@ const parseOptions = (): CliOptions => {
       "--runs",
     ),
     scenarios: new Set(scenarioNames),
+    warmups: parseNonNegativeInteger(
+      getArgValue(args, "--warmups"),
+      DEFAULT_WARMUPS,
+      "--warmups",
+    ),
   };
 };
 
 const getGitValue = (args: string[]) =>
   execFileSync("git", args, { cwd: REPO_ROOT, encoding: "utf8" }).trim();
+
+const getOptionalCommandValue = (command: string, args: string[]) => {
+  try {
+    return execFileSync(command, args, {
+      cwd: REPO_ROOT,
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    return undefined;
+  }
+};
 
 const getGitInfo = () => {
   const branch = getGitValue(["branch", "--show-current"]) || "detached";
@@ -165,6 +199,23 @@ const getGitInfo = () => {
 
   return { branch, commit, dirty };
 };
+
+const createRunContext = (
+  browser: Browser,
+  options: CliOptions,
+  scenarios: ScenarioDefinition[],
+): RunContext => ({
+  browserName: "chromium",
+  browserVersion: browser.version(),
+  bunVersion: getOptionalCommandValue("bun", ["--version"]),
+  headless: !options.headed,
+  nodeVersion: process.version,
+  platform: process.platform,
+  scenarios: scenarios.map((scenario) => scenario.name),
+  viewport: VIEWPORT,
+  warmupRuns: options.warmups,
+  weekStart: RUN_WEEK_START_LABEL,
+});
 
 const toSafeLabel = (label: string) =>
   label
@@ -318,6 +369,19 @@ const waitForSettledFrames = async (page: Page) => {
         });
       }),
   );
+};
+
+const newScenarioContext = (browser: Browser) =>
+  browser.newContext({
+    viewport: VIEWPORT,
+  });
+
+const newScenarioPage = async (
+  context: BrowserContext,
+): Promise<ScenarioPage> => {
+  const page = await context.newPage();
+
+  return { page };
 };
 
 const startBrowserMetrics = async (page: Page) => {
@@ -543,13 +607,7 @@ const createLocalDate = (
   return date;
 };
 
-const getCurrentWeekStart = () => {
-  const date = new Date();
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() - date.getDay());
-
-  return date;
-};
+const getPerfWeekStart = () => new Date(RUN_WEEK_START);
 
 const createTimedEvent = (
   index: number,
@@ -605,7 +663,7 @@ const createAllDayEvent = (
 };
 
 const createHeavyWeekEvents = () => {
-  const weekStart = getCurrentWeekStart();
+  const weekStart = getPerfWeekStart();
   const timedEvents: StoredPerfEvent[] = [];
   const allDayEvents: StoredPerfEvent[] = [];
 
@@ -633,7 +691,7 @@ const createHeavyWeekEvents = () => {
 };
 
 const createSingleDragEvent = () => {
-  const weekStart = getCurrentWeekStart();
+  const weekStart = getPerfWeekStart();
   return createTimedEvent(
     50_000,
     weekStart,
@@ -681,8 +739,14 @@ const openTimedEventFormWithShortcut = async (page: Page) => {
       });
       await page.locator("#mainGrid").focus();
       await pressShortcut(page, "c");
+      if (!(await titleInput.isVisible().catch(() => false))) {
+        await page.keyboard.press("c");
+      }
 
-      await titleInput.waitFor({ state: "visible", timeout: 4_000 });
+      await titleInput.waitFor({
+        state: "visible",
+        timeout: FORM_OPEN_ATTEMPT_TIMEOUT_MS,
+      });
       return;
     } catch (error) {
       lastError = error;
@@ -716,9 +780,122 @@ const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
 
 const expectTimedEventVisible = async (page: Page, title: string) => {
   await page
-    .locator("#mainGrid")
-    .getByRole("button", { name: title })
-    .waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+    .locator("#timedEvents")
+    .getByText(title)
+    .waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+};
+
+type ElementBox = {
+  height: number;
+  width: number;
+  x: number;
+  y: number;
+};
+
+const getLocatorBox = async (
+  locator: ReturnType<Page["locator"]>,
+  message: string,
+): Promise<ElementBox> => {
+  const box = await locator.boundingBox();
+
+  if (!box) {
+    throw new Error(message);
+  }
+
+  return box;
+};
+
+const waitForElementBoxChange = async (
+  page: Page,
+  selector: string,
+  initialBox: ElementBox,
+  dimensions: Array<keyof ElementBox>,
+  minDelta = 10,
+) => {
+  await page.waitForFunction(
+    ({ box, keys, selector: elementSelector, threshold }) => {
+      const element = document.querySelector(elementSelector);
+      if (!element) {
+        return false;
+      }
+
+      const rect = element.getBoundingClientRect();
+      const current = {
+        height: rect.height,
+        width: rect.width,
+        x: rect.x,
+        y: rect.y,
+      };
+
+      return keys.some((key) => Math.abs(current[key] - box[key]) >= threshold);
+    },
+    { box: initialBox, keys: dimensions, selector, threshold: minDelta },
+    { timeout: FORM_TIMEOUT_MS },
+  );
+};
+
+const dragOnMainGrid = async (
+  page: Page,
+  drag: { endY: number; startX: number; startY: number },
+  options: { afterMoveMs?: number; holdMs?: number; steps?: number } = {},
+) => {
+  const { afterMoveMs = 0, holdMs = 0, steps = 12 } = options;
+
+  await page.mouse.move(drag.startX, drag.startY);
+  await page.mouse.down();
+  if (holdMs > 0) {
+    await page.waitForTimeout(holdMs);
+  }
+  await page.mouse.move(drag.startX, drag.endY, { steps });
+  if (afterMoveMs > 0) {
+    await page.waitForTimeout(afterMoveMs);
+  }
+  await page.mouse.up();
+};
+
+const openTimedEventFormFromGrid = async (
+  page: Page,
+  point: { x: number; y: number },
+) => {
+  const titleInput = getFormTitleInput(page);
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    try {
+      await page.evaluate(() => {
+        if (document.activeElement instanceof HTMLElement) {
+          document.activeElement.blur();
+        }
+      });
+      await page.locator("#mainGrid").focus();
+      await page.mouse.move(point.x, point.y);
+      await page.mouse.down();
+      await page
+        .waitForFunction(
+          () => document.querySelector("#timedEvents [role='button']"),
+          undefined,
+          { timeout: 1_000 },
+        )
+        .catch(() => undefined);
+      await page.mouse.up();
+      await titleInput.waitFor({
+        state: "visible",
+        timeout: FORM_OPEN_ATTEMPT_TIMEOUT_MS,
+      });
+      return;
+    } catch (error) {
+      lastError = error;
+      if (await titleInput.isVisible().catch(() => false)) {
+        return;
+      }
+      await page.keyboard.press("Escape").catch(() => undefined);
+      await page.waitForTimeout(200);
+    }
+  }
+
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Unable to open timed event form from grid.");
 };
 
 const measureEmptyWeekLoad = async (
@@ -756,10 +933,35 @@ const measureCreateTimedEvent = async (
   await prepareCalendarState(page, baseUrl, []);
   await page.reload({ waitUntil: "domcontentloaded" });
   await waitForWeekReady(page);
+  await page.waitForTimeout(1_000);
 
   return measureAction(page, async () => {
     const title = `Perf created event ${Date.now()}`;
     await openTimedEventFormWithShortcut(page);
+    await fillTitleAndSaveEventForm(page, title);
+  });
+};
+
+const measureGridCreateTimedEvent = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  await prepareCalendarState(page, baseUrl, []);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await waitForWeekReady(page);
+
+  const mainGrid = page.locator("#mainGrid");
+  const mainGridBox = await getLocatorBox(
+    mainGrid,
+    "Expected main grid to be visible.",
+  );
+  const x = mainGridBox.x + mainGridBox.width * 0.4;
+  const y = mainGridBox.y + mainGridBox.height * 0.35;
+  await page.waitForTimeout(1_000);
+
+  return measureAction(page, async () => {
+    const title = `Perf grid-created event ${Date.now()}`;
+    await openTimedEventFormFromGrid(page, { x, y });
     await fillTitleAndSaveEventForm(page, title);
     await expectTimedEventVisible(page, title);
   });
@@ -775,14 +977,15 @@ const measureDragTimedEvent = async (
   await waitForWeekReady(page, { allDay: 0, timed: 1 });
 
   const eventButton = page.locator(`#mainGrid [data-event-id="${event._id}"]`);
+  const eventSelector = `#mainGrid [data-event-id="${event._id}"]`;
   await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
   await eventButton.scrollIntoViewIfNeeded();
   await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
 
-  const box = await eventButton.boundingBox();
-  if (!box) {
-    throw new Error("Expected seeded timed event to be visible.");
-  }
+  const box = await getLocatorBox(
+    eventButton,
+    "Expected seeded timed event to be visible.",
+  );
 
   const startX = box.x + box.width / 2;
   const startY = box.y + Math.min(20, box.height / 2);
@@ -795,14 +998,63 @@ const measureDragTimedEvent = async (
     await page.mouse.move(endX, endY, { steps: 16 });
     await page.mouse.up();
     await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+    await waitForElementBoxChange(page, eventSelector, box, ["x", "y"]);
+  });
+};
+
+const measureResizeTimedEvent = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const event = createSingleDragEvent();
+  await prepareCalendarState(page, baseUrl, [event]);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await waitForWeekReady(page, { allDay: 0, timed: 1 });
+
+  const eventSelector = `#mainGrid [data-event-id="${event._id}"]`;
+  const eventButton = page.locator(eventSelector);
+  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+  await eventButton.scrollIntoViewIfNeeded();
+  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+
+  const box = await getLocatorBox(
+    eventButton,
+    "Expected seeded timed event to be visible.",
+  );
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height - 2;
+  const endY = startY + 90;
+
+  return measureAction(page, async () => {
+    await dragOnMainGrid(page, { endY, startX, startY });
+    await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+    await waitForElementBoxChange(page, eventSelector, box, ["height"]);
   });
 };
 
 const SCENARIOS: ScenarioDefinition[] = [
   { name: "empty-week-load", run: measureEmptyWeekLoad },
   { name: "heavy-week-load", run: measureHeavyWeekLoad },
-  { name: "create-timed-event", run: measureCreateTimedEvent },
-  { name: "drag-timed-event", run: measureDragTimedEvent },
+  {
+    isolateSamples: true,
+    name: "create-timed-event",
+    run: measureCreateTimedEvent,
+  },
+  {
+    isolateSamples: true,
+    name: "grid-create-timed-event",
+    run: measureGridCreateTimedEvent,
+  },
+  {
+    isolateSamples: true,
+    name: "drag-timed-event",
+    run: measureDragTimedEvent,
+  },
+  {
+    isolateSamples: true,
+    name: "resize-timed-event",
+    run: measureResizeTimedEvent,
+  },
 ];
 
 const selectScenarios = (options: CliOptions) => {
@@ -827,45 +1079,55 @@ const runScenarios = async (
   browser: Browser,
   baseUrl: string,
   options: CliOptions,
+  scenarios: ScenarioDefinition[],
 ) => {
   const results: ScenarioResult[] = [];
-  const scenarios = selectScenarios(options);
+
+  const runScenarioOnce = async (
+    scenario: ScenarioDefinition,
+    context?: BrowserContext,
+  ) => {
+    const sampleContext = context ?? (await newScenarioContext(browser));
+    const scenarioPage = await newScenarioPage(sampleContext);
+
+    try {
+      return await scenario.run(scenarioPage.page, baseUrl);
+    } finally {
+      await scenarioPage.page.close();
+      if (!context) {
+        await sampleContext.close();
+      }
+    }
+  };
 
   for (const scenario of scenarios) {
     const samples: ScenarioSample[] = [];
+    const context = scenario.isolateSamples
+      ? undefined
+      : await newScenarioContext(browser);
     writeOut(`Running ${scenario.name} (${options.runs} sample(s))...`);
 
-    for (let index = 0; index < options.runs; index += 1) {
-      const page = await browser.newPage({
-        viewport: { width: 1440, height: 1000 },
-      });
+    try {
+      for (let index = 0; index < options.warmups; index += 1) {
+        await runScenarioOnce(scenario, context);
+        writeOut(`  warmup ${index + 1}/${options.warmups}: discarded`);
+      }
 
-      try {
-        const sample = await scenario.run(page, baseUrl);
+      for (let index = 0; index < options.runs; index += 1) {
+        const sample = await runScenarioOnce(scenario, context);
         samples.push(sample);
         writeOut(
           `  ${index + 1}/${options.runs}: ${sample.durationMs.toFixed(1)} ms`,
         );
-      } finally {
-        await page.close();
       }
+    } finally {
+      await context?.close();
     }
 
     results.push(summarizeScenario(scenario.name, samples));
   }
 
   return results;
-};
-
-const getLatestPath = (outputDir: string) =>
-  path.join(outputDir, "latest.json");
-
-const resolveComparePath = (compare: string, outputDir: string) => {
-  if (compare === "latest") {
-    return getLatestPath(outputDir);
-  }
-
-  return path.resolve(compare);
 };
 
 const readBaseline = async (
@@ -876,7 +1138,7 @@ const readBaseline = async (
     return null;
   }
 
-  const baselinePath = resolveComparePath(compare, outputDir);
+  const baselinePath = path.resolve(resolveComparePath(compare, outputDir));
   const rawBaseline = await readFile(baselinePath, "utf8");
 
   return JSON.parse(rawBaseline) as PerfRunResult;
@@ -886,12 +1148,27 @@ const appendHistory = async (result: PerfRunResult, outputDir: string) => {
   const historyPath = path.join(outputDir, "history.jsonl");
   const compact = {
     branch: result.git.branch,
+    browserVersion: result.runContext.browserVersion,
     commit: result.git.commit,
+    comparison: result.comparison
+      ? {
+          baseline: result.comparison.baseline,
+          scenarios: result.comparison.scenarios.map((scenario) => ({
+            longTaskDelta: scenario.longTaskCount.delta,
+            maxFrameGapDeltaMs: Number(scenario.maxFrameGapMs.delta.toFixed(1)),
+            medianDeltaMs: Number(scenario.medianMs.delta.toFixed(1)),
+            name: scenario.name,
+            p95DeltaMs: Number(scenario.p95Ms.delta.toFixed(1)),
+          })),
+        }
+      : undefined,
     dirty: result.git.dirty,
+    headless: result.runContext.headless,
     label: result.label,
     note: result.note,
     outputPath: result.outputPath,
     runAt: result.runAt,
+    scenariosRun: result.runContext.scenarios,
     scenarios: result.scenarios.map((scenario) => ({
       longTaskCount: scenario.longTaskCount,
       maxFrameGapMs: Number(scenario.maxFrameGapMs.toFixed(1)),
@@ -899,6 +1176,9 @@ const appendHistory = async (result: PerfRunResult, outputDir: string) => {
       name: scenario.name,
       p95Ms: Number(scenario.p95Ms.toFixed(1)),
     })),
+    viewport: result.runContext.viewport,
+    warmupRuns: result.runContext.warmupRuns,
+    weekStart: result.runContext.weekStart,
   };
 
   await writeFile(historyPath, `${JSON.stringify(compact)}\n`, {
@@ -927,6 +1207,24 @@ const saveResult = async (
 
 const formatMs = (value: number) => `${value.toFixed(1)} ms`;
 
+const formatDeltaMs = (value: number) => {
+  const sign = value > 0 ? "+" : "";
+
+  return `${sign}${value.toFixed(1)} ms`;
+};
+
+const formatDeltaCount = (value: number) => {
+  const sign = value > 0 ? "+" : "";
+
+  return `${sign}${value}`;
+};
+
+const formatDeltaPercent = (value: number) => {
+  const sign = value > 0 ? "+" : "";
+
+  return `${sign}${value.toFixed(1)}%`;
+};
+
 const printResultTable = (result: PerfRunResult) => {
   writeOut("");
   writeOut(`Week view performance: ${result.label}`);
@@ -934,6 +1232,12 @@ const printResultTable = (result: PerfRunResult) => {
     writeOut(`Note: ${result.note}`);
   }
   writeOut(`Commit: ${result.git.commit}${result.git.dirty ? " (dirty)" : ""}`);
+  writeOut(
+    `Browser: chromium ${result.runContext.browserVersion} ${result.runContext.headless ? "(headless)" : "(headed)"}`,
+  );
+  writeOut(
+    `Viewport: ${result.runContext.viewport.width}x${result.runContext.viewport.height}; warmups: ${result.runContext.warmupRuns}; seed week: ${result.runContext.weekStart}`,
+  );
   writeOut("");
   writeOut(
     "Scenario                 Median      P95         Max frame gap  Long tasks",
@@ -957,61 +1261,82 @@ const printComparison = (
   baseline: PerfRunResult | null,
   current: PerfRunResult,
 ) => {
-  if (!baseline) {
+  if (!baseline || !current.comparison) {
     return;
   }
 
-  const baselineByName = new Map(
-    baseline.scenarios.map((scenario) => [scenario.name, scenario]),
-  );
-
   writeOut("");
   writeOut(`Compared with: ${baseline.label} (${baseline.git.commit})`);
-  writeOut("Scenario                 Before      After       Change");
+  writeOut(
+    "Scenario                 Before      After       Median      Frame gap   Long tasks",
+  );
 
-  for (const currentScenario of current.scenarios) {
-    const baselineScenario = baselineByName.get(currentScenario.name);
-    if (!baselineScenario) {
-      continue;
-    }
-
-    const deltaMs = currentScenario.medianMs - baselineScenario.medianMs;
-    const deltaPercent =
-      baselineScenario.medianMs === 0
-        ? 0
-        : (deltaMs / baselineScenario.medianMs) * 100;
-    const sign = deltaMs > 0 ? "+" : "";
+  for (const scenario of current.comparison.scenarios) {
+    const medianChange = `${formatDeltaMs(scenario.medianMs.delta)} (${formatDeltaPercent(
+      scenario.medianMs.deltaPercent,
+    )})`;
 
     writeOut(
-      `${currentScenario.name.padEnd(24)}${formatMs(
-        baselineScenario.medianMs,
-      ).padEnd(
+      `${scenario.name.padEnd(24)}${formatMs(scenario.medianMs.before).padEnd(
         12,
-      )}${formatMs(currentScenario.medianMs).padEnd(12)}${sign}${deltaMs.toFixed(
-        1,
-      )} ms (${sign}${deltaPercent.toFixed(1)}%)`,
+      )}${formatMs(scenario.medianMs.after).padEnd(12)}${medianChange.padEnd(
+        20,
+      )}${formatDeltaMs(scenario.maxFrameGapMs.delta).padEnd(
+        12,
+      )}${formatDeltaCount(scenario.longTaskCount.delta)}`,
     );
   }
 };
 
 const main = async () => {
   const options = parseOptions();
+  const scenariosToRun = selectScenarios(options);
+  const git = getGitInfo();
   const baseline = await readBaseline(options.compare, options.outputDir);
+  validateLatestComparison({
+    baseline,
+    compare: options.compare,
+    current: {
+      git,
+      runsPerScenario: options.runs,
+      runContext: {
+        headless: !options.headed,
+        scenarios: scenariosToRun.map((scenario) => scenario.name),
+        viewport: VIEWPORT,
+        weekStart: RUN_WEEK_START_LABEL,
+      },
+    },
+    expectedScenarios: scenariosToRun.map((scenario) => scenario.name),
+  });
   const server = await startServer(options);
   let browser: Browser | null = null;
 
   try {
     browser = await chromium.launch({ headless: !options.headed });
-    const scenarios = await runScenarios(browser, server.baseUrl, options);
+    const scenarios = await runScenarios(
+      browser,
+      server.baseUrl,
+      options,
+      scenariosToRun,
+    );
+    const runContext = createRunContext(browser, options, scenariosToRun);
+    const resultWithoutOutputPath = {
+      baseUrl: server.baseUrl,
+      git,
+      label: options.label,
+      note: options.note,
+      runAt: new Date().toISOString(),
+      runContext,
+      runsPerScenario: options.runs,
+      scenarios,
+    };
     const result = await saveResult(
       {
-        baseUrl: server.baseUrl,
-        git: getGitInfo(),
-        label: options.label,
-        note: options.note,
-        runAt: new Date().toISOString(),
-        runsPerScenario: options.runs,
-        scenarios,
+        ...resultWithoutOutputPath,
+        comparison: buildComparison(baseline, {
+          ...resultWithoutOutputPath,
+          outputPath: "",
+        }),
       },
       options.outputDir,
     );

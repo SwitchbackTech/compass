@@ -24,8 +24,13 @@ bun run perf:week -- --label colocate-date-calcs --compare latest --note "moved 
 ```
 
 `--compare latest` reads the previous run before saving the new one, so the
-printed table shows before, after, and percent change. The new run then becomes
-the next `latest` baseline.
+printed table shows before, after, and percent change. The saved JSON also keeps
+that comparison under `comparison`, and `history.jsonl` gets a compact copy.
+The new run then becomes the next `latest` baseline.
+
+`latest` is intentionally strict. It only compares when the branch, sample
+count, browser mode, viewport, scenario set, and seeded week match. If you want
+to compare across one of those boundaries, pass the saved JSON path explicitly.
 
 ## What It Measures
 
@@ -34,7 +39,9 @@ The harness runs the same seeded browser flows each time:
 - empty week view load
 - heavy week view load with overlapping timed events and all-day events
 - timed event creation through the app shortcut and real form save
-- timed event drag through the real grid interaction
+- timed event creation from the grid and real form save
+- timed event drag through the real grid interaction, verified by visible movement
+- timed event resize through the real grid interaction, verified by visible size change
 
 Each scenario runs several samples and reports median time, p95 time, worst
 frame gap, and long-task count.
@@ -43,7 +50,7 @@ frame gap, and long-task count.
 
 ```bash
 # Fewer samples for a quick smoke test
-bun run perf:week -- --runs 1 --label smoke
+bun run perf:week -- --runs 1 --warmups 0 --label smoke
 
 # Run one scenario
 bun run perf:week -- --scenario heavy-week-load --label heavy-baseline
@@ -55,4 +62,7 @@ bun run perf:week -- --compare tmp/perf/week-view/2026-...-baseline.json --label
 bun run perf:week -- --base-url http://localhost:9080 --label local-server
 ```
 
-Use the same machine, browser mode, and sample count when comparing runs.
+By default, each scenario gets one warmup sample that is discarded. Use
+`--warmups 0` only for quick smoke checks.
+
+Use the same machine and avoid background-heavy work when comparing runs.
