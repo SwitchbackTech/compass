@@ -1,4 +1,4 @@
-import { type MutableRefObject, useEffect, useRef, useState } from "react";
+import { type MutableRefObject, useEffect, useRef } from "react";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const SCROLL_SPEED = 10;
@@ -8,31 +8,25 @@ export const useDragEventSmartScroll = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
 ) => {
   const { state } = useDraftContext();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const mousePositionRef = useRef({ x: 0, y: 0 });
   const scrollRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!state.isDragging) return;
     if (state.draft?.isAllDay !== false) return;
-
-    const updateMousePosition = (event: MouseEvent) => {
-      setMousePosition({ x: event.clientX, y: event.clientY });
-    };
-
-    window.addEventListener("mousemove", updateMousePosition);
-
-    return () => {
-      window.removeEventListener("mousemove", updateMousePosition);
-    };
-  }, [state.draft?.isAllDay, state.isDragging]);
-
-  useEffect(() => {
     if (!mainGridRef.current) return;
     const container = mainGridRef.current;
 
+    const scheduleScroll = () => {
+      if (scrollRef.current !== null) return;
+
+      scrollRef.current = requestAnimationFrame(scrollIfNeeded);
+    };
+
     const scrollIfNeeded = () => {
+      scrollRef.current = null;
+
       if (!state.isDragging) return;
-      if (!container) return;
       if (state.draft?.isAllDay !== false) return;
 
       const containerRect = container.getBoundingClientRect();
@@ -40,7 +34,7 @@ export const useDragEventSmartScroll = (
         top: containerRect.top,
         bottom: containerRect.bottom - 100,
       };
-      const { y } = mousePosition;
+      const { y } = mousePositionRef.current;
 
       let scrollAmount = 0;
 
@@ -56,29 +50,25 @@ export const useDragEventSmartScroll = (
 
       if (scrollAmount !== 0) {
         container.scrollTop += scrollAmount;
-        scrollRef.current = requestAnimationFrame(scrollIfNeeded);
-      } else {
-        scrollRef.current = null;
+        scheduleScroll();
       }
     };
 
-    if (!scrollRef.current) {
-      scrollRef.current = requestAnimationFrame(scrollIfNeeded);
-    }
+    const updateMousePosition = (event: MouseEvent) => {
+      mousePositionRef.current = { x: event.clientX, y: event.clientY };
+      scheduleScroll();
+    };
+
+    window.addEventListener("mousemove", updateMousePosition);
+    scheduleScroll();
 
     return () => {
-      if (scrollRef.current) {
+      window.removeEventListener("mousemove", updateMousePosition);
+
+      if (scrollRef.current !== null) {
         cancelAnimationFrame(scrollRef.current);
         scrollRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    state.isDragging,
-    mousePosition.x,
-    mousePosition.y,
-    state.draft?.isAllDay,
-    mousePosition,
-    mainGridRef.current,
-  ]);
+  }, [mainGridRef, state.draft?.isAllDay, state.isDragging]);
 };
