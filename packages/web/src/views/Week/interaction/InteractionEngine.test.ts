@@ -1,7 +1,7 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { InteractionEngine } from "./InteractionEngine";
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 const createDraft = (
   overrides: Partial<Schema_GridEvent> = {},
@@ -64,5 +64,20 @@ describe("InteractionEngine", () => {
       draft: null,
       pointer: null,
     });
+  });
+
+  it("can publish live draft motion without notifying React store subscribers", () => {
+    const engine = new InteractionEngine();
+    const reactSubscriber = mock();
+    const motionSubscriber = mock();
+    const draft = createDraft({ title: "Live draft" });
+
+    engine.getStore().subscribe(reactSubscriber);
+    engine.subscribeMotion(motionSubscriber);
+    engine.updateDraft(draft, { notifyReact: false });
+
+    expect(engine.getSnapshot().draft).toBe(draft);
+    expect(reactSubscriber).not.toHaveBeenCalled();
+    expect(motionSubscriber).toHaveBeenCalledWith(engine.getSnapshot());
   });
 });

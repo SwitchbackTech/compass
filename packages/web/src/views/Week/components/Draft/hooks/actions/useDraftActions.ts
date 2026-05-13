@@ -387,7 +387,10 @@ export const useDraftActions = (
         return;
       }
 
-      interaction.updatePointer({ x: e.clientX, y: e.clientY });
+      interaction.updatePointer(
+        { x: e.clientX, y: e.clientY },
+        { notifyReact: false },
+      );
       const liveDraft = interaction.getSnapshot().draft ?? draft;
 
       const hasMoved = computeDragHasMoved({
@@ -417,7 +420,7 @@ export const useDraftActions = (
       });
 
       if (nextDraft) {
-        interaction.updateDraft(nextDraft);
+        interaction.updateDraft(nextDraft, { notifyReact: false });
       }
     },
     [
@@ -441,7 +444,10 @@ export const useDraftActions = (
 
       if (!isResizing) return;
 
-      interaction.updatePointer({ x: e.clientX, y: e.clientY });
+      interaction.updatePointer(
+        { x: e.clientX, y: e.clientY },
+        { notifyReact: false },
+      );
       // For all-day events, use a fixed Y coordinate (0) because Y positioning is irrelevant:
       const y = liveDraft.isAllDay ? 0 : e.clientY;
       const currTime = dateCalcs.getDateByXY(
@@ -473,15 +479,18 @@ export const useDraftActions = (
         setResizeStatus({ hasMoved: true });
       }
 
-      interaction.updateDraft({
-        ...liveDraft,
-        _id: liveDraft._id,
-        hasFlipped: resizeResult.flipDraft.hasFlipped,
-        endDate: resizeResult.flipDraft.endDate,
-        startDate: resizeResult.flipDraft.startDate,
-        priority: resizeResult.flipDraft.priority,
-        [resizeResult.dateChanged]: resizeResult.updatedTime,
-      });
+      interaction.updateDraft(
+        {
+          ...liveDraft,
+          _id: liveDraft._id,
+          hasFlipped: resizeResult.flipDraft.hasFlipped,
+          endDate: resizeResult.flipDraft.endDate,
+          startDate: resizeResult.flipDraft.startDate,
+          priority: resizeResult.flipDraft.priority,
+          [resizeResult.dateChanged]: resizeResult.updatedTime,
+        },
+        { notifyReact: false },
+      );
     },
     [
       closeForm,

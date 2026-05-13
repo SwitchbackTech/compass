@@ -9,13 +9,22 @@ type InteractionStatePatch = Partial<InteractionState>;
 type InteractionStateUpdater = (
   snapshot: InteractionState,
 ) => InteractionStatePatch | InteractionState;
+type InteractionStoreUpdateOptions = {
+  notify?: boolean;
+};
 
 export interface InteractionStore {
   getSnapshot: () => InteractionState;
   reset: () => void;
-  setState: (update: InteractionStatePatch | InteractionStateUpdater) => void;
+  setState: (
+    update: InteractionStatePatch | InteractionStateUpdater,
+    options?: InteractionStoreUpdateOptions,
+  ) => void;
   subscribe: (listener: InteractionListener) => () => void;
-  updatePointer: (pointer: InteractionPointer) => void;
+  updatePointer: (
+    pointer: InteractionPointer,
+    options?: InteractionStoreUpdateOptions,
+  ) => void;
 }
 
 const createInteractionState = (
@@ -47,7 +56,7 @@ export const createInteractionStore = (
     }
   };
 
-  const setState: InteractionStore["setState"] = (update) => {
+  const setState: InteractionStore["setState"] = (update, options = {}) => {
     const patch = typeof update === "function" ? update(state) : update;
     const nextState = createInteractionState({
       ...state,
@@ -59,7 +68,9 @@ export const createInteractionStore = (
     }
 
     state = nextState;
-    emit();
+    if (options.notify ?? true) {
+      emit();
+    }
   };
 
   return {
@@ -75,8 +86,8 @@ export const createInteractionStore = (
         listeners.delete(listener);
       };
     },
-    updatePointer: (pointer) => {
-      setState({ pointer });
+    updatePointer: (pointer, options) => {
+      setState({ pointer }, options);
     },
   };
 };

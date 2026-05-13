@@ -14,8 +14,15 @@ interface DraftStateMirror {
   isResizing: boolean;
 }
 
+interface InteractionMotionOptions {
+  notifyReact?: boolean;
+}
+
+type InteractionMotionListener = (snapshot: InteractionState) => void;
+
 export class InteractionEngine {
   private readonly store: InteractionStore;
+  private readonly motionListeners = new Set<InteractionMotionListener>();
 
   constructor(store: InteractionStore = createInteractionStore()) {
     this.store = store;
@@ -27,6 +34,14 @@ export class InteractionEngine {
 
   getStore(): InteractionStore {
     return this.store;
+  }
+
+  subscribeMotion(listener: InteractionMotionListener): () => void {
+    this.motionListeners.add(listener);
+
+    return () => {
+      this.motionListeners.delete(listener);
+    };
   }
 
   mirrorDraftState(state: DraftStateMirror): void {
@@ -43,15 +58,32 @@ export class InteractionEngine {
     });
   }
 
-  updateDraft(draft: Schema_GridEvent): void {
-    this.store.setState({ draft });
+  updateDraft(
+    draft: Schema_GridEvent,
+    options: InteractionMotionOptions = {},
+  ): void {
+    this.store.setState({ draft }, { notify: options.notifyReact ?? true });
+    this.emitMotion();
   }
 
   reset(): void {
     this.store.reset();
   }
 
-  updatePointer(pointer: InteractionPointer): void {
-    this.store.updatePointer(pointer);
+  updatePointer(
+    pointer: InteractionPointer,
+    options: InteractionMotionOptions = {},
+  ): void {
+    this.store.updatePointer(pointer, {
+      notify: options.notifyReact ?? true,
+    });
+  }
+
+  private emitMotion(): void {
+    const snapshot = this.getSnapshot();
+
+    for (const listener of this.motionListeners) {
+      listener(snapshot);
+    }
   }
 }

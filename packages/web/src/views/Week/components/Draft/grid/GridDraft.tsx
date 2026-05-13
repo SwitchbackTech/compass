@@ -1,5 +1,11 @@
 import { FloatingFocusManager } from "@floating-ui/react";
-import { type FC, type MouseEvent } from "react";
+import {
+  type FC,
+  type MouseEvent,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
@@ -12,6 +18,10 @@ import { GridEvent } from "@web/views/Week/components/Event/Grid";
 import { useGridEventMouseDown } from "@web/views/Week/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  applyDraftDomPosition,
+  resetDraftDomPosition,
+} from "@web/views/Week/interaction/dom/applyDraftDomPosition";
 
 interface Props {
   draft: Schema_GridEvent;
@@ -28,13 +38,56 @@ export const GridDraft: FC<Props> = ({
   measurements,
   weekProps,
 }) => {
-  const { actions, setters, state, confirmation } = useDraftContext();
+  const { actions, interaction, setters, state, confirmation } =
+    useDraftContext();
+  const draftElementRef = useRef<HTMLDivElement | null>(null);
   const { discard, duplicateEvent } = actions;
   const { startDragging } = actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
   const { formProps, isFormOpen } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
     formProps;
+
+  const setReference = useCallback(
+    (element: HTMLDivElement | null) => {
+      draftElementRef.current = element;
+      refs.setReference(element);
+    },
+    [refs.setReference],
+  );
+
+  useEffect(() => {
+    const element = draftElementRef.current;
+    if (!element) return;
+
+    const applyLiveDraftPosition = () => {
+      const liveDraft = interaction.getSnapshot().draft;
+      if (!liveDraft) return;
+
+      applyDraftDomPosition({
+        baseDraft: draft,
+        draft: liveDraft,
+        element,
+        endOfView: weekProps.component.endOfView,
+        measurements,
+        startOfView: weekProps.component.startOfView,
+      });
+    };
+
+    applyLiveDraftPosition();
+    const unsubscribe = interaction.subscribeMotion(applyLiveDraftPosition);
+
+    return () => {
+      unsubscribe();
+      resetDraftDomPosition(element);
+    };
+  }, [
+    draft,
+    interaction,
+    measurements,
+    weekProps.component.endOfView,
+    weekProps.component.startOfView,
+  ]);
 
   const onConvert = () => {
     const start = weekProps.component.startOfView.format(YEAR_MONTH_DAY_FORMAT);
@@ -95,7 +148,7 @@ export const GridDraft: FC<Props> = ({
           setDateBeingChanged(dateToChange);
           setIsResizing(true);
         }}
-        ref={refs.setReference}
+        ref={setReference}
         weekProps={weekProps}
         {...getReferenceProps()}
       />
