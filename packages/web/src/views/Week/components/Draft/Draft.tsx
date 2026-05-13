@@ -6,6 +6,7 @@ import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors
 import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { useInteractionSnapshot } from "@web/views/Week/interaction/interaction.store";
 import { useDraftContext } from "./context/useDraftContext";
 import { GridDraft } from "./grid/GridDraft";
 import { useGridMouseMove } from "./grid/hooks/useGridMouseMove";
@@ -21,8 +22,11 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   useGridMouseMove();
 
   const category = useAppSelector(selectDraftCategory);
-  const { state } = useDraftContext();
-  const { draft, isDragging, isResizing } = state;
+  const { interaction } = useDraftContext();
+  const interactionState = useInteractionSnapshot(interaction.getStore());
+  const { draft } = interactionState;
+  const isDragging = interactionState.mode === "drag";
+  const isResizing = interactionState.mode === "resize";
 
   if (draft?.isAllDay === undefined) {
     return null;

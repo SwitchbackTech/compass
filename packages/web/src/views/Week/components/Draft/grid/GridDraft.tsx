@@ -21,12 +21,18 @@ interface Props {
   weekProps: WeekProps;
 }
 
-export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
+export const GridDraft: FC<Props> = ({
+  draft,
+  isDragging,
+  isResizing,
+  measurements,
+  weekProps,
+}) => {
   const { actions, setters, state, confirmation } = useDraftContext();
   const { discard, duplicateEvent } = actions;
   const { startDragging } = actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
-  const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
+  const { formProps, isFormOpen } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
     formProps;
 
