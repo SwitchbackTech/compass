@@ -1,0 +1,38 @@
+name: Deploy staging
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release tag being deployed, such as v1.2.3'
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag being deployed, such as v1.2.3'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy staging
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy release to staging
+        env:
+          RELEASE_TAG: ${{ inputs.tag }}
+          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
+          SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
+          SSH_USER: ${{ secrets.STAGING_SSH_USER }}
+        run: |
+          echo "Deploying Compass ${RELEASE_TAG} to staging"
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/staging_key
+          chmod 600 ~/.ssh/staging_key
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update"

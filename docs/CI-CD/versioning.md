@@ -6,7 +6,7 @@ Compass uses two complementary version identifiers.
 
 Format: `v{MAJOR}.{MINOR}.{PATCH}` — e.g. `v0.5.4`
 
-- Bumped automatically on every merge to `main` (patch) by `bump-and-tag.yml`
+- Bumped automatically on every merge to `main` (patch) by `release-on-main.yml`
 - Minor/major bumps are manual: push a tag like `v0.6.0` directly
 - Used to tag Docker images on Docker Hub (`switchbacktech/compass-web:0.5.4`, `:0.5`, `:latest`)
 
@@ -22,10 +22,12 @@ A string baked into the web bundle at build time by `packages/web/build.ts` and 
 
 ### How it flows in CI
 
-1. `bump-and-tag.yml` pushes `v0.5.4`
-2. `publish-images.yml` fires, sets `COMPASS_BUILD_REF=0.5.4` as a Docker build arg
-3. `build.ts` reads `COMPASS_BUILD_REF`, sets `BUILD_VERSION = "0.5.4"`
-4. Bundle and `version.json` both contain `"0.5.4"`
+1. `release-on-main.yml` pushes `v0.5.4` from its `tag-release` job.
+2. `release-on-main.yml` calls `publish-docker-images.yml` with `tag=v0.5.4`.
+3. `publish-docker-images.yml` sets `COMPASS_BUILD_REF=0.5.4` as a Docker build arg.
+4. `build.ts` reads `COMPASS_BUILD_REF`, sets `BUILD_VERSION = "0.5.4"`.
+5. Bundle and `version.json` both contain `"0.5.4"`.
+6. `release-on-main.yml` calls `deploy-staging.yml` after Docker publishing succeeds.
 
 ### Adding a new build context
 
