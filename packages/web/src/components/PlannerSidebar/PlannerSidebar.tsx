@@ -21,6 +21,7 @@ interface Props extends HTMLAttributes<HTMLDivElement> {
   monthsShown?: number;
   onSelectDate: (date: Dayjs) => void;
   shortcutSections: ShortcutOverlaySection[];
+  showSomedayEventSections?: boolean;
   viewEnd: Dayjs;
   viewStart: Dayjs;
 }
@@ -33,6 +34,7 @@ export function PlannerSidebar({
   monthsShown = 1,
   onSelectDate,
   shortcutSections,
+  showSomedayEventSections = true,
   viewEnd,
   viewStart,
   ...props
@@ -55,16 +57,18 @@ export function PlannerSidebar({
 
         <PlannerAccountSummary />
 
-        <section aria-label="Unscheduled events" className="space-y-4">
-          <SomedayEventSections
-            calendarDate={calendarDate}
-            dateCalcs={dateCalcs}
-            gridRefs={gridRefs}
-            measurements={measurements}
-            viewEnd={viewEnd}
-            viewStart={viewStart}
-          />
-        </section>
+        {showSomedayEventSections ? (
+          <section aria-label="Someday events" className="space-y-4">
+            <SomedayEventSections
+              calendarDate={calendarDate}
+              dateCalcs={dateCalcs}
+              gridRefs={gridRefs}
+              measurements={measurements}
+              viewEnd={viewEnd}
+              viewStart={viewStart}
+            />
+          </section>
+        ) : null}
       </div>
 
       <PlannerSidebarActions
