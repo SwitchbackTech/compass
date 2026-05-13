@@ -42,6 +42,7 @@ Markdown files in this `docs/` directory are automatically mirrored to [docs.com
 - [Types And Validation](./development/types-and-validation.md)
 - [CI/CD](./ci-cd/README.md)
 - [CLI And Maintenance Commands](./ci-cd/cli-and-maintenance-commands.md)
+- [Versioning](./ci-cd/versioning.md)
 
 ## Feature Deep Dives
 

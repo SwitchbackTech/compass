@@ -299,15 +299,7 @@ You want the Compass containers healthy, Caddy listening on public `80` and
 
 ## 7. Add Google Calendar (optional)
 
-If you want Google sign-in or Google Calendar watch notifications, see [Google Calendar — Public watch notifications](./google-calendar.md#public-watch-notifications). The short version:
-
-- add `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and `TOKEN_GCAL_NOTIFICATION` to `~/compass/.env`
-- in your Google OAuth client, set the authorized JavaScript origin and redirect URI to `https://compass.example.com`
-- `./compass rebuild`
-
-Test Google connect, import, and webhook delivery on this install before relying on Google sync. Create or edit one event directly in Google Calendar and confirm it appears in Compass without reconnecting Google. Then restart Compass and confirm the connection still works.
-
-Long-running Google watch renewal is not scheduled by the self-host Docker stack. If you rely on ongoing Google sync, you still need to verify renewal on your server and wire up maintenance separately.
+See [Connect Google Calendar — Public watch notifications](./google-calendar.md#public-watch-notifications) for the full setup. Test Google connect, import, and webhook delivery on this install before relying on Google sync.
 
 ## Updating
 

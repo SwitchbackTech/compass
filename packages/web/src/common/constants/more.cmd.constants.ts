@@ -10,13 +10,6 @@ export const moreCommandPaletteItems: Array<{
     id: "advanced",
     items: [
       {
-        id: "code",
-        children: "View Code",
-        icon: "CodeBracketIcon",
-        href: "https://github.com/SwitchbackTech/compass",
-        target: "_blank",
-      },
-      {
         id: "report-bug",
         children: "Report Bug",
         icon: "BugAntIcon",
@@ -31,11 +24,14 @@ export const moreCommandPaletteItems: Array<{
         target: "_blank",
       },
       {
-        id: "donate",
-        children: "Donate",
-        icon: "CreditCardIcon",
-        href: "https://buy.stripe.com/cNi8wQ6pE9gyejz6hZ9sk00",
-        target: "_blank",
+        id: "version",
+        children: `Version: ${typeof BUILD_VERSION === "string" ? BUILD_VERSION : "dev"}`,
+        icon: "InformationCircleIcon",
+        onClick: () => {
+          const v =
+            typeof BUILD_VERSION === "string" ? BUILD_VERSION : "dev";
+          void navigator.clipboard.writeText(v);
+        },
       },
     ],
   },
