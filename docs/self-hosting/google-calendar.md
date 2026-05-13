@@ -153,6 +153,8 @@ Before you call continuous Google Calendar sync "working" on any self-host insta
 - Google watch registration succeeds
 - watch repair and refresh behavior holds up over time
 
+To confirm sync is live: create or edit one event directly in Google Calendar and confirm it appears in Compass without reconnecting Google. Then restart Compass and confirm the connection still works after restart.
+
 The repo has the code paths for Google watches and repair. The self-host Docker stack does not schedule watch renewal, so you need to verify and wire up maintenance separately before treating ongoing Google sync as dependable.
 
 ## What to read next
