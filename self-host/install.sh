@@ -10,7 +10,6 @@ case $COMPASS_VERSION in
 esac
 
 CONFIG_FILE=$COMPASS_HOME/compass.yaml
-LEGACY_ENV_FILE=$COMPASS_HOME/.env
 COMPOSE_ENV_FILE=$COMPASS_HOME/.compose.env
 MARKER_FILE=$COMPASS_HOME/.compass-self-host
 HELPER_FILE=$COMPASS_HOME/compass
@@ -23,7 +22,6 @@ APP_URL=http://localhost:9080
 HEALTH_URL=http://localhost:3000/api/health
 IS_REFRESH=0
 TMP_ENV=
-TMP_COMPOSE_ENV=
 INSTALL_COMPLETE=0
 FRESH_INSTALL_CREATED=0
 STACK_TOUCHED=0
@@ -40,10 +38,6 @@ fail() {
 cleanup() {
   if [ -n "$TMP_ENV" ] && [ -f "$TMP_ENV" ]; then
     rm -f "$TMP_ENV"
-  fi
-
-  if [ -n "$TMP_COMPOSE_ENV" ] && [ -f "$TMP_COMPOSE_ENV" ]; then
-    rm -f "$TMP_COMPOSE_ENV"
   fi
 
   if [ "$INSTALL_COMPLETE" -eq 0 ] && [ "$STACK_TOUCHED" -eq 1 ] && [ "$IS_REFRESH" -eq 0 ]; then
@@ -89,46 +83,6 @@ confirm_refresh() {
       exit 0
       ;;
   esac
-}
-
-check_legacy_env_file() {
-  [ ! -f "$LEGACY_ENV_FILE" ] || fail "Found legacy config file $LEGACY_ENV_FILE. Compass now uses $CONFIG_FILE. Create compass.yaml from the self-host example, copy your old values, then remove .env."
-}
-
-check_missing_config_with_existing_volumes() {
-  [ ! -f "$CONFIG_FILE" ] || return
-
-  existing_volumes=
-  delete_command="docker volume rm"
-  for volume_name in \
-    "${PROJECT_NAME}_compass_mongo_data" \
-    "${PROJECT_NAME}_compass_supertokens_postgres_data"
-  do
-    if docker volume inspect "$volume_name" >/dev/null 2>&1; then
-      existing_volumes="${existing_volumes}
-  $volume_name"
-      delete_command="$delete_command $volume_name"
-    fi
-  done
-
-  [ -n "$existing_volumes" ] || return
-
-  cat >&2 <<EOF
-Compass installer: I found existing Compass Docker data, but $CONFIG_FILE is missing.
-
-This usually means Compass was installed before, then the install folder or compass.yaml file was removed.
-The installer stopped before creating a new compass.yaml because new database passwords could lock you out of that data.
-
-Existing Docker volumes for "$PROJECT_NAME":$existing_volumes
-
-Next steps:
-  - Keep old data: restore $CONFIG_FILE, then rerun the installer.
-  - Start fresh with a different name: set COMPASS_HOME to a new directory (the directory name becomes the project name).
-    Example: curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | env COMPASS_HOME="$HOME/compass-new" sh
-  - Start over after confirming you do not need the old data:
-    $delete_command
-EOF
-  exit 1
 }
 
 check_install_dir() {
@@ -435,7 +389,7 @@ write_config_if_missing() {
   umask 077
   TMP_ENV=$COMPASS_HOME/compass.yaml.$$
   cat > "$TMP_ENV" <<EOF
-# See https://docs.compasscalendar.com/docs/self-hosting/environment-variables
+# See https://docs.compasscalendar.com/docs/self-hosting/config
 
 compose:
   version: $COMPASS_VERSION
@@ -473,10 +427,10 @@ tokens:
   compassSync: $compass_sync_token
   googleCalendarNotification: $gcal_notification_token
 
-google:
-  clientId: compass-self-host-placeholder.apps.googleusercontent.com
-  clientSecret: compass-self-host-placeholder-secret
-  channelExpirationMin: 10
+# google:
+#   clientId: YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
+#   clientSecret: YOUR_GOOGLE_CLIENT_SECRET
+#   channelExpirationMin: 10
 EOF
 
   chmod 600 "$TMP_ENV" || fail "Could not secure temporary env file."
@@ -517,8 +471,7 @@ EOF
 write_compose_env() {
   [ -f "$CONFIG_FILE" ] || fail "Missing config file: $CONFIG_FILE."
 
-  TMP_COMPOSE_ENV=$COMPASS_HOME/.compose.env.$$
-  cat > "$TMP_COMPOSE_ENV" <<EOF
+  cat > "$COMPOSE_ENV_FILE" <<EOF
 COMPASS_CONFIG_FILE=$CONFIG_FILE
 COMPASS_VERSION=$(strip_quotes "$(read_config_value compose.version)")
 WEB_PORT=$(strip_quotes "$(read_config_value ports.web)")
@@ -532,9 +485,7 @@ SUPERTOKENS_POSTGRES_PASSWORD=$(strip_quotes "$(read_config_value supertokens.po
 SUPERTOKENS_POSTGRES_DB=$(strip_quotes "$(read_config_value supertokens.postgres.database)")
 EOF
 
-  chmod 600 "$TMP_COMPOSE_ENV" || fail "Could not secure temporary compose env file."
-  mv "$TMP_COMPOSE_ENV" "$COMPOSE_ENV_FILE" || fail "Could not write $COMPOSE_ENV_FILE."
-  TMP_COMPOSE_ENV=
+  chmod 600 "$COMPOSE_ENV_FILE" || fail "Could not secure $COMPOSE_ENV_FILE."
 }
 
 compose_base() {
@@ -654,9 +605,7 @@ EOF
 
 check_install_dir
 require_prerequisites
-check_legacy_env_file
 load_runtime_config
-check_missing_config_with_existing_volumes
 
 if [ "$IS_REFRESH" -eq 0 ]; then
   check_required_ports

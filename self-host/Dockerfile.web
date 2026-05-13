@@ -11,9 +11,25 @@ ENV COMPASS_BUILD_REF=${COMPASS_BUILD_REF}
 ENV NODE_ENV=production
 ENV WEB_PORT=9080
 
-RUN cp self-host/compass.web-build.yaml compass.yaml && \
-    sed -i "s|__BASEURL__|${BASEURL}|g" compass.yaml && \
-    sed -i "s|__GOOGLE_CLIENT_ID__|${GOOGLE_CLIENT_ID}|g" compass.yaml
+RUN printf '%s\n' \
+  'runtime:' \
+  '  nodeEnv: production' \
+  '  timezone: Etc/UTC' \
+  'urls:' \
+  "  frontend: http://localhost:9080" \
+  "  backendApi: ${BASEURL}" \
+  '  cors:' \
+  '    - http://localhost:9080' \
+  'mongo:' \
+  '  uri: mongodb://localhost:27017/unused' \
+  'supertokens:' \
+  '  uri: http://localhost:3567' \
+  '  key: unused-web-build' \
+  'tokens:' \
+  '  compassSync: unused-web-build' \
+  'google:' \
+  "  clientId: ${GOOGLE_CLIENT_ID}" \
+  > compass.yaml
 
 RUN bun install --frozen-lockfile
 RUN cd packages/web && bun run build.ts
