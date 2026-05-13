@@ -24,6 +24,8 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     { k: VIEW_SHORTCUTS.day.key, label: VIEW_SHORTCUTS.day.label },
     { k: VIEW_SHORTCUTS.week.key, label: VIEW_SHORTCUTS.week.label },
     { k: "r", label: "Edit reminder" },
+    { k: "[", label: "Toggle sidebar" },
+    { k: "?", label: "Toggle shortcuts" },
     { k: "z", label: isAuthenticated ? "Logout" : "Log in" },
     { k: "Mod+k", label: "Command Palette" },
   ];

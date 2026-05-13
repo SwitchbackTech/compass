@@ -41,19 +41,17 @@ export const Header: FC<Props> = ({ scrollUtil, weekProps }) => {
 
   return (
     <div className="relative flex h-20 w-full shrink-0 items-baseline justify-between text-text-light">
-      <TooltipWrapper
-        description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-        onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
-        shortcut="["
-      >
-        <SidebarIcon
-          color={
-            isSidebarOpen
-              ? theme.color.text.light
-              : theme.color.text.lightInactive
-          }
-        />
-      </TooltipWrapper>
+      {!isSidebarOpen ? (
+        <TooltipWrapper
+          description="Open sidebar"
+          onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
+          shortcut="["
+        >
+          <span className="flex h-6 w-6 items-center justify-center">
+            <SidebarIcon color={theme.color.text.lightInactive} size={21} />
+          </span>
+        </TooltipWrapper>
+      ) : null}
       <div className="z-[2] flex items-center justify-between">
         <h1 className="pl-5 text-text-light">
           <Text size="xl">{headerLabel}</Text>

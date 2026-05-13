@@ -17,5 +17,5 @@ export const getSomedayMonthLabel = (
   viewStart: Dayjs,
   today: Dayjs,
 ): string => {
-  return viewStart.isSame(today, "month") ? "This Month" : `Month of ${label}`;
+  return viewStart.isSame(today, "month") ? "This Month" : label;
 };

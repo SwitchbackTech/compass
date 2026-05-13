@@ -31,14 +31,15 @@ describe("ShortcutsSidebar", () => {
     expect(screen.getByText("Tasks")).toBeInTheDocument();
   });
 
-  it("does not render when closed and not visible", () => {
-    const { container } = render(
-      <ShortcutsSidebar isOpen={false} sections={baseSections} />,
-    );
+  it("hides shortcut sections when closed", () => {
+    render(<ShortcutsSidebar isOpen={false} sections={baseSections} />);
 
-    // Initially renders for animation, but after state settles it should be hidden
-    // Since isOpen=false and isVisible starts as false, it returns null
-    expect(container.querySelector("aside")).not.toBeInTheDocument();
+    const sidebar = screen.getByRole("complementary", { hidden: true });
+
+    expect(sidebar).toHaveAttribute("aria-hidden", "true");
+    expect(sidebar).toHaveClass("pointer-events-none");
+    expect(sidebar).toHaveClass("-translate-x-4");
+    expect(sidebar).toHaveClass("opacity-0");
   });
 
   it("does not render empty sections", () => {
@@ -64,39 +65,25 @@ describe("ShortcutsSidebar", () => {
     expect(container).toBeEmptyDOMElement();
   });
 
-  it("applies open animation classes when visible", async () => {
+  it("applies open animation classes when visible", () => {
     render(<ShortcutsSidebar isOpen={true} sections={baseSections} />);
 
-    // Wait for requestAnimationFrame to trigger
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-
     const sidebar = screen.getByRole("complementary", { hidden: true });
+    expect(sidebar).toHaveAttribute("aria-hidden", "false");
     expect(sidebar).toHaveClass("translate-x-0");
     expect(sidebar).toHaveClass("opacity-100");
   });
 
-  it("applies closed animation classes during close transition", async () => {
-    // Start with isOpen=true so component renders
+  it("applies closed animation classes when closed", () => {
     const { rerender } = render(
       <ShortcutsSidebar isOpen={true} sections={baseSections} />,
     );
 
-    // Wait for open animation
-    await new Promise((resolve) => requestAnimationFrame(resolve));
-
-    // Rerender with isOpen=false to trigger close animation
-    // The component stays mounted briefly during the transition
     rerender(<ShortcutsSidebar isOpen={false} sections={baseSections} />);
 
-    // During the close transition (before unmount), isVisible becomes false
-    // but the component is still rendered because isOpen just changed
-    const sidebar = screen.queryByRole("complementary", { hidden: true });
-
-    // After transition, sidebar may be unmounted - this is expected behavior
-    // The animation applies -translate-x-4 and opacity-0 before unmounting
-    if (sidebar) {
-      expect(sidebar).toHaveClass("-translate-x-4");
-      expect(sidebar).toHaveClass("opacity-0");
-    }
+    const sidebar = screen.getByRole("complementary", { hidden: true });
+    expect(sidebar).toHaveClass("pointer-events-none");
+    expect(sidebar).toHaveClass("-translate-x-4");
+    expect(sidebar).toHaveClass("opacity-0");
   });
 });

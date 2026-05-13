@@ -21,7 +21,6 @@ interface Props {
   status: {
     isDrafting: boolean;
     isDragging: boolean;
-    isFocused: boolean;
     isOverGrid: boolean;
   };
   onBlur: () => void;
@@ -46,7 +45,7 @@ export const SomedayEvent = ({
   formProps,
   snapshot,
 }: Props) => {
-  const { isDrafting, isDragging, isFocused, isOverGrid } = status;
+  const { isDrafting, isDragging, isOverGrid } = status;
   const style = getDraggableStyle(
     snapshot,
     isOverGrid,
@@ -69,7 +68,6 @@ export const SomedayEvent = ({
     isDragging,
     isDrafting,
     isOverGrid,
-    isFocused,
     onBlur,
     onClick,
     onFocus,
@@ -81,7 +79,7 @@ export const SomedayEvent = ({
   };
 
   return (
-    <StyledNewSomedayEvent {...somedayEventProps}>
+    <StyledNewSomedayEvent {...somedayEventProps} className="group">
       <SomedayEventRectangle
         category={category}
         event={event}

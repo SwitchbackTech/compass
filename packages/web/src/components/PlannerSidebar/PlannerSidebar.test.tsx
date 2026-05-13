@@ -29,6 +29,9 @@ const renderSidebar = (props?: { showSomedayEventSections?: boolean }) => {
   render(
     <PlannerSidebar
       calendarDate={dayjs("2026-05-12")}
+      isShortcutsOpen={false}
+      onCloseShortcuts={mock()}
+      onToggleShortcuts={mock()}
       onSelectDate={mock()}
       shortcutSections={[]}
       viewEnd={dayjs("2026-05-16")}

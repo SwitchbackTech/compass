@@ -2,10 +2,14 @@ import { type FC, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
+import { theme } from "@web/common/styles/theme";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
+import { SidebarIcon } from "@web/components/Icons/Sidebar";
+import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface Props {
   monthsShown?: number;
+  onToggleSidebar?: () => void;
   onSelectDate: (date: Dayjs) => void;
   selectedDate: Dayjs;
 }
@@ -13,8 +17,7 @@ interface Props {
 const plannerMonthPickerClassName =
   "[&_.calendar]:!w-full [&_.calendar]:!bg-transparent [&_.calendar]:!shadow-none [&_.react-datepicker]:!border-0 [&_.react-datepicker]:!bg-transparent [&_.react-datepicker]:!shadow-none [&_.react-datepicker\\_\\_day-names]:!mb-0 [&_.react-datepicker\\_\\_header.react-datepicker\\_\\_header]:!px-0 [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!bg-transparent [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!px-0";
 
-const headerActionsClassName =
-  "!absolute !inset-x-11 !justify-between [&>div:first-child]:!w-full [&>div:first-child]:!justify-between [&>span]:!hidden";
+const headerActionsClassName = "!ml-2.5";
 
 const PlannerMonthPickerFieldset = styled.fieldset`
   .react-datepicker__month-container,
@@ -64,6 +67,7 @@ const PlannerMonthPickerFieldset = styled.fieldset`
 export const PlannerMonthPicker: FC<Props> = ({
   monthsShown,
   onSelectDate,
+  onToggleSidebar,
   selectedDate,
 }) => {
   const selectedDateKey = selectedDate.format(
@@ -103,11 +107,24 @@ export const PlannerMonthPicker: FC<Props> = ({
         calendarClassName={ID_DATEPICKER_SIDEBAR}
         dayClassName={getPlannerDayClassName}
         headerActionsClassName={headerActionsClassName}
-        headerClassName="!relative !justify-center !px-0 !pb-3"
+        headerEndContent={
+          onToggleSidebar ? (
+            <TooltipWrapper
+              description="Close sidebar"
+              onClick={onToggleSidebar}
+              shortcut="["
+            >
+              <span className="flex h-6 w-6 items-center justify-center">
+                <SidebarIcon color={theme.color.text.light} size={21} />
+              </span>
+            </TooltipWrapper>
+          ) : null
+        }
+        headerClassName="!relative !justify-start !px-0 !pb-3"
         inline
         isOpen={true}
         monthContainerClassName="!w-auto"
-        monthTextClassName="!text-xs"
+        monthTextClassName="!text-l !font-medium"
         monthsShown={monthsShown}
         onChange={(date) => {
           if (!date) return;
@@ -120,7 +137,7 @@ export const PlannerMonthPicker: FC<Props> = ({
         selected={focusedDate.toDate()}
         shouldCloseOnSelect={false}
         view="sidebar"
-        withTodayButton={true}
+        withTodayButton={false}
       />
     </PlannerMonthPickerFieldset>
   );

@@ -13,6 +13,7 @@ import {
 import { openEventFormEditEvent } from "@web/common/utils/event/event.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
+import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -80,6 +81,11 @@ export const DayViewContent = memo(() => {
   const toggleSidebar = useCallback(() => {
     dispatch(viewSlice.actions.toggleSidebar());
   }, [dispatch]);
+  const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
+    usePlannerShortcuts({
+      isSidebarOpen,
+      onToggleSidebar: toggleSidebar,
+    });
 
   const shortcutSections = useMemo(
     () => [
@@ -174,7 +180,11 @@ export const DayViewContent = memo(() => {
       {isSidebarOpen ? (
         <PlannerSidebar
           calendarDate={dateInView}
+          isShortcutsOpen={isShortcutsOpen}
+          onCloseShortcuts={closeShortcuts}
+          onToggleShortcuts={toggleShortcuts}
           onSelectDate={navigateToDate}
+          onToggleSidebar={toggleSidebar}
           shortcutSections={shortcutSections}
           showSomedayEventSections={false}
           viewEnd={plannerViewEnd}

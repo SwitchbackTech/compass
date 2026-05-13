@@ -28,7 +28,7 @@ export const useSidebarState = () => {
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
   const [isSomedayFormOpen, setIsSomedayFormOpen] = useState(false);
 
-  const isDragging = isDrafting && draft !== null;
+  const isDragging = isDNDing && draft !== null;
   const { togglePointerMovementTracking } = usePointerPosition();
   const { isOverAllDayRow, isOverGrid, isOverMainGrid } = usePointerState();
 

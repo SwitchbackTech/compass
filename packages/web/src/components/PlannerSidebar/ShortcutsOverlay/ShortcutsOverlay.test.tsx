@@ -1,7 +1,7 @@
-import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { describe, expect, it, mock } from "bun:test";
+import "@testing-library/jest-dom";
+import { ShortcutsOverlay } from "./ShortcutsOverlay";
 
 const sections = [
   {
@@ -23,13 +23,13 @@ describe("ShortcutsOverlay", () => {
       <ShortcutsOverlay isOpen={true} onClose={mock()} sections={sections} />,
     );
 
-    expect(
-      screen.getByRole("dialog", { name: "Keyboard shortcuts" }),
-    ).toBeInTheDocument();
-    expect(screen.getByText("Shortcuts")).toBeInTheDocument();
-    expect(screen.getByText("Day")).toBeInTheDocument();
-    expect(screen.getByText("Previous day")).toBeInTheDocument();
-    expect(screen.queryByText("Empty")).not.toBeInTheDocument();
+    const overlay = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
+
+    expect(overlay.firstElementChild?.className).toContain("translate-x-0");
+    expect(screen.getByText("Shortcuts")).toBeTruthy();
+    expect(screen.getByText("Day")).toBeTruthy();
+    expect(screen.getByText("Previous day")).toBeTruthy();
+    expect(screen.queryByText("Empty")).toBeNull();
   });
 
   it("returns focus to the planner sidebar when closed with Escape", () => {
@@ -45,10 +45,20 @@ describe("ShortcutsOverlay", () => {
   });
 
   it("does not render when closed", () => {
-    const { container } = render(
+    render(
       <ShortcutsOverlay isOpen={false} onClose={mock()} sections={sections} />,
     );
 
-    expect(container).toBeEmptyDOMElement();
+    expect(
+      screen.queryByRole("dialog", { name: "Keyboard shortcuts" }),
+    ).toBeNull();
+    const overlay = screen.getByLabelText("Keyboard shortcuts", {
+      selector: "div",
+    });
+    expect(overlay.className).toContain("pointer-events-none");
+    expect(overlay.firstElementChild?.className).toContain("-translate-x-full");
+    expect(
+      screen.getByRole("button", { hidden: true, name: "Close shortcuts" }),
+    ).toHaveProperty("tabIndex", -1);
   });
 });
