@@ -32,4 +32,4 @@ jobs:
           NEW_TAG="v${MAJOR}.${MINOR}.$((PATCH + 1))"
           echo "Bumping ${LATEST} → ${NEW_TAG}"
           git tag "$NEW_TAG"
-          git push "https://x-access-token:${COMPASS_CI_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$NEW_TAG"
+          git push "https://x-access-token:${COMPASS_PAT}@github.com/${GITHUB_REPOSITORY}.git" "$NEW_TAG"
