@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 
 type MeasurementSnapshot = Pick<
   DOMRectReadOnly,
@@ -114,23 +114,37 @@ export const useGridLayout = () => {
     [observeElement, updateMainGridMeasurement],
   );
 
-  const colWidths = allDayColumnsMeasurements?.width
-    ? Array(DAYS_IN_VIEW).fill(allDayColumnsMeasurements.width / DAYS_IN_VIEW)
-    : [];
-
-  return {
-    gridRefs: {
+  const colWidths = useMemo(
+    () =>
+      allDayColumnsMeasurements?.width
+        ? Array(DAYS_IN_VIEW).fill(
+            allDayColumnsMeasurements.width / DAYS_IN_VIEW,
+          )
+        : [],
+    [allDayColumnsMeasurements?.width],
+  );
+  const gridRefs = useMemo(
+    () => ({
       allDayRef,
       allDayRowRef,
       mainGridElementRef,
       mainGridRef,
-    },
-    measurements: {
+    }),
+    [allDayRef, allDayRowRef, mainGridElementRef],
+  );
+  const measurements = useMemo(
+    () => ({
       allDayRow: allDayMeasurements,
       colWidths,
       mainGrid: mainMeasurements,
       hourHeight: mainMeasurements?.height ? mainMeasurements.height / 11 : 0,
-    },
+    }),
+    [allDayMeasurements, colWidths, mainMeasurements],
+  );
+
+  return {
+    gridRefs,
+    measurements,
   };
 };
 
