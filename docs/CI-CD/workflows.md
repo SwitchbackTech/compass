@@ -69,17 +69,9 @@ All secrets go in **GitHub → Settings → Secrets and variables → Actions**:
 
 | Secret | Value |
 |---|---|
-| `GITHUB_PAT` | Fine-grained PAT — see below |
+| `COMPASS_CI_TOKEN` | Fine-grained PAT needed for the bump and tag workflow |
 | `DOCKERHUB_USERNAME` | Docker Hub username for the `switchbacktech` org |
 | `DOCKERHUB_TOKEN` | Docker Hub personal access token (Read & Write) |
 | `STAGING_SSH_HOST` | VPS IP address or hostname |
 | `STAGING_SSH_USER` | Linux user on the VPS that owns `~/compass` |
 | `STAGING_SSH_KEY` | Private key from the deploy keypair (the `compass-staging-deploy` file, not `.pub`) |
-
-### Why GITHUB_PAT is needed
-
-GitHub intentionally prevents workflows from triggering other workflows when using the default `GITHUB_TOKEN`. This blocks infinite loops, but it also means a tag pushed by `bump-and-tag.yml` via `GITHUB_TOKEN` would never trigger `publish-images.yml`.
-
-Using a Personal Access Token (PAT) instead is treated as a human actor pushing the tag, so `publish-images.yml` fires normally.
-
-**Creating the PAT**: GitHub → avatar → Settings → Developer settings → Personal access tokens → Fine-grained tokens → Generate new token. Set repository access to `compass` only, and grant `Contents: Read and write`. No other permissions needed.
