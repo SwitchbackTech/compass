@@ -4,7 +4,6 @@ import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
-import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
@@ -33,7 +32,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   );
   const draftId = useAppSelector(selectDraftId);
 
-  const adjustedEvents = adjustOverlappingEvents(timedEvents);
   const category = Categories_Event.TIMED;
 
   const handleClick = (event: Schema_GridEvent) => {
@@ -117,7 +115,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
       return null;
     }
 
-    return adjustedEvents.map((event: Schema_GridEvent) => {
+    return timedEvents.map((event: Schema_GridEvent) => {
       return (
         <GridEventMemo
           event={event}

@@ -53,7 +53,7 @@ export const selectGridEvents = createSelector(
       )
       .map(assembleGridEvent);
 
-    return weekEvents;
+    return adjustOverlappingEvents(weekEvents);
   },
 );
 
