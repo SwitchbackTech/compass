@@ -3,7 +3,7 @@ import {
   type DraggableProvided,
   type DraggableStateSnapshot,
 } from "@hello-pangea/dnd";
-import { useState } from "react";
+import { useRef } from "react";
 import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import {
@@ -63,10 +63,11 @@ export const SomedayEventContainer = ({
     setters.setIsSomedayFormOpen,
   );
 
-  const [isFocused, setIsFocused] = useState(false);
+  const isFocusedRef = useRef(false);
 
-  useAppHotkey("Enter", () => actions.onDraft(event, category), {
-    enabled: isFocused,
+  useAppHotkey("Enter", () => {
+    if (!isFocusedRef.current) return;
+    actions.onDraft(event, category);
   });
 
   const migrateEvent = (direction: "up" | "down") => {
@@ -86,11 +87,13 @@ export const SomedayEventContainer = ({
     );
   };
 
-  useAppHotkey("Control+Meta+ArrowUp", () => migrateEvent("up"), {
-    enabled: isFocused,
+  useAppHotkey("Control+Meta+ArrowUp", () => {
+    if (!isFocusedRef.current) return;
+    migrateEvent("up");
   });
-  useAppHotkey("Control+Meta+ArrowDown", () => migrateEvent("down"), {
-    enabled: isFocused,
+  useAppHotkey("Control+Meta+ArrowDown", () => {
+    if (!isFocusedRef.current) return;
+    migrateEvent("down");
   });
 
   const isDraftingThisEvent =
@@ -105,14 +108,17 @@ export const SomedayEventContainer = ({
         status={{
           isDrafting,
           isDragging,
-          isFocused,
           isOverGrid,
         }}
-        onBlur={() => setIsFocused(false)}
+        onBlur={() => {
+          isFocusedRef.current = false;
+        }}
         onClick={() => {
           actions.onDraft(event, category);
         }}
-        onFocus={() => setIsFocused(true)}
+        onFocus={() => {
+          isFocusedRef.current = true;
+        }}
         priority={event.priority || Priorities.UNASSIGNED}
         provided={provided}
         snapshot={snapshot}
