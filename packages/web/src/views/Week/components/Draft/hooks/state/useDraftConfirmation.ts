@@ -6,7 +6,10 @@ import { type useDraftContext } from "@web/views/Week/components/Draft/context/u
 export const useDraftConfirmation = ({
   actions,
   state,
-}: Omit<ReturnType<typeof useDraftContext>, "setters" | "confirmation">) => {
+}: Omit<
+  ReturnType<typeof useDraftContext>,
+  "setters" | "confirmation" | "interaction"
+>) => {
   const { discard, deleteEvent, submit } = actions;
   const { isInstance, isRecurrence } = actions;
   const { draft } = state;

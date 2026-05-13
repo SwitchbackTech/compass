@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import { type InteractionEngine } from "@web/views/Week/interaction/InteractionEngine";
 import { type Actions_Draft } from "../hooks/actions/useDraftActions";
 import { type useDraftConfirmation } from "../hooks/state/useDraftConfirmation";
 import { type useDraftForm } from "../hooks/state/useDraftForm";
@@ -17,6 +18,7 @@ interface DraftContextValue {
   setters: Setters_Draft;
   actions: Actions_Draft;
   confirmation: ReturnType<typeof useDraftConfirmation>;
+  interaction: InteractionEngine;
 }
 
 export const DraftContext = createContext<DraftContextValue | null>(null);
