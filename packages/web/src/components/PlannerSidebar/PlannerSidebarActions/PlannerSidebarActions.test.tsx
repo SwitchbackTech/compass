@@ -25,7 +25,7 @@ describe("PlannerSidebarActions", () => {
     render(
       <PlannerSidebarActions
         isShortcutsOpen={false}
-        onOpenShortcuts={mock()}
+        onToggleShortcuts={mock()}
       />,
     );
 
@@ -34,6 +34,19 @@ describe("PlannerSidebarActions", () => {
         name: "Syncing Google Calendar in the background.",
       }),
     ).not.toBeInTheDocument();
+  });
+
+  it("labels the shortcuts button as a close action when shortcuts are open", () => {
+    render(
+      <PlannerSidebarActions
+        isShortcutsOpen={true}
+        onToggleShortcuts={mock()}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: "Close shortcuts" }),
+    ).toBeInTheDocument();
   });
 });
 

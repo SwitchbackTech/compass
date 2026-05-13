@@ -45,9 +45,10 @@ export const ShortcutsOverlay = ({
           {heading}
         </div>
       )}
-      {visibleSections.map((section) => (
+      {visibleSections.map((section, index) => (
         <ShortcutSection
           key={section.id ?? section.title}
+          isFirst={index === 0}
           title={section.title}
           shortcuts={section.shortcuts}
         />

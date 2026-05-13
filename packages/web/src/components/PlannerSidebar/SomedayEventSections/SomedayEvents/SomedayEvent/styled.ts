@@ -1,66 +1,51 @@
 import styled from "styled-components";
 import { type Priorities } from "@core/constants/core.constants";
-import { brighten } from "@core/util/color.utils";
-import { SOMEDAY_EVENT_HEIGHT } from "@web/common/constants/web.constants";
-import {
-  colorByPriority,
-  hoverColorByPriority,
-} from "@web/common/styles/theme.util";
+import { colorByPriority } from "@web/common/styles/theme.util";
+
+const SOMEDAY_EVENT_ROW_HEIGHT = 32;
+
+const getPriorityTint = (priority: Priorities, mixPercent: number) =>
+  `color-mix(in srgb, ${colorByPriority[priority]} ${mixPercent}%, transparent)`;
 
 export interface Props {
   priority: Priorities;
   isDrafting: boolean;
   isDragging?: boolean;
   isOverGrid: boolean;
-  isFocused: boolean;
 }
 
 export const StyledNewSomedayEvent = styled.div<Props>`
   background: ${({ isDrafting, isDragging, priority }) => {
     if (isDrafting) {
-      if (isDragging) {
-        return brighten(colorByPriority[priority]);
-      }
-      return hoverColorByPriority[priority];
+      return getPriorityTint(priority, isDragging ? 45 : 35);
     }
 
-    return colorByPriority[priority];
+    return getPriorityTint(priority, 15);
   }};
 
   border-radius: 2px;
-  color: ${({ theme }) => theme.color.text.dark};
-  height: ${SOMEDAY_EVENT_HEIGHT}px;
-  filter: brightness(${({ isFocused }) => (isFocused ? "160%" : "100%")});
-  margin-bottom: 2px;
+  color: ${({ theme }) => theme.color.text.lighter};
+  height: ${SOMEDAY_EVENT_ROW_HEIGHT}px;
+  margin: 2px 0;
   opacity: ${({ isDragging, isOverGrid }) => {
     if (isDragging && isOverGrid) return 0;
     return 1;
   }};
   font-size: 12px;
-  padding: 4px;
+  padding: 4px 8px;
   transition:
     background-color 0.2s,
     box-shadow 0.2s;
   width: 100%;
 
+  cursor: ${({ isDragging }) => (isDragging ? "grabbing" : "grab")};
+
   &:hover {
-    background: ${({ priority }) => hoverColorByPriority[priority]};
-    cursor: pointer;
+    background: ${({ priority }) => getPriorityTint(priority, 25)};
   }
 
   &:focus-visible {
     outline: 2px solid ${({ theme }) => theme.color.text.accent};
     outline-offset: 2px;
-  }
-
-  & span {
-    &:first-child {
-      display: -webkit-box;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      word-break: break-all;
-      -webkit-box-orient: vertical;
-      -webkit-line-clamp: 1;
-    }
   }
 `;

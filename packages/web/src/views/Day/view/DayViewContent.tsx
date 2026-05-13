@@ -12,9 +12,8 @@ import {
 } from "@web/common/utils/dom/event-emitter.util";
 import { openEventFormEditEvent } from "@web/common/utils/event/event.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
-import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
-import { usePlannerSidebarSomedayEvents } from "@web/components/PlannerSidebar/usePlannerSidebarSomedayEvents";
+import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -78,13 +77,15 @@ export const DayViewContent = memo(() => {
 
   const plannerViewStart = dateInView.startOf("week");
   const plannerViewEnd = dateInView.endOf("week");
-  usePlannerSidebarSomedayEvents(plannerViewStart, {
-    isEnabled: isSidebarOpen,
-  });
 
   const toggleSidebar = useCallback(() => {
     dispatch(viewSlice.actions.toggleSidebar());
   }, [dispatch]);
+  const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
+    usePlannerShortcuts({
+      isSidebarOpen,
+      onToggleSidebar: toggleSidebar,
+    });
 
   const shortcutSections = useMemo(
     () => [
@@ -177,19 +178,18 @@ export const DayViewContent = memo(() => {
       <Dedication />
 
       {isSidebarOpen ? (
-        <SidebarDraftProvider
-          onGoToDate={navigateToDate}
+        <PlannerSidebar
+          calendarDate={dateInView}
+          isShortcutsOpen={isShortcutsOpen}
+          onCloseShortcuts={closeShortcuts}
+          onToggleShortcuts={toggleShortcuts}
+          onSelectDate={navigateToDate}
+          onToggleSidebar={toggleSidebar}
+          shortcutSections={shortcutSections}
+          showSomedayEventSections={false}
           viewEnd={plannerViewEnd}
           viewStart={plannerViewStart}
-        >
-          <PlannerSidebar
-            calendarDate={dateInView}
-            onSelectDate={navigateToDate}
-            shortcutSections={shortcutSections}
-            viewEnd={plannerViewEnd}
-            viewStart={plannerViewStart}
-          />
-        </SidebarDraftProvider>
+        />
       ) : null}
 
       <StyledCalendar>

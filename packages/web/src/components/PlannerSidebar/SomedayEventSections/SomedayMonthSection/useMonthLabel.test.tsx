@@ -8,9 +8,9 @@ describe("getSomedayMonthLabel()", () => {
     ).toBe("This Month");
   });
 
-  it("returns a prefixed month label when today is outside the selected month", () => {
+  it("returns the month label when today is outside the selected month", () => {
     expect(
       getSomedayMonthLabel("April", dayjs("2026-04-01"), dayjs("2026-05-11")),
-    ).toBe("Month of April");
+    ).toBe("April");
   });
 });

@@ -23,8 +23,6 @@ describe("SomedayMonthSection", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("heading", { name: "Month of June" }),
-    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "June" })).toBeInTheDocument();
   });
 });

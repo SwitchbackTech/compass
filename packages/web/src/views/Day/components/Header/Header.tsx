@@ -30,19 +30,17 @@ export const Header: FC<Props> = ({
 
   return (
     <div className="relative flex h-20 w-full items-baseline justify-between text-text-light">
-      <TooltipWrapper
-        description={isSidebarOpen ? "Close sidebar" : "Open sidebar"}
-        onClick={onToggleSidebar}
-        shortcut="["
-      >
-        <SidebarIcon
-          color={
-            isSidebarOpen
-              ? theme.color.text.light
-              : theme.color.text.lightInactive
-          }
-        />
-      </TooltipWrapper>
+      {!isSidebarOpen ? (
+        <TooltipWrapper
+          description="Open sidebar"
+          onClick={onToggleSidebar}
+          shortcut="["
+        >
+          <span className="flex h-6 w-6 items-center justify-center">
+            <SidebarIcon color={theme.color.text.lightInactive} size={21} />
+          </span>
+        </TooltipWrapper>
+      ) : null}
       <div className="z-2 flex items-center justify-between" />
 
       {showReminder && <Reminder ref={reminderRef} />}
