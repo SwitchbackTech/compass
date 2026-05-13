@@ -107,42 +107,40 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     );
   };
 
-  const renderEvents = () => {
-    if (
-      isProcessing &&
-      reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE
-    ) {
-      return null;
-    }
+  const isChangingWeek =
+    isProcessing && reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE;
 
-    return timedEvents.map((event: Schema_GridEvent) => {
-      return (
-        <GridEventMemo
-          event={event}
-          isDragging={false}
-          isDraft={false}
-          isPlaceholder={event._id === draftId}
-          isResizing={false}
-          key={`initial-${event._id}`}
-          measurements={measurements}
-          onEventMouseDown={(event, e) => {
-            onMouseDown(e, event);
-          }}
-          onEventKeyDown={handleKeyDown}
-          onScalerMouseDown={(
-            event,
-            e,
-            dateToChange: "startDate" | "endDate",
-          ) => {
-            e.stopPropagation();
-            e.preventDefault();
-            resizeTimedEvent(event, dateToChange);
-          }}
-          weekProps={weekProps}
-        />
-      );
-    });
-  };
-
-  return <div id={ID_GRID_EVENTS_TIMED}>{renderEvents()}</div>;
+  return (
+    <div id={ID_GRID_EVENTS_TIMED}>
+      {isChangingWeek
+        ? null
+        : timedEvents.map((event: Schema_GridEvent) => {
+            return (
+              <GridEventMemo
+                event={event}
+                isDragging={false}
+                isDraft={false}
+                isPlaceholder={event._id === draftId}
+                isResizing={false}
+                key={`initial-${event._id}`}
+                measurements={measurements}
+                onEventMouseDown={(event, e) => {
+                  onMouseDown(e, event);
+                }}
+                onEventKeyDown={handleKeyDown}
+                onScalerMouseDown={(
+                  event,
+                  e,
+                  dateToChange: "startDate" | "endDate",
+                ) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  resizeTimedEvent(event, dateToChange);
+                }}
+                weekProps={weekProps}
+              />
+            );
+          })}
+    </div>
+  );
 };

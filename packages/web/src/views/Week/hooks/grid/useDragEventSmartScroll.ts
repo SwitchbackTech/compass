@@ -8,7 +8,7 @@ export const useDragEventSmartScroll = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
 ) => {
   const { state } = useDraftContext();
-  const mousePositionRef = useRef({ x: 0, y: 0 });
+  const mouseYRef = useRef(0);
   const scrollRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -34,17 +34,15 @@ export const useDragEventSmartScroll = (
         top: containerRect.top,
         bottom: containerRect.bottom - 100,
       };
-      const { y } = mousePositionRef.current;
-
       let scrollAmount = 0;
 
       const isAtTop = container.scrollTop === 0;
       const isAtBottom =
         container.scrollTop + container.clientHeight >= container.scrollHeight;
 
-      if (y < top + EDGE_THRESHOLD && !isAtTop) {
+      if (mouseYRef.current < top + EDGE_THRESHOLD && !isAtTop) {
         scrollAmount = -SCROLL_SPEED;
-      } else if (y > bottom - EDGE_THRESHOLD && !isAtBottom) {
+      } else if (mouseYRef.current > bottom - EDGE_THRESHOLD && !isAtBottom) {
         scrollAmount = SCROLL_SPEED;
       }
 
@@ -55,7 +53,7 @@ export const useDragEventSmartScroll = (
     };
 
     const updateMousePosition = (event: MouseEvent) => {
-      mousePositionRef.current = { x: event.clientX, y: event.clientY };
+      mouseYRef.current = event.clientY;
       scheduleScroll();
     };
 

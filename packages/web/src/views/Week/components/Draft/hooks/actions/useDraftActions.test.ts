@@ -160,37 +160,7 @@ describe("useDraftActions", () => {
     expect(createAction.payload.title).toBe("Seed event");
   });
 
-  it("does not update draft state when dragging snaps to the same timed range", () => {
-    const draft = createDraft();
-    const setDraft = mock();
-    const setDragStatus = mock();
-    const dragDateCalcs = {
-      getDateByXY: mock(() => dayjs(draft.startDate)),
-      getDateStrByXY: mock(() => draft.startDate),
-    } as unknown as DateCalcs;
-
-    const { result } = renderHook(() =>
-      useDraftActions(
-        createState({
-          draft,
-          isDragging: true,
-        }),
-        createSetters({
-          setDraft,
-          setDragStatus,
-        }),
-        dragDateCalcs,
-        weekProps,
-      ),
-    );
-
-    result.current.drag({ clientX: 120, clientY: 240 });
-
-    expect(setDraft).not.toHaveBeenCalled();
-    expect(setDragStatus).not.toHaveBeenCalled();
-  });
-
-  it("does not mark movement when dragging snaps to the same timed instant", () => {
+  it("does not update draft state when dragging snaps to the same timed instant", () => {
     const draft = createDraft();
     const setDraft = mock();
     const setDragStatus = mock();
