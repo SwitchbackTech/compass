@@ -19,7 +19,7 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy staging
+    name: Deploy release to staging
     runs-on: ubuntu-latest
 
     steps:
