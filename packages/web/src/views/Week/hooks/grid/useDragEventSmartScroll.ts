@@ -7,7 +7,7 @@ const EDGE_THRESHOLD = 50;
 export const useDragEventSmartScroll = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
 ) => {
-  const { state } = useDraftContext();
+  const { interaction, state } = useDraftContext();
   const mouseYRef = useRef(0);
   const scrollRef = useRef<number | null>(null);
 
@@ -52,21 +52,22 @@ export const useDragEventSmartScroll = (
       }
     };
 
-    const updateMousePosition = (event: MouseEvent) => {
-      mouseYRef.current = event.clientY;
-      scheduleScroll();
-    };
+    const unsubscribe = interaction.subscribeMotion((snapshot) => {
+      if (!snapshot.pointer) return;
 
-    window.addEventListener("mousemove", updateMousePosition);
+      mouseYRef.current = snapshot.pointer.y;
+      scheduleScroll();
+    });
+
     scheduleScroll();
 
     return () => {
-      window.removeEventListener("mousemove", updateMousePosition);
+      unsubscribe();
 
       if (scrollRef.current !== null) {
         cancelAnimationFrame(scrollRef.current);
         scrollRef.current = null;
       }
     };
-  }, [mainGridRef, state.draft?.isAllDay, state.isDragging]);
+  }, [interaction, mainGridRef, state.draft?.isAllDay, state.isDragging]);
 };

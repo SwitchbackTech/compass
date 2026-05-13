@@ -1,7 +1,8 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { type ComponentProps, type FC, useCallback, useRef } from "react";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
+import { InteractionEngine } from "@web/views/Week/interaction/InteractionEngine";
 import { useDragEventSmartScroll } from "./useDragEventSmartScroll";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -15,11 +16,13 @@ let animationFrames = new Map<number, FrameRequestCallback>();
 let nextAnimationFrameId = 0;
 
 const timedDraft = { isAllDay: false } as Schema_GridEvent;
+let interaction: InteractionEngine;
 
 const createDraftContextValue = (): DraftContextValue =>
   ({
     actions: {},
     confirmation: {},
+    interaction,
     setters: {},
     state: {
       dateBeingChanged: "endDate",
@@ -95,6 +98,12 @@ const SmartScrollHarness: FC = () => {
 
 describe("useDragEventSmartScroll", () => {
   beforeEach(() => {
+    interaction = new InteractionEngine();
+    interaction.mirrorDraftState({
+      draft: timedDraft,
+      isDragging: true,
+      isResizing: false,
+    });
     animationFrames = new Map();
     nextAnimationFrameId = 0;
 
@@ -129,7 +138,8 @@ describe("useDragEventSmartScroll", () => {
       screen.getByTestId("render-count").textContent;
     const scrollTopBeforeMove = grid.scrollTop;
 
-    fireEvent.mouseMove(window, { clientX: 320, clientY: 880 });
+    interaction.updatePointer({ x: 320, y: 880 }, { notifyReact: false });
+    interaction.updateDraft(timedDraft, { notifyReact: false });
     flushAnimationFrames();
 
     expect(grid.scrollTop).toBeGreaterThan(scrollTopBeforeMove);

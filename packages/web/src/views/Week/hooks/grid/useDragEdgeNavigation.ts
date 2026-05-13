@@ -1,10 +1,4 @@
-import {
-  type MutableRefObject,
-  useEffect,
-  useReducer,
-  useRef,
-  useState,
-} from "react";
+import { type MutableRefObject, useEffect, useRef, useState } from "react";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -13,9 +7,6 @@ import { type WeekProps } from "../useWeek";
 
 const EDGE_THRESHOLD = 50; // pixels from edge to trigger navigation
 const NAVIGATION_DELAY = 500; // milliseconds to hold before navigating
-
-const replaceProgress = (_currentProgress: number, nextProgress: number) =>
-  nextProgress;
 
 export interface DragEdgeNavigationState {
   isDragging: boolean;
@@ -31,11 +22,16 @@ export const useDragEdgeNavigation = (
   const { state: draftState } = useDraftContext();
   const isDNDing = useAppSelector(selectIsDNDing);
   const { state: sidebarState } = useSidebarContext();
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const navigationTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [edgeState, setEdgeState] = useState<
+    Pick<DragEdgeNavigationState, "currentEdge" | "isTimerActive">
+  >({
+    currentEdge: null,
+    isTimerActive: false,
+  });
+  const edgeStateRef = useRef(edgeState);
+  const mousePositionRef = useRef<{ x: number; y: number } | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
   const lastEdgeRef = useRef<"left" | "right" | null>(null);
-  const [progress, updateProgress] = useReducer(replaceProgress, 0);
   const timerStartTimeRef = useRef<number | null>(null);
 
   const isGridEventDragging = draftState.isDragging;
@@ -47,159 +43,159 @@ export const useDragEdgeNavigation = (
   const isDragging = isGridEventDragging || isSomedayEventDragging;
   const currentDraft = gridEventDraft || somedayEventDraft;
 
-  // Track mouse position during dragging
   useEffect(() => {
-    if (!isDragging) {
-      // Clear any pending navigation when dragging stops
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current);
-        navigationTimeoutRef.current = null;
-      }
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      lastEdgeRef.current = null;
-      updateProgress(0);
-      timerStartTimeRef.current = null;
+    const setNextEdgeState = (
+      nextState: Pick<DragEdgeNavigationState, "currentEdge" | "isTimerActive">,
+    ) => {
+      const previous = edgeStateRef.current;
+      const isSame =
+        previous.currentEdge === nextState.currentEdge &&
+        previous.isTimerActive === nextState.isTimerActive;
 
+      if (isSame) return;
+
+      edgeStateRef.current = nextState;
+      setEdgeState(nextState);
+    };
+
+    const cancelScheduledFrame = () => {
+      if (animationFrameRef.current !== null) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+
+    const resetNavigation = () => {
+      cancelScheduledFrame();
+
+      lastEdgeRef.current = null;
+      timerStartTimeRef.current = null;
+      setNextEdgeState({ currentEdge: null, isTimerActive: false });
+    };
+
+    if (!isDragging || !currentDraft || !mainGridRef.current) {
+      resetNavigation();
       return;
     }
 
+    let isCancelled = false;
+
+    const scheduleTick = (tick: FrameRequestCallback) => {
+      if (animationFrameRef.current !== null) return;
+
+      animationFrameRef.current = requestAnimationFrame(tick);
+    };
+
+    const getCurrentEdge = () => {
+      if (!mainGridRef.current || !mousePositionRef.current) {
+        return null;
+      }
+
+      const calendarBounds = mainGridRef.current.getBoundingClientRect();
+      const { x, y } = mousePositionRef.current;
+
+      const isMouseOverCalendar =
+        x >= calendarBounds.left &&
+        x <= calendarBounds.right &&
+        y >= calendarBounds.top &&
+        y <= calendarBounds.bottom;
+
+      if (!isMouseOverCalendar) {
+        return null;
+      }
+
+      const { left, right } = calendarBounds;
+
+      if (x < left + EDGE_THRESHOLD) {
+        return "left";
+      }
+
+      if (x > right - EDGE_THRESHOLD) {
+        return "right";
+      }
+
+      return null;
+    };
+
+    const updateEdge = (currentEdge: "left" | "right" | null) => {
+      if (currentEdge === lastEdgeRef.current) return;
+
+      lastEdgeRef.current = currentEdge;
+      timerStartTimeRef.current = null;
+      setNextEdgeState({
+        currentEdge,
+        isTimerActive: currentEdge !== null,
+      });
+    };
+
+    const tick = (timestamp: number) => {
+      animationFrameRef.current = null;
+
+      if (isCancelled) {
+        return;
+      }
+
+      const currentEdge = getCurrentEdge();
+      updateEdge(currentEdge);
+
+      if (!currentEdge) {
+        cancelScheduledFrame();
+        return;
+      }
+
+      if (timerStartTimeRef.current === null) {
+        timerStartTimeRef.current = timestamp;
+      }
+
+      if (timerStartTimeRef.current !== null) {
+        const elapsed = timestamp - timerStartTimeRef.current;
+
+        if (elapsed >= NAVIGATION_DELAY) {
+          if (currentEdge === "left") {
+            weekProps.util.decrementWeek("drag-to-edge");
+          } else if (currentEdge === "right") {
+            weekProps.util.incrementWeek("drag-to-edge");
+          }
+
+          lastEdgeRef.current = null;
+          timerStartTimeRef.current = null;
+          setNextEdgeState({ currentEdge: null, isTimerActive: false });
+          return;
+        }
+      }
+
+      scheduleTick(tick);
+    };
+
+    const evaluatePointer = () => {
+      const currentEdge = getCurrentEdge();
+      updateEdge(currentEdge);
+
+      if (currentEdge) {
+        scheduleTick(tick);
+      } else {
+        cancelScheduledFrame();
+      }
+    };
+
     const updateMousePosition = (event: MouseEvent) => {
-      setMousePosition({ x: event.clientX, y: event.clientY });
+      mousePositionRef.current = { x: event.clientX, y: event.clientY };
+      evaluatePointer();
     };
 
     window.addEventListener("mousemove", updateMousePosition);
 
     return () => {
+      isCancelled = true;
       window.removeEventListener("mousemove", updateMousePosition);
+      resetNavigation();
     };
-  }, [isDragging]);
-
-  // Check for edge proximity and trigger navigation
-  useEffect(() => {
-    if (!isDragging || !currentDraft) {
-      return;
-    }
-
-    // Check if mouse is over the main calendar grid
-    if (!mainGridRef.current) {
-      return;
-    }
-
-    const calendarBounds = mainGridRef.current.getBoundingClientRect();
-    const { x, y } = mousePosition;
-
-    const isMouseOverCalendar =
-      x >= calendarBounds.left &&
-      x <= calendarBounds.right &&
-      y >= calendarBounds.top &&
-      y <= calendarBounds.bottom;
-
-    // Only proceed with edge detection if mouse is over calendar
-    if (!isMouseOverCalendar) {
-      return;
-    }
-
-    // Use main calendar bounds for edge detection
-    const { left, right } = calendarBounds;
-
-    let currentEdge: "left" | "right" | null = null;
-
-    // Determine which edge we're near
-    if (x < left + EDGE_THRESHOLD) {
-      currentEdge = "left";
-    } else if (x > right - EDGE_THRESHOLD) {
-      currentEdge = "right";
-    }
-
-    // If we moved away from an edge, clear the timeout and progress
-    if (currentEdge !== lastEdgeRef.current) {
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current);
-        navigationTimeoutRef.current = null;
-      }
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-      updateProgress(0);
-      timerStartTimeRef.current = null;
-      lastEdgeRef.current = currentEdge;
-    }
-
-    // Start navigation timer if we're at an edge and don't already have a timer
-    if (currentEdge && !navigationTimeoutRef.current) {
-      timerStartTimeRef.current = Date.now();
-
-      // Progress tracking interval
-      progressIntervalRef.current = setInterval(() => {
-        if (timerStartTimeRef.current) {
-          const elapsed = Date.now() - timerStartTimeRef.current;
-          const progressPercent = Math.min(
-            (elapsed / NAVIGATION_DELAY) * 100,
-            100,
-          );
-          updateProgress(progressPercent);
-        }
-      }, 16);
-
-      navigationTimeoutRef.current = setTimeout(() => {
-        if (currentEdge === "left") {
-          weekProps.util.decrementWeek("drag-to-edge");
-        } else if (currentEdge === "right") {
-          weekProps.util.incrementWeek("drag-to-edge");
-        }
-
-        // Clear progress tracking
-        if (progressIntervalRef.current) {
-          clearInterval(progressIntervalRef.current);
-          progressIntervalRef.current = null;
-        }
-        updateProgress(0);
-        timerStartTimeRef.current = null;
-        navigationTimeoutRef.current = null;
-      }, NAVIGATION_DELAY);
-    }
-
-    return () => {
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current);
-        navigationTimeoutRef.current = null;
-      }
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-        progressIntervalRef.current = null;
-      }
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    isDragging,
-    mousePosition.x,
-    weekProps.util,
-    currentDraft,
-    mousePosition,
-    mainGridRef.current?.getBoundingClientRect,
-    mainGridRef.current,
-  ]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (navigationTimeoutRef.current) {
-        clearTimeout(navigationTimeoutRef.current);
-      }
-      if (progressIntervalRef.current) {
-        clearInterval(progressIntervalRef.current);
-      }
-    };
-  }, []);
+  }, [currentDraft, isDragging, mainGridRef, weekProps.util]);
 
   return {
     isDragging,
-    currentEdge: lastEdgeRef.current,
-    isTimerActive: navigationTimeoutRef.current !== null,
-    progress,
+    currentEdge: edgeState.currentEdge,
+    isTimerActive: edgeState.isTimerActive,
+    progress: edgeState.isTimerActive ? 100 : 0,
   };
 };

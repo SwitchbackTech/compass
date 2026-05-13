@@ -21,6 +21,15 @@ const pulseGlow = keyframes`
   }
 `;
 
+const fillProgress = keyframes`
+  from {
+    --edge-progress: 0%;
+  }
+  to {
+    --edge-progress: 100%;
+  }
+`;
+
 export const StyledEdgeZone = styled.div<{
   position: "left" | "right";
   isActive: boolean;
@@ -89,15 +98,16 @@ export const StyledEdgeZone = styled.div<{
 `;
 
 export const StyledProgressIndicator = styled.div<{
-  progress: number;
   direction: "left" | "right";
+  isTimerActive: boolean;
 }>`
+  --edge-progress: 0%;
   width: 32px;
   height: 32px;
   border-radius: 50%;
   background: conic-gradient(
     from ${({ direction }) => (direction === "left" ? "180deg" : "0deg")},
-    rgba(59, 130, 246, 0.8) ${({ progress }) => progress}%,
+    rgba(59, 130, 246, 0.8) var(--edge-progress),
     rgba(255, 255, 255, 0.2) 0%
   );
   display: flex;
@@ -105,6 +115,13 @@ export const StyledProgressIndicator = styled.div<{
   justify-content: center;
   margin-bottom: 8px;
   animation: ${fadeIn} 0.2s ease-out;
+  ${({ isTimerActive }) =>
+    isTimerActive &&
+    css`
+      animation:
+        ${fillProgress} 500ms linear forwards,
+        ${fadeIn} 0.2s ease-out;
+    `}
   backdrop-filter: blur(4px);
   border: 2px solid rgba(255, 255, 255, 0.3);
 

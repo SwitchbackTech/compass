@@ -27,8 +27,8 @@ export const EdgeNavigationIndicators: FC<Props> = ({ dragEdgeState }) => {
         {dragEdgeState.currentEdge === "left" && (
           <>
             <StyledProgressIndicator
-              progress={dragEdgeState.progress}
               direction="left"
+              isTimerActive={dragEdgeState.isTimerActive}
             />
             <StyledNavigationIcon direction="left">←</StyledNavigationIcon>
             <StyledNavigationLabel>Previous Week</StyledNavigationLabel>
@@ -47,8 +47,8 @@ export const EdgeNavigationIndicators: FC<Props> = ({ dragEdgeState }) => {
         {dragEdgeState.currentEdge === "right" && (
           <>
             <StyledProgressIndicator
-              progress={dragEdgeState.progress}
               direction="right"
+              isTimerActive={dragEdgeState.isTimerActive}
             />
             <StyledNavigationIcon direction="right">→</StyledNavigationIcon>
             <StyledNavigationLabel>Next Week</StyledNavigationLabel>
