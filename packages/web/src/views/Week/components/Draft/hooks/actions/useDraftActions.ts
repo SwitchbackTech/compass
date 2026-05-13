@@ -4,7 +4,6 @@ import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import {
   Categories_Event,
@@ -14,7 +13,6 @@ import {
 } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
 import { devAlert } from "@core/util/app.util";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
@@ -53,8 +51,11 @@ import {
 } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
-import { getDragDurationMinutes } from "./drag-duration.util";
+import {
+  computeDragHasMoved,
+  computeDragPosition,
+} from "@web/views/Week/interaction/math/computeDragPosition";
+import { computeResize } from "@web/views/Week/interaction/math/computeResize";
 
 export const useDraftActions = (
   draftState: State_Draft_Local,
@@ -379,76 +380,17 @@ export const useDraftActions = (
 
   const drag = useCallback(
     (e: Omit<PartialMouseEvent, "currentTarget">) => {
-      const updateTimesDuringDrag = (
-        e: Omit<PartialMouseEvent, "currentTarget">,
-      ) => {
-        if (!draft) return;
-
-        const rawX = e.clientX;
-        const x = draft.isAllDay ? rawX - draft.position.dragOffset.x : rawX;
-        const startEndDurationMin = getDragDurationMinutes(draft, dragStatus);
-
-        const y = e.clientY - draft.position.dragOffset.y;
-
-        let eventStart = dateCalcs.getDateByXY(
-          x,
-          y,
-          weekProps.component.startOfView,
-        );
-
-        let eventEnd = eventStart.add(startEndDurationMin, "minutes");
-
-        if (!draft.isAllDay) {
-          // Edge case: timed events' end times can overflow past midnight at the bottom of the grid.
-          // Below logic prevents that from occurring.
-          if (eventEnd.date() !== eventStart.date()) {
-            eventEnd = eventEnd.hour(0).minute(0);
-            eventStart = eventEnd.subtract(startEndDurationMin, "minutes");
-          }
-        }
-
-        const nextStartDate = draft.isAllDay
-          ? eventStart.format(YEAR_MONTH_DAY_FORMAT)
-          : eventStart.format();
-        const nextEndDate = draft.isAllDay
-          ? eventEnd.format(YEAR_MONTH_DAY_FORMAT)
-          : eventEnd.format();
-
-        const isSameStart = draft.isAllDay
-          ? draft.startDate === nextStartDate
-          : dayjs(draft.startDate).isSame(nextStartDate);
-        const isSameEnd = draft.isAllDay
-          ? draft.endDate === nextEndDate
-          : dayjs(draft.endDate).isSame(nextEndDate);
-
-        if (isSameStart && isSameEnd) {
-          return;
-        }
-
-        const _draft: Schema_GridEvent = {
-          ...draft,
-          startDate: nextStartDate,
-          endDate: nextEndDate,
-          priority: draft.priority || Priorities.UNASSIGNED,
-        };
-
-        setDraft(_draft);
-      };
       if (!isDragging) {
         devAlert("not dragging (anymore?)");
         return;
       }
 
-      const currTime = dateCalcs.getDateStrByXY(
-        e.clientX,
-        e.clientY,
-        weekProps.component.startOfView,
-      );
-      const hasMoved =
-        draft !== null &&
-        (draft.isAllDay
-          ? currTime !== draft.startDate
-          : !dayjs(draft.startDate).isSame(currTime));
+      const hasMoved = computeDragHasMoved({
+        dateCalcs,
+        draft,
+        pointer: e,
+        startOfView: weekProps.component.startOfView,
+      });
 
       if (!dragStatus?.hasMoved && hasMoved) {
         setDragStatus(
@@ -459,7 +401,19 @@ export const useDraftActions = (
         );
       }
 
-      updateTimesDuringDrag(e);
+      if (!draft) return;
+
+      const nextDraft = computeDragPosition({
+        dateCalcs,
+        draft,
+        dragStatus,
+        pointer: e,
+        startOfView: weekProps.component.startOfView,
+      });
+
+      if (nextDraft) {
+        setDraft(nextDraft);
+      }
     },
     [
       isDragging,
@@ -472,95 +426,9 @@ export const useDraftActions = (
     ],
   );
 
-  const isValidMovement = useCallback(
-    (currTime: dayjs.Dayjs) => {
-      if (!draft || !dateBeingChanged) return false;
-
-      if (draft.isAllDay) {
-        return true;
-      }
-
-      const _currTime = currTime.format();
-      const noChange = draft[dateBeingChanged] === _currTime;
-
-      if (noChange) return false;
-
-      const diffDay = currTime.day() !== dayjs(draft.startDate).day();
-      if (diffDay) return false;
-
-      const sameStart = currTime.format() === draft.startDate;
-      if (sameStart) return false;
-
-      return true;
-    },
-    [dateBeingChanged, draft],
-  );
-
   const resize = useCallback(
     (e: MouseEvent) => {
       if (!draft || !reduxDraft) return; // TS Guard
-
-      const _dateBeingChanged = dateBeingChanged as "startDate" | "endDate";
-      const oppositeKey =
-        _dateBeingChanged === "startDate" ? "endDate" : "startDate";
-
-      const flipIfNeeded = (currTime: Dayjs) => {
-        let startDate = draft?.startDate;
-        let endDate = draft?.endDate;
-
-        let justFlipped = false;
-        let dateKey = dateBeingChanged;
-        const opposite = dayjs(draft?.[oppositeKey]);
-        const comparisonKeyword =
-          dateBeingChanged === "startDate" ? "after" : "before";
-
-        if (comparisonKeyword === "after") {
-          if (currTime.isAfter(opposite)) {
-            dateKey = oppositeKey;
-            startDate = draft?.endDate;
-            setDateBeingChanged(dateKey);
-
-            justFlipped = true;
-          }
-        } else if (comparisonKeyword === "before") {
-          if (currTime.isBefore(opposite)) {
-            setDateBeingChanged(oppositeKey);
-            if (draft?.isAllDay) {
-              // For all-day events, move by day
-              startDate = dayjs(startDate)
-                .subtract(1, "day")
-                .format(YEAR_MONTH_DAY_FORMAT);
-              endDate = dayjs(startDate)
-                .add(1, "day")
-                .format(YEAR_MONTH_DAY_FORMAT);
-            } else {
-              // For timed events, move by time step
-              startDate = dayjs(startDate)
-                .subtract(GRID_TIME_STEP, "minutes")
-                .format();
-              endDate = dayjs(startDate)
-                .add(GRID_TIME_STEP, "minutes")
-                .format();
-            }
-
-            justFlipped = true;
-          }
-        }
-
-        closeForm();
-        setDraft((_draft): Schema_GridEvent => {
-          return {
-            ..._draft!,
-            _id: _draft!._id,
-            hasFlipped: justFlipped,
-            endDate: endDate,
-            startDate: startDate,
-            priority: draft.priority,
-          };
-        });
-
-        return justFlipped;
-      };
 
       e.preventDefault();
       e.stopPropagation();
@@ -575,40 +443,41 @@ export const useDraftActions = (
         weekProps.component.startOfView,
       );
 
-      if (!isValidMovement(currTime)) {
+      const resizeResult = computeResize({
+        currTime,
+        dateBeingChanged,
+        draft,
+        reduxDraft,
+      });
+
+      if (!resizeResult) {
         return;
       }
 
-      const justFlipped = flipIfNeeded(currTime);
-      const dateChanged = justFlipped ? oppositeKey : _dateBeingChanged;
-
-      const origTime = dayjs(reduxDraft[dateChanged]).add(-1, "day");
-
-      let updatedTime: string;
-      let hasMoved: boolean;
-
-      if (draft?.isAllDay) {
-        // For all-day events, work with day differences
-        const diffDays = currTime.diff(origTime, "day", true);
-        updatedTime = currTime
-          .add(dateChanged === "endDate" ? 1 : 0, "day")
-          .format(YEAR_MONTH_DAY_FORMAT);
-        hasMoved = diffDays !== 0;
-      } else {
-        // For timed events, work with minute differences
-        const diffMin = currTime.diff(origTime, "minute");
-        updatedTime = origTime.add(diffMin, "minutes").format();
-        hasMoved = diffMin !== 0;
+      if (resizeResult.nextDateBeingChanged !== dateBeingChanged) {
+        setDateBeingChanged(resizeResult.nextDateBeingChanged);
       }
 
-      if (!resizeStatus?.hasMoved && hasMoved) {
+      closeForm();
+      setDraft((_draft): Schema_GridEvent => {
+        return {
+          ..._draft!,
+          _id: _draft!._id,
+          hasFlipped: resizeResult.flipDraft.hasFlipped,
+          endDate: resizeResult.flipDraft.endDate,
+          startDate: resizeResult.flipDraft.startDate,
+          priority: resizeResult.flipDraft.priority,
+        };
+      });
+
+      if (!resizeStatus?.hasMoved && resizeResult.hasMoved) {
         setResizeStatus({ hasMoved: true });
       }
 
       setDraft((_draft): Schema_GridEvent => {
         return {
           ..._draft!,
-          ...(dateChanged ? { [dateChanged]: updatedTime } : {}),
+          [resizeResult.dateChanged]: resizeResult.updatedTime,
         };
       });
     },
@@ -619,7 +488,6 @@ export const useDraftActions = (
       draft,
       reduxDraft,
       isResizing,
-      isValidMovement,
       resizeStatus?.hasMoved,
       setDateBeingChanged,
       setDraft,

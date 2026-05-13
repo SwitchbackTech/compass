@@ -190,4 +190,56 @@ describe("useDraftActions", () => {
     expect(setDraft).not.toHaveBeenCalled();
     expect(setDragStatus).not.toHaveBeenCalled();
   });
+
+  it("keeps resize updates flowing through the same draft setters", () => {
+    const draft = createDraft();
+    const setDraft = mock();
+    const setIsFormOpen = mock();
+    const setResizeStatus = mock();
+    const resizeDateCalcs = {
+      getDateByXY: mock(() => dayjs("2024-01-15T12:00:00.000Z")),
+    } as unknown as DateCalcs;
+
+    const { result } = renderHook(() =>
+      useDraftActions(
+        createState({
+          dateBeingChanged: "endDate",
+          draft,
+          isResizing: true,
+        }),
+        createSetters({
+          setDraft,
+          setIsFormOpen,
+          setResizeStatus,
+        }),
+        resizeDateCalcs,
+        weekProps,
+      ),
+    );
+
+    result.current.resize({
+      clientX: 120,
+      clientY: 240,
+      preventDefault: mock(),
+      stopPropagation: mock(),
+    } as unknown as MouseEvent);
+
+    expect(setIsFormOpen).toHaveBeenCalledWith(false);
+    expect(setResizeStatus).toHaveBeenCalledWith({ hasMoved: true });
+    expect(setDraft).toHaveBeenCalledTimes(2);
+
+    const firstUpdate = setDraft.mock.calls[0]![0] as (
+      value: Schema_GridEvent,
+    ) => Schema_GridEvent;
+    const secondUpdate = setDraft.mock.calls[1]![0] as (
+      value: Schema_GridEvent,
+    ) => Schema_GridEvent;
+
+    expect(firstUpdate(draft)).toMatchObject({
+      endDate: draft.endDate,
+      hasFlipped: false,
+      startDate: draft.startDate,
+    });
+    expect(secondUpdate(draft).endDate).toBe("2024-01-15T12:00:00+00:00");
+  });
 });
