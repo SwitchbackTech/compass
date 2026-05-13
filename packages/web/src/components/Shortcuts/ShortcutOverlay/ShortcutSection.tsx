@@ -2,11 +2,11 @@ import { type Shortcut } from "@web/common/types/global.shortcut.types";
 import { ShortcutList } from "../ShortcutList";
 
 export const ShortcutSection = ({
-  isFirst = false,
+  isFirst,
   title,
   shortcuts,
 }: {
-  isFirst?: boolean;
+  isFirst: boolean;
   title: string;
   shortcuts: Shortcut[];
 }) => {
@@ -15,11 +15,11 @@ export const ShortcutSection = ({
     <section
       className={
         isFirst
-          ? "mb-5 last:mb-0"
-          : "mt-5 mb-5 border-border-primary/70 border-t pt-4 last:mb-0"
+          ? "mb-6 last:mb-0"
+          : "mt-6 mb-6 border-border-primary/60 border-t pt-5 last:mb-0"
       }
     >
-      <div className="mb-2 font-semibold text-[11px] text-accent-primary uppercase tracking-wide">
+      <div className="mb-3 font-bold text-sm text-text-lighter leading-tight">
         {title}
       </div>
       <ShortcutList shortcuts={shortcuts} />

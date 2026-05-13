@@ -54,7 +54,7 @@ export function PlannerSidebar({
       className="relative flex h-full w-[285px] min-w-[285px] flex-col overflow-hidden border-border-primary border-r bg-panel-bg pt-5 text-panel-text"
       id={ID_SIDEBAR}
     >
-      <div className="flex min-h-0 flex-1 flex-col gap-5 overflow-y-auto px-4 pb-5 [scrollbar-gutter:stable]">
+      <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 pb-5 [scrollbar-gutter:stable]">
         <PlannerMonthPicker
           monthsShown={monthsShown}
           onSelectDate={onSelectDate}
@@ -65,7 +65,7 @@ export function PlannerSidebar({
         <PlannerAccountSummary />
 
         {showSomedayEventSections ? (
-          <section aria-label="Someday events" className="space-y-4">
+          <section aria-label="Someday events">
             <SomedayEventSections
               calendarDate={calendarDate}
               dateCalcs={dateCalcs}

@@ -37,12 +37,12 @@ describe("PlannerAccountSummary", () => {
 
     await user.click(
       screen.getByRole("button", {
-        name: "Temporary account. Sign up to save your changes",
+        name: "Temporary account. Sign up to save changes",
       }),
     );
 
     expect(screen.getByText("Temporary account")).toBeTruthy();
-    expect(screen.getByText("Sign up to save your changes")).toBeTruthy();
+    expect(screen.getByText("Sign up")).toBeTruthy();
     expect(mockOpenModal).toHaveBeenCalledWith("signUp");
   });
 

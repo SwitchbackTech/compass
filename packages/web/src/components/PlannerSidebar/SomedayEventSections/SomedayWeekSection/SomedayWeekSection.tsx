@@ -26,7 +26,7 @@ export const SomedayWeekSection: FC<Props> = ({
   return (
     <div className="flex flex-col">
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-semibold text-[13px] text-text-lighter leading-none">
+        <h2 className="font-semibold text-sm text-text-lighter leading-none">
           {weekLabel}
         </h2>
       </div>

@@ -25,14 +25,11 @@ describe("ShortcutsOverlay", () => {
 
     const overlay = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
 
-    expect(
-      screen.getByRole("dialog", { name: "Keyboard shortcuts" }),
-    ).toBeInTheDocument();
-    expect(overlay).toHaveClass("translate-x-0");
-    expect(screen.getByText("Shortcuts")).toBeInTheDocument();
-    expect(screen.getByText("Day")).toBeInTheDocument();
-    expect(screen.getByText("Previous day")).toBeInTheDocument();
-    expect(screen.queryByText("Empty")).not.toBeInTheDocument();
+    expect(overlay.firstElementChild?.className).toContain("translate-x-0");
+    expect(screen.getByText("Shortcuts")).toBeTruthy();
+    expect(screen.getByText("Day")).toBeTruthy();
+    expect(screen.getByText("Previous day")).toBeTruthy();
+    expect(screen.queryByText("Empty")).toBeNull();
   });
 
   it("returns focus to the planner sidebar when closed with Escape", () => {
@@ -54,12 +51,14 @@ describe("ShortcutsOverlay", () => {
 
     expect(
       screen.queryByRole("dialog", { name: "Keyboard shortcuts" }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.getByLabelText("Keyboard shortcuts", { selector: "div" }),
-    ).toHaveClass("-translate-x-full");
+    ).toBeNull();
+    const overlay = screen.getByLabelText("Keyboard shortcuts", {
+      selector: "div",
+    });
+    expect(overlay.className).toContain("pointer-events-none");
+    expect(overlay.firstElementChild?.className).toContain("-translate-x-full");
     expect(
       screen.getByRole("button", { hidden: true, name: "Close shortcuts" }),
-    ).toHaveAttribute("tabIndex", "-1");
+    ).toHaveProperty("tabIndex", -1);
   });
 });
