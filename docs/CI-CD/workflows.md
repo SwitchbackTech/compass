@@ -69,6 +69,7 @@ All secrets go in **GitHub → Settings → Secrets and variables → Actions**:
 
 | Secret | Value |
 |---|---|
+| `COMPASS_CI_TOKEN` | Fine-grained PAT needed for the bump and tag workflow |
 | `DOCKERHUB_USERNAME` | Docker Hub username for the `switchbacktech` org |
 | `DOCKERHUB_TOKEN` | Docker Hub personal access token (Read & Write) |
 | `STAGING_SSH_HOST` | VPS IP address or hostname |
