@@ -25,6 +25,7 @@ jobs:
     steps:
       - name: Deploy release to staging
         env:
+          COMPASS_YAML: ${{ secrets.COMPASS_YAML }}
           RELEASE_TAG: ${{ inputs.tag }}
           SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
           SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
@@ -35,4 +36,7 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+          if [ -n "$COMPASS_YAML" ]; then
+            printf '%s\n' "$COMPASS_YAML" | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml"
+          fi
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update"

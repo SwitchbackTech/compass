@@ -1,5 +1,5 @@
 import pkg from "inquirer";
-import { CLI_ENV } from "./cli.constants";
+import { getCliEnv } from "./cli.constants";
 import { type Environment_Cli } from "./cli.types";
 import { styleText } from "node:util";
 
@@ -11,9 +11,7 @@ export const getApiBaseUrl = async (
   const category = environment ? environment : await getEnvironmentAnswer();
 
   if (category === "local") {
-    const baseUrl: string = (
-      process.env["BASEURL"] || `http://localhost:3000/api`
-    ).replace(/\/$/, "");
+    const baseUrl: string = getCliEnv().BASEURL.replace(/\/$/, "");
     return baseUrl;
   }
 
@@ -22,7 +20,7 @@ export const getApiBaseUrl = async (
 };
 
 const getDomainAnswer = async () => {
-  const { hostname, host } = new URL(CLI_ENV.FRONTEND_URL);
+  const { hostname, host } = new URL(getCliEnv().FRONTEND_URL);
 
   if (hostname !== "localhost") {
     return host;
@@ -32,7 +30,7 @@ const getDomainAnswer = async () => {
     Do not include 'https://', just the domain.
     Example: app.yourdomain.com
 
-    Tip: set FRONTEND_URL in .env to skip this step.
+    Tip: set urls.frontend in compass.yaml to skip this step.
 
     Type here:`;
 

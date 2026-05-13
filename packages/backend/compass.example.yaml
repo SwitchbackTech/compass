@@ -1,0 +1,50 @@
+# Copy this file to compass.yaml and replace values for your local setup.
+# Do not commit compass.yaml; it contains secrets.
+
+compose:
+  version: latest
+
+ports:
+  web: 9080
+  backend: 3000
+
+runtime:
+  nodeEnv: development
+  timezone: Etc/UTC
+  logLevel: debug
+
+urls:
+  frontend: http://localhost:9080
+  backendApi: http://localhost:3000/api
+  cors:
+    - http://localhost:3000
+    - http://localhost:9080
+    - https://app.yourdomain.com
+  # googleWebhook: https://example.trycloudflare.com/api
+
+mongo:
+  username: compass
+  password: local-mongo-password
+  replicaSetKey: local-mongo-replica-set-key
+  uri: mongodb+srv://admin:YOUR_ADMIN_PW@cluster0.m99yy.mongodb.net/dev_calendar?authSource=admin&retryWrites=true&w=majority&tls=true
+
+supertokens:
+  uri: UNIQUE_URI_FROM_YOUR_SUPERTOKENS_ACCOUNT
+  key: UNIQUE_KEY_FROM_YOUR_SUPERTOKENS_ACCOUNT
+
+tokens:
+  compassSync: YOUR_UNIQUE_STRING
+  googleCalendarNotification: ANOTHER_UNIQUE_STRING
+
+google:
+  # clientId: UNIQUE_ID_FROM_YOUR_GOOGLE_CLOUD_PROJECT
+  # clientSecret: UNIQUE_SECRET_FROM_YOUR_GOOGLE_CLOUD_PROJECT
+  channelExpirationMin: 10
+
+email:
+  # kitApiSecret: UNIQUE_SECRET_FROM_YOUR_KIT_ACCOUNT
+  # kitUserTagId: YOUR_USER_TAG_ID
+
+posthog:
+  # key: YOUR_POSTHOG_KEY
+  # host: YOUR_POSTHOG_HOST

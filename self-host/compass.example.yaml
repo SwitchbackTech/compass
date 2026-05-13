@@ -1,0 +1,45 @@
+# Compass self-host config.
+# The installer writes ~/compass/compass.yaml with generated secrets.
+
+compose:
+  version: latest
+
+ports:
+  web: 9080
+  backend: 3000
+
+runtime:
+  nodeEnv: production
+  timezone: Etc/UTC
+  logLevel: info
+
+urls:
+  frontend: https://cal.yourdomain.com
+  backendApi: https://cal.yourdomain.com/api
+  cors:
+    - https://cal.yourdomain.com
+  # health: http://127.0.0.1:3000/api/health
+  # googleWebhook: https://cal.yourdomain.com/api
+
+mongo:
+  username: compass
+  password: replace-with-generated-mongo-password
+  replicaSetKey: replace-with-generated-mongo-replica-set-key
+  uri: mongodb://compass:replace-with-generated-mongo-password@mongo:27017/prod_calendar?authSource=admin&replicaSet=rs0
+
+supertokens:
+  uri: http://supertokens:3567
+  key: replace-with-generated-supertokens-key
+  postgres:
+    user: supertokens
+    password: replace-with-generated-supertokens-postgres-password
+    database: supertokens
+
+tokens:
+  compassSync: replace-with-generated-compass-sync-token
+  googleCalendarNotification: replace-with-generated-gcal-notification-token
+
+google:
+  clientId: compass-self-host-placeholder.apps.googleusercontent.com
+  clientSecret: compass-self-host-placeholder-secret
+  channelExpirationMin: 10

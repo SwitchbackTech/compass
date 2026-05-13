@@ -1,112 +1,82 @@
-# Environment Variables
+# Compass YAML Configuration
 
-All environment variables for the Compass self-host stack, grouped by category.
+Compass uses `compass.yaml` for self-hosting and local development. The file is visible, diffable, and contains secrets, so keep it out of git and back it up with the Docker volumes.
 
-**Legend**
-- **Required** — the backend refuses to start if the value is missing or invalid
-- **Optional** — enables extra features when set; omit or leave blank to disable
-- **Build-time** — baked into the web image at Docker build time; changing it after pulling from Docker Hub requires rebuilding the web image locally (see the commented-out `build:` blocks in `docker-compose.yml`)
+Examples:
 
----
+- local development: `packages/backend/compass.example.yaml`
+- self-hosting: `self-host/compass.example.yaml`
 
-## Compose Metadata
+## Top-Level Sections
 
-| Variable | Default | Description |
+| YAML path | Default | Description |
 |---|---|---|
-| `COMPASS_VERSION` | `latest` | Docker Hub image tag to pull for the `compass-web`, `compass-backend`, and `compass-mongo` images. Pin to a specific semver (e.g. `1.2.3`) for reproducible installs. The `./compass update` command pulls the tag set here. |
-
----
-
-## Port Bindings
-
-| Variable | Default | Description |
-|---|---|---|
-| `WEB_PORT` | `9080` | Host port the web container binds to on `127.0.0.1`. The container always listens on `9080` internally. |
-| `PORT` | `3000` | Host port the backend container binds to on `127.0.0.1`. The container always listens on `3000` internally. |
-
----
-
-## Runtime Behavior
-
-| Variable | Default | Required | Valid values | Description |
-|---|---|---|---|---|
-| `NODE_ENV` | `production` | Yes | `production`, `development` | Controls runtime mode. Self-hosted installs always use `production`. Setting `development` changes the MongoDB database name to `dev_calendar`. |
-| `TZ` | `Etc/UTC` | Yes | `Etc/UTC`, `UTC` | Timezone for the backend process. Only UTC variants are accepted. |
-| `LOG_LEVEL` | `info` | No | `error` `warn` `info` `http` `verbose` `debug` `silly` | Winston log level. Logs are written to `/app/logs/app.log` in the backend container (persisted in the `compass_backend_logs` Docker volume) and to stdout. |
-
----
+| `compose.version` | `latest` | Docker image tag used by the self-host compose stack. Pin this for reproducible installs. |
+| `ports.web` | `9080` | Host port bound to the web container on `127.0.0.1`. |
+| `ports.backend` | `3000` | Host port bound to the backend container on `127.0.0.1`. |
+| `runtime.nodeEnv` | `production` | Runtime mode. Self-hosted installs should use `production`; local development uses `development`. |
+| `runtime.timezone` | `Etc/UTC` | Backend timezone. Only `Etc/UTC` and `UTC` are accepted. |
+| `runtime.logLevel` | `info` | Winston log level. |
 
 ## URLs
 
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `FRONTEND_URL` | `http://localhost:9080` | Yes | Full URL of the web frontend as seen by the backend. Used in CORS configuration and SuperTokens redirect targets. For a public server: `https://compass.example.com`. |
-| `BASEURL` | `http://localhost:3000/api` | Yes, Build-time | Full URL of the backend API. Baked into the web image at build time. For a public server: `https://compass.example.com/api`. Changing this after pulling a pre-built image requires rebuilding the web image. |
-| `CORS` | `http://localhost:9080,http://localhost:3000` | Yes | Comma-separated list of allowed CORS origins. Must include `FRONTEND_URL`. For a public server: `https://compass.example.com`. Note: this key is named `CORS` in `.env` but the backend splits it by comma and calls it `ORIGINS_ALLOWED` internally. |
-| `GCAL_WEBHOOK_BASEURL` | _(empty)_ | No | Public HTTPS URL for Google Calendar push notification callbacks. Required only when Google OAuth is configured and you want real-time calendar sync. Must start with `https://`. When empty, watch notifications are disabled. |
-
----
+| YAML path | Required | Description |
+|---|---|---|
+| `urls.frontend` | Yes | Public frontend URL as seen by the backend. Example: `https://compass.example.com`. |
+| `urls.backendApi` | Yes | Public API URL. Example: `https://compass.example.com/api`. This is baked into the web bundle when the web image is rebuilt. |
+| `urls.cors` | Yes | YAML list of allowed CORS origins. Include `urls.frontend`. |
+| `urls.googleWebhook` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `urls.backendApi`. |
+| `urls.health` | No | Override for helper health checks, usually `http://127.0.0.1:3000/api/health` when the public URL is behind Caddy. |
 
 ## MongoDB
 
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `MONGO_INITDB_ROOT_USERNAME` | `compass` | No | MongoDB root username created on first container startup. Must match the username in `MONGO_URI`. |
-| `MONGO_INITDB_ROOT_PASSWORD` | _(generate)_ | Yes | MongoDB root password. Must match the password in `MONGO_URI`. Changing this after initial database creation requires a MongoDB user migration. |
-| `MONGO_REPLICA_SET_KEY` | _(generate)_ | Yes | Shared secret used by MongoDB replica set members to authenticate each other. Compass runs a single-node replica set (`rs0`) because transactions require one. Written to `/data/configdb/mongo-keyfile` and persisted in the `compass_mongo_configdb` volume. |
-| `MONGO_URI` | `mongodb://compass:<password>@mongo:27017/prod_calendar?authSource=admin&replicaSet=rs0` | Yes | Full MongoDB connection string. Must include `authSource=admin` and `replicaSet=rs0`. The hostname `mongo` resolves to the mongo container within the Docker network. |
+| YAML path | Required | Description |
+|---|---|---|
+| `mongo.username` | Self-host | MongoDB root username created on first container startup. Must match `mongo.uri`. |
+| `mongo.password` | Self-host | MongoDB root password. Changing it after first startup requires a MongoDB user migration. |
+| `mongo.replicaSetKey` | Self-host | MongoDB replica set key for the single-node `rs0` replica set. |
+| `mongo.uri` | Yes | Backend MongoDB connection string. Self-hosted installs must include `authSource=admin` and `replicaSet=rs0`. |
 
----
+## SuperTokens
 
-## SuperTokens Postgres
+| YAML path | Required | Description |
+|---|---|---|
+| `supertokens.uri` | Yes | SuperTokens Core URL as seen by the backend. Self-hosted Docker uses `http://supertokens:3567`. |
+| `supertokens.key` | Yes | API key shared by backend and SuperTokens Core. |
+| `supertokens.postgres.user` | Self-host | Postgres user for the SuperTokens database container. |
+| `supertokens.postgres.password` | Self-host | Postgres password for the SuperTokens database container. |
+| `supertokens.postgres.database` | Self-host | Postgres database name for SuperTokens. |
 
-These variables configure the Postgres instance used exclusively by SuperTokens Core for auth data.
+## Tokens
 
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `SUPERTOKENS_POSTGRES_USER` | `supertokens` | No | Postgres username created on first container startup. |
-| `SUPERTOKENS_POSTGRES_PASSWORD` | _(generate)_ | Yes | Postgres password for the SuperTokens user. |
-| `SUPERTOKENS_POSTGRES_DB` | `supertokens` | No | Postgres database name for SuperTokens. |
-
----
-
-## SuperTokens Core
-
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `SUPERTOKENS_URI` | `http://supertokens:3567` | Yes | URL of the SuperTokens Core service as seen by the backend. The hostname `supertokens` resolves within the Docker network. Do not expose this port externally. |
-| `SUPERTOKENS_KEY` | _(generate)_ | Yes | API key for SuperTokens Core. The backend sends this in `api-key` request headers; SuperTokens Core validates it. Must be consistent between the `backend` and `supertokens` services. |
-
----
-
-## Internal Tokens
-
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `TOKEN_COMPASS_SYNC` | _(generate)_ | Yes | Bearer token protecting the internal Compass sync endpoint. |
-| `TOKEN_GCAL_NOTIFICATION` | _(generate)_ | Required when Google webhooks are active | Bearer token for the Google Calendar webhook endpoint. Required when Google OAuth is configured and `BASEURL` or `GCAL_WEBHOOK_BASEURL` uses HTTPS — the backend schema rejects startup without it. Google includes this as a channel token in webhook requests so the backend can verify the caller. |
-
----
+| YAML path | Required | Description |
+|---|---|---|
+| `tokens.compassSync` | Yes | Bearer token protecting internal sync endpoints. |
+| `tokens.googleCalendarNotification` | Required for HTTPS Google webhooks | Token used to verify Google Calendar webhook requests. |
 
 ## Google OAuth
 
-Both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` must be set to non-placeholder values for Google features to activate — setting only one causes the backend to refuse to start. Leave the placeholder values to run in email/password-only mode.
+Both `google.clientId` and `google.clientSecret` must be real values for Google features to activate. Setting only one causes backend startup to fail. Leave the self-host placeholders in place for password-only mode.
 
-See [google-calendar.md](./google-calendar.md) for step-by-step OAuth credential setup.
-
-| Variable | Default | Required | Description |
-|---|---|---|---|
-| `GOOGLE_CLIENT_ID` | _(placeholder)_ | No, Build-time | Google OAuth 2.0 client ID. Baked into the web bundle at build time — changing this after pulling a pre-built image requires rebuilding the web image locally. |
-| `GOOGLE_CLIENT_SECRET` | _(placeholder)_ | No | Google OAuth 2.0 client secret. Backend-only; not baked into the web image. |
-| `CHANNEL_EXPIRATION_MIN` | `10` | No | Lifetime in minutes for Google Calendar watch channels before Compass renews them. The default is suitable for development. For production with watch notifications: consider `60`–`4320` (1 hour to 3 days). |
-
----
-
-## Email (Optional)
-
-Email integration uses [Kit](https://kit.com) (formerly ConvertKit). These variables are commented out in `packages/backend/.env.local.example`. Set them only if you are connecting Compass to a Kit account.
-
-| Variable | Required | Description |
+| YAML path | Required | Description |
 |---|---|---|
-| `EMAILER_API_SECRET` | No | Kit.com API secret key. Note: the env key is `EMAILER_API_SECRET` but it maps to `EMAILER_SECRET` in the backend schema. |
-| `EMAILER_USER_TAG_ID` | No | Kit.com tag ID applied to users on signup. |
+| `google.clientId` | No | Google OAuth client ID. Rebuild the web image after changing it. |
+| `google.clientSecret` | No | Google OAuth client secret. Backend-only. |
+| `google.channelExpirationMin` | No | Google Calendar watch channel lifetime in minutes. |
+
+See [Google Calendar](./google-calendar.md) for OAuth setup.
+
+## Optional Integrations
+
+| YAML path | Required | Description |
+|---|---|---|
+| `email.kitApiSecret` | No | Kit.com API secret key. |
+| `email.kitUserTagId` | No | Kit.com tag ID applied to users on signup. |
+| `posthog.key` | No | PostHog project key injected into the web bundle. |
+| `posthog.host` | No | PostHog host injected into the web bundle. |
+
+## GitHub Deployments
+
+For deployed instances managed through GitHub Actions, store the full deployed YAML as one GitHub Environment secret named `COMPASS_YAML`. Keep SSH and Docker Hub credentials as separate workflow secrets.
+
+After adding `COMPASS_YAML`, remove old app config vars/secrets such as `BASEURL`, `CORS`, `FRONTEND_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MONGO_URI`, `SUPERTOKENS_*`, `TOKEN_*`, `POSTHOG_*`, and `COMPASS_VERSION`.

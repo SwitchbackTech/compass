@@ -1,28 +1,32 @@
+import { loadCompassEnv } from "@core/config/compass.config";
 import { postcssPlugin } from "./plugins/postcss.plugin";
 import { watch } from "node:fs";
 import path from "node:path";
 
-const WEB_PORT = Number(process.env.WEB_PORT) || 9080;
+const compassEnv = loadCompassEnv();
+Object.assign(process.env, compassEnv);
+
+const WEB_PORT = Number(compassEnv.WEB_PORT) || 9080;
 const OUTDIR = path.resolve(import.meta.dir, "../../build/web");
 const SRCDIR = path.resolve(import.meta.dir, "src");
 
 // In development: unminified + inline sourcemaps + live-reload watcher.
 // In test/other: minified + no sourcemaps + no live-reload (keeps bundle small
 // so Playwright tests can parse it quickly on CI's limited CPU).
-const IS_DEV = (process.env.NODE_ENV ?? "development") === "development";
+const IS_DEV = (compassEnv.NODE_ENV ?? "development") === "development";
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = compassEnv.GOOGLE_CLIENT_ID;
 
 // Define process.env as a whole object so both dot and bracket notation work:
 // process.env.NODE_ENV and process.env["NODE_ENV"] are both replaced correctly.
 const define: Record<string, string> = {
   "process.env": JSON.stringify({
-    NODE_ENV: process.env.NODE_ENV || "development",
-    API_BASEURL: process.env.BASEURL ?? "",
+    NODE_ENV: compassEnv.NODE_ENV || "development",
+    API_BASEURL: compassEnv.BASEURL ?? "",
     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID || "",
-    POSTHOG_KEY: process.env.POSTHOG_KEY || "",
-    POSTHOG_HOST: process.env.POSTHOG_HOST || "",
-    PORT: process.env.PORT || "3000",
+    POSTHOG_KEY: compassEnv.POSTHOG_KEY || "",
+    POSTHOG_HOST: compassEnv.POSTHOG_HOST || "",
+    PORT: compassEnv.PORT || "3000",
   }),
   BUILD_VERSION: JSON.stringify("dev"),
 };

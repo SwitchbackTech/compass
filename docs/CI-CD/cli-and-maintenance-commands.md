@@ -16,8 +16,8 @@ Primary file:
 
 Environment loading:
 
-- `bun run cli` loads `packages/backend/.env.local`.
-- Keep local development variables in `packages/backend/.env.local` (bootstrap from `.env.local.example`).
+- `bun run cli` loads `packages/backend/compass.yaml`.
+- Keep local development config in `packages/backend/compass.yaml` (bootstrap from `compass.example.yaml`).
 
 ## CLI URL Resolution Contract
 
@@ -27,14 +27,14 @@ Primary source:
 
 How API base URLs are resolved:
 
-- local (`--environment local`): returns `BASEURL` directly (trailing slash removed)
-- staging/production: derives `https://<domain>/api` from `FRONTEND_URL`
+- local (`--environment local`): returns `urls.backendApi` directly (trailing slash removed)
+- staging/production: derives `https://<domain>/api` from `urls.frontend`
 
 Fallback behavior:
 
-- if `FRONTEND_URL` points at `localhost`, CLI prompts for a domain and builds `https://<domain>/api`
-- if `FRONTEND_URL` is already a non-localhost URL, CLI uses that hostname directly
-- local mode does not prompt for a domain; it depends on `BASEURL`
+- if `urls.frontend` points at `localhost`, CLI prompts for a domain and builds `https://<domain>/api`
+- if `urls.frontend` is already a non-localhost URL, CLI uses that hostname directly
+- local mode does not prompt for a domain; it depends on `urls.backendApi`
 
 ## Commands To Know
 

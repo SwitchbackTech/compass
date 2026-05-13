@@ -5,11 +5,13 @@
 - Frontend-only work usually starts with `bun run dev:web`; it does not require
   backend services.
 - Backend, auth, MongoDB, Google sync, and SSE work require
-  `packages/backend/.env.local`. Bootstrap with:
+  `packages/backend/compass.yaml`. Bootstrap with:
 
 ```bash
-cp packages/backend/.env.local.example packages/backend/.env.local
+cp packages/backend/compass.example.yaml packages/backend/compass.yaml
 ```
+
+- `compass.yaml` contains secrets. Do not commit it.
 
 - Avoid defaulting to `bun run test`; use the focused package test first.
 - Formatting is handled by the repo-local Codex Stop hook after each agent turn.

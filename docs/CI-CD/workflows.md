@@ -73,7 +73,7 @@ publishing images.
 Source: [`.github/workflows/deploy-staging.yml`](../../.github/workflows/deploy-staging.yml)
 
 The deploy workflow SSHes into the staging VPS and runs `./compass update`,
-which pulls the Docker Hub image tag configured by the staging `.env` file and
+which pulls the Docker Hub image tag configured by the staging `compass.yaml` file and
 restarts the stack. The workflow accepts a release tag input so the Actions logs
 show which release triggered or motivated the deploy.
 

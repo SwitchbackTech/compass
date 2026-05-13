@@ -13,6 +13,38 @@ ENV COMPASS_BUILD_REF=${COMPASS_BUILD_REF}
 ENV NODE_ENV=production
 ENV WEB_PORT=9080
 
+RUN printf '%s\n' \
+  'compose:' \
+  '  version: self-host' \
+  'ports:' \
+  '  web: 9080' \
+  '  backend: 3000' \
+  'runtime:' \
+  '  nodeEnv: production' \
+  '  timezone: Etc/UTC' \
+  '  logLevel: info' \
+  'urls:' \
+  "  frontend: http://localhost:9080" \
+  "  backendApi: ${BASEURL}" \
+  '  cors:' \
+  '    - http://localhost:9080' \
+  'mongo:' \
+  '  username: compass' \
+  '  password: unused-web-build' \
+  '  replicaSetKey: unused-web-build' \
+  '  uri: mongodb://localhost:27017/unused' \
+  'supertokens:' \
+  '  uri: http://localhost:3567' \
+  '  key: unused-web-build' \
+  'tokens:' \
+  '  compassSync: unused-web-build' \
+  '  googleCalendarNotification: unused-web-build' \
+  'google:' \
+  "  clientId: ${GOOGLE_CLIENT_ID}" \
+  '  clientSecret: compass-self-host-placeholder-secret' \
+  '  channelExpirationMin: 10' \
+  > packages/backend/compass.yaml
+
 RUN bun install --frozen-lockfile
 RUN cd packages/web && bun run build.ts
 

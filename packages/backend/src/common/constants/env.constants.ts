@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { loadCompassEnv } from "@core/config/compass.config";
 import {
   NodeEnv,
   PORT_DEFAULT_BACKEND,
@@ -8,9 +9,30 @@ import {
 import { Logger } from "@core/logger/winston.logger";
 import { isDev } from "@core/util/env.util";
 
+type RawBackendEnv = Record<string, string | undefined>;
+
+const getBackendRuntimeEnv = (): RawBackendEnv => {
+  if (
+    process.env["NODE_ENV"] === "test" &&
+    !process.env["COMPASS_CONFIG_FILE"]
+  ) {
+    return process.env;
+  }
+
+  return loadCompassEnv();
+};
+
+const rawRuntimeEnv = getBackendRuntimeEnv();
+
+for (const [key, value] of Object.entries(rawRuntimeEnv)) {
+  if (value !== undefined) {
+    process.env[key] = value;
+  }
+}
+
 const logger = Logger("app:constants");
 
-const _nodeEnv = process.env["NODE_ENV"] as NodeEnv;
+const _nodeEnv = rawRuntimeEnv["NODE_ENV"] as NodeEnv;
 
 if (!Object.values(NodeEnv).includes(_nodeEnv)) {
   throw new Error(`Invalid NODE_ENV value: '${_nodeEnv}'`);
@@ -83,8 +105,6 @@ const EnvSchema = z
     }
   });
 
-type RawBackendEnv = Record<string, string | undefined>;
-
 export type BackendEnv = z.infer<typeof EnvSchema>;
 
 const isUsableGoogleClientId = (clientId?: string): boolean =>
@@ -135,7 +155,7 @@ export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
 let parsedEnv: BackendEnv;
 
 try {
-  parsedEnv = parseBackendEnv(process.env);
+  parsedEnv = parseBackendEnv(rawRuntimeEnv);
 } catch (error) {
   logger.error(`Exiting because a critical env value is missing or invalid:`);
   console.error(error);

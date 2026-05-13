@@ -3,13 +3,16 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
 describe("self-host docker compose", () => {
-  it("passes the Google webhook override to the backend container", () => {
-    const compose = readFileSync(join(import.meta.dir, "docker-compose.yml"), {
+  it("mounts compass.yaml into the backend container", () => {
+    const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
       encoding: "utf8",
     });
 
+    expect(compose).toContain("COMPASS_CONFIG_FILE: /app/compass.yaml");
     expect(compose).toContain(
-      "GCAL_WEBHOOK_BASEURL: $".concat("{GCAL_WEBHOOK_BASEURL:-}"),
+      "- $".concat(
+        "{COMPASS_CONFIG_FILE:-./compass.yaml}:/app/compass.yaml:ro",
+      ),
     );
   });
 });

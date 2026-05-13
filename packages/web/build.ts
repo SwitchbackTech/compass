@@ -1,6 +1,10 @@
+import { loadCompassEnv } from "@core/config/compass.config";
 import { postcssPlugin } from "./plugins/postcss.plugin";
 import { execSync } from "node:child_process";
 import path from "node:path";
+
+const compassEnv = loadCompassEnv();
+Object.assign(process.env, compassEnv);
 
 function getBuildHash(): string {
   const fallbackBuildRef = process.env.COMPASS_BUILD_REF || "self-host";
@@ -34,18 +38,18 @@ const BUILD_VERSION =
   buildHash === "self-host" ? `${Date.now()}-self-host` : buildHash;
 const OUTDIR = path.resolve(import.meta.dir, "../../build/web");
 
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_ID = compassEnv.GOOGLE_CLIENT_ID;
 
 // Define process.env as a whole object so both dot and bracket notation work:
 // process.env.NODE_ENV and process.env["NODE_ENV"] are both replaced correctly.
 const define: Record<string, string> = {
   "process.env": JSON.stringify({
-    NODE_ENV: process.env.NODE_ENV || "production",
-    API_BASEURL: process.env.BASEURL ?? "",
+    NODE_ENV: compassEnv.NODE_ENV || "production",
+    API_BASEURL: compassEnv.BASEURL ?? "",
     GOOGLE_CLIENT_ID: GOOGLE_CLIENT_ID || "",
-    POSTHOG_KEY: process.env.POSTHOG_KEY || "",
-    POSTHOG_HOST: process.env.POSTHOG_HOST || "",
-    PORT: process.env.PORT || "3000",
+    POSTHOG_KEY: compassEnv.POSTHOG_KEY || "",
+    POSTHOG_HOST: compassEnv.POSTHOG_HOST || "",
+    PORT: compassEnv.PORT || "3000",
   }),
   BUILD_VERSION: JSON.stringify(BUILD_VERSION),
 };
