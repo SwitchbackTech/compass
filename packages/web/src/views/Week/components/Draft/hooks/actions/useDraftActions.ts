@@ -444,7 +444,11 @@ export const useDraftActions = (
         e.clientY,
         weekProps.component.startOfView,
       );
-      const hasMoved = currTime !== draft?.startDate;
+      const hasMoved =
+        draft !== null &&
+        (draft.isAllDay
+          ? currTime !== draft.startDate
+          : !dayjs(draft.startDate).isSame(currTime));
 
       if (!dragStatus?.hasMoved && hasMoved) {
         setDragStatus(

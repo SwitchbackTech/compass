@@ -189,4 +189,35 @@ describe("useDraftActions", () => {
     expect(setDraft).not.toHaveBeenCalled();
     expect(setDragStatus).not.toHaveBeenCalled();
   });
+
+  it("does not mark movement when dragging snaps to the same timed instant", () => {
+    const draft = createDraft();
+    const setDraft = mock();
+    const setDragStatus = mock();
+    const sameInstantWithOffset = "2024-01-15T04:00:00.000-06:00";
+    const dragDateCalcs = {
+      getDateByXY: mock(() => dayjs(sameInstantWithOffset)),
+      getDateStrByXY: mock(() => sameInstantWithOffset),
+    } as unknown as DateCalcs;
+
+    const { result } = renderHook(() =>
+      useDraftActions(
+        createState({
+          draft,
+          isDragging: true,
+        }),
+        createSetters({
+          setDraft,
+          setDragStatus,
+        }),
+        dragDateCalcs,
+        weekProps,
+      ),
+    );
+
+    result.current.drag({ clientX: 120, clientY: 240 });
+
+    expect(setDraft).not.toHaveBeenCalled();
+    expect(setDragStatus).not.toHaveBeenCalled();
+  });
 });
