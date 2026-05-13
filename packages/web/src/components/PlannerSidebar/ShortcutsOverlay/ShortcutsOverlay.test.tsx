@@ -1,7 +1,7 @@
-import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { describe, expect, it, mock } from "bun:test";
+import "@testing-library/jest-dom";
+import { ShortcutsOverlay } from "./ShortcutsOverlay";
 
 const sections = [
   {
@@ -23,9 +23,12 @@ describe("ShortcutsOverlay", () => {
       <ShortcutsOverlay isOpen={true} onClose={mock()} sections={sections} />,
     );
 
+    const overlay = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
+
     expect(
       screen.getByRole("dialog", { name: "Keyboard shortcuts" }),
     ).toBeInTheDocument();
+    expect(overlay).toHaveClass("translate-x-0");
     expect(screen.getByText("Shortcuts")).toBeInTheDocument();
     expect(screen.getByText("Day")).toBeInTheDocument();
     expect(screen.getByText("Previous day")).toBeInTheDocument();
@@ -45,10 +48,18 @@ describe("ShortcutsOverlay", () => {
   });
 
   it("does not render when closed", () => {
-    const { container } = render(
+    render(
       <ShortcutsOverlay isOpen={false} onClose={mock()} sections={sections} />,
     );
 
-    expect(container).toBeEmptyDOMElement();
+    expect(
+      screen.queryByRole("dialog", { name: "Keyboard shortcuts" }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.getByLabelText("Keyboard shortcuts", { selector: "div" }),
+    ).toHaveClass("-translate-x-full");
+    expect(
+      screen.getByRole("button", { hidden: true, name: "Close shortcuts" }),
+    ).toHaveAttribute("tabIndex", "-1");
   });
 });

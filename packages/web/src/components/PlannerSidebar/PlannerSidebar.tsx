@@ -1,4 +1,4 @@
-import { type HTMLAttributes, useState } from "react";
+import { type HTMLAttributes } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
@@ -19,6 +19,9 @@ interface Props extends HTMLAttributes<HTMLDivElement> {
   gridRefs?: Refs_Grid;
   measurements?: Measurements_Grid;
   monthsShown?: number;
+  isShortcutsOpen: boolean;
+  onCloseShortcuts: () => void;
+  onToggleShortcuts: () => void;
   onSelectDate: (date: Dayjs) => void;
   onToggleSidebar?: () => void;
   shortcutSections: ShortcutOverlaySection[];
@@ -33,6 +36,9 @@ export function PlannerSidebar({
   gridRefs,
   measurements,
   monthsShown = 1,
+  isShortcutsOpen,
+  onCloseShortcuts,
+  onToggleShortcuts,
   onSelectDate,
   onToggleSidebar,
   shortcutSections,
@@ -41,8 +47,6 @@ export function PlannerSidebar({
   viewStart,
   ...props
 }: Props) {
-  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
-
   return (
     <aside
       {...props}
@@ -76,12 +80,12 @@ export function PlannerSidebar({
 
       <PlannerSidebarActions
         isShortcutsOpen={isShortcutsOpen}
-        onOpenShortcuts={() => setIsShortcutsOpen(true)}
+        onToggleShortcuts={onToggleShortcuts}
       />
 
       <ShortcutsOverlay
         isOpen={isShortcutsOpen}
-        onClose={() => setIsShortcutsOpen(false)}
+        onClose={onCloseShortcuts}
         sections={shortcutSections}
       />
     </aside>

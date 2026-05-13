@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
+import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -32,6 +33,11 @@ export const WeekView = () => {
   const toggleSidebar = useCallback(() => {
     dispatch(viewSlice.actions.toggleSidebar());
   }, [dispatch]);
+  const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
+    usePlannerShortcuts({
+      isSidebarOpen,
+      onToggleSidebar: toggleSidebar,
+    });
 
   const { today } = useToday();
 
@@ -84,6 +90,8 @@ export const WeekView = () => {
           { k: "d", label: "Day" },
           { k: "w", label: "Week" },
           { k: "n", label: "Now" },
+          { k: "[", label: "Toggle sidebar" },
+          { k: "?", label: "Toggle shortcuts" },
           { k: "Mod+k", label: "Command Palette" },
         ],
       },
@@ -119,6 +127,9 @@ export const WeekView = () => {
                   dateCalcs={dateCalcs}
                   gridRefs={gridRefs}
                   measurements={measurements}
+                  isShortcutsOpen={isShortcutsOpen}
+                  onCloseShortcuts={closeShortcuts}
+                  onToggleShortcuts={toggleShortcuts}
                   onSelectDate={goToDateFromSidebar}
                   onToggleSidebar={toggleSidebar}
                   shortcutSections={shortcutSections}

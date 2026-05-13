@@ -6,19 +6,16 @@ describe("shortcuts.data", () => {
     it("should return default shortcuts when no config provided", () => {
       const shortcuts = getShortcuts();
 
-      expect(shortcuts.globalShortcuts).toHaveLength(6);
-      expect(shortcuts.globalShortcuts[0]).toEqual({ k: "n", label: "Now" });
-      expect(shortcuts.globalShortcuts[1]).toEqual({ k: "d", label: "Day" });
-      expect(shortcuts.globalShortcuts[2]).toEqual({ k: "w", label: "Week" });
-      expect(shortcuts.globalShortcuts[3]).toEqual({
-        k: "r",
-        label: "Edit reminder",
-      });
-      expect(shortcuts.globalShortcuts[4]).toEqual({ k: "z", label: "Log in" });
-      expect(shortcuts.globalShortcuts[5]).toEqual({
-        k: "Mod+k",
-        label: "Command Palette",
-      });
+      expect(shortcuts.globalShortcuts).toEqual([
+        { k: "n", label: "Now" },
+        { k: "d", label: "Day" },
+        { k: "w", label: "Week" },
+        { k: "r", label: "Edit reminder" },
+        { k: "[", label: "Toggle sidebar" },
+        { k: "?", label: "Toggle shortcuts" },
+        { k: "z", label: "Log in" },
+        { k: "Mod+k", label: "Command Palette" },
+      ]);
 
       expect(shortcuts.dayAgendaShortcuts).toHaveLength(2);
       expect(shortcuts.dayAgendaShortcuts[0]).toEqual({
@@ -40,7 +37,7 @@ describe("shortcuts.data", () => {
     it("shows logout when authenticated", () => {
       const shortcuts = getShortcuts({ isAuthenticated: true });
 
-      expect(shortcuts.globalShortcuts[4]).toEqual({ k: "z", label: "Logout" });
+      expect(shortcuts.globalShortcuts[6]).toEqual({ k: "z", label: "Logout" });
     });
 
     it("should show 'Scroll to now' when currentDate is today", () => {

@@ -5,7 +5,7 @@ import {
 } from "@phosphor-icons/react";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
-import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -13,12 +13,12 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 interface Props {
   isShortcutsOpen: boolean;
-  onOpenShortcuts: () => void;
+  onToggleShortcuts: () => void;
 }
 
 export const PlannerSidebarActions = ({
   isShortcutsOpen,
-  onOpenShortcuts,
+  onToggleShortcuts,
 }: Props) => {
   const dispatch = useAppDispatch();
   const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
@@ -36,12 +36,20 @@ export const PlannerSidebarActions = ({
     }
   };
 
+  const shortcutsActionLabel = isShortcutsOpen
+    ? "Close shortcuts"
+    : "Open shortcuts";
+
   return (
     <div className="flex h-12 shrink-0 items-center justify-between border-border-primary border-t px-3">
       <div className="flex items-center gap-2">
-        <TooltipWrapper description="Open shortcuts" onClick={onOpenShortcuts}>
+        <TooltipWrapper
+          description={shortcutsActionLabel}
+          shortcut="?"
+          onClick={onToggleShortcuts}
+        >
           <button
-            aria-label="Open shortcuts"
+            aria-label={shortcutsActionLabel}
             className="flex size-9 items-center justify-center rounded-default text-text-light-inactive transition hover:bg-panel-bg hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             type="button"
           >
@@ -57,11 +65,7 @@ export const PlannerSidebarActions = ({
       <div className="flex items-center gap-2">
         <TooltipWrapper
           description="Open command palette"
-          shortcut={
-            <span className="flex items-center gap-1">
-              {getModifierKeyIcon()} + K
-            </span>
-          }
+          shortcut={`${getModifierKeyLabel()}+K`}
           onClick={toggleCmdPalette}
         >
           <button
