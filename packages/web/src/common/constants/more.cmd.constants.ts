@@ -37,6 +37,16 @@ export const moreCommandPaletteItems: Array<{
         href: "https://buy.stripe.com/cNi8wQ6pE9gyejz6hZ9sk00",
         target: "_blank",
       },
+      {
+        id: "version",
+        children: `Version: ${typeof BUILD_VERSION === "string" ? BUILD_VERSION : "dev"}`,
+        icon: "InformationCircleIcon",
+        onClick: () => {
+          const v =
+            typeof BUILD_VERSION === "string" ? BUILD_VERSION : "dev";
+          void navigator.clipboard.writeText(v);
+        },
+      },
     ],
   },
 ];

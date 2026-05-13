@@ -29,7 +29,9 @@ function getBuildHash(): string {
     .trim();
 }
 
-const BUILD_VERSION = `${Date.now()}-${getBuildHash()}`;
+const buildHash = getBuildHash();
+const BUILD_VERSION =
+  buildHash === "self-host" ? `${Date.now()}-self-host` : buildHash;
 const OUTDIR = path.resolve(import.meta.dir, "../../build/web");
 
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID;
