@@ -43,6 +43,10 @@ export class InteractionEngine {
     });
   }
 
+  updateDraft(draft: Schema_GridEvent): void {
+    this.store.setState({ draft });
+  }
+
   reset(): void {
     this.store.reset();
   }

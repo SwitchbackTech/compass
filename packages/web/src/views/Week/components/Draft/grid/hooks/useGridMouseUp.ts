@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { Categories_Event } from "@core/types/event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getElemById } from "@web/common/utils/grid/grid.util";
 import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -7,7 +8,7 @@ import { useEventListener } from "@web/views/Week/hooks/mouse/useEventListener";
 import { useDraftContext } from "../../context/useDraftContext";
 
 export const useGridMouseUp = () => {
-  const { actions, state } = useDraftContext();
+  const { actions, interaction, state } = useDraftContext();
   const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
   const { discard, openForm, stopDragging, stopResizing, submit } = actions;
 
@@ -16,29 +17,35 @@ export const useGridMouseUp = () => {
   const isDrafting = draftStatus?.isDrafting;
 
   const getNextAction = useCallback(
-    (category: Categories_Event) => {
+    (category: Categories_Event, currentDraft: Schema_GridEvent) => {
       let shouldSubmit = false;
       let hasMoved = false;
-      const isNew = !draft?._id;
+      const isNew = !currentDraft?._id;
 
       if (category === Categories_Event.TIMED) {
         hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved || false;
-        shouldSubmit = !draft?.isOpen;
+        shouldSubmit = !currentDraft?.isOpen;
       } else if (category === Categories_Event.ALLDAY) {
         hasMoved = dragStatus?.hasMoved || resizeStatus?.hasMoved || false;
         shouldSubmit = hasMoved;
       }
 
       const clickedOnExisting = !isNew && !hasMoved;
-      const shouldOpenForm = (isNew || clickedOnExisting) && !draft?.isOpen;
+      const shouldOpenForm =
+        (isNew || clickedOnExisting) && !currentDraft?.isOpen;
 
       return { shouldOpenForm, shouldSubmit };
     },
-    [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved],
+    [dragStatus?.hasMoved, resizeStatus?.hasMoved],
   );
 
+  const getLatestDraft = useCallback(() => {
+    return interaction.getSnapshot().draft ?? draft;
+  }, [draft, interaction]);
+
   const handleAllDayRowMouseUp = useCallback(() => {
-    if (!draft) return;
+    const latestDraft = getLatestDraft();
+    if (!latestDraft) return;
 
     if (isResizing) {
       stopResizing();
@@ -50,6 +57,7 @@ export const useGridMouseUp = () => {
 
     const { shouldSubmit, shouldOpenForm } = getNextAction(
       Categories_Event.ALLDAY,
+      latestDraft,
     );
 
     if (shouldOpenForm) {
@@ -58,10 +66,10 @@ export const useGridMouseUp = () => {
     }
 
     if (shouldSubmit) {
-      submit(draft);
+      submit(latestDraft);
     }
   }, [
-    draft,
+    getLatestDraft,
     isDragging,
     isResizing,
     getNextAction,
@@ -72,7 +80,8 @@ export const useGridMouseUp = () => {
   ]);
 
   const handleMainGridMouseUp = useCallback(() => {
-    if (!draft || !isDrafting) return;
+    const latestDraft = getLatestDraft();
+    if (!latestDraft || !isDrafting) return;
 
     if (isDrafting && reduxDraftType === Categories_Event.ALLDAY) {
       discard();
@@ -94,6 +103,7 @@ export const useGridMouseUp = () => {
 
     const { shouldSubmit, shouldOpenForm } = getNextAction(
       Categories_Event.TIMED,
+      latestDraft,
     );
 
     if (shouldOpenForm) {
@@ -102,10 +112,10 @@ export const useGridMouseUp = () => {
     }
 
     if (shouldSubmit) {
-      submit(draft);
+      submit(latestDraft);
     }
   }, [
-    draft,
+    getLatestDraft,
     isDrafting,
     reduxDraftType,
     isResizing,
@@ -120,26 +130,27 @@ export const useGridMouseUp = () => {
 
   const onGridMouseUp = useCallback(
     (e: MouseEvent) => {
-      if (!draft || !isDrafting) return;
+      const latestDraft = getLatestDraft();
+      if (!latestDraft || !isDrafting) return;
       if (e.button !== 0) return;
 
       // Only for SOMEDAY_WEEK in main grid, we need to stop propagation
       if (
         isDrafting &&
         reduxDraftType === Categories_Event.SOMEDAY_WEEK &&
-        !draft?.isAllDay
+        !latestDraft?.isAllDay
       ) {
         e.stopPropagation();
       }
 
-      if (draft?.isAllDay) {
+      if (latestDraft?.isAllDay) {
         handleAllDayRowMouseUp();
       } else {
         handleMainGridMouseUp();
       }
     },
     [
-      draft,
+      getLatestDraft,
       isDrafting,
       reduxDraftType,
       handleAllDayRowMouseUp,

@@ -1,5 +1,4 @@
 import { render, waitFor } from "@testing-library/react";
-import { useEffect, useRef } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -43,10 +42,6 @@ mock.module("@web/store/store.hooks", () => ({
     selector(currentState),
 }));
 
-mock.module("../hooks/effects/useDraftEffects", () => ({
-  useDraftEffects: mock(),
-}));
-
 mock.module("@web/views/Forms/hooks/useEventForm", () => ({
   useEventForm: () => ({
     form: {},
@@ -84,7 +79,7 @@ describe("DraftProvider", () => {
     currentState.events.draft = {
       event: draft,
       status: {
-        activity: "eventRightClick",
+        activity: "dragging",
         dateToResize: null,
         eventType: Categories_Event.TIMED,
         isDrafting: true,
@@ -97,17 +92,7 @@ describe("DraftProvider", () => {
 
     const Probe = () => {
       const context = useDraftContext();
-      const didSeedDraft = useRef(false);
       interaction = context.interaction;
-
-      useEffect(() => {
-        if (didSeedDraft.current) return;
-        didSeedDraft.current = true;
-
-        context.setters.setDraft(draft);
-        context.setters.setIsDragging(true);
-      }, [context.setters]);
-
       return null;
     };
 

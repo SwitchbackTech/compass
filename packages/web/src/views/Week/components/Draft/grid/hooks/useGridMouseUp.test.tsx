@@ -1,15 +1,31 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { render, waitFor } from "@testing-library/react";
+import { renderHook } from "@testing-library/react";
+import { type ReactNode } from "react";
 import { Provider } from "react-redux";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { reducers } from "@web/store/reducers";
+import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { InteractionEngine } from "@web/views/Week/interaction/InteractionEngine";
-import { DraftContext } from "./context/DraftContext";
 import { describe, expect, it, mock } from "bun:test";
+
+let mouseUpHandler: ((event: MouseEvent) => void) | null = null;
+
+mock.module("@web/views/Week/hooks/mouse/useEventListener", () => ({
+  useEventListener: (
+    eventName: string,
+    handler: (event: MouseEvent) => void,
+  ) => {
+    if (eventName === "mouseup") {
+      mouseUpHandler = handler;
+    }
+  },
+}));
+
+const { useGridMouseUp } =
+  require("./useGridMouseUp") as typeof import("./useGridMouseUp");
 
 const createDraft = (
   overrides: Partial<Schema_GridEvent> = {},
@@ -35,44 +51,32 @@ const createDraft = (
   ...overrides,
 });
 
-let gridDraftProps: Record<string, unknown> | null = null;
-
-mock.module("./grid/hooks/useGridMouseMove", () => ({
-  useGridMouseMove: mock(),
-}));
-
-mock.module("./grid/GridDraft", () => ({
-  GridDraft: (props: Record<string, unknown>) => {
-    gridDraftProps = props;
-    return <div data-testid="grid-draft" />;
-  },
-}));
-
-const { Draft } = require("./Draft") as typeof import("./Draft");
-
-describe("Draft", () => {
-  it("renders the grid draft from the interaction engine snapshot", async () => {
-    document.body.innerHTML = `<div id="root"></div><div id="${ID_GRID_EVENTS_TIMED}"></div>`;
+describe("useGridMouseUp", () => {
+  it("submits the latest interaction engine draft on mouse up", () => {
+    document.body.innerHTML = '<div id="root"></div>';
 
     const reactDraft = createDraft({ title: "React draft" });
     const engineDraft = createDraft({ title: "Engine draft" });
     const interaction = new InteractionEngine();
-
-    interaction.mirrorDraftState({
-      draft: engineDraft,
-      isDragging: true,
-      isResizing: false,
-    });
+    const submit = mock();
+    const stopDragging = mock();
     const preloadedState = createInitialState();
+
     preloadedState.events.draft = {
-      event: engineDraft,
+      event: reactDraft,
       status: {
-        activity: "eventRightClick",
+        activity: "dragging",
         dateToResize: null,
         eventType: Categories_Event.TIMED,
         isDrafting: true,
       },
     };
+    interaction.mirrorDraftState({
+      draft: engineDraft,
+      isDragging: true,
+      isResizing: false,
+    });
+
     const store = configureStore({
       reducer: reducers,
       preloadedState,
@@ -84,21 +88,27 @@ describe("Draft", () => {
         }),
     });
 
-    render(
+    const wrapper = ({ children }: { children: ReactNode }) => (
       <Provider store={store}>
         <DraftContext.Provider
           value={
             {
-              actions: {},
+              actions: {
+                discard: mock(),
+                openForm: mock(),
+                stopDragging,
+                stopResizing: mock(),
+                submit,
+              },
               confirmation: {},
               interaction,
               setters: {},
               state: {
                 dateBeingChanged: "endDate",
                 draft: reactDraft,
-                dragStatus: null,
+                dragStatus: { durationMin: 90, hasMoved: true },
                 formProps: {},
-                isDragging: false,
+                isDragging: true,
                 isFormOpen: false,
                 isFormOpenBeforeDragging: null,
                 isResizing: false,
@@ -107,17 +117,19 @@ describe("Draft", () => {
             } as never
           }
         >
-          <Draft measurements={{} as never} weekProps={{} as never} />
+          {children}
         </DraftContext.Provider>
-      </Provider>,
+      </Provider>
     );
 
-    await waitFor(() => {
-      expect(gridDraftProps).toMatchObject({
-        draft: engineDraft,
-        isDragging: true,
-        isResizing: false,
-      });
-    });
+    renderHook(() => useGridMouseUp(), { wrapper });
+
+    mouseUpHandler?.({
+      button: 0,
+      stopPropagation: mock(),
+    } as unknown as MouseEvent);
+
+    expect(stopDragging).toHaveBeenCalled();
+    expect(submit).toHaveBeenCalledWith(engineDraft);
   });
 });

@@ -51,6 +51,7 @@ import {
 } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { type InteractionEngine } from "@web/views/Week/interaction/InteractionEngine";
 import {
   computeDragHasMoved,
   computeDragPosition,
@@ -62,6 +63,7 @@ export const useDraftActions = (
   setters: Setters_Draft,
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
+  interaction: InteractionEngine,
 ) => {
   const dispatch = useAppDispatch();
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
@@ -87,8 +89,8 @@ export const useDraftActions = (
     dragStatus,
     isDragging,
     isResizing,
-    resizeStatus,
     isFormOpen,
+    resizeStatus,
     isFormOpenBeforeDragging,
   } = draftState;
 
@@ -385,9 +387,12 @@ export const useDraftActions = (
         return;
       }
 
+      interaction.updatePointer({ x: e.clientX, y: e.clientY });
+      const liveDraft = interaction.getSnapshot().draft ?? draft;
+
       const hasMoved = computeDragHasMoved({
         dateCalcs,
-        draft,
+        draft: liveDraft,
         pointer: e,
         startOfView: weekProps.component.startOfView,
       });
@@ -401,42 +406,44 @@ export const useDraftActions = (
         );
       }
 
-      if (!draft) return;
+      if (!liveDraft) return;
 
       const nextDraft = computeDragPosition({
         dateCalcs,
-        draft,
+        draft: liveDraft,
         dragStatus,
         pointer: e,
         startOfView: weekProps.component.startOfView,
       });
 
       if (nextDraft) {
-        setDraft(nextDraft);
+        interaction.updateDraft(nextDraft);
       }
     },
     [
       isDragging,
+      interaction,
       dateCalcs,
       weekProps.component.startOfView,
       draft,
       dragStatus,
-      setDraft,
       setDragStatus,
     ],
   );
 
   const resize = useCallback(
     (e: MouseEvent) => {
-      if (!draft || !reduxDraft) return; // TS Guard
+      const liveDraft = interaction.getSnapshot().draft ?? draft;
+      if (!liveDraft || !reduxDraft) return; // TS Guard
 
       e.preventDefault();
       e.stopPropagation();
 
       if (!isResizing) return;
 
+      interaction.updatePointer({ x: e.clientX, y: e.clientY });
       // For all-day events, use a fixed Y coordinate (0) because Y positioning is irrelevant:
-      const y = draft.isAllDay ? 0 : e.clientY;
+      const y = liveDraft.isAllDay ? 0 : e.clientY;
       const currTime = dateCalcs.getDateByXY(
         e.clientX,
         y,
@@ -446,7 +453,7 @@ export const useDraftActions = (
       const resizeResult = computeResize({
         currTime,
         dateBeingChanged,
-        draft,
+        draft: liveDraft,
         reduxDraft,
       });
 
@@ -458,27 +465,22 @@ export const useDraftActions = (
         setDateBeingChanged(resizeResult.nextDateBeingChanged);
       }
 
-      closeForm();
-      setDraft((_draft): Schema_GridEvent => {
-        return {
-          ..._draft!,
-          _id: _draft!._id,
-          hasFlipped: resizeResult.flipDraft.hasFlipped,
-          endDate: resizeResult.flipDraft.endDate,
-          startDate: resizeResult.flipDraft.startDate,
-          priority: resizeResult.flipDraft.priority,
-        };
-      });
+      if (isFormOpen) {
+        closeForm();
+      }
 
       if (!resizeStatus?.hasMoved && resizeResult.hasMoved) {
         setResizeStatus({ hasMoved: true });
       }
 
-      setDraft((_draft): Schema_GridEvent => {
-        return {
-          ..._draft!,
-          [resizeResult.dateChanged]: resizeResult.updatedTime,
-        };
+      interaction.updateDraft({
+        ...liveDraft,
+        _id: liveDraft._id,
+        hasFlipped: resizeResult.flipDraft.hasFlipped,
+        endDate: resizeResult.flipDraft.endDate,
+        startDate: resizeResult.flipDraft.startDate,
+        priority: resizeResult.flipDraft.priority,
+        [resizeResult.dateChanged]: resizeResult.updatedTime,
       });
     },
     [
@@ -487,10 +489,11 @@ export const useDraftActions = (
       dateCalcs,
       draft,
       reduxDraft,
+      interaction,
+      isFormOpen,
       isResizing,
       resizeStatus?.hasMoved,
       setDateBeingChanged,
-      setDraft,
       setResizeStatus,
       weekProps.component.startOfView,
     ],

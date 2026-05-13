@@ -23,7 +23,13 @@ export const DraftProvider = ({
 }: DraftProviderProps) => {
   const interaction = useMemo(() => new InteractionEngine(), []);
   const { state: originalState, setters } = useDraftState();
-  const actions = useDraftActions(originalState, setters, dateCalcs, weekProps);
+  const actions = useDraftActions(
+    originalState,
+    setters,
+    dateCalcs,
+    weekProps,
+    interaction,
+  );
   const { discard, reset } = actions;
   const { isFormOpen } = originalState;
   const { setIsFormOpen } = setters;
