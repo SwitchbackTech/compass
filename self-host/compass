@@ -46,22 +46,6 @@ Commands:
 USAGE
 }
 
-append_health_path() {
-  base_url=$1
-
-  while :; do
-    case $base_url in
-      */)
-        base_url=${base_url%/}
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
-
-  printf '%s/health\n' "$base_url"
-}
 
 read_env_value() {
   key=$1
@@ -120,11 +104,11 @@ load_env() {
   [ -f "$ENV_FILE" ] || fail "Missing env file: $ENV_FILE. Rerun the installer or set COMPASS_ENV_FILE."
 
   frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
-  baseurl=$(strip_quotes "$(read_env_value BASEURL)")
   health_url=$(strip_quotes "$(read_env_value COMPASS_HEALTH_URL)")
+  port=$(strip_quotes "$(read_env_value PORT)")
 
   APP_URL=${frontend_url:-http://localhost:9080}
-  HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-$(append_health_path "${baseurl:-http://localhost:3000/api}")}}
+  HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-http://localhost:${port:-3000}/api/health}}
   ENV_LOADED=1
 }
 
