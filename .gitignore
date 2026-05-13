@@ -15,6 +15,7 @@ credentials.txt
 *.tsbuildinfo
 *.mjs
 compass.yaml
+.playwright-compass.yaml
 
 ########
 # DIRS #
