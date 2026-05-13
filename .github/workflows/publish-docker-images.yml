@@ -22,7 +22,7 @@ permissions:
 
 jobs:
   publish:
-    name: Publish Docker images
+    name: Build and push Docker images
     runs-on: ubuntu-latest
 
     steps:
@@ -47,16 +47,16 @@ jobs:
           echo "Minor tag: ${minor_tag}"
 
       - name: Log in to Docker Hub
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and push compass-backend
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: self-host/Dockerfile.backend
@@ -67,7 +67,7 @@ jobs:
             switchbacktech/compass-backend:latest
 
       - name: Build and push compass-mongo
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: self-host/Dockerfile.mongo
@@ -78,7 +78,7 @@ jobs:
             switchbacktech/compass-mongo:latest
 
       - name: Build and push compass-web
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: self-host/Dockerfile.web
