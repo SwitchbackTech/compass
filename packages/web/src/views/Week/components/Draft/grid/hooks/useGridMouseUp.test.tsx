@@ -71,11 +71,8 @@ describe("useGridMouseUp", () => {
         isDrafting: true,
       },
     };
-    interaction.mirrorDraftState({
-      draft: engineDraft,
-      isDragging: true,
-      isResizing: false,
-    });
+    interaction.startDrag(engineDraft);
+    interaction.markDragMoved();
 
     const store = configureStore({
       reducer: reducers,
@@ -106,13 +103,10 @@ describe("useGridMouseUp", () => {
               state: {
                 dateBeingChanged: "endDate",
                 draft: reactDraft,
-                dragStatus: { durationMin: 90, hasMoved: true },
                 formProps: {},
-                isDragging: true,
                 isFormOpen: false,
                 isFormOpenBeforeDragging: null,
                 isResizing: false,
-                resizeStatus: null,
               },
             } as never
           }

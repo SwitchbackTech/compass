@@ -58,11 +58,7 @@ describe("Draft", () => {
     const engineDraft = createDraft({ title: "Engine draft" });
     const interaction = new InteractionEngine();
 
-    interaction.mirrorDraftState({
-      draft: engineDraft,
-      isDragging: true,
-      isResizing: false,
-    });
+    interaction.startDrag(engineDraft);
     const preloadedState = createInitialState();
     preloadedState.events.draft = {
       event: engineDraft,
@@ -96,13 +92,10 @@ describe("Draft", () => {
               state: {
                 dateBeingChanged: "endDate",
                 draft: reactDraft,
-                dragStatus: null,
                 formProps: {},
-                isDragging: false,
                 isFormOpen: false,
                 isFormOpenBeforeDragging: null,
                 isResizing: false,
-                resizeStatus: null,
               },
             } as never
           }

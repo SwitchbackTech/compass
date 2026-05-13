@@ -1,6 +1,6 @@
 import { useEffect } from "react";
-import dayjs from "@core/util/date/dayjs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { type InteractionEngine } from "@web/views/Week/interaction/InteractionEngine";
 import {
   type Setters_Draft,
   type State_Draft_Local,
@@ -12,21 +12,17 @@ export const useDraftEffects = (
   weekProps: WeekProps,
   isDrafting: boolean,
   handleChange: () => Promise<void>,
+  interaction: InteractionEngine,
 ) => {
-  const { draft, isDragging, isResizing, dateBeingChanged } = state;
-  const {
-    setDraft,
-    setIsDragging,
-    setIsFormOpen,
-    setIsResizing,
-    setResizeStatus,
-    setDragStatus,
-    setDateBeingChanged,
-  } = setters;
+  const { isResizing, dateBeingChanged } = state;
+  const { setDraft, setIsFormOpen, setIsResizing, setDateBeingChanged } =
+    setters;
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: draft state should clear only when the visible week changes.
   useEffect(() => {
-    if (isDragging || isResizing) {
+    const isInteracting = interaction.getSnapshot().mode !== "idle";
+
+    if (isInteracting || isResizing) {
       return;
     }
 
@@ -34,63 +30,53 @@ export const useDraftEffects = (
     const lastNavigationSource = weekProps.util.getLastNavigationSource();
     const isDragToEdgeNavigation = lastNavigationSource === "drag-to-edge";
     const shouldPreserveDuringDrag =
-      (isDragging || isResizing) && isDragToEdgeNavigation;
+      (isInteracting || isResizing) && isDragToEdgeNavigation;
 
     if (shouldPreserveDuringDrag) {
       return;
     }
 
     setDraft(null);
-    setIsDragging(false);
+    interaction.reset();
     setIsFormOpen(false);
     setIsResizing(false);
-    setDragStatus(null);
-    setResizeStatus(null);
     setDateBeingChanged(null);
   }, [weekProps.component.week]);
 
   useEffect(() => {
-    if (isResizing) {
+    const isActivelyResizing = interaction.getSnapshot().mode === "resize";
+
+    if (isResizing && isActivelyResizing) {
       setDateBeingChanged(dateBeingChanged);
       setIsFormOpen(false);
     }
-  }, [dateBeingChanged, isResizing, setDateBeingChanged, setIsFormOpen]);
+  }, [
+    dateBeingChanged,
+    interaction,
+    isResizing,
+    setDateBeingChanged,
+    setIsFormOpen,
+  ]);
 
   useEffect(() => {
     const isStaleDraft = !isDrafting;
     if (isStaleDraft) {
       setDraft(null);
-      setIsDragging(false);
+      interaction.reset();
       setIsFormOpen(false);
       setIsResizing(false);
-      setDragStatus(null);
-      setResizeStatus(null);
       setDateBeingChanged(null);
     }
   }, [
+    interaction,
     isDrafting,
     setDateBeingChanged,
     setDraft,
-    setDragStatus,
-    setIsDragging,
     setIsFormOpen,
     setIsResizing,
-    setResizeStatus,
   ]);
 
   useEffect(() => {
     handleChange();
   }, [handleChange]);
-
-  useEffect(() => {
-    if (isDragging && draft) {
-      setIsFormOpen(false);
-      const durationMin = dayjs(draft.endDate).diff(draft.startDate, "minutes");
-
-      setDragStatus((dragStatus) => ({
-        durationMin,
-        hasMoved: dragStatus?.hasMoved,
-      }));
-    }
-  }, [isDragging, setDragStatus, draft?.endDate, draft, setIsFormOpen]);
 };

@@ -1,5 +1,6 @@
 import { type MutableRefObject, useEffect, useRef } from "react";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
+import { useInteractionSnapshot } from "@web/views/Week/interaction/interaction.store";
 
 const SCROLL_SPEED = 10;
 const EDGE_THRESHOLD = 50;
@@ -8,12 +9,15 @@ export const useDragEventSmartScroll = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
 ) => {
   const { interaction, state } = useDraftContext();
+  const interactionState = useInteractionSnapshot(interaction.getStore());
+  const draft = interactionState.draft ?? state.draft;
+  const isDragging = interactionState.mode === "drag";
   const mouseYRef = useRef(0);
   const scrollRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!state.isDragging) return;
-    if (state.draft?.isAllDay !== false) return;
+    if (!isDragging) return;
+    if (draft?.isAllDay !== false) return;
     if (!mainGridRef.current) return;
     const container = mainGridRef.current;
 
@@ -26,8 +30,8 @@ export const useDragEventSmartScroll = (
     const scrollIfNeeded = () => {
       scrollRef.current = null;
 
-      if (!state.isDragging) return;
-      if (state.draft?.isAllDay !== false) return;
+      if (interaction.getSnapshot().mode !== "drag") return;
+      if (draft?.isAllDay !== false) return;
 
       const containerRect = container.getBoundingClientRect();
       const { top, bottom } = {
@@ -69,5 +73,5 @@ export const useDragEventSmartScroll = (
         scrollRef.current = null;
       }
     };
-  }, [interaction, mainGridRef, state.draft?.isAllDay, state.isDragging]);
+  }, [draft?.isAllDay, interaction, isDragging, mainGridRef]);
 };

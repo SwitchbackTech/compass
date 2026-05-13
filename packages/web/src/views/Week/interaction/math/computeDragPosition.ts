@@ -2,8 +2,10 @@ import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { getDragDurationMinutes } from "@web/views/Week/components/Draft/hooks/actions/drag-duration.util";
-import { type Status_Drag } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
+import {
+  type DragDurationStatus,
+  getDragDurationMinutes,
+} from "@web/views/Week/components/Draft/hooks/actions/drag-duration.util";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 
 type DragPointer = {
@@ -14,7 +16,7 @@ type DragPointer = {
 type ComputeDragPositionParams = {
   dateCalcs: Pick<DateCalcs, "getDateByXY">;
   draft: Schema_GridEvent;
-  dragStatus: Status_Drag | null;
+  dragStatus: DragDurationStatus | null;
   pointer: DragPointer;
   startOfView: Dayjs;
 };

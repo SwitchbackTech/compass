@@ -55,15 +55,9 @@ export const DraftProvider = ({
   useEffect(() => {
     interaction.mirrorDraftState({
       draft: originalState.draft,
-      isDragging: originalState.isDragging,
       isResizing: originalState.isResizing,
     });
-  }, [
-    interaction,
-    originalState.draft,
-    originalState.isDragging,
-    originalState.isResizing,
-  ]);
+  }, [interaction, originalState.draft, originalState.isResizing]);
 
   return (
     <DraftContext.Provider

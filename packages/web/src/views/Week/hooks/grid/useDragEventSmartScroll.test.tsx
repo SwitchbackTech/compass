@@ -15,7 +15,11 @@ const originalCancelAnimationFrame = window.cancelAnimationFrame;
 let animationFrames = new Map<number, FrameRequestCallback>();
 let nextAnimationFrameId = 0;
 
-const timedDraft = { isAllDay: false } as Schema_GridEvent;
+const timedDraft = {
+  endDate: "2024-01-15T11:00:00.000Z",
+  isAllDay: false,
+  startDate: "2024-01-15T10:00:00.000Z",
+} as Schema_GridEvent;
 let interaction: InteractionEngine;
 
 const createDraftContextValue = (): DraftContextValue =>
@@ -27,13 +31,10 @@ const createDraftContextValue = (): DraftContextValue =>
     state: {
       dateBeingChanged: "endDate",
       draft: timedDraft,
-      dragStatus: null,
       formProps: {},
-      isDragging: true,
       isFormOpen: false,
       isFormOpenBeforeDragging: null,
       isResizing: false,
-      resizeStatus: null,
     },
   }) as DraftContextValue;
 
@@ -99,11 +100,7 @@ const SmartScrollHarness: FC = () => {
 describe("useDragEventSmartScroll", () => {
   beforeEach(() => {
     interaction = new InteractionEngine();
-    interaction.mirrorDraftState({
-      draft: timedDraft,
-      isDragging: true,
-      isResizing: false,
-    });
+    interaction.startDrag(timedDraft);
     animationFrames = new Map();
     nextAnimationFrameId = 0;
 

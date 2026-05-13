@@ -28,40 +28,54 @@ const createDraft = (
 });
 
 describe("InteractionEngine", () => {
-  it("mirrors React draft drag state in shadow mode", () => {
+  it("preserves drag mode while mirroring React draft state", () => {
     const engine = new InteractionEngine();
     const draft = createDraft();
 
+    engine.startDrag(draft);
     engine.mirrorDraftState({
       draft,
-      isDragging: true,
       isResizing: false,
     });
 
     expect(engine.getSnapshot()).toMatchObject({
       mode: "drag",
       draft,
+      drag: {
+        durationMin: 90,
+        hasMoved: false,
+      },
     });
   });
 
-  it("clears live interaction state when React draft state is idle", () => {
+  it("ignores stale null draft mirrors while an interaction is active", () => {
     const engine = new InteractionEngine();
+    const draft = createDraft();
 
-    engine.mirrorDraftState({
-      draft: createDraft(),
-      isDragging: false,
-      isResizing: true,
-    });
+    engine.startResize(draft);
     engine.updatePointer({ x: 80, y: 120 });
     engine.mirrorDraftState({
       draft: null,
-      isDragging: false,
       isResizing: false,
     });
 
     expect(engine.getSnapshot()).toMatchObject({
-      mode: "idle",
+      mode: "resize",
+      draft,
+      pointer: { x: 80, y: 120 },
+    });
+  });
+
+  it("clears live interaction state when explicitly reset", () => {
+    const engine = new InteractionEngine();
+
+    engine.startResize(createDraft());
+    engine.updatePointer({ x: 80, y: 120 });
+    engine.reset();
+
+    expect(engine.getSnapshot()).toMatchObject({
       draft: null,
+      mode: "idle",
       pointer: null,
     });
   });

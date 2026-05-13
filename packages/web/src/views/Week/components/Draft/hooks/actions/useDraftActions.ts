@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -47,7 +47,6 @@ import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/
 import {
   type Setters_Draft,
   type State_Draft_Local,
-  type Status_Drag,
 } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -69,6 +68,7 @@ export const useDraftActions = (
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
   const reduxDraft = useAppSelector(selectDraft);
+  const latestDraftRef = useRef<Schema_GridEvent | null>(null);
   const pendingEventIds = useAppSelector(
     (state) => state.events.pendingEvents.eventIds,
   );
@@ -86,45 +86,51 @@ export const useDraftActions = (
   const {
     dateBeingChanged,
     draft,
-    dragStatus,
-    isDragging,
     isResizing,
     isFormOpen,
-    resizeStatus,
     isFormOpenBeforeDragging,
   } = draftState;
 
   const {
-    setIsDragging,
     setIsResizing,
-    setDragStatus,
-    setResizeStatus,
     setDateBeingChanged,
     setDraft,
     setIsFormOpen,
     setIsFormOpenBeforeDragging,
   } = setters;
 
+  latestDraftRef.current = draft ?? (reduxDraft as Schema_GridEvent | null);
+
+  const getLiveDraft = useCallback(() => {
+    return interaction.getSnapshot().draft ?? latestDraftRef.current;
+  }, [interaction]);
+
   const startDragging = useCallback(() => {
-    setIsDragging(true);
-  }, [setIsDragging]);
+    interaction.startDrag(getLiveDraft());
+  }, [getLiveDraft, interaction]);
 
   const startResizing = useCallback(() => {
+    interaction.startResize(getLiveDraft());
     setIsResizing(true);
     setDateBeingChanged(dateToResize ?? null);
-  }, [setIsResizing, setDateBeingChanged, dateToResize]);
+  }, [
+    dateToResize,
+    getLiveDraft,
+    interaction,
+    setDateBeingChanged,
+    setIsResizing,
+  ]);
 
   const stopDragging = useCallback(() => {
-    setIsDragging(false);
-    setDragStatus(null);
+    interaction.stopInteraction();
     setIsFormOpenBeforeDragging(null);
-  }, [setIsDragging, setDragStatus, setIsFormOpenBeforeDragging]);
+  }, [interaction, setIsFormOpenBeforeDragging]);
 
   const stopResizing = useCallback(() => {
     setIsResizing(false);
-    setResizeStatus(null);
+    interaction.stopInteraction();
     setDateBeingChanged("endDate");
-  }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
+  }, [interaction, setIsResizing, setDateBeingChanged]);
 
   const isSomeday = useCallback((): boolean => {
     return reduxDraft?.isSomeday ?? false;
@@ -146,21 +152,11 @@ export const useDraftActions = (
 
   const reset = useCallback(() => {
     setDraft(null);
-    setIsDragging(false);
+    interaction.reset();
     closeForm();
     setIsResizing(false);
-    setDragStatus(null);
-    setResizeStatus(null);
     setDateBeingChanged(null);
-  }, [
-    closeForm,
-    setDateBeingChanged,
-    setDraft,
-    setDragStatus,
-    setIsDragging,
-    setIsResizing,
-    setResizeStatus,
-  ]);
+  }, [closeForm, interaction, setDateBeingChanged, setDraft, setIsResizing]);
 
   const discard = useCallback(() => {
     reset();
@@ -382,7 +378,9 @@ export const useDraftActions = (
 
   const drag = useCallback(
     (e: Omit<PartialMouseEvent, "currentTarget">) => {
-      if (!isDragging) {
+      const interactionState = interaction.getSnapshot();
+
+      if (interactionState.mode !== "drag") {
         devAlert("not dragging (anymore?)");
         return;
       }
@@ -400,13 +398,8 @@ export const useDraftActions = (
         startOfView: weekProps.component.startOfView,
       });
 
-      if (!dragStatus?.hasMoved && hasMoved) {
-        setDragStatus(
-          (_status): Status_Drag => ({
-            ..._status!,
-            hasMoved: true,
-          }),
-        );
+      if (!interactionState.drag.hasMoved && hasMoved) {
+        interaction.markDragMoved();
       }
 
       if (!liveDraft) return;
@@ -414,7 +407,7 @@ export const useDraftActions = (
       const nextDraft = computeDragPosition({
         dateCalcs,
         draft: liveDraft,
-        dragStatus,
+        dragStatus: interaction.getSnapshot().drag,
         pointer: e,
         startOfView: weekProps.component.startOfView,
       });
@@ -423,15 +416,7 @@ export const useDraftActions = (
         interaction.updateDraft(nextDraft, { notifyReact: false });
       }
     },
-    [
-      isDragging,
-      interaction,
-      dateCalcs,
-      weekProps.component.startOfView,
-      draft,
-      dragStatus,
-      setDragStatus,
-    ],
+    [interaction, dateCalcs, weekProps.component.startOfView, draft],
   );
 
   const resize = useCallback(
@@ -475,8 +460,8 @@ export const useDraftActions = (
         closeForm();
       }
 
-      if (!resizeStatus?.hasMoved && resizeResult.hasMoved) {
-        setResizeStatus({ hasMoved: true });
+      if (!interaction.getSnapshot().resize.hasMoved && resizeResult.hasMoved) {
+        interaction.markResizeMoved();
       }
 
       interaction.updateDraft(
@@ -501,9 +486,7 @@ export const useDraftActions = (
       interaction,
       isFormOpen,
       isResizing,
-      resizeStatus?.hasMoved,
       setDateBeingChanged,
-      setResizeStatus,
       weekProps.component.startOfView,
     ],
   );
@@ -594,7 +577,14 @@ export const useDraftActions = (
     stopResizing,
   };
 
-  useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
+  useDraftEffects(
+    draftState,
+    setters,
+    weekProps,
+    isDrafting,
+    handleChange,
+    interaction,
+  );
 
   return actions;
 };

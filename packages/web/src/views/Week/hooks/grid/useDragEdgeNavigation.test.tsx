@@ -15,7 +15,9 @@ import { describe, expect, it, mock } from "bun:test";
 
 const timedDraft = {
   _id: "event-1",
+  endDate: "2024-01-15T11:00:00.000Z",
   isAllDay: false,
+  startDate: "2024-01-15T10:00:00.000Z",
 } as Schema_GridEvent;
 
 const createWeekProps = (): WeekProps =>
@@ -77,6 +79,7 @@ const EdgeNavigationHarness: FC<{ weekProps: WeekProps }> = ({ weekProps }) => {
       }),
   });
   const interaction = new InteractionEngine();
+  interaction.startDrag(timedDraft);
 
   return (
     <Provider store={store}>
@@ -99,13 +102,10 @@ const EdgeNavigationHarness: FC<{ weekProps: WeekProps }> = ({ weekProps }) => {
               state: {
                 dateBeingChanged: "endDate",
                 draft: timedDraft,
-                dragStatus: null,
                 formProps: {},
-                isDragging: true,
                 isFormOpen: false,
                 isFormOpenBeforeDragging: null,
                 isResizing: false,
-                resizeStatus: null,
               },
             } as never
           }

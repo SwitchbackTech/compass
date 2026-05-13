@@ -11,6 +11,13 @@ export interface InteractionState {
   mode: InteractionMode;
   pointer: InteractionPointer | null;
   draft: Schema_GridEvent | null;
+  drag: {
+    durationMin: number | null;
+    hasMoved: boolean;
+  };
+  resize: {
+    hasMoved: boolean;
+  };
   scroll: {
     velocityY: number;
   };

@@ -80,12 +80,9 @@ const createState = (
 ): State_Draft_Local => ({
   dateBeingChanged: "endDate",
   draft: createDraft(),
-  dragStatus: null,
-  isDragging: false,
   isFormOpen: true,
   isFormOpenBeforeDragging: null,
   isResizing: false,
-  resizeStatus: null,
   ...overrides,
 });
 
@@ -94,12 +91,9 @@ const createSetters = (
 ): Setters_Draft => ({
   setDateBeingChanged: mock(),
   setDraft: mock(),
-  setDragStatus: mock(),
-  setIsDragging: mock(),
   setIsFormOpen: mock(),
   setIsFormOpenBeforeDragging: mock(),
   setIsResizing: mock(),
-  setResizeStatus: mock(),
   ...overrides,
 });
 
@@ -170,33 +164,51 @@ describe("useDraftActions", () => {
   it("does not update draft state when dragging snaps to the same timed instant", () => {
     const draft = createDraft();
     const setDraft = mock();
-    const setDragStatus = mock();
+    const interaction = new InteractionEngine();
     const sameInstantWithOffset = "2024-01-15T04:00:00.000-06:00";
     const dragDateCalcs = {
       getDateByXY: mock(() => dayjs(sameInstantWithOffset)),
       getDateStrByXY: mock(() => sameInstantWithOffset),
     } as unknown as DateCalcs;
 
+    interaction.startDrag(draft);
+
     const { result } = renderHook(() =>
       useDraftActions(
-        createState({
-          draft,
-          isDragging: true,
-        }),
-        createSetters({
-          setDraft,
-          setDragStatus,
-        }),
+        createState({ draft }),
+        createSetters({ setDraft }),
         dragDateCalcs,
         weekProps,
-        new InteractionEngine(),
+        interaction,
       ),
     );
 
     result.current.drag({ clientX: 120, clientY: 240 });
 
     expect(setDraft).not.toHaveBeenCalled();
-    expect(setDragStatus).not.toHaveBeenCalled();
+    expect(interaction.getSnapshot().drag.hasMoved).toBe(false);
+  });
+
+  it("can start drag motion from the Redux draft before React draft state catches up", () => {
+    const interaction = new InteractionEngine();
+    const reduxDraft = currentState.events.draft?.event as Schema_GridEvent;
+
+    const { result } = renderHook(() =>
+      useDraftActions(
+        createState({ draft: null }),
+        createSetters(),
+        dateCalcs,
+        weekProps,
+        interaction,
+      ),
+    );
+
+    result.current.startDragging();
+
+    expect(interaction.getSnapshot()).toMatchObject({
+      draft: reduxDraft,
+      mode: "drag",
+    });
   });
 
   it("writes drag movement to the interaction engine instead of React draft state", () => {
@@ -208,19 +220,11 @@ describe("useDraftActions", () => {
       getDateStrByXY: mock(() => "2024-01-15T11:00:00.000Z"),
     } as unknown as DateCalcs;
 
-    interaction.mirrorDraftState({
-      draft,
-      isDragging: true,
-      isResizing: false,
-    });
+    interaction.startDrag(draft);
 
     const { result } = renderHook(() =>
       useDraftActions(
-        createState({
-          draft,
-          dragStatus: { durationMin: 90 },
-          isDragging: true,
-        }),
+        createState({ draft }),
         createSetters({ setDraft }),
         dragDateCalcs,
         weekProps,
@@ -231,6 +235,7 @@ describe("useDraftActions", () => {
     result.current.drag({ clientX: 120, clientY: 240 });
 
     expect(setDraft).not.toHaveBeenCalled();
+    expect(interaction.getSnapshot().drag.hasMoved).toBe(true);
     expect(interaction.getSnapshot().draft).toMatchObject({
       startDate: "2024-01-15T11:00:00+00:00",
       endDate: "2024-01-15T12:30:00+00:00",
@@ -241,17 +246,12 @@ describe("useDraftActions", () => {
     const draft = createDraft();
     const setDraft = mock();
     const setIsFormOpen = mock();
-    const setResizeStatus = mock();
     const interaction = new InteractionEngine();
     const resizeDateCalcs = {
       getDateByXY: mock(() => dayjs("2024-01-15T12:00:00.000Z")),
     } as unknown as DateCalcs;
 
-    interaction.mirrorDraftState({
-      draft,
-      isDragging: false,
-      isResizing: true,
-    });
+    interaction.startResize(draft);
 
     const { result } = renderHook(() =>
       useDraftActions(
@@ -263,7 +263,6 @@ describe("useDraftActions", () => {
         createSetters({
           setDraft,
           setIsFormOpen,
-          setResizeStatus,
         }),
         resizeDateCalcs,
         weekProps,
@@ -279,7 +278,7 @@ describe("useDraftActions", () => {
     } as unknown as MouseEvent);
 
     expect(setIsFormOpen).toHaveBeenCalledWith(false);
-    expect(setResizeStatus).toHaveBeenCalledWith({ hasMoved: true });
+    expect(interaction.getSnapshot().resize.hasMoved).toBe(true);
     expect(setDraft).not.toHaveBeenCalled();
     expect(interaction.getSnapshot().draft).toMatchObject({
       endDate: "2024-01-15T12:00:00+00:00",
@@ -296,11 +295,7 @@ describe("useDraftActions", () => {
       getDateByXY: mock(() => dayjs("2024-01-15T12:00:00.000Z")),
     } as unknown as DateCalcs;
 
-    interaction.mirrorDraftState({
-      draft,
-      isDragging: false,
-      isResizing: true,
-    });
+    interaction.startResize(draft);
 
     const { result } = renderHook(() =>
       useDraftActions(

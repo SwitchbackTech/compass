@@ -5,8 +5,8 @@ import { useEventListener } from "@web/views/Week/hooks/mouse/useEventListener";
 import { useDraftContext } from "../../context/useDraftContext";
 
 export const useGridMouseMove = () => {
-  const { actions, state } = useDraftContext();
-  const { isDragging, isResizing } = state;
+  const { actions, interaction, state } = useDraftContext();
+  const { isResizing } = state;
   const { drag, resize } = actions;
 
   const isDrafting = useAppSelector(selectIsDrafting);
@@ -17,13 +17,13 @@ export const useGridMouseMove = () => {
 
       if (isResizing) {
         resize(e);
-      } else if (isDragging) {
+      } else if (interaction.getSnapshot().mode === "drag") {
         e.preventDefault();
         document.body.style.cursor = "move";
         drag(e);
       }
     },
-    [drag, isDrafting, isDragging, isResizing, resize],
+    [drag, interaction, isDrafting, isResizing, resize],
   );
 
   const _onMouseUp = useCallback(() => {

@@ -111,6 +111,7 @@ export const GridDraft: FC<Props> = ({
     };
 
     setDraft(newDraft);
+    interaction.updateDraft(newDraft);
     startDragging();
   };
 

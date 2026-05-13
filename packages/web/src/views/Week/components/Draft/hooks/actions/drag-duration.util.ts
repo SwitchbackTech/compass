@@ -1,10 +1,13 @@
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { type Status_Drag } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
+
+export interface DragDurationStatus {
+  durationMin?: number | null;
+}
 
 export const getDragDurationMinutes = (
   draft: Schema_GridEvent,
-  dragStatus: Status_Drag | null,
+  dragStatus: DragDurationStatus | null,
 ) => {
   return (
     dragStatus?.durationMin ??

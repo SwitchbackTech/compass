@@ -3,6 +3,7 @@ import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
+import { useInteractionSnapshot } from "@web/views/Week/interaction/interaction.store";
 import { type WeekProps } from "../useWeek";
 
 const EDGE_THRESHOLD = 50; // pixels from edge to trigger navigation
@@ -19,7 +20,8 @@ export const useDragEdgeNavigation = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
   weekProps: WeekProps,
 ): DragEdgeNavigationState => {
-  const { state: draftState } = useDraftContext();
+  const { interaction, state: draftState } = useDraftContext();
+  const interactionState = useInteractionSnapshot(interaction.getStore());
   const isDNDing = useAppSelector(selectIsDNDing);
   const { state: sidebarState } = useSidebarContext();
   const [edgeState, setEdgeState] = useState<
@@ -34,10 +36,10 @@ export const useDragEdgeNavigation = (
   const lastEdgeRef = useRef<"left" | "right" | null>(null);
   const timerStartTimeRef = useRef<number | null>(null);
 
-  const isGridEventDragging = draftState.isDragging;
+  const isGridEventDragging = interactionState.mode === "drag";
   const isSomedayEventDragging = isDNDing;
 
-  const gridEventDraft = draftState.draft;
+  const gridEventDraft = interactionState.draft ?? draftState.draft;
   const somedayEventDraft = sidebarState.draft;
 
   const isDragging = isGridEventDragging || isSomedayEventDragging;

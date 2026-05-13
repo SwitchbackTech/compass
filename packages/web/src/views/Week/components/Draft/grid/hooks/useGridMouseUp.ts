@@ -9,7 +9,7 @@ import { useDraftContext } from "../../context/useDraftContext";
 
 export const useGridMouseUp = () => {
   const { actions, interaction, state } = useDraftContext();
-  const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
+  const { draft, isResizing } = state;
   const { discard, openForm, stopDragging, stopResizing, submit } = actions;
 
   const draftStatus = useAppSelector(selectDraftStatus);
@@ -17,16 +17,17 @@ export const useGridMouseUp = () => {
   const isDrafting = draftStatus?.isDrafting;
 
   const getNextAction = useCallback(
-    (category: Categories_Event, currentDraft: Schema_GridEvent) => {
+    (
+      category: Categories_Event,
+      currentDraft: Schema_GridEvent,
+      hasMoved: boolean,
+    ) => {
       let shouldSubmit = false;
-      let hasMoved = false;
       const isNew = !currentDraft?._id;
 
       if (category === Categories_Event.TIMED) {
-        hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved || false;
         shouldSubmit = !currentDraft?.isOpen;
       } else if (category === Categories_Event.ALLDAY) {
-        hasMoved = dragStatus?.hasMoved || resizeStatus?.hasMoved || false;
         shouldSubmit = hasMoved;
       }
 
@@ -36,28 +37,36 @@ export const useGridMouseUp = () => {
 
       return { shouldOpenForm, shouldSubmit };
     },
-    [dragStatus?.hasMoved, resizeStatus?.hasMoved],
+    [],
   );
 
   const getLatestDraft = useCallback(() => {
     return interaction.getSnapshot().draft ?? draft;
   }, [draft, interaction]);
 
+  const getHasMoved = useCallback(() => {
+    const interactionState = interaction.getSnapshot();
+
+    return interactionState.drag.hasMoved || interactionState.resize.hasMoved;
+  }, [interaction]);
+
   const handleAllDayRowMouseUp = useCallback(() => {
     const latestDraft = getLatestDraft();
     if (!latestDraft) return;
+    const hasMoved = getHasMoved();
 
     if (isResizing) {
       stopResizing();
     }
 
-    if (isDragging) {
+    if (interaction.getSnapshot().mode === "drag") {
       stopDragging();
     }
 
     const { shouldSubmit, shouldOpenForm } = getNextAction(
       Categories_Event.ALLDAY,
       latestDraft,
+      hasMoved,
     );
 
     if (shouldOpenForm) {
@@ -70,7 +79,8 @@ export const useGridMouseUp = () => {
     }
   }, [
     getLatestDraft,
-    isDragging,
+    getHasMoved,
+    interaction,
     isResizing,
     getNextAction,
     stopDragging,
@@ -82,6 +92,7 @@ export const useGridMouseUp = () => {
   const handleMainGridMouseUp = useCallback(() => {
     const latestDraft = getLatestDraft();
     if (!latestDraft || !isDrafting) return;
+    const hasMoved = getHasMoved();
 
     if (isDrafting && reduxDraftType === Categories_Event.ALLDAY) {
       discard();
@@ -97,13 +108,14 @@ export const useGridMouseUp = () => {
       stopResizing();
     }
 
-    if (isDragging) {
+    if (interaction.getSnapshot().mode === "drag") {
       stopDragging();
     }
 
     const { shouldSubmit, shouldOpenForm } = getNextAction(
       Categories_Event.TIMED,
       latestDraft,
+      hasMoved,
     );
 
     if (shouldOpenForm) {
@@ -116,10 +128,11 @@ export const useGridMouseUp = () => {
     }
   }, [
     getLatestDraft,
+    getHasMoved,
     isDrafting,
     reduxDraftType,
     isResizing,
-    isDragging,
+    interaction,
     getNextAction,
     discard,
     stopResizing,

@@ -4,9 +4,9 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   type Setters_Draft,
   type State_Draft_Local,
-  type Status_Drag,
 } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { InteractionEngine } from "@web/views/Week/interaction/InteractionEngine";
 import { useDraftEffects } from "./useDraftEffects";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -39,12 +39,9 @@ const createState = (
 ): State_Draft_Local => ({
   dateBeingChanged: "endDate",
   draft: createDraft(),
-  dragStatus: { durationMin: 60, hasMoved: true },
-  isDragging: true,
   isFormOpen: false,
   isFormOpenBeforeDragging: null,
   isResizing: false,
-  resizeStatus: null,
   ...overrides,
 });
 
@@ -53,12 +50,9 @@ const createSetters = (
 ): Setters_Draft => ({
   setDateBeingChanged: mock(),
   setDraft: mock(),
-  setDragStatus: mock(),
-  setIsDragging: mock(),
   setIsFormOpen: mock(),
   setIsFormOpenBeforeDragging: mock(),
   setIsResizing: mock(),
-  setResizeStatus: mock(),
   ...overrides,
 });
 
@@ -70,24 +64,61 @@ const weekProps = {
 } as unknown as WeekProps;
 
 describe("useDraftEffects", () => {
-  it("preserves movement tracking while refreshing drag duration", async () => {
-    const setDragStatus = mock();
-    const setters = createSetters({ setDragStatus });
+  it("does not close the form for stale React resize state after engine resize has stopped", async () => {
+    const interaction = new InteractionEngine();
+    const setDateBeingChanged = mock();
+    const setIsFormOpen = mock();
 
     renderHook(() =>
-      useDraftEffects(createState(), setters, weekProps, true, async () => {}),
+      useDraftEffects(
+        createState({ isResizing: true }),
+        createSetters({ setDateBeingChanged, setIsFormOpen }),
+        weekProps,
+        true,
+        async () => {},
+        interaction,
+      ),
     );
 
-    await waitFor(() => expect(setDragStatus).toHaveBeenCalled());
+    await Promise.resolve();
 
-    const updateDragStatus = setDragStatus.mock.calls.at(-1)?.[0];
+    expect(setDateBeingChanged).not.toHaveBeenCalled();
+    expect(setIsFormOpen).not.toHaveBeenCalledWith(false);
+  });
 
-    expect(typeof updateDragStatus).toBe("function");
-    expect(
-      (updateDragStatus as (status: Status_Drag) => Status_Drag)({
-        durationMin: 60,
-        hasMoved: true,
-      }),
-    ).toEqual({ durationMin: 60, hasMoved: true });
+  it("clears stale draft state from React and the interaction engine", async () => {
+    const draft = createDraft();
+    const interaction = new InteractionEngine();
+    const setDateBeingChanged = mock();
+    const setDraft = mock();
+    const setIsFormOpen = mock();
+    const setIsResizing = mock();
+
+    interaction.startDrag(draft);
+
+    renderHook(() =>
+      useDraftEffects(
+        createState({ draft }),
+        createSetters({
+          setDateBeingChanged,
+          setDraft,
+          setIsFormOpen,
+          setIsResizing,
+        }),
+        weekProps,
+        false,
+        async () => {},
+        interaction,
+      ),
+    );
+
+    await waitFor(() => expect(setDraft).toHaveBeenCalledWith(null));
+    expect(interaction.getSnapshot()).toMatchObject({
+      draft: null,
+      mode: "idle",
+    });
+    expect(setIsFormOpen).toHaveBeenCalledWith(false);
+    expect(setIsResizing).toHaveBeenCalledWith(false);
+    expect(setDateBeingChanged).toHaveBeenCalledWith(null);
   });
 });

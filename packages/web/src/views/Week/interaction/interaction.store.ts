@@ -33,6 +33,13 @@ const createInteractionState = (
   mode: overrides.mode ?? "idle",
   pointer: overrides.pointer ?? null,
   draft: overrides.draft ?? null,
+  drag: {
+    durationMin: overrides.drag?.durationMin ?? null,
+    hasMoved: overrides.drag?.hasMoved ?? false,
+  },
+  resize: {
+    hasMoved: overrides.resize?.hasMoved ?? false,
+  },
   scroll: {
     velocityY: overrides.scroll?.velocityY ?? 0,
   },
