@@ -11,6 +11,8 @@ permissions:
 jobs:
   bump:
     runs-on: ubuntu-latest
+    outputs:
+      new_tag: ${{ steps.bump.outputs.new_tag }}
 
     steps:
       - name: Check out repository
@@ -19,6 +21,7 @@ jobs:
           fetch-depth: 0
 
       - name: Bump patch version and push tag
+        id: bump
         env:
           COMPASS_CI_TOKEN: ${{ secrets.COMPASS_CI_TOKEN }}
         run: |
@@ -33,3 +36,11 @@ jobs:
           echo "Bumping ${LATEST} → ${NEW_TAG}"
           git tag "$NEW_TAG"
           git push "https://x-access-token:${COMPASS_CI_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" "$NEW_TAG"
+          echo "new_tag=${NEW_TAG}" >> "$GITHUB_OUTPUT"
+
+  publish:
+    needs: bump
+    uses: ./.github/workflows/publish-images.yml
+    with:
+      tag: ${{ needs.bump.outputs.new_tag }}
+    secrets: inherit

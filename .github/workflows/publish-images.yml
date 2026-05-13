@@ -4,6 +4,12 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Semver tag to build (e.g. v1.2.3)'
+        required: true
+        type: string
 
 permissions:
   contents: read
@@ -15,13 +21,15 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Derive semver tags from git tag
         id: version
         run: |
-          TAG="${GITHUB_REF_NAME}"        # e.g. v1.2.3
-          VERSION="${TAG#v}"              # 1.2.3
-          MINOR="${VERSION%.*}"           # 1.2
+          TAG="${{ inputs.tag || github.ref_name }}"  # e.g. v1.2.3
+          VERSION="${TAG#v}"                           # 1.2.3
+          MINOR="${VERSION%.*}"                        # 1.2
           echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
           echo "minor=${MINOR}"    >> "$GITHUB_OUTPUT"
 
