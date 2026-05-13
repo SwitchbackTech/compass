@@ -358,7 +358,7 @@ ensure_existing_local_mongo_uri_replica_set() {
 }
 
 validate_existing_env_secrets() {
-  [ -f "$ENV_FILE" ] || return
+  [ -f "$CONFIG_FILE" ] || return
 
   ensure_existing_generated_secret mongo.replicaSetKey "MongoDB replica set key"
   ensure_existing_local_mongo_uri_replica_set

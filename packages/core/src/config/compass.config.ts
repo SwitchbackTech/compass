@@ -20,7 +20,7 @@ const CompassConfigSchema = z
       .optional(),
     runtime: z.object({
       nodeEnv: z.string(),
-      timezone: z.string(),
+      timezone: z.enum(["Etc/UTC", "UTC"]),
       logLevel: z.string().optional(),
     }),
     urls: z.object({
