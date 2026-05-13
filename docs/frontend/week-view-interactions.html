@@ -1,0 +1,1688 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Compass Week View Interaction Guide</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ink: #f7f1df;
+        --ink-muted: #c8c0aa;
+        --ink-soft: #9f967f;
+        --paper: #171711;
+        --paper-2: #222116;
+        --paper-3: #2c2a1d;
+        --line: #4d472f;
+        --line-strong: #7d744f;
+        --signal: #f0c44f;
+        --signal-2: #61d3b4;
+        --signal-3: #f27c61;
+        --blueprint: #151c25;
+        --blueprint-line: #30455b;
+        --shadow: rgba(0, 0, 0, 0.35);
+        --radius: 8px;
+        --mono:
+          ui-monospace, "SFMono-Regular", "Cascadia Code", "Liberation Mono",
+          Menlo, monospace;
+        --body: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+        --display: "Avenir Next", "Gill Sans", "Trebuchet MS", sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          radial-gradient(circle at 14% 12%, rgba(240, 196, 79, 0.12), transparent 30rem),
+          radial-gradient(circle at 86% 18%, rgba(97, 211, 180, 0.11), transparent 28rem),
+          linear-gradient(135deg, #11130f 0%, var(--paper) 42%, #101821 100%);
+        color: var(--ink);
+        font-family: var(--body);
+        line-height: 1.55;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background-image:
+          linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255, 255, 255, 0.028) 1px, transparent 1px);
+        background-size: 36px 36px;
+        mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.9), transparent 85%);
+      }
+
+      a {
+        color: var(--signal-2);
+        text-decoration-thickness: 1px;
+        text-underline-offset: 3px;
+      }
+
+      code,
+      .mono {
+        font-family: var(--mono);
+      }
+
+      .layout {
+        display: grid;
+        grid-template-columns: 280px minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .side {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        padding: 24px;
+        border-right: 1px solid var(--line);
+        background: rgba(18, 18, 13, 0.86);
+        backdrop-filter: blur(18px);
+        overflow-y: auto;
+      }
+
+      .side-title {
+        margin: 0 0 8px;
+        font-family: var(--display);
+        font-size: 26px;
+        line-height: 1;
+      }
+
+      .side-note {
+        margin: 0 0 24px;
+        color: var(--ink-muted);
+        font-size: 14px;
+      }
+
+      .nav {
+        display: grid;
+        gap: 8px;
+      }
+
+      .nav a {
+        display: block;
+        padding: 8px 10px;
+        border: 1px solid transparent;
+        border-radius: 6px;
+        color: var(--ink-muted);
+        text-decoration: none;
+        transition:
+          border-color 160ms ease,
+          color 160ms ease,
+          background 160ms ease;
+      }
+
+      .nav a:hover,
+      .nav a:focus-visible {
+        border-color: var(--line-strong);
+        background: rgba(240, 196, 79, 0.08);
+        color: var(--ink);
+        outline: none;
+      }
+
+      main {
+        min-width: 0;
+        overflow-x: hidden;
+      }
+
+      .hero {
+        min-height: auto;
+        display: grid;
+        align-items: end;
+        padding: 72px 7vw 56px;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .eyebrow {
+        display: inline-block;
+        margin: 0 0 16px;
+        color: var(--signal);
+        font-family: var(--mono);
+        font-size: 13px;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.05;
+      }
+
+      h1 {
+        max-width: 760px;
+        font-family: var(--display);
+        font-size: clamp(32px, 4vw, 48px);
+        font-weight: 700;
+        letter-spacing: 0;
+        text-wrap: balance;
+      }
+
+      h2 {
+        font-family: var(--display);
+        font-size: clamp(26px, 3vw, 36px);
+        font-weight: 700;
+        letter-spacing: 0;
+      }
+
+      h3 {
+        font-size: 20px;
+        letter-spacing: 0;
+      }
+
+      .hero-copy {
+        max-width: 780px;
+        margin-top: 22px;
+        color: var(--ink-muted);
+        font-size: 18px;
+      }
+
+      .hero-grid {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 34px;
+        max-width: 980px;
+      }
+
+      .stat {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px;
+        background: rgba(34, 33, 22, 0.75);
+      }
+
+      .stat b {
+        display: block;
+        font-family: var(--mono);
+        color: var(--signal);
+        font-size: 22px;
+      }
+
+      .stat span {
+        color: var(--ink-muted);
+        font-size: 14px;
+      }
+
+      section {
+        padding: 74px 7vw;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .section-intro {
+        max-width: 880px;
+        margin: 14px 0 34px;
+        color: var(--ink-muted);
+        font-size: 18px;
+      }
+
+      table td strong {
+        color: var(--ink);
+      }
+
+      .callout {
+        border: 1px solid var(--line-strong);
+        border-left: 5px solid var(--signal);
+        border-radius: var(--radius);
+        padding: 18px;
+        background: rgba(240, 196, 79, 0.08);
+        color: var(--ink-muted);
+      }
+
+      .callout strong {
+        color: var(--ink);
+      }
+
+      .machine {
+        display: grid;
+        gap: 12px;
+      }
+
+      .machine-row {
+        display: grid;
+        grid-template-columns: 180px repeat(4, minmax(0, 1fr));
+        gap: 10px;
+        align-items: stretch;
+      }
+
+      .lane {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        color: var(--signal);
+        font-family: var(--mono);
+        font-size: 13px;
+        text-transform: uppercase;
+      }
+
+      .node {
+        position: relative;
+        min-height: 96px;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 14px;
+        background: linear-gradient(160deg, rgba(44, 42, 29, 0.94), rgba(21, 28, 37, 0.82));
+        box-shadow: 0 16px 35px var(--shadow);
+      }
+
+      .node::after {
+        content: "";
+        position: absolute;
+        right: -11px;
+        top: 50%;
+        width: 10px;
+        border-top: 1px solid var(--line-strong);
+      }
+
+      .node:last-child::after {
+        display: none;
+      }
+
+      .node-title {
+        display: block;
+        margin-bottom: 6px;
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .node small {
+        color: var(--ink-muted);
+      }
+
+      .source {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        margin-top: 8px;
+        color: var(--signal-2);
+        font-family: var(--mono);
+        font-size: 12px;
+        word-break: break-word;
+      }
+
+      .blueprint {
+        display: grid;
+        grid-template-columns: minmax(280px, 1fr) minmax(280px, 0.9fr);
+        gap: 20px;
+        align-items: stretch;
+      }
+
+      .grid-demo {
+        position: relative;
+        min-height: 490px;
+        border: 1px solid var(--blueprint-line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        background:
+          linear-gradient(90deg, transparent 0 13.5%, rgba(240, 196, 79, 0.16) 13.5% 14%, transparent 14%),
+          repeating-linear-gradient(90deg, rgba(97, 211, 180, 0.12) 0 1px, transparent 1px calc((100% - 50px) / 7)),
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px 40px),
+          var(--blueprint);
+      }
+
+      .grid-demo .time-column {
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 50px;
+        border-right: 1px solid var(--blueprint-line);
+        background: rgba(0, 0, 0, 0.22);
+      }
+
+      .axis-label {
+        position: absolute;
+        padding: 7px 9px;
+        border: 1px solid currentColor;
+        border-radius: 5px;
+        background: rgba(16, 24, 31, 0.88);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .axis-x {
+        top: 18px;
+        left: 86px;
+        color: var(--signal-2);
+      }
+
+      .axis-y {
+        top: 148px;
+        left: 12px;
+        color: var(--signal);
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+      }
+
+      .pointer {
+        position: absolute;
+        left: 56%;
+        top: 48%;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--signal-3);
+        box-shadow: 0 0 0 12px rgba(242, 124, 97, 0.14);
+        animation: pulse 1500ms ease-in-out infinite;
+      }
+
+      .draft-block {
+        position: absolute;
+        left: 50%;
+        top: 51%;
+        width: 18%;
+        height: 92px;
+        border: 1px solid rgba(247, 241, 223, 0.72);
+        border-radius: 5px;
+        background: rgba(97, 211, 180, 0.28);
+        box-shadow: 0 18px 30px rgba(0, 0, 0, 0.32);
+      }
+
+      .grid-caption {
+        position: absolute;
+        right: 16px;
+        bottom: 16px;
+        max-width: 320px;
+        border: 1px solid var(--blueprint-line);
+        border-radius: var(--radius);
+        padding: 14px;
+        background: rgba(13, 19, 26, 0.88);
+        color: var(--ink-muted);
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          transform: scale(1);
+        }
+        50% {
+          transform: scale(0.82);
+        }
+      }
+
+      .formula-stack {
+        display: grid;
+        gap: 12px;
+      }
+
+      .formula {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px;
+        background: rgba(34, 33, 22, 0.72);
+      }
+
+      .formula b {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .formula code {
+        color: var(--signal);
+      }
+
+      .tabs {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 0 0 18px;
+      }
+
+      .tab-button {
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 9px 14px;
+        background: rgba(34, 33, 22, 0.75);
+        color: var(--ink-muted);
+        cursor: pointer;
+        font-family: var(--mono);
+        font-size: 13px;
+      }
+
+      .tab-button[aria-selected="true"] {
+        border-color: var(--signal);
+        background: rgba(240, 196, 79, 0.16);
+        color: var(--ink);
+      }
+
+      .flow-panel {
+        display: none;
+      }
+
+      .flow-panel.active {
+        display: block;
+      }
+
+      .timeline {
+        display: grid;
+        gap: 12px;
+        counter-reset: step;
+      }
+
+      .step {
+        display: grid;
+        grid-template-columns: 54px minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 16px;
+        background: rgba(23, 23, 17, 0.74);
+      }
+
+      .step::before {
+        counter-increment: step;
+        content: counter(step);
+        display: grid;
+        place-items: center;
+        width: 42px;
+        height: 42px;
+        border-radius: 50%;
+        background: var(--signal);
+        color: #16130c;
+        font-family: var(--display);
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .step h3 {
+        margin-bottom: 6px;
+      }
+
+      .step p {
+        margin: 0;
+        color: var(--ink-muted);
+      }
+
+      .two-col {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 18px;
+      }
+
+      .panel {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 18px;
+        background: rgba(34, 33, 22, 0.72);
+      }
+
+      .panel h3 {
+        margin-bottom: 10px;
+      }
+
+      .panel p {
+        margin: 0 0 12px;
+        color: var(--ink-muted);
+      }
+
+      .panel p:last-child {
+        margin-bottom: 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        overflow: hidden;
+        background: rgba(18, 18, 13, 0.7);
+        table-layout: fixed;
+      }
+
+      th,
+      td {
+        padding: 13px 14px;
+        border-bottom: 1px solid var(--line);
+        vertical-align: top;
+        text-align: left;
+      }
+
+      th {
+        background: rgba(240, 196, 79, 0.11);
+        color: var(--signal);
+        font-family: var(--mono);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      tr:last-child td {
+        border-bottom: 0;
+      }
+
+      td {
+        color: var(--ink-muted);
+        overflow-wrap: anywhere;
+      }
+
+      .accordion-grid {
+        display: grid;
+        gap: 10px;
+      }
+
+      details {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        background: rgba(34, 33, 22, 0.7);
+      }
+
+      summary {
+        cursor: pointer;
+        padding: 15px 17px;
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      details[open] summary {
+        border-bottom: 1px solid var(--line);
+        color: var(--signal);
+      }
+
+      details > div {
+        padding: 17px;
+        color: var(--ink-muted);
+      }
+
+      .sequence {
+        display: grid;
+        gap: 8px;
+        margin-top: 16px;
+      }
+
+      .sequence-line {
+        display: grid;
+        grid-template-columns: 190px minmax(0, 1fr);
+        gap: 12px;
+        align-items: stretch;
+      }
+
+      .actor {
+        border: 1px solid var(--line-strong);
+        border-radius: 5px;
+        padding: 9px;
+        color: var(--signal);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .message {
+        border-left: 2px solid var(--signal-2);
+        padding: 9px 12px;
+        background: rgba(97, 211, 180, 0.07);
+        color: var(--ink-muted);
+      }
+
+      .red {
+        color: var(--signal-3);
+      }
+
+      .source-table code {
+        color: var(--signal-2);
+      }
+
+      .plain-list {
+        margin: 0;
+        padding-left: 18px;
+        color: var(--ink-muted);
+      }
+
+      .plain-list li {
+        margin: 8px 0;
+      }
+
+      .commit-list {
+        display: grid;
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+
+      .commit-list li {
+        border: 1px solid var(--line);
+        border-radius: var(--radius);
+        padding: 13px 14px;
+        background: rgba(18, 18, 13, 0.7);
+        color: var(--ink-muted);
+      }
+
+      .commit-list code {
+        color: var(--signal);
+      }
+
+      .footer {
+        padding: 32px 7vw 60px;
+        color: var(--ink-soft);
+      }
+
+      @media (max-width: 1100px) {
+        .layout {
+          grid-template-columns: 1fr;
+        }
+
+        .side {
+          position: relative;
+          height: auto;
+          border-right: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        .nav {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+
+        .machine-row,
+        .blueprint,
+        .two-col,
+        .hero-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .machine-row {
+          gap: 8px;
+        }
+
+        .lane {
+          justify-content: flex-start;
+        }
+
+        .node::after {
+          display: none;
+        }
+      }
+
+      @media (max-width: 640px) {
+        section,
+        .hero,
+        .footer {
+          padding-left: 20px;
+          padding-right: 20px;
+        }
+
+        .nav {
+          grid-template-columns: 1fr;
+        }
+
+        .sequence-line {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="layout">
+      <aside class="side">
+        <p class="side-title">Week View Field Guide</p>
+        <p class="side-note">
+          A beginner-readable map of how Compass turns mouse gestures into calendar events.
+        </p>
+        <nav class="nav" aria-label="Guide sections">
+          <a href="#mental-model">Mental Model</a>
+          <a href="#machine">System Map</a>
+          <a href="#coordinate-math">Coordinate Math</a>
+          <a href="#gesture-flows">Gesture Flows</a>
+          <a href="#data-flow">Save Pipeline</a>
+          <a href="#state">Where State Lives</a>
+          <a href="#performance">Smoothness Notes</a>
+          <a href="#branch-updates">Branch Updates</a>
+          <a href="#sources">Source Atlas</a>
+        </nav>
+      </aside>
+
+      <main>
+        <header class="hero">
+          <div>
+            <span class="eyebrow">Compass calendar internals, current checkout, May 13 2026</span>
+            <h1>The week view is a mouse-to-time translator with a draft layer in the middle.</h1>
+            <p class="hero-copy">
+              If you remember only one thing, remember this: the grid does not store pixels. It stores event dates.
+              Pixels from the mouse become dates, dates become a temporary draft, and that draft either opens the form
+              or saves through the event pipeline.
+            </p>
+            <div class="hero-grid" aria-label="Fast facts">
+              <div class="stat">
+                <b>15 min</b>
+                <span>current snap interval in code</span>
+              </div>
+              <div class="stat">
+                <b>750 ms</b>
+                <span>hold delay before existing-event drag starts</span>
+              </div>
+              <div class="stat">
+                <b>25 px</b>
+                <span>movement threshold before a click becomes a drag</span>
+              </div>
+              <div class="stat">
+                <b>6 flows</b>
+                <span>current perf harness scenario count</span>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <section id="mental-model">
+          <h2>Mental Model</h2>
+          <p class="section-intro">
+            A beginner can read the week view as four stacked systems. They run together in the UI, but each has a
+            different job.
+          </p>
+          <div class="two-col">
+            <div class="panel">
+              <h3>1. The visible grid</h3>
+              <p>
+                `WeekView` now keeps the outer week setup separate from `WeekGridInteraction`.
+                The interaction boundary owns date calculations, draft providers, shortcuts, sidebar wiring, and the grid.
+              </p>
+              <a class="source" href="../../packages/web/src/views/Week/WeekView.tsx">WeekView.tsx</a>
+            </div>
+            <div class="panel">
+              <h3>2. The date calculator</h3>
+              <p>
+                `useDateCalcs` turns a mouse X/Y position into a day and time. X picks the column. Y picks the minute.
+                The minute is rounded down to the grid step.
+              </p>
+              <a class="source" href="../../packages/web/src/views/Week/hooks/grid/useDateCalcs.ts">useDateCalcs.ts</a>
+            </div>
+            <div class="panel">
+              <h3>3. The draft layer</h3>
+              <p>
+                A draft is the temporary version of an event while you are clicking, dragging, resizing, or editing.
+                It lets the UI move first, then decide later whether to save.
+              </p>
+              <a class="source" href="../../packages/web/src/views/Week/components/Draft/hooks/state/useDraftState.ts">useDraftState.ts</a>
+            </div>
+            <div class="panel">
+              <h3>4. The save pipeline</h3>
+              <p>
+                Saves go through Redux actions, sagas, repository selection, then local storage or the remote API.
+                The event is marked pending so it cannot be dragged again while the save is in flight.
+              </p>
+              <a class="source" href="../../packages/web/src/ducks/events/sagas/event.sagas.ts">event.sagas.ts</a>
+            </div>
+          </div>
+        </section>
+
+        <section id="machine">
+          <h2>System Map</h2>
+          <p class="section-intro">
+            This is the high-level wiring. Read each row left to right. The week page collects the tools, the grid
+            renders the surface, the draft layer handles live gestures, and the save pipeline persists the result.
+          </p>
+
+          <div class="machine" aria-label="Week view system map">
+            <div class="machine-row">
+              <div class="lane">Page setup</div>
+              <div class="node">
+                <span class="node-title">WeekView</span>
+                <small>Owns refetch, visible week, grid layout, scroll utility, and the interaction boundary.</small>
+                <a class="source" href="../../packages/web/src/views/Week/WeekView.tsx">WeekView.tsx</a>
+              </div>
+              <div class="node">
+                <span class="node-title">WeekGridInteraction</span>
+                <small>Colocates date calculations with the draft, sidebar, shortcuts, and grid consumers.</small>
+                <a class="source" href="../../packages/web/src/views/Week/WeekView.tsx">WeekView.tsx</a>
+              </div>
+              <div class="node">
+                <span class="node-title">useGridLayout</span>
+                <small>Measures columns, all-day row, and main grid height, then returns stable objects when the size has not changed.</small>
+                <a class="source" href="../../packages/web/src/views/Week/hooks/grid/useGridLayout.ts">useGridLayout.ts</a>
+              </div>
+              <div class="node">
+                <span class="node-title">useDateCalcs</span>
+                <small>Maps mouse coordinates to dates and snapped times.</small>
+                <a class="source" href="../../packages/web/src/views/Week/hooks/grid/useDateCalcs.ts">useDateCalcs.ts</a>
+              </div>
+            </div>
+
+            <div class="machine-row">
+              <div class="lane">Render</div>
+              <div class="node">
+                <span class="node-title">Grid</span>
+                <small>Places all-day lane above timed lane.</small>
+                <a class="source" href="../../packages/web/src/views/Week/components/Grid/Grid.tsx">Grid.tsx:22</a>
+              </div>
+              <div class="node">
+                <span class="node-title">AllDayRow</span>
+                <small>Creates all-day drafts and renders all-day events.</small>
+                <a class="source" href="../../packages/web/src/views/Week/components/Grid/AllDayRow/AllDayRow.tsx">AllDayRow.tsx:30</a>
+              </div>
+              <div class="node">
+                <span class="node-title">MainGrid</span>
+                <small>Creates timed drafts and renders hour rows.</small>
+                <a class="source" href="../../packages/web/src/views/Week/components/Grid/MainGrid/MainGrid.tsx">MainGrid.tsx</a>
+              </div>
+              <div class="node">
+                <span class="node-title">selectGridEvents</span>
+                <small>Builds timed grid events and memoizes overlap adjustment before render.</small>
+                <a class="source" href="../../packages/web/src/ducks/events/selectors/event.selectors.ts">event.selectors.ts</a>
+              </div>
+            </div>
+
+            <div class="machine-row">
+              <div class="lane">Live gesture</div>
+              <div class="node">
+                <span class="node-title">draftSlice</span>
+                <small>Stores draft event and draft activity in Redux.</small>
+                <a class="source" href="../../packages/web/src/ducks/events/slices/draft.slice.ts">draft.slice.ts:19</a>
+              </div>
+              <div class="node">
+                <span class="node-title">DraftProvider</span>
+                <small>Turns Redux draft status into local live state and actions.</small>
+                <a class="source" href="../../packages/web/src/views/Week/components/Draft/context/DraftProvider.tsx">DraftProvider.tsx:18</a>
+              </div>
+              <div class="node">
+                <span class="node-title">Draft</span>
+                <small>Registers document mousemove and mouseup listeners.</small>
+                <a class="source" href="../../packages/web/src/views/Week/components/Draft/Draft.tsx">Draft.tsx</a>
+              </div>
+              <div class="node">
+                <span class="node-title">useDraftActions</span>
+                <small>Updates startDate and endDate during real drag or resize movement, skipping no-op timed drag updates.</small>
+                <a class="source" href="../../packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.ts">useDraftActions.ts</a>
+              </div>
+            </div>
+
+            <div class="machine-row">
+              <div class="lane">Persist</div>
+              <div class="node">
+                <span class="node-title">OnSubmitParser</span>
+                <small>Prepares a draft so it matches the event schema.</small>
+                <a class="source" href="../../packages/web/src/views/Week/components/Draft/hooks/actions/submit.parser.ts">submit.parser.ts:12</a>
+              </div>
+              <div class="node">
+                <span class="node-title">event slices</span>
+                <small>Dispatch create, edit, delete requests.</small>
+                <a class="source" href="../../packages/web/src/ducks/events/slices/event.slice.ts">event.slice.ts:28</a>
+              </div>
+              <div class="node">
+                <span class="node-title">event sagas</span>
+                <small>Optimistically update the visible event and call storage/API.</small>
+                <a class="source" href="../../packages/web/src/ducks/events/sagas/event.sagas.ts">event.sagas.ts:113</a>
+              </div>
+              <div class="node">
+                <span class="node-title">repository</span>
+                <small>Chooses local IndexedDB or remote API.</small>
+                <a class="source" href="../../packages/web/src/common/repositories/event/event.repository.util.ts">event.repository.util.ts:36</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="coordinate-math">
+          <h2>Coordinate Math</h2>
+          <p class="section-intro">
+            The week view constantly translates between two worlds: screen coordinates and calendar dates.
+            This is the "mouse through the grid" part.
+          </p>
+
+          <div class="blueprint">
+            <div class="grid-demo" aria-label="Calendar grid coordinate diagram">
+              <div class="time-column"></div>
+              <span class="axis-label axis-x">X axis: which day column?</span>
+              <span class="axis-label axis-y">Y axis: which minute?</span>
+              <div class="pointer" aria-hidden="true"></div>
+              <div class="draft-block" aria-hidden="true"></div>
+              <div class="grid-caption">
+                A mouse point becomes a calendar moment. The draft block is then rendered from its
+                `startDate` and `endDate`, not from the original mouse point.
+              </div>
+            </div>
+
+            <div class="formula-stack">
+              <div class="formula">
+                <b>Day column</b>
+                <code>x - gridLeft - GRID_MARGIN_LEFT -> dayIndex</code>
+                <p>
+                  `useDateCalcs.getDateByX` subtracts the measured left edge and the time-column margin,
+                  then walks the measured column widths to find the day.
+                </p>
+                <a class="source" href="../../packages/web/src/views/Week/hooks/grid/useDateCalcs.ts">useDateCalcs.ts:17</a>
+              </div>
+              <div class="formula">
+                <b>Minute of day</b>
+                <code>((y - gridTop + scrollTop) / hourHeight) * 60</code>
+                <p>
+                  `getMinuteByY` uses the main grid's measured top, current vertical scroll, and the computed
+                  hour height.
+                </p>
+                <a class="source" href="../../packages/web/src/views/Week/hooks/grid/useDateCalcs.ts">useDateCalcs.ts:70</a>
+              </div>
+              <div class="formula">
+                <b>Snap rule</b>
+                <code>roundToPrev(decimalMinute, GRID_TIME_STEP)</code>
+                <p>
+                  The code currently snaps to `GRID_TIME_STEP = 15`. New timed drafts also use a 15-minute default duration.
+                </p>
+                <a class="source" href="../../packages/web/src/views/Week/layout.constants.ts">layout.constants.ts</a>
+              </div>
+              <div class="formula">
+                <b>Visible block</b>
+                <code>event dates + measurements -> top / left / width / height</code>
+                <p>
+                  `getEventPosition` recalculates the block's rendered position from the event's dates each time
+                  it renders.
+                </p>
+                <a class="source" href="../../packages/web/src/common/utils/position/position.util.ts">position.util.ts:228</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="gesture-flows">
+          <h2>Gesture Flows</h2>
+          <p class="section-intro">
+            Pick a gesture. Each panel walks from the user's hand motion to the code path that handles it.
+          </p>
+
+          <div class="tabs" role="tablist" aria-label="Gesture flow tabs">
+            <button type="button" class="tab-button" role="tab" aria-selected="true" data-tab="create">Create</button>
+            <button type="button" class="tab-button" role="tab" aria-selected="false" data-tab="drag">Drag</button>
+            <button type="button" class="tab-button" role="tab" aria-selected="false" data-tab="resize">Resize</button>
+            <button type="button" class="tab-button" role="tab" aria-selected="false" data-tab="time">Set Times</button>
+          </div>
+
+          <div class="flow-panel active" id="panel-create" role="tabpanel">
+            <div class="timeline">
+              <div class="step">
+                <div>
+                  <h3>Mouse down on empty timed grid</h3>
+                  <p>
+                    `MainGrid` ignores right-clicks and existing drafts. Otherwise it starts a timed draft from the
+                    pointer position.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Grid/MainGrid/MainGrid.tsx">MainGrid.tsx:49</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Pointer becomes a start time</h3>
+                  <p>
+                    `dateCalcs.getDateByXY` chooses the day and snapped minute. The initial end time is 15 minutes
+                    later.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Grid/MainGrid/MainGrid.tsx">MainGrid.tsx:62</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>A default event is assembled</h3>
+                  <p>
+                    `assembleDefaultEvent` creates a timed grid event with default priority, origin, user, and
+                    grid position metadata.
+                    <a class="source" href="../../packages/web/src/common/utils/event/event.util.ts">event.util.ts:71</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Creation is treated like resizing</h3>
+                  <p>
+                    The code dispatches `draftSlice.actions.startResizing` with `dateToChange: "endDate"`.
+                    Dragging downward while creating an event is literally resizing the temporary event's end.
+                    <a class="source" href="../../packages/web/src/ducks/events/slices/draft.slice.ts">draft.slice.ts:36</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Mouse up opens the form</h3>
+                  <p>
+                    For a new timed draft, mouse-up opens the event form instead of saving immediately.
+                    The form owns title, priority, recurrence, and final save.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Draft/grid/hooks/useGridMouseUp.ts">useGridMouseUp.ts:95</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-panel" id="panel-drag" role="tabpanel">
+            <div class="timeline">
+              <div class="step">
+                <div>
+                  <h3>Click or drag is decided first</h3>
+                  <p>
+                    `useGridEventMouseDown` waits for either a 750 ms hold or more than 25 px of movement. A quick
+                    release opens the form. Hold or move starts a drag.
+                    <a class="source" href="../../packages/web/src/views/Week/hooks/grid/useGridEventMouseDown.ts">useGridEventMouseDown.ts:31</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>The real event becomes a draft</h3>
+                  <p>
+                    `MainGridEvents.handleDrag` stores the original mouse offset and dispatches `startDragging`.
+                    Pending events are blocked here.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Grid/MainGrid/MainGridEvents.tsx">MainGridEvents.tsx</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Document-level mousemove takes over</h3>
+                  <p>
+                    `Draft` mounts `useGridMouseMove`, which listens for mouse movement while drafting and calls
+                    `actions.drag`.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Draft/grid/hooks/useGridMouseMove.ts">useGridMouseMove.ts:14</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Dates are rewritten, not pixels</h3>
+                  <p>
+                    `useDraftActions.drag` maps the mouse to a new start time, preserves the old duration, prevents
+                    timed events from overflowing past midnight, and updates the draft only when the snapped start or end
+                    actually changed.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.ts">useDraftActions.ts</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Mouse up saves if it really moved</h3>
+                  <p>
+                    `useGridMouseUp` checks `dragStatus.hasMoved`. Same-instant timed movement does not set that marker,
+                    moved timed events submit, and clicked existing events open the form.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Draft/grid/hooks/useGridMouseUp.ts">useGridMouseUp.ts:18</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-panel" id="panel-resize" role="tabpanel">
+            <div class="timeline">
+              <div class="step">
+                <div>
+                  <h3>Invisible handles catch the mouse</h3>
+                  <p>
+                    Timed events have hidden top and bottom strips. Top means `startDate`; bottom means `endDate`.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Event/Grid/GridEvent/GridEvent.tsx">GridEvent.tsx:210</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>The draft remembers which edge is moving</h3>
+                  <p>
+                    `dateBeingChanged` is set to `startDate` or `endDate`, then `isResizing` starts.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Draft/grid/GridDraft.tsx">GridDraft.tsx:82</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Resize rejects impossible movement</h3>
+                  <p>
+                    Timed resize ignores no-op movement, same-start movement, and cross-day movement.
+                    All-day resize is more permissive because it moves by days.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.ts">useDraftActions.ts:457</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>The active edge can flip</h3>
+                  <p>
+                    If you drag the start past the end, or the end before the start, the code flips which date it
+                    is changing so the event stays valid.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.ts">useDraftActions.ts:489</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Mouse up follows the same submit rules</h3>
+                  <p>
+                    Resized existing events submit on release. New drafts still open the form.
+                    <a class="source" href="../../packages/web/src/views/Week/components/Draft/grid/hooks/useGridMouseUp.ts">useGridMouseUp.ts:87</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flow-panel" id="panel-time" role="tabpanel">
+            <div class="timeline">
+              <div class="step">
+                <div>
+                  <h3>The form reads the event dates</h3>
+                  <p>
+                    `EventForm` calls `getFormDates` when the event changes. That fills local picker state for
+                    start time, end time, and selected dates.
+                    <a class="source" href="../../packages/web/src/views/Forms/EventForm/EventForm.tsx">EventForm.tsx:101</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Time pickers update the event draft</h3>
+                  <p>
+                    `TimePickers` calls `mapToBackend` after a time selection, then writes new `startDate` and
+                    `endDate` into the draft.
+                    <a class="source" href="../../packages/web/src/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/TimePickers.tsx">TimePickers.tsx:79</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Bad time order is auto-corrected</h3>
+                  <p>
+                    If changing start would collide with end, or changing end would collide with start, the
+                    companion time is adjusted to preserve a usable duration.
+                    <a class="source" href="../../packages/web/src/common/utils/datetime/web.datetime.util.ts">web.datetime.util.ts:43</a>
+                  </p>
+                </div>
+              </div>
+              <div class="step">
+                <div>
+                  <h3>Submit maps picker state back to stored dates</h3>
+                  <p>
+                    On save, `EventForm.onSubmitForm` calls `mapToBackend`. All-day one-day events use an exclusive
+                    next-day end date.
+                    <a class="source" href="../../packages/web/src/common/utils/datetime/web.date.util.ts">web.date.util.ts:180</a>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="data-flow">
+          <h2>Save Pipeline</h2>
+          <p class="section-intro">
+            Once a draft is ready to save, the path is intentionally centralized. Components do not choose storage
+            directly.
+          </p>
+
+          <div class="sequence" aria-label="Save sequence">
+            <div class="sequence-line">
+              <div class="actor">GridDraft / EventForm</div>
+              <div class="message">Submit the draft event from the form or mouse-up handler.</div>
+            </div>
+            <div class="sequence-line">
+              <div class="actor">useDraftConfirmation</div>
+              <div class="message">For recurring events, ask whether the change applies to this event or more of the series.</div>
+            </div>
+            <div class="sequence-line">
+              <div class="actor">useDraftActions.submit</div>
+              <div class="message">Decide create, update, discard, or reopen form.</div>
+            </div>
+            <div class="sequence-line">
+              <div class="actor">event slice</div>
+              <div class="message">Dispatch `createEventSlice.request` or `editEventSlice.request`.</div>
+            </div>
+            <div class="sequence-line">
+              <div class="actor">event saga</div>
+              <div class="message">Optimistically update visible state, mark the event pending, call the repository, then clear pending.</div>
+            </div>
+            <div class="sequence-line">
+              <div class="actor">repository</div>
+              <div class="message">Choose local IndexedDB or remote API based on auth, Google revocation, and backend availability.</div>
+            </div>
+          </div>
+
+          <div style="margin-top: 28px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Decision</th>
+                  <th>Code</th>
+                  <th>Beginner translation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Is this new?</strong></td>
+                  <td><code>!draft._id -> CREATE</code></td>
+                  <td>No saved ID means Compass needs to create a new event.</td>
+                </tr>
+                <tr>
+                  <td><strong>Is it pending?</strong></td>
+                  <td><code>pendingEventIds.includes(draft._id)</code></td>
+                  <td>If a previous save is still happening, throw away the new movement instead of stacking writes.</td>
+                </tr>
+                <tr>
+                  <td><strong>Did it change?</strong></td>
+                  <td><code>DirtyParser.isEventDirty</code></td>
+                  <td>If the draft is identical to the original event, do not save.</td>
+                </tr>
+                <tr>
+                  <td><strong>Where does it save?</strong></td>
+                  <td><code>getEventRepository(sessionExists)</code></td>
+                  <td>Local storage for local/offline modes, remote API for authenticated users.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="state">
+          <h2>Where State Lives</h2>
+          <p class="section-intro">
+            A lot of confusion comes from the word "draft" meaning a few nearby things. This table separates them.
+          </p>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Thing</th>
+                <th>What it means</th>
+                <th>Where to look</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Event entities</strong></td>
+                <td>Normalized saved events used by the week selectors. The week slice stores IDs, and the entity map stores event objects.</td>
+                <td><code>eventsEntitiesSlice</code>, <code>getWeekEventsSlice</code></td>
+              </tr>
+              <tr>
+                <td><strong>Redux draft status</strong></td>
+                <td>The current draft event plus activity: grid click, dragging, resizing, keyboard edit, and so on.</td>
+                <td><code>draft.slice.ts</code></td>
+              </tr>
+              <tr>
+                <td><strong>DraftProvider local state</strong></td>
+                <td>Live gesture state: is dragging, is resizing, which date edge is moving, whether the form is open.</td>
+                <td><code>useDraftState.ts</code></td>
+              </tr>
+              <tr>
+                <td><strong>Grid event position</strong></td>
+                <td>Render-only metadata used to calculate overlap, width, drag offset, and visual placement.</td>
+                <td><code>web.event.types.ts</code>, <code>position.util.ts</code></td>
+              </tr>
+              <tr>
+                <td><strong>Pending event IDs</strong></td>
+                <td>IDs currently being saved. Pending events show wait behavior and cannot be dragged/resized again.</td>
+                <td><code>pending.slice.ts</code></td>
+              </tr>
+              <tr>
+                <td><strong>EventForm picker state</strong></td>
+                <td>Local form state for selected dates and times. It is mapped back into event dates on save.</td>
+                <td><code>EventForm.tsx</code>, <code>TimePickers.tsx</code></td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="callout" style="margin-top: 20px">
+            <strong>Small gotcha:</strong> the repo also has an Elf `eventsStore` used by some shared floating-form
+            and day-view paths. The main week grid path described here uses Redux week IDs, Redux event entities,
+            Redux draft status, and local DraftProvider state.
+          </div>
+        </section>
+
+        <section id="performance">
+          <h2>Smoothness Notes</h2>
+          <p class="section-intro">
+            This section is now a status snapshot for this branch. Some earlier pressure points have been fixed,
+            and a few are still worth knowing before the next round of performance work.
+          </p>
+
+          <div class="accordion-grid">
+            <details open>
+              <summary>Mousemove still drives draft state, but no-op timed drags are guarded</summary>
+              <div>
+                During drag and resize, document-level mousemove calls `useDraftActions.drag` or `resize`, and those
+                can update React draft state. This branch adds guards so timed drags that snap to the same start/end,
+                including the same instant represented with a different offset, do not call `setDraft` or mark the drag
+                as moved again.
+                <br />
+                <a class="source" href="../../packages/web/src/views/Week/components/Draft/grid/hooks/useGridMouseMove.ts">useGridMouseMove.ts:14</a>
+              </div>
+            </details>
+            <details>
+              <summary>Grid measurement objects are stable when the size is stable</summary>
+              <div>
+                `useGridLayout` still measures the all-day row, all-day columns, and main grid, but it now avoids state
+                replacement when a ResizeObserver reports the same rectangle. It also memoizes `colWidths`, `gridRefs`,
+                and `measurements`, which helps memoized grid consumers keep their boundary.
+                <br />
+                <a class="source" href="../../packages/web/src/views/Week/hooks/grid/useGridLayout.ts">useGridLayout.ts</a>
+              </div>
+            </details>
+            <details>
+              <summary>Timed overlap handling is now selector work</summary>
+              <div>
+                Timed events are still copied, sorted, grouped by overlap, and assigned horizontal lanes. The important
+                change is where it happens: `selectGridEvents` now returns overlap-adjusted events, so `MainGridEvents`
+                does not redo that work during render when the selected week events have not changed.
+                <br />
+                <a class="source" href="../../packages/web/src/ducks/events/selectors/event.selectors.ts">event.selectors.ts</a>
+              </div>
+            </details>
+            <details>
+              <summary>Smart scroll no longer stores pointer position in React state</summary>
+              <div>
+                Timed drag auto-scroll now stores only the mouse Y value in a ref and schedules its scroll loop with
+                `requestAnimationFrame`. Mousemove no longer causes a React re-render just to remember pointer position.
+                Week-edge navigation still has its own mouse tracking, timer, and progress state, so that remains a
+                good future cleanup target.
+                <br />
+                <a class="source" href="../../packages/web/src/views/Week/hooks/grid/useDragEventSmartScroll.ts">useDragEventSmartScroll.ts</a>
+              </div>
+            </details>
+            <details>
+              <summary>Performance is tracked commit by commit</summary>
+              <div>
+                This branch adds `bun run perf:week`, which seeds a browser run and records empty load, heavy load,
+                create, grid-create, drag, and resize scenarios. Use `--compare latest` after each focused commit to
+                keep the before/after trail. The latest local rerun for this branch is
+                `2026-05-13T21-05-40-575Z-simplify-week-performance-cleanup-rerun.json`.
+                <br />
+                <a class="source" href="../../performance/week-view/README.md">performance/week-view/README.md</a>
+              </div>
+            </details>
+            <details>
+              <summary>Focused tests now cover the new performance boundaries</summary>
+              <div>
+                This branch added focused checks for stable grid layout objects, memoized overlap-adjusted selectors,
+                no-op timed drag updates, and smart-scroll pointer tracking without re-rendering. Remaining gaps are
+                full-flow week drag/release behavior, edge navigation, and resize no-op guarding.
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <section id="branch-updates">
+          <h2>What This Branch Changed</h2>
+          <p class="section-intro">
+            These are the week-view changes this guide now reflects. The important pattern is one focused code change,
+            one commit, then one performance comparison.
+          </p>
+
+          <ul class="commit-list">
+            <li>
+              <code>e5a2ac79</code> colocated `useDateCalcs` inside `WeekGridInteraction`, closer to the grid and draft
+              consumers that need coordinate-to-date conversion.
+            </li>
+            <li>
+              <code>7f6415c7</code> stabilized grid layout values so harmless parent renders and unchanged ResizeObserver
+              reports do not recreate measurement objects.
+            </li>
+            <li>
+              <code>9e54b747</code> moved timed-event overlap adjustment into `selectGridEvents`, so overlap sorting and
+              grouping are memoized selector work instead of render-time work.
+            </li>
+            <li>
+              <code>aeac1a77</code> and <code>ef325694</code> added no-op guards for timed drags that snap to the same
+              start/end instant, including equivalent timestamps with different offsets.
+            </li>
+            <li>
+              <code>d3b00b2f</code> moved smart-scroll pointer tracking out of React state; <code>b5a77319</code> then
+              simplified that to the single Y coordinate the hook actually uses.
+            </li>
+            <li>
+              <code>26aa085d</code> and <code>41d71323</code> added and hardened the `perf:week` harness so each change
+              can be measured against the previous saved run.
+            </li>
+          </ul>
+
+          <div style="margin-top: 28px">
+            <table>
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>Baseline median</th>
+                  <th>Latest median</th>
+                  <th>Reading</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>empty-week-load</strong></td>
+                  <td>260.1 ms</td>
+                  <td>266.9 ms</td>
+                  <td>Roughly flat; normal run noise is larger than this difference.</td>
+                </tr>
+                <tr>
+                  <td><strong>heavy-week-load</strong></td>
+                  <td>5348.4 ms</td>
+                  <td>5367.8 ms</td>
+                  <td>Roughly flat in median, with known fast/slow sample spread in this scenario.</td>
+                </tr>
+                <tr>
+                  <td><strong>create-timed-event</strong></td>
+                  <td>398.8 ms</td>
+                  <td>396.5 ms</td>
+                  <td>Flat; this branch did not target command-palette creation directly.</td>
+                </tr>
+                <tr>
+                  <td><strong>grid-create-timed-event</strong></td>
+                  <td>497.8 ms</td>
+                  <td>498.6 ms</td>
+                  <td>Flat after rerun; earlier samples had outliers.</td>
+                </tr>
+                <tr>
+                  <td><strong>drag-timed-event</strong></td>
+                  <td>460.1 ms</td>
+                  <td>460.3 ms</td>
+                  <td>Flat, with less unnecessary state churn in the no-op drag path.</td>
+                </tr>
+                <tr>
+                  <td><strong>resize-timed-event</strong></td>
+                  <td>392.7 ms</td>
+                  <td>419.7 ms</td>
+                  <td>Slightly slower in this latest rerun; resize no-op guarding is still a future target.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="callout" style="margin-top: 20px">
+            <strong>Measurement caveat:</strong> the default harness now gives a useful before/after trail, but it does
+            not yet deliberately hold a drag near the top/bottom smart-scroll edge or the left/right week-navigation
+            edge. Add targeted scenarios before making claims about those two gesture loops.
+          </div>
+        </section>
+
+        <section id="sources">
+          <h2>Source Atlas</h2>
+          <p class="section-intro">
+            Use this table as a map when you want to jump into the code. File names are more stable than line numbers
+            while this branch is moving, so this atlas points at the current source files instead of exact lines.
+          </p>
+
+          <table class="source-table">
+            <thead>
+              <tr>
+                <th>Area</th>
+                <th>File</th>
+                <th>Why it matters</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong>Week root</strong></td>
+                <td><code>packages/web/src/views/Week/WeekView.tsx</code></td>
+                <td>Outer week setup plus the `WeekGridInteraction` boundary.</td>
+              </tr>
+              <tr>
+                <td><strong>Visible week</strong></td>
+                <td><code>packages/web/src/views/Week/hooks/useWeek.ts</code></td>
+                <td>Computes visible week range and fetches events when the week changes.</td>
+              </tr>
+              <tr>
+                <td><strong>Measurements</strong></td>
+                <td><code>packages/web/src/views/Week/hooks/grid/useGridLayout.ts</code></td>
+                <td>Measures row, column, and grid geometry, with stable returned objects.</td>
+              </tr>
+              <tr>
+                <td><strong>Pointer to date</strong></td>
+                <td><code>packages/web/src/views/Week/hooks/grid/useDateCalcs.ts</code></td>
+                <td>Converts mouse X/Y into day and snapped minute.</td>
+              </tr>
+              <tr>
+                <td><strong>Grid layout constants</strong></td>
+                <td><code>packages/web/src/views/Week/layout.constants.ts</code></td>
+                <td>Defines default draft duration and 15-minute grid step.</td>
+              </tr>
+              <tr>
+                <td><strong>Timed grid creation</strong></td>
+                <td><code>packages/web/src/views/Week/components/Grid/MainGrid/MainGrid.tsx</code></td>
+                <td>Starts a timed draft when the user presses on empty grid space.</td>
+              </tr>
+              <tr>
+                <td><strong>Existing timed events</strong></td>
+                <td><code>packages/web/src/views/Week/components/Grid/MainGrid/MainGridEvents.tsx</code></td>
+                <td>Gets visible timed events and starts edit/drag/resize drafts.</td>
+              </tr>
+              <tr>
+                <td><strong>Timed event selector</strong></td>
+                <td><code>packages/web/src/ducks/events/selectors/event.selectors.ts</code></td>
+                <td>Builds grid events and memoizes timed overlap adjustment.</td>
+              </tr>
+              <tr>
+                <td><strong>Event block render</strong></td>
+                <td><code>packages/web/src/views/Week/components/Event/Grid/GridEvent/GridEvent.tsx</code></td>
+                <td>Draws the event block and its hidden resize handles.</td>
+              </tr>
+              <tr>
+                <td><strong>Position engine</strong></td>
+                <td><code>packages/web/src/common/utils/position/position.util.ts</code></td>
+                <td>Turns event dates and grid measurements into visual placement.</td>
+              </tr>
+              <tr>
+                <td><strong>Draft state</strong></td>
+                <td><code>packages/web/src/views/Week/components/Draft/hooks/state/useDraftState.ts</code></td>
+                <td>Local live state for dragging, resizing, and form visibility.</td>
+              </tr>
+              <tr>
+                <td><strong>Draft actions</strong></td>
+                <td><code>packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.ts</code></td>
+                <td>Core action hub for submit, drag, resize, discard, and open form.</td>
+              </tr>
+              <tr>
+                <td><strong>Mouse move</strong></td>
+                <td><code>packages/web/src/views/Week/components/Draft/grid/hooks/useGridMouseMove.ts</code></td>
+                <td>Document-level drag and resize movement listener.</td>
+              </tr>
+              <tr>
+                <td><strong>Mouse up</strong></td>
+                <td><code>packages/web/src/views/Week/components/Draft/grid/hooks/useGridMouseUp.ts</code></td>
+                <td>Decides whether to open the form, submit, or discard.</td>
+              </tr>
+              <tr>
+                <td><strong>Smart scroll</strong></td>
+                <td><code>packages/web/src/views/Week/hooks/grid/useDragEventSmartScroll.ts</code></td>
+                <td>Auto-scrolls timed drags with mouse Y stored outside React state.</td>
+              </tr>
+              <tr>
+                <td><strong>Event form</strong></td>
+                <td><code>packages/web/src/views/Forms/EventForm/EventForm.tsx</code></td>
+                <td>Title, priority, date/time controls, recurrence, description, and save.</td>
+              </tr>
+              <tr>
+                <td><strong>Time controls</strong></td>
+                <td><code>packages/web/src/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/TimePickers.tsx</code></td>
+                <td>Updates start and end times in the draft while preserving valid ordering.</td>
+              </tr>
+              <tr>
+                <td><strong>Save saga</strong></td>
+                <td><code>packages/web/src/ducks/events/sagas/event.sagas.ts</code></td>
+                <td>Create/edit/delete persistence, pending state, and optimistic updates.</td>
+              </tr>
+              <tr>
+                <td><strong>Repository choice</strong></td>
+                <td><code>packages/web/src/common/repositories/event/event.repository.util.ts</code></td>
+                <td>Local versus remote event persistence decision.</td>
+              </tr>
+              <tr>
+                <td><strong>Event contract</strong></td>
+                <td><code>packages/core/src/types/event.types.ts</code></td>
+                <td>Shared core event shape.</td>
+              </tr>
+              <tr>
+                <td><strong>Grid event contract</strong></td>
+                <td><code>packages/web/src/common/types/web.event.types.ts</code></td>
+                <td>Web-only position metadata for calendar rendering and gestures.</td>
+              </tr>
+              <tr>
+                <td><strong>Performance harness</strong></td>
+                <td><code>packages/scripts/src/performance/week-view.perf.ts</code></td>
+                <td>Browser-backed before/after measurement for this branch.</td>
+              </tr>
+            </tbody>
+          </table>
+        </section>
+
+        <section id="dictionary">
+          <h2>Beginner Dictionary</h2>
+          <p class="section-intro">
+            The short version of the terms you will see while reading the source.
+          </p>
+          <div class="accordion-grid">
+            <details open>
+              <summary>Grid event</summary>
+              <div>
+                An event that belongs on the calendar grid. It has `startDate`, `endDate`, and extra web-only
+                `position` data so the UI can place it.
+              </div>
+            </details>
+            <details>
+              <summary>Draft event</summary>
+              <div>
+                A temporary event used while the user is creating, dragging, resizing, or editing. The draft may be
+                saved, discarded, or used only to open the form.
+              </div>
+            </details>
+            <details>
+              <summary>Pending event</summary>
+              <div>
+                An event currently waiting for storage or API confirmation. Compass blocks new drag/resize gestures
+                on pending events to avoid conflicting writes.
+              </div>
+            </details>
+            <details>
+              <summary>Exclusive all-day end date</summary>
+              <div>
+                A one-day all-day event is stored as start date plus next-day end date. Example: May 13 all day is
+                stored as May 13 to May 14.
+              </div>
+            </details>
+            <details>
+              <summary>Optimistic update</summary>
+              <div>
+                The UI updates immediately before the save finishes. If the save fails, the saga rolls the visible
+                event back or removes the temporary event.
+              </div>
+            </details>
+          </div>
+        </section>
+
+        <footer class="footer">
+          Built from live code exploration in this checkout. Existing unrelated local changes were left untouched.
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      const buttons = Array.from(document.querySelectorAll(".tab-button"));
+      const panels = Array.from(document.querySelectorAll(".flow-panel"));
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const tab = button.dataset.tab;
+
+          buttons.forEach((item) => {
+            item.setAttribute("aria-selected", String(item === button));
+          });
+
+          panels.forEach((panel) => {
+            panel.classList.toggle("active", panel.id === `panel-${tab}`);
+          });
+        });
+      });
+    </script>
+  </body>
+</html>
