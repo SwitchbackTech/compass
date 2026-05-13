@@ -926,6 +926,34 @@ const measureHeavyWeekLoad = async (
   });
 };
 
+const measureInputBaseline = async (page: Page): Promise<ScenarioSample> => {
+  await page.setContent(
+    [
+      "<!doctype html>",
+      '<html lang="en">',
+      "<head>",
+      '<meta charset="utf-8" />',
+      "<title>Week view perf input baseline</title>",
+      "<style>",
+      "html, body { margin: 0; width: 100%; height: 100%; }",
+      "main { width: 100vw; height: 100vh; }",
+      "</style>",
+      "</head>",
+      "<body>",
+      "<main></main>",
+      "</body>",
+      "</html>",
+    ].join(""),
+  );
+
+  return measureAction(page, async () => {
+    await page.mouse.move(200, 200);
+    await page.mouse.down();
+    await page.mouse.move(290, 320, { steps: 16 });
+    await page.mouse.up();
+  });
+};
+
 const measureCreateTimedEvent = async (
   page: Page,
   baseUrl: string,
@@ -1033,6 +1061,11 @@ const measureResizeTimedEvent = async (
 };
 
 const SCENARIOS: ScenarioDefinition[] = [
+  {
+    isolateSamples: true,
+    name: "input-baseline",
+    run: measureInputBaseline,
+  },
   { name: "empty-week-load", run: measureEmptyWeekLoad },
   { name: "heavy-week-load", run: measureHeavyWeekLoad },
   {
