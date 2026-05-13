@@ -1,7 +1,4 @@
-import {
-  mapCompassConfigToEnv,
-  parseCompassConfigText,
-} from "./compass.config";
+import { parseCompassConfigText } from "./compass.config";
 import { describe, expect, it } from "bun:test";
 
 const validYaml = `
@@ -35,76 +32,83 @@ supertokens:
 tokens:
   compassSync: sync-token
   googleCalendarNotification: notification-token
-google:
-  channelExpirationMin: 10
 `;
 
 describe("compass config", () => {
-  it("maps grouped YAML to the existing env-shaped runtime contract", () => {
+  it("parses grouped YAML into a typed CompassConfig object", () => {
     const config = parseCompassConfigText(validYaml, "compass.yaml");
 
-    expect(mapCompassConfigToEnv(config)).toEqual({
-      BASEURL: "http://localhost:3000/api",
-      CHANNEL_EXPIRATION_MIN: "10",
-      CORS: "http://localhost:3000,http://localhost:9080",
-      EMAILER_API_SECRET: undefined,
-      EMAILER_USER_TAG_ID: undefined,
-      FRONTEND_URL: "http://localhost:9080",
-      GCAL_WEBHOOK_BASEURL: undefined,
-      GOOGLE_CLIENT_ID: undefined,
-      GOOGLE_CLIENT_SECRET: undefined,
-      LOG_LEVEL: "debug",
-      MONGO_INITDB_ROOT_PASSWORD: "mongo-password",
-      MONGO_INITDB_ROOT_USERNAME: "compass",
-      MONGO_REPLICA_SET_KEY: "replica-set-key",
-      MONGO_URI: "mongodb://localhost:27017/compass",
-      NODE_ENV: "development",
-      PORT: "3000",
-      POSTHOG_HOST: undefined,
-      POSTHOG_KEY: undefined,
-      SUPERTOKENS_KEY: "supertokens-key",
-      SUPERTOKENS_POSTGRES_DB: "supertokens",
-      SUPERTOKENS_POSTGRES_PASSWORD: "postgres-password",
-      SUPERTOKENS_POSTGRES_USER: "supertokens",
-      SUPERTOKENS_URI: "http://localhost:3567",
-      TOKEN_COMPASS_SYNC: "sync-token",
-      TOKEN_GCAL_NOTIFICATION: "notification-token",
-      TZ: "Etc/UTC",
-      WEB_PORT: "9080",
-      COMPASS_VERSION: "latest",
-      COMPASS_HEALTH_URL: undefined,
-    });
+    expect(config.runtime.nodeEnv).toBe("development");
+    expect(config.runtime.timezone).toBe("Etc/UTC");
+    expect(config.runtime.logLevel).toBe("debug");
+    expect(config.urls.backendApi).toBe("http://localhost:3000/api");
+    expect(config.urls.frontend).toBe("http://localhost:9080");
+    expect(config.urls.cors).toEqual([
+      "http://localhost:3000",
+      "http://localhost:9080",
+    ]);
+    expect(config.mongo.uri).toBe("mongodb://localhost:27017/compass");
+    expect(config.mongo.username).toBe("compass");
+    expect(config.supertokens.uri).toBe("http://localhost:3567");
+    expect(config.supertokens.key).toBe("supertokens-key");
+    expect(config.supertokens.postgres?.user).toBe("supertokens");
+    expect(config.tokens.compassSync).toBe("sync-token");
+    expect(config.tokens.googleCalendarNotification).toBe("notification-token");
+    expect(config.ports?.web).toBe(9080);
+    expect(config.ports?.backend).toBe(3000);
+    expect(config.compose?.version).toBe("latest");
   });
 
   it("omits optional Google and email config when keys are absent", () => {
-    const env = mapCompassConfigToEnv(
-      parseCompassConfigText(validYaml, "compass.yaml"),
-    );
+    const config = parseCompassConfigText(validYaml, "compass.yaml");
 
-    expect(env.GOOGLE_CLIENT_ID).toBeUndefined();
-    expect(env.GOOGLE_CLIENT_SECRET).toBeUndefined();
-    expect(env.EMAILER_API_SECRET).toBeUndefined();
-    expect(env.EMAILER_USER_TAG_ID).toBeUndefined();
+    expect(config.google?.clientId).toBeUndefined();
+    expect(config.google?.clientSecret).toBeUndefined();
+    expect(config.email).toBeUndefined();
+    expect(config.posthog).toBeUndefined();
   });
 
   it("accepts optional sections that are empty because they only contain comments", () => {
-    const env = mapCompassConfigToEnv(
-      parseCompassConfigText(
-        `${validYaml}
+    const config = parseCompassConfigText(
+      `${validYaml}
 email:
 posthog:
 `,
-        "compass.yaml",
-      ),
+      "compass.yaml",
     );
 
-    expect(env.EMAILER_API_SECRET).toBeUndefined();
-    expect(env.POSTHOG_KEY).toBeUndefined();
+    expect(config.email?.kitApiSecret).toBeUndefined();
+    expect(config.posthog?.key).toBeUndefined();
+  });
+
+  it("parses google section when provided", () => {
+    const config = parseCompassConfigText(
+      `${validYaml}
+google:
+  clientId: my-client-id
+  clientSecret: my-client-secret
+  channelExpirationMin: 30
+`,
+      "compass.yaml",
+    );
+
+    expect(config.google?.clientId).toBe("my-client-id");
+    expect(config.google?.clientSecret).toBe("my-client-secret");
+    expect(config.google?.channelExpirationMin).toBe(30);
   });
 
   it("throws a clear error for invalid YAML", () => {
     expect(() =>
       parseCompassConfigText("runtime:\n  nodeEnv: [", "broken.yaml"),
     ).toThrow("Could not parse Compass config file broken.yaml");
+  });
+
+  it("throws a clear error for missing required fields", () => {
+    expect(() =>
+      parseCompassConfigText(
+        "runtime:\n  nodeEnv: development\n  timezone: Etc/UTC\n",
+        "incomplete.yaml",
+      ),
+    ).toThrow("Invalid Compass config file incomplete.yaml");
   });
 });

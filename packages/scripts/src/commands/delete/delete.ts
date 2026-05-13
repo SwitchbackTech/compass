@@ -1,4 +1,4 @@
-import { getCliEnv } from "@scripts/common/cli.constants";
+import { getCliConfig } from "@scripts/common/cli.constants";
 import { log } from "@scripts/common/cli.utils";
 import inquirer, { type QuestionCollection } from "inquirer";
 import open from "open";
@@ -15,7 +15,7 @@ import {
 } from "./delete.types";
 
 const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
-  const cliEnv = getCliEnv();
+  const cliEnv = getCliConfig();
   const browserName = cliEnv.DEV_BROWSER?.toLowerCase();
   if (!browserName) return undefined;
 
@@ -30,7 +30,7 @@ const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
 };
 
 const getCleanupUrl = (): string => {
-  return `${getCliEnv().FRONTEND_URL}/cleanup`;
+  return `${getCliConfig().FRONTEND_URL}/cleanup`;
 };
 
 const normalizeEmail = (value: string): string => value.trim().toLowerCase();
@@ -49,7 +49,7 @@ const summarizeDeleteError = (error: unknown): { message: string } => {
 const forceBrowserCleanup = async (): Promise<void> => {
   const cleanupUrl = getCleanupUrl();
   const browserApp = getBrowserApp();
-  const browserName = getCliEnv().DEV_BROWSER || "default";
+  const browserName = getCliConfig().DEV_BROWSER || "default";
 
   log.info(`\nOpening ${browserName} browser to clear local data...`);
 
@@ -93,7 +93,7 @@ const promptBrowserCleanup = async (): Promise<void> => {
 
   if (promptResult.cleanup) {
     const browserApp = getBrowserApp();
-    const browserName = getCliEnv().DEV_BROWSER || "default";
+    const browserName = getCliConfig().DEV_BROWSER || "default";
 
     log.info(`\nOpening ${browserName} browser to clear local data...`);
 

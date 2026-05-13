@@ -9,7 +9,7 @@ Examples:
 
 ## Top-Level Sections
 
-| YAML path | Default | Description |
+| key | Default | Description |
 |---|---|---|
 | `compose.version` | `latest` | Docker image tag used by the self-host compose stack. Pin this for reproducible installs. |
 | `ports.web` | `9080` | Host port bound to the web container on `127.0.0.1`. |
@@ -20,7 +20,7 @@ Examples:
 
 ## URLs
 
-| YAML path | Required | Description |
+| key | Required | Description |
 |---|---|---|
 | `urls.frontend` | Yes | Public frontend URL as seen by the backend. Example: `https://compass.example.com`. |
 | `urls.backendApi` | Yes | Public API URL. Example: `https://compass.example.com/api`. This is baked into the web bundle when the web image is rebuilt. |
@@ -30,7 +30,7 @@ Examples:
 
 ## MongoDB
 
-| YAML path | Required | Description |
+| key | Required | Description |
 |---|---|---|
 | `mongo.username` | Self-host | MongoDB root username created on first container startup. Must match `mongo.uri`. |
 | `mongo.password` | Self-host | MongoDB root password. Changing it after first startup requires a MongoDB user migration. |
@@ -39,7 +39,7 @@ Examples:
 
 ## SuperTokens
 
-| YAML path | Required | Description |
+| key | Required | Description |
 |---|---|---|
 | `supertokens.uri` | Yes | SuperTokens Core URL as seen by the backend. Self-hosted Docker uses `http://supertokens:3567`. |
 | `supertokens.key` | Yes | API key shared by backend and SuperTokens Core. |
@@ -49,7 +49,7 @@ Examples:
 
 ## Tokens
 
-| YAML path | Required | Description |
+| key | Required | Description |
 |---|---|---|
 | `tokens.compassSync` | Yes | Bearer token protecting internal sync endpoints. |
 | `tokens.googleCalendarNotification` | Required for HTTPS Google webhooks | Token used to verify Google Calendar webhook requests. |
@@ -58,7 +58,7 @@ Examples:
 
 Both `google.clientId` and `google.clientSecret` must be real values for Google features to activate. Setting only one causes backend startup to fail. Leave the self-host placeholders in place for password-only mode.
 
-| YAML path | Required | Description |
+| key | Required | Description |
 |---|---|---|
 | `google.clientId` | No | Google OAuth client ID. Rebuild the web image after changing it. |
 | `google.clientSecret` | No | Google OAuth client secret. Backend-only. |
@@ -68,7 +68,7 @@ See [Google Calendar](./google-calendar.md) for OAuth setup.
 
 ## Optional Integrations
 
-| YAML path | Required | Description |
+| key | Required | Description |
 |---|---|---|
 | `email.kitApiSecret` | No | Kit.com API secret key. |
 | `email.kitUserTagId` | No | Kit.com tag ID applied to users on signup. |

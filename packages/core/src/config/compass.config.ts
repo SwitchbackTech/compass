@@ -3,8 +3,6 @@ import { z } from "zod";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-export type CompassEnv = Record<string, string | undefined>;
-
 const optionalString = z.string().nullish();
 
 const CompassConfigSchema = z
@@ -77,20 +75,6 @@ const CompassConfigSchema = z
 
 export type CompassConfig = z.infer<typeof CompassConfigSchema>;
 
-const toOptionalString = (
-  value: string | number | null | undefined,
-): string | undefined => {
-  if (value === undefined || value === null) {
-    return undefined;
-  }
-
-  return String(value);
-};
-
-const optionalNonEmpty = (
-  value: string | null | undefined,
-): string | undefined => (value?.trim() ? value : undefined);
-
 export function parseCompassConfigText(
   text: string,
   filePath: string,
@@ -114,48 +98,6 @@ export function parseCompassConfigText(
   return parsed.data;
 }
 
-export function mapCompassConfigToEnv(config: CompassConfig): CompassEnv {
-  return {
-    BASEURL: config.urls.backendApi,
-    CHANNEL_EXPIRATION_MIN:
-      toOptionalString(config.google?.channelExpirationMin) ?? "10",
-    COMPASS_HEALTH_URL: optionalNonEmpty(config.urls.health),
-    COMPASS_VERSION: toOptionalString(config.compose?.version),
-    CORS: config.urls.cors?.join(",") ?? "",
-    EMAILER_API_SECRET: optionalNonEmpty(config.email?.kitApiSecret),
-    EMAILER_USER_TAG_ID: toOptionalString(config.email?.kitUserTagId),
-    FRONTEND_URL: config.urls.frontend,
-    GCAL_WEBHOOK_BASEURL: optionalNonEmpty(config.urls.googleWebhook),
-    GOOGLE_CLIENT_ID: optionalNonEmpty(config.google?.clientId),
-    GOOGLE_CLIENT_SECRET: optionalNonEmpty(config.google?.clientSecret),
-    LOG_LEVEL: config.runtime.logLevel,
-    MONGO_INITDB_ROOT_PASSWORD: optionalNonEmpty(config.mongo.password),
-    MONGO_INITDB_ROOT_USERNAME: optionalNonEmpty(config.mongo.username),
-    MONGO_REPLICA_SET_KEY: optionalNonEmpty(config.mongo.replicaSetKey),
-    MONGO_URI: config.mongo.uri,
-    NODE_ENV: config.runtime.nodeEnv,
-    PORT: toOptionalString(config.ports?.backend),
-    POSTHOG_HOST: optionalNonEmpty(config.posthog?.host),
-    POSTHOG_KEY: optionalNonEmpty(config.posthog?.key),
-    SUPERTOKENS_KEY: config.supertokens.key,
-    SUPERTOKENS_POSTGRES_DB: optionalNonEmpty(
-      config.supertokens.postgres?.database,
-    ),
-    SUPERTOKENS_POSTGRES_PASSWORD: optionalNonEmpty(
-      config.supertokens.postgres?.password,
-    ),
-    SUPERTOKENS_POSTGRES_USER: optionalNonEmpty(
-      config.supertokens.postgres?.user,
-    ),
-    SUPERTOKENS_URI: config.supertokens.uri,
-    TOKEN_COMPASS_SYNC: config.tokens.compassSync,
-    TOKEN_GCAL_NOTIFICATION:
-      optionalNonEmpty(config.tokens.googleCalendarNotification) ?? "",
-    TZ: config.runtime.timezone,
-    WEB_PORT: toOptionalString(config.ports?.web),
-  };
-}
-
 export function findCompassConfigFile(
   explicitPath = process.env["COMPASS_CONFIG_FILE"],
 ): string {
@@ -165,8 +107,6 @@ export function findCompassConfigFile(
 
   const candidates = [
     resolve(process.cwd(), "compass.yaml"),
-    resolve(process.cwd(), "packages/backend/compass.yaml"),
-    resolve(process.cwd(), "../backend/compass.yaml"),
     "/app/compass.yaml",
   ];
 
@@ -174,7 +114,7 @@ export function findCompassConfigFile(
 
   if (!configPath) {
     throw new Error(
-      "Missing Compass config file. Create packages/backend/compass.yaml from packages/backend/compass.example.yaml or set COMPASS_CONFIG_FILE.",
+      "Missing Compass config file. Create compass.yaml from compass.example.yaml or set COMPASS_CONFIG_FILE.",
     );
   }
 
@@ -185,6 +125,6 @@ export function loadCompassConfigFile(filePath = findCompassConfigFile()) {
   return parseCompassConfigText(readFileSync(filePath, "utf8"), filePath);
 }
 
-export function loadCompassEnv(filePath?: string): CompassEnv {
-  return mapCompassConfigToEnv(loadCompassConfigFile(filePath));
+export function loadCompassConfig(filePath?: string): CompassConfig {
+  return loadCompassConfigFile(filePath);
 }

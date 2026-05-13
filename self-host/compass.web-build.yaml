@@ -1,0 +1,33 @@
+# Minimal Compass config for the Docker web build stage.
+# __BASEURL__ and __GOOGLE_CLIENT_ID__ are substituted by Dockerfile.web ARGs.
+# All other values are unused placeholders — only the web bundle is produced.
+
+compose:
+  version: self-host
+
+ports:
+  web: 9080
+  backend: 3000
+
+runtime:
+  nodeEnv: production
+  timezone: Etc/UTC
+
+urls:
+  frontend: http://localhost:9080
+  backendApi: __BASEURL__
+  cors:
+    - http://localhost:9080
+
+mongo:
+  uri: mongodb://localhost:27017/unused
+
+supertokens:
+  uri: http://localhost:3567
+  key: unused-web-build
+
+tokens:
+  compassSync: unused-web-build
+
+google:
+  clientId: __GOOGLE_CLIENT_ID__

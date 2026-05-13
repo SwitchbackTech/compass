@@ -60,7 +60,7 @@ log.success(`Bundled → ${BACKEND_BUILD}/app.js`);
 // 3. Copy config file when present for local bundled runs.
 const configPath = process.env["COMPASS_CONFIG_FILE"]
   ? path.resolve(process.env["COMPASS_CONFIG_FILE"])
-  : path.join(COMPASS_ROOT_DEV, "packages/backend/compass.yaml");
+  : path.join(COMPASS_ROOT_DEV, "compass.yaml");
 
 if (await Bun.file(configPath).exists()) {
   await $`cp ${configPath} ${BACKEND_BUILD}/compass.yaml`.quiet();

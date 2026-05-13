@@ -26,6 +26,6 @@ The compose stack binds the web and backend containers to `127.0.0.1`; the serve
 - `compose.yaml` — the Docker Compose stack used by the installed app.
 - `Dockerfile.web`, `Dockerfile.backend`, `Dockerfile.mongo` — the images for the web app, backend, and local MongoDB.
 - `serve-web.ts` — the small web server that serves the built web app inside the web container.
-- `compass.example.yaml` — example self-host config values. See [Compass YAML Configuration](../docs/self-hosting/environment-variables.md) for the full reference.
+- `compass.example.yaml` — example self-host config values. See [Compass YAML Configuration](../docs/Self-Hosting/config.md) for the full reference.
 
 In this folder and the docs, `~/compass` means a `compass` folder in your home directory (e.g., `/Users/alex/compass` on macOS, `/home/alex/compass` on Linux). It is not a folder inside this repo.

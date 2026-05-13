@@ -19,7 +19,6 @@ urls:
   cors:
     - http://localhost:3000
     - http://localhost:9080
-    - https://app.yourdomain.com
   # googleWebhook: https://example.trycloudflare.com/api
 
 mongo:
@@ -36,15 +35,15 @@ tokens:
   compassSync: YOUR_UNIQUE_STRING
   googleCalendarNotification: ANOTHER_UNIQUE_STRING
 
-google:
-  # clientId: UNIQUE_ID_FROM_YOUR_GOOGLE_CLOUD_PROJECT
-  # clientSecret: UNIQUE_SECRET_FROM_YOUR_GOOGLE_CLOUD_PROJECT
-  channelExpirationMin: 10
+# google:
+#   clientId: UNIQUE_ID_FROM_YOUR_GOOGLE_CLOUD_PROJECT
+#   clientSecret: UNIQUE_SECRET_FROM_YOUR_GOOGLE_CLOUD_PROJECT
+#   channelExpirationMin: 10
 
-email:
-  # kitApiSecret: UNIQUE_SECRET_FROM_YOUR_KIT_ACCOUNT
-  # kitUserTagId: YOUR_USER_TAG_ID
+# email:
+#   kitApiSecret: UNIQUE_SECRET_FROM_YOUR_KIT_ACCOUNT
+#   kitUserTagId: YOUR_USER_TAG_ID
 
-posthog:
-  # key: YOUR_POSTHOG_KEY
-  # host: YOUR_POSTHOG_HOST
+# posthog:
+#   key: YOUR_POSTHOG_KEY
+#   host: YOUR_POSTHOG_HOST

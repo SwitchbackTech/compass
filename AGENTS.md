@@ -5,10 +5,10 @@
 - Frontend-only work usually starts with `bun run dev:web`; it does not require
   backend services.
 - Backend, auth, MongoDB, Google sync, and SSE work require
-  `packages/backend/compass.yaml`. Bootstrap with:
+  a `compass.yaml` at the repo root. Bootstrap with:
 
 ```bash
-cp packages/backend/compass.example.yaml packages/backend/compass.yaml
+cp compass.example.yaml compass.yaml
 ```
 
 - `compass.yaml` contains secrets. Do not commit it.

@@ -24,7 +24,7 @@ Sign up with email and password. Event create, edit, and delete all work without
 
 This is an optional add-on for a Bun-based local setup. Browser-driven flows (sign-in, one-time import) work. Watch notifications do not, because Google can't reach `localhost`. After the import, changes made later in Google Calendar will not reliably arrive in Compass unless you also set up public HTTPS watch notifications.
 
-Add real Google OAuth values to `packages/backend/compass.yaml`:
+Add real Google OAuth values to `compass.yaml`:
 
 ```yaml
 google:

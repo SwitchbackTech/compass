@@ -39,7 +39,7 @@ tokens:
   compassSync: replace-with-generated-compass-sync-token
   googleCalendarNotification: replace-with-generated-gcal-notification-token
 
-google:
-  clientId: compass-self-host-placeholder.apps.googleusercontent.com
-  clientSecret: compass-self-host-placeholder-secret
-  channelExpirationMin: 10
+# google:
+#   clientId: YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
+#   clientSecret: YOUR_GOOGLE_CLIENT_SECRET
+#   channelExpirationMin: 10

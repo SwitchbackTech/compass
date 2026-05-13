@@ -39,19 +39,19 @@ This requires valid Compass YAML config.
 Bootstrap once from repo root:
 
 ```bash
-cp packages/backend/compass.example.yaml packages/backend/compass.yaml
+cp compass.example.yaml compass.yaml
 ```
 
 Runtime note:
 
-- `bun run dev:backend`, `bun run dev:web`, and `bun run cli ...` load values from `packages/backend/compass.yaml`.
+- `bun run dev:backend`, `bun run dev:web`, and `bun run cli ...` load values from `compass.yaml` at the repo root.
 - `compass.yaml` contains secrets. Do not commit it.
 
 Migrating from the old `.env.local` setup:
 
 1. Pull the latest code.
 2. Run `bun install`.
-3. Copy `packages/backend/compass.example.yaml` to `packages/backend/compass.yaml`.
+3. Copy `compass.example.yaml` to `compass.yaml` at the repo root.
 4. Copy your old `.env.local` values into the matching YAML fields.
 5. Delete or archive `packages/backend/.env.local`; Compass no longer reads it.
 6. Run `bun run dev:web` and `bun run dev:backend`.
@@ -62,7 +62,7 @@ Source:
 
 - `packages/backend/src/common/constants/env.constants.ts`
 
-The backend loads `compass.yaml`, maps it to the existing runtime contract, and validates that contract at startup with Zod.
+The backend loads `compass.yaml`, builds the runtime config object directly from it, and validates that object at startup with Zod.
 
 Important config paths:
 
@@ -217,7 +217,7 @@ Stop the tunnel when testing is complete. Do not use personal calendars with sen
 ## Common Failure Modes
 
 - backend exits immediately because required YAML config is missing
-- backend/web/cli read from `packages/backend/compass.yaml`; using `.env` no longer configures Compass
+- backend/web/cli read from `compass.yaml` at the repo root; using `.env` no longer configures Compass
 - web points at the wrong API base URL
 - session exists but user profile fetch fails
 - sync endpoints work but notification/watch setup is skipped because neither `urls.googleWebhook` nor `urls.backendApi` is public HTTPS

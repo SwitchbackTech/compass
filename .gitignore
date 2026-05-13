@@ -56,5 +56,4 @@ packages/backend/.prod.env
 
 
 tmp/
-!.env.local.example
 !compass.example.yaml

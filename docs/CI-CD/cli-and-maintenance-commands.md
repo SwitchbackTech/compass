@@ -16,8 +16,8 @@ Primary file:
 
 Environment loading:
 
-- `bun run cli` loads `packages/backend/compass.yaml`.
-- Keep local development config in `packages/backend/compass.yaml` (bootstrap from `compass.example.yaml`).
+- `bun run cli` loads `compass.yaml` from the repo root.
+- Keep local development config in `compass.yaml` at the repo root (bootstrap from `compass.example.yaml`).
 
 ## CLI URL Resolution Contract
 
