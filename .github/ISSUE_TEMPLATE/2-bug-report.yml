@@ -14,9 +14,9 @@ body:
       label: Where did this happen?
       multiple: true
       options:
-        - Hosted (app.compasscalendar.com)
+        - Hosted (compasscalendar.com)
         - Local code on main
-        - Self-hosted (app.yourdomain.com)
+        - Self-hosted (yourdomain.com)
 
   - type: textarea
     attributes:
