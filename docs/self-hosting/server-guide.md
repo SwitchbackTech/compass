@@ -161,7 +161,7 @@ Replace the file contents with this Caddyfile, using your real domain instead
 of `compass.example.com`:
 
 ```caddyfile
-compass.example.com {
+compass.example.com {  # <- this is the only line you need to change
  handle /api/* {
   reverse_proxy 127.0.0.1:3000
  }

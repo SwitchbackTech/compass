@@ -1,6 +1,8 @@
-# Add Google Calendar
+# Connect Google Calendar
 
-Google Calendar is optional for self-hosting. Compass works fine with email and password alone. Pick a mode based on what you actually need.
+You can optionally connect your Google account to enable:
+- Google OAuth (instead of the default email/password auth)
+- Two-way sync between Compass Calendar and Google Calendar
 
 ## The three modes
 
