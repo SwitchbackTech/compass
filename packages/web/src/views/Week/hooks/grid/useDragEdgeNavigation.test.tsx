@@ -1,5 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { type FC, useCallback, useRef } from "react";
 import { Provider } from "react-redux";
 import dayjs from "@core/util/date/dayjs";
@@ -67,7 +67,10 @@ const EdgeNavigationGrid: FC<{ weekProps: WeekProps }> = ({ weekProps }) => {
   );
 };
 
-const EdgeNavigationHarness: FC<{ weekProps: WeekProps }> = ({ weekProps }) => {
+const EdgeNavigationHarness: FC<{
+  interaction: InteractionEngine;
+  weekProps: WeekProps;
+}> = ({ interaction, weekProps }) => {
   const store = configureStore({
     reducer: reducers,
     preloadedState: createInitialState(),
@@ -78,7 +81,6 @@ const EdgeNavigationHarness: FC<{ weekProps: WeekProps }> = ({ weekProps }) => {
         thunk: false,
       }),
   });
-  const interaction = new InteractionEngine();
   interaction.startDrag(timedDraft);
 
   return (
@@ -120,10 +122,15 @@ const EdgeNavigationHarness: FC<{ weekProps: WeekProps }> = ({ weekProps }) => {
 describe("useDragEdgeNavigation", () => {
   it("does not re-render for edge progress while waiting to navigate", async () => {
     const weekProps = createWeekProps();
+    const interaction = new InteractionEngine();
 
-    render(<EdgeNavigationHarness weekProps={weekProps} />);
+    render(
+      <EdgeNavigationHarness interaction={interaction} weekProps={weekProps} />,
+    );
 
-    fireEvent.mouseMove(window, { clientX: 690, clientY: 200 });
+    act(() => {
+      interaction.updatePointer({ x: 690, y: 200 }, { notifyReact: false });
+    });
 
     await waitFor(() =>
       expect(screen.getByTestId("edge").textContent).toBe("right"),
@@ -140,10 +147,15 @@ describe("useDragEdgeNavigation", () => {
 
   it("navigates after the pointer stays at the right edge", async () => {
     const weekProps = createWeekProps();
+    const interaction = new InteractionEngine();
 
-    render(<EdgeNavigationHarness weekProps={weekProps} />);
+    render(
+      <EdgeNavigationHarness interaction={interaction} weekProps={weekProps} />,
+    );
 
-    fireEvent.mouseMove(window, { clientX: 690, clientY: 200 });
+    act(() => {
+      interaction.updatePointer({ x: 690, y: 200 }, { notifyReact: false });
+    });
 
     await waitFor(
       () =>

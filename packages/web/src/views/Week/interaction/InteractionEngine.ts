@@ -19,10 +19,12 @@ interface InteractionMotionOptions {
 }
 
 type InteractionMotionListener = (snapshot: InteractionState) => void;
+type InteractionPointerListener = (snapshot: InteractionState) => void;
 
 export class InteractionEngine {
   private readonly store: InteractionStore;
   private readonly motionListeners = new Set<InteractionMotionListener>();
+  private readonly pointerListeners = new Set<InteractionPointerListener>();
 
   constructor(store: InteractionStore = createInteractionStore()) {
     this.store = store;
@@ -41,6 +43,14 @@ export class InteractionEngine {
 
     return () => {
       this.motionListeners.delete(listener);
+    };
+  }
+
+  subscribePointer(listener: InteractionPointerListener): () => void {
+    this.pointerListeners.add(listener);
+
+    return () => {
+      this.pointerListeners.delete(listener);
     };
   }
 
@@ -163,12 +173,21 @@ export class InteractionEngine {
     this.store.updatePointer(pointer, {
       notify: options.notifyReact ?? true,
     });
+    this.emitPointer();
   }
 
   private emitMotion(): void {
     const snapshot = this.getSnapshot();
 
     for (const listener of this.motionListeners) {
+      listener(snapshot);
+    }
+  }
+
+  private emitPointer(): void {
+    const snapshot = this.getSnapshot();
+
+    for (const listener of this.pointerListeners) {
       listener(snapshot);
     }
   }

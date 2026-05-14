@@ -56,7 +56,7 @@ export const useDragEventSmartScroll = (
       }
     };
 
-    const unsubscribe = interaction.subscribeMotion((snapshot) => {
+    const unsubscribe = interaction.subscribePointer((snapshot) => {
       if (!snapshot.pointer) return;
 
       mouseYRef.current = snapshot.pointer.y;

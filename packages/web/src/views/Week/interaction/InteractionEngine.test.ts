@@ -94,4 +94,18 @@ describe("InteractionEngine", () => {
     expect(reactSubscriber).not.toHaveBeenCalled();
     expect(motionSubscriber).toHaveBeenCalledWith(engine.getSnapshot());
   });
+
+  it("can publish pointer motion without notifying React store subscribers", () => {
+    const engine = new InteractionEngine();
+    const reactSubscriber = mock();
+    const pointerSubscriber = mock();
+
+    engine.getStore().subscribe(reactSubscriber);
+    engine.subscribePointer(pointerSubscriber);
+    engine.updatePointer({ x: 120, y: 240 }, { notifyReact: false });
+
+    expect(engine.getSnapshot().pointer).toEqual({ x: 120, y: 240 });
+    expect(reactSubscriber).not.toHaveBeenCalled();
+    expect(pointerSubscriber).toHaveBeenCalledWith(engine.getSnapshot());
+  });
 });

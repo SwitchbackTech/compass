@@ -180,19 +180,50 @@ export const useDragEdgeNavigation = (
       }
     };
 
-    const updateMousePosition = (event: MouseEvent) => {
-      mousePositionRef.current = { x: event.clientX, y: event.clientY };
+    const updatePointerPosition = (pointer: { x: number; y: number }) => {
+      mousePositionRef.current = pointer;
       evaluatePointer();
     };
 
-    window.addEventListener("mousemove", updateMousePosition);
+    const unsubscribePointer = isGridEventDragging
+      ? interaction.subscribePointer((snapshot) => {
+          if (!snapshot.pointer) return;
+          updatePointerPosition(snapshot.pointer);
+        })
+      : undefined;
+
+    const initialPointer = interaction.getSnapshot().pointer;
+    if (isGridEventDragging && initialPointer) {
+      updatePointerPosition(initialPointer);
+    }
+
+    const updateMousePosition = (event: MouseEvent) => {
+      updatePointerPosition({ x: event.clientX, y: event.clientY });
+    };
+
+    if (!isGridEventDragging && isSomedayEventDragging) {
+      window.addEventListener("mousemove", updateMousePosition);
+    }
 
     return () => {
       isCancelled = true;
-      window.removeEventListener("mousemove", updateMousePosition);
+      unsubscribePointer?.();
+
+      if (!isGridEventDragging && isSomedayEventDragging) {
+        window.removeEventListener("mousemove", updateMousePosition);
+      }
+
       resetNavigation();
     };
-  }, [currentDraft, isDragging, mainGridRef, weekProps.util]);
+  }, [
+    currentDraft,
+    interaction,
+    isDragging,
+    isGridEventDragging,
+    isSomedayEventDragging,
+    mainGridRef,
+    weekProps.util,
+  ]);
 
   return {
     isDragging,
