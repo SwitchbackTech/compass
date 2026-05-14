@@ -73,7 +73,3 @@ See [Google Calendar](./google-calendar.md) for OAuth setup.
 | `email.kitUserTagId` | No | Kit.com tag ID applied to users on signup. |
 | `posthog.key` | No | PostHog project key injected into the web bundle. |
 | `posthog.host` | No | PostHog host injected into the web bundle. |
-
-## GitHub Deployments
-
-For deployed instances managed through GitHub Actions, store non-sensitive config as GitHub environment variables (`vars.*`) and secrets as GitHub environment secrets (`secrets.*`). The deploy workflow assembles `compass.yaml` inline from these values before connecting to the server.
