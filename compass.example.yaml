@@ -20,7 +20,6 @@ backend:
     - http://localhost:3000
     - http://localhost:9080
   compassToken: YOUR_UNIQUE_STRING
-  # googleWebhook: https://example.trycloudflare.com/api
 
 mongo:
   username: compass
@@ -32,13 +31,12 @@ supertokens:
   uri: UNIQUE_URI_FROM_YOUR_SUPERTOKENS_ACCOUNT
   key: UNIQUE_KEY_FROM_YOUR_SUPERTOKENS_ACCOUNT
 
-# tokens:
-#   googleCalendarNotification: ANOTHER_UNIQUE_STRING
-
 # google:
 #   clientId: UNIQUE_ID_FROM_YOUR_GOOGLE_CLOUD_PROJECT
 #   clientSecret: UNIQUE_SECRET_FROM_YOUR_GOOGLE_CLOUD_PROJECT
 #   channelExpirationMin: 10
+#   webhookUrl: https://example.trycloudflare.com/api
+#   notificationToken: ANOTHER_UNIQUE_STRING
 
 # email:
 #   kitApiSecret: UNIQUE_SECRET_FROM_YOUR_KIT_ACCOUNT

@@ -56,7 +56,7 @@ Workflow: The backend loads `compass.yaml`, builds the runtime config object dir
 Google Integration
 
 - Google is disabled unless both `google.clientId` and `google.clientSecret` are set to real, non-placeholder values.
-- When Google is enabled and the effective Google webhook URL uses HTTPS, `tokens.googleCalendarNotification` is required for Google Calendar webhook validation.
+- When Google is enabled and the effective Google webhook URL uses HTTPS, `google.notificationToken` is required for Google Calendar webhook validation.
 
 Derived backend values:
 
@@ -155,7 +155,7 @@ When testing changes around event loading, explicitly decide which user state yo
 
 Google OAuth and Google Calendar Watch have different local requirements. Google sign-in can use localhost redirect URLs, but Calendar Watch notifications are server-to-server callbacks from Google to Compass. For those callbacks, Google needs an HTTPS backend URL that it can reach from the public internet.
 
-Compass does not start a local tunnel automatically. Google Calendar webhook watch flows use `backend.googleWebhook` when it is set and fall back to `backend.apiUrl` when it is not set.
+Compass does not start a local tunnel automatically. Google Calendar webhook watch flows use `google.webhookUrl` when it is set and fall back to `backend.apiUrl` when it is not set.
 
 For normal local development:
 
@@ -177,7 +177,8 @@ Then set:
 ```yaml
 backend:
   apiUrl: http://localhost:3000/api
-  googleWebhook: https://<generated-host>.trycloudflare.com/api
+google:
+  webhookUrl: https://<generated-host>.trycloudflare.com/api
 ```
 
 Keep `backend.apiUrl` local so the browser and Server-Sent Events continue using localhost. Only Google's webhook POST requests should use the tunnel.
@@ -190,6 +191,6 @@ Stop the tunnel when testing is complete. Do not use personal calendars with sen
 - backend/web/cli read from `compass.yaml` at the repo root; using `.env` no longer configures Compass
 - web points at the wrong API base URL
 - session exists but user profile fetch fails
-- sync endpoints work but notification/watch setup is skipped because neither `backend.googleWebhook` nor `backend.apiUrl` is public HTTPS
-- `backend.googleWebhook` points to a tunnel without `/api`, so Google posts to the wrong route
+- sync endpoints work but notification/watch setup is skipped because neither `google.webhookUrl` nor `backend.apiUrl` is public HTTPS
+- `google.webhookUrl` points to a tunnel without `/api`, so Google posts to the wrong route
 - backend starts but `/api/health` returns `500` because `mongo.uri` or database reachability is broken

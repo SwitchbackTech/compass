@@ -31,7 +31,6 @@ Examples:
 | `backend.apiUrl` | Yes | Public API URL. Example: `https://compass.example.com/api`. This is baked into the web bundle when the web image is rebuilt. |
 | `backend.originsAllowed` | Yes | YAML list of allowed CORS origins. Include `web.url`. |
 | `backend.compassToken` | Yes | Bearer token protecting internal sync endpoints. |
-| `backend.googleWebhook` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `backend.apiUrl`. |
 
 ## MongoDB
 
@@ -52,12 +51,6 @@ Examples:
 | `supertokens.postgres.password` | Self-host | Postgres password for the SuperTokens database container. |
 | `supertokens.postgres.database` | Self-host | Postgres database name for SuperTokens. |
 
-## Tokens
-
-| key | Required | Description |
-|---|---|---|
-| `tokens.googleCalendarNotification` | Required for HTTPS Google webhooks | Token used to verify Google Calendar webhook requests. |
-
 ## Google OAuth
 
 Both `google.clientId` and `google.clientSecret` must be real values for Google features to activate. Setting only one causes backend startup to fail. Leave the self-host placeholders in place for password-only mode.
@@ -67,6 +60,8 @@ Both `google.clientId` and `google.clientSecret` must be real values for Google 
 | `google.clientId` | No | Google OAuth client ID. Rebuild the web image after changing it. |
 | `google.clientSecret` | No | Google OAuth client secret. Backend-only. |
 | `google.channelExpirationMin` | No | Google Calendar watch channel lifetime in minutes. |
+| `google.webhookUrl` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `backend.apiUrl`. |
+| `google.notificationToken` | Required for HTTPS Google webhooks | Token used to verify Google Calendar webhook requests. |
 
 See [Google Calendar](./google-calendar.md) for OAuth setup.
 

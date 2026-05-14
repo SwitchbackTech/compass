@@ -19,7 +19,6 @@ backend:
   originsAllowed:
     - https://cal.yourdomain.com
   compassToken: replace-with-generated-compass-sync-token
-  # googleWebhook: https://cal.yourdomain.com/api
 
 mongo:
   username: compass
@@ -35,10 +34,9 @@ supertokens:
     password: replace-with-generated-supertokens-postgres-password
     database: supertokens
 
-# tokens:
-#   googleCalendarNotification: replace-with-generated-gcal-notification-token
-
 # google:
 #   clientId: YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
 #   clientSecret: YOUR_GOOGLE_CLIENT_SECRET
 #   channelExpirationMin: 10
+#   webhookUrl: https://cal.yourdomain.com/api
+#   notificationToken: replace-with-generated-gcal-notification-token

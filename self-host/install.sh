@@ -348,7 +348,7 @@ validate_existing_env_secrets() {
   validate_existing_secret supertokens.postgres.password change-me-supertokens-postgres-pass-32
   validate_existing_secret supertokens.key change-me-supertokens-key-32chars
   validate_existing_secret backend.compassToken change-me-compass-sync-token-32chars
-  validate_existing_secret tokens.googleCalendarNotification change-me-gcal-notification-token-32chars
+  validate_existing_secret google.notificationToken change-me-gcal-notification-token-32chars
   validate_existing_mongo_uri
 }
 
@@ -404,8 +404,8 @@ supertokens:
     password: $supertokens_postgres_password
     database: supertokens
 
-tokens:
-  googleCalendarNotification: $gcal_notification_token
+google:
+  notificationToken: $gcal_notification_token
 
 # google:
 #   clientId: YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com

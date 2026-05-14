@@ -21,7 +21,6 @@ const CompassConfigSchema = z
       apiUrl: z.string(),
       originsAllowed: z.array(z.string()).optional(),
       compassToken: z.string(),
-      googleWebhook: optionalString,
     }),
     runtime: z.object({
       nodeEnv: z.string(),
@@ -45,16 +44,13 @@ const CompassConfigSchema = z
         })
         .nullish(),
     }),
-    tokens: z
-      .object({
-        googleCalendarNotification: z.string().optional(),
-      })
-      .nullish(),
     google: z
       .object({
         clientId: optionalString,
         clientSecret: optionalString,
         channelExpirationMin: z.union([z.string(), z.number()]).optional(),
+        webhookUrl: optionalString,
+        notificationToken: optionalString,
       })
       .nullish(),
     email: z

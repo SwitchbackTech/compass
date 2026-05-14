@@ -93,7 +93,7 @@ function parseRawConfig(config: CompassConfig): Config {
     EMAILER_USER_TAG_ID: toStr(config.email?.kitUserTagId),
     FRONTEND_URL: config.web.url,
     GCAL_WEBHOOK_BASEURL:
-      nonEmpty(config.backend.googleWebhook) || config.backend.apiUrl,
+      nonEmpty(config.google?.webhookUrl) || config.backend.apiUrl,
     MONGO_URI: config.mongo.uri,
     NODE_ENV: nodeEnv,
     TZ: config.runtime.timezone,
@@ -101,8 +101,7 @@ function parseRawConfig(config: CompassConfig): Config {
     PORT: toStr(config.backend.port),
     SUPERTOKENS_URI: config.supertokens.uri,
     SUPERTOKENS_KEY: config.supertokens.key,
-    TOKEN_GCAL_NOTIFICATION:
-      nonEmpty(config.tokens?.googleCalendarNotification) ?? "",
+    TOKEN_GCAL_NOTIFICATION: nonEmpty(config.google?.notificationToken) ?? "",
     TOKEN_COMPASS_SYNC: config.backend.compassToken,
   });
 }
