@@ -803,20 +803,23 @@ const createAllDayEvent = (
   index: number,
   weekStart: Date,
   dayOffset: number,
+  spanDays = 0,
 ): StoredPerfEvent => {
-  const date = new Date(weekStart);
-  date.setDate(weekStart.getDate() + dayOffset);
+  const startDate = new Date(weekStart);
+  startDate.setDate(weekStart.getDate() + dayOffset);
+  const endDate = new Date(startDate);
+  endDate.setDate(startDate.getDate() + spanDays);
 
   return {
     _id: objectIdFromNumber(10_000 + index),
     allDayOrder: index,
-    endDate: toDateOnly(date),
+    endDate: toDateOnly(endDate),
     isAllDay: true,
     isSomeday: false,
     order: index,
     origin: "compass",
     priority: "relationships",
-    startDate: toDateOnly(date),
+    startDate: toDateOnly(startDate),
     title: `Perf all-day event ${index}`,
     updatedAt: new Date().toISOString(),
     user: "perf-user",
@@ -1187,6 +1190,28 @@ const prepareSingleAllDayEventForMotion = async (
   const box = await getLocatorBox(
     eventButton,
     "Expected seeded all-day event to be visible.",
+  );
+
+  return { box, eventButton, eventSelector };
+};
+
+const prepareSingleAllDayResizeEventForMotion = async (
+  page: Page,
+  baseUrl: string,
+) => {
+  const event = createAllDayEvent(1, getPerfWeekStart(), 3, 2);
+  await prepareCalendarState(page, baseUrl, [event]);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await waitForWeekReady(page, { allDay: 1, timed: 0 });
+
+  const eventSelector = `#allDayEvents [data-event-id="${event._id}"]`;
+  const eventButton = page.locator(eventSelector);
+  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+
+  const box = await getLocatorBox(
+    eventButton,
+    "Expected seeded all-day resize event to be visible.",
   );
 
   return { box, eventButton, eventSelector };
@@ -1566,6 +1591,37 @@ const measureAllDayDragV2Sustained = async (
   return sample;
 };
 
+const measureAllDayResizeV2Sustained = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box } = await prepareSingleAllDayResizeEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
+
+  const startX = box.x + box.width - 2;
+  const startY = box.y + box.height / 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 30, startY, { steps: 4 });
+  await waitForWeekInteractionOverlay(page);
+
+  const sample = await measureAction(page, async () => {
+    await page.mouse.move(startX + 120, startY, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 60, startY, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 180, startY, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 90, startY, { steps: 24 });
+    await page.waitForTimeout(250);
+  });
+
+  await page.mouse.up();
+
+  return sample;
+};
+
 const SCENARIOS: ScenarioDefinition[] = [
   {
     isolateSamples: true,
@@ -1643,6 +1699,11 @@ const SCENARIOS: ScenarioDefinition[] = [
     isolateSamples: true,
     name: "all-day-drag-v2-sustained",
     run: measureAllDayDragV2Sustained,
+  },
+  {
+    isolateSamples: true,
+    name: "all-day-resize-v2-sustained",
+    run: measureAllDayResizeV2Sustained,
   },
 ];
 

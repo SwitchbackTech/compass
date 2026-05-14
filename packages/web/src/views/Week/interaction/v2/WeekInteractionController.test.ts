@@ -250,6 +250,36 @@ describe("WeekInteractionController", () => {
     allDay.unregister();
   });
 
+  it("owns all-day resize handles", () => {
+    const allDay = setupEligibleController(
+      {},
+      {
+        endDate: "2026-05-15",
+        isAllDay: true,
+        startDate: "2026-05-13",
+      },
+      "allDay",
+      { height: 20, left: 300, top: 20, width: 196 },
+    );
+    const resizeHandle = document.createElement("div");
+    resizeHandle.setAttribute("data-week-event-resize-handle", "endDate");
+    allDay.sourceElement.append(resizeHandle);
+
+    expect(
+      allDay.controller.handlePointerDown(
+        createPointerEvent("pointerdown", resizeHandle, 495, 30),
+      ),
+    ).toBe(true);
+    expect(allDay.controller.getSession()).toMatchObject({
+      edge: "endDate",
+      eventId: "event-1",
+      kind: "allDayResize",
+      phase: "pending",
+    });
+
+    allDay.unregister();
+  });
+
   it("returns a moved all-day event after active all-day drag release", () => {
     let frameCallback: FrameRequestCallback | null = null;
     const runFrame = (timestamp: number) => {
@@ -298,6 +328,63 @@ describe("WeekInteractionController", () => {
       eventId: "event-1",
       hasMoved: true,
       type: "allDayDragEnd",
+    });
+
+    unregister();
+  });
+
+  it("returns a resized all-day event after active all-day resize release", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      callback(timestamp);
+    };
+    const { controller, sourceElement, unregister } = setupEligibleController(
+      {
+        requestFrame: (callback) => {
+          frameCallback = callback;
+          return 1;
+        },
+      },
+      {
+        endDate: "2026-05-15",
+        isAllDay: true,
+        startDate: "2026-05-13",
+      },
+      "allDay",
+      { height: 20, left: 300, top: 20, width: 196 },
+    );
+    const resizeHandle = document.createElement("div");
+    resizeHandle.setAttribute("data-week-event-resize-handle", "endDate");
+    sourceElement.append(resizeHandle);
+
+    controller.handlePointerDown(
+      createPointerEvent("pointerdown", resizeHandle, 495, 30),
+    );
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", resizeHandle, 530, 30),
+    );
+    runFrame(16);
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", resizeHandle, 555, 30),
+    );
+    runFrame(32);
+
+    const result = controller.handlePointerUp(
+      createPointerEvent("pointerup", resizeHandle, 555, 30),
+    );
+
+    expect(result).toMatchObject({
+      event: {
+        endDate: "2026-05-16",
+        startDate: "2026-05-13",
+      },
+      eventId: "event-1",
+      hasMoved: true,
+      type: "allDayResizeEnd",
     });
 
     unregister();

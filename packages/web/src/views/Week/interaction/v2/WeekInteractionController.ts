@@ -9,6 +9,10 @@ import {
   hasAllDayDragVisualMoved,
 } from "./commit/allDayDragVisualToGridEvent";
 import {
+  allDayResizeVisualToGridEvent,
+  hasAllDayResizeVisualChanged,
+} from "./commit/allDayResizeVisualToGridEvent";
+import {
   hasTimedEventVisualChanged,
   visualDraftToGridEvent,
 } from "./commit/visualDraftToGridEvent";
@@ -31,12 +35,17 @@ import {
   createAllDayDragVisual,
   updateAllDayDragVisual,
 } from "./math/allDayDrag";
+import {
+  createAllDayResizeVisual,
+  updateAllDayResizeVisual,
+} from "./math/allDayResize";
 import { createTimedDragVisual, updateTimedDragVisual } from "./math/timedDrag";
 import {
   createTimedResizeVisual,
   updateTimedResizeVisual,
 } from "./math/timedResize";
 import { type AllDayDragVisual } from "./model/AllDayDragVisual";
+import { type AllDayResizeVisual } from "./model/AllDayResizeVisual";
 import {
   type TimedDragVisual,
   type VisualPoint,
@@ -51,9 +60,11 @@ import {
 } from "./WeekInteractionMetrics";
 import {
   type ActiveAllDayDragSession,
+  type ActiveAllDayResizeSession,
   type ActiveTimedDragSession,
   type ActiveTimedResizeSession,
   type PendingAllDayDragSession,
+  type PendingAllDayResizeSession,
   type PendingTimedDragSession,
   type PendingTimedResizeSession,
   type TimedDragActivationReason,
@@ -63,6 +74,7 @@ import {
 
 const DEFAULT_HOLD_DELAY_MS = 750;
 const DEFAULT_MOVE_THRESHOLD_PX = 25;
+const MS_PER_DAY = 24 * 60 * 60 * 1_000;
 const SMART_SCROLL_EDGE_THRESHOLD_PX = 50;
 
 type WeekInteractionControllerOptions = {
@@ -114,7 +126,12 @@ export class WeekInteractionController {
   #placeholder: SourcePlaceholder | null = null;
   #rafId: unknown = null;
   #session: WeekInteractionSession = { phase: "idle" };
-  #visual: AllDayDragVisual | TimedDragVisual | TimedResizeVisual | null = null;
+  #visual:
+    | AllDayDragVisual
+    | AllDayResizeVisual
+    | TimedDragVisual
+    | TimedResizeVisual
+    | null = null;
 
   constructor(options: WeekInteractionControllerOptions = {}) {
     this.#options = { ...defaultOptions, ...options };
@@ -126,6 +143,7 @@ export class WeekInteractionController {
     }
 
     return (
+      this.#getEligibleAllDayResize(event) !== null ||
       this.#getEligibleTimedResize(event) !== null ||
       this.#getEligibleTimedDrag(event) !== null ||
       this.#getEligibleAllDayDrag(event) !== null
@@ -133,10 +151,15 @@ export class WeekInteractionController {
   }
 
   handlePointerDown(event: PointerEvent): boolean {
-    const resize = this.#getEligibleTimedResize(event);
-    const drag = resize ? null : this.#getEligibleTimedDrag(event);
-    const allDay = resize || drag ? null : this.#getEligibleAllDayDrag(event);
-    const eligible = resize ?? drag ?? allDay;
+    const allDayResize = this.#getEligibleAllDayResize(event);
+    const resize = allDayResize ? null : this.#getEligibleTimedResize(event);
+    const drag =
+      allDayResize || resize ? null : this.#getEligibleTimedDrag(event);
+    const allDay =
+      allDayResize || resize || drag
+        ? null
+        : this.#getEligibleAllDayDrag(event);
+    const eligible = allDayResize ?? resize ?? drag ?? allDay;
 
     if (!eligible) {
       return false;
@@ -150,11 +173,13 @@ export class WeekInteractionController {
     const formOpenAtPointerDown = this.#options.isFormOpen();
     this.#session = {
       eventId: eligible.registered.event._id!,
-      ...(resize
-        ? { edge: resize.edge, kind: "timedResize" as const }
-        : allDay
-          ? { kind: "allDayDrag" as const }
-          : { kind: "timed" as const }),
+      ...(allDayResize
+        ? { edge: allDayResize.edge, kind: "allDayResize" as const }
+        : resize
+          ? { edge: resize.edge, kind: "timedResize" as const }
+          : allDay
+            ? { kind: "allDayDrag" as const }
+            : { kind: "timed" as const }),
       formEventIdAtPointerDown: formOpenAtPointerDown
         ? this.#options.getFormEventId()
         : null,
@@ -241,11 +266,13 @@ export class WeekInteractionController {
     const hadFormOpenBeforeInteraction = this.#session.formOpenAtPointerDown;
     const formEventIdAtPointerDown = this.#session.formEventIdAtPointerDown;
     const resultType =
-      this.#session.kind === "timedResize"
-        ? "timedResizeEnd"
-        : this.#session.kind === "allDayDrag"
-          ? "allDayDragEnd"
-          : "timedDragEnd";
+      this.#session.kind === "allDayResize"
+        ? "allDayResizeEnd"
+        : this.#session.kind === "timedResize"
+          ? "timedResizeEnd"
+          : this.#session.kind === "allDayDrag"
+            ? "allDayDragEnd"
+            : "timedDragEnd";
     this.#teardownActiveSession();
     this.#session = { phase: "idle" };
 
@@ -285,15 +312,18 @@ export class WeekInteractionController {
 
     const activeSession:
       | ActiveAllDayDragSession
+      | ActiveAllDayResizeSession
       | ActiveTimedDragSession
       | ActiveTimedResizeSession = {
       activatedBy,
       eventId: this.#session.eventId,
-      ...(this.#session.kind === "timedResize"
-        ? { edge: this.#session.edge, kind: "timedResize" as const }
-        : this.#session.kind === "allDayDrag"
-          ? { kind: "allDayDrag" as const }
-          : { kind: "timed" as const }),
+      ...(this.#session.kind === "allDayResize"
+        ? { edge: this.#session.edge, kind: "allDayResize" as const }
+        : this.#session.kind === "timedResize"
+          ? { edge: this.#session.edge, kind: "timedResize" as const }
+          : this.#session.kind === "allDayDrag"
+            ? { kind: "allDayDrag" as const }
+            : { kind: "timed" as const }),
       formEventIdAtPointerDown: this.#session.formEventIdAtPointerDown,
       formOpenAtPointerDown: this.#session.formOpenAtPointerDown,
       phase: "motion",
@@ -320,6 +350,7 @@ export class WeekInteractionController {
   #clearPendingTimer(
     session:
       | PendingAllDayDragSession
+      | PendingAllDayResizeSession
       | PendingTimedDragSession
       | PendingTimedResizeSession,
   ) {
@@ -364,6 +395,51 @@ export class WeekInteractionController {
       this.#options.isPendingEvent(eventId) ||
       isEdgeNavigationCandidate(registered.event) ||
       isSmartScrollCandidate(element)
+    ) {
+      return null;
+    }
+
+    return { edge, element, registered };
+  }
+
+  #getEligibleAllDayResize(event: PointerEvent) {
+    if (!this.#isEnabled()) {
+      return null;
+    }
+
+    const target = event.target instanceof Element ? event.target : null;
+    const handle =
+      target?.closest<HTMLElement>("[data-week-event-resize-handle]") ?? null;
+    const element =
+      target?.closest<HTMLElement>("[data-week-event-role='event']") ?? null;
+
+    if (!target || !handle || !element) {
+      return null;
+    }
+
+    const edge = handle.dataset.weekEventResizeHandle as
+      | "startDate"
+      | "endDate"
+      | undefined;
+    const eventId = element.dataset.weekEventId;
+    const eventKind = element.dataset.weekEventKind;
+
+    if (
+      !eventId ||
+      eventKind !== "allDay" ||
+      (edge !== "startDate" && edge !== "endDate")
+    ) {
+      return null;
+    }
+
+    const registered = this.#options.getRegisteredEvent(eventId);
+
+    if (
+      !registered ||
+      registered.kind !== "allDay" ||
+      !registered.event.isAllDay ||
+      this.#options.isPendingEvent(eventId) ||
+      isAllDayEdgeNavigationCandidate(registered.event)
     ) {
       return null;
     }
@@ -459,6 +535,7 @@ export class WeekInteractionController {
   #mountTimedDragOverlay(
     session:
       | PendingAllDayDragSession
+      | PendingAllDayResizeSession
       | PendingTimedDragSession
       | PendingTimedResizeSession,
   ) {
@@ -470,7 +547,7 @@ export class WeekInteractionController {
 
     const sourceClientRect = readElementRect(session.sourceElement);
     const layout =
-      session.kind === "allDayDrag"
+      session.kind === "allDayDrag" || session.kind === "allDayResize"
         ? buildAllDayLayoutCache()
         : buildWeekLayoutCache();
 
@@ -495,18 +572,22 @@ export class WeekInteractionController {
     this.#layout = layout;
     const visualInput = {
       dayIndex: getLocalDayIndex(registered.event.startDate),
+      endDayIndex: getAllDayInclusiveEndDayIndex(registered.event),
       endMinutes: getLocalMinutes(registered.event.endDate),
       eventId: session.eventId,
       pointerStart: { x: session.startX, y: session.startY },
       sourceRect: sourceClientRect,
+      startDayIndex: getLocalDayIndex(registered.event.startDate),
       startMinutes: getLocalMinutes(registered.event.startDate),
     };
     this.#visual =
       session.kind === "timedResize"
         ? createTimedResizeVisual({ ...visualInput, edge: session.edge })
-        : session.kind === "allDayDrag"
-          ? createAllDayDragVisual(visualInput)
-          : createTimedDragVisual(visualInput);
+        : session.kind === "allDayResize"
+          ? createAllDayResizeVisual({ ...visualInput, edge: session.edge })
+          : session.kind === "allDayDrag"
+            ? createAllDayDragVisual(visualInput)
+            : createTimedDragVisual(visualInput);
     this.#activatedAt = this.#options.now();
     this.#startMutationObserver();
 
@@ -553,6 +634,16 @@ export class WeekInteractionController {
         pointer: this.#latestPointer,
       });
       this.#overlay.updateTransform(this.#visual.transform);
+    } else if (this.#visual.type === "allDayResize") {
+      this.#visual = updateAllDayResizeVisual(this.#visual, {
+        layout: this.#layout,
+        pointer: this.#latestPointer,
+      });
+      this.#overlay.updateResize({
+        height: this.#visual.sourceRect.height,
+        transform: this.#visual.transform,
+        width: this.#visual.width,
+      });
     } else if (this.#visual.type === "timedResize") {
       this.#visual = updateTimedResizeVisual(this.#visual, {
         layout: this.#layout,
@@ -729,18 +820,30 @@ const buildAllDayLayoutCache = (): WeekLayoutCache | null => {
 
 const convertVisualToGridEvent = (
   event: Schema_GridEvent,
-  visual: AllDayDragVisual | TimedDragVisual | TimedResizeVisual,
+  visual:
+    | AllDayDragVisual
+    | AllDayResizeVisual
+    | TimedDragVisual
+    | TimedResizeVisual,
 ) =>
   visual.type === "allDayDrag"
     ? allDayDragVisualToGridEvent(event, visual)
-    : visualDraftToGridEvent(event, visual);
+    : visual.type === "allDayResize"
+      ? allDayResizeVisualToGridEvent(event, visual)
+      : visualDraftToGridEvent(event, visual);
 
 const hasVisualChanged = (
-  visual: AllDayDragVisual | TimedDragVisual | TimedResizeVisual,
+  visual:
+    | AllDayDragVisual
+    | AllDayResizeVisual
+    | TimedDragVisual
+    | TimedResizeVisual,
 ) =>
   visual.type === "allDayDrag"
     ? hasAllDayDragVisualMoved(visual)
-    : hasTimedEventVisualChanged(visual);
+    : visual.type === "allDayResize"
+      ? hasAllDayResizeVisualChanged(visual)
+      : hasTimedEventVisualChanged(visual);
 
 const getLocalMinutes = (dateString: string | undefined) => {
   const date = new Date(dateString ?? 0);
@@ -749,12 +852,54 @@ const getLocalMinutes = (dateString: string | undefined) => {
 };
 
 const getLocalDayIndex = (dateString: string | undefined) =>
-  new Date(dateString ?? 0).getDay();
+  getLocalDate(dateString).getDay();
+
+const getAllDayInclusiveEndDayIndex = (event: Schema_GridEvent) => {
+  const startDate = getLocalStartOfDay(event.startDate);
+  const endDate = getLocalStartOfDay(event.endDate);
+  const durationDays = Math.max(
+    1,
+    Math.round((endDate.getTime() - startDate.getTime()) / MS_PER_DAY),
+  );
+
+  return Math.min(6, getLocalDayIndex(event.startDate) + durationDays - 1);
+};
+
+const getLocalDate = (dateString: string | undefined) => {
+  if (!dateString) {
+    return new Date(0);
+  }
+
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+
+  if (dateOnly) {
+    return new Date(
+      Number(dateOnly[1]!),
+      Number(dateOnly[2]!) - 1,
+      Number(dateOnly[3]!),
+    );
+  }
+
+  return new Date(dateString);
+};
+
+const getLocalStartOfDay = (dateString: string | undefined) => {
+  const date = getLocalDate(dateString);
+
+  return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+};
 
 const isEdgeNavigationCandidate = (event: Schema_GridEvent) => {
   const dayIndex = getLocalDayIndex(event.startDate);
 
   return dayIndex === 0 || dayIndex === 6;
+};
+
+const isAllDayEdgeNavigationCandidate = (event: Schema_GridEvent) => {
+  const startDayIndex = getLocalDayIndex(event.startDate);
+  const endDayIndex = getAllDayInclusiveEndDayIndex(event);
+
+  return startDayIndex === 0 || endDayIndex === 6;
 };
 
 const isSmartScrollCandidate = (sourceElement: HTMLElement) => {

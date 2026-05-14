@@ -52,6 +52,9 @@ The harness runs the same seeded browser flows each time:
   - bottom-edge sustained resize
   - top-edge sustained resize
   - edge-flip resize
+- all-day V2 scenarios:
+  - sustained drag motion
+  - sustained resize motion
 
 Each scenario runs several samples and reports median time, p95 time, worst
 frame gap, and long-task count.
@@ -193,3 +196,21 @@ Use the same machine and avoid background-heavy work when comparing runs.
   `all-day-drag-v2-sustained` reported a 14.4 ms max frame gap, 0 long tasks,
   React 0, Redux 0, unexpected DOM 0, layout reads 0, save 0/0, RAF p95
   0.1 ms, and RAF max 0.3 ms.
+- 2026-05-14, `v2-all-day-resize`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T19-04-34-617Z-v2-all-day-resize.json`
+  was the first Task 12 run after moving all-day resize through the V2
+  controller. `--compare latest` was refused because `latest` used the Task 11
+  scenario shape, so the run used the explicit `v2-all-day-drag` JSON path.
+  The run did not pass because `all-day-resize-v2-sustained` recorded
+  intermittent React commits during motion.
+- 2026-05-14, `v2-all-day-resize-fixed`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T19-07-30-634Z-v2-all-day-resize-fixed.json`
+  was the rerun after suppressing the legacy resize `mousedown`. It still did
+  not pass because some legacy `mousemove` listeners could update React state
+  during the V2-owned motion session.
+- 2026-05-14, `v2-all-day-resize-suppressed-mousemove`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T19-09-23-301Z-v2-all-day-resize-suppressed-mousemove.json`
+  is the passing Task 12 run after suppressing legacy mouse events while V2
+  owns the session. `all-day-resize-v2-sustained` reported a 14.4 ms max frame
+  gap, 0 long tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save
+  0/0, RAF p95 0.1 ms, and RAF max 0.3 ms.

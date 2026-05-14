@@ -31,15 +31,20 @@ export class DragOverlay {
   updateResize({
     height,
     transform,
+    width,
   }: {
     height: number;
     transform: VisualPoint;
+    width?: number;
   }) {
     if (!this.#node) {
       return;
     }
 
     this.#node.style.height = `${height}px`;
+    if (width !== undefined) {
+      this.#node.style.width = `${width}px`;
+    }
     this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
   }
 

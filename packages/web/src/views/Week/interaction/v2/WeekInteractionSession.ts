@@ -1,4 +1,5 @@
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type AllDayResizeEdge } from "./model/AllDayResizeVisual";
 import { type TimedResizeEdge } from "./model/TimedResizeVisual";
 
 export type WeekInteractionPhase = "idle" | "pending" | "motion" | "commit";
@@ -52,6 +53,18 @@ export interface ActiveAllDayDragSession
   phase: "motion";
 }
 
+export interface PendingAllDayResizeSession
+  extends Omit<PendingTimedDragSession, "kind"> {
+  edge: AllDayResizeEdge;
+  kind: "allDayResize";
+}
+
+export interface ActiveAllDayResizeSession
+  extends Omit<PendingAllDayResizeSession, "holdTimer" | "phase"> {
+  activatedBy: TimedDragActivationReason;
+  phase: "motion";
+}
+
 export type WeekInteractionSession =
   | IdleWeekInteractionSession
   | PendingTimedDragSession
@@ -59,7 +72,9 @@ export type WeekInteractionSession =
   | PendingTimedResizeSession
   | ActiveTimedResizeSession
   | PendingAllDayDragSession
-  | ActiveAllDayDragSession;
+  | ActiveAllDayDragSession
+  | PendingAllDayResizeSession
+  | ActiveAllDayResizeSession;
 
 export type WeekInteractionPointerUpResult =
   | { event: Schema_GridEvent; eventId: string; type: "click" }
@@ -86,5 +101,13 @@ export type WeekInteractionPointerUpResult =
       eventId: string;
       hasMoved: boolean;
       type: "allDayDragEnd";
+    }
+  | {
+      event: Schema_GridEvent;
+      formEventIdAtPointerDown: string | null;
+      hadFormOpenBeforeInteraction: boolean;
+      eventId: string;
+      hasMoved: boolean;
+      type: "allDayResizeEnd";
     }
   | null;

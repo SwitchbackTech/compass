@@ -157,7 +157,9 @@ const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
             draftSlice.actions.start({
               activity: "gridClick",
               event,
-              eventType: Categories_Event.TIMED,
+              eventType: event.isAllDay
+                ? Categories_Event.ALLDAY
+                : Categories_Event.TIMED,
             }),
           );
         },
@@ -208,6 +210,24 @@ const WeekInteractionBoundaryView = ({
       event.preventDefault();
       event.stopPropagation();
     };
+    const handleMouseDown = (event: MouseEvent) => {
+      if (controller.getSession().phase === "idle") {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    };
+    const handleMouseMove = (event: MouseEvent) => {
+      if (controller.getSession().phase === "idle") {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+    };
     const handlePointerMove = (event: PointerEvent) => {
       const wasHandling = controller.isHandlingPointer(event);
       const previousSession = controller.getSession();
@@ -237,6 +257,7 @@ const WeekInteractionBoundaryView = ({
         commitAdapter.openExistingEvent(result.event);
       } else if (
         result?.type === "allDayDragEnd" ||
+        result?.type === "allDayResizeEnd" ||
         result?.type === "timedDragEnd" ||
         result?.type === "timedResizeEnd"
       ) {
@@ -255,16 +276,26 @@ const WeekInteractionBoundaryView = ({
     boundaryElement.addEventListener("pointerdown", handlePointerDown, {
       capture: true,
     });
+    boundaryElement.addEventListener("mousedown", handleMouseDown, {
+      capture: true,
+    });
     window.addEventListener("pointermove", handlePointerMove, {
       capture: true,
     });
+    window.addEventListener("mousemove", handleMouseMove, { capture: true });
     window.addEventListener("pointerup", handlePointerUp, { capture: true });
 
     return () => {
       boundaryElement.removeEventListener("pointerdown", handlePointerDown, {
         capture: true,
       });
+      boundaryElement.removeEventListener("mousedown", handleMouseDown, {
+        capture: true,
+      });
       window.removeEventListener("pointermove", handlePointerMove, {
+        capture: true,
+      });
+      window.removeEventListener("mousemove", handleMouseMove, {
         capture: true,
       });
       window.removeEventListener("pointerup", handlePointerUp, {

@@ -19,9 +19,14 @@ describe("DragOverlay", () => {
     expect(clone.style.height).toBe("40px");
     expect(clone.style.transform).toBe("translate3d(15px, 30px, 0)");
 
-    overlay.updateResize({ height: 90, transform: { x: 0, y: -30 } });
+    overlay.updateResize({
+      height: 90,
+      transform: { x: 0, y: -30 },
+      width: 180,
+    });
 
     expect(clone.style.height).toBe("90px");
+    expect(clone.style.width).toBe("180px");
     expect(clone.style.transform).toBe("translate3d(0px, -30px, 0)");
 
     overlay.unmount();

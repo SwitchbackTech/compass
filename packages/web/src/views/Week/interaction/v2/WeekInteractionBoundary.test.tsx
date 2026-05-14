@@ -67,6 +67,91 @@ describe("WeekInteractionBoundary", () => {
     expect(openExistingEvent).toHaveBeenCalledWith(event);
   });
 
+  it("suppresses legacy mousedown after the controller owns pointerdown", () => {
+    const controller = new WeekInteractionController();
+    controller.handlePointerDown = mock(() => true);
+    controller.getSession = mock(() => ({
+      eventId: "event-1",
+      formEventIdAtPointerDown: null,
+      formOpenAtPointerDown: false,
+      holdTimer: 1,
+      kind: "allDayResize" as const,
+      phase: "pending" as const,
+      pointerId: 1,
+      sourceElement: document.createElement("div"),
+      startX: 0,
+      startY: 0,
+      startedAt: 0,
+      edge: "endDate" as const,
+    })) as WeekInteractionController["getSession"];
+
+    render(
+      <WeekInteractionBoundary
+        commitAdapter={{
+          openExistingEvent: mock(),
+          submitMovedEvent: mock(),
+        }}
+        controller={controller}
+      >
+        <button type="button">Existing event</button>
+      </WeekInteractionBoundary>,
+    );
+
+    const button = screen.getByRole("button", { name: "Existing event" });
+    button.dispatchEvent(
+      new MouseEvent("pointerdown", { bubbles: true, cancelable: true }),
+    );
+    const mouseDown = new MouseEvent("mousedown", {
+      bubbles: true,
+      cancelable: true,
+    });
+    button.dispatchEvent(mouseDown);
+
+    expect(mouseDown.defaultPrevented).toBe(true);
+  });
+
+  it("suppresses legacy mousemove while the controller owns motion", () => {
+    const controller = new WeekInteractionController();
+    controller.getSession = mock(() => ({
+      activatedBy: "move" as const,
+      eventId: "event-1",
+      formEventIdAtPointerDown: null,
+      formOpenAtPointerDown: false,
+      kind: "allDayResize" as const,
+      phase: "motion" as const,
+      pointerId: 1,
+      sourceElement: document.createElement("div"),
+      startX: 0,
+      startY: 0,
+      startedAt: 0,
+      edge: "endDate" as const,
+    })) as WeekInteractionController["getSession"];
+    const legacyMouseMove = mock();
+
+    render(
+      <WeekInteractionBoundary
+        commitAdapter={{
+          openExistingEvent: mock(),
+          submitMovedEvent: mock(),
+        }}
+        controller={controller}
+      >
+        <button type="button">Existing event</button>
+      </WeekInteractionBoundary>,
+    );
+
+    window.addEventListener("mousemove", legacyMouseMove);
+    const mouseMove = new MouseEvent("mousemove", {
+      bubbles: true,
+      cancelable: true,
+    });
+    window.dispatchEvent(mouseMove);
+    window.removeEventListener("mousemove", legacyMouseMove);
+
+    expect(mouseMove.defaultPrevented).toBe(true);
+    expect(legacyMouseMove).not.toHaveBeenCalled();
+  });
+
   it("submits moved timed drag results through the commit adapter", () => {
     const event = { _id: "event-1" } as Schema_GridEvent;
     const pointerUpResult = {
@@ -76,6 +161,51 @@ describe("WeekInteractionBoundary", () => {
       hadFormOpenBeforeInteraction: false,
       hasMoved: true,
       type: "timedDragEnd",
+    } satisfies WeekInteractionPointerUpResult;
+    const controller = new WeekInteractionController();
+    controller.handlePointerDown = mock(() => true);
+    controller.isHandlingPointer = mock(() => true);
+    controller.handlePointerUp = mock(() => pointerUpResult);
+    const submitMovedEvent = mock();
+
+    render(
+      <WeekInteractionBoundary
+        commitAdapter={{
+          openExistingEvent: mock(),
+          submitMovedEvent,
+        }}
+        controller={controller}
+      >
+        <button type="button">Existing event</button>
+      </WeekInteractionBoundary>,
+    );
+
+    screen
+      .getByRole("button", { name: "Existing event" })
+      .dispatchEvent(
+        new MouseEvent("pointerdown", { bubbles: true, cancelable: true }),
+      );
+    window.dispatchEvent(
+      new MouseEvent("pointerup", { bubbles: true, cancelable: true }),
+    );
+
+    expect(submitMovedEvent).toHaveBeenCalledWith(event, {
+      hadFormOpenBeforeInteraction: false,
+    });
+  });
+
+  it("submits moved all-day resize results through the commit adapter", () => {
+    const event = {
+      _id: "event-1",
+      isAllDay: true,
+    } as Schema_GridEvent;
+    const pointerUpResult = {
+      event,
+      eventId: "event-1",
+      formEventIdAtPointerDown: null,
+      hadFormOpenBeforeInteraction: false,
+      hasMoved: true,
+      type: "allDayResizeEnd",
     } satisfies WeekInteractionPointerUpResult;
     const controller = new WeekInteractionController();
     controller.handlePointerDown = mock(() => true);
