@@ -19,7 +19,7 @@ backend:
   originsAllowed:
     - http://localhost:3000
     - http://localhost:9080
-  compassToken: REPLACE_WITH_COMPASS_TOKEN
+  compassToken: REPLACE_WITH_COMPASS_TOKEN # any string will do
 
 mongo:
   username: compass

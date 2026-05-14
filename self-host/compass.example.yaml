@@ -18,7 +18,7 @@ backend:
   apiUrl: REPLACE_WITH_YOUR_API_URL # e.g. https://cal.yourdomain.com/api
   originsAllowed:
     - REPLACE_WITH_YOUR_WEB_URL # e.g. https://cal.yourdomain.com
-  compassToken: REPLACE_WITH_COMPASS_TOKEN
+  compassToken: REPLACE_WITH_COMPASS_TOKEN # any string will do
 
 mongo:
   username: compass
