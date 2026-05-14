@@ -13,9 +13,9 @@ import {
   getGoogleAuthCallbackUrl,
 } from "@backend/auth/services/google/util/google.redirect-uri.util";
 import {
-  ENV,
+  CONFIG,
   isGoogleConfigured,
-} from "@backend/common/constants/env.constants";
+} from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 
@@ -24,9 +24,9 @@ class GoogleOAuthClient {
 
   constructor() {
     if (
-      !ENV.GOOGLE_CLIENT_ID ||
-      !ENV.GOOGLE_CLIENT_SECRET ||
-      !isGoogleConfigured(ENV)
+      !CONFIG.GOOGLE_CLIENT_ID ||
+      !CONFIG.GOOGLE_CLIENT_SECRET ||
+      !isGoogleConfigured(CONFIG)
     ) {
       throw error(
         AuthError.GoogleNotConfigured,
@@ -35,8 +35,8 @@ class GoogleOAuthClient {
     }
 
     this.oauthClient = new OAuth2Client(
-      ENV.GOOGLE_CLIENT_ID,
-      ENV.GOOGLE_CLIENT_SECRET,
+      CONFIG.GOOGLE_CLIENT_ID,
+      CONFIG.GOOGLE_CLIENT_SECRET,
       getGoogleAuthCallbackUrl(),
     );
   }

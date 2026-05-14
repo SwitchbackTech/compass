@@ -13,9 +13,9 @@ import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import {
-  ENV,
+  CONFIG,
   isGoogleConfigured,
-} from "@backend/common/constants/env.constants";
+} from "@backend/common/constants/config.constants";
 import {
   createEmailPasswordUser,
   createGoogleUser,
@@ -90,10 +90,10 @@ const googleThirdPartyOverride: NonNullable<ThirdPartyTypeInput["override"]> = {
 };
 
 const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
-  const clientId = ENV.GOOGLE_CLIENT_ID;
-  const clientSecret = ENV.GOOGLE_CLIENT_SECRET;
+  const clientId = CONFIG.GOOGLE_CLIENT_ID;
+  const clientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
 
-  if (!clientId || !clientSecret || !isGoogleConfigured(ENV)) {
+  if (!clientId || !clientSecret || !isGoogleConfigured(CONFIG)) {
     return [];
   }
 
@@ -107,13 +107,13 @@ const getThirdPartyRecipes = (): ReturnType<typeof ThirdParty.init>[] => {
   ];
 };
 
-const getSupertokensApiDomain = () => new URL(ENV.BASEURL).origin;
+const getSupertokensApiDomain = () => new URL(CONFIG.BASEURL).origin;
 
-const getSupertokensWebsiteDomain = () => new URL(ENV.FRONTEND_URL).origin;
+const getSupertokensWebsiteDomain = () => new URL(CONFIG.FRONTEND_URL).origin;
 
 const getSupertokensAllowedOrigins = () =>
-  ENV.ORIGINS_ALLOWED.length > 0
-    ? ENV.ORIGINS_ALLOWED
+  CONFIG.ORIGINS_ALLOWED.length > 0
+    ? CONFIG.ORIGINS_ALLOWED
     : [getSupertokensWebsiteDomain()];
 
 export const initSupertokens = () => {
@@ -126,8 +126,8 @@ export const initSupertokens = () => {
       websiteDomain: getSupertokensWebsiteDomain(),
     },
     supertokens: {
-      connectionURI: ENV.SUPERTOKENS_URI,
-      apiKey: ENV.SUPERTOKENS_KEY,
+      connectionURI: CONFIG.SUPERTOKENS_URI,
+      apiKey: CONFIG.SUPERTOKENS_KEY,
     },
     framework: "express",
     recipeList: [

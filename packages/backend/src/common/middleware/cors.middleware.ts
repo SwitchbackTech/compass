@@ -1,12 +1,12 @@
 import cors from "cors";
-import { ENV } from "../constants/env.constants";
+import { CONFIG } from "../constants/config.constants";
 
 const corsWhitelist = cors({
   credentials: true,
   origin: (origin, callback) => {
     if (!origin) return callback(null, true);
 
-    if (ENV.ORIGINS_ALLOWED.indexOf(origin) === -1) {
+    if (CONFIG.ORIGINS_ALLOWED.indexOf(origin) === -1) {
       const msg = `The CORS policy for this site does not allow access from ${origin}`;
       return callback(new Error(msg), false);
     }

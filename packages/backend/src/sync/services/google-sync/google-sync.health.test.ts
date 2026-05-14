@@ -9,7 +9,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
-import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import { isUsingGcalWebhookHttps } from "@backend/common/constants/config.util";
 import { isGoogleCalendarSyncHealthy } from "./google-sync.health";
 
 jest.mock("@backend/sync/services/watch/google-watch-config", () => ({

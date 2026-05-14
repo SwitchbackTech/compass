@@ -1,12 +1,12 @@
 import { Logger } from "@core/logger/winston.logger";
 import dayjs from "@core/util/date/dayjs";
 import { SYNC_BUFFER_DAYS } from "@backend/common/constants/backend.constants";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 
 const logger = Logger("app:google-watch-timing");
 
 export const getChannelExpiration = (): string => {
-  const numMin = parseInt(ENV.CHANNEL_EXPIRATION_MIN, 10);
+  const numMin = parseInt(CONFIG.CHANNEL_EXPIRATION_MIN, 10);
   const expiration = dayjs().add(numMin, "minutes");
 
   logExpirationReminder(numMin);

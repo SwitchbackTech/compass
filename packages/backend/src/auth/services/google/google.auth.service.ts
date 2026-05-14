@@ -7,7 +7,7 @@ import {
   determineGoogleAuthMode,
   parseReconnectGoogleParams,
 } from "@backend/auth/services/google/util/google.auth.util";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
@@ -36,7 +36,7 @@ function getTraceId(value: string | null | undefined): string | undefined {
     return undefined;
   }
 
-  return createHmac("sha256", ENV.TOKEN_COMPASS_SYNC)
+  return createHmac("sha256", CONFIG.TOKEN_COMPASS_SYNC)
     .update(normalizedValue)
     .digest("hex")
     .slice(0, AUTH_TRACE_ID_LENGTH);

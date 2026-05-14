@@ -98,7 +98,7 @@ export function parseCompassConfigText(
   return parsed.data;
 }
 
-export function findCompassConfigFile(
+function findCompassConfigFile(
   explicitPath = process.env["COMPASS_CONFIG_FILE"],
 ): string {
   if (explicitPath) {
@@ -114,14 +114,14 @@ export function findCompassConfigFile(
 
   if (!configPath) {
     throw new Error(
-      "Missing Compass config file. Create compass.yaml from compass.example.yaml or set COMPASS_CONFIG_FILE.",
+      "Missing Compass config file. Create compass.yaml from compass.example.yaml.",
     );
   }
 
   return configPath;
 }
 
-export function loadCompassConfigFile(filePath = findCompassConfigFile()) {
+function loadCompassConfigFile(filePath = findCompassConfigFile()) {
   return parseCompassConfigText(readFileSync(filePath, "utf8"), filePath);
 }
 

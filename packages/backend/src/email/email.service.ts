@@ -6,8 +6,7 @@ import {
   SubscriberSchema,
 } from "@core/types/email/email.types";
 import { type Schema_User } from "@core/types/user.types";
-import { ENV } from "@backend/common/constants/env.constants";
-import { isMissingUserTagId } from "@backend/common/constants/env.util";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import { EmailerError } from "@backend/common/errors/emailer/emailer.errors";
 import {
   error,
@@ -59,12 +58,12 @@ class EmailService {
 
   private static initialize() {
     if (!EmailService.headers) {
-      if (!ENV.EMAILER_SECRET) {
+      if (!CONFIG.EMAILER_SECRET) {
         throw error(EmailerError.InvalidSecret, "Did not instantiate Emailer");
       }
       EmailService.headers = {
         headers: {
-          "X-Kit-Api-Key": ENV.EMAILER_SECRET,
+          "X-Kit-Api-Key": CONFIG.EMAILER_SECRET,
           "Content-Type": "application/json",
           Accept: "application/json",
         },
@@ -76,15 +75,21 @@ class EmailService {
     user: Schema_User,
     isNewUser: boolean,
   ): Promise<void> {
-    if (isMissingUserTagId()) {
+    const isMissingValue =
+      !CONFIG.EMAILER_SECRET || !CONFIG.EMAILER_USER_TAG_ID;
+    if (isMissingValue) {
       logger.warn(
         "Did not tag subscriber due to missing EMAILER_ ENV value(s)",
       );
       return;
     }
+
     if (!isNewUser) return;
     const subscriber = mapCompassUserToEmailSubscriber(user);
-    await EmailService.addTagToSubscriber(subscriber, ENV.EMAILER_USER_TAG_ID!);
+    await EmailService.addTagToSubscriber(
+      subscriber,
+      CONFIG.EMAILER_USER_TAG_ID!,
+    );
   }
 
   static async addTagToSubscriber(

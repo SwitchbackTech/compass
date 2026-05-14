@@ -7,7 +7,7 @@ import { Logger } from "@core/logger/winston.logger";
 import { zObjectId } from "@core/types/type.utils";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
 import { type GoogleSignInSuccess } from "@backend/auth/services/google/google.auth.types";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import {
   buildResetPasswordLink,
   createGoogleSignInSuccess,
@@ -138,10 +138,10 @@ export async function sendPasswordResetEmail<
 >(input: T, originalSendEmail: (input: T) => Promise<void>): Promise<void> {
   const resetLink = buildResetPasswordLink(
     input.passwordResetLink,
-    ENV.FRONTEND_URL,
+    CONFIG.FRONTEND_URL,
   );
 
-  if (ENV.NODE_ENV === NodeEnv.Test) {
+  if (CONFIG.NODE_ENV === NodeEnv.Test) {
     logger.info(`Password reset link for ${input.user.email}: ${resetLink}`);
     return;
   }

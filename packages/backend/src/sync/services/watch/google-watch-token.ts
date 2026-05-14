@@ -1,7 +1,7 @@
 import { Logger } from "@core/logger/winston.logger";
 import { zBase64String } from "@core/types/type.utils";
 import { type ChannelToken, ChannelTokenSchema } from "@core/types/watch.types";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 
 const logger = Logger("app:google-watch-token");
 
@@ -9,7 +9,7 @@ export function encodeChannelToken(
   _channelData: Omit<ChannelToken, "token"> & { token?: string },
 ): string {
   const { token: _token, ...channelData } = _channelData;
-  const notificationToken = _token ?? ENV.TOKEN_GCAL_NOTIFICATION;
+  const notificationToken = _token ?? CONFIG.TOKEN_GCAL_NOTIFICATION;
   const _data = { token: notificationToken, ...channelData };
   const data = ChannelTokenSchema.parse(_data);
   const urlEncodeData = new URLSearchParams(data).toString();
@@ -31,7 +31,7 @@ export function decodeChannelToken(_token: string): ChannelToken | undefined {
 
     if (!success) return undefined;
 
-    if (data.token !== ENV.TOKEN_GCAL_NOTIFICATION) return undefined;
+    if (data.token !== CONFIG.TOKEN_GCAL_NOTIFICATION) return undefined;
 
     return data;
   } catch (err) {

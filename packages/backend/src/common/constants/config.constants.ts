@@ -3,18 +3,17 @@ import {
   loadCompassConfig,
   type CompassConfig,
 } from "@core/config/compass.config";
-import {
-  NodeEnv,
-  PORT_DEFAULT_BACKEND,
-  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-} from "@core/constants/core.constants";
+import { NodeEnv, PORT_DEFAULT_BACKEND } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { isDev } from "@core/util/env.util";
+import {
+  isGoogleClientIdValid,
+  isGoogleClientSecretValid,
+} from "./config.util";
 
 const logger = Logger("app:constants");
 
-const EnvSchema = z
+const ConfigSchema = z
   .object({
     BASEURL: z.string().nonempty(),
     CHANNEL_EXPIRATION_MIN: z.string().nonempty().default("10"),
@@ -43,8 +42,8 @@ const EnvSchema = z
   })
   .strict()
   .superRefine((env, context) => {
-    const hasGoogleClientId = isUsableGoogleClientId(env.GOOGLE_CLIENT_ID);
-    const hasGoogleClientSecret = isUsableGoogleClientSecret(
+    const hasGoogleClientId = isGoogleClientIdValid(env.GOOGLE_CLIENT_ID);
+    const hasGoogleClientSecret = isGoogleClientSecretValid(
       env.GOOGLE_CLIENT_SECRET,
     );
     const isGoogleConfigComplete = hasGoogleClientId && hasGoogleClientSecret;
@@ -79,27 +78,7 @@ const EnvSchema = z
     }
   });
 
-export type BackendEnv = z.infer<typeof EnvSchema>;
-
-const isUsableGoogleClientId = (clientId?: string): boolean =>
-  Boolean(
-    clientId &&
-      clientId !== "undefined" &&
-      clientId !== SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  );
-
-const isUsableGoogleClientSecret = (clientSecret?: string): boolean =>
-  Boolean(
-    clientSecret &&
-      clientSecret !== "undefined" &&
-      clientSecret !== SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-  );
-
-export const isGoogleConfigured = (
-  env: Pick<BackendEnv, "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET">,
-): boolean =>
-  isUsableGoogleClientId(env.GOOGLE_CLIENT_ID) &&
-  isUsableGoogleClientSecret(env.GOOGLE_CLIENT_SECRET);
+export type Config = z.infer<typeof ConfigSchema>;
 
 const toStr = (
   value: string | number | null | undefined,
@@ -108,14 +87,12 @@ const toStr = (
 const nonEmpty = (value: string | null | undefined): string | undefined =>
   value?.trim() ? value : undefined;
 
-// Build BackendEnv directly from the parsed CompassConfig (normal runtime).
-export function parseBackendConfig(config: CompassConfig): BackendEnv {
+function parseRawConfig(config: CompassConfig): Config {
   const nodeEnv = config.runtime.nodeEnv as NodeEnv;
 
-  return EnvSchema.parse({
+  return ConfigSchema.parse({
     BASEURL: config.urls.backendApi,
-    CHANNEL_EXPIRATION_MIN:
-      toStr(config.google?.channelExpirationMin) ?? "10",
+    CHANNEL_EXPIRATION_MIN: toStr(config.google?.channelExpirationMin) ?? "10",
     GOOGLE_CLIENT_ID: nonEmpty(config.google?.clientId),
     GOOGLE_CLIENT_SECRET: nonEmpty(config.google?.clientSecret),
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
@@ -136,14 +113,10 @@ export function parseBackendConfig(config: CompassConfig): BackendEnv {
   });
 }
 
-// Build BackendEnv from process.env — used only in test mode when no
-// COMPASS_CONFIG_FILE is set, since tests inject env vars directly.
-export function parseBackendEnv(
-  rawEnv: Record<string, string | undefined>,
-): BackendEnv {
+function parseConfig(rawEnv: Record<string, string | undefined>): Config {
   const nodeEnv = rawEnv["NODE_ENV"] as NodeEnv;
 
-  return EnvSchema.parse({
+  return ConfigSchema.parse({
     BASEURL: rawEnv["BASEURL"],
     CHANNEL_EXPIRATION_MIN: rawEnv["CHANNEL_EXPIRATION_MIN"],
     GOOGLE_CLIENT_ID: rawEnv["GOOGLE_CLIENT_ID"],
@@ -168,26 +141,19 @@ export function parseBackendEnv(
 const isTestWithoutConfig =
   process.env["NODE_ENV"] === "test" && !process.env["COMPASS_CONFIG_FILE"];
 
-let parsedEnv: BackendEnv;
+let parsedConfig: Config;
 
 try {
-  parsedEnv = isTestWithoutConfig
-    ? parseBackendEnv(process.env)
-    : parseBackendConfig(loadCompassConfig());
+  parsedConfig = isTestWithoutConfig
+    ? parseConfig(process.env)
+    : parseRawConfig(loadCompassConfig());
 } catch (error) {
-  logger.error("Exiting because a critical config value is missing or invalid:");
+  logger.error(
+    "Exiting because a critical config value is missing or invalid:",
+  );
   console.error(error);
   process.exit(1);
 }
 
-export const ENV = parsedEnv;
-export const IS_DEV = isDev(ENV.NODE_ENV);
-export const IS_GOOGLE_CONFIGURED = isGoogleConfigured(ENV);
-
-export function getApiBaseURL(): string {
-  if (!ENV.BASEURL?.trim()) {
-    throw new Error("ENV.BASEURL is not set");
-  }
-
-  return ENV.BASEURL;
-}
+export const CONFIG = parsedConfig;
+export const IS_DEV = isDev(CONFIG.NODE_ENV);

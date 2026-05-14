@@ -17,7 +17,7 @@ import { type Schema_User } from "@core/types/user.types";
 import { type Schema_Watch } from "@core/types/watch.types";
 import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { Collections } from "@backend/common/constants/collections";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 
 const logger = Logger("app:mongo.service");
 
@@ -115,7 +115,7 @@ class MongoService {
     client: MongoClient,
     useDynamicDb = false,
   ): InternalClient {
-    const db = client.db(useDynamicDb ? undefined : ENV.DB);
+    const db = client.db(useDynamicDb ? undefined : CONFIG.DB);
 
     return {
       db,
@@ -162,7 +162,7 @@ class MongoService {
   async start(useDynamicDb = false): Promise<MongoService> {
     if (this.#internalClient) return this;
 
-    const client = new MongoClient(ENV.MONGO_URI, {
+    const client = new MongoClient(CONFIG.MONGO_URI, {
       serverApi: { strict: true, version: "1" },
     });
 

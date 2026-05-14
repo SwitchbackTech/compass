@@ -1,4 +1,4 @@
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { initExpressServer } from "@backend/servers/express/express.server";
 import { logger } from "./init"; //must be first import
@@ -16,8 +16,8 @@ async function start() {
     await mongoService.start();
 
     await new Promise((resolve) =>
-      httpServer.listen(ENV.PORT, () => {
-        logger.info(`Server running on port: ${ENV.PORT}`);
+      httpServer.listen(CONFIG.PORT, () => {
+        logger.info(`Server running on port: ${CONFIG.PORT}`);
         resolve(undefined);
       }),
     );

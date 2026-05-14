@@ -1,16 +1,16 @@
 import { type Request, type Response } from "express";
 import { type AppConfig, AppConfigSchema } from "@core/types/config.types";
 import {
-  ENV,
+  CONFIG,
   isGoogleConfigured,
-} from "@backend/common/constants/env.constants";
+} from "@backend/common/constants/config.constants";
 
 class ConfigController {
   get = (_req: Request<never, AppConfig, never, never>, res: Response) => {
     res.json(
       AppConfigSchema.parse({
         google: {
-          isConfigured: isGoogleConfigured(ENV),
+          isConfigured: isGoogleConfigured(CONFIG),
         },
       }),
     );
