@@ -1,5 +1,6 @@
 import {
   ID_ALLDAY_COLUMNS,
+  ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -909,12 +910,13 @@ const buildWeekLayoutCache = (): WeekLayoutCache | null => {
   }
 
   const rect = mainGrid.getBoundingClientRect();
-  const columnWidth = rect.width / 7;
+  const columnsRect = getTimedColumnsRect() ?? rect;
+  const columnWidth = columnsRect.width / 7;
   const dayColumns: WeekDayColumnCache[] = Array.from(
     { length: 7 },
     (_, index) => ({
       index,
-      left: rect.left + columnWidth * index,
+      left: columnsRect.left + columnWidth * index,
       width: columnWidth,
     }),
   );
@@ -924,8 +926,8 @@ const buildWeekLayoutCache = (): WeekLayoutCache | null => {
     edgeNavigation: {
       bottom: rect.bottom,
       edgeThresholdPx: SMART_SCROLL_EDGE_THRESHOLD_PX,
-      left: rect.left,
-      right: rect.right,
+      left: columnsRect.left,
+      right: columnsRect.right,
       top: rect.top,
     },
     pixelsPerMinute: rect.height / (11 * 60),
@@ -940,6 +942,13 @@ const buildWeekLayoutCache = (): WeekLayoutCache | null => {
       top: rect.top,
     },
   };
+};
+
+const getTimedColumnsRect = () => {
+  const columns = document.getElementById(ID_GRID_COLUMNS_TIMED);
+  const rect = columns?.getBoundingClientRect();
+
+  return rect && rect.width > 0 ? rect : null;
 };
 
 const buildAllDayLayoutCache = (): WeekLayoutCache | null => {

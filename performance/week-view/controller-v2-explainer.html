@@ -1,0 +1,1963 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Week View Controller V2 Explainer</title>
+    <style>
+      :root {
+        --paper: #f7f3ea;
+        --paper-strong: #fffaf0;
+        --ink: #202018;
+        --muted: #605c51;
+        --line: #d8cfbd;
+        --line-strong: #94866f;
+        --blue: #245f86;
+        --blue-soft: #d7e8ee;
+        --green: #347056;
+        --green-soft: #dcead9;
+        --amber: #b4672d;
+        --amber-soft: #f3dfc7;
+        --red: #9d3d31;
+        --red-soft: #efd8d1;
+        --black: #14130f;
+        --shadow: 0 18px 50px rgb(42 34 20 / 14%);
+        --mono: "SFMono-Regular", "Consolas", "Liberation Mono", monospace;
+        --body: "Avenir Next", "Helvetica Neue", Helvetica, Arial, sans-serif;
+        --display: Georgia, "Times New Roman", serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html {
+        scroll-behavior: smooth;
+      }
+
+      body {
+        margin: 0;
+        background:
+          linear-gradient(90deg, rgb(32 32 24 / 4%) 1px, transparent 1px),
+          linear-gradient(rgb(32 32 24 / 4%) 1px, transparent 1px),
+          var(--paper);
+        background-size: 32px 32px;
+        color: var(--ink);
+        font-family: var(--body);
+        line-height: 1.55;
+      }
+
+      a {
+        color: var(--blue);
+        font-weight: 700;
+        text-decoration-thickness: 0.08em;
+        text-underline-offset: 0.18em;
+      }
+
+      a:hover {
+        color: var(--amber);
+      }
+
+      .page {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        min-height: 100vh;
+      }
+
+      .hero {
+        border-bottom: 1px solid var(--line);
+        background:
+          radial-gradient(circle at 18% 22%, rgb(36 95 134 / 12%), transparent 30%),
+          radial-gradient(circle at 88% 12%, rgb(180 103 45 / 14%), transparent 28%),
+          linear-gradient(135deg, #fffaf0 0%, #f6efe1 60%, #efe5d4 100%);
+      }
+
+      .hero-inner,
+      .main {
+        width: min(1220px, calc(100vw - 40px));
+        margin: 0 auto;
+      }
+
+      .hero-inner {
+        display: grid;
+        grid-template-columns: minmax(0, 1.1fr) minmax(320px, 0.9fr);
+        gap: 38px;
+        align-items: end;
+        padding: 58px 0 42px;
+      }
+
+      .eyebrow {
+        display: inline-flex;
+        gap: 10px;
+        align-items: center;
+        margin: 0 0 18px;
+        padding: 6px 10px;
+        border: 1px solid var(--line-strong);
+        background: rgb(255 250 240 / 72%);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      h1,
+      h2,
+      h3 {
+        margin: 0;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      h1 {
+        max-width: 820px;
+        font-family: var(--display);
+        font-size: clamp(42px, 7vw, 86px);
+        font-weight: 700;
+      }
+
+      h2 {
+        font-family: var(--display);
+        font-size: clamp(30px, 4vw, 48px);
+      }
+
+      h3 {
+        font-size: 19px;
+      }
+
+      p {
+        margin: 0;
+      }
+
+      .hero-copy {
+        max-width: 760px;
+        margin-top: 22px;
+        color: var(--muted);
+        font-size: 19px;
+      }
+
+      .hero-panel {
+        border: 1px solid var(--black);
+        background: var(--paper-strong);
+        box-shadow: 8px 8px 0 var(--black);
+      }
+
+      .panel-header {
+        display: flex;
+        justify-content: space-between;
+        gap: 16px;
+        align-items: center;
+        padding: 13px 16px;
+        border-bottom: 1px solid var(--black);
+        background: var(--black);
+        color: var(--paper-strong);
+        font-family: var(--mono);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .hero-panel-body {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--black);
+      }
+
+      .score-cell {
+        min-height: 132px;
+        padding: 16px;
+        background: var(--paper-strong);
+      }
+
+      .score-label {
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .score-value {
+        margin-top: 12px;
+        font-family: var(--display);
+        font-size: 44px;
+        line-height: 0.95;
+      }
+
+      .score-note {
+        margin-top: 10px;
+        color: var(--muted);
+        font-size: 13px;
+      }
+
+      .main {
+        display: grid;
+        grid-template-columns: 255px minmax(0, 1fr);
+        gap: 34px;
+        min-width: 0;
+        padding: 34px 0 80px;
+      }
+
+      .toc {
+        position: sticky;
+        top: 18px;
+        align-self: start;
+        min-width: 0;
+        border: 1px solid var(--line);
+        background: rgb(255 250 240 / 88%);
+        box-shadow: var(--shadow);
+      }
+
+      .toc-title {
+        padding: 14px 16px;
+        border-bottom: 1px solid var(--line);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .toc a {
+        display: block;
+        padding: 11px 16px;
+        border-bottom: 1px solid var(--line);
+        color: var(--ink);
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+      }
+
+      .toc a:last-child {
+        border-bottom: 0;
+      }
+
+      .toc a:hover {
+        background: var(--blue-soft);
+      }
+
+      .content {
+        display: grid;
+        gap: 28px;
+        min-width: 0;
+      }
+
+      .section {
+        min-width: 0;
+        padding: 30px;
+        border: 1px solid var(--line);
+        background: rgb(255 250 240 / 92%);
+        box-shadow: var(--shadow);
+      }
+
+      .section > h2 + p {
+        margin-top: 14px;
+        color: var(--muted);
+        font-size: 17px;
+      }
+
+      .section-kicker {
+        margin-bottom: 9px;
+        color: var(--amber);
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .grid-2,
+      .grid-3,
+      .grid-4 {
+        display: grid;
+        gap: 14px;
+        min-width: 0;
+        margin-top: 22px;
+      }
+
+      .grid-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .grid-3 {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .grid-4 {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .card,
+      .file-card,
+      .metric-card {
+        min-width: 0;
+        border: 1px solid var(--line);
+        background: #fffdf7;
+      }
+
+      .card {
+        padding: 18px;
+      }
+
+      .card p,
+      .file-card p,
+      .metric-card p {
+        margin-top: 9px;
+        color: var(--muted);
+      }
+
+      .tag-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 14px;
+      }
+
+      .tag {
+        display: inline-flex;
+        align-items: center;
+        min-height: 26px;
+        padding: 4px 8px;
+        border: 1px solid var(--line);
+        background: var(--paper);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+      }
+
+      .tag.good {
+        border-color: rgb(52 112 86 / 45%);
+        background: var(--green-soft);
+        color: var(--green);
+      }
+
+      .tag.warn {
+        border-color: rgb(180 103 45 / 45%);
+        background: var(--amber-soft);
+        color: var(--amber);
+      }
+
+      .tag.stop {
+        border-color: rgb(157 61 49 / 45%);
+        background: var(--red-soft);
+        color: var(--red);
+      }
+
+      .flow {
+        display: grid;
+        gap: 12px;
+        margin-top: 20px;
+      }
+
+      .flow-row {
+        display: grid;
+        grid-template-columns: 132px minmax(0, 1fr);
+        gap: 14px;
+        align-items: stretch;
+      }
+
+      .flow-label {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 76px;
+        border: 1px solid var(--black);
+        background: var(--black);
+        color: var(--paper-strong);
+        font-family: var(--mono);
+        font-size: 12px;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      .flow-track {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .flow-step {
+        position: relative;
+        min-height: 76px;
+        padding: 12px;
+        border: 1px solid var(--line);
+        background: #fffdf7;
+      }
+
+      .flow-step::after {
+        position: absolute;
+        top: 50%;
+        right: -10px;
+        width: 10px;
+        height: 1px;
+        background: var(--line-strong);
+        content: "";
+      }
+
+      .flow-step:last-child::after {
+        display: none;
+      }
+
+      .flow-step strong {
+        display: block;
+        font-size: 14px;
+      }
+
+      .flow-step span {
+        display: block;
+        margin-top: 5px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+
+      .before .flow-step {
+        background: var(--red-soft);
+      }
+
+      .after .flow-step {
+        background: var(--green-soft);
+      }
+
+      .callout {
+        margin-top: 22px;
+        padding: 18px;
+        border-left: 6px solid var(--blue);
+        background: var(--blue-soft);
+      }
+
+      .callout strong {
+        display: block;
+        margin-bottom: 6px;
+      }
+
+      .split-detail {
+        display: grid;
+        grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+        gap: 16px;
+        margin-top: 22px;
+      }
+
+      .diagram-board {
+        position: relative;
+        min-height: 440px;
+        padding: 18px;
+        border: 1px solid var(--black);
+        background:
+          linear-gradient(90deg, rgb(20 19 15 / 5%) 1px, transparent 1px),
+          linear-gradient(rgb(20 19 15 / 5%) 1px, transparent 1px),
+          #fffdf7;
+        background-size: 22px 22px;
+      }
+
+      .diagram-title {
+        font-family: var(--mono);
+        font-size: 12px;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+
+      .calendar-frame {
+        display: grid;
+        grid-template-columns: 50px repeat(7, 1fr);
+        gap: 4px;
+        margin-top: 20px;
+      }
+
+      .calendar-frame div {
+        min-height: 34px;
+        border: 1px solid var(--line);
+        background: rgb(247 243 234 / 82%);
+      }
+
+      .calendar-frame .time {
+        display: grid;
+        place-items: center;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 10px;
+      }
+
+      .calendar-frame .saved-event {
+        grid-column: 4 / span 1;
+        grid-row: 3 / span 3;
+        padding: 8px;
+        border: 2px solid var(--blue);
+        background: var(--blue-soft);
+        color: var(--blue);
+        font-size: 12px;
+        font-weight: 800;
+      }
+
+      .calendar-frame .overlay-event {
+        grid-column: 5 / span 1;
+        grid-row: 4 / span 3;
+        padding: 8px;
+        border: 2px solid var(--green);
+        background: var(--green-soft);
+        color: var(--green);
+        font-size: 12px;
+        font-weight: 800;
+        box-shadow: 6px 6px 0 rgb(52 112 86 / 22%);
+      }
+
+      .pointer-line {
+        position: absolute;
+        top: 172px;
+        left: 50%;
+        width: 164px;
+        height: 42px;
+        border-top: 2px solid var(--amber);
+        border-right: 2px solid var(--amber);
+        transform: rotate(-10deg);
+      }
+
+      .pointer-line::after {
+        position: absolute;
+        right: -7px;
+        bottom: -4px;
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        background: var(--amber);
+        content: "";
+      }
+
+      .file-card {
+        display: grid;
+        grid-template-rows: auto 1fr auto;
+        min-height: 210px;
+        padding: 17px;
+      }
+
+      .file-path {
+        margin-top: 8px;
+        color: var(--blue);
+        font-family: var(--mono);
+        font-size: 12px;
+        overflow-wrap: anywhere;
+      }
+
+      .file-role {
+        display: inline-flex;
+        align-self: start;
+        width: fit-content;
+        padding: 4px 7px;
+        border: 1px solid var(--line-strong);
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 11px;
+        text-transform: uppercase;
+      }
+
+      .timeline {
+        position: relative;
+        display: grid;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .timeline::before {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 92px;
+        width: 1px;
+        background: var(--line-strong);
+        content: "";
+      }
+
+      .timeline-item {
+        display: grid;
+        grid-template-columns: 76px minmax(0, 1fr);
+        gap: 34px;
+        align-items: start;
+      }
+
+      .commit {
+        position: relative;
+        z-index: 1;
+        padding: 5px 7px;
+        border: 1px solid var(--black);
+        background: var(--paper-strong);
+        font-family: var(--mono);
+        font-size: 11px;
+        text-align: center;
+      }
+
+      .timeline-body {
+        padding: 14px;
+        border: 1px solid var(--line);
+        background: #fffdf7;
+      }
+
+      .timeline-body p {
+        margin-top: 6px;
+        color: var(--muted);
+      }
+
+      code {
+        padding: 0.08em 0.3em;
+        border: 1px solid rgb(148 134 111 / 32%);
+        background: rgb(255 250 240 / 86%);
+        font-family: var(--mono);
+        font-size: 0.92em;
+      }
+
+      pre {
+        margin: 18px 0 0;
+        max-width: 100%;
+        padding: 16px;
+        overflow: auto;
+        border: 1px solid var(--line);
+        background: #181a18;
+        color: #f6efe1;
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 1.55;
+      }
+
+      pre code {
+        display: block;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        color: inherit;
+        font-size: inherit;
+        white-space: pre;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 22px;
+        border-collapse: collapse;
+        background: #fffdf7;
+      }
+
+      th,
+      td {
+        padding: 12px;
+        border: 1px solid var(--line);
+        text-align: left;
+        vertical-align: top;
+      }
+
+      th {
+        background: var(--black);
+        color: var(--paper-strong);
+        font-family: var(--mono);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      td {
+        color: var(--muted);
+      }
+
+      .section table td strong {
+        color: var(--ink);
+      }
+
+      .metric-card {
+        padding: 16px;
+      }
+
+      .metric-card strong {
+        display: block;
+        font-family: var(--display);
+        font-size: 30px;
+        line-height: 1;
+      }
+
+      .metric-card .metric-label {
+        margin-top: 10px;
+        color: var(--muted);
+        font-family: var(--mono);
+        font-size: 12px;
+        text-transform: uppercase;
+      }
+
+      .beginner-path {
+        counter-reset: step;
+        display: grid;
+        gap: 12px;
+        margin-top: 22px;
+      }
+
+      .beginner-step {
+        counter-increment: step;
+        display: grid;
+        grid-template-columns: 46px minmax(0, 1fr);
+        gap: 14px;
+        align-items: start;
+        padding: 14px;
+        border: 1px solid var(--line);
+        background: #fffdf7;
+      }
+
+      .beginner-step::before {
+        display: grid;
+        place-items: center;
+        width: 34px;
+        height: 34px;
+        border: 1px solid var(--black);
+        background: var(--black);
+        color: var(--paper-strong);
+        content: counter(step);
+        font-family: var(--mono);
+        font-size: 13px;
+      }
+
+      .footer {
+        padding: 28px 0 48px;
+        border-top: 1px solid var(--line);
+        color: var(--muted);
+        font-size: 13px;
+        text-align: center;
+      }
+
+      @media (max-width: 980px) {
+        .hero-inner,
+        .main {
+          width: min(100vw - 28px, 760px);
+        }
+
+        .hero-inner,
+        .main,
+        .split-detail,
+        .grid-2,
+        .grid-3,
+        .grid-4 {
+          grid-template-columns: 1fr;
+        }
+
+        .toc {
+          position: static;
+        }
+
+        .flow-row {
+          grid-template-columns: 1fr;
+        }
+
+        .flow-track {
+          grid-template-columns: 1fr;
+        }
+
+        .flow-step::after {
+          display: none;
+        }
+      }
+
+      @media (max-width: 620px) {
+        .section {
+          padding: 22px 16px;
+        }
+
+        table {
+          display: block;
+          max-width: 100%;
+          overflow-x: hidden;
+        }
+
+        thead,
+        tbody,
+        tr,
+        th,
+        td {
+          display: block;
+          width: 100%;
+        }
+
+        tr {
+          margin-bottom: 12px;
+          border: 1px solid var(--line);
+        }
+
+        th,
+        td {
+          border: 0;
+          border-bottom: 1px solid var(--line);
+        }
+
+        tr > :last-child {
+          border-bottom: 0;
+        }
+
+        .hero-panel-body {
+          grid-template-columns: 1fr;
+        }
+
+        .calendar-frame {
+          grid-template-columns: 38px repeat(7, minmax(34px, 1fr));
+          overflow: auto;
+        }
+
+        .timeline::before {
+          left: 54px;
+        }
+
+        .timeline-item {
+          grid-template-columns: 56px minmax(0, 1fr);
+          gap: 18px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <header class="hero">
+        <div class="hero-inner">
+          <div>
+            <p class="eyebrow">Compass Week View / controller-v2 branch</p>
+            <h1>Week View drag and resize now move outside React and Redux.</h1>
+            <p class="hero-copy">
+              This page explains the V2 interaction work from the ground up:
+              what was slow before, what changed, how the new controller works,
+              which files matter, what problems came up, and how the final
+              branch was verified.
+            </p>
+          </div>
+
+          <aside class="hero-panel" aria-label="Final performance summary">
+            <div class="panel-header">
+              <span>final proof</span>
+              <span>2026-05-14</span>
+            </div>
+            <div class="hero-panel-body">
+              <div class="score-cell">
+                <div class="score-label">React commits in motion</div>
+                <div class="score-value">0</div>
+                <div class="score-note">for sustained migrated motion</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-label">Redux dispatches in motion</div>
+                <div class="score-value">0</div>
+                <div class="score-note">except intentional week change</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-label">RAF p95</div>
+                <div class="score-value">0.1ms</div>
+                <div class="score-note">timed drag final suite</div>
+              </div>
+              <div class="score-cell">
+                <div class="score-label">Long tasks</div>
+                <div class="score-value">0</div>
+                <div class="score-note">in final V2 scenarios</div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </header>
+
+      <main class="main">
+        <nav class="toc" aria-label="Page sections">
+          <div class="toc-title">Read this in order</div>
+          <a href="#plain-english">1. Plain English Summary</a>
+          <a href="#glossary">2. Beginner Glossary</a>
+          <a href="#before-after">3. Before and After</a>
+          <a href="#architecture">4. Architecture Map</a>
+          <a href="#interaction-life">5. Interaction Life</a>
+          <a href="#phases">6. What Happened</a>
+          <a href="#files">7. File Guide</a>
+          <a href="#perf">8. Performance Evidence</a>
+          <a href="#verification">9. Verification</a>
+          <a href="#reading-path">10. How To Read The Code</a>
+        </nav>
+
+        <div class="content">
+          <section class="section" id="plain-english">
+            <div class="section-kicker">What changed</div>
+            <h2>The app stopped rebuilding the calendar while your pointer moves.</h2>
+            <p>
+              The old path treated dragging and resizing as a fast stream of app
+              state changes. Every little pointer move could update a draft in
+              Redux, wake up React, and redraw parts of the Week View. The new
+              path treats pointer motion like an animation: the saved calendar
+              stays still, a temporary overlay moves on top of it, and the real
+              event is saved only after the pointer is released.
+            </p>
+
+            <div class="grid-3">
+              <div class="card">
+                <h3>React now shows the stable page</h3>
+                <p>
+                  React still renders the Week View, the saved events, and the
+                  event form. During live drag/resize motion, React is no
+                  longer responsible for moving the visible event.
+                </p>
+                <div class="tag-row">
+                  <span class="tag good">stable shell</span>
+                  <span class="tag good">form preserved</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>The controller owns the live session</h3>
+                <p>
+                  The new <code>WeekInteractionController</code> watches the
+                  pointer, keeps tiny visual state, and writes movement to a DOM
+                  overlay inside one animation-frame loop.
+                </p>
+                <div class="tag-row">
+                  <span class="tag good">one RAF loop</span>
+                  <span class="tag good">small visual draft</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>Redux and saves happen after release</h3>
+                <p>
+                  Redux and the backend still own the real saved event, but only
+                  once the interaction finishes. The commit adapter preserves
+                  existing form, save, and recurring-event behavior.
+                </p>
+                <div class="tag-row">
+                  <span class="tag good">canonical state later</span>
+                  <span class="tag good">recurrence preserved</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="callout">
+              <strong>The short version</strong>
+              The visible motion is now a lightweight DOM overlay. The saved
+              calendar does not churn while your pointer moves. When you let go,
+              the controller converts the visual result into the normal event
+              shape and hands it back to the app.
+            </div>
+          </section>
+
+          <section class="section" id="glossary">
+            <div class="section-kicker">Beginner glossary</div>
+            <h2>Terms this branch uses</h2>
+            <p>
+              These are the ideas that make the performance work easier to
+              understand before opening the code.
+            </p>
+
+            <div class="grid-3">
+              <div class="card">
+                <h3>React commit</h3>
+                <p>
+                  A moment when React finishes applying UI changes. React
+                  commits are normal, but during pointer motion they can steal
+                  time from animation frames.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Redux dispatch</h3>
+                <p>
+                  A message sent to the global app store. Dispatches are normal
+                  for real app changes, but not for every pixel of drag motion.
+                </p>
+              </div>
+              <div class="card">
+                <h3>RAF</h3>
+                <p>
+                  Short for <code>requestAnimationFrame</code>. It is the
+                  browser's animation clock. V2 does pointer math and DOM writes
+                  once per frame.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Visual draft</h3>
+                <p>
+                  Tiny temporary information like "this event is 30 minutes
+                  lower" or "this all-day block is two columns wider." It is not
+                  a full calendar event object.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Overlay</h3>
+                <p>
+                  A temporary DOM element that looks like the event being moved.
+                  It sits above the saved event and is the only visible thing
+                  that moves during live motion.
+                </p>
+              </div>
+              <div class="card">
+                <h3>Canonical event</h3>
+                <p>
+                  The real saved event shape, <code>Schema_GridEvent</code>.
+                  V2 avoids using this as live-motion state, then creates it at
+                  commit time.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" id="before-after">
+            <div class="section-kicker">The performance move</div>
+            <h2>Before V2, pointer motion went through the whole app.</h2>
+            <p>
+              The core change is ownership. The question is no longer "how do we
+              optimize the old draft path?" The question is "who should own the
+              live pointer session?" V2 answers: the dedicated Week interaction
+              controller.
+            </p>
+
+            <div class="flow">
+              <div class="flow-row before">
+                <div class="flow-label">Before</div>
+                <div class="flow-track">
+                  <div class="flow-step">
+                    <strong>Pointer move</strong>
+                    <span>browser sends many move events</span>
+                  </div>
+                  <div class="flow-step">
+                    <strong>Legacy hooks</strong>
+                    <span>drag/resize path receives motion</span>
+                  </div>
+                  <div class="flow-step">
+                    <strong>Redux draft</strong>
+                    <span>draft state changes repeatedly</span>
+                  </div>
+                  <div class="flow-step">
+                    <strong>React render</strong>
+                    <span>Week UI can update during motion</span>
+                  </div>
+                  <div class="flow-step">
+                    <strong>GridDraft DOM</strong>
+                    <span>visible event follows app state</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="flow-row after">
+                <div class="flow-label">After V2</div>
+                <div class="flow-track">
+                  <div class="flow-step">
+                    <strong>Pointer down</strong>
+                    <span>boundary asks controller to own it</span>
+                  </div>
+                  <div class="flow-step">
+                    <strong>Pending session</strong>
+                    <span>clicks stay clicks until motion begins</span>
+                  </div>
+                  <div class="flow-step">
+                    <strong>One RAF loop</strong>
+                    <span>controller computes visual state</span>
+                  </div>
+                  <div class="flow-step">
+                    <strong>Overlay write</strong>
+                    <span>only transform/size changes</span>
+                  </div>
+                  <div class="flow-step">
+                    <strong>Pointer up</strong>
+                    <span>normal save/form path resumes</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="split-detail">
+              <div class="diagram-board" aria-label="Overlay movement diagram">
+                <div class="diagram-title">V2 mental model</div>
+                <div class="calendar-frame" aria-hidden="true">
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div class="time">9</div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div class="time">10</div>
+                  <div></div>
+                  <div></div>
+                  <div class="saved-event">saved event stays put</div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div class="time">11</div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div class="overlay-event">overlay moves</div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div class="time">12</div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                  <div></div>
+                </div>
+                <div class="pointer-line" aria-hidden="true"></div>
+              </div>
+
+              <div class="card">
+                <h3>The saved event is not the moving thing anymore</h3>
+                <p>
+                  The saved calendar remains React-rendered. When the controller
+                  activates, it hides or placeholders the source element, mounts
+                  an overlay, and updates that overlay directly.
+                </p>
+                <pre><code>Pointer motion:
+  event element registration
+  -> controller pending session
+  -> overlay mount
+  -> RAF visual update
+  -> overlay transform/size write
+  -> pointerup commit adapter</code></pre>
+                <p>
+                  The code for this starts in
+                  <a href="../../packages/web/src/views/Week/interaction/v2/WeekInteractionController.ts">WeekInteractionController.ts</a>
+                  around lines 125, 167, 318, 625, and 797.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" id="architecture">
+            <div class="section-kicker">Architecture map</div>
+            <h2>The new system has four main pieces.</h2>
+            <p>
+              A beginner-friendly way to read this branch is to separate the
+              work into registration, ownership, animation, and commit.
+            </p>
+
+            <div class="grid-4">
+              <div class="card">
+                <h3>1. Saved events identify themselves</h3>
+                <p>
+                  Each event DOM node registers its event id, event data, kind,
+                  and resize handles. That gives the controller a way to find the
+                  real element without React re-rendering it.
+                </p>
+                <div class="tag-row">
+                  <span class="tag">GridEvent.tsx:173</span>
+                  <span class="tag">AllDayEvent.tsx:114</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>2. Boundary captures input first</h3>
+                <p>
+                  <code>WeekInteractionBoundary</code> listens in the capture
+                  phase, asks the controller whether it owns the pointer, and
+                  suppresses the old mouse path while V2 owns motion.
+                </p>
+                <div class="tag-row">
+                  <span class="tag">Boundary.tsx:214</span>
+                  <span class="tag">Boundary.tsx:287</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>3. Controller animates the overlay</h3>
+                <p>
+                  The controller stores a tiny visual draft, schedules RAF, does
+                  math, writes transform or size to the overlay, and records
+                  performance counters.
+                </p>
+                <div class="tag-row">
+                  <span class="tag">Controller.ts:625</span>
+                  <span class="tag">Controller.ts:687</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>4. Commit adapter resumes app behavior</h3>
+                <p>
+                  Pointer-up converts the visual draft into a normal event. The
+                  adapter then opens the form, asks for recurrence scope, or
+                  submits the save exactly where the app already expects it.
+                </p>
+                <div class="tag-row">
+                  <span class="tag">Boundary.tsx:52</span>
+                  <span class="tag">Controller.ts:992</span>
+                </div>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Layer</th>
+                  <th>Owns</th>
+                  <th>Does not own anymore</th>
+                  <th>Why that matters</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>React</strong></td>
+                  <td>Saved calendar UI, event form, normal rendering.</td>
+                  <td>Per-frame event movement.</td>
+                  <td>React can stay calm while the pointer moves.</td>
+                </tr>
+                <tr>
+                  <td><strong>Redux/backend</strong></td>
+                  <td>The real saved event after commit.</td>
+                  <td>Every intermediate drag or resize position.</td>
+                  <td>Global state changes once, not dozens of times per second.</td>
+                </tr>
+                <tr>
+                  <td><strong>V2 controller</strong></td>
+                  <td>The live pointer session and visual draft.</td>
+                  <td>Long-term event truth.</td>
+                  <td>Pointer math stays local and cheap.</td>
+                </tr>
+                <tr>
+                  <td><strong>DOM overlay</strong></td>
+                  <td>The visible moving event during live motion.</td>
+                  <td>Saved event data.</td>
+                  <td>Motion becomes a direct style write, not app re-rendering.</td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section" id="interaction-life">
+            <div class="section-kicker">Interaction life cycle</div>
+            <h2>What happens from click to save</h2>
+            <p>
+              V2 keeps clicks, drags, resizes, recurrence, and form-open
+              behavior separate. That was the key to making performance better
+              without changing the product feel.
+            </p>
+
+            <div class="grid-2">
+              <div class="card">
+                <h3>Clicking an existing event</h3>
+                <p>
+                  On pointer down, the controller starts a pending session. If
+                  the pointer comes up without real movement, the controller
+                  returns a <code>click</code> result. The boundary then opens
+                  the existing event using the normal draft start path.
+                </p>
+                <pre><code>Controller.ts:263-271
+pending pointerup -> { type: "click" }
+
+Boundary.tsx:266-269
+click result -> openExistingEvent(result.event)</code></pre>
+              </div>
+
+              <div class="card">
+                <h3>Dragging or resizing</h3>
+                <p>
+                  Once the pointer moves far enough, or the hold delay finishes,
+                  the pending session becomes motion. The overlay appears, the
+                  controller writes each frame, and pointer-up returns the moved
+                  event only once.
+                </p>
+                <pre><code>Controller.ts:318-365
+pending -> motion -> scheduleFrame()
+
+Controller.ts:625-699
+one RAF loop updates visual + overlay</code></pre>
+              </div>
+
+              <div class="card">
+                <h3>Dragging while the form is open</h3>
+                <p>
+                  If the form was already open for the event, motion closes it
+                  while dragging. On release, the adapter restores the moved
+                  event into the form instead of immediately submitting.
+                </p>
+                <pre><code>Boundary.tsx:247-253
+pending -> motion and form was open
+-> close form for interaction
+
+Boundary.tsx:62-67
+submitMovedEvent restores draft + form</code></pre>
+              </div>
+
+              <div class="card">
+                <h3>Recurring events</h3>
+                <p>
+                  Recurring events do not bypass the existing recurrence
+                  decision. After pointer-up, the adapter asks for the update
+                  scope instead of saving directly.
+                </p>
+                <pre><code>Boundary.tsx:69-74
+if recurring:
+  requestUpdateScopeForDraft(event)
+else:
+  submit(event)</code></pre>
+              </div>
+
+              <div class="card">
+                <h3>Smart scroll</h3>
+                <p>
+                  Smart scroll moved into the same RAF loop as timed drag. The
+                  controller updates the scroll position and includes that scroll
+                  delta in the visual math.
+                </p>
+                <pre><code>Controller.ts:647-650
+timed drag -> applySmartScroll()
+
+Controller.ts:770-795
+scrollTop is written directly</code></pre>
+              </div>
+
+              <div class="card">
+                <h3>Drag-to-edge week navigation</h3>
+                <p>
+                  Edge navigation is also controller-owned. It watches whether
+                  the pointer dwells near the left or right edge, applies a week
+                  offset to the visual draft, and asks React for one real week
+                  change.
+                </p>
+                <pre><code>Controller.ts:717-759
+edge dwell -> applyWeekOffset()
+-> onRequestWeekNavigation(side)</code></pre>
+              </div>
+            </div>
+          </section>
+
+          <section class="section" id="phases">
+            <div class="section-kicker">What happened</div>
+            <h2>The work moved one behavior at a time.</h2>
+            <p>
+              The branch deliberately started with the smallest proof slice:
+              existing timed-event drag, same week, form closed, non-recurring,
+              not pending. Riskier cases stayed on the old path until their turn.
+            </p>
+
+            <div class="timeline">
+              <div class="timeline-item">
+                <div class="commit">f203c56b</div>
+                <div class="timeline-body">
+                  <h3>Measurement guards first</h3>
+                  <p>
+                    Added counters for React commits, Redux dispatches, DOM
+                    mutations, save requests, layout reads, frame gaps, and RAF
+                    duration. This made "smooth" measurable.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">799f6e6c</div>
+                <div class="timeline-body">
+                  <h3>Event registration</h3>
+                  <p>
+                    Saved timed and all-day event DOM nodes started registering
+                    themselves so the controller could target real elements.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">2d8cc257</div>
+                <div class="timeline-body">
+                  <h3>Passive boundary</h3>
+                  <p>
+                    The Week View got a boundary that can listen before legacy
+                    handlers, but it did not yet take over behavior.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">a6fe938a</div>
+                <div class="timeline-body">
+                  <h3>Pending timed drag</h3>
+                  <p>
+                    Added the first controller session. This was intentionally
+                    pending-only so clicks still opened the form.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">fc8dac38</div>
+                <div class="timeline-body">
+                  <h3>Timed drag overlay</h3>
+                  <p>
+                    Timed event drag began moving through the V2 overlay instead
+                    of the old live Redux draft path.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">a32345a7</div>
+                <div class="timeline-body">
+                  <h3>Commit once on release</h3>
+                  <p>
+                    Pointer-up became the handoff point from visual draft back to
+                    the normal app event shape and save behavior.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">b026dbaa</div>
+                <div class="timeline-body">
+                  <h3>Legacy fallbacks locked</h3>
+                  <p>
+                    Tests made sure edge cases still had safe paths while V2 was
+                    not yet responsible for them.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">1220cd3d</div>
+                <div class="timeline-body">
+                  <h3>Form-open drag preserved</h3>
+                  <p>
+                    Dragging with the form open was moved through V2 without
+                    losing the form behavior users already had.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">bc031e9d</div>
+                <div class="timeline-body">
+                  <h3>Recurring timed drag adapter</h3>
+                  <p>
+                    Recurring event drags now go through the controller, then
+                    return to the existing recurrence-scope decision.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">3a1cd514</div>
+                <div class="timeline-body">
+                  <h3>Timed resize migrated</h3>
+                  <p>
+                    Top-edge, bottom-edge, and edge-flip timed resize moved into
+                    the controller-owned overlay path.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">05982e5a</div>
+                <div class="timeline-body">
+                  <h3>All-day drag migrated</h3>
+                  <p>
+                    All-day movement got its own visual draft and overlay math.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">1dcd4b7a</div>
+                <div class="timeline-body">
+                  <h3>All-day resize migrated</h3>
+                  <p>
+                    Horizontal all-day resizing moved into V2. Follow-up fixes
+                    suppressed leftover legacy mouse movement and store updates
+                    during motion.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">110ed58b</div>
+                <div class="timeline-body">
+                  <h3>Smart scroll migrated</h3>
+                  <p>
+                    Timed drag near the scroll edge now scrolls inside the
+                    controller's RAF loop.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">a2f5400a</div>
+                <div class="timeline-body">
+                  <h3>Edge navigation migrated</h3>
+                  <p>
+                    Drag-to-edge week changes moved into the controller. This is
+                    the one scenario where a real week change intentionally wakes
+                    the app while the drag remains active.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">17794cd0</div>
+                <div class="timeline-body">
+                  <h3>Legacy live-motion residue removed</h3>
+                  <p>
+                    Removed saved-event live-motion paths that were no longer
+                    allowed to participate after V2 owned the complete migrated
+                    set.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="callout">
+              <strong>Important discovery during the work</strong>
+              Several runs failed before passing. One form-open run saw auth
+              cleanup dispatches during motion until the harness used the e2e
+              session-check flag. One recurring run had a React blip and passed
+              on rerun. All-day resize revealed legacy mousemove and selector
+              updates still waking React, which led to the motion-safety guards.
+            </div>
+          </section>
+
+          <section class="section" id="files">
+            <div class="section-kicker">Code atlas</div>
+            <h2>The files to know</h2>
+            <p>
+              These are the files that explain most of the branch. Paths are
+              relative to the repository root, and line numbers refer to this
+              branch when this explainer was written.
+            </p>
+
+            <div class="grid-3">
+              <article class="file-card">
+                <span class="file-role">core controller</span>
+                <h3>WeekInteractionController.ts</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/interaction/v2/WeekInteractionController.ts">packages/web/src/views/Week/interaction/v2/WeekInteractionController.ts</a>
+                </div>
+                <p>
+                  Owns pending sessions, active motion sessions, overlay mount,
+                  one RAF loop, visual draft math, smart scroll, edge dwell, and
+                  teardown. Start at lines 125, 167, 254, 318, 625, 717, 770,
+                  797, 904, and 992.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">React bridge</span>
+                <h3>WeekInteractionBoundary.tsx</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/interaction/v2/WeekInteractionBoundary.tsx">packages/web/src/views/Week/interaction/v2/WeekInteractionBoundary.tsx</a>
+                </div>
+                <p>
+                  Creates the controller, captures pointer events, suppresses
+                  old mouse handlers, records React/Redux/save counters, and
+                  commits results back to normal form/save behavior. Read lines
+                  52, 118, 133, 162, 214, 242, 261, 287, 319, and 340.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">event DOM markers</span>
+                <h3>GridEvent.tsx</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/components/Event/Grid/GridEvent/GridEvent.tsx">packages/web/src/views/Week/components/Event/Grid/GridEvent/GridEvent.tsx</a>
+                </div>
+                <p>
+                  Saved timed events register their DOM element and expose data
+                  attributes for event id, kind, role, and resize handle. Read
+                  lines 173-183 and 187-250.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">all-day DOM markers</span>
+                <h3>AllDayEvent.tsx</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/components/Grid/AllDayRow/AllDayEvent.tsx">packages/web/src/views/Week/components/Grid/AllDayRow/AllDayEvent.tsx</a>
+                </div>
+                <p>
+                  All-day events register their DOM element and expose horizontal
+                  resize handles. Read lines 114-123, 128-136, and 165-181.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">saved event rendering</span>
+                <h3>MainGridEvents.tsx</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/components/Grid/MainGrid/MainGridEvents.tsx">packages/web/src/views/Week/components/Grid/MainGrid/MainGridEvents.tsx</a>
+                </div>
+                <p>
+                  Timed saved events no longer start live drag from their old
+                  React mouse handlers. Selectors freeze during V2 motion, and
+                  old resize mousedown behavior is suppressed. See lines 28-39
+                  and 66-83.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">all-day rendering</span>
+                <h3>AllDayEvents.tsx</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/components/Grid/AllDayRow/AllDayEvents.tsx">packages/web/src/views/Week/components/Grid/AllDayRow/AllDayEvents.tsx</a>
+                </div>
+                <p>
+                  All-day saved events follow the same pattern: freeze selector
+                  equality during motion and avoid starting legacy live-motion
+                  handlers. See lines 29-40 and 66-81.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">motion safety</span>
+                <h3>motionSafeSelector.ts</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/interaction/v2/motionSafeSelector.ts">packages/web/src/views/Week/interaction/v2/motionSafeSelector.ts</a>
+                </div>
+                <p>
+                  A tiny helper that says "while V2 motion is active, treat
+                  selector output as unchanged." This prevents unrelated store
+                  changes from repainting Week event lists mid-drag.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">layout guard</span>
+                <h3>useGridLayout.ts</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/hooks/grid/useGridLayout.ts">packages/web/src/views/Week/hooks/grid/useGridLayout.ts</a>
+                </div>
+                <p>
+                  ResizeObserver measurement updates now bail out while motion
+                  is active. That protects the "no layout reads after
+                  activation" rule. See lines 37-39 and 51-94.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">background create</span>
+                <h3>MainGrid.tsx and AllDayRow.tsx</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/components/Grid/MainGrid/MainGrid.tsx">MainGrid.tsx</a>
+                  /
+                  <a href="../../packages/web/src/views/Week/components/Grid/AllDayRow/AllDayRow.tsx">AllDayRow.tsx</a>
+                </div>
+                <p>
+                  Blank-grid create behavior still uses the old draft flow, but
+                  these components now avoid subscribed draft checks where a
+                  direct store read is enough for a click. See MainGrid lines
+                  46-79 and AllDayRow lines 67-87.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">quiet timers</span>
+                <h3>NowLine.tsx and TimesColumn.tsx</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/views/Week/components/NowLine/NowLine.tsx">NowLine.tsx</a>
+                  /
+                  <a href="../../packages/web/src/views/Week/components/Grid/Columns/TimesColumn/TimesColumn.tsx">TimesColumn.tsx</a>
+                </div>
+                <p>
+                  Minute-based timer updates now skip React state changes during
+                  V2 motion. This prevents a clock tick from ruining an otherwise
+                  clean drag sample. See NowLine lines 15-25 and TimesColumn
+                  lines 15-25.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">perf harness</span>
+                <h3>week-view.perf.ts</h3>
+                <div class="file-path">
+                  <a href="../../packages/scripts/src/performance/week-view.perf.ts">packages/scripts/src/performance/week-view.perf.ts</a>
+                </div>
+                <p>
+                  Records the V2 counters and runs the named Week View
+                  scenarios. See lines 535-615 for metric extraction and
+                  1791-1857 for the V2 scenarios.
+                </p>
+              </article>
+
+              <article class="file-card">
+                <span class="file-role">perf notes</span>
+                <h3>performance/week-view/README.md</h3>
+                <div class="file-path">
+                  <a href="README.md">performance/week-view/README.md</a>
+                </div>
+                <p>
+                  The benchmark history lives here. The final entries at lines
+                  236-262 record the clean all-day resize stress run, long drag
+                  stress run, and final full-suite run.
+                </p>
+              </article>
+            </div>
+          </section>
+
+          <section class="section" id="perf">
+            <div class="section-kicker">Evidence</div>
+            <h2>The hard gates were measured, not guessed.</h2>
+            <p>
+              The final full-suite benchmark JSON is
+              <code>tmp/perf/week-view/2026-05-14T21-16-07-935Z-v2-final-clean-after-motion-safe.json</code>.
+              The notes are recorded in
+              <a href="README.md">performance/week-view/README.md</a> lines
+              249-262.
+            </p>
+
+            <div class="grid-4">
+              <div class="metric-card">
+                <strong>14.4ms</strong>
+                <div class="metric-label">timed drag max frame gap</div>
+                <p>Final sustained timed-drag scenario.</p>
+              </div>
+              <div class="metric-card">
+                <strong>0.1ms</strong>
+                <div class="metric-label">timed drag RAF p95</div>
+                <p>Well under the 2ms gate.</p>
+              </div>
+              <div class="metric-card">
+                <strong>0.6ms</strong>
+                <div class="metric-label">timed drag RAF max</div>
+                <p>Well under the 5ms gate.</p>
+              </div>
+              <div class="metric-card">
+                <strong>0</strong>
+                <div class="metric-label">long tasks</div>
+                <p>Reported across final V2 motion scenarios.</p>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>React</th>
+                  <th>Redux</th>
+                  <th>Unexpected DOM</th>
+                  <th>Layout reads</th>
+                  <th>Save during motion</th>
+                  <th>RAF p95 / max</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>timed-drag-v2-sustained</strong></td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0.1ms / 0.6ms</td>
+                </tr>
+                <tr>
+                  <td><strong>long-drag-timed-event</strong></td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>clean in final suite</td>
+                </tr>
+                <tr>
+                  <td><strong>timed resize</strong></td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>clean in final suite</td>
+                </tr>
+                <tr>
+                  <td><strong>all-day drag/resize</strong></td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>clean in final suite</td>
+                </tr>
+                <tr>
+                  <td><strong>smart-scroll-drag-v2</strong></td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>clean in final suite</td>
+                </tr>
+                <tr>
+                  <td><strong>edge-navigation-drag-v2</strong></td>
+                  <td>0</td>
+                  <td>3</td>
+                  <td>31</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0.2ms / 0.4ms</td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="callout">
+              <strong>Why edge navigation is different</strong>
+              Drag-to-edge intentionally changes the visible week while the drag
+              is active. That real week change belongs to React and Redux, so
+              the final notes call out the non-zero Redux and DOM counters as
+              expected for that one scenario.
+            </div>
+          </section>
+
+          <section class="section" id="verification">
+            <div class="section-kicker">Verification story</div>
+            <h2>What was checked before this explainer</h2>
+            <p>
+              The branch was checked with tests, type-checking, linting,
+              whitespace validation, benchmarks, React Doctor, and real Chrome
+              smoke tests on the Week View.
+            </p>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Check</th>
+                  <th>Result</th>
+                  <th>What it proved</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Focused Week V2 tests</strong></td>
+                  <td>Passed, 61 tests</td>
+                  <td>
+                    Controller, boundary, layout guards, and fallback behavior
+                    are covered by focused tests.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>bun run type-check</strong></td>
+                  <td>Passed</td>
+                  <td>Production TypeScript still compiles.</td>
+                </tr>
+                <tr>
+                  <td><strong>bun run lint</strong></td>
+                  <td>Passed</td>
+                  <td>Repo lint rules are satisfied.</td>
+                </tr>
+                <tr>
+                  <td><strong>git diff --check</strong></td>
+                  <td>Passed</td>
+                  <td>No whitespace errors in the diff.</td>
+                </tr>
+                <tr>
+                  <td><strong>bun run perf:week</strong></td>
+                  <td>Passed final suite</td>
+                  <td>The hard motion counters and frame metrics were measured.</td>
+                </tr>
+                <tr>
+                  <td><strong>bunx react-doctor@latest . --verbose --diff</strong></td>
+                  <td>Passed, final score 93/100</td>
+                  <td>
+                    React-specific review passed through the Bun route. The npm
+                    route hit <code>EOVERRIDE</code> in this repo setup.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Chrome smoke on /week</strong></td>
+                  <td>Passed</td>
+                  <td>
+                    Click existing event opens form; timed drag and resize work;
+                    all-day drag and resize work; smart scroll works; edge
+                    navigation works.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </section>
+
+          <section class="section" id="reading-path">
+            <div class="section-kicker">How to understand the code</div>
+            <h2>A beginner reading path</h2>
+            <p>
+              If you are new to this part of the codebase, this order will keep
+              the moving pieces understandable.
+            </p>
+
+            <div class="beginner-path">
+              <div class="beginner-step">
+                <div>
+                  <h3>Start with the source-of-truth plan</h3>
+                  <p>
+                    Read <a href="controller-v2-plan.md">controller-v2-plan.md</a>
+                    for the rules the branch had to obey. Focus on the ownership
+                    rule: React renders saved UI; controller owns live motion;
+                    Redux/backend resume after completion.
+                  </p>
+                </div>
+              </div>
+
+              <div class="beginner-step">
+                <div>
+                  <h3>Then open the boundary</h3>
+                  <p>
+                    In
+                    <a href="../../packages/web/src/views/Week/interaction/v2/WeekInteractionBoundary.tsx">WeekInteractionBoundary.tsx</a>,
+                    read the pointer handlers first. This file answers "how does
+                    V2 get control before the old code?"
+                  </p>
+                </div>
+              </div>
+
+              <div class="beginner-step">
+                <div>
+                  <h3>Read the controller in chunks</h3>
+                  <p>
+                    In
+                    <a href="../../packages/web/src/views/Week/interaction/v2/WeekInteractionController.ts">WeekInteractionController.ts</a>,
+                    do not read top-to-bottom at first. Read pointer down, pointer
+                    up, activation, RAF, teardown, and visual-to-event conversion.
+                  </p>
+                </div>
+              </div>
+
+              <div class="beginner-step">
+                <div>
+                  <h3>Look at event registration</h3>
+                  <p>
+                    Read the registration code in <code>GridEvent.tsx</code> and
+                    <code>AllDayEvent.tsx</code>. This explains how the
+                    controller can find saved events without asking React to move
+                    them.
+                  </p>
+                </div>
+              </div>
+
+              <div class="beginner-step">
+                <div>
+                  <h3>Read the safety guards last</h3>
+                  <p>
+                    Read <code>motionSafeSelector.ts</code>,
+                    <code>useGridLayout.ts</code>, <code>NowLine.tsx</code>, and
+                    <code>TimesColumn.tsx</code>. These are not the main feature;
+                    they keep unrelated updates from spoiling a clean drag.
+                  </p>
+                </div>
+              </div>
+
+              <div class="beginner-step">
+                <div>
+                  <h3>Use the benchmark notes as the receipts</h3>
+                  <p>
+                    Read <a href="README.md">performance/week-view/README.md</a>
+                    from the V2 entries onward. It shows which phases passed,
+                    which failed first, which JSON path was used, and why some
+                    comparisons needed an explicit saved JSON path.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div class="callout">
+              <strong>What remains deliberately legacy</strong>
+              The old draft system still exists for things that are not saved
+              event live motion, such as blank-grid create, form editing, and
+              normal draft lifecycle behavior. V2 removed the high-frequency
+              saved-event motion path, not every draft concept in the app.
+            </div>
+          </section>
+        </div>
+      </main>
+
+      <footer class="footer">
+        Created for branch <code>feature/week-view-controller-v2</code>. Source
+        plan:
+        <a href="controller-v2-plan.md">performance/week-view/controller-v2-plan.md</a>.
+      </footer>
+    </div>
+  </body>
+</html>

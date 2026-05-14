@@ -1,3 +1,4 @@
+import { ID_GRID_COLUMNS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   getRegisteredWeekEvent,
@@ -83,6 +84,79 @@ describe("WeekInteractionController", () => {
     expect(controller.getSession().phase).toBe("idle");
 
     unregister();
+  });
+
+  it("snaps the timed drag overlay to the rendered day columns", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      callback(timestamp);
+    };
+    const { controller, mainGrid, sourceElement, unregister } =
+      setupEligibleController(
+        {
+          requestFrame: (callback) => {
+            frameCallback = callback;
+            return 1;
+          },
+        },
+        {
+          endDate: "2026-05-12T11:00:00",
+          startDate: "2026-05-12T10:00:00",
+        },
+        "timed",
+        { height: 60, left: 255, top: 100, width: 90 },
+      );
+    mainGrid.getBoundingClientRect = () =>
+      ({
+        bottom: 660,
+        height: 660,
+        left: 0,
+        right: 750,
+        top: 0,
+        width: 750,
+      }) as DOMRect;
+    const timedColumns = document.createElement("div");
+    timedColumns.id = ID_GRID_COLUMNS_TIMED;
+    timedColumns.getBoundingClientRect = () =>
+      ({
+        bottom: 660,
+        height: 660,
+        left: 50,
+        right: 750,
+        top: 0,
+        width: 700,
+      }) as DOMRect;
+    document.body.append(timedColumns);
+
+    try {
+      controller.handlePointerDown(
+        createPointerEvent("pointerdown", sourceElement, 300, 120),
+      );
+      controller.handlePointerMove(
+        createPointerEvent("pointermove", sourceElement, 330, 120),
+      );
+      runFrame(16);
+      controller.handlePointerMove(
+        createPointerEvent("pointermove", sourceElement, 405, 120),
+      );
+      runFrame(32);
+
+      const overlay = document.querySelector<HTMLElement>(
+        "[data-week-interaction-overlay='true']",
+      );
+      expect(overlay?.style.transform).toBe("translate3d(100px, 0px, 0)");
+
+      controller.handlePointerUp(
+        createPointerEvent("pointerup", sourceElement, 405, 120),
+      );
+    } finally {
+      timedColumns.remove();
+      unregister();
+    }
   });
 
   it("carries form-open metadata through moved timed drag release", () => {
