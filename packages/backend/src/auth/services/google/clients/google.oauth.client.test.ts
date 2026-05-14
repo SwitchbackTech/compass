@@ -6,7 +6,7 @@ import {
   SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
 } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
-import { CONFIG as ENV } from "@backend/common/constants/config.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
 
@@ -58,8 +58,8 @@ describe("GoogleOAuthClient", () => {
     const client = new GoogleOAuthClient();
 
     expect(OAuth2Client).toHaveBeenCalledWith(
-      ENV.GOOGLE_CLIENT_ID,
-      ENV.GOOGLE_CLIENT_SECRET,
+      CONFIG.GOOGLE_CLIENT_ID,
+      CONFIG.GOOGLE_CLIENT_SECRET,
       "http://localhost:9080/auth/google/callback",
     );
     expect(client.getGcalClient()).toBe(gcalClient);
@@ -70,18 +70,18 @@ describe("GoogleOAuthClient", () => {
   });
 
   it("throws when self-host placeholder credentials are configured", () => {
-    const originalClientId = ENV.GOOGLE_CLIENT_ID;
-    const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
-    ENV.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
-    ENV.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
+    const originalClientId = CONFIG.GOOGLE_CLIENT_ID;
+    const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+    CONFIG.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
+    CONFIG.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
 
     try {
       expect(() => new GoogleOAuthClient()).toThrow(
         AuthError.GoogleNotConfigured.description,
       );
     } finally {
-      ENV.GOOGLE_CLIENT_ID = originalClientId;
-      ENV.GOOGLE_CLIENT_SECRET = originalClientSecret;
+      CONFIG.GOOGLE_CLIENT_ID = originalClientId;
+      CONFIG.GOOGLE_CLIENT_SECRET = originalClientSecret;
     }
   });
 
