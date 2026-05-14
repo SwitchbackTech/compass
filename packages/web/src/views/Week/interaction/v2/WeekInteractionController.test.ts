@@ -204,7 +204,72 @@ describe("WeekInteractionController", () => {
     recurring.unregister();
   });
 
-  it("falls through for pending, all-day, resize, and unregistered targets", () => {
+  it("owns timed resize handles", () => {
+    const resize = setupEligibleController();
+    const resizeHandle = document.createElement("div");
+    resizeHandle.setAttribute("data-week-event-resize-handle", "endDate");
+    resize.sourceElement.append(resizeHandle);
+
+    expect(
+      resize.controller.handlePointerDown(
+        createPointerEvent("pointerdown", resizeHandle, 100, 100),
+      ),
+    ).toBe(true);
+    expect(resize.controller.getSession()).toMatchObject({
+      edge: "endDate",
+      eventId: "event-1",
+      kind: "timedResize",
+      phase: "pending",
+    });
+
+    resize.unregister();
+  });
+
+  it("returns a resized event after active timed resize release", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      callback(timestamp);
+    };
+    const { controller, sourceElement, unregister } = setupEligibleController({
+      requestFrame: (callback) => {
+        frameCallback = callback;
+        return 1;
+      },
+    });
+    const resizeHandle = document.createElement("div");
+    resizeHandle.setAttribute("data-week-event-resize-handle", "endDate");
+    sourceElement.append(resizeHandle);
+
+    controller.handlePointerDown(
+      createPointerEvent("pointerdown", resizeHandle, 250, 160),
+    );
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", resizeHandle, 250, 190),
+    );
+    runFrame(16);
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", resizeHandle, 250, 220),
+    );
+    runFrame(32);
+
+    const result = controller.handlePointerUp(
+      createPointerEvent("pointerup", resizeHandle, 250, 220),
+    );
+
+    expect(result).toMatchObject({
+      eventId: "event-1",
+      hasMoved: true,
+      type: "timedResizeEnd",
+    });
+
+    unregister();
+  });
+
+  it("falls through for pending, all-day, and unregistered targets", () => {
     const pending = setupEligibleController({
       isPendingEvent: () => true,
     });
@@ -222,17 +287,6 @@ describe("WeekInteractionController", () => {
       ),
     ).toBe(false);
     allDay.unregister();
-
-    const resize = setupEligibleController();
-    const resizeHandle = document.createElement("div");
-    resizeHandle.setAttribute("data-week-event-resize-handle", "endDate");
-    resize.sourceElement.append(resizeHandle);
-    expect(
-      resize.controller.handlePointerDown(
-        createPointerEvent("pointerdown", resizeHandle, 100, 100),
-      ),
-    ).toBe(false);
-    resize.unregister();
 
     const unregistered = document.createElement("div");
     unregistered.setAttribute("data-week-event-id", "missing-event");

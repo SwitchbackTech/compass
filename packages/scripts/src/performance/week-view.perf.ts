@@ -1422,6 +1422,97 @@ const measureResizeJitterTimedEvent = async (
   return sample;
 };
 
+const measureTimedResizeV2SustainedBottom = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box } = await prepareSingleTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
+
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height - 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX, startY + 30, { steps: 4 });
+  await waitForWeekInteractionOverlay(page);
+
+  const sample = await measureAction(page, async () => {
+    await page.mouse.move(startX, startY + 120, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX, startY + 60, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX, startY + 150, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX, startY + 90, { steps: 24 });
+    await page.waitForTimeout(250);
+  });
+
+  await page.mouse.up();
+
+  return sample;
+};
+
+const measureTimedResizeV2SustainedTop = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box } = await prepareSingleTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
+
+  const startX = box.x + box.width / 2;
+  const startY = box.y + 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX, startY - 30, { steps: 4 });
+  await waitForWeekInteractionOverlay(page);
+
+  const sample = await measureAction(page, async () => {
+    await page.mouse.move(startX, startY - 90, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX, startY - 30, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX, startY - 120, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX, startY - 60, { steps: 24 });
+    await page.waitForTimeout(250);
+  });
+
+  await page.mouse.up();
+
+  return sample;
+};
+
+const measureTimedResizeV2EdgeFlip = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box } = await prepareSingleTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
+
+  const startX = box.x + box.width / 2;
+  const startY = box.y + 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX, startY + 30, { steps: 4 });
+  await waitForWeekInteractionOverlay(page);
+
+  const sample = await measureAction(page, async () => {
+    await page.mouse.move(startX, startY + box.height + 90, { steps: 32 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX, startY + 20, { steps: 32 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX, startY + box.height + 120, { steps: 32 });
+    await page.waitForTimeout(250);
+  });
+
+  await page.mouse.up();
+
+  return sample;
+};
+
 const SCENARIOS: ScenarioDefinition[] = [
   {
     isolateSamples: true,
@@ -1479,6 +1570,21 @@ const SCENARIOS: ScenarioDefinition[] = [
     isolateSamples: true,
     name: "resize-jitter-timed-event",
     run: measureResizeJitterTimedEvent,
+  },
+  {
+    isolateSamples: true,
+    name: "timed-resize-v2-sustained-bottom",
+    run: measureTimedResizeV2SustainedBottom,
+  },
+  {
+    isolateSamples: true,
+    name: "timed-resize-v2-sustained-top",
+    run: measureTimedResizeV2SustainedTop,
+  },
+  {
+    isolateSamples: true,
+    name: "timed-resize-v2-edge-flip",
+    run: measureTimedResizeV2EdgeFlip,
   },
 ];
 

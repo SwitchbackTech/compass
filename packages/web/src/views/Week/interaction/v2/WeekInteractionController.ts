@@ -2,7 +2,7 @@ import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 import {
-  hasTimedDragVisualMoved,
+  hasTimedEventVisualChanged,
   visualDraftToGridEvent,
 } from "./commit/visualDraftToGridEvent";
 import { cloneGridEventNode } from "./dom/cloneGridEventNode";
@@ -22,16 +22,26 @@ import {
 } from "./geometry/WeekLayoutCache";
 import { createTimedDragVisual, updateTimedDragVisual } from "./math/timedDrag";
 import {
+  createTimedResizeVisual,
+  updateTimedResizeVisual,
+} from "./math/timedResize";
+import {
   type TimedDragVisual,
   type VisualPoint,
 } from "./model/TimedDragVisual";
+import {
+  type TimedResizeEdge,
+  type TimedResizeVisual,
+} from "./model/TimedResizeVisual";
 import {
   createWeekInteractionMetrics,
   type WeekInteractionMetrics,
 } from "./WeekInteractionMetrics";
 import {
   type ActiveTimedDragSession,
+  type ActiveTimedResizeSession,
   type PendingTimedDragSession,
+  type PendingTimedResizeSession,
   type TimedDragActivationReason,
   type WeekInteractionPointerUpResult,
   type WeekInteractionSession,
@@ -90,7 +100,7 @@ export class WeekInteractionController {
   #placeholder: SourcePlaceholder | null = null;
   #rafId: unknown = null;
   #session: WeekInteractionSession = { phase: "idle" };
-  #visual: TimedDragVisual | null = null;
+  #visual: TimedDragVisual | TimedResizeVisual | null = null;
 
   constructor(options: WeekInteractionControllerOptions = {}) {
     this.#options = { ...defaultOptions, ...options };
@@ -101,11 +111,16 @@ export class WeekInteractionController {
       return false;
     }
 
-    return this.#getEligibleTimedDrag(event) !== null;
+    return (
+      this.#getEligibleTimedResize(event) !== null ||
+      this.#getEligibleTimedDrag(event) !== null
+    );
   }
 
   handlePointerDown(event: PointerEvent): boolean {
-    const eligible = this.#getEligibleTimedDrag(event);
+    const resize = this.#getEligibleTimedResize(event);
+    const drag = resize ? null : this.#getEligibleTimedDrag(event);
+    const eligible = resize ?? drag;
 
     if (!eligible) {
       return false;
@@ -119,12 +134,14 @@ export class WeekInteractionController {
     const formOpenAtPointerDown = this.#options.isFormOpen();
     this.#session = {
       eventId: eligible.registered.event._id!,
+      ...(resize
+        ? { edge: resize.edge, kind: "timedResize" as const }
+        : { kind: "timed" as const }),
       formEventIdAtPointerDown: formOpenAtPointerDown
         ? this.#options.getFormEventId()
         : null,
       formOpenAtPointerDown,
       holdTimer,
-      kind: "timed",
       phase: "pending",
       pointerId: event.pointerId,
       sourceElement: eligible.element,
@@ -202,9 +219,11 @@ export class WeekInteractionController {
       registered && visual
         ? visualDraftToGridEvent(registered.event, visual)
         : null;
-    const hasMoved = visual ? hasTimedDragVisualMoved(visual) : false;
+    const hasMoved = visual ? hasTimedEventVisualChanged(visual) : false;
     const hadFormOpenBeforeInteraction = this.#session.formOpenAtPointerDown;
     const formEventIdAtPointerDown = this.#session.formEventIdAtPointerDown;
+    const resultType =
+      this.#session.kind === "timedResize" ? "timedResizeEnd" : "timedDragEnd";
     this.#teardownActiveSession();
     this.#session = { phase: "idle" };
 
@@ -215,7 +234,7 @@ export class WeekInteractionController {
           formEventIdAtPointerDown,
           hadFormOpenBeforeInteraction,
           hasMoved,
-          type: "timedDragEnd",
+          type: resultType,
         }
       : null;
   }
@@ -242,12 +261,14 @@ export class WeekInteractionController {
       return;
     }
 
-    const activeSession: ActiveTimedDragSession = {
+    const activeSession: ActiveTimedDragSession | ActiveTimedResizeSession = {
       activatedBy,
       eventId: this.#session.eventId,
+      ...(this.#session.kind === "timedResize"
+        ? { edge: this.#session.edge, kind: "timedResize" as const }
+        : { kind: "timed" as const }),
       formEventIdAtPointerDown: this.#session.formEventIdAtPointerDown,
       formOpenAtPointerDown: this.#session.formOpenAtPointerDown,
-      kind: this.#session.kind,
       phase: "motion",
       pointerId: this.#session.pointerId,
       sourceElement: this.#session.sourceElement,
@@ -269,8 +290,55 @@ export class WeekInteractionController {
     this.#scheduleFrame();
   }
 
-  #clearPendingTimer(session: PendingTimedDragSession) {
+  #clearPendingTimer(
+    session: PendingTimedDragSession | PendingTimedResizeSession,
+  ) {
     this.#options.clearTimer(session.holdTimer);
+  }
+
+  #getEligibleTimedResize(event: PointerEvent) {
+    if (!this.#isEnabled()) {
+      return null;
+    }
+
+    const target = event.target instanceof Element ? event.target : null;
+    const handle =
+      target?.closest<HTMLElement>("[data-week-event-resize-handle]") ?? null;
+    const element =
+      target?.closest<HTMLElement>("[data-week-event-role='event']") ?? null;
+
+    if (!target || !handle || !element) {
+      return null;
+    }
+
+    const edge = handle.dataset.weekEventResizeHandle as
+      | TimedResizeEdge
+      | undefined;
+    const eventId = element.dataset.weekEventId;
+    const eventKind = element.dataset.weekEventKind;
+
+    if (
+      !eventId ||
+      eventKind !== "timed" ||
+      (edge !== "startDate" && edge !== "endDate")
+    ) {
+      return null;
+    }
+
+    const registered = this.#options.getRegisteredEvent(eventId);
+
+    if (
+      !registered ||
+      registered.kind !== "timed" ||
+      registered.event.isAllDay ||
+      this.#options.isPendingEvent(eventId) ||
+      isEdgeNavigationCandidate(registered.event) ||
+      isSmartScrollCandidate(element)
+    ) {
+      return null;
+    }
+
+    return { edge, element, registered };
   }
 
   #getEligibleTimedDrag(event: PointerEvent) {
@@ -319,7 +387,9 @@ export class WeekInteractionController {
     return typeof isEnabled === "function" ? isEnabled() : isEnabled;
   }
 
-  #mountTimedDragOverlay(session: PendingTimedDragSession) {
+  #mountTimedDragOverlay(
+    session: PendingTimedDragSession | PendingTimedResizeSession,
+  ) {
     const registered = this.#options.getRegisteredEvent(session.eventId);
 
     if (!registered) {
@@ -348,14 +418,18 @@ export class WeekInteractionController {
     this.#placeholder = markSourcePlaceholder(session.sourceElement);
     this.#overlay = overlay;
     this.#layout = layout;
-    this.#visual = createTimedDragVisual({
+    const visualInput = {
       dayIndex: getLocalDayIndex(registered.event.startDate),
       endMinutes: getLocalMinutes(registered.event.endDate),
       eventId: session.eventId,
       pointerStart: { x: session.startX, y: session.startY },
       sourceRect: sourceClientRect,
       startMinutes: getLocalMinutes(registered.event.startDate),
-    });
+    };
+    this.#visual =
+      session.kind === "timedResize"
+        ? createTimedResizeVisual({ ...visualInput, edge: session.edge })
+        : createTimedDragVisual(visualInput);
     this.#activatedAt = this.#options.now();
     this.#startMutationObserver();
 
@@ -396,11 +470,22 @@ export class WeekInteractionController {
     }
     this.#lastFrameAt = timestamp;
 
-    this.#visual = updateTimedDragVisual(this.#visual, {
-      layout: this.#layout,
-      pointer: this.#latestPointer,
-    });
-    this.#overlay.updateTransform(this.#visual.transform);
+    if (this.#visual.type === "timedResize") {
+      this.#visual = updateTimedResizeVisual(this.#visual, {
+        layout: this.#layout,
+        pointer: this.#latestPointer,
+      });
+      this.#overlay.updateResize({
+        height: this.#visual.durationMinutes * this.#layout.pixelsPerMinute,
+        transform: this.#visual.transform,
+      });
+    } else {
+      this.#visual = updateTimedDragVisual(this.#visual, {
+        layout: this.#layout,
+        pointer: this.#latestPointer,
+      });
+      this.#overlay.updateTransform(this.#visual.transform);
+    }
 
     if (metrics) {
       metrics.rafCount += 1;

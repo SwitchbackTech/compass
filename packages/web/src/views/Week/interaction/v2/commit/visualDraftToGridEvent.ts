@@ -1,17 +1,26 @@
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type TimedDragVisual } from "../model/TimedDragVisual";
+import { type TimedResizeVisual } from "../model/TimedResizeVisual";
+
+type TimedEventVisual = TimedDragVisual | TimedResizeVisual;
 
 export const hasTimedDragVisualMoved = (visual: TimedDragVisual) =>
-  visual.dayIndex !== visual.initialDayIndex ||
+  hasTimedEventVisualChanged(visual);
+
+export const hasTimedEventVisualChanged = (visual: TimedEventVisual) =>
+  ("initialDayIndex" in visual
+    ? visual.dayIndex !== visual.initialDayIndex
+    : false) ||
   visual.startMinutes !== visual.initialStartMinutes ||
   visual.endMinutes !== visual.initialEndMinutes;
 
 export const visualDraftToGridEvent = (
   event: Schema_GridEvent,
-  visual: TimedDragVisual,
+  visual: TimedEventVisual,
 ): Schema_GridEvent => {
-  const dayDelta = visual.dayIndex - visual.initialDayIndex;
+  const dayDelta =
+    "initialDayIndex" in visual ? visual.dayIndex - visual.initialDayIndex : 0;
   const movedDay = dayjs(event.startDate).add(dayDelta, "day").startOf("day");
 
   return {

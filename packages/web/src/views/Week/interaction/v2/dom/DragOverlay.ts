@@ -28,6 +28,21 @@ export class DragOverlay {
     this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
   }
 
+  updateResize({
+    height,
+    transform,
+  }: {
+    height: number;
+    transform: VisualPoint;
+  }) {
+    if (!this.#node) {
+      return;
+    }
+
+    this.#node.style.height = `${height}px`;
+    this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
+  }
+
   unmount() {
     this.#node?.remove();
     this.#node = null;

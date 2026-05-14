@@ -48,6 +48,10 @@ The harness runs the same seeded browser flows each time:
   - first visual frame
   - sustained drag motion
   - pointerup commit
+- timed-resize V2 scenarios:
+  - bottom-edge sustained resize
+  - top-edge sustained resize
+  - edge-flip resize
 
 Each scenario runs several samples and reports median time, p95 time, worst
 frame gap, and long-task count.
@@ -171,3 +175,13 @@ Use the same machine and avoid background-heavy work when comparing runs.
   `timed-drag-v2-pointerup-commit` reported a 15.4 ms max frame gap, 0 long
   tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save 0/1, RAF p95
   0.2 ms, and RAF max 0.2 ms.
+- 2026-05-14, `v2-timed-resize`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T18-46-59-672Z-v2-timed-resize.json`
+  recorded Task 10 after moving timed resize through the V2 controller.
+  `--compare latest` was refused because `latest` used the Task 9 scenario
+  shape, so the run used the explicit `v2-recurring-timed-drag-adapter-rerun`
+  JSON path. `input-baseline` reported a 15.3 ms max frame gap. Bottom-edge,
+  top-edge, and edge-flip resize each reported a 15.4 ms max frame gap, 0 long
+  tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, and save 0/0.
+  RAF p95/max were 0.1/0.2 ms for bottom resize, 0.2/0.3 ms for top resize,
+  and 0.1/0.2 ms for edge flip.

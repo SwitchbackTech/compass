@@ -234,6 +234,7 @@ const GridEventBase = (
               )}
             {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
             <div
+              data-week-event-resize-handle="startDate"
               style={scalerStyle({ top: "-0.25px" })}
               onMouseDown={(e) => {
                 onScalerMouseDown(event, e, "startDate");
@@ -241,6 +242,7 @@ const GridEventBase = (
             />
             {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
             <div
+              data-week-event-resize-handle="endDate"
               style={scalerStyle({ bottom: "-0.25px" })}
               onMouseDown={(e) => {
                 onScalerMouseDown(event, e, "endDate");

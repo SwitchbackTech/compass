@@ -1,4 +1,5 @@
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type TimedResizeEdge } from "./model/TimedResizeVisual";
 
 export type WeekInteractionPhase = "idle" | "pending" | "motion" | "commit";
 
@@ -28,10 +29,24 @@ export interface ActiveTimedDragSession
   phase: "motion";
 }
 
+export interface PendingTimedResizeSession
+  extends Omit<PendingTimedDragSession, "kind"> {
+  edge: TimedResizeEdge;
+  kind: "timedResize";
+}
+
+export interface ActiveTimedResizeSession
+  extends Omit<PendingTimedResizeSession, "holdTimer" | "phase"> {
+  activatedBy: TimedDragActivationReason;
+  phase: "motion";
+}
+
 export type WeekInteractionSession =
   | IdleWeekInteractionSession
   | PendingTimedDragSession
-  | ActiveTimedDragSession;
+  | ActiveTimedDragSession
+  | PendingTimedResizeSession
+  | ActiveTimedResizeSession;
 
 export type WeekInteractionPointerUpResult =
   | { event: Schema_GridEvent; eventId: string; type: "click" }
@@ -42,5 +57,13 @@ export type WeekInteractionPointerUpResult =
       eventId: string;
       hasMoved: boolean;
       type: "timedDragEnd";
+    }
+  | {
+      event: Schema_GridEvent;
+      formEventIdAtPointerDown: string | null;
+      hadFormOpenBeforeInteraction: boolean;
+      eventId: string;
+      hasMoved: boolean;
+      type: "timedResizeEnd";
     }
   | null;

@@ -235,7 +235,10 @@ const WeekInteractionBoundaryView = ({
       const result = controller.handlePointerUp(event);
       if (result?.type === "click") {
         commitAdapter.openExistingEvent(result.event);
-      } else if (result?.type === "timedDragEnd") {
+      } else if (
+        result?.type === "timedDragEnd" ||
+        result?.type === "timedResizeEnd"
+      ) {
         if (result.hasMoved) {
           commitAdapter.submitMovedEvent(result.event, {
             hadFormOpenBeforeInteraction: result.hadFormOpenBeforeInteraction,
