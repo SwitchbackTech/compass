@@ -34,6 +34,11 @@ export const useDraftConfirmation = ({
     [finalDraft, submit, discard, deleteEvent],
   );
 
+  const requestUpdateScopeForDraft = useCallback((draft: Schema_GridEvent) => {
+    setFinalDraft(draft);
+    setRecurrenceUpdateScopeDialogOpen(true);
+  }, []);
+
   const onSubmit = useCallback(
     async (_draft: Schema_GridEvent) => {
       const rule = _draft.recurrence?.rule;
@@ -88,5 +93,6 @@ export const useDraftConfirmation = ({
     onSubmit,
     onDelete,
     onUpdateScopeChange,
+    requestUpdateScopeForDraft,
   };
 };

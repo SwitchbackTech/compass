@@ -1,6 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { WeekInteractionBoundary } from "./WeekInteractionBoundary";
+import {
+  createWeekInteractionCommitAdapter,
+  WeekInteractionBoundary,
+} from "./WeekInteractionBoundary";
 import { WeekInteractionController } from "./WeekInteractionController";
 import { type WeekInteractionPointerUpResult } from "./WeekInteractionSession";
 import { describe, expect, it, mock } from "bun:test";
@@ -193,5 +196,46 @@ describe("WeekInteractionBoundary", () => {
     expect(submitMovedEvent).toHaveBeenCalledWith(event, {
       hadFormOpenBeforeInteraction: true,
     });
+  });
+
+  it("routes recurring moved events to the existing recurrence scope flow", () => {
+    const event = {
+      _id: "event-1",
+      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
+    } as Schema_GridEvent;
+    const requestUpdateScopeForDraft = mock();
+    const submit = mock();
+    const adapter = createWeekInteractionCommitAdapter({
+      closeForm: mock(),
+      dispatchStart: mock(),
+      requestUpdateScopeForDraft,
+      setDraft: mock(),
+      setIsFormOpen: mock(),
+      submit,
+    });
+
+    adapter.submitMovedEvent(event, { hadFormOpenBeforeInteraction: false });
+
+    expect(requestUpdateScopeForDraft).toHaveBeenCalledWith(event);
+    expect(submit).not.toHaveBeenCalled();
+  });
+
+  it("submits non-recurring moved events without opening recurrence scope", () => {
+    const event = { _id: "event-1" } as Schema_GridEvent;
+    const requestUpdateScopeForDraft = mock();
+    const submit = mock();
+    const adapter = createWeekInteractionCommitAdapter({
+      closeForm: mock(),
+      dispatchStart: mock(),
+      requestUpdateScopeForDraft,
+      setDraft: mock(),
+      setIsFormOpen: mock(),
+      submit,
+    });
+
+    adapter.submitMovedEvent(event, { hadFormOpenBeforeInteraction: false });
+
+    expect(submit).toHaveBeenCalledWith(event);
+    expect(requestUpdateScopeForDraft).not.toHaveBeenCalled();
   });
 });

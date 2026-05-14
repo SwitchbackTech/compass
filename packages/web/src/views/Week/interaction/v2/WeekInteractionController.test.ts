@@ -189,18 +189,22 @@ describe("WeekInteractionController", () => {
     unregister();
   });
 
-  it("falls through for recurring, pending, all-day, resize, and unregistered targets", () => {
+  it("owns recurring timed drags so the boundary can route the recurrence scope flow", () => {
     const recurring = setupEligibleController(
       {},
       { recurrence: { rule: ["RRULE:FREQ=WEEKLY"] } },
     );
+
     expect(
       recurring.controller.handlePointerDown(
         createPointerEvent("pointerdown", recurring.sourceElement, 100, 100),
       ),
-    ).toBe(false);
-    recurring.unregister();
+    ).toBe(true);
 
+    recurring.unregister();
+  });
+
+  it("falls through for pending, all-day, resize, and unregistered targets", () => {
     const pending = setupEligibleController({
       isPendingEvent: () => true,
     });

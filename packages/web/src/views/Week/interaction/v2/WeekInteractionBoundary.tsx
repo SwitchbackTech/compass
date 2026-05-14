@@ -38,6 +38,41 @@ const noopCommitAdapter: WeekInteractionCommitAdapter = {
   submitMovedEvent: () => {},
 };
 
+interface CreateCommitAdapterInput {
+  closeForm: () => void;
+  dispatchStart: (event: Schema_GridEvent) => void;
+  requestUpdateScopeForDraft: (event: Schema_GridEvent) => void;
+  setDraft: (event: Schema_GridEvent) => void;
+  setIsFormOpen: (isOpen: boolean) => void;
+  submit: (event: Schema_GridEvent) => void;
+}
+
+export const createWeekInteractionCommitAdapter = ({
+  closeForm,
+  dispatchStart,
+  requestUpdateScopeForDraft,
+  setDraft,
+  setIsFormOpen,
+  submit,
+}: CreateCommitAdapterInput): WeekInteractionCommitAdapter => ({
+  closeFormForInteraction: closeForm,
+  openExistingEvent: dispatchStart,
+  submitMovedEvent: (event, meta) => {
+    if (meta.hadFormOpenBeforeInteraction) {
+      setDraft(event);
+      setIsFormOpen(true);
+      return;
+    }
+
+    if (isRecurringEvent(event)) {
+      requestUpdateScopeForDraft(event);
+      return;
+    }
+
+    submit(event);
+  },
+});
+
 export const WeekInteractionBoundary = ({
   children,
   commitAdapter,
@@ -63,7 +98,7 @@ export const WeekInteractionBoundary = ({
 
 const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
   const store = useStore<RootState>();
-  const { actions, setters, state } = useDraftContext();
+  const { actions, confirmation, setters, state } = useDraftContext();
   const draftStateRef = useRef(state);
 
   useEffect(() => {
@@ -114,28 +149,26 @@ const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
   }, [store]);
 
   const commitAdapter = useMemo<WeekInteractionCommitAdapter>(
-    () => ({
-      closeFormForInteraction: actions.closeForm,
-      openExistingEvent: (event) => {
-        store.dispatch(
-          draftSlice.actions.start({
-            activity: "gridClick",
-            event,
-            eventType: Categories_Event.TIMED,
-          }),
-        );
-      },
-      submitMovedEvent: (event, meta) => {
-        if (meta.hadFormOpenBeforeInteraction) {
-          setters.setDraft(event);
-          setters.setIsFormOpen(true);
-          return;
-        }
-
-        void actions.submit(event);
-      },
-    }),
-    [actions, setters, store],
+    () =>
+      createWeekInteractionCommitAdapter({
+        closeForm: actions.closeForm,
+        dispatchStart: (event) => {
+          store.dispatch(
+            draftSlice.actions.start({
+              activity: "gridClick",
+              event,
+              eventType: Categories_Event.TIMED,
+            }),
+          );
+        },
+        requestUpdateScopeForDraft: confirmation.requestUpdateScopeForDraft,
+        setDraft: setters.setDraft,
+        setIsFormOpen: setters.setIsFormOpen,
+        submit: (event) => {
+          void actions.submit(event);
+        },
+      }),
+    [actions, confirmation.requestUpdateScopeForDraft, setters, store],
   );
 
   return (
@@ -261,3 +294,16 @@ const WeekInteractionBoundaryView = ({
 const isEventSaveRequest = (actionType: string) =>
   actionType === createEventSlice.actions.request.type ||
   actionType === editEventSlice.actions.request.type;
+
+const isRecurringEvent = (event: Schema_GridEvent) => {
+  const recurrence = event.recurrence;
+
+  if (!recurrence) {
+    return false;
+  }
+
+  return (
+    typeof recurrence.eventId === "string" ||
+    (Array.isArray(recurrence.rule) && recurrence.rule.length > 0)
+  );
+};

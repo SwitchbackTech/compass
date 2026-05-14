@@ -303,7 +303,6 @@ export class WeekInteractionController {
       !registered ||
       registered.kind !== "timed" ||
       registered.event.isAllDay ||
-      isRecurringEvent(registered.event) ||
       this.#options.isPendingEvent(eventId) ||
       isEdgeNavigationCandidate(registered.event) ||
       isSmartScrollCandidate(element)
@@ -494,19 +493,6 @@ const hasExceededMoveThreshold = (
   const deltaY = Math.abs(currentY - initialY);
 
   return deltaX > threshold || deltaY > threshold;
-};
-
-const isRecurringEvent = (event: Schema_GridEvent) => {
-  const recurrence = event.recurrence;
-
-  if (!recurrence) {
-    return false;
-  }
-
-  return (
-    typeof recurrence.eventId === "string" ||
-    (Array.isArray(recurrence.rule) && recurrence.rule.length > 0)
-  );
 };
 
 const getWeekInteractionMetrics = () =>

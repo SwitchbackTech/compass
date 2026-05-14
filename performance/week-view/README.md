@@ -157,3 +157,17 @@ Use the same machine and avoid background-heavy work when comparing runs.
   `timed-drag-v2-pointerup-commit` reported a 15.3 ms max frame gap, 0 long
   tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save 0/1, RAF p95
   0.2 ms, and RAF max 0.2 ms.
+- 2026-05-14, `v2-recurring-timed-drag-adapter`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T18-37-44-867Z-v2-recurring-timed-drag-adapter.json`
+  was the first Task 9 run after routing recurring timed drags through the
+  recurrence-scope adapter. `timed-drag-v2-sustained` stayed clean, but one
+  `timed-drag-v2-pointerup-commit` sample recorded React 2 with Redux 0 during
+  motion, so the run did not pass the ownership counter gate.
+- 2026-05-14, `v2-recurring-timed-drag-adapter-rerun`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T18-39-12-938Z-v2-recurring-timed-drag-adapter-rerun.json`
+  is the passing Task 9 rerun. `timed-drag-v2-sustained` reported a 15.4 ms
+  max frame gap, 0 long tasks, React 0, Redux 0, unexpected DOM 0, layout reads
+  0, save 0/0, RAF p95 0.1 ms, and RAF max 0.2 ms.
+  `timed-drag-v2-pointerup-commit` reported a 15.4 ms max frame gap, 0 long
+  tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save 0/1, RAF p95
+  0.2 ms, and RAF max 0.2 ms.
