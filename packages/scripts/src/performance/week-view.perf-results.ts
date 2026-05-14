@@ -15,7 +15,9 @@ export type WeekInteractionMetricSummary = {
   rafCount: number;
   rafDurationMaxMs: number;
   rafDurationP95Ms: number;
+  reactCommitDurationsDuringMotion: number[];
   reactCommitsDuringMotion: number;
+  reduxActionTypesDuringMotion: string[];
   reduxDispatchesDuringMotion: number;
   saveRequestsAfterPointerUp: number;
   saveRequestsDuringMotion: number;

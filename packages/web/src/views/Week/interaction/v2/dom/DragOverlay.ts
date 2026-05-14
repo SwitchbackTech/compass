@@ -1,0 +1,35 @@
+import { type VisualPoint, type VisualRect } from "../model/TimedDragVisual";
+
+export class DragOverlay {
+  #node: HTMLElement | null = null;
+
+  mount({ clone, rect }: { clone: HTMLElement; rect: VisualRect }) {
+    this.unmount();
+
+    clone.style.contain = "layout paint style";
+    clone.style.height = `${rect.height}px`;
+    clone.style.left = `${rect.left}px`;
+    clone.style.position = "absolute";
+    clone.style.pointerEvents = "none";
+    clone.style.top = `${rect.top}px`;
+    clone.style.transform = "translate3d(0px, 0px, 0)";
+    clone.style.willChange = "transform";
+    clone.style.width = `${rect.width}px`;
+
+    document.body.append(clone);
+    this.#node = clone;
+  }
+
+  updateTransform(transform: VisualPoint) {
+    if (!this.#node) {
+      return;
+    }
+
+    this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
+  }
+
+  unmount() {
+    this.#node?.remove();
+    this.#node = null;
+  }
+}

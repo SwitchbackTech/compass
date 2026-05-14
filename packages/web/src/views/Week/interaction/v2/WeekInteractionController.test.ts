@@ -161,10 +161,27 @@ const setupEligibleController = (
   eventOverrides: Partial<Schema_GridEvent> = {},
   kind: "timed" | "allDay" = "timed",
 ) => {
+  const mainGrid = document.createElement("div");
+  mainGrid.id = "mainGrid";
+  mainGrid.getBoundingClientRect = () =>
+    ({
+      height: 660,
+      left: 0,
+      top: 0,
+      width: 700,
+    }) as DOMRect;
   const sourceElement = document.createElement("div");
   sourceElement.setAttribute("data-week-event-id", "event-1");
   sourceElement.setAttribute("data-week-event-kind", kind);
   sourceElement.setAttribute("data-week-event-role", "event");
+  sourceElement.getBoundingClientRect = () =>
+    ({
+      height: 60,
+      left: 200,
+      top: 100,
+      width: 100,
+    }) as DOMRect;
+  document.body.append(mainGrid, sourceElement);
 
   const event = {
     _id: "event-1",
@@ -174,7 +191,7 @@ const setupEligibleController = (
     startDate: "2026-05-12T10:00:00.000Z",
     ...eventOverrides,
   } as Schema_GridEvent;
-  const unregister = registerWeekEventElement("event-1", {
+  const unregisterRegistry = registerWeekEventElement("event-1", {
     element: sourceElement,
     event,
     kind,
@@ -189,6 +206,10 @@ const setupEligibleController = (
       ...overrides,
     }),
     sourceElement,
-    unregister,
+    unregister: () => {
+      unregisterRegistry();
+      mainGrid.remove();
+      sourceElement.remove();
+    },
   };
 };

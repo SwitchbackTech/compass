@@ -337,8 +337,14 @@ const summarizeWeekInteractionSamples = (
     rafDurationP95Ms: maxMetric(
       summaries.map((summary) => summary.rafDurationP95Ms),
     ),
+    reactCommitDurationsDuringMotion: summaries.flatMap(
+      (summary) => summary.reactCommitDurationsDuringMotion,
+    ),
     reactCommitsDuringMotion: maxMetric(
       summaries.map((summary) => summary.reactCommitsDuringMotion),
+    ),
+    reduxActionTypesDuringMotion: uniqueStrings(
+      summaries.flatMap((summary) => summary.reduxActionTypesDuringMotion),
     ),
     reduxDispatchesDuringMotion: maxMetric(
       summaries.map((summary) => summary.reduxDispatchesDuringMotion),
@@ -531,7 +537,9 @@ const stopBrowserMetrics = async (
         pointerMoveCount: number;
         rafCount: number;
         rafDurations: number[];
+        reactCommitDurationsDuringMotion: number[];
         reactCommitsDuringMotion: number;
+        reduxActionTypesDuringMotion: string[];
         reduxDispatchesDuringMotion: number;
         saveRequestsAfterPointerUp: number;
         saveRequestsDuringMotion: number;
@@ -578,8 +586,12 @@ const stopBrowserMetrics = async (
           weekInteractionMetrics?.rafDurations ?? [],
           95,
         ),
+        reactCommitDurationsDuringMotion:
+          weekInteractionMetrics?.reactCommitDurationsDuringMotion ?? [],
         reactCommitsDuringMotion:
           weekInteractionMetrics?.reactCommitsDuringMotion ?? 0,
+        reduxActionTypesDuringMotion:
+          weekInteractionMetrics?.reduxActionTypesDuringMotion ?? [],
         reduxDispatchesDuringMotion:
           weekInteractionMetrics?.reduxDispatchesDuringMotion ?? 0,
         saveRequestsAfterPointerUp:
@@ -1153,6 +1165,20 @@ const prepareSingleTimedEventForMotion = async (
   return { box, eventButton, eventSelector };
 };
 
+const enableWeekInteractionV2 = async (page: Page) => {
+  await page.evaluate(() => {
+    (
+      window as Window & { __weekInteractionV2ForceEnabled?: boolean }
+    ).__weekInteractionV2ForceEnabled = true;
+  });
+};
+
+const waitForWeekInteractionOverlay = async (page: Page) => {
+  await page
+    .locator("[data-week-interaction-overlay='true']")
+    .waitFor({ state: "attached", timeout: FORM_OPEN_ATTEMPT_TIMEOUT_MS });
+};
+
 const measureCreateTimedEvent = async (
   page: Page,
   baseUrl: string,
@@ -1239,8 +1265,8 @@ const measureTimedDragV2StartFirstFrame = async (
   page: Page,
   baseUrl: string,
 ): Promise<ScenarioSample> => {
-  const { box, eventButton, eventSelector } =
-    await prepareSingleTimedEventForMotion(page, baseUrl);
+  const { box } = await prepareSingleTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
   const startX = box.x + box.width / 2;
   const startY = box.y + Math.min(20, box.height / 2);
 
@@ -1248,17 +1274,44 @@ const measureTimedDragV2StartFirstFrame = async (
     await page.mouse.move(startX, startY);
     await page.mouse.down();
     await page.mouse.move(startX + 30, startY + 30, { steps: 4 });
-    await waitForEventDraft(page, eventSelector);
+    await waitForWeekInteractionOverlay(page);
   });
 
   await page.mouse.up();
-  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
 
   return sample;
 };
 
-const measureTimedDragV2Sustained = (page: Page, baseUrl: string) =>
-  measureLongDragTimedEvent(page, baseUrl);
+const measureTimedDragV2Sustained = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box } = await prepareSingleTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
+
+  const startX = box.x + box.width / 2;
+  const startY = box.y + Math.min(20, box.height / 2);
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 30, startY + 30, { steps: 4 });
+  await waitForWeekInteractionOverlay(page);
+
+  const sample = await measureAction(page, async () => {
+    await page.mouse.move(startX + 90, startY + 120, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 30, startY + 60, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 120, startY + 150, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 60, startY + 90, { steps: 24 });
+    await page.waitForTimeout(250);
+  });
+
+  await page.mouse.up();
+
+  return sample;
+};
 
 const measureTimedDragV2PointerupCommit = (page: Page, baseUrl: string) =>
   measureDragTimedEvent(page, baseUrl);

@@ -110,3 +110,15 @@ Use the same machine and avoid background-heavy work when comparing runs.
   median changed from 453.5 ms to 456.0 ms with a 14.3 ms max frame gap and 0
   long tasks; `resize-timed-event` median changed from 397.6 ms to 387.7 ms
   with a 15.2 ms max frame gap and 0 long tasks.
+- 2026-05-14, `v2-timed-drag-overlay`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T18-12-07-144Z-v2-timed-drag-overlay.json`
+  was the first Task 5 hard-gate run. It proved the overlay appeared after the
+  proof flag was moved after page reload, but `timed-drag-v2-sustained`
+  recorded intermittent React/Redux work during motion, so it did not pass the
+  ownership counter gate.
+- 2026-05-14, `v2-timed-drag-overlay-rerun`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T18-14-34-627Z-v2-timed-drag-overlay-rerun.json`
+  is the passing Task 5 hard-gate rerun. `input-baseline` reported a 15.3 ms
+  max frame gap. `timed-drag-v2-sustained` reported a 15.4 ms max frame gap,
+  0 long tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save
+  requests 0, RAF p95 0.1 ms, and RAF max 0.5 ms.
