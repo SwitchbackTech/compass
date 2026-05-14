@@ -23,4 +23,5 @@ export interface TimedDragVisual {
   startMinutes: number;
   transform: VisualPoint;
   type: "timedDrag";
+  weekOffsetDays: number;
 }

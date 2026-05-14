@@ -71,6 +71,7 @@ describe("WeekInteractionBoundary", () => {
     const controller = new WeekInteractionController();
     controller.handlePointerDown = mock(() => true);
     controller.getSession = mock(() => ({
+      event: { _id: "event-1", isAllDay: true } as Schema_GridEvent,
       eventId: "event-1",
       formEventIdAtPointerDown: null,
       formOpenAtPointerDown: false,
@@ -114,6 +115,7 @@ describe("WeekInteractionBoundary", () => {
     const controller = new WeekInteractionController();
     controller.getSession = mock(() => ({
       activatedBy: "move" as const,
+      event: { _id: "event-1", isAllDay: true } as Schema_GridEvent,
       eventId: "event-1",
       formEventIdAtPointerDown: null,
       formOpenAtPointerDown: false,

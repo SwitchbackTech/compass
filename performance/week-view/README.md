@@ -56,6 +56,7 @@ The harness runs the same seeded browser flows each time:
   - sustained drag motion
   - sustained resize motion
 - smart-scroll V2 timed drag
+- edge-navigation V2 timed drag
 
 Each scenario runs several samples and reports median time, p95 time, worst
 frame gap, and long-task count.
@@ -223,3 +224,12 @@ Use the same machine and avoid background-heavy work when comparing runs.
   `v2-all-day-resize-suppressed-mousemove` JSON path. `smart-scroll-drag-v2`
   reported a 14.4 ms max frame gap, 0 long tasks, React 0, Redux 0, unexpected
   DOM 0, layout reads 0, save 0/0, RAF p95 0.2 ms, and RAF max 0.3 ms.
+- 2026-05-14, `v2-edge-navigation`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T19-26-13-275Z-v2-edge-navigation.json`
+  recorded Task 14 after moving drag-to-edge dwell into the V2 controller.
+  `--compare latest` was refused because `latest` used the Task 13 scenario
+  shape, so the run used the explicit `v2-smart-scroll` JSON path.
+  `edge-navigation-drag-v2` reported a 14.5 ms max frame gap, 0 long tasks,
+  layout reads 0, save 0/0, RAF p95 0.2 ms, and RAF max 0.6 ms. The React,
+  Redux, and DOM counters are non-zero in this scenario because the controller
+  intentionally requests one React-owned week change during the active drag.

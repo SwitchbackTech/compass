@@ -52,6 +52,16 @@ export const WeekView = () => {
 
   const isCurrentWeek = weekProps.component.isCurrentWeek;
   const util = weekProps.util;
+  const handleWeekInteractionNavigation = useCallback(
+    (direction: "next" | "prev") => {
+      if (direction === "prev") {
+        weekProps.util.decrementWeek("drag-to-edge");
+      } else {
+        weekProps.util.incrementWeek("drag-to-edge");
+      }
+    },
+    [weekProps.util],
+  );
 
   const shortcutProps = {
     today,
@@ -151,7 +161,9 @@ export const WeekView = () => {
                     weekDays={weekProps.component.weekDays}
                   />
 
-                  <WeekInteractionBoundary>
+                  <WeekInteractionBoundary
+                    onRequestWeekNavigation={handleWeekInteractionNavigation}
+                  >
                     <ContextMenuWrapper id="grid-context-menu">
                       <Grid
                         dateCalcs={dateCalcs}

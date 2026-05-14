@@ -1173,6 +1173,36 @@ const prepareSingleTimedEventForMotion = async (
   return { box, eventButton, eventSelector };
 };
 
+const prepareEdgeNavigationTimedEventForMotion = async (
+  page: Page,
+  baseUrl: string,
+) => {
+  const event = createTimedEvent(
+    60_000,
+    getPerfWeekStart(),
+    6,
+    10 * 60,
+    60,
+    "Perf edge navigation target",
+  );
+  await prepareCalendarState(page, baseUrl, [event]);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await waitForWeekReady(page, { allDay: 0, timed: 1 });
+
+  const eventSelector = `#mainGrid [data-event-id="${event._id}"]`;
+  const eventButton = page.locator(eventSelector);
+  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+  await eventButton.scrollIntoViewIfNeeded();
+  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+
+  const box = await getLocatorBox(
+    eventButton,
+    "Expected seeded edge-navigation event to be visible.",
+  );
+
+  return { box, eventButton, eventSelector };
+};
+
 const prepareSingleAllDayEventForMotion = async (
   page: Page,
   baseUrl: string,
@@ -1669,6 +1699,65 @@ const measureSmartScrollDragV2 = async (
   return sample;
 };
 
+const getViewStartDate = (page: Page) =>
+  page.evaluate(() => {
+    const compassWindow = window as Window & {
+      __COMPASS_E2E_STORE__?: {
+        getState: () => { view: { dates: { start: string } } };
+      };
+    };
+
+    return compassWindow.__COMPASS_E2E_STORE__?.getState().view.dates.start;
+  });
+
+const measureEdgeNavigationDragV2 = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box } = await prepareEdgeNavigationTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
+
+  const mainGrid = page.locator("#mainGrid");
+  const gridBox = await getLocatorBox(
+    mainGrid,
+    "Expected main grid to be visible for edge navigation.",
+  );
+  const startX = box.x + box.width / 2;
+  const startY = box.y + Math.min(20, box.height / 2);
+  const rightEdgeX = gridBox.x + gridBox.width - 20;
+  const initialViewStart = await getViewStartDate(page);
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(rightEdgeX, startY, { steps: 8 });
+  await waitForWeekInteractionOverlay(page);
+
+  const sample = await measureAction(page, async () => {
+    await page.waitForFunction(
+      (startDate) => {
+        const compassWindow = window as Window & {
+          __COMPASS_E2E_STORE__?: {
+            getState: () => { view: { dates: { start: string } } };
+          };
+        };
+
+        return (
+          compassWindow.__COMPASS_E2E_STORE__?.getState().view.dates.start !==
+          startDate
+        );
+      },
+      initialViewStart,
+      { timeout: FORM_TIMEOUT_MS },
+    );
+    await page.mouse.move(rightEdgeX - 10, startY, { steps: 4 });
+    await page.waitForTimeout(150);
+  });
+
+  await page.mouse.up();
+
+  return sample;
+};
+
 const SCENARIOS: ScenarioDefinition[] = [
   {
     isolateSamples: true,
@@ -1756,6 +1845,11 @@ const SCENARIOS: ScenarioDefinition[] = [
     isolateSamples: true,
     name: "smart-scroll-drag-v2",
     run: measureSmartScrollDragV2,
+  },
+  {
+    isolateSamples: true,
+    name: "edge-navigation-drag-v2",
+    run: measureEdgeNavigationDragV2,
   },
 ];
 

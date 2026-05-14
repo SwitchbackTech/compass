@@ -46,6 +46,7 @@ export const createTimedDragVisual = ({
   startMinutes,
   transform: { x: 0, y: 0 },
   type: "timedDrag",
+  weekOffsetDays: 0,
 });
 
 export const updateTimedDragVisual = (

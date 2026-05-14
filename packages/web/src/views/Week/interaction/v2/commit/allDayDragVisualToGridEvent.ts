@@ -4,13 +4,14 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type AllDayDragVisual } from "../model/AllDayDragVisual";
 
 export const hasAllDayDragVisualMoved = (visual: AllDayDragVisual) =>
-  visual.dayIndex !== visual.initialDayIndex;
+  visual.dayIndex !== visual.initialDayIndex || visual.weekOffsetDays !== 0;
 
 export const allDayDragVisualToGridEvent = (
   event: Schema_GridEvent,
   visual: AllDayDragVisual,
 ): Schema_GridEvent => {
-  const dayDelta = visual.dayIndex - visual.initialDayIndex;
+  const dayDelta =
+    visual.dayIndex - visual.initialDayIndex + visual.weekOffsetDays;
 
   return {
     ...event,

@@ -92,6 +92,8 @@ type WeekInteractionControllerOptions = {
   isPendingEvent?: (eventId: string) => boolean;
   moveThresholdPx?: number;
   now?: () => number;
+  edgeNavigationDwellMs?: number;
+  onRequestWeekNavigation?: (direction: "next" | "prev") => void;
   requestFrame?: (callback: FrameRequestCallback) => unknown;
   setTimer?: (callback: () => void, delayMs: number) => unknown;
 };
@@ -112,6 +114,8 @@ const defaultOptions = {
   isPendingEvent: () => false,
   moveThresholdPx: DEFAULT_MOVE_THRESHOLD_PX,
   now: () => performance.now(),
+  edgeNavigationDwellMs: 500,
+  onRequestWeekNavigation: () => undefined,
   requestFrame: (callback: FrameRequestCallback) =>
     requestAnimationFrame(callback),
   setTimer: (callback: () => void, delayMs: number) =>
@@ -129,6 +133,12 @@ export class WeekInteractionController {
   #placeholder: SourcePlaceholder | null = null;
   #rafId: unknown = null;
   #scrollTop: number | null = null;
+  #edgeNavigation: {
+    enteredAt: number | null;
+    requested: boolean;
+    side: "next" | "prev" | null;
+  } = { enteredAt: null, requested: false, side: null };
+  #isLayoutRebuildPending = false;
   #session: WeekInteractionSession = { phase: "idle" };
   #visual:
     | AllDayDragVisual
@@ -176,6 +186,7 @@ export class WeekInteractionController {
     this.#resetMetrics("pending");
     const formOpenAtPointerDown = this.#options.isFormOpen();
     this.#session = {
+      event: eligible.registered.event,
       eventId: eligible.registered.event._id!,
       ...(allDayResize
         ? { edge: allDayResize.edge, kind: "allDayResize" as const }
@@ -251,21 +262,20 @@ export class WeekInteractionController {
     if (this.#session.phase === "pending") {
       const eventId = this.#session.eventId;
       const registered = this.#options.getRegisteredEvent(eventId);
+      const sourceEvent = registered?.event ?? this.#session.event;
       this.#clearPendingTimer(this.#session);
       this.#session = { phase: "idle" };
 
-      return registered
-        ? { event: registered.event, eventId, type: "click" }
-        : null;
+      return { event: sourceEvent, eventId, type: "click" };
     }
 
     const eventId = this.#session.eventId;
     const registered = this.#options.getRegisteredEvent(eventId);
+    const sourceEvent = registered?.event ?? this.#session.event;
     const visual = this.#visual;
-    const movedEvent =
-      registered && visual
-        ? convertVisualToGridEvent(registered.event, visual)
-        : null;
+    const movedEvent = visual
+      ? convertVisualToGridEvent(sourceEvent, visual)
+      : null;
     const hasMoved = visual ? hasVisualChanged(visual) : false;
     const hadFormOpenBeforeInteraction = this.#session.formOpenAtPointerDown;
     const formEventIdAtPointerDown = this.#session.formEventIdAtPointerDown;
@@ -320,6 +330,7 @@ export class WeekInteractionController {
       | ActiveTimedDragSession
       | ActiveTimedResizeSession = {
       activatedBy,
+      event: this.#session.event,
       eventId: this.#session.eventId,
       ...(this.#session.kind === "allDayResize"
         ? { edge: this.#session.edge, kind: "allDayResize" as const }
@@ -481,8 +492,7 @@ export class WeekInteractionController {
       !registered ||
       registered.kind !== "timed" ||
       registered.event.isAllDay ||
-      this.#options.isPendingEvent(eventId) ||
-      isEdgeNavigationCandidate(registered.event)
+      this.#options.isPendingEvent(eventId)
     ) {
       return null;
     }
@@ -520,8 +530,7 @@ export class WeekInteractionController {
       !registered ||
       registered.kind !== "allDay" ||
       !registered.event.isAllDay ||
-      this.#options.isPendingEvent(eventId) ||
-      isEdgeNavigationCandidate(registered.event)
+      this.#options.isPendingEvent(eventId)
     ) {
       return null;
     }
@@ -549,10 +558,7 @@ export class WeekInteractionController {
     }
 
     const sourceClientRect = readElementRect(session.sourceElement);
-    const layout =
-      session.kind === "allDayDrag" || session.kind === "allDayResize"
-        ? buildAllDayLayoutCache()
-        : buildWeekLayoutCache();
+    const layout = buildLayoutForSession(session);
 
     if (!layout) {
       return false;
@@ -627,6 +633,7 @@ export class WeekInteractionController {
 
     const metrics = getWeekInteractionMetrics();
     const frameStart = this.#options.now();
+    this.#rebuildLayoutIfNeeded();
     if (metrics && this.#lastFrameAt !== null) {
       metrics.frameGaps.push(timestamp - this.#lastFrameAt);
     }
@@ -636,6 +643,7 @@ export class WeekInteractionController {
       this.#visual.type === "timedDrag"
         ? this.#applySmartScroll()
         : { isScrolling: false, scrollDeltaPx: 0 };
+    const isEdgeDwellActive = this.#updateEdgeNavigation(timestamp);
 
     if (this.#visual.type === "allDayDrag") {
       this.#visual = updateAllDayDragVisual(this.#visual, {
@@ -680,9 +688,78 @@ export class WeekInteractionController {
       }
     }
 
-    if (smartScroll.isScrolling) {
+    if (smartScroll.isScrolling || isEdgeDwellActive) {
       this.#scheduleFrame();
     }
+  }
+
+  #rebuildLayoutIfNeeded() {
+    if (!this.#isLayoutRebuildPending || this.#session.phase !== "motion") {
+      return;
+    }
+
+    const nextLayout = buildLayoutForSession(this.#session);
+
+    if (!nextLayout) {
+      return;
+    }
+
+    this.#layout = nextLayout;
+    this.#scrollTop = nextLayout.smartScroll?.initialScrollTop ?? null;
+    this.#isLayoutRebuildPending = false;
+  }
+
+  #updateEdgeNavigation(timestamp: number) {
+    if (
+      !this.#layout?.edgeNavigation ||
+      !this.#latestPointer ||
+      (this.#visual?.type !== "timedDrag" &&
+        this.#visual?.type !== "allDayDrag")
+    ) {
+      this.#resetEdgeNavigation();
+      return false;
+    }
+
+    const side = getEdgeNavigationSide(
+      this.#layout.edgeNavigation,
+      this.#latestPointer,
+    );
+
+    if (!side) {
+      this.#resetEdgeNavigation();
+      return false;
+    }
+
+    if (this.#edgeNavigation.side !== side) {
+      this.#edgeNavigation = {
+        enteredAt: timestamp,
+        requested: false,
+        side,
+      };
+      return true;
+    }
+
+    if (
+      this.#edgeNavigation.enteredAt !== null &&
+      !this.#edgeNavigation.requested &&
+      timestamp - this.#edgeNavigation.enteredAt >=
+        this.#options.edgeNavigationDwellMs
+    ) {
+      this.#edgeNavigation.requested = true;
+      this.#visual = applyWeekOffset(this.#visual, side);
+      this.#isLayoutRebuildPending = true;
+      this.#options.onRequestWeekNavigation(side);
+    }
+
+    return !this.#edgeNavigation.requested;
+  }
+
+  #resetEdgeNavigation() {
+    this.#edgeNavigation = {
+      enteredAt: null,
+      requested: false,
+      side: null,
+    };
   }
 
   #applySmartScroll() {
@@ -728,6 +805,8 @@ export class WeekInteractionController {
     this.#layout = null;
     this.#latestPointer = null;
     this.#scrollTop = null;
+    this.#resetEdgeNavigation();
+    this.#isLayoutRebuildPending = false;
     this.#visual = null;
     this.#activatedAt = null;
     this.#lastFrameAt = null;
@@ -830,6 +909,13 @@ const buildWeekLayoutCache = (): WeekLayoutCache | null => {
 
   return {
     dayColumns,
+    edgeNavigation: {
+      bottom: rect.bottom,
+      edgeThresholdPx: SMART_SCROLL_EDGE_THRESHOLD_PX,
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+    },
     pixelsPerMinute: rect.height / (11 * 60),
     snapMinutes: GRID_TIME_STEP,
     smartScroll: {
@@ -864,10 +950,32 @@ const buildAllDayLayoutCache = (): WeekLayoutCache | null => {
 
   return {
     dayColumns,
+    edgeNavigation: {
+      bottom: rect.bottom,
+      edgeThresholdPx: SMART_SCROLL_EDGE_THRESHOLD_PX,
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+    },
     pixelsPerMinute: 1,
     snapMinutes: GRID_TIME_STEP,
   };
 };
+
+const buildLayoutForSession = (
+  session:
+    | ActiveAllDayDragSession
+    | ActiveAllDayResizeSession
+    | ActiveTimedDragSession
+    | ActiveTimedResizeSession
+    | PendingAllDayDragSession
+    | PendingAllDayResizeSession
+    | PendingTimedDragSession
+    | PendingTimedResizeSession,
+) =>
+  session.kind === "allDayDrag" || session.kind === "allDayResize"
+    ? buildAllDayLayoutCache()
+    : buildWeekLayoutCache();
 
 const convertVisualToGridEvent = (
   event: Schema_GridEvent,
@@ -895,6 +1003,36 @@ const hasVisualChanged = (
     : visual.type === "allDayResize"
       ? hasAllDayResizeVisualChanged(visual)
       : hasTimedEventVisualChanged(visual);
+
+const getEdgeNavigationSide = (
+  edgeNavigation: NonNullable<WeekLayoutCache["edgeNavigation"]>,
+  pointer: VisualPoint,
+) => {
+  const isInVerticalBounds =
+    pointer.y >= edgeNavigation.top && pointer.y <= edgeNavigation.bottom;
+
+  if (!isInVerticalBounds) {
+    return null;
+  }
+
+  if (pointer.x < edgeNavigation.left + edgeNavigation.edgeThresholdPx) {
+    return "prev" as const;
+  }
+
+  if (pointer.x > edgeNavigation.right - edgeNavigation.edgeThresholdPx) {
+    return "next" as const;
+  }
+
+  return null;
+};
+
+const applyWeekOffset = (
+  visual: AllDayDragVisual | TimedDragVisual,
+  side: "next" | "prev",
+) => ({
+  ...visual,
+  weekOffsetDays: visual.weekOffsetDays + (side === "next" ? 7 : -7),
+});
 
 const getLocalMinutes = (dateString: string | undefined) => {
   const date = new Date(dateString ?? 0);

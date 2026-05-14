@@ -457,7 +457,7 @@ describe("WeekInteractionController", () => {
     ).toBe(false);
   });
 
-  it("falls through for first and last visible day drags until edge navigation migrates", () => {
+  it("owns first and last visible day drags after edge navigation migrates", () => {
     const firstDay = setupEligibleController(
       {},
       {
@@ -469,7 +469,7 @@ describe("WeekInteractionController", () => {
       firstDay.controller.handlePointerDown(
         createPointerEvent("pointerdown", firstDay.sourceElement, 100, 100),
       ),
-    ).toBe(false);
+    ).toBe(true);
     firstDay.unregister();
 
     const lastDay = setupEligibleController(
@@ -483,8 +483,72 @@ describe("WeekInteractionController", () => {
       lastDay.controller.handlePointerDown(
         createPointerEvent("pointerdown", lastDay.sourceElement, 100, 100),
       ),
-    ).toBe(false);
+    ).toBe(true);
     lastDay.unregister();
+  });
+
+  it("requests one next-week navigation per edge dwell and saves in that week", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      frameCallback = null;
+      callback(timestamp);
+    };
+    const requestedNavigations: Array<"next" | "prev"> = [];
+    const { controller, sourceElement, unregister } = setupEligibleController(
+      {
+        edgeNavigationDwellMs: 20,
+        onRequestWeekNavigation: (direction) => {
+          requestedNavigations.push(direction);
+        },
+        requestFrame: (callback) => {
+          frameCallback = callback;
+          return 1;
+        },
+      },
+      {
+        endDate: "2026-05-16T11:00:00",
+        startDate: "2026-05-16T10:00:00",
+      },
+      "timed",
+      { height: 60, left: 600, top: 100, width: 80 },
+    );
+
+    controller.handlePointerDown(
+      createPointerEvent("pointerdown", sourceElement, 650, 120),
+    );
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 680, 120),
+    );
+    runFrame(16);
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 690, 120),
+    );
+    runFrame(32);
+    runFrame(64);
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 690, 120),
+    );
+    runFrame(96);
+
+    const result = controller.handlePointerUp(
+      createPointerEvent("pointerup", sourceElement, 690, 120),
+    );
+
+    expect(requestedNavigations).toEqual(["next"]);
+    expect(controller.getSession().phase).toBe("idle");
+    expect(result).toMatchObject({
+      event: {
+        startDate: expect.stringContaining("2026-05-23T10:00:00"),
+      },
+      hasMoved: true,
+      type: "timedDragEnd",
+    });
+
+    unregister();
   });
 
   it("owns scroll-zone timed drags after smart scroll migrates", () => {
@@ -614,6 +678,7 @@ const setupEligibleController = (
       height: 660,
       left: 0,
       bottom: 660,
+      right: 700,
       top: 0,
       width: 700,
     }) as DOMRect;
@@ -621,6 +686,8 @@ const setupEligibleController = (
     ({
       height: 60,
       left: 0,
+      bottom: 60,
+      right: 700,
       top: 0,
       width: 700,
     }) as DOMRect;
@@ -633,6 +700,7 @@ const setupEligibleController = (
       bottom: sourceRect.top + sourceRect.height,
       height: sourceRect.height,
       left: sourceRect.left,
+      right: sourceRect.left + sourceRect.width,
       top: sourceRect.top,
       width: sourceRect.width,
     }) as DOMRect;

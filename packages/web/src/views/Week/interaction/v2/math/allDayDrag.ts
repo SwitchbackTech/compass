@@ -30,6 +30,7 @@ export const createAllDayDragVisual = ({
   sourceRect,
   transform: { x: 0, y: 0 },
   type: "allDayDrag",
+  weekOffsetDays: 0,
 });
 
 export const updateAllDayDragVisual = (

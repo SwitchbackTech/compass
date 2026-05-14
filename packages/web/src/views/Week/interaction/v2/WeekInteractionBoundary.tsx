@@ -31,6 +31,7 @@ export type WeekInteractionCommitAdapter = {
 interface Props extends PropsWithChildren {
   commitAdapter?: WeekInteractionCommitAdapter;
   controller?: WeekInteractionController;
+  onRequestWeekNavigation?: (direction: "next" | "prev") => void;
 }
 
 const noopCommitAdapter: WeekInteractionCommitAdapter = {
@@ -77,6 +78,7 @@ export const WeekInteractionBoundary = ({
   children,
   commitAdapter,
   controller,
+  onRequestWeekNavigation,
 }: Props) => {
   if (controller) {
     return (
@@ -90,13 +92,20 @@ export const WeekInteractionBoundary = ({
   }
 
   return (
-    <ConnectedWeekInteractionBoundary>
+    <ConnectedWeekInteractionBoundary
+      onRequestWeekNavigation={onRequestWeekNavigation}
+    >
       {children}
     </ConnectedWeekInteractionBoundary>
   );
 };
 
-const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
+const ConnectedWeekInteractionBoundary = ({
+  children,
+  onRequestWeekNavigation,
+}: PropsWithChildren<{
+  onRequestWeekNavigation?: (direction: "next" | "prev") => void;
+}>) => {
   const store = useStore<RootState>();
   const { actions, confirmation, setters, state } = useDraftContext();
   const draftStateRef = useRef(state);
@@ -115,8 +124,9 @@ const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
         isFormOpen: () => draftStateRef.current.isFormOpen || isEventFormOpen(),
         isPendingEvent: (eventId) =>
           selectIsEventPending(store.getState(), eventId),
+        onRequestWeekNavigation,
       }),
-    [store],
+    [onRequestWeekNavigation, store],
   );
 
   useEffect(() => {

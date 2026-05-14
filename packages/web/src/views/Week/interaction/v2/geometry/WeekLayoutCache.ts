@@ -8,9 +8,18 @@ export interface WeekDayColumnCache {
 
 export interface WeekLayoutCache {
   dayColumns: WeekDayColumnCache[];
+  edgeNavigation?: WeekEdgeNavigationCache;
   pixelsPerMinute: number;
   snapMinutes: number;
   smartScroll?: SmartScrollCache;
+}
+
+export interface WeekEdgeNavigationCache {
+  bottom: number;
+  edgeThresholdPx: number;
+  left: number;
+  right: number;
+  top: number;
 }
 
 export const getNearestDayColumn = (

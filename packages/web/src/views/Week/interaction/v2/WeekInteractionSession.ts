@@ -11,6 +11,7 @@ export interface IdleWeekInteractionSession {
 export type TimedDragActivationReason = "hold" | "move";
 
 export interface PendingTimedDragSession {
+  event: Schema_GridEvent;
   eventId: string;
   formEventIdAtPointerDown: string | null;
   formOpenAtPointerDown: boolean;

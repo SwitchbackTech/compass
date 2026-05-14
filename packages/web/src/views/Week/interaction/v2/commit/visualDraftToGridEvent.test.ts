@@ -30,6 +30,7 @@ describe("visualDraftToGridEvent", () => {
       startMinutes: 10 * 60 + 30,
       transform: { x: 100, y: 90 },
       type: "timedDrag",
+      weekOffsetDays: 0,
     } satisfies TimedDragVisual;
 
     const moved = visualDraftToGridEvent(event, visual);
@@ -60,8 +61,38 @@ describe("visualDraftToGridEvent", () => {
       startMinutes: 10 * 60,
       transform: { x: 0, y: 0 },
       type: "timedDrag",
+      weekOffsetDays: 0,
     } satisfies TimedDragVisual;
 
     expect(hasTimedDragVisualMoved(visual)).toBe(false);
+  });
+
+  it("applies edge-navigation week offsets", () => {
+    const event = {
+      _id: "event-1",
+      endDate: "2026-05-16T11:00:00",
+      isAllDay: false,
+      startDate: "2026-05-16T10:00:00",
+    } as Schema_GridEvent;
+    const visual = {
+      dayIndex: 6,
+      durationMinutes: 60,
+      endMinutes: 11 * 60,
+      eventId: "event-1",
+      initialDayIndex: 6,
+      initialEndMinutes: 11 * 60,
+      initialStartMinutes: 10 * 60,
+      pointerStart: { x: 100, y: 100 },
+      sourceRect: { height: 60, left: 600, top: 100, width: 80 },
+      startMinutes: 10 * 60,
+      transform: { x: 0, y: 0 },
+      type: "timedDrag",
+      weekOffsetDays: 7,
+    } satisfies TimedDragVisual;
+
+    const moved = visualDraftToGridEvent(event, visual);
+
+    expect(moved.startDate).toContain("2026-05-23T10:00:00");
+    expect(hasTimedDragVisualMoved(visual)).toBe(true);
   });
 });

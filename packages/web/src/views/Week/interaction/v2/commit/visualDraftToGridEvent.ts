@@ -10,7 +10,7 @@ export const hasTimedDragVisualMoved = (visual: TimedDragVisual) =>
 
 export const hasTimedEventVisualChanged = (visual: TimedEventVisual) =>
   ("initialDayIndex" in visual
-    ? visual.dayIndex !== visual.initialDayIndex
+    ? visual.dayIndex !== visual.initialDayIndex || visual.weekOffsetDays !== 0
     : false) ||
   visual.startMinutes !== visual.initialStartMinutes ||
   visual.endMinutes !== visual.initialEndMinutes;
@@ -20,7 +20,9 @@ export const visualDraftToGridEvent = (
   visual: TimedEventVisual,
 ): Schema_GridEvent => {
   const dayDelta =
-    "initialDayIndex" in visual ? visual.dayIndex - visual.initialDayIndex : 0;
+    "initialDayIndex" in visual
+      ? visual.dayIndex - visual.initialDayIndex + visual.weekOffsetDays
+      : 0;
   const movedDay = dayjs(event.startDate).add(dayDelta, "day").startOf("day");
 
   return {

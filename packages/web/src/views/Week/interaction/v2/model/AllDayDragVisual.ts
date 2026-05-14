@@ -8,4 +8,5 @@ export interface AllDayDragVisual {
   sourceRect: VisualRect;
   transform: VisualPoint;
   type: "allDayDrag";
+  weekOffsetDays: number;
 }
