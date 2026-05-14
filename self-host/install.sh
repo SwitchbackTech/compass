@@ -381,13 +381,13 @@ runtime:
 
 web:
   port: 9080
-  url: https://cal.yourdomain.com
+  url: REPLACE_WITH_YOUR_WEB_URL # e.g. https://cal.yourdomain.com
 
 backend:
   port: 3000
-  apiUrl: https://cal.yourdomain.com/api
+  apiUrl: REPLACE_WITH_YOUR_API_URL # e.g. https://cal.yourdomain.com/api
   originsAllowed:
-    - https://cal.yourdomain.com
+    - REPLACE_WITH_YOUR_WEB_URL # e.g. https://cal.yourdomain.com
   compassToken: $compass_sync_token
 
 mongo:
@@ -408,8 +408,8 @@ google:
   notificationToken: $gcal_notification_token
 
 # google:
-#   clientId: YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com
-#   clientSecret: YOUR_GOOGLE_CLIENT_SECRET
+#   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
+#   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
 #   channelExpirationMin: 10
 EOF
 

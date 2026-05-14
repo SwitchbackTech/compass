@@ -70,6 +70,32 @@ const CompassConfigSchema = z
 
 export type CompassConfig = z.infer<typeof CompassConfigSchema>;
 
+const PLACEHOLDER_PREFIX = "REPLACE_WITH_";
+
+function collectPlaceholderPaths(
+  value: unknown,
+  path: string,
+  results: string[],
+): void {
+  if (typeof value === "string") {
+    if (value.includes(PLACEHOLDER_PREFIX)) results.push(path);
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach((item, i) =>
+      collectPlaceholderPaths(item, `${path}[${i}]`, results),
+    );
+    return;
+  }
+  if (value !== null && typeof value === "object") {
+    for (const [key, child] of Object.entries(
+      value as Record<string, unknown>,
+    )) {
+      collectPlaceholderPaths(child, path ? `${path}.${key}` : key, results);
+    }
+  }
+}
+
 export function parseCompassConfigText(
   text: string,
   filePath: string,
@@ -87,6 +113,16 @@ export function parseCompassConfigText(
   if (!parsed.success) {
     throw new Error(
       `Invalid Compass config file ${filePath}: ${parsed.error.message}`,
+    );
+  }
+
+  const placeholderPaths: string[] = [];
+  collectPlaceholderPaths(parsed.data, "", placeholderPaths);
+  if (placeholderPaths.length > 0) {
+    throw new Error(
+      `Compass config file ${filePath} contains unfilled placeholder values.\n` +
+        `Replace the following fields with real values:\n` +
+        placeholderPaths.map((p) => `  - ${p}`).join("\n"),
     );
   }
 

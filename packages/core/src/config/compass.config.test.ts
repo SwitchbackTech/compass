@@ -115,3 +115,61 @@ google:
     ).toThrow("Invalid Compass config file incomplete.yaml");
   });
 });
+
+describe("compass config — placeholder detection", () => {
+  it("throws with the field path when a single value contains REPLACE_WITH_", () => {
+    const yaml = validYaml.replace(
+      "supertokens-key",
+      "REPLACE_WITH_SUPERTOKENS_KEY",
+    );
+    expect(() => parseCompassConfigText(yaml, "compass.yaml")).toThrow(
+      "supertokens.key",
+    );
+  });
+
+  it("collects all placeholder fields into a single error", () => {
+    const yaml = validYaml
+      .replace("sync-token", "REPLACE_WITH_COMPASS_TOKEN")
+      .replace("supertokens-key", "REPLACE_WITH_SUPERTOKENS_KEY");
+    expect(() => parseCompassConfigText(yaml, "compass.yaml")).toThrow(
+      /backend\.compassToken[\s\S]*supertokens\.key/,
+    );
+  });
+
+  it("detects a placeholder embedded inside a URI string", () => {
+    const yaml = validYaml.replace(
+      "mongodb://localhost:27017/compass",
+      "mongodb://compass:REPLACE_WITH_MONGO_PASSWORD@mongo:27017/compass",
+    );
+    expect(() => parseCompassConfigText(yaml, "compass.yaml")).toThrow(
+      "mongo.uri",
+    );
+  });
+
+  it("detects a placeholder inside an originsAllowed array entry", () => {
+    const yaml = validYaml.replace(
+      "- http://localhost:3000",
+      "- REPLACE_WITH_YOUR_WEB_URL",
+    );
+    expect(() => parseCompassConfigText(yaml, "compass.yaml")).toThrow(
+      "backend.originsAllowed[0]",
+    );
+  });
+
+  it("includes the file path in the placeholder error message", () => {
+    const yaml = validYaml.replace(
+      "supertokens-key",
+      "REPLACE_WITH_SUPERTOKENS_KEY",
+    );
+    expect(() => parseCompassConfigText(yaml, "my-compass.yaml")).toThrow(
+      "my-compass.yaml",
+    );
+  });
+
+  it("does not block configs using the compass-self-host-placeholder Google credentials", () => {
+    const yaml =
+      validYaml +
+      "\ngoogle:\n  clientId: compass-self-host-placeholder.apps.googleusercontent.com\n  clientSecret: compass-self-host-placeholder-secret\n";
+    expect(() => parseCompassConfigText(yaml, "compass.yaml")).not.toThrow();
+  });
+});
