@@ -1,6 +1,5 @@
 import { type MutableRefObject, useEffect, useRef } from "react";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
-import { useInteractionSnapshot } from "@web/views/Week/interaction/interaction.store";
 
 const SCROLL_SPEED = 10;
 const EDGE_THRESHOLD = 50;
@@ -8,16 +7,11 @@ const EDGE_THRESHOLD = 50;
 export const useDragEventSmartScroll = (
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
 ) => {
-  const { interaction, state } = useDraftContext();
-  const interactionState = useInteractionSnapshot(interaction.getStore());
-  const draft = interactionState.draft ?? state.draft;
-  const isDragging = interactionState.mode === "drag";
+  const { interaction } = useDraftContext();
   const mouseYRef = useRef(0);
   const scrollRef = useRef<number | null>(null);
 
   useEffect(() => {
-    if (!isDragging) return;
-    if (draft?.isAllDay !== false) return;
     if (!mainGridRef.current) return;
     const container = mainGridRef.current;
 
@@ -30,8 +24,9 @@ export const useDragEventSmartScroll = (
     const scrollIfNeeded = () => {
       scrollRef.current = null;
 
-      if (interaction.getSnapshot().mode !== "drag") return;
-      if (draft?.isAllDay !== false) return;
+      const snapshot = interaction.getSnapshot();
+      if (snapshot.mode !== "drag") return;
+      if (snapshot.draft?.isAllDay !== false) return;
 
       const containerRect = container.getBoundingClientRect();
       const { top, bottom } = {
@@ -57,13 +52,13 @@ export const useDragEventSmartScroll = (
     };
 
     const unsubscribe = interaction.subscribeMotion((snapshot) => {
+      if (snapshot.mode !== "drag") return;
+      if (snapshot.draft?.isAllDay !== false) return;
       if (!snapshot.pointer) return;
 
       mouseYRef.current = snapshot.pointer.y;
       scheduleScroll();
     });
-
-    scheduleScroll();
 
     return () => {
       unsubscribe();
@@ -73,5 +68,5 @@ export const useDragEventSmartScroll = (
         scrollRef.current = null;
       }
     };
-  }, [draft?.isAllDay, interaction, isDragging, mainGridRef]);
+  }, [interaction, mainGridRef]);
 };
