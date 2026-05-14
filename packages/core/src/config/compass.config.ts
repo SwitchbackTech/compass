@@ -100,20 +100,22 @@ function findCompassConfigFile(
     return resolve(explicitPath);
   }
 
-  const candidates = [
-    resolve(process.cwd(), "compass.yaml"),
-    "/app/compass.yaml",
-  ];
-
-  const configPath = candidates.find((candidate) => existsSync(candidate));
-
-  if (!configPath) {
-    throw new Error(
-      "Missing Compass config file. Create compass.yaml from compass.example.yaml.",
-    );
+  // Walk up from CWD so scripts run from a subdirectory (e.g. packages/web)
+  // still find compass.yaml at the repo root.
+  let dir = process.cwd();
+  for (;;) {
+    const candidate = resolve(dir, "compass.yaml");
+    if (existsSync(candidate)) return candidate;
+    const parent = resolve(dir, "..");
+    if (parent === dir) break;
+    dir = parent;
   }
 
-  return configPath;
+  if (existsSync("/app/compass.yaml")) return "/app/compass.yaml";
+
+  throw new Error(
+    "Missing Compass config file. Create compass.yaml from compass.example.yaml.",
+  );
 }
 
 function loadCompassConfigFile(filePath = findCompassConfigFile()) {
