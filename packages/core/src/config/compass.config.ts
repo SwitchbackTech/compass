@@ -12,26 +12,22 @@ const CompassConfigSchema = z
         version: z.union([z.string(), z.number()]).optional(),
       })
       .optional(),
-    web: z
-      .object({
-        port: z.union([z.string(), z.number()]).optional(),
-      })
-      .optional(),
+    web: z.object({
+      port: z.union([z.string(), z.number()]).optional(),
+      url: z.string(),
+    }),
     backend: z.object({
       port: z.union([z.string(), z.number()]).optional(),
       apiUrl: z.string(),
       originsAllowed: z.array(z.string()).optional(),
       compassToken: z.string(),
+      googleWebhook: optionalString,
+      healthUrl: optionalString,
     }),
     runtime: z.object({
       nodeEnv: z.string(),
       timezone: z.enum(["Etc/UTC", "UTC"]),
       logLevel: z.string().optional(),
-    }),
-    urls: z.object({
-      frontend: z.string(),
-      googleWebhook: optionalString,
-      health: optionalString,
     }),
     mongo: z.object({
       username: z.string().optional(),

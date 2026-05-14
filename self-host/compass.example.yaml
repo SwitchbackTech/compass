@@ -11,6 +11,7 @@ runtime:
 
 web:
   port: 9080
+  url: https://cal.yourdomain.com
 
 backend:
   port: 3000
@@ -18,11 +19,8 @@ backend:
   originsAllowed:
     - https://cal.yourdomain.com
   compassToken: replace-with-generated-compass-sync-token
-
-urls:
-  frontend: https://cal.yourdomain.com
-  # health: http://127.0.0.1:3000/api/health
   # googleWebhook: https://cal.yourdomain.com/api
+  # healthUrl: http://127.0.0.1:3000/api/health
 
 mongo:
   username: compass

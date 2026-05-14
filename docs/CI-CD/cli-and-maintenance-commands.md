@@ -27,14 +27,14 @@ Primary source:
 
 How API base URLs are resolved:
 
-- local (`--environment local`): returns `urls.backendApi` directly (trailing slash removed)
-- staging/production: derives `https://<domain>/api` from `urls.frontend`
+- local (`--environment local`): returns `backend.apiUrl` directly (trailing slash removed)
+- staging/production: derives `https://<domain>/api` from `web.url`
 
 Fallback behavior:
 
-- if `urls.frontend` points at `localhost`, CLI prompts for a domain and builds `https://<domain>/api`
-- if `urls.frontend` is already a non-localhost URL, CLI uses that hostname directly
-- local mode does not prompt for a domain; it depends on `urls.backendApi`
+- if `web.url` points at `localhost`, CLI prompts for a domain and builds `https://<domain>/api`
+- if `web.url` is already a non-localhost URL, CLI uses that hostname directly
+- local mode does not prompt for a domain; it depends on `backend.apiUrl`
 
 ## Commands To Know
 

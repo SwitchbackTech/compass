@@ -237,8 +237,8 @@ load_runtime_config() {
   PORT_VALUE=${backend_port:-3000}
   validate_port_value WEB_PORT "$WEB_PORT_VALUE"
   validate_port_value PORT "$PORT_VALUE"
-  frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
-  health_url=$(strip_quotes "$(read_env_value COMPASS_HEALTH_URL)")
+  frontend_url=$(strip_quotes "$(read_config_value web.url)")
+  health_url=$(strip_quotes "$(read_config_value backend.healthUrl)")
 
   APP_URL=${frontend_url:-http://localhost:$WEB_PORT_VALUE}
   HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-http://localhost:$PORT_VALUE/api/health}}
@@ -382,6 +382,7 @@ runtime:
 
 web:
   port: 9080
+  url: https://cal.yourdomain.com
 
 backend:
   port: 3000
@@ -389,9 +390,6 @@ backend:
   originsAllowed:
     - https://cal.yourdomain.com
   compassToken: $compass_sync_token
-
-urls:
-  frontend: https://cal.yourdomain.com
 
 mongo:
   username: compass
@@ -539,7 +537,7 @@ EOF
   This install uses placeholder Google OAuth values.
   To add your own OAuth credentials, edit:
     $CONFIG_FILE
-  Then rebuild the web image (urls.backendApi and google.clientId are baked in at build time):
+  Then rebuild the web image (backend.apiUrl and google.clientId are baked in at build time):
     $HELPER_FILE rebuild
   See https://docs.compasscalendar.com/docs/self-hosting/google-calendar
 EOF
@@ -547,7 +545,7 @@ EOF
     cat <<EOF
   Custom Google OAuth credentials are present in:
     $CONFIG_FILE
-  If you change google.clientId or urls.backendApi, rebuild the web image to apply them:
+  If you change google.clientId or backend.apiUrl, rebuild the web image to apply them:
     $HELPER_FILE rebuild
 EOF
   fi

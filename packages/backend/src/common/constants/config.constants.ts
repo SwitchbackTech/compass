@@ -91,9 +91,9 @@ function parseRawConfig(config: CompassConfig): Config {
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
     EMAILER_SECRET: nonEmpty(config.email?.kitApiSecret),
     EMAILER_USER_TAG_ID: toStr(config.email?.kitUserTagId),
-    FRONTEND_URL: config.urls.frontend,
+    FRONTEND_URL: config.web.url,
     GCAL_WEBHOOK_BASEURL:
-      nonEmpty(config.urls.googleWebhook) || config.backend.apiUrl,
+      nonEmpty(config.backend.googleWebhook) || config.backend.apiUrl,
     MONGO_URI: config.mongo.uri,
     NODE_ENV: nodeEnv,
     TZ: config.runtime.timezone,

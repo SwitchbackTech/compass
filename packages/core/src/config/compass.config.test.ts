@@ -10,6 +10,7 @@ runtime:
   logLevel: debug
 web:
   port: 9080
+  url: http://localhost:9080
 backend:
   port: 3000
   apiUrl: http://localhost:3000/api
@@ -17,8 +18,6 @@ backend:
     - http://localhost:3000
     - http://localhost:9080
   compassToken: sync-token
-urls:
-  frontend: http://localhost:9080
 mongo:
   username: compass
   password: mongo-password
@@ -49,8 +48,8 @@ describe("compass config", () => {
       "http://localhost:9080",
     ]);
     expect(config.backend.port).toBe(3000);
-    expect(config.web?.port).toBe(9080);
-    expect(config.urls.frontend).toBe("http://localhost:9080");
+    expect(config.web.port).toBe(9080);
+    expect(config.web.url).toBe("http://localhost:9080");
     expect(config.mongo.uri).toBe("mongodb://localhost:27017/compass");
     expect(config.mongo.username).toBe("compass");
     expect(config.supertokens.uri).toBe("http://localhost:3567");

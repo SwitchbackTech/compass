@@ -49,13 +49,13 @@ jobs:
             'runtime:' \
             '  nodeEnv: production' \
             '  timezone: Etc/UTC' \
+            'web:' \
+            "  url: ${FRONTEND_URL}" \
             'backend:' \
             "  apiUrl: ${BACKEND_API_URL}" \
             '  originsAllowed:' \
             "    - ${FRONTEND_URL}" \
             "  compassToken: ${COMPASS_SYNC_TOKEN}" \
-            'urls:' \
-            "  frontend: ${FRONTEND_URL}" \
             'mongo:' \
             "  uri: ${MONGO_URI}" \
             'supertokens:' \

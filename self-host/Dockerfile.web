@@ -15,11 +15,11 @@ RUN printf '%s\n' \
   'runtime:' \
   '  nodeEnv: production' \
   '  timezone: Etc/UTC' \
+  'web:' \
+  '  url: http://localhost:9080' \
   'backend:' \
   "  apiUrl: ${BASEURL}" \
   '  compassToken: unused-web-build' \
-  'urls:' \
-  '  frontend: http://localhost:9080' \
   'mongo:' \
   '  uri: mongodb://localhost:27017/unused' \
   'supertokens:' \

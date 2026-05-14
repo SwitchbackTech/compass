@@ -11,6 +11,7 @@ runtime:
 
 web:
   port: 9080
+  url: http://localhost:9080
 
 backend:
   port: 3000
@@ -19,9 +20,6 @@ backend:
     - http://localhost:3000
     - http://localhost:9080
   compassToken: YOUR_UNIQUE_STRING
-
-urls:
-  frontend: http://localhost:9080
   # googleWebhook: https://example.trycloudflare.com/api
 
 mongo:

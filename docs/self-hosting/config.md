@@ -12,21 +12,27 @@ Examples:
 | key | Default | Description |
 |---|---|---|
 | `compose.version` | `latest` | Docker image tag used by the self-host compose stack. Pin this for reproducible installs. |
-| `ports.web` | `9080` | Host port bound to the web container on `127.0.0.1`. |
-| `ports.backend` | `3000` | Host port bound to the backend container on `127.0.0.1`. |
 | `runtime.nodeEnv` | `production` | Runtime mode. Self-hosted installs should use `production`; local development uses `development`. |
 | `runtime.timezone` | `Etc/UTC` | Backend timezone. Only `Etc/UTC` and `UTC` are accepted. |
 | `runtime.logLevel` | `info` | Winston log level. |
 
-## URLs
+## Web
 
 | key | Required | Description |
 |---|---|---|
-| `urls.frontend` | Yes | Public frontend URL as seen by the backend. Example: `https://compass.example.com`. |
-| `urls.backendApi` | Yes | Public API URL. Example: `https://compass.example.com/api`. This is baked into the web bundle when the web image is rebuilt. |
-| `urls.cors` | Yes | YAML list of allowed CORS origins. Include `urls.frontend`. |
-| `urls.googleWebhook` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `urls.backendApi`. |
-| `urls.health` | No | Override for helper health checks, usually `http://127.0.0.1:3000/api/health` when the public URL is behind Caddy. |
+| `web.port` | `9080` | Host port bound to the web container on `127.0.0.1`. |
+| `web.url` | Yes | Public frontend URL as seen by the backend. Example: `https://compass.example.com`. |
+
+## Backend
+
+| key | Required | Description |
+|---|---|---|
+| `backend.port` | `3000` | Host port bound to the backend container on `127.0.0.1`. |
+| `backend.apiUrl` | Yes | Public API URL. Example: `https://compass.example.com/api`. This is baked into the web bundle when the web image is rebuilt. |
+| `backend.originsAllowed` | Yes | YAML list of allowed CORS origins. Include `web.url`. |
+| `backend.compassToken` | Yes | Bearer token protecting internal sync endpoints. |
+| `backend.googleWebhook` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `backend.apiUrl`. |
+| `backend.healthUrl` | No | Override for helper health checks, usually `http://127.0.0.1:3000/api/health` when the public URL is behind Caddy. |
 
 ## MongoDB
 
@@ -51,7 +57,6 @@ Examples:
 
 | key | Required | Description |
 |---|---|---|
-| `tokens.compassSync` | Yes | Bearer token protecting internal sync endpoints. |
 | `tokens.googleCalendarNotification` | Required for HTTPS Google webhooks | Token used to verify Google Calendar webhook requests. |
 
 ## Google OAuth
@@ -77,6 +82,4 @@ See [Google Calendar](./google-calendar.md) for OAuth setup.
 
 ## GitHub Deployments
 
-For deployed instances managed through GitHub Actions, store the full deployed YAML as one GitHub Environment secret named `COMPASS_YAML`. Keep SSH and Docker Hub credentials as separate workflow secrets.
-
-After adding `COMPASS_YAML`, remove old app config vars/secrets such as `BASEURL`, `CORS`, `FRONTEND_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `MONGO_URI`, `SUPERTOKENS_*`, `TOKEN_*`, `POSTHOG_*`, and `COMPASS_VERSION`.
+For deployed instances managed through GitHub Actions, store non-sensitive config as GitHub environment variables (`vars.*`) and secrets as GitHub environment secrets (`secrets.*`). The deploy workflow assembles `compass.yaml` inline from these values before connecting to the server.

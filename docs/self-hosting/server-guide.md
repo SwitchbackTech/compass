@@ -249,7 +249,7 @@ cd ~/compass
 ```
 
 The rebuild step is needed when values baked into the web bundle change, such
-as `urls.backendApi` or `google.clientId`. It can be slow on a small VPS.
+as `backend.apiUrl` or `google.clientId`. It can be slow on a small VPS.
 
 Confirm the public health check still works after applying the env changes:
 

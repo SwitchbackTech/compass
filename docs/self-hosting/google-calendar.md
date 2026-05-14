@@ -65,7 +65,7 @@ For Google to notify Compass when something changes in Google Calendar, Google m
 Local setups do not create a public HTTPS URL, so they can't receive these. You have two paths:
 
 - **Run Compass on a public server.** The recommended path. See [Server hosting guide](./server-guide.md).
-- **Use a public HTTPS tunnel for webhooks only (development).** The backend supports `urls.googleWebhook` as a separate public HTTPS base URL for Google webhook callbacks. Browser API traffic and Server-Sent Events keep using localhost:
+- **Use a public HTTPS tunnel for webhooks only (development).** The backend supports `backend.googleWebhook` as a separate public HTTPS base URL for Google webhook callbacks. Browser API traffic and Server-Sent Events keep using localhost:
 
   ```yaml
   urls:

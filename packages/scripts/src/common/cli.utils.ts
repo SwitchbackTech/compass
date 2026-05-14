@@ -20,7 +20,7 @@ export const getApiBaseUrl = async (
 };
 
 const getDomainAnswer = async () => {
-  const { hostname, host } = new URL(cliConfig.urls.frontend);
+  const { hostname, host } = new URL(cliConfig.web.url);
 
   if (hostname !== "localhost") {
     return host;
@@ -30,7 +30,7 @@ const getDomainAnswer = async () => {
     Do not include 'https://', just the domain.
     Example: app.yourdomain.com
 
-    Tip: set urls.frontend in compass.yaml to skip this step.
+    Tip: set web.url in compass.yaml to skip this step.
 
     Type here:`;
 

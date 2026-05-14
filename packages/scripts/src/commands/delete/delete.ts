@@ -30,7 +30,7 @@ const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
 };
 
 const getCleanupUrl = (): string => {
-  return `${cliConfig.urls.frontend}/cleanup`;
+  return `${cliConfig.web.url}/cleanup`;
 };
 
 const normalizeEmail = (value: string): string => value.trim().toLowerCase();
