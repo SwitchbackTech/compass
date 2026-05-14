@@ -27,16 +27,17 @@ jobs:
         env:
           # Non-sensitive
           BACKEND_API_URL: ${{ vars.STAGING_BACKEND_API_URL }}
-          FRONTEND_URL: ${{ vars.STAGING_FRONTEND_URL }} GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
+          FRONTEND_URL: ${{ vars.STAGING_FRONTEND_URL }}
+          GOOGLE_CLIENT_ID: ${{ vars.STAGING_GOOGLE_CLIENT_ID }}
           RELEASE_TAG: ${{ inputs.tag }}
+          SSH_USER: ${{ vars.STAGING_SSH_USER }}
+          SSH_HOST: ${{ vars.STAGING_SSH_HOST }}
           SUPERTOKENS_URI: ${{ vars.STAGING_SUPERTOKENS_URI }}
           # Sensitive 
           COMPASS_SYNC_TOKEN: ${{ secrets.STAGING_COMPASS_SYNC_TOKEN }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
           MONGO_URI: ${{ secrets.STAGING_MONGO_URI }}
           SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
-          SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
-          SSH_USER: ${{ secrets.STAGING_SSH_USER }}
           SUPERTOKENS_KEY: ${{ secrets.STAGING_SUPERTOKENS_KEY }}
         run: |
           echo "Deploying Compass ${RELEASE_TAG} to staging"
