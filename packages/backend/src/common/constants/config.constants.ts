@@ -107,7 +107,9 @@ function parseRawConfig(config: CompassConfig): Config {
   });
 }
 
-function parseConfig(rawEnv: Record<string, string | undefined>): Config {
+export function parseConfigFromEnv(
+  rawEnv: Record<string, string | undefined>,
+): Config {
   const nodeEnv = rawEnv["NODE_ENV"] as NodeEnv;
 
   return ConfigSchema.parse({
@@ -139,7 +141,7 @@ let parsedConfig: Config;
 
 try {
   parsedConfig = isTestWithoutConfig
-    ? parseConfig(process.env)
+    ? parseConfigFromEnv(process.env)
     : parseRawConfig(loadCompassConfig());
 } catch (error) {
   logger.error(

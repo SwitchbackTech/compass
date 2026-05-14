@@ -4,7 +4,7 @@ import {
 } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG as ENV } from "@backend/common/constants/config.constants";
 
 describe("GET /api/config", () => {
   const baseDriver = new BaseDriver();

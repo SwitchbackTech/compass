@@ -6,7 +6,7 @@ import {
   SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
 } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG as ENV } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import GoogleOAuthClient from "./google.oauth.client";
 

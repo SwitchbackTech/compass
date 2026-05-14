@@ -1,14 +1,14 @@
 import { faker } from "@faker-js/faker";
 import { Resource_Sync } from "@core/types/sync.types";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG as ENV } from "@backend/common/constants/config.constants";
 import {
   decodeChannelToken,
   encodeChannelToken,
 } from "@backend/sync/services/watch/google-watch-token";
 
 // Mock ENV
-jest.mock("@backend/common/constants/env.constants", () => ({
-  ENV: { TOKEN_GCAL_NOTIFICATION: "test-notification-token" },
+jest.mock("@backend/common/constants/config.constants", () => ({
+  CONFIG: { TOKEN_GCAL_NOTIFICATION: "test-notification-token" },
 }));
 
 describe("google-watch-token", () => {

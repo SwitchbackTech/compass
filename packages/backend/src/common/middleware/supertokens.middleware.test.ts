@@ -12,7 +12,7 @@ import {
   SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
 } from "@core/constants/core.constants";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG as ENV } from "@backend/common/constants/config.constants";
 import {
   initSupertokens,
   supertokensCors,

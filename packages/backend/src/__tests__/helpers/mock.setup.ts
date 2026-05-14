@@ -18,7 +18,7 @@ import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { type UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG as ENV } from "@backend/common/constants/config.constants";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { randomUUID } from "node:crypto";
 
