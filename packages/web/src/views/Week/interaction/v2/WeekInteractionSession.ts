@@ -1,3 +1,5 @@
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+
 export type WeekInteractionPhase = "idle" | "pending" | "motion" | "commit";
 
 export interface IdleWeekInteractionSession {
@@ -30,6 +32,11 @@ export type WeekInteractionSession =
   | ActiveTimedDragSession;
 
 export type WeekInteractionPointerUpResult =
-  | { eventId: string; type: "click" }
-  | { eventId: string; type: "timedDragEnd" }
+  | { event: Schema_GridEvent; eventId: string; type: "click" }
+  | {
+      event: Schema_GridEvent;
+      eventId: string;
+      hasMoved: boolean;
+      type: "timedDragEnd";
+    }
   | null;

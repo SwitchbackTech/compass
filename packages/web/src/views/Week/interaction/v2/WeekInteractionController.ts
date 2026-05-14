@@ -1,6 +1,10 @@
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
+import {
+  hasTimedDragVisualMoved,
+  visualDraftToGridEvent,
+} from "./commit/visualDraftToGridEvent";
 import { cloneGridEventNode } from "./dom/cloneGridEventNode";
 import { DragOverlay } from "./dom/DragOverlay";
 import {
@@ -174,17 +178,29 @@ export class WeekInteractionController {
 
     if (this.#session.phase === "pending") {
       const eventId = this.#session.eventId;
+      const registered = this.#options.getRegisteredEvent(eventId);
       this.#clearPendingTimer(this.#session);
       this.#session = { phase: "idle" };
 
-      return { eventId, type: "click" };
+      return registered
+        ? { event: registered.event, eventId, type: "click" }
+        : null;
     }
 
     const eventId = this.#session.eventId;
+    const registered = this.#options.getRegisteredEvent(eventId);
+    const visual = this.#visual;
+    const movedEvent =
+      registered && visual
+        ? visualDraftToGridEvent(registered.event, visual)
+        : null;
+    const hasMoved = visual ? hasTimedDragVisualMoved(visual) : false;
     this.#teardownActiveSession();
     this.#session = { phase: "idle" };
 
-    return { eventId, type: "timedDragEnd" };
+    return movedEvent
+      ? { event: movedEvent, eventId, hasMoved, type: "timedDragEnd" }
+      : null;
   }
 
   getSession(): WeekInteractionSession {

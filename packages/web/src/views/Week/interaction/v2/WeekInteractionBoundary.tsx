@@ -6,19 +6,48 @@ import {
   useRef,
 } from "react";
 import { useStore } from "react-redux";
+import { Categories_Event } from "@core/types/event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import {
+  createEventSlice,
+  editEventSlice,
+} from "@web/ducks/events/slices/event.slice";
 import { type RootState } from "@web/store";
+import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { WeekInteractionController } from "./WeekInteractionController";
 
+export type WeekInteractionCommitAdapter = {
+  openExistingEvent: (event: Schema_GridEvent) => void;
+  submitMovedEvent: (
+    event: Schema_GridEvent,
+    meta: { hadFormOpenBeforeInteraction: boolean },
+  ) => void;
+};
+
 interface Props extends PropsWithChildren {
+  commitAdapter?: WeekInteractionCommitAdapter;
   controller?: WeekInteractionController;
 }
 
-export const WeekInteractionBoundary = ({ children, controller }: Props) => {
+const noopCommitAdapter: WeekInteractionCommitAdapter = {
+  openExistingEvent: () => {},
+  submitMovedEvent: () => {},
+};
+
+export const WeekInteractionBoundary = ({
+  children,
+  commitAdapter,
+  controller,
+}: Props) => {
   if (controller) {
     return (
-      <WeekInteractionBoundaryView controller={controller}>
+      <WeekInteractionBoundaryView
+        commitAdapter={commitAdapter ?? noopCommitAdapter}
+        controller={controller}
+      >
         {children}
       </WeekInteractionBoundaryView>
     );
@@ -33,6 +62,7 @@ export const WeekInteractionBoundary = ({ children, controller }: Props) => {
 
 const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
   const store = useStore<RootState>();
+  const { actions } = useDraftContext();
   const defaultController = useMemo(
     () =>
       new WeekInteractionController({
@@ -50,13 +80,21 @@ const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
     const originalDispatch = store.dispatch;
     store.dispatch = ((action: Parameters<typeof originalDispatch>[0]) => {
       const metrics = window.__weekInteractionMetrics;
+      const actionType =
+        typeof action === "object" && action && "type" in action
+          ? String(action.type)
+          : "unknown";
       if (metrics?.phase === "motion") {
         metrics.reduxDispatchesDuringMotion += 1;
-        metrics.reduxActionTypesDuringMotion.push(
-          typeof action === "object" && action && "type" in action
-            ? String(action.type)
-            : "unknown",
-        );
+        metrics.reduxActionTypesDuringMotion.push(actionType);
+      }
+
+      if (metrics && isEventSaveRequest(actionType)) {
+        if (metrics.phase === "motion") {
+          metrics.saveRequestsDuringMotion += 1;
+        } else if (metrics.phase === "commit") {
+          metrics.saveRequestsAfterPointerUp += 1;
+        }
       }
 
       return originalDispatch(action);
@@ -67,8 +105,29 @@ const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
     };
   }, [store]);
 
+  const commitAdapter = useMemo<WeekInteractionCommitAdapter>(
+    () => ({
+      openExistingEvent: (event) => {
+        store.dispatch(
+          draftSlice.actions.start({
+            activity: "gridClick",
+            event,
+            eventType: Categories_Event.TIMED,
+          }),
+        );
+      },
+      submitMovedEvent: (event) => {
+        void actions.submit(event);
+      },
+    }),
+    [actions, store],
+  );
+
   return (
-    <WeekInteractionBoundaryView controller={defaultController}>
+    <WeekInteractionBoundaryView
+      commitAdapter={commitAdapter}
+      controller={defaultController}
+    >
       {children}
     </WeekInteractionBoundaryView>
   );
@@ -76,8 +135,12 @@ const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
 
 const WeekInteractionBoundaryView = ({
   children,
+  commitAdapter,
   controller,
-}: PropsWithChildren<{ controller: WeekInteractionController }>) => {
+}: PropsWithChildren<{
+  commitAdapter: WeekInteractionCommitAdapter;
+  controller: WeekInteractionController;
+}>) => {
   const boundaryRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -112,7 +175,18 @@ const WeekInteractionBoundaryView = ({
         return;
       }
 
-      controller.handlePointerUp(event);
+      const result = controller.handlePointerUp(event);
+      if (result?.type === "click") {
+        commitAdapter.openExistingEvent(result.event);
+      } else if (result?.type === "timedDragEnd") {
+        if (result.hasMoved) {
+          commitAdapter.submitMovedEvent(result.event, {
+            hadFormOpenBeforeInteraction: false,
+          });
+        } else {
+          commitAdapter.openExistingEvent(result.event);
+        }
+      }
       event.preventDefault();
       event.stopPropagation();
     };
@@ -136,7 +210,7 @@ const WeekInteractionBoundaryView = ({
         capture: true,
       });
     };
-  }, [controller]);
+  }, [commitAdapter, controller]);
 
   return (
     <Profiler
@@ -159,3 +233,7 @@ const WeekInteractionBoundaryView = ({
     </Profiler>
   );
 };
+
+const isEventSaveRequest = (actionType: string) =>
+  actionType === createEventSlice.actions.request.type ||
+  actionType === editEventSlice.actions.request.type;

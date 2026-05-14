@@ -122,3 +122,13 @@ Use the same machine and avoid background-heavy work when comparing runs.
   max frame gap. `timed-drag-v2-sustained` reported a 15.4 ms max frame gap,
   0 long tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save
   requests 0, RAF p95 0.1 ms, and RAF max 0.5 ms.
+- 2026-05-14, `v2-timed-drag-commit`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T18-22-13-315Z-v2-timed-drag-commit.json`
+  recorded Task 6 after routing unchanged clicks and moved timed drags through
+  the V2 pointer-up adapter. `--compare latest` was refused because `latest`
+  used the Task 5 scenario shape, so the run used the explicit
+  `v2-timed-drag-overlay-rerun` JSON path. `timed-drag-v2-click-unchanged`
+  reported React 0, Redux 0, unexpected DOM 0, layout reads 0, and save 0/0.
+  `timed-drag-v2-pointerup-commit` reported a 26.6 ms max frame gap, 0 long
+  tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save 0/1, RAF p95
+  0.2 ms, and RAF max 0.2 ms.

@@ -1247,6 +1247,7 @@ const measureTimedDragV2ClickUnchanged = async (
   baseUrl: string,
 ): Promise<ScenarioSample> => {
   const { box } = await prepareSingleTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
   const startX = box.x + box.width / 2;
   const startY = box.y + Math.min(20, box.height / 2);
 
@@ -1313,8 +1314,30 @@ const measureTimedDragV2Sustained = async (
   return sample;
 };
 
-const measureTimedDragV2PointerupCommit = (page: Page, baseUrl: string) =>
-  measureDragTimedEvent(page, baseUrl);
+const measureTimedDragV2PointerupCommit = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box, eventButton, eventSelector } =
+    await prepareSingleTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
+
+  const startX = box.x + box.width / 2;
+  const startY = box.y + Math.min(20, box.height / 2);
+  const endX = startX + 90;
+  const endY = startY + 120;
+
+  return measureAction(page, async () => {
+    await page.mouse.move(startX, startY);
+    await page.mouse.down();
+    await page.mouse.move(startX + 30, startY + 30, { steps: 4 });
+    await waitForWeekInteractionOverlay(page);
+    await page.mouse.move(endX, endY, { steps: 16 });
+    await page.mouse.up();
+    await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+    await waitForElementBoxChange(page, eventSelector, box, ["x", "y"]);
+  });
+};
 
 const measureLongDragTimedEvent = async (
   page: Page,

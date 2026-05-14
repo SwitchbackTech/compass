@@ -24,7 +24,60 @@ describe("WeekInteractionController", () => {
       createPointerEvent("pointerup", sourceElement, 100, 100),
     );
 
-    expect(result).toEqual({ eventId: "event-1", type: "click" });
+    expect(result).toMatchObject({ eventId: "event-1", type: "click" });
+    expect(result?.event).toMatchObject({ _id: "event-1" });
+    expect(controller.getSession().phase).toBe("idle");
+
+    unregister();
+  });
+
+  it("returns a moved event only after active timed drag release", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      callback(timestamp);
+    };
+    const { controller, sourceElement, unregister } = setupEligibleController(
+      {
+        requestFrame: (callback) => {
+          frameCallback = callback;
+          return 1;
+        },
+      },
+      {
+        endDate: "2026-05-12T11:00:00",
+        startDate: "2026-05-12T10:00:00",
+        title: "Original title",
+      },
+    );
+
+    controller.handlePointerDown(
+      createPointerEvent("pointerdown", sourceElement, 250, 120),
+    );
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 280, 150),
+    );
+    runFrame(16);
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 365, 210),
+    );
+    runFrame(32);
+
+    const result = controller.handlePointerUp(
+      createPointerEvent("pointerup", sourceElement, 365, 210),
+    );
+
+    expect(result).toMatchObject({
+      eventId: "event-1",
+      hasMoved: true,
+      type: "timedDragEnd",
+    });
+    expect(result?.event.title).toBe("Original title");
+    expect(result?.event.startDate).toContain("2026-05-13T11:30:00");
+    expect(result?.event.endDate).toContain("2026-05-13T12:30:00");
     expect(controller.getSession().phase).toBe("idle");
 
     unregister();
