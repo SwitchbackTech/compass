@@ -11,7 +11,7 @@ export const getApiBaseUrl = async (
   const category = environment ? environment : await getEnvironmentAnswer();
 
   if (category === "local") {
-    const baseUrl: string = cliConfig.urls.backendApi.replace(/\/$/, "");
+    const baseUrl: string = cliConfig.backend.apiUrl.replace(/\/$/, "");
     return baseUrl;
   }
 

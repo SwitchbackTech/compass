@@ -4,20 +4,23 @@
 compose:
   version: latest
 
-ports:
-  web: 9080
-  backend: 3000
-
 runtime:
   nodeEnv: production
   timezone: Etc/UTC
   logLevel: info
 
+web:
+  port: 9080
+
+backend:
+  port: 3000
+  apiUrl: https://cal.yourdomain.com/api
+  originsAllowed:
+    - https://cal.yourdomain.com
+  compassToken: replace-with-generated-compass-sync-token
+
 urls:
   frontend: https://cal.yourdomain.com
-  backendApi: https://cal.yourdomain.com/api
-  cors:
-    - https://cal.yourdomain.com
   # health: http://127.0.0.1:3000/api/health
   # googleWebhook: https://cal.yourdomain.com/api
 
@@ -35,9 +38,8 @@ supertokens:
     password: replace-with-generated-supertokens-postgres-password
     database: supertokens
 
-tokens:
-  compassSync: replace-with-generated-compass-sync-token
-  googleCalendarNotification: replace-with-generated-gcal-notification-token
+# tokens:
+#   googleCalendarNotification: replace-with-generated-gcal-notification-token
 
 # google:
 #   clientId: YOUR_GOOGLE_CLIENT_ID.apps.googleusercontent.com

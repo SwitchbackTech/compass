@@ -4,21 +4,24 @@
 compose:
   version: latest
 
-ports:
-  web: 9080
-  backend: 3000
-
 runtime:
   nodeEnv: development
   timezone: Etc/UTC
   logLevel: debug
 
-urls:
-  frontend: http://localhost:9080
-  backendApi: http://localhost:3000/api
-  cors:
+web:
+  port: 9080
+
+backend:
+  port: 3000
+  apiUrl: http://localhost:3000/api
+  originsAllowed:
     - http://localhost:3000
     - http://localhost:9080
+  compassToken: YOUR_UNIQUE_STRING
+
+urls:
+  frontend: http://localhost:9080
   # googleWebhook: https://example.trycloudflare.com/api
 
 mongo:
@@ -31,9 +34,8 @@ supertokens:
   uri: UNIQUE_URI_FROM_YOUR_SUPERTOKENS_ACCOUNT
   key: UNIQUE_KEY_FROM_YOUR_SUPERTOKENS_ACCOUNT
 
-tokens:
-  compassSync: YOUR_UNIQUE_STRING
-  googleCalendarNotification: ANOTHER_UNIQUE_STRING
+# tokens:
+#   googleCalendarNotification: ANOTHER_UNIQUE_STRING
 
 # google:
 #   clientId: UNIQUE_ID_FROM_YOUR_GOOGLE_CLOUD_PROJECT

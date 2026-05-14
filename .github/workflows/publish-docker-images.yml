@@ -83,7 +83,7 @@ jobs:
           context: .
           file: self-host/Dockerfile.web
           push: true
-          # urls.backendApi and google.clientId are baked into the web bundle at build time.
+          # backend.apiUrl and google.clientId are baked into the web bundle at build time.
           # The published image ships with localhost defaults, which work for local installs.
           # Users who need a custom API domain or real Google credentials must rebuild
           # the web image locally using the build: blocks in compose.yaml.

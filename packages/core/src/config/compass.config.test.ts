@@ -4,19 +4,21 @@ import { describe, expect, it } from "bun:test";
 const validYaml = `
 compose:
   version: latest
-ports:
-  web: 9080
-  backend: 3000
 runtime:
   nodeEnv: development
   timezone: Etc/UTC
   logLevel: debug
-urls:
-  frontend: http://localhost:9080
-  backendApi: http://localhost:3000/api
-  cors:
+web:
+  port: 9080
+backend:
+  port: 3000
+  apiUrl: http://localhost:3000/api
+  originsAllowed:
     - http://localhost:3000
     - http://localhost:9080
+  compassToken: sync-token
+urls:
+  frontend: http://localhost:9080
 mongo:
   username: compass
   password: mongo-password
@@ -30,7 +32,6 @@ supertokens:
     password: postgres-password
     database: supertokens
 tokens:
-  compassSync: sync-token
   googleCalendarNotification: notification-token
 `;
 
@@ -41,21 +42,23 @@ describe("compass config", () => {
     expect(config.runtime.nodeEnv).toBe("development");
     expect(config.runtime.timezone).toBe("Etc/UTC");
     expect(config.runtime.logLevel).toBe("debug");
-    expect(config.urls.backendApi).toBe("http://localhost:3000/api");
-    expect(config.urls.frontend).toBe("http://localhost:9080");
-    expect(config.urls.cors).toEqual([
+    expect(config.backend.apiUrl).toBe("http://localhost:3000/api");
+    expect(config.backend.compassToken).toBe("sync-token");
+    expect(config.backend.originsAllowed).toEqual([
       "http://localhost:3000",
       "http://localhost:9080",
     ]);
+    expect(config.backend.port).toBe(3000);
+    expect(config.web?.port).toBe(9080);
+    expect(config.urls.frontend).toBe("http://localhost:9080");
     expect(config.mongo.uri).toBe("mongodb://localhost:27017/compass");
     expect(config.mongo.username).toBe("compass");
     expect(config.supertokens.uri).toBe("http://localhost:3567");
     expect(config.supertokens.key).toBe("supertokens-key");
     expect(config.supertokens.postgres?.user).toBe("supertokens");
-    expect(config.tokens.compassSync).toBe("sync-token");
-    expect(config.tokens.googleCalendarNotification).toBe("notification-token");
-    expect(config.ports?.web).toBe(9080);
-    expect(config.ports?.backend).toBe(3000);
+    expect(config.tokens?.googleCalendarNotification).toBe(
+      "notification-token",
+    );
     expect(config.compose?.version).toBe("latest");
   });
 

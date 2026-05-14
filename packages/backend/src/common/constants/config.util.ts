@@ -4,9 +4,6 @@ import {
 } from "@core/constants/core.constants";
 import { type Config } from "./config.constants";
 
-export function getGcalWebhookBaseURL(): string {
-  return CONFIG.GCAL_WEBHOOK_BASEURL ?? CONFIG.BASEURL;
-}
 export const isGoogleClientIdValid = (clientId?: string): boolean =>
   Boolean(
     clientId &&

@@ -1,7 +1,7 @@
 import { z } from "zod";
 import {
-  loadCompassConfig,
   type CompassConfig,
+  loadCompassConfig,
 } from "@core/config/compass.config";
 import { NodeEnv, PORT_DEFAULT_BACKEND } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
@@ -23,13 +23,7 @@ const ConfigSchema = z
     EMAILER_SECRET: z.string().nonempty().optional(),
     EMAILER_USER_TAG_ID: z.string().nonempty().optional(),
     FRONTEND_URL: z.string().url(),
-    GCAL_WEBHOOK_BASEURL: z
-      .string()
-      .url()
-      .refine((url) => url.startsWith("https://"), {
-        message: "GCAL_WEBHOOK_BASEURL must use HTTPS",
-      })
-      .optional(),
+    GCAL_WEBHOOK_BASEURL: z.string().url(),
     MONGO_URI: z.string().nonempty(),
     NODE_ENV: z.nativeEnum(NodeEnv),
     TZ: z.enum(["Etc/UTC", "UTC"]),
@@ -60,8 +54,7 @@ const ConfigSchema = z
     }
 
     const usesHttpsGoogleWebhook =
-      env.GCAL_WEBHOOK_BASEURL?.startsWith("https://") ||
-      env.BASEURL.startsWith("https://");
+      env.GCAL_WEBHOOK_BASEURL.startsWith("https://");
 
     if (
       isGoogleConfigComplete &&
@@ -91,7 +84,7 @@ function parseRawConfig(config: CompassConfig): Config {
   const nodeEnv = config.runtime.nodeEnv as NodeEnv;
 
   return ConfigSchema.parse({
-    BASEURL: config.urls.backendApi,
+    BASEURL: config.backend.apiUrl,
     CHANNEL_EXPIRATION_MIN: toStr(config.google?.channelExpirationMin) ?? "10",
     GOOGLE_CLIENT_ID: nonEmpty(config.google?.clientId),
     GOOGLE_CLIENT_SECRET: nonEmpty(config.google?.clientSecret),
@@ -99,17 +92,18 @@ function parseRawConfig(config: CompassConfig): Config {
     EMAILER_SECRET: nonEmpty(config.email?.kitApiSecret),
     EMAILER_USER_TAG_ID: toStr(config.email?.kitUserTagId),
     FRONTEND_URL: config.urls.frontend,
-    GCAL_WEBHOOK_BASEURL: nonEmpty(config.urls.googleWebhook) || undefined,
+    GCAL_WEBHOOK_BASEURL:
+      nonEmpty(config.urls.googleWebhook) || config.backend.apiUrl,
     MONGO_URI: config.mongo.uri,
     NODE_ENV: nodeEnv,
     TZ: config.runtime.timezone,
-    ORIGINS_ALLOWED: config.urls.cors ?? [],
-    PORT: toStr(config.ports?.backend),
+    ORIGINS_ALLOWED: config.backend.originsAllowed ?? [],
+    PORT: toStr(config.backend.port),
     SUPERTOKENS_URI: config.supertokens.uri,
     SUPERTOKENS_KEY: config.supertokens.key,
     TOKEN_GCAL_NOTIFICATION:
-      nonEmpty(config.tokens.googleCalendarNotification) ?? "",
-    TOKEN_COMPASS_SYNC: config.tokens.compassSync,
+      nonEmpty(config.tokens?.googleCalendarNotification) ?? "",
+    TOKEN_COMPASS_SYNC: config.backend.compassToken,
   });
 }
 
@@ -125,7 +119,7 @@ function parseConfig(rawEnv: Record<string, string | undefined>): Config {
     EMAILER_SECRET: rawEnv["EMAILER_API_SECRET"],
     EMAILER_USER_TAG_ID: rawEnv["EMAILER_USER_TAG_ID"],
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
-    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"] || undefined,
+    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"] || rawEnv["BASEURL"],
     MONGO_URI: rawEnv["MONGO_URI"],
     NODE_ENV: nodeEnv,
     TZ: rawEnv["TZ"],

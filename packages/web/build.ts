@@ -42,11 +42,11 @@ const OUTDIR = path.resolve(import.meta.dir, "../../build/web");
 const define: Record<string, string> = {
   "process.env": JSON.stringify({
     NODE_ENV: config.runtime.nodeEnv || "production",
-    API_BASEURL: config.urls.backendApi,
+    API_BASEURL: config.backend.apiUrl,
     GOOGLE_CLIENT_ID: config.google?.clientId || "",
     POSTHOG_KEY: config.posthog?.key || "",
     POSTHOG_HOST: config.posthog?.host || "",
-    PORT: String(config.ports?.backend ?? 3000),
+    PORT: String(config.backend.port ?? 3000),
   }),
   BUILD_VERSION: JSON.stringify(BUILD_VERSION),
 };

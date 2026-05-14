@@ -12,12 +12,17 @@ const CompassConfigSchema = z
         version: z.union([z.string(), z.number()]).optional(),
       })
       .optional(),
-    ports: z
+    web: z
       .object({
-        web: z.union([z.string(), z.number()]).optional(),
-        backend: z.union([z.string(), z.number()]).optional(),
+        port: z.union([z.string(), z.number()]).optional(),
       })
       .optional(),
+    backend: z.object({
+      port: z.union([z.string(), z.number()]).optional(),
+      apiUrl: z.string(),
+      originsAllowed: z.array(z.string()).optional(),
+      compassToken: z.string(),
+    }),
     runtime: z.object({
       nodeEnv: z.string(),
       timezone: z.enum(["Etc/UTC", "UTC"]),
@@ -25,8 +30,6 @@ const CompassConfigSchema = z
     }),
     urls: z.object({
       frontend: z.string(),
-      backendApi: z.string(),
-      cors: z.array(z.string()).optional(),
       googleWebhook: optionalString,
       health: optionalString,
     }),
@@ -47,10 +50,11 @@ const CompassConfigSchema = z
         })
         .nullish(),
     }),
-    tokens: z.object({
-      compassSync: z.string(),
-      googleCalendarNotification: z.string().optional(),
-    }),
+    tokens: z
+      .object({
+        googleCalendarNotification: z.string().optional(),
+      })
+      .nullish(),
     google: z
       .object({
         clientId: optionalString,

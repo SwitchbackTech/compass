@@ -12,10 +12,8 @@ import {
   assertGoogleRedirectUri,
   getGoogleAuthCallbackUrl,
 } from "@backend/auth/services/google/util/google.redirect-uri.util";
-import {
-  CONFIG,
-  isGoogleConfigured,
-} from "@backend/common/constants/config.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
+import { isGoogleConfigured } from "@backend/common/constants/config.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 

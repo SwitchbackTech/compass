@@ -15,18 +15,16 @@ RUN printf '%s\n' \
   'runtime:' \
   '  nodeEnv: production' \
   '  timezone: Etc/UTC' \
+  'backend:' \
+  "  apiUrl: ${BASEURL}" \
+  '  compassToken: unused-web-build' \
   'urls:' \
-  "  frontend: http://localhost:9080" \
-  "  backendApi: ${BASEURL}" \
-  '  cors:' \
-  '    - http://localhost:9080' \
+  '  frontend: http://localhost:9080' \
   'mongo:' \
   '  uri: mongodb://localhost:27017/unused' \
   'supertokens:' \
   '  uri: http://localhost:3567' \
   '  key: unused-web-build' \
-  'tokens:' \
-  '  compassSync: unused-web-build' \
   'google:' \
   "  clientId: ${GOOGLE_CLIENT_ID}" \
   > compass.yaml

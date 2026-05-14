@@ -230,8 +230,8 @@ read_config_value() {
 }
 
 load_runtime_config() {
-  web_port=$(strip_quotes "$(read_config_value ports.web)")
-  backend_port=$(strip_quotes "$(read_config_value ports.backend)")
+  web_port=$(strip_quotes "$(read_config_value web.port)")
+  backend_port=$(strip_quotes "$(read_config_value backend.port)")
 
   WEB_PORT_VALUE=${web_port:-9080}
   PORT_VALUE=${backend_port:-3000}
@@ -348,7 +348,7 @@ validate_existing_env_secrets() {
   validate_existing_secret mongo.replicaSetKey change-me-mongo-replica-set-key-32chars
   validate_existing_secret supertokens.postgres.password change-me-supertokens-postgres-pass-32
   validate_existing_secret supertokens.key change-me-supertokens-key-32chars
-  validate_existing_secret tokens.compassSync change-me-compass-sync-token-32chars
+  validate_existing_secret backend.compassToken change-me-compass-sync-token-32chars
   validate_existing_secret tokens.googleCalendarNotification change-me-gcal-notification-token-32chars
   validate_existing_mongo_uri
 }
@@ -375,20 +375,23 @@ write_config_if_missing() {
 compose:
   version: $COMPASS_VERSION
 
-ports:
-  web: 9080
-  backend: 3000
-
 runtime:
   nodeEnv: production
   timezone: Etc/UTC
   logLevel: info
 
+web:
+  port: 9080
+
+backend:
+  port: 3000
+  apiUrl: https://cal.yourdomain.com/api
+  originsAllowed:
+    - https://cal.yourdomain.com
+  compassToken: $compass_sync_token
+
 urls:
   frontend: https://cal.yourdomain.com
-  backendApi: https://cal.yourdomain.com/api
-  cors:
-    - https://cal.yourdomain.com
 
 mongo:
   username: compass
@@ -405,7 +408,6 @@ supertokens:
     database: supertokens
 
 tokens:
-  compassSync: $compass_sync_token
   googleCalendarNotification: $gcal_notification_token
 
 # google:
@@ -455,8 +457,8 @@ write_compose_env() {
   cat > "$COMPOSE_ENV_FILE" <<EOF
 COMPASS_CONFIG_FILE=$CONFIG_FILE
 COMPASS_VERSION=$(strip_quotes "$(read_config_value compose.version)")
-WEB_PORT=$(strip_quotes "$(read_config_value ports.web)")
-PORT=$(strip_quotes "$(read_config_value ports.backend)")
+WEB_PORT=$(strip_quotes "$(read_config_value web.port)")
+PORT=$(strip_quotes "$(read_config_value backend.port)")
 MONGO_INITDB_ROOT_USERNAME=$(strip_quotes "$(read_config_value mongo.username)")
 MONGO_INITDB_ROOT_PASSWORD=$(strip_quotes "$(read_config_value mongo.password)")
 MONGO_REPLICA_SET_KEY=$(strip_quotes "$(read_config_value mongo.replicaSetKey)")

@@ -12,10 +12,8 @@ import UserMetadata from "supertokens-node/recipe/usermetadata";
 import { APP_NAME } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import {
-  CONFIG,
-  isGoogleConfigured,
-} from "@backend/common/constants/config.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
+import { isGoogleConfigured } from "@backend/common/constants/config.util";
 import {
   createEmailPasswordUser,
   createGoogleUser,

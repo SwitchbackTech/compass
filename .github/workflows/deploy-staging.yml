@@ -49,18 +49,18 @@ jobs:
             'runtime:' \
             '  nodeEnv: production' \
             '  timezone: Etc/UTC' \
+            'backend:' \
+            "  apiUrl: ${BACKEND_API_URL}" \
+            '  originsAllowed:' \
+            "    - ${FRONTEND_URL}" \
+            "  compassToken: ${COMPASS_SYNC_TOKEN}" \
             'urls:' \
             "  frontend: ${FRONTEND_URL}" \
-            "  backendApi: ${BACKEND_API_URL}" \
-            '  cors:' \
-            "    - ${FRONTEND_URL}" \
             'mongo:' \
             "  uri: ${MONGO_URI}" \
             'supertokens:' \
             "  uri: ${SUPERTOKENS_URI}" \
             "  key: ${SUPERTOKENS_KEY}" \
-            'tokens:' \
-            "  compassSync: ${COMPASS_SYNC_TOKEN}" \
             'google:' \
             "  clientId: ${GOOGLE_CLIENT_ID}" \
             "  clientSecret: ${GOOGLE_CLIENT_SECRET}" \

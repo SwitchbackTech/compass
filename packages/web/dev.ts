@@ -5,7 +5,7 @@ import path from "node:path";
 
 const config = loadCompassConfig();
 
-const WEB_PORT = Number(config.ports?.web) || 9080;
+const WEB_PORT = Number(config.web?.port) || 9080;
 const OUTDIR = path.resolve(import.meta.dir, "../../build/web");
 const SRCDIR = path.resolve(import.meta.dir, "src");
 
@@ -19,11 +19,11 @@ const IS_DEV = (config.runtime.nodeEnv ?? "development") === "development";
 const define: Record<string, string> = {
   "process.env": JSON.stringify({
     NODE_ENV: config.runtime.nodeEnv || "development",
-    API_BASEURL: config.urls.backendApi,
+    API_BASEURL: config.backend.apiUrl,
     GOOGLE_CLIENT_ID: config.google?.clientId || "",
     POSTHOG_KEY: config.posthog?.key || "",
     POSTHOG_HOST: config.posthog?.host || "",
-    PORT: String(config.ports?.backend ?? 3000),
+    PORT: String(config.backend.port ?? 3000),
   }),
   BUILD_VERSION: JSON.stringify("dev"),
 };
