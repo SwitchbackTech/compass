@@ -47,46 +47,16 @@ Runtime note:
 - `bun run dev:backend`, `bun run dev:web`, and `bun run cli ...` load values from `compass.yaml` at the repo root.
 - `compass.yaml` contains secrets. Do not commit it.
 
-Migrating from the old `.env.local` setup:
-
-1. Pull the latest code.
-2. Run `bun install`.
-3. Copy `compass.example.yaml` to `compass.yaml` at the repo root.
-4. Copy your old `.env.local` values into the matching YAML fields.
-5. Delete or archive `packages/backend/.env.local`; Compass no longer reads it.
-6. Run `bun run dev:web` and `bun run dev:backend`.
-
 ## Backend Environment Contract
 
-Source:
+Source: `packages/backend/src/common/constants/env.constants.ts`
 
-- `packages/backend/src/common/constants/env.constants.ts`
+Workflow: The backend loads `compass.yaml`, builds the runtime config object directly from it, and validates that object at startup with Zod.
 
-The backend loads `compass.yaml`, builds the runtime config object directly from it, and validates that object at startup with Zod.
+Google Integration
 
-Important config paths:
-
-- `runtime.nodeEnv`
-- `runtime.timezone`
-- `urls.backendApi`
-- `ports.backend`
-- `mongo.uri`
-- `supertokens.uri`
-- `supertokens.key`
-- `tokens.compassSync`
-- `urls.frontend`
-- `urls.cors` (parsed into `ENV.ORIGINS_ALLOWED`)
-
-Optional but behavior-changing:
-
-- `google.clientId`
-- `google.clientSecret`
-- `urls.googleWebhook`
-- `tokens.googleCalendarNotification`
-- `email.kitApiSecret`
-- `email.kitUserTagId`
-
-Google is disabled unless both `google.clientId` and `google.clientSecret` are set to real, non-placeholder values. When Google is enabled and the effective Google webhook URL uses HTTPS, `tokens.googleCalendarNotification` is required for Google Calendar webhook validation.
+- Google is disabled unless both `google.clientId` and `google.clientSecret` are set to real, non-placeholder values.
+- When Google is enabled and the effective Google webhook URL uses HTTPS, `tokens.googleCalendarNotification` is required for Google Calendar webhook validation.
 
 Derived backend values:
 
