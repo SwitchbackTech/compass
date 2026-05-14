@@ -87,3 +87,9 @@ Use the same machine and avoid background-heavy work when comparing runs.
   recorded the Task 1 input floor. `input-baseline` reported a 14.3 ms max
   frame gap and 0 long tasks. V2 ownership counters were unavailable, as
   expected before the controller is enabled.
+- 2026-05-14, `v2-event-registry`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T17-54-30-893Z-v2-event-registry.json`
+  recorded Task 2 after adding the Week event registry and stable event
+  attributes. `input-baseline` reported a 14.3 ms max frame gap and 0 long
+  tasks. Compared with `v2-input-floor`, the median changed from 407.4 ms to
+  420.1 ms.

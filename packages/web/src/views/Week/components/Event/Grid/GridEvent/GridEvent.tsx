@@ -1,3 +1,4 @@
+import { useMergeRefs } from "@floating-ui/react";
 import {
   type CSSProperties,
   type ForwardedRef,
@@ -5,7 +6,10 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   memo,
+  useCallback,
+  useEffect,
   useMemo,
+  useRef,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { brighten, darken } from "@core/util/color.utils";
@@ -34,6 +38,7 @@ import { selectIsEventPending } from "@web/ducks/events/selectors/pending.select
 import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { registerWeekEventElement } from "@web/views/Week/interaction/v2/geometry/eventRegistry";
 import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
 
 interface Props {
@@ -70,6 +75,11 @@ const GridEventBase = (
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
   const { component } = weekProps;
+  const elementRef = useRef<HTMLDivElement | null>(null);
+  const setElementRef = useCallback((node: HTMLDivElement | null) => {
+    elementRef.current = node;
+  }, []);
+  const mergedRef = useMergeRefs([ref, setElementRef]);
 
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
@@ -160,11 +170,26 @@ const GridEventBase = (
     ...placement,
   });
 
+  useEffect(() => {
+    if (isDraft || !event._id || !elementRef.current) {
+      return;
+    }
+
+    return registerWeekEventElement(event._id, {
+      element: elementRef.current,
+      event,
+      kind: event.isAllDay ? "allDay" : "timed",
+    });
+  }, [event, isDraft]);
+
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
-      ref={ref}
+      data-week-event-id={event._id}
+      data-week-event-kind={event.isAllDay ? "allDay" : "timed"}
+      data-week-event-role="event"
+      ref={mergedRef}
       role="button"
       tabIndex={0}
       className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
