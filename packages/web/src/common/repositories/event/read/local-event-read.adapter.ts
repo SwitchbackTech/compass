@@ -22,6 +22,7 @@ export class LocalEventReadAdapter {
         mode: params.someday ? "someday" : "calendar",
         startDate: params.startDate,
         endDate: params.endDate,
+        priorities: params.priorities,
       },
       events,
       baseEventsById,

@@ -65,6 +65,14 @@ describe("event read candidates", () => {
     expect(result.every((event) => event.isSomeday === true)).toBe(true);
     expect(result.some(isBase)).toBe(false);
   });
+
+  it("filters candidates by the event priority field", () => {
+    const filter = getReadCandidateFilter(userId, {
+      priorities: "work,self",
+    });
+
+    expect(filter.priority).toEqual({ $in: ["work", "self"] });
+  });
 });
 
 describe("eventService.readAll", () => {

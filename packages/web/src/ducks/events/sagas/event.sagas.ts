@@ -212,8 +212,9 @@ export function* editEvent({ payload }: Action_EditEvent) {
 
 export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
   try {
-    const startDate = dayjs().startOf("month").format(YEAR_MONTH_DAY_FORMAT);
-    const endDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
+    const monthStart = dayjs().startOf("month");
+    const startDate = monthStart.format(YEAR_MONTH_DAY_FORMAT);
+    const endDate = monthStart.add(1, "month").format(YEAR_MONTH_DAY_FORMAT);
     const data: Response_GetEventsSaga = (yield* getEvents({
       ...payload,
       startDate,

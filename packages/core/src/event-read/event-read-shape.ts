@@ -14,6 +14,7 @@ export const shapeEventRead = ({
 }: EventReadShapeInput): EventReadShapeResult => {
   const data = events
     .filter((event) => matchesMode(event, window.mode))
+    .filter((event) => matchesPriorities(event, window.priorities))
     .filter((event) => isVisibleInWindow(event, window))
     .map((event) => shapeRecurringEvent(event, baseEventsById))
     .filter((event): event is Schema_Event => Boolean(event));
@@ -40,6 +41,17 @@ const matchesMode = (
   }
 
   return event.isSomeday !== true;
+};
+
+const matchesPriorities = (
+  event: Schema_Event,
+  priorities: EventReadShapeInput["window"]["priorities"],
+) => {
+  if (!priorities?.length) {
+    return true;
+  }
+
+  return Boolean(event.priority && priorities.includes(event.priority));
 };
 
 const isVisibleInWindow = (

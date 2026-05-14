@@ -121,4 +121,25 @@ describe("shapeEventRead", () => {
       ["missing-b", 4],
     ]);
   });
+
+  it("filters events by requested priorities", () => {
+    const workEvent = makeEvent({
+      _id: "work",
+      priority: Priorities.WORK,
+    });
+    const selfEvent = makeEvent({
+      _id: "self",
+      priority: Priorities.SELF,
+    });
+
+    const result = shapeEventRead({
+      window: {
+        ...calendarWindow,
+        priorities: [Priorities.WORK],
+      },
+      events: [workEvent, selfEvent],
+    });
+
+    expect(result.data.map((event) => event._id)).toEqual(["work"]);
+  });
 });

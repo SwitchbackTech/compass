@@ -1,5 +1,6 @@
 import { type Document, ObjectId, type WithId } from "mongodb";
 import {
+  type Priority,
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
@@ -41,6 +42,7 @@ export const readBackendEvents = async (
       mode: isSomeday ? "someday" : "calendar",
       startDate: query.start ?? FALLBACK_START_DATE,
       endDate: query.end ?? FALLBACK_END_DATE,
+      priorities: parsePriorityQuery(query.priorities),
     },
     events: events.map(mapMongoEvent),
     baseEventsById,
@@ -72,3 +74,11 @@ const mapMongoEvent = (
   ...event,
   _id: event._id.toString(),
 });
+
+const parsePriorityQuery = (priorities: Query_Event["priorities"]) => {
+  if (!priorities) {
+    return undefined;
+  }
+
+  return priorities.split(",") as Priority[];
+};

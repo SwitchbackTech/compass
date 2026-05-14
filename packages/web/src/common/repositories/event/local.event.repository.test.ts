@@ -1,5 +1,5 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Event_Core } from "@core/types/event.types";
+import { type Event_Core, type Params_Events } from "@core/types/event.types";
 import { LocalEventRepository } from "@web/common/repositories/event/local.event.repository";
 import {
   isLocalDemoEvent,
@@ -73,5 +73,23 @@ describe("LocalEventRepository", () => {
       eventId: "base-event",
       rule: ["RRULE:FREQ=WEEKLY"],
     });
+  });
+
+  it("filters local reads by requested priorities", async () => {
+    getAllEvents.mockResolvedValue([
+      makeEvent({ _id: "work-event", priority: Priorities.WORK }),
+      makeEvent({ _id: "self-event", priority: Priorities.SELF }),
+    ]);
+
+    const params: Params_Events = {
+      startDate: "2026-05-05T00:00:00.000Z",
+      endDate: "2026-05-06T00:00:00.000Z",
+      someday: false,
+      priorities: [Priorities.WORK],
+    };
+
+    const result = await new LocalEventRepository().get(params);
+
+    expect(result.data.map((event) => event._id)).toEqual(["work-event"]);
   });
 });

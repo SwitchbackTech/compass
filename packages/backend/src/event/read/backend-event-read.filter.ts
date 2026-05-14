@@ -1,4 +1,5 @@
 import { type Filter } from "mongodb";
+import { type Priority } from "@core/constants/core.constants";
 import { type Query_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 
@@ -14,7 +15,7 @@ export const getReadCandidateFilter = (
   filter["isSomeday"] = isSomeday;
 
   if (priorities) {
-    filter["priorities"] = { $in: priorities.split(",") };
+    filter["priority"] = { $in: priorities.split(",") as Priority[] };
   }
 
   if (start && end) {

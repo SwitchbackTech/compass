@@ -1,3 +1,4 @@
+import { type Priority } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 
 export type EventReadMode = "calendar" | "someday";
@@ -6,6 +7,7 @@ export type EventReadWindow = {
   mode: EventReadMode;
   startDate: string;
   endDate: string;
+  priorities?: Priority[];
 };
 
 export type EventReadShapeInput = {
