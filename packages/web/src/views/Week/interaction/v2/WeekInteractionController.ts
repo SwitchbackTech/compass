@@ -45,6 +45,7 @@ type WeekInteractionControllerOptions = {
   clearTimer?: (timer: unknown) => void;
   cancelFrame?: (frame: unknown) => void;
   createOverlay?: () => DragOverlay;
+  getFormEventId?: () => string | null;
   getRegisteredEvent?: (id: string) => RegisteredWeekEvent | null;
   holdDelayMs?: number;
   isEnabled?: boolean | (() => boolean);
@@ -64,6 +65,7 @@ const defaultOptions = {
     clearTimeout(timer as ReturnType<typeof setTimeout>);
   },
   createOverlay: () => new DragOverlay(),
+  getFormEventId: () => null,
   getRegisteredEvent: getRegisteredWeekEvent,
   holdDelayMs: DEFAULT_HOLD_DELAY_MS,
   isEnabled: false,
@@ -114,8 +116,13 @@ export class WeekInteractionController {
     }, this.#options.holdDelayMs);
 
     this.#resetMetrics("pending");
+    const formOpenAtPointerDown = this.#options.isFormOpen();
     this.#session = {
       eventId: eligible.registered.event._id!,
+      formEventIdAtPointerDown: formOpenAtPointerDown
+        ? this.#options.getFormEventId()
+        : null,
+      formOpenAtPointerDown,
       holdTimer,
       kind: "timed",
       phase: "pending",
@@ -196,11 +203,20 @@ export class WeekInteractionController {
         ? visualDraftToGridEvent(registered.event, visual)
         : null;
     const hasMoved = visual ? hasTimedDragVisualMoved(visual) : false;
+    const hadFormOpenBeforeInteraction = this.#session.formOpenAtPointerDown;
+    const formEventIdAtPointerDown = this.#session.formEventIdAtPointerDown;
     this.#teardownActiveSession();
     this.#session = { phase: "idle" };
 
     return movedEvent
-      ? { event: movedEvent, eventId, hasMoved, type: "timedDragEnd" }
+      ? {
+          event: movedEvent,
+          eventId,
+          formEventIdAtPointerDown,
+          hadFormOpenBeforeInteraction,
+          hasMoved,
+          type: "timedDragEnd",
+        }
       : null;
   }
 
@@ -229,6 +245,8 @@ export class WeekInteractionController {
     const activeSession: ActiveTimedDragSession = {
       activatedBy,
       eventId: this.#session.eventId,
+      formEventIdAtPointerDown: this.#session.formEventIdAtPointerDown,
+      formOpenAtPointerDown: this.#session.formOpenAtPointerDown,
       kind: this.#session.kind,
       phase: "motion",
       pointerId: this.#session.pointerId,
@@ -256,7 +274,7 @@ export class WeekInteractionController {
   }
 
   #getEligibleTimedDrag(event: PointerEvent) {
-    if (!this.#isEnabled() || this.#options.isFormOpen()) {
+    if (!this.#isEnabled()) {
       return null;
     }
 
@@ -548,7 +566,7 @@ const isEdgeNavigationCandidate = (event: Schema_GridEvent) => {
 const isSmartScrollCandidate = (sourceElement: HTMLElement) => {
   const mainGrid = document.getElementById(ID_GRID_MAIN);
 
-  if (!mainGrid || mainGrid.scrollHeight <= mainGrid.clientHeight) {
+  if (!mainGrid) {
     return false;
   }
 

@@ -461,6 +461,11 @@ const newScenarioPage = async (
   context: BrowserContext,
 ): Promise<ScenarioPage> => {
   const page = await context.newPage();
+  await page.addInitScript(() => {
+    (
+      window as Window & { __COMPASS_E2E_TEST__?: boolean }
+    ).__COMPASS_E2E_TEST__ = true;
+  });
 
   return { page };
 };

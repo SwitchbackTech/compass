@@ -10,6 +10,8 @@ export type TimedDragActivationReason = "hold" | "move";
 
 export interface PendingTimedDragSession {
   eventId: string;
+  formEventIdAtPointerDown: string | null;
+  formOpenAtPointerDown: boolean;
   holdTimer: unknown;
   kind: "timed";
   phase: "pending";
@@ -35,6 +37,8 @@ export type WeekInteractionPointerUpResult =
   | { event: Schema_GridEvent; eventId: string; type: "click" }
   | {
       event: Schema_GridEvent;
+      formEventIdAtPointerDown: string | null;
+      hadFormOpenBeforeInteraction: boolean;
       eventId: string;
       hasMoved: boolean;
       type: "timedDragEnd";

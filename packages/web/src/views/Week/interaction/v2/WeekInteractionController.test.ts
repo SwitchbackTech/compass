@@ -72,6 +72,8 @@ describe("WeekInteractionController", () => {
 
     expect(result).toMatchObject({
       eventId: "event-1",
+      formEventIdAtPointerDown: null,
+      hadFormOpenBeforeInteraction: false,
       hasMoved: true,
       type: "timedDragEnd",
     });
@@ -79,6 +81,46 @@ describe("WeekInteractionController", () => {
     expect(result?.event.startDate).toContain("2026-05-13T11:30:00");
     expect(result?.event.endDate).toContain("2026-05-13T12:30:00");
     expect(controller.getSession().phase).toBe("idle");
+
+    unregister();
+  });
+
+  it("carries form-open metadata through moved timed drag release", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      callback(timestamp);
+    };
+    const { controller, sourceElement, unregister } = setupEligibleController({
+      getFormEventId: () => "event-1",
+      isFormOpen: () => true,
+      requestFrame: (callback) => {
+        frameCallback = callback;
+        return 1;
+      },
+    });
+
+    controller.handlePointerDown(
+      createPointerEvent("pointerdown", sourceElement, 250, 120),
+    );
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 280, 150),
+    );
+    runFrame(16);
+
+    const result = controller.handlePointerUp(
+      createPointerEvent("pointerup", sourceElement, 280, 150),
+    );
+
+    expect(result).toMatchObject({
+      eventId: "event-1",
+      formEventIdAtPointerDown: "event-1",
+      hadFormOpenBeforeInteraction: true,
+      type: "timedDragEnd",
+    });
 
     unregister();
   });
@@ -127,8 +169,9 @@ describe("WeekInteractionController", () => {
     unregister();
   });
 
-  it("falls through when the form is already open", () => {
+  it("snapshots form state when the form is already open", () => {
     const { controller, sourceElement, unregister } = setupEligibleController({
+      getFormEventId: () => "event-1",
       isFormOpen: () => true,
     });
 
@@ -136,7 +179,12 @@ describe("WeekInteractionController", () => {
       controller.handlePointerDown(
         createPointerEvent("pointerdown", sourceElement, 100, 100),
       ),
-    ).toBe(false);
+    ).toBe(true);
+    expect(controller.getSession()).toMatchObject({
+      formEventIdAtPointerDown: "event-1",
+      formOpenAtPointerDown: true,
+      phase: "pending",
+    });
 
     unregister();
   });

@@ -20,6 +20,7 @@ import { useDraftContext } from "@web/views/Week/components/Draft/context/useDra
 import { WeekInteractionController } from "./WeekInteractionController";
 
 export type WeekInteractionCommitAdapter = {
+  closeFormForInteraction?: () => void;
   openExistingEvent: (event: Schema_GridEvent) => void;
   submitMovedEvent: (
     event: Schema_GridEvent,
@@ -62,14 +63,21 @@ export const WeekInteractionBoundary = ({
 
 const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
   const store = useStore<RootState>();
-  const { actions } = useDraftContext();
+  const { actions, setters, state } = useDraftContext();
+  const draftStateRef = useRef(state);
+
+  useEffect(() => {
+    draftStateRef.current = state;
+  }, [state]);
+
   const defaultController = useMemo(
     () =>
       new WeekInteractionController({
+        getFormEventId: () => draftStateRef.current.draft?._id ?? null,
         isEnabled: () =>
           typeof window !== "undefined" &&
           window.__weekInteractionV2ForceEnabled === true,
-        isFormOpen: isEventFormOpen,
+        isFormOpen: () => draftStateRef.current.isFormOpen || isEventFormOpen(),
         isPendingEvent: (eventId) =>
           selectIsEventPending(store.getState(), eventId),
       }),
@@ -107,6 +115,7 @@ const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
 
   const commitAdapter = useMemo<WeekInteractionCommitAdapter>(
     () => ({
+      closeFormForInteraction: actions.closeForm,
       openExistingEvent: (event) => {
         store.dispatch(
           draftSlice.actions.start({
@@ -116,11 +125,17 @@ const ConnectedWeekInteractionBoundary = ({ children }: PropsWithChildren) => {
           }),
         );
       },
-      submitMovedEvent: (event) => {
+      submitMovedEvent: (event, meta) => {
+        if (meta.hadFormOpenBeforeInteraction) {
+          setters.setDraft(event);
+          setters.setIsFormOpen(true);
+          return;
+        }
+
         void actions.submit(event);
       },
     }),
-    [actions, store],
+    [actions, setters, store],
   );
 
   return (
@@ -162,7 +177,16 @@ const WeekInteractionBoundaryView = ({
     };
     const handlePointerMove = (event: PointerEvent) => {
       const wasHandling = controller.isHandlingPointer(event);
+      const previousSession = controller.getSession();
       controller.handlePointerMove(event);
+      const nextSession = controller.getSession();
+      if (
+        previousSession.phase === "pending" &&
+        nextSession.phase === "motion" &&
+        nextSession.formOpenAtPointerDown
+      ) {
+        commitAdapter.closeFormForInteraction?.();
+      }
       if (!wasHandling && !controller.isHandlingPointer(event)) {
         return;
       }
@@ -181,7 +205,7 @@ const WeekInteractionBoundaryView = ({
       } else if (result?.type === "timedDragEnd") {
         if (result.hasMoved) {
           commitAdapter.submitMovedEvent(result.event, {
-            hadFormOpenBeforeInteraction: false,
+            hadFormOpenBeforeInteraction: result.hadFormOpenBeforeInteraction,
           });
         } else {
           commitAdapter.openExistingEvent(result.event);

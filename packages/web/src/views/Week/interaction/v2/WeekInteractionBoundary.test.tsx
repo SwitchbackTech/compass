@@ -69,6 +69,8 @@ describe("WeekInteractionBoundary", () => {
     const pointerUpResult = {
       event,
       eventId: "event-1",
+      formEventIdAtPointerDown: null,
+      hadFormOpenBeforeInteraction: false,
       hasMoved: true,
       type: "timedDragEnd",
     } satisfies WeekInteractionPointerUpResult;
@@ -101,6 +103,95 @@ describe("WeekInteractionBoundary", () => {
 
     expect(submitMovedEvent).toHaveBeenCalledWith(event, {
       hadFormOpenBeforeInteraction: false,
+    });
+  });
+
+  it("closes an already-open form when V2 drag motion activates", () => {
+    const controller = new WeekInteractionController();
+    controller.handlePointerDown = mock(() => true);
+    controller.isHandlingPointer = mock(() => true);
+    controller.getSession = mock()
+      .mockReturnValueOnce({
+        eventId: "event-1",
+        formEventIdAtPointerDown: "event-1",
+        formOpenAtPointerDown: true,
+        phase: "pending",
+        pointerId: 1,
+      })
+      .mockReturnValueOnce({
+        eventId: "event-1",
+        formEventIdAtPointerDown: "event-1",
+        formOpenAtPointerDown: true,
+        phase: "motion",
+        pointerId: 1,
+      }) as WeekInteractionController["getSession"];
+    controller.handlePointerMove = mock();
+    const closeFormForInteraction = mock();
+
+    render(
+      <WeekInteractionBoundary
+        commitAdapter={{
+          closeFormForInteraction,
+          openExistingEvent: mock(),
+          submitMovedEvent: mock(),
+        }}
+        controller={controller}
+      >
+        <button type="button">Existing event</button>
+      </WeekInteractionBoundary>,
+    );
+
+    screen
+      .getByRole("button", { name: "Existing event" })
+      .dispatchEvent(
+        new MouseEvent("pointerdown", { bubbles: true, cancelable: true }),
+      );
+    window.dispatchEvent(
+      new MouseEvent("pointermove", { bubbles: true, cancelable: true }),
+    );
+
+    expect(closeFormForInteraction).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps form-open moved drags out of the immediate save path", () => {
+    const event = { _id: "event-1" } as Schema_GridEvent;
+    const pointerUpResult = {
+      event,
+      eventId: "event-1",
+      formEventIdAtPointerDown: "event-1",
+      hadFormOpenBeforeInteraction: true,
+      hasMoved: true,
+      type: "timedDragEnd",
+    } satisfies WeekInteractionPointerUpResult;
+    const controller = new WeekInteractionController();
+    controller.handlePointerDown = mock(() => true);
+    controller.isHandlingPointer = mock(() => true);
+    controller.handlePointerUp = mock(() => pointerUpResult);
+    const submitMovedEvent = mock();
+
+    render(
+      <WeekInteractionBoundary
+        commitAdapter={{
+          openExistingEvent: mock(),
+          submitMovedEvent,
+        }}
+        controller={controller}
+      >
+        <button type="button">Existing event</button>
+      </WeekInteractionBoundary>,
+    );
+
+    screen
+      .getByRole("button", { name: "Existing event" })
+      .dispatchEvent(
+        new MouseEvent("pointerdown", { bubbles: true, cancelable: true }),
+      );
+    window.dispatchEvent(
+      new MouseEvent("pointerup", { bubbles: true, cancelable: true }),
+    );
+
+    expect(submitMovedEvent).toHaveBeenCalledWith(event, {
+      hadFormOpenBeforeInteraction: true,
     });
   });
 });
