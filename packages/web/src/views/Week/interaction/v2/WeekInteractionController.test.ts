@@ -1,3 +1,8 @@
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  getRegisteredWeekEvent,
+  registerWeekEventElement,
+} from "./geometry/eventRegistry";
 import { WeekInteractionController } from "./WeekInteractionController";
 import { describe, expect, it } from "bun:test";
 
@@ -7,4 +12,183 @@ describe("WeekInteractionController", () => {
 
     expect(controller.canOwnPointerDown()).toBe(false);
   });
+
+  it("keeps quick eligible presses as clicks", () => {
+    const { controller, sourceElement, unregister } = setupEligibleController();
+    const down = createPointerEvent("pointerdown", sourceElement, 100, 100);
+
+    expect(controller.handlePointerDown(down)).toBe(true);
+    expect(controller.getSession().phase).toBe("pending");
+
+    const result = controller.handlePointerUp(
+      createPointerEvent("pointerup", sourceElement, 100, 100),
+    );
+
+    expect(result).toEqual({ eventId: "event-1", type: "click" });
+    expect(controller.getSession().phase).toBe("idle");
+
+    unregister();
+  });
+
+  it("activates timed drag after movement crosses the threshold", () => {
+    const { controller, sourceElement, unregister } = setupEligibleController();
+
+    controller.handlePointerDown(
+      createPointerEvent("pointerdown", sourceElement, 100, 100),
+    );
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 126, 100),
+    );
+
+    expect(controller.getSession()).toMatchObject({
+      activatedBy: "move",
+      eventId: "event-1",
+      phase: "motion",
+    });
+
+    unregister();
+  });
+
+  it("activates timed drag after the hold delay", () => {
+    let holdCallback: () => void = () => {
+      throw new Error("Hold timer callback was not registered.");
+    };
+    const { controller, sourceElement, unregister } = setupEligibleController({
+      setTimer: (callback) => {
+        holdCallback = callback;
+        return 1;
+      },
+    });
+
+    controller.handlePointerDown(
+      createPointerEvent("pointerdown", sourceElement, 100, 100),
+    );
+    holdCallback();
+
+    expect(controller.getSession()).toMatchObject({
+      activatedBy: "hold",
+      eventId: "event-1",
+      phase: "motion",
+    });
+
+    unregister();
+  });
+
+  it("falls through when the form is already open", () => {
+    const { controller, sourceElement, unregister } = setupEligibleController({
+      isFormOpen: () => true,
+    });
+
+    expect(
+      controller.handlePointerDown(
+        createPointerEvent("pointerdown", sourceElement, 100, 100),
+      ),
+    ).toBe(false);
+
+    unregister();
+  });
+
+  it("falls through for recurring, pending, all-day, resize, and unregistered targets", () => {
+    const recurring = setupEligibleController(
+      {},
+      { recurrence: { rule: ["RRULE:FREQ=WEEKLY"] } },
+    );
+    expect(
+      recurring.controller.handlePointerDown(
+        createPointerEvent("pointerdown", recurring.sourceElement, 100, 100),
+      ),
+    ).toBe(false);
+    recurring.unregister();
+
+    const pending = setupEligibleController({
+      isPendingEvent: () => true,
+    });
+    expect(
+      pending.controller.handlePointerDown(
+        createPointerEvent("pointerdown", pending.sourceElement, 100, 100),
+      ),
+    ).toBe(false);
+    pending.unregister();
+
+    const allDay = setupEligibleController({}, { isAllDay: true }, "allDay");
+    expect(
+      allDay.controller.handlePointerDown(
+        createPointerEvent("pointerdown", allDay.sourceElement, 100, 100),
+      ),
+    ).toBe(false);
+    allDay.unregister();
+
+    const resize = setupEligibleController();
+    const resizeHandle = document.createElement("div");
+    resizeHandle.setAttribute("data-week-event-resize-handle", "endDate");
+    resize.sourceElement.append(resizeHandle);
+    expect(
+      resize.controller.handlePointerDown(
+        createPointerEvent("pointerdown", resizeHandle, 100, 100),
+      ),
+    ).toBe(false);
+    resize.unregister();
+
+    const unregistered = document.createElement("div");
+    unregistered.setAttribute("data-week-event-id", "missing-event");
+    unregistered.setAttribute("data-week-event-kind", "timed");
+    unregistered.setAttribute("data-week-event-role", "event");
+    const controller = new WeekInteractionController({ isEnabled: true });
+    expect(
+      controller.handlePointerDown(
+        createPointerEvent("pointerdown", unregistered, 100, 100),
+      ),
+    ).toBe(false);
+  });
 });
+
+const createPointerEvent = (
+  type: string,
+  target: Element,
+  clientX: number,
+  clientY: number,
+): PointerEvent =>
+  ({
+    clientX,
+    clientY,
+    pointerId: 1,
+    target,
+    type,
+  }) as unknown as PointerEvent;
+
+const setupEligibleController = (
+  overrides: ConstructorParameters<typeof WeekInteractionController>[0] = {},
+  eventOverrides: Partial<Schema_GridEvent> = {},
+  kind: "timed" | "allDay" = "timed",
+) => {
+  const sourceElement = document.createElement("div");
+  sourceElement.setAttribute("data-week-event-id", "event-1");
+  sourceElement.setAttribute("data-week-event-kind", kind);
+  sourceElement.setAttribute("data-week-event-role", "event");
+
+  const event = {
+    _id: "event-1",
+    endDate: "2026-05-12T11:00:00.000Z",
+    isAllDay: false,
+    recurrence: undefined,
+    startDate: "2026-05-12T10:00:00.000Z",
+    ...eventOverrides,
+  } as Schema_GridEvent;
+  const unregister = registerWeekEventElement("event-1", {
+    element: sourceElement,
+    event,
+    kind,
+  });
+
+  return {
+    controller: new WeekInteractionController({
+      getRegisteredEvent: getRegisteredWeekEvent,
+      isEnabled: true,
+      isFormOpen: () => false,
+      isPendingEvent: () => false,
+      ...overrides,
+    }),
+    sourceElement,
+    unregister,
+  };
+};

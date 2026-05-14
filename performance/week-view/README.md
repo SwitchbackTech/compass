@@ -102,3 +102,11 @@ Use the same machine and avoid background-heavy work when comparing runs.
   `resize-timed-event` reported a 15.4 ms max frame gap and 0 long tasks. V2
   ownership counters were unavailable because the passive controller still
   refuses ownership.
+- 2026-05-14, `v2-pending-timed-drag`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T18-04-39-793Z-v2-pending-timed-drag.json`
+  recorded Task 4 after adding the pending timed-drag controller internals.
+  The default boundary still remained passive, so live Week behavior stayed on
+  the legacy path. Compared with `v2-passive-boundary`, `drag-timed-event`
+  median changed from 453.5 ms to 456.0 ms with a 14.3 ms max frame gap and 0
+  long tasks; `resize-timed-event` median changed from 397.6 ms to 387.7 ms
+  with a 15.2 ms max frame gap and 0 long tasks.
