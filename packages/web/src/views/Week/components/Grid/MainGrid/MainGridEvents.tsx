@@ -12,6 +12,7 @@ import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/sel
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { type RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { useGridEventMouseDown } from "@web/views/Week/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -25,6 +26,7 @@ interface Props {
 export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const dispatch = useAppDispatch();
   const store = useStore<RootState>();
+  const { interaction } = useDraftContext();
 
   const timedEvents = useAppSelector(selectGridEvents);
   const { isProcessing, reason } = useAppSelector(
@@ -135,6 +137,11 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
                 ) => {
                   e.stopPropagation();
                   e.preventDefault();
+                  interaction.startResize(event);
+                  interaction.updatePointer(
+                    { x: e.clientX, y: e.clientY },
+                    { notifyReact: false },
+                  );
                   resizeTimedEvent(event, dateToChange);
                 }}
                 weekProps={weekProps}
