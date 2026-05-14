@@ -4,7 +4,7 @@ import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { addId, isEventInRange } from "@web/common/utils/event/event.util";
+import { addId } from "@web/common/utils/event/event.util";
 import { _assembleGridEvent } from "@web/ducks/events/sagas/saga.util";
 import {
   afterEach,
@@ -40,26 +40,6 @@ describe("handleError", () => {
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
     expect(alertMock).not.toHaveBeenCalled();
-  });
-});
-
-describe("isEventInRange", () => {
-  it("returns true if event is in range", () => {
-    const event = { start: "2022-03-15", end: "2022-03-15" };
-    const dates = {
-      start: "2022-03-14",
-      end: "2022-03-19",
-    };
-    expect(isEventInRange(event, dates)).toBe(true);
-  });
-
-  it("returns false if event is not in range", () => {
-    const event = { start: "2022-03-15", end: "2022-03-15" };
-    const dates = {
-      start: "2022-03-16",
-      end: "2022-03-19",
-    };
-    expect(isEventInRange(event, dates)).toBe(false);
   });
 });
 

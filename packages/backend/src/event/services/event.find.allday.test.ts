@@ -6,7 +6,8 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import mongoService from "@backend/common/services/mongo.service";
-import { getReadAllFilter } from "@backend/event/services/event.service.util";
+import { getReadCandidateFilter } from "@backend/event/read/backend-event-read.filter";
+import eventService from "@backend/event/services/event.service";
 
 describe("Mar 6 - 12, 2022: All-Day Events", () => {
   let filter: Filter<Omit<Schema_Event, "_id">>;
@@ -17,7 +18,7 @@ describe("Mar 6 - 12, 2022: All-Day Events", () => {
 
     await mongoService.event.insertMany(mockEventSetMar22);
 
-    filter = getReadAllFilter("user1", {
+    filter = getReadCandidateFilter("user1", {
       start: "2022-03-06T00:00:00-07:00",
       end: "2022-03-12T23:59:59-07:00",
     });
@@ -42,5 +43,31 @@ describe("Mar 6 - 12, 2022: All-Day Events", () => {
   it("ignores events next week", () => {
     expect(titles.includes("Mar 13")).toBe(false);
     expect(titles.includes("Mar 13 - 16")).toBe(false);
+  });
+});
+
+describe("All-Day Event read shape", () => {
+  beforeAll(async () => {
+    await setupTestDb();
+    await mongoService.event.insertOne({
+      user: "user-start-day",
+      title: "Start of Week",
+      isAllDay: true,
+      isSomeday: false,
+      startDate: "2026-04-06",
+      endDate: "2026-04-07",
+    });
+  });
+
+  afterAll(cleanupTestDb);
+
+  it("returns an all-day event that starts on the requested window start", async () => {
+    const result = await eventService.readAll("user-start-day", {
+      start: "2026-04-06T00:00:00.000Z",
+      end: "2026-04-13T00:00:00.000Z",
+    });
+
+    expect(Array.isArray(result)).toBe(true);
+    expect(result.map((event) => event.title)).toContain("Start of Week");
   });
 });

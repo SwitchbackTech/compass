@@ -162,20 +162,14 @@ describe("getWeekEvents saga", () => {
     sagaTask = sagaMiddleware.run(sagas);
   });
 
-  it("filters repository results by the requested date range", async () => {
-    const previousDayEvent = createMockStandaloneEvent({
-      _id: "previous-day-event",
-      startDate: "2026-04-05T15:00:00.000Z",
-      endDate: "2026-04-05T16:00:00.000Z",
-      isAllDay: false,
-    } as Partial<Schema_Event>);
+  it("requests week events without adjusting the requested date range", async () => {
     const requestedRangeEvent = createMockStandaloneEvent({
       _id: "requested-range-event",
       startDate: "2026-04-06T15:00:00.000Z",
       endDate: "2026-04-06T16:00:00.000Z",
       isAllDay: false,
     } as Partial<Schema_Event>);
-    mockLocalEvents.push(previousDayEvent, requestedRangeEvent);
+    mockLocalEvents.push(requestedRangeEvent);
 
     store.dispatch(
       getWeekEventsSlice.actions.request({
@@ -188,7 +182,7 @@ describe("getWeekEvents saga", () => {
 
     expect(mockLocalRepository.get).toHaveBeenCalledWith(
       expect.objectContaining({
-        startDate: "2026-04-05T00:00:00+00:00",
+        startDate: "2026-04-06T00:00:00.000Z",
         endDate: "2026-04-13T00:00:00.000Z",
       }),
     );

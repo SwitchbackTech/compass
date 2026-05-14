@@ -18,7 +18,6 @@ function createMockAdapter(): MockedStorageAdapter {
     deleteTask: mock().mockResolvedValue(undefined),
     moveTask: mock().mockResolvedValue(undefined),
     clearAllTasks: mock().mockResolvedValue(undefined),
-    getEvents: mock().mockResolvedValue([]),
     getAllEvents: mock().mockResolvedValue([]),
     putEvent: mock().mockResolvedValue(undefined),
     putEvents: mock().mockResolvedValue(undefined),

@@ -1,15 +1,10 @@
 import { type GaxiosError } from "gaxios";
 import {
   type ClientSession,
-  type Document,
   type Filter,
   ObjectId,
   type WithId,
 } from "mongodb";
-import {
-  SOMEDAY_MONTHLY_LIMIT,
-  SOMEDAY_WEEKLY_LIMIT,
-} from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { MapEvent } from "@core/mappers/map.event";
@@ -36,7 +31,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { reorderEvents } from "@backend/event/queries/event.queries";
-import { getReadAllFilter } from "@backend/event/services/event.service.util";
+import { readBackendEvents } from "@backend/event/read/backend-event-read.adapter";
 import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 
 class EventService {
@@ -95,61 +90,7 @@ class EventService {
     userId: string,
     query: Query_Event,
   ): Promise<Schema_Event_Core[] | BaseError> => {
-    const filter = getReadAllFilter(userId, query) as Filter<Document>;
-
-    let events: Array<WithId<Omit<Schema_Event, "_id">>>;
-
-    if (query.someday) {
-      events = await mongoService.event
-        .find(filter)
-        .limit(SOMEDAY_WEEKLY_LIMIT + SOMEDAY_MONTHLY_LIMIT)
-        .sort({ startDate: 1 })
-        .toArray();
-    } else {
-      events = await mongoService.event.find(filter).toArray();
-    }
-
-    const baseEventIds = events
-      .filter(isInstance)
-      .map((e) => new ObjectId(e.recurrence?.eventId));
-
-    const baseEvents = await mongoService.event
-      .find({ user: userId, _id: { $in: baseEventIds } })
-      .toArray();
-
-    return events
-      .map((event) => {
-        if (isInstance(event)) {
-          const baseEvent = baseEvents.find(
-            ({ _id }) => _id.toString() === event.recurrence?.eventId,
-          );
-
-          if (!baseEvent) {
-            console.error(
-              new BaseError(
-                "Skipping instance. Base event not found for instance",
-                `Tried with user: ${userId} and _id: ${event._id.toString()}`,
-                Status.NOT_FOUND,
-                true,
-              ),
-            );
-
-            return undefined;
-          }
-
-          return {
-            ...event,
-            _id: event._id.toString(),
-            recurrence: {
-              eventId: baseEvent._id.toString(),
-              rule: baseEvent.recurrence?.rule,
-            },
-          };
-        }
-
-        return { ...event, _id: event._id.toString() } as Schema_Event_Core;
-      })
-      .filter((e) => e) as Schema_Event_Core[];
+    return readBackendEvents(userId, query);
   };
 
   readById = async (userId: string, eventId: string) => {

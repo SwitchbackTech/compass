@@ -63,6 +63,10 @@ _Avoid_: logged out
 **Event**:
 A Compass calendar item represented by the shared event contract.
 
+**Event Read Shape**:
+The rule that decides which Events belong in a visible calendar or sidebar read
+window, and how those Events are shaped before the UI receives them.
+
 **Standalone Event**:
 A single event that is not part of a recurring series.
 

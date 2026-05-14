@@ -1,11 +1,9 @@
 import { call, put, type SelectEffect, select } from "@redux-saga/core/effects";
 import { normalize, schema } from "normalizr";
 import {
-  type Params_Events,
   type RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
 import { session } from "@web/common/classes/Session";
 import { getEventRepository } from "@web/common/repositories/event/event.repository.util";
 import {
@@ -113,58 +111,3 @@ export function* _createOptimisticGridEvent(
 
 export const normalizedEventsSchema = () =>
   new schema.Entity("events", {}, { idAttribute: "_id" });
-
-// Meant to be a hotfix to address issue where backend returns date
-// filtered events in an inconsistent way.
-// See https://github.com/SwitchbackTech/compass/issues/428
-// Should be removed after backend is fixed
-export const EventDateUtils = {
-  /**
-   * Adjusts start and end dates for event queries
-   */
-  adjustStartEndDate: (payload: Params_Events) => {
-    if (payload.someday || payload.dontAdjustDates) return payload;
-
-    // Make start date 1 day before the start date
-    const startDate = dayjs(payload.startDate).subtract(1, "day").format();
-    const endDate = payload.endDate;
-
-    return {
-      ...payload,
-      startDate,
-      endDate,
-    };
-  },
-
-  /**
-   * Filters events by start and end date range
-   * Handles comparison between different date formats (raw dates vs ISO 8601)
-   */
-  filterEventsByStartEndDate: (
-    events: Schema_Event[],
-    startDate: string,
-    endDate: string,
-  ) => {
-    return events.filter((event) => {
-      const eventStart = dayjs(event.startDate).utc(true); // use local time - until we use actual dates
-      const eventEnd = dayjs(event.endDate).utc(true); // This is exclusive, so the event ends at the very start of the end date
-
-      if (event.isAllDay) {
-        // For all-day events with exclusive end dates (e.g., Mon event: start="2025-09-08", end="2025-09-09")
-        // Check if the event overlaps with the requested date range
-        const rangeStart = dayjs(startDate);
-        const rangeEnd = dayjs(endDate);
-
-        // Event overlaps if: event starts before range ends AND event ends after range starts
-        const overlaps =
-          eventStart.isBefore(rangeEnd) && eventEnd.isAfter(rangeStart);
-
-        return overlaps;
-      }
-
-      return (
-        eventStart.isSameOrAfter(startDate) && eventEnd.isSameOrBefore(endDate)
-      );
-    });
-  },
-} as const;

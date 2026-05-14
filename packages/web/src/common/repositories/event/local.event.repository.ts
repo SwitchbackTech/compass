@@ -9,6 +9,7 @@ import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
 import { preserveLocalEventMarker } from "@web/common/storage/types/local-event.types";
 import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
 import { type EventRepository } from "./event.repository.interface";
+import { LocalEventReadAdapter } from "./read/local-event-read.adapter";
 
 /**
  * Local event repository implementation using the storage adapter.
@@ -44,21 +45,7 @@ export class LocalEventRepository implements EventRepository {
   }
 
   async get(params: Params_Events): Promise<Response_GetEventsSuccess> {
-    const events = await this.adapter.getEvents(
-      params.startDate,
-      params.endDate,
-      params.someday,
-    );
-
-    return {
-      data: events as Schema_Event[],
-      count: events.length,
-      page: 1,
-      pageSize: events.length || 1,
-      offset: 0,
-      startDate: params.startDate,
-      endDate: params.endDate,
-    };
+    return new LocalEventReadAdapter(this.adapter).get(params);
   }
 
   async edit(

@@ -46,4 +46,32 @@ describe("LocalEventRepository", () => {
 
     expect(isLocalDemoEvent(putEvent.mock.calls[0][0])).toBe(true);
   });
+
+  it("shapes local calendar reads like backend reads", async () => {
+    const baseEvent = makeEvent({
+      _id: "base-event",
+      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const instanceEvent = makeEvent({
+      _id: "instance-event",
+      recurrence: { eventId: "base-event" },
+    });
+    const somedayEvent = makeEvent({
+      _id: "someday-event",
+      isSomeday: true,
+    });
+    getAllEvents.mockResolvedValue([baseEvent, instanceEvent, somedayEvent]);
+
+    const result = await new LocalEventRepository().get({
+      startDate: "2026-05-05T00:00:00.000Z",
+      endDate: "2026-05-06T00:00:00.000Z",
+      someday: false,
+    });
+
+    expect(result.data.map((event) => event._id)).toEqual(["instance-event"]);
+    expect(result.data[0]?.recurrence).toEqual({
+      eventId: "base-event",
+      rule: ["RRULE:FREQ=WEEKLY"],
+    });
+  });
 });

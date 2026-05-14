@@ -102,42 +102,6 @@ export const categorizeSomedayEvents = (
   return sortedData;
 };
 
-/**
- * See https://github.com/SwitchbackTech/compass/issues/512 for more context.
- * Should be removed after we ensure that backend sets the order field for all someday events.
- */
-export const setSomedayEventsOrder = (
-  events: Schema_Event[],
-): Schema_Event[] => {
-  if (events.length === 0) return [];
-
-  // Get existing valid orders
-  const existingOrders = events
-    .map((e) => e.order)
-    .filter(
-      (order): order is number =>
-        typeof order === "number" && !Number.isNaN(order),
-    )
-    .sort((a, b) => a - b);
-
-  // If no valid orders exist, assign sequential orders starting from 0
-  if (existingOrders.length === 0) {
-    return events.map((event, index) => ({ ...event, order: index }));
-  }
-
-  const highestOrder = existingOrders[existingOrders.length - 1];
-
-  let nextNewOrder = highestOrder + 1;
-  return events.map((event) => {
-    if (typeof event.order === "number" && !Number.isNaN(event.order)) {
-      return event;
-    }
-
-    const order = nextNewOrder++;
-    return { ...event, order };
-  });
-};
-
 export const isSomedayEventActionMenuOpen = () => {
   const actionMenu = document.getElementById(ID_SOMEDAY_EVENT_ACTION_MENU);
   return !!actionMenu;
