@@ -20,7 +20,6 @@ backend:
     - https://cal.yourdomain.com
   compassToken: replace-with-generated-compass-sync-token
   # googleWebhook: https://cal.yourdomain.com/api
-  # healthUrl: http://127.0.0.1:3000/api/health
 
 mongo:
   username: compass

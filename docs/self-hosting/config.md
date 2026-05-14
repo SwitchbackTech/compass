@@ -32,7 +32,6 @@ Examples:
 | `backend.originsAllowed` | Yes | YAML list of allowed CORS origins. Include `web.url`. |
 | `backend.compassToken` | Yes | Bearer token protecting internal sync endpoints. |
 | `backend.googleWebhook` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `backend.apiUrl`. |
-| `backend.healthUrl` | No | Override for helper health checks, usually `http://127.0.0.1:3000/api/health` when the public URL is behind Caddy. |
 
 ## MongoDB
 

@@ -22,7 +22,6 @@ const CompassConfigSchema = z
       originsAllowed: z.array(z.string()).optional(),
       compassToken: z.string(),
       googleWebhook: optionalString,
-      healthUrl: optionalString,
     }),
     runtime: z.object({
       nodeEnv: z.string(),

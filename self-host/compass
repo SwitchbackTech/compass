@@ -116,12 +116,11 @@ load_env() {
 
   [ -f "$CONFIG_FILE" ] || fail "Missing config file: $CONFIG_FILE. Rerun the installer or set COMPASS_CONFIG_FILE."
 
-  frontend_url=$(strip_quotes "$(read_config_value urls.frontend)")
-  health_url=$(strip_quotes "$(read_config_value urls.health)")
-  port=$(strip_quotes "$(read_config_value ports.backend)")
+  frontend_url=$(strip_quotes "$(read_config_value web.url)")
+  port=$(strip_quotes "$(read_config_value backend.port)")
 
   APP_URL=${frontend_url:-http://localhost:9080}
-  HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-http://localhost:${port:-3000}/api/health}}
+  HEALTH_URL=${COMPASS_HEALTH_URL:-http://localhost:${port:-3000}/api/health}
   ENV_LOADED=1
 }
 

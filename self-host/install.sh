@@ -238,10 +238,9 @@ load_runtime_config() {
   validate_port_value WEB_PORT "$WEB_PORT_VALUE"
   validate_port_value PORT "$PORT_VALUE"
   frontend_url=$(strip_quotes "$(read_config_value web.url)")
-  health_url=$(strip_quotes "$(read_config_value backend.healthUrl)")
 
   APP_URL=${frontend_url:-http://localhost:$WEB_PORT_VALUE}
-  HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-http://localhost:$PORT_VALUE/api/health}}
+  HEALTH_URL=${COMPASS_HEALTH_URL:-http://localhost:$PORT_VALUE/api/health}
 }
 
 random_hex() {
