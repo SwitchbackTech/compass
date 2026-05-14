@@ -853,6 +853,17 @@ const dragOnMainGrid = async (
   await page.mouse.up();
 };
 
+const waitForEventDraft = async (page: Page, eventSelector: string) => {
+  await page
+    .waitForFunction(
+      (selector) => document.querySelectorAll(selector).length >= 2,
+      eventSelector,
+      { timeout: FORM_OPEN_ATTEMPT_TIMEOUT_MS },
+    )
+    .catch(() => undefined);
+  await waitForSettledFrames(page);
+};
+
 const openTimedEventFormFromGrid = async (
   page: Page,
   point: { x: number; y: number },
@@ -954,6 +965,29 @@ const measureInputBaseline = async (page: Page): Promise<ScenarioSample> => {
   });
 };
 
+const prepareSingleTimedEventForMotion = async (
+  page: Page,
+  baseUrl: string,
+) => {
+  const event = createSingleDragEvent();
+  await prepareCalendarState(page, baseUrl, [event]);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await waitForWeekReady(page, { allDay: 0, timed: 1 });
+
+  const eventSelector = `#mainGrid [data-event-id="${event._id}"]`;
+  const eventButton = page.locator(eventSelector);
+  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+  await eventButton.scrollIntoViewIfNeeded();
+  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+
+  const box = await getLocatorBox(
+    eventButton,
+    "Expected seeded timed event to be visible.",
+  );
+
+  return { box, eventButton, eventSelector };
+};
+
 const measureCreateTimedEvent = async (
   page: Page,
   baseUrl: string,
@@ -999,21 +1033,8 @@ const measureDragTimedEvent = async (
   page: Page,
   baseUrl: string,
 ): Promise<ScenarioSample> => {
-  const event = createSingleDragEvent();
-  await prepareCalendarState(page, baseUrl, [event]);
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await waitForWeekReady(page, { allDay: 0, timed: 1 });
-
-  const eventButton = page.locator(`#mainGrid [data-event-id="${event._id}"]`);
-  const eventSelector = `#mainGrid [data-event-id="${event._id}"]`;
-  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
-  await eventButton.scrollIntoViewIfNeeded();
-  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
-
-  const box = await getLocatorBox(
-    eventButton,
-    "Expected seeded timed event to be visible.",
-  );
+  const { box, eventButton, eventSelector } =
+    await prepareSingleTimedEventForMotion(page, baseUrl);
 
   const startX = box.x + box.width / 2;
   const startY = box.y + Math.min(20, box.height / 2);
@@ -1030,25 +1051,45 @@ const measureDragTimedEvent = async (
   });
 };
 
+const measureLongDragTimedEvent = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box, eventButton, eventSelector } =
+    await prepareSingleTimedEventForMotion(page, baseUrl);
+
+  const startX = box.x + box.width / 2;
+  const startY = box.y + Math.min(20, box.height / 2);
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 30, startY + 30, { steps: 4 });
+  await waitForEventDraft(page, eventSelector);
+
+  const sample = await measureAction(page, async () => {
+    await page.mouse.move(startX + 90, startY + 120, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 30, startY + 60, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 120, startY + 150, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 60, startY + 90, { steps: 24 });
+    await page.waitForTimeout(250);
+  });
+
+  await page.mouse.up();
+  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+  await waitForElementBoxChange(page, eventSelector, box, ["x", "y"]);
+
+  return sample;
+};
+
 const measureResizeTimedEvent = async (
   page: Page,
   baseUrl: string,
 ): Promise<ScenarioSample> => {
-  const event = createSingleDragEvent();
-  await prepareCalendarState(page, baseUrl, [event]);
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await waitForWeekReady(page, { allDay: 0, timed: 1 });
-
-  const eventSelector = `#mainGrid [data-event-id="${event._id}"]`;
-  const eventButton = page.locator(eventSelector);
-  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
-  await eventButton.scrollIntoViewIfNeeded();
-  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
-
-  const box = await getLocatorBox(
-    eventButton,
-    "Expected seeded timed event to be visible.",
-  );
+  const { box, eventButton, eventSelector } =
+    await prepareSingleTimedEventForMotion(page, baseUrl);
   const startX = box.x + box.width / 2;
   const startY = box.y + box.height - 2;
   const endY = startY + 90;
@@ -1058,6 +1099,34 @@ const measureResizeTimedEvent = async (
     await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
     await waitForElementBoxChange(page, eventSelector, box, ["height"]);
   });
+};
+
+const measureResizeJitterTimedEvent = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box, eventButton, eventSelector } =
+    await prepareSingleTimedEventForMotion(page, baseUrl);
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height - 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await waitForEventDraft(page, eventSelector);
+
+  const sample = await measureAction(page, async () => {
+    await page.mouse.move(startX, startY + 90, { steps: 12 });
+    await page.mouse.move(startX, startY + 30, { steps: 12 });
+    await page.mouse.move(startX, startY + 120, { steps: 12 });
+    await page.mouse.move(startX, startY + 45, { steps: 12 });
+    await page.mouse.move(startX, startY + 100, { steps: 12 });
+  });
+
+  await page.mouse.up();
+  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+  await waitForElementBoxChange(page, eventSelector, box, ["height"]);
+
+  return sample;
 };
 
 const SCENARIOS: ScenarioDefinition[] = [
@@ -1085,8 +1154,18 @@ const SCENARIOS: ScenarioDefinition[] = [
   },
   {
     isolateSamples: true,
+    name: "long-drag-timed-event",
+    run: measureLongDragTimedEvent,
+  },
+  {
+    isolateSamples: true,
     name: "resize-timed-event",
     run: measureResizeTimedEvent,
+  },
+  {
+    isolateSamples: true,
+    name: "resize-jitter-timed-event",
+    run: measureResizeJitterTimedEvent,
   },
 ];
 
