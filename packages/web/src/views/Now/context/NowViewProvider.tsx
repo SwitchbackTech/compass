@@ -135,6 +135,10 @@ export function NowViewProvider({
     setFocusedTask,
   ]);
 
+  const handleEscape = useCallback(() => {
+    navigate(ROOT_ROUTES.DAY);
+  }, [navigate]);
+
   useNowShortcuts({
     focusedTask,
     availableTasks,
@@ -142,6 +146,7 @@ export function NowViewProvider({
     onNextTask: handleNextTask,
     onCompleteTask: handleCompleteTask,
     onToggleSidebar,
+    onEscape: handleEscape,
   });
 
   const value: NowViewContextValue = {

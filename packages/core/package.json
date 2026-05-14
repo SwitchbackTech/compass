@@ -7,7 +7,9 @@
   "main": "",
   "devDependencies": {
     "@faker-js/faker": "^9.6.0",
+    "@types/lodash.mergewith": "^4.6.9",
     "@types/tinycolor2": "^1.4.6",
+    "lodash.mergewith": "^4.6.2",
     "typescript": "^6.0.3"
   },
   "dependencies": {

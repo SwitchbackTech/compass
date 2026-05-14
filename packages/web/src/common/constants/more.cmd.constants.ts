@@ -28,8 +28,7 @@ export const moreCommandPaletteItems: Array<{
         children: `Version: ${typeof BUILD_VERSION === "string" ? BUILD_VERSION : "dev"}`,
         icon: "InformationCircleIcon",
         onClick: () => {
-          const v =
-            typeof BUILD_VERSION === "string" ? BUILD_VERSION : "dev";
+          const v = typeof BUILD_VERSION === "string" ? BUILD_VERSION : "dev";
           void navigator.clipboard.writeText(v);
         },
       },

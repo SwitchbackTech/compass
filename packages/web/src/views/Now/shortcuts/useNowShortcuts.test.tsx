@@ -70,4 +70,15 @@ describe("useNowShortcuts", () => {
       expect(onToggleSidebar).toHaveBeenCalledTimes(1);
     });
   });
+
+  it("navigates to day view when Escape is pressed", async () => {
+    const onEscape = mock();
+    renderHook(() => useNowShortcuts({ onEscape }), { wrapper });
+
+    pressKey("escape");
+
+    await waitFor(() => {
+      expect(onEscape).toHaveBeenCalledTimes(1);
+    });
+  });
 });

@@ -14,6 +14,7 @@ interface Props {
   onNextTask?: () => void;
   onCompleteTask?: () => void;
   onToggleSidebar?: () => void;
+  onEscape?: () => void;
 }
 
 export function useNowShortcuts(props?: Props) {
@@ -24,6 +25,7 @@ export function useNowShortcuts(props?: Props) {
     onNextTask,
     onCompleteTask,
     onToggleSidebar,
+    onEscape,
   } = props || {};
 
   const handleTaskNavigation = useCallback(
@@ -70,5 +72,9 @@ export function useNowShortcuts(props?: Props) {
 
   useAppHotkeyUp("[", () => {
     onToggleSidebar?.();
+  });
+
+  useAppHotkeyUp("Escape", () => {
+    onEscape?.();
   });
 }
