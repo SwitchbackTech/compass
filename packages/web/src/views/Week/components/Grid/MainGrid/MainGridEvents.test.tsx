@@ -55,7 +55,7 @@ describe("MainGridEvents", () => {
     preloadedState.events.entities!.value = {
       [event._id!]: event,
     };
-    preloadedState.events.getWeekEvents.value = {
+    preloadedState.events.getWeekEvents!.value = {
       data: [event._id!],
       count: 1,
       pageSize: 1,

@@ -71,7 +71,7 @@ const DEFAULT_RUNS = 5;
 const DEFAULT_WARMUPS = 1;
 const DEFAULT_PORT = 9160;
 const FORM_TIMEOUT_MS = 10_000;
-const FORM_OPEN_ATTEMPT_TIMEOUT_MS = 1_000;
+const FORM_OPEN_ATTEMPT_TIMEOUT_MS = 2_000;
 const SERVER_TIMEOUT_MS = 120_000;
 const VIEWPORT = { width: 1440, height: 1000 };
 
@@ -775,28 +775,40 @@ const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
         timeout: FORM_OPEN_ATTEMPT_TIMEOUT_MS,
       });
       await titleInput.fill(title);
-      break;
+
+      await page.waitForFunction(
+        ({ expectedTitle }) => {
+          const input = document.querySelector<HTMLInputElement>(
+            'input[name="Event Title"]',
+          );
+
+          return input?.value === expectedTitle;
+        },
+        { expectedTitle: title },
+        { timeout: FORM_OPEN_ATTEMPT_TIMEOUT_MS },
+      );
+
+      const saveButton = page
+        .getByRole("form")
+        .getByRole("button", { name: "Save" });
+      await saveButton.evaluate((element) => {
+        (element as HTMLElement).click();
+      });
+
+      await getFormTitleInput(page).waitFor({
+        state: "hidden",
+        timeout: FORM_OPEN_ATTEMPT_TIMEOUT_MS,
+      });
+      return;
     } catch (error) {
       lastError = error;
       await page.waitForTimeout(100);
-
-      if (attempt === 3) {
-        throw lastError;
-      }
     }
   }
 
-  const saveButton = page
-    .getByRole("form")
-    .getByRole("button", { name: "Save" });
-  await saveButton.evaluate((element) => {
-    (element as HTMLElement).click();
-  });
-
-  await getFormTitleInput(page).waitFor({
-    state: "hidden",
-    timeout: FORM_TIMEOUT_MS,
-  });
+  throw lastError instanceof Error
+    ? lastError
+    : new Error("Unable to fill and save timed event form.");
 };
 
 const expectTimedEventVisible = async (page: Page, title: string) => {
