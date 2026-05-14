@@ -1,5 +1,9 @@
-# Copy this file to compass.yaml and replace values for your local setup.
-# Do not commit compass.yaml; it contains secrets.
+# Compass Config
+
+# Notes
+# - Copy this file to compass.yaml and replace values for your local setup.
+# - Do not commit this file; it contains secrets.
+# - For detailed explanations, see: https://docs.compasscalendar.com/docs/config
 
 compose:
   version: latest

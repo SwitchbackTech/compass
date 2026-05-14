@@ -43,6 +43,8 @@ Examples:
 
 ## SuperTokens
 
+SuperTokens handles user-sessions for us.
+
 | key | Required | Description |
 |---|---|---|
 | `supertokens.uri` | Yes | SuperTokens Core URL as seen by the backend. Self-hosted Docker uses `http://supertokens:3567`. |
@@ -51,9 +53,10 @@ Examples:
 | `supertokens.postgres.password` | Self-host | Postgres password for the SuperTokens database container. |
 | `supertokens.postgres.database` | Self-host | Postgres database name for SuperTokens. |
 
-## Google OAuth
+## Google
+These values are only necessary if you want to enable Google Oauth and/or 2-way sync between Compass and Google Calendar
 
-Both `google.clientId` and `google.clientSecret` must be real values for Google features to activate. Setting only one causes backend startup to fail. Leave the self-host placeholders in place for password-only mode.
+Both `google.clientId` and `google.clientSecret` must be real values for Google features to activate. Setting only one causes backend startup to fail.
 
 | key | Required | Description |
 |---|---|---|
@@ -63,7 +66,7 @@ Both `google.clientId` and `google.clientSecret` must be real values for Google 
 | `google.webhookUrl` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `backend.apiUrl`. |
 | `google.notificationToken` | Required for HTTPS Google webhooks | Token used to verify Google Calendar webhook requests. |
 
-See [Google Calendar](./google-calendar.md) for OAuth setup.
+See [Google Calendar](./google-calendar.md) for full setup instructions.
 
 ## Optional Integrations
 

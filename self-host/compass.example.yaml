@@ -1,5 +1,8 @@
-# Compass self-host config.
-# The installer writes ~/compass/compass.yaml with generated secrets.
+# Compass Self-Hosting Config
+#
+# Notes
+# - The installer writes ~/compass/compass.yaml with generated secrets.
+# - For detailed explanations, see: https://docs.compasscalendar.com/docs/config
 
 compose:
   version: latest
