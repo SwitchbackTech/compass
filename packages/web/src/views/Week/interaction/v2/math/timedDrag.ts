@@ -23,6 +23,7 @@ interface CreateTimedDragVisualInput {
 interface UpdateTimedDragVisualInput {
   layout: WeekLayoutCache;
   pointer: VisualPoint;
+  scrollDeltaPx?: number;
 }
 
 export const createTimedDragVisual = ({
@@ -49,12 +50,16 @@ export const createTimedDragVisual = ({
 
 export const updateTimedDragVisual = (
   visual: TimedDragVisual,
-  { layout, pointer }: UpdateTimedDragVisualInput,
+  { layout, pointer, scrollDeltaPx = 0 }: UpdateTimedDragVisualInput,
 ): TimedDragVisual => {
   const deltaX = pointer.x - visual.pointerStart.x;
   const deltaY = pointer.y - visual.pointerStart.y;
-  const deltaMinutes = snapToStep(
+  const pointerDeltaMinutes = snapToStep(
     deltaY / layout.pixelsPerMinute,
+    layout.snapMinutes,
+  );
+  const deltaMinutes = snapToStep(
+    (deltaY + scrollDeltaPx) / layout.pixelsPerMinute,
     layout.snapMinutes,
   );
   const latestStartMinutes = clamp(
@@ -84,9 +89,7 @@ export const updateTimedDragVisual = (
     startMinutes: latestStartMinutes,
     transform: {
       x: nextColumnLeft - initialColumnLeft,
-      y:
-        (latestStartMinutes - visual.initialStartMinutes) *
-        layout.pixelsPerMinute,
+      y: pointerDeltaMinutes * layout.pixelsPerMinute,
     },
   };
 };

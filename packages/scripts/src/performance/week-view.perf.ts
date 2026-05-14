@@ -1622,6 +1622,53 @@ const measureAllDayResizeV2Sustained = async (
   return sample;
 };
 
+const measureSmartScrollDragV2 = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box } = await prepareSingleTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
+
+  const mainGrid = page.locator("#mainGrid");
+  const gridBox = await getLocatorBox(
+    mainGrid,
+    "Expected main grid to be visible for smart scroll.",
+  );
+  const startX = box.x + box.width / 2;
+  const startY = box.y + Math.min(20, box.height / 2);
+  const bottomZoneY = gridBox.y + gridBox.height - 60;
+  const initialScrollTop = await mainGrid.evaluate(
+    (element) => element.scrollTop,
+  );
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 30, startY + 30, { steps: 4 });
+  await waitForWeekInteractionOverlay(page);
+
+  const sample = await measureAction(page, async () => {
+    await page.mouse.move(startX + 30, bottomZoneY, { steps: 24 });
+    await page.waitForTimeout(350);
+    await page.mouse.move(startX + 45, bottomZoneY, { steps: 24 });
+    await page.waitForTimeout(350);
+    await page.mouse.move(startX + 60, bottomZoneY, { steps: 24 });
+    await page.waitForTimeout(350);
+  });
+
+  const finalScrollTop = await mainGrid.evaluate(
+    (element) => element.scrollTop,
+  );
+  await page.mouse.up();
+
+  if (finalScrollTop <= initialScrollTop) {
+    throw new Error(
+      `Expected V2 smart scroll to move the main grid. Before: ${initialScrollTop}; after: ${finalScrollTop}.`,
+    );
+  }
+
+  return sample;
+};
+
 const SCENARIOS: ScenarioDefinition[] = [
   {
     isolateSamples: true,
@@ -1704,6 +1751,11 @@ const SCENARIOS: ScenarioDefinition[] = [
     isolateSamples: true,
     name: "all-day-resize-v2-sustained",
     run: measureAllDayResizeV2Sustained,
+  },
+  {
+    isolateSamples: true,
+    name: "smart-scroll-drag-v2",
+    run: measureSmartScrollDragV2,
   },
 ];
 

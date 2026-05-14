@@ -487,7 +487,7 @@ describe("WeekInteractionController", () => {
     lastDay.unregister();
   });
 
-  it("falls through for scroll-zone drags until smart scroll migrates", () => {
+  it("owns scroll-zone timed drags after smart scroll migrates", () => {
     const nearTop = setupEligibleController(
       {},
       {},
@@ -500,9 +500,83 @@ describe("WeekInteractionController", () => {
       nearTop.controller.handlePointerDown(
         createPointerEvent("pointerdown", nearTop.sourceElement, 250, 40),
       ),
+    ).toBe(true);
+
+    nearTop.unregister();
+  });
+
+  it("keeps timed resize scroll-zone candidates on the legacy path", () => {
+    const nearTop = setupEligibleController(
+      {},
+      {},
+      "timed",
+      { height: 60, left: 200, top: 20, width: 100 },
+      { clientHeight: 300, scrollHeight: 660 },
+    );
+    const resizeHandle = document.createElement("div");
+    resizeHandle.setAttribute("data-week-event-resize-handle", "endDate");
+    nearTop.sourceElement.append(resizeHandle);
+
+    expect(
+      nearTop.controller.handlePointerDown(
+        createPointerEvent("pointerdown", resizeHandle, 250, 40),
+      ),
     ).toBe(false);
 
     nearTop.unregister();
+  });
+
+  it("scrolls timed drags in the controller frame loop", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      frameCallback = null;
+      callback(timestamp);
+    };
+    const { controller, mainGrid, sourceElement, unregister } =
+      setupEligibleController(
+        {
+          requestFrame: (callback) => {
+            frameCallback = callback;
+            return 1;
+          },
+        },
+        {
+          endDate: "2026-05-12T11:00:00",
+          startDate: "2026-05-12T10:00:00",
+        },
+        "timed",
+        { height: 60, left: 200, top: 220, width: 100 },
+        { clientHeight: 300, scrollHeight: 660 },
+      );
+
+    controller.handlePointerDown(
+      createPointerEvent("pointerdown", sourceElement, 250, 260),
+    );
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 250, 290),
+    );
+    runFrame(16);
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 250, 620),
+    );
+    runFrame(32);
+    runFrame(48);
+
+    const result = controller.handlePointerUp(
+      createPointerEvent("pointerup", sourceElement, 250, 620),
+    );
+
+    expect(mainGrid.scrollTop).toBe(20);
+    expect(result).toMatchObject({
+      hasMoved: true,
+      type: "timedDragEnd",
+    });
+
+    unregister();
   });
 });
 
@@ -586,6 +660,7 @@ const setupEligibleController = (
       isPendingEvent: () => false,
       ...overrides,
     }),
+    mainGrid,
     sourceElement,
     unregister: () => {
       unregisterRegistry();

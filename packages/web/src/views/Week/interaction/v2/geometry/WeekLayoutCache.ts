@@ -1,3 +1,5 @@
+import { type SmartScrollCache } from "../math/smartScroll";
+
 export interface WeekDayColumnCache {
   index: number;
   left: number;
@@ -8,6 +10,7 @@ export interface WeekLayoutCache {
   dayColumns: WeekDayColumnCache[];
   pixelsPerMinute: number;
   snapMinutes: number;
+  smartScroll?: SmartScrollCache;
 }
 
 export const getNearestDayColumn = (

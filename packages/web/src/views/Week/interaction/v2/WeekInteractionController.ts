@@ -39,6 +39,7 @@ import {
   createAllDayResizeVisual,
   updateAllDayResizeVisual,
 } from "./math/allDayResize";
+import { getSmartScrollFrame } from "./math/smartScroll";
 import { createTimedDragVisual, updateTimedDragVisual } from "./math/timedDrag";
 import {
   createTimedResizeVisual,
@@ -76,6 +77,8 @@ const DEFAULT_HOLD_DELAY_MS = 750;
 const DEFAULT_MOVE_THRESHOLD_PX = 25;
 const MS_PER_DAY = 24 * 60 * 60 * 1_000;
 const SMART_SCROLL_EDGE_THRESHOLD_PX = 50;
+const SMART_SCROLL_BOTTOM_INSET_PX = 100;
+const SMART_SCROLL_SPEED_PX = 10;
 
 type WeekInteractionControllerOptions = {
   clearTimer?: (timer: unknown) => void;
@@ -125,6 +128,7 @@ export class WeekInteractionController {
   #overlay: DragOverlay | null = null;
   #placeholder: SourcePlaceholder | null = null;
   #rafId: unknown = null;
+  #scrollTop: number | null = null;
   #session: WeekInteractionSession = { phase: "idle" };
   #visual:
     | AllDayDragVisual
@@ -478,8 +482,7 @@ export class WeekInteractionController {
       registered.kind !== "timed" ||
       registered.event.isAllDay ||
       this.#options.isPendingEvent(eventId) ||
-      isEdgeNavigationCandidate(registered.event) ||
-      isSmartScrollCandidate(element)
+      isEdgeNavigationCandidate(registered.event)
     ) {
       return null;
     }
@@ -570,6 +573,7 @@ export class WeekInteractionController {
     this.#placeholder = markSourcePlaceholder(session.sourceElement);
     this.#overlay = overlay;
     this.#layout = layout;
+    this.#scrollTop = layout.smartScroll?.initialScrollTop ?? null;
     const visualInput = {
       dayIndex: getLocalDayIndex(registered.event.startDate),
       endDayIndex: getAllDayInclusiveEndDayIndex(registered.event),
@@ -628,6 +632,11 @@ export class WeekInteractionController {
     }
     this.#lastFrameAt = timestamp;
 
+    const smartScroll =
+      this.#visual.type === "timedDrag"
+        ? this.#applySmartScroll()
+        : { isScrolling: false, scrollDeltaPx: 0 };
+
     if (this.#visual.type === "allDayDrag") {
       this.#visual = updateAllDayDragVisual(this.#visual, {
         layout: this.#layout,
@@ -657,6 +666,7 @@ export class WeekInteractionController {
       this.#visual = updateTimedDragVisual(this.#visual, {
         layout: this.#layout,
         pointer: this.#latestPointer,
+        scrollDeltaPx: smartScroll.scrollDeltaPx,
       });
       this.#overlay.updateTransform(this.#visual.transform);
     }
@@ -669,6 +679,37 @@ export class WeekInteractionController {
         metrics.firstFrameLatencyMs = this.#options.now() - this.#activatedAt;
       }
     }
+
+    if (smartScroll.isScrolling) {
+      this.#scheduleFrame();
+    }
+  }
+
+  #applySmartScroll() {
+    if (
+      !this.#layout?.smartScroll ||
+      !this.#latestPointer ||
+      this.#scrollTop === null
+    ) {
+      return { isScrolling: false, scrollDeltaPx: 0 };
+    }
+
+    const frame = getSmartScrollFrame({
+      cache: this.#layout.smartScroll,
+      pointerY: this.#latestPointer.y,
+      scrollTop: this.#scrollTop,
+    });
+
+    if (frame.scrollTop !== this.#scrollTop) {
+      this.#layout.smartScroll.element.scrollTop = frame.scrollTop;
+      this.#scrollTop = frame.scrollTop;
+    }
+
+    return {
+      isScrolling: frame.velocityPx !== 0,
+      scrollDeltaPx:
+        this.#scrollTop - this.#layout.smartScroll.initialScrollTop,
+    };
   }
 
   #teardownActiveSession() {
@@ -686,6 +727,7 @@ export class WeekInteractionController {
     this.#mutationObserver = null;
     this.#layout = null;
     this.#latestPointer = null;
+    this.#scrollTop = null;
     this.#visual = null;
     this.#activatedAt = null;
     this.#lastFrameAt = null;
@@ -790,6 +832,15 @@ const buildWeekLayoutCache = (): WeekLayoutCache | null => {
     dayColumns,
     pixelsPerMinute: rect.height / (11 * 60),
     snapMinutes: GRID_TIME_STEP,
+    smartScroll: {
+      bottom: rect.bottom - SMART_SCROLL_BOTTOM_INSET_PX,
+      edgeThresholdPx: SMART_SCROLL_EDGE_THRESHOLD_PX,
+      element: mainGrid,
+      initialScrollTop: mainGrid.scrollTop,
+      maxScrollTop: Math.max(0, mainGrid.scrollHeight - mainGrid.clientHeight),
+      speedPx: SMART_SCROLL_SPEED_PX,
+      top: rect.top,
+    },
   };
 };
 

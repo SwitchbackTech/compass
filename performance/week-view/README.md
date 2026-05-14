@@ -55,6 +55,7 @@ The harness runs the same seeded browser flows each time:
 - all-day V2 scenarios:
   - sustained drag motion
   - sustained resize motion
+- smart-scroll V2 timed drag
 
 Each scenario runs several samples and reports median time, p95 time, worst
 frame gap, and long-task count.
@@ -214,3 +215,11 @@ Use the same machine and avoid background-heavy work when comparing runs.
   owns the session. `all-day-resize-v2-sustained` reported a 14.4 ms max frame
   gap, 0 long tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save
   0/0, RAF p95 0.1 ms, and RAF max 0.3 ms.
+- 2026-05-14, `v2-smart-scroll`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T19-16-47-448Z-v2-smart-scroll.json`
+  recorded Task 13 after moving timed-drag smart scroll into the V2 controller
+  RAF loop. `--compare latest` was refused because `latest` used the Task 12
+  scenario shape, so the run used the explicit
+  `v2-all-day-resize-suppressed-mousemove` JSON path. `smart-scroll-drag-v2`
+  reported a 14.4 ms max frame gap, 0 long tasks, React 0, Redux 0, unexpected
+  DOM 0, layout reads 0, save 0/0, RAF p95 0.2 ms, and RAF max 0.3 ms.
