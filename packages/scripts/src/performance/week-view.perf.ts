@@ -764,9 +764,27 @@ const openTimedEventFormWithShortcut = async (page: Page) => {
 };
 
 const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
-  const titleInput = getFormTitleInput(page);
-  await titleInput.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
-  await titleInput.fill(title);
+  let lastError: unknown;
+
+  for (let attempt = 0; attempt < 4; attempt += 1) {
+    const titleInput = getFormTitleInput(page);
+
+    try {
+      await titleInput.waitFor({
+        state: "visible",
+        timeout: FORM_OPEN_ATTEMPT_TIMEOUT_MS,
+      });
+      await titleInput.fill(title);
+      break;
+    } catch (error) {
+      lastError = error;
+      await page.waitForTimeout(100);
+
+      if (attempt === 3) {
+        throw lastError;
+      }
+    }
+  }
 
   const saveButton = page
     .getByRole("form")
@@ -775,7 +793,10 @@ const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
     (element as HTMLElement).click();
   });
 
-  await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT_MS });
+  await getFormTitleInput(page).waitFor({
+    state: "hidden",
+    timeout: FORM_TIMEOUT_MS,
+  });
 };
 
 const expectTimedEventVisible = async (page: Page, title: string) => {
