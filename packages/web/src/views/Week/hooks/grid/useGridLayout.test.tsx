@@ -3,7 +3,7 @@ import { type FC, useRef } from "react";
 import { Provider } from "react-redux";
 import { store } from "@web/store";
 import { useGridLayout } from "./useGridLayout";
-import { describe, expect, it } from "bun:test";
+import { afterEach, describe, expect, it } from "bun:test";
 
 type ObserverRecord = {
   node: Element;
@@ -114,6 +114,10 @@ const renderHarness = () =>
   );
 
 describe("useGridLayout", () => {
+  afterEach(() => {
+    window.__weekInteractionV2MotionActive = false;
+  });
+
   it("measures grid elements from callback refs and derives column widths", async () => {
     observers.length = 0;
     window.ResizeObserver =
@@ -151,6 +155,32 @@ describe("useGridLayout", () => {
 
     await Promise.resolve();
 
+    expect(Number(screen.getByTestId("render-count").textContent)).toBe(before);
+  });
+
+  it("ignores ResizeObserver updates while V2 owns pointer motion", async () => {
+    observers.length = 0;
+    window.ResizeObserver =
+      TestResizeObserver as unknown as typeof ResizeObserver;
+    globalThis.ResizeObserver =
+      TestResizeObserver as unknown as typeof ResizeObserver;
+
+    renderHarness();
+
+    await waitFor(() => {
+      expect(screen.getByTestId("hour-height")).toHaveTextContent("70");
+    });
+
+    const mainGrid = screen.getByTestId("main-grid");
+    const before = Number(screen.getByTestId("render-count").textContent);
+    setRect(mainGrid, { width: 700, height: 880 });
+    window.__weekInteractionV2MotionActive = true;
+
+    triggerResize(mainGrid);
+
+    await Promise.resolve();
+
+    expect(screen.getByTestId("hour-height")).toHaveTextContent("70");
     expect(Number(screen.getByTestId("render-count").textContent)).toBe(before);
   });
 });

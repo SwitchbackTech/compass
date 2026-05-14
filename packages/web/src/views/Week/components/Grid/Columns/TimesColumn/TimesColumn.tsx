@@ -8,26 +8,23 @@ import { Text } from "@web/components/Text";
 import { StyledDayTimes, StyledTimesLabel } from "./styled";
 
 export const TimesColumn = () => {
-  const [currentHour, setCurrentHour] = useState(dayjs().hour());
-  const [colors, setColors] = useState<string[] | null>(null);
+  const [currentHour, setCurrentHour] = useState(() => dayjs().hour());
   const hourLabels = useMemo(() => getHourLabels(), []);
-
-  useEffect(() => {
-    const _colors = getColorsByHour(currentHour);
-    setColors(_colors);
-  }, [currentHour]);
+  const colors = useMemo(() => getColorsByHour(currentHour), [currentHour]);
 
   useEffect(() => {
     const interval = setInterval(() => {
-      const hour = dayjs().hour();
-      if (hour !== currentHour) {
-        setCurrentHour(hour);
-      }
+      setCurrentHour((current) => {
+        const hour = dayjs().hour();
+        if (window.__weekInteractionV2MotionActive || hour === current) {
+          return current;
+        }
+
+        return hour;
+      });
     }, 60000);
     return () => clearInterval(interval);
-  }, [currentHour]);
-
-  if (!colors) return null;
+  }, []);
 
   return (
     <StyledDayTimes>

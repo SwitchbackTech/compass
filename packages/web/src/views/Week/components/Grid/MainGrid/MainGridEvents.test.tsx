@@ -8,7 +8,8 @@ import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { type RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
-import { AllDayEvents } from "./AllDayEvents";
+import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { MainGridEvents } from "./MainGridEvents";
 import { describe, expect, it } from "bun:test";
 
 const configureTestStore = configureStore as unknown as (
@@ -45,32 +46,37 @@ const measurements = {
   mainGrid: null,
 } as Measurements_Grid;
 
-describe("AllDayEvents", () => {
-  it("marks all-day resize handles for V2 without dispatching legacy live motion", () => {
+const weekProps = {
+  component: {
+    endOfView: dayjs("2026-05-16T23:59:59.999Z"),
+    startOfView: dayjs("2026-05-10T00:00:00.000Z"),
+  },
+} as WeekProps;
+
+describe("MainGridEvents", () => {
+  it("marks timed resize handles for V2 without dispatching legacy live motion", () => {
     const event = {
       _id: "event-1",
-      endDate: "2026-05-15",
-      isAllDay: true,
+      endDate: "2026-05-13T10:00:00.000Z",
+      isAllDay: false,
       isSomeday: false,
       origin: "compass",
       priority: "unassigned",
-      startDate: "2026-05-13",
-      title: "Board review",
+      startDate: "2026-05-13T09:00:00.000Z",
+      title: "Planning",
       updatedAt: "2026-05-01T00:00:00.000Z",
       user: "user-1",
     } as Schema_Event;
     const store = createStoreWithWeekEvent(event);
     const { container } = render(
       <Provider store={store}>
-        <AllDayEvents
-          measurements={measurements}
-          startOfView={dayjs("2026-05-10")}
-          endOfView={dayjs("2026-05-16")}
-        />
+        <div id="mainGrid">
+          <MainGridEvents measurements={measurements} weekProps={weekProps} />
+        </div>
       </Provider>,
     );
     const eventButton = container.querySelector<HTMLElement>(
-      "[data-week-event-kind='allDay']",
+      "[data-week-event-kind='timed']",
     );
     const endHandle = eventButton?.querySelector<HTMLElement>(
       "[data-week-event-resize-handle='endDate']",

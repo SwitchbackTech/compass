@@ -179,6 +179,7 @@ export class WeekInteractionController {
       return false;
     }
 
+    this.#setMotionActive(true);
     const holdTimer = this.#options.setTimer(() => {
       this.#activatePendingSession("hold");
     }, this.#options.holdDelayMs);
@@ -265,6 +266,7 @@ export class WeekInteractionController {
       const sourceEvent = registered?.event ?? this.#session.event;
       this.#clearPendingTimer(this.#session);
       this.#session = { phase: "idle" };
+      this.#setMotionActive(false);
 
       return { event: sourceEvent, eventId, type: "click" };
     }
@@ -321,6 +323,7 @@ export class WeekInteractionController {
     if (!this.#mountTimedDragOverlay(this.#session)) {
       this.#clearPendingTimer(this.#session);
       this.#session = { phase: "idle" };
+      this.#setMotionActive(false);
       return;
     }
 
@@ -353,7 +356,6 @@ export class WeekInteractionController {
     const metrics = getWeekInteractionMetrics();
     if (metrics) {
       metrics.active = true;
-      metrics.phase = "motion";
     }
     this.#latestPointer = {
       x: this.#session.startX,
@@ -633,6 +635,9 @@ export class WeekInteractionController {
 
     const metrics = getWeekInteractionMetrics();
     const frameStart = this.#options.now();
+    if (metrics && metrics.phase !== "motion") {
+      metrics.phase = "motion";
+    }
     this.#rebuildLayoutIfNeeded();
     if (metrics && this.#lastFrameAt !== null) {
       metrics.frameGaps.push(timestamp - this.#lastFrameAt);
@@ -815,6 +820,13 @@ export class WeekInteractionController {
     if (metrics) {
       metrics.active = false;
       metrics.phase = "commit";
+    }
+    this.#setMotionActive(false);
+  }
+
+  #setMotionActive(isActive: boolean) {
+    if (typeof window !== "undefined") {
+      window.__weekInteractionV2MotionActive = isActive;
     }
   }
 

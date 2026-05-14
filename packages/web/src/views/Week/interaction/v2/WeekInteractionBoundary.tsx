@@ -1,4 +1,5 @@
 import {
+  memo,
   Profiler,
   type PropsWithChildren,
   useEffect,
@@ -120,7 +121,7 @@ const ConnectedWeekInteractionBoundary = ({
         getFormEventId: () => draftStateRef.current.draft?._id ?? null,
         isEnabled: () =>
           typeof window !== "undefined" &&
-          window.__weekInteractionV2ForceEnabled === true,
+          window.__weekInteractionV2ForceEnabled !== false,
         isFormOpen: () => draftStateRef.current.isFormOpen || isEventFormOpen(),
         isPendingEvent: (eventId) =>
           selectIsEventPending(store.getState(), eventId),
@@ -193,14 +194,14 @@ const ConnectedWeekInteractionBoundary = ({
   );
 };
 
-const WeekInteractionBoundaryView = ({
+const WeekInteractionBoundaryView = memo(function WeekInteractionBoundaryView({
   children,
   commitAdapter,
   controller,
 }: PropsWithChildren<{
   commitAdapter: WeekInteractionCommitAdapter;
   controller: WeekInteractionController;
-}>) => {
+}>) {
   const boundaryRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -334,7 +335,28 @@ const WeekInteractionBoundaryView = ({
       </div>
     </Profiler>
   );
-};
+}, areBoundaryViewPropsEqual);
+
+function areBoundaryViewPropsEqual(
+  previous: PropsWithChildren<{
+    commitAdapter: WeekInteractionCommitAdapter;
+    controller: WeekInteractionController;
+  }>,
+  next: PropsWithChildren<{
+    commitAdapter: WeekInteractionCommitAdapter;
+    controller: WeekInteractionController;
+  }>,
+) {
+  if (typeof window !== "undefined" && window.__weekInteractionV2MotionActive) {
+    return true;
+  }
+
+  return (
+    previous.children === next.children &&
+    previous.commitAdapter === next.commitAdapter &&
+    previous.controller === next.controller
+  );
+}
 
 const isEventSaveRequest = (actionType: string) =>
   actionType === createEventSlice.actions.request.type ||

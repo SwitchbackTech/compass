@@ -2,9 +2,7 @@ import { type FC } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow";
 import { MainGrid } from "@web/views/Week/components/Grid/MainGrid";
-import { EdgeNavigationIndicators } from "@web/views/Week/components/Grid/MainGrid/EdgeNavigationIndicators";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
-import { useDragEdgeNavigation } from "@web/views/Week/hooks/grid/useDragEdgeNavigation";
 import {
   type Measurements_Grid,
   type Refs_Grid,
@@ -26,10 +24,7 @@ export const Grid: FC<Props> = ({
   today,
   weekProps,
 }) => {
-  const { allDayRef, allDayRowRef, mainGridElementRef, mainGridRef } = gridRefs;
-
-  // Handle drag-to-edge navigation for both timed and all-day events
-  const dragEdgeState = useDragEdgeNavigation(mainGridRef, weekProps);
+  const { allDayRef, allDayRowRef, mainGridElementRef } = gridRefs;
 
   return (
     <div
@@ -53,12 +48,10 @@ export const Grid: FC<Props> = ({
       <MainGrid
         dateCalcs={dateCalcs}
         mainGridElementRef={mainGridElementRef}
-        mainGridRef={mainGridRef}
         measurements={measurements}
         today={today}
         weekProps={weekProps}
       />
-      <EdgeNavigationIndicators dragEdgeState={dragEdgeState} />
     </div>
   );
 };

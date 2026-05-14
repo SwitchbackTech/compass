@@ -8,11 +8,20 @@ interface NowLineProps {
 }
 
 export const NowLine: React.FC<NowLineProps> = ({ width }) => {
-  const [percentOfDay, setPercentOfDay] = useState(getCurrentPercentOfDay());
+  const [percentOfDay, setPercentOfDay] = useState(() =>
+    getCurrentPercentOfDay(),
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setPercentOfDay(getCurrentPercentOfDay());
+      setPercentOfDay((current) => {
+        if (window.__weekInteractionV2MotionActive) {
+          return current;
+        }
+
+        const next = getCurrentPercentOfDay();
+        return next === current ? current : next;
+      });
     }, 60000);
     return () => clearInterval(interval);
   }, []);

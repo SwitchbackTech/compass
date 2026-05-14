@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
+import { useState } from "react";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   createWeekInteractionCommitAdapter,
@@ -6,9 +7,13 @@ import {
 } from "./WeekInteractionBoundary";
 import { WeekInteractionController } from "./WeekInteractionController";
 import { type WeekInteractionPointerUpResult } from "./WeekInteractionSession";
-import { describe, expect, it, mock } from "bun:test";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 describe("WeekInteractionBoundary", () => {
+  afterEach(() => {
+    window.__weekInteractionV2MotionActive = false;
+  });
+
   it("calls the controller on pointerdown without blocking legacy behavior when passive", () => {
     const controller = new WeekInteractionController();
     const handlePointerDown = mock(() => false);
@@ -152,6 +157,52 @@ describe("WeekInteractionBoundary", () => {
 
     expect(mouseMove.defaultPrevented).toBe(true);
     expect(legacyMouseMove).not.toHaveBeenCalled();
+  });
+
+  it("keeps the grid subtree frozen while V2 owns pointer motion", () => {
+    const controller = new WeekInteractionController();
+    let childRenderCount = 0;
+
+    const Child = () => {
+      childRenderCount += 1;
+      return <span>Grid child</span>;
+    };
+
+    const Harness = () => {
+      const [count, setCount] = useState(0);
+
+      return (
+        <>
+          <button type="button" onClick={() => setCount((value) => value + 1)}>
+            Parent update
+          </button>
+          <WeekInteractionBoundary
+            commitAdapter={{
+              openExistingEvent: mock(),
+              submitMovedEvent: mock(),
+            }}
+            controller={controller}
+          >
+            <Child />
+            <span>{count}</span>
+          </WeekInteractionBoundary>
+        </>
+      );
+    };
+
+    render(<Harness />);
+
+    expect(childRenderCount).toBe(1);
+
+    window.__weekInteractionV2MotionActive = true;
+    fireEvent.click(screen.getByRole("button", { name: "Parent update" }));
+
+    expect(childRenderCount).toBe(1);
+
+    window.__weekInteractionV2MotionActive = false;
+    fireEvent.click(screen.getByRole("button", { name: "Parent update" }));
+
+    expect(childRenderCount).toBe(2);
   });
 
   it("submits moved timed drag results through the commit adapter", () => {

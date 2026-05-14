@@ -43,6 +43,7 @@ export const createWeekInteractionMetrics = (): WeekInteractionMetrics => ({
 declare global {
   interface Window {
     __weekInteractionV2ForceEnabled?: boolean;
+    __weekInteractionV2MotionActive?: boolean;
     __weekInteractionMetrics?: WeekInteractionMetrics;
   }
 }

@@ -1070,7 +1070,7 @@ const openTimedEventFormFromGrid = async (
         .waitForFunction(
           () => document.querySelector("#timedEvents [role='button']"),
           undefined,
-          { timeout: 1_000 },
+          { timeout: FORM_TIMEOUT_MS },
         )
         .catch(() => undefined);
       await page.mouse.up();
@@ -1164,6 +1164,7 @@ const prepareSingleTimedEventForMotion = async (
   await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
   await eventButton.scrollIntoViewIfNeeded();
   await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+  await waitForSettledFrames(page);
 
   const box = await getLocatorBox(
     eventButton,
@@ -1194,6 +1195,7 @@ const prepareEdgeNavigationTimedEventForMotion = async (
   await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
   await eventButton.scrollIntoViewIfNeeded();
   await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+  await waitForSettledFrames(page);
 
   const box = await getLocatorBox(
     eventButton,
@@ -1216,6 +1218,7 @@ const prepareSingleAllDayEventForMotion = async (
   const eventButton = page.locator(eventSelector);
   await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
   await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+  await waitForSettledFrames(page);
 
   const box = await getLocatorBox(
     eventButton,
@@ -1238,6 +1241,7 @@ const prepareSingleAllDayResizeEventForMotion = async (
   const eventButton = page.locator(eventSelector);
   await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
   await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+  await waitForSettledFrames(page);
 
   const box = await getLocatorBox(
     eventButton,
@@ -1427,6 +1431,7 @@ const measureLongDragTimedEvent = async (
 ): Promise<ScenarioSample> => {
   const { box, eventButton, eventSelector } =
     await prepareSingleTimedEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
 
   const startX = box.x + box.width / 2;
   const startY = box.y + Math.min(20, box.height / 2);
@@ -1434,7 +1439,7 @@ const measureLongDragTimedEvent = async (
   await page.mouse.move(startX, startY);
   await page.mouse.down();
   await page.mouse.move(startX + 30, startY + 30, { steps: 4 });
-  await waitForEventDraft(page, eventSelector);
+  await waitForWeekInteractionOverlay(page);
 
   const sample = await measureAction(page, async () => {
     await page.mouse.move(startX + 90, startY + 120, { steps: 24 });

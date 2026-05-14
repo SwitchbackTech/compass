@@ -233,3 +233,30 @@ Use the same machine and avoid background-heavy work when comparing runs.
   layout reads 0, save 0/0, RAF p95 0.2 ms, and RAF max 0.6 ms. The React,
   Redux, and DOM counters are non-zero in this scenario because the controller
   intentionally requests one React-owned week change during the active drag.
+- 2026-05-14, `v2-final-all-day-resize-motion-safe-clean`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T21-02-29-815Z-v2-final-all-day-resize-motion-safe-clean.json`
+  was the Task 15 all-day resize stress rerun after freezing grid store
+  selector updates while V2 owns pointer motion. The 10-sample run reported a
+  14.4 ms max frame gap, 0 long tasks, React 0, Redux 0, unexpected DOM 0,
+  layout reads 0, save 0/0, RAF p95 0.1 ms, and RAF max 0.2 ms.
+- 2026-05-14, `v2-final-long-drag-overlay-wait-clean`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T21-04-12-864Z-v2-final-long-drag-overlay-wait-clean.json`
+  was the Task 15 long timed-drag stress rerun after the harness waited for the
+  V2 overlay instead of the legacy draft duplicate signal. The 10-sample run
+  reported a 14.4 ms max frame gap, 0 long tasks, React 0, Redux 0,
+  unexpected DOM 0, layout reads 0, save 0/0, RAF p95 0.1 ms, and RAF max
+  0.4 ms.
+- 2026-05-14, `v2-final-clean-after-motion-safe`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T21-16-07-935Z-v2-final-clean-after-motion-safe.json`
+  is the final Task 15 full-suite run after removing saved-event legacy
+  live-motion paths. `--compare latest` was refused because `latest` used the
+  single-scenario `long-drag-timed-event` shape, so the run used the explicit
+  `v2-final-clean-rerun` JSON path. `timed-drag-v2-sustained` reported a
+  14.4 ms max frame gap, 0 long tasks, React 0, Redux 0, unexpected DOM 0,
+  layout reads 0, save 0/0, RAF p95 0.1 ms, and RAF max 0.6 ms.
+  `long-drag-timed-event`, timed resize, all-day drag/resize, and smart-scroll
+  scenarios all reported React 0, Redux 0, unexpected DOM 0, layout reads 0,
+  and save 0/0 during sustained motion. `edge-navigation-drag-v2` reported
+  React 0, Redux 3, unexpected DOM 31, layout reads 0, save 0/0, RAF p95
+  0.2 ms, and RAF max 0.4 ms; the non-zero Redux/DOM counters are the
+  intentional week-change work for that scenario.

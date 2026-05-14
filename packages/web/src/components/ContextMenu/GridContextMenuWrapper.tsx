@@ -21,6 +21,7 @@ import {
 import { selectSomedayEvents } from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { areSelectedValuesEqualDuringWeekMotion } from "@web/views/Week/interaction/v2/motionSafeSelector";
 import { ContextMenu } from "./ContextMenu";
 
 export const ContextMenuWrapper = ({
@@ -31,14 +32,27 @@ export const ContextMenuWrapper = ({
   children: React.ReactNode;
 }) => {
   const dispatch = useAppDispatch();
-  const timedEvents = useAppSelector(selectGridEvents);
-  const allDayEvents = useAppSelector(selectAllDayEvents);
-  const somedayEvents = useAppSelector(selectSomedayEvents);
+  const timedEvents = useAppSelector(
+    selectGridEvents,
+    areSelectedValuesEqualDuringWeekMotion,
+  );
+  const allDayEvents = useAppSelector(
+    selectAllDayEvents,
+    areSelectedValuesEqualDuringWeekMotion,
+  );
+  const somedayEvents = useAppSelector(
+    selectSomedayEvents,
+    areSelectedValuesEqualDuringWeekMotion,
+  );
   const pendingEventIds = useAppSelector(
     (state) => state.events.pendingEvents.eventIds,
+    areSelectedValuesEqualDuringWeekMotion,
   );
 
-  const draftEvent = useAppSelector(selectDraft);
+  const draftEvent = useAppSelector(
+    selectDraft,
+    areSelectedValuesEqualDuringWeekMotion,
+  );
 
   const [isOpen, setIsOpen] = useState(false);
 

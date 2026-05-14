@@ -1,4 +1,5 @@
-import { type FC, type MouseEvent } from "react";
+import { type FC, type MouseEvent, memo } from "react";
+import { useStore } from "react-redux";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import {
@@ -11,6 +12,7 @@ import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { type RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -27,7 +29,7 @@ interface Props {
   weekProps: WeekProps;
 }
 
-export const AllDayRow: FC<Props> = ({
+const AllDayRowBase: FC<Props> = ({
   allDayRef,
   allDayRowRef,
   dateCalcs,
@@ -35,10 +37,10 @@ export const AllDayRow: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
+  const store = useStore<RootState>();
 
   const { startOfView, weekDays } = weekProps.component;
   const rowsCount = useAppSelector(selectRowCount);
-  const isDrafting = useAppSelector(selectIsDrafting);
 
   const startAlldayDraft = async (e: MouseEvent) => {
     const startDate = dateCalcs.getDateStrByXY(
@@ -63,6 +65,15 @@ export const AllDayRow: FC<Props> = ({
   };
 
   const onMouseDown = async (e: MouseEvent) => {
+    if (
+      e.target instanceof HTMLElement &&
+      e.target.closest("[data-week-event-role='event']")
+    ) {
+      return;
+    }
+
+    const isDrafting = selectIsDrafting(store.getState());
+
     if (isDrafting) {
       dispatch(draftSlice.actions.discard(undefined));
       return;
@@ -98,3 +109,9 @@ export const AllDayRow: FC<Props> = ({
     </StyledAllDayRow>
   );
 };
+
+export const AllDayRow = memo(AllDayRowBase, () =>
+  Boolean(
+    typeof window !== "undefined" && window.__weekInteractionV2MotionActive,
+  ),
+);
