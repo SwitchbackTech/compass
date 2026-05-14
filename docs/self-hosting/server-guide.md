@@ -217,9 +217,9 @@ sudo systemctl restart caddy
 
 ## 5. Switch Compass to your public URLs
 
-> **Warning.** Don't change `BASEURL` until step 4 succeeds. Compass uses
-> `BASEURL` for health checks. If `BASEURL` points at an HTTPS URL Caddy can't
-> serve yet, the health check fails even if the containers are running.
+> **Warning.** Don't change `BASEURL` until step 4 succeeds. The browser uses
+> `BASEURL` for API requests. If `BASEURL` points at an HTTPS URL Caddy can't
+> serve yet, the app can load but cannot reach the backend.
 
 Edit the env file:
 
@@ -268,7 +268,7 @@ cd ~/compass
 ./compass logs backend
 ```
 
-> **Tip.** If you ever need the helper to check the local backend directly while `BASEURL` stays public, add `COMPASS_HEALTH_URL=http://127.0.0.1:3000/api/health` to `~/compass/.env`. Most one-domain installs don't need this once Caddy is working.
+> **Tip.** The `./compass` helper checks backend health through localhost using `PORT`. Set `COMPASS_HEALTH_URL` only if you move the backend health endpoint to a different local address.
 
 ## 6. Sign in and test the basics
 
