@@ -253,23 +253,6 @@ read_env_value() {
   fi
 }
 
-append_health_path() {
-  base_url=$1
-
-  while :; do
-    case $base_url in
-      */)
-        base_url=${base_url%/}
-        ;;
-      *)
-        break
-        ;;
-    esac
-  done
-
-  printf '%s/health\n' "$base_url"
-}
-
 load_runtime_config() {
   web_port=$(strip_quotes "$(read_env_value WEB_PORT)")
   backend_port=$(strip_quotes "$(read_env_value PORT)")
@@ -280,11 +263,10 @@ load_runtime_config() {
   validate_port_value PORT "$PORT_VALUE"
 
   frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
-  baseurl=$(strip_quotes "$(read_env_value BASEURL)")
   health_url=$(strip_quotes "$(read_env_value COMPASS_HEALTH_URL)")
 
   APP_URL=${frontend_url:-http://localhost:$WEB_PORT_VALUE}
-  HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-$(append_health_path "${baseurl:-http://localhost:$PORT_VALUE/api}")}}
+  HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-http://localhost:$PORT_VALUE/api/health}}
 }
 
 random_hex() {
