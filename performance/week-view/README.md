@@ -132,3 +132,12 @@ Use the same machine and avoid background-heavy work when comparing runs.
   `timed-drag-v2-pointerup-commit` reported a 26.6 ms max frame gap, 0 long
   tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save 0/1, RAF p95
   0.2 ms, and RAF max 0.2 ms.
+- 2026-05-14, `v2-legacy-fallbacks`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T18-26-22-895Z-v2-legacy-fallbacks.json`
+  recorded Task 7 after adding explicit fallback guards for edge-navigation
+  and smart-scroll candidates. The run compared cleanly with
+  `v2-timed-drag-commit`. `timed-drag-v2-click-unchanged` stayed at React 0,
+  Redux 0, unexpected DOM 0, layout reads 0, and save 0/0.
+  `timed-drag-v2-pointerup-commit` reported a 26.1 ms max frame gap, 0 long
+  tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, save 0/1, RAF p95
+  0.2 ms, and RAF max 0.2 ms.

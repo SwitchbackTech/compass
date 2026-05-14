@@ -193,6 +193,54 @@ describe("WeekInteractionController", () => {
       ),
     ).toBe(false);
   });
+
+  it("falls through for first and last visible day drags until edge navigation migrates", () => {
+    const firstDay = setupEligibleController(
+      {},
+      {
+        endDate: "2026-05-10T11:00:00",
+        startDate: "2026-05-10T10:00:00",
+      },
+    );
+    expect(
+      firstDay.controller.handlePointerDown(
+        createPointerEvent("pointerdown", firstDay.sourceElement, 100, 100),
+      ),
+    ).toBe(false);
+    firstDay.unregister();
+
+    const lastDay = setupEligibleController(
+      {},
+      {
+        endDate: "2026-05-16T11:00:00",
+        startDate: "2026-05-16T10:00:00",
+      },
+    );
+    expect(
+      lastDay.controller.handlePointerDown(
+        createPointerEvent("pointerdown", lastDay.sourceElement, 100, 100),
+      ),
+    ).toBe(false);
+    lastDay.unregister();
+  });
+
+  it("falls through for scroll-zone drags until smart scroll migrates", () => {
+    const nearTop = setupEligibleController(
+      {},
+      {},
+      "timed",
+      { height: 60, left: 200, top: 20, width: 100 },
+      { clientHeight: 300, scrollHeight: 660 },
+    );
+
+    expect(
+      nearTop.controller.handlePointerDown(
+        createPointerEvent("pointerdown", nearTop.sourceElement, 250, 40),
+      ),
+    ).toBe(false);
+
+    nearTop.unregister();
+  });
 });
 
 const createPointerEvent = (
@@ -213,13 +261,20 @@ const setupEligibleController = (
   overrides: ConstructorParameters<typeof WeekInteractionController>[0] = {},
   eventOverrides: Partial<Schema_GridEvent> = {},
   kind: "timed" | "allDay" = "timed",
+  sourceRect = { height: 60, left: 200, top: 100, width: 100 },
+  gridSize = { clientHeight: 660, scrollHeight: 660 },
 ) => {
   const mainGrid = document.createElement("div");
   mainGrid.id = "mainGrid";
+  Object.defineProperties(mainGrid, {
+    clientHeight: { value: gridSize.clientHeight },
+    scrollHeight: { value: gridSize.scrollHeight },
+  });
   mainGrid.getBoundingClientRect = () =>
     ({
       height: 660,
       left: 0,
+      bottom: 660,
       top: 0,
       width: 700,
     }) as DOMRect;
@@ -229,10 +284,11 @@ const setupEligibleController = (
   sourceElement.setAttribute("data-week-event-role", "event");
   sourceElement.getBoundingClientRect = () =>
     ({
-      height: 60,
-      left: 200,
-      top: 100,
-      width: 100,
+      bottom: sourceRect.top + sourceRect.height,
+      height: sourceRect.height,
+      left: sourceRect.left,
+      top: sourceRect.top,
+      width: sourceRect.width,
     }) as DOMRect;
   document.body.append(mainGrid, sourceElement);
 

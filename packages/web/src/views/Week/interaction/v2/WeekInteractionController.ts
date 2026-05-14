@@ -39,6 +39,7 @@ import {
 
 const DEFAULT_HOLD_DELAY_MS = 750;
 const DEFAULT_MOVE_THRESHOLD_PX = 25;
+const SMART_SCROLL_EDGE_THRESHOLD_PX = 50;
 
 type WeekInteractionControllerOptions = {
   clearTimer?: (timer: unknown) => void;
@@ -285,7 +286,9 @@ export class WeekInteractionController {
       registered.kind !== "timed" ||
       registered.event.isAllDay ||
       isRecurringEvent(registered.event) ||
-      this.#options.isPendingEvent(eventId)
+      this.#options.isPendingEvent(eventId) ||
+      isEdgeNavigationCandidate(registered.event) ||
+      isSmartScrollCandidate(element)
     ) {
       return null;
     }
@@ -535,6 +538,30 @@ const getLocalMinutes = (dateString: string | undefined) => {
 
 const getLocalDayIndex = (dateString: string | undefined) =>
   new Date(dateString ?? 0).getDay();
+
+const isEdgeNavigationCandidate = (event: Schema_GridEvent) => {
+  const dayIndex = getLocalDayIndex(event.startDate);
+
+  return dayIndex === 0 || dayIndex === 6;
+};
+
+const isSmartScrollCandidate = (sourceElement: HTMLElement) => {
+  const mainGrid = document.getElementById(ID_GRID_MAIN);
+
+  if (!mainGrid || mainGrid.scrollHeight <= mainGrid.clientHeight) {
+    return false;
+  }
+
+  const gridRect = mainGrid.getBoundingClientRect();
+  const sourceRect = sourceElement.getBoundingClientRect();
+  const sourceBottom = sourceRect.bottom || sourceRect.top + sourceRect.height;
+  const gridBottom = gridRect.bottom || gridRect.top + gridRect.height;
+
+  return (
+    sourceRect.top < gridRect.top + SMART_SCROLL_EDGE_THRESHOLD_PX ||
+    sourceBottom > gridBottom - SMART_SCROLL_EDGE_THRESHOLD_PX
+  );
+};
 
 const describeMutationTarget = (target: Element | null) => {
   if (!target) {
