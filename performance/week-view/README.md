@@ -93,3 +93,12 @@ Use the same machine and avoid background-heavy work when comparing runs.
   attributes. `input-baseline` reported a 14.3 ms max frame gap and 0 long
   tasks. Compared with `v2-input-floor`, the median changed from 407.4 ms to
   420.1 ms.
+- 2026-05-14, `v2-passive-boundary`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T17-57-52-508Z-v2-passive-boundary.json`
+  recorded Task 3 after adding the passive Week interaction boundary.
+  `--compare latest` was refused because `latest` used only `input-baseline`,
+  so the run used the explicit `v2-event-registry` JSON path as instructed.
+  `drag-timed-event` reported a 14.3 ms max frame gap and 0 long tasks;
+  `resize-timed-event` reported a 15.4 ms max frame gap and 0 long tasks. V2
+  ownership counters were unavailable because the passive controller still
+  refuses ownership.
