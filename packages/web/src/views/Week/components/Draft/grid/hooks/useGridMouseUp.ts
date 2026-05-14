@@ -9,7 +9,7 @@ import { useDraftContext } from "../../context/useDraftContext";
 
 export const useGridMouseUp = () => {
   const { actions, interaction, state } = useDraftContext();
-  const { draft, isResizing } = state;
+  const { draft, isFormOpenBeforeDragging, isResizing } = state;
   const { discard, openForm, stopDragging, stopResizing, submit } = actions;
 
   const draftStatus = useAppSelector(selectDraftStatus);
@@ -104,19 +104,23 @@ export const useGridMouseUp = () => {
       return;
     }
 
-    if (isResizing) {
-      stopResizing();
-    }
-
-    if (interaction.getSnapshot().mode === "drag") {
-      stopDragging();
-    }
-
     const { shouldSubmit, shouldOpenForm } = getNextAction(
       Categories_Event.TIMED,
       latestDraft,
       hasMoved,
     );
+    const canSubmitResetInteraction =
+      shouldSubmit && !!latestDraft._id && !isFormOpenBeforeDragging;
+
+    if (!canSubmitResetInteraction) {
+      if (isResizing) {
+        stopResizing();
+      }
+
+      if (interaction.getSnapshot().mode === "drag") {
+        stopDragging();
+      }
+    }
 
     if (shouldOpenForm) {
       openForm();
@@ -132,6 +136,7 @@ export const useGridMouseUp = () => {
     isDrafting,
     reduxDraftType,
     isResizing,
+    isFormOpenBeforeDragging,
     interaction,
     getNextAction,
     discard,

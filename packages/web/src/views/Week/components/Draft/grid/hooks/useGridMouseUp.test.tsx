@@ -123,7 +123,7 @@ describe("useGridMouseUp", () => {
       stopPropagation: mock(),
     } as unknown as MouseEvent);
 
-    expect(stopDragging).toHaveBeenCalled();
+    expect(stopDragging).not.toHaveBeenCalled();
     expect(submit).toHaveBeenCalledWith(engineDraft);
   });
 });
