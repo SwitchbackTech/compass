@@ -64,6 +64,32 @@ describe("shapeEventRead", () => {
     expect(result.data.map((event) => event._id)).toEqual(["first-day"]);
   });
 
+  it("excludes all-day calendar events that start on the exclusive window end", () => {
+    const lastDayAllDayEvent = makeEvent({
+      _id: "last-day",
+      isAllDay: true,
+      startDate: "2026-04-12",
+      endDate: "2026-04-13",
+    });
+    const nextDayAllDayEvent = makeEvent({
+      _id: "next-day",
+      isAllDay: true,
+      startDate: "2026-04-13",
+      endDate: "2026-04-14",
+    });
+
+    const result = shapeEventRead({
+      window: {
+        mode: "calendar",
+        startDate: "2026-04-06T00:00:00-05:00",
+        endDate: "2026-04-13T00:00:00-05:00",
+      },
+      events: [lastDayAllDayEvent, nextDayAllDayEvent],
+    });
+
+    expect(result.data.map((event) => event._id)).toEqual(["last-day"]);
+  });
+
   it("excludes base events and returns instances with base recurrence rules", () => {
     const baseEvent = makeEvent({
       _id: "base",

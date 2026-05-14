@@ -82,12 +82,34 @@ const allDayEventOverlapsWindow = (
   event: Required<Pick<Schema_Event, "startDate" | "endDate">>,
   window: EventReadShapeInput["window"],
 ) => {
-  const eventStart = dayjs(event.startDate).utc(true);
-  const eventEnd = dayjs(event.endDate).utc(true);
   const rangeStart = dayjs(window.startDate);
   const rangeEnd = dayjs(window.endDate);
+  const eventStart = dayjs(event.startDate).utcOffset(
+    getExplicitOffsetMinutes(window.endDate),
+    true,
+  );
+  const eventEnd = dayjs(event.endDate).utcOffset(
+    getExplicitOffsetMinutes(window.startDate),
+    true,
+  );
 
   return eventStart.isBefore(rangeEnd) && eventEnd.isAfter(rangeStart);
+};
+
+const getExplicitOffsetMinutes = (value: string) => {
+  if (/T.*Z$/.test(value)) {
+    return 0;
+  }
+
+  const offset = value.match(/T.*([+-])(\d{2}):?(\d{2})$/);
+  if (!offset) {
+    return dayjs(value).utcOffset();
+  }
+
+  const [, sign, hours, minutes] = offset;
+  const direction = sign === "-" ? -1 : 1;
+
+  return direction * (Number(hours) * 60 + Number(minutes));
 };
 
 const timedEventIsInsideWindow = (
