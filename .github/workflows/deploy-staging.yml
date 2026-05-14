@@ -25,18 +25,44 @@ jobs:
     steps:
       - name: Deploy release to staging
         env:
-          COMPASS_YAML: ${{ secrets.COMPASS_YAML }}
+          # Non-sensitive
+          BACKEND_API_URL: ${{ vars.STAGING_BACKEND_API_URL }}
+          FRONTEND_URL: ${{ vars.STAGING_FRONTEND_URL }} GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           RELEASE_TAG: ${{ inputs.tag }}
+          SUPERTOKENS_URI: ${{ vars.STAGING_SUPERTOKENS_URI }}
+          # Sensitive 
+          COMPASS_SYNC_TOKEN: ${{ secrets.STAGING_COMPASS_SYNC_TOKEN }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MONGO_URI: ${{ secrets.STAGING_MONGO_URI }}
           SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
           SSH_HOST: ${{ secrets.STAGING_SSH_HOST }}
           SSH_USER: ${{ secrets.STAGING_SSH_USER }}
+          SUPERTOKENS_KEY: ${{ secrets.STAGING_SUPERTOKENS_KEY }}
         run: |
           echo "Deploying Compass ${RELEASE_TAG} to staging"
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
-          if [ -n "$COMPASS_YAML" ]; then
-            printf '%s\n' "$COMPASS_YAML" | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml"
-          fi
+          printf '%s\n' \
+            'runtime:' \
+            '  nodeEnv: production' \
+            '  timezone: Etc/UTC' \
+            'urls:' \
+            "  frontend: ${FRONTEND_URL}" \
+            "  backendApi: ${BACKEND_API_URL}" \
+            '  cors:' \
+            "    - ${FRONTEND_URL}" \
+            'mongo:' \
+            "  uri: ${MONGO_URI}" \
+            'supertokens:' \
+            "  uri: ${SUPERTOKENS_URI}" \
+            "  key: ${SUPERTOKENS_KEY}" \
+            'tokens:' \
+            "  compassSync: ${COMPASS_SYNC_TOKEN}" \
+            'google:' \
+            "  clientId: ${GOOGLE_CLIENT_ID}" \
+            "  clientSecret: ${GOOGLE_CLIENT_SECRET}" \
+            | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
+                "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update"
