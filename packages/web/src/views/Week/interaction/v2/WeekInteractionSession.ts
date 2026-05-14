@@ -41,12 +41,25 @@ export interface ActiveTimedResizeSession
   phase: "motion";
 }
 
+export interface PendingAllDayDragSession
+  extends Omit<PendingTimedDragSession, "kind"> {
+  kind: "allDayDrag";
+}
+
+export interface ActiveAllDayDragSession
+  extends Omit<PendingAllDayDragSession, "holdTimer" | "phase"> {
+  activatedBy: TimedDragActivationReason;
+  phase: "motion";
+}
+
 export type WeekInteractionSession =
   | IdleWeekInteractionSession
   | PendingTimedDragSession
   | ActiveTimedDragSession
   | PendingTimedResizeSession
-  | ActiveTimedResizeSession;
+  | ActiveTimedResizeSession
+  | PendingAllDayDragSession
+  | ActiveAllDayDragSession;
 
 export type WeekInteractionPointerUpResult =
   | { event: Schema_GridEvent; eventId: string; type: "click" }
@@ -65,5 +78,13 @@ export type WeekInteractionPointerUpResult =
       eventId: string;
       hasMoved: boolean;
       type: "timedResizeEnd";
+    }
+  | {
+      event: Schema_GridEvent;
+      formEventIdAtPointerDown: string | null;
+      hadFormOpenBeforeInteraction: boolean;
+      eventId: string;
+      hasMoved: boolean;
+      type: "allDayDragEnd";
     }
   | null;

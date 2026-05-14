@@ -1,6 +1,13 @@
-import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
+import {
+  ID_ALLDAY_COLUMNS,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
+import {
+  allDayDragVisualToGridEvent,
+  hasAllDayDragVisualMoved,
+} from "./commit/allDayDragVisualToGridEvent";
 import {
   hasTimedEventVisualChanged,
   visualDraftToGridEvent,
@@ -20,11 +27,16 @@ import {
   type WeekDayColumnCache,
   type WeekLayoutCache,
 } from "./geometry/WeekLayoutCache";
+import {
+  createAllDayDragVisual,
+  updateAllDayDragVisual,
+} from "./math/allDayDrag";
 import { createTimedDragVisual, updateTimedDragVisual } from "./math/timedDrag";
 import {
   createTimedResizeVisual,
   updateTimedResizeVisual,
 } from "./math/timedResize";
+import { type AllDayDragVisual } from "./model/AllDayDragVisual";
 import {
   type TimedDragVisual,
   type VisualPoint,
@@ -38,8 +50,10 @@ import {
   type WeekInteractionMetrics,
 } from "./WeekInteractionMetrics";
 import {
+  type ActiveAllDayDragSession,
   type ActiveTimedDragSession,
   type ActiveTimedResizeSession,
+  type PendingAllDayDragSession,
   type PendingTimedDragSession,
   type PendingTimedResizeSession,
   type TimedDragActivationReason,
@@ -100,7 +114,7 @@ export class WeekInteractionController {
   #placeholder: SourcePlaceholder | null = null;
   #rafId: unknown = null;
   #session: WeekInteractionSession = { phase: "idle" };
-  #visual: TimedDragVisual | TimedResizeVisual | null = null;
+  #visual: AllDayDragVisual | TimedDragVisual | TimedResizeVisual | null = null;
 
   constructor(options: WeekInteractionControllerOptions = {}) {
     this.#options = { ...defaultOptions, ...options };
@@ -113,14 +127,16 @@ export class WeekInteractionController {
 
     return (
       this.#getEligibleTimedResize(event) !== null ||
-      this.#getEligibleTimedDrag(event) !== null
+      this.#getEligibleTimedDrag(event) !== null ||
+      this.#getEligibleAllDayDrag(event) !== null
     );
   }
 
   handlePointerDown(event: PointerEvent): boolean {
     const resize = this.#getEligibleTimedResize(event);
     const drag = resize ? null : this.#getEligibleTimedDrag(event);
-    const eligible = resize ?? drag;
+    const allDay = resize || drag ? null : this.#getEligibleAllDayDrag(event);
+    const eligible = resize ?? drag ?? allDay;
 
     if (!eligible) {
       return false;
@@ -136,7 +152,9 @@ export class WeekInteractionController {
       eventId: eligible.registered.event._id!,
       ...(resize
         ? { edge: resize.edge, kind: "timedResize" as const }
-        : { kind: "timed" as const }),
+        : allDay
+          ? { kind: "allDayDrag" as const }
+          : { kind: "timed" as const }),
       formEventIdAtPointerDown: formOpenAtPointerDown
         ? this.#options.getFormEventId()
         : null,
@@ -217,13 +235,17 @@ export class WeekInteractionController {
     const visual = this.#visual;
     const movedEvent =
       registered && visual
-        ? visualDraftToGridEvent(registered.event, visual)
+        ? convertVisualToGridEvent(registered.event, visual)
         : null;
-    const hasMoved = visual ? hasTimedEventVisualChanged(visual) : false;
+    const hasMoved = visual ? hasVisualChanged(visual) : false;
     const hadFormOpenBeforeInteraction = this.#session.formOpenAtPointerDown;
     const formEventIdAtPointerDown = this.#session.formEventIdAtPointerDown;
     const resultType =
-      this.#session.kind === "timedResize" ? "timedResizeEnd" : "timedDragEnd";
+      this.#session.kind === "timedResize"
+        ? "timedResizeEnd"
+        : this.#session.kind === "allDayDrag"
+          ? "allDayDragEnd"
+          : "timedDragEnd";
     this.#teardownActiveSession();
     this.#session = { phase: "idle" };
 
@@ -261,12 +283,17 @@ export class WeekInteractionController {
       return;
     }
 
-    const activeSession: ActiveTimedDragSession | ActiveTimedResizeSession = {
+    const activeSession:
+      | ActiveAllDayDragSession
+      | ActiveTimedDragSession
+      | ActiveTimedResizeSession = {
       activatedBy,
       eventId: this.#session.eventId,
       ...(this.#session.kind === "timedResize"
         ? { edge: this.#session.edge, kind: "timedResize" as const }
-        : { kind: "timed" as const }),
+        : this.#session.kind === "allDayDrag"
+          ? { kind: "allDayDrag" as const }
+          : { kind: "timed" as const }),
       formEventIdAtPointerDown: this.#session.formEventIdAtPointerDown,
       formOpenAtPointerDown: this.#session.formOpenAtPointerDown,
       phase: "motion",
@@ -291,7 +318,10 @@ export class WeekInteractionController {
   }
 
   #clearPendingTimer(
-    session: PendingTimedDragSession | PendingTimedResizeSession,
+    session:
+      | PendingAllDayDragSession
+      | PendingTimedDragSession
+      | PendingTimedResizeSession,
   ) {
     this.#options.clearTimer(session.holdTimer);
   }
@@ -381,6 +411,45 @@ export class WeekInteractionController {
     return { element, registered };
   }
 
+  #getEligibleAllDayDrag(event: PointerEvent) {
+    if (!this.#isEnabled()) {
+      return null;
+    }
+
+    const target = event.target instanceof Element ? event.target : null;
+    const element =
+      target?.closest<HTMLElement>("[data-week-event-role='event']") ?? null;
+
+    if (!target || !element) {
+      return null;
+    }
+
+    if (target.closest("[data-week-event-resize-handle]")) {
+      return null;
+    }
+
+    const eventId = element.dataset.weekEventId;
+    const eventKind = element.dataset.weekEventKind;
+
+    if (!eventId || eventKind !== "allDay") {
+      return null;
+    }
+
+    const registered = this.#options.getRegisteredEvent(eventId);
+
+    if (
+      !registered ||
+      registered.kind !== "allDay" ||
+      !registered.event.isAllDay ||
+      this.#options.isPendingEvent(eventId) ||
+      isEdgeNavigationCandidate(registered.event)
+    ) {
+      return null;
+    }
+
+    return { element, registered };
+  }
+
   #isEnabled() {
     const { isEnabled } = this.#options;
 
@@ -388,7 +457,10 @@ export class WeekInteractionController {
   }
 
   #mountTimedDragOverlay(
-    session: PendingTimedDragSession | PendingTimedResizeSession,
+    session:
+      | PendingAllDayDragSession
+      | PendingTimedDragSession
+      | PendingTimedResizeSession,
   ) {
     const registered = this.#options.getRegisteredEvent(session.eventId);
 
@@ -397,7 +469,10 @@ export class WeekInteractionController {
     }
 
     const sourceClientRect = readElementRect(session.sourceElement);
-    const layout = buildWeekLayoutCache();
+    const layout =
+      session.kind === "allDayDrag"
+        ? buildAllDayLayoutCache()
+        : buildWeekLayoutCache();
 
     if (!layout) {
       return false;
@@ -429,7 +504,9 @@ export class WeekInteractionController {
     this.#visual =
       session.kind === "timedResize"
         ? createTimedResizeVisual({ ...visualInput, edge: session.edge })
-        : createTimedDragVisual(visualInput);
+        : session.kind === "allDayDrag"
+          ? createAllDayDragVisual(visualInput)
+          : createTimedDragVisual(visualInput);
     this.#activatedAt = this.#options.now();
     this.#startMutationObserver();
 
@@ -470,7 +547,13 @@ export class WeekInteractionController {
     }
     this.#lastFrameAt = timestamp;
 
-    if (this.#visual.type === "timedResize") {
+    if (this.#visual.type === "allDayDrag") {
+      this.#visual = updateAllDayDragVisual(this.#visual, {
+        layout: this.#layout,
+        pointer: this.#latestPointer,
+      });
+      this.#overlay.updateTransform(this.#visual.transform);
+    } else if (this.#visual.type === "timedResize") {
       this.#visual = updateTimedResizeVisual(this.#visual, {
         layout: this.#layout,
         pointer: this.#latestPointer,
@@ -618,6 +701,46 @@ const buildWeekLayoutCache = (): WeekLayoutCache | null => {
     snapMinutes: GRID_TIME_STEP,
   };
 };
+
+const buildAllDayLayoutCache = (): WeekLayoutCache | null => {
+  const allDayColumns = document.getElementById(ID_ALLDAY_COLUMNS);
+
+  if (!allDayColumns) {
+    return null;
+  }
+
+  const rect = allDayColumns.getBoundingClientRect();
+  const columnWidth = rect.width / 7;
+  const dayColumns: WeekDayColumnCache[] = Array.from(
+    { length: 7 },
+    (_, index) => ({
+      index,
+      left: rect.left + columnWidth * index,
+      width: columnWidth,
+    }),
+  );
+
+  return {
+    dayColumns,
+    pixelsPerMinute: 1,
+    snapMinutes: GRID_TIME_STEP,
+  };
+};
+
+const convertVisualToGridEvent = (
+  event: Schema_GridEvent,
+  visual: AllDayDragVisual | TimedDragVisual | TimedResizeVisual,
+) =>
+  visual.type === "allDayDrag"
+    ? allDayDragVisualToGridEvent(event, visual)
+    : visualDraftToGridEvent(event, visual);
+
+const hasVisualChanged = (
+  visual: AllDayDragVisual | TimedDragVisual | TimedResizeVisual,
+) =>
+  visual.type === "allDayDrag"
+    ? hasAllDayDragVisualMoved(visual)
+    : hasTimedEventVisualChanged(visual);
 
 const getLocalMinutes = (dateString: string | undefined) => {
   const date = new Date(dateString ?? 0);

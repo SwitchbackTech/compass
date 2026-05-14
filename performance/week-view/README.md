@@ -185,3 +185,11 @@ Use the same machine and avoid background-heavy work when comparing runs.
   tasks, React 0, Redux 0, unexpected DOM 0, layout reads 0, and save 0/0.
   RAF p95/max were 0.1/0.2 ms for bottom resize, 0.2/0.3 ms for top resize,
   and 0.1/0.2 ms for edge flip.
+- 2026-05-14, `v2-all-day-drag`:
+  `/Users/ugur/Projects/switchback-tech/compass2/tmp/perf/week-view/2026-05-14T18-53-25-803Z-v2-all-day-drag.json`
+  recorded Task 11 after moving all-day drag through the V2 controller.
+  `--compare latest` was refused because `latest` used the Task 10 scenario
+  shape, so the run used the explicit `v2-timed-resize` JSON path.
+  `all-day-drag-v2-sustained` reported a 14.4 ms max frame gap, 0 long tasks,
+  React 0, Redux 0, unexpected DOM 0, layout reads 0, save 0/0, RAF p95
+  0.1 ms, and RAF max 0.3 ms.

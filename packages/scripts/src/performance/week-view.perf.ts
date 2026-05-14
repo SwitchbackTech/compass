@@ -1170,6 +1170,28 @@ const prepareSingleTimedEventForMotion = async (
   return { box, eventButton, eventSelector };
 };
 
+const prepareSingleAllDayEventForMotion = async (
+  page: Page,
+  baseUrl: string,
+) => {
+  const event = createAllDayEvent(0, getPerfWeekStart(), 3);
+  await prepareCalendarState(page, baseUrl, [event]);
+  await page.reload({ waitUntil: "domcontentloaded" });
+  await waitForWeekReady(page, { allDay: 1, timed: 0 });
+
+  const eventSelector = `#allDayEvents [data-event-id="${event._id}"]`;
+  const eventButton = page.locator(eventSelector);
+  await eventButton.waitFor({ state: "attached", timeout: FORM_TIMEOUT_MS });
+  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT_MS });
+
+  const box = await getLocatorBox(
+    eventButton,
+    "Expected seeded all-day event to be visible.",
+  );
+
+  return { box, eventButton, eventSelector };
+};
+
 const enableWeekInteractionV2 = async (page: Page) => {
   await page.evaluate(() => {
     (
@@ -1513,6 +1535,37 @@ const measureTimedResizeV2EdgeFlip = async (
   return sample;
 };
 
+const measureAllDayDragV2Sustained = async (
+  page: Page,
+  baseUrl: string,
+): Promise<ScenarioSample> => {
+  const { box } = await prepareSingleAllDayEventForMotion(page, baseUrl);
+  await enableWeekInteractionV2(page);
+
+  const startX = box.x + box.width / 2;
+  const startY = box.y + box.height / 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 30, startY, { steps: 4 });
+  await waitForWeekInteractionOverlay(page);
+
+  const sample = await measureAction(page, async () => {
+    await page.mouse.move(startX + 120, startY, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 60, startY, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 180, startY, { steps: 24 });
+    await page.waitForTimeout(250);
+    await page.mouse.move(startX + 90, startY, { steps: 24 });
+    await page.waitForTimeout(250);
+  });
+
+  await page.mouse.up();
+
+  return sample;
+};
+
 const SCENARIOS: ScenarioDefinition[] = [
   {
     isolateSamples: true,
@@ -1585,6 +1638,11 @@ const SCENARIOS: ScenarioDefinition[] = [
     isolateSamples: true,
     name: "timed-resize-v2-edge-flip",
     run: measureTimedResizeV2EdgeFlip,
+  },
+  {
+    isolateSamples: true,
+    name: "all-day-drag-v2-sustained",
+    run: measureAllDayDragV2Sustained,
   },
 ];
 

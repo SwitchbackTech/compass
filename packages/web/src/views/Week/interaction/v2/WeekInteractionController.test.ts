@@ -225,6 +225,84 @@ describe("WeekInteractionController", () => {
     resize.unregister();
   });
 
+  it("owns all-day drags", () => {
+    const allDay = setupEligibleController(
+      {},
+      {
+        endDate: "2026-05-14",
+        isAllDay: true,
+        startDate: "2026-05-13",
+      },
+      "allDay",
+    );
+
+    expect(
+      allDay.controller.handlePointerDown(
+        createPointerEvent("pointerdown", allDay.sourceElement, 250, 40),
+      ),
+    ).toBe(true);
+    expect(allDay.controller.getSession()).toMatchObject({
+      eventId: "event-1",
+      kind: "allDayDrag",
+      phase: "pending",
+    });
+
+    allDay.unregister();
+  });
+
+  it("returns a moved all-day event after active all-day drag release", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      callback(timestamp);
+    };
+    const { controller, sourceElement, unregister } = setupEligibleController(
+      {
+        requestFrame: (callback) => {
+          frameCallback = callback;
+          return 1;
+        },
+      },
+      {
+        endDate: "2026-05-14",
+        isAllDay: true,
+        startDate: "2026-05-13",
+      },
+      "allDay",
+    );
+
+    controller.handlePointerDown(
+      createPointerEvent("pointerdown", sourceElement, 250, 40),
+    );
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 280, 40),
+    );
+    runFrame(16);
+    controller.handlePointerMove(
+      createPointerEvent("pointermove", sourceElement, 370, 40),
+    );
+    runFrame(32);
+
+    const result = controller.handlePointerUp(
+      createPointerEvent("pointerup", sourceElement, 370, 40),
+    );
+
+    expect(result).toMatchObject({
+      event: {
+        endDate: "2026-05-15",
+        startDate: "2026-05-14",
+      },
+      eventId: "event-1",
+      hasMoved: true,
+      type: "allDayDragEnd",
+    });
+
+    unregister();
+  });
+
   it("returns a resized event after active timed resize release", () => {
     let frameCallback: FrameRequestCallback | null = null;
     const runFrame = (timestamp: number) => {
@@ -269,7 +347,7 @@ describe("WeekInteractionController", () => {
     unregister();
   });
 
-  it("falls through for pending, all-day, and unregistered targets", () => {
+  it("falls through for pending and unregistered targets", () => {
     const pending = setupEligibleController({
       isPendingEvent: () => true,
     });
@@ -279,14 +357,6 @@ describe("WeekInteractionController", () => {
       ),
     ).toBe(false);
     pending.unregister();
-
-    const allDay = setupEligibleController({}, { isAllDay: true }, "allDay");
-    expect(
-      allDay.controller.handlePointerDown(
-        createPointerEvent("pointerdown", allDay.sourceElement, 100, 100),
-      ),
-    ).toBe(false);
-    allDay.unregister();
 
     const unregistered = document.createElement("div");
     unregistered.setAttribute("data-week-event-id", "missing-event");
@@ -372,6 +442,8 @@ const setupEligibleController = (
 ) => {
   const mainGrid = document.createElement("div");
   mainGrid.id = "mainGrid";
+  const allDayColumns = document.createElement("div");
+  allDayColumns.id = "allDayColumns";
   Object.defineProperties(mainGrid, {
     clientHeight: { value: gridSize.clientHeight },
     scrollHeight: { value: gridSize.scrollHeight },
@@ -381,6 +453,13 @@ const setupEligibleController = (
       height: 660,
       left: 0,
       bottom: 660,
+      top: 0,
+      width: 700,
+    }) as DOMRect;
+  allDayColumns.getBoundingClientRect = () =>
+    ({
+      height: 60,
+      left: 0,
       top: 0,
       width: 700,
     }) as DOMRect;
@@ -396,7 +475,7 @@ const setupEligibleController = (
       top: sourceRect.top,
       width: sourceRect.width,
     }) as DOMRect;
-  document.body.append(mainGrid, sourceElement);
+  document.body.append(mainGrid, allDayColumns, sourceElement);
 
   const event = {
     _id: "event-1",
@@ -424,6 +503,7 @@ const setupEligibleController = (
     unregister: () => {
       unregisterRegistry();
       mainGrid.remove();
+      allDayColumns.remove();
       sourceElement.remove();
     },
   };

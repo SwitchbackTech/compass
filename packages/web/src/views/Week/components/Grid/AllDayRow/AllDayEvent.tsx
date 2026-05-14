@@ -3,6 +3,8 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   memo,
+  useEffect,
+  useRef,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
@@ -25,6 +27,7 @@ import { selectIsEventPending } from "@web/ducks/events/selectors/pending.select
 import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { registerWeekEventElement } from "@web/views/Week/interaction/v2/geometry/eventRegistry";
 
 interface Props {
   event: Schema_GridEvent;
@@ -51,6 +54,7 @@ const AllDayEvent = ({
   onKeyDown,
   onScalerMouseDown,
 }: Props) => {
+  const elementRef = useRef<HTMLDivElement | null>(null);
   const position = getEventPosition(
     event,
     startOfView,
@@ -107,10 +111,26 @@ const AllDayEvent = ({
     ...placement,
   });
 
+  useEffect(() => {
+    if (!event._id || !elementRef.current) {
+      return;
+    }
+
+    return registerWeekEventElement(event._id, {
+      element: elementRef.current,
+      event,
+      kind: "allDay",
+    });
+  }, [event]);
+
   return (
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
+      data-week-event-id={event._id}
+      data-week-event-kind="allDay"
+      data-week-event-role="event"
+      ref={elementRef}
       role="button"
       tabIndex={0}
       className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
@@ -144,6 +164,7 @@ const AllDayEvent = ({
         <>
           {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
           <div
+            data-week-event-resize-handle="startDate"
             style={scalerStyle({ left: "-0.25px" })}
             onMouseDown={(e) => {
               e.stopPropagation();
@@ -152,6 +173,7 @@ const AllDayEvent = ({
           />
           {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
           <div
+            data-week-event-resize-handle="endDate"
             style={scalerStyle({ right: "-0.25px" })}
             onMouseDown={(e) => {
               e.stopPropagation();

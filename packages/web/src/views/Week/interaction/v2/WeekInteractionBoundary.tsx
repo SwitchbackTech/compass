@@ -236,6 +236,7 @@ const WeekInteractionBoundaryView = ({
       if (result?.type === "click") {
         commitAdapter.openExistingEvent(result.event);
       } else if (
+        result?.type === "allDayDragEnd" ||
         result?.type === "timedDragEnd" ||
         result?.type === "timedResizeEnd"
       ) {
