@@ -531,12 +531,10 @@ export const useDraftActions = (
       return;
     }
     if (activity === "dragging") {
-      setDraft(reduxDraft as Schema_GridEvent);
       startDragging();
       return;
     }
     if (activity === "resizing") {
-      setDraft(reduxDraft as Schema_GridEvent);
       startResizing();
     }
   }, [
