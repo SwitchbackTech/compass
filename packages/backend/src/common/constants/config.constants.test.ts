@@ -1,7 +1,3 @@
-import {
-  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-} from "@core/constants/core.constants";
 import { parseConfigFromEnv } from "@backend/common/constants/config.constants";
 import { isGoogleConfigured } from "@backend/common/constants/config.util";
 
@@ -68,32 +64,14 @@ describe("config.constants", () => {
     expect(isGoogleConfigured(env)).toBe(true);
   });
 
-  it("treats self-host Google placeholders as not configured", () => {
+  it("treats absent Google credentials as not configured", () => {
     const env = parseConfigFromEnv({
       ...validEnv,
-      GOOGLE_CLIENT_ID: SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-      GOOGLE_CLIENT_SECRET: SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
+      GOOGLE_CLIENT_ID: undefined,
+      GOOGLE_CLIENT_SECRET: undefined,
     });
 
     expect(isGoogleConfigured(env)).toBe(false);
-  });
-
-  it("rejects mixed real and placeholder Google credentials", () => {
-    expect(() =>
-      parseConfigFromEnv({
-        ...validEnv,
-        GOOGLE_CLIENT_ID: "client-id",
-        GOOGLE_CLIENT_SECRET: SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-      }),
-    ).toThrow("Google configuration requires both client ID and secret");
-
-    expect(() =>
-      parseConfigFromEnv({
-        ...validEnv,
-        GOOGLE_CLIENT_ID: SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-        GOOGLE_CLIENT_SECRET: "client-secret",
-      }),
-    ).toThrow("Google configuration requires both client ID and secret");
   });
 
   it("requires a Google notification token for HTTPS Google watch callbacks", () => {

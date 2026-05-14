@@ -1,10 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { calendar } from "@googleapis/calendar";
 import { OAuth2Client } from "google-auth-library";
-import {
-  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-} from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
@@ -69,11 +65,11 @@ describe("GoogleOAuthClient", () => {
     });
   });
 
-  it("throws when self-host placeholder credentials are configured", () => {
+  it("throws when credentials are absent", () => {
     const originalClientId = CONFIG.GOOGLE_CLIENT_ID;
     const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
-    CONFIG.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
-    CONFIG.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
+    CONFIG.GOOGLE_CLIENT_ID = undefined;
+    CONFIG.GOOGLE_CLIENT_SECRET = undefined;
 
     try {
       expect(() => new GoogleOAuthClient()).toThrow(

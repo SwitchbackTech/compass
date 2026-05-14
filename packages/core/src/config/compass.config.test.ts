@@ -165,11 +165,4 @@ describe("compass config — placeholder detection", () => {
       "my-compass.yaml",
     );
   });
-
-  it("does not block configs using the compass-self-host-placeholder Google credentials", () => {
-    const yaml =
-      validYaml +
-      "\ngoogle:\n  clientId: compass-self-host-placeholder.apps.googleusercontent.com\n  clientSecret: compass-self-host-placeholder-secret\n";
-    expect(() => parseCompassConfigText(yaml, "compass.yaml")).not.toThrow();
-  });
 });

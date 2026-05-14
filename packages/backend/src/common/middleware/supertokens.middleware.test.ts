@@ -6,11 +6,7 @@ import EmailPassword from "supertokens-node/recipe/emailpassword";
 import Session from "supertokens-node/recipe/session";
 import ThirdParty from "supertokens-node/recipe/thirdparty";
 import UserMetadata from "supertokens-node/recipe/usermetadata";
-import {
-  APP_NAME,
-  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-} from "@core/constants/core.constants";
+import { APP_NAME } from "@core/constants/core.constants";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import {
@@ -259,11 +255,11 @@ describe("supertokens.middleware", () => {
       ]);
     });
 
-    it("omits the Google third-party provider for self-host placeholder credentials", () => {
+    it("omits the Google third-party provider when credentials are absent", () => {
       const originalClientId = CONFIG.GOOGLE_CLIENT_ID;
       const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
-      CONFIG.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
-      CONFIG.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
+      CONFIG.GOOGLE_CLIENT_ID = undefined;
+      CONFIG.GOOGLE_CLIENT_SECRET = undefined;
 
       try {
         initSupertokens();

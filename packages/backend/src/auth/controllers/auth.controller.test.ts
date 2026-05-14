@@ -1,7 +1,3 @@
-import {
-  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-} from "@core/constants/core.constants";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import authController from "./auth.controller";
@@ -42,11 +38,11 @@ describe("auth.controller", () => {
       });
     });
 
-    it("rejects Google connect when self-host placeholder credentials are configured", async () => {
+    it("rejects Google connect when credentials are absent", async () => {
       const originalClientId = CONFIG.GOOGLE_CLIENT_ID;
       const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
-      CONFIG.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
-      CONFIG.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
+      CONFIG.GOOGLE_CLIENT_ID = undefined;
+      CONFIG.GOOGLE_CLIENT_SECRET = undefined;
       const promise = jest.fn();
 
       try {

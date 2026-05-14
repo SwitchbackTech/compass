@@ -4,7 +4,7 @@ WORKDIR /app
 COPY . .
 
 ARG BASEURL=http://localhost:3000/api
-ARG GOOGLE_CLIENT_ID=compass-self-host-placeholder.apps.googleusercontent.com
+ARG GOOGLE_CLIENT_ID=
 ARG COMPASS_BUILD_REF=self-host
 
 ENV COMPASS_BUILD_REF=${COMPASS_BUILD_REF}

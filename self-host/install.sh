@@ -527,13 +527,9 @@ print_google_note() {
 Google setup:
 EOF
 
-  if [ "$google_client_id" = "compass-self-host-placeholder.apps.googleusercontent.com" ] \
-    || [ "$google_client_secret" = "compass-self-host-placeholder-secret" ] \
-    || [ -z "$google_client_id" ] \
-    || [ -z "$google_client_secret" ]; then
+  if [ -z "$google_client_id" ] || [ -z "$google_client_secret" ]; then
     cat <<EOF
   Google auth and Google Calendar sync are not configured.
-  This install uses placeholder Google OAuth values.
   To add your own OAuth credentials, edit:
     $CONFIG_FILE
   Then rebuild the web image (backend.apiUrl and google.clientId are baked in at build time):

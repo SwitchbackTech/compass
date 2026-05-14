@@ -1,4 +1,3 @@
-import { SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER } from "@core/constants/core.constants";
 import { describe, expect, it } from "bun:test";
 
 process.env.PORT = "3000";
@@ -26,13 +25,10 @@ describe("getApiBaseUrl", () => {
 });
 
 describe("isGoogleAuthConfigured", () => {
-  it("rejects missing and placeholder Google client IDs", () => {
+  it("rejects missing or empty Google client IDs", () => {
     expect(isGoogleAuthConfigured()).toBe(false);
     expect(isGoogleAuthConfigured("")).toBe(false);
     expect(isGoogleAuthConfigured("undefined")).toBe(false);
-    expect(isGoogleAuthConfigured(SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER)).toBe(
-      false,
-    );
   });
 
   it("accepts a custom Google client ID", () => {

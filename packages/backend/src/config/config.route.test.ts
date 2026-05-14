@@ -1,7 +1,3 @@
-import {
-  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-} from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { CONFIG } from "@backend/common/constants/config.constants";
@@ -32,11 +28,11 @@ describe("GET /api/config", () => {
     }
   });
 
-  it("reports Google unavailable for self-host placeholder credentials", async () => {
+  it("reports Google unavailable when credentials are absent", async () => {
     const originalClientId = CONFIG.GOOGLE_CLIENT_ID;
     const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
-    CONFIG.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
-    CONFIG.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
+    CONFIG.GOOGLE_CLIENT_ID = undefined;
+    CONFIG.GOOGLE_CLIENT_SECRET = undefined;
 
     try {
       const response = await baseDriver
