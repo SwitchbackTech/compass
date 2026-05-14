@@ -155,6 +155,120 @@ Leave untouched in the first proof slice:
 - `packages/web/src/views/Week/interaction/InteractionEngine.ts`
 - `packages/web/src/views/Week/interaction/interaction.store.ts`
 
+## Extra Context From The Expert Follow-Up
+
+Keep these details attached to the plan. They are the parts most likely to get
+lost if the implementation starts weeks later.
+
+### Controller Integration Point
+
+The controller should integrate once, at the Week surface boundary. It should
+not be embedded inside `GridDraft`, `GridEvent`, Redux, or the old
+`InteractionEngine`.
+
+Recommended shape:
+
+```tsx
+<DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
+  <StyledCalendar>
+    <Header scrollUtil={scrollUtil} weekProps={weekProps} />
+    <WeekGridScrollArea>
+      <WeekGridTrack>
+        <DayLabels ... />
+        <WeekInteractionBoundary
+          measurements={measurements}
+          scrollUtil={scrollUtil}
+          weekProps={weekProps}
+        >
+          <ContextMenuWrapper id="grid-context-menu">
+            <Grid ... />
+          </ContextMenuWrapper>
+        </WeekInteractionBoundary>
+      </WeekGridTrack>
+    </WeekGridScrollArea>
+  </StyledCalendar>
+</DraftProvider>
+```
+
+The boundary may build a commit adapter from existing Week/Draft callbacks, but
+the controller itself must not import React hooks, Redux hooks, draft selectors,
+or `useDraftContext`.
+
+### Instrumentation Implementation Details
+
+The metrics are not just a result shape. They need concrete hooks that prove
+ownership:
+
+- React: wrap the Week subtree in a `Profiler`; if `phase === "motion"`, record
+  every commit and duration.
+- Redux: add a dev/perf-only middleware or dispatch wrapper; if
+  `phase === "motion"`, record every action type.
+- DOM: start a `MutationObserver` during motion; allow overlay style changes,
+  but record mutations outside `[data-week-interaction-overlay]` as unexpected.
+- Layout reads: instrument the controller's own geometry helpers. Initial cache
+  reads are allowed; post-activation timed drag reads are not.
+- Save/network: in the perf harness, count event save/update requests during
+  motion and after pointerup.
+
+Required proof for the timed-drag slice:
+
+```text
+React commits during motion: 0
+Redux dispatches during motion: 0
+Unexpected DOM mutations during motion: 0
+Save requests during motion: 0
+Post-activation layout reads during timed drag: 0
+```
+
+### DOM Clone Hygiene
+
+The first overlay should clone the rendered `GridEvent` DOM to preserve visual
+fidelity without bringing React/portals into live motion.
+
+The clone helper should:
+
+- remove duplicate `id` attributes from the clone and descendants.
+- set `aria-hidden="true"`.
+- set `data-week-interaction-overlay="true"`.
+- remove or neutralize interactive attributes that do not belong in the overlay.
+- keep CSS classes/tokens so typography, colors, and priority styling match.
+- use `pointer-events: none`, `will-change: transform`, and
+  `contain: layout paint style`.
+
+Use a lightweight hand-built card only if cloning is measured as too expensive.
+Do not start with a React portal for the live overlay.
+
+### UX Failure Modes To Guard
+
+These are the dangerous places where a fast implementation can quietly break
+calendar behavior:
+
+- Form open before drag: first slice must refuse ownership when a form is open.
+  Add V2 support later only after tests prove the current reopen/save behavior.
+- Unchanged click vs drag: do not mount a visible overlay on pointerdown. Start
+  as a pending session, then activate only after the current threshold or hold
+  delay.
+- Recurrence: first slice must refuse recurring events. Later support must call
+  the existing recurrence-aware flow, never dispatch save/update directly.
+- Pending backend events: first slice must refuse pending events to avoid double
+  saves or updates before backend confirmation.
+- All-day resize: treat as a separate correctness phase. Watch for off-by-one
+  end dates, one-day minimums, and left/right edge flip semantics.
+- Edge navigation: the controller must live above the re-rendered grid so the
+  overlay and session survive a week change. React changes the week; controller
+  rebuilds the layout cache after render.
+
+### Stop Conditions
+
+The plan should stop and rethink, not continue accumulating phases, when:
+
+- existing timed drag cannot meet the hard ownership counters.
+- timed drag sustained motion is not within `input floor + 4ms`.
+- first-frame latency is high because overlay mount or layout-cache build is
+  too expensive.
+- the commit adapter cannot preserve click/form/save behavior without pulling
+  the old draft lifecycle into the motion path.
+
 ## Task 1: Add Measurement Guards First
 
 **Files:**
