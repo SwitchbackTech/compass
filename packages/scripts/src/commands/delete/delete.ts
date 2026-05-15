@@ -1,4 +1,3 @@
-import { cliConfig } from "@scripts/common/cli.constants";
 import { log } from "@scripts/common/cli.utils";
 import inquirer, { type QuestionCollection } from "inquirer";
 import open from "open";
@@ -13,6 +12,7 @@ import {
   type DeleteConfirmPromptAnswers,
   type SupportedBrowser,
 } from "./delete.types";
+import { CONFIG } from "@backend/common/constants/config.constants";
 
 const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
   const devBrowser = process.env["DEV_BROWSER"];
@@ -30,7 +30,7 @@ const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
 };
 
 const getCleanupUrl = (): string => {
-  return `${cliConfig.web.url}/cleanup`;
+  return `${CONFIG.FRONTEND_URL}/cleanup`;
 };
 
 const normalizeEmail = (value: string): string => value.trim().toLowerCase();
