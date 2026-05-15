@@ -10,6 +10,8 @@ import {
 import {
   GRID_MARGIN_LEFT,
   TIMED_EVENT_COLUMN_INSET,
+  TIMED_EVENT_COLUMN_LEFT_PADDING,
+  TIMED_EVENT_COLUMN_RIGHT_EXTRA_SPACE,
 } from "@web/views/Week/layout.constants";
 
 const createTimedEvent = (
@@ -186,7 +188,7 @@ describe("getAllDayEventWidth", () => {
 });
 
 describe("getTimedEventPosition", () => {
-  it("keeps a timed event inset inside its day column", () => {
+  it("keeps the timed event size while aligning it to the left of the day column", () => {
     const colWidth = 100;
     const startIndex = 2;
     const columnLeft = GRID_MARGIN_LEFT + colWidth * startIndex;
@@ -204,9 +206,12 @@ describe("getTimedEventPosition", () => {
       false,
     );
 
-    expect(position.left).toBe(columnLeft + TIMED_EVENT_COLUMN_INSET);
-    expect(position.width).toBe(colWidth - TIMED_EVENT_COLUMN_INSET * 2);
-    expect(position.left).toBeGreaterThan(columnLeft);
+    expect(position.left).toBe(columnLeft + TIMED_EVENT_COLUMN_LEFT_PADDING);
+    expect(position.width).toBe(
+      colWidth -
+        TIMED_EVENT_COLUMN_INSET * 2 -
+        TIMED_EVENT_COLUMN_RIGHT_EXTRA_SPACE,
+    );
     expect(position.left + position.width).toBeLessThan(columnRight);
   });
 });
