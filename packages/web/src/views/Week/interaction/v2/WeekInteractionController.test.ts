@@ -238,8 +238,66 @@ describe("WeekInteractionController", () => {
     }
   });
 
-  it("uses the configured timed drag glide for the moving clone", () => {
+  it("keeps same-day timed drag motion immediate", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      frameCallback = null;
+      callback(timestamp);
+    };
     const { controller, sourceElement, unregister } = setupEligibleController({
+      requestFrame: (callback) => {
+        frameCallback = callback;
+        return 1;
+      },
+    });
+
+    try {
+      controller.handlePointerDown(
+        createPointerEvent("pointerdown", sourceElement, 250, 120),
+      );
+      controller.handlePointerMove(
+        createPointerEvent("pointermove", sourceElement, 250, 150),
+      );
+      runFrame(16);
+      controller.handlePointerMove(
+        createPointerEvent("pointermove", sourceElement, 250, 210),
+      );
+      runFrame(32);
+
+      const overlay = document.querySelector<HTMLElement>(
+        "[data-week-interaction-overlay='true']",
+      );
+
+      expect(overlay?.style.transition).toBe("");
+    } finally {
+      if (controller.getSession().phase !== "idle") {
+        controller.handlePointerUp(
+          createPointerEvent("pointerup", sourceElement, 250, 210),
+        );
+      }
+      unregister();
+    }
+  });
+
+  it("uses the configured timed drag glide for the moving clone", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      frameCallback = null;
+      callback(timestamp);
+    };
+    const { controller, sourceElement, unregister } = setupEligibleController({
+      requestFrame: (callback) => {
+        frameCallback = callback;
+        return 1;
+      },
       timedDragGlideMs: 90,
     });
 
@@ -248,8 +306,13 @@ describe("WeekInteractionController", () => {
         createPointerEvent("pointerdown", sourceElement, 250, 120),
       );
       controller.handlePointerMove(
-        createPointerEvent("pointermove", sourceElement, 280, 150),
+        createPointerEvent("pointermove", sourceElement, 280, 120),
       );
+      runFrame(16);
+      controller.handlePointerMove(
+        createPointerEvent("pointermove", sourceElement, 365, 120),
+      );
+      runFrame(32);
 
       const overlay = document.querySelector<HTMLElement>(
         "[data-week-interaction-overlay='true']",

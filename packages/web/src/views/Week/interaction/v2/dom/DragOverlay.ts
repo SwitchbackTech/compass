@@ -8,6 +8,7 @@ export class DragOverlay {
     body: string;
     documentElement: string;
   } | null = null;
+  #transformTransitionMs: number | null = null;
 
   mount({
     clone,
@@ -21,6 +22,7 @@ export class DragOverlay {
     transformTransitionMs?: number;
   }) {
     this.unmount();
+    this.#transformTransitionMs = transformTransitionMs ?? null;
 
     clone.style.contain = "layout paint style";
     clone.style.height = `${rect.height}px`;
@@ -29,9 +31,7 @@ export class DragOverlay {
     clone.style.pointerEvents = "none";
     clone.style.top = `${rect.top}px`;
     clone.style.cursor = cursor ?? "";
-    clone.style.transition = transformTransitionMs
-      ? `transform ${transformTransitionMs}ms ${TRANSFORM_GLIDE_TIMING}`
-      : "";
+    clone.style.transition = "";
     clone.style.transform = "translate3d(0px, 0px, 0)";
     clone.style.willChange = "transform";
     clone.style.width = `${rect.width}px`;
@@ -48,11 +48,18 @@ export class DragOverlay {
     this.#node = clone;
   }
 
-  updateTransform(transform: VisualPoint) {
+  updateTransform(
+    transform: VisualPoint,
+    { shouldGlide = false }: { shouldGlide?: boolean } = {},
+  ) {
     if (!this.#node) {
       return;
     }
 
+    this.#node.style.transition =
+      shouldGlide && this.#transformTransitionMs !== null
+        ? `transform ${this.#transformTransitionMs}ms ${TRANSFORM_GLIDE_TIMING}`
+        : "";
     this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
   }
 
@@ -120,6 +127,7 @@ export class DragOverlay {
     if (width !== undefined) {
       this.#node.style.width = `${width}px`;
     }
+    this.#node.style.transition = "";
     this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
   }
 
@@ -132,5 +140,6 @@ export class DragOverlay {
     }
     this.#node?.remove();
     this.#node = null;
+    this.#transformTransitionMs = null;
   }
 }

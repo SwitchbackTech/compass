@@ -690,12 +690,15 @@ export class WeekInteractionController {
         transform: this.#visual.transform,
       });
     } else {
+      const previousDayIndex = this.#visual.dayIndex;
       this.#visual = updateTimedDragVisual(this.#visual, {
         layout: this.#layout,
         pointer: this.#latestPointer,
         scrollDeltaPx: smartScroll.scrollDeltaPx,
       });
-      this.#overlay.updateTransform(this.#visual.transform);
+      this.#overlay.updateTransform(this.#visual.transform, {
+        shouldGlide: this.#visual.dayIndex !== previousDayIndex,
+      });
       this.#updateTimedDragOverlayTimeLabel(this.#session.event, this.#visual);
     }
 

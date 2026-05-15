@@ -26,7 +26,7 @@ import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionBoundary } from "@web/views/Week/interaction/v2/WeekInteractionBoundary";
 import { Styled, StyledCalendar, WeekGridTrack } from "@web/views/Week/styled";
 
-const WEEK_TIMED_DRAG_GLIDE_MS = 100;
+const WEEK_TIMED_DRAG_GLIDE_MS = 60;
 
 export const WeekView = () => {
   useRefetch();

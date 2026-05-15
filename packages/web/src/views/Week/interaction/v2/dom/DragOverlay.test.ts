@@ -34,7 +34,7 @@ describe("DragOverlay", () => {
     expect(document.body.contains(clone)).toBe(false);
   });
 
-  it("can mount timed drag clones with a tight transform glide", () => {
+  it("applies timed drag glide only to requested transform updates", () => {
     const clone = document.createElement("div");
     const overlay = new DragOverlay();
 
@@ -44,9 +44,18 @@ describe("DragOverlay", () => {
       transformTransitionMs: 60,
     });
 
+    expect(clone.style.transition).toBe("");
+
+    overlay.updateTransform({ x: 15, y: 30 });
+    expect(clone.style.transition).toBe("");
+
+    overlay.updateTransform({ x: 100, y: 30 }, { shouldGlide: true });
     expect(clone.style.transition).toBe(
       "transform 60ms cubic-bezier(0.2, 0, 0, 1)",
     );
+
+    overlay.updateTransform({ x: 100, y: 60 });
+    expect(clone.style.transition).toBe("");
 
     overlay.unmount();
   });
