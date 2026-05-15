@@ -26,6 +26,8 @@ import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionBoundary } from "@web/views/Week/interaction/v2/WeekInteractionBoundary";
 import { Styled, StyledCalendar, WeekGridTrack } from "@web/views/Week/styled";
 
+const WEEK_TIMED_DRAG_GLIDE_MS = 100;
+
 export const WeekView = () => {
   useRefetch();
 
@@ -163,6 +165,7 @@ export const WeekView = () => {
 
                   <WeekInteractionBoundary
                     onRequestWeekNavigation={handleWeekInteractionNavigation}
+                    timedDragGlideMs={WEEK_TIMED_DRAG_GLIDE_MS}
                   >
                     <ContextMenuWrapper id="grid-context-menu">
                       <Grid

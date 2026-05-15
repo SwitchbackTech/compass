@@ -39,7 +39,6 @@ import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { registerWeekEventElement } from "@web/views/Week/interaction/v2/geometry/eventRegistry";
-import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
 
 interface Props {
   event: Schema_GridEvent;
@@ -99,6 +98,7 @@ const GridEventBase = (
     () => getLineClamp(position.height),
     [position.height],
   );
+  const isTitleVisible = event.isAllDay || position.height > 20;
 
   const priority = event.priority || Priorities.UNASSIGNED;
   const baseColor = colorByPriority[priority];
@@ -150,10 +150,20 @@ const GridEventBase = (
     display: "-webkit-box",
     overflow: "hidden",
     textOverflow: "ellipsis",
+    visibility: isTitleVisible ? undefined : "hidden",
     wordBreak: "break-all",
     WebkitBoxOrient: "vertical",
     WebkitLineClamp: lineClamp,
   };
+  const timeLabelStyle: CSSProperties = isTitleVisible
+    ? {}
+    : {
+        position: "absolute",
+        inset: "1px 3px 0 5px",
+        overflow: "hidden",
+        textOverflow: "ellipsis",
+        whiteSpace: "nowrap",
+      };
 
   const showResizeCursor =
     !isPlaceholder && !isResizing && !isDragging && !isPending;
@@ -224,14 +234,16 @@ const GridEventBase = (
         <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
-            {(isDraft || !isInPast) &&
-              position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL && (
-                <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
-                  {event.startDate &&
-                    event.endDate &&
-                    getTimesLabel(event.startDate, event.endDate)}
-                </Text>
-              )}
+            <Text
+              role="textbox"
+              size="xs"
+              style={timeLabelStyle}
+              zIndex={ZIndex.LAYER_3}
+            >
+              {event.startDate &&
+                event.endDate &&
+                getTimesLabel(event.startDate, event.endDate)}
+            </Text>
             {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
             <div
               data-week-event-resize-handle="startDate"

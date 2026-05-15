@@ -33,6 +33,7 @@ interface Props extends PropsWithChildren {
   commitAdapter?: WeekInteractionCommitAdapter;
   controller?: WeekInteractionController;
   onRequestWeekNavigation?: (direction: "next" | "prev") => void;
+  timedDragGlideMs?: number;
 }
 
 const noopCommitAdapter: WeekInteractionCommitAdapter = {
@@ -80,6 +81,7 @@ export const WeekInteractionBoundary = ({
   commitAdapter,
   controller,
   onRequestWeekNavigation,
+  timedDragGlideMs,
 }: Props) => {
   if (controller) {
     return (
@@ -95,6 +97,7 @@ export const WeekInteractionBoundary = ({
   return (
     <ConnectedWeekInteractionBoundary
       onRequestWeekNavigation={onRequestWeekNavigation}
+      timedDragGlideMs={timedDragGlideMs}
     >
       {children}
     </ConnectedWeekInteractionBoundary>
@@ -104,8 +107,10 @@ export const WeekInteractionBoundary = ({
 const ConnectedWeekInteractionBoundary = ({
   children,
   onRequestWeekNavigation,
+  timedDragGlideMs,
 }: PropsWithChildren<{
   onRequestWeekNavigation?: (direction: "next" | "prev") => void;
+  timedDragGlideMs?: number;
 }>) => {
   const store = useStore<RootState>();
   const { actions, confirmation, setters, state } = useDraftContext();
@@ -126,8 +131,9 @@ const ConnectedWeekInteractionBoundary = ({
         isPendingEvent: (eventId) =>
           selectIsEventPending(store.getState(), eventId),
         onRequestWeekNavigation,
+        timedDragGlideMs,
       }),
-    [onRequestWeekNavigation, store],
+    [onRequestWeekNavigation, store, timedDragGlideMs],
   );
 
   useEffect(() => {

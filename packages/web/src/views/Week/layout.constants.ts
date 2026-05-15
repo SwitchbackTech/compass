@@ -16,10 +16,6 @@ export const EVENT_PADDING_RIGHT = 10;
 export const TIMED_EVENT_COLUMN_INSET = 5;
 export const TIMED_EVENT_COLUMN_LEFT_PADDING = 2;
 export const TIMED_EVENT_COLUMN_RIGHT_EXTRA_SPACE = 4;
-/** Minimum rendered event height (px) to show the time label below the title.
- *  Below this the label is suppressed to prevent overflow on short events.
- *  At typical hourHeight (~65px/hr): 30-min ≈ 33px (hidden), 45-min ≈ 49px (shown). */
-export const MIN_EVENT_HEIGHT_FOR_TIME_LABEL = 36;
 export const EVENT_WIDTH_MINIMUM = 80;
 
 export const FLEX_TODAY = 21.4;

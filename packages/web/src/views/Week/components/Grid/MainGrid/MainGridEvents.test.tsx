@@ -54,6 +54,33 @@ const weekProps = {
 } as WeekProps;
 
 describe("MainGridEvents", () => {
+  it("shows the time on short timed events", () => {
+    const event = {
+      _id: "event-1",
+      endDate: "2026-05-13T09:15:00.000Z",
+      isAllDay: false,
+      isSomeday: false,
+      origin: "compass",
+      priority: "unassigned",
+      startDate: "2026-05-13T09:00:00.000Z",
+      title: "Tiny sync",
+      updatedAt: "2026-05-01T00:00:00.000Z",
+      user: "user-1",
+    } as Schema_Event;
+    const store = createStoreWithWeekEvent(event);
+    const { container } = render(
+      <Provider store={store}>
+        <div id="mainGrid">
+          <MainGridEvents measurements={measurements} weekProps={weekProps} />
+        </div>
+      </Provider>,
+    );
+
+    expect(container.querySelector("[role='textbox']")?.textContent).toContain(
+      "9  - 9:15 AM",
+    );
+  });
+
   it("marks timed resize handles for V2 without dispatching legacy live motion", () => {
     const event = {
       _id: "event-1",

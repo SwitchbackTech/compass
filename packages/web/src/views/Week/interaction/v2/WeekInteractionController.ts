@@ -102,6 +102,7 @@ type WeekInteractionControllerOptions = {
   onRequestWeekNavigation?: (direction: "next" | "prev") => void;
   requestFrame?: (callback: FrameRequestCallback) => unknown;
   setTimer?: (callback: () => void, delayMs: number) => unknown;
+  timedDragGlideMs?: number;
 };
 
 const defaultOptions = {
@@ -126,6 +127,7 @@ const defaultOptions = {
     requestAnimationFrame(callback),
   setTimer: (callback: () => void, delayMs: number) =>
     setTimeout(callback, delayMs),
+  timedDragGlideMs: TIMED_EVENT_DRAG_GLIDE_MS,
 };
 
 export class WeekInteractionController {
@@ -577,6 +579,10 @@ export class WeekInteractionController {
     const overlay = this.#options.createOverlay();
     overlay.mount({
       clone,
+      cursor:
+        session.kind === "timed" || session.kind === "allDayDrag"
+          ? "move"
+          : undefined,
       rect: {
         height: sourceClientRect.height,
         left: sourceClientRect.left + window.scrollX,
@@ -584,7 +590,7 @@ export class WeekInteractionController {
         width: sourceClientRect.width,
       },
       transformTransitionMs:
-        session.kind === "timed" ? TIMED_EVENT_DRAG_GLIDE_MS : undefined,
+        session.kind === "timed" ? this.#options.timedDragGlideMs : undefined,
     });
     this.#placeholder = markSourcePlaceholder(session.sourceElement);
     this.#overlay = overlay;

@@ -98,6 +98,70 @@ describe("WeekInteractionController", () => {
     unregister();
   });
 
+  it("shows a time label and move cursor for short timed drags", () => {
+    let frameCallback: FrameRequestCallback | null = null;
+    const runFrame = (timestamp: number) => {
+      const callback = frameCallback;
+      if (!callback) {
+        throw new Error("Expected a scheduled animation frame.");
+      }
+      callback(timestamp);
+    };
+    const { controller, sourceElement, unregister } = setupEligibleController(
+      {
+        requestFrame: (callback) => {
+          frameCallback = callback;
+          return 1;
+        },
+      },
+      {
+        endDate: "2026-05-12T10:30:00",
+        startDate: "2026-05-12T10:00:00",
+        title: "Short event",
+      },
+      "timed",
+      { height: 18, left: 200, top: 100, width: 100 },
+    );
+
+    try {
+      controller.handlePointerDown(
+        createPointerEvent("pointerdown", sourceElement, 250, 120),
+      );
+      controller.handlePointerMove(
+        createPointerEvent("pointermove", sourceElement, 280, 150),
+      );
+      runFrame(16);
+      controller.handlePointerMove(
+        createPointerEvent("pointermove", sourceElement, 280, 170),
+      );
+      runFrame(32);
+
+      const overlay = document.querySelector<HTMLElement>(
+        "[data-week-interaction-overlay='true']",
+      );
+
+      expect(overlay?.style.cursor).toBe("move");
+      expect(document.body.style.cursor).toBe("move");
+      expect(overlay?.querySelector("[role='textbox']")?.textContent).toBe(
+        "11  - 11:30 AM",
+      );
+
+      controller.handlePointerUp(
+        createPointerEvent("pointerup", sourceElement, 280, 150),
+      );
+
+      expect(document.body.style.cursor).toBe("");
+    } finally {
+      if (controller.getSession().phase !== "idle") {
+        controller.handlePointerUp(
+          createPointerEvent("pointerup", sourceElement, 280, 150),
+        );
+      }
+      document.body.style.cursor = "";
+      unregister();
+    }
+  });
+
   it("snaps the timed drag overlay to the rendered day columns", () => {
     let frameCallback: FrameRequestCallback | null = null;
     const runFrame = (timestamp: number) => {
@@ -170,6 +234,36 @@ describe("WeekInteractionController", () => {
       );
     } finally {
       timedColumns.remove();
+      unregister();
+    }
+  });
+
+  it("uses the configured timed drag glide for the moving clone", () => {
+    const { controller, sourceElement, unregister } = setupEligibleController({
+      timedDragGlideMs: 90,
+    });
+
+    try {
+      controller.handlePointerDown(
+        createPointerEvent("pointerdown", sourceElement, 250, 120),
+      );
+      controller.handlePointerMove(
+        createPointerEvent("pointermove", sourceElement, 280, 150),
+      );
+
+      const overlay = document.querySelector<HTMLElement>(
+        "[data-week-interaction-overlay='true']",
+      );
+
+      expect(overlay?.style.transition).toBe(
+        "transform 90ms cubic-bezier(0.2, 0, 0, 1)",
+      );
+    } finally {
+      if (controller.getSession().phase !== "idle") {
+        controller.handlePointerUp(
+          createPointerEvent("pointerup", sourceElement, 280, 150),
+        );
+      }
       unregister();
     }
   });

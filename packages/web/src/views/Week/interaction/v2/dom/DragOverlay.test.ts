@@ -50,4 +50,45 @@ describe("DragOverlay", () => {
 
     overlay.unmount();
   });
+
+  it("adds a time label when the moving clone did not already render one", () => {
+    const clone = document.createElement("div");
+    const title = document.createElement("span");
+    const overlay = new DragOverlay();
+    title.textContent = "Short event";
+    clone.append(title);
+
+    overlay.mount({
+      clone,
+      rect: { height: 18, left: 10, top: 20, width: 120 },
+    });
+    overlay.updateTimeLabel("11:45 AM - 12:45 PM");
+
+    const timeLabel = clone.querySelector<HTMLElement>("[role='textbox']");
+
+    expect(timeLabel?.textContent).toBe("11:45 AM - 12:45 PM");
+    expect(title.style.visibility).toBe("hidden");
+
+    overlay.unmount();
+  });
+
+  it("sets a move cursor while mounted and restores it on unmount", () => {
+    const clone = document.createElement("div");
+    const overlay = new DragOverlay();
+    document.body.style.cursor = "copy";
+
+    overlay.mount({
+      clone,
+      cursor: "move",
+      rect: { height: 40, left: 10, top: 20, width: 120 },
+    });
+
+    expect(clone.style.cursor).toBe("move");
+    expect(document.body.style.cursor).toBe("move");
+
+    overlay.unmount();
+
+    expect(document.body.style.cursor).toBe("copy");
+    document.body.style.cursor = "";
+  });
 });
