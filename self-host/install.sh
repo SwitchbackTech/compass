@@ -10,7 +10,6 @@ case $COMPASS_VERSION in
 esac
 
 CONFIG_FILE=$COMPASS_HOME/compass.yaml
-COMPOSE_ENV_FILE=$COMPASS_HOME/.compose.env
 MARKER_FILE=$COMPASS_HOME/.compass-self-host
 HELPER_FILE=$COMPASS_HOME/compass
 COMPOSE_FILE=$COMPASS_HOME/compose.yaml
@@ -482,29 +481,24 @@ EOF
   [ $? -eq 0 ] || fail "Could not write marker file: $MARKER_FILE."
 }
 
-write_compose_env() {
+set_compose_env() {
   [ -f "$CONFIG_FILE" ] || fail "Missing config file: $CONFIG_FILE."
-
-  cat > "$COMPOSE_ENV_FILE" <<EOF
-COMPASS_CONFIG_FILE=$CONFIG_FILE
-COMPASS_VERSION=$(strip_quotes "$(read_config_value compose.version)")
-WEB_PORT=$(strip_quotes "$(read_config_value web.port)")
-PORT=$(strip_quotes "$(read_config_value backend.port)")
-MONGO_INITDB_ROOT_USERNAME=$(strip_quotes "$(read_config_value mongo.username)")
-MONGO_INITDB_ROOT_PASSWORD=$(strip_quotes "$(read_config_value mongo.password)")
-MONGO_REPLICA_SET_KEY=$(strip_quotes "$(read_config_value mongo.replicaSetKey)")
-SUPERTOKENS_KEY=$(strip_quotes "$(read_config_value supertokens.key)")
-SUPERTOKENS_POSTGRES_USER=$(strip_quotes "$(read_config_value supertokens.postgres.user)")
-SUPERTOKENS_POSTGRES_PASSWORD=$(strip_quotes "$(read_config_value supertokens.postgres.password)")
-SUPERTOKENS_POSTGRES_DB=$(strip_quotes "$(read_config_value supertokens.postgres.database)")
-EOF
-
-  chmod 600 "$COMPOSE_ENV_FILE" || fail "Could not secure $COMPOSE_ENV_FILE."
+  export COMPASS_CONFIG_FILE="$CONFIG_FILE"
+  export COMPASS_VERSION="$(strip_quotes "$(read_config_value compose.version)")"
+  export WEB_PORT="$(strip_quotes "$(read_config_value web.port)")"
+  export PORT="$(strip_quotes "$(read_config_value backend.port)")"
+  export MONGO_INITDB_ROOT_USERNAME="$(strip_quotes "$(read_config_value mongo.username)")"
+  export MONGO_INITDB_ROOT_PASSWORD="$(strip_quotes "$(read_config_value mongo.password)")"
+  export MONGO_REPLICA_SET_KEY="$(strip_quotes "$(read_config_value mongo.replicaSetKey)")"
+  export SUPERTOKENS_KEY="$(strip_quotes "$(read_config_value supertokens.key)")"
+  export SUPERTOKENS_POSTGRES_USER="$(strip_quotes "$(read_config_value supertokens.postgres.user)")"
+  export SUPERTOKENS_POSTGRES_PASSWORD="$(strip_quotes "$(read_config_value supertokens.postgres.password)")"
+  export SUPERTOKENS_POSTGRES_DB="$(strip_quotes "$(read_config_value supertokens.postgres.database)")"
 }
 
 compose_base() {
-  write_compose_env
-  docker compose --project-name "$PROJECT_NAME" --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
+  set_compose_env
+  docker compose --project-name "$PROJECT_NAME" -f "$COMPOSE_FILE" "$@"
 }
 
 start_stack() {
