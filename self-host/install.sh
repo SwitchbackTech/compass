@@ -383,7 +383,6 @@ validate_existing_env_secrets() {
   validate_existing_secret supertokens.postgres.password change-me-supertokens-postgres-pass-32
   validate_existing_secret supertokens.key change-me-supertokens-key-32chars
   validate_existing_secret backend.compassToken change-me-compass-sync-token-32chars
-  validate_existing_secret google.notificationToken change-me-gcal-notification-token-32chars
   validate_existing_mongo_uri
 }
 
