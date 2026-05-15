@@ -1,5 +1,5 @@
 import pkg from "inquirer";
-import { cliConfig } from "./cli.constants";
+import { cliConfigValues } from "./cli.constants";
 import { type Environment_Cli } from "./cli.types";
 import { styleText } from "node:util";
 
@@ -11,7 +11,7 @@ export const getApiBaseUrl = async (
   const category = environment ? environment : await getEnvironmentAnswer();
 
   if (category === "local") {
-    const baseUrl: string = cliConfig.backend.apiUrl.replace(/\/$/, "");
+    const baseUrl: string = cliConfigValues.backendApiUrl.replace(/\/$/, "");
     return baseUrl;
   }
 
@@ -20,7 +20,7 @@ export const getApiBaseUrl = async (
 };
 
 const getDomainAnswer = async () => {
-  const { hostname, host } = new URL(cliConfig.web.url);
+  const { hostname, host } = new URL(cliConfigValues.webUrl);
 
   if (hostname !== "localhost") {
     return host;

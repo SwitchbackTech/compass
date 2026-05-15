@@ -1,5 +1,6 @@
 import CompassCLI from "@scripts/cli";
 import { startDeleteFlow } from "@scripts/commands/delete/delete";
+import { loadCliConfigValues } from "@scripts/common/cli.constants";
 import { MigratorType } from "./common/cli.types";
 
 // Mock 'open' module to avoid ESM compatibility issues in Jest
@@ -34,6 +35,17 @@ jest.mock("@scripts/commands/migrate", () => ({
   runMigrator: jest.fn((type: MigratorType) => mockRunMigrator(type)),
 }));
 
+jest.mock("@scripts/common/cli.constants", () => ({
+  __esModule: true,
+  COMPASS_BUILD_DEV: `${process.cwd()}/build`,
+  COMPASS_ROOT_DEV: process.cwd(),
+  cliConfigValues: {
+    backendApiUrl: "",
+    webUrl: "",
+  },
+  loadCliConfigValues: jest.fn(),
+}));
+
 describe("CompassCLI", () => {
   beforeEach(() => jest.clearAllMocks());
 
@@ -48,6 +60,7 @@ describe("CompassCLI", () => {
     await cli.run();
 
     expect(mockValidateDelete).toHaveBeenCalled();
+    expect(loadCliConfigValues).toHaveBeenCalledTimes(1);
     expect(startDeleteFlow).toHaveBeenCalledWith("user@example.com", true);
   });
 

@@ -1,4 +1,4 @@
-import { cliConfig } from "@scripts/common/cli.constants";
+import { cliConfigValues } from "@scripts/common/cli.constants";
 import { log } from "@scripts/common/cli.utils";
 import inquirer, { type QuestionCollection } from "inquirer";
 import open from "open";
@@ -30,7 +30,7 @@ const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
 };
 
 const getCleanupUrl = (): string => {
-  return `${cliConfig.web.url}/cleanup`;
+  return `${cliConfigValues.webUrl}/cleanup`;
 };
 
 const normalizeEmail = (value: string): string => value.trim().toLowerCase();
