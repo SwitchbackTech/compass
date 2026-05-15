@@ -107,6 +107,7 @@
         margin: 0;
         line-height: 1.08;
         letter-spacing: 0;
+        overflow-wrap: anywhere;
       }
 
       h1 {
@@ -127,6 +128,7 @@
 
       p {
         margin: 0;
+        overflow-wrap: anywhere;
       }
 
       .hero-copy {
@@ -301,6 +303,7 @@
       .metric-card p {
         margin-top: 9px;
         color: var(--muted);
+        overflow-wrap: anywhere;
       }
 
       .tag-row {
@@ -320,6 +323,8 @@
         color: var(--muted);
         font-family: var(--mono);
         font-size: 12px;
+        overflow-wrap: anywhere;
+        word-break: break-word;
       }
 
       .tag.good {
@@ -381,23 +386,10 @@
         background: #fffdf7;
       }
 
-      .flow-step::after {
-        position: absolute;
-        top: 50%;
-        right: -10px;
-        width: 10px;
-        height: 1px;
-        background: var(--line-strong);
-        content: "";
-      }
-
-      .flow-step:last-child::after {
-        display: none;
-      }
-
       .flow-step strong {
         display: block;
         font-size: 14px;
+        overflow-wrap: anywhere;
       }
 
       .flow-step span {
@@ -405,6 +397,7 @@
         margin-top: 5px;
         color: var(--muted);
         font-size: 12px;
+        overflow-wrap: anywhere;
       }
 
       .before .flow-step {
@@ -483,6 +476,7 @@
         color: var(--blue);
         font-size: 12px;
         font-weight: 800;
+        overflow-wrap: anywhere;
       }
 
       .calendar-frame .overlay-event {
@@ -494,6 +488,7 @@
         color: var(--green);
         font-size: 12px;
         font-weight: 800;
+        overflow-wrap: anywhere;
         box-shadow: 6px 6px 0 rgb(52 112 86 / 22%);
       }
 
@@ -579,6 +574,8 @@
         font-family: var(--mono);
         font-size: 11px;
         text-align: center;
+        overflow-wrap: normal;
+        white-space: nowrap;
       }
 
       .timeline-body {
@@ -604,7 +601,7 @@
         margin: 18px 0 0;
         max-width: 100%;
         padding: 16px;
-        overflow: auto;
+        overflow: hidden;
         border: 1px solid var(--line);
         background: #181a18;
         color: #f6efe1;
@@ -620,7 +617,8 @@
         background: transparent;
         color: inherit;
         font-size: inherit;
-        white-space: pre;
+        overflow-wrap: anywhere;
+        white-space: pre-wrap;
       }
 
       table {
@@ -636,6 +634,7 @@
         border: 1px solid var(--line);
         text-align: left;
         vertical-align: top;
+        overflow-wrap: anywhere;
       }
 
       th {
@@ -745,14 +744,27 @@
       }
 
       @media (max-width: 620px) {
+        .hero-inner,
+        .main {
+          width: min(100vw - 20px, 760px);
+        }
+
+        h1 {
+          font-size: clamp(36px, 12vw, 48px);
+        }
+
+        h2 {
+          font-size: clamp(26px, 9vw, 34px);
+        }
+
         .section {
-          padding: 22px 16px;
+          padding: 22px 14px;
         }
 
         table {
           display: block;
           max-width: 100%;
-          overflow-x: hidden;
+          overflow-x: visible;
         }
 
         thead,
@@ -784,17 +796,54 @@
         }
 
         .calendar-frame {
-          grid-template-columns: 38px repeat(7, minmax(34px, 1fr));
-          overflow: auto;
+          grid-template-columns: 30px repeat(7, minmax(22px, 1fr));
+          gap: 3px;
+          overflow: hidden;
+        }
+
+        .calendar-frame div {
+          min-height: 30px;
+        }
+
+        .calendar-frame .saved-event,
+        .calendar-frame .overlay-event {
+          padding: 4px;
+          font-size: 10px;
+          line-height: 1.1;
+        }
+
+        .diagram-board {
+          min-height: 360px;
+          padding: 14px;
+          overflow: hidden;
+        }
+
+        .pointer-line {
+          display: none;
         }
 
         .timeline::before {
-          left: 54px;
+          display: none;
         }
 
         .timeline-item {
-          grid-template-columns: 56px minmax(0, 1fr);
-          gap: 18px;
+          grid-template-columns: 1fr;
+          gap: 8px;
+        }
+
+        .commit {
+          width: fit-content;
+          min-width: 74px;
+          text-align: left;
+        }
+
+        .beginner-step {
+          grid-template-columns: 1fr;
+        }
+
+        .beginner-step::before {
+          width: 32px;
+          height: 32px;
         }
       }
     </style>
@@ -805,12 +854,12 @@
         <div class="hero-inner">
           <div>
             <p class="eyebrow">Compass Week View / controller-v2 branch</p>
-            <h1>Week View drag and resize now move outside React and Redux.</h1>
+            <h1>This PR makes Week View drag and resize controller-owned.</h1>
             <p class="hero-copy">
               This page explains the V2 interaction work from the ground up:
               what was slow before, what changed, how the new controller works,
-              which files matter, what problems came up, and how the final
-              branch was verified.
+              what the product gets out of it, which files matter, what
+              problems came up, and how the final branch was verified.
             </p>
           </div>
 
@@ -828,12 +877,12 @@
               <div class="score-cell">
                 <div class="score-label">Redux dispatches in motion</div>
                 <div class="score-value">0</div>
-                <div class="score-note">except intentional week change</div>
+                <div class="score-note">except the week-change scenario</div>
               </div>
               <div class="score-cell">
-                <div class="score-label">RAF p95</div>
-                <div class="score-value">0.1ms</div>
-                <div class="score-note">timed drag final suite</div>
+                <div class="score-label">Controller RAF p95</div>
+                <div class="score-value">0.1-0.2ms</div>
+                <div class="score-note">final V2 motion scenarios</div>
               </div>
               <div class="score-cell">
                 <div class="score-label">Long tasks</div>
@@ -849,15 +898,16 @@
         <nav class="toc" aria-label="Page sections">
           <div class="toc-title">Read this in order</div>
           <a href="#plain-english">1. Plain English Summary</a>
-          <a href="#glossary">2. Beginner Glossary</a>
-          <a href="#before-after">3. Before and After</a>
-          <a href="#architecture">4. Architecture Map</a>
-          <a href="#interaction-life">5. Interaction Life</a>
-          <a href="#phases">6. What Happened</a>
-          <a href="#files">7. File Guide</a>
-          <a href="#perf">8. Performance Evidence</a>
-          <a href="#verification">9. Verification</a>
-          <a href="#reading-path">10. How To Read The Code</a>
+          <a href="#benefits">2. Benefits</a>
+          <a href="#glossary">3. Beginner Glossary</a>
+          <a href="#before-after">4. Before and After</a>
+          <a href="#architecture">5. Architecture Map</a>
+          <a href="#interaction-life">6. Interaction Life</a>
+          <a href="#phases">7. What Happened</a>
+          <a href="#files">8. File Guide</a>
+          <a href="#perf">9. Performance Evidence</a>
+          <a href="#verification">10. Verification</a>
+          <a href="#reading-path">11. How To Read The Code</a>
         </nav>
 
         <div class="content">
@@ -920,6 +970,96 @@
               calendar does not churn while your pointer moves. When you let go,
               the controller converts the visual result into the normal event
               shape and hands it back to the app.
+            </div>
+          </section>
+
+          <section class="section" id="benefits">
+            <div class="section-kicker">What we get</div>
+            <h2>The benefit is not just speed. It is simpler ownership.</h2>
+            <p>
+              The PR makes saved-event motion a small, measurable browser
+              interaction instead of a whole-app state update. That gives users
+              smoother movement and gives future maintainers clearer boundaries.
+            </p>
+
+            <div class="grid-3">
+              <div class="card">
+                <h3>Smoother drag and resize</h3>
+                <p>
+                  Motion is handled in one animation loop with a lightweight
+                  overlay, so the calendar is not repeatedly rebuilt while the
+                  pointer is moving.
+                </p>
+                <div class="tag-row">
+                  <span class="tag good">0 long tasks</span>
+                  <span class="tag good">sub-ms RAF work</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>Safer saves</h3>
+                <p>
+                  The controller never becomes the source of truth for saved
+                  events. It hands the final result back to the existing form,
+                  save, and recurring-event paths after release.
+                </p>
+                <div class="tag-row">
+                  <span class="tag good">save after release</span>
+                  <span class="tag good">Update Scope preserved</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>Clicks still feel like clicks</h3>
+                <p>
+                  Pointer-down starts as a pending session. If the pointer does
+                  not move far enough, the event opens normally instead of
+                  becoming a drag.
+                </p>
+                <div class="tag-row">
+                  <span class="tag good">no fake drag</span>
+                  <span class="tag good">form behavior kept</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>Visuals line up with the real grid</h3>
+                <p>
+                  The overlay reads the rendered timed-event columns, not the
+                  wider grid shell, and timed events now keep a little breathing
+                  room on the right edge of each day column.
+                </p>
+                <div class="tag-row">
+                  <span class="tag good">column snap fixed</span>
+                  <span class="tag good">timed width tightened</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>Failures became visible</h3>
+                <p>
+                  The performance harness now reports React commits, Redux
+                  dispatches, DOM mutations, layout reads, frame gaps, RAF time,
+                  and save requests during motion.
+                </p>
+                <div class="tag-row">
+                  <span class="tag good">measured gates</span>
+                  <span class="tag good">JSON receipts</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>The old path is smaller</h3>
+                <p>
+                  Saved-event drag and resize no longer need the legacy
+                  high-frequency draft path. Drafts still exist for creating,
+                  editing, and normal form lifecycle work.
+                </p>
+                <div class="tag-row">
+                  <span class="tag good">less live-motion code</span>
+                  <span class="tag good">drafts still useful</span>
+                </div>
+              </div>
             </div>
           </section>
 
@@ -1102,16 +1242,23 @@
                   an overlay, and updates that overlay directly.
                 </p>
                 <pre><code>Pointer motion:
-  event element registration
-  -> controller pending session
+  registerWeekEventElement()
+  -> WeekInteractionController.handlePointerDown()
   -> overlay mount
   -> RAF visual update
   -> overlay transform/size write
-  -> pointerup commit adapter</code></pre>
+  -> createWeekInteractionCommitAdapter()</code></pre>
                 <p>
-                  The code for this starts in
+                  Registration comes from
+                  <code>registerWeekEventElement()</code> in
+                  <a href="../../packages/web/src/views/Week/interaction/v2/geometry/eventRegistry.ts">geometry/eventRegistry.ts</a>,
+                  the motion path is in
                   <a href="../../packages/web/src/views/Week/interaction/v2/WeekInteractionController.ts">WeekInteractionController.ts</a>
-                  around lines 125, 167, 318, 625, and 797.
+                  around lines 126, 168, 319, 626, and 798, and the commit
+                  adapter is <code>createWeekInteractionCommitAdapter()</code>
+                  in
+                  <a href="../../packages/web/src/views/Week/interaction/v2/WeekInteractionBoundary.tsx">WeekInteractionBoundary.tsx</a>
+                  at line 52.
                 </p>
               </div>
             </div>
@@ -1119,10 +1266,11 @@
 
           <section class="section" id="architecture">
             <div class="section-kicker">Architecture map</div>
-            <h2>The new system has four main pieces.</h2>
+            <h2>The new system has five main pieces.</h2>
             <p>
               A beginner-friendly way to read this branch is to separate the
-              work into registration, ownership, animation, and commit.
+              work into registration, ownership, animation, commit, and visual
+              alignment.
             </p>
 
             <div class="grid-4">
@@ -1147,8 +1295,8 @@
                   suppresses the old mouse path while V2 owns motion.
                 </p>
                 <div class="tag-row">
-                  <span class="tag">Boundary.tsx:214</span>
-                  <span class="tag">Boundary.tsx:287</span>
+                  <span class="tag">WeekInteractionBoundary.tsx:214</span>
+                  <span class="tag">WeekInteractionBoundary.tsx:287</span>
                 </div>
               </div>
 
@@ -1160,8 +1308,8 @@
                   performance counters.
                 </p>
                 <div class="tag-row">
-                  <span class="tag">Controller.ts:625</span>
-                  <span class="tag">Controller.ts:687</span>
+                  <span class="tag">WeekInteractionController.ts:626</span>
+                  <span class="tag">WeekInteractionController.ts:688</span>
                 </div>
               </div>
 
@@ -1173,8 +1321,22 @@
                   submits the save exactly where the app already expects it.
                 </p>
                 <div class="tag-row">
-                  <span class="tag">Boundary.tsx:52</span>
-                  <span class="tag">Controller.ts:992</span>
+                  <span class="tag">WeekInteractionBoundary.tsx:52</span>
+                  <span class="tag">WeekInteractionController.ts:1001</span>
+                </div>
+              </div>
+
+              <div class="card">
+                <h3>5. Column geometry keeps motion honest</h3>
+                <p>
+                  Timed drag now snaps against the actual rendered day columns,
+                  and saved timed events are slightly narrowed so the overlay and
+                  saved block use the same visual lane.
+                </p>
+                <div class="tag-row">
+                  <span class="tag">WeekInteractionController.ts:905</span>
+                  <span class="tag">position.util.ts:187</span>
+                  <span class="tag">layout.constants.ts:16</span>
                 </div>
               </div>
             </div>
@@ -1213,6 +1375,12 @@
                   <td>Saved event data.</td>
                   <td>Motion becomes a direct style write, not app re-rendering.</td>
                 </tr>
+                <tr>
+                  <td><strong>Grid geometry</strong></td>
+                  <td>The rendered day columns and timed-event lane spacing.</td>
+                  <td>The broader Week View shell as a drag target.</td>
+                  <td>Overlay motion lands where the saved event will actually live.</td>
+                </tr>
               </tbody>
             </table>
           </section>
@@ -1235,10 +1403,10 @@
                   returns a <code>click</code> result. The boundary then opens
                   the existing event using the normal draft start path.
                 </p>
-                <pre><code>Controller.ts:263-271
+                <pre><code>WeekInteractionController.ts:264-272
 pending pointerup -> { type: "click" }
 
-Boundary.tsx:266-269
+WeekInteractionBoundary.tsx:266-269
 click result -> openExistingEvent(result.event)</code></pre>
               </div>
 
@@ -1250,10 +1418,10 @@ click result -> openExistingEvent(result.event)</code></pre>
                   controller writes each frame, and pointer-up returns the moved
                   event only once.
                 </p>
-                <pre><code>Controller.ts:318-365
-pending -> motion -> scheduleFrame()
+                <pre><code>WeekInteractionController.ts:319-365
+pending -> motion -> #scheduleFrame()
 
-Controller.ts:625-699
+WeekInteractionController.ts:626-699
 one RAF loop updates visual + overlay</code></pre>
               </div>
 
@@ -1264,11 +1432,11 @@ one RAF loop updates visual + overlay</code></pre>
                   while dragging. On release, the adapter restores the moved
                   event into the form instead of immediately submitting.
                 </p>
-                <pre><code>Boundary.tsx:247-253
+                <pre><code>WeekInteractionBoundary.tsx:247-253
 pending -> motion and form was open
 -> close form for interaction
 
-Boundary.tsx:62-67
+WeekInteractionBoundary.tsx:62-67
 submitMovedEvent restores draft + form</code></pre>
               </div>
 
@@ -1279,7 +1447,7 @@ submitMovedEvent restores draft + form</code></pre>
                   decision. After pointer-up, the adapter asks for the update
                   scope instead of saving directly.
                 </p>
-                <pre><code>Boundary.tsx:69-74
+                <pre><code>WeekInteractionBoundary.tsx:69-74
 if recurring:
   requestUpdateScopeForDraft(event)
 else:
@@ -1293,10 +1461,10 @@ else:
                   controller updates the scroll position and includes that scroll
                   delta in the visual math.
                 </p>
-                <pre><code>Controller.ts:647-650
-timed drag -> applySmartScroll()
+                <pre><code>WeekInteractionController.ts:648-650
+timed drag -> #applySmartScroll()
 
-Controller.ts:770-795
+WeekInteractionController.ts:771-795
 scrollTop is written directly</code></pre>
               </div>
 
@@ -1308,8 +1476,11 @@ scrollTop is written directly</code></pre>
                   offset to the visual draft, and asks React for one real week
                   change.
                 </p>
-                <pre><code>Controller.ts:717-759
-edge dwell -> applyWeekOffset()
+                <pre><code>WeekInteractionController.ts:718-758
+edge dwell -> #updateEdgeNavigation()
+
+WeekInteractionController.ts:1050-1056
+#updateEdgeNavigation() -> applyWeekOffset()
 -> onRequestWeekNavigation(side)</code></pre>
               </div>
             </div>
@@ -1492,6 +1663,31 @@ edge dwell -> applyWeekOffset()
                   </p>
                 </div>
               </div>
+
+              <div class="timeline-item">
+                <div class="commit">c0ab09a0</div>
+                <div class="timeline-body">
+                  <h3>Timed overlay snapped to real columns</h3>
+                  <p>
+                    The controller stopped using the whole timed grid as the
+                    horizontal reference and started reading the actual rendered
+                    timed-event columns. This fixed overlay drift when the grid
+                    includes the time-label gutter.
+                  </p>
+                </div>
+              </div>
+
+              <div class="timeline-item">
+                <div class="commit">621804b4</div>
+                <div class="timeline-body">
+                  <h3>Timed event lane width tightened</h3>
+                  <p>
+                    Timed events now sit closer to the left of their day column
+                    and leave extra room on the right, which makes saved events
+                    and V2 overlays feel aligned in the same lane.
+                  </p>
+                </div>
+              </div>
             </div>
 
             <div class="callout">
@@ -1501,6 +1697,9 @@ edge dwell -> applyWeekOffset()
               session-check flag. One recurring run had a React blip and passed
               on rerun. All-day resize revealed legacy mousemove and selector
               updates still waking React, which led to the motion-safety guards.
+              The last polish pass found that timed overlays also needed to snap
+              to the rendered event columns, not the full grid including the
+              time gutter.
             </div>
           </section>
 
@@ -1523,8 +1722,8 @@ edge dwell -> applyWeekOffset()
                 <p>
                   Owns pending sessions, active motion sessions, overlay mount,
                   one RAF loop, visual draft math, smart scroll, edge dwell, and
-                  teardown. Start at lines 125, 167, 254, 318, 625, 717, 770,
-                  797, 904, and 992.
+                  teardown. Start around lines 126, 168, 255, 319, 626, 718,
+                  771, 798, 905, 947, 1001, and 1050.
                 </p>
               </article>
 
@@ -1666,6 +1865,23 @@ edge dwell -> applyWeekOffset()
               </article>
 
               <article class="file-card">
+                <span class="file-role">visual lane sizing</span>
+                <h3>position.util.ts and layout.constants.ts</h3>
+                <div class="file-path">
+                  <a href="../../packages/web/src/common/utils/position/position.util.ts">position.util.ts</a>
+                  /
+                  <a href="../../packages/web/src/views/Week/layout.constants.ts">layout.constants.ts</a>
+                </div>
+                <p>
+                  Timed saved events now use a small left padding and extra
+                  right-side space inside each day column. This keeps the saved
+                  event block visually inside the same lane the V2 overlay uses.
+                  See position.util lines 187-228 and 255-297, plus layout
+                  constants lines 16-18.
+                </p>
+              </article>
+
+              <article class="file-card">
                 <span class="file-role">perf notes</span>
                 <h3>performance/week-view/README.md</h3>
                 <div class="file-path">
@@ -1682,14 +1898,92 @@ edge dwell -> applyWeekOffset()
 
           <section class="section" id="perf">
             <div class="section-kicker">Evidence</div>
-            <h2>The hard gates were measured, not guessed.</h2>
+            <h2>The hard gates and before/after speed were measured.</h2>
             <p>
               The final full-suite benchmark JSON is
               <code>tmp/perf/week-view/2026-05-14T21-16-07-935Z-v2-final-clean-after-motion-safe.json</code>.
+              The before numbers come from the saved starting-app benchmark
+              runs at commit <code>28077f0f</code>:
+              <code>2026-05-13T23-45-15-190Z-starting-app-current-harness.json</code>
+              and
+              <code>2026-05-14T00-13-09-359Z-starting-app-sustained-current-harness.json</code>.
               The notes are recorded in
               <a href="README.md">performance/week-view/README.md</a> lines
               249-262.
             </p>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Scenario</th>
+                  <th>Before V2</th>
+                  <th>After V2</th>
+                  <th>Change</th>
+                  <th>What to take from it</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Heavy Week load median</strong></td>
+                  <td>5673.8ms</td>
+                  <td>5434.5ms</td>
+                  <td><strong>4.2% faster</strong></td>
+                  <td>
+                    Loading a heavy week was modestly faster, though this PR was
+                    aimed at interaction motion more than initial render.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Timed drag complete-flow median</strong></td>
+                  <td>477.1ms</td>
+                  <td>459.5ms</td>
+                  <td><strong>3.7% faster</strong></td>
+                  <td>
+                    The end-to-end drag scenario got a little faster while also
+                    removing app-state churn during the live motion.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Timed resize complete-flow median</strong></td>
+                  <td>417.9ms</td>
+                  <td>400.1ms</td>
+                  <td><strong>4.3% faster</strong></td>
+                  <td>
+                    Resize improved on median time; its p95 stayed effectively
+                    flat at 437.1ms before and 440.8ms after.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Long timed-drag motion median</strong></td>
+                  <td>4207.9ms</td>
+                  <td>4049.7ms</td>
+                  <td><strong>3.8% faster</strong></td>
+                  <td>
+                    The long-motion case became slightly faster and stayed at a
+                    14.4ms max frame gap, near the measured input floor.
+                  </td>
+                </tr>
+                <tr>
+                  <td><strong>Resize jitter stress median</strong></td>
+                  <td>983.6ms</td>
+                  <td>1039.7ms</td>
+                  <td><strong>5.7% slower</strong></td>
+                  <td>
+                    This stress case did not become faster by elapsed time, but
+                    it still stayed clean during motion: no React, Redux,
+                    layout, save, or unexpected DOM work.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+
+            <div class="callout">
+              <strong>Important nuance</strong>
+              The stopwatch gains are real but modest. The larger performance
+              win is that sustained motion now has a bounded, sub-millisecond
+              controller loop and no React commits, Redux dispatches, layout
+              reads, or save requests while the pointer is moving.
+            </div>
 
             <div class="grid-4">
               <div class="metric-card">
@@ -1813,7 +2107,7 @@ edge dwell -> applyWeekOffset()
               <tbody>
                 <tr>
                   <td><strong>Focused Week V2 tests</strong></td>
-                  <td>Passed, 61 tests</td>
+                  <td>Passed, 75 tests</td>
                   <td>
                     Controller, boundary, layout guards, and fallback behavior
                     are covered by focused tests.
