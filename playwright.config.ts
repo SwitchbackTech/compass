@@ -1,39 +1,8 @@
 import { defineConfig, devices } from "@playwright/test";
-import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 
 const TEST_PORT = 9150;
-
-// Write a minimal compass config for the Playwright web server process.
-// This runs at config-load time, before the webServer is started.
-const TEST_CONFIG_PATH = join(process.cwd(), ".playwright-compass.yaml");
-writeFileSync(
-  TEST_CONFIG_PATH,
-  [
-    "runtime:",
-    "  nodeEnv: test",
-    "  timezone: Etc/UTC",
-    "web:",
-    `  port: ${TEST_PORT}`,
-    `  url: http://localhost:${TEST_PORT}`,
-    "backend:",
-    "  port: 3000",
-    `  apiUrl: http://localhost:3000/api`,
-    "  originsAllowed:",
-    `    - http://localhost:${TEST_PORT}`,
-    `  compassToken: test-token`,
-    "mongo:",
-    "  uri: mongodb://localhost:27017/unused",
-    "supertokens:",
-    "  uri: http://localhost:3567",
-    "  key: test-key",
-    "google:",
-    "  clientId: test-client-id",
-    "posthog:",
-    "  key: test-posthog-key",
-    "  host: https://app.posthog.com",
-  ].join("\n"),
-);
+const TEST_CONFIG_PATH = join(process.cwd(), "e2e/compass.playwright.yaml");
 
 export default defineConfig({
   testDir: "./e2e",

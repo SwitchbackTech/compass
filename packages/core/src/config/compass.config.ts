@@ -1,4 +1,4 @@
-import { parseDocument } from "yaml";
+import { parse } from "yaml";
 import { z } from "zod";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
@@ -100,15 +100,18 @@ export function parseCompassConfigText(
   text: string,
   filePath: string,
 ): CompassConfig {
-  const document = parseDocument(text);
-
-  if (document.errors.length > 0) {
+  let rawConfig: unknown;
+  try {
+    rawConfig = parse(text);
+  } catch (error) {
     throw new Error(
-      `Could not parse Compass config file ${filePath}: ${document.errors[0]?.message}`,
+      `Could not parse Compass config file ${filePath}: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     );
   }
 
-  const parsed = CompassConfigSchema.safeParse(document.toJS());
+  const parsed = CompassConfigSchema.safeParse(rawConfig);
 
   if (!parsed.success) {
     throw new Error(
