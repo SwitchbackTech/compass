@@ -7,7 +7,6 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import {
   GRID_TIME_STEP,
-  TIMED_EVENT_DRAG_GLIDE_MS,
   WEEK_TIMED_VISIBLE_HOURS,
 } from "@web/views/Week/layout.constants";
 import {
@@ -102,7 +101,6 @@ type WeekInteractionControllerOptions = {
   onRequestWeekNavigation?: (direction: "next" | "prev") => void;
   requestFrame?: (callback: FrameRequestCallback) => unknown;
   setTimer?: (callback: () => void, delayMs: number) => unknown;
-  timedDragGlideMs?: number;
 };
 
 const defaultOptions = {
@@ -127,7 +125,6 @@ const defaultOptions = {
     requestAnimationFrame(callback),
   setTimer: (callback: () => void, delayMs: number) =>
     setTimeout(callback, delayMs),
-  timedDragGlideMs: TIMED_EVENT_DRAG_GLIDE_MS,
 };
 
 export class WeekInteractionController {
@@ -589,8 +586,6 @@ export class WeekInteractionController {
         top: sourceClientRect.top + window.scrollY,
         width: sourceClientRect.width,
       },
-      transformTransitionMs:
-        session.kind === "timed" ? this.#options.timedDragGlideMs : undefined,
     });
     this.#placeholder = markSourcePlaceholder(session.sourceElement);
     this.#overlay = overlay;
@@ -690,15 +685,12 @@ export class WeekInteractionController {
         transform: this.#visual.transform,
       });
     } else {
-      const previousDayIndex = this.#visual.dayIndex;
       this.#visual = updateTimedDragVisual(this.#visual, {
         layout: this.#layout,
         pointer: this.#latestPointer,
         scrollDeltaPx: smartScroll.scrollDeltaPx,
       });
-      this.#overlay.updateTransform(this.#visual.transform, {
-        shouldGlide: this.#visual.dayIndex !== previousDayIndex,
-      });
+      this.#overlay.updateTransform(this.#visual.transform);
       this.#updateTimedDragOverlayTimeLabel(this.#session.event, this.#visual);
     }
 

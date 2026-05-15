@@ -1,28 +1,22 @@
 import { type VisualPoint, type VisualRect } from "../model/TimedDragVisual";
 
-const TRANSFORM_GLIDE_TIMING = "cubic-bezier(0.2, 0, 0, 1)";
-
 export class DragOverlay {
   #node: HTMLElement | null = null;
   #previousCursor: {
     body: string;
     documentElement: string;
   } | null = null;
-  #transformTransitionMs: number | null = null;
 
   mount({
     clone,
     cursor,
     rect,
-    transformTransitionMs,
   }: {
     clone: HTMLElement;
     cursor?: string;
     rect: VisualRect;
-    transformTransitionMs?: number;
   }) {
     this.unmount();
-    this.#transformTransitionMs = transformTransitionMs ?? null;
 
     clone.style.contain = "layout paint style";
     clone.style.height = `${rect.height}px`;
@@ -48,18 +42,12 @@ export class DragOverlay {
     this.#node = clone;
   }
 
-  updateTransform(
-    transform: VisualPoint,
-    { shouldGlide = false }: { shouldGlide?: boolean } = {},
-  ) {
+  updateTransform(transform: VisualPoint) {
     if (!this.#node) {
       return;
     }
 
-    this.#node.style.transition =
-      shouldGlide && this.#transformTransitionMs !== null
-        ? `transform ${this.#transformTransitionMs}ms ${TRANSFORM_GLIDE_TIMING}`
-        : "";
+    this.#node.style.transition = "";
     this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
   }
 
@@ -140,6 +128,5 @@ export class DragOverlay {
     }
     this.#node?.remove();
     this.#node = null;
-    this.#transformTransitionMs = null;
   }
 }

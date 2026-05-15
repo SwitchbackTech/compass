@@ -224,9 +224,7 @@ describe("WeekInteractionController", () => {
       const overlay = document.querySelector<HTMLElement>(
         "[data-week-interaction-overlay='true']",
       );
-      expect(overlay?.style.transition).toBe(
-        "transform 60ms cubic-bezier(0.2, 0, 0, 1)",
-      );
+      expect(overlay?.style.transition).toBe("");
       expect(overlay?.style.transform).toBe("translate3d(100px, 0px, 0)");
 
       controller.handlePointerUp(
@@ -283,7 +281,7 @@ describe("WeekInteractionController", () => {
     }
   });
 
-  it("uses the configured timed drag glide for the moving clone", () => {
+  it("keeps day-crossing timed drag motion immediate", () => {
     let frameCallback: FrameRequestCallback | null = null;
     const runFrame = (timestamp: number) => {
       const callback = frameCallback;
@@ -298,7 +296,6 @@ describe("WeekInteractionController", () => {
         frameCallback = callback;
         return 1;
       },
-      timedDragGlideMs: 90,
     });
 
     try {
@@ -318,9 +315,7 @@ describe("WeekInteractionController", () => {
         "[data-week-interaction-overlay='true']",
       );
 
-      expect(overlay?.style.transition).toBe(
-        "transform 90ms cubic-bezier(0.2, 0, 0, 1)",
-      );
+      expect(overlay?.style.transition).toBe("");
     } finally {
       if (controller.getSession().phase !== "idle") {
         controller.handlePointerUp(

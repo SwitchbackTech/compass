@@ -34,25 +34,19 @@ describe("DragOverlay", () => {
     expect(document.body.contains(clone)).toBe(false);
   });
 
-  it("applies timed drag glide only to requested transform updates", () => {
+  it("keeps transform updates immediate", () => {
     const clone = document.createElement("div");
     const overlay = new DragOverlay();
 
     overlay.mount({
       clone,
       rect: { height: 40, left: 10, top: 20, width: 120 },
-      transformTransitionMs: 60,
     });
 
     expect(clone.style.transition).toBe("");
 
     overlay.updateTransform({ x: 15, y: 30 });
     expect(clone.style.transition).toBe("");
-
-    overlay.updateTransform({ x: 100, y: 30 }, { shouldGlide: true });
-    expect(clone.style.transition).toBe(
-      "transform 60ms cubic-bezier(0.2, 0, 0, 1)",
-    );
 
     overlay.updateTransform({ x: 100, y: 60 });
     expect(clone.style.transition).toBe("");
