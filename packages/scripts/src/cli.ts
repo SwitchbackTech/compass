@@ -1,7 +1,6 @@
 import { CliValidator } from "@scripts/cli.validator";
 import { startDeleteFlow } from "@scripts/commands/delete/delete";
 import { runMigrator } from "@scripts/commands/migrate";
-import { loadCliConfigValues } from "@scripts/common/cli.constants";
 import { MigratorType } from "@scripts/common/cli.types";
 import { Command } from "commander";
 
@@ -22,7 +21,6 @@ export default class CompassCLI {
     switch (true) {
       case cmd === "delete": {
         const { force, user } = options;
-        loadCliConfigValues();
         this.validator.validateDelete(options);
         await startDeleteFlow(user as string, force);
         break;
