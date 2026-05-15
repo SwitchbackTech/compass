@@ -135,8 +135,8 @@ write_compose_env() {
   cat > "$COMPOSE_ENV_FILE" <<EOF
 COMPASS_CONFIG_FILE=$CONFIG_FILE
 COMPASS_VERSION=$(strip_quotes "$(read_config_value compose.version)")
-WEB_PORT=$(strip_quotes "$(read_config_value ports.web)")
-PORT=$(strip_quotes "$(read_config_value ports.backend)")
+WEB_PORT=$(strip_quotes "$(read_config_value web.port)")
+PORT=$(strip_quotes "$(read_config_value backend.port)")
 MONGO_INITDB_ROOT_USERNAME=$(strip_quotes "$(read_config_value mongo.username)")
 MONGO_INITDB_ROOT_PASSWORD=$(strip_quotes "$(read_config_value mongo.password)")
 MONGO_REPLICA_SET_KEY=$(strip_quotes "$(read_config_value mongo.replicaSetKey)")

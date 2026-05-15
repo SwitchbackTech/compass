@@ -63,10 +63,7 @@ function findWebTestFiles(dir: string): string[] {
 }
 
 function assertBackendConfigFile() {
-  const configFilePath = resolve(
-    process.cwd(),
-    "packages/backend/compass.yaml",
-  );
+  const configFilePath = resolve(process.cwd(), "compass.yaml");
 
   if (!existsSync(configFilePath)) {
     return;

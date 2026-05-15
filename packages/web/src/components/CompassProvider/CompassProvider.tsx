@@ -8,10 +8,7 @@ import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
-import {
-  ENV_WEB,
-  IS_GOOGLE_AUTH_CONFIGURED,
-} from "@web/common/constants/env.constants";
+import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/context/compass-refs";
 import { PointerPositionProvider } from "@web/common/context/pointer-position";
 import { theme } from "@web/common/styles/theme";
@@ -22,15 +19,6 @@ import { DNDOverlay } from "@web/components/DND/DNDOverlay";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { store } from "@web/store";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
-
-function WithGoogleOAuth({ children }: PropsWithChildren) {
-  if (!IS_GOOGLE_AUTH_CONFIGURED) return <>{children}</>;
-  return (
-    <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID as string}>
-      {children}
-    </GoogleOAuthProvider>
-  );
-}
 
 /**
  * Mount once under {@link HotkeysProvider} and inside React Router so
@@ -48,7 +36,7 @@ export const CompassRequiredProviders = (
     <CompassRefsProvider>
       <SessionProvider>
         <Provider store={props?.store ?? store}>
-          <WithGoogleOAuth>
+          <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}>
             <ThemeProvider theme={theme}>
               <PointerPositionProvider>
                 <DNDContext>
@@ -76,7 +64,7 @@ export const CompassRequiredProviders = (
                 </DNDContext>
               </PointerPositionProvider>
             </ThemeProvider>
-          </WithGoogleOAuth>
+          </GoogleOAuthProvider>
         </Provider>
       </SessionProvider>
     </CompassRefsProvider>

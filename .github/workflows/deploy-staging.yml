@@ -50,20 +50,20 @@ jobs:
             '  nodeEnv: production' \
             '  timezone: Etc/UTC' \
             'web:' \
-            "  url: ${FRONTEND_URL}" \
+            "  url: \"${FRONTEND_URL}\"" \
             'backend:' \
-            "  apiUrl: ${BACKEND_API_URL}" \
+            "  apiUrl: \"${BACKEND_API_URL}\"" \
             '  originsAllowed:' \
-            "    - ${FRONTEND_URL}" \
-            "  compassToken: ${COMPASS_SYNC_TOKEN}" \
+            "    - \"${FRONTEND_URL}\"" \
+            "  compassToken: \"${COMPASS_SYNC_TOKEN}\"" \
             'mongo:' \
-            "  uri: ${MONGO_URI}" \
+            "  uri: \"${MONGO_URI}\"" \
             'supertokens:' \
-            "  uri: ${SUPERTOKENS_URI}" \
-            "  key: ${SUPERTOKENS_KEY}" \
+            "  uri: \"${SUPERTOKENS_URI}\"" \
+            "  key: \"${SUPERTOKENS_KEY}\"" \
             'google:' \
-            "  clientId: ${GOOGLE_CLIENT_ID}" \
-            "  clientSecret: ${GOOGLE_CLIENT_SECRET}" \
+            "  clientId: \"${GOOGLE_CLIENT_ID}\"" \
+            "  clientSecret: \"${GOOGLE_CLIENT_SECRET}\"" \
             | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
                 "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update"

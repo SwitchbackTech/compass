@@ -231,14 +231,15 @@ vi compass.yaml
 Set:
 
 ```yaml
-urls:
-  frontend: https://compass.example.com
-  backendApi: https://compass.example.com/api
-  cors:
+web:
+  url: https://compass.example.com
+backend:
+  apiUrl: https://compass.example.com/api
+  originsAllowed:
     - https://compass.example.com
 ```
 
-Leave `WEB_PORT=9080` and `PORT=3000` unless you have a specific reason to change them.
+Leave `web.port: 9080` and `backend.port: 3000` unless you have a specific reason to change them.
 
 Apply the env changes.
 

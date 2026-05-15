@@ -313,7 +313,6 @@ ensure_existing_generated_secret() {
     return
   fi
 
-  secret=$(generate_secret "$label") || exit 1
   fail "$CONFIG_FILE is missing required generated value $key. Add it from the self-host example, then rerun this installer."
 }
 
