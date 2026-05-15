@@ -36,7 +36,9 @@ export const CompassRequiredProviders = (
     <CompassRefsProvider>
       <SessionProvider>
         <Provider store={props?.store ?? store}>
-          <GoogleOAuthProvider clientId={ENV_WEB.GOOGLE_CLIENT_ID || ""}>
+          <GoogleOAuthProvider
+            clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
+          >
             <ThemeProvider theme={theme}>
               <PointerPositionProvider>
                 <DNDContext>

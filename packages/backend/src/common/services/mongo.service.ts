@@ -15,9 +15,8 @@ import { type Schema_Priority } from "@core/types/priority.types";
 import { type Schema_Sync } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
 import { type Schema_Watch } from "@core/types/watch.types";
-import { waitUntilEvent } from "@core/util/wait-until-event.util";
 import { Collections } from "@backend/common/constants/collections";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 
 const logger = Logger("app:mongo.service");
 
@@ -95,8 +94,6 @@ class MongoService {
 
   private onConnect(client: MongoClient, useDynamicDb = false) {
     this.#internalClient = this.createInternalClient(client, useDynamicDb);
-
-    Object.seal(this);
   }
 
   private onDisconnect(): void {
@@ -115,7 +112,7 @@ class MongoService {
     client: MongoClient,
     useDynamicDb = false,
   ): InternalClient {
-    const db = client.db(useDynamicDb ? undefined : ENV.DB);
+    const db = client.db(useDynamicDb ? undefined : CONFIG.DB);
 
     return {
       db,
@@ -162,22 +159,18 @@ class MongoService {
   async start(useDynamicDb = false): Promise<MongoService> {
     if (this.#internalClient) return this;
 
-    const client = new MongoClient(ENV.MONGO_URI, {
+    const client = new MongoClient(CONFIG.MONGO_URI, {
       serverApi: { strict: true, version: "1" },
     });
 
-    client.on("open", (client) => this.onConnect(client, useDynamicDb));
     client.on("close", this.onDisconnect.bind(this));
     client.on("error", this.onError.bind(this));
     client.on("connectionClosed", this.onClose.bind(this));
 
-    return waitUntilEvent<MongoClient[], MongoService>(
-      client,
-      "open",
-      30000,
-      () => this.reconnect(client),
-      () => new Promise((resolve) => process.nextTick(() => resolve(this))),
-    );
+    const connectedClient = await this.reconnect(client);
+    this.onConnect(connectedClient, useDynamicDb);
+
+    return this;
   }
 
   async reconnect(client: MongoClient): Promise<MongoClient> {

@@ -8,10 +8,8 @@ import {
 import { zObjectId } from "@core/types/type.utils";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import { googleAuthService } from "@backend/auth/services/google/google.auth.service";
-import {
-  ENV,
-  isGoogleConfigured,
-} from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
+import { isGoogleConfigured } from "@backend/common/constants/config.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import {
@@ -56,7 +54,7 @@ class AuthController {
     req: SReqBody<GoogleAuthCodeRequest>,
     res: Res_Promise,
   ): void => {
-    if (!isGoogleConfigured(ENV)) {
+    if (!isGoogleConfigured(CONFIG)) {
       res.promise(
         Promise.reject(error(AuthError.GoogleNotConfigured, "Connect failed")),
       );

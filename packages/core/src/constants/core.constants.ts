@@ -1,9 +1,5 @@
 export const APP_NAME = "Compass Calendar";
 export const GCAL_NOTIFICATION_ENDPOINT = `/sync/gcal/notifications`;
-export const SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER =
-  "compass-self-host-placeholder.apps.googleusercontent.com";
-export const SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER =
-  "compass-self-host-placeholder-secret";
 export const MB_50 = 50000000; // in bytes
 export const MS_IN_HR = 2.7777777777778e-7;
 export const PORT_DEFAULT_BACKEND = 3000;

@@ -24,7 +24,7 @@ Do not use this guide to validate:
 
 1. Start the app with `bun run dev:web`.
 2. Start the backend — Google sync requires a live backend with Google credentials configured.
-3. Ensure `packages/backend/.env.local` has valid Google OAuth client credentials.
+3. Ensure `compass.yaml` at the repo root has valid Google OAuth client credentials.
 4. Use a Google account you control and can create test events in.
 5. For revocation scenarios, you need access to the Google account's security settings at `myaccount.google.com/permissions`.
 

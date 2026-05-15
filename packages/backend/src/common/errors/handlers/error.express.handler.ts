@@ -5,7 +5,7 @@ import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
-import { IS_DEV } from "@backend/common/constants/env.constants";
+import { IS_DEV } from "@backend/common/constants/config.constants";
 import {
   errorHandler,
   toClientErrorPayload,

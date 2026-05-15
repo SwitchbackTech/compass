@@ -1,5 +1,5 @@
-jest.mock("@backend/common/util/api-base-url.util", () => ({
-  getGcalWebhookBaseURL: jest.fn(() => "https://example.trycloudflare.com/api"),
+jest.mock("@backend/common/constants/config.constants", () => ({
+  CONFIG: { GCAL_WEBHOOK_BASEURL: "https://example.trycloudflare.com/api" },
 }));
 
 jest.mock("@backend/sync/services/watch/google-watch-token", () => ({

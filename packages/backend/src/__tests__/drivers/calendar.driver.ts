@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { ObjectId } from "mongodb";
 import { createMockCalendarListEntry } from "@core/__tests__/helpers/gcal.factory";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
-import { IS_DEV } from "@backend/common/constants/env.constants";
+import { IS_DEV } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 
 export class CalendarDriver {

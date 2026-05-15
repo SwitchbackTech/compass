@@ -1,0 +1,45 @@
+# Compass Self-Hosting Config
+#
+# Notes
+# - The installer writes ~/compass/compass.yaml with generated secrets.
+# - For detailed explanations, see: https://docs.compasscalendar.com/docs/config
+
+compose:
+  version: latest
+
+runtime:
+  nodeEnv: production
+  timezone: Etc/UTC
+  logLevel: info
+
+web:
+  port: 9080
+  url: REPLACE_WITH_YOUR_WEB_URL # e.g. https://cal.yourdomain.com
+
+backend:
+  port: 3000
+  apiUrl: REPLACE_WITH_YOUR_API_URL # e.g. https://cal.yourdomain.com/api
+  originsAllowed:
+    - REPLACE_WITH_YOUR_WEB_URL # e.g. https://cal.yourdomain.com
+  compassToken: REPLACE_WITH_COMPASS_TOKEN # any string will do
+
+mongo:
+  username: compass
+  password: REPLACE_WITH_MONGO_PASSWORD
+  replicaSetKey: REPLACE_WITH_MONGO_REPLICA_SET_KEY
+  uri: mongodb://compass:REPLACE_WITH_MONGO_PASSWORD@mongo:27017/prod_calendar?authSource=admin&replicaSet=rs0
+
+supertokens:
+  uri: http://supertokens:3567
+  key: REPLACE_WITH_SUPERTOKENS_KEY
+  postgres:
+    user: supertokens
+    password: REPLACE_WITH_SUPERTOKENS_POSTGRES_PASSWORD
+    database: supertokens
+
+# google:
+#   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
+#   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
+#   channelExpirationMin: 10
+#   webhookUrl: REPLACE_WITH_GOOGLE_WEBHOOK_URL # e.g. https://cal.yourdomain.com/api
+#   notificationToken: REPLACE_WITH_NOTIFICATION_TOKEN

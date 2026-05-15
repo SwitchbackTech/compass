@@ -15,17 +15,17 @@ The compose stack binds the web and backend containers to `127.0.0.1`; the serve
 
 - First install: [Run Compass on a server](../docs/self-hosting/server-guide.md)
 - Back up before updating: [Backups and restore](../docs/self-hosting/backups-and-restore.md)
-- Missing `.env` with old Docker volumes: [Backups and restore](../docs/self-hosting/backups-and-restore.md#if-env-is-missing-but-old-volumes-exist)
+- Missing `compass.yaml` with old Docker volumes: [Backups and restore](../docs/self-hosting/backups-and-restore.md#if-compassyaml-is-missing-but-old-volumes-exist)
 - Google setup or no-Google mode: [Google Calendar](../docs/self-hosting/google-calendar.md)
 - Manual Bun setup: [Run Compass without the installer](../docs/self-hosting/advanced-manual.md)
 
 ## Files in this folder
 
-- `install.sh` — the installer. Sets up `~/compass`, writes `~/compass/.env`, copies the helper script, and places app files under `~/compass/app`.
+- `install.sh` — the installer. Sets up `~/compass`, writes `~/compass/compass.yaml`, and copies the helper script.
 - `compass` — the helper script template. The installer copies it to `~/compass/compass`. Don't run this copy directly; run `~/compass/compass` after install.
-- `docker-compose.yml` — the Docker Compose stack used by the installed app.
+- `compose.yaml` — the Docker Compose stack used by the installed app.
 - `Dockerfile.web`, `Dockerfile.backend`, `Dockerfile.mongo` — the images for the web app, backend, and local MongoDB.
 - `serve-web.ts` — the small web server that serves the built web app inside the web container.
-- `packages/backend/.env.local.example` (in the repo root) — example environment values. See [Environment Variables](../docs/self-hosting/environment-variables.md) for the full reference.
+- `compass.example.yaml` — example self-host config values. See [Compass YAML Configuration](../docs/Self-Hosting/config.md) for the full reference.
 
 In this folder and the docs, `~/compass` means a `compass` folder in your home directory (e.g., `/Users/alex/compass` on macOS, `/home/alex/compass` on Linux). It is not a folder inside this repo.

@@ -21,28 +21,14 @@ services:
       supertokens:
         condition: service_healthy
     environment:
-      BASEURL: ${BASEURL:-http://localhost:3000/api}
-      CHANNEL_EXPIRATION_MIN: ${CHANNEL_EXPIRATION_MIN:-10}
-      CORS: ${CORS:-http://localhost:9080,http://localhost:3000}
-      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:9080}
-      GCAL_WEBHOOK_BASEURL: ${GCAL_WEBHOOK_BASEURL:-}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-compass-self-host-placeholder.apps.googleusercontent.com}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-compass-self-host-placeholder-secret}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
-      MONGO_URI: ${MONGO_URI:-mongodb://compass:change-me-mongo-password-32chars@mongo:27017/prod_calendar?authSource=admin&replicaSet=rs0}
-      NODE_ENV: ${NODE_ENV:-production}
-      PORT: "3000"
-      SUPERTOKENS_KEY: ${SUPERTOKENS_KEY:-change-me-supertokens-key-32chars}
-      SUPERTOKENS_URI: ${SUPERTOKENS_URI:-http://supertokens:3567}
-      TOKEN_COMPASS_SYNC: ${TOKEN_COMPASS_SYNC:-change-me-compass-sync-token-32chars}
-      TOKEN_GCAL_NOTIFICATION: ${TOKEN_GCAL_NOTIFICATION:-change-me-gcal-notification-token-32chars}
-      TZ: ${TZ:-Etc/UTC}
+      COMPASS_CONFIG_FILE: /app/compass.yaml
     ports:
       - *backend-port
     read_only: true
     tmpfs:
       - /tmp
     volumes:
+      - ${COMPASS_CONFIG_FILE:-./compass.yaml}:/app/compass.yaml:ro
       - compass_backend_logs:/app/logs
     restart: unless-stopped
     healthcheck:

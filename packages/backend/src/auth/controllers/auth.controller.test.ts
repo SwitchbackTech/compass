@@ -1,8 +1,4 @@
-import {
-  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-} from "@core/constants/core.constants";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import authController from "./auth.controller";
 
@@ -16,10 +12,10 @@ jest.mock("@backend/auth/services/google/google.auth.service", () => ({
 describe("auth.controller", () => {
   describe("connectGoogle", () => {
     it("rejects Google connect when Google is not configured", async () => {
-      const originalClientId = ENV.GOOGLE_CLIENT_ID;
-      const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
-      ENV.GOOGLE_CLIENT_ID = undefined;
-      ENV.GOOGLE_CLIENT_SECRET = undefined;
+      const originalClientId = CONFIG.GOOGLE_CLIENT_ID;
+      const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+      CONFIG.GOOGLE_CLIENT_ID = undefined;
+      CONFIG.GOOGLE_CLIENT_SECRET = undefined;
       const promise = jest.fn();
 
       try {
@@ -31,8 +27,8 @@ describe("auth.controller", () => {
           { promise } as never,
         );
       } finally {
-        ENV.GOOGLE_CLIENT_ID = originalClientId;
-        ENV.GOOGLE_CLIENT_SECRET = originalClientSecret;
+        CONFIG.GOOGLE_CLIENT_ID = originalClientId;
+        CONFIG.GOOGLE_CLIENT_SECRET = originalClientSecret;
       }
 
       expect(promise).toHaveBeenCalledTimes(1);
@@ -42,11 +38,11 @@ describe("auth.controller", () => {
       });
     });
 
-    it("rejects Google connect when self-host placeholder credentials are configured", async () => {
-      const originalClientId = ENV.GOOGLE_CLIENT_ID;
-      const originalClientSecret = ENV.GOOGLE_CLIENT_SECRET;
-      ENV.GOOGLE_CLIENT_ID = SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER;
-      ENV.GOOGLE_CLIENT_SECRET = SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER;
+    it("rejects Google connect when credentials are absent", async () => {
+      const originalClientId = CONFIG.GOOGLE_CLIENT_ID;
+      const originalClientSecret = CONFIG.GOOGLE_CLIENT_SECRET;
+      CONFIG.GOOGLE_CLIENT_ID = undefined;
+      CONFIG.GOOGLE_CLIENT_SECRET = undefined;
       const promise = jest.fn();
 
       try {
@@ -58,8 +54,8 @@ describe("auth.controller", () => {
           { promise } as never,
         );
       } finally {
-        ENV.GOOGLE_CLIENT_ID = originalClientId;
-        ENV.GOOGLE_CLIENT_SECRET = originalClientSecret;
+        CONFIG.GOOGLE_CLIENT_ID = originalClientId;
+        CONFIG.GOOGLE_CLIENT_SECRET = originalClientSecret;
       }
 
       expect(promise).toHaveBeenCalledTimes(1);

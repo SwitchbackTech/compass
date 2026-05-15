@@ -13,13 +13,13 @@ import {
 } from "@core/types/sync.types";
 import { IDSchemaV4 } from "@core/types/type.utils";
 import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
-import { getGcalWebhookBaseURL } from "@backend/common/util/api-base-url.util";
 import { encodeChannelToken } from "@backend/sync/services/watch/google-watch-token";
 
 const getGcalNotificationAddress = () =>
-  getGcalWebhookBaseURL() + GCAL_NOTIFICATION_ENDPOINT;
+  CONFIG.GCAL_WEBHOOK_BASEURL + GCAL_NOTIFICATION_ENDPOINT;
 
 class GCalService {
   private validateGCalResponse<T>(

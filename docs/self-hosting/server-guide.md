@@ -11,7 +11,7 @@ This path assumes you're comfortable with:
 - SSH and editing files on a remote Linux machine
 - DNS records (pointing a domain at a server's IP)
 - installing Docker on Ubuntu
-- editing config files like `~/compass/.env` and a Caddyfile
+- editing config files like `~/compass/compass.yaml` and a Caddyfile
 
 Plan for **30 to 60 minutes** end to end, mostly waiting on DNS propagation, image pulls, and Caddy's first certificate fetch.
 
@@ -35,7 +35,7 @@ A separate API domain like `https://api.compass.example.com` may be possible, bu
 3. SSH into the server and install Compass with the self-host installer.
 4. Configure Caddy to proxy `compass.example.com` to `127.0.0.1:9080` and `/api/*` to `127.0.0.1:3000`.
 5. Verify Caddy can reach the local backend over HTTPS.
-6. Edit `~/compass/.env` to use your public URLs, then recreate the backend
+6. Edit `~/compass/compass.yaml` to use your public URLs, then recreate the backend
    container and rebuild the web container.
 7. Sign in over HTTPS and run the basic tests below.
 8. (Optional) Add Google Calendar.
@@ -143,7 +143,7 @@ redirects. It needs port `443` for the final HTTPS site.
 curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | sh
 ```
 
-The installer creates `~/compass`, writes `~/compass/.env`, and starts the Docker stack on `127.0.0.1:9080` (web) and `127.0.0.1:3000` (backend). The database containers stay on Docker's internal network and aren't exposed publicly.
+The installer creates `~/compass`, writes `~/compass/compass.yaml`, and starts the Docker stack on `127.0.0.1:9080` (web) and `127.0.0.1:3000` (backend). The database containers stay on Docker's internal network and aren't exposed publicly.
 
 From this point on, `localhost` means the VPS you are SSH'd into. You won't open `http://localhost:9080` from your own laptop unless you use SSH port forwarding. For normal server use, continue to Caddy and open the public HTTPS URL.
 
@@ -221,38 +221,36 @@ sudo systemctl restart caddy
 > `BASEURL` for API requests. If `BASEURL` points at an HTTPS URL Caddy can't
 > serve yet, the app can load but cannot reach the backend.
 
-Edit the env file:
+Edit the config file:
 
 ```bash
 cd ~/compass
-vi .env
+vi compass.yaml
 ```
 
 Set:
 
-```bash
-FRONTEND_URL=https://compass.example.com
-BASEURL=https://compass.example.com/api
-CORS=https://compass.example.com
+```yaml
+web:
+  url: https://compass.example.com
+backend:
+  apiUrl: https://compass.example.com/api
+  originsAllowed:
+    - https://compass.example.com
 ```
 
-Leave `WEB_PORT=9080` and `PORT=3000` unless you have a specific reason to change them.
+Leave `web.port: 9080` and `backend.port: 3000` unless you have a specific reason to change them.
 
 Apply the env changes.
 
 ```bash
 cd ~/compass
-docker compose --project-name compass --env-file .env \
-  -f app/self-host/docker-compose.yml \
-  up -d --no-deps --force-recreate backend
-
-docker compose --project-name compass --env-file .env \
-  -f app/self-host/docker-compose.yml \
-  up -d --build --no-deps web
+./compass restart
+./compass rebuild
 ```
 
-`./compass rebuild` also works, but it rebuilds every Compass image and can be
-slow on a small VPS.
+The rebuild step is needed when values baked into the web bundle change, such
+as `backend.apiUrl` or `google.clientId`. It can be slow on a small VPS.
 
 Confirm the public health check still works after applying the env changes:
 
@@ -303,7 +301,7 @@ See [Connect Google Calendar — Public watch notifications](./google-calendar.m
 
 ## Updating
 
-> **Warning: back up before every update.** `./compass update` rebuilds with newer code. There is no rollback. Back up `~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume **together**. See [Backups and restore](./backups-and-restore.md).
+> **Warning: back up before every update.** `./compass update` rebuilds with newer code. There is no rollback. Back up `~/compass/compass.yaml`, the Mongo volume, and the SuperTokens Postgres volume **together**. See [Backups and restore](./backups-and-restore.md).
 
 Then:
 

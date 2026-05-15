@@ -1,0 +1,28 @@
+runtime:
+  nodeEnv: test
+  timezone: Etc/UTC
+
+web:
+  port: 9150
+  url: http://localhost:9150
+
+backend:
+  port: 3000
+  apiUrl: http://localhost:3000/api
+  originsAllowed:
+    - http://localhost:9150
+  compassToken: test-token
+
+mongo:
+  uri: mongodb://localhost:27017/unused
+
+supertokens:
+  uri: http://localhost:3567
+  key: test-key
+
+google:
+  clientId: test-client-id
+
+posthog:
+  key: test-posthog-key
+  host: https://app.posthog.com

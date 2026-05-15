@@ -1,0 +1,51 @@
+# Compass Config
+
+# Notes
+# - Copy this file to compass.yaml and replace values for your local setup.
+# - Do not commit this file; it contains secrets.
+# - For detailed explanations, see: https://docs.compasscalendar.com/docs/config
+
+compose:
+  version: latest
+
+runtime:
+  nodeEnv: development
+  timezone: Etc/UTC
+  logLevel: debug
+
+web:
+  port: 9080
+  url: http://localhost:9080
+
+backend:
+  port: 3000
+  apiUrl: http://localhost:3000/api
+  originsAllowed:
+    - http://localhost:3000
+    - http://localhost:9080
+  compassToken: REPLACE_WITH_COMPASS_TOKEN # any string will do
+
+mongo:
+  username: compass
+  password: local-mongo-password
+  replicaSetKey: local-mongo-replica-set-key
+  uri: mongodb+srv://admin:REPLACE_WITH_MONGO_PASSWORD@cluster0.m99yy.mongodb.net/dev_calendar?authSource=admin&retryWrites=true&w=majority&tls=true
+
+supertokens:
+  uri: REPLACE_WITH_SUPERTOKENS_URI
+  key: REPLACE_WITH_SUPERTOKENS_KEY
+
+# google:
+#   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
+#   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
+#   channelExpirationMin: 10
+#   webhookUrl: REPLACE_WITH_GOOGLE_WEBHOOK_URL # e.g. https://example.trycloudflare.com/api
+#   notificationToken: REPLACE_WITH_NOTIFICATION_TOKEN
+
+# email:
+#   kitApiSecret: REPLACE_WITH_KIT_API_SECRET
+#   kitUserTagId: REPLACE_WITH_KIT_USER_TAG_ID
+
+# posthog:
+#   key: REPLACE_WITH_POSTHOG_KEY
+#   host: REPLACE_WITH_POSTHOG_HOST

@@ -62,10 +62,10 @@ function findWebTestFiles(dir: string): string[] {
     .sort();
 }
 
-function assertBackendEnvFile() {
-  const envFilePath = resolve(process.cwd(), "packages/backend/.env.local");
+function assertBackendConfigFile() {
+  const configFilePath = resolve(process.cwd(), "compass.yaml");
 
-  if (!existsSync(envFilePath)) {
+  if (!existsSync(configFilePath)) {
     return;
   }
 
@@ -107,7 +107,7 @@ function runProject(projectName: keyof typeof TEST_PROJECTS) {
 }
 
 function main() {
-  assertBackendEnvFile();
+  assertBackendConfigFile();
 
   const requestedProject = process.argv[2] as
     | keyof typeof TEST_PROJECTS

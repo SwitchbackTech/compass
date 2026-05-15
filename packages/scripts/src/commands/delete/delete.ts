@@ -1,4 +1,4 @@
-import { CLI_ENV } from "@scripts/common/cli.constants";
+import { cliConfig } from "@scripts/common/cli.constants";
 import { log } from "@scripts/common/cli.utils";
 import inquirer, { type QuestionCollection } from "inquirer";
 import open from "open";
@@ -15,13 +15,14 @@ import {
 } from "./delete.types";
 
 const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
-  const browserName = CLI_ENV.DEV_BROWSER?.toLowerCase();
+  const devBrowser = process.env["DEV_BROWSER"];
+  const browserName = devBrowser?.toLowerCase();
   if (!browserName) return undefined;
 
   const browserApp = BROWSER_MAP[browserName as SupportedBrowser];
   if (!browserApp) {
     log.warning(
-      `Unknown browser "${CLI_ENV.DEV_BROWSER}". Supported: ${Object.keys(BROWSER_MAP).join(", ")}. Falling back to default.`,
+      `Unknown browser "${devBrowser}". Supported: ${Object.keys(BROWSER_MAP).join(", ")}. Falling back to default.`,
     );
     return undefined;
   }
@@ -29,7 +30,7 @@ const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
 };
 
 const getCleanupUrl = (): string => {
-  return `${CLI_ENV.FRONTEND_URL}/cleanup`;
+  return `${cliConfig.web.url}/cleanup`;
 };
 
 const normalizeEmail = (value: string): string => value.trim().toLowerCase();
@@ -48,7 +49,7 @@ const summarizeDeleteError = (error: unknown): { message: string } => {
 const forceBrowserCleanup = async (): Promise<void> => {
   const cleanupUrl = getCleanupUrl();
   const browserApp = getBrowserApp();
-  const browserName = CLI_ENV.DEV_BROWSER || "default";
+  const browserName = process.env["DEV_BROWSER"] || "default";
 
   log.info(`\nOpening ${browserName} browser to clear local data...`);
 
@@ -92,7 +93,7 @@ const promptBrowserCleanup = async (): Promise<void> => {
 
   if (promptResult.cleanup) {
     const browserApp = getBrowserApp();
-    const browserName = CLI_ENV.DEV_BROWSER || "default";
+    const browserName = process.env["DEV_BROWSER"] || "default";
 
     log.info(`\nOpening ${browserName} browser to clear local data...`);
 

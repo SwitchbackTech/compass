@@ -57,20 +57,16 @@ if (!result.success) {
 }
 log.success(`Bundled → ${BACKEND_BUILD}/app.js`);
 
-// 3. Copy env file
-const envName =
-  environment === "production"
-    ? ".env.production"
-    : environment === "staging"
-      ? ".env.staging"
-      : ".env.local";
-const envPath = path.join(COMPASS_ROOT_DEV, "packages/backend", envName);
+// 3. Copy config file when present for local bundled runs.
+const configPath = process.env["COMPASS_CONFIG_FILE"]
+  ? path.resolve(process.env["COMPASS_CONFIG_FILE"])
+  : path.join(COMPASS_ROOT_DEV, "compass.yaml");
 
-if (await Bun.file(envPath).exists()) {
-  await $`cp ${envPath} ${BACKEND_BUILD}/.env`.quiet();
-  log.success("Copied env file");
+if (await Bun.file(configPath).exists()) {
+  await $`cp ${configPath} ${BACKEND_BUILD}/compass.yaml`.quiet();
+  log.success("Copied Compass config file");
 } else {
-  log.warning(`Env file not found: ${envPath}`);
+  log.warning(`Compass config file not found: ${configPath}`);
 }
 
 // 4. Write a minimal package.json for the external native modules only.

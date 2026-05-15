@@ -1,24 +1,19 @@
 import { z } from "zod";
 import {
-  NodeEnv,
-  PORT_DEFAULT_BACKEND,
-  SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-} from "@core/constants/core.constants";
+  type CompassConfig,
+  loadCompassConfig,
+} from "@core/config/compass.config";
+import { NodeEnv, PORT_DEFAULT_BACKEND } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { isDev } from "@core/util/env.util";
+import {
+  isGoogleClientIdValid,
+  isGoogleClientSecretValid,
+} from "./config.util";
 
 const logger = Logger("app:constants");
 
-const _nodeEnv = process.env["NODE_ENV"] as NodeEnv;
-
-if (!Object.values(NodeEnv).includes(_nodeEnv)) {
-  throw new Error(`Invalid NODE_ENV value: '${_nodeEnv}'`);
-}
-
-export const IS_DEV = isDev(_nodeEnv);
-
-const EnvSchema = z
+const ConfigSchema = z
   .object({
     BASEURL: z.string().nonempty(),
     CHANNEL_EXPIRATION_MIN: z.string().nonempty().default("10"),
@@ -28,13 +23,7 @@ const EnvSchema = z
     EMAILER_SECRET: z.string().nonempty().optional(),
     EMAILER_USER_TAG_ID: z.string().nonempty().optional(),
     FRONTEND_URL: z.string().url(),
-    GCAL_WEBHOOK_BASEURL: z
-      .string()
-      .url()
-      .refine((url) => url.startsWith("https://"), {
-        message: "GCAL_WEBHOOK_BASEURL must use HTTPS",
-      })
-      .optional(),
+    GCAL_WEBHOOK_BASEURL: z.string().url(),
     MONGO_URI: z.string().nonempty(),
     NODE_ENV: z.nativeEnum(NodeEnv),
     TZ: z.enum(["Etc/UTC", "UTC"]),
@@ -47,8 +36,8 @@ const EnvSchema = z
   })
   .strict()
   .superRefine((env, context) => {
-    const hasGoogleClientId = isUsableGoogleClientId(env.GOOGLE_CLIENT_ID);
-    const hasGoogleClientSecret = isUsableGoogleClientSecret(
+    const hasGoogleClientId = isGoogleClientIdValid(env.GOOGLE_CLIENT_ID);
+    const hasGoogleClientSecret = isGoogleClientSecretValid(
       env.GOOGLE_CLIENT_SECRET,
     );
     const isGoogleConfigComplete = hasGoogleClientId && hasGoogleClientSecret;
@@ -65,8 +54,7 @@ const EnvSchema = z
     }
 
     const usesHttpsGoogleWebhook =
-      env.GCAL_WEBHOOK_BASEURL?.startsWith("https://") ||
-      env.BASEURL.startsWith("https://");
+      env.GCAL_WEBHOOK_BASEURL.startsWith("https://");
 
     if (
       isGoogleConfigComplete &&
@@ -83,34 +71,47 @@ const EnvSchema = z
     }
   });
 
-type RawBackendEnv = Record<string, string | undefined>;
+export type Config = z.infer<typeof ConfigSchema>;
 
-export type BackendEnv = z.infer<typeof EnvSchema>;
+const toStr = (
+  value: string | number | null | undefined,
+): string | undefined => (value != null ? String(value) : undefined);
 
-const isUsableGoogleClientId = (clientId?: string): boolean =>
-  Boolean(
-    clientId &&
-      clientId !== "undefined" &&
-      clientId !== SELF_HOST_GOOGLE_CLIENT_ID_PLACEHOLDER,
-  );
+const nonEmpty = (value: string | null | undefined): string | undefined =>
+  value?.trim() ? value : undefined;
 
-const isUsableGoogleClientSecret = (clientSecret?: string): boolean =>
-  Boolean(
-    clientSecret &&
-      clientSecret !== "undefined" &&
-      clientSecret !== SELF_HOST_GOOGLE_CLIENT_SECRET_PLACEHOLDER,
-  );
+function parseRawConfig(config: CompassConfig): Config {
+  const nodeEnv = config.runtime.nodeEnv as NodeEnv;
 
-export const isGoogleConfigured = (
-  env: Pick<BackendEnv, "GOOGLE_CLIENT_ID" | "GOOGLE_CLIENT_SECRET">,
-): boolean =>
-  isUsableGoogleClientId(env.GOOGLE_CLIENT_ID) &&
-  isUsableGoogleClientSecret(env.GOOGLE_CLIENT_SECRET);
+  return ConfigSchema.parse({
+    BASEURL: config.backend.apiUrl,
+    CHANNEL_EXPIRATION_MIN: toStr(config.google?.channelExpirationMin) ?? "10",
+    GOOGLE_CLIENT_ID: nonEmpty(config.google?.clientId),
+    GOOGLE_CLIENT_SECRET: nonEmpty(config.google?.clientSecret),
+    DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",
+    EMAILER_SECRET: nonEmpty(config.email?.kitApiSecret),
+    EMAILER_USER_TAG_ID: toStr(config.email?.kitUserTagId),
+    FRONTEND_URL: config.web.url,
+    GCAL_WEBHOOK_BASEURL:
+      nonEmpty(config.google?.webhookUrl) || config.backend.apiUrl,
+    MONGO_URI: config.mongo.uri,
+    NODE_ENV: nodeEnv,
+    TZ: config.runtime.timezone,
+    ORIGINS_ALLOWED: config.backend.originsAllowed ?? [],
+    PORT: toStr(config.backend.port),
+    SUPERTOKENS_URI: config.supertokens.uri,
+    SUPERTOKENS_KEY: config.supertokens.key,
+    TOKEN_GCAL_NOTIFICATION: nonEmpty(config.google?.notificationToken) ?? "",
+    TOKEN_COMPASS_SYNC: config.backend.compassToken,
+  });
+}
 
-export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
+export function parseConfigFromEnv(
+  rawEnv: Record<string, string | undefined>,
+): Config {
   const nodeEnv = rawEnv["NODE_ENV"] as NodeEnv;
 
-  return EnvSchema.parse({
+  return ConfigSchema.parse({
     BASEURL: rawEnv["BASEURL"],
     CHANNEL_EXPIRATION_MIN: rawEnv["CHANNEL_EXPIRATION_MIN"],
     GOOGLE_CLIENT_ID: rawEnv["GOOGLE_CLIENT_ID"],
@@ -119,7 +120,7 @@ export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
     EMAILER_SECRET: rawEnv["EMAILER_API_SECRET"],
     EMAILER_USER_TAG_ID: rawEnv["EMAILER_USER_TAG_ID"],
     FRONTEND_URL: rawEnv["FRONTEND_URL"],
-    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"] || undefined,
+    GCAL_WEBHOOK_BASEURL: rawEnv["GCAL_WEBHOOK_BASEURL"] || rawEnv["BASEURL"],
     MONGO_URI: rawEnv["MONGO_URI"],
     NODE_ENV: nodeEnv,
     TZ: rawEnv["TZ"],
@@ -132,23 +133,22 @@ export function parseBackendEnv(rawEnv: RawBackendEnv): BackendEnv {
   });
 }
 
-let parsedEnv: BackendEnv;
+const isTestWithoutConfig =
+  process.env["NODE_ENV"] === "test" && !process.env["COMPASS_CONFIG_FILE"];
+
+let parsedConfig: Config;
 
 try {
-  parsedEnv = parseBackendEnv(process.env);
+  parsedConfig = isTestWithoutConfig
+    ? parseConfigFromEnv(process.env)
+    : parseRawConfig(loadCompassConfig());
 } catch (error) {
-  logger.error(`Exiting because a critical env value is missing or invalid:`);
+  logger.error(
+    "Exiting because a critical config value is missing or invalid:",
+  );
   console.error(error);
   process.exit(1);
 }
 
-export const ENV = parsedEnv;
-export const IS_GOOGLE_CONFIGURED = isGoogleConfigured(ENV);
-
-export function getApiBaseURL(): string {
-  if (!ENV.BASEURL?.trim()) {
-    throw new Error("ENV.BASEURL is not set");
-  }
-
-  return ENV.BASEURL;
-}
+export const CONFIG = parsedConfig;
+export const IS_DEV = isDev(CONFIG.NODE_ENV);

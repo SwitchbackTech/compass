@@ -5,7 +5,7 @@ import { MapCalendar } from "@core/mappers/map.calendar";
 import { type Schema_Calendar } from "@core/types/calendar.types";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
-import { IS_DEV } from "@backend/common/constants/env.constants";
+import { IS_DEV } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {

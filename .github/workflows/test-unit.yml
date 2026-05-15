@@ -74,6 +74,6 @@ jobs:
 
       - name: Run ${{ matrix.project }} tests
         env:
-          TZ: ${{ vars.TZ }}
+          TZ: Etc/UTC
         run: |
           bun run test:${{ matrix.project }}

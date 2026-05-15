@@ -15,13 +15,13 @@
     "@compass/scripts": "packages/scripts/src"
   },
   "scripts": {
-    "cli": "bun --env-file=packages/backend/.env.local packages/scripts/src/cli.ts",
+    "cli": "bun packages/scripts/src/cli.ts",
     "debug:supertokens": "export DEBUG=com.supertokens &&bun run dev:backend",
     "debug:web": "http-server build/web/",
     "dev:backend -verbose": "export DEBUG=* &&bun run dev:backend",
-    "dev:backend": "cd packages/backend && bun --env-file=.env.local --watch src/app.ts",
+    "dev:backend": "cd packages/backend && bun --watch src/app.ts",
     "dev:update": "git checkout main && git pull &&bun install",
-    "dev:web": "cd packages/web &&bun --env-file=../backend/.env.local run dev.ts",
+    "dev:web": "cd packages/web &&bun run dev.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
@@ -36,7 +36,7 @@
     "type-check:web-tests": "bunx typescript@6.0.3 -p packages/web/tsconfig.test.json --noEmit",
     "verify": "bun packages/scripts/src/testing/verify.ts",
     "build:backend": "bun packages/scripts/src/commands/build.backend.ts",
-    "build:web": "cd packages/web && bun --env-file=../backend/.env.local run build.ts"
+    "build:web": "cd packages/web && bun run build.ts"
   },
   "dependencies": {
     "@compass/backend": "*",

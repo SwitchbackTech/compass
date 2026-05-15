@@ -87,7 +87,7 @@ Design intent:
   to `/day`.
 - The backend accepts only the configured Compass Google callback URL as the
   OAuth redirect URI when exchanging a Google code. The callback URL is derived
-  from backend `FRONTEND_URL` plus `/auth/google/callback`.
+  from backend `ENV.FRONTEND_URL`, loaded from `web.url`, plus `/auth/google/callback`.
 - The callback page is intentionally transitional: it shows a simple completion
   status, finishes or fails the saved Google authorization intent, and navigates
   back into the app.
@@ -403,7 +403,7 @@ Current behavior in `supertokens.middleware.ts`:
 
 The rewritten reset link shape comes from `buildResetPasswordLink()`.
 
-The host/origin portion is taken from backend env (`FRONTEND_URL`), and the
+The host/origin portion is taken from backend config (`web.url`), and the
 route is always `/day`.
 
 - Reset: `http://[REDACTED]/day?auth=reset&token=...`
@@ -436,7 +436,7 @@ session-linking failure mode.
 ## Known Caveats
 
 - The rollout gate is not limited to `lastKnownEmail`; any `?auth=` URL currently enables the auth UI.
-- Reset password links always target the `/day` route and require a valid `FRONTEND_URL` in backend env.
+- Reset password links always target the `/day` route and require a valid `web.url` in backend config.
 - Logged-out same-email Google/password identities can now reuse the existing
   Compass user when no conflicting `google.googleId` owner exists.
 - A Google account can belong to only one Compass user. In-session connect

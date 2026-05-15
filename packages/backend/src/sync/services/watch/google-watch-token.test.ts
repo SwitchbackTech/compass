@@ -1,18 +1,18 @@
 import { faker } from "@faker-js/faker";
 import { Resource_Sync } from "@core/types/sync.types";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import {
   decodeChannelToken,
   encodeChannelToken,
 } from "@backend/sync/services/watch/google-watch-token";
 
-// Mock ENV
-jest.mock("@backend/common/constants/env.constants", () => ({
-  ENV: { TOKEN_GCAL_NOTIFICATION: "test-notification-token" },
+// Mock CONFIG
+jest.mock("@backend/common/constants/config.constants", () => ({
+  CONFIG: { TOKEN_GCAL_NOTIFICATION: "test-notification-token" },
 }));
 
 describe("google-watch-token", () => {
-  const notificationToken = ENV.TOKEN_GCAL_NOTIFICATION;
+  const notificationToken = CONFIG.TOKEN_GCAL_NOTIFICATION;
 
   describe("encodeChannelToken", () => {
     it.each([
@@ -78,7 +78,7 @@ describe("google-watch-token", () => {
       const token = encodeChannelToken({ resource });
       const result = decodeChannelToken(token);
 
-      // Should match the original data plus the token from ENV
+      // Should match the original data plus the token from CONFIG
       expect(result).toEqual({
         token: notificationToken,
         resource,
@@ -97,7 +97,7 @@ describe("google-watch-token", () => {
       expect(decodeChannelToken(badToken)).toBeUndefined();
     });
 
-    it("should return undefined if token does not match ENV.TOKEN_GCAL_NOTIFICATION", () => {
+    it("should return undefined if token does not match CONFIG.TOKEN_GCAL_NOTIFICATION", () => {
       // Create a valid ChannelToken but with wrong token value
       const params = new URLSearchParams({
         token: "wrong-token",
@@ -120,7 +120,7 @@ describe("google-watch-token", () => {
     it("should return undefined if token is missing the resource field", () => {
       // Missing 'resource' field
       const params = new URLSearchParams({
-        token: ENV.TOKEN_GCAL_NOTIFICATION,
+        token: CONFIG.TOKEN_GCAL_NOTIFICATION,
       }).toString();
 
       const badToken = Buffer.from(params).toString("base64");

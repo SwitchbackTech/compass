@@ -34,54 +34,34 @@ Use this for:
 - Mongo-backed event behavior
 - sync and SSE work
 
-This requires valid env config.
+This requires valid Compass YAML config.
 
 Bootstrap once from repo root:
 
 ```bash
-cp packages/backend/.env.local.example packages/backend/.env.local
+cp compass.example.yaml compass.yaml
 ```
 
 Runtime note:
 
-- `bun run dev:backend`, `bun run dev:web`, and `bun run cli ...` load variables from `packages/backend/.env.local` through Bun's `--env-file`.
+- `bun run dev:backend`, `bun run dev:web`, and `bun run cli ...` load values from `compass.yaml` at the repo root.
+- `compass.yaml` contains secrets. Do not commit it.
 
 ## Backend Environment Contract
 
-Source:
+Source: `packages/backend/src/common/constants/config.constants.ts`
 
-- `packages/backend/src/common/constants/env.constants.ts`
+Workflow: The backend loads `compass.yaml`, builds the runtime config object directly from it, and validates that object at startup with Zod.
 
-The backend validates env at startup with Zod.
+Google Integration
 
-Important variables:
-
-- `NODE_ENV`
-- `TZ`
-- `BASEURL`
-- `PORT`
-- `MONGO_URI`
-- `SUPERTOKENS_URI`
-- `SUPERTOKENS_KEY`
-- `TOKEN_COMPASS_SYNC`
-- `FRONTEND_URL`
-- `CORS` (parsed into `ENV.ORIGINS_ALLOWED`)
-
-Optional but behavior-changing:
-
-- `GOOGLE_CLIENT_ID`
-- `GOOGLE_CLIENT_SECRET`
-- `GCAL_WEBHOOK_BASEURL`
-- `TOKEN_GCAL_NOTIFICATION`
-- `EMAILER_API_SECRET`
-- `EMAILER_USER_TAG_ID`
-
-Google is disabled unless both `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` are set to real, non-placeholder values. When Google is enabled and the effective Google webhook URL uses HTTPS, `TOKEN_GCAL_NOTIFICATION` is required for Google Calendar webhook validation.
+- Google is disabled unless both `google.clientId` and `google.clientSecret` are set to real, non-placeholder values.
+- When Google is enabled and the effective Google webhook URL uses HTTPS, `google.notificationToken` is required for Google Calendar webhook validation.
 
 Derived backend values:
 
-- `DB` is not supplied directly; backend derives it from `NODE_ENV`
-- `ORIGINS_ALLOWED` is derived by splitting the comma-separated `CORS` env var
+- `DB` is not supplied directly; backend derives it from `runtime.nodeEnv`
+- `ORIGINS_ALLOWED` is derived from the `backend.originsAllowed` YAML list
 
 ## CLI And Build URL Variables
 
@@ -94,10 +74,10 @@ Primary files:
 
 Variables used by CLI/build flows:
 
-- `BASEURL` (used for local CLI operations and injected into the web build as `API_BASEURL`)
-- `FRONTEND_URL` (used by backend auth email flows and CLI domain resolution)
+- `backend.apiUrl` (used for local CLI operations and injected into the web build as `API_BASEURL`)
+- `web.url` (used by backend auth email flows and CLI domain resolution)
 
-If `FRONTEND_URL` points to localhost, the CLI prompts for a VM/public domain and builds the API URL from that input.
+If `web.url` points to localhost, the CLI prompts for a VM/public domain and builds the API URL from that input.
 
 ## Web Environment Contract
 
@@ -112,15 +92,15 @@ Important variables:
 - `POSTHOG_KEY`
 - `POSTHOG_HOST`
 
-`GOOGLE_CLIENT_ID` is optional. When it is missing, the web app hides Google sign-in and Google Calendar connection actions.
+`google.clientId` is optional. When it is missing, the web app hides Google sign-in and Google Calendar connection actions.
 
 `BACKEND_BASEURL` is derived from `API_BASEURL`.
 
 Bun build/dev behavior:
 
-- `packages/web/build.ts` injects `BASEURL` as `API_BASEURL` for production builds
+- `packages/web/build.ts` injects `backend.apiUrl` as `API_BASEURL` for production builds
 - `packages/web/dev.ts` does the same for the local web dev server
-- `GOOGLE_CLIENT_ID` is injected when present
+- `google.clientId` is injected when present
 - if `API_BASEURL` is not injected, the web app falls back to `PORT` and builds `http://localhost:<PORT>/api`
 
 ## Practical Mode Matrix
@@ -175,12 +155,13 @@ When testing changes around event loading, explicitly decide which user state yo
 
 Google OAuth and Google Calendar Watch have different local requirements. Google sign-in can use localhost redirect URLs, but Calendar Watch notifications are server-to-server callbacks from Google to Compass. For those callbacks, Google needs an HTTPS backend URL that it can reach from the public internet.
 
-Compass does not start a local tunnel automatically. Google Calendar webhook watch flows use `GCAL_WEBHOOK_BASEURL` when it is set and fall back to `BASEURL` when it is not set.
+Compass does not start a local tunnel automatically. Google Calendar webhook watch flows use `google.webhookUrl` when it is set and fall back to `backend.apiUrl` when it is not set.
 
 For normal local development:
 
-```bash
-BASEURL=http://localhost:3000/api
+```yaml
+backend:
+  apiUrl: http://localhost:3000/api
 ```
 
 Google sign-in, Google Calendar connect, and initial import can still work, but live Google-to-Compass notifications are skipped because Google cannot call a local HTTP backend.
@@ -193,21 +174,23 @@ cloudflared tunnel --url http://localhost:3000
 
 Then set:
 
-```bash
-BASEURL=http://localhost:3000/api
-GCAL_WEBHOOK_BASEURL=https://<generated-host>.trycloudflare.com/api
+```yaml
+backend:
+  apiUrl: http://localhost:3000/api
+google:
+  webhookUrl: https://<generated-host>.trycloudflare.com/api
 ```
 
-Keep `BASEURL` local so the browser and Server-Sent Events continue using localhost. Only Google's webhook POST requests should use the tunnel.
+Keep `backend.apiUrl` local so the browser and Server-Sent Events continue using localhost. Only Google's webhook POST requests should use the tunnel.
 
 Stop the tunnel when testing is complete. Do not use personal calendars with sensitive data for manual tunnel tests.
 
 ## Common Failure Modes
 
-- backend exits immediately because required env is missing
-- backend/web/cli read from `.env.local`; using `.env` instead leaves required variables unset
+- backend exits immediately because required YAML config is missing
+- backend/web/cli read from `compass.yaml` at the repo root; using `.env` no longer configures Compass
 - web points at the wrong API base URL
 - session exists but user profile fetch fails
-- sync endpoints work but notification/watch setup is skipped because neither `GCAL_WEBHOOK_BASEURL` nor `BASEURL` is public HTTPS
-- `GCAL_WEBHOOK_BASEURL` points to a tunnel without `/api`, so Google posts to the wrong route
-- backend starts but `/api/health` returns `500` because `MONGO_URI` or database reachability is broken
+- sync endpoints work but notification/watch setup is skipped because neither `google.webhookUrl` nor `backend.apiUrl` is public HTTPS
+- `google.webhookUrl` points to a tunnel without `/api`, so Google posts to the wrong route
+- backend starts but `/api/health` returns `500` because `mongo.uri` or database reachability is broken

@@ -77,7 +77,7 @@ See [CLI And Maintenance Commands](../ci-cd/cli-and-maintenance-commands.md) for
 
 ### Invalid domain name
 
-When encountering an invalid domain name error, this is because the URL you provided in the `SUPERTOKENS_..` value in your active environment file is incorrect. For local development that is usually `.env.local`. This could be caused by prematurely finishing the setup of your Supertokens instance.
+When encountering an invalid domain name error, this is because the URL you provided in `supertokens.uri` in your active Compass config is incorrect. For local development that is usually `compass.yaml` at the repo root. This could be caused by prematurely finishing the setup of your Supertokens instance.
 
 To fix this:
 

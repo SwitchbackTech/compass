@@ -9,14 +9,14 @@ You can optionally connect your Google account to enable:
 | Mode | What it does | What you need | Who it's for |
 | --- | --- | --- | --- |
 | **Off (default)** | Google sign-in and connect actions are hidden. Email/password signup works normally. | Nothing. | Everyone who doesn't need Google. |
-| **Local development sign-in & import** | Google sign-in works. One-time Google Calendar import works. No continuous sync. | A Google Cloud OAuth client that allows `http://localhost:9080`, plus `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` in your local env file. | Bun-based local setups that want Google sign-in or a one-time import. |
-| **Public watch notifications** | Google can notify Compass when calendar events change. | A public HTTPS URL Google can reach, real Google OAuth credentials, `TOKEN_GCAL_NOTIFICATION` set, and verified Google watch registration and repair on this install. | Server installs only. See [Server hosting guide](./server-guide.md). |
+| **Local development sign-in & import** | Google sign-in works. One-time Google Calendar import works. No continuous sync. | A Google Cloud OAuth client that allows `http://localhost:9080`, plus `google.clientId` and `google.clientSecret` in `compass.yaml`. | Bun-based local setups that want Google sign-in or a one-time import. |
+| **Public watch notifications** | Google can notify Compass when calendar events change. | A public HTTPS URL Google can reach, real Google OAuth credentials, `google.notificationToken` set, and verified Google watch registration and repair on this install. | Server installs only. See [Server hosting guide](./server-guide.md). |
 
 Most self-hosters should start with **Off** or a public server setup. Continuous sync needs a public server because Google sends notifications over the public internet.
 
 ## Off (default)
 
-The installer writes placeholder Google OAuth values to `~/compass/.env`. Compass treats those placeholders as not configured, so Google sign-in and Google Calendar connect actions stay hidden in the UI.
+The installer writes placeholder Google OAuth values to `~/compass/compass.yaml`. Compass treats those placeholders as not configured, so Google sign-in and Google Calendar connect actions stay hidden in the UI.
 
 Sign up with email and password. Event create, edit, and delete all work without a Google connection. Nothing more to do.
 
@@ -24,11 +24,12 @@ Sign up with email and password. Event create, edit, and delete all work without
 
 This is an optional add-on for a Bun-based local setup. Browser-driven flows (sign-in, one-time import) work. Watch notifications do not, because Google can't reach `localhost`. After the import, changes made later in Google Calendar will not reliably arrive in Compass unless you also set up public HTTPS watch notifications.
 
-Add real Google OAuth values to your local environment file:
+Add real Google OAuth values to `compass.yaml`:
 
-```bash
-GOOGLE_CLIENT_ID=<your-google-client-id>
-GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+```yaml
+google:
+  clientId: <your-google-client-id>
+  clientSecret: <your-google-client-secret>
 ```
 
 Then rebuild so the web app picks up the new values:
@@ -64,11 +65,13 @@ For Google to notify Compass when something changes in Google Calendar, Google m
 Local setups do not create a public HTTPS URL, so they can't receive these. You have two paths:
 
 - **Run Compass on a public server.** The recommended path. See [Server hosting guide](./server-guide.md).
-- **Use a public HTTPS tunnel for webhooks only (development).** The backend supports `GCAL_WEBHOOK_BASEURL` as a separate public HTTPS base URL for Google webhook callbacks. Browser API traffic and Server-Sent Events keep using localhost:
+- **Use a public HTTPS tunnel for webhooks only (development).** The backend supports `google.webhookUrl` as a separate public HTTPS base URL for Google webhook callbacks. Browser API traffic and Server-Sent Events keep using localhost:
 
-  ```bash
-  BASEURL=http://localhost:3000/api
-  GCAL_WEBHOOK_BASEURL=https://<public-https-host>/api
+  ```yaml
+  backend:
+    apiUrl: http://localhost:3000/api
+  google:
+    webhookUrl: https://<public-https-host>/api
   ```
 
   This is for Google webhook POSTs only.
@@ -101,18 +104,19 @@ If Google shows `Error 403: access_denied` and says the app has not completed ve
 
 ### Configure Compass
 
-On the server, add the real Google OAuth values to `~/compass/.env`:
+On the server, add the real Google OAuth values to `~/compass/compass.yaml`:
 
-```bash
-GOOGLE_CLIENT_ID=<your-google-client-id>
-GOOGLE_CLIENT_SECRET=<your-google-client-secret>
+```yaml
+google:
+  clientId: <your-google-client-id>
+  clientSecret: <your-google-client-secret>
 ```
 
 Next, check the notification secret Compass uses to verify Google webhook calls.
-Keep `TOKEN_GCAL_NOTIFICATION` set:
+Keep `google.notificationToken` set:
 
 - If you installed with the self-host installer, leave the generated value in place.
-- If you are creating `.env` manually, set it to a long random secret.
+- If you are creating `compass.yaml` manually, set it to a long random secret.
 
 This is a Compass webhook secret, not a Google credential.
 
@@ -149,7 +153,7 @@ Before you call continuous Google Calendar sync "working" on any self-host insta
 
 - real Google OAuth credentials configured
 - backend reachable by Google over public HTTPS
-- `TOKEN_GCAL_NOTIFICATION` set
+- `google.notificationToken` set
 - Google watch registration succeeds
 - watch repair and refresh behavior holds up over time
 

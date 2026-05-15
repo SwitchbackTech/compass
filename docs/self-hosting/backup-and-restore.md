@@ -6,22 +6,22 @@ For the Docker install created by `self-host/install.sh` on your server. Backups
 
 > **Warning.** If you run `./compass update` without a backup and something goes wrong, there is no rollback. The update command rebuilds Compass with newer code. It does not snapshot your old data or your old app version.
 >
-> If `~/compass/.env` is lost while the Docker volumes still exist, a new install generates fresh database passwords that won't match the old volumes. You'll be locked out of your existing events and accounts.
+> If `~/compass/compass.yaml` is lost while the Docker volumes still exist, a new install generates fresh database passwords that won't match the old volumes. You'll be locked out of your existing events and accounts.
 
 Your three things to keep, **together as a set**:
 
-1. `~/compass/.env`
+1. `~/compass/compass.yaml`
 2. the Mongo Docker volume (events)
 3. the SuperTokens Postgres Docker volume (accounts and sessions)
 
-## Keep `.env` with your data
+## Keep `compass.yaml` with your data
 
-`~/compass/.env` holds the generated passwords and tokens that match your
-Docker volumes. If the volumes stay but `.env` is gone, a new install creates
+`~/compass/compass.yaml` holds the generated passwords and tokens that match your
+Docker volumes. If the volumes stay but `compass.yaml` is gone, a new install creates
 different credentials and can lock you out of the old data.
 
 Before `./compass update` or anything that touches the install, back up
-`~/compass/.env`, the Mongo volume, and the SuperTokens Postgres volume together.
+`~/compass/compass.yaml`, the Mongo volume, and the SuperTokens Postgres volume together.
 They're a set.
 
 ## What's not in a Docker backup
@@ -60,7 +60,7 @@ mkdir -p "$BACKUP_DIR"
 
 ./compass stop
 
-cp -p .env "$BACKUP_DIR/compass.env"
+cp -p compass.yaml "$BACKUP_DIR/compass.yaml"
 
 docker run --rm \
   -v compass_compass_mongo_data:/volume \
@@ -77,11 +77,11 @@ docker run --rm \
 ./compass start
 ```
 
-Backups land in `~/compass-backups`, outside `~/compass`, so they survive if you ever delete the install folder. Keep the whole timestamped folder together. The `.env` file and the two volume archives are useless apart.
+Backups land in `~/compass-backups`, outside `~/compass`, so they survive if you ever delete the install folder. Keep the whole timestamped folder together. The `compass.yaml` file and the two volume archives are useless apart.
 
 ## Restore a backup
 
-> **Warning: restore replaces existing data.** The commands below wipe both Docker volumes and overwrite `.env`. Only run them on an install you're willing to replace.
+> **Warning: restore replaces existing data.** The commands below wipe both Docker volumes and overwrite `compass.yaml`. Only run them on an install you're willing to replace.
 
 Set `BACKUP_DIR` to the folder you created during backup:
 
@@ -90,13 +90,13 @@ cd ~/compass
 BACKUP_DIR="$HOME/compass-backups/YYYYMMDD-HHMMSS"
 
 # Only continue if these three files are from the backup you want to restore.
-ls -lh "$BACKUP_DIR/compass.env" \
+ls -lh "$BACKUP_DIR/compass.yaml" \
   "$BACKUP_DIR/mongo-volume.tgz" \
   "$BACKUP_DIR/supertokens-postgres-volume.tgz"
 
 ./compass stop
 
-cp -p "$BACKUP_DIR/compass.env" .env
+cp -p "$BACKUP_DIR/compass.yaml" compass.yaml
 
 docker run --rm \
   -v compass_compass_mongo_data:/volume \
@@ -136,13 +136,13 @@ Then open Compass and check:
 - your events are present
 - the backend health check responds: `http://localhost:3000/api/health`
 
-If sign-in fails, the most likely cause is a `.env` and volume pair from different backups. Restore the matching `.env` from the same backup folder as the volumes.
+If sign-in fails, the most likely cause is a `compass.yaml` and volume pair from different backups. Restore the matching `compass.yaml` from the same backup folder as the volumes.
 
-## If `.env` is missing but old volumes exist
+## If `compass.yaml` is missing but old volumes exist
 
-The installer stops in this case on purpose. A fresh `.env` would have new credentials that don't match the old volumes.
+The installer stops in this case on purpose. A fresh `compass.yaml` would have new credentials that don't match the old volumes.
 
-To keep the old data, restore the matching `.env` from a backup, then rerun the installer.
+To keep the old data, restore the matching `compass.yaml` from a backup, then rerun the installer.
 
 ## What to read next
 

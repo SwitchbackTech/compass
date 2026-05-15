@@ -18,7 +18,7 @@ import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 import { type UserMetadata } from "@core/types/user.types";
 import { mockAndCategorizeGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.batch";
 import { mockGcal } from "@backend/__tests__/mocks.gcal/factories/gcal.factory";
-import { ENV } from "@backend/common/constants/env.constants";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import { type SupertokensAccessTokenPayload } from "@backend/common/types/supertokens.types";
 import { randomUUID } from "node:crypto";
 
@@ -311,7 +311,7 @@ function mockConstants() {
   }));
 }
 
-export function mockEnv(env: Partial<typeof ENV>) {
+export function mockEnv(env: Partial<typeof CONFIG>) {
   const entries = Object.entries(env) as Array<
     [keyof typeof env, (typeof env)[keyof typeof env]]
   >;
@@ -322,7 +322,7 @@ export function mockEnv(env: Partial<typeof ENV>) {
   >;
 
   for (const [key, value] of entries) {
-    newEnv[key] = jest.replaceProperty(ENV, key, value);
+    newEnv[key] = jest.replaceProperty(CONFIG, key, value);
   }
 
   return newEnv;

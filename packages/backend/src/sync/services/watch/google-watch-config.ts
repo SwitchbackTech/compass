@@ -1,4 +1,4 @@
-import { getGcalWebhookBaseURL } from "@backend/common/util/api-base-url.util";
+import { CONFIG } from "@backend/common/constants/config.constants";
 
 export const isUsingGcalWebhookHttps = () =>
-  getGcalWebhookBaseURL().startsWith("https://");
+  CONFIG.GCAL_WEBHOOK_BASEURL.startsWith("https://");

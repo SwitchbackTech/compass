@@ -9,10 +9,11 @@ case $COMPASS_VERSION in
   *)      COMPASS_GIT_REF=$COMPASS_VERSION ;;
 esac
 
-ENV_FILE=$COMPASS_HOME/.env
+CONFIG_FILE=$COMPASS_HOME/compass.yaml
+COMPOSE_ENV_FILE=$COMPASS_HOME/.compose.env
 MARKER_FILE=$COMPASS_HOME/.compass-self-host
 HELPER_FILE=$COMPASS_HOME/compass
-COMPOSE_FILE=$COMPASS_HOME/docker-compose.yml
+COMPOSE_FILE=$COMPASS_HOME/compose.yaml
 
 PROJECT_NAME=$(basename "$COMPASS_HOME")
 WEB_PORT_VALUE=9080
@@ -84,8 +85,8 @@ confirm_refresh() {
   esac
 }
 
-check_missing_env_with_existing_volumes() {
-  [ ! -f "$ENV_FILE" ] || return
+check_missing_config_with_existing_volumes() {
+  [ ! -f "$CONFIG_FILE" ] || return
 
   existing_volumes=
   delete_command="docker volume rm"
@@ -103,15 +104,15 @@ check_missing_env_with_existing_volumes() {
   [ -n "$existing_volumes" ] || return
 
   cat >&2 <<EOF
-Compass installer: I found existing Compass Docker data, but $ENV_FILE is missing.
+Compass installer: I found existing Compass Docker data, but $CONFIG_FILE is missing.
 
-This usually means Compass was installed before, then the install folder or .env file was removed.
-The installer stopped before creating a new .env because new database passwords could lock you out of that data.
+This usually means Compass was installed before, then the install folder or compass.yaml file was removed.
+The installer stopped before creating a new compass.yaml because new database passwords could lock you out of that data.
 
 Existing Docker volumes for "$PROJECT_NAME":$existing_volumes
 
 Next steps:
-  - Keep old data: restore $ENV_FILE, then rerun the installer.
+  - Keep old data: restore $CONFIG_FILE, then rerun the installer.
   - Start fresh with a different name: set COMPASS_HOME to a new directory (the directory name becomes the project name).
     Example: curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install.sh | env COMPASS_HOME="$HOME/compass-new" sh
   - Start over after confirming you do not need the old data:
@@ -232,41 +233,50 @@ strip_quotes() {
   printf '%s\n' "$value"
 }
 
-read_env_value() {
-  key=$1
-  value=
-  found=0
+read_config_value() {
+  path=$1
 
-  [ -f "$ENV_FILE" ] || return 0
+  [ -f "$CONFIG_FILE" ] || return 0
 
-  while IFS= read -r line || [ -n "$line" ]; do
-    case $line in
-      "$key="*)
-        value=${line#*=}
-        found=1
-        ;;
-    esac
-  done < "$ENV_FILE"
-
-  if [ "$found" -eq 1 ]; then
-    printf '%s\n' "$value"
-  fi
+  awk -v path="$path" '
+    BEGIN { count = split(path, parts, ".") }
+    /^[[:space:]]*#/ || /^[[:space:]]*$/ { next }
+    {
+      line = $0
+      sub(/[[:space:]]+#.*/, "", line)
+      indent = match(line, /[^ ]/) - 1
+      level = int(indent / 2) + 1
+      key = line
+      sub(/:.*/, "", key)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", key)
+      value = line
+      sub(/^[^:]+:[[:space:]]*/, "", value)
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", value)
+      gsub(/^"|"$/, "", value)
+      gsub(/^'\''|'\''$/, "", value)
+      stack[level] = key
+      for (i = level + 1; i <= 8; i++) stack[i] = ""
+      if (level != count || key != parts[count] || value == "") next
+      for (i = 1; i < count; i++) {
+        if (stack[i] != parts[i]) next
+      }
+      print value
+    }
+  ' "$CONFIG_FILE" | tail -n 1
 }
 
 load_runtime_config() {
-  web_port=$(strip_quotes "$(read_env_value WEB_PORT)")
-  backend_port=$(strip_quotes "$(read_env_value PORT)")
+  web_port=$(strip_quotes "$(read_config_value web.port)")
+  backend_port=$(strip_quotes "$(read_config_value backend.port)")
 
   WEB_PORT_VALUE=${web_port:-9080}
   PORT_VALUE=${backend_port:-3000}
   validate_port_value WEB_PORT "$WEB_PORT_VALUE"
   validate_port_value PORT "$PORT_VALUE"
-
-  frontend_url=$(strip_quotes "$(read_env_value FRONTEND_URL)")
-  health_url=$(strip_quotes "$(read_env_value COMPASS_HEALTH_URL)")
+  frontend_url=$(strip_quotes "$(read_config_value web.url)")
 
   APP_URL=${frontend_url:-http://localhost:$WEB_PORT_VALUE}
-  HEALTH_URL=${COMPASS_HEALTH_URL:-${health_url:-http://localhost:$PORT_VALUE/api/health}}
+  HEALTH_URL=${COMPASS_HEALTH_URL:-http://localhost:$PORT_VALUE/api/health}
 }
 
 random_hex() {
@@ -305,27 +315,27 @@ generate_secret() {
 validate_existing_secret() {
   key=$1
   placeholder=$2
-  value=$(strip_quotes "$(read_env_value "$key")")
+  value=$(strip_quotes "$(read_config_value "$key")")
 
   if [ -z "$value" ]; then
-    fail "$ENV_FILE has an empty required secret: $key. Set a non-placeholder value, then rerun this installer."
+    fail "$CONFIG_FILE has an empty required secret: $key. Set a non-placeholder value, then rerun this installer."
   fi
 
   if [ "$value" = "$placeholder" ]; then
-    fail "$ENV_FILE still has the template placeholder for $key. Set a real value, then rerun this installer."
+    fail "$CONFIG_FILE still has the template placeholder for $key. Set a real value, then rerun this installer."
   fi
 }
 
 validate_existing_mongo_uri() {
-  mongo_uri=$(strip_quotes "$(read_env_value MONGO_URI)")
+  mongo_uri=$(strip_quotes "$(read_config_value mongo.uri)")
 
   if [ -z "$mongo_uri" ]; then
-    fail "$ENV_FILE has an empty required MongoDB connection string: MONGO_URI. Set a non-placeholder value, then rerun this installer."
+    fail "$CONFIG_FILE has an empty required MongoDB connection string: mongo.uri. Set a non-placeholder value, then rerun this installer."
   fi
 
   case $mongo_uri in
     *replace-with-generated-mongo-password* | *YOUR_ADMIN_PW* | *change-me-mongo-password-32chars*)
-      fail "$ENV_FILE has a placeholder password in MONGO_URI. Set a real value, then rerun this installer."
+      fail "$CONFIG_FILE has a placeholder password in mongo.uri. Set a real value, then rerun this installer."
       ;;
   esac
 }
@@ -333,21 +343,17 @@ validate_existing_mongo_uri() {
 ensure_existing_generated_secret() {
   key=$1
   label=$2
-  value=$(strip_quotes "$(read_env_value "$key")")
+  value=$(strip_quotes "$(read_config_value "$key")")
 
   if [ -n "$value" ]; then
     return
   fi
 
-  secret=$(generate_secret "$label") || exit 1
-  printf '\n%s=%s\n' "$key" "$secret" >> "$ENV_FILE" \
-    || fail "Could not add $key to $ENV_FILE."
-  chmod 600 "$ENV_FILE" || fail "Could not secure $ENV_FILE."
-  info "Added missing $key to $ENV_FILE."
+  fail "$CONFIG_FILE is missing required generated value $key. Add it from the self-host example, then rerun this installer."
 }
 
 ensure_existing_local_mongo_uri_replica_set() {
-  mongo_uri=$(strip_quotes "$(read_env_value MONGO_URI)")
+  mongo_uri=$(strip_quotes "$(read_config_value mongo.uri)")
 
   case $mongo_uri in
     *mongo:27017*) ;;
@@ -363,44 +369,26 @@ ensure_existing_local_mongo_uri_replica_set() {
     *\?*) separator="&" ;;
   esac
 
-  TMP_ENV=$COMPASS_HOME/.env.$$
-  while IFS= read -r line || [ -n "$line" ]; do
-    case $line in
-      MONGO_URI=*)
-        printf 'MONGO_URI=%s%sreplicaSet=rs0\n' "$mongo_uri" "$separator"
-        ;;
-      *)
-        printf '%s\n' "$line"
-        ;;
-    esac
-  done < "$ENV_FILE" > "$TMP_ENV" \
-    || fail "Could not update $ENV_FILE with MongoDB replica set settings."
-
-  chmod 600 "$TMP_ENV" || fail "Could not secure temporary env file."
-  mv "$TMP_ENV" "$ENV_FILE" \
-    || fail "Could not update $ENV_FILE with MongoDB replica set settings."
-  TMP_ENV=
-  info "Updated MONGO_URI to include MongoDB replica set rs0."
+  fail "$CONFIG_FILE mongo.uri must include MongoDB replica set settings. Add ${separator}replicaSet=rs0, then rerun this installer."
 }
 
 validate_existing_env_secrets() {
-  [ -f "$ENV_FILE" ] || return
+  [ -f "$CONFIG_FILE" ] || return
 
-  ensure_existing_generated_secret MONGO_REPLICA_SET_KEY "MongoDB replica set key"
+  ensure_existing_generated_secret mongo.replicaSetKey "MongoDB replica set key"
   ensure_existing_local_mongo_uri_replica_set
 
-  validate_existing_secret MONGO_INITDB_ROOT_PASSWORD change-me-mongo-password-32chars
-  validate_existing_secret MONGO_REPLICA_SET_KEY change-me-mongo-replica-set-key-32chars
-  validate_existing_secret SUPERTOKENS_POSTGRES_PASSWORD change-me-supertokens-postgres-pass-32
-  validate_existing_secret SUPERTOKENS_KEY change-me-supertokens-key-32chars
-  validate_existing_secret TOKEN_COMPASS_SYNC change-me-compass-sync-token-32chars
-  validate_existing_secret TOKEN_GCAL_NOTIFICATION change-me-gcal-notification-token-32chars
+  validate_existing_secret mongo.password change-me-mongo-password-32chars
+  validate_existing_secret mongo.replicaSetKey change-me-mongo-replica-set-key-32chars
+  validate_existing_secret supertokens.postgres.password change-me-supertokens-postgres-pass-32
+  validate_existing_secret supertokens.key change-me-supertokens-key-32chars
+  validate_existing_secret backend.compassToken change-me-compass-sync-token-32chars
   validate_existing_mongo_uri
 }
 
-write_env_if_missing() {
-  if [ -f "$ENV_FILE" ]; then
-    info "Keeping existing environment file at $ENV_FILE."
+write_config_if_missing() {
+  if [ -f "$CONFIG_FILE" ]; then
+    info "Keeping existing config file at $CONFIG_FILE."
     validate_existing_env_secrets
     return
   fi
@@ -413,70 +401,69 @@ write_env_if_missing() {
   gcal_notification_token=$(generate_secret "Google Calendar notification token") || exit 1
 
   umask 077
-  TMP_ENV=$COMPASS_HOME/.env.$$
+  TMP_ENV=$COMPASS_HOME/compass.yaml.$$
   cat > "$TMP_ENV" <<EOF
-# See for a detailed description of each variable here:
-# https://docs.compasscalendar.com/docs/self-hosting/environment-variables
+# See https://docs.compasscalendar.com/docs/self-hosting/config
 
-# Compose
-COMPASS_VERSION=$COMPASS_VERSION
+compose:
+  version: $COMPASS_VERSION
 
-# Local ports
-WEB_PORT=9080
-PORT=3000
+runtime:
+  nodeEnv: production
+  timezone: Etc/UTC
+  logLevel: info
 
-# Runtime
-NODE_ENV=production
-TZ=Etc/UTC
-LOG_LEVEL=info
+web:
+  port: 9080
+  url: http://localhost:$WEB_PORT_VALUE
 
-# Local URLs
-FRONTEND_URL=https://cal.yourdomain.com
-BASEURL=https://cal.yourdomain.com/api
-CORS=https://cal.yourdomain.com
+backend:
+  port: 3000
+  apiUrl: http://localhost:$PORT_VALUE/api
+  originsAllowed:
+    - http://localhost:$WEB_PORT_VALUE
+  compassToken: $compass_sync_token
 
-# Compass MongoDB
-MONGO_INITDB_ROOT_USERNAME=compass
-MONGO_INITDB_ROOT_PASSWORD=$mongo_password
-MONGO_REPLICA_SET_KEY=$mongo_replica_set_key
-MONGO_URI=mongodb://compass:$mongo_password@mongo:27017/prod_calendar?authSource=admin&replicaSet=rs0
+mongo:
+  username: compass
+  password: $mongo_password
+  replicaSetKey: $mongo_replica_set_key
+  uri: mongodb://compass:$mongo_password@mongo:27017/prod_calendar?authSource=admin&replicaSet=rs0
 
-# SuperTokens Postgres
-SUPERTOKENS_POSTGRES_USER=supertokens
-SUPERTOKENS_POSTGRES_PASSWORD=$supertokens_postgres_password
-SUPERTOKENS_POSTGRES_DB=supertokens
+supertokens:
+  uri: http://supertokens:3567
+  key: $supertokens_key
+  postgres:
+    user: supertokens
+    password: $supertokens_postgres_password
+    database: supertokens
 
-# SuperTokens Core
-SUPERTOKENS_URI=http://supertokens:3567
-SUPERTOKENS_KEY=$supertokens_key
+google:
+  notificationToken: $gcal_notification_token
 
-# Internal tokens
-TOKEN_COMPASS_SYNC=$compass_sync_token
-TOKEN_GCAL_NOTIFICATION=$gcal_notification_token
-
-# Google OAuth
-GOOGLE_CLIENT_ID=compass-self-host-placeholder.apps.googleusercontent.com
-GOOGLE_CLIENT_SECRET=compass-self-host-placeholder-secret
-CHANNEL_EXPIRATION_MIN=10
+# google:
+#   clientId: REPLACE_WITH_GOOGLE_CLIENT_ID # e.g. your-id.apps.googleusercontent.com
+#   clientSecret: REPLACE_WITH_GOOGLE_CLIENT_SECRET
+#   channelExpirationMin: 10
 EOF
 
   chmod 600 "$TMP_ENV" || fail "Could not secure temporary env file."
-  mv "$TMP_ENV" "$ENV_FILE" || fail "Could not write $ENV_FILE."
+  mv "$TMP_ENV" "$CONFIG_FILE" || fail "Could not write $CONFIG_FILE."
   TMP_ENV=
-  info "Created $ENV_FILE with local defaults and generated secrets."
+  info "Created $CONFIG_FILE with local defaults and generated secrets."
 }
 
 download_compose_file() {
-  tmp_compose=$COMPASS_HOME/docker-compose.yml.$$
-  info "Downloading docker-compose.yml for Compass ${COMPASS_VERSION}."
-  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/docker-compose.yml" -o "$tmp_compose" \
-    || fail "Could not download docker-compose.yml for version ${COMPASS_VERSION}. Check that the version exists."
+  tmp_compose=$COMPASS_HOME/compose.yaml.$$
+  info "Downloading compose.yaml for Compass ${COMPASS_VERSION}."
+  curl -fsSL "${COMPASS_RAW_URL}/${COMPASS_GIT_REF}/self-host/compose.yaml" -o "$tmp_compose" \
+    || fail "Could not download compose.yaml for version ${COMPASS_VERSION}. Check that the version exists."
 
   if [ -f "$COMPOSE_FILE" ]; then
-    cp "$COMPOSE_FILE" "${COMPASS_HOME}/.docker-compose.yml.bak" || true
+    cp "$COMPOSE_FILE" "${COMPASS_HOME}/.compose.yaml.bak" || true
   fi
 
-  mv "$tmp_compose" "$COMPOSE_FILE" || fail "Could not install docker-compose.yml."
+  mv "$tmp_compose" "$COMPOSE_FILE" || fail "Could not install compose.yaml."
 }
 
 download_helper() {
@@ -495,8 +482,29 @@ EOF
   [ $? -eq 0 ] || fail "Could not write marker file: $MARKER_FILE."
 }
 
+write_compose_env() {
+  [ -f "$CONFIG_FILE" ] || fail "Missing config file: $CONFIG_FILE."
+
+  cat > "$COMPOSE_ENV_FILE" <<EOF
+COMPASS_CONFIG_FILE=$CONFIG_FILE
+COMPASS_VERSION=$(strip_quotes "$(read_config_value compose.version)")
+WEB_PORT=$(strip_quotes "$(read_config_value web.port)")
+PORT=$(strip_quotes "$(read_config_value backend.port)")
+MONGO_INITDB_ROOT_USERNAME=$(strip_quotes "$(read_config_value mongo.username)")
+MONGO_INITDB_ROOT_PASSWORD=$(strip_quotes "$(read_config_value mongo.password)")
+MONGO_REPLICA_SET_KEY=$(strip_quotes "$(read_config_value mongo.replicaSetKey)")
+SUPERTOKENS_KEY=$(strip_quotes "$(read_config_value supertokens.key)")
+SUPERTOKENS_POSTGRES_USER=$(strip_quotes "$(read_config_value supertokens.postgres.user)")
+SUPERTOKENS_POSTGRES_PASSWORD=$(strip_quotes "$(read_config_value supertokens.postgres.password)")
+SUPERTOKENS_POSTGRES_DB=$(strip_quotes "$(read_config_value supertokens.postgres.database)")
+EOF
+
+  chmod 600 "$COMPOSE_ENV_FILE" || fail "Could not secure $COMPOSE_ENV_FILE."
+}
+
 compose_base() {
-  docker compose --project-name "$PROJECT_NAME" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+  write_compose_env
+  docker compose --project-name "$PROJECT_NAME" --env-file "$COMPOSE_ENV_FILE" -f "$COMPOSE_FILE" "$@"
 }
 
 start_stack() {
@@ -546,31 +554,27 @@ open_browser() {
 }
 
 print_google_note() {
-  google_client_id=$(strip_quotes "$(read_env_value GOOGLE_CLIENT_ID)")
-  google_client_secret=$(strip_quotes "$(read_env_value GOOGLE_CLIENT_SECRET)")
+  google_client_id=$(strip_quotes "$(read_config_value google.clientId)")
+  google_client_secret=$(strip_quotes "$(read_config_value google.clientSecret)")
 
   cat <<EOF
 Google setup:
 EOF
 
-  if [ "$google_client_id" = "compass-self-host-placeholder.apps.googleusercontent.com" ] \
-    || [ "$google_client_secret" = "compass-self-host-placeholder-secret" ] \
-    || [ -z "$google_client_id" ] \
-    || [ -z "$google_client_secret" ]; then
+  if [ -z "$google_client_id" ] || [ -z "$google_client_secret" ]; then
     cat <<EOF
   Google auth and Google Calendar sync are not configured.
-  This install uses placeholder Google OAuth values.
   To add your own OAuth credentials, edit:
-    $ENV_FILE
-  Then rebuild the web image (BASEURL and GOOGLE_CLIENT_ID are baked in at build time):
+    $CONFIG_FILE
+  Then rebuild the web image (backend.apiUrl and google.clientId are baked in at build time):
     $HELPER_FILE rebuild
   See https://docs.compasscalendar.com/docs/self-hosting/google-calendar
 EOF
   else
     cat <<EOF
   Custom Google OAuth credentials are present in:
-    $ENV_FILE
-  If you change GOOGLE_CLIENT_ID or BASEURL, rebuild the web image to apply them:
+    $CONFIG_FILE
+  If you change google.clientId or backend.apiUrl, rebuild the web image to apply them:
     $HELPER_FILE rebuild
 EOF
   fi
@@ -612,7 +616,7 @@ EOF
 check_install_dir
 require_prerequisites
 load_runtime_config
-check_missing_env_with_existing_volumes
+check_missing_config_with_existing_volumes
 
 if [ "$IS_REFRESH" -eq 0 ]; then
   check_required_ports
@@ -621,7 +625,7 @@ else
 fi
 
 prepare_install_dir
-write_env_if_missing
+write_config_if_missing
 load_runtime_config
 download_compose_file
 download_helper

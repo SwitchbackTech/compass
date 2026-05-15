@@ -14,6 +14,8 @@ credentials.txt
 *.mongodb
 *.tsbuildinfo
 *.mjs
+compass.yaml
+.playwright-compass.yaml
 
 ########
 # DIRS #
@@ -55,4 +57,4 @@ packages/backend/.prod.env
 
 
 tmp/
-!.env.local.example
+!compass.example.yaml

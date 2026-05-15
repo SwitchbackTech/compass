@@ -83,10 +83,10 @@ jobs:
           context: .
           file: self-host/Dockerfile.web
           push: true
-          # BASEURL and GOOGLE_CLIENT_ID are baked into the web bundle at build time.
+          # backend.apiUrl and google.clientId are baked into the web bundle at build time.
           # The published image ships with localhost defaults, which work for local installs.
           # Users who need a custom API domain or real Google credentials must rebuild
-          # the web image locally using the build: blocks in docker-compose.yml.
+          # the web image locally using the build: blocks in compose.yaml.
           build-args: |
             BASEURL=http://localhost:3000/api
             GOOGLE_CLIENT_ID=compass-self-host-placeholder.apps.googleusercontent.com
