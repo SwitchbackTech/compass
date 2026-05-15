@@ -4,7 +4,12 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
+import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
+import {
+  GRID_TIME_STEP,
+  TIMED_EVENT_DRAG_GLIDE_MS,
+  WEEK_TIMED_VISIBLE_HOURS,
+} from "@web/views/Week/layout.constants";
 import {
   allDayDragVisualToGridEvent,
   hasAllDayDragVisualMoved,
@@ -578,6 +583,8 @@ export class WeekInteractionController {
         top: sourceClientRect.top + window.scrollY,
         width: sourceClientRect.width,
       },
+      transformTransitionMs:
+        session.kind === "timed" ? TIMED_EVENT_DRAG_GLIDE_MS : undefined,
     });
     this.#placeholder = markSourcePlaceholder(session.sourceElement);
     this.#overlay = overlay;
@@ -683,6 +690,7 @@ export class WeekInteractionController {
         scrollDeltaPx: smartScroll.scrollDeltaPx,
       });
       this.#overlay.updateTransform(this.#visual.transform);
+      this.#updateTimedDragOverlayTimeLabel(this.#session.event, this.#visual);
     }
 
     if (metrics) {
@@ -713,6 +721,17 @@ export class WeekInteractionController {
     this.#layout = nextLayout;
     this.#scrollTop = nextLayout.smartScroll?.initialScrollTop ?? null;
     this.#isLayoutRebuildPending = false;
+  }
+
+  #updateTimedDragOverlayTimeLabel(
+    event: Schema_GridEvent,
+    visual: TimedDragVisual,
+  ) {
+    const movedEvent = visualDraftToGridEvent(event, visual);
+
+    this.#overlay?.updateTimeLabel(
+      getTimesLabel(movedEvent.startDate, movedEvent.endDate),
+    );
   }
 
   #updateEdgeNavigation(timestamp: number) {
@@ -930,7 +949,7 @@ const buildWeekLayoutCache = (): WeekLayoutCache | null => {
       right: columnsRect.right,
       top: rect.top,
     },
-    pixelsPerMinute: rect.height / (11 * 60),
+    pixelsPerMinute: rect.height / (WEEK_TIMED_VISIBLE_HOURS * 60),
     snapMinutes: GRID_TIME_STEP,
     smartScroll: {
       bottom: rect.bottom - SMART_SCROLL_BOTTOM_INSET_PX,

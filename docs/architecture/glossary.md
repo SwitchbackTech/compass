@@ -9,6 +9,8 @@ Compass-specific terms used in the source code and docs.
 **Grid Event**: An event assigned to a concrete calendar slot in the day/week
 grid. These are different from Someday events.
 
+**Timed Slot**: A 15-minute placement on the day/week time grid for Timed Events.
+
 **Draft Event**: A pending event shape used while the user edits, drags, or
 resizes before saving.
 

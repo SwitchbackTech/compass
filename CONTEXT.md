@@ -69,6 +69,10 @@ A single event that is not part of a recurring series.
 **Timed Event**:
 An event shown in a concrete time range on the calendar grid.
 
+**Timed Slot**:
+A 15-minute placement on the day/week time grid for Timed Events.
+_Avoid_: 30-minute slot
+
 **All-Day Event**:
 An event shown in the all-day row.
 
@@ -160,6 +164,7 @@ during Import or Public watch notification handling.
 - An **Anonymous user** stores **Events** and **Tasks** in browser IndexedDB.
 - An **Authenticated user** stores **Events** through the backend and configured
   MongoDB.
+- A **Timed Event** starts and ends on **Timed Slot** boundaries.
 - A **Task** belongs to a **Date key** and stays local today, even when the user
   is authenticated.
 - A **Someday Event** is an **Event**, not a **Task**.

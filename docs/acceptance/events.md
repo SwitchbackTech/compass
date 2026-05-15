@@ -189,7 +189,12 @@ Deleting a standalone event (non-recurring) removes it immediately. No scope dia
 
 ### UX
 
-Users can click-hold and drag an event block to a new time or date. The event snaps to 30-minute grid intervals. The event updates when dropped.
+Users can click-hold and drag an event block to a new time or date. The event snaps to 15-minute grid intervals. The event updates when dropped.
+The Week view prototype should show about 13 visible hours at once so each
+15-minute movement has enough room while still feeling responsive.
+This prototype applies to Week view timed-event drag only; Day view and all-day
+event drag keep their current behavior.
+No zoom or density control is part of this prototype.
 
 ### Steps
 
@@ -200,7 +205,11 @@ Users can click-hold and drag an event block to a new time or date. The event sn
 
 ### Expected Results
 
-- While dragging, the event block highlights and follows the cursor.
+- While dragging, the event block highlights and moves toward the latest snapped
+  15-minute slot and day column without jumping frame-by-frame.
+- The drag visual stays close to pointer movement without feeling fully attached
+  to the cursor.
+- A normal click still opens the event without showing a moving drag visual.
 - A ghost or preview shows the target position.
 - On release, the event moves to the new slot.
 - The updated position persists after a page reload.

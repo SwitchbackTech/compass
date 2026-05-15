@@ -128,7 +128,9 @@ describe("useGridLayout", () => {
     renderHarness();
 
     await waitFor(() => {
-      expect(screen.getByTestId("hour-height")).toHaveTextContent("70");
+      expect(screen.getByTestId("hour-height")).toHaveTextContent(
+        "59.23076923076923",
+      );
       expect(screen.getByTestId("col-widths")).toHaveTextContent(
         "100,100,100,100,100,100,100",
       );
@@ -145,7 +147,9 @@ describe("useGridLayout", () => {
     renderHarness();
 
     await waitFor(() => {
-      expect(screen.getByTestId("hour-height")).toHaveTextContent("70");
+      expect(screen.getByTestId("hour-height")).toHaveTextContent(
+        "59.23076923076923",
+      );
     });
 
     const before = Number(screen.getByTestId("render-count").textContent);
@@ -168,7 +172,9 @@ describe("useGridLayout", () => {
     renderHarness();
 
     await waitFor(() => {
-      expect(screen.getByTestId("hour-height")).toHaveTextContent("70");
+      expect(screen.getByTestId("hour-height")).toHaveTextContent(
+        "59.23076923076923",
+      );
     });
 
     const mainGrid = screen.getByTestId("main-grid");
@@ -180,7 +186,9 @@ describe("useGridLayout", () => {
 
     await Promise.resolve();
 
-    expect(screen.getByTestId("hour-height")).toHaveTextContent("70");
+    expect(screen.getByTestId("hour-height")).toHaveTextContent(
+      "59.23076923076923",
+    );
     expect(Number(screen.getByTestId("render-count").textContent)).toBe(before);
   });
 });

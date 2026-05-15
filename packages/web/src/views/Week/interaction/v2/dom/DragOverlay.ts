@@ -1,9 +1,19 @@
 import { type VisualPoint, type VisualRect } from "../model/TimedDragVisual";
 
+const TRANSFORM_GLIDE_TIMING = "cubic-bezier(0.2, 0, 0, 1)";
+
 export class DragOverlay {
   #node: HTMLElement | null = null;
 
-  mount({ clone, rect }: { clone: HTMLElement; rect: VisualRect }) {
+  mount({
+    clone,
+    rect,
+    transformTransitionMs,
+  }: {
+    clone: HTMLElement;
+    rect: VisualRect;
+    transformTransitionMs?: number;
+  }) {
     this.unmount();
 
     clone.style.contain = "layout paint style";
@@ -12,6 +22,9 @@ export class DragOverlay {
     clone.style.position = "absolute";
     clone.style.pointerEvents = "none";
     clone.style.top = `${rect.top}px`;
+    clone.style.transition = transformTransitionMs
+      ? `transform ${transformTransitionMs}ms ${TRANSFORM_GLIDE_TIMING}`
+      : "";
     clone.style.transform = "translate3d(0px, 0px, 0)";
     clone.style.willChange = "transform";
     clone.style.width = `${rect.width}px`;
@@ -26,6 +39,17 @@ export class DragOverlay {
     }
 
     this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
+  }
+
+  updateTimeLabel(label: string) {
+    const timeLabel =
+      this.#node?.querySelector<HTMLElement>("[role='textbox']");
+
+    if (!timeLabel) {
+      return;
+    }
+
+    timeLabel.textContent = label;
   }
 
   updateResize({

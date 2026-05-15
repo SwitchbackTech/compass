@@ -55,6 +55,11 @@ describe("WeekInteractionController", () => {
       },
     );
 
+    const label = document.createElement("span");
+    label.setAttribute("role", "textbox");
+    label.textContent = "10 - 11am";
+    sourceElement.append(label);
+
     controller.handlePointerDown(
       createPointerEvent("pointerdown", sourceElement, 250, 120),
     );
@@ -66,6 +71,13 @@ describe("WeekInteractionController", () => {
       createPointerEvent("pointermove", sourceElement, 365, 210),
     );
     runFrame(32);
+
+    const overlay = document.querySelector<HTMLElement>(
+      "[data-week-interaction-overlay='true']",
+    );
+    expect(overlay?.querySelector("[role='textbox']")?.textContent).toBe(
+      "11:45 AM - 12:45 PM",
+    );
 
     const result = controller.handlePointerUp(
       createPointerEvent("pointerup", sourceElement, 365, 210),
@@ -79,8 +91,8 @@ describe("WeekInteractionController", () => {
       type: "timedDragEnd",
     });
     expect(result?.event.title).toBe("Original title");
-    expect(result?.event.startDate).toContain("2026-05-13T11:30:00");
-    expect(result?.event.endDate).toContain("2026-05-13T12:30:00");
+    expect(result?.event.startDate).toContain("2026-05-13T11:45:00");
+    expect(result?.event.endDate).toContain("2026-05-13T12:45:00");
     expect(controller.getSession().phase).toBe("idle");
 
     unregister();
@@ -147,6 +159,9 @@ describe("WeekInteractionController", () => {
 
       const overlay = document.querySelector<HTMLElement>(
         "[data-week-interaction-overlay='true']",
+      );
+      expect(overlay?.style.transition).toBe(
+        "transform 60ms cubic-bezier(0.2, 0, 0, 1)",
       );
       expect(overlay?.style.transform).toBe("translate3d(100px, 0px, 0)");
 

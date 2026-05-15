@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { WEEK_TIMED_VISIBLE_HOURS } from "@web/views/Week/layout.constants";
 
 type MeasurementSnapshot = Pick<
   DOMRectReadOnly,
@@ -156,7 +157,9 @@ export const useGridLayout = () => {
       allDayRow: allDayMeasurements,
       colWidths,
       mainGrid: mainMeasurements,
-      hourHeight: mainMeasurements?.height ? mainMeasurements.height / 11 : 0,
+      hourHeight: mainMeasurements?.height
+        ? mainMeasurements.height / WEEK_TIMED_VISIBLE_HOURS
+        : 0,
     },
   };
 };

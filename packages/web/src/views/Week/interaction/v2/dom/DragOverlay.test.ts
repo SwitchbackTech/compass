@@ -33,4 +33,21 @@ describe("DragOverlay", () => {
 
     expect(document.body.contains(clone)).toBe(false);
   });
+
+  it("can mount timed drag clones with a tight transform glide", () => {
+    const clone = document.createElement("div");
+    const overlay = new DragOverlay();
+
+    overlay.mount({
+      clone,
+      rect: { height: 40, left: 10, top: 20, width: 120 },
+      transformTransitionMs: 60,
+    });
+
+    expect(clone.style.transition).toBe(
+      "transform 60ms cubic-bezier(0.2, 0, 0, 1)",
+    );
+
+    overlay.unmount();
+  });
 });
