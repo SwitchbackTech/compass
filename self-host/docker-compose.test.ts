@@ -9,6 +9,13 @@ function readRepoFile(path: string): string {
 }
 
 describe("self-host docker compose", () => {
+  it("builds the backend image without build-time Compass config", () => {
+    const dockerfile = readRepoFile("self-host/Dockerfile.backend");
+
+    expect(dockerfile).toContain("RUN bun run build:backend");
+    expect(dockerfile).not.toContain("--environment");
+  });
+
   it("mounts compass.yaml into the backend container", () => {
     const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
       encoding: "utf8",

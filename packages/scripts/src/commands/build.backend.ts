@@ -7,29 +7,25 @@
  *
  * Usage:
  *   bun run build:backend
- *   bun run build:backend --environment staging
- *   bun run build:backend --environment production
  */
 
 import {
   COMPASS_BUILD_DEV,
   COMPASS_ROOT_DEV,
 } from "@scripts/common/cli.constants";
-import { getEnvironmentAnswer, log } from "@scripts/common/cli.utils";
 import { $ } from "bun";
 import path from "node:path";
+import { styleText } from "node:util";
 
 const BACKEND_BUILD = path.join(COMPASS_BUILD_DEV, "backend");
 
-// Parse --environment flag; prompt if absent
-const envFlagIdx = process.argv.indexOf("--environment");
-let environment: string =
-  envFlagIdx !== -1 ? (process.argv[envFlagIdx + 1] ?? "") : "";
-
-const validEnvs = ["local", "staging", "production"];
-if (!validEnvs.includes(environment)) {
-  environment = await getEnvironmentAnswer();
-}
+const log = {
+  info: (msg: string) => console.log(styleText(["italic", "whiteBright"], msg)),
+  error: (msg: string) => console.log(styleText(["bold", "red"], msg)),
+  warning: (msg: string) => console.log(styleText("yellow", msg)),
+  success: (msg: string) => console.log(styleText("green", msg)),
+  tip: (msg: string) => console.log(styleText("yellowBright", msg)),
+};
 
 // 1. Clean old build
 log.info("Removing old backend build ...");

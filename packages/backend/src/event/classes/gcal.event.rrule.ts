@@ -81,7 +81,21 @@ export class GcalEventRRule extends RRule {
     const includesDtStart = this.#startDate.isSame(firstInstanceStartDate);
     const rDates = includesDtStart ? [] : [this.#startDate.toDate()];
 
-    return rDates.concat(dates);
+    const uniqueDates = this.deduplicateByDate(rDates.concat(dates));
+    return uniqueDates;
+  }
+
+  deduplicateByDate(dates: Date[]): Date[] {
+    const seen = new Set<string>();
+
+    return dates.filter((date) => {
+      const key = dayjs(date).tz(this.#timezone).format(this.#dateFormat);
+
+      if (seen.has(key)) return false;
+
+      seen.add(key);
+      return true;
+    });
   }
 
   /**

@@ -88,7 +88,7 @@ Seeders use the same migration framework and Mongo-backed execution state.
 Builds usually use direct package scripts:
 
 - `bun run build:web`
-- `bun run build:backend --environment [local|staging|production]`
+- `bun run build:backend`
 
 Use CLI build commands only when you specifically need their legacy packaging
 behavior.
