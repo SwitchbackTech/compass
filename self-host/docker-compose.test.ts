@@ -1,11 +1,66 @@
 import { describe, expect, it } from "bun:test";
-import { readFileSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const repoRoot = join(import.meta.dir, "..");
+const passwordOnlyConfig = `
+compose:
+  version: latest
+runtime:
+  nodeEnv: production
+  timezone: Etc/UTC
+web:
+  port: 9080
+  url: http://localhost:9080
+backend:
+  port: 3000
+  apiUrl: http://localhost:3000/api
+  originsAllowed:
+    - http://localhost:9080
+  compassToken: real-compass-token
+mongo:
+  username: compass
+  password: real-mongo-password
+  replicaSetKey: real-replica-key
+  uri: mongodb://compass:real-mongo-password@mongo:27017/prod_calendar?authSource=admin&replicaSet=rs0
+supertokens:
+  uri: http://supertokens:3567
+  key: real-supertokens-key
+  postgres:
+    user: supertokens
+    password: real-postgres-password
+    database: supertokens
+`;
 
 function readRepoFile(path: string): string {
   return readFileSync(join(repoRoot, path), { encoding: "utf8" });
+}
+
+function runInstallerSecretValidation(config: string) {
+  const installDir = mkdtempSync(join(tmpdir(), "compass-install-"));
+  writeFileSync(join(installDir, "compass.yaml"), config);
+
+  try {
+    return spawnSync(
+      "sh",
+      [
+        "-c",
+        `eval "$(awk '$0=="check_install_dir"{exit} {print}' self-host/install.sh)"; validate_existing_env_secrets`,
+      ],
+      {
+        cwd: repoRoot,
+        encoding: "utf8",
+        env: {
+          ...process.env,
+          COMPASS_HOME: installDir,
+        },
+      },
+    );
+  } finally {
+    rmSync(installDir, { recursive: true, force: true });
+  }
 }
 
 describe("self-host docker compose", () => {
@@ -43,6 +98,25 @@ describe("self-host installer", () => {
       "I found existing Compass Docker data, but $CONFIG_FILE is missing.",
     );
   });
+
+  it("allows existing password-only configs without a Google notification token", () => {
+    const result = runInstallerSecretValidation(passwordOnlyConfig);
+
+    expect(result.status).toBe(0);
+    expect(result.stderr).not.toContain("google.notificationToken");
+  });
+
+  it("still rejects placeholder Google notification tokens when present", () => {
+    const result = runInstallerSecretValidation(`${passwordOnlyConfig}
+google:
+  notificationToken: change-me-gcal-notification-token-32chars
+`);
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain(
+      "still has the template placeholder for google.notificationToken",
+    );
+  });
 });
 
 describe("staging deploy workflow", () => {
@@ -50,10 +124,13 @@ describe("staging deploy workflow", () => {
     const workflow = readRepoFile(".github/workflows/deploy-staging.yml");
 
     expect(workflow).toContain(
-      "GCAL_NOTIFICATION_TOKEN: ${{ secrets.STAGING_GCAL_NOTIFICATION_TOKEN }}",
+      [
+        "GCAL_NOTIFICATION_TOKEN: $",
+        "{{ secrets.STAGING_GCAL_NOTIFICATION_TOKEN }}",
+      ].join(""),
     );
     expect(workflow).toContain(
-      'notificationToken: \\"${GCAL_NOTIFICATION_TOKEN}\\"',
+      ['notificationToken: \\"$', '{GCAL_NOTIFICATION_TOKEN}\\"'].join(""),
     );
   });
 });

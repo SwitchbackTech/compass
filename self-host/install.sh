@@ -326,6 +326,20 @@ validate_existing_secret() {
   fi
 }
 
+validate_existing_secret_if_present() {
+  key=$1
+  placeholder=$2
+  value=$(strip_quotes "$(read_config_value "$key")")
+
+  if [ -z "$value" ]; then
+    return
+  fi
+
+  if [ "$value" = "$placeholder" ]; then
+    fail "$CONFIG_FILE still has the template placeholder for $key. Set a real value, then rerun this installer."
+  fi
+}
+
 validate_existing_mongo_uri() {
   mongo_uri=$(strip_quotes "$(read_config_value mongo.uri)")
 
@@ -383,7 +397,7 @@ validate_existing_env_secrets() {
   validate_existing_secret supertokens.postgres.password change-me-supertokens-postgres-pass-32
   validate_existing_secret supertokens.key change-me-supertokens-key-32chars
   validate_existing_secret backend.compassToken change-me-compass-sync-token-32chars
-  validate_existing_secret google.notificationToken change-me-gcal-notification-token-32chars
+  validate_existing_secret_if_present google.notificationToken change-me-gcal-notification-token-32chars
   validate_existing_mongo_uri
 }
 
