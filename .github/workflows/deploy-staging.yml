@@ -35,6 +35,7 @@ jobs:
           SUPERTOKENS_URI: ${{ vars.STAGING_SUPERTOKENS_URI }}
           # Sensitive 
           COMPASS_SYNC_TOKEN: ${{ secrets.STAGING_COMPASS_SYNC_TOKEN }}
+          GCAL_NOTIFICATION_TOKEN: ${{ secrets.STAGING_GCAL_NOTIFICATION_TOKEN }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
           MONGO_URI: ${{ secrets.STAGING_MONGO_URI }}
           SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
@@ -64,6 +65,7 @@ jobs:
             'google:' \
             "  clientId: \"${GOOGLE_CLIENT_ID}\"" \
             "  clientSecret: \"${GOOGLE_CLIENT_SECRET}\"" \
+            "  notificationToken: \"${GCAL_NOTIFICATION_TOKEN}\"" \
             | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
                 "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update"
