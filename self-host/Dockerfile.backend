@@ -4,7 +4,7 @@ WORKDIR /app
 COPY . .
 
 RUN bun install --frozen-lockfile
-RUN bun run build:backend --environment local
+RUN bun run build:backend
 
 FROM oven/bun:1.2.18-slim AS runtime
 

@@ -61,6 +61,31 @@ describe("GcalEventRRule: ", () => {
     expect(events).toEqual(expect.arrayContaining([startDate.toDate()]));
   });
 
+  it("should not duplicate the base occurrence across timezone offsets", () => {
+    const dates = {
+      start: {
+        dateTime: "2027-03-14T03:42:16-04:00",
+        timeZone: "America/Indiana/Winamac",
+      },
+      end: {
+        dateTime: "2027-03-14T04:42:16-04:00",
+        timeZone: "America/Indiana/Winamac",
+      },
+    };
+    const baseEvent = mockRecurringGcalBaseEvent(dates, false, {
+      count: 3,
+      freq: RRule.YEARLY,
+    });
+    const rrule = new GcalEventRRule(baseEvent);
+    const instances = rrule.instances();
+    const instanceStarts = instances.map(
+      (instance) => instance.start?.dateTime,
+    );
+
+    expect(instances).toHaveLength(3);
+    expect(new Set(instanceStarts).size).toBe(3);
+  });
+
   describe("diffOptions", () => {
     it("should return the differences between two rrule options", () => {
       const until = dayjs();

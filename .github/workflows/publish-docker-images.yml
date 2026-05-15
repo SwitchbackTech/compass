@@ -10,12 +10,22 @@ on:
         description: 'Semver tag to build, such as v1.2.3'
         required: true
         type: string
+      push_images:
+        description: 'Push built images to Docker Hub'
+        required: false
+        default: true
+        type: boolean
   workflow_dispatch:
     inputs:
       tag:
         description: 'Semver tag to build, such as v1.2.3'
         required: true
         type: string
+      push_images:
+        description: 'Push built images to Docker Hub'
+        required: false
+        default: true
+        type: boolean
 
 permissions:
   contents: read
@@ -60,7 +70,7 @@ jobs:
         with:
           context: .
           file: self-host/Dockerfile.backend
-          push: true
+          push: ${{ github.event_name == 'push' || inputs.push_images }}
           tags: |
             switchbacktech/compass-backend:${{ steps.version.outputs.image_version }}
             switchbacktech/compass-backend:${{ steps.version.outputs.minor_tag }}
@@ -71,7 +81,7 @@ jobs:
         with:
           context: .
           file: self-host/Dockerfile.mongo
-          push: true
+          push: ${{ github.event_name == 'push' || inputs.push_images }}
           tags: |
             switchbacktech/compass-mongo:${{ steps.version.outputs.image_version }}
             switchbacktech/compass-mongo:${{ steps.version.outputs.minor_tag }}
@@ -82,7 +92,7 @@ jobs:
         with:
           context: .
           file: self-host/Dockerfile.web
-          push: true
+          push: ${{ github.event_name == 'push' || inputs.push_images }}
           # backend.apiUrl and google.clientId are baked into the web bundle at build time.
           # The published image ships with localhost defaults, which work for local installs.
           # Users who need a custom API domain or real Google credentials must rebuild
