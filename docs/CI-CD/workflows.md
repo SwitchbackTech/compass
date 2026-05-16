@@ -95,7 +95,7 @@ Secrets and variables are split between repository level (shared across workflow
 
 | Secret | Value |
 |---|---|
-| `SSH_KEY` | Private key from the deploy keypair (the `compass-staging-deploy` file, not `.pub`) |
+| `SSH_KEY` | Private key from the deploy keypair |
 | `COMPASS_SYNC_TOKEN` | Token for compass sync |
 | `GCAL_NOTIFICATION_TOKEN` | Google Calendar notification token |
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret |
