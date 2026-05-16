@@ -92,5 +92,7 @@ jobs:
             ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "docker logs compass-supertokens-db-1 2>&1 | tail -20" || true
             echo "--- mongo logs ---"
             ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "docker logs compass-mongo-1 2>&1 | tail -40" || true
+            echo "--- backend logs ---"
+            ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "docker logs compass-backend-1 2>&1 | tail -60" || true
             exit 1
           }
