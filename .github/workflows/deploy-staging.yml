@@ -59,6 +59,8 @@ jobs:
           tail -1 ~/.ssh/staging_key
           wc -l ~/.ssh/staging_key
           ssh -v -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" echo ok 2>&1 | grep -E "Offering|Authentications|denied|identity|key_load|Will attempt|publickey"
+          echo "Public key being offered (paste this into authorized_keys on the server):"
+          ssh-keygen -y -f ~/.ssh/staging_key
           echo "=== END DEBUG ==="
           printf '%s\n' \
             'compose:' \
