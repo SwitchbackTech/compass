@@ -21,26 +21,27 @@ jobs:
   deploy:
     name: Deploy release to staging
     runs-on: ubuntu-latest
+    environment: Staging
 
     steps:
       - name: Deploy release to staging
         env:
           # Non-sensitive
-          BACKEND_API_URL: ${{ vars.STAGING_BACKEND_API_URL }}
-          FRONTEND_URL: ${{ vars.STAGING_FRONTEND_URL }}
-          GOOGLE_CLIENT_ID: ${{ vars.STAGING_GOOGLE_CLIENT_ID }}
+          BACKEND_API_URL: ${{ vars.BACKEND_API_URL }}
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+          GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           RELEASE_TAG: ${{ inputs.tag }}
-          SSH_USER: ${{ vars.STAGING_SSH_USER }}
-          SSH_HOST: ${{ vars.STAGING_SSH_HOST }}
+          SSH_USER: ${{ vars.SSH_USER }}
+          SSH_HOST: ${{ vars.SSH_HOST }}
           # Sensitive
-          COMPASS_SYNC_TOKEN: ${{ secrets.STAGING_COMPASS_SYNC_TOKEN }}
-          GCAL_NOTIFICATION_TOKEN: ${{ secrets.STAGING_GCAL_NOTIFICATION_TOKEN }}
-          GOOGLE_CLIENT_SECRET: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
-          MONGO_PASSWORD: ${{ secrets.STAGING_MONGO_PASSWORD }}
-          MONGO_REPLICA_SET_KEY: ${{ secrets.STAGING_MONGO_REPLICA_SET_KEY }}
-          SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
-          SUPERTOKENS_KEY: ${{ secrets.STAGING_SUPERTOKENS_KEY }}
-          SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.STAGING_SUPERTOKENS_POSTGRES_PASSWORD }}
+          COMPASS_SYNC_TOKEN: ${{ secrets.COMPASS_SYNC_TOKEN }}
+          GCAL_NOTIFICATION_TOKEN: ${{ secrets.GCAL_NOTIFICATION_TOKEN }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+          MONGO_REPLICA_SET_KEY: ${{ secrets.MONGO_REPLICA_SET_KEY }}
+          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SUPERTOKENS_KEY: ${{ secrets.SUPERTOKENS_KEY }}
+          SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.SUPERTOKENS_POSTGRES_PASSWORD }}
         run: |
           # Strip 'v' prefix for Docker image tags (v0.5.18 -> 0.5.18)
           IMAGE_VERSION="${RELEASE_TAG#v}"
@@ -81,7 +82,7 @@ jobs:
             "  clientSecret: \"${GOOGLE_CLIENT_SECRET}\"" \
             "  notificationToken: \"${GCAL_NOTIFICATION_TOKEN}\"" \
             | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
-                "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml"
+                "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml && chmod 644 ~/compass/compass.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${RELEASE_TAG}/self-host/compose.yaml -o ~/compass/compose.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${RELEASE_TAG}/self-host/compass -o ~/compass/compass && chmod +x ~/compass/compass"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update"

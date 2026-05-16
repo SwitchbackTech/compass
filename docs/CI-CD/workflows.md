@@ -80,14 +80,34 @@ show which release triggered or motivated the deploy.
 Manual staging redeploys do not rebuild images. Run `Deploy staging` with an
 existing tag after confirming the desired image tags already exist on Docker Hub.
 
-### Required secrets
+### Required secrets and variables
 
-All secrets go in **GitHub → Settings → Secrets and variables → Actions**:
+Secrets and variables are split between repository level (shared across workflows) and the `Staging` GitHub Environment (scoped to the deploy job).
 
-| Secret | Value |
+**Repository-level** — GitHub → Settings → Secrets and variables → Actions:
+
+| Name | Value |
 |---|---|
 | `DOCKERHUB_USERNAME` | Docker Hub username for the `switchbacktech` org |
 | `DOCKERHUB_TOKEN` | Docker Hub personal access token (Read & Write) |
-| `STAGING_SSH_HOST` | VPS IP address or hostname |
-| `STAGING_SSH_USER` | Linux user on the VPS that owns `~/compass` |
-| `STAGING_SSH_KEY` | Private key from the deploy keypair (the `compass-staging-deploy` file, not `.pub`) |
+
+**`Staging` environment** — GitHub → Settings → Environments → Staging:
+
+| Secret | Value |
+|---|---|
+| `SSH_KEY` | Private key from the deploy keypair |
+| `COMPASS_SYNC_TOKEN` | Token for compass sync |
+| `GCAL_NOTIFICATION_TOKEN` | Google Calendar notification token |
+| `GOOGLE_CLIENT_SECRET` | OAuth client secret |
+| `MONGO_PASSWORD` | MongoDB compass user password |
+| `MONGO_REPLICA_SET_KEY` | MongoDB replica set key |
+| `SUPERTOKENS_KEY` | SuperTokens API key |
+| `SUPERTOKENS_POSTGRES_PASSWORD` | SuperTokens PostgreSQL password |
+
+| Variable | Value |
+|---|---|
+| `SSH_HOST` | VPS IP address or hostname |
+| `SSH_USER` | Linux user on the VPS that owns `~/compass` |
+| `BACKEND_API_URL` | Staging backend API URL |
+| `FRONTEND_URL` | Staging frontend URL |
+| `GOOGLE_CLIENT_ID` | OAuth client ID |
