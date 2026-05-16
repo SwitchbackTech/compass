@@ -42,14 +42,16 @@ jobs:
           SUPERTOKENS_KEY: ${{ secrets.STAGING_SUPERTOKENS_KEY }}
           SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.STAGING_SUPERTOKENS_POSTGRES_PASSWORD }}
         run: |
-          echo "Deploying Compass ${RELEASE_TAG} to staging"
+          # Strip 'v' prefix for Docker image tags (v0.5.18 -> 0.5.18)
+          IMAGE_VERSION="${RELEASE_TAG#v}"
+          echo "Deploying Compass ${RELEASE_TAG} (image version: ${IMAGE_VERSION}) to staging"
           mkdir -p ~/.ssh
           echo "$SSH_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           printf '%s\n' \
             'compose:' \
-            "  version: \"${RELEASE_TAG}\"" \
+            "  version: \"${IMAGE_VERSION}\"" \
             'runtime:' \
             '  nodeEnv: production' \
             '  timezone: Etc/UTC' \
