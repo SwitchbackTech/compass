@@ -5,10 +5,10 @@
 # - For detailed explanations, see: https://docs.compasscalendar.com/docs/config
 
 runtime:
-  nodeEnv: production
-  timezone: Etc/UTC
-  logLevel: info
   version: latest
+  nodeEnv: production
+  logLevel: info
+  timezone: Etc/UTC
 
 web:
   port: 9080

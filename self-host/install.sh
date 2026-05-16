@@ -405,10 +405,10 @@ write_config_if_missing() {
 # See https://docs.compasscalendar.com/docs/self-hosting/config
 
 runtime:
-  nodeEnv: production
-  timezone: Etc/UTC
-  logLevel: info
   version: $COMPASS_VERSION
+  nodeEnv: production
+  logLevel: info
+  timezone: Etc/UTC
 
 web:
   port: 9080

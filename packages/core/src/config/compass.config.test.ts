@@ -3,10 +3,10 @@ import { describe, expect, it } from "bun:test";
 
 const validYaml = `
 runtime:
-  nodeEnv: development
-  timezone: Etc/UTC
-  logLevel: debug
   version: latest
+  nodeEnv: development
+  logLevel: debug
+  timezone: Etc/UTC
 web:
   port: 9080
   url: http://localhost:9080

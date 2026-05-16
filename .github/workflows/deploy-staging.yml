@@ -52,9 +52,9 @@ jobs:
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           printf '%s\n' \
             'runtime:' \
+            "  version: \"${IMAGE_VERSION}\"" \
             '  nodeEnv: production' \
             '  timezone: Etc/UTC' \
-            "  version: \"${IMAGE_VERSION}\"" \
             'web:' \
             '  port: 9080' \
             "  url: \"${FRONTEND_URL}\"" \

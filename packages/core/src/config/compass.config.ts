@@ -18,10 +18,10 @@ const CompassConfigSchema = z
       compassToken: z.string(),
     }),
     runtime: z.object({
-      nodeEnv: z.string(),
-      timezone: z.enum(["Etc/UTC", "UTC"]),
-      logLevel: z.string().optional(),
       version: z.union([z.string(), z.number()]).optional(),
+      nodeEnv: z.string(),
+      logLevel: z.string().optional(),
+      timezone: z.enum(["Etc/UTC", "UTC"]),
     }),
     mongo: z.object({
       username: z.string().optional(),
