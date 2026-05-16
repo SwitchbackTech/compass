@@ -39,7 +39,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
           MONGO_REPLICA_SET_KEY: ${{ secrets.MONGO_REPLICA_SET_KEY }}
-          SSH_KEY: ${{ secrets.SSH_KEY }}
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SUPERTOKENS_KEY: ${{ secrets.SUPERTOKENS_KEY }}
           SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.SUPERTOKENS_POSTGRES_PASSWORD }}
         run: |
@@ -47,15 +47,14 @@ jobs:
           IMAGE_VERSION="${RELEASE_TAG#v}"
           echo "Deploying Compass ${RELEASE_TAG} (image version: ${IMAGE_VERSION}) to staging"
           mkdir -p ~/.ssh
-          echo "$SSH_KEY" > ~/.ssh/staging_key
+          echo "$SSH_PRIVATE_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           printf '%s\n' \
-            'compose:' \
-            "  version: \"${IMAGE_VERSION}\"" \
             'runtime:' \
             '  nodeEnv: production' \
             '  timezone: Etc/UTC' \
+            "  version: \"${IMAGE_VERSION}\"" \
             'web:' \
             '  port: 9080' \
             "  url: \"${FRONTEND_URL}\"" \

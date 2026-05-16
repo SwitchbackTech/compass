@@ -4,13 +4,11 @@
 # - The installer writes ~/compass/compass.yaml with generated secrets.
 # - For detailed explanations, see: https://docs.compasscalendar.com/docs/config
 
-compose:
-  version: latest
-
 runtime:
   nodeEnv: production
   timezone: Etc/UTC
   logLevel: info
+  version: latest
 
 web:
   port: 9080

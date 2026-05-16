@@ -11,7 +11,7 @@ Examples:
 
 | key | Default | Description |
 |---|---|---|
-| `compose.version` | `latest` | Docker image tag used by the self-host compose stack. Pin this for reproducible installs. |
+| `runtime.version` | `latest` | Docker image tag used by the self-host compose stack. Pin this for reproducible installs. |
 | `runtime.nodeEnv` | `production` | Runtime mode. Self-hosted installs should use `production`; local development uses `development`. |
 | `runtime.timezone` | `Etc/UTC` | Backend timezone. Only `Etc/UTC` and `UTC` are accepted. |
 | `runtime.logLevel` | `info` | Winston log level. |

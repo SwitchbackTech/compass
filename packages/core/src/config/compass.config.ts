@@ -7,11 +7,6 @@ const optionalString = z.string().nullish();
 
 const CompassConfigSchema = z
   .object({
-    compose: z
-      .object({
-        version: z.union([z.string(), z.number()]).optional(),
-      })
-      .optional(),
     web: z.object({
       port: z.union([z.string(), z.number()]).optional(),
       url: z.string(),
@@ -26,6 +21,7 @@ const CompassConfigSchema = z
       nodeEnv: z.string(),
       timezone: z.enum(["Etc/UTC", "UTC"]),
       logLevel: z.string().optional(),
+      version: z.union([z.string(), z.number()]).optional(),
     }),
     mongo: z.object({
       username: z.string().optional(),
