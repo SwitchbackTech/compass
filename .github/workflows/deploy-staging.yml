@@ -44,6 +44,7 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SUPERTOKENS_KEY: ${{ secrets.SUPERTOKENS_KEY }}
           SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.SUPERTOKENS_POSTGRES_PASSWORD }}
+          SUPERTOKENS_URI: ${{ secrets.SUPERTOKENS_URI }}
         run: |
           # Strip 'v' prefix for Docker image tags (v0.5.18 -> 0.5.18)
           IMAGE_VERSION="${RELEASE_TAG#v}"
@@ -72,7 +73,7 @@ jobs:
             ${MONGO_REPLICA_SET_KEY:+"  replicaSetKey: \"${MONGO_REPLICA_SET_KEY}\""} \
             "  uri: \"${MONGO_URI}\"" \
             'supertokens:' \
-            '  uri: http://supertokens:3567' \
+            "  uri: \"${SUPERTOKENS_URI}\"" \
             "  key: \"${SUPERTOKENS_KEY}\"" \
             ${SUPERTOKENS_POSTGRES_PASSWORD:+'  postgres:'} \
             ${SUPERTOKENS_POSTGRES_PASSWORD:+'    user: supertokens'} \
