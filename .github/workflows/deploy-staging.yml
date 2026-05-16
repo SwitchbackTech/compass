@@ -85,4 +85,10 @@ jobs:
                 "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${RELEASE_TAG}/self-host/compose.yaml -o ~/compass/compose.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${RELEASE_TAG}/self-host/compass -o ~/compass/compass && chmod +x ~/compass/compass"
-          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update"
+          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && ./compass update" || {
+            echo "--- supertokens logs ---"
+            ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "docker logs compass-supertokens-1 2>&1 | tail -40" || true
+            echo "--- supertokens-db logs ---"
+            ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "docker logs compass-supertokens-db-1 2>&1 | tail -20" || true
+            exit 1
+          }
