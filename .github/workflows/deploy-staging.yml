@@ -40,6 +40,7 @@ jobs:
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
           MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
           MONGO_REPLICA_SET_KEY: ${{ secrets.MONGO_REPLICA_SET_KEY }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SUPERTOKENS_KEY: ${{ secrets.SUPERTOKENS_KEY }}
           SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.SUPERTOKENS_POSTGRES_PASSWORD }}
@@ -69,7 +70,7 @@ jobs:
             '  username: compass' \
             "  password: \"${MONGO_PASSWORD}\"" \
             ${MONGO_REPLICA_SET_KEY:+"  replicaSetKey: \"${MONGO_REPLICA_SET_KEY}\""} \
-            "  uri: \"mongodb://compass:${MONGO_PASSWORD}@mongo:27017/staging_calendar?authSource=admin&replicaSet=rs0\"" \
+            "  uri: \"${MONGO_URI}\"" \
             'supertokens:' \
             '  uri: http://supertokens:3567' \
             "  key: \"${SUPERTOKENS_KEY}\"" \
