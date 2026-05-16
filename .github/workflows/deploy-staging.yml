@@ -32,14 +32,15 @@ jobs:
           RELEASE_TAG: ${{ inputs.tag }}
           SSH_USER: ${{ vars.STAGING_SSH_USER }}
           SSH_HOST: ${{ vars.STAGING_SSH_HOST }}
-          SUPERTOKENS_URI: ${{ vars.STAGING_SUPERTOKENS_URI }}
-          # Sensitive 
+          # Sensitive
           COMPASS_SYNC_TOKEN: ${{ secrets.STAGING_COMPASS_SYNC_TOKEN }}
           GCAL_NOTIFICATION_TOKEN: ${{ secrets.STAGING_GCAL_NOTIFICATION_TOKEN }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.STAGING_GOOGLE_CLIENT_SECRET }}
-          MONGO_URI: ${{ secrets.STAGING_MONGO_URI }}
+          MONGO_PASSWORD: ${{ secrets.STAGING_MONGO_PASSWORD }}
+          MONGO_REPLICA_SET_KEY: ${{ secrets.STAGING_MONGO_REPLICA_SET_KEY }}
           SSH_KEY: ${{ secrets.STAGING_SSH_KEY }}
           SUPERTOKENS_KEY: ${{ secrets.STAGING_SUPERTOKENS_KEY }}
+          SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.STAGING_SUPERTOKENS_POSTGRES_PASSWORD }}
         run: |
           echo "Deploying Compass ${RELEASE_TAG} to staging"
           mkdir -p ~/.ssh
@@ -47,21 +48,32 @@ jobs:
           chmod 600 ~/.ssh/staging_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
           printf '%s\n' \
+            'compose:' \
+            "  version: \"${RELEASE_TAG}\"" \
             'runtime:' \
             '  nodeEnv: production' \
             '  timezone: Etc/UTC' \
             'web:' \
+            '  port: 9080' \
             "  url: \"${FRONTEND_URL}\"" \
             'backend:' \
+            '  port: 3000' \
             "  apiUrl: \"${BACKEND_API_URL}\"" \
             '  originsAllowed:' \
             "    - \"${FRONTEND_URL}\"" \
             "  compassToken: \"${COMPASS_SYNC_TOKEN}\"" \
             'mongo:' \
-            "  uri: \"${MONGO_URI}\"" \
+            '  username: compass' \
+            "  password: \"${MONGO_PASSWORD}\"" \
+            "  replicaSetKey: \"${MONGO_REPLICA_SET_KEY}\"" \
+            "  uri: \"mongodb://compass:${MONGO_PASSWORD}@mongo:27017/staging_calendar?authSource=admin&replicaSet=rs0\"" \
             'supertokens:' \
-            "  uri: \"${SUPERTOKENS_URI}\"" \
+            '  uri: http://supertokens:3567' \
             "  key: \"${SUPERTOKENS_KEY}\"" \
+            '  postgres:' \
+            '    user: supertokens' \
+            "    password: \"${SUPERTOKENS_POSTGRES_PASSWORD}\"" \
+            '    database: supertokens' \
             'google:' \
             "  clientId: \"${GOOGLE_CLIENT_ID}\"" \
             "  clientSecret: \"${GOOGLE_CLIENT_SECRET}\"" \
