@@ -72,10 +72,10 @@ jobs:
             'supertokens:' \
             '  uri: http://supertokens:3567' \
             "  key: \"${SUPERTOKENS_KEY}\"" \
-            '  postgres:' \
-            '    user: supertokens' \
-            "    password: \"${SUPERTOKENS_POSTGRES_PASSWORD}\"" \
-            '    database: supertokens' \
+            ${SUPERTOKENS_POSTGRES_PASSWORD:+'  postgres:'} \
+            ${SUPERTOKENS_POSTGRES_PASSWORD:+'    user: supertokens'} \
+            ${SUPERTOKENS_POSTGRES_PASSWORD:+"    password: \"${SUPERTOKENS_POSTGRES_PASSWORD}\""} \
+            ${SUPERTOKENS_POSTGRES_PASSWORD:+'    database: supertokens'} \
             'google:' \
             "  clientId: \"${GOOGLE_CLIENT_ID}\"" \
             "  clientSecret: \"${GOOGLE_CLIENT_SECRET}\"" \
