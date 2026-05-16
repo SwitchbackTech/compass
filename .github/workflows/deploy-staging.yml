@@ -50,18 +50,6 @@ jobs:
           echo "$SSH_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
-
-          # DEBUG - remove before merge
-          echo "=== DEBUG ==="
-          echo "SSH_USER: '${SSH_USER}'"
-          echo "SSH_HOST: '${SSH_HOST}'"
-          head -1 ~/.ssh/staging_key
-          tail -1 ~/.ssh/staging_key
-          wc -l ~/.ssh/staging_key
-          ssh -v -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" echo ok 2>&1 | grep -E "Offering|Authentications|denied|identity|key_load|Will attempt|publickey"
-          echo "Public key being offered (paste this into authorized_keys on the server):"
-          ssh-keygen -y -f ~/.ssh/staging_key
-          echo "=== END DEBUG ==="
           printf '%s\n' \
             'compose:' \
             "  version: \"${IMAGE_VERSION}\"" \
