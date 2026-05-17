@@ -6,7 +6,6 @@ import * as eventRepositoryUtil from "@web/common/repositories/event/event.repos
 import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import { type Schema_OptimisticEvent } from "@web/common/types/web.event.types";
 import { handleError } from "@web/common/utils/event/event.util";
-import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
 import {
   type Action_ConvertEvent,
   type Action_DeleteEvent,
@@ -124,9 +123,7 @@ export function* getSomedayEvents({ payload }: Action_GetEvents): Generator {
       }),
     )) as Response_GetEventsSuccess;
 
-    const events = setSomedayEventsOrder(res.data);
-
-    const normalizedEvents = normalize<Schema_Event>(events, [
+    const normalizedEvents = normalize<Schema_Event>(res.data, [
       normalizedEventsSchema(),
     ]);
     yield put(

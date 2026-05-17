@@ -17,6 +17,7 @@ const mockDelete = mock();
 const mockReorder = mock();
 const mockPutEvent = mock();
 const mockGetEvents = mock();
+const mockGetAllEvents = mock();
 
 mock.module("@web/ducks/events/event.api", () => ({
   EventApi: {
@@ -31,6 +32,7 @@ mock.module("@web/ducks/events/event.api", () => ({
 mock.module("@web/common/storage/adapter/adapter", () => ({
   getStorageAdapter: () => ({
     getEvents: mockGetEvents,
+    getAllEvents: mockGetAllEvents,
     putEvent: mockPutEvent,
   }),
 }));
@@ -56,6 +58,7 @@ describe("RemoteEventRepository", () => {
     mockReorder.mockClear();
     mockPutEvent.mockClear();
     mockGetEvents.mockClear();
+    mockGetAllEvents.mockClear();
     resetBackendAvailabilityForTests();
     repository = new RemoteEventRepository();
   });
@@ -173,19 +176,23 @@ describe("RemoteEventRepository", () => {
         endDate: "2024-01-31",
         someday: false,
       };
-      const localEvents = [{ _id: "event-1", title: "Local Event" }];
+      const localEvents = [
+        {
+          _id: "event-1",
+          title: "Local Event",
+          startDate: "2024-01-05T15:00:00.000Z",
+          endDate: "2024-01-05T16:00:00.000Z",
+          isSomeday: false,
+        },
+      ];
 
       mockGet.mockRejectedValue(createBackendUnavailableError());
-      mockGetEvents.mockResolvedValue(localEvents);
+      mockGetAllEvents.mockResolvedValue(localEvents);
 
       const result = await repository.get(params);
 
       expect(mockGet).toHaveBeenCalledWith(params);
-      expect(mockGetEvents).toHaveBeenCalledWith(
-        params.startDate,
-        params.endDate,
-        params.someday,
-      );
+      expect(mockGetAllEvents).toHaveBeenCalledTimes(1);
       expect(result.data).toEqual(localEvents);
     });
   });

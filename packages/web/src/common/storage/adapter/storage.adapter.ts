@@ -81,15 +81,6 @@ export interface StorageAdapter {
   // ─── Event Operations ──────────────────────────────────────────────────────
 
   /**
-   * Get events overlapping a date range.
-   */
-  getEvents(
-    startDate: string,
-    endDate: string,
-    isSomeday?: boolean,
-  ): Promise<LocalStoredEvent[]>;
-
-  /**
    * Get all events without filtering.
    */
   getAllEvents(): Promise<LocalStoredEvent[]>;

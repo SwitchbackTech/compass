@@ -17,10 +17,7 @@ import {
   type Schema_SomedayEvent,
   type Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";
-import {
-  categorizeSomedayEvents,
-  setSomedayEventsOrder,
-} from "@web/common/utils/event/someday.event.util";
+import { categorizeSomedayEvents } from "@web/common/utils/event/someday.event.util";
 import {
   afterAll,
   beforeAll,
@@ -220,109 +217,6 @@ describe("categorizeSomedayEvents", () => {
   });
 });
 
-describe("setSomedayEventsOrder", () => {
-  const createEvent = (id: string, order?: number): Schema_Event => ({
-    _id: id,
-    ...(order !== undefined && { order }),
-  });
-
-  it("should return empty array for empty input", () => {
-    expect(setSomedayEventsOrder([])).toEqual([]);
-  });
-
-  it("should assign sequential orders starting from 0 when no events have orders", () => {
-    const events = [createEvent("1"), createEvent("2"), createEvent("3")];
-
-    const result = setSomedayEventsOrder(events);
-
-    expect(result).toEqual([
-      { ...events[0], order: 0 },
-      { ...events[1], order: 1 },
-      { ...events[2], order: 2 },
-    ]);
-  });
-
-  it("should preserve existing valid orders", () => {
-    const events = [
-      createEvent("1", 5),
-      createEvent("2", 2),
-      createEvent("3", 8),
-    ];
-
-    const result = setSomedayEventsOrder(events);
-
-    expect(result).toEqual(events);
-  });
-
-  it("should append missing orders after the highest existing order", () => {
-    const events = [
-      createEvent("1", 0),
-      createEvent("2"),
-      createEvent("3", 3),
-      createEvent("4"),
-      createEvent("5", 5),
-    ];
-
-    const result = setSomedayEventsOrder(events);
-
-    expect(result).toEqual([
-      { ...events[0], order: 0 },
-      { ...events[1], order: 6 },
-      { ...events[2], order: 3 },
-      { ...events[3], order: 7 },
-      { ...events[4], order: 5 },
-    ]);
-  });
-
-  it("should append to end when no gaps available", () => {
-    const events = [
-      createEvent("1", 0),
-      createEvent("2", 1),
-      createEvent("3"), // Should get order 3
-      createEvent("4", 2),
-      createEvent("5"), // Should get order 4
-    ];
-
-    const result = setSomedayEventsOrder(events);
-
-    expect(result).toEqual([
-      { ...events[0], order: 0 },
-      { ...events[1], order: 1 },
-      { ...events[2], order: 3 },
-      { ...events[3], order: 2 },
-      { ...events[4], order: 4 },
-    ]);
-  });
-
-  it("should handle mix of valid and invalid order values", () => {
-    const events = [
-      createEvent("1", 1),
-      { ...createEvent("2"), order: Number.NaN }, // Should get order 5
-      { ...createEvent("3"), order: undefined }, // Should get order 6
-      createEvent("4", 4),
-      { ...createEvent("5"), order: undefined }, // Should get order 7
-    ];
-
-    const result = setSomedayEventsOrder(events);
-
-    expect(result).toEqual([
-      { ...events[0], order: 1 },
-      { ...events[1], order: 5 },
-      { ...events[2], order: 6 },
-      { ...events[3], order: 4 },
-      { ...events[4], order: 7 },
-    ]);
-  });
-
-  it("should handle single event without order", () => {
-    const events = [createEvent("1")];
-
-    const result = setSomedayEventsOrder(events);
-
-    expect(result).toEqual([{ ...events[0], order: 0 }]);
-  });
-});
-
 describe("computeRelativeEventDateRange", () => {
   const baseEvent: Schema_Event = {
     _id: "test-id",
@@ -409,80 +303,6 @@ describe("computeRelativeEventDateRange", () => {
       expect(result.columns[COLUMN_WEEK].eventIds).toEqual([
         eventIdB,
         eventIdA,
-      ]);
-    });
-
-    it("should assign sequential orders for events without order", () => {
-      const eventIdA = new ObjectId().toString();
-      const eventIdB = new ObjectId().toString();
-      // Add all required properties for Schema_Event
-      const events = [
-        {
-          ...baseEvent,
-          _id: eventIdA,
-          isSomeday: true,
-          origin: Origin.COMPASS,
-          priority: Priorities.UNASSIGNED,
-          user: "test-user",
-        },
-        {
-          ...baseEvent,
-          _id: eventIdB,
-          isSomeday: true,
-          origin: Origin.COMPASS,
-          priority: Priorities.UNASSIGNED,
-          user: "test-user",
-        },
-      ];
-
-      const result = setSomedayEventsOrder(events as Schema_Event[]);
-
-      expect(result).toEqual([
-        { ...events[0], order: 0 },
-        { ...events[1], order: 1 },
-      ]);
-    });
-
-    it("should append missing order values for events", () => {
-      const eventIdA = new ObjectId().toString();
-      const eventIdB = new ObjectId().toString();
-      const eventIdC = new ObjectId().toString();
-      // Add all required properties for Schema_Event
-      const events = [
-        {
-          ...baseEvent,
-          _id: eventIdA,
-          order: 0,
-          isSomeday: true,
-          origin: Origin.COMPASS,
-          priority: Priorities.UNASSIGNED,
-          user: "test-user",
-        },
-        {
-          ...baseEvent,
-          _id: eventIdB,
-          isSomeday: true,
-          origin: Origin.COMPASS,
-          priority: Priorities.UNASSIGNED,
-          user: "test-user",
-        }, // Should get order 4
-        {
-          ...baseEvent,
-          _id: eventIdC,
-          order: 3,
-          isSomeday: true,
-          origin: Origin.COMPASS,
-          priority: Priorities.UNASSIGNED,
-          user: "test-user",
-        },
-      ];
-
-      const result = setSomedayEventsOrder(events as Schema_Event[]);
-
-      expect(result).toEqual([
-        { ...events[0], order: 0 },
-        { ...events[1], order: 4 },
-        { ...events[2], order: 3 },
       ]);
     });
 

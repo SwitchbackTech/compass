@@ -44,7 +44,6 @@ import {
   _assembleGridEvent,
   _createOptimisticGridEvent,
   _editEvent,
-  EventDateUtils,
   normalizedEventsSchema,
 } from "@web/ducks/events/sagas/saga.util";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
@@ -213,8 +212,9 @@ export function* editEvent({ payload }: Action_EditEvent) {
 
 export function* getCurrentMonthEvents({ payload }: Action_GetPaginatedEvents) {
   try {
-    const startDate = dayjs().startOf("month").format(YEAR_MONTH_DAY_FORMAT);
-    const endDate = dayjs().endOf("month").format(YEAR_MONTH_DAY_FORMAT);
+    const monthStart = dayjs().startOf("month");
+    const startDate = monthStart.format(YEAR_MONTH_DAY_FORMAT);
+    const endDate = monthStart.add(1, "month").format(YEAR_MONTH_DAY_FORMAT);
     const data: Response_GetEventsSaga = (yield* getEvents({
       ...payload,
       startDate,
@@ -250,20 +250,10 @@ function* getEvents(payload: GetEventsPayload) {
       throw new Error("Event query requires startDate and endDate");
     }
 
-    const _payload = EventDateUtils.adjustStartEndDate(
-      payload as Params_Events,
-    );
-
     const res = (yield call(
       [repository, "get"],
-      _payload,
+      payload as Params_Events,
     )) as Response_GetEventsSuccess;
-
-    const events = EventDateUtils.filterEventsByStartEndDate(
-      res.data,
-      payload.startDate,
-      payload.endDate,
-    );
 
     // Validate response data exists before normalizing
     if (!res.data || !Array.isArray(res.data)) {
@@ -272,7 +262,7 @@ function* getEvents(payload: GetEventsPayload) {
       );
     }
 
-    const normalizedEvents = normalize<Schema_Event>(events, [
+    const normalizedEvents = normalize<Schema_Event>(res.data, [
       normalizedEventsSchema(),
     ]);
 
@@ -304,7 +294,6 @@ export function* getDayEvents({ payload }: Action_GetEvents) {
   try {
     const data = (yield call(getEvents, {
       ...payload,
-      dontAdjustDates: true,
       someday: false,
     })) as Response_GetEventsSaga;
 

@@ -30,15 +30,16 @@ const EventApi = {
     return BaseApi.put<void>(`/event/${_id}`, event);
   },
   get: (params: Params_Events) => {
-    if (params.someday) {
-      return BaseApi.get<Response_HttpPaginatedSuccess<Schema_Event[]>>(
-        `/event?someday=true&start=${params.startDate}&end=${params.endDate}`,
-      );
-    } else {
-      return BaseApi.get<Response_HttpPaginatedSuccess<Schema_Event[]>>(
-        `/event?start=${params.startDate}&end=${params.endDate}`,
-      );
+    const query = params.someday ? ["someday=true"] : [];
+    query.push(`start=${params.startDate}`, `end=${params.endDate}`);
+
+    if (params.priorities?.length) {
+      query.push(`priorities=${params.priorities.join(",")}`);
     }
+
+    return BaseApi.get<Response_HttpPaginatedSuccess<Schema_Event[]>>(
+      `/event?${query.join("&")}`,
+    );
   },
   reorder: (order: Payload_Order[]) => {
     return BaseApi.put(`/event/reorder`, order);

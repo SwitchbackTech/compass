@@ -64,7 +64,7 @@ export interface Params_Events {
   startDate: string;
   endDate: string;
   someday: boolean;
-  dontAdjustDates?: boolean;
+  priorities?: Priority[];
 }
 
 export interface Payload_Order {
@@ -167,6 +167,7 @@ export const CoreEventSchema = z.object({
   isSomeday: z.boolean().optional(),
   gEventId: z.string().optional(),
   gRecurringEventId: z.string().optional(),
+  order: z.number().optional(),
   origin: z.nativeEnum(Origin),
   priority: z.nativeEnum(Priorities),
   recurrence: Recurrence.optional(),

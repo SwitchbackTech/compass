@@ -1,5 +1,5 @@
 import { put } from "redux-saga/effects";
-import { type Schema_Event } from "@core/types/event.types";
+import { type Params_Events, type Schema_Event } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
   clearAnonymousCalendarChangeSignUpPrompt,
@@ -21,6 +21,7 @@ import {
   expect,
   it,
   mock,
+  setSystemTime,
   spyOn,
 } from "bun:test";
 
@@ -48,7 +49,7 @@ const mockLocalRepository = {
       mockLocalEvents[index] = event;
     }
   }),
-  get: mock(async () => ({
+  get: mock(async (_params?: Params_Events) => ({
     data: [...mockLocalEvents],
     count: mockLocalEvents.length,
     page: 1,
@@ -106,6 +107,9 @@ const { pendingEventsSlice } = await import(
 const { getWeekEventsSlice } = await import(
   "@web/ducks/events/slices/week.slice"
 );
+const { getCurrentMonthEventsSlice } = await import(
+  "@web/ducks/events/slices/event.slice"
+);
 const { sagas } = await import("@web/store/sagas");
 const { OnSubmitParser } = await import(
   "@web/views/Week/components/Draft/hooks/actions/submit.parser"
@@ -162,20 +166,14 @@ describe("getWeekEvents saga", () => {
     sagaTask = sagaMiddleware.run(sagas);
   });
 
-  it("filters repository results by the requested date range", async () => {
-    const previousDayEvent = createMockStandaloneEvent({
-      _id: "previous-day-event",
-      startDate: "2026-04-05T15:00:00.000Z",
-      endDate: "2026-04-05T16:00:00.000Z",
-      isAllDay: false,
-    } as Partial<Schema_Event>);
+  it("requests week events without adjusting the requested date range", async () => {
     const requestedRangeEvent = createMockStandaloneEvent({
       _id: "requested-range-event",
       startDate: "2026-04-06T15:00:00.000Z",
       endDate: "2026-04-06T16:00:00.000Z",
       isAllDay: false,
     } as Partial<Schema_Event>);
-    mockLocalEvents.push(previousDayEvent, requestedRangeEvent);
+    mockLocalEvents.push(requestedRangeEvent);
 
     store.dispatch(
       getWeekEventsSlice.actions.request({
@@ -188,13 +186,70 @@ describe("getWeekEvents saga", () => {
 
     expect(mockLocalRepository.get).toHaveBeenCalledWith(
       expect.objectContaining({
-        startDate: "2026-04-05T00:00:00+00:00",
+        startDate: "2026-04-06T00:00:00.000Z",
         endDate: "2026-04-13T00:00:00.000Z",
       }),
     );
     expect(store.getState().events.getWeekEvents.value?.data).toEqual([
       "requested-range-event",
     ]);
+  });
+});
+
+describe("getCurrentMonthEvents saga", () => {
+  let store: ReturnType<typeof createStoreWithEvents>;
+
+  beforeEach(() => {
+    clearApiMocks();
+    setSystemTime(new Date("2026-04-15T12:00:00.000Z"));
+    mockDoesSessionExist.mockResolvedValue(false);
+    store = createStoreWithEvents([]);
+    sagaTask = sagaMiddleware.run(sagas);
+  });
+
+  afterEach(() => {
+    setSystemTime();
+  });
+
+  it("requests a next-month exclusive end so all-day events on the final day are visible", async () => {
+    const finalDayAllDayEvent = createMockStandaloneEvent({
+      _id: "final-day",
+      startDate: "2026-04-30",
+      endDate: "2026-05-01",
+      isAllDay: true,
+    } as Partial<Schema_Event>);
+
+    mockLocalRepository.get.mockImplementationOnce(
+      async (params?: Params_Events) => ({
+        data: params?.endDate === "2026-05-01" ? [finalDayAllDayEvent] : [],
+        count: params?.endDate === "2026-05-01" ? 1 : 0,
+        page: 1,
+        pageSize: 1,
+        offset: 0,
+        startDate: params?.startDate ?? "",
+        endDate: params?.endDate ?? "",
+      }),
+    );
+
+    store.dispatch(
+      getCurrentMonthEventsSlice.actions.request({
+        pageSize: 10,
+        priorities: [],
+      }),
+    );
+
+    await new Promise((resolve) => setTimeout(resolve, 100));
+
+    expect(mockLocalRepository.get).toHaveBeenCalledWith(
+      expect.objectContaining({
+        startDate: "2026-04-01",
+        endDate: "2026-05-01",
+      }),
+    );
+    const currentMonthState = store.getState().events.getCurrentMonthEvents as {
+      value?: { data?: unknown };
+    };
+    expect(currentMonthState.value?.data).toEqual(["final-day"]);
   });
 });
 

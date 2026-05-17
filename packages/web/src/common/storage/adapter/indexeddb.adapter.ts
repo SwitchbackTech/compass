@@ -1,5 +1,4 @@
 import Dexie, { type Table } from "dexie";
-import { isDateRangeOverlapping } from "@core/util/date/date.util";
 import { type LocalStoredEvent } from "@web/common/storage/types/local-event.types";
 import {
   normalizeTask,
@@ -190,28 +189,6 @@ export class IndexedDBAdapter implements StorageAdapter {
   }
 
   // ─── Event Operations ──────────────────────────────────────────────────────
-
-  async getEvents(
-    startDate: string,
-    endDate: string,
-    isSomeday?: boolean,
-  ): Promise<LocalStoredEvent[]> {
-    const allEvents = await this.db.events.toArray();
-
-    return allEvents.filter((event) => {
-      if (!event.startDate || !event.endDate) return false;
-      if (isSomeday !== undefined && event.isSomeday !== isSomeday) {
-        return false;
-      }
-      return isDateRangeOverlapping(
-        event.startDate,
-        event.endDate,
-        startDate,
-        endDate,
-        "day",
-      );
-    });
-  }
 
   async getAllEvents(): Promise<LocalStoredEvent[]> {
     return this.db.events.toArray();
