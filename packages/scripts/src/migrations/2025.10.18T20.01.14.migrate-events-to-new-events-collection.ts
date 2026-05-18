@@ -1,6 +1,5 @@
 import { type MigrationContext } from "@scripts/common/cli.types";
-import { ObjectId } from "bson";
-import { type AnyBulkWriteOperation } from "mongodb";
+import { type AnyBulkWriteOperation, ObjectId } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
 import { z } from "zod/v4";
 import { Origin, Priorities } from "@core/constants/core.constants";
