@@ -8,7 +8,8 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 | CodeQL | Push / PR to `main` | Static security analysis |
 | Release on main | Push to `main` | Auto-increments patch version, publishes Docker images, then deploys staging |
 | Publish Docker images | Reusable workflow / manual dispatch / manual `v*.*.*` tag push | Builds and pushes Docker images only |
-| Deploy staging | Reusable workflow / manual dispatch | Pulls published images on staging and restarts the stack |
+| Deploy staging | Reusable workflow / manual dispatch | Pulls published images on staging, restarts the stack, then runs deploy health checks |
+| Deploy health check | Reusable workflow | Validates the deployed staging stack and alerts Discord on failure |
 | Sync docs to compass-docs | Push to `main` touching `docs/**` | Mirrors this `docs/` directory to docs.compasscalendar.com |
 
 ---
@@ -23,11 +24,17 @@ PR merged to main
         ├─► tag-release             — reads latest tag, pushes v1.2.X+1
         ├─► publish-docker-images   — builds and pushes Docker Hub images
         └─► deploy-staging          — SSHes into VPS, runs ./compass update
+              ├─► staging-cloud deploy health check
+              └─► staging-selfhosted deploy health check
 ```
 
 The automatic path calls reusable workflows directly. It uses `GITHUB_TOKEN` to
 push the git tag, then passes that tag to the publish and deploy workflows. It
 does not rely on the workflow-created tag push to trigger another workflow.
+The release workflow remains blocked until both staging deploy health checks pass.
+If a health check fails, the reusable workflow sends one Discord alert for that
+environment with the release tag, run URL, failed check names, and redacted
+excerpts.
 
 **Monthly minor/major releases** remain manual: a maintainer pushes a tag like
 `v1.3.0` or `v2.0.0`, which skips the bump step and runs
@@ -77,6 +84,14 @@ which pulls the Docker Hub image tag configured by the staging `compass.yaml` fi
 restarts the stack. The workflow accepts a release tag input so the Actions logs
 show which release triggered or motivated the deploy.
 
+After each staging environment deploy, `deploy-staging.yml` calls
+`deploy-health-check.yml`. The health check SSHes into the same host, verifies
+`~/compass`, `./compass status`, bounded Docker Compose logs, service health,
+expected Docker image tags, frontend HTML, backend `/health`, and data-service
+reachability. The `staging-cloud` profile checks the external MongoDB URI. The
+`staging-selfhosted` profile additionally checks MongoDB, SuperTokens, and the
+expected Docker volumes inside the self-hosted stack.
+
 Manual staging redeploys do not rebuild images. Run `Deploy staging` with an
 existing tag after confirming the desired image tags already exist on Docker Hub.
 
@@ -90,12 +105,13 @@ Secrets and variables are split between repository level (shared across workflow
 |---|---|
 | `DOCKERHUB_USERNAME` | Docker Hub username for the `switchbacktech` org |
 | `DOCKERHUB_TOKEN` | Docker Hub personal access token (Read & Write) |
+| `DISCORD_DEPLOY_WEBHOOK_URL` | Discord webhook for deploy health check failure alerts |
 
 **`Staging` environment** — GitHub → Settings → Environments → Staging:
 
 | Secret | Value |
 |---|---|
-| `SSH_KEY` | Private key from the deploy keypair |
+| `SSH_PRIVATE_KEY` | Private key from the deploy keypair |
 | `COMPASS_SYNC_TOKEN` | Token for compass sync |
 | `GCAL_NOTIFICATION_TOKEN` | Google Calendar notification token |
 | `GOOGLE_CLIENT_SECRET` | OAuth client secret |

@@ -26,10 +26,30 @@ jobs:
       environment: staging-cloud
     secrets: inherit
 
+  health-check-cloud:
+    name: Health check staging-cloud
+    needs: deploy-cloud
+    uses: ./.github/workflows/deploy-health-check.yml
+    with:
+      tag: ${{ inputs.tag }}
+      environment: staging-cloud
+      profile: cloud
+    secrets: inherit
+
   deploy-selfhosted:
     name: Deploy to staging-selfhosted
     uses: ./.github/workflows/_deploy-environment.yml
     with:
       tag: ${{ inputs.tag }}
       environment: staging-selfhosted
+    secrets: inherit
+
+  health-check-selfhosted:
+    name: Health check staging-selfhosted
+    needs: deploy-selfhosted
+    uses: ./.github/workflows/deploy-health-check.yml
+    with:
+      tag: ${{ inputs.tag }}
+      environment: staging-selfhosted
+      profile: selfhosted
     secrets: inherit
