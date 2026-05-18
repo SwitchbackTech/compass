@@ -25,6 +25,7 @@ interface WeekViewPerfFrameSample {
 interface WeekViewPerfProbe {
   patchReduxStore: (store: WeekViewPerfStore | undefined) => void;
   recordCalendarInteractionFrame: (frame: WeekViewPerfFrameSample) => void;
+  recordLayoutRead: () => void;
   recordReactCommit: () => void;
   snapshot: () => Partial<Record<WeekViewPerfPhase, WeekViewPerfPhaseMetrics>>;
   startPhase: (phase: WeekViewPerfPhase) => void;
@@ -238,6 +239,7 @@ const prepareWeekViewPerfPage = async (page: Page) => {
     const createMetrics = (): WeekViewPerfPhaseMetrics => ({
       domMutationsUnexpected: 0,
       frameGapsMs: [],
+      layoutReadsDuringMotion: 0,
       longTasks: 0,
       rafComputeWriteMs: [],
       reactCommits: 0,
@@ -396,6 +398,13 @@ const prepareWeekViewPerfPage = async (page: Page) => {
           metrics.firstFrameLatencyMs === undefined
         ) {
           metrics.firstFrameLatencyMs = frame.firstFrameLatencyMs;
+        }
+      },
+      recordLayoutRead() {
+        const metrics = getPhaseMetrics();
+
+        if (metrics) {
+          metrics.layoutReadsDuringMotion += 1;
         }
       },
       recordReactCommit() {

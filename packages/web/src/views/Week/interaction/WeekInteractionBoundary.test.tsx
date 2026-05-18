@@ -15,6 +15,11 @@ class OwningWeekInteractionAdapter extends WeekInteractionAdapter {
   }
 }
 
+class CancellationAwareWeekInteractionAdapter extends WeekInteractionAdapter {
+  disconnectCancellationEvents = mock();
+  connectCancellationEvents = mock(() => this.disconnectCancellationEvents);
+}
+
 describe("WeekInteractionBoundary", () => {
   it("does not block child pointer handlers in passive mode", () => {
     const adapter = new WeekInteractionAdapter({ mode: "passive" });
@@ -52,5 +57,22 @@ describe("WeekInteractionBoundary", () => {
     fireEvent.pointerDown(screen.getByRole("button", { name: "event" }));
 
     expect(onPointerDown).not.toHaveBeenCalled();
+  });
+
+  it("connects global cancellation events while mounted and disconnects them on unmount", () => {
+    const adapter = new CancellationAwareWeekInteractionAdapter();
+
+    const { unmount } = render(
+      <WeekInteractionBoundary adapter={adapter}>
+        <button type="button">event</button>
+      </WeekInteractionBoundary>,
+    );
+
+    expect(adapter.connectCancellationEvents).toHaveBeenCalledTimes(1);
+    expect(adapter.disconnectCancellationEvents).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(adapter.disconnectCancellationEvents).toHaveBeenCalledTimes(1);
   });
 });

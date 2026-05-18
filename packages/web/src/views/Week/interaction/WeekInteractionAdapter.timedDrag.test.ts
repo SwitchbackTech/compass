@@ -48,21 +48,36 @@ const setRect = (
 const makePointerEvent = (
   type: string,
   {
+    button,
+    buttons,
+    isPrimary = true,
+    metaKey,
     pointerId = 1,
+    shiftKey,
     target,
     x = 0,
     y = 0,
   }: {
     pointerId?: number;
+    button?: number;
+    buttons?: number;
+    isPrimary?: boolean;
+    metaKey?: boolean;
+    shiftKey?: boolean;
     target: EventTarget;
     x?: number;
     y?: number;
   },
 ) => {
   const event = new PointerEvent(type, {
+    button,
+    buttons,
     clientX: x,
     clientY: y,
+    isPrimary,
+    metaKey,
     pointerId,
+    shiftKey,
   });
 
   Object.defineProperty(event, "target", { value: target });
@@ -238,6 +253,52 @@ describe("WeekInteractionAdapter timed drag", () => {
       reason: "no-week-interaction-target",
       shouldOwn: false,
     });
+  });
+
+  it("does not own right-click, non-primary, or modifier pointerdowns", () => {
+    const { adapter, child, timerCallbacks } = createHarness();
+
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          button: 2,
+          buttons: 2,
+          target: child,
+          x: 320,
+          y: 1020,
+        }),
+      ),
+    ).toEqual({
+      reason: "ineligible-week-pointer",
+      shouldOwn: false,
+    });
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          isPrimary: false,
+          target: child,
+          x: 320,
+          y: 1020,
+        }),
+      ),
+    ).toEqual({
+      reason: "ineligible-week-pointer",
+      shouldOwn: false,
+    });
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          metaKey: true,
+          target: child,
+          x: 320,
+          y: 1020,
+        }),
+      ),
+    ).toEqual({
+      reason: "ineligible-week-pointer",
+      shouldOwn: false,
+    });
+    expect(timerCallbacks.size).toBe(0);
   });
 
   it("commits an activated no-op timed drag as not moved", () => {

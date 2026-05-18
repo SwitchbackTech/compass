@@ -49,20 +49,32 @@ const setRect = (
 const makePointerEvent = (
   type: string,
   {
+    button,
+    buttons,
+    ctrlKey,
+    isPrimary = true,
     pointerId = 1,
     target,
     x = 0,
     y = 0,
   }: {
     pointerId?: number;
+    button?: number;
+    buttons?: number;
+    ctrlKey?: boolean;
+    isPrimary?: boolean;
     target: EventTarget;
     x?: number;
     y?: number;
   },
 ) => {
   const event = new PointerEvent(type, {
+    button,
+    buttons,
     clientX: x,
     clientY: y,
+    ctrlKey,
+    isPrimary,
     pointerId,
   });
 
@@ -189,6 +201,7 @@ const createHarness = ({
     onMotionActivation,
     onRequestWeekNavigation,
     source,
+    timerCallbacks,
   };
 };
 
@@ -234,6 +247,52 @@ describe("WeekInteractionAdapter all-day drag", () => {
       reason: "no-week-interaction-target",
       shouldOwn: false,
     });
+  });
+
+  it("does not own right-click, non-primary, or modifier pointerdowns", () => {
+    const { adapter, child, timerCallbacks } = createHarness();
+
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          button: 2,
+          buttons: 2,
+          target: child,
+          x: 430,
+          y: 30,
+        }),
+      ),
+    ).toEqual({
+      reason: "ineligible-week-pointer",
+      shouldOwn: false,
+    });
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          isPrimary: false,
+          target: child,
+          x: 430,
+          y: 30,
+        }),
+      ),
+    ).toEqual({
+      reason: "ineligible-week-pointer",
+      shouldOwn: false,
+    });
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          ctrlKey: true,
+          target: child,
+          x: 430,
+          y: 30,
+        }),
+      ),
+    ).toEqual({
+      reason: "ineligible-week-pointer",
+      shouldOwn: false,
+    });
+    expect(timerCallbacks.size).toBe(0);
   });
 
   it("commits an activated no-op all-day drag as not moved", () => {

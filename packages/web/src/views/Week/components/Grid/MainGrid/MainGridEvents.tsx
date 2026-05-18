@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -29,7 +30,10 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   );
   const draftId = useAppSelector(selectDraftId);
 
-  const adjustedEvents = adjustOverlappingEvents(timedEvents);
+  const adjustedEvents = useMemo(
+    () => adjustOverlappingEvents(timedEvents),
+    [timedEvents],
+  );
   const category = Categories_Event.TIMED;
 
   const handleKeyDown = (event: Schema_GridEvent) => {
@@ -52,11 +56,8 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
       {!isLoadingWeekView &&
         adjustedEvents.map((event: Schema_GridEvent) => (
           <GridEventMemo
+            displayMode={event._id === draftId ? "placeholder" : "saved"}
             event={event}
-            isDragging={false}
-            isDraft={false}
-            isPlaceholder={event._id === draftId}
-            isResizing={false}
             key={`initial-${event._id}`}
             measurements={measurements}
             onEventKeyDown={handleKeyDown}

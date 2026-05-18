@@ -15,7 +15,7 @@ export interface WeekViewPerfPhaseMetrics {
   domMutationsUnexpected: number;
   firstFrameLatencyMs?: number;
   frameGapsMs: number[];
-  layoutReadsDuringMotion?: number;
+  layoutReadsDuringMotion: number;
   longTasks: number;
   rafComputeWriteMs: number[];
   reactCommits: number;
@@ -61,6 +61,7 @@ export const createEmptyWeekViewPerfPhaseMetrics =
   (): WeekViewPerfPhaseMetrics => ({
     domMutationsUnexpected: 0,
     frameGapsMs: [],
+    layoutReadsDuringMotion: 0,
     longTasks: 0,
     rafComputeWriteMs: [],
     reactCommits: 0,
@@ -149,7 +150,9 @@ const collectZeroWorkFailures = (
     failures.push(`${phase}: expected 0 long tasks`);
   }
 
-  if ((metrics.layoutReadsDuringMotion ?? 0) !== 0) {
+  if (!("layoutReadsDuringMotion" in metrics)) {
+    failures.push(`${phase}: expected layout read metrics`);
+  } else if (metrics.layoutReadsDuringMotion !== 0) {
     failures.push(`${phase}: expected 0 layout reads during motion`);
   }
 };

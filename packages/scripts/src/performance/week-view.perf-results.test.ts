@@ -81,6 +81,25 @@ describe("evaluateWeekViewPerfResult", () => {
     ]);
   });
 
+  it("fails zero-work phases when layout-read metrics are missing", () => {
+    const metrics = addPassingRafSamples();
+
+    delete metrics.layoutReadsDuringMotion;
+
+    const evaluation = evaluateWeekViewPerfResult(
+      createScenario({
+        phases: {
+          sustainedMotion: metrics,
+        },
+      }),
+    );
+
+    expect(evaluation.status).toBe("failed");
+    expect(evaluation.failures).toEqual([
+      "sustainedMotion: expected layout read metrics",
+    ]);
+  });
+
   it("does not apply sustained zero-work gates to activation and commit phases", () => {
     const activation = createEmptyWeekViewPerfPhaseMetrics();
     const commit = createEmptyWeekViewPerfPhaseMetrics();

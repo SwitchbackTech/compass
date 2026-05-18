@@ -1,5 +1,6 @@
 import { type CalendarInteractionOverlayMount } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
 import { sanitizeInteractionCloneBase } from "@web/common/calendar-interaction/dom/sanitizeInteractionCloneBase";
+import { recordWeekInteractionLayoutRead } from "../WeekInteractionMetrics";
 
 const createWeekInteractionEventClone = (source: HTMLElement) => {
   const clone = sanitizeInteractionCloneBase(source);
@@ -16,6 +17,7 @@ export const createWeekInteractionEventOverlayMount = ({
   cursor?: string;
   source: HTMLElement;
 }): CalendarInteractionOverlayMount => {
+  recordWeekInteractionLayoutRead();
   const rect = source.getBoundingClientRect();
 
   return {

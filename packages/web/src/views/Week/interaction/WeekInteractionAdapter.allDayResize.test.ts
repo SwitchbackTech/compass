@@ -49,11 +49,13 @@ const setRect = (
 const makePointerEvent = (
   type: string,
   {
+    isPrimary = true,
     pointerId = 1,
     target,
     x = 0,
     y = 0,
   }: {
+    isPrimary?: boolean;
     pointerId?: number;
     target: EventTarget;
     x?: number;
@@ -63,6 +65,7 @@ const makePointerEvent = (
   const event = new PointerEvent(type, {
     clientX: x,
     clientY: y,
+    isPrimary,
     pointerId,
   });
 

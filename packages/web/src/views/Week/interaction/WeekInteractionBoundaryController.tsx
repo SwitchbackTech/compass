@@ -1,4 +1,10 @@
-import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
+import {
+  type FC,
+  type PropsWithChildren,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -40,6 +46,10 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
   const allDayEventsById = useMemo(() => {
     return mapEventsById(allDayEvents);
   }, [allDayEvents]);
+  const pendingEventIdSet = useMemo(
+    () => new Set(pendingEventIds),
+    [pendingEventIds],
+  );
   const runtimeRef = useRef<WeekInteractionRuntime>({
     getTimedEventById: () => null,
     isEventPending: () => false,
@@ -54,6 +64,19 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
       }),
     [],
   );
+  const lastNavigationSource = weekProps.util.getLastNavigationSource();
+  const renderedWeekStartMs = weekProps.component.startOfView.valueOf();
+
+  useLayoutEffect(() => {
+    if (
+      lastNavigationSource !== "drag-to-edge" ||
+      !Number.isFinite(renderedWeekStartMs)
+    ) {
+      return;
+    }
+
+    adapter.rebuildLayoutAfterNavigation();
+  }, [adapter, lastNavigationSource, renderedWeekStartMs]);
 
   const openTimedEvent = (event: Schema_GridEvent) => {
     dispatch(
@@ -103,7 +126,7 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
   runtimeRef.current = {
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
-    isEventPending: (eventId) => pendingEventIds.includes(eventId),
+    isEventPending: (eventId) => pendingEventIdSet.has(eventId),
     isFormOpen: () => state.isFormOpen,
     onClickAllDayEvent: openAllDayEvent,
     onClickTimedEvent: openTimedEvent,

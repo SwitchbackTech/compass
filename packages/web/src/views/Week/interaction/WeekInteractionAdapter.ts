@@ -55,6 +55,7 @@ import {
   type TimedResizeEdge,
   type TimedResizeVisual,
 } from "./model/TimedResizeVisual";
+import { recordWeekInteractionLayoutRead } from "./WeekInteractionMetrics";
 import { setWeekInteractionMotionActive } from "./weekInteractionMotionState";
 
 export type WeekInteractionAdapterMode = "active" | "passive";
@@ -76,6 +77,11 @@ interface WeekInteractionEngineOptions {
   now?: () => number;
   requestFrame?: (callback: FrameRequestCallback) => unknown;
   setTimer?: (callback: () => void, delayMs: number) => unknown;
+}
+
+interface WeekInteractionCancellationTargets {
+  documentTarget?: Document;
+  windowTarget?: Window;
 }
 
 export interface WeekInteractionRuntime {
@@ -221,10 +227,31 @@ export class WeekInteractionAdapter {
     return this.#engine.ownsPointer(event);
   }
 
+  connectCancellationEvents(targets?: WeekInteractionCancellationTargets) {
+    return this.#engine.connectCancellationEvents(targets);
+  }
+
+  rebuildLayoutAfterNavigation() {
+    const session = this.#engine.getSession();
+
+    if (session.phase === "idle") {
+      return;
+    }
+
+    this.#rebuildLayoutIfNeeded(session.target);
+  }
+
   handlePointerDown(event: PointerEvent): WeekInteractionPointerOwnership {
     if (this.#mode === "passive") {
       return {
         reason: "passive-week-adapter",
+        shouldOwn: false,
+      };
+    }
+
+    if (!isEligibleWeekPointerDown(event)) {
+      return {
+        reason: "ineligible-week-pointer",
         shouldOwn: false,
       };
     }
@@ -879,7 +906,16 @@ const buildWeekLayoutCacheForTarget = (target: WeekInteractionTarget) =>
     ? buildAllDayWeekLayoutCache()
     : buildTimedWeekLayoutCache();
 
+const isEligibleWeekPointerDown = (event: PointerEvent) =>
+  event.isPrimary !== false &&
+  event.button === 0 &&
+  !event.altKey &&
+  !event.ctrlKey &&
+  !event.metaKey &&
+  !event.shiftKey;
+
 const readElementRect = (element: HTMLElement): VisualRect => {
+  recordWeekInteractionLayoutRead();
   const rect = element.getBoundingClientRect();
 
   return {

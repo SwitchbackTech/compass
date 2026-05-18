@@ -142,11 +142,8 @@ describe("weekEventRegistry", () => {
     const event = createTimedEvent();
     const { unmount } = renderWithStore(
       <GridEvent
+        displayMode="saved"
         event={event}
-        isDragging={false}
-        isDraft={false}
-        isPlaceholder={false}
-        isResizing={false}
         measurements={measurements}
         onEventMouseDown={mock()}
         onScalerMouseDown={mock()}
@@ -275,22 +272,16 @@ describe("weekEventRegistry", () => {
     renderWithStore(
       <>
         <GridEvent
+          displayMode="draft"
           event={draftEvent}
-          isDragging={false}
-          isDraft={true}
-          isPlaceholder={false}
-          isResizing={false}
           measurements={measurements}
           onEventMouseDown={mock()}
           onScalerMouseDown={mock()}
           weekProps={weekProps}
         />
         <GridEvent
+          displayMode="saved"
           event={pendingEvent}
-          isDragging={false}
-          isDraft={false}
-          isPlaceholder={false}
-          isResizing={false}
           measurements={measurements}
           onEventMouseDown={mock()}
           onScalerMouseDown={mock()}

@@ -25,6 +25,9 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
       return;
     }
 
+    const disconnectCancellationEvents =
+      activeAdapter.connectCancellationEvents();
+
     const handlePointerDown = (event: PointerEvent) => {
       const ownership = activeAdapter.handlePointerDown(event);
 
@@ -77,6 +80,7 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
       boundary.removeEventListener("pointercancel", handlePointerCancel, {
         capture: true,
       });
+      disconnectCancellationEvents();
     };
   }, [activeAdapter]);
 
