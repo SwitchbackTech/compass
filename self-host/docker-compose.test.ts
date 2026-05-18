@@ -77,6 +77,13 @@ describe("staging deploy workflow", () => {
     expect(workflow).toContain("cd ~/compass && ./compass update");
   });
 
+  it("falls back to the release tag when a configured compose ref is unavailable", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).toContain('COMPOSE_GIT_REF="${COMPOSE_GIT_REF:-${RELEASE_TAG}}"');
+    expect(workflow).toContain('COMPOSE_GIT_REF="${RELEASE_TAG}"');
+  });
+
   it("writes the Google Calendar notification token with Google credentials", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
