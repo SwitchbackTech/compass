@@ -100,15 +100,20 @@ export const MainGrid: FC<Props> = ({
         mouseEvent.clientY,
         component.startOfView,
       );
-      const resolvedEndDate =
-        hasMoved &&
-        pointerDate.isSame(_start, "day") &&
-        pointerDate.isAfter(minimumEndDate)
-          ? pointerDate
+      const isSameDayDrag = hasMoved && pointerDate.isSame(_start, "day");
+      const isUpwardDrag = isSameDayDrag && pointerDate.isBefore(_start);
+      const isDownwardDragPastMinimum =
+        isSameDayDrag && pointerDate.isAfter(minimumEndDate);
+      const resolvedStartDate = isUpwardDrag ? pointerDate : _start;
+      const resolvedEndDate = isDownwardDragPastMinimum
+        ? pointerDate
+        : isUpwardDrag
+          ? _start
           : minimumEndDate;
 
       return {
         ...event,
+        startDate: resolvedStartDate.format(),
         endDate: resolvedEndDate.format(),
       } as Schema_GridEvent;
     };
