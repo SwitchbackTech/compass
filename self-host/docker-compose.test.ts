@@ -70,6 +70,13 @@ describe("self-host helper", () => {
 });
 
 describe("staging deploy workflow", () => {
+  it("lets the self-host helper default compose profiles when the environment variable is unset", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).toContain('if [ -n "$COMPOSE_PROFILES" ]; then');
+    expect(workflow).toContain("cd ~/compass && ./compass update");
+  });
+
   it("writes the Google Calendar notification token with Google credentials", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
