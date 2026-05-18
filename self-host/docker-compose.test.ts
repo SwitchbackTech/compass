@@ -53,6 +53,14 @@ describe("self-host installer", () => {
 });
 
 describe("self-host helper", () => {
+  it("defaults Docker Compose to the self-host profile", () => {
+    const helper = readRepoFile("self-host/compass");
+
+    expect(helper).toContain(
+      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-selfhost}"',
+    );
+  });
+
   it("reads the Docker image version from runtime.version", () => {
     const helper = readRepoFile("self-host/compass");
 
