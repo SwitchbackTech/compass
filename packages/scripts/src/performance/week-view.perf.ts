@@ -52,7 +52,12 @@ const BROWSER_SCENARIOS = new Set([
   "timed-resize-v2-sustained-bottom",
   "timed-resize-v2-sustained-top",
   "timed-resize-v2-edge-flip",
+  "all-day-drag-v2-sustained",
+  "edge-navigation-all-day-drag-v2",
+  "all-day-resize-v2-sustained",
 ]);
+const ALL_DAY_EVENT_SELECTOR =
+  '[data-week-interaction-event-id][data-week-interaction-event-type="all-day"]';
 const TIMED_EVENT_SELECTOR =
   '[data-week-interaction-event-id][data-week-interaction-event-type="timed"]';
 const OVERLAY_SELECTOR = "[data-calendar-interaction-overlay]";
@@ -434,10 +439,6 @@ const prepareWeekViewPerfPage = async (page: Page) => {
       perfWindow.__COMPASS_E2E_STORE__,
     );
   });
-  await page
-    .locator(TIMED_EVENT_SELECTOR)
-    .first()
-    .waitFor({ state: "visible", timeout: 30_000 });
 };
 
 const runBrowserScenarioInteraction = async (page: Page, scenario: string) => {
@@ -462,6 +463,15 @@ const runBrowserScenarioInteraction = async (page: Page, scenario: string) => {
       return;
     case "timed-resize-v2-edge-flip":
       await runTimedResizeScenario(page, "endDate", -120);
+      return;
+    case "all-day-drag-v2-sustained":
+      await runAllDayDragSustainedScenario(page);
+      return;
+    case "edge-navigation-all-day-drag-v2":
+      await runAllDayEdgeNavigationScenario(page);
+      return;
+    case "all-day-resize-v2-sustained":
+      await runAllDayResizeScenario(page);
       return;
     default:
       throw new Error(`Unhandled Week browser perf scenario: ${scenario}`);
@@ -552,6 +562,61 @@ const runTimedResizeScenario = async (
   await page.waitForTimeout(250);
 };
 
+const runAllDayDragSustainedScenario = async (page: Page) => {
+  const start = await activateAllDayDrag(page);
+
+  await waitForBrowserSettled(page);
+  await startBrowserPerfPhase(page, "sustainedMotion");
+  const end = await movePointerInFrames(page, start.x + 35, start.y, 140, 0);
+  await stopBrowserPerfPhase(page);
+  await dispatchPointerEvent(page, "pointerup", end.x, end.y);
+  await page.waitForTimeout(250);
+};
+
+const runAllDayEdgeNavigationScenario = async (page: Page) => {
+  const start = await activateAllDayDrag(page);
+  const allDayColumnsBox = await requireBox(
+    page.locator("#allDayColumns"),
+    "all-day columns",
+  );
+  const edgeX = allDayColumnsBox.x + allDayColumnsBox.width - 20;
+  const edgeY = Math.min(
+    allDayColumnsBox.y + allDayColumnsBox.height - 4,
+    Math.max(allDayColumnsBox.y + 4, start.y),
+  );
+  const safeX = allDayColumnsBox.x + allDayColumnsBox.width / 2;
+  const safeY = edgeY;
+
+  await waitForBrowserSettled(page);
+  await dispatchPointerEvent(page, "pointermove", safeX, safeY);
+  await waitFrames(page, 2);
+
+  await startBrowserPerfPhase(page, "preNavigationSustainedMotion");
+  await movePointerInFrames(page, safeX, safeY, 25, 0, 4);
+  await stopBrowserPerfPhase(page);
+
+  await runEdgeNavigationDwellAndStartRenderPhase(page, edgeX, edgeY);
+  await page.waitForTimeout(700);
+  await stopBrowserPerfPhase(page);
+
+  await startBrowserPerfPhase(page, "postNavigationSustainedMotion");
+  const end = await movePointerInFrames(page, edgeX, edgeY, -70, 0, 4);
+  await stopBrowserPerfPhase(page);
+  await dispatchPointerEvent(page, "pointerup", end.x, end.y);
+  await page.waitForTimeout(250);
+};
+
+const runAllDayResizeScenario = async (page: Page) => {
+  const start = await activateAllDayResize(page, "endDate");
+
+  await waitForBrowserSettled(page);
+  await startBrowserPerfPhase(page, "sustainedMotion");
+  const end = await movePointerInFrames(page, start.x + 35, start.y, 140, 0);
+  await stopBrowserPerfPhase(page);
+  await dispatchPointerEvent(page, "pointerup", end.x, end.y);
+  await page.waitForTimeout(250);
+};
+
 const activateTimedDrag = async (page: Page) => {
   const event = page.locator(TIMED_EVENT_SELECTOR).first();
 
@@ -563,6 +628,24 @@ const activateTimedDrag = async (page: Page) => {
   await dispatchPointerEvent(page, "pointermove", x, y);
   await dispatchPointerEvent(page, "pointerdown", x, y, TIMED_EVENT_SELECTOR);
   await dispatchPointerEvent(page, "pointermove", x, y + 40);
+  await page
+    .locator(OVERLAY_SELECTOR)
+    .waitFor({ state: "visible", timeout: 5_000 });
+
+  return { x, y };
+};
+
+const activateAllDayDrag = async (page: Page) => {
+  const event = page.locator(ALL_DAY_EVENT_SELECTOR).first();
+
+  await event.waitFor({ state: "visible", timeout: 30_000 });
+  const box = await requireBox(event, "all-day event");
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+
+  await dispatchPointerEvent(page, "pointermove", x, y);
+  await dispatchPointerEvent(page, "pointerdown", x, y, ALL_DAY_EVENT_SELECTOR);
+  await dispatchPointerEvent(page, "pointermove", x + 40, y);
   await page
     .locator(OVERLAY_SELECTOR)
     .waitFor({ state: "visible", timeout: 5_000 });
@@ -587,6 +670,29 @@ const activateTimedResize = async (
   await dispatchPointerEvent(page, "pointermove", x, y);
   await dispatchPointerEvent(page, "pointerdown", x, y, handleSelector);
   await dispatchPointerEvent(page, "pointermove", x, y + activationDeltaY);
+  await page
+    .locator(OVERLAY_SELECTOR)
+    .waitFor({ state: "visible", timeout: 5_000 });
+
+  return { x, y };
+};
+
+const activateAllDayResize = async (
+  page: Page,
+  edge: "endDate" | "startDate",
+) => {
+  const event = page.locator(ALL_DAY_EVENT_SELECTOR).first();
+
+  await event.waitFor({ state: "visible", timeout: 30_000 });
+  const handle = event.locator(`[data-week-event-resize-handle="${edge}"]`);
+  const handleSelector = `${ALL_DAY_EVENT_SELECTOR} [data-week-event-resize-handle="${edge}"]`;
+  const box = await requireBox(handle, `all-day ${edge} resize handle`);
+  const x = box.x + box.width / 2;
+  const y = box.y + box.height / 2;
+
+  await dispatchPointerEvent(page, "pointermove", x, y);
+  await dispatchPointerEvent(page, "pointerdown", x, y, handleSelector);
+  await dispatchPointerEvent(page, "pointermove", x + 40, y);
   await page
     .locator(OVERLAY_SELECTOR)
     .waitFor({ state: "visible", timeout: 5_000 });
@@ -738,6 +844,13 @@ const waitFrames = (page: Page, frameCount: number) =>
     }
   }, frameCount);
 
+const waitForBrowserSettled = async (page: Page) => {
+  await page
+    .waitForLoadState("networkidle", { timeout: 2_000 })
+    .catch(() => undefined);
+  await waitFrames(page, 4);
+};
+
 const requireBox = async (locator: Locator, label: string) => {
   const box = await locator.boundingBox();
 
@@ -760,8 +873,7 @@ const readBrowserPerfPhases = async (page: Page) => {
 
 const getBrowserScenarioInteraction = (
   scenario: string,
-): WeekViewPerfInteraction =>
-  scenario.startsWith("timed-resize") ? "resize" : "drag";
+): WeekViewPerfInteraction => (scenario.includes("resize") ? "resize" : "drag");
 
 const getBrowserScenarioSampleCount = (
   phases: Partial<Record<WeekViewPerfPhase, WeekViewPerfPhaseMetrics>>,
