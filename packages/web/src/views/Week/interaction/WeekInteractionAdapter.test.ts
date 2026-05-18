@@ -72,8 +72,21 @@ describe("WeekInteractionAdapter", () => {
 
   it("documents the active Week surfaces owned by the calendar interaction engine", () => {
     const adapter = new WeekInteractionAdapter({ mode: "active" });
+    const matrix = adapter.getOwnershipMatrix();
+    const adapterOwnedSurfaces = matrix
+      .filter((entry) => entry.newOwner === "week-interaction-adapter")
+      .map((entry) => entry.surface);
 
-    expect(adapter.getOwnershipMatrix()).toEqual([
+    expect(new Set(matrix.map((entry) => entry.surface)).size).toBe(
+      matrix.length,
+    );
+    expect(adapterOwnedSurfaces).toEqual([
+      "savedTimedDrag",
+      "savedTimedResize",
+      "savedAllDayDrag",
+      "savedAllDayResize",
+    ]);
+    expect(matrix).toEqual([
       expect.objectContaining({
         newOwner: "week-interaction-adapter",
         surface: "savedTimedDrag",

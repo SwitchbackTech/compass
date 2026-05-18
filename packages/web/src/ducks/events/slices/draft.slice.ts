@@ -55,17 +55,6 @@ export const draftSlice = createSlice({
       };
     },
 
-    startDragging: (state, action) => {
-      const { category, event } = action.payload;
-      state.event = event;
-      state.status = {
-        ...state.status,
-        activity: "dragging",
-        eventType: category,
-        isDrafting: true,
-      };
-    },
-
     swap: (state, action: Action_Draft_Swap) => {
       const { category, event } = action.payload;
       state.event = event;

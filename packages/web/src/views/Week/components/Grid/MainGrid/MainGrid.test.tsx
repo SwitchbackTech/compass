@@ -1,26 +1,78 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { cleanup, fireEvent, render, waitFor } from "@testing-library/react";
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { Provider } from "react-redux";
 import { ThemeProvider } from "styled-components";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { ID_GRID_COLUMNS_TIMED } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
+import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { DRAFT_DURATION_MIN } from "@web/views/Week/layout.constants";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
+const { AllDayEvents } = await import("../AllDayRow/AllDayEvents");
 const { MainGrid } = await import("./MainGrid");
+const { MainGridEvents } = await import("./MainGridEvents");
 
 afterEach(() => {
   cleanup();
+  (
+    window as unknown as {
+      __weekInteractionV2MotionActive?: boolean;
+    }
+  ).__weekInteractionV2MotionActive = false;
 });
 
 const startOfView = dayjs("2024-01-14T00:00:00.000");
+const measurements = {
+  allDayRow: null,
+  colWidths: [100, 100, 100, 100, 100, 100, 100],
+  hourHeight: 60,
+  mainGrid: {
+    bottom: 780,
+    height: 780,
+    left: 0,
+    right: 700,
+    top: 0,
+    width: 700,
+    x: 0,
+    y: 0,
+  },
+} satisfies Measurements_Grid;
 
-const createStore = () =>
-  configureStore({
+const createStore = (events: Schema_Event[] = []) => {
+  const preloadedState = createInitialState();
+  const eventIds = events
+    .map((event) => event._id)
+    .filter((eventId): eventId is string => Boolean(eventId));
+
+  preloadedState.events.entities!.value = Object.fromEntries(
+    events
+      .filter((event): event is Schema_Event & { _id: string } =>
+        Boolean(event._id),
+      )
+      .map((event) => [event._id, event]),
+  );
+  preloadedState.events.getWeekEvents!.value = {
+    count: eventIds.length,
+    data: eventIds,
+    offset: 0,
+    page: 1,
+    pageSize: eventIds.length || 1,
+  };
+
+  return configureStore({
+    preloadedState,
     reducer: reducers,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
@@ -29,6 +81,7 @@ const createStore = () =>
         thunk: false,
       }),
   });
+};
 
 const createDateCalcs = () => ({
   getDateByXY: (_x: number, y: number, firstDayInView: Dayjs) =>
@@ -60,6 +113,19 @@ const createWeekProps = () => ({
   },
 });
 
+const createSavedEvent = (
+  overrides: Partial<Schema_Event> = {},
+): Schema_Event =>
+  ({
+    _id: "saved-event",
+    endDate: "2024-01-15T10:00:00.000Z",
+    isAllDay: false,
+    recurrence: undefined,
+    startDate: "2024-01-15T09:00:00.000Z",
+    title: "Saved event",
+    ...overrides,
+  }) as Schema_Event;
+
 const renderMainGrid = () => {
   const store = createStore();
   const dateCalcs = createDateCalcs();
@@ -86,21 +152,7 @@ const renderMainGrid = () => {
             dateCalcs={dateCalcs}
             mainGridElementRef={mock()}
             mainGridRef={mainGridRef}
-            measurements={{
-              allDayRow: null,
-              colWidths: [100, 100, 100, 100, 100, 100, 100],
-              hourHeight: 60,
-              mainGrid: {
-                bottom: 780,
-                height: 780,
-                left: 0,
-                right: 700,
-                top: 0,
-                width: 700,
-                x: 0,
-                y: 0,
-              },
-            }}
+            measurements={measurements}
             today={startOfView}
             weekProps={createWeekProps()}
           />
@@ -160,6 +212,17 @@ const getFirstTimedGridRow = (container: HTMLElement) => {
   return timedRows.firstElementChild;
 };
 
+const expectDraftIsInactive = (store: ReturnType<typeof createStore>) => {
+  const draftStatus = store.getState().events.draft.status;
+
+  if (!draftStatus) {
+    throw new Error("Draft status was not initialized");
+  }
+
+  expect(draftStatus.activity).toBeNull();
+  expect(draftStatus.isDrafting).toBe(false);
+};
+
 describe("MainGrid empty-grid draft creation", () => {
   it("creates the selected range when dragging upward from an empty timed slot", async () => {
     const { container, store } = renderMainGrid();
@@ -198,5 +261,75 @@ describe("MainGrid empty-grid draft creation", () => {
       startOfView.add(11, "hour").format(),
       startOfView.add(11, "hour").add(DRAFT_DURATION_MIN, "minute").format(),
     );
+  });
+});
+
+describe("saved Week event ownership", () => {
+  it("keeps saved timed mouse and resize events out of the draft motion owner", () => {
+    const savedEvent = createSavedEvent();
+    const store = createStore([savedEvent]);
+
+    render(
+      <Provider store={store}>
+        <ThemeProvider theme={theme}>
+          <MainGridEvents
+            measurements={measurements}
+            weekProps={createWeekProps()}
+          />
+        </ThemeProvider>
+      </Provider>,
+    );
+
+    const eventButton = screen.getByRole("button", { name: /saved event/i });
+    const resizeHandle = eventButton.querySelector(
+      '[data-week-event-resize-handle="endDate"]',
+    );
+
+    fireEvent.mouseDown(eventButton, { button: 0, buttons: 1 });
+    expectDraftIsInactive(store);
+
+    if (!(resizeHandle instanceof HTMLElement)) {
+      throw new Error("Saved timed resize handle was not rendered");
+    }
+
+    fireEvent.mouseDown(resizeHandle, { button: 0, buttons: 1 });
+    expectDraftIsInactive(store);
+  });
+
+  it("keeps saved all-day mouse and resize events out of the draft motion owner", () => {
+    const savedEvent = createSavedEvent({
+      _id: "saved-all-day-event",
+      endDate: "2024-01-17T00:00:00.000Z",
+      isAllDay: true,
+      startDate: "2024-01-15T00:00:00.000Z",
+    });
+    const store = createStore([savedEvent]);
+
+    render(
+      <Provider store={store}>
+        <ThemeProvider theme={theme}>
+          <AllDayEvents
+            endOfView={startOfView.endOf("week")}
+            measurements={measurements}
+            startOfView={startOfView}
+          />
+        </ThemeProvider>
+      </Provider>,
+    );
+
+    const eventButton = screen.getByRole("button", { name: /saved event/i });
+    const resizeHandle = eventButton.querySelector(
+      '[data-week-event-resize-handle="endDate"]',
+    );
+
+    fireEvent.mouseDown(eventButton, { button: 0, buttons: 1 });
+    expectDraftIsInactive(store);
+
+    if (!(resizeHandle instanceof HTMLElement)) {
+      throw new Error("Saved all-day resize handle was not rendered");
+    }
+
+    fireEvent.mouseDown(resizeHandle, { button: 0, buttons: 1 });
+    expectDraftIsInactive(store);
   });
 });
