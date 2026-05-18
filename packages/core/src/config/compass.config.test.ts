@@ -2,12 +2,11 @@ import { parseCompassConfigText } from "./compass.config";
 import { describe, expect, it } from "bun:test";
 
 const validYaml = `
-compose:
-  version: latest
 runtime:
+  version: latest
   nodeEnv: development
-  timezone: Etc/UTC
   logLevel: debug
+  timezone: Etc/UTC
 web:
   port: 9080
   url: http://localhost:9080
@@ -53,7 +52,7 @@ describe("compass config", () => {
     expect(config.supertokens.uri).toBe("http://localhost:3567");
     expect(config.supertokens.key).toBe("supertokens-key");
     expect(config.supertokens.postgres?.user).toBe("supertokens");
-    expect(config.compose?.version).toBe("latest");
+    expect(config.runtime.version).toBe("latest");
   });
 
   it("omits optional Google and email config when keys are absent", () => {

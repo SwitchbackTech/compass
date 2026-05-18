@@ -52,9 +52,33 @@ describe("self-host installer", () => {
   });
 });
 
+describe("self-host helper", () => {
+  it("defaults Docker Compose to the self-host profile", () => {
+    const helper = readRepoFile("self-host/compass");
+
+    expect(helper).toContain(
+      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-selfhost}"',
+    );
+  });
+
+  it("reads the Docker image version from runtime.version", () => {
+    const helper = readRepoFile("self-host/compass");
+
+    expect(helper).toContain("read_config_value runtime.version");
+    expect(helper).not.toContain("read_config_value compose.version");
+  });
+});
+
 describe("staging deploy workflow", () => {
+  it("lets the self-host helper default compose profiles when the environment variable is unset", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).toContain('if [ -n "$COMPOSE_PROFILES" ]; then');
+    expect(workflow).toContain("cd ~/compass && ./compass update");
+  });
+
   it("writes the Google Calendar notification token with Google credentials", () => {
-    const workflow = readRepoFile(".github/workflows/deploy-staging.yml");
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
     expect(workflow).toContain(
       "GCAL_NOTIFICATION_TOKEN: $".concat(
