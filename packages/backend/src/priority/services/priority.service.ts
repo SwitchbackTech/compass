@@ -1,4 +1,4 @@
-import { type ClientSession } from "mongodb";
+import { type AnyBulkWriteOperation, type ClientSession } from "mongodb";
 import { Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import {
@@ -20,16 +20,21 @@ class PriorityService {
     data: Array<Omit<Schema_Priority, "_id">>,
     session?: ClientSession,
   ): Promise<Schema_Priority[]> {
-    const bulkUpsert = mongoService.priority.initializeUnorderedBulkOp();
+    if (data.length > 0) {
+      const operations: AnyBulkWriteOperation<Omit<Schema_Priority, "_id">>[] =
+        data.map(({ name, user, ...item }) => ({
+          updateOne: {
+            filter: { name, user },
+            update: { $setOnInsert: { name, user }, $set: item },
+            upsert: true,
+          },
+        }));
 
-    data.forEach(({ name, user, ...item }) => {
-      bulkUpsert
-        .find({ name, user })
-        .upsert()
-        .update({ $setOnInsert: { name, user }, $set: item });
-    });
-
-    await bulkUpsert.execute({ session });
+      await mongoService.priority.bulkWrite(operations, {
+        ordered: false,
+        session,
+      });
+    }
 
     const result = await mongoService.priority
       .find(

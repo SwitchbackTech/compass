@@ -1,4 +1,4 @@
-# Compass YAML Configuration
+# Configuration
 
 Compass uses `compass.yaml` for self-hosting and local development. The file is visible, diffable, and contains secrets, so keep it out of git and back it up with the Docker volumes.
 
@@ -7,14 +7,14 @@ Examples:
 - local development: `packages/backend/compass.example.yaml`
 - self-hosting: `self-host/compass.example.yaml`
 
-## Top-Level Sections
+## Runtime
 
-| key | Default | Description |
+| key | Required | Description |
 |---|---|---|
-| `compose.version` | `latest` | Docker image tag used by the self-host compose stack. Pin this for reproducible installs. |
-| `runtime.nodeEnv` | `production` | Runtime mode. Self-hosted installs should use `production`; local development uses `development`. |
-| `runtime.timezone` | `Etc/UTC` | Backend timezone. Only `Etc/UTC` and `UTC` are accepted. |
-| `runtime.logLevel` | `info` | Winston log level. |
+| `runtime.version` | Self-host | Docker image tag used by the self-host compose stack. Defaults to `latest`. Pin this for reproducible installs. |
+| `runtime.nodeEnv` | Yes | Runtime mode. Use `production` for self-hosted and staging; `development` for local dev. |
+| `runtime.timezone` | Yes | Backend timezone. Only `Etc/UTC` and `UTC` are accepted. |
+| `runtime.logLevel` | No | Winston log level. Defaults to `info`. |
 
 ## Web
 
@@ -36,10 +36,10 @@ Examples:
 
 | key | Required | Description |
 |---|---|---|
-| `mongo.username` | Self-host | MongoDB root username created on first container startup. Must match `mongo.uri`. |
+| `mongo.uri` | Yes | Backend MongoDB connection string. For self-hosted installs, must include `authSource=admin` and `replicaSet=rs0`. |
+| `mongo.username` | Self-host | MongoDB root username created on first container startup. Must match the credentials in `mongo.uri`. |
 | `mongo.password` | Self-host | MongoDB root password. Changing it after first startup requires a MongoDB user migration. |
-| `mongo.replicaSetKey` | Self-host | MongoDB replica set key for the single-node `rs0` replica set. |
-| `mongo.uri` | Yes | Backend MongoDB connection string. Self-hosted installs must include `authSource=admin` and `replicaSet=rs0`. |
+| `mongo.replicaSetKey` | Self-host | Shared secret used for internal authentication between replica set members. |
 
 ## SuperTokens
 

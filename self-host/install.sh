@@ -404,13 +404,11 @@ write_config_if_missing() {
   cat > "$TMP_ENV" <<EOF
 # See https://docs.compasscalendar.com/docs/self-hosting/config
 
-compose:
-  version: $COMPASS_VERSION
-
 runtime:
+  version: $COMPASS_VERSION
   nodeEnv: production
-  timezone: Etc/UTC
   logLevel: info
+  timezone: Etc/UTC
 
 web:
   port: 9080
@@ -484,7 +482,8 @@ EOF
 set_compose_env() {
   [ -f "$CONFIG_FILE" ] || fail "Missing config file: $CONFIG_FILE."
   export COMPASS_CONFIG_FILE="$CONFIG_FILE"
-  export COMPASS_VERSION="$(strip_quotes "$(read_config_value compose.version)")"
+  export COMPOSE_PROFILES="${COMPOSE_PROFILES-selfhost}"
+  export COMPASS_VERSION="$(strip_quotes "$(read_config_value runtime.version)")"
   export WEB_PORT="$(strip_quotes "$(read_config_value web.port)")"
   export PORT="$(strip_quotes "$(read_config_value backend.port)")"
   export MONGO_INITDB_ROOT_USERNAME="$(strip_quotes "$(read_config_value mongo.username)")"

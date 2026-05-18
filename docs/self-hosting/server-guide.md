@@ -147,7 +147,7 @@ The installer creates `~/compass`, writes `~/compass/compass.yaml`, and starts t
 
 From this point on, `localhost` means the VPS you are SSH'd into. You won't open `http://localhost:9080` from your own laptop unless you use SSH port forwarding. For normal server use, continue to Caddy and open the public HTTPS URL.
 
-## 3. Configure Caddy
+## 3. Configure Caddy Reverse Proxy
 
 Put Caddy on the same server as Compass. Its config file is usually `/etc/caddy/Caddyfile`.
 

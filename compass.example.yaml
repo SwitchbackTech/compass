@@ -5,13 +5,11 @@
 # - Do not commit this file; it contains secrets.
 # - For detailed explanations, see: https://docs.compasscalendar.com/docs/config
 
-compose:
-  version: latest
-
 runtime:
+  version: latest
   nodeEnv: development
-  timezone: Etc/UTC
   logLevel: debug
+  timezone: Etc/UTC
 
 web:
   port: 9080

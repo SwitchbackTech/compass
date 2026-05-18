@@ -491,22 +491,24 @@ export class SyncImport {
       Origin.GOOGLE_IMPORT,
     );
 
-    const bulkUpsert = mongoService.event.initializeUnorderedBulkOp();
-
-    cInstances.forEach((event) => {
-      bulkUpsert
-        .find({ gEventId: event.gEventId, user: userId })
-        .upsert()
-        .update({
+    const operations = cInstances.map((event) => ({
+      updateOne: {
+        filter: { gEventId: event.gEventId, user: userId },
+        update: {
           $set: {
             ...event,
             recurrence: { eventId: baseId.toString() },
             updatedAt: new Date(),
           },
-        });
-    });
+        },
+        upsert: true,
+      },
+    }));
 
-    const result = await bulkUpsert.execute({ session });
+    const result = await mongoService.event.bulkWrite(operations, {
+      ordered: false,
+      session,
+    });
 
     return {
       totalProcessed: baseImport.totalProcessed + instances.length,
