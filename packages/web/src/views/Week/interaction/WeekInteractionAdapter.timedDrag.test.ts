@@ -148,7 +148,6 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
     runtime: () => ({
       getTimedEventById: (eventId) => (eventId === event._id ? event : null),
       isEventPending: () => isPending,
-      now: () => now,
       onClickTimedEvent,
       onCommitTimedDrag,
       onMotionActivation,
@@ -222,11 +221,6 @@ describe("WeekInteractionAdapter timed drag", () => {
 
     expect(onClickTimedEvent).toHaveBeenCalledWith(event);
     expect(onCommitTimedDrag).not.toHaveBeenCalled();
-    expect(adapter.getMetrics()).toMatchObject({
-      ownedPointerDowns: 1,
-      pointerDowns: 1,
-      pointerUps: 1,
-    });
   });
 
   it("keeps pending events on the existing Week path", () => {

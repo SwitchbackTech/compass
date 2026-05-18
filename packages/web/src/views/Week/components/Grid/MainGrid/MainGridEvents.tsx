@@ -44,35 +44,25 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     );
   };
 
-  const renderEvents = () => {
-    if (
-      isProcessing &&
-      reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE
-    ) {
-      return null;
-    }
+  const isLoadingWeekView =
+    isProcessing && reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE;
 
-    return adjustedEvents.map((event: Schema_GridEvent) => {
-      return (
-        <GridEventMemo
-          event={event}
-          isDragging={false}
-          isDraft={false}
-          isPlaceholder={event._id === draftId}
-          isResizing={false}
-          key={`initial-${event._id}`}
-          measurements={measurements}
-          onEventMouseDown={() => undefined}
-          onEventKeyDown={handleKeyDown}
-          onScalerMouseDown={(_event, e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-          weekProps={weekProps}
-        />
-      );
-    });
-  };
-
-  return <div id={ID_GRID_EVENTS_TIMED}>{renderEvents()}</div>;
+  return (
+    <div id={ID_GRID_EVENTS_TIMED}>
+      {!isLoadingWeekView &&
+        adjustedEvents.map((event: Schema_GridEvent) => (
+          <GridEventMemo
+            event={event}
+            isDragging={false}
+            isDraft={false}
+            isPlaceholder={event._id === draftId}
+            isResizing={false}
+            key={`initial-${event._id}`}
+            measurements={measurements}
+            onEventKeyDown={handleKeyDown}
+            weekProps={weekProps}
+          />
+        ))}
+    </div>
+  );
 };

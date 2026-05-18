@@ -158,7 +158,6 @@ const createHarness = ({
       getAllDayEventById: (eventId) => (eventId === event._id ? event : null),
       getTimedEventById: () => null,
       isEventPending: () => isPending,
-      now: () => now,
       onClickAllDayEvent,
       onClickTimedEvent: () => undefined,
       onCommitAllDayDrag,

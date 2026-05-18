@@ -32,7 +32,6 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
         return;
       }
 
-      activeAdapter.recordOwnedPointerDown();
       event.preventDefault();
       event.stopPropagation();
     };
@@ -85,14 +84,10 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
     <Profiler
       id="WeekInteractionBoundary"
       onRender={() => {
-        recordWeekInteractionRender(activeAdapter.getMetrics());
+        recordWeekInteractionRender();
       }}
     >
-      <div
-        data-week-interaction-boundary="true"
-        ref={boundaryRef}
-        style={{ display: "contents" }}
-      >
+      <div ref={boundaryRef} style={{ display: "contents" }}>
         {children}
       </div>
     </Profiler>

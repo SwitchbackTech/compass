@@ -38,6 +38,7 @@ import {
   getWeekInteractionEventAttributes,
   useWeekEventRegistrationRef,
 } from "@web/views/Week/interaction/geometry/weekEventRegistry";
+import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/weekInteractionMotionState";
 import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
 
 interface Props {
@@ -47,9 +48,9 @@ interface Props {
   isPlaceholder: boolean;
   isResizing: boolean;
   measurements: Measurements_Grid;
-  onEventMouseDown: (event: Schema_GridEvent, e: MouseEvent) => void;
+  onEventMouseDown?: (event: Schema_GridEvent, e: MouseEvent) => void;
   onEventKeyDown?: (event: Schema_GridEvent) => void;
-  onScalerMouseDown: (
+  onScalerMouseDown?: (
     event: Schema_GridEvent,
     e: MouseEvent,
     dateToChange: "startDate" | "endDate",
@@ -202,6 +203,11 @@ const GridEventBase = (
           return;
         }
 
+        if (!onEventMouseDown) {
+          e.stopPropagation();
+          return;
+        }
+
         onEventMouseDown(event, e);
       }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
@@ -234,7 +240,8 @@ const GridEventBase = (
               data-week-event-resize-handle="startDate"
               style={scalerStyle({ top: "-0.25px" })}
               onMouseDown={(e) => {
-                onScalerMouseDown(event, e, "startDate");
+                e.stopPropagation();
+                onScalerMouseDown?.(event, e, "startDate");
               }}
             />
             {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
@@ -242,7 +249,8 @@ const GridEventBase = (
               data-week-event-resize-handle="endDate"
               style={scalerStyle({ bottom: "-0.25px" })}
               onMouseDown={(e) => {
-                onScalerMouseDown(event, e, "endDate");
+                e.stopPropagation();
+                onScalerMouseDown?.(event, e, "endDate");
               }}
             />
           </>
@@ -261,13 +269,3 @@ export const GridEventMemo = memo(GridEvent, (prev, next) => {
     prev.measurements === next.measurements
   );
 });
-
-const isWeekInteractionMotionActive = () =>
-  typeof window !== "undefined" &&
-  Boolean(
-    (
-      window as unknown as {
-        __weekInteractionV2MotionActive?: boolean;
-      }
-    ).__weekInteractionV2MotionActive,
-  );

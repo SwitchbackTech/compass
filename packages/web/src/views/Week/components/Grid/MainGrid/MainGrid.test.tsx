@@ -16,6 +16,7 @@ import { theme } from "@web/common/styles/theme";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
+import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/weekInteractionMotionState";
 import { DRAFT_DURATION_MIN } from "@web/views/Week/layout.constants";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
@@ -26,11 +27,7 @@ const { MainGridEvents } = await import("./MainGridEvents");
 
 afterEach(() => {
   cleanup();
-  (
-    window as unknown as {
-      __weekInteractionV2MotionActive?: boolean;
-    }
-  ).__weekInteractionV2MotionActive = false;
+  setWeekInteractionMotionActive(false);
 });
 
 const startOfView = dayjs("2024-01-14T00:00:00.000");
@@ -52,17 +49,19 @@ const measurements = {
 
 const createStore = (events: Schema_Event[] = []) => {
   const preloadedState = createInitialState();
-  const eventIds = events
-    .map((event) => event._id)
-    .filter((eventId): eventId is string => Boolean(eventId));
+  const eventIds: string[] = [];
+  const eventEntities: Record<string, Schema_Event> = {};
 
-  preloadedState.events.entities!.value = Object.fromEntries(
-    events
-      .filter((event): event is Schema_Event & { _id: string } =>
-        Boolean(event._id),
-      )
-      .map((event) => [event._id, event]),
-  );
+  for (const event of events) {
+    if (!event._id) {
+      continue;
+    }
+
+    eventIds.push(event._id);
+    eventEntities[event._id] = event;
+  }
+
+  preloadedState.events.entities!.value = eventEntities;
   preloadedState.events.getWeekEvents!.value = {
     count: eventIds.length,
     data: eventIds,

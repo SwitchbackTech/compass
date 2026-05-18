@@ -36,7 +36,7 @@ interface Props {
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
-  onMouseDown: (e: MouseEvent, event: Schema_GridEvent) => void;
+  onMouseDown?: (e: MouseEvent, event: Schema_GridEvent) => void;
   onKeyDown?: (event: Schema_GridEvent) => void;
   onScalerMouseDown?: (
     event: Schema_GridEvent,
@@ -138,6 +138,12 @@ const AllDayEvent = ({
         if (isPending) {
           return;
         }
+
+        if (!onMouseDown) {
+          e.stopPropagation();
+          return;
+        }
+
         onMouseDown(e, event);
       }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
@@ -158,28 +164,24 @@ const AllDayEvent = ({
           <SpaceCharacter />
         </Text>
       </Flex>
-      {onScalerMouseDown && (
-        <>
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
-          <div
-            data-week-event-resize-handle="startDate"
-            style={scalerStyle({ left: "-0.25px" })}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              onScalerMouseDown(event, e, "startDate");
-            }}
-          />
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
-          <div
-            data-week-event-resize-handle="endDate"
-            style={scalerStyle({ right: "-0.25px" })}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              onScalerMouseDown(event, e, "endDate");
-            }}
-          />
-        </>
-      )}
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
+      <div
+        data-week-event-resize-handle="startDate"
+        style={scalerStyle({ left: "-0.25px" })}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onScalerMouseDown?.(event, e, "startDate");
+        }}
+      />
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
+      <div
+        data-week-event-resize-handle="endDate"
+        style={scalerStyle({ right: "-0.25px" })}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onScalerMouseDown?.(event, e, "endDate");
+        }}
+      />
     </div>
   );
 };

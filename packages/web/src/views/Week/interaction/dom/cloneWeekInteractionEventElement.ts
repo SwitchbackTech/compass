@@ -1,7 +1,7 @@
 import { type CalendarInteractionOverlayMount } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
 import { sanitizeInteractionCloneBase } from "@web/common/calendar-interaction/dom/sanitizeInteractionCloneBase";
 
-export const createWeekInteractionEventClone = (source: HTMLElement) => {
+const createWeekInteractionEventClone = (source: HTMLElement) => {
   const clone = sanitizeInteractionCloneBase(source);
 
   disableTransitionTree(clone);

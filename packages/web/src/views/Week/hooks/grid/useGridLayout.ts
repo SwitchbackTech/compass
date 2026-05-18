@@ -1,4 +1,5 @@
 import { useCallback, useRef, useState } from "react";
+import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/weekInteractionMotionState";
 import { WEEK_TIMED_VISIBLE_HOURS } from "@web/views/Week/layout.constants";
 
 type MeasurementSnapshot = Pick<
@@ -7,15 +8,6 @@ type MeasurementSnapshot = Pick<
 >;
 
 const DAYS_IN_VIEW = 7;
-const isWeekInteractionMotionActive = () =>
-  typeof window !== "undefined" &&
-  Boolean(
-    (
-      window as unknown as {
-        __weekInteractionV2MotionActive?: boolean;
-      }
-    ).__weekInteractionV2MotionActive,
-  );
 
 const toMeasurementSnapshot = (rect: DOMRectReadOnly): MeasurementSnapshot => ({
   bottom: rect.bottom,

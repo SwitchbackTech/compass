@@ -55,30 +55,9 @@ import {
   type TimedResizeEdge,
   type TimedResizeVisual,
 } from "./model/TimedResizeVisual";
-import {
-  createWeekInteractionRuntimeMetrics,
-  type WeekInteractionRuntimeMetrics,
-} from "./WeekInteractionMetrics";
+import { setWeekInteractionMotionActive } from "./weekInteractionMotionState";
 
 export type WeekInteractionAdapterMode = "active" | "passive";
-
-export type WeekInteractionOwnedSurface =
-  | "savedTimedDrag"
-  | "savedTimedResize"
-  | "savedAllDayDrag"
-  | "savedAllDayResize"
-  | "pendingEvent"
-  | "draftEvent"
-  | "emptyGridSelection"
-  | "emptyGridDraftCreation"
-  | "somedaySidebarDrop"
-  | "formUi";
-
-export interface WeekInteractionOwnershipEntry {
-  newOwner: "existing-week-path" | "week-interaction-adapter";
-  notes: string;
-  surface: WeekInteractionOwnedSurface;
-}
 
 export interface WeekInteractionPointerOwnership {
   reason: string;
@@ -87,7 +66,6 @@ export interface WeekInteractionPointerOwnership {
 
 interface WeekInteractionAdapterOptions {
   engineOptions?: WeekInteractionEngineOptions;
-  metrics?: WeekInteractionRuntimeMetrics;
   mode?: WeekInteractionAdapterMode;
   runtime?: () => WeekInteractionRuntime;
 }
@@ -105,7 +83,6 @@ export interface WeekInteractionRuntime {
   getTimedEventById(eventId: string): Schema_GridEvent | null;
   isEventPending: (eventId: string) => boolean;
   isFormOpen?: () => boolean;
-  now?: () => number;
   onClickAllDayEvent?: (event: Schema_GridEvent) => void;
   onClickTimedEvent: (event: Schema_GridEvent) => void;
   onCommitAllDayDrag?: (result: WeekAllDayDragCommitResult) => void;
@@ -216,10 +193,8 @@ export class WeekInteractionAdapter {
     WeekInteractionVisual,
     WeekInteractionCommitResult
   >;
-  readonly #metrics: WeekInteractionRuntimeMetrics;
   readonly #mode: WeekInteractionAdapterMode;
   readonly #runtime: () => WeekInteractionRuntime;
-  #didRecordOwnedPointerDown = false;
   #edgeNavigation: {
     enteredAt: number | null;
     requested: boolean;
@@ -231,11 +206,9 @@ export class WeekInteractionAdapter {
 
   constructor({
     engineOptions,
-    metrics = createWeekInteractionRuntimeMetrics(),
     mode = "passive",
     runtime = () => inertRuntime,
   }: WeekInteractionAdapterOptions = {}) {
-    this.#metrics = metrics;
     this.#mode = mode;
     this.#runtime = runtime;
     this.#engine = new CalendarInteractionEngine({
@@ -244,101 +217,11 @@ export class WeekInteractionAdapter {
     });
   }
 
-  getMetrics() {
-    return this.#metrics;
-  }
-
   ownsPointer(event: Pick<PointerEvent, "pointerId">) {
     return this.#engine.ownsPointer(event);
   }
 
-  getOwnershipMatrix(): WeekInteractionOwnershipEntry[] {
-    return [
-      {
-        newOwner:
-          this.#mode === "active"
-            ? "week-interaction-adapter"
-            : "existing-week-path",
-        notes:
-          this.#mode === "active"
-            ? "Active adapter owns saved timed drag through the calendar interaction engine."
-            : "Passive adapter refuses saved timed drag until the timed-drag cutover task.",
-        surface: "savedTimedDrag",
-      },
-      {
-        newOwner:
-          this.#mode === "active"
-            ? "week-interaction-adapter"
-            : "existing-week-path",
-        notes:
-          this.#mode === "active"
-            ? "Active adapter owns saved timed resize through the calendar interaction engine."
-            : "Passive adapter refuses saved timed resize until the timed-resize cutover task.",
-        surface: "savedTimedResize",
-      },
-      {
-        newOwner:
-          this.#mode === "active"
-            ? "week-interaction-adapter"
-            : "existing-week-path",
-        notes:
-          this.#mode === "active"
-            ? "Active adapter owns saved all-day drag through the calendar interaction engine."
-            : "Passive adapter refuses saved all-day drag until the all-day drag cutover task.",
-        surface: "savedAllDayDrag",
-      },
-      {
-        newOwner:
-          this.#mode === "active"
-            ? "week-interaction-adapter"
-            : "existing-week-path",
-        notes:
-          this.#mode === "active"
-            ? "Active adapter owns saved all-day resize through the calendar interaction engine."
-            : "Passive adapter refuses saved all-day resize until the all-day resize cutover task.",
-        surface: "savedAllDayResize",
-      },
-      {
-        newOwner: "existing-week-path",
-        notes:
-          "Pending events remain non-owned by the adapter and follow the existing pending-event rule.",
-        surface: "pendingEvent",
-      },
-      {
-        newOwner: "existing-week-path",
-        notes: "Draft events remain with the existing draft provider paths.",
-        surface: "draftEvent",
-      },
-      {
-        newOwner: "existing-week-path",
-        notes:
-          "Empty-grid selection remains outside the adapter in this branch phase.",
-        surface: "emptyGridSelection",
-      },
-      {
-        newOwner: "existing-week-path",
-        notes:
-          "Empty-grid draft creation remains with the current all-day and timed grid handlers.",
-        surface: "emptyGridDraftCreation",
-      },
-      {
-        newOwner: "existing-week-path",
-        notes:
-          "Someday/sidebar drag and drop remains with the planner sidebar DND paths.",
-        surface: "somedaySidebarDrop",
-      },
-      {
-        newOwner: "existing-week-path",
-        notes: "Form UI remains owned by existing floating form paths.",
-        surface: "formUi",
-      },
-    ];
-  }
-
   handlePointerDown(event: PointerEvent): WeekInteractionPointerOwnership {
-    this.#didRecordOwnedPointerDown = false;
-    this.#metrics.pointerDowns += 1;
-
     if (this.#mode === "passive") {
       return {
         reason: "passive-week-adapter",
@@ -362,8 +245,7 @@ export class WeekInteractionAdapter {
       };
     }
 
-    this.#setMotionActive(true);
-    this.#recordOwnedPointerDown();
+    setWeekInteractionMotionActive(true);
 
     return {
       reason: getOwnershipReason(target),
@@ -371,14 +253,7 @@ export class WeekInteractionAdapter {
     };
   }
 
-  getRegisteredTarget(
-    event: PointerEvent,
-  ): WeekInteractionRegisteredTarget | null {
-    return weekEventRegistry.resolveFromTarget(event.target);
-  }
-
   handlePointerMove(event: PointerEvent) {
-    this.#metrics.pointerMoves += 1;
     const ownsPointer = this.ownsPointer(event);
 
     this.#engine.handlePointerMove(event);
@@ -387,7 +262,6 @@ export class WeekInteractionAdapter {
   }
 
   handlePointerUp(event: PointerEvent) {
-    this.#metrics.pointerUps += 1;
     const ownsPointer = this.ownsPointer(event);
     const result = this.#engine.handlePointerUp(event);
 
@@ -403,7 +277,7 @@ export class WeekInteractionAdapter {
       } else {
         runtime.onClickTimedEvent(result.target.event);
       }
-      this.#setMotionActive(false);
+      setWeekInteractionMotionActive(false);
       return ownsPointer;
     }
 
@@ -430,26 +304,11 @@ export class WeekInteractionAdapter {
   }
 
   handlePointerCancel(event: PointerEvent) {
-    this.#metrics.pointerCancels += 1;
     const ownsPointer = this.ownsPointer(event);
 
     this.#engine.handlePointerCancel(event);
 
     return ownsPointer;
-  }
-
-  recordOwnedPointerDown() {
-    if (this.#didRecordOwnedPointerDown) {
-      this.#didRecordOwnedPointerDown = false;
-      return;
-    }
-
-    this.#recordOwnedPointerDown();
-  }
-
-  #recordOwnedPointerDown() {
-    this.#didRecordOwnedPointerDown = true;
-    this.#metrics.ownedPointerDowns += 1;
   }
 
   #createEngineAdapter(): CalendarInteractionAdapter<
@@ -460,7 +319,7 @@ export class WeekInteractionAdapter {
     return {
       cancel: () => {
         this.#clearInteractionState();
-        this.#setMotionActive(false);
+        setWeekInteractionMotionActive(false);
       },
       commit: ({ target, visual }) => {
         let result: WeekInteractionCommitResult;
@@ -514,11 +373,11 @@ export class WeekInteractionAdapter {
             type: "timedDragEnd",
           };
         } else {
-          throw new Error("Mismatched Week timed interaction target");
+          throw new Error("Mismatched Week interaction target");
         }
 
         this.#clearInteractionState();
-        this.#setMotionActive(false);
+        setWeekInteractionMotionActive(false);
 
         return result;
       },
@@ -661,7 +520,7 @@ export class WeekInteractionAdapter {
         }
 
         if (target.type !== "timedDrag") {
-          throw new Error("Mismatched Week timed interaction target");
+          throw new Error("Mismatched Week interaction target");
         }
 
         const smartScroll = this.#applySmartScroll(pointer);
@@ -969,22 +828,7 @@ export class WeekInteractionAdapter {
     this.#resetEdgeNavigation();
     this.#isLayoutRebuildPending = false;
   }
-
-  #setMotionActive(isActive: boolean) {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    (
-      window as unknown as {
-        __weekInteractionV2MotionActive?: boolean;
-      }
-    ).__weekInteractionV2MotionActive = isActive;
-  }
 }
-
-export const createPassiveWeekInteractionAdapter = () =>
-  new WeekInteractionAdapter({ mode: "passive" });
 
 const isAllDayTarget = (
   target: WeekInteractionTarget,

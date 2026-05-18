@@ -12,7 +12,7 @@ export const WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE =
 
 export type WeekInteractionEventType = "all-day" | "timed";
 
-export interface WeekInteractionEventRegistration {
+interface WeekInteractionEventRegistration {
   element: HTMLElement;
   eventId: string;
   eventType: WeekInteractionEventType;

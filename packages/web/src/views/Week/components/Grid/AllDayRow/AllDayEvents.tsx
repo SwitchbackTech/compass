@@ -45,35 +45,23 @@ export const AllDayEvents = ({
     );
   };
 
-  const renderEvents = () => {
-    if (
-      isProcessing &&
-      reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE
-    ) {
-      return null;
-    }
-
-    return allDayEvents.map((event: Schema_GridEvent) => {
-      return (
-        <AllDayEventMemo
-          key={event._id}
-          isPlaceholder={event._id === draftId}
-          event={event}
-          startOfView={startOfView}
-          endOfView={endOfView}
-          measurements={measurements}
-          onMouseDown={() => undefined}
-          onKeyDown={handleKeyDown}
-          onScalerMouseDown={(_event, e) => {
-            e.stopPropagation();
-            e.preventDefault();
-          }}
-        />
-      );
-    });
-  };
+  const isLoadingWeekView =
+    isProcessing && reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE;
 
   return (
-    <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>{renderEvents()}</StyledEvents>
+    <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
+      {!isLoadingWeekView &&
+        allDayEvents.map((event: Schema_GridEvent) => (
+          <AllDayEventMemo
+            key={event._id}
+            isPlaceholder={event._id === draftId}
+            event={event}
+            startOfView={startOfView}
+            endOfView={endOfView}
+            measurements={measurements}
+            onKeyDown={handleKeyDown}
+          />
+        ))}
+    </StyledEvents>
   );
 };

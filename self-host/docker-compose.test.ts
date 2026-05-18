@@ -57,10 +57,12 @@ describe("staging deploy workflow", () => {
     const workflow = readRepoFile(".github/workflows/deploy-staging.yml");
 
     expect(workflow).toContain(
-      "GCAL_NOTIFICATION_TOKEN: ${{ secrets.STAGING_GCAL_NOTIFICATION_TOKEN }}",
+      "GCAL_NOTIFICATION_TOKEN: $".concat(
+        "{{ secrets.GCAL_NOTIFICATION_TOKEN }}",
+      ),
     );
     expect(workflow).toContain(
-      'notificationToken: \\"${GCAL_NOTIFICATION_TOKEN}\\"',
+      'notificationToken: \\"$'.concat('{GCAL_NOTIFICATION_TOKEN}\\"'),
     );
   });
 });

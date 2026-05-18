@@ -4,7 +4,6 @@ import {
   percentile,
   type WeekViewPerfScenarioResult,
 } from "./week-view.perf-results";
-import { describe, expect, it } from "bun:test";
 
 const createScenario = (
   overrides: Partial<WeekViewPerfScenarioResult> = {},

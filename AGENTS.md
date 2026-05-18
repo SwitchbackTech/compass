@@ -40,6 +40,9 @@ Validation defaults:
 - Scripts: `bun run test:scripts`
 - Shared contracts/cross-package behavior: affected package tests plus
   `bun run type-check`
+- Keep regression tests that protect real behavior. Remove temporary tests,
+  scripts, debug hooks, or code added only to confirm a one-time hypothesis once
+  that verification is complete.
 
 ## Lookups
 
