@@ -1,4 +1,5 @@
 import {
+  ID_ALLDAY_COLUMNS,
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
@@ -32,7 +33,7 @@ export interface WeekLayoutCache {
   edgeNavigation: WeekEdgeNavigationCache;
   pixelsPerMinute: number;
   snapMinutes: number;
-  smartScroll: SmartScrollCache;
+  smartScroll?: SmartScrollCache;
 }
 
 export const buildTimedWeekLayoutCache = (): WeekLayoutCache | null => {
@@ -44,15 +45,7 @@ export const buildTimedWeekLayoutCache = (): WeekLayoutCache | null => {
 
   const rect = mainGrid.getBoundingClientRect();
   const columnsRect = getTimedColumnsRect() ?? rect;
-  const columnWidth = columnsRect.width / DAYS_IN_WEEK;
-  const dayColumns: WeekDayColumnCache[] = Array.from(
-    { length: DAYS_IN_WEEK },
-    (_, index) => ({
-      index,
-      left: columnsRect.left + columnWidth * index,
-      width: columnWidth,
-    }),
-  );
+  const dayColumns = buildDayColumns(columnsRect);
 
   return {
     dayColumns,
@@ -74,6 +67,28 @@ export const buildTimedWeekLayoutCache = (): WeekLayoutCache | null => {
       speedPx: SMART_SCROLL_SPEED_PX,
       top: rect.top,
     },
+  };
+};
+
+export const buildAllDayWeekLayoutCache = (): WeekLayoutCache | null => {
+  const allDayColumns = document.getElementById(ID_ALLDAY_COLUMNS);
+  const rect = allDayColumns?.getBoundingClientRect();
+
+  if (!rect || rect.width <= 0) {
+    return null;
+  }
+
+  return {
+    dayColumns: buildDayColumns(rect),
+    edgeNavigation: {
+      bottom: rect.bottom,
+      edgeThresholdPx: SMART_SCROLL_EDGE_THRESHOLD_PX,
+      left: rect.left,
+      right: rect.right,
+      top: rect.top,
+    },
+    pixelsPerMinute: 1,
+    snapMinutes: GRID_TIME_STEP,
   };
 };
 
@@ -102,4 +117,16 @@ const getTimedColumnsRect = () => {
   const rect = columns?.getBoundingClientRect();
 
   return rect && rect.width > 0 ? rect : null;
+};
+
+const buildDayColumns = (
+  rect: Pick<DOMRect, "left" | "width">,
+): WeekDayColumnCache[] => {
+  const columnWidth = rect.width / DAYS_IN_WEEK;
+
+  return Array.from({ length: DAYS_IN_WEEK }, (_, index) => ({
+    index,
+    left: rect.left + columnWidth * index,
+    width: columnWidth,
+  }));
 };

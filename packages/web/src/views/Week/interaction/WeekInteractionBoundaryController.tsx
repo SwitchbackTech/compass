@@ -1,12 +1,17 @@
 import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
+import {
+  selectAllDayEvents,
+  selectGridEvents,
+} from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
+  type WeekAllDayDragCommitResult,
+  type WeekAllDayResizeCommitResult,
   WeekInteractionAdapter,
   type WeekInteractionRuntime,
   type WeekTimedDragCommitResult,
@@ -23,6 +28,7 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
+  const allDayEvents = useAppSelector(selectAllDayEvents);
   const timedEvents = useAppSelector(selectGridEvents);
   const pendingEventIds = useAppSelector(
     (state) => state.events.pendingEvents.eventIds,
@@ -39,6 +45,17 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
 
     return eventsById;
   }, [timedEvents]);
+  const allDayEventsById = useMemo(() => {
+    const eventsById = new Map<string, Schema_GridEvent>();
+
+    for (const event of allDayEvents) {
+      if (event._id) {
+        eventsById.set(event._id, event);
+      }
+    }
+
+    return eventsById;
+  }, [allDayEvents]);
   const runtimeRef = useRef<WeekInteractionRuntime>({
     getTimedEventById: () => null,
     isEventPending: () => false,
@@ -64,11 +81,29 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
     );
   };
 
-  const commitTimedMutation = (
-    result: WeekTimedDragCommitResult | WeekTimedResizeCommitResult,
+  const openAllDayEvent = (event: Schema_GridEvent) => {
+    dispatch(
+      draftSlice.actions.start({
+        activity: "gridClick",
+        event,
+        eventType: Categories_Event.ALLDAY,
+      }),
+    );
+  };
+
+  const commitSavedMutation = (
+    result:
+      | WeekAllDayDragCommitResult
+      | WeekAllDayResizeCommitResult
+      | WeekTimedDragCommitResult
+      | WeekTimedResizeCommitResult,
   ) => {
     if (!result.hasMoved) {
-      openTimedEvent(result.event);
+      if (result.event.isAllDay) {
+        openAllDayEvent(result.event);
+      } else {
+        openTimedEvent(result.event);
+      }
       return;
     }
 
@@ -82,18 +117,30 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
   };
 
   const commitTimedDrag = (result: WeekTimedDragCommitResult) => {
-    commitTimedMutation(result);
+    commitSavedMutation(result);
   };
 
   const commitTimedResize = (result: WeekTimedResizeCommitResult) => {
-    commitTimedMutation(result);
+    commitSavedMutation(result);
+  };
+
+  const commitAllDayDrag = (result: WeekAllDayDragCommitResult) => {
+    commitSavedMutation(result);
+  };
+
+  const commitAllDayResize = (result: WeekAllDayResizeCommitResult) => {
+    commitSavedMutation(result);
   };
 
   runtimeRef.current = {
+    getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
     isEventPending: (eventId) => pendingEventIds.includes(eventId),
     isFormOpen: () => state.isFormOpen,
+    onClickAllDayEvent: openAllDayEvent,
     onClickTimedEvent: openTimedEvent,
+    onCommitAllDayDrag: commitAllDayDrag,
+    onCommitAllDayResize: commitAllDayResize,
     onCommitTimedDrag: commitTimedDrag,
     onCommitTimedResize: commitTimedResize,
     onMotionActivation: (target) => {

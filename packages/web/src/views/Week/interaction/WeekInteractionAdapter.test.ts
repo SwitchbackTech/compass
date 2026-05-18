@@ -69,6 +69,53 @@ describe("WeekInteractionAdapter", () => {
       }),
     ]);
   });
+
+  it("documents the active Week surfaces owned by the calendar interaction engine", () => {
+    const adapter = new WeekInteractionAdapter({ mode: "active" });
+
+    expect(adapter.getOwnershipMatrix()).toEqual([
+      expect.objectContaining({
+        newOwner: "week-interaction-adapter",
+        surface: "savedTimedDrag",
+      }),
+      expect.objectContaining({
+        newOwner: "week-interaction-adapter",
+        surface: "savedTimedResize",
+      }),
+      expect.objectContaining({
+        newOwner: "week-interaction-adapter",
+        surface: "savedAllDayDrag",
+      }),
+      expect.objectContaining({
+        newOwner: "week-interaction-adapter",
+        surface: "savedAllDayResize",
+      }),
+      expect.objectContaining({
+        newOwner: "existing-week-path",
+        surface: "pendingEvent",
+      }),
+      expect.objectContaining({
+        newOwner: "existing-week-path",
+        surface: "draftEvent",
+      }),
+      expect.objectContaining({
+        newOwner: "existing-week-path",
+        surface: "emptyGridSelection",
+      }),
+      expect.objectContaining({
+        newOwner: "existing-week-path",
+        surface: "emptyGridDraftCreation",
+      }),
+      expect.objectContaining({
+        newOwner: "existing-week-path",
+        surface: "somedaySidebarDrop",
+      }),
+      expect.objectContaining({
+        newOwner: "existing-week-path",
+        surface: "formUi",
+      }),
+    ]);
+  });
 });
 
 describe("WeekInteractionMetrics", () => {

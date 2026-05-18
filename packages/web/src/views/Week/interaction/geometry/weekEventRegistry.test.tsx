@@ -180,6 +180,7 @@ describe("weekEventRegistry", () => {
         isPlaceholder={false}
         measurements={measurements}
         onMouseDown={mock()}
+        onScalerMouseDown={mock()}
         startOfView={startOfView}
       />,
     );
@@ -191,6 +192,12 @@ describe("weekEventRegistry", () => {
       WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
       "all-day",
     );
+    expect(
+      element.querySelector('[data-week-event-resize-handle="startDate"]'),
+    ).toBeTruthy();
+    expect(
+      element.querySelector('[data-week-event-resize-handle="endDate"]'),
+    ).toBeTruthy();
 
     unmount();
 

@@ -162,6 +162,7 @@ const AllDayEvent = ({
         <>
           {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
           <div
+            data-week-event-resize-handle="startDate"
             style={scalerStyle({ left: "-0.25px" })}
             onMouseDown={(e) => {
               e.stopPropagation();
@@ -170,6 +171,7 @@ const AllDayEvent = ({
           />
           {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
           <div
+            data-week-event-resize-handle="endDate"
             style={scalerStyle({ right: "-0.25px" })}
             onMouseDown={(e) => {
               e.stopPropagation();
