@@ -223,6 +223,33 @@ const expectDraftIsInactive = (store: ReturnType<typeof createStore>) => {
   expect(draftStatus.isDrafting).toBe(false);
 };
 
+const getEndResizeHandle = (eventButton: HTMLElement) => {
+  const resizeHandle = eventButton.querySelector(
+    '[data-week-event-resize-handle="endDate"]',
+  );
+
+  if (!(resizeHandle instanceof HTMLElement)) {
+    throw new Error("Saved event resize handle was not rendered");
+  }
+
+  return resizeHandle;
+};
+
+const expectSavedEventDoesNotStartDraftMotion = (
+  store: ReturnType<typeof createStore>,
+) => {
+  const eventButton = screen.getByRole("button", { name: /saved event/i });
+
+  fireEvent.mouseDown(eventButton, { button: 0, buttons: 1 });
+  expectDraftIsInactive(store);
+
+  fireEvent.mouseDown(getEndResizeHandle(eventButton), {
+    button: 0,
+    buttons: 1,
+  });
+  expectDraftIsInactive(store);
+};
+
 describe("MainGrid empty-grid draft creation", () => {
   it("creates the selected range when dragging upward from an empty timed slot", async () => {
     const { container, store } = renderMainGrid();
@@ -280,20 +307,7 @@ describe("saved Week event ownership", () => {
       </Provider>,
     );
 
-    const eventButton = screen.getByRole("button", { name: /saved event/i });
-    const resizeHandle = eventButton.querySelector(
-      '[data-week-event-resize-handle="endDate"]',
-    );
-
-    fireEvent.mouseDown(eventButton, { button: 0, buttons: 1 });
-    expectDraftIsInactive(store);
-
-    if (!(resizeHandle instanceof HTMLElement)) {
-      throw new Error("Saved timed resize handle was not rendered");
-    }
-
-    fireEvent.mouseDown(resizeHandle, { button: 0, buttons: 1 });
-    expectDraftIsInactive(store);
+    expectSavedEventDoesNotStartDraftMotion(store);
   });
 
   it("keeps saved all-day mouse and resize events out of the draft motion owner", () => {
@@ -317,19 +331,6 @@ describe("saved Week event ownership", () => {
       </Provider>,
     );
 
-    const eventButton = screen.getByRole("button", { name: /saved event/i });
-    const resizeHandle = eventButton.querySelector(
-      '[data-week-event-resize-handle="endDate"]',
-    );
-
-    fireEvent.mouseDown(eventButton, { button: 0, buttons: 1 });
-    expectDraftIsInactive(store);
-
-    if (!(resizeHandle instanceof HTMLElement)) {
-      throw new Error("Saved all-day resize handle was not rendered");
-    }
-
-    fireEvent.mouseDown(resizeHandle, { button: 0, buttons: 1 });
-    expectDraftIsInactive(store);
+    expectSavedEventDoesNotStartDraftMotion(store);
   });
 });
