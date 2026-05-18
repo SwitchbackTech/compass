@@ -50,6 +50,7 @@ Markdown files in this `docs/` directory are automatically mirrored to [docs.com
 - [Google Sync And SSE Flow](./features/google-sync-and-sse-flow.md)
 - [Recurrence Handling](./features/recurring-events-handling.md)
 - [Offline Storage And Migrations](./features/offline-storage-and-migrations.md)
+- [Week Interaction Behavior Contract](./features/week-interaction-behavior-contract.md)
 
 ## Acceptance
 
