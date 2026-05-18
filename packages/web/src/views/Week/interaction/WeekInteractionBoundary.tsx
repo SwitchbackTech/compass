@@ -15,10 +15,6 @@ interface Props extends PropsWithChildren {
 
 export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
   const boundaryRef = useRef<HTMLDivElement | null>(null);
-  const adapterRef = useRef(adapter);
-
-  adapterRef.current = adapter;
-
   const defaultAdapter = useMemo(() => new WeekInteractionAdapter(), []);
   const activeAdapter = adapter ?? defaultAdapter;
 

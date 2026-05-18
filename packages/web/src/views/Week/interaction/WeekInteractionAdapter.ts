@@ -16,6 +16,7 @@ import {
 } from "./commit/timedDragVisualToGridEvent";
 import { createWeekInteractionEventOverlayMount } from "./dom/cloneWeekInteractionEventElement";
 import {
+  type WeekInteractionEventType,
   type WeekInteractionRegisteredTarget,
   weekEventRegistry,
 } from "./geometry/weekEventRegistry";
@@ -193,6 +194,11 @@ type WeekInteractionCommitResult =
   | WeekTimedDragCommitResult
   | WeekTimedResizeCommitResult;
 type WeekEdgeNavigableVisual = AllDayDragVisual | TimedDragVisual;
+type WeekResolvedEventTarget = {
+  event: Schema_GridEvent;
+  hadFormOpenBeforeInteraction: boolean;
+  registered: WeekInteractionRegisteredTarget;
+};
 
 const inertRuntime: WeekInteractionRuntime = {
   getTimedEventById: () => null,
@@ -202,6 +208,7 @@ const inertRuntime: WeekInteractionRuntime = {
 };
 
 const EDGE_NAVIGATION_DWELL_MS = 500;
+const WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE = "data-week-event-resize-handle";
 
 export class WeekInteractionAdapter {
   readonly #engine: CalendarInteractionEngine<
@@ -389,31 +396,35 @@ export class WeekInteractionAdapter {
     }
 
     if (result.type === "click") {
+      const runtime = this.#runtime();
+
       if (isAllDayTarget(result.target)) {
-        this.#runtime().onClickAllDayEvent?.(result.target.event);
+        runtime.onClickAllDayEvent?.(result.target.event);
       } else {
-        this.#runtime().onClickTimedEvent(result.target.event);
+        runtime.onClickTimedEvent(result.target.event);
       }
       this.#setMotionActive(false);
       return ownsPointer;
     }
 
+    const runtime = this.#runtime();
+
     if (result.result.type === "allDayDragEnd") {
-      this.#runtime().onCommitAllDayDrag?.(result.result);
+      runtime.onCommitAllDayDrag?.(result.result);
       return ownsPointer;
     }
 
     if (result.result.type === "allDayResizeEnd") {
-      this.#runtime().onCommitAllDayResize?.(result.result);
+      runtime.onCommitAllDayResize?.(result.result);
       return ownsPointer;
     }
 
     if (result.result.type === "timedDragEnd") {
-      this.#runtime().onCommitTimedDrag(result.result);
+      runtime.onCommitTimedDrag(result.result);
       return ownsPointer;
     }
 
-    this.#runtime().onCommitTimedResize?.(result.result);
+    runtime.onCommitTimedResize?.(result.result);
 
     return ownsPointer;
   }
@@ -452,72 +463,59 @@ export class WeekInteractionAdapter {
         this.#setMotionActive(false);
       },
       commit: ({ target, visual }) => {
+        let result: WeekInteractionCommitResult;
+
         if (visual.type === "allDayDrag" && target.type === "allDayDrag") {
           const movedEvent = allDayDragVisualToGridEvent(target.event, visual);
-          const result: WeekAllDayDragCommitResult = {
+          result = {
             event: movedEvent,
             eventId: target.event._id!,
             hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
             hasMoved: hasAllDayDragVisualMoved(visual),
             type: "allDayDragEnd",
           };
-
-          this.#clearInteractionState();
-          this.#setMotionActive(false);
-
-          return result;
-        }
-
-        if (visual.type === "allDayResize" && target.type === "allDayResize") {
+        } else if (
+          visual.type === "allDayResize" &&
+          target.type === "allDayResize"
+        ) {
           const resizedEvent = allDayResizeVisualToGridEvent(
             target.event,
             visual,
           );
-          const result: WeekAllDayResizeCommitResult = {
+          result = {
             event: resizedEvent,
             eventId: target.event._id!,
             hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
             hasMoved: hasAllDayResizeVisualChanged(visual),
             type: "allDayResizeEnd",
           };
-
-          this.#clearInteractionState();
-          this.#setMotionActive(false);
-
-          return result;
-        }
-
-        if (visual.type === "timedResize" && target.type === "timedResize") {
+        } else if (
+          visual.type === "timedResize" &&
+          target.type === "timedResize"
+        ) {
           const resizedEvent = timedResizeVisualToGridEvent(
             target.event,
             visual,
           );
-          const result: WeekTimedResizeCommitResult = {
+          result = {
             event: resizedEvent,
             eventId: target.event._id!,
             hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
             hasMoved: hasTimedResizeVisualMoved(visual),
             type: "timedResizeEnd",
           };
-
-          this.#clearInteractionState();
-          this.#setMotionActive(false);
-
-          return result;
-        }
-
-        if (visual.type !== "timedDrag" || target.type !== "timedDrag") {
+        } else if (visual.type === "timedDrag" && target.type === "timedDrag") {
+          const movedEvent = timedDragVisualToGridEvent(target.event, visual);
+          result = {
+            event: movedEvent,
+            eventId: target.event._id!,
+            hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
+            hasMoved: hasTimedDragVisualMoved(visual),
+            type: "timedDragEnd",
+          };
+        } else {
           throw new Error("Mismatched Week timed interaction target");
         }
-
-        const movedEvent = timedDragVisualToGridEvent(target.event, visual);
-        const result: WeekTimedDragCommitResult = {
-          event: movedEvent,
-          eventId: target.event._id!,
-          hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-          hasMoved: hasTimedDragVisualMoved(visual),
-          type: "timedDragEnd",
-        };
 
         this.#clearInteractionState();
         this.#setMotionActive(false);
@@ -719,34 +717,18 @@ export class WeekInteractionAdapter {
       return null;
     }
 
-    const pointerTarget = event.target instanceof Element ? event.target : null;
-
-    if (pointerTarget?.closest("[data-week-event-resize-handle]")) {
+    if (getResizeHandleEdge(event)) {
       return null;
     }
 
-    const registered = weekEventRegistry.resolveFromTarget(event.target);
+    const target = this.#resolveAllDayEventTarget(event);
 
-    if (!registered || registered.eventType !== "all-day") {
-      return null;
-    }
-
-    const allDayEvent = this.#runtime().getAllDayEventById?.(
-      registered.eventId,
-    );
-
-    if (
-      !allDayEvent?._id ||
-      !allDayEvent.isAllDay ||
-      this.#runtime().isEventPending(allDayEvent._id)
-    ) {
+    if (!target) {
       return null;
     }
 
     return {
-      event: allDayEvent,
-      hadFormOpenBeforeInteraction: this.#runtime().isFormOpen?.() ?? false,
-      registered,
+      ...target,
       type: "allDayDrag",
     };
   }
@@ -756,37 +738,21 @@ export class WeekInteractionAdapter {
       return null;
     }
 
-    const pointerTarget = event.target instanceof Element ? event.target : null;
-    const handle = pointerTarget?.closest("[data-week-event-resize-handle]");
-    const edge = handle?.getAttribute("data-week-event-resize-handle");
+    const edge = getResizeHandleEdge(event);
 
-    if (edge !== "startDate" && edge !== "endDate") {
+    if (!edge) {
       return null;
     }
 
-    const registered = weekEventRegistry.resolveFromTarget(event.target);
+    const target = this.#resolveAllDayEventTarget(event);
 
-    if (!registered || registered.eventType !== "all-day") {
-      return null;
-    }
-
-    const allDayEvent = this.#runtime().getAllDayEventById?.(
-      registered.eventId,
-    );
-
-    if (
-      !allDayEvent?._id ||
-      !allDayEvent.isAllDay ||
-      this.#runtime().isEventPending(allDayEvent._id)
-    ) {
+    if (!target) {
       return null;
     }
 
     return {
       edge,
-      event: allDayEvent,
-      hadFormOpenBeforeInteraction: this.#runtime().isFormOpen?.() ?? false,
-      registered,
+      ...target,
       type: "allDayResize",
     };
   }
@@ -796,32 +762,18 @@ export class WeekInteractionAdapter {
       return null;
     }
 
-    const pointerTarget = event.target instanceof Element ? event.target : null;
-
-    if (pointerTarget?.closest("[data-week-event-resize-handle]")) {
+    if (getResizeHandleEdge(event)) {
       return null;
     }
 
-    const registered = weekEventRegistry.resolveFromTarget(event.target);
+    const target = this.#resolveTimedEventTarget(event);
 
-    if (!registered || registered.eventType !== "timed") {
-      return null;
-    }
-
-    const timedEvent = this.#runtime().getTimedEventById(registered.eventId);
-
-    if (
-      !timedEvent?._id ||
-      timedEvent.isAllDay ||
-      this.#runtime().isEventPending(timedEvent._id)
-    ) {
+    if (!target) {
       return null;
     }
 
     return {
-      event: timedEvent,
-      hadFormOpenBeforeInteraction: this.#runtime().isFormOpen?.() ?? false,
-      registered,
+      ...target,
       type: "timedDrag",
     };
   }
@@ -831,37 +783,86 @@ export class WeekInteractionAdapter {
       return null;
     }
 
-    const pointerTarget = event.target instanceof Element ? event.target : null;
-    const handle = pointerTarget?.closest("[data-week-event-resize-handle]");
-    const edge = handle?.getAttribute("data-week-event-resize-handle");
+    const edge = getResizeHandleEdge(event);
 
-    if (edge !== "startDate" && edge !== "endDate") {
+    if (!edge) {
       return null;
     }
 
-    const registered = weekEventRegistry.resolveFromTarget(event.target);
+    const target = this.#resolveTimedEventTarget(event);
 
-    if (!registered || registered.eventType !== "timed") {
-      return null;
-    }
-
-    const timedEvent = this.#runtime().getTimedEventById(registered.eventId);
-
-    if (
-      !timedEvent?._id ||
-      timedEvent.isAllDay ||
-      this.#runtime().isEventPending(timedEvent._id)
-    ) {
+    if (!target) {
       return null;
     }
 
     return {
       edge,
-      event: timedEvent,
-      hadFormOpenBeforeInteraction: this.#runtime().isFormOpen?.() ?? false,
-      registered,
+      ...target,
       type: "timedResize",
     };
+  }
+
+  #resolveAllDayEventTarget(
+    event: PointerEvent,
+  ): WeekResolvedEventTarget | null {
+    const registered = this.#getRegisteredTarget(event, "all-day");
+
+    if (!registered) {
+      return null;
+    }
+
+    const runtime = this.#runtime();
+    const allDayEvent = runtime.getAllDayEventById?.(registered.eventId);
+
+    if (
+      !allDayEvent?._id ||
+      !allDayEvent.isAllDay ||
+      runtime.isEventPending(allDayEvent._id)
+    ) {
+      return null;
+    }
+
+    return {
+      event: allDayEvent,
+      hadFormOpenBeforeInteraction: runtime.isFormOpen?.() ?? false,
+      registered,
+    };
+  }
+
+  #resolveTimedEventTarget(
+    event: PointerEvent,
+  ): WeekResolvedEventTarget | null {
+    const registered = this.#getRegisteredTarget(event, "timed");
+
+    if (!registered) {
+      return null;
+    }
+
+    const runtime = this.#runtime();
+    const timedEvent = runtime.getTimedEventById(registered.eventId);
+
+    if (
+      !timedEvent?._id ||
+      timedEvent.isAllDay ||
+      runtime.isEventPending(timedEvent._id)
+    ) {
+      return null;
+    }
+
+    return {
+      event: timedEvent,
+      hadFormOpenBeforeInteraction: runtime.isFormOpen?.() ?? false,
+      registered,
+    };
+  }
+
+  #getRegisteredTarget(
+    event: PointerEvent,
+    eventType: WeekInteractionEventType,
+  ) {
+    const registered = weekEventRegistry.resolveFromTarget(event.target);
+
+    return registered?.eventType === eventType ? registered : null;
   }
 
   #applySmartScroll(pointer: VisualPoint) {
@@ -1014,6 +1015,20 @@ const getInteractionCursor = (target: WeekInteractionTarget) => {
       return "move";
   }
 };
+
+const getResizeHandleEdge = (event: PointerEvent): AllDayResizeEdge | null => {
+  const pointerTarget = event.target instanceof Element ? event.target : null;
+  const handle = pointerTarget?.closest<HTMLElement>(
+    `[${WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE}]`,
+  );
+  const edge = handle?.getAttribute(WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE);
+
+  return isResizeEdge(edge) ? edge : null;
+};
+
+const isResizeEdge = (
+  edge: string | null | undefined,
+): edge is AllDayResizeEdge => edge === "startDate" || edge === "endDate";
 
 const buildWeekLayoutCacheForTarget = (target: WeekInteractionTarget) =>
   isAllDayTarget(target)

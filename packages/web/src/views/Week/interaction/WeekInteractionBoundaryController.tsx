@@ -35,26 +35,10 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
   );
   const { actions, confirmation, setters, state } = useDraftContext();
   const timedEventsById = useMemo(() => {
-    const eventsById = new Map<string, Schema_GridEvent>();
-
-    for (const event of timedEvents) {
-      if (event._id) {
-        eventsById.set(event._id, event);
-      }
-    }
-
-    return eventsById;
+    return mapEventsById(timedEvents);
   }, [timedEvents]);
   const allDayEventsById = useMemo(() => {
-    const eventsById = new Map<string, Schema_GridEvent>();
-
-    for (const event of allDayEvents) {
-      if (event._id) {
-        eventsById.set(event._id, event);
-      }
-    }
-
-    return eventsById;
+    return mapEventsById(allDayEvents);
   }, [allDayEvents]);
   const runtimeRef = useRef<WeekInteractionRuntime>({
     getTimedEventById: () => null,
@@ -116,22 +100,6 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
     void confirmation.onSubmit(result.event);
   };
 
-  const commitTimedDrag = (result: WeekTimedDragCommitResult) => {
-    commitSavedMutation(result);
-  };
-
-  const commitTimedResize = (result: WeekTimedResizeCommitResult) => {
-    commitSavedMutation(result);
-  };
-
-  const commitAllDayDrag = (result: WeekAllDayDragCommitResult) => {
-    commitSavedMutation(result);
-  };
-
-  const commitAllDayResize = (result: WeekAllDayResizeCommitResult) => {
-    commitSavedMutation(result);
-  };
-
   runtimeRef.current = {
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
@@ -139,10 +107,10 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
     isFormOpen: () => state.isFormOpen,
     onClickAllDayEvent: openAllDayEvent,
     onClickTimedEvent: openTimedEvent,
-    onCommitAllDayDrag: commitAllDayDrag,
-    onCommitAllDayResize: commitAllDayResize,
-    onCommitTimedDrag: commitTimedDrag,
-    onCommitTimedResize: commitTimedResize,
+    onCommitAllDayDrag: commitSavedMutation,
+    onCommitAllDayResize: commitSavedMutation,
+    onCommitTimedDrag: commitSavedMutation,
+    onCommitTimedResize: commitSavedMutation,
     onMotionActivation: (target) => {
       if (target.hadFormOpenBeforeInteraction) {
         actions.closeForm();
@@ -163,4 +131,16 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
       {children}
     </WeekInteractionBoundary>
   );
+};
+
+const mapEventsById = (events: Schema_GridEvent[]) => {
+  const eventsById = new Map<string, Schema_GridEvent>();
+
+  for (const event of events) {
+    if (event._id) {
+      eventsById.set(event._id, event);
+    }
+  }
+
+  return eventsById;
 };
