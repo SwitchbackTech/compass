@@ -4,7 +4,16 @@ x-local-bindings:
 
 services:
   web:
-    image: switchbacktech/compass-web:${COMPASS_VERSION:-latest}
+    image: ${COMPASS_WEB_IMAGE:-switchbacktech/compass-web:${COMPASS_VERSION:-latest}}
+    # Uncomment the build block below and run `./compass rebuild` to build the web
+    # image from source with your own backend.apiUrl and google.clientId baked in.
+    # Requires the full repo to be present alongside this compose.yaml.
+    # build:
+    #   context: ..
+    #   dockerfile: self-host/Dockerfile.web
+    #   args:
+    #     BASEURL: http://localhost:3000/api
+    #     GOOGLE_CLIENT_ID: ""
     depends_on:
       backend:
         condition: service_healthy

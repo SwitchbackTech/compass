@@ -1,5 +1,6 @@
-import { describe, expect, it } from "bun:test";
-import { readFileSync } from "node:fs";
+import { afterEach, describe, expect, it } from "bun:test";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 
 const repoRoot = join(import.meta.dir, "..");
@@ -7,6 +8,48 @@ const repoRoot = join(import.meta.dir, "..");
 function readRepoFile(path: string): string {
   return readFileSync(join(repoRoot, path), { encoding: "utf8" });
 }
+
+async function runHealthScript(
+  args: string[],
+  env: Record<string, string> = {},
+) {
+  const reportDir = makeTempDir();
+  const proc = Bun.spawn(
+    ["bash", join(repoRoot, ".github/scripts/deploy-health-check.sh"), ...args],
+    {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        HEALTH_CHECK_REPORT_FILE: join(reportDir, "report.txt"),
+        ...env,
+      },
+      stderr: "pipe",
+      stdout: "pipe",
+    },
+  );
+
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+
+  return { exitCode, stderr, stdout };
+}
+
+function makeTempDir() {
+  const dir = mkdtempSync(join(tmpdir(), "compass-health-check-"));
+  tempDirs.push(dir);
+  return dir;
+}
+
+const tempDirs: string[] = [];
+
+afterEach(() => {
+  for (const dir of tempDirs.splice(0)) {
+    rmSync(dir, { force: true, recursive: true });
+  }
+});
 
 describe("self-host docker compose", () => {
   it("builds the backend image without build-time Compass config", () => {
@@ -80,8 +123,10 @@ describe("staging deploy workflow", () => {
   it("falls back to the release tag when a configured compose ref is unavailable", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
-    expect(workflow).toContain('COMPOSE_GIT_REF="${COMPOSE_GIT_REF:-${RELEASE_TAG}}"');
-    expect(workflow).toContain('COMPOSE_GIT_REF="${RELEASE_TAG}"');
+    expect(workflow).toContain(
+      'COMPOSE_GIT_REF="$'.concat("{COMPOSE_GIT_REF:-$", '{RELEASE_TAG}}"'),
+    );
+    expect(workflow).toContain('COMPOSE_GIT_REF="$'.concat('{RELEASE_TAG}"'));
   });
 
   it("writes the Google Calendar notification token with Google credentials", () => {
@@ -95,5 +140,99 @@ describe("staging deploy workflow", () => {
     expect(workflow).toContain(
       'notificationToken: \\"$'.concat('{GCAL_NOTIFICATION_TOKEN}\\"'),
     );
+  });
+
+  it("runs deploy health checks after each staging deploy", () => {
+    const workflow = readRepoFile(".github/workflows/deploy-staging.yml");
+
+    expect(workflow).toContain(
+      "uses: ./.github/workflows/deploy-health-check.yml",
+    );
+    expect(workflow).toContain("needs: deploy-cloud");
+    expect(workflow).toContain("environment: staging-cloud");
+    expect(workflow).toContain("profile: cloud");
+    expect(workflow).toContain("needs: deploy-selfhosted");
+    expect(workflow).toContain("environment: staging-selfhosted");
+    expect(workflow).toContain("profile: selfhosted");
+  });
+
+  it("provides a reusable deploy health check workflow with Discord failure alerts", () => {
+    const workflow = readRepoFile(".github/workflows/deploy-health-check.yml");
+
+    expect(workflow).toContain("workflow_call:");
+    expect(workflow).toContain("tag:");
+    expect(workflow).toContain("environment:");
+    expect(workflow).toContain("profile:");
+    expect(workflow).toContain("DISCORD_DEPLOY_WEBHOOK_URL");
+    expect(workflow).toContain(".github/scripts/deploy-health-check.sh");
+  });
+});
+
+describe("deploy health check script", () => {
+  it("accepts an HTML frontend response", async () => {
+    const dir = makeTempDir();
+    const bodyPath = join(dir, "frontend.html");
+    const headersPath = join(dir, "headers.txt");
+    writeFileSync(bodyPath, "<!doctype html><html><body>Compass</body></html>");
+    writeFileSync(headersPath, "HTTP/2 200\r\ncontent-type: text/html\r\n");
+
+    const result = await runHealthScript(["validate-frontend"], {
+      FRONTEND_BODY_FILE: bodyPath,
+      FRONTEND_HEADERS_FILE: headersPath,
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("frontend-http");
+  });
+
+  it("rejects a non-2xx frontend response", async () => {
+    const dir = makeTempDir();
+    const bodyPath = join(dir, "frontend.html");
+    const headersPath = join(dir, "headers.txt");
+    writeFileSync(bodyPath, "<!doctype html><html><body>Compass</body></html>");
+    writeFileSync(headersPath, "HTTP/2 503\r\ncontent-type: text/html\r\n");
+
+    const result = await runHealthScript(["validate-frontend"], {
+      FRONTEND_BODY_FILE: bodyPath,
+      FRONTEND_HEADERS_FILE: headersPath,
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("frontend-http");
+  });
+
+  it("rejects a non-HTML frontend response", async () => {
+    const dir = makeTempDir();
+    const bodyPath = join(dir, "frontend.json");
+    const headersPath = join(dir, "headers.txt");
+    writeFileSync(bodyPath, '{"ok":true}');
+    writeFileSync(
+      headersPath,
+      "HTTP/2 200\r\ncontent-type: application/json\r\n",
+    );
+
+    const result = await runHealthScript(["validate-frontend"], {
+      FRONTEND_BODY_FILE: bodyPath,
+      FRONTEND_HEADERS_FILE: headersPath,
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("frontend-content-type");
+  });
+
+  it("rejects an empty frontend response body", async () => {
+    const dir = makeTempDir();
+    const bodyPath = join(dir, "frontend.html");
+    const headersPath = join(dir, "headers.txt");
+    writeFileSync(bodyPath, "");
+    writeFileSync(headersPath, "HTTP/2 200\r\ncontent-type: text/html\r\n");
+
+    const result = await runHealthScript(["validate-frontend"], {
+      FRONTEND_BODY_FILE: bodyPath,
+      FRONTEND_HEADERS_FILE: headersPath,
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("frontend-body");
   });
 });
