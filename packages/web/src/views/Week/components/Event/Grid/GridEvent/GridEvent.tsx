@@ -34,6 +34,10 @@ import { selectIsEventPending } from "@web/ducks/events/selectors/pending.select
 import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  getWeekInteractionEventAttributes,
+  useWeekEventRegistrationRef,
+} from "@web/views/Week/interaction/geometry/weekEventRegistry";
 import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
 
 interface Props {
@@ -76,6 +80,14 @@ const GridEventBase = (
   const isPending = useAppSelector((state) =>
     event._id ? selectIsEventPending(state, event._id) : false,
   );
+  const isRegisteredForWeekInteraction =
+    Boolean(event._id) && !isDraft && !isPlaceholder && !isPending;
+  const registrationRef = useWeekEventRegistrationRef({
+    eventId: event._id,
+    eventType: "timed",
+    forwardedRef: ref,
+    isEnabled: isRegisteredForWeekInteraction,
+  });
 
   const position = getEventPosition(
     event,
@@ -164,7 +176,13 @@ const GridEventBase = (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
-      ref={ref}
+      {...(isRegisteredForWeekInteraction
+        ? getWeekInteractionEventAttributes({
+            eventId: event._id,
+            eventType: "timed",
+          })
+        : {})}
+      ref={registrationRef}
       role="button"
       tabIndex={0}
       className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
@@ -232,6 +250,7 @@ export const GridEvent = forwardRef(GridEventBase);
 export const GridEventMemo = memo(GridEvent, (prev, next) => {
   return (
     prev.event === next.event &&
+    prev.isDraft === next.isDraft &&
     prev.isPlaceholder === next.isPlaceholder &&
     prev.measurements === next.measurements
   );

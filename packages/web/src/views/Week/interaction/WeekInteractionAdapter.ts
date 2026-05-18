@@ -1,4 +1,8 @@
 import {
+  type WeekInteractionRegisteredTarget,
+  weekEventRegistry,
+} from "./geometry/weekEventRegistry";
+import {
   createWeekInteractionRuntimeMetrics,
   type WeekInteractionRuntimeMetrics,
 } from "./WeekInteractionMetrics";
@@ -126,6 +130,12 @@ export class WeekInteractionAdapter {
       reason: "active-week-adapter-has-no-enabled-surfaces",
       shouldOwn: false,
     };
+  }
+
+  getRegisteredTarget(
+    event: PointerEvent,
+  ): WeekInteractionRegisteredTarget | null {
+    return weekEventRegistry.resolveFromTarget(event.target);
   }
 
   handlePointerMove(_event: PointerEvent) {

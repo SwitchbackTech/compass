@@ -25,6 +25,10 @@ import { selectIsEventPending } from "@web/ducks/events/selectors/pending.select
 import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  getWeekInteractionEventAttributes,
+  useWeekEventRegistrationRef,
+} from "@web/views/Week/interaction/geometry/weekEventRegistry";
 
 interface Props {
   event: Schema_GridEvent;
@@ -62,6 +66,13 @@ const AllDayEvent = ({
   const isPending = useAppSelector((state) =>
     selectIsEventPending(state, event._id!),
   );
+  const isRegisteredForWeekInteraction =
+    Boolean(event._id) && !isPlaceholder && !isPending;
+  const registrationRef = useWeekEventRegistrationRef({
+    eventId: event._id,
+    eventType: "all-day",
+    isEnabled: isRegisteredForWeekInteraction,
+  });
 
   const priority = event.priority || Priorities.UNASSIGNED;
   const baseColor = colorByPriority[priority];
@@ -111,6 +122,13 @@ const AllDayEvent = ({
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
+      {...(isRegisteredForWeekInteraction
+        ? getWeekInteractionEventAttributes({
+            eventId: event._id,
+            eventType: "all-day",
+          })
+        : {})}
+      ref={registrationRef}
       role="button"
       tabIndex={0}
       className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}

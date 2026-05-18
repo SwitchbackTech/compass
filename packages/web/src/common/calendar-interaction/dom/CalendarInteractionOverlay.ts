@@ -30,7 +30,7 @@ export class CalendarInteractionOverlay {
     clone.style.pointerEvents = "none";
     clone.style.top = `${rect.top}px`;
     clone.style.cursor = cursor ?? "";
-    clone.style.transition = "";
+    clone.style.transition = "none";
     clone.style.transform = "translate3d(0px, 0px, 0)";
     clone.style.willChange = "transform";
     clone.style.width = `${rect.width}px`;
@@ -69,7 +69,7 @@ export class CalendarInteractionOverlay {
       this.#node.style.width = `${width}px`;
     }
 
-    this.#node.style.transition = "";
+    this.#node.style.transition = "none";
     this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
   }
 
