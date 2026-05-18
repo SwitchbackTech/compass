@@ -1,5 +1,5 @@
 import { type MigrationContext } from "@scripts/common/cli.types";
-import { ObjectId } from "bson";
+import { type AnyBulkWriteOperation, ObjectId } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
 import { z } from "zod/v4";
 import { Origin, Priorities } from "@core/constants/core.constants";
@@ -49,7 +49,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
     await collection.deleteMany();
 
     const cursor = mongoService.event.find({}, { batchSize: MONGO_BATCH_SIZE });
-    const bulkInsert = collection.initializeUnorderedBulkOp();
+    const operations: AnyBulkWriteOperation<Schema_Event>[] = [];
     const calendars = new Map<string, ObjectId>();
     const rrules = new Map<string, string[]>();
 
@@ -149,11 +149,11 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         updatedAt: new Date(),
       });
 
-      bulkInsert.insert(event);
+      operations.push({ insertOne: { document: event } });
     }
 
-    if (bulkInsert.batches.length > 0) {
-      await bulkInsert.execute();
+    if (operations.length > 0) {
+      await collection.bulkWrite(operations, { ordered: false });
     } else {
       logger.info(`No events to migrate into ${collectionName}`);
     }
