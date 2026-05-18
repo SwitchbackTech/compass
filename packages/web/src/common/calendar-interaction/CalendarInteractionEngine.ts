@@ -364,12 +364,6 @@ export class CalendarInteractionEngine<TTarget, TVisual, TResult> {
         this.#options.now() - (this.#activatedAt ?? this.#options.now());
     }
 
-    recordCalendarInteractionPerfFrame({
-      firstFrameLatencyMs: this.#metrics.firstFrameLatencyMs ?? undefined,
-      frameGapMs,
-      rafComputeWriteMs: frameDurationMs,
-    });
-
     if (next.shouldContinue) {
       this.#scheduleFrame();
     }
@@ -418,25 +412,3 @@ const hasExceededMoveThreshold = (
 ) =>
   Math.abs(current.x - initial.x) > threshold ||
   Math.abs(current.y - initial.y) > threshold;
-
-const recordCalendarInteractionPerfFrame = (frame: {
-  firstFrameLatencyMs?: number;
-  frameGapMs?: number;
-  rafComputeWriteMs: number;
-}) => {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  (
-    window as unknown as {
-      __WEEK_VIEW_PERF_PROBE__?: {
-        recordCalendarInteractionFrame?: (frame: {
-          firstFrameLatencyMs?: number;
-          frameGapMs?: number;
-          rafComputeWriteMs: number;
-        }) => void;
-      };
-    }
-  ).__WEEK_VIEW_PERF_PROBE__?.recordCalendarInteractionFrame?.(frame);
-};

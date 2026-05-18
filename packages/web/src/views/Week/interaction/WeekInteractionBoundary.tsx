@@ -1,13 +1,11 @@
 import {
   type FC,
-  Profiler,
   type PropsWithChildren,
   useEffect,
   useMemo,
   useRef,
 } from "react";
 import { WeekInteractionAdapter } from "./WeekInteractionAdapter";
-import { recordWeekInteractionRender } from "./WeekInteractionMetrics";
 
 interface Props extends PropsWithChildren {
   adapter?: WeekInteractionAdapter;
@@ -85,16 +83,9 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
   }, [activeAdapter]);
 
   return (
-    <Profiler
-      id="WeekInteractionBoundary"
-      onRender={() => {
-        recordWeekInteractionRender();
-      }}
-    >
-      <div ref={boundaryRef} style={{ display: "contents" }}>
-        {children}
-      </div>
-    </Profiler>
+    <div ref={boundaryRef} style={{ display: "contents" }}>
+      {children}
+    </div>
   );
 };
 

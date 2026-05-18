@@ -8,7 +8,6 @@ import {
   WEEK_TIMED_VISIBLE_HOURS,
 } from "@web/views/Week/layout.constants";
 import { type SmartScrollCache } from "../math/smartScroll";
-import { recordWeekInteractionLayoutRead } from "../WeekInteractionMetrics";
 
 const SMART_SCROLL_EDGE_THRESHOLD_PX = 50;
 const SMART_SCROLL_BOTTOM_INSET_PX = 100;
@@ -44,11 +43,9 @@ export const buildTimedWeekLayoutCache = (): WeekLayoutCache | null => {
     return null;
   }
 
-  recordWeekInteractionLayoutRead();
   const rect = mainGrid.getBoundingClientRect();
   const columnsRect = getTimedColumnsRect() ?? rect;
   const dayColumns = buildDayColumns(columnsRect);
-  recordWeekInteractionLayoutRead();
   const initialScrollTop = mainGrid.scrollTop;
   const maxScrollTop = Math.max(
     0,
@@ -80,7 +77,6 @@ export const buildTimedWeekLayoutCache = (): WeekLayoutCache | null => {
 
 export const buildAllDayWeekLayoutCache = (): WeekLayoutCache | null => {
   const allDayColumns = document.getElementById(ID_ALLDAY_COLUMNS);
-  recordWeekInteractionLayoutRead();
   const rect = allDayColumns?.getBoundingClientRect();
 
   if (!rect || rect.width <= 0) {
@@ -123,7 +119,6 @@ export const getNearestDayColumn = (
 
 const getTimedColumnsRect = () => {
   const columns = document.getElementById(ID_GRID_COLUMNS_TIMED);
-  recordWeekInteractionLayoutRead();
   const rect = columns?.getBoundingClientRect();
 
   return rect && rect.width > 0 ? rect : null;

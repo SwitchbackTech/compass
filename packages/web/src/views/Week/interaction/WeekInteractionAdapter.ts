@@ -55,7 +55,6 @@ import {
   type TimedResizeEdge,
   type TimedResizeVisual,
 } from "./model/TimedResizeVisual";
-import { recordWeekInteractionLayoutRead } from "./WeekInteractionMetrics";
 import { setWeekInteractionMotionActive } from "./weekInteractionMotionState";
 
 export type WeekInteractionAdapterMode = "active" | "passive";
@@ -915,7 +914,6 @@ const isEligibleWeekPointerDown = (event: PointerEvent) =>
   !event.shiftKey;
 
 const readElementRect = (element: HTMLElement): VisualRect => {
-  recordWeekInteractionLayoutRead();
   const rect = element.getBoundingClientRect();
 
   return {
