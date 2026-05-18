@@ -24,7 +24,7 @@
     "dev:web": "cd packages/web &&bun run dev.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
-    "perf:week": "bun packages/scripts/src/performance/week-view.perf.ts",
+    "perf:week": "bun packages/scripts/src/week-view.perf.ts",
     "format": "biome format --write .",
     "format:check": "biome format .",
     "test": "bun packages/scripts/src/testing/run.ts",
