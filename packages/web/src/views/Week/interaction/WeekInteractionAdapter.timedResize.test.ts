@@ -80,18 +80,21 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
   const timerCallbacks = new Map<unknown, () => void>();
   const event = createTimedEvent();
   const source = document.createElement("div");
-  const child = document.createElement("span");
+  const startHandle = document.createElement("div");
+  const endHandle = document.createElement("div");
   const mainGrid = document.createElement("div");
   const columns = document.createElement("div");
   const onClickTimedEvent = mock();
   const onCommitTimedDrag = mock();
+  const onCommitTimedResize = mock();
   const onMotionActivation = mock();
-  const onRequestWeekNavigation = mock();
 
   source.style.visibility = "visible";
+  startHandle.setAttribute("data-week-event-resize-handle", "startDate");
+  endHandle.setAttribute("data-week-event-resize-handle", "endDate");
   mainGrid.id = ID_GRID_MAIN;
   columns.id = ID_GRID_COLUMNS_TIMED;
-  source.append(child);
+  source.append(startHandle, endHandle);
   mainGrid.append(columns, source);
   document.body.append(mainGrid);
   Object.defineProperty(mainGrid, "clientHeight", { value: 1300 });
@@ -117,7 +120,7 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
     width: 90,
   });
 
-  const unregister = weekEventRegistry.register({
+  weekEventRegistry.register({
     element: source,
     eventId: event._id!,
     eventType: "timed",
@@ -148,11 +151,10 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
     runtime: () => ({
       getTimedEventById: (eventId) => (eventId === event._id ? event : null),
       isEventPending: () => isPending,
-      now: () => now,
       onClickTimedEvent,
       onCommitTimedDrag,
+      onCommitTimedResize,
       onMotionActivation,
-      onRequestWeekNavigation,
     }),
   });
 
@@ -181,19 +183,16 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
 
   return {
     adapter,
-    child,
+    endHandle,
     event,
     fireHoldTimer,
     flushFrame,
-    frameCallbacks,
-    mainGrid,
     onClickTimedEvent,
     onCommitTimedDrag,
+    onCommitTimedResize,
     onMotionActivation,
-    onRequestWeekNavigation,
     source,
-    timerCallbacks,
-    unregister,
+    startHandle,
   };
 };
 
@@ -202,42 +201,48 @@ afterEach(() => {
   weekEventRegistry.clear();
 });
 
-describe("WeekInteractionAdapter timed drag", () => {
-  it("owns a saved timed event pointerdown and routes quick release as a click", () => {
-    const { adapter, child, event, onClickTimedEvent, onCommitTimedDrag } =
-      createHarness();
+describe("WeekInteractionAdapter timed resize", () => {
+  it("owns a saved timed resize handle and routes quick release as a click", () => {
+    const {
+      adapter,
+      endHandle,
+      event,
+      onClickTimedEvent,
+      onCommitTimedDrag,
+      onCommitTimedResize,
+    } = createHarness();
 
     expect(
       adapter.handlePointerDown(
-        makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+        makePointerEvent("pointerdown", {
+          target: endHandle,
+          x: 320,
+          y: 1100,
+        }),
       ),
     ).toEqual({
-      reason: "saved-timed-drag",
+      reason: "saved-timed-resize",
       shouldOwn: true,
     });
 
     adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: child, x: 320, y: 1020 }),
+      makePointerEvent("pointerup", { target: endHandle, x: 320, y: 1100 }),
     );
 
     expect(onClickTimedEvent).toHaveBeenCalledWith(event);
     expect(onCommitTimedDrag).not.toHaveBeenCalled();
-    expect(adapter.getMetrics()).toMatchObject({
-      ownedPointerDowns: 1,
-      pointerDowns: 1,
-      pointerUps: 1,
-    });
+    expect(onCommitTimedResize).not.toHaveBeenCalled();
   });
 
-  it("keeps pending events on the existing Week path", () => {
-    const pendingHarness = createHarness({ isPending: true });
+  it("keeps pending timed resize handles on the existing Week path", () => {
+    const { adapter, endHandle } = createHarness({ isPending: true });
 
     expect(
-      pendingHarness.adapter.handlePointerDown(
+      adapter.handlePointerDown(
         makePointerEvent("pointerdown", {
-          target: pendingHarness.child,
+          target: endHandle,
           x: 320,
-          y: 1020,
+          y: 1100,
         }),
       ),
     ).toEqual({
@@ -246,62 +251,25 @@ describe("WeekInteractionAdapter timed drag", () => {
     });
   });
 
-  it("commits an activated no-op timed drag as not moved", () => {
+  it("resizes the bottom edge with immediate height writes and commits once", () => {
     const {
       adapter,
-      child,
-      event,
-      fireHoldTimer,
+      endHandle,
       flushFrame,
-      onCommitTimedDrag,
-    } = createHarness();
-
-    adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
-    );
-    fireHoldTimer();
-    flushFrame();
-    adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: child, x: 320, y: 1020 }),
-    );
-
-    expect(onCommitTimedDrag).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event: expect.objectContaining({
-          _id: event._id,
-          endDate: expect.stringContaining("10:00"),
-          startDate: expect.stringContaining("09:00"),
-        }),
-        eventId: event._id,
-        hadFormOpenBeforeInteraction: false,
-        hasMoved: false,
-        type: "timedDragEnd",
-      }),
-    );
-  });
-
-  it("drags a timed event on the engine path and commits the snapped event once", () => {
-    const {
-      adapter,
-      child,
-      event,
-      flushFrame,
-      onCommitTimedDrag,
+      onCommitTimedResize,
       onMotionActivation,
       source,
     } = createHarness();
 
     adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+      makePointerEvent("pointerdown", { target: endHandle, x: 320, y: 1100 }),
     );
     adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: child, x: 320, y: 1120 }),
+      makePointerEvent("pointermove", { target: endHandle, x: 320, y: 1150 }),
     );
 
     expect(source.style.visibility).toBe("hidden");
-    expect(onMotionActivation).toHaveBeenCalledWith(
-      expect.objectContaining({ event }),
-    );
+    expect(onMotionActivation).toHaveBeenCalled();
 
     flushFrame();
 
@@ -309,24 +277,23 @@ describe("WeekInteractionAdapter timed drag", () => {
       "[data-calendar-interaction-overlay]",
     ) as HTMLElement | null;
 
-    expect(overlay).toBeTruthy();
     expect(overlay?.style.transition).toBe("none");
-    expect(overlay?.style.transform).toBe("translate3d(0px, 100px, 0)");
+    expect(overlay?.style.transform).toBe("translate3d(0px, 0px, 0)");
+    expect(overlay?.style.height).toBe("150px");
 
     adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: child, x: 320, y: 1120 }),
+      makePointerEvent("pointerup", { target: endHandle, x: 320, y: 1150 }),
     );
 
-    expect(onCommitTimedDrag).toHaveBeenCalledTimes(1);
-    expect(onCommitTimedDrag).toHaveBeenCalledWith(
+    expect(onCommitTimedResize).toHaveBeenCalledTimes(1);
+    expect(onCommitTimedResize).toHaveBeenCalledWith(
       expect.objectContaining({
         event: expect.objectContaining({
-          _id: event._id,
-          endDate: expect.stringContaining("11:00"),
-          startDate: expect.stringContaining("10:00"),
+          endDate: expect.stringContaining("10:30"),
+          startDate: expect.stringContaining("09:00"),
         }),
-        hadFormOpenBeforeInteraction: false,
         hasMoved: true,
+        type: "timedResizeEnd",
       }),
     );
     expect(source.style.visibility).toBe("visible");
@@ -335,54 +302,114 @@ describe("WeekInteractionAdapter timed drag", () => {
     ).toBeNull();
   });
 
-  it("continues timed smart scroll in the RAF loop and feeds scroll delta into commit time", () => {
-    const { adapter, child, flushFrame, mainGrid, onCommitTimedDrag } =
+  it("resizes the top edge with immediate transform and height writes", () => {
+    const { adapter, flushFrame, onCommitTimedResize, startHandle } =
       createHarness();
 
     adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+      makePointerEvent("pointerdown", {
+        target: startHandle,
+        x: 320,
+        y: 1000,
+      }),
     );
     adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: child, x: 320, y: 1120 }),
+      makePointerEvent("pointermove", {
+        target: startHandle,
+        x: 320,
+        y: 950,
+      }),
     );
+    flushFrame();
 
-    flushFrame(16);
-    adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: child, x: 320, y: 1290 }),
-    );
-    flushFrame(32);
-    flushFrame(48);
+    const overlay = document.body.querySelector(
+      "[data-calendar-interaction-overlay]",
+    ) as HTMLElement | null;
 
-    expect(mainGrid.scrollTop).toBe(20);
+    expect(overlay?.style.transition).toBe("none");
+    expect(overlay?.style.transform).toBe("translate3d(0px, -50px, 0)");
+    expect(overlay?.style.height).toBe("150px");
 
     adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: child, x: 320, y: 1290 }),
+      makePointerEvent("pointerup", { target: startHandle, x: 320, y: 950 }),
     );
 
-    expect(onCommitTimedDrag).toHaveBeenCalledWith(
+    expect(onCommitTimedResize).toHaveBeenCalledWith(
       expect.objectContaining({
         event: expect.objectContaining({
-          startDate: expect.stringContaining("12:00"),
+          endDate: expect.stringContaining("10:00"),
+          startDate: expect.stringContaining("08:30"),
         }),
+        hasMoved: true,
+        type: "timedResizeEnd",
       }),
     );
   });
 
-  it("requests one timed edge navigation after the edge dwell", () => {
-    const { adapter, child, flushFrame, onRequestWeekNavigation } =
+  it("flips the bottom edge across the start while keeping one slot minimum", () => {
+    const { adapter, endHandle, flushFrame, onCommitTimedResize } =
       createHarness();
 
     adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+      makePointerEvent("pointerdown", { target: endHandle, x: 320, y: 1100 }),
     );
     adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: child, x: 40, y: 1020 }),
+      makePointerEvent("pointermove", { target: endHandle, x: 320, y: 980 }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector(
+      "[data-calendar-interaction-overlay]",
+    ) as HTMLElement | null;
+
+    expect(overlay?.style.transform).toBe("translate3d(0px, -25px, 0)");
+    expect(overlay?.style.height).toBe("25px");
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: endHandle, x: 320, y: 980 }),
     );
 
-    flushFrame(16);
-    flushFrame(600);
+    expect(onCommitTimedResize).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          endDate: expect.stringContaining("09:00"),
+          startDate: expect.stringContaining("08:45"),
+        }),
+        hasMoved: true,
+      }),
+    );
+  });
 
-    expect(onRequestWeekNavigation).toHaveBeenCalledTimes(1);
-    expect(onRequestWeekNavigation).toHaveBeenCalledWith("prev");
+  it("commits an activated no-op timed resize as not moved", () => {
+    const {
+      adapter,
+      endHandle,
+      event,
+      fireHoldTimer,
+      flushFrame,
+      onCommitTimedResize,
+    } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: endHandle, x: 320, y: 1100 }),
+    );
+    fireHoldTimer();
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: endHandle, x: 320, y: 1100 }),
+    );
+
+    expect(onCommitTimedResize).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          _id: event._id,
+          endDate: expect.stringContaining("10:00"),
+          startDate: expect.stringContaining("09:00"),
+        }),
+        eventId: event._id,
+        hasMoved: false,
+        type: "timedResizeEnd",
+      }),
+    );
   });
 });

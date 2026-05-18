@@ -4,7 +4,9 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import {
   hasTimedDragVisualMoved,
+  hasTimedResizeVisualMoved,
   timedDragVisualToGridEvent,
+  timedResizeVisualToGridEvent,
 } from "./commit/timedDragVisualToGridEvent";
 import { createWeekInteractionEventOverlayMount } from "./dom/cloneWeekInteractionEventElement";
 import {
@@ -19,10 +21,18 @@ import {
 import { getSmartScrollFrame } from "./math/smartScroll";
 import { createTimedDragVisual, updateTimedDragVisual } from "./math/timedDrag";
 import {
+  createTimedResizeVisual,
+  updateTimedResizeVisual,
+} from "./math/timedResize";
+import {
   type TimedDragVisual,
   type VisualPoint,
   type VisualRect,
 } from "./model/TimedDragVisual";
+import {
+  type TimedResizeEdge,
+  type TimedResizeVisual,
+} from "./model/TimedResizeVisual";
 import {
   createWeekInteractionRuntimeMetrics,
   type WeekInteractionRuntimeMetrics,
@@ -75,7 +85,8 @@ export interface WeekInteractionRuntime {
   now?: () => number;
   onClickTimedEvent: (event: Schema_GridEvent) => void;
   onCommitTimedDrag: (result: WeekTimedDragCommitResult) => void;
-  onMotionActivation?: (target: WeekTimedDragTarget) => void;
+  onCommitTimedResize?: (result: WeekTimedResizeCommitResult) => void;
+  onMotionActivation?: (target: WeekTimedInteractionTarget) => void;
   onRequestWeekNavigation?: (direction: "next" | "prev") => void;
 }
 
@@ -91,7 +102,30 @@ export interface WeekTimedDragTarget {
   event: Schema_GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: WeekInteractionRegisteredTarget;
+  type: "timedDrag";
 }
+
+export interface WeekTimedResizeCommitResult {
+  event: Schema_GridEvent;
+  eventId: string;
+  hadFormOpenBeforeInteraction: boolean;
+  hasMoved: boolean;
+  type: "timedResizeEnd";
+}
+
+export interface WeekTimedResizeTarget {
+  edge: TimedResizeEdge;
+  event: Schema_GridEvent;
+  hadFormOpenBeforeInteraction: boolean;
+  registered: WeekInteractionRegisteredTarget;
+  type: "timedResize";
+}
+
+type WeekTimedInteractionTarget = WeekTimedDragTarget | WeekTimedResizeTarget;
+type WeekTimedInteractionVisual = TimedDragVisual | TimedResizeVisual;
+type WeekTimedInteractionCommitResult =
+  | WeekTimedDragCommitResult
+  | WeekTimedResizeCommitResult;
 
 const inertRuntime: WeekInteractionRuntime = {
   getTimedEventById: () => null,
@@ -104,9 +138,9 @@ const EDGE_NAVIGATION_DWELL_MS = 500;
 
 export class WeekInteractionAdapter {
   readonly #engine: CalendarInteractionEngine<
-    WeekTimedDragTarget,
-    TimedDragVisual,
-    WeekTimedDragCommitResult
+    WeekTimedInteractionTarget,
+    WeekTimedInteractionVisual,
+    WeekTimedInteractionCommitResult
   >;
   readonly #metrics: WeekInteractionRuntimeMetrics;
   readonly #mode: WeekInteractionAdapterMode;
@@ -154,9 +188,14 @@ export class WeekInteractionAdapter {
         surface: "savedTimedDrag",
       },
       {
-        newOwner: "existing-week-path",
+        newOwner:
+          this.#mode === "active"
+            ? "week-interaction-adapter"
+            : "existing-week-path",
         notes:
-          "Passive adapter refuses saved timed resize until the timed-resize cutover task.",
+          this.#mode === "active"
+            ? "Active adapter owns saved timed resize through the calendar interaction engine."
+            : "Passive adapter refuses saved timed resize until the timed-resize cutover task.",
         surface: "savedTimedResize",
       },
       {
@@ -219,7 +258,9 @@ export class WeekInteractionAdapter {
       };
     }
 
-    if (!this.#getTimedDragTarget(event)) {
+    const target = this.#getTimedInteractionTarget(event);
+
+    if (!target) {
       return {
         reason: "no-week-interaction-target",
         shouldOwn: false,
@@ -237,7 +278,8 @@ export class WeekInteractionAdapter {
     this.#recordOwnedPointerDown();
 
     return {
-      reason: "saved-timed-drag",
+      reason:
+        target.type === "timedDrag" ? "saved-timed-drag" : "saved-timed-resize",
       shouldOwn: true,
     };
   }
@@ -267,7 +309,12 @@ export class WeekInteractionAdapter {
       return;
     }
 
-    this.#runtime().onCommitTimedDrag(result.result);
+    if (result.result.type === "timedDragEnd") {
+      this.#runtime().onCommitTimedDrag(result.result);
+      return;
+    }
+
+    this.#runtime().onCommitTimedResize?.(result.result);
   }
 
   handlePointerCancel(event: PointerEvent) {
@@ -290,16 +337,39 @@ export class WeekInteractionAdapter {
   }
 
   #createTimedDragEngineAdapter(): CalendarInteractionAdapter<
-    WeekTimedDragTarget,
-    TimedDragVisual,
-    WeekTimedDragCommitResult
+    WeekTimedInteractionTarget,
+    WeekTimedInteractionVisual,
+    WeekTimedInteractionCommitResult
   > {
     return {
       cancel: () => {
-        this.#clearTimedDragState();
+        this.#clearTimedInteractionState();
         this.#setMotionActive(false);
       },
       commit: ({ target, visual }) => {
+        if (visual.type === "timedResize" && target.type === "timedResize") {
+          const resizedEvent = timedResizeVisualToGridEvent(
+            target.event,
+            visual,
+          );
+          const result: WeekTimedResizeCommitResult = {
+            event: resizedEvent,
+            eventId: target.event._id!,
+            hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
+            hasMoved: hasTimedResizeVisualMoved(visual),
+            type: "timedResizeEnd",
+          };
+
+          this.#clearTimedInteractionState();
+          this.#setMotionActive(false);
+
+          return result;
+        }
+
+        if (visual.type !== "timedDrag" || target.type !== "timedDrag") {
+          throw new Error("Mismatched Week timed interaction target");
+        }
+
         const movedEvent = timedDragVisualToGridEvent(target.event, visual);
         const result: WeekTimedDragCommitResult = {
           event: movedEvent,
@@ -309,7 +379,7 @@ export class WeekInteractionAdapter {
           type: "timedDragEnd",
         };
 
-        this.#clearTimedDragState();
+        this.#clearTimedInteractionState();
         this.#setMotionActive(false);
 
         return result;
@@ -326,6 +396,17 @@ export class WeekInteractionAdapter {
         this.#scrollTop = layout.smartScroll.initialScrollTop;
         this.#runtime().onMotionActivation?.(target);
 
+        if (target.type === "timedResize") {
+          return createTimedResizeVisual({
+            edge: target.edge,
+            endMinutes: getLocalMinutes(target.event.endDate),
+            eventId: target.event._id!,
+            pointerStart,
+            sourceRect,
+            startMinutes: getLocalMinutes(target.event.startDate),
+          });
+        }
+
         return createTimedDragVisual({
           dayIndex: getLocalDayIndex(target.event.startDate),
           endMinutes: getLocalMinutes(target.event.endDate),
@@ -335,13 +416,13 @@ export class WeekInteractionAdapter {
           startMinutes: getLocalMinutes(target.event.startDate),
         });
       },
-      getOverlayMount: ({ sourceElement }) =>
+      getOverlayMount: ({ sourceElement, target }) =>
         createWeekInteractionEventOverlayMount({
-          cursor: "move",
+          cursor: target.type === "timedResize" ? "row-resize" : "move",
           source: sourceElement,
         }),
       getSourceElement: (target) => target.registered.element,
-      getTarget: (event) => this.#getTimedDragTarget(event),
+      getTarget: (event) => this.#getTimedInteractionTarget(event),
       updateVisual: ({ pointer, target, timestamp, visual }) => {
         this.#rebuildLayoutIfNeeded();
 
@@ -350,6 +431,30 @@ export class WeekInteractionAdapter {
             overlay: null,
             visual,
           };
+        }
+
+        if (visual.type === "timedResize") {
+          const nextVisual = updateTimedResizeVisual(visual, {
+            layout: this.#layout,
+            pointer,
+          });
+          const nextEvent = timedResizeVisualToGridEvent(
+            target.event,
+            nextVisual,
+          );
+
+          return {
+            overlay: {
+              height: nextVisual.height,
+              mutate: (node) => updateOverlayTimeLabel(node, nextEvent),
+              transform: nextVisual.transform,
+            },
+            visual: nextVisual,
+          };
+        }
+
+        if (target.type !== "timedDrag") {
+          throw new Error("Mismatched Week timed interaction target");
         }
 
         const smartScroll = this.#applySmartScroll(pointer);
@@ -376,6 +481,18 @@ export class WeekInteractionAdapter {
         };
       },
     };
+  }
+
+  #getTimedInteractionTarget(
+    event: PointerEvent,
+  ): WeekTimedInteractionTarget | null {
+    const resizeTarget = this.#getTimedResizeTarget(event);
+
+    if (resizeTarget) {
+      return resizeTarget;
+    }
+
+    return this.#getTimedDragTarget(event);
   }
 
   #getTimedDragTarget(event: PointerEvent): WeekTimedDragTarget | null {
@@ -409,6 +526,45 @@ export class WeekInteractionAdapter {
       event: timedEvent,
       hadFormOpenBeforeInteraction: this.#runtime().isFormOpen?.() ?? false,
       registered,
+      type: "timedDrag",
+    };
+  }
+
+  #getTimedResizeTarget(event: PointerEvent): WeekTimedResizeTarget | null {
+    if (this.#mode !== "active") {
+      return null;
+    }
+
+    const pointerTarget = event.target instanceof Element ? event.target : null;
+    const handle = pointerTarget?.closest("[data-week-event-resize-handle]");
+    const edge = handle?.getAttribute("data-week-event-resize-handle");
+
+    if (edge !== "startDate" && edge !== "endDate") {
+      return null;
+    }
+
+    const registered = weekEventRegistry.resolveFromTarget(event.target);
+
+    if (!registered || registered.eventType !== "timed") {
+      return null;
+    }
+
+    const timedEvent = this.#runtime().getTimedEventById(registered.eventId);
+
+    if (
+      !timedEvent?._id ||
+      timedEvent.isAllDay ||
+      this.#runtime().isEventPending(timedEvent._id)
+    ) {
+      return null;
+    }
+
+    return {
+      edge,
+      event: timedEvent,
+      hadFormOpenBeforeInteraction: this.#runtime().isFormOpen?.() ?? false,
+      registered,
+      type: "timedResize",
     };
   }
 
@@ -510,7 +666,7 @@ export class WeekInteractionAdapter {
     };
   }
 
-  #clearTimedDragState() {
+  #clearTimedInteractionState() {
     this.#layout = null;
     this.#scrollTop = null;
     this.#resetEdgeNavigation();

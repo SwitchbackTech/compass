@@ -10,6 +10,7 @@ import {
   WeekInteractionAdapter,
   type WeekInteractionRuntime,
   type WeekTimedDragCommitResult,
+  type WeekTimedResizeCommitResult,
 } from "./WeekInteractionAdapter";
 import { WeekInteractionBoundary } from "./WeekInteractionBoundary";
 
@@ -63,7 +64,9 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
     );
   };
 
-  const commitTimedDrag = (result: WeekTimedDragCommitResult) => {
+  const commitTimedMutation = (
+    result: WeekTimedDragCommitResult | WeekTimedResizeCommitResult,
+  ) => {
     if (!result.hasMoved) {
       openTimedEvent(result.event);
       return;
@@ -78,12 +81,21 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
     void confirmation.onSubmit(result.event);
   };
 
+  const commitTimedDrag = (result: WeekTimedDragCommitResult) => {
+    commitTimedMutation(result);
+  };
+
+  const commitTimedResize = (result: WeekTimedResizeCommitResult) => {
+    commitTimedMutation(result);
+  };
+
   runtimeRef.current = {
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
     isEventPending: (eventId) => pendingEventIds.includes(eventId),
     isFormOpen: () => state.isFormOpen,
     onClickTimedEvent: openTimedEvent,
     onCommitTimedDrag: commitTimedDrag,
+    onCommitTimedResize: commitTimedResize,
     onMotionActivation: (target) => {
       if (target.hadFormOpenBeforeInteraction) {
         actions.closeForm();
