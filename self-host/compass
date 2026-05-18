@@ -132,6 +132,7 @@ load_env_if_present() {
 set_compose_env() {
   load_env
   export COMPASS_CONFIG_FILE="$CONFIG_FILE"
+  export COMPOSE_PROFILES="${COMPOSE_PROFILES-selfhost}"
   export COMPASS_VERSION="$(strip_quotes "$(read_config_value runtime.version)")"
   export WEB_PORT="$(strip_quotes "$(read_config_value web.port)")"
   export PORT="$(strip_quotes "$(read_config_value backend.port)")"
