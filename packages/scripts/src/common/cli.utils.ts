@@ -1,7 +1,7 @@
 import pkg from "inquirer";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import { type Environment_Cli } from "./cli.types";
 import { styleText } from "node:util";
-import { CONFIG } from "@backend/common/constants/config.constants";
 
 const { prompt } = pkg;
 
