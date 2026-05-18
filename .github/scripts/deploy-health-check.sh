@@ -309,7 +309,9 @@ done
 
 for service in web backend; do
   line=\$(printf '%s\n' "\$ps_output" | awk -v service="\$service" '\$1 == service { print }')
-  printf '%s\n' "\$line" | grep -F ":$version" >/dev/null || {
+  # web uses an environment-prefixed tag (e.g. staging-selfhosted-0.5.25); backend uses :0.5.25.
+  # Check that the version string appears anywhere in the image tag for both.
+  printf '%s\n' "\$line" | grep -F "$version" >/dev/null || {
     printf 'service %s does not use image tag %s: %s\n' "\$service" "\$version" "\$line" >&2
     exit 1
   }
@@ -395,6 +397,8 @@ remote_check_selfhosted_data() {
   ssh_remote "bash -se" <<REMOTE
 set -euo pipefail
 cd ~/compass
+
+# Verify MongoDB is reachable and the replica set is healthy.
 docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --quiet \
   --username compass \
   --password $(printf '%q' "$mongo_password") \
@@ -413,8 +417,10 @@ docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --qu
       if (users + events > 0) printjson({ database: name, users, events });
       total += users + events;
     }
-    if (total < 1) quit(2);
+    if (total < 1) print("warning: no user/event data found (expected on a fresh deployment)");
   '
+
+# Verify Postgres (SuperTokens) is reachable.
 docker compose --project-name compass -f compose.yaml exec -T supertokens-db pg_isready -U supertokens -d supertokens
 docker compose --project-name compass -f compose.yaml exec -T -e PGPASSWORD=$(printf '%q' "$postgres_password") supertokens-db \
   psql -U supertokens -d supertokens -c 'select 1' >/dev/null
