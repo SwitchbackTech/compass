@@ -1,0 +1,62 @@
+name: Deploy health check
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        description: 'Release tag being validated, such as v1.2.3'
+        required: true
+        type: string
+      environment:
+        description: 'GitHub Environment to validate'
+        required: true
+        type: string
+      profile:
+        description: 'Health check profile: cloud or selfhosted'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  health-check:
+    name: Health check ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6
+
+      - name: Configure SSH
+        env:
+          SSH_HOST: ${{ vars.SSH_HOST }}
+          SSH_KEY_PATH: ${{ runner.temp }}/deploy_health_check_key
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          mkdir -p ~/.ssh
+          echo "$SSH_PRIVATE_KEY" > "$SSH_KEY_PATH"
+          chmod 600 "$SSH_KEY_PATH"
+          ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+
+      - name: Run deploy health check
+        env:
+          BACKEND_API_URL: ${{ vars.BACKEND_API_URL }}
+          COMPOSE_PROFILES: ${{ vars.COMPOSE_PROFILES }}
+          DISCORD_DEPLOY_WEBHOOK_URL: ${{ secrets.DISCORD_DEPLOY_WEBHOOK_URL }}
+          ENVIRONMENT: ${{ inputs.environment }}
+          FRONTEND_URL: ${{ vars.FRONTEND_URL }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_SERVER_URL: ${{ github.server_url }}
+          MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+          PROFILE: ${{ inputs.profile }}
+          RELEASE_TAG: ${{ inputs.tag }}
+          SSH_HOST: ${{ vars.SSH_HOST }}
+          SSH_KEY_PATH: ${{ runner.temp }}/deploy_health_check_key
+          SSH_USER: ${{ vars.SSH_USER }}
+          SUPERTOKENS_POSTGRES_PASSWORD: ${{ secrets.SUPERTOKENS_POSTGRES_PASSWORD }}
+        run: bash .github/scripts/deploy-health-check.sh
