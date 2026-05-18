@@ -85,7 +85,20 @@ const makePointerEvent = (
   return event;
 };
 
-const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
+const createHarness = ({
+  isPending = false,
+  mainGridScrollTop = 0,
+  sourceRect = {
+    height: 100,
+    left: 300,
+    top: 1000,
+    width: 90,
+  },
+}: {
+  isPending?: boolean;
+  mainGridScrollTop?: number;
+  sourceRect?: Pick<DOMRect, "height" | "left" | "top" | "width">;
+} = {}) => {
   document.body.innerHTML = "";
   weekEventRegistry.clear();
 
@@ -111,7 +124,7 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
   document.body.append(mainGrid);
   Object.defineProperty(mainGrid, "clientHeight", { value: 1300 });
   Object.defineProperty(mainGrid, "scrollHeight", { value: 2600 });
-  mainGrid.scrollTop = 0;
+  mainGrid.scrollTop = mainGridScrollTop;
 
   setRect(mainGrid, {
     height: 1300,
@@ -125,12 +138,7 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
     top: 100,
     width: 700,
   });
-  setRect(source, {
-    height: 100,
-    left: 300,
-    top: 1000,
-    width: 90,
-  });
+  setRect(source, sourceRect);
 
   const unregister = weekEventRegistry.register({
     element: source,
@@ -417,6 +425,78 @@ describe("WeekInteractionAdapter timed drag", () => {
     expect(onCommitTimedDrag).toHaveBeenCalledWith(
       expect.objectContaining({
         event: expect.objectContaining({
+          startDate: expect.stringContaining("12:00"),
+        }),
+      }),
+    );
+  });
+
+  it("pins timed drag motion and commit to the visible top of the timed grid", () => {
+    const { adapter, child, flushFrame, onCommitTimedDrag } = createHarness({
+      mainGridScrollTop: 300,
+      sourceRect: {
+        height: 100,
+        left: 300,
+        top: 700,
+        width: 90,
+      },
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 720 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 320, y: 20 }),
+    );
+
+    flushFrame();
+
+    const overlay = document.body.querySelector(
+      "[data-calendar-interaction-overlay]",
+    ) as HTMLElement | null;
+
+    expect(overlay?.style.transform).toBe("translate3d(0px, -600px, 0)");
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 320, y: 20 }),
+    );
+
+    expect(onCommitTimedDrag).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          endDate: expect.stringContaining("04:00"),
+          startDate: expect.stringContaining("03:00"),
+        }),
+      }),
+    );
+  });
+
+  it("pins timed drag motion and commit to the visible bottom of the timed grid", () => {
+    const { adapter, child, flushFrame, onCommitTimedDrag } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 320, y: 2200 }),
+    );
+
+    flushFrame();
+
+    const overlay = document.body.querySelector(
+      "[data-calendar-interaction-overlay]",
+    ) as HTMLElement | null;
+
+    expect(overlay?.style.transform).toBe("translate3d(0px, 300px, 0)");
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 320, y: 2200 }),
+    );
+
+    expect(onCommitTimedDrag).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          endDate: expect.stringContaining("13:00"),
           startDate: expect.stringContaining("12:00"),
         }),
       }),

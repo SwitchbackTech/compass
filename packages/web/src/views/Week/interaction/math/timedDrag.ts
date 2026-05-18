@@ -55,20 +55,17 @@ export const updateTimedDragVisual = (
 ): TimedDragVisual => {
   const deltaX = pointer.x - visual.pointerStart.x;
   const deltaY = pointer.y - visual.pointerStart.y;
-  const pointerDeltaMinutes = snapToStep(
-    deltaY / layout.pixelsPerMinute,
-    layout.snapMinutes,
-  );
   const deltaMinutes = snapToStep(
     (deltaY + scrollDeltaPx) / layout.pixelsPerMinute,
     layout.snapMinutes,
   );
-  const latestStartMinutes = clamp(
-    visual.initialStartMinutes + deltaMinutes,
-    0,
-    MINUTES_PER_DAY - visual.durationMinutes,
-  );
-  const latestEndMinutes = latestStartMinutes + visual.durationMinutes;
+  const candidateStartMinutes = visual.initialStartMinutes + deltaMinutes;
+  const verticalPlacement = getBoundedVerticalPlacement({
+    candidateStartMinutes,
+    layout,
+    scrollDeltaPx,
+    visual,
+  });
   const initialColumn = layout.dayColumns.find(
     (column) => column.index === visual.initialDayIndex,
   );
@@ -86,11 +83,81 @@ export const updateTimedDragVisual = (
   return {
     ...visual,
     dayIndex: nextDayIndex,
-    endMinutes: latestEndMinutes,
-    startMinutes: latestStartMinutes,
+    endMinutes: verticalPlacement.startMinutes + visual.durationMinutes,
+    startMinutes: verticalPlacement.startMinutes,
     transform: {
       x: nextColumnLeft - initialColumnLeft,
-      y: pointerDeltaMinutes * layout.pixelsPerMinute,
+      y: verticalPlacement.transformY,
     },
   };
 };
+
+const getBoundedVerticalPlacement = ({
+  candidateStartMinutes,
+  layout,
+  scrollDeltaPx,
+  visual,
+}: {
+  candidateStartMinutes: number;
+  layout: WeekLayoutCache;
+  scrollDeltaPx: number;
+  visual: TimedDragVisual;
+}) => {
+  const currentScrollTop = getCurrentScrollTop(layout, scrollDeltaPx);
+  const visibleStartMinutes = currentScrollTop / layout.pixelsPerMinute;
+  const visibleDurationMinutes =
+    (layout.edgeNavigation.bottom - layout.edgeNavigation.top) /
+    layout.pixelsPerMinute;
+  const latestDayStartMinutes = MINUTES_PER_DAY - visual.durationMinutes;
+  const earliestVisibleStartMinutes =
+    Math.ceil(visibleStartMinutes / layout.snapMinutes) * layout.snapMinutes;
+  const latestVisibleStartMinutes =
+    Math.floor(
+      (visibleStartMinutes + visibleDurationMinutes - visual.durationMinutes) /
+        layout.snapMinutes,
+    ) * layout.snapMinutes;
+  const earliestStartMinutes = clamp(
+    earliestVisibleStartMinutes,
+    0,
+    latestDayStartMinutes,
+  );
+  const latestStartMinutes = Math.max(
+    earliestStartMinutes,
+    clamp(latestVisibleStartMinutes, 0, latestDayStartMinutes),
+  );
+  const earliestTransformY = layout.edgeNavigation.top - visual.sourceRect.top;
+  const latestTransformY = Math.max(
+    earliestTransformY,
+    layout.edgeNavigation.bottom -
+      visual.sourceRect.height -
+      visual.sourceRect.top,
+  );
+
+  if (candidateStartMinutes < earliestStartMinutes) {
+    return {
+      startMinutes: earliestStartMinutes,
+      transformY: earliestTransformY,
+    };
+  }
+
+  if (candidateStartMinutes > latestStartMinutes) {
+    return {
+      startMinutes: latestStartMinutes,
+      transformY: latestTransformY,
+    };
+  }
+
+  const timeTransformY =
+    layout.edgeNavigation.top +
+    candidateStartMinutes * layout.pixelsPerMinute -
+    currentScrollTop -
+    visual.sourceRect.top;
+
+  return {
+    startMinutes: candidateStartMinutes,
+    transformY: clamp(timeTransformY, earliestTransformY, latestTransformY),
+  };
+};
+
+const getCurrentScrollTop = (layout: WeekLayoutCache, scrollDeltaPx: number) =>
+  (layout.smartScroll?.initialScrollTop ?? 0) + scrollDeltaPx;
