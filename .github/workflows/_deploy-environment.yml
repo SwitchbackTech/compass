@@ -87,6 +87,11 @@ jobs:
             | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
                 "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml && chmod 644 ~/compass/compass.yaml"
           COMPOSE_GIT_REF="${COMPOSE_GIT_REF:-${RELEASE_TAG}}"
+          compose_url="https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.yaml"
+          if ! curl -fsSL "$compose_url" -o /dev/null; then
+            echo "Could not fetch self-host files from ${COMPOSE_GIT_REF}; falling back to ${RELEASE_TAG}."
+            COMPOSE_GIT_REF="${RELEASE_TAG}"
+          fi
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.yaml -o ~/compass/compose.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compass -o ~/compass/compass && chmod +x ~/compass/compass"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES=selfhost docker compose --project-name compass -f compose.yaml down 2>/dev/null || true"
