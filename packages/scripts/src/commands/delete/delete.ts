@@ -2,6 +2,7 @@ import { log } from "@scripts/common/cli.utils";
 import inquirer, { type QuestionCollection } from "inquirer";
 import open from "open";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import mongoService from "@backend/common/services/mongo.service";
 import { findCompassUsersBy } from "@backend/user/queries/user.queries";
 import userService from "@backend/user/services/user.service";
@@ -12,7 +13,6 @@ import {
   type DeleteConfirmPromptAnswers,
   type SupportedBrowser,
 } from "./delete.types";
-import { CONFIG } from "@backend/common/constants/config.constants";
 
 const getBrowserApp = (): { name: string | readonly string[] } | undefined => {
   const devBrowser = process.env["DEV_BROWSER"];
