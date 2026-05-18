@@ -28,7 +28,7 @@ export const Grid: FC<Props> = ({
 }) => {
   const { allDayRef, allDayRowRef, mainGridElementRef, mainGridRef } = gridRefs;
 
-  // Handle drag-to-edge navigation for both timed and all-day events
+  // Existing draft/Someday owner. Saved-event edge navigation lives in WeekInteractionAdapter.
   const dragEdgeState = useDragEdgeNavigation(mainGridRef, weekProps);
 
   return (

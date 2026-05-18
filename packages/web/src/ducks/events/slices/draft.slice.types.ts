@@ -11,26 +11,18 @@ export interface Action_DraftEvent extends Action {
 export type Activity_DraftEvent =
   | "createShortcut"
   | "dnd"
-  | "dragging"
   | "eventRightClick"
   | "gridClick"
   | "keyboardEdit"
   | "resizing"
   | "sidebarClick";
 
-export interface Action_Draft_Drag extends Action {
-  payload: Payload_Draft_Drag;
-}
 export interface Action_Draft_Resize extends Action {
   payload: Payload_Draft_Resize;
 }
 
 export interface Action_Draft_Swap extends Action {
   payload: Payload_Draft_Swap;
-}
-
-interface Payload_Draft_Drag {
-  event: Schema_Event;
 }
 
 interface Payload_DraftEvent {

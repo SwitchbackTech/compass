@@ -1,4 +1,6 @@
 import { useCallback, useRef, useState } from "react";
+import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/weekInteractionMotionState";
+import { WEEK_TIMED_VISIBLE_HOURS } from "@web/views/Week/layout.constants";
 
 type MeasurementSnapshot = Pick<
   DOMRectReadOnly,
@@ -46,24 +48,48 @@ export const useGridLayout = () => {
   const observersRef = useRef(new Map<string, ResizeObserver>());
 
   const updateAllDayRowMeasurement = useCallback((node: HTMLDivElement) => {
+    if (isWeekInteractionMotionActive()) {
+      return;
+    }
+
     const next = toMeasurementSnapshot(node.getBoundingClientRect());
-    setAllDayMeasurements((current) =>
-      areMeasurementsEqual(current, next) ? current : next,
-    );
+    setAllDayMeasurements((current) => {
+      if (isWeekInteractionMotionActive()) {
+        return current;
+      }
+
+      return areMeasurementsEqual(current, next) ? current : next;
+    });
   }, []);
 
   const updateAllDayColumnsMeasurement = useCallback((node: HTMLDivElement) => {
+    if (isWeekInteractionMotionActive()) {
+      return;
+    }
+
     const next = toMeasurementSnapshot(node.getBoundingClientRect());
-    setAllDayColumnsMeasurements((current) =>
-      areMeasurementsEqual(current, next) ? current : next,
-    );
+    setAllDayColumnsMeasurements((current) => {
+      if (isWeekInteractionMotionActive()) {
+        return current;
+      }
+
+      return areMeasurementsEqual(current, next) ? current : next;
+    });
   }, []);
 
   const updateMainGridMeasurement = useCallback((node: HTMLDivElement) => {
+    if (isWeekInteractionMotionActive()) {
+      return;
+    }
+
     const next = toMeasurementSnapshot(node.getBoundingClientRect());
-    setMainMeasurements((current) =>
-      areMeasurementsEqual(current, next) ? current : next,
-    );
+    setMainMeasurements((current) => {
+      if (isWeekInteractionMotionActive()) {
+        return current;
+      }
+
+      return areMeasurementsEqual(current, next) ? current : next;
+    });
   }, []);
 
   const observeElement = useCallback(
@@ -129,7 +155,9 @@ export const useGridLayout = () => {
       allDayRow: allDayMeasurements,
       colWidths,
       mainGrid: mainMeasurements,
-      hourHeight: mainMeasurements?.height ? mainMeasurements.height / 11 : 0,
+      hourHeight: mainMeasurements?.height
+        ? mainMeasurements.height / WEEK_TIMED_VISIBLE_HOURS
+        : 0,
     },
   };
 };

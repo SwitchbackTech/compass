@@ -56,6 +56,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   };
 
   const { onSubmit, onDelete } = confirmation;
+  const motionMode = isResizing ? "resizing" : isDragging ? "dragging" : "idle";
 
   const { onMouseDown } = useGridEventMouseDown(
     draft?.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED,
@@ -68,13 +69,11 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   return (
     <>
       <GridEvent
+        displayMode="draft"
         event={draft}
-        isDragging={isDragging}
-        isDraft={true}
-        isPlaceholder={false}
-        isResizing={isResizing}
         key={`draft-${draft?._id}`}
         measurements={measurements}
+        motionMode={motionMode}
         onEventMouseDown={(event: Schema_GridEvent, e: MouseEvent) => {
           e.preventDefault();
           onMouseDown(e, event);

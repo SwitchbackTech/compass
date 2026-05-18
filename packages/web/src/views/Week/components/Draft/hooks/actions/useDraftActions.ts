@@ -649,11 +649,6 @@ export const useDraftActions = (
       await create();
       return;
     }
-    if (activity === "dragging") {
-      setDraft(reduxDraft as Schema_GridEvent);
-      startDragging();
-      return;
-    }
     if (activity === "resizing") {
       setDraft(reduxDraft as Schema_GridEvent);
       startResizing();
@@ -665,7 +660,6 @@ export const useDraftActions = (
     create,
     setDraft,
     reduxDraft,
-    startDragging,
     startResizing,
     openForm,
   ]);

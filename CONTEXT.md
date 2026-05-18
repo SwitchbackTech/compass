@@ -69,6 +69,10 @@ A single event that is not part of a recurring series.
 **Timed Event**:
 An event shown in a concrete time range on the calendar grid.
 
+**Timed Grid**:
+The calendar surface that lays out Timed Events by day column and time.
+_Avoid_: day slots
+
 **All-Day Event**:
 An event shown in the all-day row.
 
@@ -160,6 +164,15 @@ during Import or Public watch notification handling.
 - An **Anonymous user** stores **Events** and **Tasks** in browser IndexedDB.
 - An **Authenticated user** stores **Events** through the backend and configured
   MongoDB.
+- A **Timed Event** appears in the **Timed Grid**.
+- An **All-Day Event** appears in the all-day row.
+- A **Timed Event** that is dragged outside the **Timed Grid** stays a
+  **Timed Event** unless the interaction explicitly converts it to an
+  **All-Day Event**.
+- A dragged **Timed Event** stays within the visible bounds of the **Timed
+  Grid** while it remains a **Timed Event**.
+- A dragged **Timed Event** released outside the visible **Timed Grid** uses
+  its visible bounded position as the saved time.
 - A **Task** belongs to a **Date key** and stays local today, even when the user
   is authenticated.
 - A **Someday Event** is an **Event**, not a **Task**.

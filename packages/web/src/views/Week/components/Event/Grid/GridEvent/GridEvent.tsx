@@ -34,18 +34,21 @@ import { selectIsEventPending } from "@web/ducks/events/selectors/pending.select
 import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  getWeekInteractionEventAttributes,
+  useWeekEventRegistrationRef,
+} from "@web/views/Week/interaction/geometry/weekEventRegistry";
+import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/weekInteractionMotionState";
 import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
 
 interface Props {
+  displayMode: GridEventDisplayMode;
   event: Schema_GridEvent;
-  isDraft: boolean;
-  isDragging: boolean;
-  isPlaceholder: boolean;
-  isResizing: boolean;
   measurements: Measurements_Grid;
-  onEventMouseDown: (event: Schema_GridEvent, e: MouseEvent) => void;
+  motionMode?: GridEventMotionMode;
+  onEventMouseDown?: (event: Schema_GridEvent, e: MouseEvent) => void;
   onEventKeyDown?: (event: Schema_GridEvent) => void;
-  onScalerMouseDown: (
+  onScalerMouseDown?: (
     event: Schema_GridEvent,
     e: MouseEvent,
     dateToChange: "startDate" | "endDate",
@@ -53,15 +56,15 @@ interface Props {
   weekProps: WeekProps;
 }
 
+type GridEventDisplayMode = "draft" | "placeholder" | "saved";
+type GridEventMotionMode = "dragging" | "idle" | "resizing";
+
 const GridEventBase = (
   {
+    displayMode,
     event: _event,
-
-    isDraft,
-    isDragging,
-    isPlaceholder,
-    isResizing,
     measurements,
+    motionMode = "idle",
     onEventMouseDown,
     onEventKeyDown,
     onScalerMouseDown,
@@ -71,11 +74,23 @@ const GridEventBase = (
 ) => {
   const { component } = weekProps;
 
+  const isDraft = displayMode === "draft";
+  const isDragging = motionMode === "dragging";
+  const isPlaceholder = displayMode === "placeholder";
+  const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
   const isPending = useAppSelector((state) =>
     event._id ? selectIsEventPending(state, event._id) : false,
   );
+  const isRegisteredForWeekInteraction =
+    Boolean(event._id) && !isDraft && !isPlaceholder && !isPending;
+  const registrationRef = useWeekEventRegistrationRef({
+    eventId: event._id,
+    eventType: "timed",
+    forwardedRef: ref,
+    isEnabled: isRegisteredForWeekInteraction,
+  });
 
   const position = getEventPosition(
     event,
@@ -164,12 +179,22 @@ const GridEventBase = (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
-      ref={ref}
+      {...(isRegisteredForWeekInteraction
+        ? getWeekInteractionEventAttributes({
+            eventId: event._id,
+            eventType: "timed",
+          })
+        : {})}
+      ref={registrationRef}
       role="button"
       tabIndex={0}
       className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
       style={eventStyle}
       onMouseDown={(e: MouseEvent) => {
+        if (isWeekInteractionMotionActive()) {
+          return;
+        }
+
         if (isRightClick(e)) {
           // Ignores right click here so it can pass through to context menu
           return;
@@ -177,6 +202,11 @@ const GridEventBase = (
 
         // Prevent drag/resize if event is pending (waiting for backend confirmation)
         if (isPending) {
+          return;
+        }
+
+        if (!onEventMouseDown) {
+          e.stopPropagation();
           return;
         }
 
@@ -207,18 +237,22 @@ const GridEventBase = (
                     getTimesLabel(event.startDate, event.endDate)}
                 </Text>
               )}
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
             <div
+              aria-hidden="true"
+              data-week-event-resize-handle="startDate"
               style={scalerStyle({ top: "-0.25px" })}
               onMouseDown={(e) => {
-                onScalerMouseDown(event, e, "startDate");
+                e.stopPropagation();
+                onScalerMouseDown?.(event, e, "startDate");
               }}
             />
-            {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
             <div
+              aria-hidden="true"
+              data-week-event-resize-handle="endDate"
               style={scalerStyle({ bottom: "-0.25px" })}
               onMouseDown={(e) => {
-                onScalerMouseDown(event, e, "endDate");
+                e.stopPropagation();
+                onScalerMouseDown?.(event, e, "endDate");
               }}
             />
           </>
@@ -231,8 +265,9 @@ const GridEventBase = (
 export const GridEvent = forwardRef(GridEventBase);
 export const GridEventMemo = memo(GridEvent, (prev, next) => {
   return (
+    prev.displayMode === next.displayMode &&
     prev.event === next.event &&
-    prev.isPlaceholder === next.isPlaceholder &&
-    prev.measurements === next.measurements
+    prev.measurements === next.measurements &&
+    prev.motionMode === next.motionMode
   );
 });

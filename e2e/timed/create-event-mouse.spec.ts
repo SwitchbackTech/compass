@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import {
   createEventTitle,
   ensureSidebarOpen,
@@ -7,6 +7,76 @@ import {
   openTimedEventFormWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
+
+interface StoredTimedEvent {
+  endDate?: string;
+  startDate?: string;
+  title?: string;
+}
+
+const getMainGridPoint = async (
+  page: Page,
+  { xRatio = 0.3, yRatio = 0.3 } = {},
+) => {
+  const mainGrid = page.locator("#mainGrid");
+  await mainGrid.scrollIntoViewIfNeeded();
+  const box = await mainGrid.boundingBox();
+
+  if (!box) {
+    throw new Error("Expected the week grid to be visible.");
+  }
+
+  return {
+    x: box.x + box.width * xRatio,
+    y: box.y + box.height * yRatio,
+  };
+};
+
+const getSavedEventsByTitle = (page: Page, title: string) =>
+  page.evaluate(async (eventTitle) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("compass-local");
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+
+    try {
+      return await new Promise<StoredTimedEvent[]>((resolve, reject) => {
+        const transaction = db.transaction("events", "readonly");
+        const request = transaction.objectStore("events").getAll();
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          resolve(
+            request.result.filter(
+              (event: StoredTimedEvent) => event.title === eventTitle,
+            ),
+          );
+        };
+      });
+    } finally {
+      db.close();
+    }
+  }, title);
+
+const getDurationMinutes = (event: StoredTimedEvent) => {
+  if (!event.startDate || !event.endDate) {
+    throw new Error("Expected saved event to have start and end dates.");
+  }
+
+  return (
+    (new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) /
+    60_000
+  );
+};
+
+const expectSavedEventByTitle = async (page: Page, title: string) => {
+  await expect.poll(() => getSavedEventsByTitle(page, title)).toHaveLength(1);
+  const savedEvents = await getSavedEventsByTitle(page, title);
+
+  return savedEvents[0]!;
+};
 
 test.skip(
   ({ isMobile }) => isMobile,
@@ -23,6 +93,58 @@ test("should create a timed event using mouse interaction", async ({
   await fillTitleAndSaveEventForm(page, title);
 
   await expectTimedEventVisible(page, title);
+});
+
+test("opens a 15-minute timed event from a quick grid click", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+
+  const title = createEventTitle("Quick Click Timed Event");
+  const { x, y } = await getMainGridPoint(page);
+
+  await page.mouse.click(x, y);
+
+  const titleInput = page.getByRole("form").getByPlaceholder("Title");
+  await expect(titleInput).toBeVisible();
+
+  await page.mouse.move(x, y + 180);
+  await fillTitleAndSaveEventForm(page, title);
+  await expectTimedEventVisible(page, title);
+
+  const savedEvent = await expectSavedEventByTitle(page, title);
+
+  expect(getDurationMinutes(savedEvent)).toBe(15);
+  await expect(
+    page.locator('#timedEvents > [role="button"]:not([data-event-id])'),
+  ).toHaveCount(0);
+});
+
+test("keeps drag-to-create duration when the pointer moves before release", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+
+  const title = createEventTitle("Dragged Timed Event");
+  const { x, y } = await getMainGridPoint(page);
+
+  await page.mouse.move(x, y);
+  await page.mouse.down();
+  await page.mouse.move(x, y + 160, { steps: 8 });
+  await page.mouse.up();
+
+  const titleInput = page.getByRole("form").getByPlaceholder("Title");
+  await expect(titleInput).toBeVisible();
+
+  await fillTitleAndSaveEventForm(page, title);
+  await expectTimedEventVisible(page, title);
+
+  const savedEvent = await expectSavedEventByTitle(page, title);
+
+  expect(getDurationMinutes(savedEvent)).toBeGreaterThan(15);
+  await expect(
+    page.locator('#timedEvents > [role="button"]:not([data-event-id])'),
+  ).toHaveCount(0);
 });
 
 test("starts the timed draft in the day column under the pointer after horizontal scroll", async ({

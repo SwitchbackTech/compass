@@ -60,7 +60,7 @@ Current things we don't support (yet):
 ```bash
 # Quick start
 bun install
-cp packages/backend/.env.local.example packages/backend/.env.local 
+cp compass.example.yaml compass.yaml # then replace the placeholder values
 bun run dev:web      # Frontend on http://localhost:9080
 bun run dev:backend  # Backend on http://localhost:3000
 
