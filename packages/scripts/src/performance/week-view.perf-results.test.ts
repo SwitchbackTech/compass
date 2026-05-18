@@ -20,6 +20,15 @@ const createScenario = (
   ...overrides,
 });
 
+const addPassingRafSamples = (
+  metrics = createEmptyWeekViewPerfPhaseMetrics(),
+) => {
+  metrics.rafComputeWriteMs = [0.4, 0.5, 0.6];
+  metrics.frameGapsMs = [16, 16.2, 16.4];
+
+  return metrics;
+};
+
 describe("percentile", () => {
   it("returns the nearest-rank percentile", () => {
     expect(percentile([4, 1, 3, 2], 50)).toBe(2);
@@ -45,7 +54,7 @@ describe("evaluateWeekViewPerfResult", () => {
   });
 
   it("fails sustained motion when ownership counters are non-zero", () => {
-    const metrics = createEmptyWeekViewPerfPhaseMetrics();
+    const metrics = addPassingRafSamples();
 
     metrics.reactCommits = 1;
     metrics.reduxDispatches = 1;
@@ -86,7 +95,7 @@ describe("evaluateWeekViewPerfResult", () => {
         phases: {
           activation,
           commit,
-          sustainedMotion: createEmptyWeekViewPerfPhaseMetrics(),
+          sustainedMotion: addPassingRafSamples(),
         },
       }),
     );
@@ -120,7 +129,7 @@ describe("evaluateWeekViewPerfResult", () => {
   });
 
   it("fails drag sustained motion when RAF work exceeds hard gates", () => {
-    const metrics = createEmptyWeekViewPerfPhaseMetrics();
+    const metrics = addPassingRafSamples();
 
     metrics.rafComputeWriteMs = [1.5, 1.8, 2.1, 4.9, 5.2];
     metrics.frameGapsMs = [16, 17, 40];
@@ -145,6 +154,21 @@ describe("evaluateWeekViewPerfResult", () => {
     ]);
   });
 
+  it("fails migrated sustained motion when no RAF samples were recorded", () => {
+    const evaluation = evaluateWeekViewPerfResult(
+      createScenario({
+        phases: {
+          sustainedMotion: createEmptyWeekViewPerfPhaseMetrics(),
+        },
+      }),
+    );
+
+    expect(evaluation.status).toBe("failed");
+    expect(evaluation.failures).toEqual([
+      "sustainedMotion: expected RAF compute/write samples",
+    ]);
+  });
+
   it("uses the resize p95 budget for resize interactions", () => {
     const metrics = createEmptyWeekViewPerfPhaseMetrics();
 
@@ -163,7 +187,7 @@ describe("evaluateWeekViewPerfResult", () => {
   });
 
   it("fails first-frame latency when a prototype budget is provided", () => {
-    const metrics = createEmptyWeekViewPerfPhaseMetrics();
+    const metrics = addPassingRafSamples();
 
     metrics.firstFrameLatencyMs = 12;
 

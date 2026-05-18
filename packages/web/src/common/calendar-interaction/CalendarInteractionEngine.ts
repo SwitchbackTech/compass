@@ -79,6 +79,13 @@ export class CalendarInteractionEngine<TTarget, TVisual, TResult> {
     return this.#session;
   }
 
+  ownsPointer(event: Pick<PointerEvent, "pointerId">) {
+    return (
+      this.#session.phase !== "idle" &&
+      this.#session.pointerId === event.pointerId
+    );
+  }
+
   handlePointerDown(event: PointerEvent) {
     if (this.#session.phase !== "idle") {
       return false;
@@ -339,11 +346,15 @@ export class CalendarInteractionEngine<TTarget, TVisual, TResult> {
       this.#metrics.styleWritesDuringMotion += 1;
     }
 
-    this.#metrics.rafCount += 1;
-    this.#metrics.rafDurations.push(this.#options.now() - frameStart);
+    const frameDurationMs = this.#options.now() - frameStart;
 
+    this.#metrics.rafCount += 1;
+    this.#metrics.rafDurations.push(frameDurationMs);
+
+    let frameGapMs: number | undefined;
     if (this.#previousFrameTimestamp !== null) {
-      this.#metrics.frameGaps.push(timestamp - this.#previousFrameTimestamp);
+      frameGapMs = timestamp - this.#previousFrameTimestamp;
+      this.#metrics.frameGaps.push(frameGapMs);
     }
 
     this.#previousFrameTimestamp = timestamp;
@@ -352,6 +363,12 @@ export class CalendarInteractionEngine<TTarget, TVisual, TResult> {
       this.#metrics.firstFrameLatencyMs =
         this.#options.now() - (this.#activatedAt ?? this.#options.now());
     }
+
+    recordCalendarInteractionPerfFrame({
+      firstFrameLatencyMs: this.#metrics.firstFrameLatencyMs ?? undefined,
+      frameGapMs,
+      rafComputeWriteMs: frameDurationMs,
+    });
 
     if (next.shouldContinue) {
       this.#scheduleFrame();
@@ -401,3 +418,25 @@ const hasExceededMoveThreshold = (
 ) =>
   Math.abs(current.x - initial.x) > threshold ||
   Math.abs(current.y - initial.y) > threshold;
+
+const recordCalendarInteractionPerfFrame = (frame: {
+  firstFrameLatencyMs?: number;
+  frameGapMs?: number;
+  rafComputeWriteMs: number;
+}) => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  (
+    window as unknown as {
+      __WEEK_VIEW_PERF_PROBE__?: {
+        recordCalendarInteractionFrame?: (frame: {
+          firstFrameLatencyMs?: number;
+          frameGapMs?: number;
+          rafComputeWriteMs: number;
+        }) => void;
+      };
+    }
+  ).__WEEK_VIEW_PERF_PROBE__?.recordCalendarInteractionFrame?.(frame);
+};

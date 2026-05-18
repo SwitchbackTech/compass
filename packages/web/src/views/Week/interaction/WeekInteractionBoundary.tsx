@@ -41,13 +41,19 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
       event.stopPropagation();
     };
     const handlePointerMove = (event: PointerEvent) => {
-      activeAdapter.handlePointerMove(event);
+      if (activeAdapter.handlePointerMove(event)) {
+        consumeOwnedPointerEvent(event);
+      }
     };
     const handlePointerUp = (event: PointerEvent) => {
-      activeAdapter.handlePointerUp(event);
+      if (activeAdapter.handlePointerUp(event)) {
+        consumeOwnedPointerEvent(event);
+      }
     };
     const handlePointerCancel = (event: PointerEvent) => {
-      activeAdapter.handlePointerCancel(event);
+      if (activeAdapter.handlePointerCancel(event)) {
+        consumeOwnedPointerEvent(event);
+      }
     };
 
     boundary.addEventListener("pointerdown", handlePointerDown, {
@@ -95,4 +101,9 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
       </div>
     </Profiler>
   );
+};
+
+const consumeOwnedPointerEvent = (event: PointerEvent) => {
+  event.preventDefault();
+  event.stopPropagation();
 };

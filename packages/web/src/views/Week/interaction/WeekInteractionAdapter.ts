@@ -174,6 +174,10 @@ export class WeekInteractionAdapter {
     return this.#metrics;
   }
 
+  ownsPointer(event: Pick<PointerEvent, "pointerId">) {
+    return this.#engine.ownsPointer(event);
+  }
+
   getOwnershipMatrix(): WeekInteractionOwnershipEntry[] {
     return [
       {
@@ -292,34 +296,45 @@ export class WeekInteractionAdapter {
 
   handlePointerMove(event: PointerEvent) {
     this.#metrics.pointerMoves += 1;
+    const ownsPointer = this.ownsPointer(event);
+
     this.#engine.handlePointerMove(event);
+
+    return ownsPointer;
   }
 
   handlePointerUp(event: PointerEvent) {
     this.#metrics.pointerUps += 1;
+    const ownsPointer = this.ownsPointer(event);
     const result = this.#engine.handlePointerUp(event);
 
     if (!result) {
-      return;
+      return ownsPointer;
     }
 
     if (result.type === "click") {
       this.#runtime().onClickTimedEvent(result.target.event);
       this.#setMotionActive(false);
-      return;
+      return ownsPointer;
     }
 
     if (result.result.type === "timedDragEnd") {
       this.#runtime().onCommitTimedDrag(result.result);
-      return;
+      return ownsPointer;
     }
 
     this.#runtime().onCommitTimedResize?.(result.result);
+
+    return ownsPointer;
   }
 
   handlePointerCancel(event: PointerEvent) {
     this.#metrics.pointerCancels += 1;
+    const ownsPointer = this.ownsPointer(event);
+
     this.#engine.handlePointerCancel(event);
+
+    return ownsPointer;
   }
 
   recordOwnedPointerDown() {

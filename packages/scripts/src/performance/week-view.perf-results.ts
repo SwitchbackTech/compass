@@ -164,6 +164,10 @@ const collectSustainedMotionFailures = (
     return;
   }
 
+  if (metrics.rafComputeWriteMs.length === 0) {
+    failures.push("sustainedMotion: expected RAF compute/write samples");
+  }
+
   const p95Budget = interaction === "resize" ? 4 : 2;
   const rafP95 = percentile(metrics.rafComputeWriteMs, 95);
   const rafMax = maxOrZero(metrics.rafComputeWriteMs);

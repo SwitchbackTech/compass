@@ -25,6 +25,7 @@ export const recordWeekInteractionRender = (
   metrics: WeekInteractionRuntimeMetrics,
 ) => {
   metrics.reactCommits += 1;
+  recordWeekViewPerfReactCommit();
 };
 
 export const createMeasuredWeekInteractionDispatch =
@@ -36,3 +37,17 @@ export const createMeasuredWeekInteractionDispatch =
     metrics.reduxDispatches += 1;
     return dispatch(action);
   };
+
+const recordWeekViewPerfReactCommit = () => {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  (
+    window as unknown as {
+      __WEEK_VIEW_PERF_PROBE__?: {
+        recordReactCommit?: () => void;
+      };
+    }
+  ).__WEEK_VIEW_PERF_PROBE__?.recordReactCommit?.();
+};
