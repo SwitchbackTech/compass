@@ -11,7 +11,7 @@
     "typescript": "^6.0.3"
   },
   "dependencies": {
-    "bson": "^6.10.4",
+    "bson": "^7.2.0",
     "dayjs": "^1.11.19",
     "eventemitter2": "^6.4.9",
     "rxjs": "^7.8.2",
