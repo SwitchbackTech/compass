@@ -217,8 +217,8 @@ sudo systemctl restart caddy
 
 ## 5. Switch Compass to your public URLs
 
-> **Warning.** Don't change `BASEURL` until step 4 succeeds. The browser uses
-> `BASEURL` for API requests. If `BASEURL` points at an HTTPS URL Caddy can't
+> **Warning.** Don't change `backend.apiUrl` until step 4 succeeds. The browser uses
+> `backend.apiUrl` for API requests. If it points at an HTTPS URL Caddy can't
 > serve yet, the app can load but cannot reach the backend.
 
 Edit the config file:
@@ -241,16 +241,53 @@ backend:
 
 Leave `web.port: 9080` and `backend.port: 3000` unless you have a specific reason to change them.
 
-Apply the env changes.
+### Apply backend config changes
+
+The backend reads `compass.yaml` at startup via a Docker volume mount, so a restart picks up the new values:
 
 ```bash
 cd ~/compass
 ./compass restart
+```
+
+### Rebuild the web image with your public URL
+
+`backend.apiUrl` and `google.clientId` are baked into the web bundle at build time — a restart alone is not enough. You have two options:
+
+**Option A — build from source (recommended for custom domains)**
+
+Uncomment the `build:` block in `~/compass/compose.yaml`, fill in your real values, then rebuild:
+
+```yaml
+# In ~/compass/compose.yaml, under the web service:
+build:
+  context: ..
+  dockerfile: self-host/Dockerfile.web
+  args:
+    BASEURL: https://compass.example.com/api
+    GOOGLE_CLIENT_ID: ""   # leave empty unless adding Google Calendar
+```
+
+```bash
+cd ~/compass
 ./compass rebuild
 ```
 
-The rebuild step is needed when values baked into the web bundle change, such
-as `backend.apiUrl` or `google.clientId`. It can be slow on a small VPS.
+This builds the web image locally on the VPS. It can be slow on a small instance.
+
+**Option B — provide a pre-built image**
+
+If you build the web image elsewhere (e.g. in CI), set `web.image` in `compass.yaml` to the tag you pushed:
+
+```yaml
+web:
+  image: your-registry/compass-web:your-tag
+  url: https://compass.example.com
+```
+
+The `compass` script exports `web.image` as `COMPASS_WEB_IMAGE` and Docker Compose uses it automatically. Run `./compass restart` after updating the field.
+
+> **Note for automated deployments.** If you deploy via the Compass CI workflow (`_deploy-environment.yml`), the workflow builds an environment-specific web image with the correct `BACKEND_API_URL` and writes `web.image` into `compass.yaml` for you. No manual rebuild is needed on the server.
 
 Confirm the public health check still works after applying the env changes:
 

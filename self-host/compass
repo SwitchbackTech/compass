@@ -134,6 +134,7 @@ set_compose_env() {
   export COMPASS_CONFIG_FILE="$CONFIG_FILE"
   export COMPOSE_PROFILES="${COMPOSE_PROFILES-selfhost}"
   export COMPASS_VERSION="$(strip_quotes "$(read_config_value runtime.version)")"
+  export COMPASS_WEB_IMAGE="$(strip_quotes "$(read_config_value web.image)")"
   export WEB_PORT="$(strip_quotes "$(read_config_value web.port)")"
   export PORT="$(strip_quotes "$(read_config_value backend.port)")"
   export MONGO_INITDB_ROOT_USERNAME="$(strip_quotes "$(read_config_value mongo.username)")"
