@@ -1,5 +1,6 @@
 import { type GaxiosError } from "gaxios";
 import {
+  type AnyBulkWriteOperation,
   type ClientSession,
   type Document,
   type Filter,
@@ -243,22 +244,21 @@ export const _createCompassEvent = async (
   }
 
   if (instances.length > 0) {
-    const bulkUpsert = mongoService.event.initializeUnorderedBulkOp();
+    const operations: AnyBulkWriteOperation<Omit<Schema_Event, "_id">>[] =
+      instances.map(({ _id, ...event }) => ({
+        replaceOne: {
+          filter: {
+            startDate: event.startDate,
+            endDate: event.endDate,
+            recurrence: { eventId: baseEvent._id.toString() },
+            user: event.user,
+          },
+          replacement: event,
+          upsert: true,
+        },
+      }));
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    instances.forEach(({ _id, ...event }) => {
-      bulkUpsert
-        .find({
-          startDate: event.startDate,
-          endDate: event.endDate,
-          recurrence: { eventId: baseEvent._id.toString() },
-          user: event.user,
-        })
-        .upsert()
-        .replaceOne(event);
-    });
-
-    await bulkUpsert.execute({ session });
+    await mongoService.event.bulkWrite(operations, { ordered: false, session });
   }
 
   return { ...baseEvent, _id: baseEvent._id.toString() };

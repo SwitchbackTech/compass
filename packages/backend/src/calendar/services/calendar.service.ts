@@ -1,4 +1,8 @@
-import { type ClientSession, type ObjectId } from "mongodb";
+import {
+  type AnyBulkWriteOperation,
+  type ClientSession,
+  type ObjectId,
+} from "mongodb";
 import { z } from "zod/v4";
 import { MapCalendar } from "@core/mappers/map.calendar";
 import {
@@ -34,7 +38,6 @@ class CalendarService {
     session?: ClientSession,
   ) {
     const _user = zObjectId.parse(userId);
-    const bulkUpsert = mongoService.calendar.initializeUnorderedBulkOp();
 
     const googleCalendarResult = await getCalendarsToSync(gcal);
     const { calendars: googleCalendars } = googleCalendarResult;
@@ -52,7 +55,7 @@ class CalendarService {
       MapCalendar.gcalToCompass(_user, calendar),
     );
 
-    calendars.forEach(
+    const operations: AnyBulkWriteOperation<Schema_Calendar>[] = calendars.map(
       ({
         _id,
         user,
@@ -65,15 +68,14 @@ class CalendarService {
         updatedAt,
         metadata,
         ...calendar
-      }) => {
-        bulkUpsert
-          .find({
+      }) => ({
+        updateOne: {
+          filter: {
             user,
             "metadata.provider": metadata.provider,
             "metadata.id": metadata.id,
-          })
-          .upsert()
-          .update({
+          },
+          update: {
             $setOnInsert: {
               ...calendar,
               _id,
@@ -85,25 +87,33 @@ class CalendarService {
               createdAt,
             },
             $set: { ...calendar, updatedAt, metadata },
-          });
-      },
+          },
+          upsert: true,
+        },
+      }),
     );
 
-    bulkUpsert
-      .find({
-        user: _user,
-        "metadata.provider": CalendarProvider.GOOGLE,
-        "metadata.id": { $nin: googleCalendars.map(({ id }) => id) },
-      })
-      .delete();
+    // Delete calendars that are no longer present in Google
+    operations.push({
+      deleteMany: {
+        filter: {
+          user: _user,
+          "metadata.provider": CalendarProvider.GOOGLE,
+          "metadata.id": { $nin: googleCalendars.map(({ id }) => id) },
+        },
+      },
+    });
 
-    const result = await bulkUpsert.execute({ session });
+    const result = await mongoService.calendar.bulkWrite(operations, {
+      ordered: false,
+      session,
+    });
 
     return {
       googleCalendars,
       nextPageToken,
       nextSyncToken,
-      acknowledged: result.isOk(),
+      acknowledged: result.ok === 1,
       insertedCount: result.insertedCount,
       insertedIds: result.insertedIds,
       modifiedCount: result.modifiedCount,
@@ -156,19 +166,24 @@ class CalendarService {
     userId: ObjectId | string,
     calendars: Array<{ id: string | ObjectId; selected: boolean }>,
   ) => {
-    const bulkUpdate = mongoService.calendar.initializeUnorderedBulkOp();
+    const operations: AnyBulkWriteOperation<Schema_Calendar>[] =
+      CalendarService.calendarSelectionToggleSchema
+        .parse(calendars)
+        .map(({ id, selected }) => ({
+          updateOne: {
+            filter: {
+              user: zObjectId.parse(userId),
+              _id: zObjectId.parse(id),
+            },
+            update: { $set: { selected, updatedAt: new Date() } },
+          },
+        }));
 
-    CalendarService.calendarSelectionToggleSchema
-      .parse(calendars)
-      .forEach(({ id, selected }) => {
-        bulkUpdate
-          .find({ user: zObjectId.parse(userId), _id: zObjectId.parse(id) })
-          .update({ $set: { selected, updatedAt: new Date() } });
-      });
+    const result = await mongoService.calendar.bulkWrite(operations, {
+      ordered: false,
+    });
 
-    const result = await bulkUpdate.execute();
-
-    return result.isOk();
+    return result.ok === 1;
   };
 
   /**
