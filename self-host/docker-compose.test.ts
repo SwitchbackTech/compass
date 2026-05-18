@@ -52,15 +52,24 @@ describe("self-host installer", () => {
   });
 });
 
+describe("self-host helper", () => {
+  it("reads the Docker image version from runtime.version", () => {
+    const helper = readRepoFile("self-host/compass");
+
+    expect(helper).toContain("read_config_value runtime.version");
+    expect(helper).not.toContain("read_config_value compose.version");
+  });
+});
+
 describe("staging deploy workflow", () => {
   it("writes the Google Calendar notification token with Google credentials", () => {
-    const workflow = readRepoFile(".github/workflows/deploy-staging.yml");
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
     expect(workflow).toContain(
-      "GCAL_NOTIFICATION_TOKEN: ${{ secrets.STAGING_GCAL_NOTIFICATION_TOKEN }}",
+      "GCAL_NOTIFICATION_TOKEN: $" + "{{ secrets.GCAL_NOTIFICATION_TOKEN }}",
     );
     expect(workflow).toContain(
-      'notificationToken: \\"${GCAL_NOTIFICATION_TOKEN}\\"',
+      'notificationToken: \\"$' + '{GCAL_NOTIFICATION_TOKEN}\\"',
     );
   });
 });
