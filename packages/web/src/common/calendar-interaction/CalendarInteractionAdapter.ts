@@ -13,6 +13,7 @@ export interface CalendarInteractionOverlayMount {
 
 export type CalendarInteractionOverlayUpdate = {
   height?: number;
+  mutate?: (node: HTMLElement) => void;
   transform: CalendarInteractionPoint;
   width?: number;
 } | null;
@@ -33,9 +34,11 @@ export interface CalendarInteractionAdapter<TTarget, TVisual, TResult> {
   updateVisual(input: {
     pointer: CalendarInteractionPoint;
     target: TTarget;
+    timestamp: number;
     visual: TVisual;
   }): {
     overlay: CalendarInteractionOverlayUpdate;
+    shouldContinue?: boolean;
     visual: TVisual;
   };
   commit(input: { target: TTarget; visual: TVisual }): TResult;

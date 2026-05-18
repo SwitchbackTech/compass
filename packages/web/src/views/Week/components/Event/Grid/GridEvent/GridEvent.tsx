@@ -188,6 +188,10 @@ const GridEventBase = (
       className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
       style={eventStyle}
       onMouseDown={(e: MouseEvent) => {
+        if (isWeekInteractionMotionActive()) {
+          return;
+        }
+
         if (isRightClick(e)) {
           // Ignores right click here so it can pass through to context menu
           return;
@@ -227,6 +231,7 @@ const GridEventBase = (
               )}
             {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
             <div
+              data-week-event-resize-handle="startDate"
               style={scalerStyle({ top: "-0.25px" })}
               onMouseDown={(e) => {
                 onScalerMouseDown(event, e, "startDate");
@@ -234,6 +239,7 @@ const GridEventBase = (
             />
             {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
             <div
+              data-week-event-resize-handle="endDate"
               style={scalerStyle({ bottom: "-0.25px" })}
               onMouseDown={(e) => {
                 onScalerMouseDown(event, e, "endDate");
@@ -255,3 +261,13 @@ export const GridEventMemo = memo(GridEvent, (prev, next) => {
     prev.measurements === next.measurements
   );
 });
+
+const isWeekInteractionMotionActive = () =>
+  typeof window !== "undefined" &&
+  Boolean(
+    (
+      window as unknown as {
+        __weekInteractionV2MotionActive?: boolean;
+      }
+    ).__weekInteractionV2MotionActive,
+  );

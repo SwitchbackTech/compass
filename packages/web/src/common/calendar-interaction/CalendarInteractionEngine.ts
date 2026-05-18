@@ -326,6 +326,7 @@ export class CalendarInteractionEngine<TTarget, TVisual, TResult> {
     const next = this.#options.adapter.updateVisual({
       pointer: this.#latestPointer,
       target: this.#session.target,
+      timestamp,
       visual: this.#session.visual,
     });
     this.#session = {
@@ -350,6 +351,10 @@ export class CalendarInteractionEngine<TTarget, TVisual, TResult> {
     if (this.#metrics.firstFrameLatencyMs === null) {
       this.#metrics.firstFrameLatencyMs =
         this.#options.now() - (this.#activatedAt ?? this.#options.now());
+    }
+
+    if (next.shouldContinue) {
+      this.#scheduleFrame();
     }
   }
 

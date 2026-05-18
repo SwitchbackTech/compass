@@ -3,6 +3,7 @@ import {
   DIVIDER_GRID,
   EVENT_WIDTH_MINIMUM,
   GRID_MARGIN_LEFT,
+  WEEK_TIMED_VISIBLE_HOURS,
 } from "@web/views/Week/layout.constants";
 
 export const Columns = styled.div`
@@ -25,5 +26,5 @@ export const StyledGridCol = styled.div<{ $color: string | null }>`
 `;
 
 export const StyledGridCols = styled(Columns)`
-  height: calc(24 * 100% / 11);
+  height: calc(24 * 100% / ${WEEK_TIMED_VISIBLE_HOURS});
 `;

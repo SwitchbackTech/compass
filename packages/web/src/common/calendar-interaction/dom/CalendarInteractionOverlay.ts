@@ -50,10 +50,12 @@ export class CalendarInteractionOverlay {
 
   update({
     height,
+    mutate,
     transform,
     width,
   }: {
     height?: number;
+    mutate?: (node: HTMLElement) => void;
     transform: CalendarInteractionPoint;
     width?: number;
   }) {
@@ -71,6 +73,7 @@ export class CalendarInteractionOverlay {
 
     this.#node.style.transition = "none";
     this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
+    mutate?.(this.#node);
   }
 
   getNode() {
