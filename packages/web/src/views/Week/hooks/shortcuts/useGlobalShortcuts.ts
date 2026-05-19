@@ -1,7 +1,7 @@
 import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useLogout } from "@web/auth/compass/hooks/useLogout";
 import { useSession } from "@web/auth/compass/session/useSession";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
@@ -16,6 +16,7 @@ import { useAppDispatch } from "@web/store/store.hooks";
 export function useGlobalShortcuts() {
   const dispatch = useAppDispatch();
   const { authenticated } = useSession();
+  const logout = useLogout();
   const { openModal } = useAuthModal();
   const navigate = useNavigate();
   const location = useLocation();
@@ -44,7 +45,7 @@ export function useGlobalShortcuts() {
 
   useAppHotkeyUp("Z", () => {
     if (authenticated) {
-      navigate(ROOT_ROUTES.LOGOUT);
+      logout();
       return;
     }
 

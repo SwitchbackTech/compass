@@ -274,7 +274,7 @@ Logout should end the server session, but the local rollout gate should still re
 ### Steps
 
 1. Log in with email/password or Google.
-2. Use the app logout path.
+2. Use the `Z` shortcut or the command-palette logout action.
 3. Confirm you are redirected back into the app.
 4. Reload `/day`.
 5. Open the command palette.

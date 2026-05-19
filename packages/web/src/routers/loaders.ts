@@ -23,12 +23,6 @@ export async function loadAuthenticated() {
   return { authenticated };
 }
 
-export async function loadLogoutData() {
-  const { authenticated } = await loadAuthenticated();
-
-  return { authenticated };
-}
-
 export function loadTodayData(): DayLoaderData {
   const dateInView = dayjs();
   const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
