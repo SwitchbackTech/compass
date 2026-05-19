@@ -1,10 +1,10 @@
 import {
   type CalendarInteractionAdapter,
-  type CalendarInteractionOverlayMount,
+  type FloatingInteractionOverlayMount,
 } from "./CalendarInteractionAdapter";
 import { createCalendarInteractionEngine } from "./CalendarInteractionEngine";
-import { CalendarInteractionOverlay } from "./dom/CalendarInteractionOverlay";
-import { sanitizeInteractionCloneBase } from "./dom/sanitizeInteractionCloneBase";
+import { createInteractionClone } from "./dom/clone/createInteractionClone";
+import { FloatingInteractionOverlay } from "./dom/overlay/FloatingInteractionOverlay";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 interface TestTarget {
@@ -80,8 +80,8 @@ const createHarness = () => {
       },
     })),
     getOverlayMount: mock(
-      ({ sourceElement }): CalendarInteractionOverlayMount => {
-        const clone = sanitizeInteractionCloneBase(sourceElement);
+      ({ sourceElement }): FloatingInteractionOverlayMount => {
+        const clone = createInteractionClone(sourceElement);
 
         return {
           clone,
@@ -337,10 +337,10 @@ describe("CalendarInteractionEngine", () => {
   });
 });
 
-describe("CalendarInteractionOverlay", () => {
+describe("FloatingInteractionOverlay", () => {
   it("mounts a body-level clone and applies immediate transform updates", () => {
     const clone = document.createElement("div");
-    const overlay = new CalendarInteractionOverlay();
+    const overlay = new FloatingInteractionOverlay();
 
     overlay.mount({
       clone,
@@ -376,7 +376,7 @@ describe("CalendarInteractionOverlay", () => {
   });
 });
 
-describe("sanitizeInteractionCloneBase", () => {
+describe("createInteractionClone", () => {
   it("removes interaction-hostile attributes from the clone tree", () => {
     const source = document.createElement("div");
     const child = document.createElement("button");
@@ -389,7 +389,7 @@ describe("sanitizeInteractionCloneBase", () => {
     child.setAttribute("aria-describedby", "description");
     source.append(child);
 
-    const clone = sanitizeInteractionCloneBase(source);
+    const clone = createInteractionClone(source);
     const clonedChild = clone.querySelector("button");
 
     expect(clone.id).toBe("");

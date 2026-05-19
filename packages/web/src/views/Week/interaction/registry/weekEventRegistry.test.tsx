@@ -3,7 +3,7 @@ import { render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { CalendarInteractionOverlay } from "@web/common/calendar-interaction/dom/CalendarInteractionOverlay";
+import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { reducers } from "@web/store/reducers";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
@@ -372,7 +372,7 @@ describe("createWeekInteractionEventOverlayMount", () => {
       source,
     });
     const clonedChild = mount.clone.querySelector("button");
-    const overlay = new CalendarInteractionOverlay();
+    const overlay = new FloatingInteractionOverlay();
 
     overlay.mount(mount);
 

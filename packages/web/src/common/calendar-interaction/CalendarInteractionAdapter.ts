@@ -1,6 +1,6 @@
 import { type CalendarInteractionPoint } from "./CalendarInteractionSession";
 
-export interface CalendarInteractionOverlayMount {
+export interface FloatingInteractionOverlayMount {
   clone: HTMLElement;
   cursor?: string;
   rect: {
@@ -11,7 +11,7 @@ export interface CalendarInteractionOverlayMount {
   };
 }
 
-export type CalendarInteractionOverlayUpdate = {
+export type FloatingInteractionOverlayUpdate = {
   height?: number;
   mutate?: (node: HTMLElement) => void;
   transform: CalendarInteractionPoint;
@@ -30,14 +30,14 @@ export interface CalendarInteractionAdapter<TTarget, TVisual, TResult> {
     sourceElement: HTMLElement;
     target: TTarget;
     visual: TVisual;
-  }): CalendarInteractionOverlayMount;
+  }): FloatingInteractionOverlayMount;
   updateVisual(input: {
     pointer: CalendarInteractionPoint;
     target: TTarget;
     timestamp: number;
     visual: TVisual;
   }): {
-    overlay: CalendarInteractionOverlayUpdate;
+    overlay: FloatingInteractionOverlayUpdate;
     shouldContinue?: boolean;
     visual: TVisual;
   };

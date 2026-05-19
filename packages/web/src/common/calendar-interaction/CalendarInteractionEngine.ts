@@ -1,6 +1,6 @@
 import {
   type CalendarInteractionAdapter,
-  type CalendarInteractionOverlayMount,
+  type FloatingInteractionOverlayMount,
 } from "./CalendarInteractionAdapter";
 import {
   type CalendarInteractionMetrics,
@@ -14,12 +14,12 @@ import {
   type PendingCalendarInteractionSession,
 } from "./CalendarInteractionSession";
 import { hasExceededCalendarInteractionMoveThreshold } from "./calendarInteractionPointer";
-import { CalendarInteractionOverlay } from "./dom/CalendarInteractionOverlay";
+import { FloatingInteractionOverlay } from "./dom/overlay/FloatingInteractionOverlay";
 import {
-  markSourcePlaceholder,
-  restoreSourcePlaceholder,
-  type SourcePlaceholder,
-} from "./dom/sourcePlaceholder";
+  type HiddenSourceElement,
+  hideSourceElement,
+  restoreSourceElement,
+} from "./dom/source/sourceElementVisibility";
 
 export interface CalendarInteractionEngineSchedulerOptions {
   cancelFrame?: (frame: unknown) => void;
@@ -38,7 +38,7 @@ interface CalendarInteractionEngineOptions<TTarget, TVisual, TResult>
   extends CalendarInteractionEngineSchedulerOptions {
   adapter: CalendarInteractionAdapter<TTarget, TVisual, TResult>;
   createMetrics?: () => CalendarInteractionMetrics;
-  createOverlay?: () => CalendarInteractionOverlay;
+  createOverlay?: () => FloatingInteractionOverlay;
   holdDelayMs?: number;
   moveThresholdPx?: number;
 }
@@ -67,7 +67,7 @@ const defaultOptions = {
     clearTimeout(timer as ReturnType<typeof setTimeout>);
   },
   createMetrics: createCalendarInteractionMetrics,
-  createOverlay: () => new CalendarInteractionOverlay(),
+  createOverlay: () => new FloatingInteractionOverlay(),
   holdDelayMs: 750,
   moveThresholdPx: 25,
   now: () => performance.now(),
@@ -86,8 +86,8 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
   let activatedAt: number | null = null;
   let latestPointer: CalendarInteractionPoint | null = null;
   let metrics = resolvedOptions.createMetrics();
-  let overlay: CalendarInteractionOverlay | null = null;
-  let placeholder: SourcePlaceholder | null = null;
+  let overlay: FloatingInteractionOverlay | null = null;
+  let hiddenSource: HiddenSourceElement | null = null;
   let previousFrameTimestamp: number | null = null;
   let rafId: unknown = null;
   let session: CalendarInteractionSession<TTarget, TVisual> = {
@@ -297,7 +297,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
       visual,
     });
     mountOverlay(overlayMount);
-    placeholder = markSourcePlaceholder(pendingSession.sourceElement);
+    hiddenSource = hideSourceElement(pendingSession.sourceElement);
     activatedAt = resolvedOptions.now();
     latestPointer = pendingSession.startPoint;
     metrics.active = true;
@@ -314,7 +314,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     scheduleFrame();
   }
 
-  function mountOverlay(mount: CalendarInteractionOverlayMount) {
+  function mountOverlay(mount: FloatingInteractionOverlayMount) {
     const overlayMountStart = resolvedOptions.now();
     const nextOverlay = resolvedOptions.createOverlay();
     nextOverlay.mount(mount);
@@ -393,9 +393,9 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     overlay?.unmount();
     overlay = null;
 
-    if (placeholder) {
-      restoreSourcePlaceholder(placeholder);
-      placeholder = null;
+    if (hiddenSource) {
+      restoreSourceElement(hiddenSource);
+      hiddenSource = null;
     }
 
     latestPointer = null;

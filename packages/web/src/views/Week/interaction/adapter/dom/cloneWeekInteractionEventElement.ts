@@ -1,8 +1,8 @@
-import { type CalendarInteractionOverlayMount } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
-import { sanitizeInteractionCloneBase } from "@web/common/calendar-interaction/dom/sanitizeInteractionCloneBase";
+import { type FloatingInteractionOverlayMount } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
+import { createInteractionClone } from "@web/common/calendar-interaction/dom/clone/createInteractionClone";
 
 const createWeekInteractionEventClone = (source: HTMLElement) => {
-  const clone = sanitizeInteractionCloneBase(source);
+  const clone = createInteractionClone(source);
 
   disableTransitionTree(clone);
 
@@ -15,7 +15,7 @@ export const createWeekInteractionEventOverlayMount = ({
 }: {
   cursor?: string;
   source: HTMLElement;
-}): CalendarInteractionOverlayMount => {
+}): FloatingInteractionOverlayMount => {
   const rect = source.getBoundingClientRect();
 
   return {

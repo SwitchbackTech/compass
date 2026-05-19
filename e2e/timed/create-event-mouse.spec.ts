@@ -60,6 +60,9 @@ const getSavedEventsByTitle = (page: Page, title: string) =>
     }
   }, title);
 
+const getTimedDraftEvent = (page: Page) =>
+  page.locator('#timedEvents > [role="button"]:not([data-event-id])');
+
 const getDurationMinutes = (event: StoredTimedEvent) => {
   if (!event.startDate || !event.endDate) {
     throw new Error("Expected saved event to have start and end dates.");
@@ -71,11 +74,21 @@ const getDurationMinutes = (event: StoredTimedEvent) => {
   );
 };
 
-const expectSavedEventByTitle = async (page: Page, title: string) => {
-  await expect.poll(() => getSavedEventsByTitle(page, title)).toHaveLength(1);
-  const savedEvents = await getSavedEventsByTitle(page, title);
+const waitForSavedEventByTitle = async (page: Page, title: string) => {
+  let savedEvent: StoredTimedEvent | null = null;
 
-  return savedEvents[0]!;
+  await expect
+    .poll(async () => {
+      const savedEvents = await getSavedEventsByTitle(page, title);
+      if (savedEvents.length === 1) {
+        savedEvent = savedEvents[0]!;
+      }
+
+      return savedEvents.length;
+    })
+    .toBe(1);
+
+  return savedEvent!;
 };
 
 test.skip(
@@ -105,19 +118,14 @@ test("opens a 15-minute timed event from a quick grid click", async ({
 
   await page.mouse.click(x, y);
 
-  const titleInput = page.getByRole("form").getByPlaceholder("Title");
-  await expect(titleInput).toBeVisible();
-
   await page.mouse.move(x, y + 180);
   await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
 
-  const savedEvent = await expectSavedEventByTitle(page, title);
+  const savedEvent = await waitForSavedEventByTitle(page, title);
 
   expect(getDurationMinutes(savedEvent)).toBe(15);
-  await expect(
-    page.locator('#timedEvents > [role="button"]:not([data-event-id])'),
-  ).toHaveCount(0);
+  await expect(getTimedDraftEvent(page)).toHaveCount(0);
 });
 
 test("keeps drag-to-create duration when the pointer moves before release", async ({
@@ -133,18 +141,13 @@ test("keeps drag-to-create duration when the pointer moves before release", asyn
   await page.mouse.move(x, y + 160, { steps: 8 });
   await page.mouse.up();
 
-  const titleInput = page.getByRole("form").getByPlaceholder("Title");
-  await expect(titleInput).toBeVisible();
-
   await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
 
-  const savedEvent = await expectSavedEventByTitle(page, title);
+  const savedEvent = await waitForSavedEventByTitle(page, title);
 
   expect(getDurationMinutes(savedEvent)).toBeGreaterThan(15);
-  await expect(
-    page.locator('#timedEvents > [role="button"]:not([data-event-id])'),
-  ).toHaveCount(0);
+  await expect(getTimedDraftEvent(page)).toHaveCount(0);
 });
 
 test("starts the timed draft in the day column under the pointer after horizontal scroll", async ({
@@ -163,7 +166,9 @@ test("starts the timed draft in the day column under the pointer after horizonta
   const gridBox = await mainGrid.boundingBox();
 
   if (!targetBox || !gridBox) {
-    throw new Error("Expected the week grid and Friday label to be visible.");
+    throw new Error(
+      "Expected the week grid and target day label to be visible.",
+    );
   }
 
   const x = targetBox.x + targetBox.width / 2;
@@ -173,9 +178,7 @@ test("starts the timed draft in the day column under the pointer after horizonta
   await page.mouse.down();
   await page.mouse.move(x, y + 80);
 
-  const draftEvent = page.locator(
-    '#timedEvents > [role="button"]:not([data-event-id])',
-  );
+  const draftEvent = getTimedDraftEvent(page);
   await expect(draftEvent).toBeVisible();
 
   const draftBox = await draftEvent.boundingBox();

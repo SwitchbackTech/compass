@@ -1,4 +1,4 @@
-export const sanitizeInteractionCloneBase = (source: HTMLElement) => {
+export const createInteractionClone = (source: HTMLElement) => {
   const clone = source.cloneNode(true) as HTMLElement;
 
   for (const element of [clone, ...clone.querySelectorAll<HTMLElement>("*")]) {

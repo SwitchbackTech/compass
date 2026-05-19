@@ -1,6 +1,6 @@
-import { type CalendarInteractionPoint } from "../CalendarInteractionSession";
+import { type CalendarInteractionPoint } from "../../CalendarInteractionSession";
 
-export class CalendarInteractionOverlay {
+export class FloatingInteractionOverlay {
   #node: HTMLElement | null = null;
   #previousCursor: {
     body: string;

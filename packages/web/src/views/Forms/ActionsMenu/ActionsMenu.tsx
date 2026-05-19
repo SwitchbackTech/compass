@@ -24,6 +24,7 @@ import {
 } from "react";
 import {
   ID_EVENT_FORM_ACTION_MENU,
+  Z_INDEX_FLOATING_MENU,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
@@ -67,6 +68,10 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
 
   const menuId = id || ID_EVENT_FORM_ACTION_MENU;
   const triggerId = `${menuId}-trigger`;
+  const menuZIndex = Math.max(
+    maxZIndex + ZIndex.LAYER_2,
+    Z_INDEX_FLOATING_MENU,
+  );
 
   const { refs, context } = useFloating({
     open,
@@ -181,7 +186,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
               ref={refs.setFloating}
               style={{
                 ...context.floatingStyles,
-                zIndex: maxZIndex + ZIndex.LAYER_3,
+                zIndex: menuZIndex,
               }}
               {...getFloatingProps()}
               id={menuId}
