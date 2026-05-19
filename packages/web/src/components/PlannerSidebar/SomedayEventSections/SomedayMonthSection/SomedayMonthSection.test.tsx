@@ -16,12 +16,7 @@ const { SomedayMonthSection } =
 
 describe("SomedayMonthSection", () => {
   it("labels the selected month even when the week starts in the previous month", () => {
-    render(
-      <SomedayMonthSection
-        monthDate={dayjs("2026-06-01")}
-        viewStart={dayjs("2026-05-31")}
-      />,
-    );
+    render(<SomedayMonthSection monthDate={dayjs("2026-06-01")} />);
 
     expect(screen.getByRole("heading", { name: "June" })).toBeInTheDocument();
   });

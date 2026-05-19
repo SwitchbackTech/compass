@@ -2,6 +2,7 @@ import { useCallback, useMemo } from "react";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
+import { SomedayInteractionCoordinator } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/SomedayInteractionCoordinator";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
@@ -123,61 +124,62 @@ export const WeekView = () => {
 
       <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
         <SidebarDraftProvider
-          dateCalcs={dateCalcs}
           onGoToDate={goToDateFromSidebar}
           viewEnd={weekProps.component.endOfView}
           viewStart={weekProps.component.startOfView}
         >
-          <Shortcuts shortcutsProps={shortcutProps}>
-            <ContextMenuWrapper id="sidebar-context-menu">
-              <Draft measurements={measurements} weekProps={weekProps} />
-              {isSidebarOpen ? (
-                <PlannerSidebar
-                  calendarDate={calendarDate}
-                  dateCalcs={dateCalcs}
-                  gridRefs={gridRefs}
-                  measurements={measurements}
-                  isShortcutsOpen={isShortcutsOpen}
-                  onCloseShortcuts={closeShortcuts}
-                  onToggleShortcuts={toggleShortcuts}
-                  onSelectDate={goToDateFromSidebar}
-                  onToggleSidebar={toggleSidebar}
-                  shortcutSections={shortcutSections}
-                  viewEnd={weekProps.component.endOfView}
-                  viewStart={weekProps.component.startOfView}
-                />
-              ) : null}
-            </ContextMenuWrapper>
-            <StyledCalendar>
-              <Header scrollUtil={scrollUtil} weekProps={weekProps} />
-
-              <WeekGridScrollArea>
-                <WeekGridTrack>
-                  <DayLabels
-                    startOfView={weekProps.component.startOfView}
-                    today={today}
-                    week={weekProps.component.week}
-                    weekDays={weekProps.component.weekDays}
+          <SomedayInteractionCoordinator
+            getLayoutSources={getWeekInteractionLayoutSources}
+            weekProps={weekProps}
+          >
+            <Shortcuts shortcutsProps={shortcutProps}>
+              <ContextMenuWrapper id="sidebar-context-menu">
+                <Draft measurements={measurements} weekProps={weekProps} />
+                {isSidebarOpen ? (
+                  <PlannerSidebar
+                    calendarDate={calendarDate}
+                    isShortcutsOpen={isShortcutsOpen}
+                    onCloseShortcuts={closeShortcuts}
+                    onToggleShortcuts={toggleShortcuts}
+                    onSelectDate={goToDateFromSidebar}
+                    onToggleSidebar={toggleSidebar}
+                    shortcutSections={shortcutSections}
+                    viewEnd={weekProps.component.endOfView}
+                    viewStart={weekProps.component.startOfView}
                   />
+                ) : null}
+              </ContextMenuWrapper>
+              <StyledCalendar>
+                <Header scrollUtil={scrollUtil} weekProps={weekProps} />
 
-                  <WeekInteractionCoordinator
-                    getLayoutSources={getWeekInteractionLayoutSources}
-                    weekProps={weekProps}
-                  >
-                    <ContextMenuWrapper id="grid-context-menu">
-                      <Grid
-                        dateCalcs={dateCalcs}
-                        gridRefs={gridRefs}
-                        measurements={measurements}
-                        today={today}
-                        weekProps={weekProps}
-                      />
-                    </ContextMenuWrapper>
-                  </WeekInteractionCoordinator>
-                </WeekGridTrack>
-              </WeekGridScrollArea>
-            </StyledCalendar>
-          </Shortcuts>
+                <WeekGridScrollArea>
+                  <WeekGridTrack>
+                    <DayLabels
+                      startOfView={weekProps.component.startOfView}
+                      today={today}
+                      week={weekProps.component.week}
+                      weekDays={weekProps.component.weekDays}
+                    />
+
+                    <WeekInteractionCoordinator
+                      getLayoutSources={getWeekInteractionLayoutSources}
+                      weekProps={weekProps}
+                    >
+                      <ContextMenuWrapper id="grid-context-menu">
+                        <Grid
+                          dateCalcs={dateCalcs}
+                          gridRefs={gridRefs}
+                          measurements={measurements}
+                          today={today}
+                          weekProps={weekProps}
+                        />
+                      </ContextMenuWrapper>
+                    </WeekInteractionCoordinator>
+                  </WeekGridTrack>
+                </WeekGridScrollArea>
+              </StyledCalendar>
+            </Shortcuts>
+          </SomedayInteractionCoordinator>
 
           <RecurringEventUpdateScopeDialog />
         </SidebarDraftProvider>

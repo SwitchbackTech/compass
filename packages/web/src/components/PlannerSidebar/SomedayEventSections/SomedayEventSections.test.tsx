@@ -1,16 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
-import { type ReactNode } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { afterAll, describe, expect, it, mock } from "bun:test";
-
-mock.module("@hello-pangea/dnd", () => ({
-  Draggable: () => null,
-  DragDropContext: ({ children }: { children: ReactNode }) => (
-    <div>{children}</div>
-  ),
-  Droppable: () => null,
-}));
 
 mock.module("@web/components/AbsoluteOverflowLoader", () => ({
   AbsoluteOverflowLoader: () => (
@@ -22,18 +13,6 @@ mock.module("@web/store/store.hooks", () => ({
   useAppDispatch: () => mock(),
   useAppSelector: () => true,
 }));
-
-mock.module(
-  "@web/components/PlannerSidebar/draft/context/useSidebarContext",
-  () => ({
-    useSidebarContext: () => ({
-      actions: {
-        onDragEnd: mock(),
-        onDragStart: mock(),
-      },
-    }),
-  }),
-);
 
 mock.module("./SomedayWeekSection/SomedayWeekSection", () => ({
   SomedayWeekSection: () => <section>Week someday events</section>,

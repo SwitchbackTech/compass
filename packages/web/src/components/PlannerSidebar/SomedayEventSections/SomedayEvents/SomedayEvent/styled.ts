@@ -11,7 +11,6 @@ export interface Props {
   priority: Priorities;
   isDrafting: boolean;
   isDragging?: boolean;
-  isOverGrid: boolean;
 }
 
 export const StyledNewSomedayEvent = styled.div<Props>`
@@ -27,10 +26,7 @@ export const StyledNewSomedayEvent = styled.div<Props>`
   color: ${({ theme }) => theme.color.text.lighter};
   height: ${SOMEDAY_EVENT_ROW_HEIGHT}px;
   margin: 2px 0;
-  opacity: ${({ isDragging, isOverGrid }) => {
-    if (isDragging && isOverGrid) return 0;
-    return 1;
-  }};
+  opacity: 1;
   font-size: 12px;
   padding: 4px 8px;
   transition:

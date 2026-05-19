@@ -1,7 +1,4 @@
 import { type MutableRefObject, useEffect, useRef } from "react";
-import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import {
   createWeekEdgeNavigationController,
@@ -19,14 +16,8 @@ export const useDragEdgeNavigation = (
   weekProps: WeekProps,
 ) => {
   const { state: draftState } = useDraftContext();
-  const isDNDing = useAppSelector(selectIsDNDing);
-  const { state: sidebarState } = useSidebarContext();
-  const isGridEventDragging = draftState.isDragging;
-  const isSomedayEventDragging = isDNDing;
-  const gridEventDraft = draftState.draft;
-  const somedayEventDraft = sidebarState.draft;
-  const isDragging = isGridEventDragging || isSomedayEventDragging;
-  const currentDraft = gridEventDraft || somedayEventDraft;
+  const isDragging = draftState.isDragging;
+  const currentDraft = draftState.draft;
   const hasCurrentDraft = Boolean(currentDraft);
   const controllerRef = useRef(createWeekEdgeNavigationController());
   const currentDraftRef = useRef(currentDraft);

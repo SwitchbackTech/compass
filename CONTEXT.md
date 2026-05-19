@@ -176,6 +176,8 @@ during Import or Public watch notification handling.
 - A **Task** belongs to a **Date key** and stays local today, even when the user
   is authenticated.
 - A **Someday Event** is an **Event**, not a **Task**.
+- A **Someday Event** is scheduled as a **Timed Event** or **All-Day Event**
+  based on the calendar surface where it is dropped.
 - A **Recurring Series** has exactly one **Base Event** and zero or more
   **Instance Events**.
 - An **Instance Event** belongs to exactly one **Base Event** through

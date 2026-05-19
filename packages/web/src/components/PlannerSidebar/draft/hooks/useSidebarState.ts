@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { type Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { usePointerPosition } from "@web/common/hooks/usePointerPosition";
-import { usePointerState } from "@web/common/hooks/usePointerState";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
 import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -29,8 +27,6 @@ export const useSidebarState = () => {
   const [isSomedayFormOpen, setIsSomedayFormOpen] = useState(false);
 
   const isDragging = isDNDing && draft !== null;
-  const { togglePointerMovementTracking } = usePointerPosition();
-  const { isOverAllDayRow, isOverGrid, isOverMainGrid } = usePointerState();
 
   const somedayWeekIds = somedayEvents.columns[COLUMN_WEEK].eventIds;
   const somedayMonthIds = somedayEvents.columns[COLUMN_MONTH].eventIds;
@@ -41,16 +37,6 @@ export const useSidebarState = () => {
     !isDraftingExisting &&
     !somedayIds.includes(draft?._id as string);
 
-  const shouldPreviewOnGrid = isDNDing && isOverGrid;
-
-  useEffect(() => {
-    if (isDNDing) {
-      togglePointerMovementTracking(false);
-    }
-
-    return () => togglePointerMovementTracking(false);
-  }, [isDNDing, togglePointerMovementTracking]);
-
   const state = {
     draft,
     somedayIds,
@@ -60,11 +46,7 @@ export const useSidebarState = () => {
     isDraftingNew,
     isDraftingExisting,
     isDragging,
-    isOverAllDayRow,
-    isOverGrid,
-    isOverMainGrid,
     isSomedayFormOpen,
-    shouldPreviewOnGrid,
     somedayEvents,
   };
   const setters = {

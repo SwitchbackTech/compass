@@ -1,30 +1,26 @@
 import { type FC, memo } from "react";
-import {
-  type Categories_Event,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import { ID_SOMEDAY_DRAFT } from "@web/common/constants/web.constants";
-import { DraggableSomedayEvent } from "./DraggableSomedayEvent";
+import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
+import { SomedayEventItem } from "./SomedayEventItem";
 
-const _DraggableSomedayEvents: FC<{
-  category: Categories_Event;
+const _SomedayEventItems: FC<{
+  category: SomedayInteractionCategory;
   draft: Schema_Event | null;
   events: Schema_Event[];
-  isOverGrid: boolean;
-}> = ({ category, draft, events, isOverGrid }) => {
+}> = ({ category, draft, events }) => {
   return (
     <>
       {events.map((event, index: number) => {
         const isDrafting = draft?._id === event._id;
 
         return (
-          <DraggableSomedayEvent
+          <SomedayEventItem
             category={category}
             draftId={draft?._id || ID_SOMEDAY_DRAFT}
             event={event}
             index={index}
             isDrafting={isDrafting}
-            isOverGrid={isOverGrid}
             key={event?._id || "draft"}
           />
         );
@@ -33,6 +29,6 @@ const _DraggableSomedayEvents: FC<{
   );
 };
 
-export const DraggableSomedayEvents = memo(_DraggableSomedayEvents);
+export const SomedayEventItems = memo(_SomedayEventItems);
 
-DraggableSomedayEvents.displayName = "DraggableSomedayEvents";
+SomedayEventItems.displayName = "SomedayEventItems";
