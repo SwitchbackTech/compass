@@ -1,8 +1,8 @@
 import { type FC } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow";
-import { MainGrid } from "@web/views/Week/components/Grid/MainGrid";
-import { EdgeNavigationIndicators } from "@web/views/Week/components/Grid/MainGrid/EdgeNavigationIndicators";
+import { AllDayRow } from "@web/views/Week/components/Grid/AllDayRow/AllDayRow";
+import { EdgeNavigationIndicators } from "@web/views/Week/components/Grid/MainGrid/EdgeNavigationIndicators/EdgeNavigationIndicators";
+import { MainGrid } from "@web/views/Week/components/Grid/MainGrid/MainGrid";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useDragEdgeNavigation } from "@web/views/Week/hooks/grid/useDragEdgeNavigation";
 import {
@@ -26,9 +26,15 @@ export const Grid: FC<Props> = ({
   today,
   weekProps,
 }) => {
-  const { allDayRef, allDayRowRef, mainGridElementRef, mainGridRef } = gridRefs;
+  const {
+    allDayRef,
+    allDayRowRef,
+    mainGridElementRef,
+    mainGridRef,
+    timedColumnsElementRef,
+  } = gridRefs;
 
-  const draftDragEdgeState = useDragEdgeNavigation(mainGridRef, weekProps);
+  useDragEdgeNavigation(mainGridRef, weekProps);
 
   return (
     <div
@@ -54,10 +60,11 @@ export const Grid: FC<Props> = ({
         mainGridElementRef={mainGridElementRef}
         mainGridRef={mainGridRef}
         measurements={measurements}
+        timedColumnsElementRef={timedColumnsElementRef}
         today={today}
         weekProps={weekProps}
       />
-      <EdgeNavigationIndicators draftDragEdgeState={draftDragEdgeState} />
+      <EdgeNavigationIndicators />
     </div>
   );
 };

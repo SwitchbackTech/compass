@@ -1,23 +1,12 @@
-import {
-  type FC,
-  type PropsWithChildren,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
-import {
-  createWeekInteractionAdapter,
-  type WeekInteractionAdapter,
-} from "./WeekInteractionAdapter";
+import { type FC, type PropsWithChildren, useEffect, useRef } from "react";
+import { type WeekInteractionAdapter } from "./adapter/WeekInteractionAdapter";
 
 interface Props extends PropsWithChildren {
-  adapter?: WeekInteractionAdapter;
+  adapter: WeekInteractionAdapter;
 }
 
 export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
   const boundaryRef = useRef<HTMLDivElement | null>(null);
-  const defaultAdapter = useMemo(() => createWeekInteractionAdapter(), []);
-  const activeAdapter = adapter ?? defaultAdapter;
 
   useEffect(() => {
     const boundary = boundaryRef.current;
@@ -26,11 +15,10 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
       return;
     }
 
-    const disconnectCancellationEvents =
-      activeAdapter.connectCancellationEvents();
+    const disconnectCancellationEvents = adapter.connectCancellationEvents();
 
     const handlePointerDown = (event: PointerEvent) => {
-      const ownership = activeAdapter.handlePointerDown(event);
+      const ownership = adapter.handlePointerDown(event);
 
       if (!ownership.shouldOwn) {
         return;
@@ -40,17 +28,17 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
       event.stopPropagation();
     };
     const handlePointerMove = (event: PointerEvent) => {
-      if (activeAdapter.handlePointerMove(event)) {
+      if (adapter.handlePointerMove(event)) {
         consumeOwnedPointerEvent(event);
       }
     };
     const handlePointerUp = (event: PointerEvent) => {
-      if (activeAdapter.handlePointerUp(event)) {
+      if (adapter.handlePointerUp(event)) {
         consumeOwnedPointerEvent(event);
       }
     };
     const handlePointerCancel = (event: PointerEvent) => {
-      if (activeAdapter.handlePointerCancel(event)) {
+      if (adapter.handlePointerCancel(event)) {
         consumeOwnedPointerEvent(event);
       }
     };
@@ -81,10 +69,10 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
       boundary.removeEventListener("pointercancel", handlePointerCancel, {
         capture: true,
       });
-      activeAdapter.cancel();
+      adapter.cancel();
       disconnectCancellationEvents();
     };
-  }, [activeAdapter]);
+  }, [adapter]);
 
   return (
     <div ref={boundaryRef} style={{ display: "contents" }}>

@@ -1,15 +1,12 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { type PointerEvent as ReactPointerEvent } from "react";
-import {
-  createWeekInteractionAdapter,
-  type WeekInteractionAdapter,
-} from "./WeekInteractionAdapter";
+import { type WeekInteractionAdapter } from "./adapter/WeekInteractionAdapter";
 import { WeekInteractionBoundary } from "./WeekInteractionBoundary";
 import { describe, expect, it, mock } from "bun:test";
 
 const createOwningWeekInteractionAdapter = (): WeekInteractionAdapter => {
   return {
-    ...createPassiveWeekInteractionAdapter(),
+    ...createNonOwningWeekInteractionAdapter(),
     handlePointerDown: () => ({
       reason: "test-owner",
       shouldOwn: true,
@@ -21,19 +18,19 @@ const createCancellationAwareWeekInteractionAdapter = () => {
   const disconnectCancellationEvents = mock();
 
   return {
-    ...createPassiveWeekInteractionAdapter(),
+    ...createNonOwningWeekInteractionAdapter(),
     cancel: mock(),
     connectCancellationEvents: mock(() => disconnectCancellationEvents),
     disconnectCancellationEvents,
   };
 };
 
-const createPassiveWeekInteractionAdapter = (): WeekInteractionAdapter => ({
+const createNonOwningWeekInteractionAdapter = (): WeekInteractionAdapter => ({
   cancel: () => undefined,
   connectCancellationEvents: () => () => undefined,
   handlePointerCancel: () => false,
   handlePointerDown: () => ({
-    reason: "test-passive",
+    reason: "test-non-owner",
     shouldOwn: false,
   }),
   handlePointerMove: () => false,
@@ -43,8 +40,8 @@ const createPassiveWeekInteractionAdapter = (): WeekInteractionAdapter => ({
 });
 
 describe("WeekInteractionBoundary", () => {
-  it("does not block child pointer handlers in passive mode", () => {
-    const adapter = createWeekInteractionAdapter({ mode: "passive" });
+  it("does not block child pointer handlers when the adapter declines ownership", () => {
+    const adapter = createNonOwningWeekInteractionAdapter();
     const onPointerDown = mock(
       (event: ReactPointerEvent<HTMLButtonElement>) => {
         expect(event.defaultPrevented).toBe(false);

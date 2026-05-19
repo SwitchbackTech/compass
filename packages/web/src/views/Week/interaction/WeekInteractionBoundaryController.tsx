@@ -15,6 +15,7 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { type WeekLayoutCacheSources } from "./adapter/geometry/weekLayoutCache";
 import {
   createWeekInteractionAdapter,
   type WeekAllDayDragCommitResult,
@@ -22,15 +23,17 @@ import {
   type WeekInteractionRuntime,
   type WeekTimedDragCommitResult,
   type WeekTimedResizeCommitResult,
-} from "./WeekInteractionAdapter";
+} from "./adapter/WeekInteractionAdapter";
 import { WeekInteractionBoundary } from "./WeekInteractionBoundary";
 
 interface Props extends PropsWithChildren {
+  getLayoutSources?: () => WeekLayoutCacheSources;
   weekProps: WeekProps;
 }
 
 export const WeekInteractionBoundaryController: FC<Props> = ({
   children,
+  getLayoutSources,
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
@@ -40,6 +43,7 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
     (state) => state.events.pendingEvents.eventIds,
   );
   const { actions, confirmation, setters, state } = useDraftContext();
+  const layoutSourcesRef = useRef(getLayoutSources);
   const timedEventsById = useMemo(() => {
     return mapEventsById(timedEvents);
   }, [timedEvents]);
@@ -59,13 +63,15 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
   const adapter = useMemo(
     () =>
       createWeekInteractionAdapter({
-        mode: "active",
+        getLayoutSources: () => layoutSourcesRef.current?.() ?? {},
         runtime: () => runtimeRef.current,
       }),
     [],
   );
   const lastNavigationSource = weekProps.util.getLastNavigationSource();
   const renderedWeekStartMs = weekProps.component.startOfView.valueOf();
+
+  layoutSourcesRef.current = getLayoutSources;
 
   useLayoutEffect(() => {
     if (

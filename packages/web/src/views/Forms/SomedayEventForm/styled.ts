@@ -12,5 +12,5 @@ export const StyledFloatContainer = styled.div<FormContainerProps>`
   left: ${({ left }) => left}px;
   top: ${({ top }) => top}px;
   width: max-content;
-  z-index: ${ZIndex.LAYER_3};
+  z-index: ${ZIndex.MAX + ZIndex.LAYER_1};
 `;

@@ -8,7 +8,7 @@ import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
-import { GridEvent } from "@web/views/Week/components/Event/Grid";
+import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { useGridEventMouseDown } from "@web/views/Week/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
