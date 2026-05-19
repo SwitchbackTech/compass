@@ -12,12 +12,6 @@ export const WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE =
 
 export type WeekInteractionEventType = "all-day" | "timed";
 
-interface WeekInteractionEventRegistration {
-  element: HTMLElement;
-  eventId: string;
-  eventType: WeekInteractionEventType;
-}
-
 export interface WeekInteractionRegisteredTarget {
   element: HTMLElement;
   eventId: string;
@@ -49,47 +43,63 @@ export const getWeekInteractionEventAttributes = ({
   };
 };
 
-export class WeekEventRegistry {
-  readonly #events = new Map<string, WeekInteractionEventRegistration>();
+export interface WeekEventRegistry {
+  clear(): void;
+  register(registration: WeekInteractionRegisteredTarget): () => void;
+  resolve(
+    eventId: string,
+    eventType: WeekInteractionEventType,
+  ): HTMLElement | null;
+  resolveFromTarget(
+    target: EventTarget | null,
+  ): WeekInteractionRegisteredTarget | null;
+}
 
-  register({ element, eventId, eventType }: WeekInteractionEventRegistration) {
+export const createWeekEventRegistry = (): WeekEventRegistry => {
+  const events = new Map<string, WeekInteractionRegisteredTarget>();
+
+  const register = ({
+    element,
+    eventId,
+    eventType,
+  }: WeekInteractionRegisteredTarget) => {
     element.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, eventId);
     element.setAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE, eventType);
 
     const key = getRegistryKey(eventId, eventType);
 
-    this.#events.set(key, {
+    events.set(key, {
       element,
       eventId,
       eventType,
     });
 
     return () => {
-      const current = this.#events.get(key);
+      const current = events.get(key);
 
       if (current?.element === element) {
-        this.#events.delete(key);
+        events.delete(key);
       }
     };
-  }
+  };
 
-  resolve(eventId: string, eventType: WeekInteractionEventType) {
+  const resolve = (eventId: string, eventType: WeekInteractionEventType) => {
     const key = getRegistryKey(eventId, eventType);
-    const registration = this.#events.get(key);
+    const registration = events.get(key);
 
     if (!registration) {
       return null;
     }
 
     if (!isRegistrationCurrent(registration)) {
-      this.#events.delete(key);
+      events.delete(key);
       return null;
     }
 
     return registration.element;
-  }
+  };
 
-  resolveFromTarget(target: EventTarget | null) {
+  const resolveFromTarget = (target: EventTarget | null) => {
     if (!(target instanceof Element)) {
       return null;
     }
@@ -111,7 +121,7 @@ export class WeekEventRegistry {
       return null;
     }
 
-    const registeredElement = this.resolve(eventId, eventType);
+    const registeredElement = resolve(eventId, eventType);
 
     if (registeredElement !== element) {
       return null;
@@ -122,14 +132,21 @@ export class WeekEventRegistry {
       eventId,
       eventType,
     };
-  }
+  };
 
-  clear() {
-    this.#events.clear();
-  }
-}
+  const clear = () => {
+    events.clear();
+  };
 
-export const weekEventRegistry = new WeekEventRegistry();
+  return {
+    clear,
+    register,
+    resolve,
+    resolveFromTarget,
+  };
+};
+
+export const weekEventRegistry = createWeekEventRegistry();
 
 export const useWeekEventRegistrationRef = ({
   eventId,
@@ -186,7 +203,7 @@ const isRegistrationCurrent = ({
   element,
   eventId,
   eventType,
-}: WeekInteractionEventRegistration) =>
+}: WeekInteractionRegisteredTarget) =>
   element.isConnected &&
   element.getAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE) === eventId &&
   element.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE) === eventType;

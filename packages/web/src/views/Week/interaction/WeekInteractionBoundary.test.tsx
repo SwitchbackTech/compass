@@ -1,28 +1,47 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { type PointerEvent as ReactPointerEvent } from "react";
-import { WeekInteractionAdapter } from "./WeekInteractionAdapter";
+import { type WeekInteractionAdapter } from "./adapter/WeekInteractionAdapter";
 import { WeekInteractionBoundary } from "./WeekInteractionBoundary";
 import { describe, expect, it, mock } from "bun:test";
 
-class OwningWeekInteractionAdapter extends WeekInteractionAdapter {
-  override handlePointerDown(event: PointerEvent) {
-    super.handlePointerDown(event);
-
-    return {
+const createOwningWeekInteractionAdapter = (): WeekInteractionAdapter => {
+  return {
+    ...createNonOwningWeekInteractionAdapter(),
+    handlePointerDown: () => ({
       reason: "test-owner",
       shouldOwn: true,
-    };
-  }
-}
+    }),
+  };
+};
 
-class CancellationAwareWeekInteractionAdapter extends WeekInteractionAdapter {
-  disconnectCancellationEvents = mock();
-  connectCancellationEvents = mock(() => this.disconnectCancellationEvents);
-}
+const createCancellationAwareWeekInteractionAdapter = () => {
+  const disconnectCancellationEvents = mock();
+
+  return {
+    ...createNonOwningWeekInteractionAdapter(),
+    cancel: mock(),
+    connectCancellationEvents: mock(() => disconnectCancellationEvents),
+    disconnectCancellationEvents,
+  };
+};
+
+const createNonOwningWeekInteractionAdapter = (): WeekInteractionAdapter => ({
+  cancel: () => undefined,
+  connectCancellationEvents: () => () => undefined,
+  handlePointerCancel: () => false,
+  handlePointerDown: () => ({
+    reason: "test-non-owner",
+    shouldOwn: false,
+  }),
+  handlePointerMove: () => false,
+  handlePointerUp: () => false,
+  ownsPointer: () => false,
+  rebuildLayoutAfterNavigation: () => undefined,
+});
 
 describe("WeekInteractionBoundary", () => {
-  it("does not block child pointer handlers in passive mode", () => {
-    const adapter = new WeekInteractionAdapter({ mode: "passive" });
+  it("does not block child pointer handlers when the adapter declines ownership", () => {
+    const adapter = createNonOwningWeekInteractionAdapter();
     const onPointerDown = mock(
       (event: ReactPointerEvent<HTMLButtonElement>) => {
         expect(event.defaultPrevented).toBe(false);
@@ -43,7 +62,7 @@ describe("WeekInteractionBoundary", () => {
   });
 
   it("can stop propagation once a future adapter owns a pointerdown", () => {
-    const adapter = new OwningWeekInteractionAdapter();
+    const adapter = createOwningWeekInteractionAdapter();
     const onPointerDown = mock();
 
     render(
@@ -60,7 +79,7 @@ describe("WeekInteractionBoundary", () => {
   });
 
   it("connects global cancellation events while mounted and disconnects them on unmount", () => {
-    const adapter = new CancellationAwareWeekInteractionAdapter();
+    const adapter = createCancellationAwareWeekInteractionAdapter();
 
     const { unmount } = render(
       <WeekInteractionBoundary adapter={adapter}>
@@ -74,5 +93,21 @@ describe("WeekInteractionBoundary", () => {
     unmount();
 
     expect(adapter.disconnectCancellationEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it("cancels any active interaction when unmounted", () => {
+    const adapter = createCancellationAwareWeekInteractionAdapter();
+
+    const { unmount } = render(
+      <WeekInteractionBoundary adapter={adapter}>
+        <button type="button">event</button>
+      </WeekInteractionBoundary>,
+    );
+
+    expect(adapter.cancel).not.toHaveBeenCalled();
+
+    unmount();
+
+    expect(adapter.cancel).toHaveBeenCalledTimes(1);
   });
 });

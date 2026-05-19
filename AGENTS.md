@@ -89,7 +89,9 @@ Use a single-context domain-doc layout. See `.agents/config/domain.md`.
   `packages/web/src/index.css`, not raw colors like `bg-blue-300`.
 - Do not test login flows without the required backend setup.
 - Keep React components in their own files.
-- Do not add barrel `index.ts` files.
+- Do not add or use barrel files such as `index.ts` / `index.tsx`. Import from
+  the concrete source file instead, and remove nearby barrel files when it is
+  safe to do so.
 - Use `is` prefixes for boolean names.
 
 ## Git

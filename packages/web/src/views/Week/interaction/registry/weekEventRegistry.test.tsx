@@ -10,13 +10,14 @@ import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridE
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { createWeekInteractionEventOverlayMount } from "../dom/cloneWeekInteractionEventElement";
+import { createWeekInteractionEventOverlayMount } from "../adapter/dom/cloneWeekInteractionEventElement";
 import {
+  createWeekEventRegistry,
   getWeekInteractionEventAttributes,
   useWeekEventRegistrationRef,
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
   WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
-  WeekEventRegistry,
+  type WeekEventRegistry,
   type WeekInteractionEventType,
   weekEventRegistry,
 } from "./weekEventRegistry";
@@ -132,6 +133,83 @@ const RegistrationHarness = ({
   );
 };
 
+const RegisteredTimedEventHarness = ({
+  displayMode = "saved",
+  event,
+  isPending = false,
+}: {
+  displayMode?: "draft" | "placeholder" | "saved";
+  event: Schema_GridEvent;
+  isPending?: boolean;
+}) => {
+  const isEnabled = Boolean(event._id) && displayMode === "saved" && !isPending;
+  const ref = useWeekEventRegistrationRef({
+    eventId: event._id,
+    eventType: "timed",
+    isEnabled,
+  });
+
+  return (
+    <GridEvent
+      displayMode={displayMode}
+      event={event}
+      interactionAttributes={
+        isEnabled
+          ? getWeekInteractionEventAttributes({
+              eventId: event._id,
+              eventType: "timed",
+            })
+          : undefined
+      }
+      isPending={isPending}
+      measurements={measurements}
+      onEventMouseDown={mock()}
+      onScalerMouseDown={mock()}
+      ref={ref}
+      weekProps={weekProps}
+    />
+  );
+};
+
+const RegisteredAllDayEventHarness = ({
+  event,
+  isPending = false,
+  isPlaceholder = false,
+}: {
+  event: Schema_GridEvent;
+  isPending?: boolean;
+  isPlaceholder?: boolean;
+}) => {
+  const isEnabled = Boolean(event._id) && !isPlaceholder && !isPending;
+  const ref = useWeekEventRegistrationRef({
+    eventId: event._id,
+    eventType: "all-day",
+    isEnabled,
+  });
+
+  return (
+    <AllDayEventMemo
+      endOfView={endOfView}
+      event={event}
+      interactionAttributes={
+        isEnabled
+          ? getWeekInteractionEventAttributes({
+              eventId: event._id,
+              eventType: "all-day",
+            })
+          : undefined
+      }
+      isPending={isPending}
+      isPlaceholder={isPlaceholder}
+      measurements={measurements}
+      onMouseDown={mock()}
+      onScalerMouseDown={mock()}
+      ref={ref}
+      startOfView={startOfView}
+    />
+  );
+};
+
 afterEach(() => {
   weekEventRegistry.clear();
   document.body.innerHTML = "";
@@ -141,14 +219,7 @@ describe("weekEventRegistry", () => {
   it("registers and unregisters saved timed event elements", () => {
     const event = createTimedEvent();
     const { unmount } = renderWithStore(
-      <GridEvent
-        displayMode="saved"
-        event={event}
-        measurements={measurements}
-        onEventMouseDown={mock()}
-        onScalerMouseDown={mock()}
-        weekProps={weekProps}
-      />,
+      <RegisteredTimedEventHarness event={event} />,
     );
 
     const element = screen.getByRole("button", { name: /timed event/i });
@@ -171,15 +242,7 @@ describe("weekEventRegistry", () => {
   it("registers and unregisters saved all-day event elements", () => {
     const event = createAllDayEvent();
     const { unmount } = renderWithStore(
-      <AllDayEventMemo
-        endOfView={endOfView}
-        event={event}
-        isPlaceholder={false}
-        measurements={measurements}
-        onMouseDown={mock()}
-        onScalerMouseDown={mock()}
-        startOfView={startOfView}
-      />,
+      <RegisteredAllDayEventHarness event={event} />,
     );
 
     const element = screen.getByRole("button", { name: /all-day event/i });
@@ -202,7 +265,7 @@ describe("weekEventRegistry", () => {
   });
 
   it("unregisters the old element when a render swaps event ids", () => {
-    const registry = new WeekEventRegistry();
+    const registry = createWeekEventRegistry();
     const { rerender } = render(
       <RegistrationHarness eventId="event-1" registry={registry} />,
     );
@@ -216,7 +279,7 @@ describe("weekEventRegistry", () => {
   });
 
   it("rejects stale or mismatched registrations", () => {
-    const registry = new WeekEventRegistry();
+    const registry = createWeekEventRegistry();
     const staleElement = document.createElement("div");
 
     document.body.append(staleElement);
@@ -246,7 +309,7 @@ describe("weekEventRegistry", () => {
   });
 
   it("resolves a registered event from child pointer targets", () => {
-    const registry = new WeekEventRegistry();
+    const registry = createWeekEventRegistry();
     const element = document.createElement("div");
     const child = document.createElement("span");
 
@@ -271,22 +334,8 @@ describe("weekEventRegistry", () => {
 
     renderWithStore(
       <>
-        <GridEvent
-          displayMode="draft"
-          event={draftEvent}
-          measurements={measurements}
-          onEventMouseDown={mock()}
-          onScalerMouseDown={mock()}
-          weekProps={weekProps}
-        />
-        <GridEvent
-          displayMode="saved"
-          event={pendingEvent}
-          measurements={measurements}
-          onEventMouseDown={mock()}
-          onScalerMouseDown={mock()}
-          weekProps={weekProps}
-        />
+        <RegisteredTimedEventHarness displayMode="draft" event={draftEvent} />
+        <RegisteredTimedEventHarness event={pendingEvent} isPending />
       </>,
       ["pending-event"],
     );

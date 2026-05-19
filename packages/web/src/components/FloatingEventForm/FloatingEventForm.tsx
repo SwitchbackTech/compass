@@ -7,6 +7,7 @@ import {
 import { getEntity } from "@ngneat/elf-entities";
 import { useCallback, useMemo } from "react";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
   CursorItem,
@@ -37,6 +38,7 @@ export function FloatingEventForm({
   const onDuplicate = useDuplicateEvent(draft?._id as string);
   const onClose = useCloseEventForm();
   const maxZIndex = useGridMaxZIndex();
+  const formZIndex = Math.max(maxZIndex + 1, ZIndex.MAX + ZIndex.LAYER_1);
   const isOpenAtCursor = nodeId === CursorItem.EventForm;
   const open = floatingOpenAtCursor && isOpenAtCursor && !!draft;
   const existing = useMemo(
@@ -72,7 +74,7 @@ export function FloatingEventForm({
           className="floating-event-form"
           style={{
             ...floating.context.floatingStyles,
-            zIndex: maxZIndex + 1,
+            zIndex: formZIndex,
           }}
         >
           <EventForm

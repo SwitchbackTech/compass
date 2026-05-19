@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -11,6 +12,10 @@ import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDa
 import { StyledEvents } from "@web/views/Week/components/Grid/AllDayRow/styled";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  getWeekInteractionEventAttributes,
+  useWeekEventRegistrationRef,
+} from "@web/views/Week/interaction/registry/weekEventRegistry";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -51,17 +56,77 @@ export const AllDayEvents = ({
   return (
     <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
       {!isLoadingWeekView &&
-        allDayEvents.map((event: Schema_GridEvent) => (
-          <AllDayEventMemo
-            key={event._id}
-            isPlaceholder={event._id === draftId}
-            event={event}
-            startOfView={startOfView}
-            endOfView={endOfView}
-            measurements={measurements}
-            onKeyDown={handleKeyDown}
-          />
-        ))}
+        allDayEvents.map((event: Schema_GridEvent) => {
+          const isPending = Boolean(
+            event._id && pendingEventIds.includes(event._id),
+          );
+          const isPlaceholder = event._id === draftId;
+
+          return (
+            <AllDayEventItem
+              endOfView={endOfView}
+              event={event}
+              isPending={isPending}
+              isPlaceholder={isPlaceholder}
+              key={event._id}
+              measurements={measurements}
+              onKeyDown={handleKeyDown}
+              startOfView={startOfView}
+            />
+          );
+        })}
     </StyledEvents>
+  );
+};
+
+interface AllDayEventItemProps {
+  endOfView: WeekProps["component"]["endOfView"];
+  event: Schema_GridEvent;
+  isPending: boolean;
+  isPlaceholder: boolean;
+  measurements: Measurements_Grid;
+  onKeyDown: (event: Schema_GridEvent) => void;
+  startOfView: WeekProps["component"]["startOfView"];
+}
+
+const AllDayEventItem = ({
+  endOfView,
+  event,
+  isPending,
+  isPlaceholder,
+  measurements,
+  onKeyDown,
+  startOfView,
+}: AllDayEventItemProps) => {
+  const isRegisteredForWeekInteraction =
+    Boolean(event._id) && !isPlaceholder && !isPending;
+  const registrationRef = useWeekEventRegistrationRef({
+    eventId: event._id,
+    eventType: "all-day",
+    isEnabled: isRegisteredForWeekInteraction,
+  });
+  const interactionAttributes = useMemo(
+    () =>
+      isRegisteredForWeekInteraction
+        ? getWeekInteractionEventAttributes({
+            eventId: event._id,
+            eventType: "all-day",
+          })
+        : undefined,
+    [event._id, isRegisteredForWeekInteraction],
+  );
+
+  return (
+    <AllDayEventMemo
+      endOfView={endOfView}
+      event={event}
+      interactionAttributes={interactionAttributes}
+      isPending={isPending}
+      isPlaceholder={isPlaceholder}
+      measurements={measurements}
+      onKeyDown={onKeyDown}
+      ref={registrationRef}
+      startOfView={startOfView}
+    />
   );
 };

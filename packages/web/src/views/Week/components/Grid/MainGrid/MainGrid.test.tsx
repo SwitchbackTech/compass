@@ -16,7 +16,7 @@ import { theme } from "@web/common/styles/theme";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
-import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/weekInteractionMotionState";
+import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
 import { DRAFT_DURATION_MIN } from "@web/views/Week/layout.constants";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
@@ -152,6 +152,7 @@ const renderMainGrid = () => {
             mainGridElementRef={mock()}
             mainGridRef={mainGridRef}
             measurements={measurements}
+            timedColumnsElementRef={mock()}
             today={startOfView}
             weekProps={createWeekProps()}
           />
@@ -173,7 +174,11 @@ const dragEmptyGrid = (
     clientX: 100,
     clientY: fromMinute,
   });
-  fireEvent.mouseMove(window, { buttons: 1, clientX: 100, clientY: toMinute });
+  fireEvent.mouseMove(window, {
+    buttons: 1,
+    clientX: 100,
+    clientY: toMinute,
+  });
   fireEvent.mouseUp(window, { clientX: 100, clientY: toMinute });
 };
 

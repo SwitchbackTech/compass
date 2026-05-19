@@ -3,8 +3,9 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { weekEventRegistry } from "@web/views/Week/interaction/geometry/weekEventRegistry";
-import { WeekInteractionAdapter } from "@web/views/Week/interaction/WeekInteractionAdapter";
+import { createWeekInteractionAdapter } from "@web/views/Week/interaction/adapter/WeekInteractionAdapter";
+import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
+import { resetWeekInteractionEdgeNavigationState } from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const createAllDayEvent = (
@@ -12,7 +13,7 @@ const createAllDayEvent = (
 ): Schema_GridEvent =>
   ({
     _id: "all-day-event",
-    endDate: "2026-05-15",
+    endDate: "2026-05-14",
     isAllDay: true,
     position: {
       height: 100,
@@ -49,22 +50,31 @@ const setRect = (
 const makePointerEvent = (
   type: string,
   {
+    button,
+    buttons,
+    ctrlKey,
     isPrimary = true,
     pointerId = 1,
     target,
     x = 0,
     y = 0,
   }: {
-    isPrimary?: boolean;
     pointerId?: number;
+    button?: number;
+    buttons?: number;
+    ctrlKey?: boolean;
+    isPrimary?: boolean;
     target: EventTarget;
     x?: number;
     y?: number;
   },
 ) => {
   const event = new PointerEvent(type, {
+    button,
+    buttons,
     clientX: x,
     clientY: y,
+    ctrlKey,
     isPrimary,
     pointerId,
   });
@@ -79,9 +89,9 @@ const createHarness = ({
   isPending = false,
   sourceRect = {
     height: 20,
-    left: 400,
+    left: 300,
     top: 25,
-    width: 190,
+    width: 90,
   },
 }: {
   eventOverrides?: Partial<Schema_GridEvent>;
@@ -97,22 +107,23 @@ const createHarness = ({
   const timerCallbacks = new Map<unknown, () => void>();
   const event = createAllDayEvent(eventOverrides);
   const source = document.createElement("div");
-  const startHandle = document.createElement("div");
-  const endHandle = document.createElement("div");
+  const child = document.createElement("span");
   const mainGrid = document.createElement("div");
   const allDayColumns = document.createElement("div");
   const onClickAllDayEvent = mock();
-  const onCommitAllDayResize = mock();
+  const onCommitAllDayDrag = mock();
   const onMotionActivation = mock();
+  const onRequestWeekNavigation = mock();
 
   source.style.visibility = "visible";
-  startHandle.setAttribute("data-week-event-resize-handle", "startDate");
-  endHandle.setAttribute("data-week-event-resize-handle", "endDate");
   mainGrid.id = ID_GRID_MAIN;
   allDayColumns.id = ID_ALLDAY_COLUMNS;
-  source.append(startHandle, endHandle);
+  source.append(child);
   allDayColumns.append(source);
   document.body.append(mainGrid, allDayColumns);
+  Object.defineProperty(mainGrid, "clientHeight", { value: 1300 });
+  Object.defineProperty(mainGrid, "scrollHeight", { value: 2600 });
+  mainGrid.scrollTop = 0;
 
   setRect(mainGrid, {
     height: 1300,
@@ -134,7 +145,7 @@ const createHarness = ({
     eventType: "all-day",
   });
 
-  const adapter = new WeekInteractionAdapter({
+  const adapter = createWeekInteractionAdapter({
     engineOptions: {
       cancelFrame: (frame) => frameCallbacks.delete(frame),
       clearTimer: (timer) => timerCallbacks.delete(timer),
@@ -155,16 +166,16 @@ const createHarness = ({
         return timer;
       },
     },
-    mode: "active",
     runtime: () => ({
       getAllDayEventById: (eventId) => (eventId === event._id ? event : null),
       getTimedEventById: () => null,
       isEventPending: () => isPending,
       onClickAllDayEvent,
       onClickTimedEvent: () => undefined,
-      onCommitAllDayResize,
+      onCommitAllDayDrag,
       onCommitTimedDrag: () => undefined,
       onMotionActivation,
+      onRequestWeekNavigation,
     }),
   });
 
@@ -182,61 +193,54 @@ const createHarness = ({
 
   return {
     adapter,
-    endHandle,
+    child,
     event,
     flushFrame,
     onClickAllDayEvent,
-    onCommitAllDayResize,
+    onCommitAllDayDrag,
     onMotionActivation,
+    onRequestWeekNavigation,
     source,
-    startHandle,
+    timerCallbacks,
   };
 };
 
 afterEach(() => {
   document.body.innerHTML = "";
   weekEventRegistry.clear();
+  resetWeekInteractionEdgeNavigationState();
 });
 
-describe("WeekInteractionAdapter all-day resize", () => {
-  it("owns a saved all-day resize handle and routes quick release as a click", () => {
-    const {
-      adapter,
-      endHandle,
-      event,
-      onClickAllDayEvent,
-      onCommitAllDayResize,
-    } = createHarness();
+describe("WeekInteractionAdapter all-day drag", () => {
+  it("owns a saved all-day event pointerdown and routes quick release as a click", () => {
+    const { adapter, child, event, onClickAllDayEvent, onCommitAllDayDrag } =
+      createHarness();
 
     expect(
       adapter.handlePointerDown(
-        makePointerEvent("pointerdown", {
-          target: endHandle,
-          x: 490,
-          y: 30,
-        }),
+        makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
       ),
     ).toEqual({
-      reason: "saved-all-day-resize",
+      reason: "saved-all-day-drag",
       shouldOwn: true,
     });
 
     adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: endHandle, x: 490, y: 30 }),
+      makePointerEvent("pointerup", { target: child, x: 320, y: 30 }),
     );
 
     expect(onClickAllDayEvent).toHaveBeenCalledWith(event);
-    expect(onCommitAllDayResize).not.toHaveBeenCalled();
+    expect(onCommitAllDayDrag).not.toHaveBeenCalled();
   });
 
-  it("keeps pending all-day resize handles on the existing Week path", () => {
-    const { adapter, endHandle } = createHarness({ isPending: true });
+  it("keeps pending all-day events on the existing Week path", () => {
+    const pendingHarness = createHarness({ isPending: true });
 
     expect(
-      adapter.handlePointerDown(
+      pendingHarness.adapter.handlePointerDown(
         makePointerEvent("pointerdown", {
-          target: endHandle,
-          x: 490,
+          target: pendingHarness.child,
+          x: 320,
           y: 30,
         }),
       ),
@@ -246,44 +250,89 @@ describe("WeekInteractionAdapter all-day resize", () => {
     });
   });
 
-  it("commits an activated no-op all-day resize as not moved", () => {
-    const { adapter, endHandle, flushFrame, onCommitAllDayResize } =
-      createHarness();
+  it("does not own right-click, non-primary, or modifier pointerdowns", () => {
+    const { adapter, child, timerCallbacks } = createHarness();
+
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          button: 2,
+          buttons: 2,
+          target: child,
+          x: 430,
+          y: 30,
+        }),
+      ),
+    ).toEqual({
+      reason: "ineligible-week-pointer",
+      shouldOwn: false,
+    });
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          isPrimary: false,
+          target: child,
+          x: 430,
+          y: 30,
+        }),
+      ),
+    ).toEqual({
+      reason: "ineligible-week-pointer",
+      shouldOwn: false,
+    });
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          ctrlKey: true,
+          target: child,
+          x: 430,
+          y: 30,
+        }),
+      ),
+    ).toEqual({
+      reason: "ineligible-week-pointer",
+      shouldOwn: false,
+    });
+    expect(timerCallbacks.size).toBe(0);
+  });
+
+  it("commits an activated no-op all-day drag as not moved", () => {
+    const { adapter, child, flushFrame, onCommitAllDayDrag } = createHarness();
 
     adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: endHandle, x: 490, y: 30 }),
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
     );
     adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: endHandle, x: 525, y: 30 }),
+      makePointerEvent("pointermove", { target: child, x: 360, y: 30 }),
     );
     flushFrame();
     adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: endHandle, x: 525, y: 30 }),
+      makePointerEvent("pointerup", { target: child, x: 360, y: 30 }),
     );
 
-    expect(onCommitAllDayResize).toHaveBeenCalledWith(
+    expect(onCommitAllDayDrag).toHaveBeenCalledWith(
       expect.objectContaining({
         hasMoved: false,
-        type: "allDayResizeEnd",
+        type: "allDayDragEnd",
       }),
     );
   });
 
-  it("resizes the right edge with immediate width writes and exclusive end-date commit", () => {
+  it("drags an all-day event by visible day column and preserves its exclusive span", () => {
     const {
       adapter,
-      endHandle,
+      child,
       flushFrame,
-      onCommitAllDayResize,
+      onCommitAllDayDrag,
       onMotionActivation,
       source,
     } = createHarness();
 
     adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: endHandle, x: 490, y: 30 }),
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
     );
     adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: endHandle, x: 655, y: 30 }),
+      makePointerEvent("pointermove", { target: child, x: 430, y: 30 }),
     );
 
     expect(source.style.visibility).toBe("hidden");
@@ -295,23 +344,23 @@ describe("WeekInteractionAdapter all-day resize", () => {
       "[data-calendar-interaction-overlay]",
     ) as HTMLElement | null;
 
+    expect(overlay).toBeTruthy();
     expect(overlay?.style.transition).toBe("none");
-    expect(overlay?.style.transform).toBe("translate3d(0px, 0px, 0)");
-    expect(overlay?.style.width).toBe("290px");
+    expect(overlay?.style.transform).toBe("translate3d(100px, 0px, 0)");
 
     adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: endHandle, x: 655, y: 30 }),
+      makePointerEvent("pointerup", { target: child, x: 430, y: 30 }),
     );
 
-    expect(onCommitAllDayResize).toHaveBeenCalledTimes(1);
-    expect(onCommitAllDayResize).toHaveBeenCalledWith(
+    expect(onCommitAllDayDrag).toHaveBeenCalledTimes(1);
+    expect(onCommitAllDayDrag).toHaveBeenCalledWith(
       expect.objectContaining({
         event: expect.objectContaining({
-          endDate: "2026-05-16",
-          startDate: "2026-05-13",
+          endDate: "2026-05-15",
+          startDate: "2026-05-14",
         }),
         hasMoved: true,
-        type: "allDayResizeEnd",
+        type: "allDayDragEnd",
       }),
     );
     expect(source.style.visibility).toBe("visible");
@@ -320,86 +369,52 @@ describe("WeekInteractionAdapter all-day resize", () => {
     ).toBeNull();
   });
 
-  it("resizes the left edge and flips through a one-day minimum", () => {
-    const { adapter, flushFrame, onCommitAllDayResize, startHandle } =
+  it("requests one all-day edge navigation after the edge dwell", () => {
+    const { adapter, child, flushFrame, onRequestWeekNavigation } =
       createHarness();
 
     adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: startHandle, x: 400, y: 30 }),
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
     );
     adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: startHandle, x: 655, y: 30 }),
-    );
-    flushFrame();
-
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
-    ) as HTMLElement | null;
-
-    expect(overlay?.style.transform).toBe("translate3d(100px, 0px, 0)");
-    expect(overlay?.style.width).toBe("190px");
-
-    adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: startHandle, x: 655, y: 30 }),
+      makePointerEvent("pointermove", { target: child, x: 790, y: 30 }),
     );
 
-    expect(onCommitAllDayResize).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event: expect.objectContaining({
-          endDate: "2026-05-16",
-          startDate: "2026-05-14",
-        }),
-        hasMoved: true,
-      }),
-    );
+    flushFrame(16);
+    flushFrame(600);
+
+    expect(onRequestWeekNavigation).toHaveBeenCalledTimes(1);
+    expect(onRequestWeekNavigation).toHaveBeenCalledWith("next");
   });
 
-  it("normalizes legacy same-day end dates only after visible resize motion", () => {
-    const { adapter, endHandle, flushFrame, onCommitAllDayResize } =
-      createHarness({
-        eventOverrides: {
-          endDate: "2026-05-13",
-          startDate: "2026-05-13",
-        },
-        sourceRect: {
-          height: 20,
-          left: 400,
-          top: 25,
-          width: 90,
-        },
-      });
-
-    adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: endHandle, x: 490, y: 30 }),
-    );
-    adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: endHandle, x: 555, y: 30 }),
-    );
-    flushFrame();
-    adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: endHandle, x: 555, y: 30 }),
-    );
-
-    expect(onCommitAllDayResize).toHaveBeenCalledWith(
-      expect.objectContaining({
-        event: expect.objectContaining({
-          endDate: "2026-05-15",
-          startDate: "2026-05-13",
-        }),
-        hasMoved: true,
-      }),
-    );
-  });
-
-  it("restores the source element and overlay when all-day resize is cancelled", () => {
-    const { adapter, endHandle, flushFrame, onCommitAllDayResize, source } =
+  it("resets all-day edge dwell after leaving the edge zone", () => {
+    const { adapter, child, flushFrame, onRequestWeekNavigation } =
       createHarness();
 
     adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: endHandle, x: 490, y: 30 }),
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
     );
     adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: endHandle, x: 655, y: 30 }),
+      makePointerEvent("pointermove", { target: child, x: 790, y: 30 }),
+    );
+    flushFrame(16);
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 400, y: 30 }),
+    );
+    flushFrame(600);
+
+    expect(onRequestWeekNavigation).not.toHaveBeenCalled();
+  });
+
+  it("restores the source element and overlay when all-day drag is cancelled", () => {
+    const { adapter, child, flushFrame, onCommitAllDayDrag, source } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 430, y: 30 }),
     );
     flushFrame();
 
@@ -409,47 +424,46 @@ describe("WeekInteractionAdapter all-day resize", () => {
     ).toBeTruthy();
 
     adapter.handlePointerCancel(
-      makePointerEvent("pointercancel", { target: endHandle, x: 655, y: 30 }),
+      makePointerEvent("pointercancel", { target: child, x: 430, y: 30 }),
     );
 
     expect(source.style.visibility).toBe("visible");
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();
-    expect(onCommitAllDayResize).not.toHaveBeenCalled();
+    expect(onCommitAllDayDrag).not.toHaveBeenCalled();
   });
 
-  it("resizes the visible right edge of a clipped all-day event without dropping its hidden start", () => {
-    const { adapter, endHandle, flushFrame, onCommitAllDayResize } =
-      createHarness({
-        eventOverrides: {
-          endDate: "2026-05-13",
-          startDate: "2026-05-09",
-        },
-        sourceRect: {
-          height: 20,
-          left: 100,
-          top: 25,
-          width: 290,
-        },
-      });
+  it("drags a clipped all-day event from its visible column without corrupting its hidden span", () => {
+    const { adapter, child, flushFrame, onCommitAllDayDrag } = createHarness({
+      eventOverrides: {
+        endDate: "2026-05-13",
+        startDate: "2026-05-09",
+      },
+      sourceRect: {
+        height: 20,
+        left: 100,
+        top: 25,
+        width: 290,
+      },
+    });
 
     adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: endHandle, x: 390, y: 30 }),
+      makePointerEvent("pointerdown", { target: child, x: 150, y: 30 }),
     );
     adapter.handlePointerMove(
-      makePointerEvent("pointermove", { target: endHandle, x: 455, y: 30 }),
+      makePointerEvent("pointermove", { target: child, x: 260, y: 30 }),
     );
     flushFrame();
     adapter.handlePointerUp(
-      makePointerEvent("pointerup", { target: endHandle, x: 455, y: 30 }),
+      makePointerEvent("pointerup", { target: child, x: 260, y: 30 }),
     );
 
-    expect(onCommitAllDayResize).toHaveBeenCalledWith(
+    expect(onCommitAllDayDrag).toHaveBeenCalledWith(
       expect.objectContaining({
         event: expect.objectContaining({
           endDate: "2026-05-14",
-          startDate: "2026-05-09",
+          startDate: "2026-05-10",
         }),
         hasMoved: true,
       }),

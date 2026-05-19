@@ -3,13 +3,15 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_COLUMNS_TIMED } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
-import { NowLine } from "@web/views/Week/components/NowLine";
+import { type Ref_Callback } from "@web/common/types/util.types";
+import { NowLine } from "@web/views/Week/components/NowLine/NowLine";
 import { StyledGridCol, StyledGridCols } from "./styled";
-import { TimesColumn } from "./TimesColumn";
+import { TimesColumn } from "./TimesColumn/TimesColumn";
 
 interface Props {
   isCurrentWeek: boolean;
   today: Dayjs;
+  timedColumnsElementRef: Ref_Callback;
   week: number;
   weekDays: Dayjs[];
 }
@@ -17,6 +19,7 @@ interface Props {
 export const MainGridColumns: FC<Props> = ({
   isCurrentWeek,
   today,
+  timedColumnsElementRef,
   week,
   weekDays,
 }) => {
@@ -55,7 +58,7 @@ export const MainGridColumns: FC<Props> = ({
   return (
     <>
       <TimesColumn />
-      <StyledGridCols id={ID_GRID_COLUMNS_TIMED}>
+      <StyledGridCols id={ID_GRID_COLUMNS_TIMED} ref={timedColumnsElementRef}>
         {isCurrentWeek ? <NowLine width={100} /> : null}
 
         {weekDays.map((day, i) => (

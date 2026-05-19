@@ -11,6 +11,10 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  getWeekInteractionEventAttributes,
+  useWeekEventRegistrationRef,
+} from "@web/views/Week/interaction/registry/weekEventRegistry";
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
 
 interface Props {
@@ -54,16 +58,73 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   return (
     <div id={ID_GRID_EVENTS_TIMED}>
       {!isLoadingWeekView &&
-        adjustedEvents.map((event: Schema_GridEvent) => (
-          <GridEventMemo
-            displayMode={event._id === draftId ? "placeholder" : "saved"}
-            event={event}
-            key={`initial-${event._id}`}
-            measurements={measurements}
-            onEventKeyDown={handleKeyDown}
-            weekProps={weekProps}
-          />
-        ))}
+        adjustedEvents.map((event: Schema_GridEvent) => {
+          const isPending = Boolean(
+            event._id && pendingEventIds.includes(event._id),
+          );
+          const isPlaceholder = event._id === draftId;
+
+          return (
+            <MainGridEventItem
+              event={event}
+              isPending={isPending}
+              isPlaceholder={isPlaceholder}
+              key={`initial-${event._id}`}
+              measurements={measurements}
+              onEventKeyDown={handleKeyDown}
+              weekProps={weekProps}
+            />
+          );
+        })}
     </div>
+  );
+};
+
+interface MainGridEventItemProps {
+  event: Schema_GridEvent;
+  isPending: boolean;
+  isPlaceholder: boolean;
+  measurements: Measurements_Grid;
+  onEventKeyDown: (event: Schema_GridEvent) => void;
+  weekProps: WeekProps;
+}
+
+const MainGridEventItem = ({
+  event,
+  isPending,
+  isPlaceholder,
+  measurements,
+  onEventKeyDown,
+  weekProps,
+}: MainGridEventItemProps) => {
+  const isRegisteredForWeekInteraction =
+    Boolean(event._id) && !isPlaceholder && !isPending;
+  const registrationRef = useWeekEventRegistrationRef({
+    eventId: event._id,
+    eventType: "timed",
+    isEnabled: isRegisteredForWeekInteraction,
+  });
+  const interactionAttributes = useMemo(
+    () =>
+      isRegisteredForWeekInteraction
+        ? getWeekInteractionEventAttributes({
+            eventId: event._id,
+            eventType: "timed",
+          })
+        : undefined,
+    [event._id, isRegisteredForWeekInteraction],
+  );
+
+  return (
+    <GridEventMemo
+      displayMode={isPlaceholder ? "placeholder" : "saved"}
+      event={event}
+      interactionAttributes={interactionAttributes}
+      isPending={isPending}
+      measurements={measurements}
+      onEventKeyDown={onEventKeyDown}
+      ref={registrationRef}
+      weekProps={weekProps}
+    />
   );
 };

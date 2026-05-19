@@ -3,8 +3,12 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { weekEventRegistry } from "@web/views/Week/interaction/geometry/weekEventRegistry";
-import { WeekInteractionAdapter } from "@web/views/Week/interaction/WeekInteractionAdapter";
+import { createWeekInteractionAdapter } from "@web/views/Week/interaction/adapter/WeekInteractionAdapter";
+import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
+import {
+  getWeekInteractionEdgeNavigationState,
+  resetWeekInteractionEdgeNavigationState,
+} from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const createTimedEvent = (
@@ -146,7 +150,7 @@ const createHarness = ({
     eventType: "timed",
   });
 
-  const adapter = new WeekInteractionAdapter({
+  const adapter = createWeekInteractionAdapter({
     engineOptions: {
       cancelFrame: (frame) => frameCallbacks.delete(frame),
       clearTimer: (timer) => timerCallbacks.delete(timer),
@@ -167,7 +171,6 @@ const createHarness = ({
         return timer;
       },
     },
-    mode: "active",
     runtime: () => ({
       getTimedEventById: (eventId) => (eventId === event._id ? event : null),
       isEventPending: () => isPending,
@@ -222,6 +225,7 @@ const createHarness = ({
 afterEach(() => {
   document.body.innerHTML = "";
   weekEventRegistry.clear();
+  resetWeekInteractionEdgeNavigationState();
 });
 
 describe("WeekInteractionAdapter timed drag", () => {
@@ -519,5 +523,48 @@ describe("WeekInteractionAdapter timed drag", () => {
 
     expect(onRequestWeekNavigation).toHaveBeenCalledTimes(1);
     expect(onRequestWeekNavigation).toHaveBeenCalledWith("prev");
+  });
+
+  it("publishes edge indicator state while a saved timed event is dragged", () => {
+    const { adapter, child, flushFrame } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 360, y: 1020 }),
+    );
+    flushFrame(16);
+
+    expect(getWeekInteractionEdgeNavigationState()).toMatchObject({
+      currentEdge: null,
+      isDragging: true,
+      isTimerActive: false,
+      progress: 0,
+    });
+
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 40, y: 1020 }),
+    );
+    flushFrame(116);
+    flushFrame(216);
+
+    expect(getWeekInteractionEdgeNavigationState()).toMatchObject({
+      currentEdge: "left",
+      isDragging: true,
+      isTimerActive: true,
+      progress: 20,
+    });
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 40, y: 1020 }),
+    );
+
+    expect(getWeekInteractionEdgeNavigationState()).toMatchObject({
+      currentEdge: null,
+      isDragging: false,
+      isTimerActive: false,
+      progress: 0,
+    });
   });
 });

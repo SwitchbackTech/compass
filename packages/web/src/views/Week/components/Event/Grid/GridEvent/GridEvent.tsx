@@ -30,20 +30,16 @@ import {
   FlexWrap,
 } from "@web/components/Flex/styled";
 import { Text } from "@web/components/Text";
-import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import {
-  getWeekInteractionEventAttributes,
-  useWeekEventRegistrationRef,
-} from "@web/views/Week/interaction/geometry/weekEventRegistry";
-import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/weekInteractionMotionState";
+import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
 import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
 
 interface Props {
   displayMode: GridEventDisplayMode;
   event: Schema_GridEvent;
+  interactionAttributes?: Record<string, string | undefined>;
+  isPending?: boolean;
   measurements: Measurements_Grid;
   motionMode?: GridEventMotionMode;
   onEventMouseDown?: (event: Schema_GridEvent, e: MouseEvent) => void;
@@ -63,6 +59,8 @@ const GridEventBase = (
   {
     displayMode,
     event: _event,
+    interactionAttributes,
+    isPending = false,
     measurements,
     motionMode = "idle",
     onEventMouseDown,
@@ -80,17 +78,6 @@ const GridEventBase = (
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
-  const isPending = useAppSelector((state) =>
-    event._id ? selectIsEventPending(state, event._id) : false,
-  );
-  const isRegisteredForWeekInteraction =
-    Boolean(event._id) && !isDraft && !isPlaceholder && !isPending;
-  const registrationRef = useWeekEventRegistrationRef({
-    eventId: event._id,
-    eventType: "timed",
-    forwardedRef: ref,
-    isEnabled: isRegisteredForWeekInteraction,
-  });
 
   const position = getEventPosition(
     event,
@@ -179,13 +166,8 @@ const GridEventBase = (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
-      {...(isRegisteredForWeekInteraction
-        ? getWeekInteractionEventAttributes({
-            eventId: event._id,
-            eventType: "timed",
-          })
-        : {})}
-      ref={registrationRef}
+      {...interactionAttributes}
+      ref={ref}
       role="button"
       tabIndex={0}
       className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
@@ -267,6 +249,8 @@ export const GridEventMemo = memo(GridEvent, (prev, next) => {
   return (
     prev.displayMode === next.displayMode &&
     prev.event === next.event &&
+    prev.interactionAttributes === next.interactionAttributes &&
+    prev.isPending === next.isPending &&
     prev.measurements === next.measurements &&
     prev.motionMode === next.motionMode
   );

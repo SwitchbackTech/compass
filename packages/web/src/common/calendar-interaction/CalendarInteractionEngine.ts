@@ -13,6 +13,7 @@ import {
   type MotionCalendarInteractionSession,
   type PendingCalendarInteractionSession,
 } from "./CalendarInteractionSession";
+import { hasExceededCalendarInteractionMoveThreshold } from "./calendarInteractionPointer";
 import { CalendarInteractionOverlay } from "./dom/CalendarInteractionOverlay";
 import {
   markSourcePlaceholder,
@@ -20,17 +21,42 @@ import {
   type SourcePlaceholder,
 } from "./dom/sourcePlaceholder";
 
-interface CalendarInteractionEngineOptions<TTarget, TVisual, TResult> {
-  adapter: CalendarInteractionAdapter<TTarget, TVisual, TResult>;
+export interface CalendarInteractionEngineSchedulerOptions {
   cancelFrame?: (frame: unknown) => void;
   clearTimer?: (timer: unknown) => void;
+  now?: () => number;
+  requestFrame?: (callback: FrameRequestCallback) => unknown;
+  setTimer?: (callback: () => void, delayMs: number) => unknown;
+}
+
+export interface CalendarInteractionCancellationTargets {
+  documentTarget?: Document;
+  windowTarget?: Window;
+}
+
+interface CalendarInteractionEngineOptions<TTarget, TVisual, TResult>
+  extends CalendarInteractionEngineSchedulerOptions {
+  adapter: CalendarInteractionAdapter<TTarget, TVisual, TResult>;
   createMetrics?: () => CalendarInteractionMetrics;
   createOverlay?: () => CalendarInteractionOverlay;
   holdDelayMs?: number;
   moveThresholdPx?: number;
-  now?: () => number;
-  requestFrame?: (callback: FrameRequestCallback) => unknown;
-  setTimer?: (callback: () => void, delayMs: number) => unknown;
+}
+
+export interface CalendarInteractionEngine<TTarget, TVisual, TResult> {
+  cancel(): void;
+  connectCancellationEvents(
+    targets?: CalendarInteractionCancellationTargets,
+  ): () => void;
+  getMetrics(): CalendarInteractionMetrics;
+  getSession(): CalendarInteractionSession<TTarget, TVisual>;
+  handlePointerCancel(event: PointerEvent): void;
+  handlePointerDown(event: PointerEvent): boolean;
+  handlePointerMove(event: PointerEvent): void;
+  handlePointerUp(
+    event: PointerEvent,
+  ): CalendarInteractionPointerUpResult<TTarget, TResult>;
+  ownsPointer(event: Pick<PointerEvent, "pointerId">): boolean;
 }
 
 const defaultOptions = {
@@ -51,59 +77,53 @@ const defaultOptions = {
     setTimeout(callback, delayMs),
 };
 
-export class CalendarInteractionEngine<TTarget, TVisual, TResult> {
-  readonly #options: Required<
+export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
+  options: CalendarInteractionEngineOptions<TTarget, TVisual, TResult>,
+): CalendarInteractionEngine<TTarget, TVisual, TResult> => {
+  const resolvedOptions: Required<
     CalendarInteractionEngineOptions<TTarget, TVisual, TResult>
-  >;
-  #activatedAt: number | null = null;
-  #latestPointer: CalendarInteractionPoint | null = null;
-  #metrics: CalendarInteractionMetrics;
-  #overlay: CalendarInteractionOverlay | null = null;
-  #placeholder: SourcePlaceholder | null = null;
-  #previousFrameTimestamp: number | null = null;
-  #rafId: unknown = null;
-  #session: CalendarInteractionSession<TTarget, TVisual> = { phase: "idle" };
+  > = { ...defaultOptions, ...options };
+  let activatedAt: number | null = null;
+  let latestPointer: CalendarInteractionPoint | null = null;
+  let metrics = resolvedOptions.createMetrics();
+  let overlay: CalendarInteractionOverlay | null = null;
+  let placeholder: SourcePlaceholder | null = null;
+  let previousFrameTimestamp: number | null = null;
+  let rafId: unknown = null;
+  let session: CalendarInteractionSession<TTarget, TVisual> = {
+    phase: "idle",
+  };
 
-  constructor(
-    options: CalendarInteractionEngineOptions<TTarget, TVisual, TResult>,
-  ) {
-    this.#options = { ...defaultOptions, ...options };
-    this.#metrics = this.#options.createMetrics();
+  function getMetrics() {
+    return metrics;
   }
 
-  getMetrics() {
-    return this.#metrics;
+  function getSession() {
+    return session;
   }
 
-  getSession() {
-    return this.#session;
+  function ownsPointer(event: Pick<PointerEvent, "pointerId">) {
+    return session.phase !== "idle" && session.pointerId === event.pointerId;
   }
 
-  ownsPointer(event: Pick<PointerEvent, "pointerId">) {
-    return (
-      this.#session.phase !== "idle" &&
-      this.#session.pointerId === event.pointerId
-    );
-  }
-
-  handlePointerDown(event: PointerEvent) {
-    if (this.#session.phase !== "idle") {
+  function handlePointerDown(event: PointerEvent) {
+    if (session.phase !== "idle") {
       return false;
     }
 
-    const target = this.#options.adapter.getTarget(event);
+    const target = resolvedOptions.adapter.getTarget(event);
 
     if (!target) {
       return false;
     }
 
-    const sourceElement = this.#options.adapter.getSourceElement(target);
-    const holdTimer = this.#options.setTimer(() => {
-      this.#activatePendingSession("hold");
-    }, this.#options.holdDelayMs);
+    const sourceElement = resolvedOptions.adapter.getSourceElement(target);
+    const holdTimer = resolvedOptions.setTimer(() => {
+      activatePendingSession("hold");
+    }, resolvedOptions.holdDelayMs);
 
-    this.#resetMetrics("pending");
-    this.#session = {
+    resetMetrics("pending");
+    session = {
       holdTimer,
       phase: "pending",
       pointerId: event.pointerId,
@@ -115,300 +135,299 @@ export class CalendarInteractionEngine<TTarget, TVisual, TResult> {
     return true;
   }
 
-  handlePointerMove(event: PointerEvent) {
-    if (this.#session.phase !== "pending" && this.#session.phase !== "motion") {
+  function handlePointerMove(event: PointerEvent) {
+    if (session.phase !== "pending" && session.phase !== "motion") {
       return;
     }
 
-    if (event.pointerId !== this.#session.pointerId) {
+    if (event.pointerId !== session.pointerId) {
       return;
     }
 
-    if (this.#session.phase === "pending") {
+    if (session.phase === "pending") {
       if (
-        !hasExceededMoveThreshold(
+        !hasExceededCalendarInteractionMoveThreshold(
           getPointerPoint(event),
-          this.#session.startPoint,
-          this.#options.moveThresholdPx,
+          session.startPoint,
+          resolvedOptions.moveThresholdPx,
         )
       ) {
         return;
       }
 
-      this.#clearPendingTimer(this.#session);
-      this.#activatePendingSession("move");
+      clearPendingTimer(session);
+      activatePendingSession("move");
     }
 
-    if (this.#session.phase !== "motion") {
+    if (session.phase !== "motion") {
       return;
     }
 
-    this.#metrics.pointerMoveCount += 1;
-    this.#latestPointer = getPointerPoint(event);
-    this.#scheduleFrame();
+    metrics.pointerMoveCount += 1;
+    latestPointer = getPointerPoint(event);
+    scheduleFrame();
   }
 
-  handlePointerUp(
+  function handlePointerUp(
     event: PointerEvent,
   ): CalendarInteractionPointerUpResult<TTarget, TResult> {
-    if (this.#session.phase === "idle") {
+    if (session.phase === "idle") {
       return null;
     }
 
-    if (event.pointerId !== this.#session.pointerId) {
+    if (event.pointerId !== session.pointerId) {
       return null;
     }
 
-    if (this.#session.phase === "pending") {
-      const target = this.#session.target;
-      this.#clearPendingTimer(this.#session);
-      this.#session = { phase: "idle" };
-      this.#metrics.active = false;
-      this.#metrics.phase = "idle";
+    if (session.phase === "pending") {
+      const target = session.target;
+      clearPendingTimer(session);
+      session = { phase: "idle" };
+      metrics.active = false;
+      metrics.phase = "idle";
 
       return { target, type: "click" };
     }
 
-    const session = this.#session;
-    const result = this.#options.adapter.commit({
-      target: session.target,
-      visual: session.visual,
+    const motionSession = session;
+    const result = resolvedOptions.adapter.commit({
+      target: motionSession.target,
+      visual: motionSession.visual,
     });
-    this.#teardownActiveSession("commit");
-    this.#session = { phase: "idle" };
+    teardownActiveSession("commit");
+    session = { phase: "idle" };
 
     return { result, type: "commit" };
   }
 
-  handlePointerCancel(event: PointerEvent) {
-    if (
-      this.#session.phase === "idle" ||
-      event.pointerId !== this.#session.pointerId
-    ) {
+  function handlePointerCancel(event: PointerEvent) {
+    if (session.phase === "idle" || event.pointerId !== session.pointerId) {
       return;
     }
 
-    this.cancel();
+    cancel();
   }
 
-  handleWindowBlur = () => {
-    this.cancel();
-  };
+  function handleWindowBlur() {
+    cancel();
+  }
 
-  handleVisibilityChange = () => {
+  function handleVisibilityChange() {
     if (document.visibilityState === "hidden") {
-      this.cancel();
+      cancel();
     }
-  };
+  }
 
-  connectCancellationEvents({
+  function connectCancellationEvents({
     documentTarget = document,
     windowTarget = window,
-  }: {
-    documentTarget?: Document;
-    windowTarget?: Window;
-  } = {}) {
-    const handlePointerCancel = (event: PointerEvent) => {
-      this.handlePointerCancel(event);
+  }: CalendarInteractionCancellationTargets = {}) {
+    const handleCancellationEvent = (event: PointerEvent) => {
+      handlePointerCancel(event);
     };
 
-    windowTarget.addEventListener("pointercancel", handlePointerCancel);
-    windowTarget.addEventListener("lostpointercapture", handlePointerCancel);
-    windowTarget.addEventListener("blur", this.handleWindowBlur);
-    documentTarget.addEventListener(
-      "visibilitychange",
-      this.handleVisibilityChange,
+    windowTarget.addEventListener("pointercancel", handleCancellationEvent);
+    windowTarget.addEventListener(
+      "lostpointercapture",
+      handleCancellationEvent,
     );
+    windowTarget.addEventListener("blur", handleWindowBlur);
+    documentTarget.addEventListener("visibilitychange", handleVisibilityChange);
 
     return () => {
-      windowTarget.removeEventListener("pointercancel", handlePointerCancel);
+      windowTarget.removeEventListener(
+        "pointercancel",
+        handleCancellationEvent,
+      );
       windowTarget.removeEventListener(
         "lostpointercapture",
-        handlePointerCancel,
+        handleCancellationEvent,
       );
-      windowTarget.removeEventListener("blur", this.handleWindowBlur);
+      windowTarget.removeEventListener("blur", handleWindowBlur);
       documentTarget.removeEventListener(
         "visibilitychange",
-        this.handleVisibilityChange,
+        handleVisibilityChange,
       );
     };
   }
 
-  cancel() {
-    if (this.#session.phase === "idle") {
+  function cancel() {
+    if (session.phase === "idle") {
       return;
     }
 
-    if (this.#session.phase === "pending") {
-      this.#clearPendingTimer(this.#session);
-      this.#options.adapter.cancel?.({ target: this.#session.target });
-      this.#session = { phase: "idle" };
-      this.#metrics.cancellationCount += 1;
-      this.#metrics.active = false;
-      this.#metrics.phase = "cancelled";
+    if (session.phase === "pending") {
+      clearPendingTimer(session);
+      resolvedOptions.adapter.cancel?.({ target: session.target });
+      session = { phase: "idle" };
+      metrics.cancellationCount += 1;
+      metrics.active = false;
+      metrics.phase = "cancelled";
       return;
     }
 
-    this.#options.adapter.cancel?.({
-      target: this.#session.target,
-      visual: this.#session.visual,
+    resolvedOptions.adapter.cancel?.({
+      target: session.target,
+      visual: session.visual,
     });
-    this.#teardownActiveSession("cancelled");
-    this.#session = { phase: "idle" };
+    teardownActiveSession("cancelled");
+    session = { phase: "idle" };
   }
 
-  #activatePendingSession(activatedBy: "hold" | "move") {
-    if (this.#session.phase !== "pending") {
+  function activatePendingSession(activatedBy: "hold" | "move") {
+    if (session.phase !== "pending") {
       return;
     }
 
-    const session = this.#session;
-    const visual = this.#options.adapter.createVisual({
-      pointerStart: session.startPoint,
-      sourceElement: session.sourceElement,
-      target: session.target,
+    const pendingSession = session;
+    const visual = resolvedOptions.adapter.createVisual({
+      pointerStart: pendingSession.startPoint,
+      sourceElement: pendingSession.sourceElement,
+      target: pendingSession.target,
     });
 
     if (!visual) {
-      this.cancel();
+      cancel();
       return;
     }
 
-    const overlayMount = this.#options.adapter.getOverlayMount({
-      sourceElement: session.sourceElement,
-      target: session.target,
+    const overlayMount = resolvedOptions.adapter.getOverlayMount({
+      sourceElement: pendingSession.sourceElement,
+      target: pendingSession.target,
       visual,
     });
-    this.#mountOverlay(overlayMount);
-    this.#placeholder = markSourcePlaceholder(session.sourceElement);
-    this.#activatedAt = this.#options.now();
-    this.#latestPointer = session.startPoint;
-    this.#metrics.active = true;
-    this.#metrics.phase = "motion";
-    this.#session = {
+    mountOverlay(overlayMount);
+    placeholder = markSourcePlaceholder(pendingSession.sourceElement);
+    activatedAt = resolvedOptions.now();
+    latestPointer = pendingSession.startPoint;
+    metrics.active = true;
+    metrics.phase = "motion";
+    session = {
       activatedBy,
       phase: "motion",
-      pointerId: session.pointerId,
-      sourceElement: session.sourceElement,
-      startPoint: session.startPoint,
-      target: session.target,
+      pointerId: pendingSession.pointerId,
+      sourceElement: pendingSession.sourceElement,
+      startPoint: pendingSession.startPoint,
+      target: pendingSession.target,
       visual,
     };
-    this.#scheduleFrame();
+    scheduleFrame();
   }
 
-  #mountOverlay(mount: CalendarInteractionOverlayMount) {
-    const overlayMountStart = this.#options.now();
-    const overlay = this.#options.createOverlay();
-    overlay.mount(mount);
-    this.#metrics.overlayMountMs = this.#options.now() - overlayMountStart;
-    this.#overlay = overlay;
+  function mountOverlay(mount: CalendarInteractionOverlayMount) {
+    const overlayMountStart = resolvedOptions.now();
+    const nextOverlay = resolvedOptions.createOverlay();
+    nextOverlay.mount(mount);
+    metrics.overlayMountMs = resolvedOptions.now() - overlayMountStart;
+    overlay = nextOverlay;
   }
 
-  #clearPendingTimer(session: PendingCalendarInteractionSession<TTarget>) {
-    this.#options.clearTimer(session.holdTimer);
+  function clearPendingTimer(
+    session: PendingCalendarInteractionSession<TTarget>,
+  ) {
+    resolvedOptions.clearTimer(session.holdTimer);
   }
 
-  #scheduleFrame() {
-    if (this.#rafId !== null) {
+  function scheduleFrame() {
+    if (rafId !== null) {
       return;
     }
 
-    this.#rafId = this.#options.requestFrame((timestamp) => {
-      this.#rafId = null;
-      this.#runFrame(timestamp);
+    rafId = resolvedOptions.requestFrame((timestamp) => {
+      rafId = null;
+      runFrame(timestamp);
     });
   }
 
-  #runFrame(timestamp: number) {
-    if (
-      this.#session.phase !== "motion" ||
-      !this.#latestPointer ||
-      !this.#overlay
-    ) {
+  function runFrame(timestamp: number) {
+    if (session.phase !== "motion" || !latestPointer || !overlay) {
       return;
     }
 
-    const frameStart = this.#options.now();
-    const next = this.#options.adapter.updateVisual({
-      pointer: this.#latestPointer,
-      target: this.#session.target,
+    const frameStart = resolvedOptions.now();
+    const next = resolvedOptions.adapter.updateVisual({
+      pointer: latestPointer,
+      target: session.target,
       timestamp,
-      visual: this.#session.visual,
+      visual: session.visual,
     });
-    this.#session = {
-      ...this.#session,
+    session = {
+      ...session,
       visual: next.visual,
     } satisfies MotionCalendarInteractionSession<TTarget, TVisual>;
 
     if (next.overlay) {
-      this.#overlay.update(next.overlay);
-      this.#metrics.styleWritesDuringMotion += 1;
+      overlay.update(next.overlay);
+      metrics.styleWritesDuringMotion += 1;
     }
 
-    const frameDurationMs = this.#options.now() - frameStart;
+    const frameDurationMs = resolvedOptions.now() - frameStart;
 
-    this.#metrics.rafCount += 1;
-    this.#metrics.rafDurations.push(frameDurationMs);
+    metrics.rafCount += 1;
+    metrics.rafDurations.push(frameDurationMs);
 
     let frameGapMs: number | undefined;
-    if (this.#previousFrameTimestamp !== null) {
-      frameGapMs = timestamp - this.#previousFrameTimestamp;
-      this.#metrics.frameGaps.push(frameGapMs);
+    if (previousFrameTimestamp !== null) {
+      frameGapMs = timestamp - previousFrameTimestamp;
+      metrics.frameGaps.push(frameGapMs);
     }
 
-    this.#previousFrameTimestamp = timestamp;
+    previousFrameTimestamp = timestamp;
 
-    if (this.#metrics.firstFrameLatencyMs === null) {
-      this.#metrics.firstFrameLatencyMs =
-        this.#options.now() - (this.#activatedAt ?? this.#options.now());
+    if (metrics.firstFrameLatencyMs === null) {
+      metrics.firstFrameLatencyMs =
+        resolvedOptions.now() - (activatedAt ?? resolvedOptions.now());
     }
 
     if (next.shouldContinue) {
-      this.#scheduleFrame();
+      scheduleFrame();
     }
   }
 
-  #teardownActiveSession(phase: "cancelled" | "commit") {
-    if (this.#rafId !== null) {
-      this.#options.cancelFrame(this.#rafId);
-      this.#rafId = null;
+  function teardownActiveSession(phase: "cancelled" | "commit") {
+    if (rafId !== null) {
+      resolvedOptions.cancelFrame(rafId);
+      rafId = null;
     }
 
-    this.#overlay?.unmount();
-    this.#overlay = null;
+    overlay?.unmount();
+    overlay = null;
 
-    if (this.#placeholder) {
-      restoreSourcePlaceholder(this.#placeholder);
-      this.#placeholder = null;
+    if (placeholder) {
+      restoreSourcePlaceholder(placeholder);
+      placeholder = null;
     }
 
-    this.#latestPointer = null;
-    this.#activatedAt = null;
-    this.#previousFrameTimestamp = null;
-    this.#metrics.active = false;
-    this.#metrics.phase = phase;
+    latestPointer = null;
+    activatedAt = null;
+    previousFrameTimestamp = null;
+    metrics.active = false;
+    metrics.phase = phase;
 
     if (phase === "cancelled") {
-      this.#metrics.cancellationCount += 1;
+      metrics.cancellationCount += 1;
     }
   }
 
-  #resetMetrics(phase: CalendarInteractionMetrics["phase"]) {
-    this.#metrics = this.#options.createMetrics();
-    this.#metrics.phase = phase;
+  function resetMetrics(phase: CalendarInteractionMetrics["phase"]) {
+    metrics = resolvedOptions.createMetrics();
+    metrics.phase = phase;
   }
-}
+
+  return {
+    cancel,
+    connectCancellationEvents,
+    getMetrics,
+    getSession,
+    handlePointerCancel,
+    handlePointerDown,
+    handlePointerMove,
+    handlePointerUp,
+    ownsPointer,
+  };
+};
 
 const getPointerPoint = (event: PointerEvent): CalendarInteractionPoint => ({
   x: event.clientX,
   y: event.clientY,
 });
-
-const hasExceededMoveThreshold = (
-  current: CalendarInteractionPoint,
-  initial: CalendarInteractionPoint,
-  threshold: number,
-) =>
-  Math.abs(current.x - initial.x) > threshold ||
-  Math.abs(current.y - initial.y) > threshold;

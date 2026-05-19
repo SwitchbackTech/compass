@@ -2,7 +2,7 @@ import {
   type CalendarInteractionAdapter,
   type CalendarInteractionOverlayMount,
 } from "./CalendarInteractionAdapter";
-import { CalendarInteractionEngine } from "./CalendarInteractionEngine";
+import { createCalendarInteractionEngine } from "./CalendarInteractionEngine";
 import { CalendarInteractionOverlay } from "./dom/CalendarInteractionOverlay";
 import { sanitizeInteractionCloneBase } from "./dom/sanitizeInteractionCloneBase";
 import { afterEach, describe, expect, it, mock } from "bun:test";
@@ -113,7 +113,7 @@ const createHarness = () => {
       },
     })),
   };
-  const engine = new CalendarInteractionEngine({
+  const engine = createCalendarInteractionEngine({
     adapter,
     cancelFrame: (frame) => frameCallbacks.delete(frame),
     clearTimer: (timer) => timerCallbacks.delete(timer),
@@ -280,11 +280,13 @@ describe("CalendarInteractionEngine", () => {
 
   it("cancels cleanly on blur and can be cancelled repeatedly", () => {
     const { cancel, engine, source } = createHarness();
+    const disconnect = engine.connectCancellationEvents();
 
     engine.handlePointerDown(makePointerEvent("pointerdown"));
     engine.handlePointerMove(makePointerEvent("pointermove", { x: 26, y: 0 }));
 
-    engine.handleWindowBlur();
+    window.dispatchEvent(new Event("blur"));
+    disconnect();
     engine.cancel();
 
     expect(cancel).toHaveBeenCalledTimes(1);
