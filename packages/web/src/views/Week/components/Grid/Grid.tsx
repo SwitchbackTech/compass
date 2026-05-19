@@ -28,8 +28,7 @@ export const Grid: FC<Props> = ({
 }) => {
   const { allDayRef, allDayRowRef, mainGridElementRef, mainGridRef } = gridRefs;
 
-  // Existing draft/Someday owner. Saved-event edge navigation lives in WeekInteractionAdapter.
-  const dragEdgeState = useDragEdgeNavigation(mainGridRef, weekProps);
+  const draftDragEdgeState = useDragEdgeNavigation(mainGridRef, weekProps);
 
   return (
     <div
@@ -58,7 +57,7 @@ export const Grid: FC<Props> = ({
         today={today}
         weekProps={weekProps}
       />
-      <EdgeNavigationIndicators dragEdgeState={dragEdgeState} />
+      <EdgeNavigationIndicators draftDragEdgeState={draftDragEdgeState} />
     </div>
   );
 };

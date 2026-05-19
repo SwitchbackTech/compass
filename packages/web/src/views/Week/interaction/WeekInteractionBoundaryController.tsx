@@ -16,9 +16,9 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
+  createWeekInteractionAdapter,
   type WeekAllDayDragCommitResult,
   type WeekAllDayResizeCommitResult,
-  WeekInteractionAdapter,
   type WeekInteractionRuntime,
   type WeekTimedDragCommitResult,
   type WeekTimedResizeCommitResult,
@@ -58,7 +58,7 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
   });
   const adapter = useMemo(
     () =>
-      new WeekInteractionAdapter({
+      createWeekInteractionAdapter({
         mode: "active",
         runtime: () => runtimeRef.current,
       }),

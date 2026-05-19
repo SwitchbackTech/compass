@@ -4,7 +4,11 @@ import {
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { weekEventRegistry } from "@web/views/Week/interaction/geometry/weekEventRegistry";
-import { WeekInteractionAdapter } from "@web/views/Week/interaction/WeekInteractionAdapter";
+import { createWeekInteractionAdapter } from "@web/views/Week/interaction/WeekInteractionAdapter";
+import {
+  getWeekInteractionEdgeNavigationState,
+  resetWeekInteractionEdgeNavigationState,
+} from "@web/views/Week/interaction/weekInteractionEdgeNavigationState";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const createTimedEvent = (
@@ -129,7 +133,7 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
     eventType: "timed",
   });
 
-  const adapter = new WeekInteractionAdapter({
+  const adapter = createWeekInteractionAdapter({
     engineOptions: {
       cancelFrame: (frame) => frameCallbacks.delete(frame),
       clearTimer: (timer) => timerCallbacks.delete(timer),
@@ -202,6 +206,7 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
 afterEach(() => {
   document.body.innerHTML = "";
   weekEventRegistry.clear();
+  resetWeekInteractionEdgeNavigationState();
 });
 
 describe("WeekInteractionAdapter timed resize", () => {
@@ -303,6 +308,25 @@ describe("WeekInteractionAdapter timed resize", () => {
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();
+  });
+
+  it("does not publish drag edge indicators for timed resize gestures", () => {
+    const { adapter, endHandle, flushFrame } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: endHandle, x: 320, y: 1100 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: endHandle, x: 40, y: 1150 }),
+    );
+    flushFrame();
+
+    expect(getWeekInteractionEdgeNavigationState()).toMatchObject({
+      currentEdge: null,
+      isDragging: false,
+      isTimerActive: false,
+      progress: 0,
+    });
   });
 
   it("resizes the top edge with immediate transform and height writes", () => {

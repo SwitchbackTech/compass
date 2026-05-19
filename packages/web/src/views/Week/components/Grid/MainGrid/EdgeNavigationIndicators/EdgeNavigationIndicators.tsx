@@ -1,19 +1,20 @@
 import { type FC } from "react";
 import { type DragEdgeNavigationState } from "@web/views/Week/hooks/grid/useDragEdgeNavigation";
-import { StyledEdgeZone, StyledProgressIndicator } from "./styled";
+import { useWeekInteractionEdgeNavigationState } from "@web/views/Week/interaction/weekInteractionEdgeNavigationState";
+import { StyledEdgeZone } from "./styled";
 
 interface Props {
-  dragEdgeState: DragEdgeNavigationState;
+  draftDragEdgeState: DragEdgeNavigationState;
 }
 
-export const EdgeNavigationIndicators: FC<Props> = ({ dragEdgeState }) => {
+export const EdgeNavigationIndicators: FC<Props> = ({ draftDragEdgeState }) => {
+  const savedDragEdgeState = useWeekInteractionEdgeNavigationState();
+  const dragEdgeState = savedDragEdgeState.isDragging
+    ? savedDragEdgeState
+    : draftDragEdgeState;
   const { currentEdge, isDragging, progress } = dragEdgeState;
 
   if (!isDragging || !currentEdge) return null;
 
-  return (
-    <StyledEdgeZone position={currentEdge}>
-      <StyledProgressIndicator progress={progress} direction={currentEdge} />
-    </StyledEdgeZone>
-  );
+  return <StyledEdgeZone position={currentEdge} progress={progress} />;
 };

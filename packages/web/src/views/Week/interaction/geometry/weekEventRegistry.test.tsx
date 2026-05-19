@@ -12,11 +12,12 @@ import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { createWeekInteractionEventOverlayMount } from "../dom/cloneWeekInteractionEventElement";
 import {
+  createWeekEventRegistry,
   getWeekInteractionEventAttributes,
   useWeekEventRegistrationRef,
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
   WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
-  WeekEventRegistry,
+  type WeekEventRegistry,
   type WeekInteractionEventType,
   weekEventRegistry,
 } from "./weekEventRegistry";
@@ -202,7 +203,7 @@ describe("weekEventRegistry", () => {
   });
 
   it("unregisters the old element when a render swaps event ids", () => {
-    const registry = new WeekEventRegistry();
+    const registry = createWeekEventRegistry();
     const { rerender } = render(
       <RegistrationHarness eventId="event-1" registry={registry} />,
     );
@@ -216,7 +217,7 @@ describe("weekEventRegistry", () => {
   });
 
   it("rejects stale or mismatched registrations", () => {
-    const registry = new WeekEventRegistry();
+    const registry = createWeekEventRegistry();
     const staleElement = document.createElement("div");
 
     document.body.append(staleElement);
@@ -246,7 +247,7 @@ describe("weekEventRegistry", () => {
   });
 
   it("resolves a registered event from child pointer targets", () => {
-    const registry = new WeekEventRegistry();
+    const registry = createWeekEventRegistry();
     const element = document.createElement("div");
     const child = document.createElement("span");
 

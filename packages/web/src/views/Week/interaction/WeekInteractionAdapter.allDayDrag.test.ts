@@ -4,7 +4,8 @@ import {
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { weekEventRegistry } from "@web/views/Week/interaction/geometry/weekEventRegistry";
-import { WeekInteractionAdapter } from "@web/views/Week/interaction/WeekInteractionAdapter";
+import { createWeekInteractionAdapter } from "@web/views/Week/interaction/WeekInteractionAdapter";
+import { resetWeekInteractionEdgeNavigationState } from "@web/views/Week/interaction/weekInteractionEdgeNavigationState";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const createAllDayEvent = (
@@ -144,7 +145,7 @@ const createHarness = ({
     eventType: "all-day",
   });
 
-  const adapter = new WeekInteractionAdapter({
+  const adapter = createWeekInteractionAdapter({
     engineOptions: {
       cancelFrame: (frame) => frameCallbacks.delete(frame),
       clearTimer: (timer) => timerCallbacks.delete(timer),
@@ -208,6 +209,7 @@ const createHarness = ({
 afterEach(() => {
   document.body.innerHTML = "";
   weekEventRegistry.clear();
+  resetWeekInteractionEdgeNavigationState();
 });
 
 describe("WeekInteractionAdapter all-day drag", () => {

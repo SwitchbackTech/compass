@@ -5,7 +5,10 @@ import {
   useMemo,
   useRef,
 } from "react";
-import { WeekInteractionAdapter } from "./WeekInteractionAdapter";
+import {
+  createWeekInteractionAdapter,
+  type WeekInteractionAdapter,
+} from "./WeekInteractionAdapter";
 
 interface Props extends PropsWithChildren {
   adapter?: WeekInteractionAdapter;
@@ -13,7 +16,7 @@ interface Props extends PropsWithChildren {
 
 export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
   const boundaryRef = useRef<HTMLDivElement | null>(null);
-  const defaultAdapter = useMemo(() => new WeekInteractionAdapter(), []);
+  const defaultAdapter = useMemo(() => createWeekInteractionAdapter(), []);
   const activeAdapter = adapter ?? defaultAdapter;
 
   useEffect(() => {
@@ -78,6 +81,7 @@ export const WeekInteractionBoundary: FC<Props> = ({ adapter, children }) => {
       boundary.removeEventListener("pointercancel", handlePointerCancel, {
         capture: true,
       });
+      activeAdapter.cancel();
       disconnectCancellationEvents();
     };
   }, [activeAdapter]);
