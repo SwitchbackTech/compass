@@ -60,6 +60,10 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
   bgColor,
 }) => {
   const maxZIndex = useGridMaxZIndex();
+  const menuZIndex = Math.max(
+    maxZIndex + ZIndex.LAYER_3,
+    ZIndex.MAX + ZIndex.LAYER_2,
+  );
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const openedByMouseRef = useRef(false);
@@ -181,7 +185,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
               ref={refs.setFloating}
               style={{
                 ...context.floatingStyles,
-                zIndex: maxZIndex + ZIndex.LAYER_3,
+                zIndex: menuZIndex,
               }}
               {...getFloatingProps()}
               id={menuId}
