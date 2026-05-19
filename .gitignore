@@ -27,6 +27,7 @@ compass.yaml
 !.codex/hooks.json
 !.codex/skills/
 !.codex/skills/**
+.codex/reference/
 .idea/
 .mcp.json
 .vscode/
@@ -39,6 +40,7 @@ playwright-report/
 test-results/
 blob-report/
 docs/superpowers/
+docs/pr-explainers/
 
 #core
 packages/core/build/

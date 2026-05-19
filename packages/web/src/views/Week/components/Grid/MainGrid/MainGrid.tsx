@@ -1,14 +1,8 @@
-import { type FC, type MouseEvent, type MutableRefObject } from "react";
-import { Categories_Event } from "@core/types/event.types";
+import { type FC, type MutableRefObject } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
 import { type Ref_Callback } from "@web/common/types/util.types";
 import { getHourLabels } from "@web/common/utils/datetime/web.date.util";
-import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
-import { isRightClick } from "@web/common/utils/mouse/mouse.util";
-import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { MainGridColumns } from "@web/views/Week/components/Grid/Columns/MainGridColumns";
 import { MainGridEvents } from "@web/views/Week/components/Grid/MainGrid/MainGridEvents";
 import {
@@ -19,8 +13,8 @@ import {
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useDragEventSmartScroll } from "@web/views/Week/hooks/grid/useDragEventSmartScroll";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
+import { useTimedGridDraftCreation } from "@web/views/Week/hooks/grid/useTimedGridDraftCreation";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { DRAFT_DURATION_MIN } from "@web/views/Week/layout.constants";
 
 interface Props {
   dateCalcs: DateCalcs;
@@ -28,6 +22,7 @@ interface Props {
   mainGridRef: MutableRefObject<HTMLDivElement | null>;
   measurements: Measurements_Grid;
   today: Dayjs;
+  timedColumnsElementRef: Ref_Callback;
   weekProps: WeekProps;
 }
 
@@ -37,47 +32,17 @@ export const MainGrid: FC<Props> = ({
   mainGridRef,
   measurements,
   today,
+  timedColumnsElementRef,
   weekProps,
 }) => {
-  const dispatch = useAppDispatch();
   const { component } = weekProps;
   const { isCurrentWeek, week, weekDays } = component;
-  const isDrafting = useAppSelector(selectIsDrafting);
+  const { startTimedDraftCreation } = useTimedGridDraftCreation({
+    dateCalcs,
+    weekProps,
+  });
 
   useDragEventSmartScroll(mainGridRef);
-
-  const onMouseDown = async (e: MouseEvent) => {
-    if (isDrafting) {
-      dispatch(draftSlice.actions.discard(undefined));
-      return;
-    }
-
-    if (isRightClick(e)) {
-      return;
-    }
-
-    await startTimedDraft(e);
-  };
-
-  const startTimedDraft = async (e: MouseEvent) => {
-    const _start = dateCalcs.getDateByXY(
-      e.clientX,
-      e.clientY,
-      component.startOfView,
-    );
-    const startDate = _start.format();
-    const endDate = _start.add(DRAFT_DURATION_MIN, "minutes").format();
-    const category = Categories_Event.TIMED;
-    const event = await assembleDefaultEvent(category, startDate, endDate);
-
-    dispatch(
-      draftSlice.actions.startResizing({
-        category,
-        event,
-        dateToChange: "endDate",
-      }),
-    );
-  };
 
   return (
     <StyledMainGrid
@@ -88,6 +53,7 @@ export const MainGrid: FC<Props> = ({
     >
       <MainGridColumns
         isCurrentWeek={isCurrentWeek}
+        timedColumnsElementRef={timedColumnsElementRef}
         today={today}
         week={week}
         weekDays={weekDays}
@@ -95,7 +61,7 @@ export const MainGrid: FC<Props> = ({
 
       <StyledGridWithTimeLabels>
         {getHourLabels(true).map((dayTime) => (
-          <StyledGridRow key={dayTime} onMouseDown={onMouseDown} />
+          <StyledGridRow key={dayTime} onMouseDown={startTimedDraftCreation} />
         ))}
       </StyledGridWithTimeLabels>
 

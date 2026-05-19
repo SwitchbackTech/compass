@@ -1,23 +1,21 @@
-import { useStore } from "react-redux";
+import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
-import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { getEventDragOffset } from "@web/common/utils/event/event.util";
-import { isLeftClick } from "@web/common/utils/mouse/mouse.util";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
 import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
-import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { type RootState } from "@web/store";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { StyledEvents } from "@web/views/Week/components/Grid/AllDayRow/styled";
-import { useGridEventMouseDown } from "@web/views/Week/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  getWeekInteractionTargetAttributes,
+  useWeekEventRegistrationRef,
+} from "@web/views/Week/interaction/registry/weekEventRegistry";
 
 interface Props {
   measurements: Measurements_Grid;
@@ -36,25 +34,12 @@ export const AllDayEvents = ({
 
   const draftId = useAppSelector(selectDraftId);
   const dispatch = useAppDispatch();
-  const store = useStore<RootState>();
-
-  const handleClick = (event: Schema_GridEvent) => {
-    // Prevent opening form for pending events (being created)
-    const state = store.getState();
-    if (selectIsEventPending(state, event._id!)) return;
-
-    dispatch(
-      draftSlice.actions.start({
-        activity: "gridClick",
-        event,
-        eventType: Categories_Event.ALLDAY,
-      }),
-    );
-  };
+  const pendingEventIds = useAppSelector(
+    (state) => state.events.pendingEvents.eventIds,
+  );
 
   const handleKeyDown = (event: Schema_GridEvent) => {
-    const state = store.getState();
-    if (selectIsEventPending(state, event._id!)) return;
+    if (event._id && pendingEventIds.includes(event._id)) return;
 
     dispatch(
       draftSlice.actions.start({
@@ -65,90 +50,84 @@ export const AllDayEvents = ({
     );
   };
 
-  const handleDrag = (
-    event: Schema_GridEvent,
-    moveEvent: PartialMouseEvent,
-  ) => {
-    // Prevent dragging if event is pending (waiting for backend confirmation)
-    const state = store.getState();
-    if (selectIsEventPending(state, event._id!)) {
-      return;
-    }
-
-    dispatch(
-      draftSlice.actions.startDragging({
-        category: Categories_Event.ALLDAY,
-        event: {
-          ...event,
-          position: {
-            ...event.position,
-            dragOffset: getEventDragOffset(event, moveEvent),
-            initialX: moveEvent.clientX,
-            initialY: moveEvent.clientY,
-          },
-        },
-      }),
-    );
-  };
-
-  const { onMouseDown } = useGridEventMouseDown(
-    Categories_Event.ALLDAY,
-    handleClick,
-    handleDrag,
-  );
-
-  const resizeAllDayEvent = (
-    event: Schema_GridEvent,
-    dateToChange: "startDate" | "endDate",
-  ) => {
-    dispatch(
-      draftSlice.actions.startResizing({
-        category: Categories_Event.ALLDAY,
-        event,
-        dateToChange,
-      }),
-    );
-  };
-
-  const renderEvents = () => {
-    if (
-      isProcessing &&
-      reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE
-    ) {
-      return null;
-    }
-
-    return allDayEvents.map((event: Schema_GridEvent) => {
-      return (
-        <AllDayEventMemo
-          key={event._id}
-          isPlaceholder={event._id === draftId}
-          event={event}
-          startOfView={startOfView}
-          endOfView={endOfView}
-          measurements={measurements}
-          onMouseDown={(e, event) => {
-            if (!isLeftClick(e)) {
-              return;
-            }
-            onMouseDown(e, event);
-          }}
-          onKeyDown={handleKeyDown}
-          onScalerMouseDown={(
-            event,
-            e,
-            dateToChange: "startDate" | "endDate",
-          ) => {
-            e.stopPropagation();
-            e.preventDefault();
-            resizeAllDayEvent(event, dateToChange);
-          }}
-        />
-      );
-    });
-  };
+  const isLoadingWeekView =
+    isProcessing && reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE;
 
   return (
-    <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>{renderEvents()}</StyledEvents>
+    <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
+      {!isLoadingWeekView &&
+        allDayEvents.map((event: Schema_GridEvent) => {
+          const isPending = Boolean(
+            event._id && pendingEventIds.includes(event._id),
+          );
+          const isPlaceholder = event._id === draftId;
+
+          return (
+            <AllDayEventItem
+              endOfView={endOfView}
+              event={event}
+              isPending={isPending}
+              isPlaceholder={isPlaceholder}
+              key={event._id}
+              measurements={measurements}
+              onKeyDown={handleKeyDown}
+              startOfView={startOfView}
+            />
+          );
+        })}
+    </StyledEvents>
+  );
+};
+
+interface AllDayEventItemProps {
+  endOfView: WeekProps["component"]["endOfView"];
+  event: Schema_GridEvent;
+  isPending: boolean;
+  isPlaceholder: boolean;
+  measurements: Measurements_Grid;
+  onKeyDown: (event: Schema_GridEvent) => void;
+  startOfView: WeekProps["component"]["startOfView"];
+}
+
+const AllDayEventItem = ({
+  endOfView,
+  event,
+  isPending,
+  isPlaceholder,
+  measurements,
+  onKeyDown,
+  startOfView,
+}: AllDayEventItemProps) => {
+  const isRegisteredForWeekInteraction =
+    Boolean(event._id) && !isPlaceholder && !isPending;
+  const registrationRef = useWeekEventRegistrationRef({
+    eventId: event._id,
+    eventType: "all-day",
+    isEnabled: isRegisteredForWeekInteraction,
+  });
+
+  const interactionAttributes = useMemo(
+    () =>
+      isRegisteredForWeekInteraction
+        ? getWeekInteractionTargetAttributes({
+            eventId: event._id,
+            eventType: "all-day",
+          })
+        : undefined,
+    [event._id, isRegisteredForWeekInteraction],
+  );
+
+  return (
+    <AllDayEventMemo
+      endOfView={endOfView}
+      event={event}
+      interactionAttributes={interactionAttributes}
+      isPending={isPending}
+      isPlaceholder={isPlaceholder}
+      measurements={measurements}
+      onKeyDown={onKeyDown}
+      ref={registrationRef}
+      startOfView={startOfView}
+    />
   );
 };

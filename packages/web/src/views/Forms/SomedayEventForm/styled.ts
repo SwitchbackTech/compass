@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { ZIndex } from "@web/common/constants/web.constants";
+import { Z_INDEX_FLOATING_FORM } from "@web/common/constants/web.constants";
 
 interface FormContainerProps {
   strategy: "fixed" | "absolute";
@@ -12,5 +12,5 @@ export const StyledFloatContainer = styled.div<FormContainerProps>`
   left: ${({ left }) => left}px;
   top: ${({ top }) => top}px;
   width: max-content;
-  z-index: ${ZIndex.LAYER_3};
+  z-index: ${Z_INDEX_FLOATING_FORM};
 `;

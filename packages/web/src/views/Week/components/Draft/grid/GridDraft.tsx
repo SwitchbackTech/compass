@@ -8,7 +8,7 @@ import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
-import { GridEvent } from "@web/views/Week/components/Event/Grid";
+import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { useGridEventMouseDown } from "@web/views/Week/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -56,6 +56,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   };
 
   const { onSubmit, onDelete } = confirmation;
+  const motionMode = isResizing ? "resizing" : isDragging ? "dragging" : "idle";
 
   const { onMouseDown } = useGridEventMouseDown(
     draft?.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED,
@@ -68,13 +69,11 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   return (
     <>
       <GridEvent
+        displayMode="draft"
         event={draft}
-        isDragging={isDragging}
-        isDraft={true}
-        isPlaceholder={false}
-        isResizing={isResizing}
         key={`draft-${draft?._id}`}
         measurements={measurements}
+        motionMode={motionMode}
         onEventMouseDown={(event: Schema_GridEvent, e: MouseEvent) => {
           e.preventDefault();
           onMouseDown(e, event);

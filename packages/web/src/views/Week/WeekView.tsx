@@ -11,7 +11,7 @@ import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/Recu
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
 import { Draft } from "@web/views/Week/components/Draft/Draft";
-import { Grid } from "@web/views/Week/components/Grid/";
+import { Grid } from "@web/views/Week/components/Grid/Grid";
 import { WeekGridScrollArea } from "@web/views/Week/components/Grid/WeekGridScrollArea";
 import { DayLabels } from "@web/views/Week/components/Header/DayLabels";
 import { Header } from "@web/views/Week/components/Header/Header";
@@ -23,6 +23,7 @@ import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerS
 import { useRefetch } from "@web/views/Week/hooks/useRefetch";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
+import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 import { Styled, StyledCalendar, WeekGridTrack } from "@web/views/Week/styled";
 
 export const WeekView = () => {
@@ -106,6 +107,15 @@ export const WeekView = () => {
     viewStart: weekProps.component.startOfView,
   });
 
+  const getWeekInteractionLayoutSources = useCallback(
+    () => ({
+      allDayColumnsElement: gridRefs.allDayColumnsRef.current,
+      mainGridElement: gridRefs.mainGridRef.current,
+      timedColumnsElement: gridRefs.timedColumnsRef.current,
+    }),
+    [gridRefs.allDayColumnsRef, gridRefs.mainGridRef, gridRefs.timedColumnsRef],
+  );
+
   return (
     <Styled id="cal">
       <CmdPalette {...shortcutProps} />
@@ -150,15 +160,20 @@ export const WeekView = () => {
                     weekDays={weekProps.component.weekDays}
                   />
 
-                  <ContextMenuWrapper id="grid-context-menu">
-                    <Grid
-                      dateCalcs={dateCalcs}
-                      gridRefs={gridRefs}
-                      measurements={measurements}
-                      today={today}
-                      weekProps={weekProps}
-                    />
-                  </ContextMenuWrapper>
+                  <WeekInteractionCoordinator
+                    getLayoutSources={getWeekInteractionLayoutSources}
+                    weekProps={weekProps}
+                  >
+                    <ContextMenuWrapper id="grid-context-menu">
+                      <Grid
+                        dateCalcs={dateCalcs}
+                        gridRefs={gridRefs}
+                        measurements={measurements}
+                        today={today}
+                        weekProps={weekProps}
+                      />
+                    </ContextMenuWrapper>
+                  </WeekInteractionCoordinator>
                 </WeekGridTrack>
               </WeekGridScrollArea>
             </StyledCalendar>

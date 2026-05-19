@@ -91,7 +91,7 @@ const GridLayoutHarness: FC = () => {
             gridRefs.mainGridElementRef(null);
             return;
           }
-          setRect(node, { width: 700, height: 770 });
+          setRect(node, { width: 700, height: 910 });
           gridRefs.mainGridElementRef(node);
         }}
       />

@@ -1,3 +1,4 @@
+import { ObjectId } from "bson";
 import { useCallback, useState } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -37,8 +38,12 @@ export const useDraftConfirmation = ({
   const onSubmit = useCallback(
     async (_draft: Schema_GridEvent) => {
       const rule = _draft.recurrence?.rule;
-      const isRecurringEvent = isRecurrence();
-      const instanceEvent = isInstance();
+      const draftIsInstance = ObjectId.isValid(
+        _draft.recurrence?.eventId ?? "",
+      );
+      const draftIsRecurring = Array.isArray(rule) || draftIsInstance;
+      const isRecurringEvent = isRecurrence() || draftIsRecurring;
+      const instanceEvent = isInstance() || draftIsInstance;
       const toStandAlone = instanceEvent && rule === null;
       const applyTo = toStandAlone
         ? RecurringEventUpdateScope.ALL_EVENTS

@@ -3,10 +3,11 @@ import { Flex } from "@web/components/Flex";
 import {
   DIVIDER_GRID,
   GRID_MARGIN_LEFT,
+  WEEK_TIMED_VISIBLE_HOURS,
 } from "@web/views/Week/layout.constants";
 
 export const StyledGridRow = styled(Flex)`
-  height: calc(100% / 11);
+  height: calc(100% / ${WEEK_TIMED_VISIBLE_HOURS});
   border-bottom: ${({ theme }) =>
     `${DIVIDER_GRID}px solid ${theme.color.gridLine.primary}`};
   width: 100%;

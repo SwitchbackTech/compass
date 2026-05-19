@@ -1,5 +1,7 @@
 import {
   type CSSProperties,
+  type ForwardedRef,
+  forwardRef,
   type KeyboardEvent,
   type MouseEvent,
   memo,
@@ -21,18 +23,18 @@ import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
-import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
 interface Props {
   event: Schema_GridEvent;
+  interactionAttributes?: Record<string, string | undefined>;
+  isPending?: boolean;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
-  onMouseDown: (e: MouseEvent, event: Schema_GridEvent) => void;
+  onMouseDown?: (e: MouseEvent, event: Schema_GridEvent) => void;
   onKeyDown?: (event: Schema_GridEvent) => void;
   onScalerMouseDown?: (
     event: Schema_GridEvent,
@@ -41,26 +43,27 @@ interface Props {
   ) => void;
 }
 
-const AllDayEvent = ({
-  event,
-  isPlaceholder,
-  measurements,
-  startOfView,
-  endOfView,
-  onMouseDown,
-  onKeyDown,
-  onScalerMouseDown,
-}: Props) => {
+const AllDayEventBase = (
+  {
+    event,
+    interactionAttributes,
+    isPending = false,
+    isPlaceholder,
+    measurements,
+    startOfView,
+    endOfView,
+    onMouseDown,
+    onKeyDown,
+    onScalerMouseDown,
+  }: Props,
+  ref: ForwardedRef<HTMLDivElement>,
+) => {
   const position = getEventPosition(
     event,
     startOfView,
     endOfView,
     measurements,
     false,
-  );
-
-  const isPending = useAppSelector((state) =>
-    selectIsEventPending(state, event._id!),
   );
 
   const priority = event.priority || Priorities.UNASSIGNED;
@@ -111,6 +114,8 @@ const AllDayEvent = ({
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
+      {...interactionAttributes}
+      ref={ref}
       role="button"
       tabIndex={0}
       className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
@@ -120,6 +125,12 @@ const AllDayEvent = ({
         if (isPending) {
           return;
         }
+
+        if (!onMouseDown) {
+          e.stopPropagation();
+          return;
+        }
+
         onMouseDown(e, event);
       }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
@@ -140,33 +151,35 @@ const AllDayEvent = ({
           <SpaceCharacter />
         </Text>
       </Flex>
-      {onScalerMouseDown && (
-        <>
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
-          <div
-            style={scalerStyle({ left: "-0.25px" })}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              onScalerMouseDown(event, e, "startDate");
-            }}
-          />
-          {/* biome-ignore lint/a11y/noStaticElementInteractions: Invisible resize handle uses pointer drag behavior. */}
-          <div
-            style={scalerStyle({ right: "-0.25px" })}
-            onMouseDown={(e) => {
-              e.stopPropagation();
-              onScalerMouseDown(event, e, "endDate");
-            }}
-          />
-        </>
-      )}
+      <div
+        aria-hidden="true"
+        data-week-event-resize-handle="startDate"
+        style={scalerStyle({ left: "-0.25px" })}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onScalerMouseDown?.(event, e, "startDate");
+        }}
+      />
+      <div
+        aria-hidden="true"
+        data-week-event-resize-handle="endDate"
+        style={scalerStyle({ right: "-0.25px" })}
+        onMouseDown={(e) => {
+          e.stopPropagation();
+          onScalerMouseDown?.(event, e, "endDate");
+        }}
+      />
     </div>
   );
 };
 
+const AllDayEvent = forwardRef(AllDayEventBase);
+
 export const AllDayEventMemo = memo(AllDayEvent, (prev, next) => {
   return (
     prev.event === next.event &&
+    prev.interactionAttributes === next.interactionAttributes &&
+    prev.isPending === next.isPending &&
     prev.isPlaceholder === next.isPlaceholder &&
     prev.measurements === next.measurements
   );
