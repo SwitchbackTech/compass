@@ -12,7 +12,7 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
-  getWeekInteractionEventAttributes,
+  getWeekInteractionTargetAttributes,
   useWeekEventRegistrationRef,
 } from "@web/views/Week/interaction/registry/weekEventRegistry";
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
@@ -107,7 +107,7 @@ const MainGridEventItem = ({
   const interactionAttributes = useMemo(
     () =>
       isRegisteredForWeekInteraction
-        ? getWeekInteractionEventAttributes({
+        ? getWeekInteractionTargetAttributes({
             eventId: event._id,
             eventType: "timed",
           })

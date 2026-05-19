@@ -26,7 +26,7 @@ const isWeekInteractionEventType = (
 ): value is WeekInteractionEventType =>
   value === "all-day" || value === "timed";
 
-export const getWeekInteractionEventAttributes = ({
+export const getWeekInteractionTargetAttributes = ({
   eventId,
   eventType,
 }: {

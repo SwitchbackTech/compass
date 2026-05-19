@@ -13,7 +13,7 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { createWeekInteractionEventOverlayMount } from "../adapter/dom/cloneWeekInteractionEventElement";
 import {
   createWeekEventRegistry,
-  getWeekInteractionEventAttributes,
+  getWeekInteractionTargetAttributes,
   useWeekEventRegistrationRef,
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
   WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
@@ -125,7 +125,7 @@ const RegistrationHarness = ({
 
   return (
     <div
-      {...getWeekInteractionEventAttributes({ eventId, eventType })}
+      {...getWeekInteractionTargetAttributes({ eventId, eventType })}
       ref={ref}
     >
       event
@@ -155,7 +155,7 @@ const RegisteredTimedEventHarness = ({
       event={event}
       interactionAttributes={
         isEnabled
-          ? getWeekInteractionEventAttributes({
+          ? getWeekInteractionTargetAttributes({
               eventId: event._id,
               eventType: "timed",
             })
@@ -193,7 +193,7 @@ const RegisteredAllDayEventHarness = ({
       event={event}
       interactionAttributes={
         isEnabled
-          ? getWeekInteractionEventAttributes({
+          ? getWeekInteractionTargetAttributes({
               eventId: event._id,
               eventType: "all-day",
             })

@@ -13,7 +13,7 @@ import { StyledEvents } from "@web/views/Week/components/Grid/AllDayRow/styled";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
-  getWeekInteractionEventAttributes,
+  getWeekInteractionTargetAttributes,
   useWeekEventRegistrationRef,
 } from "@web/views/Week/interaction/registry/weekEventRegistry";
 
@@ -105,10 +105,11 @@ const AllDayEventItem = ({
     eventType: "all-day",
     isEnabled: isRegisteredForWeekInteraction,
   });
+
   const interactionAttributes = useMemo(
     () =>
       isRegisteredForWeekInteraction
-        ? getWeekInteractionEventAttributes({
+        ? getWeekInteractionTargetAttributes({
             eventId: event._id,
             eventType: "all-day",
           })
