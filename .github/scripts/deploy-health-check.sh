@@ -223,6 +223,109 @@ printf 'ok frontend-body\n'
 REMOTE
 }
 
+expected_version() {
+  local version=${EXPECTED_VERSION:-${RELEASE_TAG:-${TAG:-${INPUT_TAG:-}}}}
+  version=${version#v}
+
+  if [ -z "$version" ]; then
+    printf 'missing expected version; set EXPECTED_VERSION or RELEASE_TAG\n' >&2
+    return 1
+  fi
+
+  printf '%s\n' "$version"
+}
+
+extract_version_json() {
+  sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' | head -n 1
+}
+
+validate_frontend_version_body() {
+  local body_file=$1
+  local expected actual
+
+  expected=$(expected_version) || return 1
+  actual=$(extract_version_json < "$body_file")
+
+  if [ -z "$actual" ]; then
+    record_failure "frontend-version" "missing version field"
+    return 1
+  fi
+
+  if [ "$actual" != "$expected" ]; then
+    record_failure "frontend-version" "expected $expected, got $actual"
+    return 1
+  fi
+
+  check_passed "frontend-version"
+}
+
+validate_frontend_version() {
+  local temp_dir body_file url result output
+
+  if [ -n "${FRONTEND_VERSION_BODY_FILE:-}" ]; then
+    validate_frontend_version_body "$FRONTEND_VERSION_BODY_FILE"
+    result=$?
+    [ -n "${SUPPRESS_FRONTEND_FINISH:-}" ] && return "$result"
+    finish
+    return $?
+  fi
+
+  require_env FRONTEND_URL || return 1
+  url="${FRONTEND_URL%/}/version.json"
+
+  if is_local_url "$url" && [ -n "${SSH_TARGET:-}" ]; then
+    output=$(validate_remote_frontend_version 2>&1)
+    result=$?
+    if [ "$result" -eq 0 ]; then
+      printf '%s\n' "$output"
+    else
+      record_failure "frontend-version" "$output"
+    fi
+    [ -n "${SUPPRESS_FRONTEND_FINISH:-}" ] && return "$result"
+    finish
+    return $?
+  fi
+
+  temp_dir=$(mktemp -d)
+  body_file="$temp_dir/version.json"
+  if ! curl -fsS -L --max-time 20 -o "$body_file" "$url"; then
+    record_failure "frontend-version" "curl failed for $url"
+    rm -rf "$temp_dir"
+    [ -n "${SUPPRESS_FRONTEND_FINISH:-}" ] && return 1
+    finish
+    return $?
+  fi
+
+  validate_frontend_version_body "$body_file"
+  result=$?
+  rm -rf "$temp_dir"
+  [ -n "${SUPPRESS_FRONTEND_FINISH:-}" ] && return "$result"
+  finish
+}
+
+validate_remote_frontend_version() {
+  local expected
+
+  require_env FRONTEND_URL || return 1
+  expected=$(expected_version) || return 1
+
+  ssh_remote "FRONTEND_URL=$(printf '%q' "$FRONTEND_URL") EXPECTED_VERSION=$(printf '%q' "$expected") bash -se" <<'REMOTE'
+set -euo pipefail
+url="${FRONTEND_URL%/}/version.json"
+body=$(curl -fsS -L --max-time 20 "$url")
+actual=$(printf '%s' "$body" | sed -nE 's/.*"version"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' | head -n 1)
+if [ -z "$actual" ]; then
+  printf 'missing version field\n' >&2
+  exit 1
+fi
+if [ "$actual" != "$EXPECTED_VERSION" ]; then
+  printf 'expected %s, got %s\n' "$EXPECTED_VERSION" "$actual" >&2
+  exit 1
+fi
+printf 'ok frontend-version\n'
+REMOTE
+}
+
 validate_backend_health() {
   require_env BACKEND_API_URL || return 1
 
@@ -442,6 +545,7 @@ run_all_checks() {
     record_failure "frontend-url" "missing FRONTEND_URL"
   else
     SUPPRESS_FRONTEND_FINISH=1 validate_frontend >/tmp/compass-frontend-check.log 2>&1 || true
+    SUPPRESS_FRONTEND_FINISH=1 validate_frontend_version >/tmp/compass-frontend-version-check.log 2>&1 || true
   fi
   run_check "backend-health" validate_backend_health
   run_check "compass-status" ssh_remote "cd ~/compass && ./compass status"
@@ -471,8 +575,11 @@ case "${1:-run}" in
   validate-frontend)
     validate_frontend
     ;;
+  validate-frontend-version)
+    validate_frontend_version
+    ;;
   *)
-    printf 'usage: %s [run|validate-frontend]\n' "$0" >&2
+    printf 'usage: %s [run|validate-frontend|validate-frontend-version]\n' "$0" >&2
     exit 2
     ;;
 esac

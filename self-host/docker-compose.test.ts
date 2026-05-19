@@ -164,6 +164,9 @@ describe("staging deploy workflow", () => {
     expect(workflow).toContain("environment:");
     expect(workflow).toContain("profile:");
     expect(workflow).toContain("DISCORD_DEPLOY_WEBHOOK_URL");
+    expect(workflow).toContain(
+      "EXPECTED_VERSION: $".concat("{{ inputs.tag }}"),
+    );
     expect(workflow).toContain(".github/scripts/deploy-health-check.sh");
   });
 });
@@ -234,5 +237,34 @@ describe("deploy health check script", () => {
 
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("frontend-body");
+  });
+
+  it("accepts a frontend version response that matches the release tag", async () => {
+    const dir = makeTempDir();
+    const bodyPath = join(dir, "version.json");
+    writeFileSync(bodyPath, '{"version":"0.5.27"}');
+
+    const result = await runHealthScript(["validate-frontend-version"], {
+      FRONTEND_VERSION_BODY_FILE: bodyPath,
+      RELEASE_TAG: "v0.5.27",
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("frontend-version");
+  });
+
+  it("rejects a frontend version response that does not match the release tag", async () => {
+    const dir = makeTempDir();
+    const bodyPath = join(dir, "version.json");
+    writeFileSync(bodyPath, '{"version":"0.5.26"}');
+
+    const result = await runHealthScript(["validate-frontend-version"], {
+      FRONTEND_VERSION_BODY_FILE: bodyPath,
+      RELEASE_TAG: "v0.5.27",
+    });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.stderr).toContain("frontend-version");
+    expect(result.stderr).toContain("expected 0.5.27, got 0.5.26");
   });
 });
