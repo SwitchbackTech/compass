@@ -31,6 +31,12 @@ interface Props extends PropsWithChildren {
   weekProps: WeekProps;
 }
 
+type SavedMutationCommitResult =
+  | WeekAllDayDragCommitResult
+  | WeekAllDayResizeCommitResult
+  | WeekTimedDragCommitResult
+  | WeekTimedResizeCommitResult;
+
 export const WeekInteractionCoordinator: FC<Props> = ({
   children,
   getLayoutSources,
@@ -104,18 +110,11 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     );
   };
 
-  const commitSavedMutation = (
-    result:
-      | WeekAllDayDragCommitResult
-      | WeekAllDayResizeCommitResult
-      | WeekTimedDragCommitResult
-      | WeekTimedResizeCommitResult,
-  ) => {
+  const commitSavedMutation = (result: SavedMutationCommitResult) => {
     if (!result.hasMoved) {
-      if (result.event.isAllDay) {
-        openAllDayEvent(result.event);
-      } else {
-        openTimedEvent(result.event);
+      if (shouldReopenFormAfterNoopSavedMutation(result)) {
+        setters.setDraft(result.event);
+        actions.openForm();
       }
       return;
     }
@@ -161,6 +160,13 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     </WeekPointerCaptureBoundary>
   );
 };
+
+export const shouldReopenFormAfterNoopSavedMutation = (
+  result: Pick<
+    SavedMutationCommitResult,
+    "hadFormOpenBeforeInteraction" | "hasMoved"
+  >,
+) => !result.hasMoved && result.hadFormOpenBeforeInteraction;
 
 const mapEventsById = (events: Schema_GridEvent[]) => {
   const eventsById = new Map<string, Schema_GridEvent>();
