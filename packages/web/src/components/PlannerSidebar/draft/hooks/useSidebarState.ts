@@ -24,6 +24,9 @@ export const useSidebarState = () => {
   const [draft, setDraft] = useState<Schema_Event | null>(null);
   const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
+  const [blockedSomedayDropColumn, setBlockedSomedayDropColumn] = useState<
+    string | null
+  >(null);
   const [isSomedayFormOpen, setIsSomedayFormOpen] = useState(false);
 
   const isDragging = isDNDing && draft !== null;
@@ -42,6 +45,7 @@ export const useSidebarState = () => {
     somedayIds,
     somedayMonthIds,
     somedayWeekIds,
+    blockedSomedayDropColumn,
     isDrafting,
     isDraftingNew,
     isDraftingExisting,
@@ -51,6 +55,7 @@ export const useSidebarState = () => {
   };
   const setters = {
     setDraft,
+    setBlockedSomedayDropColumn,
     setIsDrafting,
     setIsDraftingExisting,
     setIsSomedayFormOpen,

@@ -26,11 +26,13 @@ export const StyledNewSomedayEvent = styled.div<Props>`
   color: ${({ theme }) => theme.color.text.lighter};
   height: ${SOMEDAY_EVENT_ROW_HEIGHT}px;
   margin: 2px 0;
-  opacity: 1;
+  opacity: ${({ isDragging }) => (isDragging ? 0 : 1)};
   font-size: 12px;
   padding: 4px 8px;
+  pointer-events: ${({ isDragging }) => (isDragging ? "none" : "auto")};
   transition:
     background-color 0.2s,
+    opacity 0.12s,
     box-shadow 0.2s;
   width: 100%;
 

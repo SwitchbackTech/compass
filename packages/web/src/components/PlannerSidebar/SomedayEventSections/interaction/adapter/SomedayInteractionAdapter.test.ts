@@ -91,6 +91,7 @@ const createHarness = () => {
   const onClickSomedayEvent = mock();
   const onCommitSomedayInteraction = mock();
   const onMotionActivation = mock();
+  const onPreviewSomedaySidebarDrop = mock();
   const onRequestWeekNavigation = mock();
 
   sourceButton.type = "button";
@@ -180,6 +181,7 @@ const createHarness = () => {
       onClickSomedayEvent,
       onCommitSomedayInteraction,
       onMotionActivation,
+      onPreviewSomedaySidebarDrop,
       onRequestWeekNavigation,
     }),
   });
@@ -203,6 +205,7 @@ const createHarness = () => {
     onClickSomedayEvent,
     onCommitSomedayInteraction,
     onMotionActivation,
+    onPreviewSomedaySidebarDrop,
     source,
     sourceButton,
     sourceChild,
@@ -330,8 +333,13 @@ describe("SomedayInteractionAdapter", () => {
   });
 
   it("commits a sidebar reorder through the interaction engine", () => {
-    const { adapter, flushFrame, onCommitSomedayInteraction, sourceChild } =
-      createHarness();
+    const {
+      adapter,
+      flushFrame,
+      onCommitSomedayInteraction,
+      onPreviewSomedaySidebarDrop,
+      sourceChild,
+    } = createHarness();
     const secondEvent = document.createElement("div");
 
     setRect(secondEvent, {
@@ -359,6 +367,20 @@ describe("SomedayInteractionAdapter", () => {
       }),
     );
     flushFrame();
+
+    expect(onPreviewSomedaySidebarDrop).toHaveBeenCalledWith({
+      destination: {
+        droppableId: "weekEvents",
+        index: 1,
+      },
+      eventId: "someday-event",
+      source: {
+        droppableId: "weekEvents",
+        index: 0,
+      },
+      type: "sidebarDrop",
+    });
+
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: document.body, x: 40, y: 80 }),
     );
@@ -375,5 +397,52 @@ describe("SomedayInteractionAdapter", () => {
       },
       type: "sidebarDrop",
     });
+  });
+
+  it("clears the sidebar sort preview when the drag moves to the calendar", () => {
+    const {
+      adapter,
+      flushFrame,
+      onPreviewSomedaySidebarDrop,
+      sourceChild,
+      timedColumns,
+    } = createHarness();
+    const secondEvent = document.createElement("div");
+
+    setRect(secondEvent, {
+      height: 32,
+      left: 8,
+      top: 44,
+      width: 220,
+    });
+    document.body.append(secondEvent);
+    somedayEventRegistry.register({
+      category: Categories_Event.SOMEDAY_WEEK,
+      element: secondEvent,
+      eventId: "second-event",
+      index: 1,
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: document.body,
+        x: 40,
+        y: 80,
+      }),
+    );
+    flushFrame();
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    expect(onPreviewSomedaySidebarDrop.mock.calls.at(-1)?.[0]).toBeNull();
   });
 });

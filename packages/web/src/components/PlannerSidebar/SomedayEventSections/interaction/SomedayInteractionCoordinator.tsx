@@ -63,11 +63,25 @@ export const SomedayInteractionCoordinator: FC<Props> = ({
 
   runtimeRef.current = {
     getSomedayEventById: (eventId) => eventsById.get(eventId) ?? null,
+    isSidebarDropAllowed: actions.isSomedaySidebarDropAllowed,
     onCancelInteraction: actions.cancelSomedayInteraction,
     onClickSomedayEvent: actions.onDraft,
     onCommitSomedayInteraction: actions.commitSomedayInteraction,
     onMotionActivation: (target) => {
       actions.startSomedayInteraction(target.event._id);
+    },
+    onPreviewSomedaySidebarDrop: (result) => {
+      if (!result) {
+        actions.previewSomedaySidebarDrop(null);
+        return;
+      }
+
+      if (!actions.isSomedaySidebarDropAllowed(result)) {
+        actions.previewBlockedSomedaySidebarDrop(result);
+        return;
+      }
+
+      actions.previewSomedaySidebarDrop(result);
     },
     onRequestWeekNavigation: (direction) => {
       if (direction === "prev") {

@@ -15,7 +15,11 @@ export const SomedayEvents: FC<Props> = ({ category }) => {
   const isDraftingNew = state.isDraftingNew && draftCategory === category;
 
   return (
-    <div className="w-full overflow-auto">
+    <div
+      className={
+        state.isDragging ? "w-full overflow-hidden" : "w-full overflow-auto"
+      }
+    >
       <div key={`${category}-wrapper`}>
         <SomedayEventsContainer
           category={category}

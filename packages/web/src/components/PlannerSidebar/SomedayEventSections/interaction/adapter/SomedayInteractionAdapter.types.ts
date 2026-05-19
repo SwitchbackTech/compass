@@ -25,6 +25,7 @@ export interface SomedayInteractionAdapterOptions {
 export interface SomedayInteractionRuntime {
   getSomedayEventById(eventId: string): Schema_Event | null;
   isEventPending?: (eventId: string) => boolean;
+  isSidebarDropAllowed?: (result: SomedaySidebarCommitResult) => boolean;
   onCancelInteraction?: () => void;
   onClickSomedayEvent(
     event: Schema_Event,
@@ -32,6 +33,9 @@ export interface SomedayInteractionRuntime {
   ): void;
   onCommitSomedayInteraction(result: SomedayInteractionCommitResult): void;
   onMotionActivation?: (target: SomedayInteractionTarget) => void;
+  onPreviewSomedaySidebarDrop?: (
+    result: SomedaySidebarCommitResult | null,
+  ) => void;
   onRequestWeekNavigation?: (direction: "next" | "prev") => void;
 }
 

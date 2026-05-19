@@ -26,7 +26,7 @@ export class FloatingInteractionOverlay {
     clone.style.contain = "layout paint style";
     clone.style.height = `${rect.height}px`;
     clone.style.left = `${rect.left}px`;
-    clone.style.position = "absolute";
+    clone.style.position = "fixed";
     clone.style.pointerEvents = "none";
     clone.style.top = `${rect.top}px`;
     clone.style.cursor = cursor ?? "";

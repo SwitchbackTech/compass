@@ -5,7 +5,11 @@ import { session } from "@web/common/classes/Session";
 import * as eventRepositoryUtil from "@web/common/repositories/event/event.repository.util";
 import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import { type Schema_OptimisticEvent } from "@web/common/types/web.event.types";
-import { handleError } from "@web/common/utils/event/event.util";
+import {
+  assembleWebEvent,
+  handleError,
+  hasEventDates,
+} from "@web/common/utils/event/event.util";
 import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
 import {
   type Action_ConvertEvent,
@@ -157,6 +161,25 @@ export function* reorderSomedayEvents({
   payload,
 }: Action_Someday_Reorder): Generator {
   try {
+    for (const { _id, order } of payload) {
+      const event = yield* getEventById(_id);
+
+      if (!event) {
+        continue;
+      }
+
+      if (!hasEventDates(event)) {
+        continue;
+      }
+
+      yield put(
+        eventsEntitiesSlice.actions.edit({
+          _id,
+          event: assembleWebEvent({ ...event, order }),
+        }),
+      );
+    }
+
     const sessionExists = (yield call(() =>
       session.doesSessionExist(),
     )) as boolean;

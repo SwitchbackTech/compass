@@ -49,6 +49,7 @@ import {
   type SomedayInteractionRuntime,
   type SomedayInteractionTarget,
   type SomedayInteractionVisual,
+  type SomedaySidebarCommitResult,
   type SomedaySidebarDrop,
   type SomedayTimedDrop,
 } from "./SomedayInteractionAdapter.types";
@@ -57,6 +58,7 @@ export type {
   SomedayInteractionAdapter,
   SomedayInteractionCommitResult,
   SomedayInteractionRuntime,
+  SomedaySidebarCommitResult,
 } from "./SomedayInteractionAdapter.types";
 
 const ONE_HOUR_MINUTES = 60;
@@ -83,6 +85,7 @@ export const createSomedayInteractionAdapter = ({
   const edgeNavigation = createWeekEdgeNavigationController();
   let isLayoutRebuildPending = false;
   let allDayLayout: WeekLayoutCache | null = null;
+  let lastSidebarPreviewKey: string | null = null;
   let timedLayout: WeekLayoutCache | null = null;
 
   const engine: CalendarInteractionEngine<
@@ -249,6 +252,7 @@ export const createSomedayInteractionAdapter = ({
           timestamp,
         );
         const nextDrop = resolveDrop(pointer, edgeNavigationUpdate.visual);
+        previewSidebarDrop(target, edgeNavigationUpdate.visual, nextDrop);
         const overlayRect = getCalendarOverlayRect(nextDrop);
         const nextVisual = {
           ...edgeNavigationUpdate.visual,
@@ -429,18 +433,7 @@ export const createSomedayInteractionAdapter = ({
     }
 
     if (drop.type === "sidebar") {
-      return {
-        destination: {
-          droppableId: getColumnName(drop.category),
-          index: drop.index,
-        },
-        eventId: target.event._id,
-        source: {
-          droppableId: getColumnName(target.category),
-          index: visual.sourceIndex,
-        },
-        type: "sidebarDrop",
-      };
+      return createSidebarCommitResult(target, visual, drop);
     }
 
     if (drop.type === "allDay") {
@@ -453,7 +446,7 @@ export const createSomedayInteractionAdapter = ({
           endDate: start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
           startDate: start.format(YEAR_MONTH_DAY_FORMAT),
         },
-        eventId: target.event._id,
+        eventId: target.event._id!,
         isAllDay: true,
         type: "schedule",
       };
@@ -469,10 +462,62 @@ export const createSomedayInteractionAdapter = ({
         endDate: start.add(ONE_HOUR_MINUTES, "minutes").format(),
         startDate: start.format(),
       },
-      eventId: target.event._id,
+      eventId: target.event._id!,
       isAllDay: false,
       type: "schedule",
     };
+  }
+
+  function createSidebarCommitResult(
+    target: SomedayInteractionTarget,
+    visual: SomedayInteractionVisual,
+    drop: SomedaySidebarDrop,
+  ): SomedaySidebarCommitResult {
+    return {
+      destination: {
+        droppableId: getColumnName(drop.category),
+        index: drop.index,
+      },
+      eventId: target.event._id!,
+      source: {
+        droppableId: getColumnName(target.category),
+        index: visual.sourceIndex,
+      },
+      type: "sidebarDrop",
+    };
+  }
+
+  function previewSidebarDrop(
+    target: SomedayInteractionTarget,
+    visual: SomedayInteractionVisual,
+    drop: SomedayInteractionDrop | null,
+  ) {
+    const currentRuntime = runtime();
+
+    if (drop?.type !== "sidebar" || !target.event._id) {
+      clearSidebarPreview(currentRuntime);
+      return;
+    }
+
+    const preview = createSidebarCommitResult(target, visual, drop);
+    const isAllowed = currentRuntime.isSidebarDropAllowed?.(preview) ?? true;
+    const previewKey = `${isAllowed ? "valid" : "blocked"}:${getSidebarPreviewKey(preview)}`;
+
+    if (previewKey === lastSidebarPreviewKey) {
+      return;
+    }
+
+    lastSidebarPreviewKey = previewKey;
+    currentRuntime.onPreviewSomedaySidebarDrop?.(preview);
+  }
+
+  function clearSidebarPreview(currentRuntime = runtime()) {
+    if (lastSidebarPreviewKey === null) {
+      return;
+    }
+
+    lastSidebarPreviewKey = null;
+    currentRuntime.onPreviewSomedaySidebarDrop?.(null);
   }
 
   function updateEdgeNavigation(
@@ -539,6 +584,7 @@ export const createSomedayInteractionAdapter = ({
   function clearInteractionState() {
     allDayLayout = null;
     timedLayout = null;
+    lastSidebarPreviewKey = null;
     edgeNavigation.reset();
     resetWeekInteractionEdgeNavigationState();
     setWeekInteractionMotionActive(false);
@@ -692,6 +738,13 @@ const isPointInRect = (
 
 const getColumnName = (category: SomedayInteractionCategory) =>
   category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
+
+const getSidebarPreviewKey = ({
+  destination,
+  eventId,
+  source,
+}: SomedaySidebarCommitResult) =>
+  `${eventId}:${source.droppableId}:${source.index}->${destination.droppableId}:${destination.index}`;
 
 const getWeekOffsetDaysDelta = (side: WeekEdgeNavigationSide) =>
   side === "next" ? 7 : -7;

@@ -1,5 +1,9 @@
 import type React from "react";
 import { type FC } from "react";
+import {
+  SOMEDAY_MONTHLY_LIMIT,
+  SOMEDAY_WEEKLY_LIMIT,
+} from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import {
   COLUMN_MONTH,
@@ -26,6 +30,22 @@ const getColName = (category: SomedayInteractionCategory) => {
     ? COLUMN_WEEK
     : COLUMN_MONTH;
 };
+
+const SOMEDAY_EVENT_ROW_SLOT_HEIGHT = 36;
+const SOMEDAY_DROP_ZONE_BASE_HEIGHT = 44;
+
+const getSomedayEventLimit = (category: SomedayInteractionCategory) =>
+  category === Categories_Event.SOMEDAY_WEEK
+    ? SOMEDAY_WEEKLY_LIMIT
+    : SOMEDAY_MONTHLY_LIMIT;
+
+const getActiveDropZoneHeight = (
+  eventCount: number,
+  category: SomedayInteractionCategory,
+) =>
+  SOMEDAY_DROP_ZONE_BASE_HEIGHT +
+  Math.min(eventCount, getSomedayEventLimit(category)) *
+    SOMEDAY_EVENT_ROW_SLOT_HEIGHT;
 
 const getSomedayEvents = (
   category: SomedayInteractionCategory,
@@ -61,10 +81,17 @@ export const SomedayEventsContainer: FC<Props> = ({
   const events = getSomedayEvents(category, state.somedayEvents);
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;
+  const isBlockedDropTarget = state.blockedSomedayDropColumn === colName;
   const addLabel =
     category === Categories_Event.SOMEDAY_MONTH
       ? "Add to month"
       : "Add to week";
+  const activeDropZoneStyle: React.CSSProperties | undefined = state.isDragging
+    ? {
+        boxSizing: "border-box",
+        height: getActiveDropZoneHeight(events.length, category),
+      }
+    : undefined;
 
   // Render add someday event tooltip
   const renderWithTooltip = (children: React.ReactNode) => {
@@ -85,6 +112,9 @@ export const SomedayEventsContainer: FC<Props> = ({
       id={colName}
       innerRef={dropTargetRef}
       isActive={state.isDragging && !state.isSomedayFormOpen}
+      isInvalid={isBlockedDropTarget}
+      className={state.isDragging ? "overflow-hidden" : undefined}
+      style={activeDropZoneStyle}
       {...dropTargetAttributes}
     >
       <SomedayEventItems
