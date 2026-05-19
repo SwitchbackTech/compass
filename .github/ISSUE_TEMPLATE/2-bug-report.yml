@@ -2,6 +2,7 @@ name: Bug Report
 description: You found something wrong
 labels: [ bug ]
 projects: [ SwitchbackTech/4 ]
+type: bug
 
 body:
   - type: markdown
@@ -45,11 +46,11 @@ body:
     attributes:
       label: Possible Solution
       description: Suggest a reason for the bug or how to fix it.
-      placeholder: If you already know how we could solve this, describe it here...
+      placeholder: If you know how we could solve this, describe it here...
 
   - type: textarea
     attributes:
       label: Context
-      description: How has this issue affected you as a user? What were you trying to
-        accomplish? Any workarounds?
+      description: How has this issue affected you? What were you trying to
+        accomplish?
       placeholder: Describe the context...
