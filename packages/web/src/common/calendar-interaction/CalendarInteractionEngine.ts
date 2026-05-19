@@ -299,7 +299,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     mountOverlay(overlayMount);
     preparedSource = prepareSourceElementForInteraction(
       pendingSession.sourceElement,
-      resolvedOptions.adapter.getSourceElementTreatment?.(
+      resolvedOptions.adapter.getSourceElementOverlayMode?.(
         pendingSession.target,
       ),
     );

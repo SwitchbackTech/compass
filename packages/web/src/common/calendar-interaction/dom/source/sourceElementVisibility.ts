@@ -1,40 +1,62 @@
-export type SourceElementInteractionTreatment = "hidden" | "placeholder";
+import { type SourceElementOverlayMode } from "../../CalendarInteractionAdapter";
 
-export interface PreparedSourceElement {
+interface HiddenSourceElement {
   element: HTMLElement;
-  opacity: string;
-  pointerEvents: string;
+  overlayMode: "hide-source";
   visibility: string;
 }
 
+interface DimmedSourceElement {
+  element: HTMLElement;
+  opacity: string;
+  overlayMode: "dim-source";
+  pointerEvents: string;
+}
+
+export type PreparedSourceElement = HiddenSourceElement | DimmedSourceElement;
+
+const SOURCE_ELEMENT_INTERACTION_ATTRIBUTE = "data-calendar-interaction-source";
+
 export const prepareSourceElementForInteraction = (
   element: HTMLElement,
-  treatment: SourceElementInteractionTreatment = "hidden",
+  overlayMode: SourceElementOverlayMode = "hide-source",
 ): PreparedSourceElement => {
-  const preparedSource = {
-    element,
-    opacity: element.style.opacity,
-    pointerEvents: element.style.pointerEvents,
-    visibility: element.style.visibility,
-  };
+  element.setAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE, "true");
 
-  element.setAttribute("data-calendar-interaction-placeholder", "true");
+  if (overlayMode === "dim-source") {
+    const source = {
+      element,
+      opacity: element.style.opacity,
+      overlayMode,
+      pointerEvents: element.style.pointerEvents,
+    };
 
-  if (treatment === "placeholder") {
     element.style.opacity = "0.5";
     element.style.pointerEvents = "none";
 
-    return preparedSource;
+    return source;
   }
+
+  const source = {
+    element,
+    overlayMode,
+    visibility: element.style.visibility,
+  };
 
   element.style.visibility = "hidden";
 
-  return preparedSource;
+  return source;
 };
 
 export const restoreSourceElement = (source: PreparedSourceElement) => {
-  source.element.removeAttribute("data-calendar-interaction-placeholder");
-  source.element.style.opacity = source.opacity;
-  source.element.style.pointerEvents = source.pointerEvents;
+  source.element.removeAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
+
+  if (source.overlayMode === "dim-source") {
+    source.element.style.opacity = source.opacity;
+    source.element.style.pointerEvents = source.pointerEvents;
+
+    return;
+  }
+
   source.element.style.visibility = source.visibility;
 };

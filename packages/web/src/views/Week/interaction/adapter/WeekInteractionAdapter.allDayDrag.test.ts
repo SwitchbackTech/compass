@@ -84,6 +84,22 @@ const makePointerEvent = (
   return event;
 };
 
+const SOURCE_ELEMENT_INTERACTION_ATTRIBUTE = "data-calendar-interaction-source";
+
+const expectSourceDimmed = (source: HTMLElement) => {
+  expect(source.style.visibility).toBe("visible");
+  expect(source.style.opacity).toBe("0.5");
+  expect(source.style.pointerEvents).toBe("none");
+  expect(source).toHaveAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
+};
+
+const expectSourceRestored = (source: HTMLElement) => {
+  expect(source.style.visibility).toBe("visible");
+  expect(source.style.opacity).toBe("");
+  expect(source.style.pointerEvents).toBe("");
+  expect(source).not.toHaveAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
+};
+
 const createHarness = ({
   eventOverrides,
   isPending = false,
@@ -335,9 +351,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
       makePointerEvent("pointermove", { target: child, x: 430, y: 30 }),
     );
 
-    expect(source.style.visibility).toBe("visible");
-    expect(source.style.opacity).toBe("0.5");
-    expect(source).toHaveAttribute("data-calendar-interaction-placeholder");
+    expectSourceDimmed(source);
     expect(onMotionActivation).toHaveBeenCalled();
 
     flushFrame();
@@ -365,9 +379,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
         type: "allDayDragEnd",
       }),
     );
-    expect(source.style.visibility).toBe("visible");
-    expect(source.style.opacity).toBe("");
-    expect(source).not.toHaveAttribute("data-calendar-interaction-placeholder");
+    expectSourceRestored(source);
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();
@@ -422,9 +434,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
     );
     flushFrame();
 
-    expect(source.style.visibility).toBe("visible");
-    expect(source.style.opacity).toBe("0.5");
-    expect(source).toHaveAttribute("data-calendar-interaction-placeholder");
+    expectSourceDimmed(source);
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeTruthy();
@@ -433,9 +443,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
       makePointerEvent("pointercancel", { target: child, x: 430, y: 30 }),
     );
 
-    expect(source.style.visibility).toBe("visible");
-    expect(source.style.opacity).toBe("");
-    expect(source).not.toHaveAttribute("data-calendar-interaction-placeholder");
+    expectSourceRestored(source);
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();

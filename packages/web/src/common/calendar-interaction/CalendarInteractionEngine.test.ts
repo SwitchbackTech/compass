@@ -1,11 +1,11 @@
 import {
   type CalendarInteractionAdapter,
   type FloatingInteractionOverlayMount,
+  type SourceElementOverlayMode,
 } from "./CalendarInteractionAdapter";
 import { createCalendarInteractionEngine } from "./CalendarInteractionEngine";
 import { createInteractionClone } from "./dom/clone/createInteractionClone";
 import { FloatingInteractionOverlay } from "./dom/overlay/FloatingInteractionOverlay";
-import { type SourceElementInteractionTreatment } from "./dom/source/sourceElementVisibility";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 interface TestTarget {
@@ -42,10 +42,12 @@ const makePointerEvent = (
     pointerId,
   });
 
+const SOURCE_ELEMENT_INTERACTION_ATTRIBUTE = "data-calendar-interaction-source";
+
 const createHarness = ({
-  sourceTreatment,
+  sourceOverlayMode,
 }: {
-  sourceTreatment?: SourceElementInteractionTreatment;
+  sourceOverlayMode?: SourceElementOverlayMode;
 } = {}) => {
   document.body.innerHTML = "";
   document.body.style.cursor = "";
@@ -101,8 +103,8 @@ const createHarness = ({
       },
     ),
     getSourceElement: mock((resolvedTarget) => resolvedTarget.source),
-    ...(sourceTreatment
-      ? { getSourceElementTreatment: mock(() => sourceTreatment) }
+    ...(sourceOverlayMode
+      ? { getSourceElementOverlayMode: mock(() => sourceOverlayMode) }
       : {}),
     getTarget: mock(() => target),
     updateVisual: mock(({ pointer, visual }) => ({
@@ -255,9 +257,9 @@ describe("CalendarInteractionEngine", () => {
     });
   });
 
-  it("can keep the source visible as a placeholder during motion", () => {
+  it("can keep the source visible as a dimmed placeholder during motion", () => {
     const { engine, flushFrame, source } = createHarness({
-      sourceTreatment: "placeholder",
+      sourceOverlayMode: "dim-source",
     });
 
     engine.handlePointerDown(makePointerEvent("pointerdown", { x: 10, y: 10 }));
@@ -266,7 +268,7 @@ describe("CalendarInteractionEngine", () => {
     expect(source.style.visibility).toBe("visible");
     expect(source.style.opacity).toBe("0.5");
     expect(source.style.pointerEvents).toBe("none");
-    expect(source).toHaveAttribute("data-calendar-interaction-placeholder");
+    expect(source).toHaveAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
 
     flushFrame();
     engine.handlePointerUp(makePointerEvent("pointerup"));
@@ -274,7 +276,24 @@ describe("CalendarInteractionEngine", () => {
     expect(source.style.visibility).toBe("visible");
     expect(source.style.opacity).toBe("");
     expect(source.style.pointerEvents).toBe("");
-    expect(source).not.toHaveAttribute("data-calendar-interaction-placeholder");
+    expect(source).not.toHaveAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
+  });
+
+  it("restores only the styles changed by the source overlay mode", () => {
+    const { engine, flushFrame, source } = createHarness();
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 10, y: 10 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 36, y: 10 }));
+
+    source.style.opacity = "0.25";
+    source.style.pointerEvents = "auto";
+
+    flushFrame();
+    engine.handlePointerUp(makePointerEvent("pointerup"));
+
+    expect(source.style.visibility).toBe("visible");
+    expect(source.style.opacity).toBe("0.25");
+    expect(source.style.pointerEvents).toBe("auto");
   });
 
   it("commits the current visual and restores the source on pointer up", () => {
