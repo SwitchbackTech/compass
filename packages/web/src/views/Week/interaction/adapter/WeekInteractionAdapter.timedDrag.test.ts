@@ -3,12 +3,12 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { weekEventRegistry } from "@web/views/Week/interaction/geometry/weekEventRegistry";
-import { createWeekInteractionAdapter } from "@web/views/Week/interaction/WeekInteractionAdapter";
+import { createWeekInteractionAdapter } from "@web/views/Week/interaction/adapter/WeekInteractionAdapter";
+import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
 import {
   getWeekInteractionEdgeNavigationState,
   resetWeekInteractionEdgeNavigationState,
-} from "@web/views/Week/interaction/weekInteractionEdgeNavigationState";
+} from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 const createTimedEvent = (
@@ -171,7 +171,6 @@ const createHarness = ({
         return timer;
       },
     },
-    mode: "active",
     runtime: () => ({
       getTimedEventById: (eventId) => (eventId === event._id ? event : null),
       isEventPending: () => isPending,

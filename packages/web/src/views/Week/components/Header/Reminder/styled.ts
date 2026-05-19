@@ -78,28 +78,6 @@ export const StyledReminderPlaceholder = styled.div`
   }
 `;
 
-export const _StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
-  position: absolute;
-  bottom: 0;
-  left: -5px;
-  width: calc(100% + 10px);
-  height: 20px;
-  pointer-events: none;
-  opacity: ${({ isVisible }) => (isVisible ? 1 : 0)};
-
-  path {
-    fill: none;
-    stroke: ${({ theme }) => theme.color.border.primary};
-    stroke-width: 2.5;
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-dasharray: 1000;
-    stroke-dashoffset: ${({ isVisible }) => (isVisible ? 0 : 1000)};
-    animation: ${({ isVisible }) =>
-      isVisible ? drawHandwrittenUnderline : "none"}
-      0.8s ease-out forwards;
-  }
-`;
 export const StyledPlaceholderUnderline = styled.svg<{ isVisible: boolean }>`
   position: absolute;
   bottom: 0;

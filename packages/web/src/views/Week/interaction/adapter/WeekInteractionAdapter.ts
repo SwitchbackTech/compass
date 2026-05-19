@@ -2,181 +2,75 @@ import { type CalendarInteractionAdapter } from "@web/common/calendar-interactio
 import {
   type CalendarInteractionCancellationTargets,
   type CalendarInteractionEngine,
-  type CalendarInteractionEngineSchedulerOptions,
   createCalendarInteractionEngine,
 } from "@web/common/calendar-interaction/CalendarInteractionEngine";
+import { isEligibleCalendarInteractionPointerDown } from "@web/common/calendar-interaction/calendarInteractionPointer";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import {
-  allDayDragVisualToGridEvent,
-  allDayResizeVisualToGridEvent,
-  hasAllDayDragVisualMoved,
-  hasAllDayResizeVisualChanged,
-} from "./commit/allDayVisualToGridEvent";
-import {
-  hasTimedDragVisualMoved,
-  hasTimedResizeVisualMoved,
-  timedDragVisualToGridEvent,
-  timedResizeVisualToGridEvent,
-} from "./commit/timedDragVisualToGridEvent";
-import { createWeekInteractionEventOverlayMount } from "./dom/cloneWeekInteractionEventElement";
-import {
   type WeekInteractionEventType,
-  type WeekInteractionRegisteredTarget,
   weekEventRegistry,
-} from "./geometry/weekEventRegistry";
-import {
-  buildAllDayWeekLayoutCache,
-  buildTimedWeekLayoutCache,
-  getNearestDayColumn,
-  type WeekEdgeNavigationCache,
-  type WeekLayoutCache,
-} from "./geometry/weekLayoutCache";
-import {
-  createAllDayDragVisual,
-  updateAllDayDragVisual,
-} from "./math/allDayDrag";
-import {
-  createAllDayResizeVisual,
-  updateAllDayResizeVisual,
-} from "./math/allDayResize";
-import { getSmartScrollFrame } from "./math/smartScroll";
-import { createTimedDragVisual, updateTimedDragVisual } from "./math/timedDrag";
-import {
-  createTimedResizeVisual,
-  updateTimedResizeVisual,
-} from "./math/timedResize";
-import { type AllDayDragVisual } from "./model/AllDayDragVisual";
-import {
-  type AllDayResizeEdge,
-  type AllDayResizeVisual,
-} from "./model/AllDayResizeVisual";
-import {
-  type TimedDragVisual,
-  type VisualPoint,
-  type VisualRect,
-} from "./model/TimedDragVisual";
-import {
-  type TimedResizeEdge,
-  type TimedResizeVisual,
-} from "./model/TimedResizeVisual";
+} from "../registry/weekEventRegistry";
 import {
   resetWeekInteractionEdgeNavigationState,
   setWeekInteractionEdgeNavigationState,
-} from "./weekInteractionEdgeNavigationState";
-import { setWeekInteractionMotionActive } from "./weekInteractionMotionState";
+} from "../state/weekInteractionEdgeNavigationState";
+import { setWeekInteractionMotionActive } from "../state/weekInteractionMotionState";
+import { createWeekInteractionEventOverlayMount } from "./dom/cloneWeekInteractionEventElement";
+import {
+  buildAllDayWeekLayoutCache,
+  buildTimedWeekLayoutCache,
+  type WeekLayoutCache,
+  type WeekLayoutCacheSources,
+} from "./geometry/weekLayoutCache";
+import {
+  commitAllDayDragInteraction,
+  createAllDayDragInteractionVisual,
+  updateAllDayDragInteractionVisual,
+} from "./interactions/allDayEventDragInteraction";
+import {
+  commitAllDayResizeInteraction,
+  createAllDayResizeInteractionVisual,
+  updateAllDayResizeInteractionVisual,
+} from "./interactions/allDayEventResizeInteraction";
+import {
+  commitTimedDragInteraction,
+  createTimedDragInteractionVisual,
+  updateTimedDragInteractionVisual,
+} from "./interactions/timedEventDragInteraction";
+import {
+  commitTimedResizeInteraction,
+  createTimedResizeInteractionVisual,
+  updateTimedResizeInteractionVisual,
+} from "./interactions/timedEventResizeInteraction";
+import { getSmartScrollFrame } from "./math/smartScroll";
+import { type AllDayResizeEdge } from "./model/AllDayResizeVisual";
+import { type VisualPoint, type VisualRect } from "./model/TimedDragVisual";
+import {
+  type WeekAllDayDragTarget,
+  type WeekAllDayResizeTarget,
+  type WeekEdgeNavigableVisual,
+  type WeekInteractionAdapter,
+  type WeekInteractionAdapterOptions,
+  type WeekInteractionCommitResult,
+  type WeekInteractionPointerOwnership,
+  type WeekInteractionRuntime,
+  type WeekInteractionTarget,
+  type WeekInteractionVisual,
+  type WeekResolvedEventTarget,
+  type WeekTimedDragTarget,
+  type WeekTimedResizeTarget,
+} from "./WeekInteractionAdapter.types";
+import { createWeekEdgeNavigationController } from "./weekEdgeNavigation";
 
-export type WeekInteractionAdapterMode = "active" | "passive";
-
-export interface WeekInteractionPointerOwnership {
-  reason: string;
-  shouldOwn: boolean;
-}
-
-interface WeekInteractionAdapterOptions {
-  engineOptions?: CalendarInteractionEngineSchedulerOptions;
-  mode?: WeekInteractionAdapterMode;
-  runtime?: () => WeekInteractionRuntime;
-}
-
-export interface WeekInteractionRuntime {
-  getAllDayEventById?: (eventId: string) => Schema_GridEvent | null;
-  getTimedEventById(eventId: string): Schema_GridEvent | null;
-  isEventPending: (eventId: string) => boolean;
-  isFormOpen?: () => boolean;
-  onClickAllDayEvent?: (event: Schema_GridEvent) => void;
-  onClickTimedEvent: (event: Schema_GridEvent) => void;
-  onCommitAllDayDrag?: (result: WeekAllDayDragCommitResult) => void;
-  onCommitAllDayResize?: (result: WeekAllDayResizeCommitResult) => void;
-  onCommitTimedDrag: (result: WeekTimedDragCommitResult) => void;
-  onCommitTimedResize?: (result: WeekTimedResizeCommitResult) => void;
-  onMotionActivation?: (target: WeekInteractionTarget) => void;
-  onRequestWeekNavigation?: (direction: "next" | "prev") => void;
-}
-
-export interface WeekAllDayDragCommitResult {
-  event: Schema_GridEvent;
-  eventId: string;
-  hadFormOpenBeforeInteraction: boolean;
-  hasMoved: boolean;
-  type: "allDayDragEnd";
-}
-
-export interface WeekAllDayDragTarget {
-  event: Schema_GridEvent;
-  hadFormOpenBeforeInteraction: boolean;
-  registered: WeekInteractionRegisteredTarget;
-  type: "allDayDrag";
-}
-
-export interface WeekAllDayResizeCommitResult {
-  event: Schema_GridEvent;
-  eventId: string;
-  hadFormOpenBeforeInteraction: boolean;
-  hasMoved: boolean;
-  type: "allDayResizeEnd";
-}
-
-export interface WeekAllDayResizeTarget {
-  edge: AllDayResizeEdge;
-  event: Schema_GridEvent;
-  hadFormOpenBeforeInteraction: boolean;
-  registered: WeekInteractionRegisteredTarget;
-  type: "allDayResize";
-}
-
-export interface WeekTimedDragCommitResult {
-  event: Schema_GridEvent;
-  eventId: string;
-  hadFormOpenBeforeInteraction: boolean;
-  hasMoved: boolean;
-  type: "timedDragEnd";
-}
-
-export interface WeekTimedDragTarget {
-  event: Schema_GridEvent;
-  hadFormOpenBeforeInteraction: boolean;
-  registered: WeekInteractionRegisteredTarget;
-  type: "timedDrag";
-}
-
-export interface WeekTimedResizeCommitResult {
-  event: Schema_GridEvent;
-  eventId: string;
-  hadFormOpenBeforeInteraction: boolean;
-  hasMoved: boolean;
-  type: "timedResizeEnd";
-}
-
-export interface WeekTimedResizeTarget {
-  edge: TimedResizeEdge;
-  event: Schema_GridEvent;
-  hadFormOpenBeforeInteraction: boolean;
-  registered: WeekInteractionRegisteredTarget;
-  type: "timedResize";
-}
-
-type WeekInteractionTarget =
-  | WeekAllDayDragTarget
-  | WeekAllDayResizeTarget
-  | WeekTimedDragTarget
-  | WeekTimedResizeTarget;
-type WeekInteractionVisual =
-  | AllDayDragVisual
-  | AllDayResizeVisual
-  | TimedDragVisual
-  | TimedResizeVisual;
-type WeekInteractionCommitResult =
-  | WeekAllDayDragCommitResult
-  | WeekAllDayResizeCommitResult
-  | WeekTimedDragCommitResult
-  | WeekTimedResizeCommitResult;
-type WeekEdgeNavigableVisual = AllDayDragVisual | TimedDragVisual;
-type WeekResolvedEventTarget = {
-  event: Schema_GridEvent;
-  hadFormOpenBeforeInteraction: boolean;
-  registered: WeekInteractionRegisteredTarget;
-};
+export type {
+  WeekAllDayDragCommitResult,
+  WeekAllDayResizeCommitResult,
+  WeekInteractionAdapter,
+  WeekInteractionRuntime,
+  WeekTimedDragCommitResult,
+  WeekTimedResizeCommitResult,
+} from "./WeekInteractionAdapter.types";
 
 const inertRuntime: WeekInteractionRuntime = {
   getTimedEventById: () => null,
@@ -185,7 +79,6 @@ const inertRuntime: WeekInteractionRuntime = {
   onCommitTimedDrag: () => undefined,
 };
 
-const EDGE_NAVIGATION_DWELL_MS = 500;
 const WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE = "data-week-event-resize-handle";
 const activeEdgeNavigationIndicatorState = {
   currentEdge: null,
@@ -194,29 +87,12 @@ const activeEdgeNavigationIndicatorState = {
   progress: 0,
 } as const;
 
-export interface WeekInteractionAdapter {
-  cancel(): void;
-  connectCancellationEvents(
-    targets?: CalendarInteractionCancellationTargets,
-  ): () => void;
-  handlePointerCancel(event: PointerEvent): boolean;
-  handlePointerDown(event: PointerEvent): WeekInteractionPointerOwnership;
-  handlePointerMove(event: PointerEvent): boolean;
-  handlePointerUp(event: PointerEvent): boolean;
-  ownsPointer(event: Pick<PointerEvent, "pointerId">): boolean;
-  rebuildLayoutAfterNavigation(): void;
-}
-
 export const createWeekInteractionAdapter = ({
   engineOptions,
-  mode = "passive",
+  getLayoutSources = () => ({}),
   runtime = () => inertRuntime,
 }: WeekInteractionAdapterOptions = {}): WeekInteractionAdapter => {
-  let edgeNavigation: {
-    enteredAt: number | null;
-    requested: boolean;
-    side: "next" | "prev" | null;
-  } = { enteredAt: null, requested: false, side: null };
+  const edgeNavigation = createWeekEdgeNavigationController();
   let isLayoutRebuildPending = false;
   let layout: WeekLayoutCache | null = null;
   let scrollTop: number | null = null;
@@ -253,13 +129,6 @@ export const createWeekInteractionAdapter = ({
   function handlePointerDown(
     event: PointerEvent,
   ): WeekInteractionPointerOwnership {
-    if (mode === "passive") {
-      return {
-        reason: "passive-week-adapter",
-        shouldOwn: false,
-      };
-    }
-
     if (!isEligibleWeekPointerDown(event)) {
       return {
         reason: "ineligible-week-pointer",
@@ -368,53 +237,19 @@ export const createWeekInteractionAdapter = ({
         let result: WeekInteractionCommitResult;
 
         if (visual.type === "allDayDrag" && target.type === "allDayDrag") {
-          const movedEvent = allDayDragVisualToGridEvent(target.event, visual);
-          result = {
-            event: movedEvent,
-            eventId: target.event._id!,
-            hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-            hasMoved: hasAllDayDragVisualMoved(visual),
-            type: "allDayDragEnd",
-          };
+          result = commitAllDayDragInteraction(target, visual);
         } else if (
           visual.type === "allDayResize" &&
           target.type === "allDayResize"
         ) {
-          const resizedEvent = allDayResizeVisualToGridEvent(
-            target.event,
-            visual,
-          );
-          result = {
-            event: resizedEvent,
-            eventId: target.event._id!,
-            hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-            hasMoved: hasAllDayResizeVisualChanged(visual),
-            type: "allDayResizeEnd",
-          };
+          result = commitAllDayResizeInteraction(target, visual);
         } else if (
           visual.type === "timedResize" &&
           target.type === "timedResize"
         ) {
-          const resizedEvent = timedResizeVisualToGridEvent(
-            target.event,
-            visual,
-          );
-          result = {
-            event: resizedEvent,
-            eventId: target.event._id!,
-            hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-            hasMoved: hasTimedResizeVisualMoved(visual),
-            type: "timedResizeEnd",
-          };
+          result = commitTimedResizeInteraction(target, visual);
         } else if (visual.type === "timedDrag" && target.type === "timedDrag") {
-          const movedEvent = timedDragVisualToGridEvent(target.event, visual);
-          result = {
-            event: movedEvent,
-            eventId: target.event._id!,
-            hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
-            hasMoved: hasTimedDragVisualMoved(visual),
-            type: "timedDragEnd",
-          };
+          result = commitTimedDragInteraction(target, visual);
         } else {
           throw new Error("Mismatched Week interaction target");
         }
@@ -426,7 +261,10 @@ export const createWeekInteractionAdapter = ({
         return result;
       },
       createVisual: ({ pointerStart, sourceElement, target }) => {
-        const layout = buildWeekLayoutCacheForTarget(target);
+        const layout = buildWeekLayoutCacheForTarget(
+          target,
+          getLayoutSources(),
+        );
 
         if (!layout) {
           return null;
@@ -444,47 +282,35 @@ export const createWeekInteractionAdapter = ({
         runtime().onMotionActivation?.(target);
 
         if (target.type === "allDayDrag") {
-          const visibleRange = getVisibleAllDayRange(layout, sourceRect);
-
-          return createAllDayDragVisual({
-            dayIndex: visibleRange.startDayIndex,
-            eventId: target.event._id!,
+          return createAllDayDragInteractionVisual({
+            layout,
             pointerStart,
             sourceRect,
+            target,
           });
         }
 
         if (target.type === "allDayResize") {
-          const visibleRange = getVisibleAllDayRange(layout, sourceRect);
-
-          return createAllDayResizeVisual({
-            edge: target.edge,
-            endDayIndex: visibleRange.endDayIndex,
-            eventId: target.event._id!,
+          return createAllDayResizeInteractionVisual({
+            layout,
             pointerStart,
             sourceRect,
-            startDayIndex: visibleRange.startDayIndex,
+            target,
           });
         }
 
         if (target.type === "timedResize") {
-          return createTimedResizeVisual({
-            edge: target.edge,
-            endMinutes: getLocalMinutes(target.event.endDate),
-            eventId: target.event._id!,
+          return createTimedResizeInteractionVisual({
             pointerStart,
             sourceRect,
-            startMinutes: getLocalMinutes(target.event.startDate),
+            target,
           });
         }
 
-        return createTimedDragVisual({
-          dayIndex: getLocalDayIndex(target.event.startDate),
-          endMinutes: getLocalMinutes(target.event.endDate),
-          eventId: target.event._id!,
+        return createTimedDragInteractionVisual({
           pointerStart,
           sourceRect,
-          startMinutes: getLocalMinutes(target.event.startDate),
+          target,
         });
       },
       getOverlayMount: ({ sourceElement, target }) =>
@@ -519,9 +345,10 @@ export const createWeekInteractionAdapter = ({
             pointer,
             timestamp,
           );
-          const nextVisual = updateAllDayDragVisual(nextEdgeNavigation.visual, {
+          const nextVisual = updateAllDayDragInteractionVisual({
             layout,
             pointer,
+            visual: nextEdgeNavigation.visual,
           });
 
           return {
@@ -534,9 +361,10 @@ export const createWeekInteractionAdapter = ({
         }
 
         if (visual.type === "allDayResize") {
-          const nextVisual = updateAllDayResizeVisual(visual, {
+          const nextVisual = updateAllDayResizeInteractionVisual({
             layout,
             pointer,
+            visual,
           });
 
           return {
@@ -550,22 +378,24 @@ export const createWeekInteractionAdapter = ({
         }
 
         if (visual.type === "timedResize") {
-          const nextVisual = updateTimedResizeVisual(visual, {
+          if (target.type !== "timedResize") {
+            throw new Error("Mismatched Week interaction target");
+          }
+
+          const next = updateTimedResizeInteractionVisual({
             layout,
             pointer,
+            target,
+            visual,
           });
-          const nextEvent = timedResizeVisualToGridEvent(
-            target.event,
-            nextVisual,
-          );
 
           return {
             overlay: {
-              height: nextVisual.height,
-              mutate: (node) => updateOverlayTimeLabel(node, nextEvent),
-              transform: nextVisual.transform,
+              height: next.visual.height,
+              mutate: (node) => updateOverlayTimeLabel(node, next.event),
+              transform: next.visual.transform,
             },
-            visual: nextVisual,
+            visual: next.visual,
           };
         }
 
@@ -579,21 +409,22 @@ export const createWeekInteractionAdapter = ({
           pointer,
           timestamp,
         );
-        const nextVisual = updateTimedDragVisual(nextEdgeNavigation.visual, {
+        const next = updateTimedDragInteractionVisual({
           layout,
           pointer,
           scrollDeltaPx: smartScroll.scrollDeltaPx,
+          target,
+          visual: nextEdgeNavigation.visual,
         });
-        const nextEvent = timedDragVisualToGridEvent(target.event, nextVisual);
 
         return {
           overlay: {
-            mutate: (node) => updateOverlayTimeLabel(node, nextEvent),
-            transform: nextVisual.transform,
+            mutate: (node) => updateOverlayTimeLabel(node, next.event),
+            transform: next.visual.transform,
           },
           shouldContinue:
             smartScroll.isScrolling || nextEdgeNavigation.isDwellActive,
-          visual: nextVisual,
+          visual: next.visual,
         };
       },
     };
@@ -626,10 +457,6 @@ export const createWeekInteractionAdapter = ({
   function getAllDayDragTarget(
     event: PointerEvent,
   ): WeekAllDayDragTarget | null {
-    if (mode !== "active") {
-      return null;
-    }
-
     if (getResizeHandleEdge(event)) {
       return null;
     }
@@ -649,10 +476,6 @@ export const createWeekInteractionAdapter = ({
   function getAllDayResizeTarget(
     event: PointerEvent,
   ): WeekAllDayResizeTarget | null {
-    if (mode !== "active") {
-      return null;
-    }
-
     const edge = getResizeHandleEdge(event);
 
     if (!edge) {
@@ -673,10 +496,6 @@ export const createWeekInteractionAdapter = ({
   }
 
   function getTimedDragTarget(event: PointerEvent): WeekTimedDragTarget | null {
-    if (mode !== "active") {
-      return null;
-    }
-
     if (getResizeHandleEdge(event)) {
       return null;
     }
@@ -696,10 +515,6 @@ export const createWeekInteractionAdapter = ({
   function getTimedResizeTarget(
     event: PointerEvent,
   ): WeekTimedResizeTarget | null {
-    if (mode !== "active") {
-      return null;
-    }
-
     const edge = getResizeHandleEdge(event);
 
     if (!edge) {
@@ -815,73 +630,29 @@ export const createWeekInteractionAdapter = ({
       return { isDwellActive: false, visual };
     }
 
-    const side = getEdgeNavigationSide(layout.edgeNavigation, pointer);
+    const update = edgeNavigation.update({
+      bounds: layout.edgeNavigation,
+      pointer,
+      timestamp,
+    });
 
-    if (!side) {
-      resetEdgeNavigation();
-      setWeekInteractionEdgeNavigationState(activeEdgeNavigationIndicatorState);
-      return { isDwellActive: false, visual };
-    }
+    setWeekInteractionEdgeNavigationState(update.state);
 
-    if (edgeNavigation.side !== side) {
-      edgeNavigation = {
-        enteredAt: timestamp,
-        requested: false,
-        side,
-      };
-      setWeekInteractionEdgeNavigationState({
-        currentEdge: side === "prev" ? "left" : "right",
-        isDragging: true,
-        isTimerActive: true,
-        progress: 0,
-      });
-
-      return { isDwellActive: true, visual };
-    }
-
-    const progress =
-      edgeNavigation.enteredAt === null
-        ? 0
-        : Math.min(
-            ((timestamp - edgeNavigation.enteredAt) /
-              EDGE_NAVIGATION_DWELL_MS) *
-              100,
-            100,
-          );
-
-    if (
-      edgeNavigation.enteredAt !== null &&
-      !edgeNavigation.requested &&
-      timestamp - edgeNavigation.enteredAt >= EDGE_NAVIGATION_DWELL_MS
-    ) {
-      edgeNavigation.requested = true;
+    if (update.requestedSide) {
       isLayoutRebuildPending = true;
-      setWeekInteractionEdgeNavigationState({
-        currentEdge: side === "prev" ? "left" : "right",
-        isDragging: true,
-        isTimerActive: false,
-        progress: 0,
-      });
-      runtime().onRequestWeekNavigation?.(side);
+      runtime().onRequestWeekNavigation?.(update.requestedSide);
 
       return {
         isDwellActive: false,
         visual: {
           ...visual,
-          weekOffsetDays: visual.weekOffsetDays + (side === "next" ? 7 : -7),
+          weekOffsetDays: visual.weekOffsetDays + update.weekOffsetDaysDelta,
         } as TVisual,
       };
     }
 
-    setWeekInteractionEdgeNavigationState({
-      currentEdge: side === "prev" ? "left" : "right",
-      isDragging: true,
-      isTimerActive: !edgeNavigation.requested,
-      progress,
-    });
-
     return {
-      isDwellActive: !edgeNavigation.requested,
+      isDwellActive: update.isDwellActive,
       visual,
     };
   }
@@ -891,7 +662,10 @@ export const createWeekInteractionAdapter = ({
       return;
     }
 
-    const nextLayout = buildWeekLayoutCacheForTarget(target);
+    const nextLayout = buildWeekLayoutCacheForTarget(
+      target,
+      getLayoutSources(),
+    );
 
     if (!nextLayout) {
       return;
@@ -902,11 +676,7 @@ export const createWeekInteractionAdapter = ({
   }
 
   function resetEdgeNavigation() {
-    edgeNavigation = {
-      enteredAt: null,
-      requested: false,
-      side: null,
-    };
+    edgeNavigation.reset();
   }
 
   function clearInteractionState() {
@@ -982,18 +752,15 @@ const isResizeEdge = (
   edge: string | null | undefined,
 ): edge is AllDayResizeEdge => edge === "startDate" || edge === "endDate";
 
-const buildWeekLayoutCacheForTarget = (target: WeekInteractionTarget) =>
+const buildWeekLayoutCacheForTarget = (
+  target: WeekInteractionTarget,
+  sources: WeekLayoutCacheSources,
+) =>
   isAllDayTarget(target)
-    ? buildAllDayWeekLayoutCache()
-    : buildTimedWeekLayoutCache();
+    ? buildAllDayWeekLayoutCache(sources)
+    : buildTimedWeekLayoutCache(sources);
 
-const isEligibleWeekPointerDown = (event: PointerEvent) =>
-  event.isPrimary !== false &&
-  event.button === 0 &&
-  !event.altKey &&
-  !event.ctrlKey &&
-  !event.metaKey &&
-  !event.shiftKey;
+const isEligibleWeekPointerDown = isEligibleCalendarInteractionPointerDown;
 
 const readElementRect = (element: HTMLElement): VisualRect => {
   const rect = element.getBoundingClientRect();
@@ -1004,79 +771,6 @@ const readElementRect = (element: HTMLElement): VisualRect => {
     top: rect.top,
     width: rect.width,
   };
-};
-
-const getLocalMinutes = (dateString: string | undefined) => {
-  const date = new Date(dateString ?? 0);
-
-  return date.getHours() * 60 + date.getMinutes();
-};
-
-const getLocalDayIndex = (dateString: string | undefined) =>
-  getLocalDate(dateString).getDay();
-
-const getVisibleAllDayRange = (
-  layout: WeekLayoutCache,
-  sourceRect: VisualRect,
-) => {
-  const startColumn = getNearestDayColumn(
-    layout.dayColumns,
-    sourceRect.left + 1,
-  );
-  const endColumn = getNearestDayColumn(
-    layout.dayColumns,
-    sourceRect.left + Math.max(1, sourceRect.width),
-  );
-  const startDayIndex = startColumn?.index ?? 0;
-  const endDayIndex = Math.max(
-    startDayIndex,
-    endColumn?.index ?? startDayIndex,
-  );
-
-  return {
-    endDayIndex,
-    startDayIndex,
-  };
-};
-
-const getLocalDate = (dateString: string | undefined) => {
-  if (!dateString) {
-    return new Date(0);
-  }
-
-  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
-
-  if (dateOnly) {
-    return new Date(
-      Number(dateOnly[1]!),
-      Number(dateOnly[2]!) - 1,
-      Number(dateOnly[3]!),
-    );
-  }
-
-  return new Date(dateString);
-};
-
-const getEdgeNavigationSide = (
-  edgeNavigation: WeekEdgeNavigationCache,
-  pointer: VisualPoint,
-) => {
-  const isInVerticalBounds =
-    pointer.y >= edgeNavigation.top && pointer.y <= edgeNavigation.bottom;
-
-  if (!isInVerticalBounds) {
-    return null;
-  }
-
-  if (pointer.x < edgeNavigation.left + edgeNavigation.edgeThresholdPx) {
-    return "prev" as const;
-  }
-
-  if (pointer.x > edgeNavigation.right - edgeNavigation.edgeThresholdPx) {
-    return "next" as const;
-  }
-
-  return null;
 };
 
 const updateOverlayTimeLabel = (node: HTMLElement, event: Schema_GridEvent) => {

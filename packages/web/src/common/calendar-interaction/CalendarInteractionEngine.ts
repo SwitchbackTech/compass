@@ -13,6 +13,7 @@ import {
   type MotionCalendarInteractionSession,
   type PendingCalendarInteractionSession,
 } from "./CalendarInteractionSession";
+import { hasExceededCalendarInteractionMoveThreshold } from "./calendarInteractionPointer";
 import { CalendarInteractionOverlay } from "./dom/CalendarInteractionOverlay";
 import {
   markSourcePlaceholder,
@@ -145,7 +146,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
 
     if (session.phase === "pending") {
       if (
-        !hasExceededMoveThreshold(
+        !hasExceededCalendarInteractionMoveThreshold(
           getPointerPoint(event),
           session.startPoint,
           resolvedOptions.moveThresholdPx,
@@ -430,11 +431,3 @@ const getPointerPoint = (event: PointerEvent): CalendarInteractionPoint => ({
   x: event.clientX,
   y: event.clientY,
 });
-
-const hasExceededMoveThreshold = (
-  current: CalendarInteractionPoint,
-  initial: CalendarInteractionPoint,
-  threshold: number,
-) =>
-  Math.abs(current.x - initial.x) > threshold ||
-  Math.abs(current.y - initial.y) > threshold;
