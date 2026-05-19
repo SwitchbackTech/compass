@@ -319,6 +319,8 @@ export const createWeekInteractionAdapter = ({
           source: sourceElement,
         }),
       getSourceElement: (target) => target.registered.element,
+      getSourceElementTreatment: (target) =>
+        isDragTarget(target) ? "placeholder" : "hidden",
       getTarget: (event) => getInteractionTarget(event),
       updateVisual: ({ pointer, target, timestamp, visual }) => {
         rebuildLayoutIfNeeded(target);

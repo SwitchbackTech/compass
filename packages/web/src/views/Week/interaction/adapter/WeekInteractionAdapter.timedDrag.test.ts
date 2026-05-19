@@ -365,7 +365,9 @@ describe("WeekInteractionAdapter timed drag", () => {
       makePointerEvent("pointermove", { target: child, x: 320, y: 1120 }),
     );
 
-    expect(source.style.visibility).toBe("hidden");
+    expect(source.style.visibility).toBe("visible");
+    expect(source.style.opacity).toBe("0.5");
+    expect(source).toHaveAttribute("data-calendar-interaction-placeholder");
     expect(onMotionActivation).toHaveBeenCalledWith(
       expect.objectContaining({ event }),
     );
@@ -397,6 +399,8 @@ describe("WeekInteractionAdapter timed drag", () => {
       }),
     );
     expect(source.style.visibility).toBe("visible");
+    expect(source.style.opacity).toBe("");
+    expect(source).not.toHaveAttribute("data-calendar-interaction-placeholder");
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();

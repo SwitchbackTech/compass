@@ -1,4 +1,5 @@
 import { type CalendarInteractionPoint } from "./CalendarInteractionSession";
+import { type SourceElementInteractionTreatment } from "./dom/source/sourceElementVisibility";
 
 export interface FloatingInteractionOverlayMount {
   clone: HTMLElement;
@@ -21,6 +22,9 @@ export type FloatingInteractionOverlayUpdate = {
 export interface CalendarInteractionAdapter<TTarget, TVisual, TResult> {
   getTarget(event: PointerEvent): TTarget | null;
   getSourceElement(target: TTarget): HTMLElement;
+  getSourceElementTreatment?(
+    target: TTarget,
+  ): SourceElementInteractionTreatment;
   createVisual(input: {
     pointerStart: CalendarInteractionPoint;
     sourceElement: HTMLElement;

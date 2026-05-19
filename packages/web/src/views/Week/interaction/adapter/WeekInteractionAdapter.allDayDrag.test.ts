@@ -335,7 +335,9 @@ describe("WeekInteractionAdapter all-day drag", () => {
       makePointerEvent("pointermove", { target: child, x: 430, y: 30 }),
     );
 
-    expect(source.style.visibility).toBe("hidden");
+    expect(source.style.visibility).toBe("visible");
+    expect(source.style.opacity).toBe("0.5");
+    expect(source).toHaveAttribute("data-calendar-interaction-placeholder");
     expect(onMotionActivation).toHaveBeenCalled();
 
     flushFrame();
@@ -364,6 +366,8 @@ describe("WeekInteractionAdapter all-day drag", () => {
       }),
     );
     expect(source.style.visibility).toBe("visible");
+    expect(source.style.opacity).toBe("");
+    expect(source).not.toHaveAttribute("data-calendar-interaction-placeholder");
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();
@@ -418,7 +422,9 @@ describe("WeekInteractionAdapter all-day drag", () => {
     );
     flushFrame();
 
-    expect(source.style.visibility).toBe("hidden");
+    expect(source.style.visibility).toBe("visible");
+    expect(source.style.opacity).toBe("0.5");
+    expect(source).toHaveAttribute("data-calendar-interaction-placeholder");
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeTruthy();
@@ -428,6 +434,8 @@ describe("WeekInteractionAdapter all-day drag", () => {
     );
 
     expect(source.style.visibility).toBe("visible");
+    expect(source.style.opacity).toBe("");
+    expect(source).not.toHaveAttribute("data-calendar-interaction-placeholder");
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();

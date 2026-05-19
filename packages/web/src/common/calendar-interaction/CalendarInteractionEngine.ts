@@ -16,8 +16,8 @@ import {
 import { hasExceededCalendarInteractionMoveThreshold } from "./calendarInteractionPointer";
 import { FloatingInteractionOverlay } from "./dom/overlay/FloatingInteractionOverlay";
 import {
-  type HiddenSourceElement,
-  hideSourceElement,
+  type PreparedSourceElement,
+  prepareSourceElementForInteraction,
   restoreSourceElement,
 } from "./dom/source/sourceElementVisibility";
 
@@ -87,7 +87,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
   let latestPointer: CalendarInteractionPoint | null = null;
   let metrics = resolvedOptions.createMetrics();
   let overlay: FloatingInteractionOverlay | null = null;
-  let hiddenSource: HiddenSourceElement | null = null;
+  let preparedSource: PreparedSourceElement | null = null;
   let previousFrameTimestamp: number | null = null;
   let rafId: unknown = null;
   let session: CalendarInteractionSession<TTarget, TVisual> = {
@@ -297,7 +297,12 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
       visual,
     });
     mountOverlay(overlayMount);
-    hiddenSource = hideSourceElement(pendingSession.sourceElement);
+    preparedSource = prepareSourceElementForInteraction(
+      pendingSession.sourceElement,
+      resolvedOptions.adapter.getSourceElementTreatment?.(
+        pendingSession.target,
+      ),
+    );
     activatedAt = resolvedOptions.now();
     latestPointer = pendingSession.startPoint;
     metrics.active = true;
@@ -393,9 +398,9 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     overlay?.unmount();
     overlay = null;
 
-    if (hiddenSource) {
-      restoreSourceElement(hiddenSource);
-      hiddenSource = null;
+    if (preparedSource) {
+      restoreSourceElement(preparedSource);
+      preparedSource = null;
     }
 
     latestPointer = null;
