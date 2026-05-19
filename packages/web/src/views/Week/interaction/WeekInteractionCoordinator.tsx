@@ -24,14 +24,14 @@ import {
   type WeekTimedDragCommitResult,
   type WeekTimedResizeCommitResult,
 } from "./adapter/WeekInteractionAdapter";
-import { WeekInteractionBoundary } from "./WeekInteractionBoundary";
+import { WeekPointerCaptureBoundary } from "./WeekPointerCaptureBoundary";
 
 interface Props extends PropsWithChildren {
   getLayoutSources?: () => WeekLayoutCacheSources;
   weekProps: WeekProps;
 }
 
-export const WeekInteractionBoundaryController: FC<Props> = ({
+export const WeekInteractionCoordinator: FC<Props> = ({
   children,
   getLayoutSources,
   weekProps,
@@ -156,9 +156,9 @@ export const WeekInteractionBoundaryController: FC<Props> = ({
   };
 
   return (
-    <WeekInteractionBoundary adapter={adapter}>
+    <WeekPointerCaptureBoundary adapter={adapter}>
       {children}
-    </WeekInteractionBoundary>
+    </WeekPointerCaptureBoundary>
   );
 };
 

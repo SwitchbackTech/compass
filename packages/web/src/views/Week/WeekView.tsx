@@ -23,7 +23,7 @@ import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerS
 import { useRefetch } from "@web/views/Week/hooks/useRefetch";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
-import { WeekInteractionBoundaryController } from "@web/views/Week/interaction/WeekInteractionBoundaryController";
+import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 import { Styled, StyledCalendar, WeekGridTrack } from "@web/views/Week/styled";
 
 export const WeekView = () => {
@@ -160,7 +160,7 @@ export const WeekView = () => {
                     weekDays={weekProps.component.weekDays}
                   />
 
-                  <WeekInteractionBoundaryController
+                  <WeekInteractionCoordinator
                     getLayoutSources={getWeekInteractionLayoutSources}
                     weekProps={weekProps}
                   >
@@ -173,7 +173,7 @@ export const WeekView = () => {
                         weekProps={weekProps}
                       />
                     </ContextMenuWrapper>
-                  </WeekInteractionBoundaryController>
+                  </WeekInteractionCoordinator>
                 </WeekGridTrack>
               </WeekGridScrollArea>
             </StyledCalendar>

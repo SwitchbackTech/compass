@@ -1,7 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { type PointerEvent as ReactPointerEvent } from "react";
 import { type WeekInteractionAdapter } from "./adapter/WeekInteractionAdapter";
-import { WeekInteractionBoundary } from "./WeekInteractionBoundary";
+import { WeekPointerCaptureBoundary } from "./WeekPointerCaptureBoundary";
 import { describe, expect, it, mock } from "bun:test";
 
 const createOwningWeekInteractionAdapter = (): WeekInteractionAdapter => {
@@ -39,7 +39,7 @@ const createNonOwningWeekInteractionAdapter = (): WeekInteractionAdapter => ({
   rebuildLayoutAfterNavigation: () => undefined,
 });
 
-describe("WeekInteractionBoundary", () => {
+describe("WeekPointerCaptureBoundary", () => {
   it("does not block child pointer handlers when the adapter declines ownership", () => {
     const adapter = createNonOwningWeekInteractionAdapter();
     const onPointerDown = mock(
@@ -49,11 +49,11 @@ describe("WeekInteractionBoundary", () => {
     );
 
     render(
-      <WeekInteractionBoundary adapter={adapter}>
+      <WeekPointerCaptureBoundary adapter={adapter}>
         <button onPointerDown={onPointerDown} type="button">
           event
         </button>
-      </WeekInteractionBoundary>,
+      </WeekPointerCaptureBoundary>,
     );
 
     fireEvent.pointerDown(screen.getByRole("button", { name: "event" }));
@@ -66,11 +66,11 @@ describe("WeekInteractionBoundary", () => {
     const onPointerDown = mock();
 
     render(
-      <WeekInteractionBoundary adapter={adapter}>
+      <WeekPointerCaptureBoundary adapter={adapter}>
         <button onPointerDown={onPointerDown} type="button">
           event
         </button>
-      </WeekInteractionBoundary>,
+      </WeekPointerCaptureBoundary>,
     );
 
     fireEvent.pointerDown(screen.getByRole("button", { name: "event" }));
@@ -78,13 +78,51 @@ describe("WeekInteractionBoundary", () => {
     expect(onPointerDown).not.toHaveBeenCalled();
   });
 
+  it("stops child pointer continuation handlers once the adapter consumes them", () => {
+    const adapter: WeekInteractionAdapter = {
+      ...createNonOwningWeekInteractionAdapter(),
+      handlePointerCancel: mock(() => true),
+      handlePointerMove: mock(() => true),
+      handlePointerUp: mock(() => true),
+    };
+    const onPointerCancel = mock();
+    const onPointerMove = mock();
+    const onPointerUp = mock();
+
+    render(
+      <WeekPointerCaptureBoundary adapter={adapter}>
+        <button
+          onPointerCancel={onPointerCancel}
+          onPointerMove={onPointerMove}
+          onPointerUp={onPointerUp}
+          type="button"
+        >
+          event
+        </button>
+      </WeekPointerCaptureBoundary>,
+    );
+
+    const eventButton = screen.getByRole("button", { name: "event" });
+
+    fireEvent.pointerMove(eventButton);
+    fireEvent.pointerUp(eventButton);
+    fireEvent.pointerCancel(eventButton);
+
+    expect(adapter.handlePointerMove).toHaveBeenCalledTimes(1);
+    expect(adapter.handlePointerUp).toHaveBeenCalledTimes(1);
+    expect(adapter.handlePointerCancel).toHaveBeenCalledTimes(1);
+    expect(onPointerMove).not.toHaveBeenCalled();
+    expect(onPointerUp).not.toHaveBeenCalled();
+    expect(onPointerCancel).not.toHaveBeenCalled();
+  });
+
   it("connects global cancellation events while mounted and disconnects them on unmount", () => {
     const adapter = createCancellationAwareWeekInteractionAdapter();
 
     const { unmount } = render(
-      <WeekInteractionBoundary adapter={adapter}>
+      <WeekPointerCaptureBoundary adapter={adapter}>
         <button type="button">event</button>
-      </WeekInteractionBoundary>,
+      </WeekPointerCaptureBoundary>,
     );
 
     expect(adapter.connectCancellationEvents).toHaveBeenCalledTimes(1);
@@ -99,9 +137,9 @@ describe("WeekInteractionBoundary", () => {
     const adapter = createCancellationAwareWeekInteractionAdapter();
 
     const { unmount } = render(
-      <WeekInteractionBoundary adapter={adapter}>
+      <WeekPointerCaptureBoundary adapter={adapter}>
         <button type="button">event</button>
-      </WeekInteractionBoundary>,
+      </WeekPointerCaptureBoundary>,
     );
 
     expect(adapter.cancel).not.toHaveBeenCalled();
