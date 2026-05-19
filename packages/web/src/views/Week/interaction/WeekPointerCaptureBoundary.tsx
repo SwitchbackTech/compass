@@ -10,7 +10,10 @@ interface Props extends PropsWithChildren {
   adapter: WeekInteractionAdapter;
 }
 
-export const WeekPointerCaptureBoundary: FC<Props> = ({ adapter, children }) => {
+export const WeekPointerCaptureBoundary: FC<Props> = ({
+  adapter,
+  children,
+}) => {
   useEffect(() => {
     const disconnectCancellationEvents = adapter.connectCancellationEvents();
 
