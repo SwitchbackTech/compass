@@ -4,40 +4,22 @@
 
 ```bash
 git clone git@github.com:SwitchbackTech/compass.git
-
 cd compass
-
 bun install
-
-## Setup config values
-
-```bash
-cp compass.example.yaml compass.yaml
 ```
 
-Replace the placeholder values in `compass.yaml`
-
-## Run
-
-Run the web app in one terminal:
+## Run the web app
 
 ```bash
 bun run dev:web
-# Frontend on <http://localhost:9080>
 ```
 
-Run the backend in another terminal:
+The frontend runs at <http://localhost:9080>.
 
-```bash
-bun run dev:backend  
-# Backend on <http://localhost:3000>
-```
+## Backend and config
 
-## Testing
+Most frontend work does not need backend services. For backend, auth, MongoDB,
+Google sync, SSE, or CLI work, see [Local Development](./local-development.md).
 
-After making your changes, you can run our test suite locally before opening a PR.
-
-```bash
-bun run test:core && bun run test:web && bun run test:backend
-bun run test:e2e
-```
+For test commands and expectations, see the
+[Testing Playbook](./testing-playbook.md).

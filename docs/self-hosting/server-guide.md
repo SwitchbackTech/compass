@@ -149,7 +149,7 @@ curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-ho
 
 If you'd rather do everything yourself, check-out our [manual install guide](https://raw.githubusercontent.com/SwitchbackTech/compass/main/self-host/install-manual.sh), which has bash commands you can individually copy-paste. This'll give you full visibility and control, but will take longer.
 
-## 3. Configure reverse proxy with Caddy
+## Configure reverse proxy with Caddy
 
 Now that we have Docker, Caddy, and Compass install, we can wire up the proxy to ensure requests flow through your system smoothly.
 
