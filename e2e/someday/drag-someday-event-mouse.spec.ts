@@ -61,6 +61,7 @@ const expectTimedPreviewTextStack = async (page: Page, title: string) => {
   expect(timeBox.y + timeBox.height / 2).toBeGreaterThan(
     titleBox.y + titleBox.height / 2,
   );
+  expect(timeBox.y - titleBox.y).toBeLessThan(titleBox.height + 8);
   expect(timeBox.x).toBeLessThan(titleBox.x + 8);
 };
 

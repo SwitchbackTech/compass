@@ -794,6 +794,7 @@ const applyTimedOverlayLayout = (node: HTMLElement) => {
 
   titleRow.style.alignSelf = "stretch";
   titleRow.style.alignItems = "flex-start";
+  titleRow.style.flex = "0 1 auto";
   titleRow.style.flexDirection = "row";
   titleRow.style.gap = "0";
   titleRow.style.justifyContent = "flex-start";
@@ -821,6 +822,7 @@ const resetTimedOverlayLayout = (node: HTMLElement) => {
 
   titleRow.style.alignSelf = "";
   titleRow.style.alignItems = "";
+  titleRow.style.flex = "";
   titleRow.style.flexDirection = "";
   titleRow.style.gap = "";
   titleRow.style.justifyContent = "";

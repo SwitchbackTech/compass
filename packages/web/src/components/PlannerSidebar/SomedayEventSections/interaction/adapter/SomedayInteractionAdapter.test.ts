@@ -411,6 +411,7 @@ describe("SomedayInteractionAdapter", () => {
     expect(textStack?.style.flexDirection).toBe("column");
     expect(titleRow?.style.alignSelf).toBe("stretch");
     expect(titleRow?.style.alignItems).toBe("flex-start");
+    expect(titleRow?.style.flex).toBe("0 1 auto");
     expect(titleRow?.style.flexDirection).toBe("row");
   });
 
@@ -448,6 +449,7 @@ describe("SomedayInteractionAdapter", () => {
     ).toBe(titleRow?.parentElement);
     expect(titleRow?.style.alignSelf).toBe("stretch");
     expect(titleRow?.style.alignItems).toBe("flex-start");
+    expect(titleRow?.style.flex).toBe("0 1 auto");
     expect(titleRow?.style.flexDirection).toBe("row");
     expect(titleRow?.parentElement?.style.flexDirection).toBe("column");
   });
