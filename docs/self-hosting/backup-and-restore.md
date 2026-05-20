@@ -334,4 +334,6 @@ rerun the installer.
 After you have a backup you trust, return to [Server hosting guide](./server-guide.md)
 for server checks and update notes.
 
+----
+
 Have an idea on how we can make self-hosting easier? Let us know in [this GitHub Discussion](https://github.com/SwitchbackTech/compass/discussions/1694).
