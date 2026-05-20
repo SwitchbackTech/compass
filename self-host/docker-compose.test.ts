@@ -81,9 +81,9 @@ describe("staging deploy workflow", () => {
     const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
 
     expect(workflow).toContain(
-      `COMPOSE_GIT_REF="\${COMPOSE_GIT_REF:-\${RELEASE_TAG}}"`,
+      'COMPOSE_GIT_REF="$'.concat("{COMPOSE_GIT_REF:-$", '{RELEASE_TAG}}"'),
     );
-    expect(workflow).toContain(`COMPOSE_GIT_REF="\${RELEASE_TAG}"`);
+    expect(workflow).toContain('COMPOSE_GIT_REF="$'.concat('{RELEASE_TAG}"'));
   });
 
   it("writes the Google Calendar notification token with Google credentials", () => {

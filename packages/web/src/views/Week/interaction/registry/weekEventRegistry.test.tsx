@@ -359,18 +359,23 @@ describe("weekEventRegistry", () => {
     expect(weekEventRegistry.resolve("pending-event", "timed")).toBeNull();
   });
 
-  it("settles the dropped timed event block while choreographing tall-event text", () => {
-    const event = createTimedEvent();
+  it("acknowledges a dropped timed event with block and text choreography", () => {
+    const event = createTimedEvent({
+      endDate: "2026-05-22T10:00:00.000Z",
+      startDate: "2026-05-22T09:00:00.000Z",
+    });
 
     markSomedayCommitAcknowledgement(event._id!);
     renderWithStore(<RegisteredTimedEventHarness event={event} />);
 
     const element = screen.getByRole("button", { name: /timed event/i });
     const title = screen.getByText("Timed event");
+    const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
 
     expect(element).toHaveClass("animate-someday-commit-acknowledge");
     expectEventBgToUseHoverColor(element);
     expect(title).toHaveClass("animate-someday-commit-title-rise");
+    expect(timeLabel).toHaveClass("animate-someday-commit-time-fade");
   });
 
   it("settles short dropped timed events without text choreography", () => {

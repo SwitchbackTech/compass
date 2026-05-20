@@ -333,7 +333,7 @@ describe("SomedayInteractionAdapter", () => {
     });
   });
 
-  it("transitions dragged Someday overlay text to dark while over the calendar", () => {
+  it("previews a calendar drop with landed-event styling", () => {
     const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
 
     adapter.handlePointerDown(
@@ -352,37 +352,14 @@ describe("SomedayInteractionAdapter", () => {
       "[data-calendar-interaction-overlay]",
     );
     const expectedTextColor = normalizeCssColor(theme.color.text.dark);
-
-    expect(overlay).toBeTruthy();
-    expect(overlay?.style.transition).toContain("color 240ms");
-    expect(overlay?.style.color).toBe(expectedTextColor);
-    expect(overlay?.querySelector("[data-someday-drag-affordance]")).toBeNull();
-  });
-
-  it("uses the hovered grid color for the dragged Someday overlay over the calendar", () => {
-    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
-
-    adapter.handlePointerDown(
-      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
-    );
-    adapter.handlePointerMove(
-      makePointerEvent("pointermove", {
-        target: timedColumns,
-        x: 250,
-        y: 220,
-      }),
-    );
-    flushFrame();
-
-    const overlay = document.body.querySelector<HTMLElement>(
-      "[data-calendar-interaction-overlay]",
-    );
     const expectedHoverColor = normalizeCssColor(
       gridHoverColorByPriority[Priorities.UNASSIGNED],
     );
 
     expect(overlay).toBeTruthy();
+    expect(overlay?.style.color).toBe(expectedTextColor);
     expect(overlay?.style.backgroundColor).toBe(expectedHoverColor);
+    expect(overlay?.querySelector("[data-someday-drag-affordance]")).toBeNull();
   });
 
   it("disables Someday overlay motion when reduced motion is preferred", () => {

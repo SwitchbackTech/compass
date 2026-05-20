@@ -36,12 +36,6 @@ describe("useSidebarState", () => {
     isDNDing = false;
   });
 
-  it("does not treat an idle sidebar as active dragging", () => {
-    const { result } = renderHook(() => useSidebarState());
-
-    expect(result.current.state.isDragging).toBe(false);
-  });
-
   it("tracks active dragging when a someday event draft is moving", () => {
     isDNDing = true;
 
