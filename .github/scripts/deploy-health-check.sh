@@ -497,9 +497,10 @@ remote_check_selfhosted_data() {
   ssh_remote "bash -se" <<REMOTE
 set -euo pipefail
 cd ~/compass
+export COMPOSE_PROFILES=selfhosted
 
 # Verify MongoDB is reachable and the replica set is healthy.
-COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --quiet \
+docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --quiet \
   --username compass \
   --password $(printf '%q' "$mongo_password") \
   --authenticationDatabase admin \
@@ -521,8 +522,8 @@ COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yam
   '
 
 # Verify Postgres (SuperTokens) is reachable.
-COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml exec -T supertokens-db pg_isready -U supertokens -d supertokens
-COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml exec -T -e PGPASSWORD=$(printf '%q' "$postgres_password") supertokens-db \
+docker compose --project-name compass -f compose.yaml exec -T supertokens-db pg_isready -U supertokens -d supertokens
+docker compose --project-name compass -f compose.yaml exec -T -e PGPASSWORD=$(printf '%q' "$postgres_password") supertokens-db \
   psql -U supertokens -d supertokens -c 'select 1' >/dev/null
 REMOTE
 }
