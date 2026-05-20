@@ -1,7 +1,6 @@
 import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
 import { type CalendarInteractionAdapter } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
 import {
   type CalendarInteractionCancellationTargets,
@@ -39,7 +38,6 @@ import {
   EVENT_ALLDAY_HEIGHT,
   EVENT_PADDING_RIGHT,
   GRID_TIME_STEP,
-  MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
   TIMED_EVENT_COLUMN_INSET,
 } from "@web/views/Week/layout.constants";
 import { somedayDropTargetRegistry } from "../registry/somedayDropTargetRegistry";
@@ -759,11 +757,6 @@ const mutateOverlay = (
   const titleRow = applyTimedOverlayLayout(node);
   const { end, start } = getTimedDropDateRange(drop, visual);
 
-  if (dayjs().isAfter(end) || !isOverlayTallEnoughForTimeLabel(node)) {
-    removeOverlayTimeLabel(node);
-    return;
-  }
-
   const timeLabel = getOrCreateOverlayTimeLabel(node, titleRow);
 
   timeLabel.textContent = getTimesLabel(start.format(), end.format());
@@ -826,12 +819,6 @@ const removeOverlayTimeLabel = (node: HTMLElement) => {
 
 const getOverlayTitleRow = (node: HTMLElement) =>
   node.querySelector<HTMLElement>(SOMEDAY_EVENT_TITLE_ROW_SELECTOR) ?? node;
-
-const isOverlayTallEnoughForTimeLabel = (node: HTMLElement) => {
-  const height = Number.parseFloat(node.style.height);
-
-  return Number.isNaN(height) || height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL;
-};
 
 const getOrCreateOverlayTimeLabel = (
   node: HTMLElement,

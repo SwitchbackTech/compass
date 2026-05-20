@@ -81,6 +81,8 @@
   --animate-sync-dot-pulse: syncDotPulse 2.4s ease-in-out infinite;
   --animate-someday-commit-acknowledge: somedayCommitAcknowledge 260ms
     cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-someday-commit-time-exit: somedayCommitTimeExit 260ms
+    cubic-bezier(0.16, 1, 0.3, 1) both;
 
   @keyframes progressSlide {
     0% {
@@ -112,11 +114,23 @@
       scale: 1;
     }
   }
+
+  @keyframes somedayCommitTimeExit {
+    from {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    to {
+      opacity: 0;
+      transform: translateY(-10px);
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   :root {
     --animate-someday-commit-acknowledge: none;
+    --animate-someday-commit-time-exit: none;
   }
 }
 

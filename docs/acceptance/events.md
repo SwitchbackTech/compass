@@ -247,8 +247,10 @@ Someday events can be dragged from the sidebar onto a specific day and time on t
 
 - While the Someday event is over a timed grid slot, the preview uses the same
   layout as a Timed Event: title at the top, time underneath.
-- If the target time has already passed, the preview hides the time just like
-  the saved Timed Event will.
+- The preview shows the tentative time while hovering, even if the target time
+  has already passed.
+- If the target time has already passed, the time disappears after drop the same
+  way it does on saved past Timed Events.
 - The event disappears from the sidebar.
 - The event appears on the grid at the dropped time.
 - The event is now a regular scheduled event and persists after a page reload.

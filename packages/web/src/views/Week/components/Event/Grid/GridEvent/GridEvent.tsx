@@ -102,6 +102,10 @@ const GridEventBase = (
     () => getLineClamp(position.height),
     [position.height],
   );
+  const isTallEnoughForTimeLabel =
+    position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL;
+  const shouldAnimatePastCommitTimeOut =
+    shouldAcknowledgeCommit && isInPast && !isDraft && isTallEnoughForTimeLabel;
 
   const priority = event.priority || Priorities.UNASSIGNED;
   const baseColor = gridColorByPriority[priority];
@@ -229,9 +233,14 @@ const GridEventBase = (
         <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
-            {(isDraft || !isInPast) &&
-              position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL && (
+            {(isDraft || !isInPast || shouldAnimatePastCommitTimeOut) &&
+              isTallEnoughForTimeLabel && (
                 <Text
+                  aria-hidden={shouldAnimatePastCommitTimeOut || undefined}
+                  className={cn({
+                    "animate-someday-commit-time-exit opacity-0":
+                      shouldAnimatePastCommitTimeOut,
+                  })}
                   data-week-event-time-label="true"
                   size="xs"
                   zIndex={ZIndex.LAYER_3}

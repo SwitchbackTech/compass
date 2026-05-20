@@ -394,6 +394,21 @@ describe("weekEventRegistry", () => {
     expect(title).not.toHaveClass("animate-someday-commit-title-rise");
   });
 
+  it("slides the time out when a dropped timed event lands in the past", () => {
+    const event = createTimedEvent({
+      endDate: "2026-05-18T10:00:00.000Z",
+      startDate: "2026-05-18T09:00:00.000Z",
+    });
+
+    markSomedayCommitAcknowledgement(event._id!);
+    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+
+    const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
+
+    expect(timeLabel).toHaveAttribute("aria-hidden", "true");
+    expect(timeLabel).toHaveClass("animate-someday-commit-time-exit");
+  });
+
   it("settles dropped all-day events without text choreography", () => {
     const event = createAllDayEvent();
 

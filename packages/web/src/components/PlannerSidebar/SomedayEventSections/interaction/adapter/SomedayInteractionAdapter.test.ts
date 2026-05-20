@@ -407,7 +407,7 @@ describe("SomedayInteractionAdapter", () => {
     expect(timeLabel?.parentElement?.style.flexDirection).toBe("column");
   });
 
-  it("matches dropped past timed events by hiding the tentative time range", () => {
+  it("keeps the tentative timed-grid range visible for past targets", () => {
     const { adapter, flushFrame, sourceChild, timedColumns } = createHarness({
       viewStart: dayjs().subtract(1, "week").startOf("week"),
     });
@@ -432,8 +432,9 @@ describe("SomedayInteractionAdapter", () => {
     );
 
     expect(
-      overlay?.querySelector("[data-someday-interaction-time-label]"),
-    ).toBeNull();
+      overlay?.querySelector("[data-someday-interaction-time-label]")
+        ?.textContent,
+    ).toMatch(/2\s+-\s+3 AM/);
     expect(titleRow?.style.alignSelf).toBe("stretch");
     expect(titleRow?.style.alignItems).toBe("flex-start");
     expect(titleRow?.style.flexDirection).toBe("column");
