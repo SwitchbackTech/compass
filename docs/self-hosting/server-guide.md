@@ -338,7 +338,7 @@ See [Connect Google Calendar — Public watch notifications](./google-calendar.m
 
 ## Updating
 
-> **Warning: back up before every update.** `./compass update` rebuilds with newer code. There is no rollback. Back up `~/compass/compass.yaml`, the Mongo volume, and the SuperTokens Postgres volume **together**. See [Backups and restore](./backups-and-restore.md).
+> **Warning: back up before every update.** `./compass update` rebuilds with newer code. There is no rollback. Back up `~/compass/compass.yaml`, the Mongo volumes, and the SuperTokens Postgres volume **together**. See [Backups and restore](./backup-and-restore.md).
 
 Then:
 
@@ -363,6 +363,6 @@ should be public, and Caddy should proxy only the web app and `/api`.
 
 ## What to read next
 
-Before your first update, read [Backups and restore](./backups-and-restore.md). If you are adding Google, keep [Google Calendar](./google-calendar.md) open while you test it.
+Before your first update, read [Backups and restore](./backup-and-restore.md). If you are adding Google, keep [Google Calendar](./google-calendar.md) open while you test it.
 
 Have an idea on how this guide can be improved? Let us know in [this GitHub Discussion](https://github.com/SwitchbackTech/compass/discussions/1694).

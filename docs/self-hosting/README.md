@@ -33,7 +33,7 @@ flowchart TD
 ## Start here
 
 - New self-host install: [Run Compass on a server](./server-guide.md)
-- Backups and restore: [Back up and restore your data](./backups-and-restore.md)
+- Backups and restore: [Back up and restore your data](./backup-and-restore.md)
 - Google Calendar: [Add Google Calendar](./google-calendar.md)
 - Manual Bun setup: [Run Compass without the installer](./advanced-manual.md)
 - Monitoring: [Monitoring](./monitoring.md)
