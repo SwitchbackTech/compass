@@ -37,6 +37,8 @@ import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/stat
 import {
   EVENT_ALLDAY_HEIGHT,
   EVENT_PADDING_RIGHT,
+  GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  GRID_EVENT_TIME_LABEL_OPACITY,
   GRID_TIME_STEP,
   TIMED_EVENT_COLUMN_INSET,
 } from "@web/views/Week/layout.constants";
@@ -855,9 +857,9 @@ const getOrCreateOverlayTimeLabel = (
   const label = document.createElement("span");
 
   label.setAttribute("data-someday-interaction-time-label", "true");
-  label.style.fontSize = "11px";
+  label.style.fontSize = GRID_EVENT_TIME_LABEL_FONT_SIZE;
   label.style.marginLeft = "0";
-  label.style.opacity = "0.78";
+  label.style.opacity = GRID_EVENT_TIME_LABEL_OPACITY;
   label.style.alignSelf = "flex-start";
   label.style.flexShrink = "0";
   label.style.whiteSpace = "nowrap";

@@ -35,7 +35,12 @@ import { Text } from "@web/components/Text";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
-import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
+import {
+  GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  GRID_EVENT_TIME_LABEL_OPACITY,
+  GRID_EVENT_TITLE_LINE_HEIGHT,
+  MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
+} from "@web/views/Week/layout.constants";
 
 interface Props {
   displayMode: GridEventDisplayMode;
@@ -153,7 +158,7 @@ const GridEventBase = (
 
   const titleStyle: CSSProperties = {
     fontSize: position.height <= 15 ? "10px" : "13px",
-    lineHeight: position.height <= 15 ? "1.1" : undefined,
+    lineHeight: position.height <= 15 ? "1.1" : GRID_EVENT_TITLE_LINE_HEIGHT,
     minHeight: "3px",
     display: "-webkit-box",
     overflow: "hidden",
@@ -161,6 +166,12 @@ const GridEventBase = (
     wordBreak: "break-all",
     WebkitBoxOrient: "vertical",
     WebkitLineClamp: lineClamp,
+  };
+
+  const timeLabelStyle: CSSProperties = {
+    fontSize: GRID_EVENT_TIME_LABEL_FONT_SIZE,
+    opacity: GRID_EVENT_TIME_LABEL_OPACITY,
+    whiteSpace: "nowrap",
   };
 
   const showResizeCursor =
@@ -242,7 +253,7 @@ const GridEventBase = (
                       shouldAnimatePastCommitTimeOut,
                   })}
                   data-week-event-time-label="true"
-                  size="xs"
+                  style={timeLabelStyle}
                   zIndex={ZIndex.LAYER_3}
                 >
                   {event.startDate &&
