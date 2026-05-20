@@ -71,9 +71,8 @@ export class FloatingInteractionOverlay {
       this.#node.style.width = `${width}px`;
     }
 
-    this.#node.style.transition = "none";
-    this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
     mutate?.(this.#node);
+    this.#node.style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`;
   }
 
   getNode() {

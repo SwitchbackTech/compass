@@ -1,3 +1,4 @@
+import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -11,6 +12,11 @@ import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/
 import { isEligibleCalendarInteractionPointerDown } from "@web/common/calendar-interaction/calendarInteractionPointer";
 import { createInteractionClone } from "@web/common/calendar-interaction/dom/clone/createInteractionClone";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { theme } from "@web/common/styles/theme";
+import {
+  gridColorByPriority,
+  gridHoverColorByPriority,
+} from "@web/common/styles/theme.util";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import {
   buildAllDayWeekLayoutCache,
@@ -62,6 +68,33 @@ export type {
 } from "./SomedayInteractionAdapter.types";
 
 const ONE_HOUR_MINUTES = 60;
+// Matches the "settle" curve used by GridEvent for visual coherence with the
+// landed event. The reshape duration (240ms) is short enough to track the
+// cursor without feeling instant; the transform duration (110ms) is only
+// applied while the overlay is anchored to a grid slot, so cursor-follow in
+// the sidebar stays 1:1 with the pointer.
+const SOMEDAY_OVERLAY_EASING = "cubic-bezier(0.16, 1, 0.3, 1)";
+const SOMEDAY_OVERLAY_RESHAPE_MS = 240;
+const SOMEDAY_OVERLAY_ANCHOR_MS = 110;
+const SOMEDAY_OVERLAY_LIFT_MS = 160;
+// Subtle lift while the overlay is floating (in the sidebar / between
+// targets). Settles back to 1 once anchored to a grid slot so the preview
+// matches the resting size of the real event.
+const SOMEDAY_OVERLAY_LIFT_SCALE = "1.04";
+const SOMEDAY_OVERLAY_SETTLED_SCALE = "1";
+const SOMEDAY_OVERLAY_TRANSITION_BASE =
+  `height ${SOMEDAY_OVERLAY_RESHAPE_MS}ms ${SOMEDAY_OVERLAY_EASING}, ` +
+  `width ${SOMEDAY_OVERLAY_RESHAPE_MS}ms ${SOMEDAY_OVERLAY_EASING}, ` +
+  `color ${SOMEDAY_OVERLAY_RESHAPE_MS}ms ${SOMEDAY_OVERLAY_EASING}, ` +
+  `scale ${SOMEDAY_OVERLAY_LIFT_MS}ms ${SOMEDAY_OVERLAY_EASING}, ` +
+  `box-shadow ${SOMEDAY_OVERLAY_LIFT_MS}ms ${SOMEDAY_OVERLAY_EASING}`;
+const SOMEDAY_OVERLAY_TRANSITION_ANCHORED =
+  `${SOMEDAY_OVERLAY_TRANSITION_BASE}, ` +
+  `transform ${SOMEDAY_OVERLAY_ANCHOR_MS}ms ${SOMEDAY_OVERLAY_EASING}`;
+const SOMEDAY_OVERLAY_SHADOW_LIFTED =
+  "0 12px 28px color-mix(in srgb, black 22%, transparent)";
+const SOMEDAY_OVERLAY_SHADOW_SETTLED =
+  "0 6px 14px color-mix(in srgb, black 14%, transparent)";
 
 const inertRuntime: SomedayInteractionRuntime = {
   getSomedayEventById: () => null,
@@ -233,8 +266,8 @@ export const createSomedayInteractionAdapter = ({
           weekOffsetDays: 0,
         };
       },
-      getOverlayMount: ({ sourceElement }) => ({
-        clone: createSomedayOverlayClone(sourceElement),
+      getOverlayMount: ({ sourceElement, target }) => ({
+        clone: createSomedayOverlayClone(sourceElement, target.event),
         cursor: "move",
         rect: readElementRect(sourceElement),
       }),
@@ -642,10 +675,27 @@ export const createSomedayInteractionAdapter = ({
   };
 };
 
-const createSomedayOverlayClone = (source: HTMLElement) => {
+const createSomedayOverlayClone = (
+  source: HTMLElement,
+  event: Schema_Event,
+) => {
   const clone = createInteractionClone(source);
 
   clone.style.zIndex = "25";
+
+  // SomedayEvent renders with a translucent priority tint (15% color-mix),
+  // which looks faded once it leaves the sidebar background. Repaint the
+  // floating overlay with the solid grid color so the preview reads as the
+  // GridEvent / AllDayEvent it's about to become.
+  const priority = event.priority ?? Priorities.UNASSIGNED;
+  clone.style.background = gridColorByPriority[priority];
+
+  // Strip sidebar-only affordances so the preview matches the landed event.
+  for (const node of clone.querySelectorAll<HTMLElement>(
+    "[data-someday-drag-affordance]",
+  )) {
+    node.remove();
+  }
 
   return clone;
 };
@@ -655,9 +705,56 @@ const mutateOverlay = (
   drop: SomedayInteractionDrop | null,
   event: Schema_Event,
 ) => {
-  node.style.boxShadow =
-    "0 10px 24px color-mix(in srgb, black 18%, transparent)";
   node.style.overflow = "hidden";
+
+  const isReducedMotion = isReducedMotionPreferred();
+  // Only smooth `transform` while the overlay is anchored to a grid slot.
+  // In the sidebar (or with no drop target) transform must remain instant so
+  // the clone tracks the pointer 1:1.
+  const isGridAnchored = drop?.type === "allDay" || drop?.type === "timed";
+  const priority = event.priority ?? Priorities.UNASSIGNED;
+  const nextBackground = isGridAnchored
+    ? gridHoverColorByPriority[priority]
+    : gridColorByPriority[priority];
+
+  if (node.style.backgroundColor !== nextBackground) {
+    node.style.backgroundColor = nextBackground;
+  }
+
+  const nextTransition = isReducedMotion
+    ? "none"
+    : isGridAnchored
+      ? SOMEDAY_OVERLAY_TRANSITION_ANCHORED
+      : SOMEDAY_OVERLAY_TRANSITION_BASE;
+
+  if (node.style.transition !== nextTransition) {
+    node.style.transition = nextTransition;
+  }
+
+  // Lift the overlay while it's floating so pickup reads as a physical "I've
+  // grabbed this." Settle to 1 once anchored to a slot so the preview matches
+  // the real event's resting size; shadow tightens in tandem.
+  const nextScale =
+    isReducedMotion || isGridAnchored
+      ? SOMEDAY_OVERLAY_SETTLED_SCALE
+      : SOMEDAY_OVERLAY_LIFT_SCALE;
+
+  if (node.style.scale !== nextScale) {
+    node.style.scale = nextScale;
+  }
+
+  const nextShadow =
+    isReducedMotion || isGridAnchored
+      ? SOMEDAY_OVERLAY_SHADOW_SETTLED
+      : SOMEDAY_OVERLAY_SHADOW_LIFTED;
+
+  if (node.style.boxShadow !== nextShadow) {
+    node.style.boxShadow = nextShadow;
+  }
+
+  node.style.color = isGridAnchored
+    ? theme.color.text.dark
+    : theme.color.text.lighter;
 
   const timeLabel = getOrCreateOverlayTimeLabel(node);
 
@@ -672,6 +769,11 @@ const mutateOverlay = (
   timeLabel.textContent = getTimesLabel(start.format(), end.format());
   timeLabel.style.display = event.title ? "inline" : "block";
 };
+
+const isReducedMotionPreferred = () =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const getOrCreateOverlayTimeLabel = (node: HTMLElement) => {
   const existing = node.querySelector<HTMLElement>(

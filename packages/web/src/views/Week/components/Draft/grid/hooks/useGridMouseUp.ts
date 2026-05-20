@@ -37,9 +37,7 @@ export const useGridMouseUp = () => {
     [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved],
   );
 
-  const handleAllDayRowMouseUp = useCallback(() => {
-    if (!draft) return;
-
+  const stopMotion = useCallback(() => {
     if (isResizing) {
       stopResizing();
     }
@@ -47,6 +45,12 @@ export const useGridMouseUp = () => {
     if (isDragging) {
       stopDragging();
     }
+  }, [isDragging, isResizing, stopDragging, stopResizing]);
+
+  const handleAllDayRowMouseUp = useCallback(() => {
+    if (!draft) return;
+
+    stopMotion();
 
     const { shouldSubmit, shouldOpenForm } = getNextAction(
       Categories_Event.ALLDAY,
@@ -60,16 +64,7 @@ export const useGridMouseUp = () => {
     if (shouldSubmit) {
       submit(draft);
     }
-  }, [
-    draft,
-    isDragging,
-    isResizing,
-    getNextAction,
-    stopDragging,
-    stopResizing,
-    openForm,
-    submit,
-  ]);
+  }, [draft, getNextAction, stopMotion, openForm, submit]);
 
   const handleMainGridMouseUp = useCallback(() => {
     if (!draft || !isDrafting) return;
@@ -84,13 +79,7 @@ export const useGridMouseUp = () => {
       return;
     }
 
-    if (isResizing) {
-      stopResizing();
-    }
-
-    if (isDragging) {
-      stopDragging();
-    }
+    stopMotion();
 
     const { shouldSubmit, shouldOpenForm } = getNextAction(
       Categories_Event.TIMED,
@@ -108,12 +97,9 @@ export const useGridMouseUp = () => {
     draft,
     isDrafting,
     reduxDraftType,
-    isResizing,
-    isDragging,
     getNextAction,
     discard,
-    stopResizing,
-    stopDragging,
+    stopMotion,
     openForm,
     submit,
   ]);

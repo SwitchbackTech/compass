@@ -261,20 +261,6 @@ export const useSidebarActions = (
     setIsSomedayFormOpen(true);
   }, [setIsSomedayFormOpen]);
 
-  const convertSomedayToCalendarEvent = useCallback(
-    (
-      _id: string,
-      updates: Pick<Schema_Event, "startDate" | "endDate" | "isAllDay">,
-    ) => {
-      dispatch(
-        getSomedayEventsSlice.actions.convert({
-          event: { ...updates, isSomeday: false, _id },
-        }),
-      );
-    },
-    [dispatch],
-  );
-
   const create = useCallback(() => {
     setDraft(reduxDraft);
     setIsDrafting(true);
@@ -435,10 +421,16 @@ export const useSidebarActions = (
   const commitSomedayInteraction = (result: SomedayInteractionCommitResult) => {
     if (result.type === "schedule") {
       clearSomedayInteractionPreview({ shouldRestore: true });
-      convertSomedayToCalendarEvent(result.eventId, {
-        ...result.dates,
-        isAllDay: result.isAllDay,
-      });
+      dispatch(
+        getSomedayEventsSlice.actions.convert({
+          event: {
+            ...result.dates,
+            _id: result.eventId,
+            isAllDay: result.isAllDay,
+            isSomeday: false,
+          },
+        }),
+      );
       discardSomedayInteraction();
       return;
     }

@@ -1,10 +1,16 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
+import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
+import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  __resetSomedayCommitAcknowledgementState,
+  markSomedayCommitAcknowledgement,
+} from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { reducers } from "@web/store/reducers";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
@@ -104,6 +110,12 @@ const renderWithStore = (
   pendingEventIds: string[] = [],
 ) =>
   render(<Provider store={createStore(pendingEventIds)}>{children}</Provider>);
+
+const expectEventBgToUseHoverColor = (element: HTMLElement) => {
+  expect(element.style.getPropertyValue("--event-bg")).toBe(
+    gridHoverColorByPriority[Priorities.UNASSIGNED],
+  );
+};
 
 const RegistrationHarness = ({
   eventId = "event-1",
@@ -211,6 +223,9 @@ const RegisteredAllDayEventHarness = ({
 };
 
 afterEach(() => {
+  act(() => {
+    __resetSomedayCommitAcknowledgementState();
+  });
   weekEventRegistry.clear();
   document.body.innerHTML = "";
 });
@@ -342,6 +357,50 @@ describe("weekEventRegistry", () => {
 
     expect(weekEventRegistry.resolve("draft-event", "timed")).toBeNull();
     expect(weekEventRegistry.resolve("pending-event", "timed")).toBeNull();
+  });
+
+  it("settles the dropped timed event block while choreographing tall-event text", () => {
+    const event = createTimedEvent();
+
+    markSomedayCommitAcknowledgement(event._id!);
+    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+
+    const element = screen.getByRole("button", { name: /timed event/i });
+    const title = screen.getByText("Timed event");
+
+    expect(element).toHaveClass("animate-someday-commit-acknowledge");
+    expectEventBgToUseHoverColor(element);
+    expect(title).toHaveClass("animate-someday-commit-title-rise");
+  });
+
+  it("settles short dropped timed events without text choreography", () => {
+    const event = createTimedEvent({
+      endDate: "2026-05-18T09:30:00.000Z",
+    });
+
+    markSomedayCommitAcknowledgement(event._id!);
+    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+
+    const element = screen.getByRole("button", { name: /timed event/i });
+    const title = screen.getByText("Timed event");
+
+    expect(element).toHaveClass("animate-someday-commit-acknowledge");
+    expectEventBgToUseHoverColor(element);
+    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
+  });
+
+  it("settles dropped all-day events without text choreography", () => {
+    const event = createAllDayEvent();
+
+    markSomedayCommitAcknowledgement(event._id!);
+    renderWithStore(<RegisteredAllDayEventHarness event={event} />);
+
+    const element = screen.getByRole("button", { name: /all-day event/i });
+    const title = screen.getByText("All-day event");
+
+    expect(element).toHaveClass("animate-someday-commit-acknowledge");
+    expectEventBgToUseHoverColor(element);
+    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
   });
 });
 

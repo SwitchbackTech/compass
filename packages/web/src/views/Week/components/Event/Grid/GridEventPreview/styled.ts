@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { type Priority } from "@core/constants/core.constants";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
-import { hoverColorByPriority } from "@web/common/styles/theme.util";
+import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 
 export const getItemStyles = (
   currentOffset: {
@@ -48,10 +48,10 @@ interface StyledEventProps {
 export const StyledGridEventPreview = styled.div.attrs<StyledEventProps>(
   (props) => {
     return {
-      backgroundColor: hoverColorByPriority[props.priority],
+      backgroundColor: gridHoverColorByPriority[props.priority],
       color: theme.color.text.dark,
       height: props.height,
-      hoverColor: hoverColorByPriority[props.priority],
+      hoverColor: gridHoverColorByPriority[props.priority],
       width: props.width,
     };
   },

@@ -1,3 +1,4 @@
+import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -5,6 +6,8 @@ import {
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
+import { theme } from "@web/common/styles/theme";
+import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { createSomedayInteractionAdapter } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter";
 import { somedayDropTargetRegistry } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayDropTargetRegistry";
 import { somedayEventRegistry } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
@@ -68,6 +71,34 @@ const makePointerEvent = (
   Object.defineProperty(event, "target", { value: target });
 
   return event;
+};
+
+const normalizeCssColor = (color: string) => {
+  const element = document.createElement("span");
+
+  element.style.color = color;
+
+  return element.style.color;
+};
+
+const setReducedMotionPreference = (matches: boolean) => {
+  const originalMatchMedia = window.matchMedia;
+  const reducedMotionMatchMedia = mock((query: string) => ({
+    addEventListener: mock(),
+    addListener: mock(),
+    dispatchEvent: mock(),
+    matches: query === "(prefers-reduced-motion: reduce)" ? matches : false,
+    media: query,
+    onchange: null,
+    removeEventListener: mock(),
+    removeListener: mock(),
+  }));
+
+  window.matchMedia = reducedMotionMatchMedia as typeof window.matchMedia;
+
+  return () => {
+    window.matchMedia = originalMatchMedia;
+  };
 };
 
 const createHarness = () => {
@@ -300,6 +331,87 @@ describe("SomedayInteractionAdapter", () => {
       isAllDay: false,
       type: "schedule",
     });
+  });
+
+  it("transitions dragged Someday overlay text to dark while over the calendar", () => {
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector<HTMLElement>(
+      "[data-calendar-interaction-overlay]",
+    );
+    const expectedTextColor = normalizeCssColor(theme.color.text.dark);
+
+    expect(overlay).toBeTruthy();
+    expect(overlay?.style.transition).toContain("color 240ms");
+    expect(overlay?.style.color).toBe(expectedTextColor);
+    expect(overlay?.querySelector("[data-someday-drag-affordance]")).toBeNull();
+  });
+
+  it("uses the hovered grid color for the dragged Someday overlay over the calendar", () => {
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector<HTMLElement>(
+      "[data-calendar-interaction-overlay]",
+    );
+    const expectedHoverColor = normalizeCssColor(
+      gridHoverColorByPriority[Priorities.UNASSIGNED],
+    );
+
+    expect(overlay).toBeTruthy();
+    expect(overlay?.style.backgroundColor).toBe(expectedHoverColor);
+  });
+
+  it("disables Someday overlay motion when reduced motion is preferred", () => {
+    const restoreMatchMedia = setReducedMotionPreference(true);
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
+
+    try {
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+      );
+      adapter.handlePointerMove(
+        makePointerEvent("pointermove", {
+          target: timedColumns,
+          x: 250,
+          y: 220,
+        }),
+      );
+      flushFrame();
+
+      const overlay = document.body.querySelector<HTMLElement>(
+        "[data-calendar-interaction-overlay]",
+      );
+
+      expect(overlay).toBeTruthy();
+      expect(overlay?.style.transition).toBe("none");
+      expect(overlay?.style.scale).toBe("1");
+    } finally {
+      restoreMatchMedia();
+    }
   });
 
   it("schedules a dragged Someday event as an all-day event", () => {

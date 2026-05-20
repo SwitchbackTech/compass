@@ -13,6 +13,7 @@ import {
   createSomedayInteractionAdapter,
   type SomedayInteractionRuntime,
 } from "./adapter/SomedayInteractionAdapter";
+import { markSomedayCommitAcknowledgement } from "./state/somedayCommitAcknowledgementState";
 
 interface Props extends PropsWithChildren {
   getLayoutSources?: () => WeekLayoutCacheSources;
@@ -66,7 +67,15 @@ export const SomedayInteractionCoordinator: FC<Props> = ({
     isSidebarDropAllowed: actions.isSomedaySidebarDropAllowed,
     onCancelInteraction: actions.cancelSomedayInteraction,
     onClickSomedayEvent: actions.onDraft,
-    onCommitSomedayInteraction: actions.commitSomedayInteraction,
+    onCommitSomedayInteraction: (result) => {
+      // Mark before dispatching so the freshly rendered GridEvent /
+      // AllDayEvent picks up the acknowledgment on its first paint.
+      if (result.type === "schedule") {
+        markSomedayCommitAcknowledgement(result.eventId);
+      }
+
+      actions.commitSomedayInteraction(result);
+    },
     onMotionActivation: (target) => {
       actions.startSomedayInteraction(target.event._id);
     },

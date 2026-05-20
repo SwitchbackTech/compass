@@ -98,6 +98,7 @@ export const SomedayEventsContainer: FC<Props> = ({
     return (
       <TooltipWrapper
         description={addLabel}
+        placement="right"
         shortcut={
           category === Categories_Event.SOMEDAY_MONTH ? "Shift+M" : "Shift+W"
         }
