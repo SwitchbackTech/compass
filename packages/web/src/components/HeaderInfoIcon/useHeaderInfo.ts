@@ -39,7 +39,7 @@ export const useHeaderInfo = (): HeaderInfo => {
       isAnonymousSignUpPrompt: true,
       isRepairing: false,
       sidebarStatus: {
-        iconColor: "warning" as const,
+        iconColor: "info" as const,
         isDisabled: false,
         onSelect: handleOpenSignUp,
         tooltip: ANONYMOUS_SIGN_UP_TOOLTIP,

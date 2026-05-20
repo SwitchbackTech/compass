@@ -4,7 +4,7 @@ export type GoogleUiState = "checking" | "repairing" | GoogleConnectionState;
 
 export type CommandActionIcon = "CloudArrowUpIcon";
 
-export type IconColor = "muted" | "warning" | "error";
+export type IconColor = "muted" | "warning" | "error" | "info";
 
 export type GoogleUiConfig = {
   commandAction: {

@@ -10,6 +10,7 @@ const ICON_COLOR_MAP: Record<IconColor, string> = {
   muted: theme.color.text.darkPlaceholder,
   warning: theme.color.status.warning,
   error: theme.color.status.error,
+  info: theme.color.status.info
 };
 
 const ANONYMOUS_PROMPT_ICON_CLASSNAME =
@@ -36,7 +37,8 @@ export const HeaderInfoIcon = () => {
   // Only render when user attention is needed (warning or error states)
   if (
     sidebarStatus.iconColor !== "warning" &&
-    sidebarStatus.iconColor !== "error"
+    sidebarStatus.iconColor !== "error" &&
+    sidebarStatus.iconColor !== "info"
   ) {
     return null;
   }
