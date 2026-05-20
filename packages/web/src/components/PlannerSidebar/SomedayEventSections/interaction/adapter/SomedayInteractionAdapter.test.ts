@@ -101,7 +101,11 @@ const setReducedMotionPreference = (matches: boolean) => {
   };
 };
 
-const createHarness = () => {
+const createHarness = ({
+  viewStart = dayjs("2026-05-17"),
+}: {
+  viewStart?: ReturnType<typeof dayjs>;
+} = {}) => {
   document.body.innerHTML = "";
   somedayDropTargetRegistry.clear();
   somedayEventRegistry.clear();
@@ -211,7 +215,7 @@ const createHarness = () => {
       mainGridElement: mainGrid,
       timedColumnsElement: timedColumns,
     }),
-    getViewStart: () => dayjs("2026-05-17"),
+    getViewStart: () => viewStart,
     runtime: () => ({
       getSomedayEventById: (eventId) => (eventId === event._id ? event : null),
       onCancelInteraction,
@@ -369,7 +373,9 @@ describe("SomedayInteractionAdapter", () => {
   });
 
   it("shows the tentative timed-grid range inside the visible Someday preview", () => {
-    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness({
+      viewStart: dayjs().add(1, "week").startOf("week"),
+    });
 
     adapter.handlePointerDown(
       makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
@@ -392,9 +398,45 @@ describe("SomedayInteractionAdapter", () => {
 
     expect(timeLabel).toBeTruthy();
     expect(timeLabel?.textContent).toMatch(/2\s+-\s+3 AM/);
+    expect(timeLabel?.style.display).toBe("block");
     expect(
       timeLabel?.parentElement?.getAttribute("data-someday-event-title-row"),
     ).toBe("true");
+    expect(timeLabel?.parentElement?.style.alignSelf).toBe("stretch");
+    expect(timeLabel?.parentElement?.style.alignItems).toBe("flex-start");
+    expect(timeLabel?.parentElement?.style.flexDirection).toBe("column");
+  });
+
+  it("matches dropped past timed events by hiding the tentative time range", () => {
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness({
+      viewStart: dayjs().subtract(1, "week").startOf("week"),
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector<HTMLElement>(
+      "[data-calendar-interaction-overlay]",
+    );
+    const titleRow = overlay?.querySelector<HTMLElement>(
+      "[data-someday-event-title-row]",
+    );
+
+    expect(
+      overlay?.querySelector("[data-someday-interaction-time-label]"),
+    ).toBeNull();
+    expect(titleRow?.style.alignSelf).toBe("stretch");
+    expect(titleRow?.style.alignItems).toBe("flex-start");
+    expect(titleRow?.style.flexDirection).toBe("column");
   });
 
   it("disables Someday overlay motion when reduced motion is preferred", () => {

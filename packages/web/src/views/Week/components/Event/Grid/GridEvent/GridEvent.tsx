@@ -37,12 +37,6 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
 import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
 
-// Minimum event height for the layered title-rise + time-fade choreography
-// to read meaningfully. Below this, the block-level acknowledgment plays
-// alone (degraded case) because the title has no vertical headroom to rise
-// from and the time row would arrive in the same frame as the title.
-const MIN_EVENT_HEIGHT_FOR_COMMIT_CHOREOGRAPHY = 40;
-
 interface Props {
   displayMode: GridEventDisplayMode;
   event: Schema_GridEvent;
@@ -104,15 +98,6 @@ const GridEventBase = (
     isDraft,
   );
 
-  // Layered title-rise + time-fade choreography runs alongside the
-  // block-level acknowledgment on commit, but only when the event is a
-  // timed event with enough vertical room to stage the rise and the
-  // following time-row fade. AllDayEvent and short timed events fall back
-  // to the block-level settle alone.
-  const shouldChoreographCommit =
-    shouldAcknowledgeCommit &&
-    !event.isAllDay &&
-    position.height >= MIN_EVENT_HEIGHT_FOR_COMMIT_CHOREOGRAPHY;
   const lineClamp = useMemo(
     () => getLineClamp(position.height),
     [position.height],
@@ -241,22 +226,12 @@ const GridEventBase = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <span
-          className={cn({
-            "animate-someday-commit-title-rise": shouldChoreographCommit,
-          })}
-          style={titleStyle}
-        >
-          {event.title}
-        </span>
+        <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
             {(isDraft || !isInPast) &&
               position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL && (
                 <Text
-                  className={cn({
-                    "animate-someday-commit-time-fade": shouldChoreographCommit,
-                  })}
                   data-week-event-time-label="true"
                   size="xs"
                   zIndex={ZIndex.LAYER_3}

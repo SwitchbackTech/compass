@@ -17,6 +17,8 @@ test("shows a timed-grid preview while dragging a someday event", async ({
   page,
 }) => {
   await prepareCalendarPage(page);
+  await page.getByRole("button", { name: "Next week" }).click();
+  await page.locator("#mainGrid").waitFor({ state: "visible" });
 
   const title = createEventTitle("Someday Drag Preview");
   await openSomedayEventFormWithMouse(page, "week");
@@ -43,10 +45,22 @@ test("shows a timed-grid preview while dragging a someday event", async ({
   await page.mouse.move(target.x, target.y, { steps: 12 });
 
   const overlay = page.locator("[data-calendar-interaction-overlay]");
+  const titleLabel = overlay.getByText(title);
+  const timeLabel = overlay.locator("[data-someday-interaction-time-label]");
+
   await expect(overlay).toBeVisible();
-  await expect(
-    overlay.locator("[data-someday-interaction-time-label]"),
-  ).toHaveText(/\d{1,2}(?::\d{2})?\s+-\s+\d{1,2}(?::\d{2})?\s*(AM|PM)/i);
+  await expect(timeLabel).toHaveText(
+    /\d{1,2}(?::\d{2})?\s+-\s+\d{1,2}(?::\d{2})?\s*(AM|PM)/i,
+  );
+
+  const titleBox = await titleLabel.boundingBox();
+  const timeBox = await timeLabel.boundingBox();
+
+  if (!titleBox || !timeBox) {
+    throw new Error("Expected the Someday timed preview text to be visible.");
+  }
+
+  expect(timeBox.y).toBeGreaterThan(titleBox.y);
 
   await page.mouse.up();
 });

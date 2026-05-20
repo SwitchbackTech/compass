@@ -359,7 +359,7 @@ describe("weekEventRegistry", () => {
     expect(weekEventRegistry.resolve("pending-event", "timed")).toBeNull();
   });
 
-  it("acknowledges a dropped timed event with block and text choreography", () => {
+  it("acknowledges a dropped timed event without moving the text", () => {
     const event = createTimedEvent({
       endDate: "2026-05-22T10:00:00.000Z",
       startDate: "2026-05-22T09:00:00.000Z",
@@ -374,8 +374,8 @@ describe("weekEventRegistry", () => {
 
     expect(element).toHaveClass("animate-someday-commit-acknowledge");
     expectEventBgToUseHoverColor(element);
-    expect(title).toHaveClass("animate-someday-commit-title-rise");
-    expect(timeLabel).toHaveClass("animate-someday-commit-time-fade");
+    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
+    expect(timeLabel).not.toHaveClass("animate-someday-commit-time-fade");
   });
 
   it("settles short dropped timed events without text choreography", () => {

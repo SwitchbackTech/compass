@@ -39,6 +39,7 @@ import {
   EVENT_ALLDAY_HEIGHT,
   EVENT_PADDING_RIGHT,
   GRID_TIME_STEP,
+  MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
   TIMED_EVENT_COLUMN_INSET,
 } from "@web/views/Week/layout.constants";
 import { somedayDropTargetRegistry } from "../registry/somedayDropTargetRegistry";
@@ -299,7 +300,8 @@ export const createSomedayInteractionAdapter = ({
         return {
           overlay: {
             height: overlayRect?.height,
-            mutate: (node) => mutateOverlay(node, nextDrop, target.event),
+            mutate: (node) =>
+              mutateOverlay(node, nextDrop, target.event, nextVisual),
             transform: nextVisual.transform,
             width: overlayRect?.width,
           },
@@ -696,6 +698,7 @@ const mutateOverlay = (
   node: HTMLElement,
   drop: SomedayInteractionDrop | null,
   event: Schema_Event,
+  visual: SomedayInteractionVisual,
 ) => {
   node.style.overflow = "hidden";
 
@@ -749,16 +752,22 @@ const mutateOverlay = (
     : theme.color.text.lighter;
 
   if (drop?.type !== "timed") {
-    node.querySelector<HTMLElement>(SOMEDAY_TIME_LABEL_SELECTOR)?.remove();
+    resetTimedOverlayLayout(node);
     return;
   }
 
-  const start = dayjs().startOf("day").add(drop.startMinutes, "minutes");
-  const end = start.add(ONE_HOUR_MINUTES, "minutes");
-  const timeLabel = getOrCreateOverlayTimeLabel(node);
+  const titleRow = applyTimedOverlayLayout(node);
+  const { end, start } = getTimedDropDateRange(drop, visual);
+
+  if (dayjs().isAfter(end) || !isOverlayTallEnoughForTimeLabel(node)) {
+    removeOverlayTimeLabel(node);
+    return;
+  }
+
+  const timeLabel = getOrCreateOverlayTimeLabel(node, titleRow);
 
   timeLabel.textContent = getTimesLabel(start.format(), end.format());
-  timeLabel.style.display = event.title ? "inline" : "block";
+  timeLabel.style.display = "block";
 };
 
 const isReducedMotionPreferred = () =>
@@ -766,20 +775,79 @@ const isReducedMotionPreferred = () =>
   typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const getOrCreateOverlayTimeLabel = (node: HTMLElement) => {
+const getTimedDropDateRange = (
+  drop: SomedayTimedDrop,
+  visual: SomedayInteractionVisual,
+) => {
+  const start = visual.initialViewStart
+    .add(visual.weekOffsetDays + drop.dayIndex, "day")
+    .startOf("day")
+    .add(drop.startMinutes, "minutes");
+
+  return {
+    end: start.add(ONE_HOUR_MINUTES, "minutes"),
+    start,
+  };
+};
+
+const applyTimedOverlayLayout = (node: HTMLElement) => {
+  const titleRow = getOverlayTitleRow(node);
+
+  titleRow.style.alignSelf = "stretch";
+  titleRow.style.alignItems = "flex-start";
+  titleRow.style.flexDirection = "column";
+  titleRow.style.gap = "0";
+  titleRow.style.justifyContent = "flex-start";
+
+  return titleRow;
+};
+
+const resetTimedOverlayLayout = (node: HTMLElement) => {
+  removeOverlayTimeLabel(node);
+
+  const titleRow = node.querySelector<HTMLElement>(
+    SOMEDAY_EVENT_TITLE_ROW_SELECTOR,
+  );
+
+  if (!titleRow) {
+    return;
+  }
+
+  titleRow.style.alignSelf = "";
+  titleRow.style.alignItems = "";
+  titleRow.style.flexDirection = "";
+  titleRow.style.gap = "";
+  titleRow.style.justifyContent = "";
+};
+
+const removeOverlayTimeLabel = (node: HTMLElement) => {
+  node.querySelector<HTMLElement>(SOMEDAY_TIME_LABEL_SELECTOR)?.remove();
+};
+
+const getOverlayTitleRow = (node: HTMLElement) =>
+  node.querySelector<HTMLElement>(SOMEDAY_EVENT_TITLE_ROW_SELECTOR) ?? node;
+
+const isOverlayTallEnoughForTimeLabel = (node: HTMLElement) => {
+  const height = Number.parseFloat(node.style.height);
+
+  return Number.isNaN(height) || height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL;
+};
+
+const getOrCreateOverlayTimeLabel = (
+  node: HTMLElement,
+  parent: HTMLElement,
+) => {
   const existing = node.querySelector<HTMLElement>(SOMEDAY_TIME_LABEL_SELECTOR);
 
   if (existing) {
     return existing;
   }
 
-  const parent =
-    node.querySelector<HTMLElement>(SOMEDAY_EVENT_TITLE_ROW_SELECTOR) ?? node;
   const label = document.createElement("span");
 
   label.setAttribute("data-someday-interaction-time-label", "true");
   label.style.fontSize = "11px";
-  label.style.marginLeft = parent === node ? "4px" : "0";
+  label.style.marginLeft = "0";
   label.style.opacity = "0.78";
   label.style.flexShrink = "0";
   label.style.whiteSpace = "nowrap";
