@@ -86,6 +86,10 @@ const SOMEDAY_OVERLAY_TRANSITION_ANCHORED =
   `transform ${SOMEDAY_OVERLAY_ANCHOR_MS}ms ${SOMEDAY_OVERLAY_EASING}`;
 const SOMEDAY_OVERLAY_SHADOW_LIFTED = `0 12px 28px color-mix(in srgb, ${theme.color.shadow.default} 22%, transparent)`;
 const SOMEDAY_OVERLAY_SHADOW_SETTLED = `0 6px 14px color-mix(in srgb, ${theme.color.shadow.default} 14%, transparent)`;
+const SOMEDAY_EVENT_TITLE_ROW_SELECTOR =
+  '[data-someday-event-title-row="true"]';
+const SOMEDAY_TIME_LABEL_SELECTOR =
+  '[data-someday-interaction-time-label="true"]';
 
 const inertRuntime: SomedayInteractionRuntime = {
   getSomedayEventById: () => null,
@@ -744,15 +748,14 @@ const mutateOverlay = (
     ? theme.color.text.dark
     : theme.color.text.lighter;
 
-  const timeLabel = getOrCreateOverlayTimeLabel(node);
-
   if (drop?.type !== "timed") {
-    timeLabel.remove();
+    node.querySelector<HTMLElement>(SOMEDAY_TIME_LABEL_SELECTOR)?.remove();
     return;
   }
 
   const start = dayjs().startOf("day").add(drop.startMinutes, "minutes");
   const end = start.add(ONE_HOUR_MINUTES, "minutes");
+  const timeLabel = getOrCreateOverlayTimeLabel(node);
 
   timeLabel.textContent = getTimesLabel(start.format(), end.format());
   timeLabel.style.display = event.title ? "inline" : "block";
@@ -764,21 +767,23 @@ const isReducedMotionPreferred = () =>
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 const getOrCreateOverlayTimeLabel = (node: HTMLElement) => {
-  const existing = node.querySelector<HTMLElement>(
-    "[data-someday-interaction-time-label]",
-  );
+  const existing = node.querySelector<HTMLElement>(SOMEDAY_TIME_LABEL_SELECTOR);
 
   if (existing) {
     return existing;
   }
 
+  const parent =
+    node.querySelector<HTMLElement>(SOMEDAY_EVENT_TITLE_ROW_SELECTOR) ?? node;
   const label = document.createElement("span");
 
   label.setAttribute("data-someday-interaction-time-label", "true");
   label.style.fontSize = "11px";
-  label.style.marginLeft = "4px";
+  label.style.marginLeft = parent === node ? "4px" : "0";
   label.style.opacity = "0.78";
-  node.append(label);
+  label.style.flexShrink = "0";
+  label.style.whiteSpace = "nowrap";
+  parent.append(label);
 
   return label;
 };

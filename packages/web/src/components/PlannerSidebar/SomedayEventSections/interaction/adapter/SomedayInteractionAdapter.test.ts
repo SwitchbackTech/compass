@@ -112,6 +112,8 @@ const createHarness = () => {
   const timerCallbacks = new Map<unknown, () => void>();
   const event = createSomedayEvent();
   const source = document.createElement("div");
+  const sourceContent = document.createElement("div");
+  const sourceTitleRow = document.createElement("div");
   const sourceChild = document.createElement("span");
   const sourceButton = document.createElement("button");
   const weekDropTarget = document.createElement("div");
@@ -126,7 +128,11 @@ const createHarness = () => {
   const onRequestWeekNavigation = mock();
 
   sourceButton.type = "button";
-  source.append(sourceChild, sourceButton);
+  sourceContent.className = "h-full";
+  sourceTitleRow.setAttribute("data-someday-event-title-row", "true");
+  sourceTitleRow.append(sourceChild);
+  sourceContent.append(sourceTitleRow, sourceButton);
+  source.append(sourceContent);
   weekDropTarget.append(source);
   mainGrid.id = ID_GRID_MAIN;
   timedColumns.id = ID_GRID_COLUMNS_TIMED;
@@ -360,6 +366,35 @@ describe("SomedayInteractionAdapter", () => {
     expect(overlay?.style.color).toBe(expectedTextColor);
     expect(overlay?.style.backgroundColor).toBe(expectedHoverColor);
     expect(overlay?.querySelector("[data-someday-drag-affordance]")).toBeNull();
+  });
+
+  it("shows the tentative timed-grid range inside the visible Someday preview", () => {
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector<HTMLElement>(
+      "[data-calendar-interaction-overlay]",
+    );
+    const timeLabel = overlay?.querySelector<HTMLElement>(
+      "[data-someday-interaction-time-label]",
+    );
+
+    expect(timeLabel).toBeTruthy();
+    expect(timeLabel?.textContent).toMatch(/2\s+-\s+3 AM/);
+    expect(
+      timeLabel?.parentElement?.getAttribute("data-someday-event-title-row"),
+    ).toBe("true");
   });
 
   it("disables Someday overlay motion when reduced motion is preferred", () => {
