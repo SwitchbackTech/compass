@@ -126,7 +126,7 @@ describe("self-host helper", () => {
     const helper = readRepoFile("self-host/compass");
 
     expect(helper).toContain(
-      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-selfhost}"',
+      'COMPOSE_PROFILES="' + "$" + '{COMPOSE_PROFILES-selfhosted}"',
     );
   });
 
@@ -294,25 +294,13 @@ describe("deploy health check script", () => {
     expect(result.stderr).toContain("expected 0.5.27, got 0.5.26");
   });
 
-  it("defaults self-hosted Docker Compose checks to the self-host profile", async () => {
+  it("uses selfhosted profile for selfhosted deployments", async () => {
     const result = await runHealthScriptFunction("remote_compose_prefix", {
-      COMPOSE_PROFILES: "",
       PROFILE: "selfhosted",
     });
 
     expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("COMPOSE_PROFILES=selfhost");
+    expect(result.stdout).toContain("COMPOSE_PROFILES=selfhosted");
     expect(result.stdout).toContain("docker compose --project-name compass");
-  });
-
-  it("keeps explicit Docker Compose profile overrides", async () => {
-    const result = await runHealthScriptFunction("remote_compose_prefix", {
-      COMPOSE_PROFILES: "custom",
-      PROFILE: "selfhosted",
-    });
-
-    expect(result.exitCode).toBe(0);
-    expect(result.stdout).toContain("COMPOSE_PROFILES=custom");
-    expect(result.stdout).not.toContain("COMPOSE_PROFILES=selfhost");
   });
 });

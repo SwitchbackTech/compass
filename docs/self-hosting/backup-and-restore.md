@@ -311,7 +311,7 @@ When the rehearsal is done, remove only the temporary project:
 ```bash
 cd "$CHECK_DIR"
 ./compass stop
-COMPOSE_PROFILES=selfhost docker compose \
+COMPOSE_PROFILES=selfhosted docker compose \
   --project-name "$CHECK_PROJECT" \
   -f compose.yaml \
   down -v

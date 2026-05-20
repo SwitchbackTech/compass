@@ -366,27 +366,12 @@ ssh_remote() {
   "$SSH_BIN" "${SSH_OPTS[@]}" "$SSH_TARGET" "$@"
 }
 
-resolved_compose_profiles() {
-  local profiles=${COMPOSE_PROFILES:-}
-
-  if [ -z "$profiles" ] && [ "${PROFILE:-}" = "selfhosted" ]; then
-    profiles=selfhost
-  fi
-
-  printf '%s' "$profiles"
-}
-
-remote_compose_env_prefix() {
-  local profiles
-  profiles=$(resolved_compose_profiles)
-
-  if [ -n "$profiles" ]; then
-    printf "COMPOSE_PROFILES=%q " "$profiles"
-  fi
-}
-
 remote_compose_prefix() {
-  printf 'cd ~/compass && %sdocker compose --project-name compass -f compose.yaml' "$(remote_compose_env_prefix)"
+  if [ "${PROFILE:-}" = "selfhosted" ]; then
+    printf 'cd ~/compass && COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml'
+  else
+    printf 'cd ~/compass && docker compose --project-name compass -f compose.yaml'
+  fi
 }
 
 remote_check_stack() {
@@ -508,15 +493,13 @@ REMOTE
 remote_check_selfhosted_data() {
   local mongo_password=${MONGO_PASSWORD:-}
   local postgres_password=${SUPERTOKENS_POSTGRES_PASSWORD:-}
-  local compose_env
-  compose_env=$(remote_compose_env_prefix)
 
   ssh_remote "bash -se" <<REMOTE
 set -euo pipefail
 cd ~/compass
 
 # Verify MongoDB is reachable and the replica set is healthy.
-${compose_env}docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --quiet \
+COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --quiet \
   --username compass \
   --password $(printf '%q' "$mongo_password") \
   --authenticationDatabase admin \
@@ -538,8 +521,8 @@ ${compose_env}docker compose --project-name compass -f compose.yaml exec -T mong
   '
 
 # Verify Postgres (SuperTokens) is reachable.
-${compose_env}docker compose --project-name compass -f compose.yaml exec -T supertokens-db pg_isready -U supertokens -d supertokens
-${compose_env}docker compose --project-name compass -f compose.yaml exec -T -e PGPASSWORD=$(printf '%q' "$postgres_password") supertokens-db \
+COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml exec -T supertokens-db pg_isready -U supertokens -d supertokens
+COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml exec -T -e PGPASSWORD=$(printf '%q' "$postgres_password") supertokens-db \
   psql -U supertokens -d supertokens -c 'select 1' >/dev/null
 REMOTE
 }

@@ -48,7 +48,7 @@ services:
 
   mongo:
     image: switchbacktech/compass-mongo:${COMPASS_VERSION:-latest}
-    profiles: [selfhost]
+    profiles: [selfhosted]
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-compass}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-change-me-mongo-password-32chars}
@@ -70,7 +70,7 @@ services:
 
   supertokens:
     image: supertokens/supertokens-postgresql:11.0.2
-    profiles: [selfhost]
+    profiles: [selfhosted]
     depends_on:
       supertokens-db:
         condition: service_healthy
@@ -91,7 +91,7 @@ services:
 
   supertokens-db:
     image: postgres:16-alpine
-    profiles: [selfhost]
+    profiles: [selfhosted]
     environment:
       POSTGRES_USER: ${SUPERTOKENS_POSTGRES_USER:-supertokens}
       POSTGRES_PASSWORD: ${SUPERTOKENS_POSTGRES_PASSWORD:-change-me-supertokens-postgres-pass-32}
