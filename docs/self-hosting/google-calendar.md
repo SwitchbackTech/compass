@@ -164,6 +164,6 @@ The repo has the code paths for Google watches and repair. The self-host Docker 
 
 ## What to read next
 
-If you are using local development, use [Run Compass without the installer](./advanced-manual.md). If you need public Google watch notifications, continue with [Server hosting guide](./server-guide.md).
+If you need public Google watch notifications, continue with [Server hosting guide](./server-guide.md).
 
 Have an idea on how we can make self-hosting easier? Let us know in [this GitHub Discussion](https://github.com/SwitchbackTech/compass/discussions/1694).

@@ -2,7 +2,7 @@
 
 This guide describes the recommended first server setup for one person hosting Compass on a small VPS. One public domain, Compass on `127.0.0.1`, Caddy in front for HTTPS.
 
-If you only want Compass on your own computer, use the normal Bun-based local setup instead of this self-hosting guide. See [Run Compass without the installer](./advanced-manual.md).
+If you only want Compass on your own computer, use the normal Bun-based local setup instead of this self-hosting guide.
 
 ## Before you start
 

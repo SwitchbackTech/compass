@@ -17,7 +17,6 @@ The compose stack binds the web and backend containers to `127.0.0.1`; the serve
 - Back up before updating: [Backups and restore](../docs/Self-Hosting/backup-and-restore.md)
 - Missing `compass.yaml` with old Docker volumes: [Backups and restore](../docs/Self-Hosting/backup-and-restore.md#if-compassyaml-is-missing-but-old-volumes-exist)
 - Google setup or no-Google mode: [Google Calendar](../docs/self-hosting/google-calendar.md)
-- Manual Bun setup: [Run Compass without the installer](../docs/self-hosting/advanced-manual.md)
 
 ## Files in this folder
 
