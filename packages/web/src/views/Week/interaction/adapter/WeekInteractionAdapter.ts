@@ -80,6 +80,7 @@ const inertRuntime: WeekInteractionRuntime = {
 };
 
 const WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE = "data-week-event-resize-handle";
+const WEEK_EVENT_TIME_LABEL_SELECTOR = "[data-week-event-time-label='true']";
 const activeEdgeNavigationIndicatorState = {
   currentEdge: null,
   isDragging: true,
@@ -776,13 +777,61 @@ const readElementRect = (element: HTMLElement): VisualRect => {
 };
 
 const updateOverlayTimeLabel = (node: HTMLElement, event: Schema_GridEvent) => {
-  const timeLabel = node.querySelector<HTMLElement>(
-    "[data-week-event-time-label='true']",
-  );
-
-  if (!timeLabel || !event.startDate || !event.endDate) {
+  if (!event.startDate || !event.endDate) {
     return;
   }
 
+  const timeLabel = getOrCreateOverlayTimeLabel(node);
+
+  timeLabel.removeAttribute("aria-hidden");
+  timeLabel.classList.remove("animate-someday-commit-time-exit", "opacity-0");
+  timeLabel.style.display = "block";
   timeLabel.textContent = getTimesLabel(event.startDate, event.endDate);
+};
+
+const getOrCreateOverlayTimeLabel = (node: HTMLElement) => {
+  const existing = node.querySelector<HTMLElement>(
+    WEEK_EVENT_TIME_LABEL_SELECTOR,
+  );
+
+  if (existing) {
+    return existing;
+  }
+
+  const label = document.createElement("span");
+
+  label.setAttribute("data-week-event-time-label", "true");
+  label.style.fontSize = "0.563rem";
+  label.style.position = "relative";
+  label.style.zIndex = "3";
+
+  const parent = getOverlayTimeLabelParent(node);
+  const resizeHandle = getFirstDirectResizeHandle(parent);
+
+  parent.insertBefore(label, resizeHandle);
+
+  return label;
+};
+
+const getOverlayTimeLabelParent = (node: HTMLElement) => {
+  const firstChild = node.firstElementChild;
+
+  if (firstChild instanceof HTMLElement && firstChild.tagName !== "SPAN") {
+    return firstChild;
+  }
+
+  return node;
+};
+
+const getFirstDirectResizeHandle = (node: HTMLElement) => {
+  for (const child of node.children) {
+    if (
+      child instanceof HTMLElement &&
+      child.hasAttribute(WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE)
+    ) {
+      return child;
+    }
+  }
+
+  return null;
 };

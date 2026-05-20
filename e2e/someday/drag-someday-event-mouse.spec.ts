@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, type Page, test } from "@playwright/test";
 import {
   createEventTitle,
   expectSomedayEventVisible,
@@ -13,14 +13,8 @@ test.skip(
   "Mouse flows are desktop-only in week view.",
 );
 
-test("shows a timed-grid preview while dragging a someday event", async ({
-  page,
-}) => {
-  await prepareCalendarPage(page);
-  await page.getByRole("button", { name: "Next week" }).click();
-  await page.locator("#mainGrid").waitFor({ state: "visible" });
-
-  const title = createEventTitle("Someday Drag Preview");
+const dragSomedayEventToTimedGrid = async (page: Page, titlePrefix: string) => {
+  const title = createEventTitle(titlePrefix);
   await openSomedayEventFormWithMouse(page, "week");
   await fillTitleAndSaveEventForm(page, title);
   await expectSomedayEventVisible(page, title);
@@ -44,6 +38,10 @@ test("shows a timed-grid preview while dragging a someday event", async ({
   await page.mouse.down();
   await page.mouse.move(target.x, target.y, { steps: 12 });
 
+  return title;
+};
+
+const expectTimedPreviewTextStack = async (page: Page, title: string) => {
   const overlay = page.locator("[data-calendar-interaction-overlay]");
   const titleLabel = overlay.getByText(title);
   const timeLabel = overlay.locator("[data-someday-interaction-time-label]");
@@ -60,8 +58,37 @@ test("shows a timed-grid preview while dragging a someday event", async ({
     throw new Error("Expected the Someday timed preview text to be visible.");
   }
 
-  expect(timeBox.y).toBeGreaterThan(titleBox.y + titleBox.height - 2);
+  expect(timeBox.y + timeBox.height / 2).toBeGreaterThan(
+    titleBox.y + titleBox.height / 2,
+  );
   expect(timeBox.x).toBeLessThan(titleBox.x + 8);
+};
+
+test("shows a timed-grid preview while dragging a someday event", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+  await page.getByRole("button", { name: "Next week" }).click();
+  await page.locator("#mainGrid").waitFor({ state: "visible" });
+
+  const title = await dragSomedayEventToTimedGrid(page, "Someday Drag Preview");
+  await expectTimedPreviewTextStack(page, title);
+
+  await page.mouse.up();
+});
+
+test("shows a timed-grid preview while dragging over a past slot", async ({
+  page,
+}) => {
+  await prepareCalendarPage(page);
+  await page.getByRole("button", { name: "Previous week" }).click();
+  await page.locator("#mainGrid").waitFor({ state: "visible" });
+
+  const title = await dragSomedayEventToTimedGrid(
+    page,
+    "Someday Past Drag Preview",
+  );
+  await expectTimedPreviewTextStack(page, title);
 
   await page.mouse.up();
 });

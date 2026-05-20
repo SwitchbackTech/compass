@@ -418,6 +418,32 @@ describe("WeekInteractionAdapter timed drag", () => {
     ).toBeNull();
   });
 
+  it("adds a temporary time label while dragging a saved timed event that did not render one", () => {
+    const { adapter, child, flushFrame } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 320, y: 1120 }),
+    );
+
+    flushFrame();
+
+    const overlay = document.body.querySelector<HTMLElement>(
+      "[data-calendar-interaction-overlay]",
+    );
+    const timeLabel = overlay?.querySelector<HTMLElement>(
+      "[data-week-event-time-label='true']",
+    );
+
+    expect(timeLabel).toBeTruthy();
+    expect(timeLabel?.textContent).toMatch(/10\s+-\s+11 AM/);
+    expect(timeLabel?.previousElementSibling).toBe(
+      overlay?.querySelector("span"),
+    );
+  });
+
   it("continues timed smart scroll in the RAF loop and feeds scroll delta into commit time", () => {
     const { adapter, child, flushFrame, mainGrid, onCommitTimedDrag } =
       createHarness();
