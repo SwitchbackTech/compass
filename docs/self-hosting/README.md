@@ -1,10 +1,10 @@
 # Self-Hosting
 
-Self-hosting Compass means running it on a server you control instead of using `app.compasscalendar.com`.
+You can run Compass on infrastructure you control instead of using the hosted version on `compasscalendar.com`
 
-Start with [Run Compass on a server](./server-guide.md). It walks through a small VPS setup with your own domain, HTTPS, and the Compass services running behind Caddy.
+Start with [Run Compass on a server](./server-guide.md). It walks through a small VPS setup with your own domain, HTTPS, and the Compass services running behind a reverse proxy.
 
-If you only want to run Compass on your own computer, use the normal local development flow with Bun instead of the self-host installer. See [Run Compass without the installer](./advanced-manual.md).
+If you only want to run Compass on your own computer, use the normal local development flow with Bun instead of the self-host installer.
 
 ## What Compass is made of
 

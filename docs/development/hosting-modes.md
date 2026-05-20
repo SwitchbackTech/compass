@@ -20,8 +20,8 @@ When you are debugging anything storage-, auth-, or sync-related, the first ques
 
 | Hosting context | Account state | Calendar/event data location |
 | ---------------- | ------------- | ---------------------------- |
-| Compass Cloud (`app.compasscalendar.com`) | Anonymous | Browser IndexedDB |
-| Compass Cloud (`app.compasscalendar.com`) | Signed in | Compass backend -> Compass MongoDB |
+| Compass Cloud (`compasscalendar.com`) | Anonymous | Browser IndexedDB |
+| Compass Cloud (`compasscalendar.com`) | Signed in | Compass backend -> Compass MongoDB |
 | Self-hosted | Anonymous | Browser IndexedDB |
 | Self-hosted | Signed in | Operator backend -> configured MongoDB |
 
@@ -35,7 +35,7 @@ The lightest state. Useful for trying Compass without creating an account.
 - events and tasks live in the browser's IndexedDB
 - calendar and task data never leave the browser
 
-This is the same story everywhere: on [app.compasscalendar.com](https://app.compasscalendar.com) and on a self-hosted install before the user signs up. The web app might be served from Compass Cloud or from a self-hosted server, but either way, anonymous calendar and task data stay in the browser.
+This is the same story everywhere: on [compasscalendar.com](https://compasscalendar.com) and on a self-hosted install before the user signs up. The web app might be served from Compass Cloud or from a self-hosted server, but either way, anonymous calendar and task data stay in the browser.
 
 ## Self-Hosted Account Mode
 
@@ -51,7 +51,7 @@ For the runtime env and required variables, see [Local Development](./local-deve
 
 ## Hosted Compass Cloud Account Mode
 
-The signed-in state on the managed product at [app.compasscalendar.com](https://app.compasscalendar.com).
+The signed-in state on the managed product at [compasscalendar.com](https://compasscalendar.com).
 
 - Compass-operated backend
 - Compass-owned MongoDB and SuperTokens configuration

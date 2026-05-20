@@ -2,7 +2,7 @@
 
 ## Defaults
 
-- Frontend-only work usually starts with `bun run dev:web`; it does not require
+- Frontend-only work usually starts with `bun dev:web`; it does not require
   backend services.
 - Backend, auth, MongoDB, Google sync, and SSE work require
   a `compass.yaml` at the repo root. Bootstrap with:
@@ -13,33 +13,33 @@ cp compass.example.yaml compass.yaml
 
 - `compass.yaml` contains secrets. Do not commit it.
 
-- Avoid defaulting to `bun run test`; use the focused package test first.
+- Avoid defaulting to `bun test`; use the focused package test first.
 - Formatting is handled by the repo-local Codex Stop hook after each agent turn.
-- Use `bun run lint` and relevant verification before push or handoff.
+- Use `bun lint` and relevant verification before push or handoff.
 
 ## Commands
 
 ```bash
 bun install
-bun run dev:web
-bun run dev:backend
-bun run test:core
-bun run test:web
-bun run test:backend
-bun run test:scripts
-bun run type-check
-bun run lint
-bun run lint:fix
+bun dev:web
+bun dev:backend
+bun test:core
+bun test:web
+bun test:backend
+bun test:scripts
+bun type-check
+bun lint
+bun lint:fix
 ```
 
 Validation defaults:
 
-- Core: `bun run test:core`
-- Web: `bun run test:web`
-- Backend: `bun run test:backend`
-- Scripts: `bun run test:scripts`
+- Core: `bun test:core`
+- Web: `bun test:web`
+- Backend: `bun test:backend`
+- Scripts: `bun test:scripts`
 - Shared contracts/cross-package behavior: affected package tests plus
-  `bun run type-check`
+  `bun type-check`
 - Keep regression tests that protect real behavior. Remove temporary tests,
   scripts, debug hooks, or code added only to confirm a one-time hypothesis once
   that verification is complete.
