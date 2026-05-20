@@ -79,6 +79,11 @@ An event shown in the all-day row.
 **Grid Event**:
 An event assigned to a concrete day/week calendar slot.
 
+**Planner Sidebar**:
+The calendar side panel that holds navigation, account context, and Someday
+Events.
+_Avoid_: Planning sidebar
+
 **Someday Event**:
 An unscheduled event stored in the sidebar instead of the calendar grid.
 _Avoid_: Someday task
@@ -193,6 +198,16 @@ during Import or Public watch notification handling.
 - A **Task** belongs to a **Date key** and stays local today, even when the user
   is authenticated.
 - A **Someday Event** is an **Event**, not a **Task**.
+- A **Someday Event** can move between **Planner Sidebar** sections without
+  becoming a **Grid Event**.
+- During **Planner Sidebar** sorting, sibling **Someday Events** make room for
+  the dragged event's preview position before the drop commits.
+- When a dragged **Someday Event** leaves the **Planner Sidebar** for a calendar
+  surface, the sidebar stops previewing a sidebar sort.
+- A full **Planner Sidebar** section is not a valid drop target for another
+  **Someday Event**.
+- A **Someday Event** is scheduled as a **Timed Event** or **All-Day Event**
+  based on the calendar surface where it is dropped.
 - A **Recurring Series** has exactly one **Base Event** and zero or more
   **Instance Events**.
 - An **Instance Event** belongs to exactly one **Base Event** through

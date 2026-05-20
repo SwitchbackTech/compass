@@ -79,6 +79,16 @@
   /* Animations */
   --animate-progress-slide: progressSlide 2s ease-out infinite;
   --animate-sync-dot-pulse: syncDotPulse 2.4s ease-in-out infinite;
+  --animate-someday-commit-acknowledge: somedayCommitAcknowledge 260ms
+    cubic-bezier(0.16, 1, 0.3, 1) both;
+  /* Someday-to-timed-grid drop choreography: the title moves from the overlay's
+     centered resting position to its natural top-aligned position, then the
+     time row fades in beneath it. Triggers only when the event is tall enough
+     to read both phases (handled in GridEvent). */
+  --animate-someday-commit-title-rise: somedayCommitTitleRise 280ms
+    cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-someday-commit-time-fade: somedayCommitTimeFade 200ms
+    cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
 
   @keyframes progressSlide {
     0% {
@@ -100,6 +110,41 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+
+  @keyframes somedayCommitAcknowledge {
+    from {
+      scale: 0.97;
+    }
+    to {
+      scale: 1;
+    }
+  }
+
+  @keyframes somedayCommitTitleRise {
+    from {
+      transform: translateY(18px);
+    }
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes somedayCommitTimeFade {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --animate-someday-commit-acknowledge: none;
+    --animate-someday-commit-title-rise: none;
+    --animate-someday-commit-time-fade: none;
   }
 }
 

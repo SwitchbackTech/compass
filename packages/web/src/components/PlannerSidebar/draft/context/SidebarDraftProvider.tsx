@@ -1,6 +1,5 @@
 import { type ReactNode } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useSidebarActions } from "../hooks/useSidebarActions";
 import { useSidebarEffects } from "../hooks/useSidebarEffects";
 import { useSidebarState } from "../hooks/useSidebarState";
@@ -8,14 +7,12 @@ import { SidebarDraftContext } from "./SidebarDraftContext";
 
 interface Props {
   children: ReactNode;
-  dateCalcs?: DateCalcs;
   onGoToDate: (date: Dayjs) => void;
   viewEnd: Dayjs;
   viewStart: Dayjs;
 }
 export const SidebarDraftProvider = ({
   children,
-  dateCalcs,
   onGoToDate,
   viewEnd,
   viewStart,
@@ -23,7 +20,6 @@ export const SidebarDraftProvider = ({
   const { setters, state } = useSidebarState();
   const actions = useSidebarActions(
     {
-      dateCalcs,
       onGoToDate,
       viewEnd,
       viewStart,

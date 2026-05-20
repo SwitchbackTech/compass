@@ -412,6 +412,7 @@ describe("FloatingInteractionOverlay", () => {
 
     expect(overlay.getNode()).toBe(clone);
     expect(clone.parentElement).toBe(document.body);
+    expect(clone.style.position).toBe("fixed");
     expect(clone.style.transition).toBe("none");
     expect(clone.style.transform).toBe("translate3d(7px, 9px, 0)");
     expect(clone.style.height).toBe("24px");

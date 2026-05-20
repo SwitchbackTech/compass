@@ -1,0 +1,537 @@
+import { Priorities } from "@core/constants/core.constants";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
+import {
+  ID_ALLDAY_COLUMNS,
+  ID_GRID_COLUMNS_TIMED,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
+import { theme } from "@web/common/styles/theme";
+import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
+import { createSomedayInteractionAdapter } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter";
+import { somedayDropTargetRegistry } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayDropTargetRegistry";
+import { somedayEventRegistry } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
+import { resetWeekInteractionEdgeNavigationState } from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
+import { afterEach, describe, expect, it, mock } from "bun:test";
+
+const createSomedayEvent = (
+  overrides: Partial<Schema_Event> = {},
+): Schema_Event => ({
+  _id: "someday-event",
+  endDate: "2026-05-23",
+  isSomeday: true,
+  order: 0,
+  startDate: "2026-05-17",
+  title: "Someday event",
+  ...overrides,
+});
+
+const setRect = (
+  element: HTMLElement,
+  rect: Pick<DOMRect, "height" | "left" | "top" | "width">,
+) => {
+  const domRect = {
+    ...rect,
+    bottom: rect.top + rect.height,
+    right: rect.left + rect.width,
+    x: rect.left,
+    y: rect.top,
+    toJSON: () => ({}),
+  } as DOMRect;
+
+  element.getBoundingClientRect = () => domRect;
+};
+
+const makePointerEvent = (
+  type: string,
+  {
+    button,
+    isPrimary = true,
+    pointerId = 1,
+    target,
+    x = 0,
+    y = 0,
+  }: {
+    pointerId?: number;
+    button?: number;
+    isPrimary?: boolean;
+    target: EventTarget;
+    x?: number;
+    y?: number;
+  },
+) => {
+  const event = new PointerEvent(type, {
+    button,
+    clientX: x,
+    clientY: y,
+    isPrimary,
+    pointerId,
+  });
+
+  Object.defineProperty(event, "target", { value: target });
+
+  return event;
+};
+
+const normalizeCssColor = (color: string) => {
+  const element = document.createElement("span");
+
+  element.style.color = color;
+
+  return element.style.color;
+};
+
+const setReducedMotionPreference = (matches: boolean) => {
+  const originalMatchMedia = window.matchMedia;
+  const reducedMotionMatchMedia = mock((query: string) => ({
+    addEventListener: mock(),
+    addListener: mock(),
+    dispatchEvent: mock(),
+    matches: query === "(prefers-reduced-motion: reduce)" ? matches : false,
+    media: query,
+    onchange: null,
+    removeEventListener: mock(),
+    removeListener: mock(),
+  }));
+
+  window.matchMedia = reducedMotionMatchMedia as typeof window.matchMedia;
+
+  return () => {
+    window.matchMedia = originalMatchMedia;
+  };
+};
+
+const createHarness = () => {
+  document.body.innerHTML = "";
+  somedayDropTargetRegistry.clear();
+  somedayEventRegistry.clear();
+
+  let now = 100;
+  let nextFrameId = 1;
+  const frameCallbacks = new Map<unknown, FrameRequestCallback>();
+  const timerCallbacks = new Map<unknown, () => void>();
+  const event = createSomedayEvent();
+  const source = document.createElement("div");
+  const sourceChild = document.createElement("span");
+  const sourceButton = document.createElement("button");
+  const weekDropTarget = document.createElement("div");
+  const mainGrid = document.createElement("div");
+  const timedColumns = document.createElement("div");
+  const allDayColumns = document.createElement("div");
+  const onCancelInteraction = mock();
+  const onClickSomedayEvent = mock();
+  const onCommitSomedayInteraction = mock();
+  const onMotionActivation = mock();
+  const onPreviewSomedaySidebarDrop = mock();
+  const onRequestWeekNavigation = mock();
+
+  sourceButton.type = "button";
+  source.append(sourceChild, sourceButton);
+  weekDropTarget.append(source);
+  mainGrid.id = ID_GRID_MAIN;
+  timedColumns.id = ID_GRID_COLUMNS_TIMED;
+  allDayColumns.id = ID_ALLDAY_COLUMNS;
+  mainGrid.append(timedColumns);
+  document.body.append(weekDropTarget, allDayColumns, mainGrid);
+  Object.defineProperty(mainGrid, "clientHeight", { value: 780 });
+  Object.defineProperty(mainGrid, "scrollHeight", { value: 1560 });
+  mainGrid.scrollTop = 0;
+
+  setRect(weekDropTarget, {
+    height: 200,
+    left: 0,
+    top: 0,
+    width: 260,
+  });
+  setRect(source, {
+    height: 32,
+    left: 8,
+    top: 4,
+    width: 220,
+  });
+  setRect(allDayColumns, {
+    height: 40,
+    left: 100,
+    top: 50,
+    width: 700,
+  });
+  setRect(mainGrid, {
+    height: 780,
+    left: 50,
+    top: 100,
+    width: 750,
+  });
+  setRect(timedColumns, {
+    height: 780,
+    left: 100,
+    top: 100,
+    width: 700,
+  });
+
+  somedayDropTargetRegistry.register({
+    category: Categories_Event.SOMEDAY_WEEK,
+    element: weekDropTarget,
+  });
+  somedayEventRegistry.register({
+    category: Categories_Event.SOMEDAY_WEEK,
+    element: source,
+    eventId: event._id!,
+    index: 0,
+  });
+
+  const adapter = createSomedayInteractionAdapter({
+    engineOptions: {
+      cancelFrame: (frame) => frameCallbacks.delete(frame),
+      clearTimer: (timer) => timerCallbacks.delete(timer),
+      now: () => now,
+      requestFrame: (callback) => {
+        const frameId = nextFrameId;
+
+        nextFrameId += 1;
+        frameCallbacks.set(frameId, callback);
+
+        return frameId;
+      },
+      setTimer: (callback) => {
+        const timer = Symbol("timer");
+
+        timerCallbacks.set(timer, callback);
+
+        return timer;
+      },
+    },
+    getLayoutSources: () => ({
+      allDayColumnsElement: allDayColumns,
+      mainGridElement: mainGrid,
+      timedColumnsElement: timedColumns,
+    }),
+    getViewStart: () => dayjs("2026-05-17"),
+    runtime: () => ({
+      getSomedayEventById: (eventId) => (eventId === event._id ? event : null),
+      onCancelInteraction,
+      onClickSomedayEvent,
+      onCommitSomedayInteraction,
+      onMotionActivation,
+      onPreviewSomedaySidebarDrop,
+      onRequestWeekNavigation,
+    }),
+  });
+
+  const flushFrame = (timestamp = 16) => {
+    const [[frameId, callback]] = frameCallbacks;
+
+    if (!callback) {
+      throw new Error("Expected a frame callback to be scheduled");
+    }
+
+    frameCallbacks.delete(frameId);
+    now += 8;
+    callback(timestamp);
+  };
+
+  return {
+    adapter,
+    event,
+    flushFrame,
+    onClickSomedayEvent,
+    onCommitSomedayInteraction,
+    onMotionActivation,
+    onPreviewSomedaySidebarDrop,
+    source,
+    sourceButton,
+    sourceChild,
+    timedColumns,
+  };
+};
+
+afterEach(() => {
+  document.body.innerHTML = "";
+  somedayDropTargetRegistry.clear();
+  somedayEventRegistry.clear();
+  resetWeekInteractionEdgeNavigationState();
+});
+
+describe("SomedayInteractionAdapter", () => {
+  it("owns saved Someday rows and routes quick release as a click", () => {
+    const { adapter, event, onClickSomedayEvent, sourceChild } =
+      createHarness();
+
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          target: sourceChild,
+          x: 20,
+          y: 12,
+        }),
+      ),
+    ).toEqual({
+      reason: "saved-someday-drag",
+      shouldOwn: true,
+    });
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: sourceChild, x: 20, y: 12 }),
+    );
+
+    expect(onClickSomedayEvent).toHaveBeenCalledWith(
+      event,
+      Categories_Event.SOMEDAY_WEEK,
+    );
+  });
+
+  it("leaves action buttons on the normal button path", () => {
+    const { adapter, sourceButton } = createHarness();
+
+    expect(
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", {
+          target: sourceButton,
+          x: 20,
+          y: 12,
+        }),
+      ),
+    ).toEqual({
+      reason: "no-someday-interaction-target",
+      shouldOwn: false,
+    });
+  });
+
+  it("schedules a dragged Someday event as a one-hour timed event", () => {
+    const {
+      adapter,
+      flushFrame,
+      onCommitSomedayInteraction,
+      onMotionActivation,
+      sourceChild,
+      timedColumns,
+    } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: timedColumns, x: 250, y: 220 }),
+    );
+
+    expect(onMotionActivation).toHaveBeenCalledTimes(1);
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      dates: {
+        endDate: expect.stringContaining("2026-05-18T03:00"),
+        startDate: expect.stringContaining("2026-05-18T02:00"),
+      },
+      eventId: "someday-event",
+      isAllDay: false,
+      type: "schedule",
+    });
+  });
+
+  it("previews a calendar drop with landed-event styling", () => {
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector<HTMLElement>(
+      "[data-calendar-interaction-overlay]",
+    );
+    const expectedTextColor = normalizeCssColor(theme.color.text.dark);
+    const expectedHoverColor = normalizeCssColor(
+      gridHoverColorByPriority[Priorities.UNASSIGNED],
+    );
+
+    expect(overlay).toBeTruthy();
+    expect(overlay?.style.color).toBe(expectedTextColor);
+    expect(overlay?.style.backgroundColor).toBe(expectedHoverColor);
+    expect(overlay?.querySelector("[data-someday-drag-affordance]")).toBeNull();
+  });
+
+  it("disables Someday overlay motion when reduced motion is preferred", () => {
+    const restoreMatchMedia = setReducedMotionPreference(true);
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
+
+    try {
+      adapter.handlePointerDown(
+        makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+      );
+      adapter.handlePointerMove(
+        makePointerEvent("pointermove", {
+          target: timedColumns,
+          x: 250,
+          y: 220,
+        }),
+      );
+      flushFrame();
+
+      const overlay = document.body.querySelector<HTMLElement>(
+        "[data-calendar-interaction-overlay]",
+      );
+
+      expect(overlay).toBeTruthy();
+      expect(overlay?.style.transition).toBe("none");
+      expect(overlay?.style.scale).toBe("1");
+    } finally {
+      restoreMatchMedia();
+    }
+  });
+
+  it("schedules a dragged Someday event as an all-day event", () => {
+    const { adapter, flushFrame, onCommitSomedayInteraction, sourceChild } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: document.body,
+        x: 250,
+        y: 60,
+      }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: document.body, x: 250, y: 60 }),
+    );
+
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      dates: {
+        endDate: "2026-05-19",
+        startDate: "2026-05-18",
+      },
+      eventId: "someday-event",
+      isAllDay: true,
+      type: "schedule",
+    });
+  });
+
+  it("commits a sidebar reorder through the interaction engine", () => {
+    const {
+      adapter,
+      flushFrame,
+      onCommitSomedayInteraction,
+      onPreviewSomedaySidebarDrop,
+      sourceChild,
+    } = createHarness();
+    const secondEvent = document.createElement("div");
+
+    setRect(secondEvent, {
+      height: 32,
+      left: 8,
+      top: 44,
+      width: 220,
+    });
+    document.body.append(secondEvent);
+    somedayEventRegistry.register({
+      category: Categories_Event.SOMEDAY_WEEK,
+      element: secondEvent,
+      eventId: "second-event",
+      index: 1,
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: document.body,
+        x: 40,
+        y: 80,
+      }),
+    );
+    flushFrame();
+
+    expect(onPreviewSomedaySidebarDrop).toHaveBeenCalledWith({
+      destination: {
+        droppableId: "weekEvents",
+        index: 1,
+      },
+      eventId: "someday-event",
+      source: {
+        droppableId: "weekEvents",
+        index: 0,
+      },
+      type: "sidebarDrop",
+    });
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: document.body, x: 40, y: 80 }),
+    );
+
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      destination: {
+        droppableId: "weekEvents",
+        index: 1,
+      },
+      eventId: "someday-event",
+      source: {
+        droppableId: "weekEvents",
+        index: 0,
+      },
+      type: "sidebarDrop",
+    });
+  });
+
+  it("clears the sidebar sort preview when the drag moves to the calendar", () => {
+    const {
+      adapter,
+      flushFrame,
+      onPreviewSomedaySidebarDrop,
+      sourceChild,
+      timedColumns,
+    } = createHarness();
+    const secondEvent = document.createElement("div");
+
+    setRect(secondEvent, {
+      height: 32,
+      left: 8,
+      top: 44,
+      width: 220,
+    });
+    document.body.append(secondEvent);
+    somedayEventRegistry.register({
+      category: Categories_Event.SOMEDAY_WEEK,
+      element: secondEvent,
+      eventId: "second-event",
+      index: 1,
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: document.body,
+        x: 40,
+        y: 80,
+      }),
+    );
+    flushFrame();
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    expect(onPreviewSomedaySidebarDrop.mock.calls.at(-1)?.[0]).toBeNull();
+  });
+});

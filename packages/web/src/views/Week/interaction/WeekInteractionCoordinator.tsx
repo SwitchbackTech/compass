@@ -6,6 +6,7 @@ import {
   useRef,
 } from "react";
 import { Categories_Event } from "@core/types/event.types";
+import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   selectAllDayEvents,
@@ -24,7 +25,6 @@ import {
   type WeekTimedDragCommitResult,
   type WeekTimedResizeCommitResult,
 } from "./adapter/WeekInteractionAdapter";
-import { WeekPointerCaptureBoundary } from "./WeekPointerCaptureBoundary";
 
 interface Props extends PropsWithChildren {
   getLayoutSources?: () => WeekLayoutCacheSources;
@@ -156,9 +156,9 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   };
 
   return (
-    <WeekPointerCaptureBoundary adapter={adapter}>
+    <CalendarInteractionPointerCaptureBoundary adapter={adapter}>
       {children}
-    </WeekPointerCaptureBoundary>
+    </CalendarInteractionPointerCaptureBoundary>
   );
 };
 

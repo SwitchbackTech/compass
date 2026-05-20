@@ -1,3 +1,4 @@
+import cn from "classnames";
 import {
   type CSSProperties,
   type ForwardedRef,
@@ -15,8 +16,8 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import {
-  colorByPriority,
-  hoverColorByPriority,
+  gridColorByPriority,
+  gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
@@ -29,11 +30,18 @@ import {
   FlexDirections,
   FlexWrap,
 } from "@web/components/Flex/styled";
+import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { Text } from "@web/components/Text";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
 import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
+
+// Minimum event height for the layered title-rise + time-fade choreography
+// to read meaningfully. Below this, the block-level acknowledgment plays
+// alone (degraded case) because the title has no vertical headroom to rise
+// from and the time row would arrive in the same frame as the title.
+const MIN_EVENT_HEIGHT_FOR_COMMIT_CHOREOGRAPHY = 40;
 
 interface Props {
   displayMode: GridEventDisplayMode;
@@ -78,6 +86,15 @@ const GridEventBase = (
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
+  // Only choreograph the text when the event id was just committed from a
+  // Someday-to-grid drop. Keep the block itself visually stable so the
+  // overlay-to-event handoff does not flash.
+  const shouldAcknowledgeCommit =
+    useSomedayCommitAcknowledgement(event._id) &&
+    !isDragging &&
+    !isResizing &&
+    !isPlaceholder &&
+    !isDraft;
 
   const position = getEventPosition(
     event,
@@ -87,24 +104,34 @@ const GridEventBase = (
     isDraft,
   );
 
+  // Layered title-rise + time-fade choreography runs alongside the
+  // block-level acknowledgment on commit, but only when the event is a
+  // timed event with enough vertical room to stage the rise and the
+  // following time-row fade. AllDayEvent and short timed events fall back
+  // to the block-level settle alone.
+  const shouldChoreographCommit =
+    shouldAcknowledgeCommit &&
+    !event.isAllDay &&
+    position.height >= MIN_EVENT_HEIGHT_FOR_COMMIT_CHOREOGRAPHY;
   const lineClamp = useMemo(
     () => getLineClamp(position.height),
     [position.height],
   );
 
   const priority = event.priority || Priorities.UNASSIGNED;
-  const baseColor = colorByPriority[priority];
-  const hoverColor = hoverColorByPriority[priority];
+  const baseColor = gridColorByPriority[priority];
+  const draftColor = darken(baseColor, 18);
+  const hoverColor = gridHoverColorByPriority[priority];
 
   const bgColor = (() => {
-    if (isDraft) return hoverColor;
+    if (isDraft) return draftColor;
+    if (shouldAcknowledgeCommit) return hoverColor;
     if (isResizing || isDragging) return brighten(baseColor);
     return baseColor;
   })();
 
-  // When isPlaceholder or isResizing, hover produces no visible change
   const hoverBgColor =
-    !isPlaceholder && !isResizing
+    !isDraft && !isPlaceholder && !isResizing
       ? isPending && bgColor
         ? darken(bgColor)
         : hoverColor
@@ -170,7 +197,13 @@ const GridEventBase = (
       ref={ref}
       role="button"
       tabIndex={0}
-      className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
+      className={cn(
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+        {
+          "animate-someday-commit-acknowledge": shouldAcknowledgeCommit,
+        },
+        hoverCursorClass,
+      )}
       style={eventStyle}
       onMouseDown={(e: MouseEvent) => {
         if (isWeekInteractionMotionActive()) {
@@ -195,7 +228,7 @@ const GridEventBase = (
         onEventMouseDown(event, e);
       }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
-        if (e.key !== "Enter" && e.key !== " ") {
+        if (!onEventKeyDown || (e.key !== "Enter" && e.key !== " ")) {
           return;
         }
 
@@ -208,12 +241,26 @@ const GridEventBase = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <span style={titleStyle}>{event.title}</span>
+        <span
+          className={cn({
+            "animate-someday-commit-title-rise": shouldChoreographCommit,
+          })}
+          style={titleStyle}
+        >
+          {event.title}
+        </span>
         {!event.isAllDay && (
           <>
             {(isDraft || !isInPast) &&
               position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL && (
-                <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
+                <Text
+                  className={cn({
+                    "animate-someday-commit-time-fade": shouldChoreographCommit,
+                  })}
+                  data-week-event-time-label="true"
+                  size="xs"
+                  zIndex={ZIndex.LAYER_3}
+                >
                   {event.startDate &&
                     event.endDate &&
                     getTimesLabel(event.startDate, event.endDate)}

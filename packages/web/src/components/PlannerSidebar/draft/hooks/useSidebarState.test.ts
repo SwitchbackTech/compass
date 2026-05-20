@@ -2,7 +2,6 @@ import { act, renderHook } from "@testing-library/react";
 import { type Schema_Event } from "@core/types/event.types";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
-const mockTogglePointerMovementTracking = mock();
 let isDNDing = false;
 
 const emptyCategorizedEvents = {
@@ -11,20 +10,6 @@ const emptyCategorizedEvents = {
     weekEvents: { eventIds: [], id: "weekEvents" },
   },
 };
-
-mock.module("@web/common/hooks/usePointerPosition", () => ({
-  usePointerPosition: () => ({
-    togglePointerMovementTracking: mockTogglePointerMovementTracking,
-  }),
-}));
-
-mock.module("@web/common/hooks/usePointerState", () => ({
-  usePointerState: () => ({
-    isOverAllDayRow: false,
-    isOverGrid: false,
-    isOverMainGrid: false,
-  }),
-}));
 
 mock.module("@web/ducks/events/selectors/draft.selectors", () => ({
   selectIsDNDing: () => isDNDing,
@@ -49,21 +34,18 @@ const draftEvent = {
 describe("useSidebarState", () => {
   beforeEach(() => {
     isDNDing = false;
-    mockTogglePointerMovementTracking.mockClear();
   });
 
-  it("does not pause shared pointer tracking while the sidebar is idle", () => {
-    renderHook(() => useSidebarState());
-
-    expect(mockTogglePointerMovementTracking).not.toHaveBeenCalledWith(true);
-  });
-
-  it("keeps pointer tracking active while dragging someday events", () => {
+  it("tracks active dragging when a someday event draft is moving", () => {
     isDNDing = true;
 
-    renderHook(() => useSidebarState());
+    const { result } = renderHook(() => useSidebarState());
 
-    expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(false);
+    act(() => {
+      result.current.setters.setDraft(draftEvent);
+    });
+
+    expect(result.current.state.isDragging).toBe(true);
   });
 
   it("does not treat an open sidebar draft form as active dragging", () => {

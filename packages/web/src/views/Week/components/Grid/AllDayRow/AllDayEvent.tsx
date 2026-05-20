@@ -1,3 +1,4 @@
+import cn from "classnames";
 import {
   type CSSProperties,
   type ForwardedRef,
@@ -14,13 +15,14 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import {
-  colorByPriority,
-  hoverColorByPriority,
+  gridColorByPriority,
+  gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventPosition } from "@web/common/utils/position/position.util";
 import { Flex } from "@web/components/Flex";
 import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
+import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -67,10 +69,11 @@ const AllDayEventBase = (
   );
 
   const priority = event.priority || Priorities.UNASSIGNED;
-  const baseColor = colorByPriority[priority];
-  const hoverColor = hoverColorByPriority[priority];
+  const baseColor = gridColorByPriority[priority];
+  const hoverColor = gridHoverColorByPriority[priority];
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
-
+  const shouldAcknowledgeCommit =
+    useSomedayCommitAcknowledgement(event._id) && !isPlaceholder && !isPending;
   // When isPlaceholder, hover produces no visible change
   const hoverBgColor = !isPlaceholder
     ? isPending && baseColor
@@ -85,7 +88,7 @@ const AllDayEventBase = (
     : "";
 
   const eventStyle = {
-    "--event-bg": baseColor,
+    "--event-bg": shouldAcknowledgeCommit ? hoverColor : baseColor,
     "--event-hover-bg": hoverBgColor,
     height: position.height,
     left: position.left,
@@ -118,7 +121,13 @@ const AllDayEventBase = (
       ref={ref}
       role="button"
       tabIndex={0}
-      className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
+      className={cn(
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+        {
+          "animate-someday-commit-acknowledge": shouldAcknowledgeCommit,
+        },
+        hoverCursorClass,
+      )}
       style={eventStyle}
       onMouseDown={(e: MouseEvent) => {
         // Prevent drag/resize if event is pending (waiting for backend confirmation)
@@ -146,7 +155,7 @@ const AllDayEventBase = (
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}
       >
-        <Text size="m" role="textbox">
+        <Text size="m">
           {event.title}
           <SpaceCharacter />
         </Text>

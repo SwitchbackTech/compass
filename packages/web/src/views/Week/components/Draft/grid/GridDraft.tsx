@@ -14,17 +14,13 @@ import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
 interface Props {
-  draft: Schema_GridEvent;
-  isDragging: boolean;
-  isResizing: boolean;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
 }
 
 export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   const { actions, setters, state, confirmation } = useDraftContext();
-  const { discard, duplicateEvent } = actions;
-  const { startDragging } = actions;
+  const { discard, duplicateEvent, startDragging } = actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
   const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =

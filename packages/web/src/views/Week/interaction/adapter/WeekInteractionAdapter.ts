@@ -776,7 +776,9 @@ const readElementRect = (element: HTMLElement): VisualRect => {
 };
 
 const updateOverlayTimeLabel = (node: HTMLElement, event: Schema_GridEvent) => {
-  const timeLabel = node.querySelector<HTMLElement>("[role='textbox']");
+  const timeLabel = node.querySelector<HTMLElement>(
+    "[data-week-event-time-label='true']",
+  );
 
   if (!timeLabel || !event.startDate || !event.endDate) {
     return;

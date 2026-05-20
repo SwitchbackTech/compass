@@ -54,6 +54,7 @@ export const SomedayEventRectangle = ({
           <DotsSixVertical
             aria-hidden="true"
             className="shrink-0 text-text-light"
+            data-someday-drag-affordance="true"
             size={14}
             weight="bold"
           />
@@ -63,7 +64,10 @@ export const SomedayEventRectangle = ({
         </div>
 
         {canMigrate ? (
-          <div className={ACTIONS_CLASS_NAME}>
+          <div
+            className={ACTIONS_CLASS_NAME}
+            data-someday-drag-affordance="true"
+          >
             <button
               aria-label={`Migrate to previous ${target}`}
               className={ACTION_BUTTON_CLASS_NAME}
@@ -90,7 +94,10 @@ export const SomedayEventRectangle = ({
             </button>
           </div>
         ) : (
-          <div className={ACTIONS_CLASS_NAME}>
+          <div
+            className={ACTIONS_CLASS_NAME}
+            data-someday-drag-affordance="true"
+          >
             <button
               aria-label="Recurring events cannot be migrated"
               className={ACTION_BUTTON_CLASS_NAME}

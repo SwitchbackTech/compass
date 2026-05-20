@@ -1,16 +1,30 @@
 import {
   type FC,
-  type PointerEvent as ReactPointerEvent,
   type PropsWithChildren,
+  type PointerEvent as ReactPointerEvent,
   useEffect,
 } from "react";
-import { type WeekInteractionAdapter } from "./adapter/WeekInteractionAdapter";
+import { type CalendarInteractionCancellationTargets } from "../CalendarInteractionEngine";
 
-interface Props extends PropsWithChildren {
-  adapter: WeekInteractionAdapter;
+export interface CalendarPointerCaptureAdapter {
+  cancel(): void;
+  connectCancellationEvents(
+    targets?: CalendarInteractionCancellationTargets,
+  ): () => void;
+  handlePointerCancel(event: PointerEvent): boolean;
+  handlePointerDown(event: PointerEvent): {
+    reason: string;
+    shouldOwn: boolean;
+  };
+  handlePointerMove(event: PointerEvent): boolean;
+  handlePointerUp(event: PointerEvent): boolean;
 }
 
-export const WeekPointerCaptureBoundary: FC<Props> = ({
+interface Props extends PropsWithChildren {
+  adapter: CalendarPointerCaptureAdapter;
+}
+
+export const CalendarInteractionPointerCaptureBoundary: FC<Props> = ({
   adapter,
   children,
 }) => {

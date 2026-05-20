@@ -1,11 +1,11 @@
-import { type DropResult } from "@hello-pangea/dnd";
 import { ObjectId } from "bson";
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
+  SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEK_LIMIT_MSG,
+  SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import {
   Categories_Event,
@@ -15,12 +15,7 @@ import {
 } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/compass/session/session.util";
-import {
-  COLUMN_MONTH,
-  COLUMN_WEEK,
-  ID_SOMEDAY_DRAFT,
-} from "@web/common/constants/web.constants";
-import { getPointerPosition } from "@web/common/context/pointer-position";
+import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import {
   computeCurrentEventDateRange,
@@ -39,6 +34,10 @@ import {
   type Setters_Sidebar,
   type State_Sidebar,
 } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
+import {
+  type SomedayInteractionCommitResult,
+  type SomedaySidebarCommitResult,
+} from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter.types";
 import {
   selectDraft,
   selectDraftActivity,
@@ -59,10 +58,8 @@ import {
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { parseSomedayEventBeforeSubmit } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
-import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 
 interface SidebarActionViewProps {
-  dateCalcs?: DateCalcs;
   onGoToDate: (date: Dayjs) => void;
   viewEnd: Dayjs;
   viewStart: Dayjs;
@@ -79,8 +76,25 @@ interface SomedayEventsColumns {
   };
 }
 
+interface SomedayDragLocation {
+  droppableId: string;
+  index: number;
+}
+
+interface SomedayReorderResult {
+  baseEvents?: State_Sidebar["somedayEvents"];
+  destination: SomedayDragLocation;
+  draggableId: string;
+  source: SomedayDragLocation;
+}
+
 const getSomedayColumnName = (category: Categories_Event) =>
   category === Categories_Event.SOMEDAY_WEEK ? COLUMN_WEEK : COLUMN_MONTH;
+
+const somedayColumnLimits = {
+  [COLUMN_MONTH]: SOMEDAY_MONTHLY_LIMIT,
+  [COLUMN_WEEK]: SOMEDAY_WEEKLY_LIMIT,
+};
 
 const getNextSomedayOrder = (
   category: Categories_Event,
@@ -104,12 +118,106 @@ const getNextSomedayOrder = (
   return Math.max(...orders) + 1;
 };
 
+const getSomedaySidebarDropKey = ({
+  destination,
+  eventId,
+  source,
+}: SomedaySidebarCommitResult) =>
+  `${eventId}:${source.droppableId}:${source.index}->${destination.droppableId}:${destination.index}`;
+
+const getSomedayEventsAfterSidebarDrop = ({
+  baseEvents,
+  result,
+}: {
+  baseEvents: State_Sidebar["somedayEvents"];
+  result: SomedaySidebarCommitResult;
+}) => {
+  const sourceColumn =
+    baseEvents.columns[result.source.droppableId as keyof SomedayEventsColumns];
+  const destinationColumn =
+    baseEvents.columns[
+      result.destination.droppableId as keyof SomedayEventsColumns
+    ];
+
+  if (sourceColumn.id === destinationColumn.id) {
+    const eventIds = Array.from(sourceColumn.eventIds);
+
+    eventIds.splice(result.source.index, 1);
+    eventIds.splice(result.destination.index, 0, result.eventId);
+
+    return {
+      ...baseEvents,
+      columns: {
+        ...baseEvents.columns,
+        [sourceColumn.id]: {
+          ...sourceColumn,
+          eventIds,
+        },
+      },
+    };
+  }
+
+  const sourceEventIds = Array.from(sourceColumn.eventIds);
+  const destinationEventIds = Array.from(destinationColumn.eventIds);
+
+  sourceEventIds.splice(result.source.index, 1);
+  destinationEventIds.splice(result.destination.index, 0, result.eventId);
+
+  return {
+    ...baseEvents,
+    columns: {
+      ...baseEvents.columns,
+      [sourceColumn.id]: {
+        ...sourceColumn,
+        eventIds: sourceEventIds,
+      },
+      [destinationColumn.id]: {
+        ...destinationColumn,
+        eventIds: destinationEventIds,
+      },
+    },
+  };
+};
+
+const applySomedayColumnOrder = ({
+  eventIds,
+  events,
+}: {
+  eventIds: string[];
+  events: State_Sidebar["somedayEvents"]["events"];
+}) => {
+  const orderedEvents = { ...events };
+  const orderUpdates = eventIds.flatMap((eventId, order) => {
+    const event = orderedEvents[eventId];
+
+    if (!event) {
+      return [];
+    }
+
+    orderedEvents[eventId] = {
+      ...event,
+      order,
+    };
+
+    return [{ _id: eventId, order }];
+  });
+
+  return {
+    events: orderedEvents,
+    orderUpdates,
+  };
+};
+
 export const useSidebarActions = (
   view: SidebarActionViewProps,
   state: State_Sidebar,
   setters: Setters_Sidebar,
 ) => {
   const dispatch = useAppDispatch();
+  const interactionPreviewKeyRef = useRef<string | null>(null);
+  const interactionSnapshotRef = useRef<State_Sidebar["somedayEvents"] | null>(
+    null,
+  );
 
   const isDrafting = useAppSelector(selectIsDrafting);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
@@ -122,10 +230,15 @@ export const useSidebarActions = (
     return ObjectId.isValid(reduxDraft?.recurrence?.eventId ?? "");
   }, [reduxDraft?.recurrence?.eventId]);
 
-  const { dateCalcs, onGoToDate, viewEnd, viewStart } = view;
+  const { onGoToDate, viewEnd, viewStart } = view;
 
-  const { setDraft, setIsDrafting, setIsSomedayFormOpen, setSomedayEvents } =
-    setters;
+  const {
+    setBlockedSomedayDropColumn,
+    setDraft,
+    setIsDrafting,
+    setIsSomedayFormOpen,
+    setSomedayEvents,
+  } = setters;
 
   const close = () => {
     setIsDrafting(false);
@@ -148,20 +261,6 @@ export const useSidebarActions = (
     setIsSomedayFormOpen(true);
   }, [setIsSomedayFormOpen]);
 
-  const convertSomedayToCalendarEvent = useCallback(
-    (
-      _id: string,
-      updates: Pick<Schema_Event, "startDate" | "endDate" | "isAllDay">,
-    ) => {
-      dispatch(
-        getSomedayEventsSlice.actions.convert({
-          event: { ...updates, isSomeday: false, _id },
-        }),
-      );
-    },
-    [dispatch],
-  );
-
   const create = useCallback(() => {
     setDraft(reduxDraft);
     setIsDrafting(true);
@@ -177,30 +276,6 @@ export const useSidebarActions = (
       dispatch(draftSlice.actions.discard(undefined));
     }
   }, [state.draft, reduxDraft, setDraft, dispatch]);
-
-  const getDatesAfterDroppingOn = (target: "mainGrid" | "alldayRow") => {
-    if (!dateCalcs) return undefined;
-
-    const cursor = getPointerPosition();
-    const x = cursor.clientX;
-    const y = cursor.clientY;
-
-    if (target === "mainGrid") {
-      const _start = dateCalcs.getDateByXY(x, y, viewStart);
-      const startDate = _start.format();
-      const endDate = _start.add(1, "hour").format();
-
-      return { startDate, endDate };
-    }
-
-    if (target === "alldayRow") {
-      const _start = dateCalcs.getDateByXY(x, y, viewStart);
-      const startDate = _start.format(YEAR_MONTH_DAY_FORMAT);
-      const endDate = _start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
-
-      return { startDate, endDate };
-    }
-  };
 
   const handleChange = useCallback(() => {
     if (activity === "createShortcut") {
@@ -229,66 +304,158 @@ export const useSidebarActions = (
     );
   };
 
-  const onDragEnd = (result: DropResult) => {
-    const { destination, draggableId, source } = result;
-
-    const handleDiscard = () => {
-      dispatch(draftSlice.actions.discard(undefined));
-      close();
-    };
-
-    const droppedOnSidebar = destination !== null;
-    if (droppedOnSidebar) {
-      const reorderedDraft = draggableId === ID_SOMEDAY_DRAFT;
-      if (reorderedDraft && !state.isDraftingNew) {
-        handleDiscard();
-        return;
-      }
-
-      const noChange =
-        destination.droppableId === source.droppableId &&
-        destination.index === source.index;
-
-      if (noChange) {
-        handleDiscard();
-        return;
-      }
-
-      reorder(result);
-    } else {
-      const grid = state.isOverMainGrid ? "mainGrid" : "alldayRow";
-      const dates = getDatesAfterDroppingOn(grid);
-
-      if (!dates) {
-        handleDiscard();
-        return;
-      }
-
-      convertSomedayToCalendarEvent(draggableId, {
-        ...dates,
-        isAllDay: state.isOverAllDayRow,
-      });
+  const getInteractionSnapshot = () => {
+    if (!interactionSnapshotRef.current) {
+      interactionSnapshotRef.current = state.somedayEvents;
     }
 
-    handleDiscard();
+    return interactionSnapshotRef.current;
   };
 
-  const onDragStart = async (props: { draggableId: string }) => {
-    const existingEvent = state.somedayEvents.events[props.draggableId];
-    const isExisting = existingEvent !== undefined;
+  const clearSomedayInteractionPreview = ({
+    shouldRestore,
+  }: {
+    shouldRestore: boolean;
+  }) => {
+    const snapshot = interactionSnapshotRef.current;
 
-    dispatch(draftSlice.actions.startDnd(undefined));
-
-    if (isExisting) {
-      setDraft(existingEvent);
-    } else {
-      const defaultSomeday = await assembleDefaultEvent(
-        Categories_Event.SOMEDAY_WEEK,
-      );
-      setDraft(defaultSomeday);
+    if (shouldRestore && snapshot) {
+      setSomedayEvents(snapshot);
     }
 
+    interactionPreviewKeyRef.current = null;
+    interactionSnapshotRef.current = null;
+    setBlockedSomedayDropColumn(null);
+  };
+
+  const isSomedaySidebarDropAllowed = (result: SomedaySidebarCommitResult) => {
+    if (result.source.droppableId === result.destination.droppableId) {
+      return true;
+    }
+
+    const snapshot = getInteractionSnapshot();
+    const destinationColumn =
+      snapshot.columns[
+        result.destination.droppableId as keyof SomedayEventsColumns
+      ];
+    const destinationLimit =
+      somedayColumnLimits[
+        result.destination.droppableId as keyof typeof somedayColumnLimits
+      ];
+
+    return destinationColumn.eventIds.length < destinationLimit;
+  };
+
+  const previewSomedaySidebarDrop = (
+    result: SomedaySidebarCommitResult | null,
+  ) => {
+    const snapshot = getInteractionSnapshot();
+
+    if (!result) {
+      if (interactionPreviewKeyRef.current !== null) {
+        setSomedayEvents(snapshot);
+      }
+
+      interactionPreviewKeyRef.current = null;
+      setBlockedSomedayDropColumn(null);
+      return;
+    }
+
+    const previewKey = getSomedaySidebarDropKey(result);
+
+    if (previewKey === interactionPreviewKeyRef.current) {
+      return;
+    }
+
+    interactionPreviewKeyRef.current = previewKey;
+    setBlockedSomedayDropColumn(null);
+    setSomedayEvents(
+      getSomedayEventsAfterSidebarDrop({
+        baseEvents: snapshot,
+        result,
+      }),
+    );
+  };
+
+  const previewBlockedSomedaySidebarDrop = (
+    result: SomedaySidebarCommitResult,
+  ) => {
+    const snapshot = getInteractionSnapshot();
+
+    if (interactionPreviewKeyRef.current !== null) {
+      setSomedayEvents(snapshot);
+    }
+
+    interactionPreviewKeyRef.current = null;
+    setBlockedSomedayDropColumn(result.destination.droppableId);
+  };
+
+  const discardSomedayInteraction = () => {
+    dispatch(draftSlice.actions.discard(undefined));
+    close();
+  };
+
+  const startSomedayInteraction = (eventId: string | undefined) => {
+    if (!eventId) return;
+
+    const existingEvent = state.somedayEvents.events[eventId];
+
+    if (!existingEvent) {
+      return;
+    }
+
+    dispatch(draftSlice.actions.startDnd(undefined));
+    interactionSnapshotRef.current = state.somedayEvents;
+    interactionPreviewKeyRef.current = null;
+    setBlockedSomedayDropColumn(null);
+    setDraft(existingEvent);
+    setIsSomedayFormOpen(false);
     setIsDrafting(true);
+  };
+
+  const cancelSomedayInteraction = () => {
+    clearSomedayInteractionPreview({ shouldRestore: true });
+    discardSomedayInteraction();
+  };
+
+  const commitSomedayInteraction = (result: SomedayInteractionCommitResult) => {
+    if (result.type === "schedule") {
+      clearSomedayInteractionPreview({ shouldRestore: true });
+      dispatch(
+        getSomedayEventsSlice.actions.convert({
+          event: {
+            ...result.dates,
+            _id: result.eventId,
+            isAllDay: result.isAllDay,
+            isSomeday: false,
+          },
+        }),
+      );
+      discardSomedayInteraction();
+      return;
+    }
+
+    let shouldRestorePreview = result.type === "noop";
+
+    if (result.type === "sidebarDrop") {
+      const noChange =
+        result.destination.droppableId === result.source.droppableId &&
+        result.destination.index === result.source.index;
+
+      shouldRestorePreview = noChange;
+
+      if (!noChange) {
+        reorderSomedayEvent({
+          destination: result.destination,
+          draggableId: result.eventId,
+          source: result.source,
+          baseEvents: interactionSnapshotRef.current ?? state.somedayEvents,
+        });
+      }
+    }
+
+    clearSomedayInteractionPreview({ shouldRestore: shouldRestorePreview });
+    discardSomedayInteraction();
   };
 
   const deleteSomedayEvent = (
@@ -515,18 +682,25 @@ export const useSidebarActions = (
   };
 
   const handleCrossColumnDragging = (
-    source: { droppableId: string; index: number },
-    destination: { droppableId: string; index: number },
+    source: SomedayDragLocation,
+    destination: SomedayDragLocation,
     draggableId: string,
+    baseEvents: State_Sidebar["somedayEvents"],
   ) => {
     const sourceColumn =
-      state.somedayEvents.columns[
-        source.droppableId as keyof SomedayEventsColumns
-      ];
+      baseEvents.columns[source.droppableId as keyof SomedayEventsColumns];
     const destColumn =
-      state.somedayEvents.columns[
-        destination.droppableId as keyof SomedayEventsColumns
-      ];
+      baseEvents.columns[destination.droppableId as keyof SomedayEventsColumns];
+
+    if (destColumn.id === COLUMN_WEEK && isAtWeeklyLimit) {
+      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      return;
+    }
+
+    if (destColumn.id === COLUMN_MONTH && isAtMonthlyLimit) {
+      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      return;
+    }
 
     // Remove from source column
     const sourceEventIds = Array.from(sourceColumn.eventIds);
@@ -536,23 +710,16 @@ export const useSidebarActions = (
     const destEventIds = Array.from(destColumn.eventIds);
     destEventIds.splice(destination.index, 0, draggableId);
 
-    const newState = {
-      ...state.somedayEvents,
-      columns: {
-        ...state.somedayEvents.columns,
-        [sourceColumn.id]: {
-          ...sourceColumn,
-          eventIds: sourceEventIds,
-        },
-        [destColumn.id]: {
-          ...destColumn,
-          eventIds: destEventIds,
-        },
-      },
-    };
-    setSomedayEvents(newState);
+    const sourceOrder = applySomedayColumnOrder({
+      eventIds: sourceEventIds,
+      events: baseEvents.events,
+    });
+    const destOrder = applySomedayColumnOrder({
+      eventIds: destEventIds,
+      events: sourceOrder.events,
+    });
 
-    let draggedEvent = state.somedayEvents.events[draggableId];
+    let draggedEvent = destOrder.events[draggableId];
 
     const draggedToMonthColumn = destColumn.id === COLUMN_MONTH;
 
@@ -574,31 +741,54 @@ export const useSidebarActions = (
       );
     }
 
-    const newOrder = destEventIds.indexOf(draggableId);
-
     if (!draggedEvent?._id) return;
 
-    draggedEvent.order = newOrder;
+    const draggedEventId = draggedEvent._id;
 
     if (!hasEventDates(draggedEvent)) return;
 
+    const orderUpdates = [
+      ...sourceOrder.orderUpdates,
+      ...destOrder.orderUpdates,
+    ];
+
+    const newState = {
+      ...baseEvents,
+      columns: {
+        ...baseEvents.columns,
+        [sourceColumn.id]: {
+          ...sourceColumn,
+          eventIds: sourceEventIds,
+        },
+        [destColumn.id]: {
+          ...destColumn,
+          eventIds: destEventIds,
+        },
+      },
+      events: {
+        ...destOrder.events,
+        [draggableId]: draggedEvent,
+      },
+    };
+    setSomedayEvents(newState);
+    dispatch(getSomedayEventsSlice.actions.reorder(orderUpdates));
+
     dispatch(
       editEventSlice.actions.request({
-        _id: draggedEvent._id,
+        _id: draggedEventId,
         event: assembleWebEvent(draggedEvent),
       }),
     );
   };
 
   const handleSameColumnReordering = (
-    source: { droppableId: string; index: number },
-    destination: { droppableId: string; index: number },
+    source: SomedayDragLocation,
+    destination: SomedayDragLocation,
     draggableId: string,
+    baseEvents: State_Sidebar["somedayEvents"],
   ) => {
     const column =
-      state.somedayEvents.columns[
-        source.droppableId as keyof SomedayEventsColumns
-      ];
+      baseEvents.columns[source.droppableId as keyof SomedayEventsColumns];
     const newEventIds = Array.from(column.eventIds);
     newEventIds.splice(source.index, 1);
     newEventIds.splice(destination.index, 0, draggableId);
@@ -608,9 +798,9 @@ export const useSidebarActions = (
     };
 
     const newState = {
-      ...state.somedayEvents,
+      ...baseEvents,
       columns: {
-        ...state.somedayEvents.columns,
+        ...baseEvents.columns,
         [newColumn.id]: newColumn,
       },
     };
@@ -624,17 +814,18 @@ export const useSidebarActions = (
     dispatch(getSomedayEventsSlice.actions.reorder(newOrder));
   };
 
-  const reorder = (result: DropResult) => {
-    const { destination, source, draggableId } = result;
-
-    if (!destination) {
-      return;
-    }
+  const reorderSomedayEvent = (result: SomedayReorderResult) => {
+    const {
+      baseEvents = state.somedayEvents,
+      destination,
+      source,
+      draggableId,
+    } = result;
 
     if (source.droppableId === destination.droppableId) {
-      handleSameColumnReordering(source, destination, draggableId);
+      handleSameColumnReordering(source, destination, draggableId, baseEvents);
     } else {
-      handleCrossColumnDragging(source, destination, draggableId);
+      handleCrossColumnDragging(source, destination, draggableId, baseEvents);
     }
   };
 
@@ -650,15 +841,19 @@ export const useSidebarActions = (
     discard,
     handleChange,
     onDraft,
-    onDragEnd,
-    onDragStart,
     onMigrate,
+    cancelSomedayInteraction,
+    commitSomedayInteraction,
     createSomedayDraft,
     deleteSomedayEvent,
     duplicateSomedayEvent,
+    isSomedaySidebarDropAllowed,
     onSubmit,
+    previewBlockedSomedaySidebarDrop,
+    previewSomedaySidebarDrop,
     reset,
     setDraft,
+    startSomedayInteraction,
   };
 };
 
