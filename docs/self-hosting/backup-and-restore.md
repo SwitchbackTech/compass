@@ -267,12 +267,17 @@ cp -p "$BACKUP_DIR/compass.yaml" "$CHECK_DIR/compass.yaml"
 
 cd "$CHECK_DIR"
 
+# Keep `backend.port` at 3000. The backend listens on that port inside the
+# container; the temporary project only changes the host-side binding to 13000.
 sed -i.bak \
   -e 's/^  port: 9080$/  port: 19080/' \
-  -e 's/^  port: 3000$/  port: 13000/' \
   -e 's#http://localhost:9080#http://localhost:19080#g' \
   -e 's#http://localhost:3000/api#http://localhost:13000/api#g' \
   compass.yaml
+
+sed -i.bak \
+  -e 's#127.0.0.1:${PORT:-3000}:3000#127.0.0.1:13000:3000#' \
+  compose.yaml
 
 docker volume create "${CHECK_PROJECT}_compass_mongo_data"
 docker volume create "${CHECK_PROJECT}_compass_mongo_configdb"
@@ -296,7 +301,7 @@ docker run --rm \
   alpine \
   sh -c 'cd /volume && tar xzf /backup/supertokens-postgres.tgz'
 
-./compass start
+COMPASS_HEALTH_URL=http://localhost:13000/api/health ./compass start
 curl -f http://localhost:13000/api/health
 ./compass status
 ```
