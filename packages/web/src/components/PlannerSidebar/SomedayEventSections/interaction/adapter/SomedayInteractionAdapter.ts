@@ -785,14 +785,20 @@ const getTimedDropDateRange = (
 
 const applyTimedOverlayLayout = (node: HTMLElement) => {
   const titleRow = getOverlayTitleRow(node);
+  const textStack = getOverlayTextStack(titleRow);
+
+  textStack.style.alignItems = "flex-start";
+  textStack.style.display = "flex";
+  textStack.style.flexDirection = "column";
+  textStack.style.justifyContent = "flex-start";
 
   titleRow.style.alignSelf = "stretch";
   titleRow.style.alignItems = "flex-start";
-  titleRow.style.flexDirection = "column";
+  titleRow.style.flexDirection = "row";
   titleRow.style.gap = "0";
   titleRow.style.justifyContent = "flex-start";
 
-  return titleRow;
+  return textStack;
 };
 
 const resetTimedOverlayLayout = (node: HTMLElement) => {
@@ -805,6 +811,13 @@ const resetTimedOverlayLayout = (node: HTMLElement) => {
   if (!titleRow) {
     return;
   }
+
+  const textStack = getOverlayTextStack(titleRow);
+
+  textStack.style.alignItems = "";
+  textStack.style.display = "";
+  textStack.style.flexDirection = "";
+  textStack.style.justifyContent = "";
 
   titleRow.style.alignSelf = "";
   titleRow.style.alignItems = "";
@@ -820,6 +833,9 @@ const removeOverlayTimeLabel = (node: HTMLElement) => {
 const getOverlayTitleRow = (node: HTMLElement) =>
   node.querySelector<HTMLElement>(SOMEDAY_EVENT_TITLE_ROW_SELECTOR) ?? node;
 
+const getOverlayTextStack = (titleRow: HTMLElement) =>
+  titleRow.parentElement ?? titleRow;
+
 const getOrCreateOverlayTimeLabel = (
   node: HTMLElement,
   parent: HTMLElement,
@@ -827,6 +843,10 @@ const getOrCreateOverlayTimeLabel = (
   const existing = node.querySelector<HTMLElement>(SOMEDAY_TIME_LABEL_SELECTOR);
 
   if (existing) {
+    if (existing.parentElement !== parent) {
+      parent.append(existing);
+    }
+
     return existing;
   }
 
@@ -836,6 +856,7 @@ const getOrCreateOverlayTimeLabel = (
   label.style.fontSize = "11px";
   label.style.marginLeft = "0";
   label.style.opacity = "0.78";
+  label.style.alignSelf = "flex-start";
   label.style.flexShrink = "0";
   label.style.whiteSpace = "nowrap";
   parent.append(label);

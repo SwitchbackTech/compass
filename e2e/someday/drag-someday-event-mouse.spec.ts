@@ -60,7 +60,8 @@ test("shows a timed-grid preview while dragging a someday event", async ({
     throw new Error("Expected the Someday timed preview text to be visible.");
   }
 
-  expect(timeBox.y).toBeGreaterThan(titleBox.y);
+  expect(timeBox.y).toBeGreaterThan(titleBox.y + titleBox.height - 2);
+  expect(timeBox.x).toBeLessThan(titleBox.x + 8);
 
   await page.mouse.up();
 });

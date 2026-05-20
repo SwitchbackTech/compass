@@ -132,6 +132,7 @@ const createHarness = ({
   const onRequestWeekNavigation = mock();
 
   sourceButton.type = "button";
+  sourceButton.setAttribute("data-someday-drag-affordance", "true");
   sourceContent.className = "h-full";
   sourceTitleRow.setAttribute("data-someday-event-title-row", "true");
   sourceTitleRow.append(sourceChild);
@@ -395,16 +396,22 @@ describe("SomedayInteractionAdapter", () => {
     const timeLabel = overlay?.querySelector<HTMLElement>(
       "[data-someday-interaction-time-label]",
     );
+    const titleRow = overlay?.querySelector<HTMLElement>(
+      "[data-someday-event-title-row]",
+    );
+    const textStack = titleRow?.parentElement;
 
     expect(timeLabel).toBeTruthy();
     expect(timeLabel?.textContent).toMatch(/2\s+-\s+3 AM/);
     expect(timeLabel?.style.display).toBe("block");
-    expect(
-      timeLabel?.parentElement?.getAttribute("data-someday-event-title-row"),
-    ).toBe("true");
-    expect(timeLabel?.parentElement?.style.alignSelf).toBe("stretch");
-    expect(timeLabel?.parentElement?.style.alignItems).toBe("flex-start");
-    expect(timeLabel?.parentElement?.style.flexDirection).toBe("column");
+    expect(timeLabel?.parentElement).toBe(textStack);
+    expect(timeLabel?.previousElementSibling).toBe(titleRow);
+    expect(textStack?.style.alignItems).toBe("flex-start");
+    expect(textStack?.style.display).toBe("flex");
+    expect(textStack?.style.flexDirection).toBe("column");
+    expect(titleRow?.style.alignSelf).toBe("stretch");
+    expect(titleRow?.style.alignItems).toBe("flex-start");
+    expect(titleRow?.style.flexDirection).toBe("row");
   });
 
   it("keeps the tentative timed-grid range visible for past targets", () => {
@@ -435,9 +442,14 @@ describe("SomedayInteractionAdapter", () => {
       overlay?.querySelector("[data-someday-interaction-time-label]")
         ?.textContent,
     ).toMatch(/2\s+-\s+3 AM/);
+    expect(
+      overlay?.querySelector("[data-someday-interaction-time-label]")
+        ?.parentElement,
+    ).toBe(titleRow?.parentElement);
     expect(titleRow?.style.alignSelf).toBe("stretch");
     expect(titleRow?.style.alignItems).toBe("flex-start");
-    expect(titleRow?.style.flexDirection).toBe("column");
+    expect(titleRow?.style.flexDirection).toBe("row");
+    expect(titleRow?.parentElement?.style.flexDirection).toBe("column");
   });
 
   it("disables Someday overlay motion when reduced motion is preferred", () => {
