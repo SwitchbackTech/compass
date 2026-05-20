@@ -1,7 +1,7 @@
 import {
   type FC,
-  type PropsWithChildren,
   type PointerEvent as ReactPointerEvent,
+  type PropsWithChildren,
   useEffect,
 } from "react";
 import { type WeekInteractionAdapter } from "./adapter/WeekInteractionAdapter";
