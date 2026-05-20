@@ -9,10 +9,8 @@ import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { type WeekLayoutCacheSources } from "@web/views/Week/interaction/adapter/geometry/weekLayoutCache";
-import {
-  createSomedayInteractionAdapter,
-  type SomedayInteractionRuntime,
-} from "./adapter/SomedayInteractionAdapter";
+import { createSomedayInteractionAdapter } from "./adapter/SomedayInteractionAdapter";
+import { type SomedayInteractionRuntime } from "./adapter/SomedayInteractionAdapter.types";
 import { markSomedayCommitAcknowledgement } from "./state/somedayCommitAcknowledgementState";
 
 interface Props extends PropsWithChildren {

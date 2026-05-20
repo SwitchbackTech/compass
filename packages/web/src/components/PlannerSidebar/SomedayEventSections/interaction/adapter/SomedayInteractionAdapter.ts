@@ -60,13 +60,6 @@ import {
   type SomedayTimedDrop,
 } from "./SomedayInteractionAdapter.types";
 
-export type {
-  SomedayInteractionAdapter,
-  SomedayInteractionCommitResult,
-  SomedayInteractionRuntime,
-  SomedaySidebarCommitResult,
-} from "./SomedayInteractionAdapter.types";
-
 const ONE_HOUR_MINUTES = 60;
 // Matches the "settle" curve used by GridEvent for visual coherence with the
 // landed event. The reshape duration (240ms) is short enough to track the
@@ -78,8 +71,8 @@ const SOMEDAY_OVERLAY_RESHAPE_MS = 240;
 const SOMEDAY_OVERLAY_ANCHOR_MS = 110;
 const SOMEDAY_OVERLAY_LIFT_MS = 160;
 // Subtle lift while the overlay is floating (in the sidebar / between
-// targets). Settles back to 1 once anchored to a grid slot so the preview
-// matches the resting size of the real event.
+// targets). Settles back to 1 once anchored to a slot so the preview matches
+// the resting size of the real event.
 const SOMEDAY_OVERLAY_LIFT_SCALE = "1.04";
 const SOMEDAY_OVERLAY_SETTLED_SCALE = "1";
 const SOMEDAY_OVERLAY_TRANSITION_BASE =
@@ -91,10 +84,8 @@ const SOMEDAY_OVERLAY_TRANSITION_BASE =
 const SOMEDAY_OVERLAY_TRANSITION_ANCHORED =
   `${SOMEDAY_OVERLAY_TRANSITION_BASE}, ` +
   `transform ${SOMEDAY_OVERLAY_ANCHOR_MS}ms ${SOMEDAY_OVERLAY_EASING}`;
-const SOMEDAY_OVERLAY_SHADOW_LIFTED =
-  "0 12px 28px color-mix(in srgb, black 22%, transparent)";
-const SOMEDAY_OVERLAY_SHADOW_SETTLED =
-  "0 6px 14px color-mix(in srgb, black 14%, transparent)";
+const SOMEDAY_OVERLAY_SHADOW_LIFTED = `0 12px 28px color-mix(in srgb, ${theme.color.shadow.default} 22%, transparent)`;
+const SOMEDAY_OVERLAY_SHADOW_SETTLED = `0 6px 14px color-mix(in srgb, ${theme.color.shadow.default} 14%, transparent)`;
 
 const inertRuntime: SomedayInteractionRuntime = {
   getSomedayEventById: () => null,
@@ -258,11 +249,9 @@ export const createSomedayInteractionAdapter = ({
           eventId: target.event._id!,
           initialViewStart: getViewStart(),
           pointerStart,
-          sourceCategory: target.category,
           sourceIndex: target.registered.index,
           sourceRect,
           transform: { x: 0, y: 0 },
-          type: "somedayDrag",
           weekOffsetDays: 0,
         };
       },
@@ -344,7 +333,6 @@ export const createSomedayInteractionAdapter = ({
       category: registered.category,
       event: somedayEvent,
       registered,
-      type: "somedayEvent",
     };
   }
 

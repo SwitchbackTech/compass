@@ -43,7 +43,6 @@ export interface SomedayInteractionTarget {
   category: SomedayInteractionCategory;
   event: Schema_Event;
   registered: SomedayInteractionRegisteredEvent;
-  type: "somedayEvent";
 }
 
 export interface SomedaySidebarDrop {
@@ -77,7 +76,6 @@ export interface SomedayInteractionVisual {
     x: number;
     y: number;
   };
-  sourceCategory: SomedayInteractionCategory;
   sourceIndex: number;
   sourceRect: {
     height: number;
@@ -89,7 +87,6 @@ export interface SomedayInteractionVisual {
     x: number;
     y: number;
   };
-  type: "somedayDrag";
   weekOffsetDays: number;
 }
 

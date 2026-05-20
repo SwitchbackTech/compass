@@ -26,7 +26,6 @@ export interface Props {
   onSubmit: (event: Schema_Event | null) => void;
   deleteEvent: (applyTo?: RecurringEventUpdateScope) => void;
   duplicateEvent: () => void;
-  interactionAttributes: Record<string, string>;
   interactionRef: Ref<HTMLDivElement>;
   setEvent: Setters_Sidebar["setDraft"];
   weekViewRange: {
@@ -43,7 +42,6 @@ export const SomedayEventContainer = ({
   onSubmit,
   deleteEvent,
   duplicateEvent,
-  interactionAttributes,
   interactionRef,
   setEvent,
   weekViewRange,
@@ -113,7 +111,6 @@ export const SomedayEventContainer = ({
         onFocus={() => {
           isFocusedRef.current = true;
         }}
-        interactionAttributes={interactionAttributes}
         interactionRef={interactionRef}
         priority={event.priority || Priorities.UNASSIGNED}
         onMigrate={actions.onMigrate}

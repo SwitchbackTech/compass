@@ -25,7 +25,7 @@ export const TooltipWrapper: React.FC<Props> = ({
   children,
   description,
   disabled = false,
-  onClick = () => {},
+  onClick,
   placement,
   shortcut,
 }) => {

@@ -20,7 +20,6 @@ interface Props {
   onFocus: () => void;
   onMigrate: Actions_Sidebar["onMigrate"];
   priority: Priorities;
-  interactionAttributes: Record<string, string>;
   interactionRef: Ref<HTMLDivElement>;
   formProps: Props_DraftForm;
 }
@@ -33,13 +32,16 @@ export const SomedayEvent = ({
   onFocus,
   onMigrate,
   priority,
-  interactionAttributes,
   interactionRef,
   formProps,
 }: Props) => {
   const { isDrafting, isDragging } = status;
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
-    if (event.defaultPrevented || event.key !== "Enter") {
+    if (
+      event.defaultPrevented ||
+      event.target !== event.currentTarget ||
+      (event.key !== "Enter" && event.key !== " ")
+    ) {
       return;
     }
 
@@ -49,7 +51,7 @@ export const SomedayEvent = ({
 
   const somedayEventProps = {
     [DATA_EVENT_ELEMENT_ID]: event._id,
-    ...interactionAttributes,
+    "aria-hidden": isDragging || undefined,
     isDragging,
     isDrafting,
     onBlur,
@@ -59,7 +61,7 @@ export const SomedayEvent = ({
     priority,
     role: "button",
     ref: interactionRef,
-    tabIndex: 0,
+    tabIndex: isDragging ? -1 : 0,
   };
 
   return (

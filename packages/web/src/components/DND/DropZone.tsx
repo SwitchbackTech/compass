@@ -17,10 +17,11 @@ export const DropZone = ({
   return (
     <div
       {...props}
+      aria-invalid={isInvalid || undefined}
       className={classNames(
         "relative rounded-default border-2 border-dashed transition-[background-color,border-color] duration-200",
         isInvalid
-          ? "border-status-error bg-status-error/10"
+          ? "border-status-error border-solid bg-status-error/10"
           : isActive
             ? "border-border-primary bg-bg-secondary"
             : "border-transparent bg-transparent",

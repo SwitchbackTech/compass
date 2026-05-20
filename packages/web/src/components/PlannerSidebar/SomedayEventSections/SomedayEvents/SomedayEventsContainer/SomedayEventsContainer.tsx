@@ -13,13 +13,9 @@ import {
 import { DropZone } from "@web/components/DND/DropZone";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type State_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
-import {
-  getSomedayInteractionDropTargetAttributes,
-  useSomedayDropTargetRegistrationRef,
-} from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayDropTargetRegistry";
+import { useSomedayDropTargetRegistrationRef } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayDropTargetRegistry";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEventItem } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventItem/SomedayEventItem";
-import { SomedayEventItems } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventItem/SomedayEventItems";
 import { AddSomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
@@ -74,9 +70,6 @@ export const SomedayEventsContainer: FC<Props> = ({
   const dropTargetRef = useSomedayDropTargetRegistrationRef({
     category,
   });
-  const dropTargetAttributes = getSomedayInteractionDropTargetAttributes({
-    category,
-  });
 
   const events = getSomedayEvents(category, state.somedayEvents);
   const isDraftingThisCategory =
@@ -116,28 +109,25 @@ export const SomedayEventsContainer: FC<Props> = ({
       isInvalid={isBlockedDropTarget}
       className={state.isDragging ? "overflow-hidden" : undefined}
       style={activeDropZoneStyle}
-      {...dropTargetAttributes}
     >
-      <SomedayEventItems
-        category={category}
-        draft={state.draft}
-        events={events}
-      />
+      {events.map((event, index) => (
+        <SomedayEventItem
+          category={category}
+          draftId={state.draft?._id || ID_SOMEDAY_DRAFT}
+          event={event}
+          index={index}
+          isDrafting={state.draft?._id === event._id}
+          key={event?._id || "draft"}
+        />
+      ))}
 
-      {!isDraftingNew && (
-        <div className={state.isDragging ? "opacity-0" : "opacity-100"}>
-          {state.isDragging ? (
+      {!isDraftingNew && !state.isDragging && (
+        <div className="opacity-100">
+          {renderWithTooltip(
             <AddSomedayEvent
               ariaLabel={addLabel}
               onCreate={() => actions.createSomedayDraft(category)}
-            />
-          ) : (
-            renderWithTooltip(
-              <AddSomedayEvent
-                ariaLabel={addLabel}
-                onCreate={() => actions.createSomedayDraft(category)}
-              />,
-            )
+            />,
           )}
         </div>
       )}

@@ -67,13 +67,6 @@ export const gridHoverColorByPriority = {
   [Priorities.SELF]: brighten(GRID_SELF),
 };
 
-export const gridDraftColorByPriority = {
-  [Priorities.UNASSIGNED]: darken(GRID_UNASSIGNED, 18),
-  [Priorities.WORK]: darken(GRID_WORK, 18),
-  [Priorities.RELATIONS]: darken(GRID_RELATIONS, 18),
-  [Priorities.SELF]: darken(GRID_SELF, 18),
-};
-
 export const blueGradient = `linear-gradient(${c.blue100}, ${c.blue300})`;
 const grayGradient = `linear-gradient(90deg, ${c.gray100}, ${c.gray200})`;
 

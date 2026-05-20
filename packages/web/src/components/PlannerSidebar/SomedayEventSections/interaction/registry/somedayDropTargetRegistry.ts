@@ -1,5 +1,4 @@
 import { type MutableRefObject, type Ref, useCallback, useRef } from "react";
-import { Categories_Event } from "@core/types/event.types";
 import { type SomedayInteractionCategory } from "./somedayEventRegistry";
 
 export const SOMEDAY_INTERACTION_DROP_CATEGORY_ATTRIBUTE =
@@ -10,62 +9,53 @@ export interface SomedayInteractionDropTarget {
   element: HTMLElement;
 }
 
-export const getSomedayInteractionDropTargetAttributes = ({
-  category,
-}: {
-  category: SomedayInteractionCategory;
-}) => ({
-  [SOMEDAY_INTERACTION_DROP_CATEGORY_ATTRIBUTE]: category,
-});
-
 export interface SomedayDropTargetRegistry {
   clear(): void;
   getTargets(): SomedayInteractionDropTarget[];
   register(registration: SomedayInteractionDropTarget): () => void;
 }
 
-export const createSomedayDropTargetRegistry =
-  (): SomedayDropTargetRegistry => {
-    const targets = new Map<
-      SomedayInteractionCategory,
-      SomedayInteractionDropTarget
-    >();
+const createSomedayDropTargetRegistry = (): SomedayDropTargetRegistry => {
+  const targets = new Map<
+    SomedayInteractionCategory,
+    SomedayInteractionDropTarget
+  >();
 
-    const register = (registration: SomedayInteractionDropTarget) => {
-      registration.element.setAttribute(
-        SOMEDAY_INTERACTION_DROP_CATEGORY_ATTRIBUTE,
-        registration.category,
-      );
-      targets.set(registration.category, registration);
+  const register = (registration: SomedayInteractionDropTarget) => {
+    registration.element.setAttribute(
+      SOMEDAY_INTERACTION_DROP_CATEGORY_ATTRIBUTE,
+      registration.category,
+    );
+    targets.set(registration.category, registration);
 
-      return () => {
-        const current = targets.get(registration.category);
+    return () => {
+      const current = targets.get(registration.category);
 
-        if (current?.element === registration.element) {
-          targets.delete(registration.category);
-        }
-      };
-    };
-
-    const getTargets = () =>
-      Array.from(targets.values()).filter(
-        (target) =>
-          target.element.isConnected &&
-          target.element.getAttribute(
-            SOMEDAY_INTERACTION_DROP_CATEGORY_ATTRIBUTE,
-          ) === target.category,
-      );
-
-    const clear = () => {
-      targets.clear();
-    };
-
-    return {
-      clear,
-      getTargets,
-      register,
+      if (current?.element === registration.element) {
+        targets.delete(registration.category);
+      }
     };
   };
+
+  const getTargets = () =>
+    Array.from(targets.values()).filter(
+      (target) =>
+        target.element.isConnected &&
+        target.element.getAttribute(
+          SOMEDAY_INTERACTION_DROP_CATEGORY_ATTRIBUTE,
+        ) === target.category,
+    );
+
+  const clear = () => {
+    targets.clear();
+  };
+
+  return {
+    clear,
+    getTargets,
+    register,
+  };
+};
 
 export const somedayDropTargetRegistry = createSomedayDropTargetRegistry();
 
@@ -114,9 +104,3 @@ const assignRef = (
 
   (ref as MutableRefObject<HTMLDivElement | null>).current = node;
 };
-
-export const isSomedayDropTargetCategory = (
-  value: string | null,
-): value is SomedayInteractionCategory =>
-  value === Categories_Event.SOMEDAY_WEEK ||
-  value === Categories_Event.SOMEDAY_MONTH;

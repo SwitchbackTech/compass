@@ -37,7 +37,7 @@ import {
 import {
   type SomedayInteractionCommitResult,
   type SomedaySidebarCommitResult,
-} from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter";
+} from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter.types";
 import {
   selectDraft,
   selectDraftActivity,
@@ -692,20 +692,12 @@ export const useSidebarActions = (
     const destColumn =
       baseEvents.columns[destination.droppableId as keyof SomedayEventsColumns];
 
-    if (
-      sourceColumn.id !== destColumn.id &&
-      destColumn.id === COLUMN_WEEK &&
-      isAtWeeklyLimit
-    ) {
+    if (destColumn.id === COLUMN_WEEK && isAtWeeklyLimit) {
       alert(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
 
-    if (
-      sourceColumn.id !== destColumn.id &&
-      destColumn.id === COLUMN_MONTH &&
-      isAtMonthlyLimit
-    ) {
+    if (destColumn.id === COLUMN_MONTH && isAtMonthlyLimit) {
       alert(SOMEDAY_MONTH_LIMIT_MSG);
       return;
     }
@@ -752,11 +744,6 @@ export const useSidebarActions = (
     if (!draggedEvent?._id) return;
 
     const draggedEventId = draggedEvent._id;
-
-    draggedEvent = {
-      ...draggedEvent,
-      order: destEventIds.indexOf(draggableId),
-    };
 
     if (!hasEventDates(draggedEvent)) return;
 

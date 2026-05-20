@@ -2,7 +2,6 @@ import { type FC, useLayoutEffect, useRef } from "react";
 import { type Schema_Event } from "@core/types/event.types";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import {
-  getSomedayInteractionEventAttributes,
   type SomedayInteractionCategory,
   useSomedayEventRegistrationRef,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
@@ -129,17 +128,12 @@ export const SomedayEventItem: FC<Props> = ({
     index,
     isEnabled: Boolean(event._id),
   });
-  const interactionAttributes = getSomedayInteractionEventAttributes({
-    category,
-    eventId: event._id,
-  });
 
   return (
     <div ref={layoutAnimationRef}>
       <SomedayEventContainer
         category={category}
         event={event}
-        interactionAttributes={interactionAttributes}
         interactionRef={interactionRef}
         isDragging={isDraggingThisEvent}
         isDrafting={isDraftingThisEvent}

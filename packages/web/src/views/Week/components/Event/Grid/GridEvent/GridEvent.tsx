@@ -17,7 +17,6 @@ import {
 } from "@web/common/constants/web.constants";
 import {
   gridColorByPriority,
-  gridDraftColorByPriority,
   gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -121,7 +120,7 @@ const GridEventBase = (
 
   const priority = event.priority || Priorities.UNASSIGNED;
   const baseColor = gridColorByPriority[priority];
-  const draftColor = gridDraftColorByPriority[priority];
+  const draftColor = darken(baseColor, 18);
   const hoverColor = gridHoverColorByPriority[priority];
 
   const bgColor = (() => {
@@ -199,7 +198,7 @@ const GridEventBase = (
       role="button"
       tabIndex={0}
       className={cn(
-        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg)",
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
         {
           "animate-someday-commit-acknowledge": shouldAcknowledgeCommit,
         },
@@ -258,7 +257,7 @@ const GridEventBase = (
                   className={cn({
                     "animate-someday-commit-time-fade": shouldChoreographCommit,
                   })}
-                  role="textbox"
+                  data-week-event-time-label="true"
                   size="xs"
                   zIndex={ZIndex.LAYER_3}
                 >

@@ -122,7 +122,7 @@ const AllDayEventBase = (
       role="button"
       tabIndex={0}
       className={cn(
-        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg)",
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
         {
           "animate-someday-commit-acknowledge": shouldAcknowledgeCommit,
         },
@@ -155,7 +155,7 @@ const AllDayEventBase = (
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}
       >
-        <Text size="m" role="textbox">
+        <Text size="m">
           {event.title}
           <SpaceCharacter />
         </Text>

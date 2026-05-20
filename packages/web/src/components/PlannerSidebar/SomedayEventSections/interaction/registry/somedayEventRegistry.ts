@@ -28,36 +28,18 @@ const isSomedayInteractionCategory = (
   value === Categories_Event.SOMEDAY_WEEK ||
   value === Categories_Event.SOMEDAY_MONTH;
 
-export const getSomedayInteractionEventAttributes = ({
-  category,
-  eventId,
-}: {
-  category: SomedayInteractionCategory;
-  eventId: string | undefined;
-}): Record<string, string> => {
-  if (!eventId) {
-    return {};
-  }
-
-  return {
-    [SOMEDAY_INTERACTION_CATEGORY_ATTRIBUTE]: category,
-    [SOMEDAY_INTERACTION_EVENT_ID_ATTRIBUTE]: eventId,
-  };
-};
-
 export interface SomedayEventRegistry {
   clear(): void;
   getEvents(
     category: SomedayInteractionCategory,
   ): SomedayInteractionRegisteredEvent[];
   register(registration: SomedayInteractionRegisteredEvent): () => void;
-  resolve(eventId: string): SomedayInteractionRegisteredEvent | null;
   resolveFromTarget(
     target: EventTarget | null,
   ): SomedayInteractionRegisteredEvent | null;
 }
 
-export const createSomedayEventRegistry = (): SomedayEventRegistry => {
+const createSomedayEventRegistry = (): SomedayEventRegistry => {
   const events = new Map<string, SomedayInteractionRegisteredEvent>();
 
   const register = (registration: SomedayInteractionRegisteredEvent) => {
@@ -146,7 +128,6 @@ export const createSomedayEventRegistry = (): SomedayEventRegistry => {
     clear,
     getEvents,
     register,
-    resolve,
     resolveFromTarget,
   };
 };
