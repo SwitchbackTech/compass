@@ -35,8 +35,7 @@ A separate API domain like `https://api.compass.example.com` may be possible, bu
 3. SSH into the server and install Compass with the self-host installer.
 4. Configure Caddy to proxy `compass.example.com` to `127.0.0.1:9080` and `/api/*` to `127.0.0.1:3000`.
 5. Verify Caddy can reach the local backend over HTTPS.
-6. Edit `~/compass/compass.yaml` to use your public URLs, then recreate the backend
-   container and rebuild the web container.
+6. Edit `~/compass/compass.yaml` to use your public URLs, then restart Compass.
 7. Sign in over HTTPS and run the basic tests below.
 8. (Optional) Add Google Calendar.
 
@@ -250,34 +249,18 @@ cd ~/compass
 ./compass restart
 ```
 
-### Rebuild the web image with your public URL
+### Use a custom web image only when needed
 
-`backend.apiUrl` and `google.clientId` are baked into the web bundle at build time — a restart alone is not enough. You have two options:
+Most self-hosted installs should use the Compass web image from Docker Hub. The
+web container does not read `compass.yaml` at runtime, so a custom web image is
+only needed when you change frontend values that are baked into the web bundle:
 
-**Option A — build from source (recommended for custom domains)**
+- the API URL used by the browser
+- the Google OAuth client ID
 
-Uncomment the `build:` block in `~/compass/compose.yaml`, fill in your real values, then rebuild:
-
-```yaml
-# In ~/compass/compose.yaml, under the web service:
-build:
-  context: ..
-  dockerfile: self-host/Dockerfile.web
-  args:
-    BASEURL: https://compass.example.com/api
-    GOOGLE_CLIENT_ID: ""   # leave empty unless adding Google Calendar
-```
-
-```bash
-cd ~/compass
-./compass rebuild
-```
-
-This builds the web image locally on the VPS. It can be slow on a small instance.
-
-**Option B — provide a pre-built image**
-
-If you build the web image elsewhere (e.g. in CI), set `web.image` in `compass.yaml` to the tag you pushed:
+If you need one of those values to differ from the published image, build and
+push a custom `compass-web` image, then set `web.image` in `compass.yaml` to the
+tag you pushed:
 
 ```yaml
 web:
@@ -287,9 +270,7 @@ web:
 
 The `compass` script exports `web.image` as `COMPASS_WEB_IMAGE` and Docker Compose uses it automatically. Run `./compass restart` after updating the field.
 
-> **Note for automated deployments.** If you deploy via the Compass CI workflow (`_deploy-environment.yml`), the workflow builds an environment-specific web image with the correct `BACKEND_API_URL` and writes `web.image` into `compass.yaml` for you. No manual rebuild is needed on the server.
-
-Confirm the public health check still works after applying the env changes:
+Confirm the public health check still works after applying the config changes:
 
 ```bash
 curl -f https://compass.example.com/api/health
