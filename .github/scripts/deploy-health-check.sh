@@ -366,15 +366,27 @@ ssh_remote() {
   "$SSH_BIN" "${SSH_OPTS[@]}" "$SSH_TARGET" "$@"
 }
 
-remote_compose_prefix() {
+resolved_compose_profiles() {
   local profiles=${COMPOSE_PROFILES:-}
 
-  if [ -n "$profiles" ]; then
-    printf "cd ~/compass && COMPOSE_PROFILES=%q docker compose --project-name compass -f compose.yaml" "$profiles"
-    return
+  if [ -z "$profiles" ] && [ "${PROFILE:-}" = "selfhosted" ]; then
+    profiles=selfhost
   fi
 
-  printf 'cd ~/compass && docker compose --project-name compass -f compose.yaml'
+  printf '%s' "$profiles"
+}
+
+remote_compose_env_prefix() {
+  local profiles
+  profiles=$(resolved_compose_profiles)
+
+  if [ -n "$profiles" ]; then
+    printf "COMPOSE_PROFILES=%q " "$profiles"
+  fi
+}
+
+remote_compose_prefix() {
+  printf 'cd ~/compass && %sdocker compose --project-name compass -f compose.yaml' "$(remote_compose_env_prefix)"
 }
 
 remote_check_stack() {
@@ -496,13 +508,15 @@ REMOTE
 remote_check_selfhosted_data() {
   local mongo_password=${MONGO_PASSWORD:-}
   local postgres_password=${SUPERTOKENS_POSTGRES_PASSWORD:-}
+  local compose_env
+  compose_env=$(remote_compose_env_prefix)
 
   ssh_remote "bash -se" <<REMOTE
 set -euo pipefail
 cd ~/compass
 
 # Verify MongoDB is reachable and the replica set is healthy.
-docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --quiet \
+${compose_env}docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --quiet \
   --username compass \
   --password $(printf '%q' "$mongo_password") \
   --authenticationDatabase admin \
@@ -524,8 +538,8 @@ docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --qu
   '
 
 # Verify Postgres (SuperTokens) is reachable.
-docker compose --project-name compass -f compose.yaml exec -T supertokens-db pg_isready -U supertokens -d supertokens
-docker compose --project-name compass -f compose.yaml exec -T -e PGPASSWORD=$(printf '%q' "$postgres_password") supertokens-db \
+${compose_env}docker compose --project-name compass -f compose.yaml exec -T supertokens-db pg_isready -U supertokens -d supertokens
+${compose_env}docker compose --project-name compass -f compose.yaml exec -T -e PGPASSWORD=$(printf '%q' "$postgres_password") supertokens-db \
   psql -U supertokens -d supertokens -c 'select 1' >/dev/null
 REMOTE
 }
@@ -568,18 +582,24 @@ run_all_checks() {
   finish
 }
 
-case "${1:-run}" in
-  run)
-    run_all_checks
-    ;;
-  validate-frontend)
-    validate_frontend
-    ;;
-  validate-frontend-version)
-    validate_frontend_version
-    ;;
-  *)
-    printf 'usage: %s [run|validate-frontend|validate-frontend-version]\n' "$0" >&2
-    exit 2
-    ;;
-esac
+main() {
+  case "${1:-run}" in
+    run)
+      run_all_checks
+      ;;
+    validate-frontend)
+      validate_frontend
+      ;;
+    validate-frontend-version)
+      validate_frontend_version
+      ;;
+    *)
+      printf 'usage: %s [run|validate-frontend|validate-frontend-version]\n' "$0" >&2
+      exit 2
+      ;;
+  esac
+}
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  main "$@"
+fi

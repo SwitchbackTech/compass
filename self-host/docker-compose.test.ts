@@ -37,6 +37,32 @@ async function runHealthScript(
   return { exitCode, stderr, stdout };
 }
 
+async function runHealthScriptFunction(
+  command: string,
+  env: Record<string, string> = {},
+) {
+  const proc = Bun.spawn(
+    ["bash", "-c", `. .github/scripts/deploy-health-check.sh; ${command}`],
+    {
+      cwd: repoRoot,
+      env: {
+        ...process.env,
+        ...env,
+      },
+      stderr: "pipe",
+      stdout: "pipe",
+    },
+  );
+
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(proc.stdout).text(),
+    new Response(proc.stderr).text(),
+    proc.exited,
+  ]);
+
+  return { exitCode, stderr, stdout };
+}
+
 function makeTempDir() {
   const dir = mkdtempSync(join(tmpdir(), "compass-health-check-"));
   tempDirs.push(dir);
@@ -266,5 +292,27 @@ describe("deploy health check script", () => {
     expect(result.exitCode).toBe(1);
     expect(result.stderr).toContain("frontend-version");
     expect(result.stderr).toContain("expected 0.5.27, got 0.5.26");
+  });
+
+  it("defaults self-hosted Docker Compose checks to the self-host profile", async () => {
+    const result = await runHealthScriptFunction("remote_compose_prefix", {
+      COMPOSE_PROFILES: "",
+      PROFILE: "selfhosted",
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("COMPOSE_PROFILES=selfhost");
+    expect(result.stdout).toContain("docker compose --project-name compass");
+  });
+
+  it("keeps explicit Docker Compose profile overrides", async () => {
+    const result = await runHealthScriptFunction("remote_compose_prefix", {
+      COMPOSE_PROFILES: "custom",
+      PROFILE: "selfhosted",
+    });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.stdout).toContain("COMPOSE_PROFILES=custom");
+    expect(result.stdout).not.toContain("COMPOSE_PROFILES=selfhost");
   });
 });
