@@ -7,6 +7,8 @@ import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
 import { type Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { getIncompleteTasksSorted } from "@web/common/utils/task/sort.task";
+import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { useAvailableTasks } from "../hooks/useAvailableTasks";
 import { useFocusedTask } from "../hooks/useFocusedTask";
 import { useNowShortcuts } from "../shortcuts/useNowShortcuts";
@@ -35,6 +37,7 @@ export function NowViewProvider({
   children,
   onToggleSidebar,
 }: NowViewProviderProps) {
+  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { availableTasks, allTasks, hasCompletedTasks } = useAvailableTasks();
   const { focusedTask, setFocusedTask } = useFocusedTask({ availableTasks });
@@ -135,6 +138,14 @@ export function NowViewProvider({
     setFocusedTask,
   ]);
 
+  const handleEscape = useCallback(() => {
+    navigate(ROOT_ROUTES.DAY);
+  }, [navigate]);
+
+  const handleEditReminder = useCallback(() => {
+    dispatch(viewSlice.actions.updateReminder(true));
+  }, [dispatch]);
+
   useNowShortcuts({
     focusedTask,
     availableTasks,
@@ -142,6 +153,8 @@ export function NowViewProvider({
     onNextTask: handleNextTask,
     onCompleteTask: handleCompleteTask,
     onToggleSidebar,
+    onEscape: handleEscape,
+    onEditReminder: handleEditReminder,
   });
 
   const value: NowViewContextValue = {

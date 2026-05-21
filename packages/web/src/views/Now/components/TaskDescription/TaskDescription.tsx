@@ -8,6 +8,7 @@ import {
 } from "@web/common/utils/dom/event-emitter.util";
 import { Textarea } from "@web/components/Textarea";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { ShortCutLabel } from "@web/common/utils/shortcut/shortcut.util";
 
 const MAX_DESCRIPTION_LENGTH = 255;
 const NEAR_LIMIT_THRESHOLD = Math.floor(MAX_DESCRIPTION_LENGTH * 0.9); // 90% of max
@@ -242,7 +243,16 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
             <CharacterCount isNearLimit={isNearLimit}>
               {value.length}/{MAX_DESCRIPTION_LENGTH}
             </CharacterCount>
-            <TooltipWrapper description="Save description" shortcut="Mod+Enter">
+            <TooltipWrapper
+              description="Save description"
+              shortcut={
+                <span className="inline-flex items-center gap-1">
+                  <ShortCutLabel k="Mod" size={12} />
+                  <span>+</span>
+                  <ShortCutLabel k="Enter" size={12} />
+                </span>
+              }
+            >
               <SaveButton
                 aria-label="Save description"
                 onClick={saveDescription}

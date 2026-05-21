@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useHotkeySequence } from "@tanstack/react-hotkeys";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { type Task } from "@web/common/types/task.types";
@@ -14,6 +15,8 @@ interface Props {
   onNextTask?: () => void;
   onCompleteTask?: () => void;
   onToggleSidebar?: () => void;
+  onEscape?: () => void;
+  onEditReminder?: () => void;
 }
 
 export function useNowShortcuts(props?: Props) {
@@ -24,6 +27,8 @@ export function useNowShortcuts(props?: Props) {
     onNextTask,
     onCompleteTask,
     onToggleSidebar,
+    onEscape,
+    onEditReminder,
   } = props || {};
 
   const handleTaskNavigation = useCallback(
@@ -35,7 +40,7 @@ export function useNowShortcuts(props?: Props) {
     [focusedTask, availableTasks.length],
   );
 
-  useAppHotkeyUp("E", () => {
+  useHotkeySequence(["E", "D"], () => {
     compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
   });
 
@@ -70,5 +75,13 @@ export function useNowShortcuts(props?: Props) {
 
   useAppHotkeyUp("[", () => {
     onToggleSidebar?.();
+  });
+
+  useAppHotkeyUp("Escape", () => {
+    onEscape?.();
+  });
+
+  useHotkeySequence(["E", "R"], () => {
+    onEditReminder?.();
   });
 }

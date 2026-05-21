@@ -1,6 +1,5 @@
 import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { useSession } from "@web/auth/compass/session/useSession";
 import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
 import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
 import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
@@ -38,7 +37,6 @@ import { Styled, StyledCalendar } from "@web/views/Week/styled";
 export const DayViewContent = memo(() => {
   const dispatch = useAppDispatch();
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
-  const { authenticated } = useSession();
 
   const selectionActions = useMainGridSelectionActions();
   const { timedEventsGridRef } = useCompassRefs();
@@ -64,7 +62,6 @@ export const DayViewContent = memo(() => {
   const dateInView = useDateInView();
   const shortcuts = getShortcuts({
     currentDate: dateInView,
-    isAuthenticated: authenticated,
   });
 
   const {

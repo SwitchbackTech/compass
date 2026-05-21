@@ -4,29 +4,20 @@ import { type Shortcut } from "@web/common/types/global.shortcut.types";
 
 interface ShortcutsConfig {
   isHome?: boolean;
-  isAuthenticated?: boolean;
   isToday?: boolean;
   isNow?: boolean;
   currentDate?: dayjs.Dayjs;
 }
 
 export const getShortcuts = (config: ShortcutsConfig = {}) => {
-  const {
-    isAuthenticated = false,
-    isHome = false,
-    isToday = true,
-    isNow = false,
-    currentDate,
-  } = config;
+  const { isHome = false, isToday = true, isNow = false, currentDate } = config;
 
   const globalShortcuts: Shortcut[] = [
     { k: VIEW_SHORTCUTS.now.key, label: VIEW_SHORTCUTS.now.label },
     { k: VIEW_SHORTCUTS.day.key, label: VIEW_SHORTCUTS.day.label },
     { k: VIEW_SHORTCUTS.week.key, label: VIEW_SHORTCUTS.week.label },
-    { k: "r", label: "Edit reminder" },
-    { k: "[", label: "Toggle sidebar" },
-    { k: "?", label: "Toggle shortcuts" },
-    { k: "z", label: isAuthenticated ? "Logout" : "Log in" },
+    { k: "[", label: "Close sidebar" },
+    { k: "?", label: "Show shortcuts" },
     { k: "Mod+k", label: "Command Palette" },
   ];
 
@@ -73,7 +64,8 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   }
   if (isNow) {
     nowShortcuts = [
-      { k: "e", label: "Edit description" },
+      { k: "e d", label: "Edit description" },
+      { k: "e r", label: "Edit reminder" },
       { k: "Mod+Enter", label: "Save description" },
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },

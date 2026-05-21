@@ -5,7 +5,6 @@ import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 
@@ -49,10 +48,6 @@ export function useGlobalShortcuts() {
     }
 
     openModal("login");
-  });
-
-  useAppHotkeyUp("R", () => {
-    dispatch(viewSlice.actions.updateReminder(true));
   });
 
   useAppHotkey(
