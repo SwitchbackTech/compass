@@ -112,12 +112,22 @@ const AllDayEventBase = (
     cursor: showResizeCursor ? "col-resize" : undefined,
     ...placement,
   });
+  const accessibleLabel = `All-day event: ${event.title || "Untitled event"}`;
+  const shouldExposeCalendarTarget = !isPending && Boolean(event._id);
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
       {...interactionAttributes}
+      aria-disabled={isPending ? "true" : undefined}
+      aria-label={accessibleLabel}
+      data-calendar-event-target={
+        shouldExposeCalendarTarget ? "true" : undefined
+      }
+      data-calendar-event-type={
+        shouldExposeCalendarTarget ? "all-day" : undefined
+      }
       ref={ref}
       role="button"
       tabIndex={0}
@@ -141,6 +151,14 @@ const AllDayEventBase = (
         }
 
         onMouseDown(e, event);
+      }}
+      onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
+        if (!shouldExposeCalendarTarget) return;
+
+        e.currentTarget.dataset.calendarEventHovered = "true";
+      }}
+      onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
+        delete e.currentTarget.dataset.calendarEventHovered;
       }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
         if (e.key !== "Enter" && e.key !== " ") {

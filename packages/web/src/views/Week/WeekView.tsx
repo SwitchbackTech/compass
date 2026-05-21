@@ -26,6 +26,7 @@ import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 import { Styled, StyledCalendar, WeekGridTrack } from "@web/views/Week/styled";
+import { buildWeekShortcutSections } from "@web/views/Week/util/weekShortcutSections";
 
 export const WeekView = () => {
   useRefetch();
@@ -65,39 +66,7 @@ export const WeekView = () => {
   };
 
   const shortcutSections = useMemo(
-    () => [
-      {
-        title: "Week",
-        shortcuts: [
-          { k: "j", label: "Previous week" },
-          { k: "k", label: "Next week" },
-          {
-            k: "t",
-            label: isCurrentWeek ? "Scroll to now" : "Go to current week",
-          },
-        ],
-      },
-      {
-        title: "Create",
-        shortcuts: [
-          { k: "c", label: "Create timed event" },
-          { k: "a", label: "Create all-day event" },
-          { k: "Shift+w", label: "Create Someday week event" },
-          { k: "Shift+m", label: "Create Someday month event" },
-        ],
-      },
-      {
-        title: "Global",
-        shortcuts: [
-          { k: "d", label: "Day" },
-          { k: "w", label: "Week" },
-          { k: "n", label: "Now" },
-          { k: "[", label: "Close sidebar" },
-          { k: "?", label: "Show shortcuts" },
-          { k: "Mod+k", label: "Command Palette" },
-        ],
-      },
-    ],
+    () => buildWeekShortcutSections({ isCurrentWeek }),
     [isCurrentWeek],
   );
 

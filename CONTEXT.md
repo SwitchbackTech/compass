@@ -73,6 +73,11 @@ An event shown in a concrete time range on the calendar grid.
 The calendar surface that lays out Timed Events by day column and time.
 _Avoid_: day slots
 
+**Day View**:
+The single-date calendar view. When routed without a date, it opens on today,
+but it can represent any selected date.
+_Avoid_: Today view, unless referring specifically to the current date
+
 **All-Day Event**:
 An event shown in the all-day row.
 

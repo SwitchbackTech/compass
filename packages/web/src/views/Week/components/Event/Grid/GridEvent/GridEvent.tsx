@@ -11,6 +11,7 @@ import {
 import { Priorities } from "@core/constants/core.constants";
 import { brighten, darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
+import { type TimedOverlapLayout } from "@web/common/calendar-grid/overlap/timedOverlapLayout";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
@@ -51,6 +52,7 @@ interface Props {
   motionMode?: GridEventMotionMode;
   onEventMouseDown?: (event: Schema_GridEvent, e: MouseEvent) => void;
   onEventKeyDown?: (event: Schema_GridEvent) => void;
+  overlapLayout?: TimedOverlapLayout;
   onScalerMouseDown?: (
     event: Schema_GridEvent,
     e: MouseEvent,
@@ -72,6 +74,7 @@ const GridEventBase = (
     motionMode = "idle",
     onEventMouseDown,
     onEventKeyDown,
+    overlapLayout,
     onScalerMouseDown,
     weekProps,
   }: Props,
@@ -140,15 +143,37 @@ const GridEventBase = (
           : "hover:cursor-pointer"
       : "";
 
+  const shouldApplyOverlapLayout =
+    displayMode === "saved" &&
+    !event.isAllDay &&
+    !isDragging &&
+    !isResizing &&
+    overlapLayout?.isOverlapping === true;
+
+  const overlappedWidth =
+    shouldApplyOverlapLayout && position.width
+      ? position.width * (overlapLayout.widthPercent / 100)
+      : position.width;
+
+  const overlappedLeft =
+    shouldApplyOverlapLayout && position.width
+      ? position.left +
+        position.width * (overlapLayout.horizontalOffsetPercent / 100)
+      : position.left;
+
   const eventStyle = {
     "--event-bg": bgColor,
     "--event-hover-bg": hoverBgColor,
     height: position.height || 0,
-    left: position.left,
+    left: overlappedLeft,
     opacity: isPlaceholder ? 0.5 : undefined,
     top: position.top,
-    width: position.width || 0,
-    zIndex: isDragging ? ZIndex.LAYER_5 : ZIndex.LAYER_1,
+    width: overlappedWidth || 0,
+    zIndex: shouldApplyOverlapLayout
+      ? ZIndex.LAYER_1 + overlapLayout.zIndex
+      : isDragging
+        ? ZIndex.LAYER_5
+        : ZIndex.LAYER_1,
     filter: isDraft
       ? "drop-shadow(2px 4px 4px black)"
       : isInPast
@@ -188,12 +213,31 @@ const GridEventBase = (
     cursor: showResizeCursor ? "row-resize" : undefined,
     ...placement,
   });
+  const eventTitle = event.title || "Untitled event";
+  const timeRange =
+    event.startDate && event.endDate
+      ? getTimesLabel(event.startDate, event.endDate)
+      : "time not set";
+  const accessibleLabel = event.isAllDay
+    ? `All-day event: ${eventTitle}`
+    : `Timed event: ${eventTitle}, ${timeRange}`;
+  const calendarEventType = event.isAllDay ? "all-day" : "timed";
+  const shouldExposeCalendarTarget = !isPending && Boolean(event._id);
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
       {...interactionAttributes}
+      aria-disabled={isPending ? "true" : undefined}
+      aria-label={accessibleLabel}
+      data-calendar-event-target={
+        shouldExposeCalendarTarget ? "true" : undefined
+      }
+      data-calendar-event-type={
+        shouldExposeCalendarTarget ? calendarEventType : undefined
+      }
+      data-week-event-overlap={shouldApplyOverlapLayout ? "true" : undefined}
       ref={ref}
       role="button"
       tabIndex={0}
@@ -201,6 +245,12 @@ const GridEventBase = (
         "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
         {
           "animate-someday-commit-acknowledge": shouldAcknowledgeCommit,
+          "border border-border-primary-dark pt-0.75 hover:z-50 focus-visible:z-50":
+            shouldApplyOverlapLayout,
+          "shadow-[0_1px_2px_rgba(0,0,0,0.4),0_3px_8px_rgba(0,0,0,0.2)]":
+            shouldApplyOverlapLayout && !overlapLayout?.isFrontmost,
+          "shadow-[0_2px_4px_rgba(0,0,0,0.5),0_10px_24px_rgba(0,0,0,0.4)]":
+            shouldApplyOverlapLayout && overlapLayout?.isFrontmost,
         },
         hoverCursorClass,
       )}
@@ -226,6 +276,14 @@ const GridEventBase = (
         }
 
         onEventMouseDown(event, e);
+      }}
+      onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
+        if (!shouldExposeCalendarTarget) return;
+
+        e.currentTarget.dataset.calendarEventHovered = "true";
+      }}
+      onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
+        delete e.currentTarget.dataset.calendarEventHovered;
       }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
         if (!onEventKeyDown || (e.key !== "Enter" && e.key !== " ")) {
@@ -294,6 +352,7 @@ export const GridEventMemo = memo(GridEvent, (prev, next) => {
     prev.interactionAttributes === next.interactionAttributes &&
     prev.isPending === next.isPending &&
     prev.measurements === next.measurements &&
-    prev.motionMode === next.motionMode
+    prev.motionMode === next.motionMode &&
+    prev.overlapLayout === next.overlapLayout
   );
 });

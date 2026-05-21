@@ -15,7 +15,7 @@ import {
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { getDragDurationMinutes } from "./drag-duration.util";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockDispatch = mock();
 let currentState: InitialReduxState = createInitialState();
@@ -25,13 +25,6 @@ mock.module("@web/store/store.hooks", () => ({
   useAppSelector: (selector: (state: InitialReduxState) => unknown) =>
     selector(currentState),
 }));
-
-mock.module(
-  "@web/views/Week/components/Draft/hooks/effects/useDraftEffects",
-  () => ({
-    useDraftEffects: mock(),
-  }),
-);
 
 const { useDraftActions } =
   require("./useDraftActions") as typeof import("./useDraftActions");
@@ -159,4 +152,8 @@ describe("useDraftActions", () => {
     expect(createAction.payload._id).not.toBe("event-1");
     expect(createAction.payload.title).toBe("Seed event");
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

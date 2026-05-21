@@ -1,6 +1,12 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
+import {
+  focusCalendarEventTarget,
+  getFirstVisibleCalendarEventTarget,
+  getFocusedCalendarEventTarget,
+  getHoveredCalendarEventTarget,
+} from "@web/common/calendar-grid/targeting/calendarEventTargeting";
 import { useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import {
   createAlldayDraft,
@@ -8,6 +14,8 @@ import {
 } from "@web/common/utils/draft/draft.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
+import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
+import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
@@ -37,8 +45,17 @@ export const useWeekShortcuts = ({
   const context = useSidebarContext(true);
 
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+  const eventEntities = useAppSelector(selectEventEntities);
+  const pendingEventIds = useAppSelector(selectPendingEventIds);
+  const eventEntitiesRef = useRef(eventEntities);
+  const pendingEventIdsRef = useRef(pendingEventIds);
   const { decrementWeek, incrementWeek, goToToday } = util;
   const { scrollToNow } = scrollUtil;
+
+  useEffect(() => {
+    eventEntitiesRef.current = eventEntities;
+    pendingEventIdsRef.current = pendingEventIds;
+  }, [eventEntities, pendingEventIds]);
 
   const _createSomedayDraft = useCallback(
     (
@@ -102,12 +119,45 @@ export const useWeekShortcuts = ({
     _createSomedayDraft(Categories_Event.SOMEDAY_WEEK);
   }, [_createSomedayDraft]);
 
+  const focusFirstCalendarEvent = useCallback(() => {
+    const target = getFirstVisibleCalendarEventTarget();
+    if (!target) return;
+
+    focusCalendarEventTarget(target);
+  }, []);
+
+  const editTargetedCalendarEvent = useCallback(() => {
+    const target =
+      getFocusedCalendarEventTarget() ??
+      getHoveredCalendarEventTarget() ??
+      getFirstVisibleCalendarEventTarget();
+
+    if (!target) return;
+    if (pendingEventIdsRef.current.includes(target.eventId)) return;
+
+    const event = eventEntitiesRef.current[target.eventId];
+    if (!event) return;
+
+    dispatch(
+      draftSlice.actions.start({
+        activity: "keyboardEdit",
+        event,
+        eventType:
+          target.eventType === "all-day"
+            ? Categories_Event.ALLDAY
+            : Categories_Event.TIMED,
+      }),
+    );
+  }, [dispatch]);
+
   useAppHotkeyUp("[", openSidebar);
   useAppHotkeyUp("J", goToPreviousWeek);
   useAppHotkeyUp("K", goToNextWeek);
   useAppHotkeyUp("T", toToday);
   useAppHotkeyUp("A", createAllDayDraftEvent);
   useAppHotkeyUp("C", createTimedDraftEvent);
+  useAppHotkeyUp("I", focusFirstCalendarEvent);
+  useAppHotkeyUp("M", editTargetedCalendarEvent);
   useAppHotkeyUp("Shift+M", createSomedayMonthDraft);
   useAppHotkeyUp("Shift+W", createSomedayWeekDraft);
 };
