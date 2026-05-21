@@ -471,7 +471,7 @@ describe("Week calendar accessibility", () => {
 });
 
 describe("saved Week event ownership", () => {
-  it("stacks overlapping saved timed events with the lower event in front", () => {
+  it("renders overlapping saved timed events without resting stack offsets", () => {
     const store = createStore([
       createSavedEvent({
         _id: "early-overlap",
@@ -501,22 +501,10 @@ describe("saved Week event ownership", () => {
     const early = screen.getByRole("button", { name: /early overlap/i });
     const late = screen.getByRole("button", { name: /late overlap/i });
 
-    expect(early.getAttribute("data-week-event-overlap")).toBe("true");
-    expect(late.getAttribute("data-week-event-overlap")).toBe("true");
-    expect(Number(late.style.zIndex)).toBeGreaterThan(
-      Number(early.style.zIndex),
-    );
-    // Back card keeps the full column width; the later card renders as a
-    // narrow overlay chip stepped to the right.
-    expect(parseFloat(early.style.width)).toBeGreaterThan(
-      parseFloat(late.style.width),
-    );
-    expect(parseFloat(late.style.left)).toBeGreaterThan(
-      parseFloat(early.style.left),
-    );
-    expect(
-      parseFloat(late.style.left) + parseFloat(late.style.width),
-    ).toBeCloseTo(parseFloat(early.style.left) + parseFloat(early.style.width));
+    expect(early.getAttribute("data-week-event-overlap")).toBeNull();
+    expect(late.getAttribute("data-week-event-overlap")).toBeNull();
+    expect(parseFloat(early.style.width)).toBe(parseFloat(late.style.width));
+    expect(parseFloat(early.style.left)).toBe(parseFloat(late.style.left));
   });
 
   it("keeps saved timed mouse and resize events out of the draft motion owner", () => {

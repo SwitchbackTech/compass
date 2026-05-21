@@ -1,9 +1,5 @@
 import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import {
-  computeTimedOverlapLayout,
-  type TimedOverlapLayout,
-} from "@web/common/calendar-grid/overlap/timedOverlapLayout";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
@@ -36,21 +32,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     (state) => state.events.pendingEvents.eventIds,
   );
   const draftId = useAppSelector(selectDraftId);
-
-  const timedOverlapLayoutByEventId = useMemo(
-    () =>
-      computeTimedOverlapLayout(
-        timedEvents
-          .filter((event) => event._id)
-          .map((event) => ({
-            endDate: event.endDate,
-            eventId: event._id as string,
-            startDate: event.startDate,
-            title: event.title,
-          })),
-      ),
-    [timedEvents],
-  );
   const category = Categories_Event.TIMED;
 
   const handleKeyDown = (event: Schema_GridEvent) => {
@@ -85,11 +66,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
               key={`initial-${event._id}`}
               measurements={measurements}
               onEventKeyDown={handleKeyDown}
-              overlapLayout={
-                event._id
-                  ? timedOverlapLayoutByEventId.get(event._id)
-                  : undefined
-              }
               weekProps={weekProps}
             />
           );
@@ -104,7 +80,6 @@ interface MainGridEventItemProps {
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
   onEventKeyDown: (event: Schema_GridEvent) => void;
-  overlapLayout?: TimedOverlapLayout;
   weekProps: WeekProps;
 }
 
@@ -114,7 +89,6 @@ const MainGridEventItem = ({
   isPlaceholder,
   measurements,
   onEventKeyDown,
-  overlapLayout,
   weekProps,
 }: MainGridEventItemProps) => {
   const isRegisteredForWeekInteraction =
@@ -143,7 +117,6 @@ const MainGridEventItem = ({
       isPending={isPending}
       measurements={measurements}
       onEventKeyDown={onEventKeyDown}
-      overlapLayout={overlapLayout}
       ref={registrationRef}
       weekProps={weekProps}
     />
