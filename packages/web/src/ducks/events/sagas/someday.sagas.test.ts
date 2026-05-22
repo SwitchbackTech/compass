@@ -249,4 +249,46 @@ describe("getSomedayEvents saga", () => {
       );
     });
   });
+
+  describe("reordering", () => {
+    beforeEach(() => {
+      mockDoesSessionExist.mockResolvedValue(false);
+      sagaTask?.cancel();
+      store = createStoreWithEvents([
+        {
+          _id: "first-event",
+          title: "First",
+          startDate: dayjs("2026-05-19").toISOString(),
+          endDate: dayjs("2026-05-20").toISOString(),
+          isSomeday: true,
+          order: 0,
+        },
+        {
+          _id: "second-event",
+          title: "Second",
+          startDate: dayjs("2026-05-19").toISOString(),
+          endDate: dayjs("2026-05-20").toISOString(),
+          isSomeday: true,
+          order: 1,
+        },
+      ]);
+      sagaTask = sagaMiddleware.run(sagas);
+    });
+
+    it("should update event order locally before saving the order", async () => {
+      const order = [
+        { _id: "first-event", order: 1 },
+        { _id: "second-event", order: 0 },
+      ];
+
+      store.dispatch(getSomedayEventsSlice.actions.reorder(order));
+
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      const state = store.getState();
+      expect(state.events.entities.value["first-event"].order).toBe(1);
+      expect(state.events.entities.value["second-event"].order).toBe(0);
+      expect(mockRepository.reorder).toHaveBeenCalledWith(order);
+    });
+  });
 });

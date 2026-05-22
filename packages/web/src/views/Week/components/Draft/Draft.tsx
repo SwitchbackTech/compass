@@ -22,7 +22,7 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
 
   const category = useAppSelector(selectDraftCategory);
   const { state } = useDraftContext();
-  const { draft, isDragging, isResizing } = state;
+  const { draft } = state;
 
   if (draft?.isAllDay === undefined) {
     return null;
@@ -37,13 +37,7 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
 
   return createPortal(
     isGridDraft && (
-      <GridDraft
-        draft={draft}
-        isDragging={isDragging}
-        isResizing={isResizing}
-        measurements={measurements}
-        weekProps={weekProps}
-      />
+      <GridDraft measurements={measurements} weekProps={weekProps} />
     ),
     container,
   );

@@ -367,14 +367,11 @@ ssh_remote() {
 }
 
 remote_compose_prefix() {
-  local profiles=${COMPOSE_PROFILES:-}
-
-  if [ -n "$profiles" ]; then
-    printf "cd ~/compass && COMPOSE_PROFILES=%q docker compose --project-name compass -f compose.yaml" "$profiles"
-    return
+  if [ "${PROFILE:-}" = "selfhosted" ]; then
+    printf 'cd ~/compass && COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml'
+  else
+    printf 'cd ~/compass && docker compose --project-name compass -f compose.yaml'
   fi
-
-  printf 'cd ~/compass && docker compose --project-name compass -f compose.yaml'
 }
 
 remote_check_stack() {
@@ -500,6 +497,7 @@ remote_check_selfhosted_data() {
   ssh_remote "bash -se" <<REMOTE
 set -euo pipefail
 cd ~/compass
+export COMPOSE_PROFILES=selfhosted
 
 # Verify MongoDB is reachable and the replica set is healthy.
 docker compose --project-name compass -f compose.yaml exec -T mongo mongosh --quiet \
@@ -568,18 +566,24 @@ run_all_checks() {
   finish
 }
 
-case "${1:-run}" in
-  run)
-    run_all_checks
-    ;;
-  validate-frontend)
-    validate_frontend
-    ;;
-  validate-frontend-version)
-    validate_frontend_version
-    ;;
-  *)
-    printf 'usage: %s [run|validate-frontend|validate-frontend-version]\n' "$0" >&2
-    exit 2
-    ;;
-esac
+main() {
+  case "${1:-run}" in
+    run)
+      run_all_checks
+      ;;
+    validate-frontend)
+      validate_frontend
+      ;;
+    validate-frontend-version)
+      validate_frontend_version
+      ;;
+    *)
+      printf 'usage: %s [run|validate-frontend|validate-frontend-version]\n' "$0" >&2
+      exit 2
+      ;;
+  esac
+}
+
+if [ "${BASH_SOURCE[0]}" = "$0" ]; then
+  main "$@"
+fi

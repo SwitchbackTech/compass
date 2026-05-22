@@ -1,3 +1,4 @@
+import cn from "classnames";
 import {
   type CSSProperties,
   type ForwardedRef,
@@ -15,8 +16,8 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import {
-  colorByPriority,
-  hoverColorByPriority,
+  gridColorByPriority,
+  gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
@@ -29,11 +30,17 @@ import {
   FlexDirections,
   FlexWrap,
 } from "@web/components/Flex/styled";
+import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { Text } from "@web/components/Text";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
-import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
+import {
+  GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  GRID_EVENT_TIME_LABEL_OPACITY,
+  GRID_EVENT_TITLE_LINE_HEIGHT,
+  MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
+} from "@web/views/Week/layout.constants";
 
 interface Props {
   displayMode: GridEventDisplayMode;
@@ -78,6 +85,15 @@ const GridEventBase = (
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
+  // Only choreograph the text when the event id was just committed from a
+  // Someday-to-grid drop. Keep the block itself visually stable so the
+  // overlay-to-event handoff does not flash.
+  const shouldAcknowledgeCommit =
+    useSomedayCommitAcknowledgement(event._id) &&
+    !isDragging &&
+    !isResizing &&
+    !isPlaceholder &&
+    !isDraft;
 
   const position = getEventPosition(
     event,
@@ -91,20 +107,25 @@ const GridEventBase = (
     () => getLineClamp(position.height),
     [position.height],
   );
+  const isTallEnoughForTimeLabel =
+    position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL;
+  const shouldAnimatePastCommitTimeOut =
+    shouldAcknowledgeCommit && isInPast && !isDraft && isTallEnoughForTimeLabel;
 
   const priority = event.priority || Priorities.UNASSIGNED;
-  const baseColor = colorByPriority[priority];
-  const hoverColor = hoverColorByPriority[priority];
+  const baseColor = gridColorByPriority[priority];
+  const draftColor = darken(baseColor, 18);
+  const hoverColor = gridHoverColorByPriority[priority];
 
   const bgColor = (() => {
-    if (isDraft) return hoverColor;
+    if (isDraft) return draftColor;
+    if (shouldAcknowledgeCommit) return hoverColor;
     if (isResizing || isDragging) return brighten(baseColor);
     return baseColor;
   })();
 
-  // When isPlaceholder or isResizing, hover produces no visible change
   const hoverBgColor =
-    !isPlaceholder && !isResizing
+    !isDraft && !isPlaceholder && !isResizing
       ? isPending && bgColor
         ? darken(bgColor)
         : hoverColor
@@ -137,7 +158,7 @@ const GridEventBase = (
 
   const titleStyle: CSSProperties = {
     fontSize: position.height <= 15 ? "10px" : "13px",
-    lineHeight: position.height <= 15 ? "1.1" : undefined,
+    lineHeight: position.height <= 15 ? "1.1" : GRID_EVENT_TITLE_LINE_HEIGHT,
     minHeight: "3px",
     display: "-webkit-box",
     overflow: "hidden",
@@ -145,6 +166,12 @@ const GridEventBase = (
     wordBreak: "break-all",
     WebkitBoxOrient: "vertical",
     WebkitLineClamp: lineClamp,
+  };
+
+  const timeLabelStyle: CSSProperties = {
+    fontSize: GRID_EVENT_TIME_LABEL_FONT_SIZE,
+    opacity: GRID_EVENT_TIME_LABEL_OPACITY,
+    whiteSpace: "nowrap",
   };
 
   const showResizeCursor =
@@ -170,7 +197,13 @@ const GridEventBase = (
       ref={ref}
       role="button"
       tabIndex={0}
-      className={`absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color] duration-350 ease-linear hover:bg-(--event-hover-bg) ${hoverCursorClass}`}
+      className={cn(
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+        {
+          "animate-someday-commit-acknowledge": shouldAcknowledgeCommit,
+        },
+        hoverCursorClass,
+      )}
       style={eventStyle}
       onMouseDown={(e: MouseEvent) => {
         if (isWeekInteractionMotionActive()) {
@@ -195,7 +228,7 @@ const GridEventBase = (
         onEventMouseDown(event, e);
       }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
-        if (e.key !== "Enter" && e.key !== " ") {
+        if (!onEventKeyDown || (e.key !== "Enter" && e.key !== " ")) {
           return;
         }
 
@@ -211,9 +244,18 @@ const GridEventBase = (
         <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
-            {(isDraft || !isInPast) &&
-              position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL && (
-                <Text role="textbox" size="xs" zIndex={ZIndex.LAYER_3}>
+            {(isDraft || !isInPast || shouldAnimatePastCommitTimeOut) &&
+              isTallEnoughForTimeLabel && (
+                <Text
+                  aria-hidden={shouldAnimatePastCommitTimeOut || undefined}
+                  className={cn({
+                    "animate-someday-commit-time-exit opacity-0":
+                      shouldAnimatePastCommitTimeOut,
+                  })}
+                  data-week-event-time-label="true"
+                  style={timeLabelStyle}
+                  zIndex={ZIndex.LAYER_3}
+                >
                   {event.startDate &&
                     event.endDate &&
                     getTimesLabel(event.startDate, event.endDate)}

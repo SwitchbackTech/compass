@@ -1,9 +1,5 @@
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
-import {
-  type DraggableProvided,
-  type DraggableStateSnapshot,
-} from "@hello-pangea/dnd";
-import { useRef } from "react";
+import { type Ref, useRef } from "react";
 import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import {
@@ -15,6 +11,7 @@ import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
+import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/SomedayEvent";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
@@ -22,16 +19,14 @@ import { useDraftForm } from "@web/views/Week/components/Draft/hooks/state/useDr
 import { getSidebarOpenWidth } from "@web/views/Week/layout.constants";
 
 export interface Props {
-  category: Categories_Event;
+  category: SomedayInteractionCategory;
   event: Schema_Event;
   isDrafting: boolean;
   isDragging: boolean;
-  isOverGrid: boolean;
   onSubmit: (event: Schema_Event | null) => void;
   deleteEvent: (applyTo?: RecurringEventUpdateScope) => void;
   duplicateEvent: () => void;
-  provided: DraggableProvided;
-  snapshot: DraggableStateSnapshot;
+  interactionRef: Ref<HTMLDivElement>;
   setEvent: Setters_Sidebar["setDraft"];
   weekViewRange: {
     startDate: string;
@@ -44,12 +39,10 @@ export const SomedayEventContainer = ({
   event,
   isDrafting,
   isDragging,
-  isOverGrid,
   onSubmit,
   deleteEvent,
   duplicateEvent,
-  provided,
-  snapshot,
+  interactionRef,
   setEvent,
   weekViewRange,
 }: Props) => {
@@ -108,7 +101,6 @@ export const SomedayEventContainer = ({
         status={{
           isDrafting,
           isDragging,
-          isOverGrid,
         }}
         onBlur={() => {
           isFocusedRef.current = false;
@@ -119,9 +111,8 @@ export const SomedayEventContainer = ({
         onFocus={() => {
           isFocusedRef.current = true;
         }}
+        interactionRef={interactionRef}
         priority={event.priority || Priorities.UNASSIGNED}
-        provided={provided}
-        snapshot={snapshot}
         onMigrate={actions.onMigrate}
         formProps={formProps}
       />

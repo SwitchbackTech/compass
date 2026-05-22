@@ -1,15 +1,26 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { render, screen } from "@testing-library/react";
+import { act, render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
+import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
+import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  __resetSomedayCommitAcknowledgementState,
+  markSomedayCommitAcknowledgement,
+} from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { reducers } from "@web/store/reducers";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  GRID_EVENT_TIME_LABEL_OPACITY,
+  GRID_EVENT_TITLE_LINE_HEIGHT,
+} from "@web/views/Week/layout.constants";
 import { createWeekInteractionEventOverlayMount } from "../adapter/dom/cloneWeekInteractionEventElement";
 import {
   createWeekEventRegistry,
@@ -104,6 +115,12 @@ const renderWithStore = (
   pendingEventIds: string[] = [],
 ) =>
   render(<Provider store={createStore(pendingEventIds)}>{children}</Provider>);
+
+const expectEventBgToUseHoverColor = (element: HTMLElement) => {
+  expect(element.style.getPropertyValue("--event-bg")).toBe(
+    gridHoverColorByPriority[Priorities.UNASSIGNED],
+  );
+};
 
 const RegistrationHarness = ({
   eventId = "event-1",
@@ -211,6 +228,9 @@ const RegisteredAllDayEventHarness = ({
 };
 
 afterEach(() => {
+  act(() => {
+    __resetSomedayCommitAcknowledgementState();
+  });
   weekEventRegistry.clear();
   document.body.innerHTML = "";
 });
@@ -342,6 +362,87 @@ describe("weekEventRegistry", () => {
 
     expect(weekEventRegistry.resolve("draft-event", "timed")).toBeNull();
     expect(weekEventRegistry.resolve("pending-event", "timed")).toBeNull();
+  });
+
+  it("acknowledges a dropped timed event without moving the text", () => {
+    const event = createTimedEvent({
+      endDate: "2026-05-22T10:00:00.000Z",
+      startDate: "2026-05-22T09:00:00.000Z",
+    });
+
+    markSomedayCommitAcknowledgement(event._id!);
+    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+
+    const element = screen.getByRole("button", { name: /timed event/i });
+    const title = screen.getByText("Timed event");
+    const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
+
+    expect(element).toHaveClass("animate-someday-commit-acknowledge");
+    expectEventBgToUseHoverColor(element);
+    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
+    expect(timeLabel).not.toHaveClass("animate-someday-commit-time-fade");
+  });
+
+  it("settles short dropped timed events without text choreography", () => {
+    const event = createTimedEvent({
+      endDate: "2026-05-18T09:30:00.000Z",
+    });
+
+    markSomedayCommitAcknowledgement(event._id!);
+    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+
+    const element = screen.getByRole("button", { name: /timed event/i });
+    const title = screen.getByText("Timed event");
+
+    expect(element).toHaveClass("animate-someday-commit-acknowledge");
+    expectEventBgToUseHoverColor(element);
+    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
+  });
+
+  it("renders a saved timed event with the Someday preview text style", () => {
+    const event = createTimedEvent({
+      endDate: "2026-05-22T10:00:00.000Z",
+      startDate: "2026-05-22T09:00:00.000Z",
+    });
+
+    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+
+    const title = screen.getByText("Timed event");
+    const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
+
+    expect(title.style.lineHeight).toBe(GRID_EVENT_TITLE_LINE_HEIGHT);
+    expect(timeLabel.style.fontSize).toBe(GRID_EVENT_TIME_LABEL_FONT_SIZE);
+    expect(timeLabel.style.opacity).toBe(GRID_EVENT_TIME_LABEL_OPACITY);
+    expect(timeLabel.previousElementSibling).toBe(title);
+  });
+
+  it("slides the time out when a dropped timed event lands in the past", () => {
+    const event = createTimedEvent({
+      endDate: "2026-05-18T10:00:00.000Z",
+      startDate: "2026-05-18T09:00:00.000Z",
+    });
+
+    markSomedayCommitAcknowledgement(event._id!);
+    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+
+    const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
+
+    expect(timeLabel).toHaveAttribute("aria-hidden", "true");
+    expect(timeLabel).toHaveClass("animate-someday-commit-time-exit");
+  });
+
+  it("settles dropped all-day events without text choreography", () => {
+    const event = createAllDayEvent();
+
+    markSomedayCommitAcknowledgement(event._id!);
+    renderWithStore(<RegisteredAllDayEventHarness event={event} />);
+
+    const element = screen.getByRole("button", { name: /all-day event/i });
+    const title = screen.getByText("All-day event");
+
+    expect(element).toHaveClass("animate-someday-commit-acknowledge");
+    expectEventBgToUseHoverColor(element);
+    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
   });
 });
 

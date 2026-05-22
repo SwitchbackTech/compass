@@ -59,17 +59,18 @@ export function* insertOptimisticEvent(
   event: WithId<Schema_GridEvent>,
   isSomeday: boolean,
 ) {
+  yield put(
+    eventsEntitiesSlice.actions.insert(
+      normalize<Schema_Event>(event, normalizedEventsSchema()).entities.events,
+    ),
+  );
+
   if (isSomeday) {
     yield put(getSomedayEventsSlice.actions.insert(event._id));
   } else {
     yield put(getWeekEventsSlice.actions.insert(event._id));
     yield put(getDayEventsSlice.actions.insert(event._id));
   }
-  yield put(
-    eventsEntitiesSlice.actions.insert(
-      normalize<Schema_Event>(event, normalizedEventsSchema()).entities.events,
-    ),
-  );
 }
 
 export function* _assembleGridEvent({

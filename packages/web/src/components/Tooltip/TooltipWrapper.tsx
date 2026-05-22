@@ -7,6 +7,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@web/components/Tooltip";
+import { type TooltipOptions } from "@web/components/Tooltip/tooltip.types";
 import { Flex } from "../Flex";
 import { LegacyShortcutHint } from "../Shortcuts/ShortcutHint";
 import { TooltipDescription } from "./Description/TooltipDescription";
@@ -16,6 +17,7 @@ export interface Props {
   description?: string;
   disabled?: boolean;
   onClick?: () => void;
+  placement?: TooltipOptions["placement"];
   shortcut?: string | ReactNode;
 }
 
@@ -23,11 +25,12 @@ export const TooltipWrapper: React.FC<Props> = ({
   children,
   description,
   disabled = false,
-  onClick = () => {},
+  onClick,
+  placement,
   shortcut,
 }) => {
   return (
-    <Tooltip>
+    <Tooltip placement={placement}>
       <TooltipTrigger
         aria-disabled={disabled || undefined}
         onClick={disabled ? undefined : onClick}

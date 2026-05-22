@@ -14,6 +14,9 @@ export const EVENT_ALLDAY_GAP = 3;
 export const EVENT_ALLDAY_ROW_HEIGHT = EVENT_ALLDAY_HEIGHT + EVENT_ALLDAY_GAP;
 export const EVENT_PADDING_RIGHT = 10;
 export const TIMED_EVENT_COLUMN_INSET = 5;
+export const GRID_EVENT_TIME_LABEL_FONT_SIZE = "11px";
+export const GRID_EVENT_TIME_LABEL_OPACITY = "0.78";
+export const GRID_EVENT_TITLE_LINE_HEIGHT = "16px";
 /** Minimum rendered event height (px) to show the time label below the title.
  *  Below this the label is suppressed to prevent overflow on short events.
  *  At typical hourHeight (~65px/hr): 30-min ≈ 33px (hidden), 45-min ≈ 49px (shown). */

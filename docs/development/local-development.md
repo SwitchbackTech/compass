@@ -2,6 +2,8 @@
 
 Compass has multiple workable development modes. Pick the lightest mode that supports the feature you are changing.
 
+For first-time setup, see [Development Quickstart](./quickstart.md).
+
 ## Frontend-Only Mode
 
 Command:
@@ -19,7 +21,7 @@ Use this for:
 
 You do not need the backend for basic frontend rendering.
 
-## Backend Mode
+## Backend
 
 Command:
 

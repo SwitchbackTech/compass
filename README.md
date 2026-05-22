@@ -37,7 +37,9 @@ It'll be around for the long-term:
 - User sessions
 
 ### The Limitations
+
 Current things we don't support (yet):
+
 - Subcalendar sync (only primary calendar)
 - Sharing, reminders, locations
 - Mobile app
@@ -86,6 +88,7 @@ We love contributions! Whether it's bug fixes, new features, or documentation im
 **Feedback**: Share your ideas on [GitHub Discussions](https://github.com/SwitchbackTech/compass/discussions).
 
 ## Resources
+
 - **Docsite**: [docs.compasscalendar.com](https://docs.compasscalendar.com/docs)
 - **Changelog**: [compasscalendar.com](https://changelog.compasscalendar.com)
 - **Handbook**: [notion.site](https://alpaca-ty.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d?utm_source=github&utm_medium=referral&utm_campaign=readme)

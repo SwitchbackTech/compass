@@ -48,6 +48,25 @@ export const gradientByPriority = {
   )})`,
 };
 
+const GRID_UNASSIGNED = c.blueGray400;
+const GRID_WORK = c.blueGray300;
+const GRID_RELATIONS = darken(c.teal, 5);
+const GRID_SELF = c.blueGray200;
+
+export const gridColorByPriority = {
+  [Priorities.UNASSIGNED]: GRID_UNASSIGNED,
+  [Priorities.WORK]: GRID_WORK,
+  [Priorities.RELATIONS]: GRID_RELATIONS,
+  [Priorities.SELF]: GRID_SELF,
+};
+
+export const gridHoverColorByPriority = {
+  [Priorities.UNASSIGNED]: brighten(GRID_UNASSIGNED),
+  [Priorities.WORK]: brighten(GRID_WORK),
+  [Priorities.RELATIONS]: brighten(GRID_RELATIONS),
+  [Priorities.SELF]: brighten(GRID_SELF),
+};
+
 export const blueGradient = `linear-gradient(${c.blue100}, ${c.blue300})`;
 const grayGradient = `linear-gradient(90deg, ${c.gray100}, ${c.gray200})`;
 

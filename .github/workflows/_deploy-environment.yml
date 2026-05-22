@@ -128,7 +128,7 @@ jobs:
           fi
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.yaml -o ~/compass/compose.yaml"
           ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "curl -fsSL https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compass -o ~/compass/compass && chmod +x ~/compass/compass"
-          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES=selfhost docker compose --project-name compass -f compose.yaml down 2>/dev/null || true"
+          ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES=selfhosted docker compose --project-name compass -f compose.yaml down 2>/dev/null || true"
           if [ -n "$COMPOSE_PROFILES" ]; then
             ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" "cd ~/compass && COMPOSE_PROFILES='${COMPOSE_PROFILES}' ./compass update"
           else
