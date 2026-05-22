@@ -7,6 +7,7 @@ import {
   type GoogleUiConfig,
   type GoogleUiState,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { theme } from "@web/common/styles/theme";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -37,7 +38,7 @@ const mockUseConnectGoogle = mock(
     isAvailable: true,
     isRepairing: false,
     sidebarStatus: {
-      iconColor: "error",
+      iconColor: theme.color.status.error,
       isDisabled: false,
       onSelect: mockGoogleOnSelect,
       tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
@@ -161,7 +162,7 @@ describe("HeaderInfoIcon", () => {
       isAvailable: true,
       isRepairing: false,
       sidebarStatus: {
-        iconColor: "error",
+        iconColor: theme.color.status.error,
         isDisabled: false,
         onSelect: mockGoogleOnSelect,
         tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
@@ -234,7 +235,7 @@ describe("HeaderInfoIcon", () => {
       isAvailable: false,
       isRepairing: false,
       sidebarStatus: {
-        iconColor: "error",
+        iconColor: theme.color.status.error,
         isDisabled: false,
         onSelect: mockGoogleOnSelect,
         tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
@@ -289,7 +290,7 @@ describe("HeaderInfoIcon", () => {
       isAvailable: true,
       isRepairing: true,
       sidebarStatus: {
-        iconColor: "warning",
+        iconColor: theme.color.status.warning,
         isDisabled: true,
         tooltip: "Repairing Google Calendar in the background.",
       },

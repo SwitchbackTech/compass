@@ -1,3 +1,4 @@
+import { theme } from "@web/common/styles/theme";
 import {
   type CommandActionIcon,
   type GoogleUiConfig,
@@ -41,7 +42,7 @@ export const getGoogleConnectionConfig = (
           isDisabled: true,
         },
         sidebarStatus: {
-          iconColor: "warning",
+          iconColor: theme.color.status.warning,
           tooltip: "Repairing Google Calendar in the background.",
           isDisabled: true,
           dialog: buildRepairDialog(onRepairGoogle),
@@ -56,7 +57,6 @@ export const getGoogleConnectionConfig = (
           onSelect: onConnectGoogle,
         },
         sidebarStatus: {
-          iconColor: "muted",
           tooltip: "Google Calendar not connected. Click to connect.",
           isDisabled: false,
           onSelect: onConnectGoogle,
@@ -71,7 +71,7 @@ export const getGoogleConnectionConfig = (
           onSelect: onConnectGoogle,
         },
         sidebarStatus: {
-          iconColor: "error",
+          iconColor: theme.color.status.error,
           tooltip: "Google Calendar needs reconnecting. Click to reconnect.",
           isDisabled: false,
           onSelect: onConnectGoogle,
@@ -98,7 +98,7 @@ export const getGoogleConnectionConfig = (
           onSelect: onRepairGoogle,
         },
         sidebarStatus: {
-          iconColor: "warning",
+          iconColor: theme.color.status.warning,
           tooltip: "Google Calendar needs repair. Click to repair.",
           isDisabled: false,
           dialog: buildRepairDialog(onRepairGoogle),
@@ -112,7 +112,6 @@ export const getGoogleConnectionConfig = (
           isDisabled: true,
         },
         sidebarStatus: {
-          iconColor: "muted",
           tooltip: "Google Calendar connected.",
           isDisabled: true,
         },
