@@ -4,8 +4,6 @@ import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { StatusDotPopover } from "./HeaderInfoIconPopover";
 import { useHeaderInfo } from "./useHeaderInfo";
 
-// Inline color selection below — no need for a separate map/type for one use
-
 const ANONYMOUS_PROMPT_ICON_CLASSNAME =
   "origin-center transition-all duration-200 ease-out motion-safe:animate-sync-dot-pulse motion-safe:group-hover:animate-none";
 const DOT_BUTTON_CLASSNAME = "inline-flex h-6 w-6 items-center justify-center";
