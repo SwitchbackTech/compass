@@ -32,7 +32,15 @@ import {
   type WeekInteractionEventType,
   weekEventRegistry,
 } from "./weekEventRegistry";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 
 const startOfView = dayjs("2026-05-17T00:00:00.000Z");
 const endOfView = startOfView.add(7, "day");
@@ -227,7 +235,12 @@ const RegisteredAllDayEventHarness = ({
   );
 };
 
+beforeEach(() => {
+  setSystemTime(new Date("2026-05-19T00:00:00.000Z"));
+});
+
 afterEach(() => {
+  setSystemTime();
   act(() => {
     __resetSomedayCommitAcknowledgementState();
   });
