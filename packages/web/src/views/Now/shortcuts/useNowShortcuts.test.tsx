@@ -94,4 +94,15 @@ describe("useNowShortcuts", () => {
       expect(onEditReminder).toHaveBeenCalledTimes(1);
     });
   });
+
+  it("does not edit reminder when pressing E alone", async () => {
+    const onEditReminder = mock();
+    renderHook(() => useNowShortcuts({ onEditReminder }), { wrapper });
+
+    pressKey("e");
+
+    await waitFor(() => {
+      expect(onEditReminder).not.toHaveBeenCalled();
+    });
+  });
 });

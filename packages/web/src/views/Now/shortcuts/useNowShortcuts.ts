@@ -1,7 +1,10 @@
 import { useCallback } from "react";
-import { useHotkeySequence } from "@tanstack/react-hotkeys";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import {
+  useAppHotkey,
+  useAppHotkeySequence,
+  useAppHotkeyUp,
+} from "@web/common/hooks/useAppHotkey";
 import { type Task } from "@web/common/types/task.types";
 import {
   CompassDOMEvents,
@@ -40,7 +43,7 @@ export function useNowShortcuts(props?: Props) {
     [focusedTask, availableTasks.length],
   );
 
-  useHotkeySequence(["E", "D"], () => {
+  useAppHotkeySequence(["E", "D"], () => {
     compassEventEmitter.emit(CompassDOMEvents.FOCUS_TASK_DESCRIPTION);
   });
 
@@ -81,7 +84,7 @@ export function useNowShortcuts(props?: Props) {
     onEscape?.();
   });
 
-  useHotkeySequence(["E", "R"], () => {
+  useAppHotkeySequence(["E", "R"], () => {
     onEditReminder?.();
   });
 }

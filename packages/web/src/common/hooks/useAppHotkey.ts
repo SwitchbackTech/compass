@@ -1,7 +1,10 @@
 import {
   type ConflictBehavior,
+  type HotkeySequence,
   type RegisterableHotkey,
   useHotkey,
+  useHotkeySequence,
+  type UseHotkeySequenceOptions,
 } from "@tanstack/react-hotkeys";
 
 export interface UseAppHotkeyOptions {
@@ -53,3 +56,20 @@ export const useAppHotkeyUp = (
   handler: (event: KeyboardEvent) => void,
   options?: Omit<UseAppHotkeyOptions, "eventType">,
 ) => useAppHotkey(hotkey, handler, { ...options, eventType: "keyup" });
+
+export function useAppHotkeySequence(
+  sequence: HotkeySequence,
+  handler: () => void,
+  options: UseHotkeySequenceOptions = {},
+) {
+  useHotkeySequence(
+    sequence,
+    () => {
+      if (document.body.dataset.appLocked === "true") {
+        return;
+      }
+      handler();
+    },
+    options,
+  );
+}
