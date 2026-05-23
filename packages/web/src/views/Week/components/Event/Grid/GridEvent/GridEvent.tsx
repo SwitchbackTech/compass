@@ -35,13 +35,12 @@ import { Text } from "@web/components/Text";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
-import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
-
-// Minimum event height for the layered title-rise + time-fade choreography
-// to read meaningfully. Below this, the block-level acknowledgment plays
-// alone (degraded case) because the title has no vertical headroom to rise
-// from and the time row would arrive in the same frame as the title.
-const MIN_EVENT_HEIGHT_FOR_COMMIT_CHOREOGRAPHY = 40;
+import {
+  GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  GRID_EVENT_TIME_LABEL_OPACITY,
+  GRID_EVENT_TITLE_LINE_HEIGHT,
+  MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
+} from "@web/views/Week/layout.constants";
 
 interface Props {
   displayMode: GridEventDisplayMode;
@@ -104,19 +103,14 @@ const GridEventBase = (
     isDraft,
   );
 
-  // Layered title-rise + time-fade choreography runs alongside the
-  // block-level acknowledgment on commit, but only when the event is a
-  // timed event with enough vertical room to stage the rise and the
-  // following time-row fade. AllDayEvent and short timed events fall back
-  // to the block-level settle alone.
-  const shouldChoreographCommit =
-    shouldAcknowledgeCommit &&
-    !event.isAllDay &&
-    position.height >= MIN_EVENT_HEIGHT_FOR_COMMIT_CHOREOGRAPHY;
   const lineClamp = useMemo(
     () => getLineClamp(position.height),
     [position.height],
   );
+  const isTallEnoughForTimeLabel =
+    position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL;
+  const shouldAnimatePastCommitTimeOut =
+    shouldAcknowledgeCommit && isInPast && !isDraft && isTallEnoughForTimeLabel;
 
   const priority = event.priority || Priorities.UNASSIGNED;
   const baseColor = gridColorByPriority[priority];
@@ -164,7 +158,7 @@ const GridEventBase = (
 
   const titleStyle: CSSProperties = {
     fontSize: position.height <= 15 ? "10px" : "13px",
-    lineHeight: position.height <= 15 ? "1.1" : undefined,
+    lineHeight: position.height <= 15 ? "1.1" : GRID_EVENT_TITLE_LINE_HEIGHT,
     minHeight: "3px",
     display: "-webkit-box",
     overflow: "hidden",
@@ -172,6 +166,12 @@ const GridEventBase = (
     wordBreak: "break-all",
     WebkitBoxOrient: "vertical",
     WebkitLineClamp: lineClamp,
+  };
+
+  const timeLabelStyle: CSSProperties = {
+    fontSize: GRID_EVENT_TIME_LABEL_FONT_SIZE,
+    opacity: GRID_EVENT_TIME_LABEL_OPACITY,
+    whiteSpace: "nowrap",
   };
 
   const showResizeCursor =
@@ -241,24 +241,19 @@ const GridEventBase = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <span
-          className={cn({
-            "animate-someday-commit-title-rise": shouldChoreographCommit,
-          })}
-          style={titleStyle}
-        >
-          {event.title}
-        </span>
+        <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
-            {(isDraft || !isInPast) &&
-              position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL && (
+            {(isDraft || !isInPast || shouldAnimatePastCommitTimeOut) &&
+              isTallEnoughForTimeLabel && (
                 <Text
+                  aria-hidden={shouldAnimatePastCommitTimeOut || undefined}
                   className={cn({
-                    "animate-someday-commit-time-fade": shouldChoreographCommit,
+                    "animate-someday-commit-time-exit opacity-0":
+                      shouldAnimatePastCommitTimeOut,
                   })}
                   data-week-event-time-label="true"
-                  size="xs"
+                  style={timeLabelStyle}
                   zIndex={ZIndex.LAYER_3}
                 >
                   {event.startDate &&

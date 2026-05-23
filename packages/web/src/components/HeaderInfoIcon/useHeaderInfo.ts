@@ -9,6 +9,7 @@ import {
   type GoogleUiConfig,
   type UseConnectGoogleResult,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { theme } from "@web/common/styles/theme";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
 const ANONYMOUS_SIGN_UP_TOOLTIP = "Sign up to save your changes.";
@@ -39,7 +40,7 @@ export const useHeaderInfo = (): HeaderInfo => {
       isAnonymousSignUpPrompt: true,
       isRepairing: false,
       sidebarStatus: {
-        iconColor: "warning" as const,
+        iconColor: theme.color.status.info,
         isDisabled: false,
         onSelect: handleOpenSignUp,
         tooltip: ANONYMOUS_SIGN_UP_TOOLTIP,
@@ -53,7 +54,6 @@ export const useHeaderInfo = (): HeaderInfo => {
       isAnonymousSignUpPrompt: false,
       isRepairing: false,
       sidebarStatus: {
-        iconColor: "muted" as const,
         isDisabled: true,
         tooltip: "",
       },

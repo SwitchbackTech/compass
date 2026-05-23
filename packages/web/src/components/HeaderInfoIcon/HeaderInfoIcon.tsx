@@ -1,16 +1,8 @@
 import { InfoIcon } from "@phosphor-icons/react";
-import { type IconColor } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
-import { theme } from "@web/common/styles/theme";
 import { SpinnerIcon } from "@web/components/Icons/Spinner";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { StatusDotPopover } from "./HeaderInfoIconPopover";
 import { useHeaderInfo } from "./useHeaderInfo";
-
-const ICON_COLOR_MAP: Record<IconColor, string> = {
-  muted: theme.color.text.darkPlaceholder,
-  warning: theme.color.status.warning,
-  error: theme.color.status.error,
-};
 
 const ANONYMOUS_PROMPT_ICON_CLASSNAME =
   "origin-center transition-all duration-200 ease-out motion-safe:animate-sync-dot-pulse motion-safe:group-hover:animate-none";
@@ -33,15 +25,11 @@ export const HeaderInfoIcon = () => {
     );
   }
 
-  // Only render when user attention is needed (warning or error states)
-  if (
-    sidebarStatus.iconColor !== "warning" &&
-    sidebarStatus.iconColor !== "error"
-  ) {
+  // Only render when user attention is needed
+  if (!sidebarStatus.iconColor) {
     return null;
   }
 
-  const iconColor = ICON_COLOR_MAP[sidebarStatus.iconColor];
   const iconClassName = isAnonymousSignUpPrompt
     ? ANONYMOUS_PROMPT_ICON_CLASSNAME
     : undefined;
@@ -49,7 +37,7 @@ export const HeaderInfoIcon = () => {
     <InfoIcon
       aria-hidden="true"
       className={iconClassName}
-      style={{ color: iconColor }}
+      style={{ color: sidebarStatus.iconColor }}
       size={15}
     />
   );
