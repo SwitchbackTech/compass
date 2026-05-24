@@ -9,7 +9,7 @@ import { Categories_Event } from "@core/types/event.types";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
   createAlldayDraft,
@@ -46,6 +46,7 @@ const CmdPalette = ({
   const [search, setSearch] = useState("");
   const authCmdItems = useAuthCmdItems();
   const googleCmdItems = useGoogleCmdItems();
+  const logoutCmdItems = useLogoutCmdItems();
 
   const handleCreateSomedayDraft = async (
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
@@ -137,16 +138,7 @@ const CmdPalette = ({
       {
         heading: "Settings",
         id: "settings",
-        items: [
-          ...googleCmdItems,
-          ...authCmdItems,
-          {
-            id: "log-out",
-            children: "Log Out [z]",
-            icon: "ArrowRightOnRectangleIcon",
-            onClick: () => pressKey("z"),
-          },
-        ],
+        items: [...googleCmdItems, ...authCmdItems, ...logoutCmdItems],
       },
       ...moreCommandPaletteItems,
     ],
