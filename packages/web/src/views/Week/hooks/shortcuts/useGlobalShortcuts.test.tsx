@@ -6,18 +6,24 @@ import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const dispatch = mock();
-const logout = mock();
+const clearAuthenticationState = mock();
 const mockOpenModal = mock();
 const mockUseAuthModal = mock();
-const mockUseLogout = mock();
 const mockUseSession = mock();
-
-mock.module("@web/auth/compass/hooks/useLogout", () => ({
-  useLogout: mockUseLogout,
-}));
+const signOut = mock();
 
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
+}));
+
+mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  clearAuthenticationState,
+}));
+
+mock.module("@web/common/classes/Session", () => ({
+  session: {
+    signOut,
+  },
 }));
 
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
@@ -46,18 +52,18 @@ function wrapper({ children }: PropsWithChildren) {
 describe("useGlobalShortcuts", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
+    clearAuthenticationState.mockClear();
     dispatch.mockClear();
-    logout.mockClear();
     mockOpenModal.mockClear();
     mockUseAuthModal.mockReset();
-    mockUseLogout.mockReset();
     mockUseSession.mockReset();
+    signOut.mockReset();
     mockUseAuthModal.mockReturnValue({ openModal: mockOpenModal });
-    mockUseLogout.mockReturnValue(logout);
     mockUseSession.mockReturnValue({
       authenticated: true,
       setAuthenticated: mock(),
     });
+    signOut.mockResolvedValue(undefined);
   });
 
   it("logs out directly when authenticated users press Z", async () => {
@@ -66,8 +72,9 @@ describe("useGlobalShortcuts", () => {
     pressKey("z");
 
     await waitFor(() => {
-      expect(logout).toHaveBeenCalledTimes(1);
+      expect(signOut).toHaveBeenCalledTimes(1);
     });
+    expect(clearAuthenticationState).toHaveBeenCalledTimes(1);
     expect(mockOpenModal).not.toHaveBeenCalled();
   });
 
@@ -83,6 +90,6 @@ describe("useGlobalShortcuts", () => {
     await waitFor(() => {
       expect(mockOpenModal).toHaveBeenCalledWith("login");
     });
-    expect(logout).not.toHaveBeenCalled();
+    expect(signOut).not.toHaveBeenCalled();
   });
 });

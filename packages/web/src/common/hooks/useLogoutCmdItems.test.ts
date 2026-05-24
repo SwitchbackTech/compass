@@ -2,30 +2,36 @@ import { renderHook } from "@testing-library/react";
 import { act, type MouseEvent } from "react";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
-const logout = mock();
-const mockUseLogout = mock();
+const clearAuthenticationState = mock();
+const signOut = mock();
 const mockUseSession = mock();
-
-mock.module("@web/auth/compass/hooks/useLogout", () => ({
-  useLogout: mockUseLogout,
-}));
 
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
+}));
+
+mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  clearAuthenticationState,
+}));
+
+mock.module("@web/common/classes/Session", () => ({
+  session: {
+    signOut,
+  },
 }));
 
 const { useLogoutCmdItems } = await import("./useLogoutCmdItems");
 
 describe("useLogoutCmdItems", () => {
   beforeEach(() => {
-    logout.mockClear();
-    mockUseLogout.mockReset();
+    clearAuthenticationState.mockClear();
+    signOut.mockReset();
     mockUseSession.mockReset();
-    mockUseLogout.mockReturnValue(logout);
     mockUseSession.mockReturnValue({
       authenticated: true,
       setAuthenticated: mock(),
     });
+    signOut.mockResolvedValue(undefined);
   });
 
   it("returns no items when logged out", () => {
@@ -47,7 +53,8 @@ describe("useLogoutCmdItems", () => {
       logoutItem.onClick?.({} as MouseEvent<HTMLButtonElement>);
     });
 
-    expect(logout).toHaveBeenCalledTimes(1);
+    expect(signOut).toHaveBeenCalledTimes(1);
+    expect(clearAuthenticationState).toHaveBeenCalledTimes(1);
   });
 });
 
