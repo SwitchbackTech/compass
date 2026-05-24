@@ -89,17 +89,18 @@ describe("useNowShortcuts", () => {
 
     const textarea = document.createElement("textarea");
     document.body.appendChild(textarea);
-    textarea.focus();
 
-    // Dispatch from the textarea so event.target is the textarea, matching
-    // real browser behavior when the user presses Escape in a focused input.
-    pressKey("Escape", {}, textarea);
+    try {
+      textarea.focus();
 
-    await waitFor(() => {
-      expect(onEscape).not.toHaveBeenCalled();
-    });
+      pressKey("Escape", {}, textarea);
 
-    document.body.removeChild(textarea);
+      await waitFor(() => {
+        expect(onEscape).not.toHaveBeenCalled();
+      });
+    } finally {
+      document.body.removeChild(textarea);
+    }
   });
 
   it("uses E R sequence to edit reminder", async () => {

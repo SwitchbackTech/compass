@@ -1,15 +1,14 @@
 import { FloppyDisk, Pencil } from "@phosphor-icons/react";
 import type React from "react";
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { flushSync } from "react-dom";
+import { useCallback, useEffect, useRef, useState } from "react";
 import styled from "styled-components";
 import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import { ShortCutLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { Textarea } from "@web/components/Textarea";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { ShortCutLabel } from "@web/common/utils/shortcut/shortcut.util";
 
 const MAX_DESCRIPTION_LENGTH = 255;
 const NEAR_LIMIT_THRESHOLD = Math.floor(MAX_DESCRIPTION_LENGTH * 0.9); // 90% of max
@@ -142,6 +141,14 @@ const SaveButton = styled.button`
   }
 `;
 
+const saveDescriptionShortcut = (
+  <span className="inline-flex items-center gap-1">
+    <ShortCutLabel k="Mod" size={12} />
+    <span>+</span>
+    <ShortCutLabel k="Enter" size={12} />
+  </span>
+);
+
 export const TaskDescription: React.FC<TaskDescriptionProps> = ({
   description = "",
   onSave,
@@ -156,12 +163,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     originalValueRef.current = description;
   }, [description]);
 
-  // useLayoutEffect (not useEffect) runs synchronously after React commits the DOM,
-  // which is essential when combined with flushSync in the FOCUS_TASK_DESCRIPTION
-  // handler below. This ensures focus is applied within the same macrotask as the
-  // E→D keypress so that any immediately following Escape keydown sees the textarea
-  // as event.target and the global ignoreInputs guard correctly suppresses navigation.
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (isEditing && textareaRef.current) {
       const length = textareaRef.current.value.length;
 
@@ -173,13 +175,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
   useEffect(() => {
     if (isEditing) return;
 
-    // flushSync forces React to render synchronously within the same macrotask
-    // as the E→D keypress that triggers this event. Without it, React schedules
-    // the render via MessageChannel (a separate macrotask), and the browser can
-    // deliver a following Escape keydown before the textarea is in the DOM or
-    // focused — causing the global Escape handler to navigate away instead of
-    // letting the textarea handle it.
-    const handler = () => flushSync(() => setIsEditing(true));
+    const handler = () => setIsEditing(true);
 
     compassEventEmitter.on(CompassDOMEvents.FOCUS_TASK_DESCRIPTION, handler);
 
@@ -212,22 +208,26 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     };
   }, [isEditing, saveDescription]);
 
-  const handleClick = () => {
+  const startEditing = () => {
     setIsEditing(true);
   };
 
-  const handleBlur = () => {
+  const saveDescriptionOnBlur = () => {
     saveDescription();
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const updateDraftDescription = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     const newValue = e.target.value;
     if (newValue.length <= MAX_DESCRIPTION_LENGTH) {
       setValue(newValue);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const cancelEditingOnEscape = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
     if (e.key === "Escape") {
       setValue(originalValueRef.current);
       setIsEditing(false);
@@ -243,9 +243,9 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
           <StyledDescription
             ref={textareaRef}
             value={value}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
+            onChange={updateDraftDescription}
+            onBlur={saveDescriptionOnBlur}
+            onKeyDown={cancelEditingOnEscape}
             placeholder="Add a description..."
             maxLength={MAX_DESCRIPTION_LENGTH}
             id={TASK_DESCRIPTION_ID}
@@ -257,13 +257,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
             </CharacterCount>
             <TooltipWrapper
               description="Save description"
-              shortcut={
-                <span className="inline-flex items-center gap-1">
-                  <ShortCutLabel k="Mod" size={12} />
-                  <span>+</span>
-                  <ShortCutLabel k="Enter" size={12} />
-                </span>
-              }
+              shortcut={saveDescriptionShortcut}
             >
               <SaveButton
                 aria-label="Save description"
@@ -278,7 +272,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
         </>
       ) : (
         <DescriptionText
-          onClick={handleClick}
+          onClick={startEditing}
           className={value.length < 1 ? "empty" : ""}
         >
           {value.length < 1 ? "Add a description..." : value}

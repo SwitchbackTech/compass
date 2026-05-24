@@ -2,9 +2,9 @@ import {
   type ConflictBehavior,
   type HotkeySequence,
   type RegisterableHotkey,
+  type UseHotkeySequenceOptions,
   useHotkey,
   useHotkeySequence,
-  type UseHotkeySequenceOptions,
 } from "@tanstack/react-hotkeys";
 
 export interface UseAppHotkeyOptions {
