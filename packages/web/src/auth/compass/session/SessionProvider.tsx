@@ -54,7 +54,7 @@ SuperTokens.init({
 
 export const SessionContext = createContext<CompassSession>({
   authenticated: false,
-  setAuthenticated: () => {},
+  setAuthenticated: () => { },
 });
 
 const authenticated$ = new BehaviorSubject(false);
@@ -131,7 +131,8 @@ export function sessionInit() {
         sse.openStream();
         break;
       case "SIGN_OUT":
-        store.dispatch(userMetadataSlice.actions.clear(undefined));
+        authenticated$.next(false);
+        handleSessionMissing();
         sse.closeStream();
         break;
     }
