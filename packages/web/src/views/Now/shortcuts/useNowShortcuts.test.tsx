@@ -72,7 +72,7 @@ describe("useNowShortcuts", () => {
     });
   });
 
-  it("navigates to day view when Escape is pressed", async () => {
+  it("navigates to day view when Escape is pressed outside an input", async () => {
     const onEscape = mock();
     renderHook(() => useNowShortcuts({ onEscape }), { wrapper });
 
@@ -81,6 +81,25 @@ describe("useNowShortcuts", () => {
     await waitFor(() => {
       expect(onEscape).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("does not navigate when Escape is pressed inside a textarea", async () => {
+    const onEscape = mock();
+    renderHook(() => useNowShortcuts({ onEscape }), { wrapper });
+
+    const textarea = document.createElement("textarea");
+    document.body.appendChild(textarea);
+    textarea.focus();
+
+    // Dispatch from the textarea so event.target is the textarea, matching
+    // real browser behavior when the user presses Escape in a focused input.
+    pressKey("Escape", {}, textarea);
+
+    await waitFor(() => {
+      expect(onEscape).not.toHaveBeenCalled();
+    });
+
+    document.body.removeChild(textarea);
   });
 
   it("uses E R sequence to edit reminder", async () => {

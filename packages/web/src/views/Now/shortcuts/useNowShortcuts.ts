@@ -80,9 +80,13 @@ export function useNowShortcuts(props?: Props) {
     onToggleSidebar?.();
   });
 
-  useAppHotkeyUp("Escape", () => {
-    onEscape?.();
-  });
+  useAppHotkeyUp(
+    "Escape",
+    () => {
+      onEscape?.();
+    },
+    { ignoreInputs: true },
+  );
 
   useAppHotkeySequence(["E", "R"], () => {
     onEditReminder?.();
