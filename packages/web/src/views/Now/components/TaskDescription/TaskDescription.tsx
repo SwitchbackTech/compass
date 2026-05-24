@@ -1,6 +1,7 @@
 import { FloppyDisk, Pencil } from "@phosphor-icons/react";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { flushSync } from "react-dom";
 import styled from "styled-components";
 import {
   CompassDOMEvents,
@@ -155,7 +156,12 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     originalValueRef.current = description;
   }, [description]);
 
-  useEffect(() => {
+  // useLayoutEffect (not useEffect) runs synchronously after React commits the DOM,
+  // which is essential when combined with flushSync in the FOCUS_TASK_DESCRIPTION
+  // handler below. This ensures focus is applied within the same macrotask as the
+  // E→D keypress so that any immediately following Escape keydown sees the textarea
+  // as event.target and the global ignoreInputs guard correctly suppresses navigation.
+  useLayoutEffect(() => {
     if (isEditing && textareaRef.current) {
       const length = textareaRef.current.value.length;
 
@@ -167,7 +173,13 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
   useEffect(() => {
     if (isEditing) return;
 
-    const handler = () => setIsEditing(true);
+    // flushSync forces React to render synchronously within the same macrotask
+    // as the E→D keypress that triggers this event. Without it, React schedules
+    // the render via MessageChannel (a separate macrotask), and the browser can
+    // deliver a following Escape keydown before the textarea is in the DOM or
+    // focused — causing the global Escape handler to navigate away instead of
+    // letting the textarea handle it.
+    const handler = () => flushSync(() => setIsEditing(true));
 
     compassEventEmitter.on(CompassDOMEvents.FOCUS_TASK_DESCRIPTION, handler);
 
