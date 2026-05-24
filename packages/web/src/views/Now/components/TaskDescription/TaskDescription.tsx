@@ -1,6 +1,13 @@
 import { FloppyDisk, Pencil } from "@phosphor-icons/react";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
+import { flushSync } from "react-dom";
 import styled from "styled-components";
 import {
   CompassDOMEvents,
@@ -163,7 +170,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     originalValueRef.current = description;
   }, [description]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (isEditing && textareaRef.current) {
       const length = textareaRef.current.value.length;
 
@@ -175,7 +182,9 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
   useEffect(() => {
     if (isEditing) return;
 
-    const handler = () => setIsEditing(true);
+    const handler = () => {
+      flushSync(() => setIsEditing(true));
+    };
 
     compassEventEmitter.on(CompassDOMEvents.FOCUS_TASK_DESCRIPTION, handler);
 

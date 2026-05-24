@@ -1,12 +1,21 @@
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
-import { renderHook, waitFor } from "@testing-library/react";
+import {
+  act,
+  render,
+  renderHook,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { MemoryRouter } from "react-router-dom";
+import { ThemeProvider } from "styled-components";
+import { theme } from "@web/common/styles/theme";
 import {
   CompassDOMEvents,
   compassEventEmitter,
   pressKey,
 } from "@web/common/utils/dom/event-emitter.util";
+import { TaskDescription } from "../components/TaskDescription/TaskDescription";
 import { useNowShortcuts } from "./useNowShortcuts";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -19,6 +28,16 @@ function wrapper({ children }: PropsWithChildren) {
         {children}
       </MemoryRouter>
     </HotkeysProvider>
+  );
+}
+
+function NowDescriptionHarness({ onEscape }: { onEscape: () => void }) {
+  useNowShortcuts({ onEscape });
+
+  return (
+    <ThemeProvider theme={theme}>
+      <TaskDescription description="Notes" onSave={mock()} />
+    </ThemeProvider>
   );
 }
 
@@ -44,6 +63,22 @@ describe("useNowShortcuts", () => {
     await waitFor(() => {
       expect(onFocusDescription).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("does not run the global Escape shortcut when Escape follows E D", async () => {
+    const onEscape = mock();
+    render(<NowDescriptionHarness onEscape={onEscape} />, { wrapper });
+
+    act(() => {
+      pressKey("e");
+      pressKey("d");
+      pressKey("Escape", {}, document.activeElement ?? document);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Notes")).toBeTruthy();
+    });
+    expect(onEscape).not.toHaveBeenCalled();
   });
 
   it("does not focus description when pressing D alone", async () => {
