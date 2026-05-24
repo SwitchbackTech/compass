@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import { act } from "react";
 import { Provider } from "react-redux";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
@@ -34,8 +35,20 @@ import {
 } from "./weekEventRegistry";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-const startOfView = dayjs("2026-05-17T00:00:00.000Z");
+const getFixtureWeekStart = (yearOffset: number) =>
+  dayjs().add(yearOffset, "year").startOf("week").startOf("day");
+
+const futureWeekStart = getFixtureWeekStart(1);
+const pastWeekStart = getFixtureWeekStart(-1);
+const startOfView = futureWeekStart;
 const endOfView = startOfView.add(7, "day");
+const futureTimedStart = futureWeekStart.add(1, "day").hour(9);
+const futureTimedEnd = futureTimedStart.add(1, "hour");
+const futureShortTimedEnd = futureTimedStart.add(30, "minute");
+const futureFridayTimedStart = futureWeekStart.add(5, "day").hour(9);
+const futureFridayTimedEnd = futureFridayTimedStart.add(1, "hour");
+const pastTimedStart = pastWeekStart.add(1, "day").hour(9);
+const pastTimedEnd = pastTimedStart.add(1, "hour");
 const measurements = {
   allDayRow: null,
   colWidths: Array(7).fill(100),
@@ -73,11 +86,11 @@ const createTimedEvent = (
 ): Schema_GridEvent =>
   ({
     _id: "timed-event",
-    endDate: "2026-05-18T10:00:00.000Z",
+    endDate: futureTimedEnd.format(),
     isAllDay: false,
     position,
     recurrence: undefined,
-    startDate: "2026-05-18T09:00:00.000Z",
+    startDate: futureTimedStart.format(),
     title: "Timed event",
     ...overrides,
   }) as Schema_GridEvent;
@@ -87,12 +100,12 @@ const createAllDayEvent = (
 ): Schema_GridEvent =>
   ({
     _id: "all-day-event",
-    endDate: "2026-05-19T00:00:00.000Z",
+    endDate: futureWeekStart.add(2, "day").format(),
     isAllDay: true,
     position,
     recurrence: undefined,
     row: 1,
-    startDate: "2026-05-18T00:00:00.000Z",
+    startDate: futureWeekStart.add(1, "day").format(),
     title: "All-day event",
     ...overrides,
   }) as Schema_GridEvent;
@@ -366,8 +379,8 @@ describe("weekEventRegistry", () => {
 
   it("acknowledges a dropped timed event without moving the text", () => {
     const event = createTimedEvent({
-      endDate: "2026-05-22T10:00:00.000Z",
-      startDate: "2026-05-22T09:00:00.000Z",
+      endDate: futureFridayTimedEnd.format(),
+      startDate: futureFridayTimedStart.format(),
     });
 
     markSomedayCommitAcknowledgement(event._id!);
@@ -385,7 +398,7 @@ describe("weekEventRegistry", () => {
 
   it("settles short dropped timed events without text choreography", () => {
     const event = createTimedEvent({
-      endDate: "2026-05-18T09:30:00.000Z",
+      endDate: futureShortTimedEnd.format(),
     });
 
     markSomedayCommitAcknowledgement(event._id!);
@@ -401,8 +414,8 @@ describe("weekEventRegistry", () => {
 
   it("renders a saved timed event with the Someday preview text style", () => {
     const event = createTimedEvent({
-      endDate: "2026-05-22T10:00:00.000Z",
-      startDate: "2026-05-22T09:00:00.000Z",
+      endDate: futureFridayTimedEnd.format(),
+      startDate: futureFridayTimedStart.format(),
     });
 
     renderWithStore(<RegisteredTimedEventHarness event={event} />);
@@ -418,8 +431,8 @@ describe("weekEventRegistry", () => {
 
   it("slides the time out when a dropped timed event lands in the past", () => {
     const event = createTimedEvent({
-      endDate: "2026-05-18T10:00:00.000Z",
-      startDate: "2026-05-18T09:00:00.000Z",
+      endDate: pastTimedEnd.format(),
+      startDate: pastTimedStart.format(),
     });
 
     markSomedayCommitAcknowledgement(event._id!);
