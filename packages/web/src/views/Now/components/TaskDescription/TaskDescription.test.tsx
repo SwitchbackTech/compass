@@ -60,7 +60,6 @@ describe("TaskDescription", () => {
     await user.hover(saveButton);
 
     await waitFor(() => {
-      // Tooltip now renders platform-specific modifier icon + "Enter" via ShortCutLabel
       expect(screen.getByTestId(getModifierKeyTestId())).toBeInTheDocument();
       expect(screen.getByTestId("enter-icon")).toBeInTheDocument();
     });
