@@ -80,7 +80,7 @@ export function useNowShortcuts(props?: Props) {
     onToggleSidebar?.();
   });
 
-  useAppHotkeyUp(
+  useAppHotkey(
     "Escape",
     () => {
       onEscape?.();
