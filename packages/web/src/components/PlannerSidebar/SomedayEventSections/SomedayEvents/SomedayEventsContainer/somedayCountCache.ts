@@ -1,10 +1,5 @@
 const STORAGE_PREFIX = "compass.someday.count.";
 
-/**
- * Remembers how many someday rows a column held last time, so the next cold
- * start can reserve roughly the right amount of vertical space and avoid the
- * empty-then-fill layout shift. Best-effort: storage failures fall back to 0.
- */
 export const getCachedSomedayCount = (cacheKey: string): number => {
   try {
     const raw = window.localStorage.getItem(getStorageKey(cacheKey));
@@ -29,7 +24,7 @@ export const setCachedSomedayCount = (
 
     window.localStorage.setItem(key, nextCount);
   } catch {
-    // Ignore storage failures (private mode, quota, unavailable).
+    return;
   }
 };
 

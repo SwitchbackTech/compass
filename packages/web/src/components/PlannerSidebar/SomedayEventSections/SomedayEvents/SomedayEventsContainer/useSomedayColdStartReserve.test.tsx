@@ -24,7 +24,6 @@ describe("useSomedayColdStartReserve", () => {
       useSomedayColdStartReserve(cacheKey, 0, true),
     );
 
-    expect(result.current.isColdStart).toBe(true);
     expect(result.current.reservedMinHeight).toBe(68);
     expect(result.current.shouldAnimateRowEntrance).toBe(false);
   });
@@ -47,7 +46,7 @@ describe("useSomedayColdStartReserve", () => {
     expect(result.current.shouldAnimateRowEntrance).toBe(true);
 
     await waitFor(() => {
-      expect(result.current.isColdStart).toBe(false);
+      expect(result.current.reservedMinHeight).toBeUndefined();
       expect(window.localStorage.getItem(storageKey)).toBe("1");
     });
 
@@ -73,7 +72,7 @@ describe("useSomedayColdStartReserve", () => {
     rerender({ eventCount: 0, isProcessing: false });
 
     await waitFor(() => {
-      expect(result.current.isColdStart).toBe(false);
+      expect(window.localStorage.getItem(storageKey)).toBe("0");
       expect(result.current.shouldAnimateRowEntrance).toBe(false);
     });
 

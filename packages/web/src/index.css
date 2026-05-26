@@ -91,10 +91,6 @@
     cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-someday-commit-time-fade: somedayCommitTimeFade 200ms
     cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
-  /* Sidebar someday rows fading in once on cold start. Applied per-row to a
-     freshly-mounted element so the browser plays it as a real mount animation
-     (compositor-driven opacity, not blocked by load-time main-thread work).
-     Deliberately slow so it reads as a gentle fade rather than a pop. */
   --animate-someday-cold-fade-in: somedayColdFadeIn 600ms
     cubic-bezier(0.16, 1, 0.3, 1) both;
 

@@ -29,8 +29,6 @@ const getColName = (category: SomedayInteractionCategory) => {
     : COLUMN_MONTH;
 };
 
-// Drag drop zones keep a little extra row allowance beyond the rendered row
-// footprint so the target does not feel cramped while hovering.
 const SOMEDAY_DROP_ZONE_ROW_SLOT_HEIGHT = 36;
 const SOMEDAY_DROP_ZONE_BASE_HEIGHT = 44;
 
@@ -67,31 +65,6 @@ export interface Props {
   isDraftingNew: boolean;
 }
 
-interface AddSomedayEventWithTooltipProps {
-  ariaLabel: string;
-  category: SomedayInteractionCategory;
-  onCreate: () => void;
-}
-
-const AddSomedayEventWithTooltip: FC<AddSomedayEventWithTooltipProps> = ({
-  ariaLabel,
-  category,
-  onCreate,
-}) => {
-  const shortcut =
-    category === Categories_Event.SOMEDAY_MONTH ? "Shift+M" : "Shift+W";
-
-  return (
-    <TooltipWrapper
-      description={`Add to ${getAddTargetLabel(category)}`}
-      placement="right"
-      shortcut={shortcut}
-    >
-      <AddSomedayEvent ariaLabel={ariaLabel} onCreate={onCreate} />
-    </TooltipWrapper>
-  );
-};
-
 export const SomedayEventsContainer: FC<Props> = ({
   category,
   isDraftingNew,
@@ -113,7 +86,10 @@ export const SomedayEventsContainer: FC<Props> = ({
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;
   const isBlockedDropTarget = state.blockedSomedayDropColumn === colName;
-  const addLabel = `Add item to ${getAddTargetLabel(category)}`;
+  const addTargetLabel = getAddTargetLabel(category);
+  const addLabel = `Add item to ${addTargetLabel}`;
+  const addShortcut =
+    category === Categories_Event.SOMEDAY_MONTH ? "Shift+M" : "Shift+W";
   const activeDropZoneStyle: React.CSSProperties | undefined = state.isDragging
     ? {
         boxSizing: "border-box",
@@ -132,7 +108,6 @@ export const SomedayEventsContainer: FC<Props> = ({
     >
       <div
         className="flex flex-col"
-        data-testid={`someday-rows-${colName}`}
         style={reservedMinHeight ? { minHeight: reservedMinHeight } : undefined}
       >
         {events.map((event, index) => (
@@ -150,11 +125,16 @@ export const SomedayEventsContainer: FC<Props> = ({
 
       {!isDraftingNew && !state.isDragging && (
         <div className="opacity-100">
-          <AddSomedayEventWithTooltip
-            ariaLabel={addLabel}
-            category={category}
-            onCreate={() => actions.createSomedayDraft(category)}
-          />
+          <TooltipWrapper
+            description={`Add to ${addTargetLabel}`}
+            placement="right"
+            shortcut={addShortcut}
+          >
+            <AddSomedayEvent
+              ariaLabel={addLabel}
+              onCreate={() => actions.createSomedayDraft(category)}
+            />
+          </TooltipWrapper>
         </div>
       )}
 
