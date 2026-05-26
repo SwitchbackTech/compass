@@ -26,7 +26,6 @@ import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 import { Styled, StyledCalendar, WeekGridTrack } from "@web/views/Week/styled";
-import { buildWeekShortcutSections } from "@web/views/Week/util/weekShortcutSections";
 
 export const WeekView = () => {
   useRefetch();
@@ -56,17 +55,54 @@ export const WeekView = () => {
   const util = weekProps.util;
 
   const shortcutProps = {
-    today,
-    dateCalcs,
     isCurrentWeek,
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
     util,
     scrollUtil,
   };
+  const cmdPaletteProps = {
+    ...shortcutProps,
+    today,
+  };
 
   const shortcutSections = useMemo(
-    () => buildWeekShortcutSections({ isCurrentWeek }),
+    () => [
+      {
+        title: "Week",
+        shortcuts: [
+          { k: "j", label: "Previous week" },
+          { k: "k", label: "Next week" },
+          {
+            k: "t",
+            label: isCurrentWeek ? "Scroll to now" : "Go to current week",
+          },
+        ],
+      },
+      {
+        title: "Create",
+        shortcuts: [
+          { k: "c", label: "Create timed event" },
+          { k: "a", label: "Create all-day event" },
+          { k: "Arrow keys", label: "Move draft event" },
+          { k: "I", label: "Focus calendar event" },
+          { k: "M", label: "Edit calendar event" },
+          { k: "Shift+w", label: "Create Someday week event" },
+          { k: "Shift+m", label: "Create Someday month event" },
+        ],
+      },
+      {
+        title: "Global",
+        shortcuts: [
+          { k: "d", label: "Day" },
+          { k: "w", label: "Week" },
+          { k: "n", label: "Now" },
+          { k: "[", label: "Toggle sidebar" },
+          { k: "?", label: "Toggle shortcuts" },
+          { k: "Mod+k", label: "Command Palette" },
+        ],
+      },
+    ],
     [isCurrentWeek],
   );
 
@@ -88,7 +124,7 @@ export const WeekView = () => {
 
   return (
     <Styled id="cal">
-      <CmdPalette {...shortcutProps} />
+      <CmdPalette {...cmdPaletteProps} />
       <Dedication />
 
       <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>

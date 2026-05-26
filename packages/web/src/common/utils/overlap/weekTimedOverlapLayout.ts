@@ -9,21 +9,6 @@ interface DeckCandidate {
   start: Dayjs;
 }
 
-/**
- * Deck overlap layout for Week timed events.
- *
- * Returns a new array (events are deep-copied, never mutated) where each event's
- * `position.deck` is set when it belongs to a same-day overlap group of >1:
- *   - events are bucketed by their start day — events on different days never
- *     visually overlap, so they never share a deck;
- *   - within a day, transitive overlap groups are built (a.start < b.end &&
- *     a.end > b.start);
- *   - groups of size 1 keep `deck: null`;
- *   - groups of size >1 are ordered background-first (start asc, then end desc)
- *     and each event gets `deck: { order, groupSize }`.
- *
- * Pure + decoupled from Day's equal-split. See deck-overlap-plan.md.
- */
 export const applyWeekTimedOverlapLayout = (
   events: Schema_GridEvent[],
 ): Schema_GridEvent[] => {
@@ -69,7 +54,6 @@ const bucketByStartDay = (events: DeckCandidate[]): DeckCandidate[][] => {
   return Array.from(buckets.values());
 };
 
-/** Connected components by transitive overlap. */
 const groupByOverlap = (events: DeckCandidate[]): DeckCandidate[][] => {
   const remaining = [...events];
   const groups: DeckCandidate[][] = [];
@@ -95,12 +79,10 @@ const groupByOverlap = (events: DeckCandidate[]): DeckCandidate[][] => {
 const overlaps = (a: DeckCandidate, b: DeckCandidate): boolean =>
   a.start.isBefore(b.end) && a.end.isAfter(b.start);
 
-/** Background-first ordering: earliest start, then longest duration, sits behind. */
 const orderBackgroundFirst = (group: DeckCandidate[]): DeckCandidate[] =>
   [...group].sort((a, b) => {
     const startDiff = a.start.diff(b.start);
     if (startDiff !== 0) return startDiff;
-    // same start: longer event (later end) sits behind
     return b.end.diff(a.end);
   });
 

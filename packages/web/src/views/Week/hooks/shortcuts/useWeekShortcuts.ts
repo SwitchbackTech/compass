@@ -18,7 +18,6 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
-import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
@@ -29,8 +28,6 @@ import {
 } from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
 
 export interface ShortcutProps {
-  today: Dayjs;
-  dateCalcs: DateCalcs;
   isCurrentWeek: boolean;
   startOfView: Dayjs;
   endOfView: Dayjs;

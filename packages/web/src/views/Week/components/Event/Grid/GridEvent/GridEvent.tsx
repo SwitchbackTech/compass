@@ -92,14 +92,8 @@ const GridEventBase = (
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
-  // Deck overlap layout: this event is one of several stacked, left-anchored,
-  // uniform-width cards in the same day column. Focus lifts a buried card to the
-  // front so its content + focus ring are not occluded. See deck-overlap-plan.md.
   const isDeck = Boolean(event.position.deck) && !isDraft;
   const [isFocused, setIsFocused] = useState(false);
-  // Only choreograph the text when the event id was just committed from a
-  // Someday-to-grid drop. Keep the block itself visually stable so the
-  // overlay-to-event handoff does not flash.
   const shouldAcknowledgeCommit =
     useSomedayCommitAcknowledgement(event._id) &&
     !isDragging &&
@@ -154,20 +148,12 @@ const GridEventBase = (
           : "hover:cursor-pointer"
       : "";
 
-  // A clicked/edited (draft), dragged, or keyboard-focused card jumps above the
-  // whole deck (ZIndex.MAX = 20, below the floating form at 21). Otherwise a deck
-  // card keeps its painter's-order slot (order+1); everything else stays LAYER_1.
-  // Without this, a deck card at z=order+1 would paint over the full-width draft,
-  // so clicking a buried event would never bring it to the front.
   const shouldFloatAboveDeck =
     isDraft || isDragging || isResizing || (isDeck && isFocused);
   const zIndex = shouldFloatAboveDeck
     ? ZIndex.MAX
     : (position.zIndex ?? ZIndex.LAYER_1);
 
-  // Dark gutter ring (matches grid bg) so stacked cards read as distinct floating
-  // tiles, plus one downward light source that intensifies on focus, and a faint
-  // top inner highlight. Applied to deck cards only; others stay visually unchanged.
   const deckBoxShadow = (() => {
     if (!isDeck) return undefined;
     const ring = `0 0 0 0.75px ${theme.color.bg.primary}`;

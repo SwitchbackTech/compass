@@ -220,7 +220,7 @@ export const getTimedEventPosition = (
   const deck = event.position.deck;
   let width =
     !isDraft && deck
-      ? getDeckBaseTimedEventWidth(colWidths, startIndex)
+      ? getTimedEventWidth(colWidths, startIndex, 1, false)
       : getTimedEventWidth(
           colWidths,
           startIndex,
@@ -233,8 +233,6 @@ export const getTimedEventPosition = (
       ? getDeckBaseTimedEventLeft(category, startIndex, colWidths)
       : getLeftPosition(category, startIndex, colWidths, event, width, isDraft);
 
-  // Deck overlap layout: left-anchored uniform-width cards fanned right by a
-  // fixed indent per depth. Drafts keep deck:null, so this never affects them.
   if (!isDraft && deck) {
     const maxIndent = (deck.groupSize - 1) * DECK_INDENT;
     const fanned = width - DECK_RIGHT_RESERVE - maxIndent;
@@ -315,9 +313,6 @@ export const getTimedEventWidth = (
   width -= BUFFER_WIDTH;
   return width;
 };
-
-const getDeckBaseTimedEventWidth = (colWidths: number[], startIndex: number) =>
-  colWidths[startIndex] - TIMED_EVENT_COLUMN_INSET * 2;
 
 const getDeckBaseTimedEventLeft = (
   category: Category,

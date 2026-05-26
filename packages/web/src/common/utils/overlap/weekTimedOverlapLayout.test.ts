@@ -51,7 +51,6 @@ describe("applyWeekTimedOverlapLayout", () => {
 
     const laid = applyWeekTimedOverlapLayout(events);
 
-    // earliest start sits behind (order 0)
     expect(deckOf(laid, "early-long")).toEqual({ order: 0, groupSize: 2 });
     expect(deckOf(laid, "later-short")).toEqual({ order: 1, groupSize: 2 });
   });

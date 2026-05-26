@@ -25,7 +25,6 @@ export const HeaderInfoIcon = () => {
     );
   }
 
-  // Only render when user attention is needed
   if (!sidebarStatus.iconColor) {
     return null;
   }

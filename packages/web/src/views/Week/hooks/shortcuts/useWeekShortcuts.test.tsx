@@ -111,12 +111,10 @@ const renderShortcuts = (options?: { includeEditableEvent?: boolean }) => {
   renderHook(
     () =>
       useWeekShortcuts({
-        dateCalcs: {} as never,
         endOfView: dayjs("2026-05-24T00:00:00.000"),
         isCurrentWeek: true,
         scrollUtil: { scrollToNow: mock() } as never,
         startOfView: dayjs("2026-05-18T00:00:00.000"),
-        today: dayjs("2026-05-20T00:00:00.000"),
         util: {
           decrementWeek: mock(),
           getLastNavigationSource: mock(),

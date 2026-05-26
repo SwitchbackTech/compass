@@ -529,16 +529,13 @@ describe("saved Week event ownership", () => {
     const late = screen.getByRole("button", { name: /late overlap/i });
     const solo = screen.getByRole("button", { name: /timed event: solo/i });
 
-    // Uniform width across the deck, but each card fanned right by DECK_INDENT.
     expect(parseFloat(early.style.width)).toBe(parseFloat(late.style.width));
     expect(parseFloat(late.style.left) - parseFloat(early.style.left)).toBe(
       DECK_INDENT,
     );
 
-    // Background-first painter's order: the earlier card sits behind the later.
     expect(Number(early.style.zIndex)).toBeLessThan(Number(late.style.zIndex));
 
-    // The non-overlapping event keeps full width and the base layer.
     expect(parseFloat(solo.style.width)).toBeGreaterThan(
       parseFloat(early.style.width),
     );

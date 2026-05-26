@@ -212,7 +212,6 @@ describe("getTimedEventPosition", () => {
     expect(position.width).toBe(colWidth - TIMED_EVENT_COLUMN_INSET * 2);
     expect(position.left).toBeGreaterThan(columnLeft);
     expect(position.left + position.width).toBeLessThan(columnRight);
-    expect(position.zIndex).toBeUndefined();
   });
 
   describe("Deck overlap layout", () => {
@@ -281,7 +280,6 @@ describe("getTimedEventPosition", () => {
       expect(front.left - back.left).toBe(2 * DECK_INDENT);
       expect(back.zIndex).toBe(1);
       expect(front.zIndex).toBe(3);
-      // uniform width across the group
       expect(front.width).toBe(back.width);
     });
 
