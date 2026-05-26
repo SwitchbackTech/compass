@@ -1,3 +1,9 @@
+import {
+  WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
+  WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
+  weekEventRegistry,
+} from "@web/views/Week/interaction/registry/weekEventRegistry";
+
 export type CalendarEventTargetType = "all-day" | "timed";
 
 export interface CalendarEventTarget {
@@ -6,20 +12,34 @@ export interface CalendarEventTarget {
   eventType: CalendarEventTargetType;
 }
 
-const TARGET_SELECTOR = '[data-calendar-event-target="true"]';
+const TARGET_SELECTOR = `[${WEEK_INTERACTION_EVENT_ID_ATTRIBUTE}][${WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE}]`;
+
+let hoveredCalendarEventElement: HTMLElement | null = null;
+
+export const setHoveredCalendarEventTarget = (
+  element: HTMLElement | null,
+): void => {
+  hoveredCalendarEventElement = element;
+};
+
+export const clearHoveredCalendarEventTarget = (
+  element?: HTMLElement,
+): void => {
+  if (!element || hoveredCalendarEventElement === element) {
+    hoveredCalendarEventElement = null;
+  }
+};
 
 export const getFocusedCalendarEventTarget = (): CalendarEventTarget | null =>
   toCalendarEventTarget(document.activeElement);
 
 export const getHoveredCalendarEventTarget = (): CalendarEventTarget | null =>
-  toCalendarEventTarget(
-    document.querySelector('[data-calendar-event-hovered="true"]'),
-  );
+  toCalendarEventTarget(hoveredCalendarEventElement);
 
 export const getFirstVisibleCalendarEventTarget = (
   root: ParentNode = document,
 ): CalendarEventTarget | null => {
-  const candidates = Array.from(root.querySelectorAll(TARGET_SELECTOR));
+  const candidates = root.querySelectorAll(TARGET_SELECTOR);
 
   for (const candidate of candidates) {
     const target = toCalendarEventTarget(candidate);
@@ -37,16 +57,15 @@ const toCalendarEventTarget = (
   element: Element | null,
 ): CalendarEventTarget | null => {
   if (!(element instanceof HTMLElement)) return null;
-  if (!element.matches(TARGET_SELECTOR)) return null;
-  if (element.getAttribute("aria-disabled") === "true") return null;
 
-  const eventId = element.dataset.eventId;
-  const eventType = element.dataset.calendarEventType;
+  const target = weekEventRegistry.resolveFromTarget(element);
+  if (!target) return null;
 
-  if (!eventId) return null;
-  if (eventType !== "all-day" && eventType !== "timed") return null;
-
-  return { element, eventId, eventType };
+  return {
+    element: target.element,
+    eventId: target.eventId,
+    eventType: target.eventType,
+  };
 };
 
 const isVisibleCalendarEventElement = (element: HTMLElement): boolean => {

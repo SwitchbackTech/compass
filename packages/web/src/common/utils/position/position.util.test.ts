@@ -11,6 +11,7 @@ import {
   DECK_INDENT,
   DECK_MIN_WIDTH,
   DECK_RIGHT_RESERVE,
+  EVENT_WIDTH_MINIMUM,
   GRID_MARGIN_LEFT,
   TIMED_EVENT_COLUMN_INSET,
 } from "@web/views/Week/layout.constants";
@@ -284,8 +285,47 @@ describe("getTimedEventPosition", () => {
       expect(front.width).toBe(back.width);
     });
 
+    it("does not apply legacy equal-split overlap math to deck cards", () => {
+      const colWidth = 200;
+      const legacyOverlapDeck = createTimedEvent({
+        position: {
+          dragOffset: { x: 0, y: 0 },
+          horizontalOrder: 2,
+          initialX: null,
+          initialY: null,
+          isOverlapping: true,
+          totalEventsInGroup: 2,
+          widthMultiplier: 0.5,
+          deck: { order: 1, groupSize: 2 },
+        },
+      } as Partial<Schema_GridEvent>);
+
+      const position = getTimedEventPosition(
+        legacyOverlapDeck,
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+      const base = getTimedEventPosition(
+        createTimedEvent(),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+
+      expect(position.width).toBe(
+        colWidth -
+          TIMED_EVENT_COLUMN_INSET * 2 -
+          DECK_RIGHT_RESERVE -
+          DECK_INDENT,
+      );
+      expect(position.left).toBe(base.left + DECK_INDENT);
+    });
+
     it("floors deck width at DECK_MIN_WIDTH for dense groups", () => {
-      const colWidth = 120;
+      const colWidth = 150;
       const deck = getTimedEventPosition(
         deckEvent(0, 8),
         startOfView,
@@ -295,6 +335,37 @@ describe("getTimedEventPosition", () => {
       );
 
       expect(deck.width).toBe(DECK_MIN_WIDTH);
+    });
+
+    it("caps deck width inside the usable column when the column is narrow", () => {
+      const colWidth = EVENT_WIDTH_MINIMUM;
+      const base = getTimedEventPosition(
+        createTimedEvent(),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+      const back = getTimedEventPosition(
+        deckEvent(0, 2),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+      const front = getTimedEventPosition(
+        deckEvent(1, 2),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+
+      expect(back.width).toBe(
+        colWidth - TIMED_EVENT_COLUMN_INSET * 2 - DECK_INDENT,
+      );
+      expect(front.width).toBe(back.width);
+      expect(front.left + front.width).toBe(base.left + base.width);
     });
 
     it("ignores deck while drafting (full-width column)", () => {

@@ -1,5 +1,13 @@
-import dayjs from "@core/util/date/dayjs";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+
+interface DeckCandidate {
+  dayKey: string;
+  end: Dayjs;
+  event: Schema_GridEvent;
+  start: Dayjs;
+}
 
 /**
  * Deck overlap layout for Week timed events.
@@ -20,12 +28,13 @@ export const applyWeekTimedOverlapLayout = (
   events: Schema_GridEvent[],
 ): Schema_GridEvent[] => {
   const copied = deepCopyEvents(events);
+  const candidates = copied.map(toDeckCandidate);
 
-  for (const dayBucket of bucketByStartDay(copied)) {
+  for (const dayBucket of bucketByStartDay(candidates)) {
     for (const group of groupByOverlap(dayBucket)) {
       if (group.length < 2) continue;
 
-      orderBackgroundFirst(group).forEach((event, index) => {
+      orderBackgroundFirst(group).forEach(({ event }, index) => {
         event.position.deck = { order: index, groupSize: group.length };
       });
     }
@@ -34,16 +43,26 @@ export const applyWeekTimedOverlapLayout = (
   return copied;
 };
 
-const bucketByStartDay = (events: Schema_GridEvent[]): Schema_GridEvent[][] => {
-  const buckets = new Map<string, Schema_GridEvent[]>();
+const toDeckCandidate = (event: Schema_GridEvent): DeckCandidate => {
+  const start = dayjs(event.startDate);
+
+  return {
+    dayKey: start.format(YEAR_MONTH_DAY_FORMAT),
+    end: dayjs(event.endDate),
+    event,
+    start,
+  };
+};
+
+const bucketByStartDay = (events: DeckCandidate[]): DeckCandidate[][] => {
+  const buckets = new Map<string, DeckCandidate[]>();
 
   for (const event of events) {
-    const key = dayjs(event.startDate).format("YYYY-MM-DD");
-    const bucket = buckets.get(key);
+    const bucket = buckets.get(event.dayKey);
     if (bucket) {
       bucket.push(event);
     } else {
-      buckets.set(key, [event]);
+      buckets.set(event.dayKey, [event]);
     }
   }
 
@@ -51,12 +70,12 @@ const bucketByStartDay = (events: Schema_GridEvent[]): Schema_GridEvent[][] => {
 };
 
 /** Connected components by transitive overlap. */
-const groupByOverlap = (events: Schema_GridEvent[]): Schema_GridEvent[][] => {
+const groupByOverlap = (events: DeckCandidate[]): DeckCandidate[][] => {
   const remaining = [...events];
-  const groups: Schema_GridEvent[][] = [];
+  const groups: DeckCandidate[][] = [];
 
   while (remaining.length) {
-    const group = [remaining.shift() as Schema_GridEvent];
+    const group = [remaining.shift() as DeckCandidate];
     let grew = true;
     while (grew) {
       grew = false;
@@ -73,21 +92,20 @@ const groupByOverlap = (events: Schema_GridEvent[]): Schema_GridEvent[][] => {
   return groups;
 };
 
-const overlaps = (a: Schema_GridEvent, b: Schema_GridEvent): boolean =>
-  dayjs(a.startDate).isBefore(dayjs(b.endDate)) &&
-  dayjs(a.endDate).isAfter(dayjs(b.startDate));
+const overlaps = (a: DeckCandidate, b: DeckCandidate): boolean =>
+  a.start.isBefore(b.end) && a.end.isAfter(b.start);
 
 /** Background-first ordering: earliest start, then longest duration, sits behind. */
-const orderBackgroundFirst = (group: Schema_GridEvent[]): Schema_GridEvent[] =>
+const orderBackgroundFirst = (group: DeckCandidate[]): DeckCandidate[] =>
   [...group].sort((a, b) => {
-    const startDiff = dayjs(a.startDate).diff(dayjs(b.startDate));
+    const startDiff = a.start.diff(b.start);
     if (startDiff !== 0) return startDiff;
     // same start: longer event (later end) sits behind
-    return dayjs(b.endDate).diff(dayjs(a.endDate));
+    return b.end.diff(a.end);
   });
 
 const deepCopyEvents = (events: Schema_GridEvent[]): Schema_GridEvent[] =>
   events.map((event) => ({
     ...event,
-    position: { ...event.position },
+    position: { ...event.position, deck: null },
   }));

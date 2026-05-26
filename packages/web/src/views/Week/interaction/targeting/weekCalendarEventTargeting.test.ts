@@ -1,12 +1,17 @@
+import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
 import {
+  clearHoveredCalendarEventTarget,
   focusCalendarEventTarget,
   getFirstVisibleCalendarEventTarget,
   getFocusedCalendarEventTarget,
   getHoveredCalendarEventTarget,
-} from "./calendarEventTargeting";
+  setHoveredCalendarEventTarget,
+} from "./weekCalendarEventTargeting";
 import { afterEach, describe, expect, it } from "bun:test";
 
 afterEach(() => {
+  clearHoveredCalendarEventTarget();
+  weekEventRegistry.clear();
   document.body.innerHTML = "";
 });
 
@@ -22,9 +27,6 @@ const addEventButton = ({
   isVisible?: boolean;
 }) => {
   const button = document.createElement("button");
-  if (eventId) button.dataset.eventId = eventId;
-  button.dataset.calendarEventTarget = "true";
-  button.dataset.calendarEventType = eventType;
   if (isPending) button.setAttribute("aria-disabled", "true");
   if (isVisible) {
     Object.defineProperty(button, "offsetParent", {
@@ -33,10 +35,19 @@ const addEventButton = ({
     });
   }
   document.body.appendChild(button);
+
+  if (eventId && !isPending) {
+    weekEventRegistry.register({
+      element: button,
+      eventId,
+      eventType,
+    });
+  }
+
   return button;
 };
 
-describe("calendarEventTargeting", () => {
+describe("weekCalendarEventTargeting", () => {
   it("prefers the focused calendar event", () => {
     addEventButton({ eventId: "first" });
     const focused = addEventButton({
@@ -54,7 +65,7 @@ describe("calendarEventTargeting", () => {
 
   it("uses the hovered calendar event when nothing is focused", () => {
     const hovered = addEventButton({ eventId: "hovered" });
-    hovered.dataset.calendarEventHovered = "true";
+    setHoveredCalendarEventTarget(hovered);
 
     expect(getHoveredCalendarEventTarget()).toMatchObject({
       element: hovered,

@@ -1,3 +1,4 @@
+import { ZIndex } from "@web/common/constants/web.constants";
 import {
   type CalendarInteractionAdapter,
   type FloatingInteractionOverlayMount,
@@ -417,6 +418,7 @@ describe("FloatingInteractionOverlay", () => {
     expect(clone.style.transform).toBe("translate3d(7px, 9px, 0)");
     expect(clone.style.height).toBe("24px");
     expect(clone.style.width).toBe("70px");
+    expect(clone.style.zIndex).toBe(`${ZIndex.MAX}`);
     expect(document.body.style.cursor).toBe("grabbing");
 
     overlay.unmount();

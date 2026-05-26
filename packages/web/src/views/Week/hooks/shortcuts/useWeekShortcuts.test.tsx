@@ -13,6 +13,11 @@ import {
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
+import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
+import {
+  clearHoveredCalendarEventTarget,
+  setHoveredCalendarEventTarget,
+} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
 import { useWeekShortcuts } from "./useWeekShortcuts";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -57,21 +62,25 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  clearHoveredCalendarEventTarget();
   cleanup();
   document.body.innerHTML = "";
   pendingEventIds = [];
+  weekEventRegistry.clear();
 });
 
 const addCalendarTarget = (eventId = editableEvent._id) => {
   const button = document.createElement("button");
-  button.dataset.calendarEventTarget = "true";
-  button.dataset.calendarEventType = "timed";
-  button.dataset.eventId = eventId;
   Object.defineProperty(button, "offsetParent", {
     configurable: true,
     get: () => document.body,
   });
   document.body.appendChild(button);
+  weekEventRegistry.register({
+    element: button,
+    eventId,
+    eventType: "timed",
+  });
   return button;
 };
 
@@ -150,7 +159,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
 
   it("edits the hovered calendar event with M when no event is focused", async () => {
     const button = addCalendarTarget();
-    button.dataset.calendarEventHovered = "true";
+    setHoveredCalendarEventTarget(button);
 
     const store = renderShortcuts();
     pressKey("M");

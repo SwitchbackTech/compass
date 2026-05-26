@@ -16,6 +16,17 @@ const expectSameTime = (actual: string, expected: string) => {
 };
 
 describe("assembleDefaultEvent", () => {
+  it("uses a provided end date for all-day drafts", async () => {
+    const event = await assembleDefaultEvent(
+      Categories_Event.ALLDAY,
+      "2024-01-01",
+      "2024-01-02",
+    );
+
+    expect(event).toHaveProperty("startDate", "2024-01-01");
+    expect(event).toHaveProperty("endDate", "2024-01-02");
+  });
+
   it("should include dates for someday event when provided", async () => {
     const startDate = "2024-01-01";
     const endDate = "2024-01-07";

@@ -38,6 +38,10 @@ import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
 import {
+  clearHoveredCalendarEventTarget,
+  setHoveredCalendarEventTarget,
+} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
+import {
   GRID_EVENT_TIME_LABEL_FONT_SIZE,
   GRID_EVENT_TIME_LABEL_OPACITY,
   GRID_EVENT_TITLE_LINE_HEIGHT,
@@ -225,14 +229,14 @@ const GridEventBase = (
   });
   const eventTitle = event.title || "Untitled event";
   const timeRange =
-    event.startDate && event.endDate
+    !event.isAllDay && event.startDate && event.endDate
       ? getTimesLabel(event.startDate, event.endDate)
-      : "time not set";
+      : null;
   const accessibleLabel = event.isAllDay
     ? `All-day event: ${eventTitle}`
-    : `Timed event: ${eventTitle}, ${timeRange}`;
-  const calendarEventType = event.isAllDay ? "all-day" : "timed";
-  const shouldExposeCalendarTarget = !isPending && Boolean(event._id);
+    : `Timed event: ${eventTitle}, ${timeRange ?? "time not set"}`;
+  const shouldTrackCalendarHover =
+    !isPending && !isPlaceholder && Boolean(event._id);
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
@@ -241,12 +245,6 @@ const GridEventBase = (
       {...interactionAttributes}
       aria-disabled={isPending ? "true" : undefined}
       aria-label={accessibleLabel}
-      data-calendar-event-target={
-        shouldExposeCalendarTarget ? "true" : undefined
-      }
-      data-calendar-event-type={
-        shouldExposeCalendarTarget ? calendarEventType : undefined
-      }
       ref={ref}
       role="button"
       tabIndex={0}
@@ -283,12 +281,12 @@ const GridEventBase = (
       onFocus={isDeck ? () => setIsFocused(true) : undefined}
       onBlur={isDeck ? () => setIsFocused(false) : undefined}
       onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
-        if (!shouldExposeCalendarTarget) return;
+        if (!shouldTrackCalendarHover) return;
 
-        e.currentTarget.dataset.calendarEventHovered = "true";
+        setHoveredCalendarEventTarget(e.currentTarget);
       }}
       onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
-        delete e.currentTarget.dataset.calendarEventHovered;
+        clearHoveredCalendarEventTarget(e.currentTarget);
       }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
         if (!onEventKeyDown || (e.key !== "Enter" && e.key !== " ")) {
@@ -320,9 +318,7 @@ const GridEventBase = (
                   style={timeLabelStyle}
                   zIndex={ZIndex.LAYER_3}
                 >
-                  {event.startDate &&
-                    event.endDate &&
-                    getTimesLabel(event.startDate, event.endDate)}
+                  {timeRange}
                 </Text>
               )}
             <div

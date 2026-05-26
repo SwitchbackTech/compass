@@ -93,13 +93,12 @@ export const createAlldayDraft = async (
     startDate,
     endDate,
   )) as Schema_GridEvent;
-  const oneDayEvent = { ...event, endDate };
 
   dispatch(
     draftSlice.actions.start({
       activity,
       eventType: Categories_Event.ALLDAY,
-      event: oneDayEvent,
+      event,
     }),
   );
 };

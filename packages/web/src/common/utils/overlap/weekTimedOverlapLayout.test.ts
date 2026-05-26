@@ -161,4 +161,26 @@ describe("applyWeekTimedOverlapLayout", () => {
     expect(events[0].position.deck).toBeNull();
     expect(events[1].position.deck).toBeNull();
   });
+
+  it("clears stale deck state from events that are no longer overlapping", () => {
+    const events = [
+      createTimedEvent({
+        _id: "morning",
+        startDate: "2024-01-15T09:00:00.000Z",
+        endDate: "2024-01-15T10:00:00.000Z",
+        position: { ...defaultPosition(), deck: { order: 0, groupSize: 2 } },
+      }),
+      createTimedEvent({
+        _id: "afternoon",
+        startDate: "2024-01-15T14:00:00.000Z",
+        endDate: "2024-01-15T15:00:00.000Z",
+        position: { ...defaultPosition(), deck: { order: 1, groupSize: 2 } },
+      }),
+    ];
+
+    const laid = applyWeekTimedOverlapLayout(events);
+
+    expect(deckOf(laid, "morning")).toBeNull();
+    expect(deckOf(laid, "afternoon")).toBeNull();
+  });
 });

@@ -56,6 +56,21 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 import { getDragDurationMinutes } from "./drag-duration.util";
 
+const getDraftKeyboardMovement = (key: string, isAllDay: boolean) => {
+  switch (key) {
+    case "ArrowLeft":
+      return { days: -1, minutes: 0 };
+    case "ArrowRight":
+      return { days: 1, minutes: 0 };
+    case "ArrowUp":
+      return isAllDay ? null : { days: 0, minutes: -GRID_TIME_STEP };
+    case "ArrowDown":
+      return isAllDay ? null : { days: 0, minutes: GRID_TIME_STEP };
+    default:
+      return null;
+  }
+};
+
 export const useDraftActions = (
   draftState: State_Draft_Local,
   setters: Setters_Draft,
@@ -400,36 +415,17 @@ export const useDraftActions = (
     (key: string) => {
       if (activity !== "createShortcut" || !draft) return false;
 
+      const movement = getDraftKeyboardMovement(key, Boolean(draft.isAllDay));
+      if (!movement) return false;
+
       const start = dayjs(draft.startDate);
       const end = dayjs(draft.endDate);
-      let nextStart = start;
-      let nextEnd = end;
-
-      if (draft.isAllDay) {
-        if (key === "ArrowLeft") {
-          nextStart = start.subtract(1, "day");
-          nextEnd = end.subtract(1, "day");
-        } else if (key === "ArrowRight") {
-          nextStart = start.add(1, "day");
-          nextEnd = end.add(1, "day");
-        } else {
-          return false;
-        }
-      } else if (key === "ArrowUp") {
-        nextStart = start.subtract(GRID_TIME_STEP, "minutes");
-        nextEnd = end.subtract(GRID_TIME_STEP, "minutes");
-      } else if (key === "ArrowDown") {
-        nextStart = start.add(GRID_TIME_STEP, "minutes");
-        nextEnd = end.add(GRID_TIME_STEP, "minutes");
-      } else if (key === "ArrowLeft") {
-        nextStart = start.subtract(1, "day");
-        nextEnd = end.subtract(1, "day");
-      } else if (key === "ArrowRight") {
-        nextStart = start.add(1, "day");
-        nextEnd = end.add(1, "day");
-      } else {
-        return false;
-      }
+      const nextStart = start
+        .add(movement.days, "day")
+        .add(movement.minutes, "minutes");
+      const nextEnd = end
+        .add(movement.days, "day")
+        .add(movement.minutes, "minutes");
 
       if (!isInsideVisibleWeek(nextStart)) return false;
 

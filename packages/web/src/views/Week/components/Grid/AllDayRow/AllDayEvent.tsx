@@ -27,6 +27,10 @@ import { SpaceCharacter } from "@web/components/SpaceCharacter";
 import { Text } from "@web/components/Text";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  clearHoveredCalendarEventTarget,
+  setHoveredCalendarEventTarget,
+} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
 
 interface Props {
   event: Schema_GridEvent;
@@ -113,7 +117,8 @@ const AllDayEventBase = (
     ...placement,
   });
   const accessibleLabel = `All-day event: ${event.title || "Untitled event"}`;
-  const shouldExposeCalendarTarget = !isPending && Boolean(event._id);
+  const shouldTrackCalendarHover =
+    !isPending && !isPlaceholder && Boolean(event._id);
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
@@ -122,12 +127,6 @@ const AllDayEventBase = (
       {...interactionAttributes}
       aria-disabled={isPending ? "true" : undefined}
       aria-label={accessibleLabel}
-      data-calendar-event-target={
-        shouldExposeCalendarTarget ? "true" : undefined
-      }
-      data-calendar-event-type={
-        shouldExposeCalendarTarget ? "all-day" : undefined
-      }
       ref={ref}
       role="button"
       tabIndex={0}
@@ -153,12 +152,12 @@ const AllDayEventBase = (
         onMouseDown(e, event);
       }}
       onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
-        if (!shouldExposeCalendarTarget) return;
+        if (!shouldTrackCalendarHover) return;
 
-        e.currentTarget.dataset.calendarEventHovered = "true";
+        setHoveredCalendarEventTarget(e.currentTarget);
       }}
       onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
-        delete e.currentTarget.dataset.calendarEventHovered;
+        clearHoveredCalendarEventTarget(e.currentTarget);
       }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
         if (e.key !== "Enter" && e.key !== " ") {

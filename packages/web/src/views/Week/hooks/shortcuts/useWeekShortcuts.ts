@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
-import {
-  focusCalendarEventTarget,
-  getFirstVisibleCalendarEventTarget,
-  getFocusedCalendarEventTarget,
-  getHoveredCalendarEventTarget,
-} from "@web/common/calendar-grid/targeting/calendarEventTargeting";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import {
   createAlldayDraft,
@@ -27,6 +21,12 @@ import { useDraftContext } from "@web/views/Week/components/Draft/context/useDra
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  focusCalendarEventTarget,
+  getFirstVisibleCalendarEventTarget,
+  getFocusedCalendarEventTarget,
+  getHoveredCalendarEventTarget,
+} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
 
 export interface ShortcutProps {
   today: Dayjs;
@@ -53,7 +53,9 @@ export const useWeekShortcuts = ({
 }: ShortcutProps) => {
   const dispatch = useAppDispatch();
   const context = useSidebarContext(true);
-  const { actions: draftActions } = useDraftContext();
+  const {
+    actions: { repositionDraftByKeyboard },
+  } = useDraftContext();
 
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
   const eventEntities = useAppSelector(selectEventEntities);
@@ -165,13 +167,13 @@ export const useWeekShortcuts = ({
     (event: KeyboardEvent) => {
       if (isEditableKeyboardTarget(event)) return;
 
-      const didMove = draftActions.repositionDraftByKeyboard(event.key);
+      const didMove = repositionDraftByKeyboard(event.key);
       if (!didMove) return;
 
       event.preventDefault();
       event.stopPropagation();
     },
-    [draftActions],
+    [repositionDraftByKeyboard],
   );
 
   useAppHotkeyUp("[", openSidebar);

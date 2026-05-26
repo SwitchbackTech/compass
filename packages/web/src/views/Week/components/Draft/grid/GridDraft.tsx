@@ -102,42 +102,40 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
         {...getReferenceProps()}
       />
 
-      <div>
-        {isFormOpen && (
-          <FloatingFocusManager context={context} modal={false}>
-            <StyledFloatContainer
-              ref={refs.setFloating}
-              strategy={strategy}
-              top={y ?? 0}
-              left={x ?? 0}
-              {...getFloatingProps()}
-            >
-              <EventForm
-                event={draft as Schema_Event}
-                onClose={discard}
-                onConvert={onConvert}
-                onDelete={onDelete}
-                onDuplicate={duplicateEvent}
-                onTitleCommit={focusDraftBlock}
-                isDraft={!draft._id}
-                isExistingEvent={!!draft._id}
-                onSubmit={(event) => {
-                  if (event) void onSubmit(event as Schema_GridEvent);
-                }}
-                setEvent={(nextEvent) => {
-                  const event =
-                    typeof nextEvent === "function"
-                      ? nextEvent(draft)
-                      : nextEvent;
-                  setDraft(event as Schema_GridEvent | null);
-                }}
-                titleEditingResetKey={state.draftSessionKey}
-                titleInputRef={titleInputRef}
-              />
-            </StyledFloatContainer>
-          </FloatingFocusManager>
-        )}
-      </div>
+      {isFormOpen && (
+        <FloatingFocusManager context={context} modal={false}>
+          <StyledFloatContainer
+            ref={refs.setFloating}
+            strategy={strategy}
+            top={y ?? 0}
+            left={x ?? 0}
+            {...getFloatingProps()}
+          >
+            <EventForm
+              event={draft as Schema_Event}
+              onClose={discard}
+              onConvert={onConvert}
+              onDelete={onDelete}
+              onDuplicate={duplicateEvent}
+              onTitleCommit={focusDraftBlock}
+              isDraft={!draft._id}
+              isExistingEvent={!!draft._id}
+              onSubmit={(event) => {
+                if (event) void onSubmit(event as Schema_GridEvent);
+              }}
+              setEvent={(nextEvent) => {
+                const event =
+                  typeof nextEvent === "function"
+                    ? nextEvent(draft)
+                    : nextEvent;
+                setDraft(event as Schema_GridEvent | null);
+              }}
+              titleEditingResetKey={state.draftSessionKey}
+              titleInputRef={titleInputRef}
+            />
+          </StyledFloatContainer>
+        </FloatingFocusManager>
+      )}
     </>
   );
 };

@@ -20,7 +20,16 @@ import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
+import {
+  WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
+  WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
+  weekEventRegistry,
+} from "@web/views/Week/interaction/registry/weekEventRegistry";
 import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
+import {
+  clearHoveredCalendarEventTarget,
+  getHoveredCalendarEventTarget,
+} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
 import {
   DECK_INDENT,
   DRAFT_DURATION_MIN,
@@ -34,8 +43,10 @@ const { MainGrid } = await import("./MainGrid");
 const { MainGridEvents } = await import("./MainGridEvents");
 
 afterEach(() => {
+  clearHoveredCalendarEventTarget();
   cleanup();
   setWeekInteractionMotionActive(false);
+  weekEventRegistry.clear();
 });
 
 const startOfView = dayjs("2024-01-14T00:00:00.000");
@@ -434,12 +445,14 @@ describe("Week calendar accessibility", () => {
     const eventButton = screen.getByRole("button", { name: /hover target/i });
 
     fireEvent.mouseEnter(eventButton);
-    expect(eventButton.getAttribute("data-calendar-event-hovered")).toBe(
-      "true",
-    );
+    expect(getHoveredCalendarEventTarget()).toMatchObject({
+      element: eventButton,
+      eventId: "hovered-timed-event",
+      eventType: "timed",
+    });
 
     fireEvent.mouseLeave(eventButton);
-    expect(eventButton.getAttribute("data-calendar-event-hovered")).toBeNull();
+    expect(getHoveredCalendarEventTarget()).toBeNull();
   });
 
   it("gives all-day events an all-day accessible name and target type", () => {
@@ -469,10 +482,12 @@ describe("Week calendar accessibility", () => {
       name: /all-day event: all-day planning/i,
     });
 
-    expect(eventButton.getAttribute("data-calendar-event-target")).toBe("true");
-    expect(eventButton.getAttribute("data-calendar-event-type")).toBe(
-      "all-day",
+    expect(eventButton.getAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE)).toBe(
+      "labeled-all-day",
     );
+    expect(
+      eventButton.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE),
+    ).toBe("all-day");
   });
 });
 

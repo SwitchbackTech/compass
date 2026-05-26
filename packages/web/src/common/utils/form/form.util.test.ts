@@ -4,8 +4,11 @@ import {
   ID_SOMEDAY_EVENT_FORM,
 } from "../../constants/web.constants";
 import {
+  EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE,
+  EVENT_FORM_TITLE_INPUT_NAME,
   isComboboxInteraction,
   isContextMenuOpen,
+  isEditableKeyboardTarget,
   isEventFormOpen,
 } from "./form.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -183,6 +186,33 @@ describe("form.util", () => {
 
     it("returns false when target is null", () => {
       expect(isComboboxInteraction(createEvent(null))).toBe(false);
+    });
+  });
+
+  describe("isEditableKeyboardTarget", () => {
+    const createEvent = (element: HTMLElement | null) =>
+      ({ target: element }) as unknown as KeyboardEvent;
+
+    it("allows arrow-key draft movement from an untouched empty title field", () => {
+      const input = document.createElement("input");
+      input.name = EVENT_FORM_TITLE_INPUT_NAME;
+
+      expect(isEditableKeyboardTarget(createEvent(input))).toBe(false);
+    });
+
+    it("keeps normal text editing after title editing starts", () => {
+      const input = document.createElement("input");
+      input.name = EVENT_FORM_TITLE_INPUT_NAME;
+      input.setAttribute(EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE, "true");
+
+      expect(isEditableKeyboardTarget(createEvent(input))).toBe(true);
+    });
+
+    it("keeps normal text editing for non-empty inputs", () => {
+      const input = document.createElement("input");
+      input.value = "Planning";
+
+      expect(isEditableKeyboardTarget(createEvent(input))).toBe(true);
     });
   });
 });

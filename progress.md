@@ -30,7 +30,8 @@ draft PR.
 
 ### Calendar event targeting primitive
 
-Added `packages/web/src/common/calendar-grid/targeting/calendarEventTargeting.ts`.
+Added
+`packages/web/src/views/Week/interaction/targeting/weekCalendarEventTargeting.ts`.
 
 This introduces a small DOM-based targeting helper for calendar events. It can:
 
@@ -39,14 +40,14 @@ This introduces a small DOM-based targeting helper for calendar events. It can:
 - Fall back to the first visible, non-pending calendar event.
 - Focus a calendar event target.
 
-The helper intentionally ignores invalid targets, hidden targets, and pending
-events marked as disabled. It uses `data-calendar-event-target`,
-`data-calendar-event-type`, and `data-event-id` so the Week shortcut logic can
-operate without needing direct component refs for every rendered event.
+The helper intentionally ignores invalid targets, hidden targets, pending
+events, and placeholders by resolving against the Week interaction registry.
+It reuses the existing `data-week-interaction-*` registration attributes so
+the shortcut logic does not maintain a second event-targeting DOM contract.
 
 Covered by:
 
-- `packages/web/src/common/calendar-grid/targeting/calendarEventTargeting.test.ts`
+- `packages/web/src/views/Week/interaction/targeting/weekCalendarEventTargeting.test.ts`
 
 ### Week keyboard shortcuts for targeting events
 
@@ -145,16 +146,16 @@ Timed events now expose:
 - A `role="button"` interaction target.
 - An accessible label in the shape `Timed event: [title], [time range]`.
 - `aria-disabled="true"` when the event is pending.
-- Calendar targeting data when the event can be targeted.
-- Hover state through `data-calendar-event-hovered`.
+- Week interaction registry attributes when the event can be targeted.
+- Hover state tracked by the Week targeting helper.
 
 All-day events now expose:
 
 - A `role="button"` interaction target.
 - An accessible label in the shape `All-day event: [title]`.
 - `aria-disabled="true"` when the event is pending.
-- Calendar targeting data when the event can be targeted.
-- Hover state through `data-calendar-event-hovered`.
+- Week interaction registry attributes when the event can be targeted.
+- Hover state tracked by the Week targeting helper.
 
 Files touched:
 
@@ -353,7 +354,7 @@ It also does not change:
 The following checks passed after rebasing the branch onto latest `main`:
 
 ```bash
-bun test --cwd packages/web src/views/Week/components/Grid/MainGrid/MainGrid.test.tsx src/common/calendar-grid/targeting/calendarEventTargeting.test.ts src/views/Week/hooks/shortcuts/useWeekShortcuts.test.tsx src/views/Week/util/weekShortcutSections.test.ts
+bun test --cwd packages/web src/views/Week/components/Grid/MainGrid/MainGrid.test.tsx src/views/Week/interaction/targeting/weekCalendarEventTargeting.test.ts src/views/Week/hooks/shortcuts/useWeekShortcuts.test.tsx src/views/Week/util/weekShortcutSections.test.ts
 bun type-check
 bun lint
 git diff --check

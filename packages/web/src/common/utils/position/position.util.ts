@@ -207,12 +207,6 @@ export const getTimedEventPosition = (
   const category = getEventCategory(start, end, startOfView, endOfView);
   const startIndex = start.get("day");
 
-  let width = getTimedEventWidth(
-    colWidths,
-    startIndex,
-    event.position.widthMultiplier,
-    isDraft,
-  );
   const startTime = ACCEPTED_TIMES.indexOf(start.format(HOURS_AM_FORMAT)) / 4;
 
   const hourHeight = measurements.hourHeight;
@@ -223,22 +217,29 @@ export const getTimedEventPosition = (
   let height = hourHeight * durationHours;
   height -= DRAFT_PADDING_BOTTOM;
 
-  let left = getLeftPosition(
-    category,
-    startIndex,
-    colWidths,
-    event,
-    width,
-    isDraft,
-  );
+  const deck = event.position.deck;
+  let width =
+    !isDraft && deck
+      ? getDeckBaseTimedEventWidth(colWidths, startIndex)
+      : getTimedEventWidth(
+          colWidths,
+          startIndex,
+          event.position.widthMultiplier,
+          isDraft,
+        );
+
+  let left =
+    !isDraft && deck
+      ? getDeckBaseTimedEventLeft(category, startIndex, colWidths)
+      : getLeftPosition(category, startIndex, colWidths, event, width, isDraft);
 
   // Deck overlap layout: left-anchored uniform-width cards fanned right by a
   // fixed indent per depth. Drafts keep deck:null, so this never affects them.
-  const deck = event.position.deck;
   if (!isDraft && deck) {
-    const fanned =
-      width - DECK_RIGHT_RESERVE - (deck.groupSize - 1) * DECK_INDENT;
-    width = Math.max(DECK_MIN_WIDTH, fanned);
+    const maxIndent = (deck.groupSize - 1) * DECK_INDENT;
+    const fanned = width - DECK_RIGHT_RESERVE - maxIndent;
+    const maxWidthWithinColumn = Math.max(0, width - maxIndent);
+    width = Math.min(Math.max(DECK_MIN_WIDTH, fanned), maxWidthWithinColumn);
     left += deck.order * DECK_INDENT;
     return { height, left, top, width, zIndex: deck.order + 1 };
   }
@@ -314,6 +315,18 @@ export const getTimedEventWidth = (
   width -= BUFFER_WIDTH;
   return width;
 };
+
+const getDeckBaseTimedEventWidth = (colWidths: number[], startIndex: number) =>
+  colWidths[startIndex] - TIMED_EVENT_COLUMN_INSET * 2;
+
+const getDeckBaseTimedEventLeft = (
+  category: Category,
+  startIndex: number,
+  colWidths: number[],
+) =>
+  getAbsoluteLeftPosition(category, startIndex, colWidths) +
+  GRID_MARGIN_LEFT +
+  TIMED_EVENT_COLUMN_INSET;
 
 export const getLeftPosition = (
   category: Category,

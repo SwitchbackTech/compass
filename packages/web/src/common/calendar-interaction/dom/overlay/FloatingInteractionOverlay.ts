@@ -1,3 +1,4 @@
+import { ZIndex } from "@web/common/constants/web.constants";
 import { type CalendarInteractionPoint } from "../../CalendarInteractionSession";
 
 export class FloatingInteractionOverlay {
@@ -34,6 +35,7 @@ export class FloatingInteractionOverlay {
     clone.style.transform = "translate3d(0px, 0px, 0)";
     clone.style.willChange = "transform";
     clone.style.width = `${rect.width}px`;
+    clone.style.zIndex = `${ZIndex.MAX}`;
 
     document.body.append(clone);
     this.#node = clone;
