@@ -7,12 +7,15 @@ import {
   getFocusedCalendarEventTarget,
   getHoveredCalendarEventTarget,
 } from "@web/common/calendar-grid/targeting/calendarEventTargeting";
-import { useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
 import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
-import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import {
+  isEditableKeyboardTarget,
+  isEventFormOpen,
+} from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
 import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
@@ -20,6 +23,7 @@ import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors"
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -34,6 +38,12 @@ export interface ShortcutProps {
   scrollUtil: Util_Scroll;
 }
 
+const DRAFT_MOVEMENT_HOTKEY_OPTIONS = {
+  ignoreInputs: false,
+  preventDefault: false,
+  stopPropagation: false,
+} as const;
+
 export const useWeekShortcuts = ({
   isCurrentWeek,
   startOfView,
@@ -43,6 +53,7 @@ export const useWeekShortcuts = ({
 }: ShortcutProps) => {
   const dispatch = useAppDispatch();
   const context = useSidebarContext(true);
+  const { actions: draftActions } = useDraftContext();
 
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
   const eventEntities = useAppSelector(selectEventEntities);
@@ -150,6 +161,19 @@ export const useWeekShortcuts = ({
     );
   }, [dispatch]);
 
+  const moveShortcutCreatedDraft = useCallback(
+    (event: KeyboardEvent) => {
+      if (isEditableKeyboardTarget(event)) return;
+
+      const didMove = draftActions.repositionDraftByKeyboard(event.key);
+      if (!didMove) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    [draftActions],
+  );
+
   useAppHotkeyUp("[", openSidebar);
   useAppHotkeyUp("J", goToPreviousWeek);
   useAppHotkeyUp("K", goToNextWeek);
@@ -158,6 +182,26 @@ export const useWeekShortcuts = ({
   useAppHotkeyUp("C", createTimedDraftEvent);
   useAppHotkeyUp("I", focusFirstCalendarEvent);
   useAppHotkeyUp("M", editTargetedCalendarEvent);
+  useAppHotkey(
+    "ArrowUp",
+    moveShortcutCreatedDraft,
+    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
+  );
+  useAppHotkey(
+    "ArrowDown",
+    moveShortcutCreatedDraft,
+    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
+  );
+  useAppHotkey(
+    "ArrowLeft",
+    moveShortcutCreatedDraft,
+    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
+  );
+  useAppHotkey(
+    "ArrowRight",
+    moveShortcutCreatedDraft,
+    DRAFT_MOVEMENT_HOTKEY_OPTIONS,
+  );
   useAppHotkeyUp("Shift+M", createSomedayMonthDraft);
   useAppHotkeyUp("Shift+W", createSomedayWeekDraft);
 };

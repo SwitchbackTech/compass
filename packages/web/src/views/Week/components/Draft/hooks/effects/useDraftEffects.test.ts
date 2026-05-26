@@ -39,6 +39,7 @@ const createState = (
 ): State_Draft_Local => ({
   dateBeingChanged: "endDate",
   draft: createDraft(),
+  draftSessionKey: 0,
   dragStatus: { durationMin: 60, hasMoved: true },
   isDragging: true,
   isFormOpen: false,
@@ -53,6 +54,7 @@ const createSetters = (
 ): Setters_Draft => ({
   setDateBeingChanged: mock(),
   setDraft: mock(),
+  setDraftSessionKey: mock(),
   setDragStatus: mock(),
   setIsDragging: mock(),
   setIsFormOpen: mock(),

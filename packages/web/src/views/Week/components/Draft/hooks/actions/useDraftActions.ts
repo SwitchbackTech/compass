@@ -98,6 +98,7 @@ export const useDraftActions = (
     setResizeStatus,
     setDateBeingChanged,
     setDraft,
+    setDraftSessionKey,
     setIsFormOpen,
     setIsFormOpenBeforeDragging,
   } = setters;
@@ -377,6 +378,76 @@ export const useDraftActions = (
     discard();
   }, [reduxDraft, submit, discard]);
 
+  const isInsideVisibleWeek = useCallback(
+    (start: Dayjs) => {
+      const viewStart = weekProps.component.startOfView.startOf("day");
+      const viewEnd = weekProps.component.endOfView.startOf("day");
+
+      return (
+        !start.isBefore(viewStart, "day") && !start.isAfter(viewEnd, "day")
+      );
+    },
+    [weekProps.component.endOfView, weekProps.component.startOfView],
+  );
+
+  const isTimedDraftInsideOneDay = useCallback((start: Dayjs, end: Dayjs) => {
+    const midnightAfterStart = start.add(1, "day").startOf("day");
+
+    return end.isSame(start, "day") || end.isSame(midnightAfterStart);
+  }, []);
+
+  const repositionDraftByKeyboard = useCallback(
+    (key: string) => {
+      if (activity !== "createShortcut" || !draft) return false;
+
+      const start = dayjs(draft.startDate);
+      const end = dayjs(draft.endDate);
+      let nextStart = start;
+      let nextEnd = end;
+
+      if (draft.isAllDay) {
+        if (key === "ArrowLeft") {
+          nextStart = start.subtract(1, "day");
+          nextEnd = end.subtract(1, "day");
+        } else if (key === "ArrowRight") {
+          nextStart = start.add(1, "day");
+          nextEnd = end.add(1, "day");
+        } else {
+          return false;
+        }
+      } else if (key === "ArrowUp") {
+        nextStart = start.subtract(GRID_TIME_STEP, "minutes");
+        nextEnd = end.subtract(GRID_TIME_STEP, "minutes");
+      } else if (key === "ArrowDown") {
+        nextStart = start.add(GRID_TIME_STEP, "minutes");
+        nextEnd = end.add(GRID_TIME_STEP, "minutes");
+      } else if (key === "ArrowLeft") {
+        nextStart = start.subtract(1, "day");
+        nextEnd = end.subtract(1, "day");
+      } else if (key === "ArrowRight") {
+        nextStart = start.add(1, "day");
+        nextEnd = end.add(1, "day");
+      } else {
+        return false;
+      }
+
+      if (!isInsideVisibleWeek(nextStart)) return false;
+
+      if (!draft.isAllDay && !isTimedDraftInsideOneDay(nextStart, nextEnd)) {
+        return false;
+      }
+
+      setDraft({
+        ...draft,
+        startDate: nextStart.format(),
+        endDate: nextEnd.format(),
+      });
+
+      return true;
+    },
+    [activity, draft, isInsideVisibleWeek, isTimedDraftInsideOneDay, setDraft],
+  );
+
   const drag = useCallback(
     (e: Omit<PartialMouseEvent, "currentTarget">) => {
       const updateTimesDuringDrag = (
@@ -611,6 +682,8 @@ export const useDraftActions = (
   );
 
   const create = useCallback(async () => {
+    setDraftSessionKey((key) => key + 1);
+
     if (reduxDraft !== null) {
       setDraft(reduxDraft as Schema_GridEvent);
     } else {
@@ -627,7 +700,7 @@ export const useDraftActions = (
       setDraft(defaultDraft);
     }
     openForm();
-  }, [openForm, reduxDraft, reduxDraftType, setDraft]);
+  }, [openForm, reduxDraft, reduxDraftType, setDraft, setDraftSessionKey]);
 
   const handleChange = useCallback(async () => {
     const isSomeday =
@@ -638,6 +711,7 @@ export const useDraftActions = (
       return; // Prevents form and context menu from opening at same time
     }
     if (!isSomeday && activity === "keyboardEdit") {
+      setDraftSessionKey((key) => key + 1);
       setDraft(reduxDraft as Schema_GridEvent);
       openForm();
       return;
@@ -650,6 +724,7 @@ export const useDraftActions = (
       return;
     }
     if (activity === "resizing") {
+      setDraftSessionKey((key) => key + 1);
       setDraft(reduxDraft as Schema_GridEvent);
       startResizing();
     }
@@ -659,6 +734,7 @@ export const useDraftActions = (
     activity,
     create,
     setDraft,
+    setDraftSessionKey,
     reduxDraft,
     startResizing,
     openForm,
@@ -673,6 +749,7 @@ export const useDraftActions = (
     discard,
     drag,
     openForm,
+    repositionDraftByKeyboard,
     reset,
     resize,
     isSomeday,

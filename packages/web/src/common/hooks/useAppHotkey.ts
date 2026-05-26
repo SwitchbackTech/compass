@@ -12,6 +12,8 @@ export interface UseAppHotkeyOptions {
   ignoreInputs?: boolean;
   blurOnTrigger?: boolean;
   eventType?: "keydown" | "keyup";
+  preventDefault?: boolean;
+  stopPropagation?: boolean;
   /** @default 'allow' — multiple features often register the same global key (e.g. Escape). */
   conflictBehavior?: ConflictBehavior;
 }
@@ -26,6 +28,8 @@ export function useAppHotkey(
     ignoreInputs,
     blurOnTrigger = false,
     eventType = "keydown",
+    preventDefault,
+    stopPropagation,
     conflictBehavior = "allow",
   } = options;
 
@@ -46,6 +50,8 @@ export function useAppHotkey(
       enabled,
       ignoreInputs,
       eventType,
+      preventDefault,
+      stopPropagation,
       conflictBehavior,
     },
   );

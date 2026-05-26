@@ -1,5 +1,5 @@
 import { FloatingFocusManager } from "@floating-ui/react";
-import { type FC, type MouseEvent } from "react";
+import { type FC, type MouseEvent, useRef } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
@@ -19,6 +19,7 @@ interface Props {
 }
 
 export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const { actions, setters, state, confirmation } = useDraftContext();
   const { discard, duplicateEvent, startDragging } = actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
@@ -34,6 +35,17 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   };
 
   const handleClick = () => {};
+  const focusDraftBlock = () => {
+    const reference = refs.reference.current;
+
+    if (reference instanceof HTMLElement) {
+      reference.focus();
+    }
+  };
+  const focusTitleInput = () => {
+    titleInputRef.current?.focus();
+  };
+
   const handleDrag = (_: Schema_GridEvent, moveEvent: PartialMouseEvent) => {
     if (!draft) return; // TS Guard
 
@@ -74,6 +86,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
           e.preventDefault();
           onMouseDown(e, event);
         }}
+        onEventKeyDown={focusTitleInput}
         onScalerMouseDown={(
           _event: Schema_GridEvent,
           e: MouseEvent,
@@ -91,7 +104,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
 
       <div>
         {isFormOpen && (
-          <FloatingFocusManager context={context}>
+          <FloatingFocusManager context={context} modal={false}>
             <StyledFloatContainer
               ref={refs.setFloating}
               strategy={strategy}
@@ -105,6 +118,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
                 onConvert={onConvert}
                 onDelete={onDelete}
                 onDuplicate={duplicateEvent}
+                onTitleCommit={focusDraftBlock}
                 isDraft={!draft._id}
                 isExistingEvent={!!draft._id}
                 onSubmit={(event) => {
@@ -117,6 +131,8 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
                       : nextEvent;
                   setDraft(event as Schema_GridEvent | null);
                 }}
+                titleEditingResetKey={state.draftSessionKey}
+                titleInputRef={titleInputRef}
               />
             </StyledFloatContainer>
           </FloatingFocusManager>

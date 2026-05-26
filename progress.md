@@ -12,12 +12,13 @@ This PR is a Week View quality pass that prepares the calendar grid for the
 eventual shared Day/Week grid primitive work, without starting that extraction
 yet.
 
-The current branch focuses on three areas:
+The current branch focuses on four areas:
 
 1. Better keyboard and screen-reader affordances for Week calendar events.
 2. Calendar-event targeting shortcuts in Week View.
 3. Removing the timed-event stacking experiment after deciding it was not the
    right visual direction.
+4. Letting shortcut-created Week drafts move by keyboard before saving.
 
 The branch has been rebased onto the latest `main` and is currently open as a
 draft PR.
@@ -67,6 +68,49 @@ Covered by:
 
 - `packages/web/src/views/Week/hooks/shortcuts/useWeekShortcuts.test.tsx`
 
+### Keyboard movement for shortcut-created drafts
+
+Updated Week draft creation and shortcut handling so users can place a new
+event without reaching for the mouse after pressing `C` or `A`.
+
+Week View now supports:
+
+- `C` creates a timed draft on today when today is in the visible week, or on
+  the visible week's anchor day when viewing another week.
+- `A` creates a one-day all-day draft instead of a full-week all-day draft.
+- Arrow keys move only the active unsaved draft created by `C` or `A`.
+- Timed drafts move by 15 minutes up/down and one day left/right.
+- All-day drafts move one day left/right; up/down do nothing.
+- Draft movement preserves duration, clamps inside the visible week, and keeps
+  timed drafts from crossing midnight.
+- Arrow movement works while the form is open. The auto-focused empty title
+  field still allows movement; once the title has text, arrows behave normally
+  in the field.
+- Focus stays where it already is while the draft moves.
+- Pressing Enter in the title field commits the title locally, keeps the draft
+  form open, and moves focus to the draft block.
+- After title commit, arrow keys move the draft again.
+- Pressing Enter on the focused draft block returns focus to the title field.
+- The draft form stays non-modal while the draft block is the active keyboard
+  handle.
+- Final event save remains separate from title commit.
+
+Files touched:
+
+- `packages/web/src/common/utils/draft/draft.util.ts`
+- `packages/web/src/views/Forms/EventForm/EventForm.tsx`
+- `packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.ts`
+- `packages/web/src/views/Week/components/Draft/grid/GridDraft.tsx`
+- `packages/web/src/views/Week/hooks/shortcuts/useWeekShortcuts.ts`
+
+Covered by:
+
+- `packages/web/src/common/utils/draft/draft.util.test.ts`
+- `packages/web/src/views/Forms/EventForm/EventForm.test.tsx`
+- `packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.test.ts`
+- `packages/web/src/views/Week/components/Draft/grid/GridDraft.test.tsx`
+- `packages/web/src/views/Week/hooks/shortcuts/useWeekShortcuts.test.tsx`
+
 ### Shortcut list updates
 
 Added `packages/web/src/views/Week/util/weekShortcutSections.ts`.
@@ -77,6 +121,7 @@ actual Week shortcut behavior easier to check together.
 
 The visible shortcut list now includes:
 
+- `Arrow keys` - Move draft event
 - `I` - Focus calendar event
 - `M` - Edit calendar event
 
@@ -194,7 +239,7 @@ It also does not change:
 
 - Day View behavior.
 - The Day task list.
-- Week drag or resize motion.
+- Saved Week drag or resize motion.
 - Smart scroll.
 - Edge navigation.
 - Commit routing.
@@ -227,6 +272,74 @@ Focused test coverage currently includes:
 - Week shortcut targeting can focus and edit events.
 - Pending events are not edited from the shortcut.
 - Shortcut docs include the new targeting shortcuts.
+- Shortcut-created timed drafts can move by arrow keys while preserving
+  duration.
+- Shortcut-created all-day drafts can move horizontally by arrow keys.
+- Keyboard movement ignores non-empty editable fields but still works from the
+  auto-focused empty title field.
+- Once the draft title has been edited, the title field keeps normal text
+  editing arrow-key behavior even if the user backspaces it empty again.
+- Pressing Enter in the draft title commits only the title and returns focus to
+  the draft block so the draft can move again.
+- Pressing Enter on the focused draft block returns focus to the title field.
+- Plain Enter does not final-save a draft while the draft block is focused;
+  final save remains the Save button or explicit submit shortcut.
+- The draft form stays non-modal so focus can intentionally move to the draft
+  block without hiding the focused block from assistive technology.
+- `A` creates a one-day all-day draft on the expected start day.
+
+Additional checks from the keyboard draft movement update:
+
+```bash
+bun test --cwd packages/web src/common/hooks/useAppHotkey.test.ts src/common/utils/draft/draft.util.test.ts src/views/Forms/EventForm/EventForm.test.tsx src/views/Week/components/Draft/grid/GridDraft.test.tsx src/views/Week/components/Draft/hooks/actions/useDraftActions.test.ts src/views/Week/hooks/shortcuts/useWeekShortcuts.test.tsx src/views/Week/util/weekShortcutSections.test.ts
+bunx biome check CONTEXT.md progress.md packages/web/src/common/hooks/useAppHotkey.ts packages/web/src/common/hooks/useAppHotkey.test.ts packages/web/src/common/utils/draft/draft.util.ts packages/web/src/common/utils/draft/draft.util.test.ts packages/web/src/views/Forms/EventForm/EventForm.tsx packages/web/src/views/Forms/EventForm/EventForm.test.tsx packages/web/src/views/Forms/EventForm/types.ts packages/web/src/views/Week/components/Draft/grid/GridDraft.tsx packages/web/src/views/Week/components/Draft/grid/GridDraft.test.tsx packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.ts packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.test.ts packages/web/src/views/Week/hooks/shortcuts/useWeekShortcuts.ts packages/web/src/views/Week/hooks/shortcuts/useWeekShortcuts.test.tsx packages/web/src/views/Week/util/weekShortcutSections.ts packages/web/src/views/Week/util/weekShortcutSections.test.ts
+git diff --check
+```
+
+Manual browser smoke on `http://localhost:9080/week`:
+
+- Pressed `C`.
+- Confirmed the form opened with the title field focused.
+- Pressed ArrowDown.
+- Confirmed the draft moved from `1:15 - 2:15 PM` to `1:30 - 2:30 PM` while
+  focus stayed on the title field.
+- Typed in the title field after moving the draft.
+- Confirmed ArrowLeft moved the title cursor and Backspace edited the title text
+  without moving the draft again.
+- Backspaced the title to empty and confirmed the next arrow key still stayed in
+  title-editing mode instead of moving the draft.
+- Pressed Enter in the title field and confirmed focus moved to the draft block
+  without saving the final event.
+- Confirmed arrow keys moved the draft again after title commit.
+- Pressed Enter on the draft block and confirmed focus returned to the title
+  field.
+- Confirmed pressing Enter from the draft block no longer final-saves the draft.
+
+Current known verification blocker:
+
+- Repo-wide `bun type-check` and `bun lint` are blocked by unrelated existing
+  issues in `packages/web/src/views/Prototype/OverlapPrototype.tsx`:
+  `bun type-check` is blocked by the prototype event layout type, and `bun lint`
+  is blocked by formatting in the same prototype file.
+
+Cleanup pass after the `simplify` review:
+
+- Moved the draft title/editable-target keyboard rules into a shared form
+  utility so Week shortcuts and the event form no longer depend on a duplicated
+  `"Event Title"` string.
+- Added a local draft session key so title-editing mode resets for a brand-new
+  unsaved draft without resetting every time the current draft moves.
+- Split EventForm effects so title typing updates the active event ref without
+  recalculating date/time picker state on every keystroke.
+- Added coverage for the unsaved draft title-editing reset.
+
+Cleanup verification:
+
+```bash
+bun test --cwd packages/web src/common/utils/form/form.util.test.ts src/common/hooks/useAppHotkey.test.ts src/common/utils/draft/draft.util.test.ts src/views/Forms/EventForm/EventForm.test.tsx src/views/Week/components/Draft/grid/GridDraft.test.tsx src/views/Week/components/Draft/hooks/effects/useDraftEffects.test.ts src/views/Week/components/Draft/hooks/actions/useDraftActions.test.ts src/views/Week/hooks/shortcuts/useWeekShortcuts.test.tsx src/views/Week/util/weekShortcutSections.test.ts
+bunx biome check CONTEXT.md progress.md packages/web/src/common/hooks/useAppHotkey.ts packages/web/src/common/hooks/useAppHotkey.test.ts packages/web/src/common/utils/draft/draft.util.ts packages/web/src/common/utils/draft/draft.util.test.ts packages/web/src/common/utils/form/form.util.ts packages/web/src/common/utils/form/form.util.test.ts packages/web/src/views/Forms/EventForm/EventForm.tsx packages/web/src/views/Forms/EventForm/EventForm.test.tsx packages/web/src/views/Forms/EventForm/types.ts packages/web/src/views/Week/components/Draft/grid/GridDraft.tsx packages/web/src/views/Week/components/Draft/grid/GridDraft.test.tsx packages/web/src/views/Week/components/Draft/hooks/effects/useDraftEffects.test.ts packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.ts packages/web/src/views/Week/components/Draft/hooks/actions/useDraftActions.test.ts packages/web/src/views/Week/components/Draft/hooks/state/useDraftState.ts packages/web/src/views/Week/hooks/shortcuts/useWeekShortcuts.ts packages/web/src/views/Week/hooks/shortcuts/useWeekShortcuts.test.tsx packages/web/src/views/Week/util/weekShortcutSections.ts packages/web/src/views/Week/util/weekShortcutSections.test.ts
+git diff --check
+```
 
 ## Remaining notes
 

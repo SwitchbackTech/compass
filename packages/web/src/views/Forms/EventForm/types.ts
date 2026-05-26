@@ -1,4 +1,4 @@
-import { type SetStateAction } from "react";
+import { type Ref, type SetStateAction } from "react";
 import { type Priority } from "@core/constants/core.constants";
 import {
   type Categories_Event,
@@ -24,8 +24,11 @@ export interface FormProps {
   ) => void;
   onSubmit: (event: Schema_Event | null) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
+  onTitleCommit?: () => void;
   priority?: Priority;
   setEvent: (event: SetStateAction<Schema_Event | null>) => void;
+  titleEditingResetKey?: string | number | null;
+  titleInputRef?: Ref<HTMLInputElement>;
 }
 
 type EventField =

@@ -6,8 +6,13 @@ import { Provider } from "react-redux";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import {
+  EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE,
+  EVENT_FORM_TITLE_INPUT_NAME,
+} from "@web/common/utils/form/form.util";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { reducers } from "@web/store/reducers";
+import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { useWeekShortcuts } from "./useWeekShortcuts";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -19,6 +24,7 @@ const editableEvent = {
   title: "Editable event",
 };
 let pendingEventIds: string[] = [];
+let repositionDraftByKeyboard = mock();
 
 const createState = ({
   includeEditableEvent = true,
@@ -47,6 +53,7 @@ const createStore = (options?: { includeEditableEvent?: boolean }) =>
 
 beforeEach(() => {
   HotkeyManager.resetInstance();
+  repositionDraftByKeyboard = mock();
 });
 
 afterEach(() => {
@@ -74,7 +81,20 @@ const renderShortcuts = (options?: { includeEditableEvent?: boolean }) => {
   function wrapper({ children }: PropsWithChildren) {
     return (
       <HotkeysProvider>
-        <Provider store={store}>{children}</Provider>
+        <Provider store={store}>
+          <DraftContext.Provider
+            value={
+              {
+                actions: { repositionDraftByKeyboard },
+                confirmation: {},
+                setters: {},
+                state: {},
+              } as never
+            }
+          >
+            {children}
+          </DraftContext.Provider>
+        </Provider>
       </HotkeysProvider>
     );
   }
@@ -174,5 +194,90 @@ describe("useWeekShortcuts calendar event targeting", () => {
       );
     });
     expect(store.getState().events.draft?.event?._id).toBe("event-1");
+  });
+
+  it("moves the active shortcut-created draft with arrow keys", () => {
+    renderShortcuts();
+
+    pressKey("ArrowRight");
+
+    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowRight");
+  });
+
+  it("lets editable fields keep normal arrow-key behavior", () => {
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+    renderShortcuts();
+
+    pressKey("ArrowRight", {}, input);
+
+    expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
+  });
+
+  it("moves the draft from the auto-focused empty event title field", () => {
+    const titleInput = document.createElement("input");
+    titleInput.name = EVENT_FORM_TITLE_INPUT_NAME;
+    document.body.appendChild(titleInput);
+    titleInput.focus();
+    renderShortcuts();
+
+    pressKey("ArrowDown", {}, titleInput);
+
+    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
+  });
+
+  it("lets a non-empty event title field keep normal arrow-key behavior", () => {
+    const titleInput = document.createElement("input");
+    titleInput.name = EVENT_FORM_TITLE_INPUT_NAME;
+    titleInput.value = "Planning";
+    document.body.appendChild(titleInput);
+    titleInput.focus();
+    renderShortcuts();
+
+    pressKey("ArrowDown", {}, titleInput);
+
+    expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
+  });
+
+  it("keeps title text editing active after the title was edited back to empty", () => {
+    repositionDraftByKeyboard = mock(() => true);
+    const titleInput = document.createElement("input");
+    titleInput.name = EVENT_FORM_TITLE_INPUT_NAME;
+    titleInput.setAttribute(EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE, "true");
+    document.body.appendChild(titleInput);
+    titleInput.focus();
+    renderShortcuts();
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "ArrowLeft",
+    });
+    titleInput.dispatchEvent(event);
+
+    expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
+    expect(event.defaultPrevented).toBe(false);
+  });
+
+  it("prevents browser arrow behavior only when the draft moves", () => {
+    repositionDraftByKeyboard = mock(() => true);
+    const titleInput = document.createElement("input");
+    titleInput.name = EVENT_FORM_TITLE_INPUT_NAME;
+    document.body.appendChild(titleInput);
+    titleInput.focus();
+    renderShortcuts();
+
+    const event = new KeyboardEvent("keydown", {
+      bubbles: true,
+      cancelable: true,
+      composed: true,
+      key: "ArrowDown",
+    });
+    titleInput.dispatchEvent(event);
+
+    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
+    expect(event.defaultPrevented).toBe(true);
   });
 });

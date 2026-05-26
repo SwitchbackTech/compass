@@ -72,6 +72,7 @@ const createState = (
 ): State_Draft_Local => ({
   dateBeingChanged: "endDate",
   draft: createDraft(),
+  draftSessionKey: 0,
   dragStatus: null,
   isDragging: false,
   isFormOpen: true,
@@ -86,6 +87,7 @@ const createSetters = (
 ): Setters_Draft => ({
   setDateBeingChanged: mock(),
   setDraft: mock(),
+  setDraftSessionKey: mock(),
   setDragStatus: mock(),
   setIsDragging: mock(),
   setIsFormOpen: mock(),
@@ -151,6 +153,111 @@ describe("useDraftActions", () => {
     expect(createAction).toBeDefined();
     expect(createAction.payload._id).not.toBe("event-1");
     expect(createAction.payload.title).toBe("Seed event");
+  });
+
+  it("moves a shortcut-created timed draft by keyboard while preserving duration", () => {
+    currentState.events.draft!.status = {
+      activity: "createShortcut",
+      dateToResize: null,
+      eventType: Categories_Event.TIMED,
+      isDrafting: true,
+    };
+    const setDraft = mock();
+    const { result } = renderHook(() =>
+      useDraftActions(
+        createState({
+          draft: createDraft({
+            _id: undefined,
+            startDate: "2024-01-16T10:00:00.000Z",
+            endDate: "2024-01-16T11:00:00.000Z",
+          }),
+        }),
+        createSetters({ setDraft }),
+        dateCalcs,
+        weekProps,
+      ),
+    );
+
+    setDraft.mockClear();
+    result.current.repositionDraftByKeyboard("ArrowDown");
+
+    const nextDraft = setDraft.mock.calls[0]?.[0] as Schema_GridEvent;
+    expect(dayjs(nextDraft.startDate).isSame("2024-01-16T10:15:00.000Z")).toBe(
+      true,
+    );
+    expect(dayjs(nextDraft.endDate).isSame("2024-01-16T11:15:00.000Z")).toBe(
+      true,
+    );
+  });
+
+  it("does not move a timed draft past midnight", () => {
+    currentState.events.draft!.status = {
+      activity: "createShortcut",
+      dateToResize: null,
+      eventType: Categories_Event.TIMED,
+      isDrafting: true,
+    };
+    const setDraft = mock();
+    const { result } = renderHook(() =>
+      useDraftActions(
+        createState({
+          draft: createDraft({
+            _id: undefined,
+            startDate: "2024-01-16T23:00:00.000Z",
+            endDate: "2024-01-17T00:00:00.000Z",
+          }),
+        }),
+        createSetters({ setDraft }),
+        dateCalcs,
+        weekProps,
+      ),
+    );
+
+    setDraft.mockClear();
+    result.current.repositionDraftByKeyboard("ArrowDown");
+
+    expect(setDraft).not.toHaveBeenCalled();
+  });
+
+  it("moves a shortcut-created all-day draft horizontally and ignores vertical arrows", () => {
+    currentState.events.draft!.status = {
+      activity: "createShortcut",
+      dateToResize: null,
+      eventType: Categories_Event.ALLDAY,
+      isDrafting: true,
+    };
+    const setDraft = mock();
+    const { result } = renderHook(() =>
+      useDraftActions(
+        createState({
+          draft: createDraft({
+            _id: undefined,
+            isAllDay: true,
+            startDate: "2024-01-16T00:00:00.000Z",
+            endDate: "2024-01-17T00:00:00.000Z",
+          }),
+        }),
+        createSetters({ setDraft }),
+        dateCalcs,
+        weekProps,
+      ),
+    );
+
+    setDraft.mockClear();
+    result.current.repositionDraftByKeyboard("ArrowRight");
+
+    const nextDraft = setDraft.mock.calls[0]?.[0] as Schema_GridEvent;
+    expect(dayjs(nextDraft.startDate).isSame("2024-01-17T00:00:00.000Z")).toBe(
+      true,
+    );
+    expect(dayjs(nextDraft.endDate).isSame("2024-01-18T00:00:00.000Z")).toBe(
+      true,
+    );
+
+    setDraft.mockClear();
+    result.current.repositionDraftByKeyboard("ArrowDown");
+
+    expect(setDraft).not.toHaveBeenCalled();
   });
 });
 

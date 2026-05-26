@@ -81,21 +81,25 @@ export const createAlldayDraft = async (
   activity: Activity_DraftEvent,
   dispatch: Dispatch,
 ) => {
-  const startDate = startOfView.startOf("day").format();
-  // Use the end of the current view as the all-day event's end date
-  const endDate = endOfView.startOf("day").add(1, "day").format();
+  const today = dayjs();
+  const start = today.isBetween(startOfView, endOfView, "day", "[]")
+    ? today.startOf("day")
+    : startOfView.startOf("day");
+  const startDate = start.format();
+  const endDate = start.add(1, "day").format();
 
   const event = (await assembleDefaultEvent(
     Categories_Event.ALLDAY,
     startDate,
     endDate,
   )) as Schema_GridEvent;
+  const oneDayEvent = { ...event, endDate };
 
   dispatch(
     draftSlice.actions.start({
       activity,
       eventType: Categories_Event.ALLDAY,
-      event,
+      event: oneDayEvent,
     }),
   );
 };

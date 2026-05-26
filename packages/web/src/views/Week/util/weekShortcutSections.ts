@@ -19,6 +19,7 @@ export const buildWeekShortcutSections = ({
     shortcuts: [
       { k: "c", label: "Create timed event" },
       { k: "a", label: "Create all-day event" },
+      { k: "Arrow keys", label: "Move draft event" },
       { k: "I", label: "Focus calendar event" },
       { k: "M", label: "Edit calendar event" },
       { k: "Shift+w", label: "Create Someday week event" },

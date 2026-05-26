@@ -20,7 +20,11 @@ import {
 import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import { getCategory } from "@web/common/utils/event/event.util";
-import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import {
+  EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE,
+  EVENT_FORM_TITLE_INPUT_NAME,
+  isComboboxInteraction,
+} from "@web/common/utils/form/form.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
@@ -51,7 +55,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     onDelete,
     onSubmit,
     onDuplicate,
+    onTitleCommit,
     setEvent,
+    titleEditingResetKey,
+    titleInputRef,
     isDraft,
     isExistingEvent,
     ...props
@@ -61,6 +68,8 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     const priorityColor = colorByPriority[priority];
     const category = getCategory(event);
     const latestEventRef = useRef(event);
+    const currentTitleEditingResetKey = titleEditingResetKey ?? event._id;
+    const previousTitleEditingResetKeyRef = useRef(currentTitleEditingResetKey);
 
     /********
      * State
@@ -72,6 +81,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     const [isFormOpen, setIsFormOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
+    const [isTitleEditingStarted, setIsTitleEditingStarted] = useState(false);
     const [startTime, setStartTime] = useState<SelectOption<string>>({
       label: "12 AM",
       value: "12:00 AM",
@@ -99,8 +109,19 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     );
 
     useEffect(() => {
-      setLatestEvent(event || {});
+      latestEventRef.current = event;
+    }, [event]);
 
+    useEffect(() => {
+      if (
+        previousTitleEditingResetKeyRef.current !== currentTitleEditingResetKey
+      ) {
+        setIsTitleEditingStarted(false);
+        previousTitleEditingResetKeyRef.current = currentTitleEditingResetKey;
+      }
+    }, [currentTitleEditingResetKey]);
+
+    useEffect(() => {
       const dt = getFormDates(
         event.startDate as string,
         event.endDate as string,
@@ -110,9 +131,11 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setDisplayEndDate(dayjs(dt.displayEndDate).toDate());
       setEndTime(dt.endTime);
       setSelectedEndDate(dt.endDate);
+    }, [event.startDate, event.endDate]);
 
+    useEffect(() => {
       setIsFormOpen(true);
-    }, [event, setLatestEvent]);
+    }, []);
 
     /***********
      * Handlers
@@ -122,6 +145,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
         e: React.ChangeEvent<T>,
       ) => {
+        if (fieldName === "title" && !isTitleEditingStarted) {
+          setIsTitleEditingStarted(true);
+        }
+
         onSetEventField({ [fieldName]: e.target.value });
       };
 
@@ -158,6 +185,24 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         e.preventDefault();
         onSubmitForm();
       }
+    };
+
+    const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+      if (
+        isDraft &&
+        onTitleCommit &&
+        e.key === "Enter" &&
+        !e.metaKey &&
+        !e.ctrlKey
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsTitleEditingStarted(false);
+        onTitleCommit();
+        return;
+      }
+
+      handleIgnoredKeys(e);
     };
 
     const onSubmitForm = () => {
@@ -236,6 +281,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     useAppHotkey(
       "Enter",
       (keyboardEvent) => {
+        if (isDraft) {
+          return;
+        }
+
         if (isComboboxInteraction(keyboardEvent)) {
           return;
         }
@@ -314,10 +363,14 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
         <StyledTitle
           autoFocus
+          {...(isTitleEditingStarted
+            ? { [EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE]: "true" }
+            : {})}
           onChange={onChangeEventTextField("title")}
-          onKeyDown={handleIgnoredKeys}
+          onKeyDown={handleTitleKeyDown}
           placeholder="Title"
-          name="Event Title"
+          name={EVENT_FORM_TITLE_INPUT_NAME}
+          ref={titleInputRef}
           underlineColor={priorityColor}
           value={title ?? ""}
         />
