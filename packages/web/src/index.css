@@ -77,6 +77,8 @@
   --color-white-100: hsl(0 0 100);
 
   /* Animations */
+  --animate-account-sync-status-in: accountSyncStatusIn 160ms
+    cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-progress-slide: progressSlide 2s ease-out infinite;
   --animate-sync-dot-pulse: syncDotPulse 2.4s ease-in-out infinite;
   --animate-someday-commit-acknowledge: somedayCommitAcknowledge 260ms
@@ -89,6 +91,12 @@
     cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-someday-commit-time-fade: somedayCommitTimeFade 200ms
     cubic-bezier(0.16, 1, 0.3, 1) 180ms both;
+  /* Sidebar someday rows fading in once on cold start. Applied per-row to a
+     freshly-mounted element so the browser plays it as a real mount animation
+     (compositor-driven opacity, not blocked by load-time main-thread work).
+     Deliberately slow so it reads as a gentle fade rather than a pop. */
+  --animate-someday-cold-fade-in: somedayColdFadeIn 600ms
+    cubic-bezier(0.16, 1, 0.3, 1) both;
 
   @keyframes progressSlide {
     0% {
@@ -96,6 +104,17 @@
     }
     100% {
       width: 600%;
+    }
+  }
+
+  @keyframes accountSyncStatusIn {
+    from {
+      opacity: 0;
+      transform: translateY(2px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
     }
   }
 
@@ -138,6 +157,15 @@
       opacity: 1;
     }
   }
+
+  @keyframes somedayColdFadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -145,6 +173,7 @@
     --animate-someday-commit-acknowledge: none;
     --animate-someday-commit-title-rise: none;
     --animate-someday-commit-time-fade: none;
+    --animate-someday-cold-fade-in: none;
   }
 }
 

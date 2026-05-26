@@ -18,6 +18,8 @@ export interface Props {
   event: Schema_Event;
   index: number;
   isDrafting: boolean;
+  /** Fade this row in on mount (cold-start first appearance only). */
+  animateEnter?: boolean;
 }
 
 const shouldReduceMotion = () =>
@@ -114,9 +116,13 @@ export const SomedayEventItem: FC<Props> = ({
   event,
   isDrafting,
   index,
+  animateEnter = false,
 }) => {
   const isDraftingThisEvent =
     isDrafting && (draftId === event._id || !event._id);
+  // Capture at mount so the fade plays exactly once for rows that appear during
+  // the cold-start batch, and never replays on re-render or reorder.
+  const enterAnimationRef = useRef(animateEnter);
   const layoutAnimationRef = useSomedayRowLayoutAnimation();
   const { actions, setters, state } = useSidebarContext();
   const { start, end } = useAppSelector(selectDatesInView);
@@ -130,7 +136,12 @@ export const SomedayEventItem: FC<Props> = ({
   });
 
   return (
-    <div ref={layoutAnimationRef}>
+    <div
+      className={
+        enterAnimationRef.current ? "animate-someday-cold-fade-in" : undefined
+      }
+      ref={layoutAnimationRef}
+    >
       <SomedayEventContainer
         category={category}
         event={event}

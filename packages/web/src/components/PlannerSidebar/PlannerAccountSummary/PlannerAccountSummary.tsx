@@ -1,62 +1,121 @@
 import { InfoIcon } from "@phosphor-icons/react";
 import { type FC, useCallback } from "react";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
+import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
 const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save changes";
+const SYNCING_STATUS_LABEL = "Syncing...";
+
+type SyncStatus = {
+  label: string;
+  isHealthy: boolean;
+  isLoading?: boolean;
+} | null;
+
+const getSyncStatus = (state: GoogleUiState): SyncStatus => {
+  switch (state) {
+    case "HEALTHY":
+      return { label: "Synced with Google", isHealthy: true };
+    case "IMPORTING":
+    case "repairing":
+    case "checking":
+      return {
+        label: SYNCING_STATUS_LABEL,
+        isHealthy: false,
+        isLoading: state === "checking",
+      };
+    case "RECONNECT_REQUIRED":
+      return { label: "Reconnect needed", isHealthy: false };
+    case "ATTENTION":
+      return { label: "Repair needed", isHealthy: false };
+    default:
+      return null;
+  }
+};
 
 export const PlannerAccountSummary: FC = () => {
   const { email } = useUser();
+
+  if (!email) {
+    return <TemporaryAccountSummary />;
+  }
+
+  return <AuthenticatedAccountSummary email={email} />;
+};
+
+const TemporaryAccountSummary: FC = () => {
   const { openModal } = useAuthModal();
-  const isTemporaryAccount = !email;
-  const accountLabel = email ?? "Temporary account";
+  const accountLabel = "Temporary account";
   const handleOpenSignUp = useCallback(() => {
     openModal("signUp");
   }, [openModal]);
 
-  if (isTemporaryAccount) {
-    return (
-      <div className="border-border-primary border-b px-1 pb-3">
-        <button
-          aria-label={`${accountLabel}. ${TEMPORARY_ACCOUNT_MESSAGE}`}
-          className="group flex w-full min-w-0 items-center gap-2 py-1 text-left text-text-light transition-colors duration-150 hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
-          onClick={handleOpenSignUp}
-          title={TEMPORARY_ACCOUNT_MESSAGE}
-          type="button"
-        >
-          <span className="flex size-5 shrink-0 items-center justify-center text-accent-primary">
-            <InfoIcon aria-hidden="true" size={15} weight="bold" />
+  return (
+    <div className="shrink-0 border-border-primary border-t px-4 py-2">
+      <button
+        aria-label={`${accountLabel}. ${TEMPORARY_ACCOUNT_MESSAGE}`}
+        className="group flex w-full min-w-0 items-center gap-2 text-left text-text-light transition-colors duration-150 hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+        onClick={handleOpenSignUp}
+        title={TEMPORARY_ACCOUNT_MESSAGE}
+        type="button"
+      >
+        <span className="flex size-5 shrink-0 items-center justify-center text-accent-primary">
+          <InfoIcon aria-hidden="true" size={15} weight="bold" />
+        </span>
+        <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
+          <span className="truncate font-normal text-text-light text-xs leading-tight">
+            {accountLabel}
           </span>
-          <span className="flex min-w-0 flex-1 items-baseline gap-1.5">
-            <span className="truncate font-normal text-text-light text-xs leading-tight">
-              {accountLabel}
-            </span>
-            <span
-              aria-hidden="true"
-              className="shrink-0 text-text-light-inactive text-xs"
-            >
-              ·
-            </span>
-            <span className="shrink-0 font-medium text-accent-primary text-xs leading-tight transition-colors duration-150 group-hover:text-text-lighter">
-              Sign up
-            </span>
+          <span
+            aria-hidden="true"
+            className="shrink-0 text-text-light-inactive text-xs"
+          >
+            ·
           </span>
-        </button>
-      </div>
-    );
-  }
+          <span className="shrink-0 font-medium text-accent-primary text-xs leading-tight transition-colors duration-150 group-hover:text-text-lighter">
+            Sign up
+          </span>
+        </span>
+      </button>
+    </div>
+  );
+};
+
+const AuthenticatedAccountSummary: FC<{ email: string }> = ({ email }) => {
+  const { state } = useConnectGoogle();
+  const accountLabel = email;
+  const syncStatus = getSyncStatus(state);
 
   return (
     <div
-      className="flex min-w-0 items-center gap-2 border-border-primary border-b px-1 pb-3 text-text-light"
+      className="flex w-full min-w-0 shrink-0 flex-col border-border-primary border-t px-4 py-2 text-text-light"
       title={accountLabel}
     >
       <span
-        className="min-w-0 flex-1 truncate font-normal text-text-light text-xs leading-tight"
+        className="truncate font-normal text-text-light text-xs leading-tight"
         translate="no"
       >
         {accountLabel}
       </span>
+      {syncStatus ? (
+        <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-text-light-inactive leading-tight motion-safe:animate-account-sync-status-in">
+          {syncStatus.isHealthy ? (
+            <span
+              aria-hidden="true"
+              className="size-1.5 shrink-0 rounded-full bg-status-success"
+            />
+          ) : null}
+          {syncStatus.isLoading ? (
+            <span
+              aria-hidden="true"
+              className="size-2 shrink-0 animate-spin rounded-full border border-text-light-inactive/40 border-t-text-lighter motion-reduce:animate-none"
+            />
+          ) : null}
+          <span className="truncate">{syncStatus.label}</span>
+        </span>
+      ) : null}
     </div>
   );
 };

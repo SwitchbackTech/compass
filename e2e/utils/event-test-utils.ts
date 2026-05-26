@@ -286,7 +286,8 @@ export const openSomedayEventFormWithMouse = async (
   section: SomedaySection,
 ) => {
   await ensureSidebarOpen(page);
-  const addButtonName = section === "week" ? "Add to week" : "Add to month";
+  const addButtonName =
+    section === "week" ? "Add item to week" : "Add item to month";
   await page
     .locator("#sidebar")
     .getByRole("button", { name: addButtonName })

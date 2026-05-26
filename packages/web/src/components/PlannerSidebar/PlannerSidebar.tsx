@@ -51,8 +51,6 @@ export function PlannerSidebar({
           selectedDate={calendarDate}
         />
 
-        <PlannerAccountSummary />
-
         {showSomedayEventSections ? (
           <section aria-label="Someday events">
             <SomedayEventSections
@@ -63,6 +61,8 @@ export function PlannerSidebar({
           </section>
         ) : null}
       </div>
+
+      <PlannerAccountSummary />
 
       <PlannerSidebarActions
         isShortcutsOpen={isShortcutsOpen}

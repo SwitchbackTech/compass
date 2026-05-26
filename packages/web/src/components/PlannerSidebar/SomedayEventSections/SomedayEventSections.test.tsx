@@ -11,8 +11,24 @@ mock.module("@web/components/AbsoluteOverflowLoader", () => ({
 
 mock.module("@web/store/store.hooks", () => ({
   useAppDispatch: () => mock(),
-  useAppSelector: () => true,
+  useAppSelector: () => 0,
 }));
+
+mock.module(
+  "@web/components/PlannerSidebar/draft/context/useSidebarContext",
+  () => ({
+    useSidebarContext: () => ({
+      state: {
+        somedayEvents: {
+          columns: {
+            weekEvents: { eventIds: [] },
+            monthEvents: { eventIds: [] },
+          },
+        },
+      },
+    }),
+  }),
+);
 
 mock.module("./SomedayWeekSection/SomedayWeekSection", () => ({
   SomedayWeekSection: () => <section>Week someday events</section>,
@@ -39,6 +55,11 @@ describe("SomedayEventSections", () => {
     expect(
       screen.getByRole("heading", { name: "This Month" }),
     ).toBeInTheDocument();
+    expect(
+      screen
+        .getByRole("heading", { name: "This Month" })
+        .parentElement?.classList.contains("min-h-[18px]"),
+    ).toBe(true);
     expect(screen.getByText("Someday events")).toBeInTheDocument();
     expect(
       screen.queryByTestId("sidebar-loading-overlay"),

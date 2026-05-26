@@ -1,0 +1,420 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Compass — Planner Sidebar redesign explorations</title>
+<!-- Phosphor icon font (allowed icon family; matches the app's @phosphor-icons/react) -->
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/regular/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/bold/style.css" />
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@2.1.1/src/fill/style.css" />
+<style>
+  /* ---- Real Compass theme tokens (from packages/web/src/index.css) ---- */
+  :root {
+    --bg: hsl(222 28% 7%);                 /* page bg-primary */
+    --panel: hsl(220 11% 12%);             /* sidebar panel over bg (approx of translucent panel-bg) */
+    --panel-2: hsl(220 11% 14%);           /* slightly lifted block surface */
+    --accent: hsl(202 100% 67%);           /* accent-primary, electric blue. LOCKED, one accent. */
+    --text-light: hsl(47 7% 73%);          /* warm gray body */
+    --text-lighter: hsl(0 0% 100%);        /* headings */
+    --text-inactive: hsla(208 13% 71% / 0.55);
+    --border: hsla(219 18% 34% / 0.28);
+    --radius: 4px;
+
+    /* someday priority tints (colorByPriority) */
+    --work: hsl(196 45% 78%);
+    --relations: hsl(163 44% 67%);
+    --self: hsl(205 36% 62%);
+
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text-light);
+    padding: 40px 32px 80px;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page-head { max-width: 1240px; margin: 0 auto 28px; }
+  .page-head h1 { color: var(--text-lighter); font-size: 20px; font-weight: 600; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .page-head p { margin: 0; font-size: 13px; color: var(--text-light); max-width: 70ch; line-height: 1.6; }
+  .page-head code { background: var(--panel-2); padding: 1px 5px; border-radius: 3px; font-size: 12px; color: var(--text-lighter); }
+
+  .row {
+    display: flex;
+    gap: 28px;
+    align-items: flex-start;
+    max-width: 1240px;
+    margin: 0 auto;
+    overflow-x: auto;
+    padding-bottom: 12px;
+  }
+
+  .col { flex: 0 0 auto; width: 285px; }
+  .col-label { margin-bottom: 12px; }
+  .col-label .tag { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--text-inactive); }
+  .col-label h2 { margin: 2px 0 0; color: var(--text-lighter); font-size: 15px; font-weight: 600; }
+  .col-label.current h2::after { content: " (today)"; color: var(--text-inactive); font-weight: 400; font-size: 12px; }
+
+  .notes { margin-top: 14px; font-size: 12px; line-height: 1.55; }
+  .notes li { margin-bottom: 6px; color: var(--text-light); }
+  .notes li::marker { color: var(--accent); }
+  .notes ul { padding-left: 16px; margin: 0; }
+
+  /* ---- Sidebar shell ---- */
+  .sidebar {
+    width: 285px;
+    height: 700px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;            /* purely to frame the mockup; the real one is full-bleed */
+    color: var(--text-light);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .sb-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 18px 16px 16px; display: flex; flex-direction: column; }
+
+  /* ---- Calendar (shared) ---- */
+  .cal-head { display: flex; align-items: center; justify-content: space-between; padding: 0 2px 12px; }
+  .cal-head .m { color: var(--text-lighter); font-size: 16px; font-weight: 500; }
+  .cal-head .collapse { color: var(--text-light); font-size: 18px; cursor: pointer; line-height: 0; opacity: .85; transition: color .15s; }
+  .cal-head .collapse:hover { color: var(--text-lighter); }
+  .dow { display: grid; grid-template-columns: repeat(7, 1fr); margin-bottom: 2px; }
+  .dow span { text-align: center; font-size: 10px; color: var(--text-inactive); padding: 4px 0; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+  .cal-grid .wk { display: contents; }
+  .day { position: relative; aspect-ratio: 1; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 300; color: var(--text-light); border-radius: var(--radius); cursor: pointer; z-index: 1; }
+  .day.out { color: var(--text-inactive); }
+  .day:hover { background: hsla(0 0% 100% / 0.06); }
+  .day.sel { color: hsl(222 28% 7%); font-weight: 600; }
+  .day.sel::before { content: ""; position: absolute; inset: 2px; border-radius: var(--radius); background: var(--accent); z-index: -1; }
+  .week-row { position: relative; display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; }
+  .week-row.selweek::before { content: ""; position: absolute; inset: 0 -4px; border-radius: var(--radius); background: hsla(221 9% 37% / 0.5); z-index: 0; }
+  .week-row.selweek .day { z-index: 2; }
+
+  /* ---- Someday event row (shared base) ---- */
+  .ev { display: flex; align-items: center; gap: 8px; height: 32px; padding: 4px 8px; border-radius: 2px; font-size: 12px; color: var(--text-lighter); margin: 2px 0; cursor: grab; transition: background-color .2s; }
+  .ev:hover { filter: brightness(1.12); }
+  .ev .dot { width: 7px; height: 7px; border-radius: 50%; flex: 0 0 auto; }
+  .ev .t { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .ev.work { background: color-mix(in srgb, var(--work) 15%, transparent); }
+  .ev.work .dot { background: var(--work); }
+  .ev.rel  { background: color-mix(in srgb, var(--relations) 15%, transparent); }
+  .ev.rel .dot { background: var(--relations); }
+  .ev.self { background: color-mix(in srgb, var(--self) 15%, transparent); }
+  .ev.self .dot { background: var(--self); }
+
+  /* ---- Footer ---- */
+  .sb-foot { flex: 0 0 auto; border-top: 1px solid var(--border); }
+  .icon-btn { width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius); color: var(--text-inactive); cursor: pointer; transition: color .15s, background-color .15s; font-size: 16px; background: none; border: 0; }
+  .icon-btn:hover { color: var(--text-lighter); background: hsla(0 0% 100% / 0.05); }
+
+  h3.sec { margin: 0; font-size: 13px; font-weight: 600; color: var(--text-lighter); }
+
+  /* ================= CURRENT ================= */
+  .v-current .acct { display: flex; align-items: center; gap: 6px; border-bottom: 1px solid var(--border); padding: 0 4px 12px; margin: 24px 0 0; font-size: 12px; }
+  .v-current .acct .i { color: var(--accent); font-size: 14px; }
+  .v-current .acct .signup { color: var(--accent); font-weight: 500; margin-left: auto; }
+  .v-current .someday { margin-top: 24px; display: flex; flex-direction: column; gap: 24px; }
+  .v-current h3.sec { font-size: 13px; }
+  .v-current .add { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 32px; margin: 4px 0; border: 1px dashed hsla(208 13% 71% / 0.4); border-radius: var(--radius); font-size: 11px; font-weight: 500; color: var(--text-light); cursor: pointer; }
+  .v-current .add:hover { border-color: var(--accent); color: var(--text-lighter); }
+  .v-current .sb-foot { height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 12px; }
+
+  /* ================= A — Refined Default ================= */
+  .v-a .someday { margin-top: 20px; display: flex; flex-direction: column; gap: 8px; }
+  .v-a .block { padding-top: 16px; border-top: 1px solid var(--border); }
+  .v-a .block:first-child { border-top: 0; padding-top: 0; }
+  .v-a .sec-row { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .v-a .count { font-size: 11px; color: var(--text-inactive); font-variant-numeric: tabular-nums; }
+  .v-a .sec-add { margin-left: auto; width: 22px; height: 22px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius); color: var(--text-inactive); opacity: 0; transition: opacity .15s, color .15s, background .15s; cursor: pointer; }
+  .v-a .block:hover .sec-add { opacity: 1; }
+  .v-a .sec-add:hover { color: var(--text-lighter); background: hsla(0 0% 100% / 0.07); }
+  /* footer identity */
+  .v-a .sb-foot { padding: 0; }
+  .v-a .identity { display: flex; align-items: center; gap: 9px; padding: 10px 14px; border-bottom: 1px solid var(--border); }
+  .v-a .avatar { width: 26px; height: 26px; border-radius: 50%; background: linear-gradient(135deg, var(--accent), hsl(196 45% 78%)); color: hsl(222 28% 7%); display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; flex: 0 0 auto; }
+  .v-a .identity .who { min-width: 0; line-height: 1.2; }
+  .v-a .identity .who .e { font-size: 12px; color: var(--text-lighter); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; }
+  .v-a .identity .who .s { font-size: 11px; color: var(--text-inactive); display: flex; align-items: center; gap: 5px; }
+  .v-a .identity .who .s .ok { width: 6px; height: 6px; border-radius: 50%; background: hsl(105 61% 62%); }
+  .v-a .actions { display: flex; align-items: center; justify-content: space-between; height: 46px; padding: 0 10px; }
+
+  /* ================= B — Sectioned & Collapsible (power) ================= */
+  .v-b .sb-scroll { padding: 14px 14px 12px; }
+  .v-b .someday { margin-top: 16px; display: flex; flex-direction: column; gap: 4px; }
+  .v-b .grp-head { display: flex; align-items: center; gap: 6px; width: 100%; background: none; border: 0; padding: 7px 6px; border-radius: var(--radius); cursor: pointer; color: var(--text-lighter); transition: background .15s; }
+  .v-b .grp-head:hover { background: hsla(0 0% 100% / 0.04); }
+  .v-b .grp-head .chev { font-size: 13px; color: var(--text-inactive); transition: transform .15s; }
+  .v-b .grp-head.closed .chev { transform: rotate(-90deg); }
+  .v-b .grp-head .lbl { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; }
+  .v-b .grp-head .badge { margin-left: auto; min-width: 18px; height: 18px; padding: 0 6px; display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-variant-numeric: tabular-nums; color: var(--text-light); background: hsla(0 0% 100% / 0.07); border-radius: 9px; }
+  .v-b .grp-body { padding: 2px 4px 8px; }
+  .v-b .ev { height: 30px; }
+  .v-b .ev .kbd { margin-left: auto; font-size: 10px; color: var(--text-inactive); opacity: 0; border: 1px solid var(--border); border-radius: 3px; padding: 1px 4px; }
+  .v-b .ev:hover .kbd { opacity: 1; }
+  .v-b .add-min { display: flex; align-items: center; gap: 7px; padding: 6px 8px; font-size: 12px; color: var(--text-inactive); cursor: pointer; border-radius: var(--radius); }
+  .v-b .add-min:hover { color: var(--text-lighter); background: hsla(0 0% 100% / 0.04); }
+  .v-b .sb-foot { display: flex; align-items: center; gap: 8px; padding: 0 10px; height: 44px; }
+  .v-b .chip { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1; }
+  .v-b .chip .avatar { width: 22px; height: 22px; border-radius: 50%; background: hsla(0 0% 100% / 0.08); color: var(--text-lighter); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; flex: 0 0 auto; }
+  .v-b .chip .meta { min-width: 0; line-height: 1.15; }
+  .v-b .chip .meta .e { font-size: 11px; color: var(--text-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block; max-width: 130px; }
+  .v-b .chip .meta .sync { font-size: 10px; color: var(--text-inactive); display: flex; align-items: center; gap: 4px; }
+  .v-b .chip .meta .sync .ok { width: 5px; height: 5px; border-radius: 50%; background: hsl(105 61% 62%); }
+
+  /* ================= C — Calm & Spacious ================= */
+  .v-c .sb-scroll { padding: 26px 20px 18px; }
+  .v-c .cal-head .m { font-size: 18px; font-weight: 500; letter-spacing: -0.01em; }
+  .v-c .someday { margin-top: 40px; display: flex; flex-direction: column; gap: 36px; }
+  .v-c .sec-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 14px; }
+  .v-c .sec-row .lbl { font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--text-inactive); }
+  .v-c .sec-row .count { font-size: 11px; color: var(--text-inactive); font-variant-numeric: tabular-nums; }
+  .v-c .sec-row .ghost-add { margin-left: auto; font-size: 15px; color: var(--text-inactive); opacity: 0; cursor: pointer; transition: opacity .15s, color .15s; line-height: 0; }
+  .v-c .grp:hover .ghost-add { opacity: 1; }
+  .v-c .sec-row .ghost-add:hover { color: var(--text-lighter); }
+  .v-c .ev { height: 34px; margin: 3px 0; background: transparent; padding: 4px 4px; border-radius: var(--radius); }
+  .v-c .ev:hover { background: hsla(0 0% 100% / 0.05); filter: none; }
+  .v-c .ev .t { color: var(--text-light); }
+  .v-c .ev:hover .t { color: var(--text-lighter); }
+  .v-c .sb-foot { border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; padding: 0 18px; height: 52px; }
+  .v-c .calm-who { display: flex; align-items: center; gap: 9px; min-width: 0; }
+  .v-c .calm-who .avatar { width: 24px; height: 24px; border-radius: 50%; background: hsla(0 0% 100% / 0.07); color: var(--text-light); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 500; flex: 0 0 auto; }
+  .v-c .calm-who .email { font-size: 12px; color: var(--text-light); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px; }
+  .v-c .foot-icons { display: flex; gap: 2px; }
+</style>
+</head>
+<body>
+  <div class="page-head">
+    <h1>Planner sidebar — three redesign directions</h1>
+    <p>
+      Product UI, dark theme locked, single electric-blue accent
+      (<code>hsl(202 100% 67%)</code>), Phosphor icons, 150ms state-only motion.
+      Shown at the real <code>285px</code> width with live theme tokens. Someday
+      events tint by priority (Work / Relations / Self). Hover the section areas
+      to reveal the add affordances.
+    </p>
+  </div>
+
+  <div class="row" id="row"></div>
+
+<script>
+  // ---- May 2026 grid; today = Tue May 26, selected week = May 24-30 ----
+  // Sunday-start. rows of {n, out, sel}
+  const weeks = [
+    [{n:26,out:1},{n:27,out:1},{n:28,out:1},{n:29,out:1},{n:30,out:1},{n:1},{n:2}],
+    [{n:3},{n:4},{n:5},{n:6},{n:7},{n:8},{n:9}],
+    [{n:10},{n:11},{n:12},{n:13},{n:14},{n:15},{n:16}],
+    [{n:17},{n:18},{n:19},{n:20},{n:21},{n:22},{n:23}],
+    [{n:24,selweek:1},{n:25,selweek:1},{n:26,sel:1,selweek:1},{n:27,selweek:1},{n:28,selweek:1},{n:29,selweek:1},{n:30,selweek:1}],
+    [{n:31},{n:1,out:1},{n:2,out:1},{n:3,out:1},{n:4,out:1},{n:5,out:1},{n:6,out:1}],
+  ];
+  const dows = ["Su","Mo","Tu","We","Th","Fr","Sa"];
+
+  function calendar(monthLabel) {
+    const dow = dows.map(d => `<span>${d}</span>`).join("");
+    const grid = weeks.map(w => {
+      const sw = w.some(d => d.selweek) ? " selweek" : "";
+      const days = w.map(d =>
+        `<div class="day${d.out?" out":""}${d.sel?" sel":""}">${d.n}</div>`
+      ).join("");
+      return `<div class="week-row${sw}">${days}</div>`;
+    }).join("");
+    return `
+      <div class="cal-head">
+        <span class="m">${monthLabel}</span>
+        <i class="ph ph-sidebar-simple collapse" title="Close sidebar"></i>
+      </div>
+      <div class="dow">${dow}</div>
+      <div class="cal-grid">${grid}</div>`;
+  }
+
+  // realistic someday content
+  const thisWeek = [
+    {t:"Draft Q3 roadmap", p:"work"},
+    {t:"Reply to Mariana re: lease", p:"rel"},
+    {t:"30-min strength session", p:"self"},
+  ];
+  const thisMonth = [
+    {t:"Renew compass.so domain", p:"work"},
+    {t:"Read 'The Mom Test'", p:"self"},
+    {t:"Book Lina's birthday dinner", p:"rel"},
+    {t:"Cancel unused subscriptions", p:"work"},
+  ];
+  const ev = (e, kbd) => `<div class="ev ${e.p}"><span class="dot"></span><span class="t">${e.t}</span>${kbd?'<span class="kbd">↵</span>':''}</div>`;
+
+  // ---------- CURRENT ----------
+  function current() {
+    return `<div class="sidebar v-current">
+      <div class="sb-scroll">
+        ${calendar("May 2026")}
+        <div class="acct" title="alex@compass.so">
+          <span class="t" style="color:var(--text-light)">alex@compass.so</span>
+        </div>
+        <div class="someday">
+          <div>
+            <h3 class="sec" style="margin-bottom:12px">May 24 - 30</h3>
+            ${thisWeek.map(e=>ev(e)).join("")}
+            <div class="add"><i class="ph-bold ph-plus"></i> Add to this week</div>
+          </div>
+          <div>
+            <h3 class="sec" style="margin-bottom:12px">This month</h3>
+            ${thisMonth.map(e=>ev(e)).join("")}
+            <div class="add"><i class="ph-bold ph-plus"></i> Add to this month</div>
+          </div>
+        </div>
+      </div>
+      <div class="sb-foot">
+        <button class="icon-btn"><i class="ph ph-keyboard"></i></button>
+        <button class="icon-btn"><i class="ph ph-command"></i></button>
+      </div>
+    </div>`;
+  }
+
+  // ---------- A — Refined Default ----------
+  function variantA() {
+    const block = (label, count, items) => `
+      <div class="block">
+        <div class="sec-row">
+          <h3 class="sec">${label}</h3>
+          <span class="count">${count}</span>
+          <span class="sec-add" title="Add"><i class="ph-bold ph-plus"></i></span>
+        </div>
+        ${items.map(e=>ev(e)).join("")}
+      </div>`;
+    return `<div class="sidebar v-a">
+      <div class="sb-scroll">
+        ${calendar("May 2026")}
+        <div class="someday">
+          ${block("This Week", "3", thisWeek)}
+          ${block("This Month", "4", thisMonth)}
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="identity">
+          <span class="avatar">A</span>
+          <span class="who">
+            <span class="e">alex@compass.so</span>
+            <span class="s"><span class="ok"></span> Synced with Google</span>
+          </span>
+        </div>
+        <div class="actions">
+          <button class="icon-btn"><i class="ph ph-keyboard"></i></button>
+          <button class="icon-btn"><i class="ph ph-command"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  // ---------- B — Sectioned & Collapsible ----------
+  function variantB() {
+    const group = (label, count, items, closed) => `
+      <div>
+        <button class="grp-head${closed?" closed":""}">
+          <i class="ph-bold ph-caret-down chev"></i>
+          <span class="lbl">${label}</span>
+          <span class="badge">${count}</span>
+        </button>
+        ${closed ? "" : `<div class="grp-body">
+          ${items.map(e=>ev(e,true)).join("")}
+          <div class="add-min"><i class="ph ph-plus"></i> Add item</div>
+        </div>`}
+      </div>`;
+    return `<div class="sidebar v-b">
+      <div class="sb-scroll">
+        ${calendar("May 2026")}
+        <div class="someday">
+          ${group("This Week", "3", thisWeek, false)}
+          ${group("This Month", "4", thisMonth, false)}
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="chip">
+          <span class="avatar">A</span>
+          <span class="meta">
+            <span class="e">alex@compass.so</span>
+            <span class="sync"><span class="ok"></span> Synced 2m ago</span>
+          </span>
+        </div>
+        <button class="icon-btn"><i class="ph ph-keyboard"></i></button>
+        <button class="icon-btn"><i class="ph ph-command"></i></button>
+      </div>
+    </div>`;
+  }
+
+  // ---------- C — Calm & Spacious ----------
+  function variantC() {
+    const grp = (label, count, items) => `
+      <div class="grp">
+        <div class="sec-row">
+          <span class="lbl">${label}</span>
+          <span class="count">${count}</span>
+          <i class="ph ph-plus ghost-add" title="Add"></i>
+        </div>
+        ${items.map(e=>ev(e)).join("")}
+      </div>`;
+    return `<div class="sidebar v-c">
+      <div class="sb-scroll">
+        ${calendar("May 2026")}
+        <div class="someday">
+          ${grp("This Week", "3", thisWeek)}
+          ${grp("This Month", "4", thisMonth)}
+        </div>
+      </div>
+      <div class="sb-foot">
+        <div class="calm-who">
+          <span class="avatar">A</span>
+          <span class="email">alex@compass.so</span>
+        </div>
+        <div class="foot-icons">
+          <button class="icon-btn"><i class="ph ph-keyboard"></i></button>
+          <button class="icon-btn"><i class="ph ph-command"></i></button>
+        </div>
+      </div>
+    </div>`;
+  }
+
+  const cols = [
+    { tag:"Baseline", title:"Current", cls:"current", build:current, notes:[
+      "Identity wedged mid-scroll between calendar and lists",
+      "Plain text headers, no counts",
+      "Always-on dashed add buttons",
+      "Two icons marooned at footer edges",
+    ]},
+    { tag:"Direction A", title:"Refined Default", cls:"", build:variantA, notes:[
+      "Identity moved to footer with sync status dot",
+      "Section headers gain counts + hover-reveal + button",
+      "Divider rhythm replaces single border",
+      "Lowest-risk evolution of current structure",
+    ]},
+    { tag:"Direction B", title:"Sectioned & Collapsible", cls:"", build:variantB, notes:[
+      "Collapsible groups with chevron + count badge",
+      "Denser rows, ↵ keyboard hint on hover",
+      "Compact account chip + sync time in footer",
+      "Power-user / Raycast density",
+    ]},
+    { tag:"Direction C", title:"Calm & Spacious", cls:"", build:variantC, notes:[
+      "Generous whitespace, larger month label",
+      "Quiet uppercase labels, grouping by space not borders",
+      "Single ghost + on section hover, no dashed buttons",
+      "Minimal footer identity",
+    ]},
+  ];
+
+  document.getElementById("row").innerHTML = cols.map(c => `
+    <div class="col">
+      <div class="col-label ${c.cls}">
+        <span class="tag">${c.tag}</span>
+        <h2>${c.title}</h2>
+      </div>
+      ${c.build()}
+      <div class="notes"><ul>${c.notes.map(n=>`<li>${n}</li>`).join("")}</ul></div>
+    </div>
+  `).join("");
+</script>
+</body>
+</html>

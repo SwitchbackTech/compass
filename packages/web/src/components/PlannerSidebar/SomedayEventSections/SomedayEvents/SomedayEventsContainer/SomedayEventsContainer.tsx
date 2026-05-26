@@ -17,8 +17,10 @@ import { useSomedayDropTargetRegistrationRef } from "@web/components/PlannerSide
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEventItem } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventItem/SomedayEventItem";
 import { AddSomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
+import { useSomedayColdStartReserve } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/useSomedayColdStartReserve";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
+import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 
 const getColName = (category: SomedayInteractionCategory) => {
@@ -27,7 +29,9 @@ const getColName = (category: SomedayInteractionCategory) => {
     : COLUMN_MONTH;
 };
 
-const SOMEDAY_EVENT_ROW_SLOT_HEIGHT = 36;
+// Drag drop zones keep a little extra row allowance beyond the rendered row
+// footprint so the target does not feel cramped while hovering.
+const SOMEDAY_DROP_ZONE_ROW_SLOT_HEIGHT = 36;
 const SOMEDAY_DROP_ZONE_BASE_HEIGHT = 44;
 
 const getSomedayEventLimit = (category: SomedayInteractionCategory) =>
@@ -35,13 +39,16 @@ const getSomedayEventLimit = (category: SomedayInteractionCategory) =>
     ? SOMEDAY_WEEKLY_LIMIT
     : SOMEDAY_MONTHLY_LIMIT;
 
+const getAddTargetLabel = (category: SomedayInteractionCategory) =>
+  category === Categories_Event.SOMEDAY_MONTH ? "month" : "week";
+
 const getActiveDropZoneHeight = (
   eventCount: number,
   category: SomedayInteractionCategory,
 ) =>
   SOMEDAY_DROP_ZONE_BASE_HEIGHT +
   Math.min(eventCount, getSomedayEventLimit(category)) *
-    SOMEDAY_EVENT_ROW_SLOT_HEIGHT;
+    SOMEDAY_DROP_ZONE_ROW_SLOT_HEIGHT;
 
 const getSomedayEvents = (
   category: SomedayInteractionCategory,
@@ -60,6 +67,31 @@ export interface Props {
   isDraftingNew: boolean;
 }
 
+interface AddSomedayEventWithTooltipProps {
+  ariaLabel: string;
+  category: SomedayInteractionCategory;
+  onCreate: () => void;
+}
+
+const AddSomedayEventWithTooltip: FC<AddSomedayEventWithTooltipProps> = ({
+  ariaLabel,
+  category,
+  onCreate,
+}) => {
+  const shortcut =
+    category === Categories_Event.SOMEDAY_MONTH ? "Shift+M" : "Shift+W";
+
+  return (
+    <TooltipWrapper
+      description={`Add to ${getAddTargetLabel(category)}`}
+      placement="right"
+      shortcut={shortcut}
+    >
+      <AddSomedayEvent ariaLabel={ariaLabel} onCreate={onCreate} />
+    </TooltipWrapper>
+  );
+};
+
 export const SomedayEventsContainer: FC<Props> = ({
   category,
   isDraftingNew,
@@ -72,34 +104,22 @@ export const SomedayEventsContainer: FC<Props> = ({
   });
 
   const events = getSomedayEvents(category, state.somedayEvents);
+  const isProcessing = Boolean(
+    useAppSelector(selectIsGetSomedayEventsProcessing),
+  );
+  const { reservedMinHeight, shouldAnimateRowEntrance } =
+    useSomedayColdStartReserve(colName, events.length, isProcessing);
+
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;
   const isBlockedDropTarget = state.blockedSomedayDropColumn === colName;
-  const addLabel =
-    category === Categories_Event.SOMEDAY_MONTH
-      ? "Add to month"
-      : "Add to week";
+  const addLabel = `Add item to ${getAddTargetLabel(category)}`;
   const activeDropZoneStyle: React.CSSProperties | undefined = state.isDragging
     ? {
         boxSizing: "border-box",
         height: getActiveDropZoneHeight(events.length, category),
       }
     : undefined;
-
-  // Render add someday event tooltip
-  const renderWithTooltip = (children: React.ReactNode) => {
-    return (
-      <TooltipWrapper
-        description={addLabel}
-        placement="right"
-        shortcut={
-          category === Categories_Event.SOMEDAY_MONTH ? "Shift+M" : "Shift+W"
-        }
-      >
-        {children}
-      </TooltipWrapper>
-    );
-  };
 
   return (
     <DropZone
@@ -110,25 +130,31 @@ export const SomedayEventsContainer: FC<Props> = ({
       className={state.isDragging ? "overflow-hidden" : undefined}
       style={activeDropZoneStyle}
     >
-      {events.map((event, index) => (
-        <SomedayEventItem
-          category={category}
-          draftId={state.draft?._id || ID_SOMEDAY_DRAFT}
-          event={event}
-          index={index}
-          isDrafting={state.draft?._id === event._id}
-          key={event?._id || "draft"}
-        />
-      ))}
+      <div
+        className="flex flex-col"
+        data-testid={`someday-rows-${colName}`}
+        style={reservedMinHeight ? { minHeight: reservedMinHeight } : undefined}
+      >
+        {events.map((event, index) => (
+          <SomedayEventItem
+            animateEnter={shouldAnimateRowEntrance}
+            category={category}
+            draftId={state.draft?._id || ID_SOMEDAY_DRAFT}
+            event={event}
+            index={index}
+            isDrafting={state.draft?._id === event._id}
+            key={event?._id || "draft"}
+          />
+        ))}
+      </div>
 
       {!isDraftingNew && !state.isDragging && (
         <div className="opacity-100">
-          {renderWithTooltip(
-            <AddSomedayEvent
-              ariaLabel={addLabel}
-              onCreate={() => actions.createSomedayDraft(category)}
-            />,
-          )}
+          <AddSomedayEventWithTooltip
+            ariaLabel={addLabel}
+            category={category}
+            onCreate={() => actions.createSomedayDraft(category)}
+          />
         </div>
       )}
 
