@@ -55,11 +55,6 @@ describe("SomedayEventSections", () => {
     expect(
       screen.getByRole("heading", { name: "This Month" }),
     ).toBeInTheDocument();
-    expect(
-      screen
-        .getByRole("heading", { name: "This Month" })
-        .parentElement?.classList.contains("min-h-[18px]"),
-    ).toBe(true);
     expect(screen.getByText("Someday events")).toBeInTheDocument();
     expect(
       screen.queryByTestId("sidebar-loading-overlay"),

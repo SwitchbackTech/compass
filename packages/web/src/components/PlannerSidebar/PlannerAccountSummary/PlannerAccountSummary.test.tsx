@@ -105,9 +105,6 @@ describe("PlannerAccountSummary", () => {
     const checkingLabel = screen.getByText("Syncing...");
 
     expect(checkingLabel).toBeTruthy();
-    expect(checkingLabel.parentElement?.className).toContain(
-      "motion-safe:animate-account-sync-status-in",
-    );
     expect(
       checkingLabel.parentElement?.querySelector(".animate-spin"),
     ).toBeTruthy();

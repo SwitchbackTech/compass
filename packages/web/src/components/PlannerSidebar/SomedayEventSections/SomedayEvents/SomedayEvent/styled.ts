@@ -2,8 +2,8 @@ import styled from "styled-components";
 import { type Priorities } from "@core/constants/core.constants";
 import { colorByPriority } from "@web/common/styles/theme.util";
 
-export const SOMEDAY_EVENT_ROW_HEIGHT = 30;
-export const SOMEDAY_EVENT_ROW_VERTICAL_MARGIN = 2;
+const SOMEDAY_EVENT_ROW_HEIGHT = 30;
+const SOMEDAY_EVENT_ROW_VERTICAL_MARGIN = 2;
 export const SOMEDAY_EVENT_ROW_FOOTPRINT =
   SOMEDAY_EVENT_ROW_HEIGHT + SOMEDAY_EVENT_ROW_VERTICAL_MARGIN * 2;
 

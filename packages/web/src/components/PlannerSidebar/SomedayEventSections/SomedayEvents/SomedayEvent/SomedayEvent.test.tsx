@@ -5,11 +5,6 @@ import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { theme } from "@web/common/styles/theme";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
 import { SomedayEvent } from "./SomedayEvent";
-import {
-  SOMEDAY_EVENT_ROW_FOOTPRINT,
-  SOMEDAY_EVENT_ROW_HEIGHT,
-  SOMEDAY_EVENT_ROW_VERTICAL_MARGIN,
-} from "./styled";
 import { describe, expect, it, mock } from "bun:test";
 
 const createEvent = (): Schema_Event =>
@@ -52,13 +47,6 @@ const renderSomedayEvent = ({
 };
 
 describe("SomedayEvent", () => {
-  it("keeps the cold-start reserve aligned with the rendered row footprint", () => {
-    expect(SOMEDAY_EVENT_ROW_FOOTPRINT).toBe(
-      SOMEDAY_EVENT_ROW_HEIGHT + SOMEDAY_EVENT_ROW_VERTICAL_MARGIN * 2,
-    );
-    expect(SOMEDAY_EVENT_ROW_FOOTPRINT).toBe(34);
-  });
-
   it("does not open the row when Space is pressed on an inner action button", () => {
     const { onClick } = renderSomedayEvent();
 

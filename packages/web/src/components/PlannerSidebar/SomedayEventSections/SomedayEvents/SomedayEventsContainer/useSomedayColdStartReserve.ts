@@ -6,9 +6,8 @@ import {
 } from "./somedayCountCache";
 
 const COLD_START_TIMEOUT_MS = 2000;
-export const SOMEDAY_COLD_FADE_DURATION_MS = 600;
 const SETTLED_EMPTY_RELEASE_DELAY_MS = 100;
-const RESERVE_RELEASE_DELAY_MS = SOMEDAY_COLD_FADE_DURATION_MS;
+const RESERVE_RELEASE_DELAY_MS = 600;
 
 interface Result {
   reservedMinHeight: number | undefined;

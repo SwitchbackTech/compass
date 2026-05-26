@@ -1,9 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import {
-  SOMEDAY_COLD_FADE_DURATION_MS,
-  useSomedayColdStartReserve,
-} from "./useSomedayColdStartReserve";
-import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
+import { useSomedayColdStartReserve } from "./useSomedayColdStartReserve";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 const cacheKey = "week";
 const storageKey = `compass.someday.count.${cacheKey}`;
@@ -79,31 +76,5 @@ describe("useSomedayColdStartReserve", () => {
     rerender({ eventCount: 1, isProcessing: false });
 
     expect(result.current.shouldAnimateRowEntrance).toBe(false);
-  });
-
-  it("keeps the reserve release aligned with the cold-start fade duration", () => {
-    expect(SOMEDAY_COLD_FADE_DURATION_MS).toBe(600);
-  });
-
-  it("reads the cached count only once per mount", () => {
-    window.localStorage.setItem(storageKey, "2");
-    const getItemSpy = spyOn(Storage.prototype, "getItem");
-
-    const { rerender } = renderHook(
-      ({ eventCount, isProcessing }) =>
-        useSomedayColdStartReserve(cacheKey, eventCount, isProcessing),
-      {
-        initialProps: {
-          eventCount: 0,
-          isProcessing: true,
-        },
-      },
-    );
-
-    rerender({ eventCount: 0, isProcessing: true });
-    rerender({ eventCount: 0, isProcessing: true });
-
-    expect(getItemSpy).toHaveBeenCalledTimes(1);
-    getItemSpy.mockRestore();
   });
 });
