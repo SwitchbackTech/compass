@@ -11,14 +11,20 @@ import { ThemeProvider } from "styled-components";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { ID_GRID_COLUMNS_TIMED } from "@web/common/constants/web.constants";
+import {
+  ID_GRID_COLUMNS_TIMED,
+  ZIndex,
+} from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
-import { DRAFT_DURATION_MIN } from "@web/views/Week/layout.constants";
+import {
+  DECK_INDENT,
+  DRAFT_DURATION_MIN,
+} from "@web/views/Week/layout.constants";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -471,7 +477,7 @@ describe("Week calendar accessibility", () => {
 });
 
 describe("saved Week event ownership", () => {
-  it("renders overlapping saved timed events without resting stack offsets", () => {
+  it("lays overlapping saved timed events out as a left-anchored deck", () => {
     const store = createStore([
       createSavedEvent({
         _id: "early-overlap",
@@ -484,6 +490,12 @@ describe("saved Week event ownership", () => {
         endDate: "2024-01-15T19:45:00.000Z",
         startDate: "2024-01-15T19:00:00.000Z",
         title: "Late overlap",
+      }),
+      createSavedEvent({
+        _id: "solo",
+        endDate: "2024-01-15T23:00:00.000Z",
+        startDate: "2024-01-15T22:00:00.000Z",
+        title: "Solo",
       }),
     ]);
 
@@ -500,11 +512,59 @@ describe("saved Week event ownership", () => {
 
     const early = screen.getByRole("button", { name: /early overlap/i });
     const late = screen.getByRole("button", { name: /late overlap/i });
+    const solo = screen.getByRole("button", { name: /timed event: solo/i });
 
-    expect(early.getAttribute("data-week-event-overlap")).toBeNull();
-    expect(late.getAttribute("data-week-event-overlap")).toBeNull();
+    // Uniform width across the deck, but each card fanned right by DECK_INDENT.
     expect(parseFloat(early.style.width)).toBe(parseFloat(late.style.width));
-    expect(parseFloat(early.style.left)).toBe(parseFloat(late.style.left));
+    expect(parseFloat(late.style.left) - parseFloat(early.style.left)).toBe(
+      DECK_INDENT,
+    );
+
+    // Background-first painter's order: the earlier card sits behind the later.
+    expect(Number(early.style.zIndex)).toBeLessThan(Number(late.style.zIndex));
+
+    // The non-overlapping event keeps full width and the base layer.
+    expect(parseFloat(solo.style.width)).toBeGreaterThan(
+      parseFloat(early.style.width),
+    );
+    expect(Number(solo.style.zIndex)).toBe(ZIndex.LAYER_1);
+  });
+
+  it("raises a focused deck card above its group-mates", () => {
+    const store = createStore([
+      createSavedEvent({
+        _id: "back",
+        endDate: "2024-01-15T19:30:00.000Z",
+        startDate: "2024-01-15T18:30:00.000Z",
+        title: "Back overlap",
+      }),
+      createSavedEvent({
+        _id: "front",
+        endDate: "2024-01-15T19:45:00.000Z",
+        startDate: "2024-01-15T19:00:00.000Z",
+        title: "Front overlap",
+      }),
+    ]);
+
+    render(
+      <Provider store={store}>
+        <ThemeProvider theme={theme}>
+          <MainGridEvents
+            measurements={measurements}
+            weekProps={createWeekProps()}
+          />
+        </ThemeProvider>
+      </Provider>,
+    );
+
+    const back = screen.getByRole("button", { name: /back overlap/i });
+    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+
+    fireEvent.focus(back);
+    expect(Number(back.style.zIndex)).toBe(ZIndex.MAX);
+
+    fireEvent.blur(back);
+    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
   });
 
   it("keeps saved timed mouse and resize events out of the draft motion owner", () => {

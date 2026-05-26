@@ -9,6 +9,7 @@ import {
 } from "@web/common/utils/event/event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
+import { applyWeekTimedOverlapLayout } from "@web/common/utils/overlap/weekTimedOverlapLayout";
 import { type RootState } from "@web/store";
 
 type Schema_GridEvent_NoPosition = Omit<Schema_GridEvent, "position">;
@@ -53,7 +54,7 @@ export const selectGridEvents = createSelector(
       )
       .map(assembleGridEvent);
 
-    return weekEvents;
+    return applyWeekTimedOverlapLayout(weekEvents);
   },
 );
 

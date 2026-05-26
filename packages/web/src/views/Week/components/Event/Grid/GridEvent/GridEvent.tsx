@@ -7,6 +7,7 @@ import {
   type MouseEvent,
   memo,
   useMemo,
+  useState,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { brighten, darken } from "@core/util/color.utils";
@@ -15,6 +16,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { theme } from "@web/common/styles/theme";
 import {
   gridColorByPriority,
   gridHoverColorByPriority,
@@ -40,6 +42,7 @@ import {
   GRID_EVENT_TIME_LABEL_OPACITY,
   GRID_EVENT_TITLE_LINE_HEIGHT,
   MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
+  MIN_EVENT_WIDTH_FOR_TIME_LABEL,
 } from "@web/views/Week/layout.constants";
 
 interface Props {
@@ -85,6 +88,11 @@ const GridEventBase = (
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
+  // Deck overlap layout: this event is one of several stacked, left-anchored,
+  // uniform-width cards in the same day column. Focus lifts a buried card to the
+  // front so its content + focus ring are not occluded. See deck-overlap-plan.md.
+  const isDeck = Boolean(event.position.deck) && !isDraft;
+  const [isFocused, setIsFocused] = useState(false);
   // Only choreograph the text when the event id was just committed from a
   // Someday-to-grid drop. Keep the block itself visually stable so the
   // overlay-to-event handoff does not flash.
@@ -109,6 +117,8 @@ const GridEventBase = (
   );
   const isTallEnoughForTimeLabel =
     position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL;
+  const isWideEnoughForTimeLabel =
+    position.width >= MIN_EVENT_WIDTH_FOR_TIME_LABEL;
   const shouldAnimatePastCommitTimeOut =
     shouldAcknowledgeCommit && isInPast && !isDraft && isTallEnoughForTimeLabel;
 
@@ -140,6 +150,30 @@ const GridEventBase = (
           : "hover:cursor-pointer"
       : "";
 
+  // A clicked/edited (draft), dragged, or keyboard-focused card jumps above the
+  // whole deck (ZIndex.MAX = 20, below the floating form at 21). Otherwise a deck
+  // card keeps its painter's-order slot (order+1); everything else stays LAYER_1.
+  // Without this, a deck card at z=order+1 would paint over the full-width draft,
+  // so clicking a buried event would never bring it to the front.
+  const shouldFloatAboveDeck =
+    isDraft || isDragging || isResizing || (isDeck && isFocused);
+  const zIndex = shouldFloatAboveDeck
+    ? ZIndex.MAX
+    : (position.zIndex ?? ZIndex.LAYER_1);
+
+  // Dark gutter ring (matches grid bg) so stacked cards read as distinct floating
+  // tiles, plus one downward light source that intensifies on focus, and a faint
+  // top inner highlight. Applied to deck cards only; others stay visually unchanged.
+  const deckBoxShadow = (() => {
+    if (!isDeck) return undefined;
+    const ring = `0 0 0 0.75px ${theme.color.bg.primary}`;
+    const drop = isFocused
+      ? "0 6px 14px -3px rgba(0,0,0,0.55)"
+      : "0 3px 6px -2px rgba(0,0,0,0.4)";
+    const highlight = `inset 0 1px 0 rgba(255,255,255,${isFocused ? 0.1 : 0.07})`;
+    return `${ring}, ${drop}, ${highlight}`;
+  })();
+
   const eventStyle = {
     "--event-bg": bgColor,
     "--event-hover-bg": hoverBgColor,
@@ -148,7 +182,8 @@ const GridEventBase = (
     opacity: isPlaceholder ? 0.5 : undefined,
     top: position.top,
     width: position.width || 0,
-    zIndex: isDragging ? ZIndex.LAYER_5 : ZIndex.LAYER_1,
+    zIndex,
+    boxShadow: deckBoxShadow,
     filter: isDraft
       ? "drop-shadow(2px 4px 4px black)"
       : isInPast
@@ -245,6 +280,8 @@ const GridEventBase = (
 
         onEventMouseDown(event, e);
       }}
+      onFocus={isDeck ? () => setIsFocused(true) : undefined}
+      onBlur={isDeck ? () => setIsFocused(false) : undefined}
       onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
         if (!shouldExposeCalendarTarget) return;
 
@@ -271,7 +308,8 @@ const GridEventBase = (
         {!event.isAllDay && (
           <>
             {(isDraft || !isInPast || shouldAnimatePastCommitTimeOut) &&
-              isTallEnoughForTimeLabel && (
+              isTallEnoughForTimeLabel &&
+              isWideEnoughForTimeLabel && (
                 <Text
                   aria-hidden={shouldAnimatePastCommitTimeOut || undefined}
                   className={cn({

@@ -21,7 +21,22 @@ export const GRID_EVENT_TITLE_LINE_HEIGHT = "16px";
  *  Below this the label is suppressed to prevent overflow on short events.
  *  At typical hourHeight (~65px/hr): 30-min ≈ 33px (hidden), 45-min ≈ 49px (shown). */
 export const MIN_EVENT_HEIGHT_FOR_TIME_LABEL = 36;
+/** Minimum rendered event width (px) to show the time label. Narrow deck cards
+ *  suppress the label so the time string never clips mid-value. */
+export const MIN_EVENT_WIDTH_FOR_TIME_LABEL = 90;
 export const EVENT_WIDTH_MINIMUM = 80;
+
+/**
+ * Deck overlap layout (Week timed events). Overlapping cards are left-anchored,
+ * uniform width, and fanned right by a fixed indent per depth, with their true
+ * start-time tops preserved. See deck-overlap-plan.md.
+ */
+/** Px the fan shifts right per overlap depth. */
+export const DECK_INDENT = 8;
+/** Px kept open on the right of a deck so there's grid space to drag-create into. */
+export const DECK_RIGHT_RESERVE = 24;
+/** Floor width (px) for a deck card before front cards begin overlapping again. */
+export const DECK_MIN_WIDTH = 72;
 
 export const FLEX_TODAY = 21.4;
 export const FLEX_TMRW = 18.6;

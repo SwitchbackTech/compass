@@ -12,13 +12,16 @@ This PR is a Week View quality pass that prepares the calendar grid for the
 eventual shared Day/Week grid primitive work, without starting that extraction
 yet.
 
-The current branch focuses on four areas:
+The current branch focuses on five areas:
 
 1. Better keyboard and screen-reader affordances for Week calendar events.
 2. Calendar-event targeting shortcuts in Week View.
-3. Removing the timed-event stacking experiment after deciding it was not the
-   right visual direction.
+3. Removing the first timed-event stacking experiment, then prototyping and
+   shipping the **Deck** overlap layout for overlapping Week timed events.
 4. Letting shortcut-created Week drafts move by keyboard before saving.
+5. Rendering overlapping Week timed events as a legible left-anchored deck
+   (uniform-width cards fanned right, true start-time tops, click/keyboard
+   reach-behind).
 
 The branch has been rebased onto the latest `main` and is currently open as a
 draft PR.
@@ -205,6 +208,104 @@ Covered by:
 
 - `packages/web/src/views/Week/components/Grid/MainGrid/MainGrid.test.tsx`
 
+### Overlap layout prototype and Deck decision
+
+After the rollback above, overlapping Week timed events render fully stacked at
+full width (a single illegible "blob"). To pick a better treatment before
+committing to code, we built a throwaway UI prototype and compared options
+side by side.
+
+What we did:
+
+- Researched how Google Calendar, Notion Calendar, Fantastical, Outlook, Apple
+  Calendar, and others handle overlapping timed events. Key takeaways: equal
+  `1/N` side-by-side split goes unreadable at 3+; the persistent left color/peek
+  strip is the universal legibility lifeline; no app solves 5+ gracefully.
+- Built a dev-only prototype route `/prototype/overlap` rendering five overlap
+  densities (double booking, triple, five-at-once, nested-in-a-block, staggered
+  chain) across three switchable variants.
+- Iterated on the variants based on review:
+  - All variants made **left-anchored** with a reserved open lane on the right
+    (so there is always empty grid to drag-create into).
+  - Separation switched from a lightened border to a thin **dark gutter ring**;
+    unified the drop shadow to a single downward light source; gated the time
+    label on width so it never clips.
+  - Removed a hover-to-front reveal (a trap: leaving the hover re-covers what is
+    behind) and a count-badge / collapse / expand affordance (visually noisy).
+
+Decision: **Deck** wins — left-anchored, uniform-width cards fanned to the right
+by a fixed indent, with each card's top edge equal to its true start time. It
+was the cleanest and easiest to understand.
+
+The prototype was throwaway. It has since been **deleted** now that the real
+Deck layout has landed (see the next section): the
+`packages/web/src/views/Prototype/` folder, the dev-only `PROTOTYPE_OVERLAP`
+route in `packages/web/src/routers/index.tsx`, and the `PROTOTYPE_OVERLAP` entry
+in `packages/web/src/common/constants/routes.ts` are all removed.
+
+### Deck overlap layout (implemented)
+
+Implemented the Deck layout for the Week timed grid per
+[`deck-overlap-plan.md`](./deck-overlap-plan.md). Overlapping same-day timed
+events now render as left-anchored, uniform-width cards fanned to the right by a
+fixed indent, with each card's top edge equal to its true start time. Scope is
+Week only; Day view's equal-split is untouched and the layout ships as a shared,
+pure util so Day can adopt it later.
+
+How it works:
+
+- **New additive `position.deck` field** (`{ order, groupSize } | null`). Its
+  presence switches the position math into Deck mode; its absence preserves all
+  existing behavior (Day equal-split, single events, all-day, drafts). This keeps
+  the change decoupled from the `widthMultiplier`/`horizontalOrder` path Day
+  still uses.
+- **New pure util `applyWeekTimedOverlapLayout`** buckets events by start day
+  (events on different days never share a deck), builds transitive overlap groups
+  within each day, orders them background-first (earliest start, then longest
+  duration sits behind), and writes `position.deck`. Groups of one stay `null`.
+  Wired into the Week selector `selectGridEvents` only.
+- **Deck geometry in `position.util.ts`**: a deck card's width is
+  `base - DECK_RIGHT_RESERVE - (groupSize-1)*DECK_INDENT` (floored at
+  `DECK_MIN_WIDTH`), left is indented by `order*DECK_INDENT`, and `zIndex` is
+  `order+1`. `getEventPosition`'s return type gained an optional `zIndex`.
+- **`GridEvent` rendering**: consumes `position.zIndex`; deck cards get a dark
+  gutter ring + a single downward drop shadow + a faint top inner highlight; the
+  time label also gates on width so it never clips on narrow cards.
+- **Reach-behind**: a clicked/edited (draft), dragged, resized, or
+  keyboard-focused card floats above the whole deck at `ZIndex.MAX` (20, below the
+  floating form at 21). This was the fix for buried events: the full-width draft
+  block was previously at `LAYER_1` (z=1) and painted *behind* deck cards at
+  `z=order+1`, so clicking a buried event never surfaced it. No hover-to-front,
+  no count badge/collapse, no sticky click mode (all rejected in the prototype).
+
+Constants (tuning dials) in `packages/web/src/views/Week/layout.constants.ts`:
+`DECK_INDENT = 8`, `DECK_RIGHT_RESERVE = 24`, `DECK_MIN_WIDTH = 72`,
+`MIN_EVENT_WIDTH_FOR_TIME_LABEL = 90`.
+
+Files touched:
+
+- `packages/web/src/common/types/web.event.types.ts` (schema)
+- `packages/web/src/common/utils/event/event.util.ts` (default position)
+- `packages/web/src/common/utils/overlap/weekTimedOverlapLayout.ts` (new util)
+- `packages/web/src/ducks/events/selectors/event.selectors.ts` (Week selector)
+- `packages/web/src/common/utils/position/position.util.ts` (deck geometry)
+- `packages/web/src/views/Week/components/Event/Grid/GridEvent/GridEvent.tsx`
+  (z-index, gutter ring/shadow/highlight, focus raise, time-label width gate)
+- `packages/web/src/views/Week/layout.constants.ts` (constants)
+
+Covered by:
+
+- `packages/web/src/common/utils/overlap/weekTimedOverlapLayout.test.ts`
+  (per-day bucketing, transitive grouping, background-first order, no-mutation)
+- `packages/web/src/common/utils/position/position.util.test.ts`
+  (deck width/left/zIndex math, floor, draft bypass)
+- `packages/web/src/views/Week/components/Grid/MainGrid/MainGrid.test.tsx`
+  (deck stagger + uniform width + increasing zIndex; focus raises to front)
+
+The previous fully-stacked overlap test was rewritten to assert the Deck layout
+instead of equal left/width. Several `position` test fixtures across the repo
+gained `deck: null` for the new required field.
+
 ### Draft/test compatibility cleanup
 
 A couple of test-only adjustments were made while keeping the Week interaction
@@ -315,12 +416,25 @@ Manual browser smoke on `http://localhost:9080/week`:
   field.
 - Confirmed pressing Enter from the draft block no longer final-saves the draft.
 
-Current known verification blocker:
+Previously, repo-wide `bun type-check` and `bun lint` were blocked by the
+throwaway `packages/web/src/views/Prototype/OverlapPrototype.tsx`. That prototype
+has been deleted, so both now pass cleanly across the repo.
 
-- Repo-wide `bun type-check` and `bun lint` are blocked by unrelated existing
-  issues in `packages/web/src/views/Prototype/OverlapPrototype.tsx`:
-  `bun type-check` is blocked by the prototype event layout type, and `bun lint`
-  is blocked by formatting in the same prototype file.
+Deck overlap layout verification:
+
+```bash
+bun type-check
+bun run lint
+bun test --cwd packages/web src/common/utils/overlap src/common/utils/position src/views/Week/components/Grid/MainGrid/MainGrid.test.tsx
+```
+
+- `bun type-check` and `bun run lint` pass repo-wide.
+- The overlap, position, and MainGrid suites pass (deck grouping/order, deck
+  width/left/zIndex math, deck stagger + focus-raise rendering).
+- Note: the Draft hooks suite has a pre-existing Bun batch-ordering
+  circular-import flake (`hasEventDates`/`gridEventDefaultPosition` "export not
+  found") that reproduces on a clean tree and passes when files are run
+  individually — not introduced by the Deck work.
 
 Cleanup pass after the `simplify` review:
 

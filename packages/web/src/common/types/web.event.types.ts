@@ -33,6 +33,16 @@ export const GridEventSchema = WebCoreEventSchema.extend({
     dragOffset: z.object({ x: z.number(), y: z.number() }),
     initialX: z.number().nullable(),
     initialY: z.number().nullable(),
+    // Week "Deck" overlap layout. Set only by the Week selector path; its
+    // presence switches position math into Deck mode. null = not in a deck
+    // (single events, Day equal-split, all-day). See deck-overlap-plan.md.
+    deck: z
+      .object({
+        order: z.number(), // 0-based; 0 = backmost, groupSize-1 = front
+        groupSize: z.number(), // events overlapping in this day stack
+      })
+      .nullable()
+      .default(null),
   }),
 });
 

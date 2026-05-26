@@ -8,6 +8,9 @@ import {
   widthMinusPadding,
 } from "@web/common/utils/position/position.util";
 import {
+  DECK_INDENT,
+  DECK_MIN_WIDTH,
+  DECK_RIGHT_RESERVE,
   GRID_MARGIN_LEFT,
   TIMED_EVENT_COLUMN_INSET,
 } from "@web/views/Week/layout.constants";
@@ -208,6 +211,105 @@ describe("getTimedEventPosition", () => {
     expect(position.width).toBe(colWidth - TIMED_EVENT_COLUMN_INSET * 2);
     expect(position.left).toBeGreaterThan(columnLeft);
     expect(position.left + position.width).toBeLessThan(columnRight);
+    expect(position.zIndex).toBeUndefined();
+  });
+
+  describe("Deck overlap layout", () => {
+    const measurements = (colWidth: number) => ({
+      allDayRow: null,
+      colWidths: Array(7).fill(colWidth),
+      hourHeight: 60,
+      mainGrid: null,
+    });
+    const startOfView = dayjs("2022-02-20");
+    const endOfView = dayjs("2022-02-26");
+
+    const deckEvent = (order: number, groupSize: number) =>
+      createTimedEvent({
+        position: {
+          dragOffset: { x: 0, y: 0 },
+          horizontalOrder: 1,
+          initialX: null,
+          initialY: null,
+          isOverlapping: false,
+          totalEventsInGroup: 1,
+          widthMultiplier: 1,
+          deck: { order, groupSize },
+        },
+      } as Partial<Schema_GridEvent>);
+
+    it("shrinks deck width by the reserve and (n-1) indents", () => {
+      const colWidth = 200;
+      const base = getTimedEventPosition(
+        createTimedEvent(),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+      const deck = getTimedEventPosition(
+        deckEvent(0, 3),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+
+      expect(deck.width).toBe(
+        base.width - DECK_RIGHT_RESERVE - 2 * DECK_INDENT,
+      );
+    });
+
+    it("indents left by order * DECK_INDENT and sets zIndex order+1", () => {
+      const colWidth = 200;
+      const back = getTimedEventPosition(
+        deckEvent(0, 3),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+      const front = getTimedEventPosition(
+        deckEvent(2, 3),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+
+      expect(front.left - back.left).toBe(2 * DECK_INDENT);
+      expect(back.zIndex).toBe(1);
+      expect(front.zIndex).toBe(3);
+      // uniform width across the group
+      expect(front.width).toBe(back.width);
+    });
+
+    it("floors deck width at DECK_MIN_WIDTH for dense groups", () => {
+      const colWidth = 120;
+      const deck = getTimedEventPosition(
+        deckEvent(0, 8),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        false,
+      );
+
+      expect(deck.width).toBe(DECK_MIN_WIDTH);
+    });
+
+    it("ignores deck while drafting (full-width column)", () => {
+      const colWidth = 200;
+      const drafting = getTimedEventPosition(
+        deckEvent(2, 3),
+        startOfView,
+        endOfView,
+        measurements(colWidth),
+        true,
+      );
+
+      expect(drafting.zIndex).toBeUndefined();
+      expect(drafting.width).toBe(colWidth - TIMED_EVENT_COLUMN_INSET * 2);
+    });
   });
 });
 

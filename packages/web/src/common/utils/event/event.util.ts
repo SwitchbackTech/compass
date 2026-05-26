@@ -39,6 +39,7 @@ export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
   initialX: null,
   initialY: null,
   dragOffset: { x: 0, y: 0 },
+  deck: null,
 };
 
 export const addId = (event: Schema_GridEvent): WithId<Schema_GridEvent> => {

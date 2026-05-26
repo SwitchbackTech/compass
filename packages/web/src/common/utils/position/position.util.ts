@@ -6,6 +6,9 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Category } from "@web/ducks/events/event.types";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
+  DECK_INDENT,
+  DECK_MIN_WIDTH,
+  DECK_RIGHT_RESERVE,
   DRAFT_PADDING_BOTTOM,
   EVENT_ALLDAY_HEIGHT,
   EVENT_ALLDAY_ROW_HEIGHT,
@@ -13,6 +16,14 @@ import {
   GRID_MARGIN_LEFT,
   TIMED_EVENT_COLUMN_INSET,
 } from "@web/views/Week/layout.constants";
+
+export interface EventPosition {
+  height: number;
+  left: number;
+  top: number;
+  width: number;
+  zIndex?: number;
+}
 
 export const getAbsoluteLeftPosition = (
   category: Category,
@@ -196,7 +207,7 @@ export const getTimedEventPosition = (
   const category = getEventCategory(start, end, startOfView, endOfView);
   const startIndex = start.get("day");
 
-  const width = getTimedEventWidth(
+  let width = getTimedEventWidth(
     colWidths,
     startIndex,
     event.position.widthMultiplier,
@@ -212,7 +223,7 @@ export const getTimedEventPosition = (
   let height = hourHeight * durationHours;
   height -= DRAFT_PADDING_BOTTOM;
 
-  const left = getLeftPosition(
+  let left = getLeftPosition(
     category,
     startIndex,
     colWidths,
@@ -221,7 +232,18 @@ export const getTimedEventPosition = (
     isDraft,
   );
 
-  const position = { height, left, top, width };
+  // Deck overlap layout: left-anchored uniform-width cards fanned right by a
+  // fixed indent per depth. Drafts keep deck:null, so this never affects them.
+  const deck = event.position.deck;
+  if (!isDraft && deck) {
+    const fanned =
+      width - DECK_RIGHT_RESERVE - (deck.groupSize - 1) * DECK_INDENT;
+    width = Math.max(DECK_MIN_WIDTH, fanned);
+    left += deck.order * DECK_INDENT;
+    return { height, left, top, width, zIndex: deck.order + 1 };
+  }
+
+  const position: EventPosition = { height, left, top, width };
   return position;
 };
 
@@ -231,7 +253,7 @@ export const getEventPosition = (
   endOfView: Dayjs,
   measurements: Measurements_Grid,
   isDraft: boolean,
-) => {
+): EventPosition => {
   if (event.isAllDay) {
     return getAllDayEventPosition(
       event,
