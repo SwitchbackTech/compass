@@ -489,6 +489,36 @@ describe("Week calendar accessibility", () => {
       eventButton.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE),
     ).toBe("all-day");
   });
+
+  it("keeps full-week all-day events spanning seven columns", () => {
+    const store = createStore([
+      createSavedEvent({
+        _id: "full-week-all-day",
+        endDate: "2024-01-21T00:00:00.000Z",
+        isAllDay: true,
+        startDate: "2024-01-14T00:00:00.000Z",
+        title: "Full week",
+      }),
+    ]);
+
+    render(
+      <Provider store={store}>
+        <ThemeProvider theme={theme}>
+          <AllDayEvents
+            endOfView={startOfView.endOf("week")}
+            measurements={measurements}
+            startOfView={startOfView}
+          />
+        </ThemeProvider>
+      </Provider>,
+    );
+
+    const eventButton = screen.getByRole("button", {
+      name: /all-day event: full week/i,
+    });
+
+    expect(parseFloat(eventButton.style.width)).toBe(690);
+  });
 });
 
 describe("saved Week event ownership", () => {
