@@ -16,6 +16,7 @@ import {
 } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type CalendarGridVisibleDate } from "@web/common/calendar-grid/types/calendarGrid.types";
 import {
+  DATA_CALENDAR_TIMED_GRID_ROW,
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
   ZIndex,
@@ -161,7 +162,11 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
 
       <StyledGridWithTimeLabels>
         {getHourLabels(true).map((dayTime) => (
-          <StyledGridRow key={dayTime} onMouseDown={onMouseDown} />
+          <StyledGridRow
+            {...{ [DATA_CALENDAR_TIMED_GRID_ROW]: "true" }}
+            key={dayTime}
+            onMouseDown={onMouseDown}
+          />
         ))}
       </StyledGridWithTimeLabels>
 

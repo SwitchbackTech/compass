@@ -8,7 +8,6 @@ import {
   hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
-import { adjustOverlappingEvents } from "@web/common/utils/overlap/overlap";
 import { type RootState } from "@web/store";
 
 type Schema_GridEvent_NoPosition = Omit<Schema_GridEvent, "position">;
@@ -90,16 +89,35 @@ export const selectDayEvents = createSelector(
 export const selectIsDayEventsProcessing = (state: RootState) =>
   isProcessing(state.events.getDayEvents);
 
-export const selectTimedDayEvents = createSelector(
+export const selectTimedDayEvents = createSelector(selectDayEvents, (events) =>
+  events
+    .filter(
+      (event): event is EventWithDates =>
+        !event.isAllDay && hasEventDates(event),
+    )
+    .map(assembleGridEvent),
+);
+
+export const selectAllDayDayEvents = createSelector(
   selectDayEvents,
   (events) => {
-    const timedEvents: Schema_GridEvent[] = events
+    const allDayEvents = events
       .filter(
         (event): event is EventWithDates =>
-          !event.isAllDay && hasEventDates(event),
+          Boolean(event.isAllDay) && hasEventDates(event),
       )
       .map(assembleGridEvent);
 
-    return adjustOverlappingEvents(timedEvents);
+    return assignEventsToRow(allDayEvents).allDayEvents;
+  },
+);
+
+export const selectDayRowCount = createSelector(
+  selectAllDayDayEvents,
+  (allDayEvents) => {
+    const rows = allDayEvents
+      .map((event) => event.row)
+      .filter((row): row is number => row !== undefined);
+    return rows.length === 0 ? 1 : Math.max(...rows);
   },
 );
