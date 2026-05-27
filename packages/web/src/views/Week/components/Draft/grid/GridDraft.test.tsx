@@ -44,7 +44,9 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
 
 const { GridDraft } = require("./GridDraft") as typeof import("./GridDraft");
 
-const createDraft = (): Schema_GridEvent => ({
+const createDraft = (
+  overrides: Partial<Schema_GridEvent> = {},
+): Schema_GridEvent => ({
   description: "",
   endDate: "2026-05-26T15:00:00.000Z",
   isAllDay: false,
@@ -55,6 +57,7 @@ const createDraft = (): Schema_GridEvent => ({
   startDate: "2026-05-26T14:00:00.000Z",
   title: "Planning",
   user: "user-1",
+  ...overrides,
 });
 
 const createWeekProps = (): WeekProps =>
@@ -85,7 +88,7 @@ const createFormProps = () => {
   };
 };
 
-const renderGridDraft = () => {
+const renderGridDraft = (draft = createDraft()) => {
   const value = {
     actions: {
       convert: mock(),
@@ -103,7 +106,7 @@ const renderGridDraft = () => {
       setIsResizing: mock(),
     },
     state: {
-      draft: createDraft(),
+      draft,
       formProps: createFormProps(),
       isDragging: false,
       isFormOpen: true,
@@ -132,6 +135,21 @@ afterEach(() => {
 });
 
 describe("GridDraft keyboard focus", () => {
+  it("renders all-day drafts that do not carry timed-event position data", () => {
+    renderGridDraft(
+      createDraft({
+        endDate: "2026-05-27T00:00:00.000Z",
+        isAllDay: true,
+        position: undefined,
+        startDate: "2026-05-26T00:00:00.000Z",
+      }),
+    );
+
+    expect(
+      screen.getByRole("button", { name: /All-day event: Planning/ }),
+    ).toBeInTheDocument();
+  });
+
   it("keeps the floating form non-modal while the draft block is a focus target", () => {
     renderGridDraft();
 

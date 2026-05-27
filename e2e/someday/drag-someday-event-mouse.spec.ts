@@ -48,21 +48,23 @@ const expectTimedPreviewTextStack = async (page: Page, title: string) => {
 
   await expect(overlay).toBeVisible();
   await expect(timeLabel).toHaveText(
-    /\d{1,2}(?::\d{2})?\s+-\s+\d{1,2}(?::\d{2})?\s*(AM|PM)/i,
+    /\d{1,2}(?::\d{2})?\s*(AM|PM)?\s+-\s+\d{1,2}(?::\d{2})?\s*(AM|PM)/i,
   );
 
-  const titleBox = await titleLabel.boundingBox();
-  const timeBox = await timeLabel.boundingBox();
+  await expect
+    .poll(async () => {
+      const titleBox = await titleLabel.boundingBox();
+      const timeBox = await timeLabel.boundingBox();
 
-  if (!titleBox || !timeBox) {
-    throw new Error("Expected the Someday timed preview text to be visible.");
-  }
+      if (!titleBox || !timeBox) return false;
 
-  expect(timeBox.y + timeBox.height / 2).toBeGreaterThan(
-    titleBox.y + titleBox.height / 2,
-  );
-  expect(timeBox.y - titleBox.y).toBeLessThan(titleBox.height + 8);
-  expect(timeBox.x).toBeLessThan(titleBox.x + 8);
+      return (
+        timeBox.y + timeBox.height / 2 > titleBox.y + titleBox.height / 2 &&
+        timeBox.y - titleBox.y < titleBox.height + 8 &&
+        timeBox.x < titleBox.x + 8
+      );
+    })
+    .toBe(true);
 };
 
 test("shows a timed-grid preview while dragging a someday event", async ({

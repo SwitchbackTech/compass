@@ -92,7 +92,7 @@ const GridEventBase = (
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
-  const isDeck = Boolean(event.position.deck) && !isDraft;
+  const isDeck = Boolean(event.position?.deck) && !isDraft;
   const [isFocused, setIsFocused] = useState(false);
   const shouldAcknowledgeCommit =
     useSomedayCommitAcknowledgement(event._id) &&
