@@ -9,11 +9,6 @@ mock.module("@web/components/AbsoluteOverflowLoader", () => ({
   ),
 }));
 
-mock.module("@web/store/store.hooks", () => ({
-  useAppDispatch: () => mock(),
-  useAppSelector: () => 0,
-}));
-
 mock.module(
   "@web/components/PlannerSidebar/draft/context/useSidebarContext",
   () => ({
