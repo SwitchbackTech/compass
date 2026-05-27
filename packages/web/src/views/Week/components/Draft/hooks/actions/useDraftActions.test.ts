@@ -7,6 +7,7 @@ import {
   type InitialReduxState,
 } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import {
   type Setters_Draft,
@@ -110,6 +111,47 @@ const weekProps = {
   },
 } as unknown as WeekProps;
 
+const setDraftActivity = (
+  activity: Activity_DraftEvent,
+  eventType = Categories_Event.TIMED,
+) => {
+  currentState.events.draft!.status = {
+    activity,
+    dateToResize: null,
+    eventType,
+    isDrafting: true,
+  };
+};
+
+const renderDraftActions = (draftOverrides: Partial<Schema_GridEvent>) => {
+  const setDraft = mock();
+  const { result } = renderHook(() =>
+    useDraftActions(
+      createState({
+        draft: createDraft(draftOverrides),
+      }),
+      createSetters({ setDraft }),
+      dateCalcs,
+      weekProps,
+    ),
+  );
+
+  setDraft.mockClear();
+
+  return { result, setDraft };
+};
+
+const expectDraftRange = (
+  setDraft: ReturnType<typeof mock>,
+  startDate: string,
+  endDate: string,
+) => {
+  const nextDraft = setDraft.mock.calls[0]?.[0] as Schema_GridEvent;
+
+  expect(dayjs(nextDraft.startDate).isSame(startDate)).toBe(true);
+  expect(dayjs(nextDraft.endDate).isSame(endDate)).toBe(true);
+};
+
 describe("useDraftActions", () => {
   beforeEach(() => {
     const draft = createDraft();
@@ -156,61 +198,101 @@ describe("useDraftActions", () => {
   });
 
   it("moves a shortcut-created timed draft by keyboard while preserving duration", () => {
-    currentState.events.draft!.status = {
-      activity: "createShortcut",
-      dateToResize: null,
-      eventType: Categories_Event.TIMED,
-      isDrafting: true,
-    };
-    const setDraft = mock();
-    const { result } = renderHook(() =>
-      useDraftActions(
-        createState({
-          draft: createDraft({
-            _id: undefined,
-            startDate: "2024-01-16T10:00:00.000Z",
-            endDate: "2024-01-16T11:00:00.000Z",
-          }),
-        }),
-        createSetters({ setDraft }),
-        dateCalcs,
-        weekProps,
-      ),
-    );
+    setDraftActivity("createShortcut");
+    const { result, setDraft } = renderDraftActions({
+      _id: undefined,
+      startDate: "2024-01-16T10:00:00.000Z",
+      endDate: "2024-01-16T11:00:00.000Z",
+    });
 
-    setDraft.mockClear();
     result.current.repositionDraftByKeyboard("ArrowDown");
 
-    const nextDraft = setDraft.mock.calls[0]?.[0] as Schema_GridEvent;
-    expect(dayjs(nextDraft.startDate).isSame("2024-01-16T10:15:00.000Z")).toBe(
-      true,
+    expectDraftRange(
+      setDraft,
+      "2024-01-16T10:15:00.000Z",
+      "2024-01-16T11:15:00.000Z",
     );
-    expect(dayjs(nextDraft.endDate).isSame("2024-01-16T11:15:00.000Z")).toBe(
-      true,
+  });
+
+  it("moves a mouse-created timed draft by keyboard while preserving duration", () => {
+    setDraftActivity("gridClick");
+    const { result, setDraft } = renderDraftActions({
+      _id: undefined,
+      startDate: "2024-01-16T10:00:00.000Z",
+      endDate: "2024-01-16T11:00:00.000Z",
+    });
+
+    result.current.repositionDraftByKeyboard("ArrowDown");
+
+    expectDraftRange(
+      setDraft,
+      "2024-01-16T10:15:00.000Z",
+      "2024-01-16T11:15:00.000Z",
+    );
+  });
+
+  it("moves a clicked existing timed event draft by keyboard", () => {
+    setDraftActivity("gridClick");
+    const { result, setDraft } = renderDraftActions({
+      _id: "event-1",
+      startDate: "2024-01-16T10:00:00.000Z",
+      endDate: "2024-01-16T11:00:00.000Z",
+    });
+
+    result.current.repositionDraftByKeyboard("ArrowLeft");
+
+    expectDraftRange(
+      setDraft,
+      "2024-01-15T10:00:00.000Z",
+      "2024-01-15T11:00:00.000Z",
+    );
+  });
+
+  it("moves a keyboard-opened existing timed event draft by keyboard", () => {
+    setDraftActivity("keyboardEdit");
+    const { result, setDraft } = renderDraftActions({
+      _id: "event-1",
+      startDate: "2024-01-16T10:00:00.000Z",
+      endDate: "2024-01-16T11:00:00.000Z",
+    });
+
+    result.current.repositionDraftByKeyboard("ArrowRight");
+
+    expectDraftRange(
+      setDraft,
+      "2024-01-17T10:00:00.000Z",
+      "2024-01-17T11:00:00.000Z",
     );
   });
 
   it("does not move a timed draft past midnight", () => {
-    currentState.events.draft!.status = {
-      activity: "createShortcut",
-      dateToResize: null,
-      eventType: Categories_Event.TIMED,
-      isDrafting: true,
-    };
-    const setDraft = mock();
-    const { result } = renderHook(() =>
-      useDraftActions(
-        createState({
-          draft: createDraft({
-            _id: undefined,
-            startDate: "2024-01-16T23:00:00.000Z",
-            endDate: "2024-01-17T00:00:00.000Z",
-          }),
-        }),
-        createSetters({ setDraft }),
-        dateCalcs,
-        weekProps,
-      ),
+    setDraftActivity("createShortcut");
+    const { result, setDraft } = renderDraftActions({
+      _id: undefined,
+      startDate: "2024-01-16T23:00:00.000Z",
+      endDate: "2024-01-17T00:00:00.000Z",
+    });
+
+    result.current.repositionDraftByKeyboard("ArrowDown");
+
+    expect(setDraft).not.toHaveBeenCalled();
+  });
+
+  it("moves a clicked existing all-day event draft horizontally and ignores vertical arrows", () => {
+    setDraftActivity("gridClick", Categories_Event.ALLDAY);
+    const { result, setDraft } = renderDraftActions({
+      _id: "event-1",
+      isAllDay: true,
+      startDate: "2024-01-16T00:00:00.000Z",
+      endDate: "2024-01-17T00:00:00.000Z",
+    });
+
+    result.current.repositionDraftByKeyboard("ArrowRight");
+
+    expectDraftRange(
+      setDraft,
+      "2024-01-17T00:00:00.000Z",
+      "2024-01-18T00:00:00.000Z",
     );
 
     setDraft.mockClear();
@@ -220,38 +302,20 @@ describe("useDraftActions", () => {
   });
 
   it("moves a shortcut-created all-day draft horizontally and ignores vertical arrows", () => {
-    currentState.events.draft!.status = {
-      activity: "createShortcut",
-      dateToResize: null,
-      eventType: Categories_Event.ALLDAY,
-      isDrafting: true,
-    };
-    const setDraft = mock();
-    const { result } = renderHook(() =>
-      useDraftActions(
-        createState({
-          draft: createDraft({
-            _id: undefined,
-            isAllDay: true,
-            startDate: "2024-01-16T00:00:00.000Z",
-            endDate: "2024-01-17T00:00:00.000Z",
-          }),
-        }),
-        createSetters({ setDraft }),
-        dateCalcs,
-        weekProps,
-      ),
-    );
+    setDraftActivity("createShortcut", Categories_Event.ALLDAY);
+    const { result, setDraft } = renderDraftActions({
+      _id: undefined,
+      isAllDay: true,
+      startDate: "2024-01-16T00:00:00.000Z",
+      endDate: "2024-01-17T00:00:00.000Z",
+    });
 
-    setDraft.mockClear();
     result.current.repositionDraftByKeyboard("ArrowRight");
 
-    const nextDraft = setDraft.mock.calls[0]?.[0] as Schema_GridEvent;
-    expect(dayjs(nextDraft.startDate).isSame("2024-01-17T00:00:00.000Z")).toBe(
-      true,
-    );
-    expect(dayjs(nextDraft.endDate).isSame("2024-01-18T00:00:00.000Z")).toBe(
-      true,
+    expectDraftRange(
+      setDraft,
+      "2024-01-17T00:00:00.000Z",
+      "2024-01-18T00:00:00.000Z",
     );
 
     setDraft.mockClear();

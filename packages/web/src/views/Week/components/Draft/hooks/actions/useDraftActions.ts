@@ -71,6 +71,11 @@ const getDraftKeyboardMovement = (key: string, isAllDay: boolean) => {
   }
 };
 
+const canRepositionDraftByKeyboard = (activity: string | null | undefined) =>
+  activity === "createShortcut" ||
+  activity === "gridClick" ||
+  activity === "keyboardEdit";
+
 export const useDraftActions = (
   draftState: State_Draft_Local,
   setters: Setters_Draft,
@@ -413,7 +418,7 @@ export const useDraftActions = (
 
   const repositionDraftByKeyboard = useCallback(
     (key: string) => {
-      if (activity !== "createShortcut" || !draft) return false;
+      if (!canRepositionDraftByKeyboard(activity) || !draft) return false;
 
       const movement = getDraftKeyboardMovement(key, Boolean(draft.isAllDay));
       if (!movement) return false;

@@ -1,5 +1,5 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createRef } from "react";
 import { ThemeProvider } from "styled-components";
@@ -224,6 +224,61 @@ describe("EventForm", () => {
 
     expect(onDraftTitleArrowKey).toHaveBeenCalledWith("ArrowDown");
     expect(eventResult.defaultPrevented).toBe(true);
+  });
+
+  it("moves an untouched existing event draft title with arrow keys", () => {
+    const event = { ...createEvent(), title: "Planning" };
+    const onDraftTitleArrowKey = mock(() => true);
+
+    render(
+      <ThemeProvider theme={theme}>
+        <EventForm
+          event={event}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDraftTitleArrowKey={onDraftTitleArrowKey}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setEvent={mock()}
+        />
+      </ThemeProvider>,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    const eventResult = dispatchArrowDown(titleField);
+
+    expect(onDraftTitleArrowKey).toHaveBeenCalledWith("ArrowDown");
+    expect(eventResult.defaultPrevented).toBe(true);
+  });
+
+  it("lets directly edited existing event titles keep normal arrow-key behavior", () => {
+    const event = { ...createEvent(), title: "Planning" };
+    const onDraftTitleArrowKey = mock(() => true);
+
+    render(
+      <ThemeProvider theme={theme}>
+        <EventForm
+          event={event}
+          isDraft={false}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDraftTitleArrowKey={onDraftTitleArrowKey}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setEvent={mock()}
+        />
+      </ThemeProvider>,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    fireEvent.pointerDown(titleField);
+    const eventResult = dispatchArrowDown(titleField);
+
+    expect(onDraftTitleArrowKey).not.toHaveBeenCalled();
+    expect(eventResult.defaultPrevented).toBe(false);
   });
 
   it("commits a draft title without submitting the event when Enter is pressed", async () => {

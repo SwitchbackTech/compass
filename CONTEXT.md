@@ -194,8 +194,9 @@ during Import or Public watch notification handling.
   MongoDB.
 - A **Timed Event** appears in the **Timed Grid**.
 - An **All-Day Event** appears in the all-day row.
-- A **Draft Event** created from a keyboard shortcut can be repositioned before
-  saving.
+- An active Week **Draft Event** can be repositioned before saving, whether it
+  was created from a keyboard shortcut, created from the grid, or opened from an
+  existing **Grid Event**.
 - A **Timed Event** draft moves vertically by time slot and horizontally by day
   while it remains in the **Timed Grid**.
 - Keyboard repositioning moves the whole **Draft Event** and preserves its
@@ -211,7 +212,7 @@ during Import or Public watch notification handling.
   not move it past midnight.
 - Keyboard repositioning works while the **Draft Event** form is open unless
   the user is typing in an editable field.
-- Keyboard repositioning preserves the user's current focus target until the
+- Keyboard repositioning preserves the user's current focus target unless the
   user explicitly commits title editing.
 - Committing the title of a shortcut-created **Draft Event** moves focus to the
   draft block without saving the final **Event**.
@@ -219,8 +220,9 @@ during Import or Public watch notification handling.
   the form.
 - The **Draft Event** form remains non-modal while the draft block is used as
   the keyboard handle.
-- Plain arrow-key repositioning applies to the active shortcut-created
-  **Draft Event**, not saved **Events**.
+- Plain arrow-key repositioning applies to the active Week **Draft Event**. A
+  saved **Event** that is not being edited as the active **Draft Event** does
+  not move.
 - The Week shortcuts overlay may summarize arrow-key movement as a single
   draft-movement shortcut instead of listing every arrow key separately.
 - A **Timed Event** that is dragged outside the **Timed Grid** stays a

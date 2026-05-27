@@ -192,15 +192,15 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
     const handleDraftTitleArrowKey = (e: KeyboardEvent<HTMLInputElement>) => {
       if (
-        !isDraft ||
+        !onDraftTitleArrowKey ||
+        (!isDraft && !isExistingEvent) ||
         isTitleEditingStarted ||
-        title ||
         !DRAFT_TITLE_MOVEMENT_KEYS.has(e.key)
       ) {
         return false;
       }
 
-      const didMove = onDraftTitleArrowKey?.(e.key) ?? false;
+      const didMove = onDraftTitleArrowKey(e.key);
       if (!didMove) return false;
 
       e.preventDefault();
@@ -390,6 +390,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           autoFocus
           onChange={onChangeEventTextField("title")}
           onKeyDown={handleTitleKeyDown}
+          onPointerDown={() => setIsTitleEditingStarted(true)}
           placeholder="Title"
           name="Event Title"
           ref={titleInputRef}
