@@ -51,7 +51,8 @@ export const applyWeekTimedDeckPosition = (
   position: EventPosition,
   deckLayout: WeekTimedDeckLayout,
 ): EventPosition => {
-  const maxIndent = (deckLayout.groupSize - 1) * DECK_INDENT;
+  const indent = getDeckIndent(position.width, deckLayout.groupSize);
+  const maxIndent = (deckLayout.groupSize - 1) * indent;
   const fanned = position.width - DECK_RIGHT_RESERVE - maxIndent;
   const maxWidthWithinColumn = Math.max(0, position.width - maxIndent);
   const width = Math.min(
@@ -61,10 +62,20 @@ export const applyWeekTimedDeckPosition = (
 
   return {
     ...position,
-    left: position.left + deckLayout.order * DECK_INDENT,
+    left: position.left + deckLayout.order * indent,
     width,
     zIndex: deckLayout.order + 1,
   };
+};
+
+const getDeckIndent = (width: number, groupSize: number) => {
+  if (groupSize < 2) return 0;
+
+  const minimumVisibleWidth =
+    width >= DECK_MIN_WIDTH ? DECK_MIN_WIDTH : width / groupSize;
+  const maxIndentForMinWidth = Math.max(0, width - minimumVisibleWidth);
+
+  return Math.min(DECK_INDENT, maxIndentForMinWidth / (groupSize - 1));
 };
 
 const toDeckCandidate = (item: WeekTimedEventLayoutItem): DeckCandidate => {

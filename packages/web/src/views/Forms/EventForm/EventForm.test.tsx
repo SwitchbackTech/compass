@@ -5,18 +5,23 @@ import { createRef, type SetStateAction, useState } from "react";
 import { ThemeProvider } from "styled-components";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
+import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
+type CapturedDateTimeSectionProps = Pick<
+  DateTimeSectionProps,
+  | "displayEndDate"
+  | "endTime"
+  | "selectedEndDate"
+  | "selectedStartDate"
+  | "startTime"
+>;
+
 interface CapturedDateControlsSectionProps {
-  dateTimeSectionProps: {
-    displayEndDate: Date;
-    endTime: { value: string };
-    selectedEndDate: Date;
-    selectedStartDate: Date;
-    startTime: { value: string };
-  };
+  dateTimeSectionProps: CapturedDateTimeSectionProps;
 }
 
 let capturedDateControlsSectionProps: CapturedDateControlsSectionProps | null =
@@ -222,7 +227,7 @@ describe("EventForm", () => {
     const event = createEvent();
     const nextEvent = {
       ...event,
-      endDate: "2026-04-25T17:30:00.000Z",
+      endDate: "2026-04-27T17:30:00.000Z",
       startDate: "2026-04-25T16:30:00.000Z",
     };
 
@@ -263,6 +268,9 @@ describe("EventForm", () => {
     expect(props?.endTime).toEqual(expected.endTime);
     expect(props?.selectedStartDate).toEqual(expected.startDate);
     expect(props?.selectedEndDate).toEqual(expected.endDate);
+    expect(props?.displayEndDate).toEqual(
+      dayjs(expected.displayEndDate).toDate(),
+    );
   });
 
   it("moves an untouched empty draft title with arrow keys", () => {
@@ -396,6 +404,33 @@ describe("EventForm", () => {
     expect(onSubmit).toHaveBeenCalledWith(
       expect.objectContaining({ title: "Plan" }),
     );
+  });
+
+  it("does not submit an existing event title with plain Enter", async () => {
+    const user = userEvent.setup();
+    const onSubmit = mock();
+
+    render(
+      <ThemeProvider theme={theme}>
+        <EventForm
+          event={createEvent()}
+          isDraft={true}
+          isExistingEvent={true}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={onSubmit}
+          setEvent={mock()}
+        />
+      </ThemeProvider>,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    titleField.focus();
+
+    await user.keyboard("{Enter}");
+
+    expect(onSubmit).not.toHaveBeenCalled();
   });
 
   it("does not submit a draft when Enter is pressed outside the title field", async () => {

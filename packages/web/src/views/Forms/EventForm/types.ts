@@ -9,7 +9,6 @@ import {
 export interface FormProps {
   event: Schema_Event;
   category: Categories_Event;
-  isOpen?: boolean;
   isDraft: boolean;
   isExistingEvent: boolean;
   onClose: () => void;
@@ -43,7 +42,6 @@ export type SetEventFormField = (
 ) => void;
 
 export interface StyledFormProps {
-  isOpen?: boolean;
   priority?: Priority;
   title?: string;
 }

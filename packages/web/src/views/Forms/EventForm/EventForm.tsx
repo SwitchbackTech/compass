@@ -5,6 +5,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -138,10 +139,9 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     );
 
     const descriptionRef = useRef<HTMLTextAreaElement>(null);
-    const currentDateTimeState = resolveDateTimeState(
-      dateTimeState,
-      eventStartDate,
-      eventEndDate,
+    const currentDateTimeState = useMemo(
+      () => resolveDateTimeState(dateTimeState, eventStartDate, eventEndDate),
+      [dateTimeState, eventEndDate, eventStartDate],
     );
     const {
       displayEndDate,
@@ -156,9 +156,18 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
     const setIsTitleEditingStarted = useCallback(
       (isStarted: boolean) => {
-        setTitleEditingState({
-          isStarted,
-          resetKey: currentTitleEditingResetKey,
+        setTitleEditingState((state) => {
+          if (
+            state.isStarted === isStarted &&
+            state.resetKey === currentTitleEditingResetKey
+          ) {
+            return state;
+          }
+
+          return {
+            isStarted,
+            resetKey: currentTitleEditingResetKey,
+          };
         });
       },
       [currentTitleEditingResetKey],
@@ -170,10 +179,24 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           Omit<EventFormDateTimeState, "sourceStartDate" | "sourceEndDate">
         >,
       ) => {
-        setDateTimeState((state) => ({
-          ...resolveDateTimeState(state, eventStartDate, eventEndDate),
-          ...field,
-        }));
+        setDateTimeState((state) => {
+          const resolvedState = resolveDateTimeState(
+            state,
+            eventStartDate,
+            eventEndDate,
+          );
+          const nextState = { ...resolvedState, ...field };
+
+          if (fastDeepEqual(nextState, state)) {
+            return state;
+          }
+
+          if (fastDeepEqual(nextState, resolvedState)) {
+            return resolvedState;
+          }
+
+          return nextState;
+        });
       },
       [eventEndDate, eventStartDate],
     );
@@ -291,7 +314,13 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         return;
       }
 
-      if (isDraft && e.key === "Enter" && !e.metaKey && !e.ctrlKey) {
+      if (
+        isDraft &&
+        !isExistingEvent &&
+        e.key === "Enter" &&
+        !e.metaKey &&
+        !e.ctrlKey
+      ) {
         e.preventDefault();
         e.stopPropagation();
         setIsTitleEditingStarted(false);

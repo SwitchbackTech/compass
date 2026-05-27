@@ -24,7 +24,7 @@ export const MIN_EVENT_HEIGHT_FOR_TIME_LABEL = 36;
 export const MIN_EVENT_WIDTH_FOR_TIME_LABEL = 90;
 export const EVENT_WIDTH_MINIMUM = 80;
 
-export const DECK_INDENT = 8;
+export const DECK_INDENT = 16;
 export const DECK_RIGHT_RESERVE = 24;
 export const DECK_MIN_WIDTH = 72;
 

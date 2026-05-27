@@ -156,6 +156,19 @@ describe("applyWeekTimedDeckPosition", () => {
     expect(front.width).toBe(back.width);
   });
 
+  it("leaves a wider visible rail for cards behind a same-time overlap", () => {
+    const back = applyWeekTimedDeckPosition(basePosition, {
+      order: 0,
+      groupSize: 2,
+    });
+    const front = applyWeekTimedDeckPosition(basePosition, {
+      order: 1,
+      groupSize: 2,
+    });
+
+    expect(front.left - back.left).toBe(DECK_INDENT);
+  });
+
   it("floors deck width for dense groups", () => {
     const deck = applyWeekTimedDeckPosition(
       { ...basePosition, width: 150 - TIMED_EVENT_COLUMN_INSET * 2 },
@@ -181,6 +194,20 @@ describe("applyWeekTimedDeckPosition", () => {
 
     expect(back.width).toBe(narrowBase.width - DECK_INDENT);
     expect(front.width).toBe(back.width);
+    expect(front.left + front.width).toBe(narrowBase.left + narrowBase.width);
+  });
+
+  it("keeps dense narrow-column decks inside the usable column", () => {
+    const narrowBase = {
+      ...basePosition,
+      width: EVENT_WIDTH_MINIMUM - TIMED_EVENT_COLUMN_INSET * 2,
+    };
+    const front = applyWeekTimedDeckPosition(narrowBase, {
+      order: 7,
+      groupSize: 8,
+    });
+
+    expect(front.width).toBeGreaterThan(0);
     expect(front.left + front.width).toBe(narrowBase.left + narrowBase.width);
   });
 });
