@@ -33,13 +33,6 @@ export const GridEventSchema = WebCoreEventSchema.extend({
     dragOffset: z.object({ x: z.number(), y: z.number() }),
     initialX: z.number().nullable(),
     initialY: z.number().nullable(),
-    deck: z
-      .object({
-        order: z.number(),
-        groupSize: z.number(),
-      })
-      .nullable()
-      .default(null),
   }),
 });
 

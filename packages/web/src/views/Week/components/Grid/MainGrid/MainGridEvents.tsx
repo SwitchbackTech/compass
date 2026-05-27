@@ -14,6 +14,10 @@ import {
   getWeekInteractionTargetAttributes,
   useWeekEventRegistrationRef,
 } from "@web/views/Week/interaction/registry/weekEventRegistry";
+import {
+  createWeekTimedEventLayout,
+  type WeekTimedDeckLayout,
+} from "@web/views/Week/utils/weekTimedOverlapLayout";
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
 
 interface Props {
@@ -32,6 +36,10 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     (state) => state.events.pendingEvents.eventIds,
   );
   const draftId = useAppSelector(selectDraftId);
+  const timedEventItems = useMemo(
+    () => createWeekTimedEventLayout(timedEvents),
+    [timedEvents],
+  );
   const category = Categories_Event.TIMED;
 
   const handleKeyDown = (event: Schema_GridEvent) => {
@@ -52,7 +60,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   return (
     <div id={ID_GRID_EVENTS_TIMED}>
       {!isLoadingWeekView &&
-        timedEvents.map((event: Schema_GridEvent) => {
+        timedEventItems.map(({ deckLayout, event }) => {
           const isPending = Boolean(
             event._id && pendingEventIds.includes(event._id),
           );
@@ -60,6 +68,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
           return (
             <MainGridEventItem
+              deckLayout={deckLayout}
               event={event}
               isPending={isPending}
               isPlaceholder={isPlaceholder}
@@ -75,6 +84,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 };
 
 interface MainGridEventItemProps {
+  deckLayout: WeekTimedDeckLayout | null;
   event: Schema_GridEvent;
   isPending: boolean;
   isPlaceholder: boolean;
@@ -84,6 +94,7 @@ interface MainGridEventItemProps {
 }
 
 const MainGridEventItem = ({
+  deckLayout,
   event,
   isPending,
   isPlaceholder,
@@ -111,6 +122,7 @@ const MainGridEventItem = ({
 
   return (
     <GridEventMemo
+      deckLayout={deckLayout}
       displayMode={isPlaceholder ? "placeholder" : "saved"}
       event={event}
       interactionAttributes={interactionAttributes}

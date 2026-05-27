@@ -17,6 +17,7 @@ export interface FormProps {
   onConvert?: () => void;
   onDelete: () => void;
   onDuplicate?: (event: Schema_Event) => void;
+  onDraftTitleArrowKey?: (key: string) => boolean;
   onMigrate?: (
     event: Schema_Event,
     category: Categories_Event,

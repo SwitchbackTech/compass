@@ -6,7 +6,6 @@ import { ThemeProvider } from "styled-components";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import { theme } from "@web/common/styles/theme";
-import { EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE } from "@web/common/utils/form/form.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 mock.module(
@@ -51,6 +50,17 @@ function dispatchModD(target: HTMLElement) {
       metaKey: !isControl,
     }),
   );
+}
+
+function dispatchArrowDown(target: HTMLElement) {
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    key: "ArrowDown",
+  });
+  target.dispatchEvent(event);
+  return event;
 }
 
 const createEvent = (): Schema_Event => ({
@@ -105,6 +115,7 @@ describe("EventForm", () => {
   it("marks the title field as text editing after the user changes it", async () => {
     const user = userEvent.setup();
     const event = { ...createEvent(), title: "" };
+    const onDraftTitleArrowKey = mock(() => true);
 
     render(
       <ThemeProvider theme={theme}>
@@ -115,6 +126,7 @@ describe("EventForm", () => {
           onClose={mock()}
           onDelete={mock()}
           onDuplicate={mock()}
+          onDraftTitleArrowKey={onDraftTitleArrowKey}
           onSubmit={mock()}
           setEvent={mock()}
         />
@@ -123,20 +135,23 @@ describe("EventForm", () => {
 
     const titleField = screen.getByPlaceholderText("Title");
 
-    expect(
-      titleField.getAttribute(EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE),
-    ).toBeNull();
+    const beforeTyping = dispatchArrowDown(titleField);
+
+    expect(onDraftTitleArrowKey).toHaveBeenCalledTimes(1);
+    expect(beforeTyping.defaultPrevented).toBe(true);
 
     await user.type(titleField, "Plan");
+    onDraftTitleArrowKey.mockClear();
+    const afterTyping = dispatchArrowDown(titleField);
 
-    expect(
-      titleField.getAttribute(EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE),
-    ).toBe("true");
+    expect(onDraftTitleArrowKey).not.toHaveBeenCalled();
+    expect(afterTyping.defaultPrevented).toBe(false);
   });
 
   it("resets title editing state when an unsaved draft session changes", async () => {
     const user = userEvent.setup();
     const event = { ...createEvent(), _id: undefined, title: "" };
+    const onDraftTitleArrowKey = mock(() => true);
 
     const { rerender } = render(
       <ThemeProvider theme={theme}>
@@ -147,6 +162,7 @@ describe("EventForm", () => {
           onClose={mock()}
           onDelete={mock()}
           onDuplicate={mock()}
+          onDraftTitleArrowKey={onDraftTitleArrowKey}
           onSubmit={mock()}
           setEvent={mock()}
           titleEditingResetKey={1}
@@ -156,10 +172,9 @@ describe("EventForm", () => {
 
     const titleField = screen.getByPlaceholderText("Title");
     await user.type(titleField, "Plan");
-
-    expect(
-      titleField.getAttribute(EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE),
-    ).toBe("true");
+    onDraftTitleArrowKey.mockClear();
+    dispatchArrowDown(titleField);
+    expect(onDraftTitleArrowKey).not.toHaveBeenCalled();
 
     rerender(
       <ThemeProvider theme={theme}>
@@ -170,6 +185,7 @@ describe("EventForm", () => {
           onClose={mock()}
           onDelete={mock()}
           onDuplicate={mock()}
+          onDraftTitleArrowKey={onDraftTitleArrowKey}
           onSubmit={mock()}
           setEvent={mock()}
           titleEditingResetKey={2}
@@ -178,10 +194,36 @@ describe("EventForm", () => {
     );
 
     await waitFor(() => {
-      expect(
-        titleField.getAttribute(EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE),
-      ).toBeNull();
+      dispatchArrowDown(titleField);
+      expect(onDraftTitleArrowKey).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("moves an untouched empty draft title with arrow keys", () => {
+    const event = { ...createEvent(), title: "" };
+    const onDraftTitleArrowKey = mock(() => true);
+
+    render(
+      <ThemeProvider theme={theme}>
+        <EventForm
+          event={event}
+          isDraft={true}
+          isExistingEvent={false}
+          onClose={mock()}
+          onDelete={mock()}
+          onDraftTitleArrowKey={onDraftTitleArrowKey}
+          onDuplicate={mock()}
+          onSubmit={mock()}
+          setEvent={mock()}
+        />
+      </ThemeProvider>,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    const eventResult = dispatchArrowDown(titleField);
+
+    expect(onDraftTitleArrowKey).toHaveBeenCalledWith("ArrowDown");
+    expect(eventResult.defaultPrevented).toBe(true);
   });
 
   it("commits a draft title without submitting the event when Enter is pressed", async () => {

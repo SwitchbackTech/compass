@@ -38,12 +38,6 @@ export const isComboboxInteraction = (
   return Boolean(container);
 };
 
-export const EVENT_FORM_TITLE_INPUT_NAME = "Event Title";
-export const EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE =
-  "data-title-editing-started";
-
-const EVENT_FORM_TITLE_EDITING_STARTED_DATA_KEY = "titleEditingStarted";
-
 export const isEditableKeyboardTarget = (
   keyboardEvent: Pick<KeyboardEvent, "target">,
 ) => {
@@ -56,19 +50,5 @@ export const isEditableKeyboardTarget = (
 
   const tagName = target.tagName.toLowerCase();
 
-  if (tagName === "input") {
-    return !isEmptyEventTitleInput(target);
-  }
-
-  return tagName === "textarea" || tagName === "select";
-};
-
-const isEmptyEventTitleInput = (target: HTMLElement) => {
-  if (!(target instanceof HTMLInputElement)) return false;
-
-  return (
-    target.name === EVENT_FORM_TITLE_INPUT_NAME &&
-    target.value.length === 0 &&
-    target.dataset[EVENT_FORM_TITLE_EDITING_STARTED_DATA_KEY] !== "true"
-  );
+  return tagName === "input" || tagName === "textarea" || tagName === "select";
 };

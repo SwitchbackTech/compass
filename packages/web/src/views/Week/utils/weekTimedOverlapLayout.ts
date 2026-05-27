@@ -1,40 +1,79 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type EventPosition } from "@web/common/utils/position/position.util";
+import {
+  DECK_INDENT,
+  DECK_MIN_WIDTH,
+  DECK_RIGHT_RESERVE,
+} from "@web/views/Week/layout.constants";
+
+export interface WeekTimedDeckLayout {
+  groupSize: number;
+  order: number;
+}
+
+export interface WeekTimedEventLayoutItem {
+  deckLayout: WeekTimedDeckLayout | null;
+  event: Schema_GridEvent;
+}
 
 interface DeckCandidate {
   dayKey: string;
   end: Dayjs;
-  event: Schema_GridEvent;
+  item: WeekTimedEventLayoutItem;
   start: Dayjs;
 }
 
-export const applyWeekTimedOverlapLayout = (
+export const createWeekTimedEventLayout = (
   events: Schema_GridEvent[],
-): Schema_GridEvent[] => {
-  const copied = deepCopyEvents(events);
-  const candidates = copied.map(toDeckCandidate);
+): WeekTimedEventLayoutItem[] => {
+  const items: WeekTimedEventLayoutItem[] = events.map((event) => ({
+    deckLayout: null,
+    event,
+  }));
+  const candidates = items.map(toDeckCandidate);
 
   for (const dayBucket of bucketByStartDay(candidates)) {
     for (const group of groupByOverlap(dayBucket)) {
       if (group.length < 2) continue;
 
-      orderBackgroundFirst(group).forEach(({ event }, index) => {
-        event.position.deck = { order: index, groupSize: group.length };
+      orderBackgroundFirst(group).forEach(({ item }, index) => {
+        item.deckLayout = { order: index, groupSize: group.length };
       });
     }
   }
 
-  return copied;
+  return items;
 };
 
-const toDeckCandidate = (event: Schema_GridEvent): DeckCandidate => {
-  const start = dayjs(event.startDate);
+export const applyWeekTimedDeckPosition = (
+  position: EventPosition,
+  deckLayout: WeekTimedDeckLayout,
+): EventPosition => {
+  const maxIndent = (deckLayout.groupSize - 1) * DECK_INDENT;
+  const fanned = position.width - DECK_RIGHT_RESERVE - maxIndent;
+  const maxWidthWithinColumn = Math.max(0, position.width - maxIndent);
+  const width = Math.min(
+    Math.max(DECK_MIN_WIDTH, fanned),
+    maxWidthWithinColumn,
+  );
+
+  return {
+    ...position,
+    left: position.left + deckLayout.order * DECK_INDENT,
+    width,
+    zIndex: deckLayout.order + 1,
+  };
+};
+
+const toDeckCandidate = (item: WeekTimedEventLayoutItem): DeckCandidate => {
+  const start = dayjs(item.event.startDate);
 
   return {
     dayKey: start.format(YEAR_MONTH_DAY_FORMAT),
-    end: dayjs(event.endDate),
-    event,
+    end: dayjs(item.event.endDate),
+    item,
     start,
   };
 };
@@ -85,9 +124,3 @@ const orderBackgroundFirst = (group: DeckCandidate[]): DeckCandidate[] =>
     if (startDiff !== 0) return startDiff;
     return b.end.diff(a.end);
   });
-
-const deepCopyEvents = (events: Schema_GridEvent[]): Schema_GridEvent[] =>
-  events.map((event) => ({
-    ...event,
-    position: { ...event.position, deck: null },
-  }));

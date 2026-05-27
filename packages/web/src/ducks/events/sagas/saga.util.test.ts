@@ -42,7 +42,6 @@ describe("insertOptimisticEvent", () => {
         horizontalOrder: 1,
         initialX: null,
         initialY: null,
-        deck: null,
         isOverlapping: false,
         totalEventsInGroup: 1,
         widthMultiplier: 1,

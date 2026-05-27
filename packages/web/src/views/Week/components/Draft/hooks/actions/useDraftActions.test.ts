@@ -49,7 +49,6 @@ const createDraft = (
     dragOffset: { x: 0, y: 0 },
     initialX: null,
     initialY: null,
-    deck: null,
   },
   ...overrides,
 });

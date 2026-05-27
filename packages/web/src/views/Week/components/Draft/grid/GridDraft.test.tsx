@@ -23,9 +23,11 @@ mock.module("@floating-ui/react", () => ({
 
 mock.module("@web/views/Forms/EventForm/EventForm", () => ({
   EventForm: ({
+    onDraftTitleArrowKey,
     onTitleCommit,
     titleInputRef,
   }: {
+    onDraftTitleArrowKey?: (key: string) => boolean;
     onTitleCommit?: () => void;
     titleInputRef?: Ref<HTMLInputElement>;
   }) => (
@@ -35,6 +37,10 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
         if (event.key === "Enter") {
           event.preventDefault();
           onTitleCommit?.();
+        }
+
+        if (event.key === "ArrowDown") {
+          onDraftTitleArrowKey?.(event.key);
         }
       }}
       ref={titleInputRef}
@@ -89,11 +95,13 @@ const createFormProps = () => {
 };
 
 const renderGridDraft = (draft = createDraft()) => {
+  const repositionDraftByKeyboard = mock(() => true);
   const value = {
     actions: {
       convert: mock(),
       discard: mock(),
       duplicateEvent: mock(),
+      repositionDraftByKeyboard,
       startDragging: mock(),
     },
     confirmation: {
@@ -114,7 +122,7 @@ const renderGridDraft = (draft = createDraft()) => {
     },
   } as never;
 
-  return render(
+  const result = render(
     <DraftContext.Provider value={value}>
       <GridDraft
         measurements={{
@@ -127,6 +135,8 @@ const renderGridDraft = (draft = createDraft()) => {
       />
     </DraftContext.Provider>,
   );
+
+  return { ...result, repositionDraftByKeyboard };
 };
 
 afterEach(() => {
@@ -173,5 +183,15 @@ describe("GridDraft keyboard focus", () => {
     await user.keyboard("{Enter}");
 
     expect(document.activeElement).toBe(titleInput);
+  });
+
+  it("routes draft title arrow movement through the draft action", async () => {
+    const user = userEvent.setup();
+    const { repositionDraftByKeyboard } = renderGridDraft();
+
+    screen.getByRole("textbox", { name: "Draft title" }).focus();
+    await user.keyboard("{ArrowDown}");
+
+    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
   });
 });

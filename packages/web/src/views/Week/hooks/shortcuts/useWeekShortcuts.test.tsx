@@ -6,10 +6,6 @@ import { Provider } from "react-redux";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import {
-  EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE,
-  EVENT_FORM_TITLE_INPUT_NAME,
-} from "@web/common/utils/form/form.util";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -28,23 +24,48 @@ const editableEvent = {
   startDate: "2026-05-20T09:00:00.000Z",
   title: "Editable event",
 };
+const editableAllDayEvent = {
+  _id: "all-day-event-1",
+  endDate: "2026-05-21T00:00:00.000Z",
+  isAllDay: true,
+  startDate: "2026-05-20T00:00:00.000Z",
+  title: "Editable all-day event",
+};
 let pendingEventIds: string[] = [];
 let repositionDraftByKeyboard = mock();
 
 const createState = ({
   includeEditableEvent = true,
+  includeAllDayEvent = false,
 }: {
   includeEditableEvent?: boolean;
+  includeAllDayEvent?: boolean;
 } = {}) => {
   const state = createInitialState();
-  state.events.entities!.value = includeEditableEvent
+  const weekEventIds = [editableEvent._id];
+  const entities = includeEditableEvent
     ? { [editableEvent._id]: editableEvent }
     : {};
+
+  if (includeAllDayEvent) {
+    weekEventIds.push(editableAllDayEvent._id);
+    entities[editableAllDayEvent._id] = editableAllDayEvent;
+  }
+
+  state.events.entities!.value = entities;
+  state.events.getWeekEvents!.value = {
+    count: weekEventIds.length,
+    data: weekEventIds,
+    pageSize: weekEventIds.length,
+  };
   state.events.pendingEvents!.eventIds = pendingEventIds;
   return state;
 };
 
-const createStore = (options?: { includeEditableEvent?: boolean }) =>
+const createStore = (options?: {
+  includeEditableEvent?: boolean;
+  includeAllDayEvent?: boolean;
+}) =>
   configureStore({
     preloadedState: createState(options),
     reducer: reducers,
@@ -69,7 +90,10 @@ afterEach(() => {
   weekEventRegistry.clear();
 });
 
-const addCalendarTarget = (eventId = editableEvent._id) => {
+const addCalendarTarget = (
+  eventId = editableEvent._id,
+  eventType: "all-day" | "timed" = "timed",
+) => {
   const button = document.createElement("button");
   Object.defineProperty(button, "offsetParent", {
     configurable: true,
@@ -79,12 +103,15 @@ const addCalendarTarget = (eventId = editableEvent._id) => {
   weekEventRegistry.register({
     element: button,
     eventId,
-    eventType: "timed",
+    eventType,
   });
   return button;
 };
 
-const renderShortcuts = (options?: { includeEditableEvent?: boolean }) => {
+const renderShortcuts = (options?: {
+  includeEditableEvent?: boolean;
+  includeAllDayEvent?: boolean;
+}) => {
   const store = createStore(options);
 
   function wrapper({ children }: PropsWithChildren) {
@@ -153,6 +180,23 @@ describe("useWeekShortcuts calendar event targeting", () => {
       );
     });
     expect(store.getState().events.draft?.event?._id).toBe("event-1");
+    expect(store.getState().events.draft?.event).toHaveProperty("position");
+  });
+
+  it("edits the prepared all-day calendar event with M", async () => {
+    const button = addCalendarTarget(editableAllDayEvent._id, "all-day");
+    button.focus();
+
+    const store = renderShortcuts({ includeAllDayEvent: true });
+    pressKey("M");
+
+    await waitFor(() => {
+      expect(store.getState().events.draft?.status?.activity).toBe(
+        "keyboardEdit",
+      );
+    });
+    expect(store.getState().events.draft?.event?._id).toBe("all-day-event-1");
+    expect(store.getState().events.draft?.event).toHaveProperty("position");
   });
 
   it("edits the hovered calendar event with M when no event is focused", async () => {
@@ -220,71 +264,5 @@ describe("useWeekShortcuts calendar event targeting", () => {
     pressKey("ArrowRight", {}, input);
 
     expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
-  });
-
-  it("moves the draft from the auto-focused empty event title field", () => {
-    const titleInput = document.createElement("input");
-    titleInput.name = EVENT_FORM_TITLE_INPUT_NAME;
-    document.body.appendChild(titleInput);
-    titleInput.focus();
-    renderShortcuts();
-
-    pressKey("ArrowDown", {}, titleInput);
-
-    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
-  });
-
-  it("lets a non-empty event title field keep normal arrow-key behavior", () => {
-    const titleInput = document.createElement("input");
-    titleInput.name = EVENT_FORM_TITLE_INPUT_NAME;
-    titleInput.value = "Planning";
-    document.body.appendChild(titleInput);
-    titleInput.focus();
-    renderShortcuts();
-
-    pressKey("ArrowDown", {}, titleInput);
-
-    expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
-  });
-
-  it("keeps title text editing active after the title was edited back to empty", () => {
-    repositionDraftByKeyboard = mock(() => true);
-    const titleInput = document.createElement("input");
-    titleInput.name = EVENT_FORM_TITLE_INPUT_NAME;
-    titleInput.setAttribute(EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE, "true");
-    document.body.appendChild(titleInput);
-    titleInput.focus();
-    renderShortcuts();
-
-    const event = new KeyboardEvent("keydown", {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      key: "ArrowLeft",
-    });
-    titleInput.dispatchEvent(event);
-
-    expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
-    expect(event.defaultPrevented).toBe(false);
-  });
-
-  it("prevents browser arrow behavior only when the draft moves", () => {
-    repositionDraftByKeyboard = mock(() => true);
-    const titleInput = document.createElement("input");
-    titleInput.name = EVENT_FORM_TITLE_INPUT_NAME;
-    document.body.appendChild(titleInput);
-    titleInput.focus();
-    renderShortcuts();
-
-    const event = new KeyboardEvent("keydown", {
-      bubbles: true,
-      cancelable: true,
-      composed: true,
-      key: "ArrowDown",
-    });
-    titleInput.dispatchEvent(event);
-
-    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
-    expect(event.defaultPrevented).toBe(true);
   });
 });

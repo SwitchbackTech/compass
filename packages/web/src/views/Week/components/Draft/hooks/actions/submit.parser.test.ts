@@ -13,7 +13,6 @@ const createMockGridPosition = (): Schema_GridEvent["position"] => ({
   dragOffset: { x: 0, y: 0 },
   initialX: null,
   initialY: null,
-  deck: null,
 });
 
 const createMockGridEvent = (
@@ -285,7 +284,6 @@ describe("submit.parser", () => {
           dragOffset: { x: 0, y: 10 },
           initialX: 100,
           initialY: 200,
-          deck: null,
         },
       });
       const userId = "test-user-id";

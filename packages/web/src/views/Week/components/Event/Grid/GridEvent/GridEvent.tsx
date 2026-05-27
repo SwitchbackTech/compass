@@ -48,8 +48,13 @@ import {
   MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
   MIN_EVENT_WIDTH_FOR_TIME_LABEL,
 } from "@web/views/Week/layout.constants";
+import {
+  applyWeekTimedDeckPosition,
+  type WeekTimedDeckLayout,
+} from "@web/views/Week/utils/weekTimedOverlapLayout";
 
 interface Props {
+  deckLayout?: WeekTimedDeckLayout | null;
   displayMode: GridEventDisplayMode;
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
@@ -71,6 +76,7 @@ type GridEventMotionMode = "dragging" | "idle" | "resizing";
 
 const GridEventBase = (
   {
+    deckLayout = null,
     displayMode,
     event: _event,
     interactionAttributes,
@@ -92,7 +98,7 @@ const GridEventBase = (
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
-  const isDeck = Boolean(event.position?.deck) && !isDraft;
+  const isDeck = Boolean(deckLayout) && !isDraft;
   const [isFocused, setIsFocused] = useState(false);
   const shouldAcknowledgeCommit =
     useSomedayCommitAcknowledgement(event._id) &&
@@ -101,13 +107,17 @@ const GridEventBase = (
     !isPlaceholder &&
     !isDraft;
 
-  const position = getEventPosition(
+  const basePosition = getEventPosition(
     event,
     component.startOfView,
     component.endOfView,
     measurements,
     isDraft,
   );
+  const position =
+    !isDraft && deckLayout
+      ? applyWeekTimedDeckPosition(basePosition, deckLayout)
+      : basePosition;
 
   const lineClamp = useMemo(
     () => getLineClamp(position.height),
@@ -336,6 +346,7 @@ export const GridEvent = forwardRef(GridEventBase);
 export const GridEventMemo = memo(GridEvent, (prev, next) => {
   return (
     prev.displayMode === next.displayMode &&
+    prev.deckLayout === next.deckLayout &&
     prev.event === next.event &&
     prev.interactionAttributes === next.interactionAttributes &&
     prev.isPending === next.isPending &&

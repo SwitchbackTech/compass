@@ -21,7 +21,8 @@ interface Props {
 export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   const titleInputRef = useRef<HTMLInputElement>(null);
   const { actions, setters, state, confirmation } = useDraftContext();
-  const { discard, duplicateEvent, startDragging } = actions;
+  const { discard, duplicateEvent, repositionDraftByKeyboard, startDragging } =
+    actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
   const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
@@ -117,6 +118,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
               onConvert={onConvert}
               onDelete={onDelete}
               onDuplicate={duplicateEvent}
+              onDraftTitleArrowKey={repositionDraftByKeyboard}
               onTitleCommit={focusDraftBlock}
               isDraft={!draft._id}
               isExistingEvent={!!draft._id}

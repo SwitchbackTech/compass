@@ -6,9 +6,6 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Category } from "@web/ducks/events/event.types";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
-  DECK_INDENT,
-  DECK_MIN_WIDTH,
-  DECK_RIGHT_RESERVE,
   DRAFT_PADDING_BOTTOM,
   EVENT_ALLDAY_HEIGHT,
   EVENT_ALLDAY_ROW_HEIGHT,
@@ -217,30 +214,21 @@ export const getTimedEventPosition = (
   let height = hourHeight * durationHours;
   height -= DRAFT_PADDING_BOTTOM;
 
-  const deck = event.position.deck;
-  let width =
-    !isDraft && deck
-      ? getTimedEventWidth(colWidths, startIndex, 1, false)
-      : getTimedEventWidth(
-          colWidths,
-          startIndex,
-          event.position.widthMultiplier,
-          isDraft,
-        );
+  const width = getTimedEventWidth(
+    colWidths,
+    startIndex,
+    event.position.widthMultiplier,
+    isDraft,
+  );
 
-  let left =
-    !isDraft && deck
-      ? getDeckBaseTimedEventLeft(category, startIndex, colWidths)
-      : getLeftPosition(category, startIndex, colWidths, event, width, isDraft);
-
-  if (!isDraft && deck) {
-    const maxIndent = (deck.groupSize - 1) * DECK_INDENT;
-    const fanned = width - DECK_RIGHT_RESERVE - maxIndent;
-    const maxWidthWithinColumn = Math.max(0, width - maxIndent);
-    width = Math.min(Math.max(DECK_MIN_WIDTH, fanned), maxWidthWithinColumn);
-    left += deck.order * DECK_INDENT;
-    return { height, left, top, width, zIndex: deck.order + 1 };
-  }
+  const left = getLeftPosition(
+    category,
+    startIndex,
+    colWidths,
+    event,
+    width,
+    isDraft,
+  );
 
   const position: EventPosition = { height, left, top, width };
   return position;
@@ -313,15 +301,6 @@ export const getTimedEventWidth = (
   width -= BUFFER_WIDTH;
   return width;
 };
-
-const getDeckBaseTimedEventLeft = (
-  category: Category,
-  startIndex: number,
-  colWidths: number[],
-) =>
-  getAbsoluteLeftPosition(category, startIndex, colWidths) +
-  GRID_MARGIN_LEFT +
-  TIMED_EVENT_COLUMN_INSET;
 
 export const getLeftPosition = (
   category: Category,

@@ -11,7 +11,10 @@ import {
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
+import {
+  selectAllDayEvents,
+  selectGridEvents,
+} from "@web/ducks/events/selectors/event.selectors";
 import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -55,17 +58,20 @@ export const useWeekShortcuts = ({
   } = useDraftContext();
 
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
-  const eventEntities = useAppSelector(selectEventEntities);
+  const allDayEvents = useAppSelector(selectAllDayEvents);
   const pendingEventIds = useAppSelector(selectPendingEventIds);
-  const eventEntitiesRef = useRef(eventEntities);
+  const timedEvents = useAppSelector(selectGridEvents);
+  const allDayEventsRef = useRef(allDayEvents);
   const pendingEventIdsRef = useRef(pendingEventIds);
+  const timedEventsRef = useRef(timedEvents);
   const { decrementWeek, incrementWeek, goToToday } = util;
   const { scrollToNow } = scrollUtil;
 
   useEffect(() => {
-    eventEntitiesRef.current = eventEntities;
+    allDayEventsRef.current = allDayEvents;
     pendingEventIdsRef.current = pendingEventIds;
-  }, [eventEntities, pendingEventIds]);
+    timedEventsRef.current = timedEvents;
+  }, [allDayEvents, pendingEventIds, timedEvents]);
 
   const _createSomedayDraft = useCallback(
     (
@@ -145,7 +151,11 @@ export const useWeekShortcuts = ({
     if (!target) return;
     if (pendingEventIdsRef.current.includes(target.eventId)) return;
 
-    const event = eventEntitiesRef.current[target.eventId];
+    const events =
+      target.eventType === "all-day"
+        ? allDayEventsRef.current
+        : timedEventsRef.current;
+    const event = events.find((candidate) => candidate._id === target.eventId);
     if (!event) return;
 
     dispatch(

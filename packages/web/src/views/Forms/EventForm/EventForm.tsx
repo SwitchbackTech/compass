@@ -20,11 +20,7 @@ import {
 import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import { getCategory } from "@web/common/utils/event/event.util";
-import {
-  EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE,
-  EVENT_FORM_TITLE_INPUT_NAME,
-  isComboboxInteraction,
-} from "@web/common/utils/form/form.util";
+import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
@@ -46,6 +42,12 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,
   ignoreInputs: false,
 } as const;
+const DRAFT_TITLE_MOVEMENT_KEYS = new Set([
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+]);
 
 export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
   ({
@@ -55,6 +57,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     onDelete,
     onSubmit,
     onDuplicate,
+    onDraftTitleArrowKey,
     onTitleCommit,
     setEvent,
     titleEditingResetKey,
@@ -187,7 +190,29 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       }
     };
 
+    const handleDraftTitleArrowKey = (e: KeyboardEvent<HTMLInputElement>) => {
+      if (
+        !isDraft ||
+        isTitleEditingStarted ||
+        title ||
+        !DRAFT_TITLE_MOVEMENT_KEYS.has(e.key)
+      ) {
+        return false;
+      }
+
+      const didMove = onDraftTitleArrowKey?.(e.key) ?? false;
+      if (!didMove) return false;
+
+      e.preventDefault();
+      e.stopPropagation();
+      return true;
+    };
+
     const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+      if (handleDraftTitleArrowKey(e)) {
+        return;
+      }
+
       if (
         isDraft &&
         onTitleCommit &&
@@ -363,13 +388,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
         <StyledTitle
           autoFocus
-          {...(isTitleEditingStarted
-            ? { [EVENT_FORM_TITLE_EDITING_STARTED_ATTRIBUTE]: "true" }
-            : {})}
           onChange={onChangeEventTextField("title")}
           onKeyDown={handleTitleKeyDown}
           placeholder="Title"
-          name={EVENT_FORM_TITLE_INPUT_NAME}
+          name="Event Title"
           ref={titleInputRef}
           underlineColor={priorityColor}
           value={title ?? ""}
