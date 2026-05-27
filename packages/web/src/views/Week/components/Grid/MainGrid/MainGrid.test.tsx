@@ -39,6 +39,7 @@ import "@testing-library/jest-dom";
 
 const { AllDayEvents } = await import("../AllDayRow/AllDayEvents");
 const { AllDayRow } = await import("../AllDayRow/AllDayRow");
+const { Grid } = await import("../Grid");
 const { MainGrid } = await import("./MainGrid");
 const { MainGridEvents } = await import("./MainGridEvents");
 
@@ -217,6 +218,47 @@ const renderGridRegions = () => {
             mainGridRef={mainGridRef}
             measurements={measurements}
             timedColumnsElementRef={mock()}
+            today={startOfView}
+            weekProps={createWeekProps()}
+          />
+        </DraftContext.Provider>
+      </ThemeProvider>
+    </Provider>,
+  );
+};
+
+const renderWeekGrid = (events: Schema_Event[] = []) => {
+  const store = createStore(events);
+  const dateCalcs = createDateCalcs();
+
+  return render(
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <DraftContext.Provider
+          value={
+            {
+              actions: {
+                stopDragging: mock(),
+                stopResizing: mock(),
+              },
+              confirmation: {},
+              setters: {},
+              state: {},
+            } as never
+          }
+        >
+          <Grid
+            dateCalcs={dateCalcs}
+            gridRefs={{
+              allDayColumnsRef: { current: null },
+              allDayRef: mock(),
+              allDayRowRef: mock(),
+              mainGridElementRef: mock(),
+              mainGridRef: { current: null },
+              timedColumnsElementRef: mock(),
+              timedColumnsRef: { current: null },
+            }}
+            measurements={measurements}
             today={startOfView}
             weekProps={createWeekProps()}
           />
@@ -518,6 +560,30 @@ describe("Week calendar accessibility", () => {
     });
 
     expect(parseFloat(eventButton.style.width)).toBe(690);
+  });
+
+  it("keeps stacked all-day rows wired through the shared Week grid", () => {
+    renderWeekGrid([
+      createSavedEvent({
+        _id: "stacked-all-day-one",
+        endDate: "2024-01-16T00:00:00.000Z",
+        isAllDay: true,
+        startDate: "2024-01-15T00:00:00.000Z",
+        title: "Stacked one",
+      }),
+      createSavedEvent({
+        _id: "stacked-all-day-two",
+        endDate: "2024-01-16T00:00:00.000Z",
+        isAllDay: true,
+        startDate: "2024-01-15T00:00:00.000Z",
+        title: "Stacked two",
+      }),
+    ]);
+
+    expect(
+      getComputedStyle(screen.getByRole("region", { name: "All-day events" }))
+        .height,
+    ).toContain("0.09090909090909091");
   });
 });
 

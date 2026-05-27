@@ -1,10 +1,7 @@
-import { type FC, type MouseEvent } from "react";
+import { type FC, type MouseEvent, type ReactNode } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
-import {
-  ID_ALLDAY_COLUMNS,
-  ID_GRID_ALLDAY_ROW,
-} from "@web/common/constants/web.constants";
+import { CalendarAllDayRow } from "@web/common/calendar-grid/components/CalendarAllDayRow";
 import { type Ref_Callback } from "@web/common/types/util.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
@@ -15,11 +12,11 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { StyledGridCol } from "../Columns/styled";
+import { GRID_Y_START } from "@web/views/Week/layout.constants";
 import { AllDayEvents } from "./AllDayEvents";
-import { StyledAllDayColumns, StyledAllDayRow } from "./styled";
 
 interface Props {
+  children?: (props: AllDayRowRenderProps) => ReactNode;
   dateCalcs: DateCalcs;
   allDayRef: Ref_Callback;
   allDayRowRef: Ref_Callback;
@@ -27,9 +24,16 @@ interface Props {
   weekProps: WeekProps;
 }
 
+interface AllDayRowRenderProps {
+  allDayEventsLayer: ReactNode;
+  allDayRowsCount: number;
+  onAllDayMouseDown: (event: MouseEvent<HTMLElement>) => Promise<void>;
+}
+
 export const AllDayRow: FC<Props> = ({
   allDayRef,
   allDayRowRef,
+  children,
   dateCalcs,
   measurements,
   weekProps,
@@ -75,28 +79,38 @@ export const AllDayRow: FC<Props> = ({
     await startAlldayDraft(e);
   };
 
+  const allDayEventsLayer = (
+    <AllDayEvents
+      measurements={measurements}
+      startOfView={weekProps.component.startOfView}
+      endOfView={weekProps.component.endOfView}
+    />
+  );
+
+  if (children) {
+    return (
+      <>
+        {children({
+          allDayEventsLayer,
+          allDayRowsCount: rowsCount,
+          onAllDayMouseDown: onMouseDown,
+        })}
+      </>
+    );
+  }
+
   return (
-    <StyledAllDayRow
-      aria-label="All-day events"
-      id={ID_GRID_ALLDAY_ROW}
-      ref={allDayRowRef}
-      role="region"
+    <CalendarAllDayRow
+      allDayColumnsRef={allDayRef}
+      allDayRowRef={allDayRowRef}
+      eventsLayer={allDayEventsLayer}
+      gridOffsetTopPx={GRID_Y_START}
       rowsCount={rowsCount}
       onMouseDown={onMouseDown}
-    >
-      <StyledAllDayColumns id={ID_ALLDAY_COLUMNS} ref={allDayRef}>
-        {weekDays.map((day) => (
-          <StyledGridCol
-            $color="transparent"
-            key={day.format(YEAR_MONTH_DAY_FORMAT)}
-          />
-        ))}
-      </StyledAllDayColumns>
-      <AllDayEvents
-        measurements={measurements}
-        startOfView={weekProps.component.startOfView}
-        endOfView={weekProps.component.endOfView}
-      />
-    </StyledAllDayRow>
+      visibleDates={weekDays.map((date) => ({
+        date,
+        key: date.format(YEAR_MONTH_DAY_FORMAT),
+      }))}
+    />
   );
 };

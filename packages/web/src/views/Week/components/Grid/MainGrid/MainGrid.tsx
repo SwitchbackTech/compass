@@ -1,15 +1,9 @@
-import { type FC, type MutableRefObject } from "react";
+import { type FC, type MutableRefObject, type ReactNode } from "react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { ID_GRID_MAIN } from "@web/common/constants/web.constants";
+import { CalendarTimedGrid } from "@web/common/calendar-grid/components/CalendarTimedGrid";
 import { type Ref_Callback } from "@web/common/types/util.types";
-import { getHourLabels } from "@web/common/utils/datetime/web.date.util";
-import { MainGridColumns } from "@web/views/Week/components/Grid/Columns/MainGridColumns";
 import { MainGridEvents } from "@web/views/Week/components/Grid/MainGrid/MainGridEvents";
-import {
-  StyledGridRow,
-  StyledGridWithTimeLabels,
-  StyledMainGrid,
-} from "@web/views/Week/components/Grid/MainGrid/styled";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useDragEventSmartScroll } from "@web/views/Week/hooks/grid/useDragEventSmartScroll";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -17,6 +11,7 @@ import { useTimedGridDraftCreation } from "@web/views/Week/hooks/grid/useTimedGr
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
 interface Props {
+  children?: (props: MainGridRenderProps) => ReactNode;
   dateCalcs: DateCalcs;
   mainGridElementRef: Ref_Callback;
   mainGridRef: MutableRefObject<HTMLDivElement | null>;
@@ -26,7 +21,15 @@ interface Props {
   weekProps: WeekProps;
 }
 
+interface MainGridRenderProps {
+  onTimedMouseDown: ReturnType<
+    typeof useTimedGridDraftCreation
+  >["startTimedDraftCreation"];
+  timedEventsLayer: ReactNode;
+}
+
 export const MainGrid: FC<Props> = ({
+  children,
   dateCalcs,
   mainGridElementRef,
   mainGridRef,
@@ -36,7 +39,7 @@ export const MainGrid: FC<Props> = ({
   weekProps,
 }) => {
   const { component } = weekProps;
-  const { isCurrentWeek, week, weekDays } = component;
+  const { weekDays } = component;
   const { startTimedDraftCreation } = useTimedGridDraftCreation({
     dateCalcs,
     weekProps,
@@ -44,30 +47,32 @@ export const MainGrid: FC<Props> = ({
 
   useDragEventSmartScroll(mainGridRef);
 
+  const timedEventsLayer = (
+    <MainGridEvents measurements={measurements} weekProps={weekProps} />
+  );
+
+  if (children) {
+    return (
+      <>
+        {children({
+          onTimedMouseDown: startTimedDraftCreation,
+          timedEventsLayer,
+        })}
+      </>
+    );
+  }
+
   return (
-    <StyledMainGrid
-      aria-label="Timed events grid"
-      id={ID_GRID_MAIN}
-      ref={mainGridElementRef}
-      role="region"
-      tabIndex={-1}
-      className="compass-scroll"
-    >
-      <MainGridColumns
-        isCurrentWeek={isCurrentWeek}
-        timedColumnsElementRef={timedColumnsElementRef}
-        today={today}
-        week={week}
-        weekDays={weekDays}
-      />
-
-      <StyledGridWithTimeLabels>
-        {getHourLabels(true).map((dayTime) => (
-          <StyledGridRow key={dayTime} onMouseDown={startTimedDraftCreation} />
-        ))}
-      </StyledGridWithTimeLabels>
-
-      <MainGridEvents measurements={measurements} weekProps={weekProps} />
-    </StyledMainGrid>
+    <CalendarTimedGrid
+      eventsLayer={timedEventsLayer}
+      onMouseDown={startTimedDraftCreation}
+      timedColumnsRef={timedColumnsElementRef}
+      timedGridRef={mainGridElementRef}
+      today={today}
+      visibleDates={weekDays.map((date) => ({
+        date,
+        key: date.format(YEAR_MONTH_DAY_FORMAT),
+      }))}
+    />
   );
 };
