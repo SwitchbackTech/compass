@@ -214,10 +214,8 @@ during Import or Public watch notification handling.
   the user is typing in an editable field.
 - Keyboard repositioning preserves the user's current focus target unless the
   user explicitly commits title editing.
-- Committing the title of a shortcut-created **Draft Event** moves focus to the
-  draft block without saving the final **Event**.
-- Pressing Enter on a focused shortcut-created **Draft Event** block re-enters
-  the form.
+- Pressing Enter in a newly created **Draft Event** title field saves the final
+  **Event** immediately.
 - The **Draft Event** form remains non-modal while the draft block is used as
   the keyboard handle.
 - Plain arrow-key repositioning applies to the active Week **Draft Event**. A

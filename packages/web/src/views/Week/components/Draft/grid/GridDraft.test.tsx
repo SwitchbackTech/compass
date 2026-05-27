@@ -23,12 +23,14 @@ mock.module("@floating-ui/react", () => ({
 
 mock.module("@web/views/Forms/EventForm/EventForm", () => ({
   EventForm: ({
+    event: draftEvent,
     onDraftTitleArrowKey,
-    onTitleCommit,
+    onSubmit,
     titleInputRef,
   }: {
+    event: Schema_GridEvent;
     onDraftTitleArrowKey?: (key: string) => boolean;
-    onTitleCommit?: () => void;
+    onSubmit?: (event: Schema_GridEvent) => void;
     titleInputRef?: Ref<HTMLInputElement>;
   }) => (
     <input
@@ -36,7 +38,7 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
       onKeyDown={(event) => {
         if (event.key === "Enter") {
           event.preventDefault();
-          onTitleCommit?.();
+          onSubmit?.(draftEvent);
         }
 
         if (event.key === "ArrowDown") {
@@ -96,6 +98,7 @@ const createFormProps = () => {
 
 const renderGridDraft = (draft = createDraft()) => {
   const repositionDraftByKeyboard = mock(() => true);
+  const onSubmit = mock();
   const value = {
     actions: {
       convert: mock(),
@@ -106,7 +109,7 @@ const renderGridDraft = (draft = createDraft()) => {
     },
     confirmation: {
       onDelete: mock(),
-      onSubmit: mock(),
+      onSubmit,
     },
     setters: {
       setDateBeingChanged: mock(),
@@ -136,7 +139,7 @@ const renderGridDraft = (draft = createDraft()) => {
     </DraftContext.Provider>,
   );
 
-  return { ...result, repositionDraftByKeyboard };
+  return { ...result, onSubmit, repositionDraftByKeyboard };
 };
 
 afterEach(() => {
@@ -166,9 +169,9 @@ describe("GridDraft keyboard focus", () => {
     expect(floatingFocusManagerProps?.modal).toBe(false);
   });
 
-  it("moves focus from title commit to the draft block and back with Enter", async () => {
+  it("submits the draft from title Enter without focusing the draft block", async () => {
     const user = userEvent.setup();
-    renderGridDraft();
+    const { onSubmit } = renderGridDraft();
 
     const titleInput = screen.getByRole("textbox", { name: "Draft title" });
     titleInput.focus();
@@ -178,11 +181,12 @@ describe("GridDraft keyboard focus", () => {
     const draftBlock = screen.getByRole("button", {
       name: /Timed event: Planning/,
     });
-    expect(document.activeElement).toBe(draftBlock);
 
-    await user.keyboard("{Enter}");
-
-    expect(document.activeElement).toBe(titleInput);
+    expect(onSubmit).toHaveBeenCalledTimes(1);
+    expect(onSubmit.mock.calls[0]?.[0]).toEqual(
+      expect.objectContaining({ title: "Planning" }),
+    );
+    expect(document.activeElement).not.toBe(draftBlock);
   });
 
   it("routes draft title arrow movement through the draft action", async () => {

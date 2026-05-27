@@ -268,6 +268,17 @@ export const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
 };
 
+export const fillTitleAndSubmitEventFormWithEnter = async (
+  page: Page,
+  title: string,
+) => {
+  const titleInput = getFormTitleInput(page);
+  await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
+  await titleInput.fill(title);
+  await titleInput.press("Enter");
+  await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
+};
+
 export const openTimedEventFormWithMouse = async (page: Page) => {
   const draftEvent = page.locator('#mainGrid .active[role="button"]').first();
   await retryUntil(

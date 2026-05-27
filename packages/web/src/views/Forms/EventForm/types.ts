@@ -25,7 +25,6 @@ export interface FormProps {
   ) => void;
   onSubmit: (event: Schema_Event | null) => void;
   onSubmitEventForm?: (event: Schema_Event) => void;
-  onTitleCommit?: () => void;
   priority?: Priority;
   setEvent: (event: SetStateAction<Schema_Event | null>) => void;
   titleEditingResetKey?: string | number | null;

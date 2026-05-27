@@ -36,13 +36,6 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   };
 
   const handleClick = () => {};
-  const focusDraftBlock = () => {
-    const reference = refs.reference.current;
-
-    if (reference instanceof HTMLElement) {
-      reference.focus();
-    }
-  };
   const focusTitleInput = () => {
     titleInputRef.current?.focus();
   };
@@ -119,7 +112,6 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
               onDelete={onDelete}
               onDuplicate={duplicateEvent}
               onDraftTitleArrowKey={repositionDraftByKeyboard}
-              onTitleCommit={focusDraftBlock}
               isDraft={!draft._id}
               isExistingEvent={!!draft._id}
               onSubmit={(event) => {

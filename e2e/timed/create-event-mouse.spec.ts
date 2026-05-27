@@ -4,6 +4,7 @@ import {
   ensureSidebarOpen,
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
+  fillTitleAndSubmitEventFormWithEnter,
   getMainGridPoint,
   openTimedEventFormWithMouse,
   prepareCalendarPage,
@@ -86,7 +87,7 @@ test("should create a timed event using mouse interaction", async ({
 
   const title = createEventTitle("Timed Event");
   await openTimedEventFormWithMouse(page);
-  await fillTitleAndSaveEventForm(page, title);
+  await fillTitleAndSubmitEventFormWithEnter(page, title);
 
   await expectTimedEventVisible(page, title);
 });
