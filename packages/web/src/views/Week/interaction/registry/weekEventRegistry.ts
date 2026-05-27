@@ -4,6 +4,11 @@ import {
   useCallback,
   useRef,
 } from "react";
+import {
+  type CalendarEventRegistry,
+  type CalendarInteractionRegisteredTarget,
+  createCalendarEventRegistry,
+} from "@web/common/calendar-grid/interaction/createCalendarEventRegistry";
 
 export const WEEK_INTERACTION_EVENT_ID_ATTRIBUTE =
   "data-week-interaction-event-id";
@@ -12,14 +17,8 @@ export const WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE =
 
 export type WeekInteractionEventType = "all-day" | "timed";
 
-export interface WeekInteractionRegisteredTarget {
-  element: HTMLElement;
-  eventId: string;
-  eventType: WeekInteractionEventType;
-}
-
-const getRegistryKey = (eventId: string, eventType: WeekInteractionEventType) =>
-  `${eventType}:${eventId}`;
+export type WeekInteractionRegisteredTarget =
+  CalendarInteractionRegisteredTarget<WeekInteractionEventType>;
 
 const isWeekInteractionEventType = (
   value: string | null,
@@ -43,108 +42,14 @@ export const getWeekInteractionTargetAttributes = ({
   };
 };
 
-export interface WeekEventRegistry {
-  clear(): void;
-  register(registration: WeekInteractionRegisteredTarget): () => void;
-  resolve(
-    eventId: string,
-    eventType: WeekInteractionEventType,
-  ): HTMLElement | null;
-  resolveFromTarget(
-    target: EventTarget | null,
-  ): WeekInteractionRegisteredTarget | null;
-}
+export type WeekEventRegistry = CalendarEventRegistry<WeekInteractionEventType>;
 
-export const createWeekEventRegistry = (): WeekEventRegistry => {
-  const events = new Map<string, WeekInteractionRegisteredTarget>();
-
-  const register = ({
-    element,
-    eventId,
-    eventType,
-  }: WeekInteractionRegisteredTarget) => {
-    element.setAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE, eventId);
-    element.setAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE, eventType);
-
-    const key = getRegistryKey(eventId, eventType);
-
-    events.set(key, {
-      element,
-      eventId,
-      eventType,
-    });
-
-    return () => {
-      const current = events.get(key);
-
-      if (current?.element === element) {
-        events.delete(key);
-      }
-    };
-  };
-
-  const resolve = (eventId: string, eventType: WeekInteractionEventType) => {
-    const key = getRegistryKey(eventId, eventType);
-    const registration = events.get(key);
-
-    if (!registration) {
-      return null;
-    }
-
-    if (!isRegistrationCurrent(registration)) {
-      events.delete(key);
-      return null;
-    }
-
-    return registration.element;
-  };
-
-  const resolveFromTarget = (target: EventTarget | null) => {
-    if (!(target instanceof Element)) {
-      return null;
-    }
-
-    const element = target.closest<HTMLElement>(
-      `[${WEEK_INTERACTION_EVENT_ID_ATTRIBUTE}][${WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE}]`,
-    );
-
-    if (!element) {
-      return null;
-    }
-
-    const eventId = element.getAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE);
-    const eventType = element.getAttribute(
-      WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
-    );
-
-    if (!eventId || !isWeekInteractionEventType(eventType)) {
-      return null;
-    }
-
-    const registeredElement = resolve(eventId, eventType);
-
-    if (registeredElement !== element) {
-      return null;
-    }
-
-    return {
-      element: registeredElement,
-      eventId,
-      eventType,
-    };
-  };
-
-  const clear = () => {
-    events.clear();
-  };
-
-  return {
-    clear,
-    register,
-    resolve,
-    resolveFromTarget,
-  };
-};
+export const createWeekEventRegistry = (): WeekEventRegistry =>
+  createCalendarEventRegistry<WeekInteractionEventType>({
+    eventIdAttribute: WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
+    eventTypeAttribute: WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
+    isEventType: isWeekInteractionEventType,
+  });
 
 export const weekEventRegistry = createWeekEventRegistry();
 
@@ -198,12 +103,3 @@ const assignRef = (
 
   (ref as MutableRefObject<HTMLDivElement | null>).current = node;
 };
-
-const isRegistrationCurrent = ({
-  element,
-  eventId,
-  eventType,
-}: WeekInteractionRegisteredTarget) =>
-  element.isConnected &&
-  element.getAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE) === eventId &&
-  element.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE) === eventType;

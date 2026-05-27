@@ -264,6 +264,18 @@ afterEach(() => {
 });
 
 describe("weekEventRegistry", () => {
+  it("keeps Week event attributes after registry extraction", () => {
+    const attributes = getWeekInteractionTargetAttributes({
+      eventId: "event-1",
+      eventType: "timed",
+    });
+
+    expect(attributes).toEqual({
+      "data-week-interaction-event-id": "event-1",
+      "data-week-interaction-event-type": "timed",
+    });
+  });
+
   it("registers and unregisters saved timed event elements", () => {
     const event = createTimedEvent();
     const { unmount } = renderWithStore(
