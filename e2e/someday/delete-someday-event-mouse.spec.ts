@@ -5,6 +5,7 @@ import {
   expectSomedayEventMissing,
   expectSomedayEventVisible,
   fillTitleAndSaveEventForm,
+  openEventForEditingWithMouse,
   openSomedayEventFormWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -21,7 +22,7 @@ test("should delete a someday event using mouse interaction", async ({
   await fillTitleAndSaveEventForm(page, title);
   await expectSomedayEventVisible(page, title);
 
-  await page.locator("#sidebar").getByRole("button", { name: title }).click();
+  await openEventForEditingWithMouse(page, title);
   await deleteEventWithMouse(page);
 
   await expectSomedayEventMissing(page, title);

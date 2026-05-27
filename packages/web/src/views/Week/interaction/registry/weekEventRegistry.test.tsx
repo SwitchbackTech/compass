@@ -27,7 +27,15 @@ import {
   type WeekInteractionEventType,
   weekEventRegistry,
 } from "./weekEventRegistry";
-import { afterEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 
 const startOfView = dayjs("2026-05-17T00:00:00.000Z");
 const endOfView = startOfView.add(7, "day");
@@ -116,6 +124,10 @@ const expectEventBgToUseHoverColor = (element: HTMLElement) => {
     gridHoverColorByPriority[Priorities.UNASSIGNED],
   );
 };
+
+beforeEach(() => {
+  setSystemTime(new Date("2026-05-01T00:00:00.000Z"));
+});
 
 const RegistrationHarness = ({
   eventId = "event-1",
@@ -223,6 +235,7 @@ const RegisteredAllDayEventHarness = ({
 };
 
 afterEach(() => {
+  setSystemTime();
   act(() => {
     __resetSomedayCommitAcknowledgementState();
   });

@@ -4,6 +4,7 @@ import {
   expectSomedayEventMissing,
   expectSomedayEventVisible,
   fillTitleAndSaveEventForm,
+  openEventForEditingWithMouse,
   openSomedayEventFormWithMouse,
   prepareCalendarPage,
   updateEventTitle,
@@ -21,7 +22,7 @@ test("should update a someday event using mouse interaction", async ({
   await fillTitleAndSaveEventForm(page, title);
   await expectSomedayEventVisible(page, title);
 
-  await page.locator("#sidebar").getByRole("button", { name: title }).click();
+  await openEventForEditingWithMouse(page, title);
 
   const updatedTitle = updateEventTitle("Someday Event");
   await fillTitleAndSaveEventForm(page, updatedTitle);
