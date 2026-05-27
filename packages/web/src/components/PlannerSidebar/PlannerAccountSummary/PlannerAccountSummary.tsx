@@ -2,38 +2,10 @@ import { InfoIcon } from "@phosphor-icons/react";
 import { type FC, useCallback } from "react";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
-import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { getGoogleAccountSummaryStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
 const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save changes";
-const SYNCING_STATUS_LABEL = "Syncing...";
-
-type SyncStatus = {
-  label: string;
-  isHealthy: boolean;
-  isLoading?: boolean;
-} | null;
-
-const getSyncStatus = (state: GoogleUiState): SyncStatus => {
-  switch (state) {
-    case "HEALTHY":
-      return { label: "Synced with Google", isHealthy: true };
-    case "IMPORTING":
-    case "repairing":
-    case "checking":
-      return {
-        label: SYNCING_STATUS_LABEL,
-        isHealthy: false,
-        isLoading: state === "checking",
-      };
-    case "RECONNECT_REQUIRED":
-      return { label: "Reconnect needed", isHealthy: false };
-    case "ATTENTION":
-      return { label: "Repair needed", isHealthy: false };
-    default:
-      return null;
-  }
-};
 
 export const PlannerAccountSummary: FC = () => {
   const { email } = useUser();
@@ -86,7 +58,7 @@ const TemporaryAccountSummary: FC = () => {
 const AuthenticatedAccountSummary: FC<{ email: string }> = ({ email }) => {
   const { state } = useConnectGoogle();
   const accountLabel = email;
-  const syncStatus = getSyncStatus(state);
+  const syncStatus = getGoogleAccountSummaryStatus(state);
 
   return (
     <div

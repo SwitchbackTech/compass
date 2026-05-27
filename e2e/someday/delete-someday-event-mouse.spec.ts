@@ -5,7 +5,7 @@ import {
   expectSomedayEventMissing,
   expectSomedayEventVisible,
   fillTitleAndSaveEventForm,
-  openEventForEditingWithMouse,
+  openSomedayEventForEditingWithMouse,
   openSomedayEventFormWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -22,7 +22,7 @@ test("should delete a someday event using mouse interaction", async ({
   await fillTitleAndSaveEventForm(page, title);
   await expectSomedayEventVisible(page, title);
 
-  await openEventForEditingWithMouse(page, title);
+  await openSomedayEventForEditingWithMouse(page, title);
   await deleteEventWithMouse(page);
 
   await expectSomedayEventMissing(page, title);

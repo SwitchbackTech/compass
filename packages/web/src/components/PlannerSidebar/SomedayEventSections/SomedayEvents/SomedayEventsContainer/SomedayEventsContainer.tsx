@@ -4,7 +4,7 @@ import {
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
@@ -12,12 +12,11 @@ import {
 } from "@web/common/constants/web.constants";
 import { DropZone } from "@web/components/DND/DropZone";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import { type State_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
 import { useSomedayDropTargetRegistrationRef } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayDropTargetRegistry";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEventItem } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventItem/SomedayEventItem";
 import { AddSomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
-import { useSomedayColdStartReserve } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/useSomedayColdStartReserve";
+import { useSomedayRefreshReserve } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/useSomedayRefreshReserve";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
 import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
@@ -48,25 +47,15 @@ const getActiveDropZoneHeight = (
   Math.min(eventCount, getSomedayEventLimit(category)) *
     SOMEDAY_DROP_ZONE_ROW_SLOT_HEIGHT;
 
-const getSomedayEvents = (
-  category: SomedayInteractionCategory,
-  somedayEvents: State_Sidebar["somedayEvents"],
-) => {
-  const colName = getColName(category);
-  const column = somedayEvents.columns[colName];
-
-  return column.eventIds.map(
-    (eventId: string) => somedayEvents.events[eventId],
-  );
-};
-
 export interface Props {
   category: SomedayInteractionCategory;
+  events: Schema_Event[];
   isDraftingNew: boolean;
 }
 
 export const SomedayEventsContainer: FC<Props> = ({
   category,
+  events,
   isDraftingNew,
 }) => {
   const colName = getColName(category);
@@ -76,12 +65,11 @@ export const SomedayEventsContainer: FC<Props> = ({
     category,
   });
 
-  const events = getSomedayEvents(category, state.somedayEvents);
   const isProcessing = Boolean(
     useAppSelector(selectIsGetSomedayEventsProcessing),
   );
   const { reservedMinHeight, shouldAnimateRowEntrance } =
-    useSomedayColdStartReserve(colName, events.length, isProcessing);
+    useSomedayRefreshReserve(events.length, isProcessing);
 
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;

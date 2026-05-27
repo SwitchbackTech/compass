@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import type React from "react";
 import { Categories_Event } from "@core/types/event.types";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockCreateSomedayDraft = mock();
 
@@ -56,6 +56,10 @@ mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
   ),
 }));
 
+mock.module("@phosphor-icons/react", () => ({
+  PlusIcon: () => <span aria-hidden="true">plus</span>,
+}));
+
 mock.module("@web/store/store.hooks", () => ({
   useAppSelector: () => false,
 }));
@@ -72,6 +76,7 @@ describe("SomedayEventsContainer", () => {
     render(
       <SomedayEventsContainer
         category={Categories_Event.SOMEDAY_WEEK}
+        events={[]}
         isDraftingNew={false}
       />,
     );
@@ -86,6 +91,7 @@ describe("SomedayEventsContainer", () => {
     render(
       <SomedayEventsContainer
         category={Categories_Event.SOMEDAY_MONTH}
+        events={[]}
         isDraftingNew={false}
       />,
     );
@@ -95,4 +101,8 @@ describe("SomedayEventsContainer", () => {
       screen.getByRole("button", { name: "Add item to month" }),
     ).toBeTruthy();
   });
+});
+
+afterAll(() => {
+  mock.restore();
 });

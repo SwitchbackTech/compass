@@ -4,6 +4,12 @@ export type GoogleUiState = "checking" | "repairing" | GoogleConnectionState;
 
 export type CommandActionIcon = "CloudArrowUpIcon";
 
+export type GoogleAccountSummaryStatus = {
+  label: string;
+  isHealthy: boolean;
+  isLoading: boolean;
+} | null;
+
 export type GoogleUiConfig = {
   commandAction: {
     label: string;

@@ -1,4 +1,8 @@
 import { type FC } from "react";
+import { type Schema_Event } from "@core/types/event.types";
+import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
+import { type State_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
 import { useWeekLabel } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayWeekSection/useWeekLabel";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { SomedayMonthSection } from "./SomedayMonthSection/SomedayMonthSection";
@@ -10,18 +14,29 @@ interface Props {
   viewEnd: WeekProps["component"]["endOfView"];
 }
 
+const getSectionEvents = (
+  columnName: typeof COLUMN_WEEK | typeof COLUMN_MONTH,
+  somedayEvents: State_Sidebar["somedayEvents"],
+): Schema_Event[] =>
+  somedayEvents.columns[columnName].eventIds.map(
+    (eventId) => somedayEvents.events[eventId],
+  );
+
 export const SomedayEventSections: FC<Props> = ({
   calendarDate,
   viewEnd,
   viewStart,
 }) => {
+  const { state } = useSidebarContext();
   const weekLabel = useWeekLabel(viewStart, viewEnd);
+  const weekEvents = getSectionEvents(COLUMN_WEEK, state.somedayEvents);
+  const monthEvents = getSectionEvents(COLUMN_MONTH, state.somedayEvents);
 
   return (
     <div className="flex flex-col gap-6">
-      <SomedayWeekSection weekLabel={weekLabel} />
+      <SomedayWeekSection events={weekEvents} weekLabel={weekLabel} />
 
-      <SomedayMonthSection monthDate={calendarDate} />
+      <SomedayMonthSection events={monthEvents} monthDate={calendarDate} />
     </div>
   );
 };

@@ -12,7 +12,7 @@ export const SomedaySectionHeader: FC<Props> = ({ count, label }) => {
         {label}
       </h2>
       {count > 0 ? (
-        <span className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-white/[0.07] px-1.5 text-[11px] text-text-light-inactive tabular-nums leading-none">
+        <span className="inline-flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-panel-badge-bg px-1.5 text-[11px] text-text-light-inactive tabular-nums leading-none">
           {count}
           <span className="sr-only"> {count === 1 ? "item" : "items"}</span>
         </span>

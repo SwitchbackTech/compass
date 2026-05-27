@@ -43,11 +43,13 @@ import {
   setSystemTime,
 } from "bun:test";
 
-const getFixtureWeekStart = (yearOffset: number) =>
-  dayjs().add(yearOffset, "year").startOf("week").startOf("day");
-
-const futureWeekStart = getFixtureWeekStart(1);
-const pastWeekStart = getFixtureWeekStart(-1);
+const TEST_NOW = new Date("2026-05-01T00:00:00.000Z");
+const testNow = dayjs(TEST_NOW);
+const futureWeekStart = testNow.add(1, "week").startOf("week").startOf("day");
+const pastWeekStart = testNow
+  .subtract(1, "week")
+  .startOf("week")
+  .startOf("day");
 const startOfView = futureWeekStart;
 const endOfView = startOfView.add(7, "day");
 const futureTimedStart = futureWeekStart.add(1, "day").hour(9);
@@ -144,7 +146,7 @@ const expectEventBgToUseHoverColor = (element: HTMLElement) => {
 };
 
 beforeEach(() => {
-  setSystemTime(new Date("2026-05-01T00:00:00.000Z"));
+  setSystemTime(TEST_NOW);
 });
 
 const RegistrationHarness = ({

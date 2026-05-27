@@ -24,6 +24,7 @@ mock.module(
             weekEvents: { eventIds: [] },
             monthEvents: { eventIds: [] },
           },
+          events: {},
         },
       },
     }),

@@ -28,6 +28,7 @@ mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
 
 mock.module("@phosphor-icons/react", () => ({
   InfoIcon: () => <span aria-hidden="true">info</span>,
+  PlusIcon: () => <span aria-hidden="true">plus</span>,
 }));
 
 const { PlannerAccountSummary } =
@@ -96,18 +97,13 @@ describe("PlannerAccountSummary", () => {
     expect(screen.getByText("Syncing...")).toBeTruthy();
   });
 
-  it("shows a checking spinner before Google metadata loads", () => {
+  it("shows syncing copy before Google metadata loads", () => {
     mockEmail = "ugur@example.com";
     mockGoogleState = "checking";
 
     render(<PlannerAccountSummary />);
 
-    const checkingLabel = screen.getByText("Syncing...");
-
-    expect(checkingLabel).toBeTruthy();
-    expect(
-      checkingLabel.parentElement?.querySelector(".animate-spin"),
-    ).toBeTruthy();
+    expect(screen.getByText("Syncing...")).toBeTruthy();
   });
 
   it("shows repair copy when Google sync needs attention", () => {

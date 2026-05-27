@@ -1,11 +1,13 @@
 import { theme } from "@web/common/styles/theme";
 import {
   type CommandActionIcon,
+  type GoogleAccountSummaryStatus,
   type GoogleUiConfig,
   type GoogleUiState,
 } from "./useConnectGoogle.types";
 
 const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
+const SYNCING_ACCOUNT_SUMMARY_LABEL = "Syncing...";
 type RepairDialog = NonNullable<GoogleUiConfig["sidebarStatus"]["dialog"]>;
 
 const buildRepairDialog = (onRepairGoogle: () => void): RepairDialog => ({
@@ -116,5 +118,45 @@ export const getGoogleConnectionConfig = (
           isDisabled: true,
         },
       };
+  }
+};
+
+export const getGoogleAccountSummaryStatus = (
+  state: GoogleUiState,
+): GoogleAccountSummaryStatus => {
+  switch (state) {
+    case "HEALTHY":
+      return {
+        isHealthy: true,
+        isLoading: false,
+        label: "Synced with Google",
+      };
+    case "IMPORTING":
+    case "repairing":
+      return {
+        isHealthy: false,
+        isLoading: false,
+        label: SYNCING_ACCOUNT_SUMMARY_LABEL,
+      };
+    case "checking":
+      return {
+        isHealthy: false,
+        isLoading: true,
+        label: SYNCING_ACCOUNT_SUMMARY_LABEL,
+      };
+    case "RECONNECT_REQUIRED":
+      return {
+        isHealthy: false,
+        isLoading: false,
+        label: "Reconnect needed",
+      };
+    case "ATTENTION":
+      return {
+        isHealthy: false,
+        isLoading: false,
+        label: "Repair needed",
+      };
+    case "NOT_CONNECTED":
+      return null;
   }
 };

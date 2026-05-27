@@ -27,6 +27,7 @@
   --color-gradient-accent-light-end: hsl(196 45 78);
   --color-grid-line-primary: hsl(219 18 34 / 20%);
   --color-menu-bg: hsl(0 0 98);
+  --color-panel-badge-bg: hsl(0 0 100 / 7%);
   --color-panel-bg: hsl(219 8 46 / 20%);
   --color-panel-scrollbar: hsl(219 8 46 / 20%);
   --color-panel-scrollbar-active: hsl(221 9 37);

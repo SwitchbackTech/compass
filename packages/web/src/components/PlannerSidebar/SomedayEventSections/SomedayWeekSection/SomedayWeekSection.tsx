@@ -1,23 +1,19 @@
 import { type FC } from "react";
-import { Categories_Event } from "@core/types/event.types";
-import { COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { SomedaySectionHeader } from "@web/components/PlannerSidebar/SomedayEventSections/SomedaySectionHeader/SomedaySectionHeader";
 import { SomedayEvents } from "../SomedayEvents/SomedayEvents";
 
 interface Props {
+  events: Schema_Event[];
   weekLabel: string;
 }
 
-export const SomedayWeekSection: FC<Props> = ({ weekLabel }) => {
-  const { state } = useSidebarContext();
-  const count = state.somedayEvents.columns[COLUMN_WEEK].eventIds.length;
-
+export const SomedayWeekSection: FC<Props> = ({ events, weekLabel }) => {
   return (
     <div className="flex flex-col">
-      <SomedaySectionHeader count={count} label={weekLabel} />
+      <SomedaySectionHeader count={events.length} label={weekLabel} />
 
-      <SomedayEvents category={Categories_Event.SOMEDAY_WEEK} />
+      <SomedayEvents category={Categories_Event.SOMEDAY_WEEK} events={events} />
     </div>
   );
 };

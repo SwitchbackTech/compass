@@ -422,6 +422,24 @@ export const openEventForEditingWithMouse = async (
     : new Error(`Unable to open event "${eventTitle}" for mouse editing.`);
 };
 
+export const openSomedayEventForEditingWithMouse = async (
+  page: Page,
+  eventTitle: string,
+) => {
+  await ensureSidebarOpen(page);
+
+  const titleInput = getFormTitleInput(page);
+  const eventButton = page
+    .locator("#sidebar")
+    .getByRole("button", { name: eventTitle })
+    .last();
+
+  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
+  await eventButton.scrollIntoViewIfNeeded();
+  await eventButton.click();
+  await expect(titleInput).toHaveValue(eventTitle, { timeout: FORM_TIMEOUT });
+};
+
 export const deleteEventWithMouse = async (page: Page) => {
   const form = page.getByRole("form");
   await expect(form).toBeVisible();
