@@ -1,52 +1,34 @@
 import { type MutableRefObject } from "react";
-import { HOURS_AM_FORMAT } from "@core/constants/date.constants";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
-import { roundToPrev } from "@web/common/utils/round/round.util";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type Dayjs } from "@core/util/date/dayjs";
+import { useCalendarDateCalcs } from "@web/common/calendar-grid/hooks/useCalendarDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
-import {
-  GRID_MARGIN_LEFT,
-  GRID_TIME_STEP,
-  GRID_X_START,
-} from "@web/views/Week/layout.constants";
 
 export const useDateCalcs = (
   measurements: Measurements_Grid,
   mainGridRef: MutableRefObject<HTMLDivElement | null>,
+  weekDays: Dayjs[],
 ) => {
-  const getDateByX = (x: number, firstDayInView: Dayjs) => {
-    const gridLeft =
-      mainGridRef.current?.getBoundingClientRect().left ??
-      measurements.mainGrid?.left ??
-      GRID_X_START - GRID_MARGIN_LEFT;
-    const gridX = x - gridLeft - GRID_MARGIN_LEFT;
-    const dayIndex = getDayNumberByX(gridX);
-    const date = firstDayInView.add(dayIndex, "day");
+  const calendarDateCalcs = useCalendarDateCalcs(
+    measurements,
+    mainGridRef,
+    weekDays.map((date) => ({
+      date,
+      key: date.format(YEAR_MONTH_DAY_FORMAT),
+    })),
+  );
 
-    return date;
-  };
-
-  const getDateByXY = (x: number, y: number, firstDayInView: Dayjs) => {
-    let date = getDateByX(x, firstDayInView);
-
-    const minutes = getMinuteByY(y);
-    date = date.add(minutes, "minutes");
-
-    return date;
+  const getDateByXY = (x: number, y: number, _firstDayInView: Dayjs) => {
+    return calendarDateCalcs.getDateByXY(x, y);
   };
 
   const getDateStrByXY = (
     x: number,
     y: number,
-    firstDayInView: Dayjs,
+    _firstDayInView: Dayjs,
     format?: string,
   ) => {
-    const date = getDateByXY(x, y, firstDayInView);
-
-    if (format) {
-      return date.format(format);
-    }
-    return date.format();
+    return calendarDateCalcs.getDateStrByXY(x, y, format);
   };
 
   const getDayNumberByX = (x: number) => {
@@ -59,7 +41,6 @@ export const useDateCalcs = (
       return prev + width;
     }, 0);
 
-    // If x is beyond the rightmost column, set to last day (Saturday = 6)
     if (x >= totalWidth) {
       dayNumber = measurements.colWidths.length - 1;
     }
@@ -67,35 +48,12 @@ export const useDateCalcs = (
     return dayNumber;
   };
 
-  const getMinuteByY = (y: number) => {
-    if (!measurements.mainGrid) return 0; // TS guard. This should never happen
-
-    const scrollTop = mainGridRef.current?.scrollTop || 0;
-    // gridY is the distance from the top of the grid (main grid) to the click
-    const gridY = y - measurements.mainGrid.top + scrollTop;
-
-    const decimalMinute = (gridY / measurements.hourHeight) * 60;
-
-    const flooredMinute = roundToPrev(decimalMinute, GRID_TIME_STEP);
-
-    const finalMinute = Math.max(0, flooredMinute); // prevents negative number when clicking all-day row
-
-    return finalMinute;
-  };
-
-  const getYByDate = (date: string) => {
-    const day = dayjs(date);
-    const startTime = ACCEPTED_TIMES.indexOf(day.format(HOURS_AM_FORMAT)) / 4;
-
-    return measurements.hourHeight * startTime;
-  };
-
   return {
     getDateByXY,
-    getDayNumberByX,
     getDateStrByXY,
-    getMinuteByY,
-    getYByDate,
+    getDayNumberByX,
+    getMinuteByY: calendarDateCalcs.getMinuteByY,
+    getYByDate: calendarDateCalcs.getYByDate,
   };
 };
 
