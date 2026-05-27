@@ -53,6 +53,9 @@ const validateGridEvent = mock(
 const validateSomedayEvent = mock(
   (event: Schema_SomedayEvent): Schema_SomedayEvent => event,
 );
+const validateSomedayEvents = mock(
+  (events: Schema_SomedayEvent[]): Schema_SomedayEvent[] => events,
+);
 const assembleGridEvent = mock((event: Partial<Schema_GridEvent>) =>
   createMockGridEvent({
     ...event,
@@ -66,6 +69,7 @@ mock.module("@web/common/validators/grid.event.validator", () => ({
 
 mock.module("@web/common/validators/someday.event.validator", () => ({
   validateSomedayEvent,
+  validateSomedayEvents,
 }));
 
 mock.module("@web/common/utils/event/event.util", () => ({

@@ -50,7 +50,10 @@ export const SomedayEventRectangle = ({
         direction={FlexDirections.ROW}
         justifyContent={JustifyContent.SPACE_BETWEEN}
       >
-        <div className="flex min-w-0 flex-1 items-center gap-1.5">
+        <div
+          className="flex min-w-0 flex-1 items-center gap-1.5"
+          data-someday-event-title-row="true"
+        >
           <DotsSixVertical
             aria-hidden="true"
             className="shrink-0 text-text-light"

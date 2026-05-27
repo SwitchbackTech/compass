@@ -101,7 +101,11 @@ const setReducedMotionPreference = (matches: boolean) => {
   };
 };
 
-const createHarness = () => {
+const createHarness = ({
+  viewStart = dayjs("2026-05-17"),
+}: {
+  viewStart?: ReturnType<typeof dayjs>;
+} = {}) => {
   document.body.innerHTML = "";
   somedayDropTargetRegistry.clear();
   somedayEventRegistry.clear();
@@ -112,6 +116,8 @@ const createHarness = () => {
   const timerCallbacks = new Map<unknown, () => void>();
   const event = createSomedayEvent();
   const source = document.createElement("div");
+  const sourceContent = document.createElement("div");
+  const sourceTitleRow = document.createElement("div");
   const sourceChild = document.createElement("span");
   const sourceButton = document.createElement("button");
   const weekDropTarget = document.createElement("div");
@@ -126,7 +132,12 @@ const createHarness = () => {
   const onRequestWeekNavigation = mock();
 
   sourceButton.type = "button";
-  source.append(sourceChild, sourceButton);
+  sourceButton.setAttribute("data-someday-drag-affordance", "true");
+  sourceContent.className = "h-full";
+  sourceTitleRow.setAttribute("data-someday-event-title-row", "true");
+  sourceTitleRow.append(sourceChild);
+  sourceContent.append(sourceTitleRow, sourceButton);
+  source.append(sourceContent);
   weekDropTarget.append(source);
   mainGrid.id = ID_GRID_MAIN;
   timedColumns.id = ID_GRID_COLUMNS_TIMED;
@@ -205,7 +216,7 @@ const createHarness = () => {
       mainGridElement: mainGrid,
       timedColumnsElement: timedColumns,
     }),
-    getViewStart: () => dayjs("2026-05-17"),
+    getViewStart: () => viewStart,
     runtime: () => ({
       getSomedayEventById: (eventId) => (eventId === event._id ? event : null),
       onCancelInteraction,
@@ -360,6 +371,87 @@ describe("SomedayInteractionAdapter", () => {
     expect(overlay?.style.color).toBe(expectedTextColor);
     expect(overlay?.style.backgroundColor).toBe(expectedHoverColor);
     expect(overlay?.querySelector("[data-someday-drag-affordance]")).toBeNull();
+  });
+
+  it("shows the tentative timed-grid range inside the visible Someday preview", () => {
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness({
+      viewStart: dayjs().add(1, "week").startOf("week"),
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector<HTMLElement>(
+      "[data-calendar-interaction-overlay]",
+    );
+    const timeLabel = overlay?.querySelector<HTMLElement>(
+      "[data-someday-interaction-time-label]",
+    );
+    const titleRow = overlay?.querySelector<HTMLElement>(
+      "[data-someday-event-title-row]",
+    );
+    const textStack = titleRow?.parentElement;
+
+    expect(timeLabel).toBeTruthy();
+    expect(timeLabel?.textContent).toMatch(/2\s+-\s+3 AM/);
+    expect(timeLabel?.style.display).toBe("block");
+    expect(timeLabel?.parentElement).toBe(textStack);
+    expect(timeLabel?.previousElementSibling).toBe(titleRow);
+    expect(textStack?.style.alignItems).toBe("flex-start");
+    expect(textStack?.style.display).toBe("flex");
+    expect(textStack?.style.flexDirection).toBe("column");
+    expect(titleRow?.style.alignSelf).toBe("stretch");
+    expect(titleRow?.style.alignItems).toBe("flex-start");
+    expect(titleRow?.style.flex).toBe("0 1 auto");
+    expect(titleRow?.style.flexDirection).toBe("row");
+  });
+
+  it("keeps the tentative timed-grid range visible for past targets", () => {
+    const { adapter, flushFrame, sourceChild, timedColumns } = createHarness({
+      viewStart: dayjs().subtract(1, "week").startOf("week"),
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector<HTMLElement>(
+      "[data-calendar-interaction-overlay]",
+    );
+    const titleRow = overlay?.querySelector<HTMLElement>(
+      "[data-someday-event-title-row]",
+    );
+
+    expect(
+      overlay?.querySelector("[data-someday-interaction-time-label]")
+        ?.textContent,
+    ).toMatch(/2\s+-\s+3 AM/);
+    expect(
+      overlay?.querySelector("[data-someday-interaction-time-label]")
+        ?.parentElement,
+    ).toBe(titleRow?.parentElement);
+    expect(titleRow?.style.alignSelf).toBe("stretch");
+    expect(titleRow?.style.alignItems).toBe("flex-start");
+    expect(titleRow?.style.flex).toBe("0 1 auto");
+    expect(titleRow?.style.flexDirection).toBe("row");
+    expect(titleRow?.parentElement?.style.flexDirection).toBe("column");
   });
 
   it("disables Someday overlay motion when reduced motion is preferred", () => {

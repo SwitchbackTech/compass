@@ -8,6 +8,7 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
 import { TaskDescription } from "./TaskDescription";
 
 function renderTaskDescription({
@@ -59,7 +60,8 @@ describe("TaskDescription", () => {
     await user.hover(saveButton);
 
     await waitFor(() => {
-      expect(screen.getByText("Mod+Enter")).toBeInTheDocument();
+      expect(screen.getByTestId(getModifierKeyTestId())).toBeInTheDocument();
+      expect(screen.getByTestId("enter-icon")).toBeInTheDocument();
     });
   });
 

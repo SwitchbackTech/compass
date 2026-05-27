@@ -85,7 +85,7 @@ export const assembleDefaultEvent = async (
         isAllDay: true,
         isSomeday: false,
         startDate,
-        endDate: startDate,
+        endDate: endDate ?? startDate,
       };
       return defaultAllday;
     }

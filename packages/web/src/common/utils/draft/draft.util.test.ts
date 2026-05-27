@@ -1,5 +1,6 @@
 import { Categories_Event } from "@core/types/event.types";
-import { afterAll, describe, expect, it, mock } from "bun:test";
+import dayjs from "@core/util/date/dayjs";
+import { afterAll, describe, expect, it, mock, setSystemTime } from "bun:test";
 
 mock.module("@web/auth/compass/session/session.util", () => ({
   getUserId: mock().mockResolvedValue("mock-user-id"),
@@ -7,8 +8,25 @@ mock.module("@web/auth/compass/session/session.util", () => ({
 
 const { assembleDefaultEvent } =
   require("../event/event.util") as typeof import("../event/event.util");
+const { createAlldayDraft, createTimedDraft } =
+  require("./draft.util") as typeof import("./draft.util");
+
+const expectSameTime = (actual: string, expected: string) => {
+  expect(dayjs(actual).isSame(dayjs(expected))).toBe(true);
+};
 
 describe("assembleDefaultEvent", () => {
+  it("uses a provided end date for all-day drafts", async () => {
+    const event = await assembleDefaultEvent(
+      Categories_Event.ALLDAY,
+      "2024-01-01",
+      "2024-01-02",
+    );
+
+    expect(event).toHaveProperty("startDate", "2024-01-01");
+    expect(event).toHaveProperty("endDate", "2024-01-02");
+  });
+
   it("should include dates for someday event when provided", async () => {
     const startDate = "2024-01-01";
     const endDate = "2024-01-07";
@@ -31,6 +49,63 @@ describe("assembleDefaultEvent", () => {
   });
 });
 
+describe("shortcut draft creation", () => {
+  it("creates a one-day all-day draft on today when today is inside the visible week", async () => {
+    setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
+    const dispatch = mock();
+
+    await createAlldayDraft(
+      dayjs("2026-05-18T00:00:00.000Z"),
+      dayjs("2026-05-24T23:59:59.999Z"),
+      "createShortcut",
+      dispatch,
+    );
+
+    const action = dispatch.mock.calls[0]?.[0];
+
+    expect(action.payload.eventType).toBe(Categories_Event.ALLDAY);
+    expectSameTime(action.payload.event.startDate, "2026-05-20T00:00:00.000Z");
+    expectSameTime(action.payload.event.endDate, "2026-05-21T00:00:00.000Z");
+  });
+
+  it("creates a one-day all-day draft on the visible week anchor when today is outside the visible week", async () => {
+    setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
+    const dispatch = mock();
+
+    await createAlldayDraft(
+      dayjs("2026-06-01T00:00:00.000Z"),
+      dayjs("2026-06-07T23:59:59.999Z"),
+      "createShortcut",
+      dispatch,
+    );
+
+    const action = dispatch.mock.calls[0]?.[0];
+
+    expect(action.payload.eventType).toBe(Categories_Event.ALLDAY);
+    expectSameTime(action.payload.event.startDate, "2026-06-01T00:00:00.000Z");
+    expectSameTime(action.payload.event.endDate, "2026-06-02T00:00:00.000Z");
+  });
+
+  it("creates timed drafts on the visible week anchor when today is outside the visible week", async () => {
+    setSystemTime(new Date("2026-05-20T10:07:00.000Z"));
+    const dispatch = mock();
+
+    await createTimedDraft(
+      false,
+      dayjs("2026-06-01T00:00:00.000Z"),
+      "createShortcut",
+      dispatch,
+    );
+
+    const action = dispatch.mock.calls[0]?.[0];
+
+    expect(action.payload.eventType).toBe(Categories_Event.TIMED);
+    expectSameTime(action.payload.event.startDate, "2026-06-01T10:15:00.000Z");
+    expectSameTime(action.payload.event.endDate, "2026-06-01T11:15:00.000Z");
+  });
+});
+
 afterAll(() => {
+  setSystemTime();
   mock.restore();
 });

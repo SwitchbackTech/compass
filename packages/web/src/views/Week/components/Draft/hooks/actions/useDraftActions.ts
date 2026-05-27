@@ -56,6 +56,26 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 import { getDragDurationMinutes } from "./drag-duration.util";
 
+const getDraftKeyboardMovement = (key: string, isAllDay: boolean) => {
+  switch (key) {
+    case "ArrowLeft":
+      return { days: -1, minutes: 0 };
+    case "ArrowRight":
+      return { days: 1, minutes: 0 };
+    case "ArrowUp":
+      return isAllDay ? null : { days: 0, minutes: -GRID_TIME_STEP };
+    case "ArrowDown":
+      return isAllDay ? null : { days: 0, minutes: GRID_TIME_STEP };
+    default:
+      return null;
+  }
+};
+
+const canRepositionDraftByKeyboard = (activity: string | null | undefined) =>
+  activity === "createShortcut" ||
+  activity === "gridClick" ||
+  activity === "keyboardEdit";
+
 export const useDraftActions = (
   draftState: State_Draft_Local,
   setters: Setters_Draft,
@@ -98,6 +118,7 @@ export const useDraftActions = (
     setResizeStatus,
     setDateBeingChanged,
     setDraft,
+    setDraftSessionKey,
     setIsFormOpen,
     setIsFormOpenBeforeDragging,
   } = setters;
@@ -377,6 +398,57 @@ export const useDraftActions = (
     discard();
   }, [reduxDraft, submit, discard]);
 
+  const isInsideVisibleWeek = useCallback(
+    (start: Dayjs) => {
+      const viewStart = weekProps.component.startOfView.startOf("day");
+      const viewEnd = weekProps.component.endOfView.startOf("day");
+
+      return (
+        !start.isBefore(viewStart, "day") && !start.isAfter(viewEnd, "day")
+      );
+    },
+    [weekProps.component.endOfView, weekProps.component.startOfView],
+  );
+
+  const isTimedDraftInsideOneDay = useCallback((start: Dayjs, end: Dayjs) => {
+    const midnightAfterStart = start.add(1, "day").startOf("day");
+
+    return end.isSame(start, "day") || end.isSame(midnightAfterStart);
+  }, []);
+
+  const repositionDraftByKeyboard = useCallback(
+    (key: string) => {
+      if (!canRepositionDraftByKeyboard(activity) || !draft) return false;
+
+      const movement = getDraftKeyboardMovement(key, Boolean(draft.isAllDay));
+      if (!movement) return false;
+
+      const start = dayjs(draft.startDate);
+      const end = dayjs(draft.endDate);
+      const nextStart = start
+        .add(movement.days, "day")
+        .add(movement.minutes, "minutes");
+      const nextEnd = end
+        .add(movement.days, "day")
+        .add(movement.minutes, "minutes");
+
+      if (!isInsideVisibleWeek(nextStart)) return false;
+
+      if (!draft.isAllDay && !isTimedDraftInsideOneDay(nextStart, nextEnd)) {
+        return false;
+      }
+
+      setDraft({
+        ...draft,
+        startDate: nextStart.format(),
+        endDate: nextEnd.format(),
+      });
+
+      return true;
+    },
+    [activity, draft, isInsideVisibleWeek, isTimedDraftInsideOneDay, setDraft],
+  );
+
   const drag = useCallback(
     (e: Omit<PartialMouseEvent, "currentTarget">) => {
       const updateTimesDuringDrag = (
@@ -611,6 +683,8 @@ export const useDraftActions = (
   );
 
   const create = useCallback(async () => {
+    setDraftSessionKey((key) => key + 1);
+
     if (reduxDraft !== null) {
       setDraft(reduxDraft as Schema_GridEvent);
     } else {
@@ -627,7 +701,7 @@ export const useDraftActions = (
       setDraft(defaultDraft);
     }
     openForm();
-  }, [openForm, reduxDraft, reduxDraftType, setDraft]);
+  }, [openForm, reduxDraft, reduxDraftType, setDraft, setDraftSessionKey]);
 
   const handleChange = useCallback(async () => {
     const isSomeday =
@@ -638,6 +712,7 @@ export const useDraftActions = (
       return; // Prevents form and context menu from opening at same time
     }
     if (!isSomeday && activity === "keyboardEdit") {
+      setDraftSessionKey((key) => key + 1);
       setDraft(reduxDraft as Schema_GridEvent);
       openForm();
       return;
@@ -650,6 +725,7 @@ export const useDraftActions = (
       return;
     }
     if (activity === "resizing") {
+      setDraftSessionKey((key) => key + 1);
       setDraft(reduxDraft as Schema_GridEvent);
       startResizing();
     }
@@ -659,6 +735,7 @@ export const useDraftActions = (
     activity,
     create,
     setDraft,
+    setDraftSessionKey,
     reduxDraft,
     startResizing,
     openForm,
@@ -673,6 +750,7 @@ export const useDraftActions = (
     discard,
     drag,
     openForm,
+    repositionDraftByKeyboard,
     reset,
     resize,
     isSomeday,

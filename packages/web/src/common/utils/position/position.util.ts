@@ -14,6 +14,14 @@ import {
   TIMED_EVENT_COLUMN_INSET,
 } from "@web/views/Week/layout.constants";
 
+export interface EventPosition {
+  height: number;
+  left: number;
+  top: number;
+  width: number;
+  zIndex?: number;
+}
+
 export const getAbsoluteLeftPosition = (
   category: Category,
   startIndex: number,
@@ -196,12 +204,6 @@ export const getTimedEventPosition = (
   const category = getEventCategory(start, end, startOfView, endOfView);
   const startIndex = start.get("day");
 
-  const width = getTimedEventWidth(
-    colWidths,
-    startIndex,
-    event.position.widthMultiplier,
-    isDraft,
-  );
   const startTime = ACCEPTED_TIMES.indexOf(start.format(HOURS_AM_FORMAT)) / 4;
 
   const hourHeight = measurements.hourHeight;
@@ -212,6 +214,13 @@ export const getTimedEventPosition = (
   let height = hourHeight * durationHours;
   height -= DRAFT_PADDING_BOTTOM;
 
+  const width = getTimedEventWidth(
+    colWidths,
+    startIndex,
+    event.position.widthMultiplier,
+    isDraft,
+  );
+
   const left = getLeftPosition(
     category,
     startIndex,
@@ -221,7 +230,7 @@ export const getTimedEventPosition = (
     isDraft,
   );
 
-  const position = { height, left, top, width };
+  const position: EventPosition = { height, left, top, width };
   return position;
 };
 
@@ -231,7 +240,7 @@ export const getEventPosition = (
   endOfView: Dayjs,
   measurements: Measurements_Grid,
   isDraft: boolean,
-) => {
+): EventPosition => {
   if (event.isAllDay) {
     return getAllDayEventPosition(
       event,

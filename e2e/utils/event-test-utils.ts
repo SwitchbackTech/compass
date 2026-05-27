@@ -227,6 +227,24 @@ export const clickGridCenter = async (page: Page, locator: Locator) => {
   await page.mouse.up();
 };
 
+export const getMainGridPoint = async (
+  page: Page,
+  { xRatio = 0.3, yRatio = 0.3 } = {},
+) => {
+  const mainGrid = page.locator("#mainGrid");
+  await mainGrid.scrollIntoViewIfNeeded();
+  const box = await mainGrid.boundingBox();
+
+  if (!box) {
+    throw new Error("Expected the week grid to be visible.");
+  }
+
+  return {
+    x: box.x + box.width * xRatio,
+    y: box.y + box.height * yRatio,
+  };
+};
+
 /**
  * Fills the event form title and submits via the Save control (role=button, name Save).
  * Keyboard shortcuts for submit (Enter / Mod+Enter) are not driven here: Playwright’s
@@ -247,6 +265,17 @@ export const fillTitleAndSaveEventForm = async (page: Page, title: string) => {
   await saveButton.evaluate((el) => {
     (el as HTMLElement).click();
   });
+  await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
+};
+
+export const fillTitleAndSubmitEventFormWithEnter = async (
+  page: Page,
+  title: string,
+) => {
+  const titleInput = getFormTitleInput(page);
+  await expect(titleInput).toBeVisible({ timeout: FORM_TIMEOUT });
+  await titleInput.fill(title);
+  await titleInput.press("Enter");
   await titleInput.waitFor({ state: "hidden", timeout: FORM_TIMEOUT });
 };
 

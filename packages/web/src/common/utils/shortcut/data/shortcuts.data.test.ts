@@ -10,10 +10,8 @@ describe("shortcuts.data", () => {
         { k: "n", label: "Now" },
         { k: "d", label: "Day" },
         { k: "w", label: "Week" },
-        { k: "r", label: "Edit reminder" },
-        { k: "[", label: "Toggle sidebar" },
-        { k: "?", label: "Toggle shortcuts" },
-        { k: "z", label: "Log in" },
+        { k: "[", label: "Close sidebar" },
+        { k: "?", label: "Show shortcuts" },
         { k: "Mod+k", label: "Command Palette" },
       ]);
 
@@ -32,12 +30,6 @@ describe("shortcuts.data", () => {
         k: "t",
         label: "Go to today",
       });
-    });
-
-    it("shows logout when authenticated", () => {
-      const shortcuts = getShortcuts({ isAuthenticated: true });
-
-      expect(shortcuts.globalShortcuts[6]).toEqual({ k: "z", label: "Logout" });
     });
 
     it("should show 'Scroll to now' when currentDate is today", () => {
@@ -121,21 +113,25 @@ describe("shortcuts.data", () => {
         k: "d",
         label: "Day",
       });
-      expect(shortcuts.nowShortcuts).toHaveLength(5);
+      expect(shortcuts.nowShortcuts).toHaveLength(6);
       expect(shortcuts.nowShortcuts[0]).toEqual({
-        k: "e",
+        k: "e d",
         label: "Edit description",
       });
       expect(shortcuts.nowShortcuts[1]).toEqual({
+        k: "e r",
+        label: "Edit reminder",
+      });
+      expect(shortcuts.nowShortcuts[2]).toEqual({
         k: "Mod+Enter",
         label: "Save description",
       });
-      expect(shortcuts.nowShortcuts[2]).toEqual({
+      expect(shortcuts.nowShortcuts[3]).toEqual({
         k: "j",
         label: "Previous task",
       });
-      expect(shortcuts.nowShortcuts[3]).toEqual({ k: "k", label: "Next task" });
-      expect(shortcuts.nowShortcuts[4]).toEqual({
+      expect(shortcuts.nowShortcuts[4]).toEqual({ k: "k", label: "Next task" });
+      expect(shortcuts.nowShortcuts[5]).toEqual({
         k: "Enter",
         label: "Mark complete",
       });

@@ -30,7 +30,7 @@ describe("useNowShortcuts", () => {
     );
   });
 
-  it("uses E to focus the task description", async () => {
+  it("uses E D sequence to focus the task description", async () => {
     const onFocusDescription = mock();
     compassEventEmitter.on(
       CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
@@ -39,13 +39,14 @@ describe("useNowShortcuts", () => {
     renderHook(() => useNowShortcuts(), { wrapper });
 
     pressKey("e");
+    pressKey("d");
 
     await waitFor(() => {
       expect(onFocusDescription).toHaveBeenCalledTimes(1);
     });
   });
 
-  it("does not use D for the task description shortcut", async () => {
+  it("does not focus description when pressing D alone", async () => {
     const onFocusDescription = mock();
     compassEventEmitter.on(
       CompassDOMEvents.FOCUS_TASK_DESCRIPTION,
@@ -68,6 +69,60 @@ describe("useNowShortcuts", () => {
 
     await waitFor(() => {
       expect(onToggleSidebar).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("navigates to day view when Escape is pressed outside an input", async () => {
+    const onEscape = mock();
+    renderHook(() => useNowShortcuts({ onEscape }), { wrapper });
+
+    pressKey("Escape");
+
+    await waitFor(() => {
+      expect(onEscape).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("does not navigate when Escape is pressed inside a textarea", async () => {
+    const onEscape = mock();
+    renderHook(() => useNowShortcuts({ onEscape }), { wrapper });
+
+    const textarea = document.createElement("textarea");
+    document.body.appendChild(textarea);
+
+    try {
+      textarea.focus();
+
+      pressKey("Escape", {}, textarea);
+
+      await waitFor(() => {
+        expect(onEscape).not.toHaveBeenCalled();
+      });
+    } finally {
+      document.body.removeChild(textarea);
+    }
+  });
+
+  it("uses E R sequence to edit reminder", async () => {
+    const onEditReminder = mock();
+    renderHook(() => useNowShortcuts({ onEditReminder }), { wrapper });
+
+    pressKey("e");
+    pressKey("r");
+
+    await waitFor(() => {
+      expect(onEditReminder).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("does not edit reminder when pressing E alone", async () => {
+    const onEditReminder = mock();
+    renderHook(() => useNowShortcuts({ onEditReminder }), { wrapper });
+
+    pressKey("e");
+
+    await waitFor(() => {
+      expect(onEditReminder).not.toHaveBeenCalled();
     });
   });
 });

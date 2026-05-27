@@ -71,15 +71,6 @@ export const router = createBrowserRouter(
           ],
         },
         {
-          path: ROOT_ROUTES.LOGOUT,
-          lazy: async () =>
-            import(/* webpackChunkName: "logout" */ "@web/views/Logout").then(
-              (module) => ({
-                Component: module.LogoutView,
-              }),
-            ),
-        },
-        {
           path: ROOT_ROUTES.WEEK,
           lazy: async () =>
             import(

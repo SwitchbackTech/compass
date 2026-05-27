@@ -46,8 +46,10 @@ export const MainGrid: FC<Props> = ({
 
   return (
     <StyledMainGrid
+      aria-label="Timed events grid"
       id={ID_GRID_MAIN}
       ref={mainGridElementRef}
+      role="region"
       tabIndex={-1}
       className="compass-scroll"
     >

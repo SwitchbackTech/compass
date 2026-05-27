@@ -9,8 +9,8 @@ Compass-specific terms used in the source code and docs.
 **Grid Event**: An event assigned to a concrete calendar slot in the day/week
 grid. These are different from Someday events.
 
-**Draft Event**: A pending event shape used while the user edits, drags, or
-resizes before saving.
+**Draft Event**: A pending event shape used while the user edits, drags,
+resizes, or repositions before saving.
 
 **Someday Event**: An unscheduled event stored in the sidebar instead of the
 calendar grid. Someday events may be recurring or standalone.

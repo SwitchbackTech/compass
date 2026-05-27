@@ -77,8 +77,10 @@ export const AllDayRow: FC<Props> = ({
 
   return (
     <StyledAllDayRow
+      aria-label="All-day events"
       id={ID_GRID_ALLDAY_ROW}
       ref={allDayRowRef}
+      role="region"
       rowsCount={rowsCount}
       onMouseDown={onMouseDown}
     >

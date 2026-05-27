@@ -1,5 +1,6 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { act, render, screen } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
+import { act } from "react";
 import { Provider } from "react-redux";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
@@ -16,6 +17,11 @@ import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridE
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import {
+  GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  GRID_EVENT_TIME_LABEL_OPACITY,
+  GRID_EVENT_TITLE_LINE_HEIGHT,
+} from "@web/views/Week/layout.constants";
 import { createWeekInteractionEventOverlayMount } from "../adapter/dom/cloneWeekInteractionEventElement";
 import {
   createWeekEventRegistry,
@@ -37,8 +43,20 @@ import {
   setSystemTime,
 } from "bun:test";
 
-const startOfView = dayjs("2026-05-17T00:00:00.000Z");
+const getFixtureWeekStart = (yearOffset: number) =>
+  dayjs().add(yearOffset, "year").startOf("week").startOf("day");
+
+const futureWeekStart = getFixtureWeekStart(1);
+const pastWeekStart = getFixtureWeekStart(-1);
+const startOfView = futureWeekStart;
 const endOfView = startOfView.add(7, "day");
+const futureTimedStart = futureWeekStart.add(1, "day").hour(9);
+const futureTimedEnd = futureTimedStart.add(1, "hour");
+const futureShortTimedEnd = futureTimedStart.add(30, "minute");
+const futureFridayTimedStart = futureWeekStart.add(5, "day").hour(9);
+const futureFridayTimedEnd = futureFridayTimedStart.add(1, "hour");
+const pastTimedStart = pastWeekStart.add(1, "day").hour(9);
+const pastTimedEnd = pastTimedStart.add(1, "hour");
 const measurements = {
   allDayRow: null,
   colWidths: Array(7).fill(100),
@@ -76,11 +94,11 @@ const createTimedEvent = (
 ): Schema_GridEvent =>
   ({
     _id: "timed-event",
-    endDate: "2026-05-18T10:00:00.000Z",
+    endDate: futureTimedEnd.format(),
     isAllDay: false,
     position,
     recurrence: undefined,
-    startDate: "2026-05-18T09:00:00.000Z",
+    startDate: futureTimedStart.format(),
     title: "Timed event",
     ...overrides,
   }) as Schema_GridEvent;
@@ -90,12 +108,12 @@ const createAllDayEvent = (
 ): Schema_GridEvent =>
   ({
     _id: "all-day-event",
-    endDate: "2026-05-19T00:00:00.000Z",
+    endDate: futureWeekStart.add(2, "day").format(),
     isAllDay: true,
     position,
     recurrence: undefined,
     row: 1,
-    startDate: "2026-05-18T00:00:00.000Z",
+    startDate: futureWeekStart.add(1, "day").format(),
     title: "All-day event",
     ...overrides,
   }) as Schema_GridEvent;
@@ -372,10 +390,10 @@ describe("weekEventRegistry", () => {
     expect(weekEventRegistry.resolve("pending-event", "timed")).toBeNull();
   });
 
-  it("acknowledges a dropped timed event with block and text choreography", () => {
+  it("acknowledges a dropped timed event without moving the text", () => {
     const event = createTimedEvent({
-      endDate: "2026-05-22T10:00:00.000Z",
-      startDate: "2026-05-22T09:00:00.000Z",
+      endDate: futureFridayTimedEnd.format(),
+      startDate: futureFridayTimedStart.format(),
     });
 
     markSomedayCommitAcknowledgement(event._id!);
@@ -387,13 +405,13 @@ describe("weekEventRegistry", () => {
 
     expect(element).toHaveClass("animate-someday-commit-acknowledge");
     expectEventBgToUseHoverColor(element);
-    expect(title).toHaveClass("animate-someday-commit-title-rise");
-    expect(timeLabel).toHaveClass("animate-someday-commit-time-fade");
+    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
+    expect(timeLabel).not.toHaveClass("animate-someday-commit-time-fade");
   });
 
   it("settles short dropped timed events without text choreography", () => {
     const event = createTimedEvent({
-      endDate: "2026-05-18T09:30:00.000Z",
+      endDate: futureShortTimedEnd.format(),
     });
 
     markSomedayCommitAcknowledgement(event._id!);
@@ -405,6 +423,38 @@ describe("weekEventRegistry", () => {
     expect(element).toHaveClass("animate-someday-commit-acknowledge");
     expectEventBgToUseHoverColor(element);
     expect(title).not.toHaveClass("animate-someday-commit-title-rise");
+  });
+
+  it("renders a saved timed event with the Someday preview text style", () => {
+    const event = createTimedEvent({
+      endDate: futureFridayTimedEnd.format(),
+      startDate: futureFridayTimedStart.format(),
+    });
+
+    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+
+    const title = screen.getByText("Timed event");
+    const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
+
+    expect(title.style.lineHeight).toBe(GRID_EVENT_TITLE_LINE_HEIGHT);
+    expect(timeLabel.style.fontSize).toBe(GRID_EVENT_TIME_LABEL_FONT_SIZE);
+    expect(timeLabel.style.opacity).toBe(GRID_EVENT_TIME_LABEL_OPACITY);
+    expect(timeLabel.previousElementSibling).toBe(title);
+  });
+
+  it("slides the time out when a dropped timed event lands in the past", () => {
+    const event = createTimedEvent({
+      endDate: pastTimedEnd.format(),
+      startDate: pastTimedStart.format(),
+    });
+
+    markSomedayCommitAcknowledgement(event._id!);
+    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+
+    const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
+
+    expect(timeLabel).toHaveAttribute("aria-hidden", "true");
+    expect(timeLabel).toHaveClass("animate-someday-commit-time-exit");
   });
 
   it("settles dropped all-day events without text choreography", () => {

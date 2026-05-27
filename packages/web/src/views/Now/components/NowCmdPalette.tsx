@@ -6,6 +6,7 @@ import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constant
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
+import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
@@ -23,6 +24,7 @@ export const NowCmdPalette = () => {
   const [search, setSearch] = useState("");
   const authCmdItems = useAuthCmdItems();
   const googleCmdItems = useGoogleCmdItems();
+  const logoutCmdItems = useLogoutCmdItems();
 
   const filteredItems = filterItems(
     [
@@ -53,16 +55,7 @@ export const NowCmdPalette = () => {
       {
         heading: "Settings",
         id: "settings",
-        items: [
-          ...googleCmdItems,
-          ...authCmdItems,
-          {
-            id: "log-out",
-            children: "Log Out [z]",
-            icon: "ArrowRightOnRectangleIcon",
-            onClick: () => pressKey("z"),
-          },
-        ],
+        items: [...googleCmdItems, ...authCmdItems, ...logoutCmdItems],
       },
       ...moreCommandPaletteItems,
     ],

@@ -6,6 +6,7 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import { ShortCutLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { Textarea } from "@web/components/Textarea";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
@@ -140,6 +141,14 @@ const SaveButton = styled.button`
   }
 `;
 
+const saveDescriptionShortcut = (
+  <span className="inline-flex items-center gap-1">
+    <ShortCutLabel k="Mod" size={12} />
+    <span>+</span>
+    <ShortCutLabel k="Enter" size={12} />
+  </span>
+);
+
 export const TaskDescription: React.FC<TaskDescriptionProps> = ({
   description = "",
   onSave,
@@ -199,22 +208,26 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
     };
   }, [isEditing, saveDescription]);
 
-  const handleClick = () => {
+  const startEditing = () => {
     setIsEditing(true);
   };
 
-  const handleBlur = () => {
+  const saveDescriptionOnBlur = () => {
     saveDescription();
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const updateDraftDescription = (
+    e: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
     const newValue = e.target.value;
     if (newValue.length <= MAX_DESCRIPTION_LENGTH) {
       setValue(newValue);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const cancelEditingOnEscape = (
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
     if (e.key === "Escape") {
       setValue(originalValueRef.current);
       setIsEditing(false);
@@ -230,9 +243,9 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
           <StyledDescription
             ref={textareaRef}
             value={value}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            onKeyDown={handleKeyDown}
+            onChange={updateDraftDescription}
+            onBlur={saveDescriptionOnBlur}
+            onKeyDown={cancelEditingOnEscape}
             placeholder="Add a description..."
             maxLength={MAX_DESCRIPTION_LENGTH}
             id={TASK_DESCRIPTION_ID}
@@ -242,7 +255,10 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
             <CharacterCount isNearLimit={isNearLimit}>
               {value.length}/{MAX_DESCRIPTION_LENGTH}
             </CharacterCount>
-            <TooltipWrapper description="Save description" shortcut="Mod+Enter">
+            <TooltipWrapper
+              description="Save description"
+              shortcut={saveDescriptionShortcut}
+            >
               <SaveButton
                 aria-label="Save description"
                 onClick={saveDescription}
@@ -256,7 +272,7 @@ export const TaskDescription: React.FC<TaskDescriptionProps> = ({
         </>
       ) : (
         <DescriptionText
-          onClick={handleClick}
+          onClick={startEditing}
           className={value.length < 1 ? "empty" : ""}
         >
           {value.length < 1 ? "Add a description..." : value}

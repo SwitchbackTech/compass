@@ -13,6 +13,7 @@ export interface Status_Resize {
 export interface State_Draft_Local {
   dateBeingChanged: "startDate" | "endDate" | null;
   draft: Schema_GridEvent | null;
+  draftSessionKey: number;
   dragStatus: Status_Drag | null;
   isDragging: boolean;
   isResizing: boolean;
@@ -28,6 +29,7 @@ export interface Setters_Draft {
   setDragStatus: Dispatch<SetStateAction<Status_Drag | null>>;
   setResizeStatus: (value: Status_Resize | null) => void;
   setDateBeingChanged: (value: "startDate" | "endDate" | null) => void;
+  setDraftSessionKey: Dispatch<SetStateAction<number>>;
   setIsFormOpen: (value: boolean) => void;
   setIsFormOpenBeforeDragging: (value: boolean | null) => void;
 }
@@ -36,6 +38,7 @@ export const useDraftState = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
+  const [draftSessionKey, setDraftSessionKey] = useState(0);
   const [dragStatus, setDragStatus] = useState<Status_Drag | null>(null);
   const [resizeStatus, setResizeStatus] = useState<Status_Resize | null>(null);
   const [dateBeingChanged, setDateBeingChanged] = useState<
@@ -48,6 +51,7 @@ export const useDraftState = () => {
 
   const state: State_Draft_Local = {
     draft,
+    draftSessionKey,
     dragStatus,
     isDragging,
     isFormOpen,
@@ -64,6 +68,7 @@ export const useDraftState = () => {
     setDragStatus,
     setResizeStatus,
     setDateBeingChanged,
+    setDraftSessionKey,
     setIsFormOpen,
     setIsFormOpenBeforeDragging,
   };

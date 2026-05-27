@@ -1,7 +1,6 @@
 import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
 import { type CalendarInteractionAdapter } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
 import {
   type CalendarInteractionCancellationTargets,
@@ -38,6 +37,8 @@ import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/stat
 import {
   EVENT_ALLDAY_HEIGHT,
   EVENT_PADDING_RIGHT,
+  GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  GRID_EVENT_TIME_LABEL_OPACITY,
   GRID_TIME_STEP,
   TIMED_EVENT_COLUMN_INSET,
 } from "@web/views/Week/layout.constants";
@@ -86,6 +87,10 @@ const SOMEDAY_OVERLAY_TRANSITION_ANCHORED =
   `transform ${SOMEDAY_OVERLAY_ANCHOR_MS}ms ${SOMEDAY_OVERLAY_EASING}`;
 const SOMEDAY_OVERLAY_SHADOW_LIFTED = `0 12px 28px color-mix(in srgb, ${theme.color.shadow.default} 22%, transparent)`;
 const SOMEDAY_OVERLAY_SHADOW_SETTLED = `0 6px 14px color-mix(in srgb, ${theme.color.shadow.default} 14%, transparent)`;
+const SOMEDAY_EVENT_TITLE_ROW_SELECTOR =
+  '[data-someday-event-title-row="true"]';
+const SOMEDAY_TIME_LABEL_SELECTOR =
+  '[data-someday-interaction-time-label="true"]';
 
 const inertRuntime: SomedayInteractionRuntime = {
   getSomedayEventById: () => null,
@@ -295,7 +300,8 @@ export const createSomedayInteractionAdapter = ({
         return {
           overlay: {
             height: overlayRect?.height,
-            mutate: (node) => mutateOverlay(node, nextDrop, target.event),
+            mutate: (node) =>
+              mutateOverlay(node, nextDrop, target.event, nextVisual),
             transform: nextVisual.transform,
             width: overlayRect?.width,
           },
@@ -692,6 +698,7 @@ const mutateOverlay = (
   node: HTMLElement,
   drop: SomedayInteractionDrop | null,
   event: Schema_Event,
+  visual: SomedayInteractionVisual,
 ) => {
   node.style.overflow = "hidden";
 
@@ -744,18 +751,18 @@ const mutateOverlay = (
     ? theme.color.text.dark
     : theme.color.text.lighter;
 
-  const timeLabel = getOrCreateOverlayTimeLabel(node);
-
   if (drop?.type !== "timed") {
-    timeLabel.remove();
+    resetTimedOverlayLayout(node);
     return;
   }
 
-  const start = dayjs().startOf("day").add(drop.startMinutes, "minutes");
-  const end = start.add(ONE_HOUR_MINUTES, "minutes");
+  const titleRow = applyTimedOverlayLayout(node);
+  const { end, start } = getTimedDropDateRange(drop, visual);
+
+  const timeLabel = getOrCreateOverlayTimeLabel(node, titleRow);
 
   timeLabel.textContent = getTimesLabel(start.format(), end.format());
-  timeLabel.style.display = event.title ? "inline" : "block";
+  timeLabel.style.display = "block";
 };
 
 const isReducedMotionPreferred = () =>
@@ -763,22 +770,100 @@ const isReducedMotionPreferred = () =>
   typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const getOrCreateOverlayTimeLabel = (node: HTMLElement) => {
-  const existing = node.querySelector<HTMLElement>(
-    "[data-someday-interaction-time-label]",
+const getTimedDropDateRange = (
+  drop: SomedayTimedDrop,
+  visual: SomedayInteractionVisual,
+) => {
+  const start = visual.initialViewStart
+    .add(visual.weekOffsetDays + drop.dayIndex, "day")
+    .startOf("day")
+    .add(drop.startMinutes, "minutes");
+
+  return {
+    end: start.add(ONE_HOUR_MINUTES, "minutes"),
+    start,
+  };
+};
+
+const applyTimedOverlayLayout = (node: HTMLElement) => {
+  const titleRow = getOverlayTitleRow(node);
+  const textStack = getOverlayTextStack(titleRow);
+
+  textStack.style.alignItems = "flex-start";
+  textStack.style.display = "flex";
+  textStack.style.flexDirection = "column";
+  textStack.style.justifyContent = "flex-start";
+
+  titleRow.style.alignSelf = "stretch";
+  titleRow.style.alignItems = "flex-start";
+  titleRow.style.flex = "0 1 auto";
+  titleRow.style.flexDirection = "row";
+  titleRow.style.gap = "0";
+  titleRow.style.justifyContent = "flex-start";
+
+  return textStack;
+};
+
+const resetTimedOverlayLayout = (node: HTMLElement) => {
+  removeOverlayTimeLabel(node);
+
+  const titleRow = node.querySelector<HTMLElement>(
+    SOMEDAY_EVENT_TITLE_ROW_SELECTOR,
   );
 
+  if (!titleRow) {
+    return;
+  }
+
+  const textStack = getOverlayTextStack(titleRow);
+
+  textStack.style.alignItems = "";
+  textStack.style.display = "";
+  textStack.style.flexDirection = "";
+  textStack.style.justifyContent = "";
+
+  titleRow.style.alignSelf = "";
+  titleRow.style.alignItems = "";
+  titleRow.style.flex = "";
+  titleRow.style.flexDirection = "";
+  titleRow.style.gap = "";
+  titleRow.style.justifyContent = "";
+};
+
+const removeOverlayTimeLabel = (node: HTMLElement) => {
+  node.querySelector<HTMLElement>(SOMEDAY_TIME_LABEL_SELECTOR)?.remove();
+};
+
+const getOverlayTitleRow = (node: HTMLElement) =>
+  node.querySelector<HTMLElement>(SOMEDAY_EVENT_TITLE_ROW_SELECTOR) ?? node;
+
+const getOverlayTextStack = (titleRow: HTMLElement) =>
+  titleRow.parentElement ?? titleRow;
+
+const getOrCreateOverlayTimeLabel = (
+  node: HTMLElement,
+  parent: HTMLElement,
+) => {
+  const existing = node.querySelector<HTMLElement>(SOMEDAY_TIME_LABEL_SELECTOR);
+
   if (existing) {
+    if (existing.parentElement !== parent) {
+      parent.append(existing);
+    }
+
     return existing;
   }
 
   const label = document.createElement("span");
 
   label.setAttribute("data-someday-interaction-time-label", "true");
-  label.style.fontSize = "11px";
-  label.style.marginLeft = "4px";
-  label.style.opacity = "0.78";
-  node.append(label);
+  label.style.fontSize = GRID_EVENT_TIME_LABEL_FONT_SIZE;
+  label.style.marginLeft = "0";
+  label.style.opacity = GRID_EVENT_TIME_LABEL_OPACITY;
+  label.style.alignSelf = "flex-start";
+  label.style.flexShrink = "0";
+  label.style.whiteSpace = "nowrap";
+  parent.append(label);
 
   return label;
 };

@@ -1,5 +1,5 @@
 import { FloatingFocusManager } from "@floating-ui/react";
-import { type FC, type MouseEvent } from "react";
+import { type FC, type MouseEvent, useRef } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
@@ -19,8 +19,10 @@ interface Props {
 }
 
 export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const { actions, setters, state, confirmation } = useDraftContext();
-  const { discard, duplicateEvent, startDragging } = actions;
+  const { discard, duplicateEvent, repositionDraftByKeyboard, startDragging } =
+    actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
   const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
@@ -34,6 +36,10 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
   };
 
   const handleClick = () => {};
+  const focusTitleInput = () => {
+    titleInputRef.current?.focus();
+  };
+
   const handleDrag = (_: Schema_GridEvent, moveEvent: PartialMouseEvent) => {
     if (!draft) return; // TS Guard
 
@@ -74,6 +80,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
           e.preventDefault();
           onMouseDown(e, event);
         }}
+        onEventKeyDown={focusTitleInput}
         onScalerMouseDown={(
           _event: Schema_GridEvent,
           e: MouseEvent,
@@ -89,39 +96,40 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
         {...getReferenceProps()}
       />
 
-      <div>
-        {isFormOpen && (
-          <FloatingFocusManager context={context}>
-            <StyledFloatContainer
-              ref={refs.setFloating}
-              strategy={strategy}
-              top={y ?? 0}
-              left={x ?? 0}
-              {...getFloatingProps()}
-            >
-              <EventForm
-                event={draft as Schema_Event}
-                onClose={discard}
-                onConvert={onConvert}
-                onDelete={onDelete}
-                onDuplicate={duplicateEvent}
-                isDraft={!draft._id}
-                isExistingEvent={!!draft._id}
-                onSubmit={(event) => {
-                  if (event) void onSubmit(event as Schema_GridEvent);
-                }}
-                setEvent={(nextEvent) => {
-                  const event =
-                    typeof nextEvent === "function"
-                      ? nextEvent(draft)
-                      : nextEvent;
-                  setDraft(event as Schema_GridEvent | null);
-                }}
-              />
-            </StyledFloatContainer>
-          </FloatingFocusManager>
-        )}
-      </div>
+      {isFormOpen && (
+        <FloatingFocusManager context={context} modal={false}>
+          <StyledFloatContainer
+            ref={refs.setFloating}
+            strategy={strategy}
+            top={y ?? 0}
+            left={x ?? 0}
+            {...getFloatingProps()}
+          >
+            <EventForm
+              event={draft as Schema_Event}
+              onClose={discard}
+              onConvert={onConvert}
+              onDelete={onDelete}
+              onDuplicate={duplicateEvent}
+              onDraftTitleArrowKey={repositionDraftByKeyboard}
+              isDraft={!draft._id}
+              isExistingEvent={!!draft._id}
+              onSubmit={(event) => {
+                if (event) void onSubmit(event as Schema_GridEvent);
+              }}
+              setEvent={(nextEvent) => {
+                const event =
+                  typeof nextEvent === "function"
+                    ? nextEvent(draft)
+                    : nextEvent;
+                setDraft(event as Schema_GridEvent | null);
+              }}
+              titleEditingResetKey={state.draftSessionKey}
+              titleInputRef={titleInputRef}
+            />
+          </StyledFloatContainer>
+        </FloatingFocusManager>
+      )}
     </>
   );
 };

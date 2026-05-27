@@ -161,7 +161,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     <StyledEventForm
       {...props}
       name={ID_SOMEDAY_EVENT_FORM}
-      isOpen={true}
       onClick={stopPropagation}
       onKeyDown={onKeyDown}
       onMouseDown={stopPropagation}

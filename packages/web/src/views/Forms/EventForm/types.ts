@@ -1,4 +1,4 @@
-import { type SetStateAction } from "react";
+import { type Ref, type SetStateAction } from "react";
 import { type Priority } from "@core/constants/core.constants";
 import {
   type Categories_Event,
@@ -9,7 +9,6 @@ import {
 export interface FormProps {
   event: Schema_Event;
   category: Categories_Event;
-  isOpen?: boolean;
   isDraft: boolean;
   isExistingEvent: boolean;
   onClose: () => void;
@@ -17,6 +16,7 @@ export interface FormProps {
   onConvert?: () => void;
   onDelete: () => void;
   onDuplicate?: (event: Schema_Event) => void;
+  onDraftTitleArrowKey?: (key: string) => boolean;
   onMigrate?: (
     event: Schema_Event,
     category: Categories_Event,
@@ -26,6 +26,8 @@ export interface FormProps {
   onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
   setEvent: (event: SetStateAction<Schema_Event | null>) => void;
+  titleEditingResetKey?: string | number | null;
+  titleInputRef?: Ref<HTMLInputElement>;
 }
 
 type EventField =
@@ -40,7 +42,6 @@ export type SetEventFormField = (
 ) => void;
 
 export interface StyledFormProps {
-  isOpen?: boolean;
   priority?: Priority;
   title?: string;
 }

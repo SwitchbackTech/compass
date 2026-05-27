@@ -5,6 +5,7 @@ import {
   memo,
   useCallback,
   useEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -42,6 +43,61 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,
   ignoreInputs: false,
 } as const;
+const DRAFT_TITLE_MOVEMENT_KEYS = new Set([
+  "ArrowDown",
+  "ArrowLeft",
+  "ArrowRight",
+  "ArrowUp",
+]);
+
+type TitleEditingResetKey = string | number | null | undefined;
+
+interface TitleEditingState {
+  isStarted: boolean;
+  resetKey: TitleEditingResetKey;
+}
+
+interface EventFormDateTimeState {
+  displayEndDate: Date;
+  endTime: SelectOption<string>;
+  selectedEndDate: Date;
+  selectedStartDate: Date;
+  sourceEndDate: string;
+  sourceStartDate: string;
+  startTime: SelectOption<string>;
+}
+
+const createDateTimeState = (
+  sourceStartDate: string,
+  sourceEndDate: string,
+): EventFormDateTimeState => {
+  const dt = getFormDates(sourceStartDate, sourceEndDate);
+
+  return {
+    displayEndDate: dayjs(dt.displayEndDate).toDate(),
+    endTime: dt.endTime,
+    selectedEndDate: dt.endDate,
+    selectedStartDate: dt.startDate,
+    sourceEndDate,
+    sourceStartDate,
+    startTime: dt.startTime,
+  };
+};
+
+const resolveDateTimeState = (
+  state: EventFormDateTimeState,
+  sourceStartDate: string,
+  sourceEndDate: string,
+) => {
+  if (
+    state.sourceStartDate === sourceStartDate &&
+    state.sourceEndDate === sourceEndDate
+  ) {
+    return state;
+  }
+
+  return createDateTimeState(sourceStartDate, sourceEndDate);
+};
 
 export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
   ({
@@ -51,7 +107,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     onDelete,
     onSubmit,
     onDuplicate,
+    onDraftTitleArrowKey,
     setEvent,
+    titleEditingResetKey,
+    titleInputRef,
     isDraft,
     isExistingEvent,
     ...props
@@ -61,26 +120,108 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     const priorityColor = colorByPriority[priority];
     const category = getCategory(event);
     const latestEventRef = useRef(event);
+    const currentTitleEditingResetKey = titleEditingResetKey ?? event._id;
+    const eventStartDate = event.startDate as string;
+    const eventEndDate = event.endDate as string;
 
     /********
      * State
      ********/
-    const [endTime, setEndTime] = useState<SelectOption<string>>({
-      label: "1 AM",
-      value: "01:00 AM",
-    });
-    const [isFormOpen, setIsFormOpen] = useState(false);
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-    const [startTime, setStartTime] = useState<SelectOption<string>>({
-      label: "12 AM",
-      value: "12:00 AM",
-    });
-    const [selectedStartDate, setSelectedStartDate] = useState(new Date());
-    const [selectedEndDate, setSelectedEndDate] = useState(new Date());
-    const [displayEndDate, setDisplayEndDate] = useState(selectedStartDate);
+    const [titleEditingState, setTitleEditingState] =
+      useState<TitleEditingState>({
+        isStarted: false,
+        resetKey: currentTitleEditingResetKey,
+      });
+    const [dateTimeState, setDateTimeState] = useState<EventFormDateTimeState>(
+      () => createDateTimeState(eventStartDate, eventEndDate),
+    );
 
     const descriptionRef = useRef<HTMLTextAreaElement>(null);
+    const currentDateTimeState = useMemo(
+      () => resolveDateTimeState(dateTimeState, eventStartDate, eventEndDate),
+      [dateTimeState, eventEndDate, eventStartDate],
+    );
+    const {
+      displayEndDate,
+      endTime,
+      selectedEndDate,
+      selectedStartDate,
+      startTime,
+    } = currentDateTimeState;
+    const isTitleEditingStarted =
+      titleEditingState.resetKey === currentTitleEditingResetKey &&
+      titleEditingState.isStarted;
+
+    const setIsTitleEditingStarted = useCallback(
+      (isStarted: boolean) => {
+        setTitleEditingState((state) => {
+          if (
+            state.isStarted === isStarted &&
+            state.resetKey === currentTitleEditingResetKey
+          ) {
+            return state;
+          }
+
+          return {
+            isStarted,
+            resetKey: currentTitleEditingResetKey,
+          };
+        });
+      },
+      [currentTitleEditingResetKey],
+    );
+
+    const updateDateTimeState = useCallback(
+      (
+        field: Partial<
+          Omit<EventFormDateTimeState, "sourceStartDate" | "sourceEndDate">
+        >,
+      ) => {
+        setDateTimeState((state) => {
+          const resolvedState = resolveDateTimeState(
+            state,
+            eventStartDate,
+            eventEndDate,
+          );
+          const nextState = { ...resolvedState, ...field };
+
+          if (fastDeepEqual(nextState, state)) {
+            return state;
+          }
+
+          if (fastDeepEqual(nextState, resolvedState)) {
+            return resolvedState;
+          }
+
+          return nextState;
+        });
+      },
+      [eventEndDate, eventStartDate],
+    );
+
+    const setStartTime = useCallback(
+      (value: SelectOption<string>) =>
+        updateDateTimeState({ startTime: value }),
+      [updateDateTimeState],
+    );
+    const setEndTime = useCallback(
+      (value: SelectOption<string>) => updateDateTimeState({ endTime: value }),
+      [updateDateTimeState],
+    );
+    const setSelectedStartDate = useCallback(
+      (value: Date) => updateDateTimeState({ selectedStartDate: value }),
+      [updateDateTimeState],
+    );
+    const setSelectedEndDate = useCallback(
+      (value: Date) => updateDateTimeState({ selectedEndDate: value }),
+      [updateDateTimeState],
+    );
+    const setDisplayEndDate = useCallback(
+      (value: Date) => updateDateTimeState({ displayEndDate: value }),
+      [updateDateTimeState],
+    );
 
     const setLatestEvent = useCallback(
       (nextEvent: Parameters<typeof setEvent>[0]) => {
@@ -99,20 +240,8 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     );
 
     useEffect(() => {
-      setLatestEvent(event || {});
-
-      const dt = getFormDates(
-        event.startDate as string,
-        event.endDate as string,
-      );
-      setStartTime(dt.startTime);
-      setSelectedStartDate(dt.startDate);
-      setDisplayEndDate(dayjs(dt.displayEndDate).toDate());
-      setEndTime(dt.endTime);
-      setSelectedEndDate(dt.endDate);
-
-      setIsFormOpen(true);
-    }, [event, setLatestEvent]);
+      latestEventRef.current = event;
+    }, [event]);
 
     /***********
      * Handlers
@@ -122,12 +251,14 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
         e: React.ChangeEvent<T>,
       ) => {
+        if (fieldName === "title" && !isTitleEditingStarted) {
+          setIsTitleEditingStarted(true);
+        }
+
         onSetEventField({ [fieldName]: e.target.value });
       };
 
     const onClose = useCallback(() => {
-      setIsFormOpen(false);
-
       setTimeout(() => {
         _onClose();
       }, 1);
@@ -158,6 +289,46 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         e.preventDefault();
         onSubmitForm();
       }
+    };
+
+    const handleDraftTitleArrowKey = (e: KeyboardEvent<HTMLInputElement>) => {
+      if (
+        !onDraftTitleArrowKey ||
+        (!isDraft && !isExistingEvent) ||
+        isTitleEditingStarted ||
+        !DRAFT_TITLE_MOVEMENT_KEYS.has(e.key)
+      ) {
+        return false;
+      }
+
+      const didMove = onDraftTitleArrowKey(e.key);
+      if (!didMove) return false;
+
+      e.preventDefault();
+      e.stopPropagation();
+      return true;
+    };
+
+    const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+      if (handleDraftTitleArrowKey(e)) {
+        return;
+      }
+
+      if (
+        isDraft &&
+        !isExistingEvent &&
+        e.key === "Enter" &&
+        !e.metaKey &&
+        !e.ctrlKey
+      ) {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsTitleEditingStarted(false);
+        onSubmitForm();
+        return;
+      }
+
+      handleIgnoredKeys(e);
     };
 
     const onSubmitForm = () => {
@@ -236,6 +407,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     useAppHotkey(
       "Enter",
       (keyboardEvent) => {
+        if (isDraft) {
+          return;
+        }
+
         if (isComboboxInteraction(keyboardEvent)) {
           return;
         }
@@ -261,7 +436,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onSubmitForm();
       },
       {
-        enabled: isFormOpen,
+        enabled: true,
       },
     );
 
@@ -275,14 +450,13 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onConvert?.();
       },
       {
-        enabled: isFormOpen,
+        enabled: true,
       },
     );
 
     return (
       <StyledEventForm
         {...props}
-        isOpen={isFormOpen}
         name={ID_EVENT_FORM}
         onMouseUp={() => {
           if (isStartDatePickerOpen) {
@@ -315,9 +489,11 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         <StyledTitle
           autoFocus
           onChange={onChangeEventTextField("title")}
-          onKeyDown={handleIgnoredKeys}
+          onKeyDown={handleTitleKeyDown}
+          onPointerDown={() => setIsTitleEditingStarted(true)}
           placeholder="Title"
           name="Event Title"
+          ref={titleInputRef}
           underlineColor={priorityColor}
           value={title ?? ""}
         />

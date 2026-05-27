@@ -1,4 +1,3 @@
-import { type MouseEvent } from "react";
 import { type Dispatch } from "redux";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
@@ -12,45 +11,7 @@ import { getElemById } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
-import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
-import {
-  DRAFT_DURATION_MIN,
-  GRID_TIME_STEP,
-} from "@web/views/Week/layout.constants";
-
-export const assembleAlldayDraft = async (
-  e: MouseEvent,
-  dateCalcs: DateCalcs,
-  startOfView: Dayjs,
-): Promise<Schema_GridEvent> => {
-  const _start = dateCalcs.getDateByXY(e.clientX, e.clientY, startOfView);
-  const startDate = _start.format();
-  const endDate = _start.add(1, "day").format();
-
-  const event = (await assembleDefaultEvent(
-    Categories_Event.ALLDAY,
-    startDate,
-    endDate,
-  )) as Schema_GridEvent;
-  return event;
-};
-
-export const assembleTimedDraft = async (
-  e: MouseEvent,
-  dateCalcs: DateCalcs,
-  startOfView: Dayjs,
-): Promise<Schema_GridEvent> => {
-  const _start = dateCalcs.getDateByXY(e.clientX, e.clientY, startOfView);
-  const startDate = _start.format();
-  const endDate = _start.add(DRAFT_DURATION_MIN, "minutes").format();
-
-  const event = (await assembleDefaultEvent(
-    Categories_Event.TIMED,
-    startDate,
-    endDate,
-  )) as Schema_GridEvent;
-  return event;
-};
+import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 
 export const createTimedDraft = async (
   isCurrentWeek: boolean,
@@ -81,9 +42,12 @@ export const createAlldayDraft = async (
   activity: Activity_DraftEvent,
   dispatch: Dispatch,
 ) => {
-  const startDate = startOfView.startOf("day").format();
-  // Use the end of the current view as the all-day event's end date
-  const endDate = endOfView.startOf("day").add(1, "day").format();
+  const today = dayjs();
+  const start = today.isBetween(startOfView, endOfView, "day", "[]")
+    ? today.startOf("day")
+    : startOfView.startOf("day");
+  const startDate = start.format();
+  const endDate = start.add(1, "day").format();
 
   const event = (await assembleDefaultEvent(
     Categories_Event.ALLDAY,

@@ -73,8 +73,14 @@ An event shown in a concrete time range on the calendar grid.
 The calendar surface that lays out Timed Events by day column and time.
 _Avoid_: day slots
 
+**Day View**:
+The single-date calendar view. When routed without a date, it opens on today,
+but it can represent any selected date.
+_Avoid_: Today view, unless referring specifically to the current date
+
 **All-Day Event**:
 An event shown in the all-day row.
+_Avoid_: day event
 
 **Grid Event**:
 An event assigned to a concrete day/week calendar slot.
@@ -89,8 +95,8 @@ An unscheduled event stored in the sidebar instead of the calendar grid.
 _Avoid_: Someday task
 
 **Draft Event**:
-A temporary event shape used while the user edits, drags, or resizes before
-saving.
+A temporary event shape used while the user edits, drags, resizes, or
+repositions before saving.
 
 **Interaction Overlay**:
 The temporary moving visual shown while a user drags or resizes an Event.
@@ -188,6 +194,35 @@ during Import or Public watch notification handling.
   MongoDB.
 - A **Timed Event** appears in the **Timed Grid**.
 - An **All-Day Event** appears in the all-day row.
+- An active Week **Draft Event** can be repositioned before saving, whether it
+  was created from a keyboard shortcut, created from the grid, or opened from an
+  existing **Grid Event**.
+- A **Timed Event** draft moves vertically by time slot and horizontally by day
+  while it remains in the **Timed Grid**.
+- Keyboard repositioning moves the whole **Draft Event** and preserves its
+  duration.
+- An **All-Day Event** draft moves horizontally by day in the all-day row.
+- A shortcut-created **All-Day Event** draft starts as a one-day draft, not a
+  full-week draft.
+- Shortcut-created **Draft Events** start on today when today is inside the
+  visible **Week View**; otherwise, they start on the visible week's anchor day.
+- Keyboard repositioning keeps **Draft Events** inside the visible **Week View**
+  bounds unless the interaction explicitly supports navigation.
+- Keyboard repositioning keeps a **Timed Event** draft within one day and does
+  not move it past midnight.
+- Keyboard repositioning works while the **Draft Event** form is open unless
+  the user is typing in an editable field.
+- Keyboard repositioning preserves the user's current focus target unless the
+  user explicitly commits title editing.
+- Pressing Enter in a newly created **Draft Event** title field saves the final
+  **Event** immediately.
+- The **Draft Event** form remains non-modal while the draft block is used as
+  the keyboard handle.
+- Plain arrow-key repositioning applies to the active Week **Draft Event**. A
+  saved **Event** that is not being edited as the active **Draft Event** does
+  not move.
+- The Week shortcuts overlay may summarize arrow-key movement as a single
+  draft-movement shortcut instead of listing every arrow key separately.
 - A **Timed Event** that is dragged outside the **Timed Grid** stays a
   **Timed Event** unless the interaction explicitly converts it to an
   **All-Day Event**.

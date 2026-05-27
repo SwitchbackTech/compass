@@ -4,6 +4,8 @@ import {
   ensureSidebarOpen,
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
+  fillTitleAndSubmitEventFormWithEnter,
+  getMainGridPoint,
   openTimedEventFormWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -13,24 +15,6 @@ interface StoredTimedEvent {
   startDate?: string;
   title?: string;
 }
-
-const getMainGridPoint = async (
-  page: Page,
-  { xRatio = 0.3, yRatio = 0.3 } = {},
-) => {
-  const mainGrid = page.locator("#mainGrid");
-  await mainGrid.scrollIntoViewIfNeeded();
-  const box = await mainGrid.boundingBox();
-
-  if (!box) {
-    throw new Error("Expected the week grid to be visible.");
-  }
-
-  return {
-    x: box.x + box.width * xRatio,
-    y: box.y + box.height * yRatio,
-  };
-};
 
 const getSavedEventsByTitle = (page: Page, title: string) =>
   page.evaluate(async (eventTitle) => {
@@ -103,7 +87,7 @@ test("should create a timed event using mouse interaction", async ({
 
   const title = createEventTitle("Timed Event");
   await openTimedEventFormWithMouse(page);
-  await fillTitleAndSaveEventForm(page, title);
+  await fillTitleAndSubmitEventFormWithEnter(page, title);
 
   await expectTimedEventVisible(page, title);
 });

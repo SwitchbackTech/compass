@@ -6,6 +6,7 @@ import {
 import {
   isComboboxInteraction,
   isContextMenuOpen,
+  isEditableKeyboardTarget,
   isEventFormOpen,
 } from "./form.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -183,6 +184,29 @@ describe("form.util", () => {
 
     it("returns false when target is null", () => {
       expect(isComboboxInteraction(createEvent(null))).toBe(false);
+    });
+  });
+
+  describe("isEditableKeyboardTarget", () => {
+    const createEvent = (element: HTMLElement | null) =>
+      ({ target: element }) as unknown as KeyboardEvent;
+
+    it("treats inputs as editable", () => {
+      const input = document.createElement("input");
+
+      expect(isEditableKeyboardTarget(createEvent(input))).toBe(true);
+    });
+
+    it("treats textareas as editable", () => {
+      const textarea = document.createElement("textarea");
+
+      expect(isEditableKeyboardTarget(createEvent(textarea))).toBe(true);
+    });
+
+    it("treats selects as editable", () => {
+      const select = document.createElement("select");
+
+      expect(isEditableKeyboardTarget(createEvent(select))).toBe(true);
     });
   });
 });

@@ -1,7 +1,10 @@
 import {
   type ConflictBehavior,
+  type HotkeySequence,
   type RegisterableHotkey,
+  type UseHotkeySequenceOptions,
   useHotkey,
+  useHotkeySequence,
 } from "@tanstack/react-hotkeys";
 
 export interface UseAppHotkeyOptions {
@@ -9,6 +12,8 @@ export interface UseAppHotkeyOptions {
   ignoreInputs?: boolean;
   blurOnTrigger?: boolean;
   eventType?: "keydown" | "keyup";
+  preventDefault?: boolean;
+  stopPropagation?: boolean;
   /** @default 'allow' — multiple features often register the same global key (e.g. Escape). */
   conflictBehavior?: ConflictBehavior;
 }
@@ -23,6 +28,8 @@ export function useAppHotkey(
     ignoreInputs,
     blurOnTrigger = false,
     eventType = "keydown",
+    preventDefault,
+    stopPropagation,
     conflictBehavior = "allow",
   } = options;
 
@@ -43,6 +50,8 @@ export function useAppHotkey(
       enabled,
       ignoreInputs,
       eventType,
+      preventDefault,
+      stopPropagation,
       conflictBehavior,
     },
   );
@@ -53,3 +62,20 @@ export const useAppHotkeyUp = (
   handler: (event: KeyboardEvent) => void,
   options?: Omit<UseAppHotkeyOptions, "eventType">,
 ) => useAppHotkey(hotkey, handler, { ...options, eventType: "keyup" });
+
+export function useAppHotkeySequence(
+  sequence: HotkeySequence,
+  handler: () => void,
+  options: UseHotkeySequenceOptions = {},
+) {
+  useHotkeySequence(
+    sequence,
+    () => {
+      if (document.body.dataset.appLocked === "true") {
+        return;
+      }
+      handler();
+    },
+    options,
+  );
+}

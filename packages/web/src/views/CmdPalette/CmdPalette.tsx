@@ -6,10 +6,11 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
+import { type Dayjs } from "@core/util/date/dayjs";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
 import { onEventTargetVisibility } from "@web/common/utils/dom/event-target-visibility.util";
 import {
   createAlldayDraft,
@@ -26,7 +27,17 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { type ShortcutProps } from "@web/views/Week/hooks/shortcuts/useWeekShortcuts";
+import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
+import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+
+interface CmdPaletteProps {
+  today: Dayjs;
+  isCurrentWeek: boolean;
+  startOfView: Dayjs;
+  endOfView: Dayjs;
+  util: WeekProps["util"];
+  scrollUtil: Util_Scroll;
+}
 
 const CommandPalette = resolveDefaultExport(_CommandPalette);
 
@@ -37,7 +48,7 @@ const CmdPalette = ({
   endOfView,
   util,
   scrollUtil,
-}: ShortcutProps) => {
+}: CmdPaletteProps) => {
   const dispatch = useAppDispatch();
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
@@ -46,6 +57,7 @@ const CmdPalette = ({
   const [search, setSearch] = useState("");
   const authCmdItems = useAuthCmdItems();
   const googleCmdItems = useGoogleCmdItems();
+  const logoutCmdItems = useLogoutCmdItems();
 
   const handleCreateSomedayDraft = async (
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
@@ -137,16 +149,7 @@ const CmdPalette = ({
       {
         heading: "Settings",
         id: "settings",
-        items: [
-          ...googleCmdItems,
-          ...authCmdItems,
-          {
-            id: "log-out",
-            children: "Log Out [z]",
-            icon: "ArrowRightOnRectangleIcon",
-            onClick: () => pressKey("z"),
-          },
-        ],
+        items: [...googleCmdItems, ...authCmdItems, ...logoutCmdItems],
       },
       ...moreCommandPaletteItems,
     ],

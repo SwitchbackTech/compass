@@ -7,6 +7,7 @@ import {
   type MouseEvent,
   memo,
   useMemo,
+  useState,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { brighten, darken } from "@core/util/color.utils";
@@ -15,6 +16,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { theme } from "@web/common/styles/theme";
 import {
   gridColorByPriority,
   gridHoverColorByPriority,
@@ -35,15 +37,24 @@ import { Text } from "@web/components/Text";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
-import { MIN_EVENT_HEIGHT_FOR_TIME_LABEL } from "@web/views/Week/layout.constants";
-
-// Minimum event height for the layered title-rise + time-fade choreography
-// to read meaningfully. Below this, the block-level acknowledgment plays
-// alone (degraded case) because the title has no vertical headroom to rise
-// from and the time row would arrive in the same frame as the title.
-const MIN_EVENT_HEIGHT_FOR_COMMIT_CHOREOGRAPHY = 40;
+import {
+  clearHoveredCalendarEventTarget,
+  setHoveredCalendarEventTarget,
+} from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
+import {
+  GRID_EVENT_TIME_LABEL_FONT_SIZE,
+  GRID_EVENT_TIME_LABEL_OPACITY,
+  GRID_EVENT_TITLE_LINE_HEIGHT,
+  MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
+  MIN_EVENT_WIDTH_FOR_TIME_LABEL,
+} from "@web/views/Week/layout.constants";
+import {
+  applyWeekTimedDeckPosition,
+  type WeekTimedDeckLayout,
+} from "@web/views/Week/utils/weekTimedOverlapLayout";
 
 interface Props {
+  deckLayout?: WeekTimedDeckLayout | null;
   displayMode: GridEventDisplayMode;
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
@@ -65,6 +76,7 @@ type GridEventMotionMode = "dragging" | "idle" | "resizing";
 
 const GridEventBase = (
   {
+    deckLayout = null,
     displayMode,
     event: _event,
     interactionAttributes,
@@ -86,9 +98,8 @@ const GridEventBase = (
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(_event.endDate));
   const event = _event;
-  // Only choreograph the text when the event id was just committed from a
-  // Someday-to-grid drop. Keep the block itself visually stable so the
-  // overlay-to-event handoff does not flash.
+  const isDeck = Boolean(deckLayout) && !isDraft;
+  const [isFocused, setIsFocused] = useState(false);
   const shouldAcknowledgeCommit =
     useSomedayCommitAcknowledgement(event._id) &&
     !isDragging &&
@@ -96,27 +107,28 @@ const GridEventBase = (
     !isPlaceholder &&
     !isDraft;
 
-  const position = getEventPosition(
+  const basePosition = getEventPosition(
     event,
     component.startOfView,
     component.endOfView,
     measurements,
     isDraft,
   );
+  const position =
+    !isDraft && deckLayout
+      ? applyWeekTimedDeckPosition(basePosition, deckLayout)
+      : basePosition;
 
-  // Layered title-rise + time-fade choreography runs alongside the
-  // block-level acknowledgment on commit, but only when the event is a
-  // timed event with enough vertical room to stage the rise and the
-  // following time-row fade. AllDayEvent and short timed events fall back
-  // to the block-level settle alone.
-  const shouldChoreographCommit =
-    shouldAcknowledgeCommit &&
-    !event.isAllDay &&
-    position.height >= MIN_EVENT_HEIGHT_FOR_COMMIT_CHOREOGRAPHY;
   const lineClamp = useMemo(
     () => getLineClamp(position.height),
     [position.height],
   );
+  const isTallEnoughForTimeLabel =
+    position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL;
+  const isWideEnoughForTimeLabel =
+    position.width >= MIN_EVENT_WIDTH_FOR_TIME_LABEL;
+  const shouldAnimatePastCommitTimeOut =
+    shouldAcknowledgeCommit && isInPast && !isDraft && isTallEnoughForTimeLabel;
 
   const priority = event.priority || Priorities.UNASSIGNED;
   const baseColor = gridColorByPriority[priority];
@@ -146,6 +158,22 @@ const GridEventBase = (
           : "hover:cursor-pointer"
       : "";
 
+  const shouldFloatAboveDeck =
+    isDraft || isDragging || isResizing || (isDeck && isFocused);
+  const zIndex = shouldFloatAboveDeck
+    ? ZIndex.MAX
+    : (position.zIndex ?? ZIndex.LAYER_1);
+
+  const deckBoxShadow = (() => {
+    if (!isDeck) return undefined;
+    const ring = `0 0 0 0.75px ${theme.color.bg.primary}`;
+    const drop = isFocused
+      ? "0 6px 14px -3px rgba(0,0,0,0.55)"
+      : "0 3px 6px -2px rgba(0,0,0,0.4)";
+    const highlight = `inset 0 1px 0 rgba(255,255,255,${isFocused ? 0.1 : 0.07})`;
+    return `${ring}, ${drop}, ${highlight}`;
+  })();
+
   const eventStyle = {
     "--event-bg": bgColor,
     "--event-hover-bg": hoverBgColor,
@@ -154,7 +182,8 @@ const GridEventBase = (
     opacity: isPlaceholder ? 0.5 : undefined,
     top: position.top,
     width: position.width || 0,
-    zIndex: isDragging ? ZIndex.LAYER_5 : ZIndex.LAYER_1,
+    zIndex,
+    boxShadow: deckBoxShadow,
     filter: isDraft
       ? "drop-shadow(2px 4px 4px black)"
       : isInPast
@@ -164,7 +193,7 @@ const GridEventBase = (
 
   const titleStyle: CSSProperties = {
     fontSize: position.height <= 15 ? "10px" : "13px",
-    lineHeight: position.height <= 15 ? "1.1" : undefined,
+    lineHeight: position.height <= 15 ? "1.1" : GRID_EVENT_TITLE_LINE_HEIGHT,
     minHeight: "3px",
     display: "-webkit-box",
     overflow: "hidden",
@@ -172,6 +201,12 @@ const GridEventBase = (
     wordBreak: "break-all",
     WebkitBoxOrient: "vertical",
     WebkitLineClamp: lineClamp,
+  };
+
+  const timeLabelStyle: CSSProperties = {
+    fontSize: GRID_EVENT_TIME_LABEL_FONT_SIZE,
+    opacity: GRID_EVENT_TIME_LABEL_OPACITY,
+    whiteSpace: "nowrap",
   };
 
   const showResizeCursor =
@@ -188,12 +223,24 @@ const GridEventBase = (
     cursor: showResizeCursor ? "row-resize" : undefined,
     ...placement,
   });
+  const eventTitle = event.title || "Untitled event";
+  const timeRange =
+    !event.isAllDay && event.startDate && event.endDate
+      ? getTimesLabel(event.startDate, event.endDate)
+      : null;
+  const accessibleLabel = event.isAllDay
+    ? `All-day event: ${eventTitle}`
+    : `Timed event: ${eventTitle}, ${timeRange ?? "time not set"}`;
+  const shouldTrackCalendarHover =
+    !isPending && !isPlaceholder && Boolean(event._id);
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
       {...interactionAttributes}
+      aria-disabled={isPending ? "true" : undefined}
+      aria-label={accessibleLabel}
       ref={ref}
       role="button"
       tabIndex={0}
@@ -227,6 +274,16 @@ const GridEventBase = (
 
         onEventMouseDown(event, e);
       }}
+      onFocus={isDeck ? () => setIsFocused(true) : undefined}
+      onBlur={isDeck ? () => setIsFocused(false) : undefined}
+      onMouseEnter={(e: MouseEvent<HTMLDivElement>) => {
+        if (!shouldTrackCalendarHover) return;
+
+        setHoveredCalendarEventTarget(e.currentTarget);
+      }}
+      onMouseLeave={(e: MouseEvent<HTMLDivElement>) => {
+        clearHoveredCalendarEventTarget(e.currentTarget);
+      }}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
         if (!onEventKeyDown || (e.key !== "Enter" && e.key !== " ")) {
           return;
@@ -241,29 +298,23 @@ const GridEventBase = (
         direction={FlexDirections.COLUMN}
         flexWrap={FlexWrap.WRAP}
       >
-        <span
-          className={cn({
-            "animate-someday-commit-title-rise": shouldChoreographCommit,
-          })}
-          style={titleStyle}
-        >
-          {event.title}
-        </span>
+        <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
-            {(isDraft || !isInPast) &&
-              position.height >= MIN_EVENT_HEIGHT_FOR_TIME_LABEL && (
+            {(isDraft || !isInPast || shouldAnimatePastCommitTimeOut) &&
+              isTallEnoughForTimeLabel &&
+              isWideEnoughForTimeLabel && (
                 <Text
+                  aria-hidden={shouldAnimatePastCommitTimeOut || undefined}
                   className={cn({
-                    "animate-someday-commit-time-fade": shouldChoreographCommit,
+                    "animate-someday-commit-time-exit opacity-0":
+                      shouldAnimatePastCommitTimeOut,
                   })}
                   data-week-event-time-label="true"
-                  size="xs"
+                  style={timeLabelStyle}
                   zIndex={ZIndex.LAYER_3}
                 >
-                  {event.startDate &&
-                    event.endDate &&
-                    getTimesLabel(event.startDate, event.endDate)}
+                  {timeRange}
                 </Text>
               )}
             <div
@@ -295,6 +346,7 @@ export const GridEvent = forwardRef(GridEventBase);
 export const GridEventMemo = memo(GridEvent, (prev, next) => {
   return (
     prev.displayMode === next.displayMode &&
+    prev.deckLayout === next.deckLayout &&
     prev.event === next.event &&
     prev.interactionAttributes === next.interactionAttributes &&
     prev.isPending === next.isPending &&

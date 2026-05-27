@@ -37,3 +37,18 @@ export const isComboboxInteraction = (
 
   return Boolean(container);
 };
+
+export const isEditableKeyboardTarget = (
+  keyboardEvent: Pick<KeyboardEvent, "target">,
+) => {
+  if (isComboboxInteraction(keyboardEvent)) return true;
+
+  const target = keyboardEvent.target as HTMLElement | null;
+  if (!target || !(target instanceof HTMLElement)) return false;
+
+  if (target.isContentEditable) return true;
+
+  const tagName = target.tagName.toLowerCase();
+
+  return tagName === "input" || tagName === "textarea" || tagName === "select";
+};
