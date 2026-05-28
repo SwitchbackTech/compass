@@ -4,6 +4,8 @@ import { type CalendarLayoutCacheSources } from "@web/common/calendar-grid/inter
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import {
   CursorItem,
+  closeFloatingAtCursor,
+  isOpenAtCursor,
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
@@ -112,6 +114,11 @@ export const DayInteractionCoordinator: FC<Props> = ({
       return;
     }
 
+    if (result.hadFormOpenBeforeInteraction) {
+      openDayCalendarEvent(result.event);
+      return;
+    }
+
     updateEvent({ event: result.event }, true);
   };
 
@@ -119,12 +126,18 @@ export const DayInteractionCoordinator: FC<Props> = ({
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
     isEventPending: (eventId) => pendingEventIdSet.has(eventId),
+    isFormOpen: () => isOpenAtCursor(CursorItem.EventForm),
     onClickAllDayEvent: openDayCalendarEvent,
     onClickTimedEvent: openDayCalendarEvent,
     onCommitAllDayDrag: commitSavedMutation,
     onCommitAllDayResize: commitSavedMutation,
     onCommitTimedDrag: commitSavedMutation,
     onCommitTimedResize: commitSavedMutation,
+    onMotionActivation: (target) => {
+      if (target.hadFormOpenBeforeInteraction) {
+        closeFloatingAtCursor();
+      }
+    },
   };
 
   return (

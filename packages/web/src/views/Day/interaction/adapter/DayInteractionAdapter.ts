@@ -34,6 +34,7 @@ import {
   createAllDayResizeVisual,
   updateAllDayResizeVisual,
 } from "@web/views/Week/interaction/adapter/math/allDayResize";
+import { getSmartScrollFrame } from "@web/views/Week/interaction/adapter/math/smartScroll";
 import {
   createTimedDragVisual,
   updateTimedDragVisual,
@@ -47,7 +48,10 @@ import {
   type AllDayResizeEdge,
   type AllDayResizeVisual,
 } from "@web/views/Week/interaction/adapter/model/AllDayResizeVisual";
-import { type TimedDragVisual } from "@web/views/Week/interaction/adapter/model/TimedDragVisual";
+import {
+  type TimedDragVisual,
+  type VisualPoint,
+} from "@web/views/Week/interaction/adapter/model/TimedDragVisual";
 import { type TimedResizeVisual } from "@web/views/Week/interaction/adapter/model/TimedResizeVisual";
 import {
   type DayInteractionEventType,
@@ -87,6 +91,9 @@ const WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE = "data-week-event-resize-handle";
 const DAY_EVENT_TIME_LABEL_ATTRIBUTE = "data-day-event-time-label";
 const WEEK_EVENT_TIME_LABEL_ATTRIBUTE = "data-week-event-time-label";
 const DAY_EVENT_TIME_LABEL_SELECTOR = `[${DAY_EVENT_TIME_LABEL_ATTRIBUTE}='true'],[${WEEK_EVENT_TIME_LABEL_ATTRIBUTE}='true']`;
+const DAY_SMART_SCROLL_EDGE_THRESHOLD_PX = 50;
+const SMART_SCROLL_BOTTOM_INSET_PX = 100;
+const SMART_SCROLL_SPEED_PX = 10;
 
 const inertRuntime: DayInteractionRuntime = {
   getTimedEventById: () => null,
@@ -102,6 +109,7 @@ export const createDayInteractionAdapter = ({
   runtime = () => inertRuntime,
 }: DayInteractionAdapterOptions = {}): DayInteractionAdapter => {
   let layout: CalendarLayoutCache | null = null;
+  let scrollTop: number | null = null;
 
   const engine: CalendarInteractionEngine<
     DayInteractionTarget,
@@ -222,6 +230,7 @@ export const createDayInteractionAdapter = ({
     return {
       cancel: () => {
         layout = null;
+        scrollTop = null;
       },
       commit: ({ target, visual }) => {
         let result: DayInteractionCommitResult;
@@ -246,6 +255,7 @@ export const createDayInteractionAdapter = ({
         }
 
         layout = null;
+        scrollTop = null;
 
         return result;
       },
@@ -262,6 +272,7 @@ export const createDayInteractionAdapter = ({
         const sourceRect = readElementRect(sourceElement);
 
         layout = nextLayout;
+        scrollTop = nextLayout.smartScroll?.initialScrollTop ?? null;
         runtime().onMotionActivation?.(target);
 
         if (target.type === "allDayDrag") {
@@ -380,10 +391,11 @@ export const createDayInteractionAdapter = ({
           throw new Error("Mismatched Day interaction target");
         }
 
+        const smartScroll = applySmartScroll(pointer);
         const nextVisual = updateTimedDragVisual(visual, {
           layout,
           pointer,
-          scrollDeltaPx: 0,
+          scrollDeltaPx: smartScroll.scrollDeltaPx,
         });
         const nextEvent = timedDragVisualToDayGridEvent(
           target.event,
@@ -396,9 +408,32 @@ export const createDayInteractionAdapter = ({
             mutate: (node) => updateOverlayTimeLabel(node, nextEvent),
             transform: nextVisual.transform,
           },
+          shouldContinue: smartScroll.isScrolling,
           visual: nextVisual,
         };
       },
+    };
+  }
+
+  function applySmartScroll(pointer: VisualPoint) {
+    if (!layout?.smartScroll || scrollTop === null) {
+      return { isScrolling: false, scrollDeltaPx: 0 };
+    }
+
+    const frame = getSmartScrollFrame({
+      cache: layout.smartScroll,
+      pointerY: pointer.y,
+      scrollTop,
+    });
+
+    if (frame.scrollTop !== scrollTop) {
+      layout.smartScroll.element.scrollTop = frame.scrollTop;
+      scrollTop = frame.scrollTop;
+    }
+
+    return {
+      isScrolling: frame.velocityPx !== 0,
+      scrollDeltaPx: scrollTop - layout.smartScroll.initialScrollTop,
     };
   }
 
@@ -583,8 +618,12 @@ export const createDayInteractionAdapter = ({
 const buildDayTimedLayoutCache = (sources: CalendarLayoutCacheSources = {}) =>
   buildTimedCalendarLayoutCache({
     ...sources,
-    edgeThresholdPx: 0,
+    edgeThresholdPx: DAY_SMART_SCROLL_EDGE_THRESHOLD_PX,
     mainGridElementId: ID_GRID_MAIN,
+    smartScroll: {
+      bottomInsetPx: SMART_SCROLL_BOTTOM_INSET_PX,
+      speedPx: SMART_SCROLL_SPEED_PX,
+    },
     snapMinutes: CALENDAR_GRID_TIME_STEP,
     timedColumnsElementId: ID_GRID_COLUMNS_TIMED,
     timedVisibleHours: CALENDAR_TIMED_VISIBLE_HOURS,

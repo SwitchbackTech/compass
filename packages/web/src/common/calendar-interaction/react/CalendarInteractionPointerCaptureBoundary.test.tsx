@@ -78,6 +78,35 @@ describe("CalendarInteractionPointerCaptureBoundary", () => {
     expect(onPointerDown).not.toHaveBeenCalled();
   });
 
+  it("captures an owned pointer and forwards window-level continuation events", () => {
+    const adapter: CalendarPointerCaptureAdapter = {
+      ...createOwningAdapter(),
+      handlePointerMove: mock(() => true),
+      handlePointerUp: mock(() => true),
+    };
+
+    render(
+      <CalendarInteractionPointerCaptureBoundary adapter={adapter}>
+        <button type="button">event</button>
+      </CalendarInteractionPointerCaptureBoundary>,
+    );
+
+    const eventButton = screen.getByRole("button", { name: "event" });
+    const boundary = eventButton.parentElement as HTMLDivElement;
+    boundary.setPointerCapture = mock();
+    boundary.releasePointerCapture = mock();
+
+    fireEvent.pointerDown(eventButton, { pointerId: 42 });
+    fireEvent.pointerMove(window, { pointerId: 42 });
+    fireEvent.pointerUp(window, { pointerId: 42 });
+    fireEvent.pointerMove(window, { pointerId: 42 });
+
+    expect(boundary.setPointerCapture).toHaveBeenCalledWith(42);
+    expect(adapter.handlePointerMove).toHaveBeenCalledTimes(1);
+    expect(adapter.handlePointerUp).toHaveBeenCalledTimes(1);
+    expect(boundary.releasePointerCapture).toHaveBeenCalledWith(42);
+  });
+
   it("stops child pointer continuation handlers once the adapter consumes them", () => {
     const adapter: CalendarPointerCaptureAdapter = {
       ...createNonOwningAdapter(),

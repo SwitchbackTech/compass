@@ -114,10 +114,12 @@ const makePointerEvent = (
 };
 
 const createAdapter = ({
+  mainGridScrollTop = 0,
   onAllDayDrag,
   onTimedDrag,
   onTimedResize,
 }: {
+  mainGridScrollTop?: number;
   onAllDayDrag?: (result: DayAllDayDragCommitResult) => void;
   onTimedDrag?: (result: DayTimedDragCommitResult) => void;
   onTimedResize?: (result: DayTimedResizeCommitResult) => void;
@@ -126,6 +128,13 @@ const createAdapter = ({
   const timers = new Map<unknown, () => void>();
   let nextFrameId = 1;
   let nextTimerId = 1;
+  const allDayColumnsElement = elementWithRect(0, 0, 320, 40);
+  const mainGridElement = elementWithRect(0, 40, 320, 780);
+  const timedColumnsElement = elementWithRect(0, 40, 320, 780);
+
+  Object.defineProperty(mainGridElement, "clientHeight", { value: 780 });
+  Object.defineProperty(mainGridElement, "scrollHeight", { value: 1560 });
+  mainGridElement.scrollTop = mainGridScrollTop;
 
   const adapter = createDayInteractionAdapter({
     engineOptions: {
@@ -150,9 +159,9 @@ const createAdapter = ({
       },
     },
     getLayoutSources: () => ({
-      allDayColumnsElement: elementWithRect(0, 0, 320, 40),
-      mainGridElement: elementWithRect(0, 40, 320, 780),
-      timedColumnsElement: elementWithRect(0, 40, 320, 780),
+      allDayColumnsElement,
+      mainGridElement,
+      timedColumnsElement,
     }),
     getVisibleDate: () => visibleDate,
     runtime: () => ({
@@ -174,7 +183,7 @@ const createAdapter = ({
     }),
   });
 
-  const flushFrame = () => {
+  const flushFrame = (timestamp = 16) => {
     const [[frameId, callback]] = frames;
 
     if (!callback) {
@@ -182,7 +191,7 @@ const createAdapter = ({
     }
 
     frames.delete(frameId);
-    callback(16);
+    callback(timestamp);
   };
 
   const flushTimer = () => {
@@ -196,7 +205,7 @@ const createAdapter = ({
     callback();
   };
 
-  return { adapter, flushFrame, flushTimer };
+  return { adapter, flushFrame, flushTimer, mainGridElement };
 };
 
 const registerEvent = (
@@ -378,6 +387,37 @@ describe("DayInteractionAdapter", () => {
 
     expect(timeLabel).toBeInstanceOf(HTMLElement);
     expect(timeLabel?.textContent).not.toBe("");
+  });
+
+  it("continues timed smart scroll while dragging a saved timed event", () => {
+    const result: { current?: DayTimedDragCommitResult } = {};
+    const { child } = registerEvent(timedEvent, "timed");
+    const { adapter, flushFrame, mainGridElement } = createAdapter({
+      onTimedDrag: (nextResult) => {
+        result.current = nextResult;
+      },
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 160, y: 160 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 160, y: 220 }),
+    );
+    flushFrame(16);
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 160, y: 810 }),
+    );
+    flushFrame(32);
+    flushFrame(48);
+
+    expect(mainGridElement.scrollTop).toBe(20);
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 160, y: 810 }),
+    );
+
+    expect(result.current?.type).toBe("timedDragEnd");
   });
 
   it("keeps all-day drag all-day on the one visible date", () => {
