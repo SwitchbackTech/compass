@@ -333,7 +333,7 @@ const expectDraftIsInactive = (store: ReturnType<typeof createStore>) => {
 
 const getEndResizeHandle = (eventButton: HTMLElement) => {
   const resizeHandle = eventButton.querySelector(
-    '[data-week-event-resize-handle="endDate"]',
+    '[data-calendar-event-resize-handle="endDate"]',
   );
 
   if (!(resizeHandle instanceof HTMLElement)) {

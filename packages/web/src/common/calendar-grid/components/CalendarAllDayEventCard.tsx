@@ -9,6 +9,7 @@ import {
 import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
+import { CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { type CalendarEventPosition } from "@web/common/calendar-grid/types/calendarGrid.types";
 import {
   DATA_EVENT_ELEMENT_ID,
@@ -153,7 +154,7 @@ const CalendarAllDayEventCardBase = (
       </Flex>
       <div
         aria-hidden="true"
-        data-week-event-resize-handle="startDate"
+        {...{ [CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE]: "startDate" }}
         style={scalerStyle({ left: "-0.25px" })}
         onMouseDown={(e) => {
           e.stopPropagation();
@@ -162,7 +163,7 @@ const CalendarAllDayEventCardBase = (
       />
       <div
         aria-hidden="true"
-        data-week-event-resize-handle="endDate"
+        {...{ [CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE]: "endDate" }}
         style={scalerStyle({ right: "-0.25px" })}
         onMouseDown={(e) => {
           e.stopPropagation();

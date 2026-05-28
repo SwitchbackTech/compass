@@ -17,6 +17,10 @@ import {
   CALENDAR_MIN_EVENT_HEIGHT_FOR_TIME_LABEL,
   CALENDAR_MIN_EVENT_WIDTH_FOR_TIME_LABEL,
 } from "@web/common/calendar-grid/calendarGrid.constants";
+import {
+  CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE,
+  CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE,
+} from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { type CalendarEventPosition } from "@web/common/calendar-grid/types/calendarGrid.types";
 import {
   DATA_EVENT_ELEMENT_ID,
@@ -243,7 +247,7 @@ const CalendarTimedEventCardBase = (
                     "animate-someday-commit-time-exit opacity-0":
                       shouldAnimatePastCommitTimeOut,
                   })}
-                  data-week-event-time-label="true"
+                  {...{ [CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE]: "true" }}
                   style={timeLabelStyle}
                   zIndex={ZIndex.LAYER_3}
                 >
@@ -252,7 +256,7 @@ const CalendarTimedEventCardBase = (
               )}
             <div
               aria-hidden="true"
-              data-week-event-resize-handle="startDate"
+              {...{ [CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE]: "startDate" }}
               style={scalerStyle({ top: "-0.25px" })}
               onMouseDown={(e) => {
                 e.stopPropagation();
@@ -261,7 +265,7 @@ const CalendarTimedEventCardBase = (
             />
             <div
               aria-hidden="true"
-              data-week-event-resize-handle="endDate"
+              {...{ [CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE]: "endDate" }}
               style={scalerStyle({ bottom: "-0.25px" })}
               onMouseDown={(e) => {
                 e.stopPropagation();

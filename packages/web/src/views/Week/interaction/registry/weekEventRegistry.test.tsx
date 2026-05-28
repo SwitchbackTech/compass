@@ -313,10 +313,12 @@ describe("weekEventRegistry", () => {
       "all-day",
     );
     expect(
-      element.querySelector('[data-week-event-resize-handle="startDate"]'),
+      element.querySelector(
+        '[data-calendar-event-resize-handle="startDate"]',
+      ),
     ).toBeTruthy();
     expect(
-      element.querySelector('[data-week-event-resize-handle="endDate"]'),
+      element.querySelector('[data-calendar-event-resize-handle="endDate"]'),
     ).toBeTruthy();
 
     unmount();

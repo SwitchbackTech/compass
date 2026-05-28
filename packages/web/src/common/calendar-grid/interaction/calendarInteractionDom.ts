@@ -10,14 +10,6 @@ export const CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE =
   "data-calendar-event-time-label";
 export const CALENDAR_EVENT_TIME_LABEL_SELECTOR = `[${CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE}='true']`;
 
-const LEGACY_DAY_EVENT_RESIZE_HANDLE_ATTRIBUTE = "data-day-event-resize-handle";
-const LEGACY_WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE =
-  "data-week-event-resize-handle";
-const LEGACY_DAY_EVENT_TIME_LABEL_SELECTOR =
-  "[data-day-event-time-label='true']";
-const LEGACY_WEEK_EVENT_TIME_LABEL_SELECTOR =
-  "[data-week-event-time-label='true']";
-
 export type CalendarResizeEdge = "endDate" | "startDate";
 
 export const getCalendarResizeHandleEdge = (
@@ -25,16 +17,9 @@ export const getCalendarResizeHandleEdge = (
 ): CalendarResizeEdge | null => {
   const pointerTarget = event.target instanceof Element ? event.target : null;
   const handle = pointerTarget?.closest<HTMLElement>(
-    [
-      `[${CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE}]`,
-      `[${LEGACY_DAY_EVENT_RESIZE_HANDLE_ATTRIBUTE}]`,
-      `[${LEGACY_WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE}]`,
-    ].join(","),
+    `[${CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE}]`,
   );
-  const edge =
-    handle?.getAttribute(CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE) ??
-    handle?.getAttribute(LEGACY_DAY_EVENT_RESIZE_HANDLE_ATTRIBUTE) ??
-    handle?.getAttribute(LEGACY_WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE);
+  const edge = handle?.getAttribute(CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE);
 
   return isCalendarResizeEdge(edge) ? edge : null;
 };
@@ -88,11 +73,7 @@ export const createCalendarInteractionEventOverlayMount = ({
 
 const getOrCreateCalendarOverlayTimeLabel = (node: HTMLElement) => {
   const existing = node.querySelector<HTMLElement>(
-    [
-      CALENDAR_EVENT_TIME_LABEL_SELECTOR,
-      LEGACY_DAY_EVENT_TIME_LABEL_SELECTOR,
-      LEGACY_WEEK_EVENT_TIME_LABEL_SELECTOR,
-    ].join(","),
+    CALENDAR_EVENT_TIME_LABEL_SELECTOR,
   );
 
   if (existing) {
@@ -128,9 +109,7 @@ const getFirstDirectResizeHandle = (node: HTMLElement) => {
   for (const child of node.children) {
     if (
       child instanceof HTMLElement &&
-      (child.hasAttribute(CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE) ||
-        child.hasAttribute(LEGACY_DAY_EVENT_RESIZE_HANDLE_ATTRIBUTE) ||
-        child.hasAttribute(LEGACY_WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE))
+      child.hasAttribute(CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE)
     ) {
       return child;
     }

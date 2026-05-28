@@ -69,12 +69,12 @@ describe("CalendarEventCard", () => {
     expect(screen.getByText("Planning block")).toBeInTheDocument();
 
     const timeLabel = screen.getByText("9 - 10 AM");
-    expect(timeLabel).toHaveAttribute("data-week-event-time-label", "true");
+    expect(timeLabel).toHaveAttribute("data-calendar-event-time-label", "true");
     expect(timeLabel).toHaveClass("animate-someday-commit-time-exit");
     expect(timeLabel).toHaveAttribute("aria-hidden", "true");
 
     const handles = document.querySelectorAll(
-      "[data-week-event-resize-handle]",
+      "[data-calendar-event-resize-handle]",
     );
     expect(handles).toHaveLength(2);
 
@@ -121,14 +121,14 @@ describe("CalendarEventCard", () => {
     expect(screen.getByText("Conference")).toBeInTheDocument();
 
     const handles = document.querySelectorAll(
-      "[data-week-event-resize-handle]",
+      "[data-calendar-event-resize-handle]",
     );
     expect(handles[0]).toHaveAttribute(
-      "data-week-event-resize-handle",
+      "data-calendar-event-resize-handle",
       "startDate",
     );
     expect(handles[1]).toHaveAttribute(
-      "data-week-event-resize-handle",
+      "data-calendar-event-resize-handle",
       "endDate",
     );
 
