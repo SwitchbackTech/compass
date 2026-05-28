@@ -11,7 +11,7 @@ mock.module("@web/common/hooks/usePointerPosition", () => ({
 type MockResizeStart = (
   event: ReactMouseEvent<HTMLButtonElement>,
   direction: "right",
-  element: null,
+  element: HTMLElement,
 ) => void;
 
 type MockResizeStop = (
@@ -35,7 +35,7 @@ mock.module("re-resizable", () => ({
       <button
         type="button"
         data-testid="resize-start"
-        onClick={(e) => onResizeStart?.(e, "right", null)}
+        onMouseDown={(e) => onResizeStart?.(e, "right", e.currentTarget)}
       >
         Start
       </button>
@@ -71,8 +71,26 @@ describe("Resizable", () => {
       </Resizable>,
     );
 
-    fireEvent.click(getByTestId("resize-start"));
+    fireEvent.mouseDown(getByTestId("resize-start"));
     expect(mockTogglePointerMovementTracking).toHaveBeenCalledWith(true);
+  });
+
+  it("does not start resizing from right click", () => {
+    const mockOnResizeStart = mock();
+    const { getByTestId } = render(
+      <Resizable
+        id="test-id"
+        defaultSize={{ width: 100, height: 100 }}
+        onResizeStart={mockOnResizeStart}
+      >
+        <div>Content</div>
+      </Resizable>,
+    );
+
+    fireEvent.mouseDown(getByTestId("resize-start"), { button: 2 });
+
+    expect(mockTogglePointerMovementTracking).not.toHaveBeenCalled();
+    expect(mockOnResizeStart).not.toHaveBeenCalled();
   });
 
   it("calls togglePointerMovementTracking with false on resize stop", () => {

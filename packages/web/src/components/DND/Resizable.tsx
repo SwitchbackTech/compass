@@ -34,6 +34,10 @@ export function Resizable({
 
   const handleResizeStart = useCallback<ResizeStartCallback>(
     (e, direction, ref) => {
+      if ("button" in e && e.button !== 0) {
+        return false;
+      }
+
       togglePointerMovementTracking(true);
       resizing$.next(true);
       resizeId$.next(id);
