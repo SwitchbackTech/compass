@@ -1,18 +1,10 @@
 import { ObjectId } from "bson";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
-  DATA_CALENDAR_TIMED_GRID_ROW,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
-import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import {
-  addId,
-  isEventInRange,
-  openEventFormCreateEvent,
-} from "@web/common/utils/event/event.util";
+import { addId, isEventInRange } from "@web/common/utils/event/event.util";
 import { _assembleGridEvent } from "@web/ducks/events/sagas/saga.util";
 import {
   afterEach,
@@ -111,31 +103,5 @@ describe("addId", () => {
     expect(result._id).toBeDefined();
     expect(ObjectId.isValid(result._id)).toBe(true);
     expect(result._id).toMatch(/^[a-f0-9]{24}$/);
-  });
-});
-
-describe("openEventFormCreateEvent", () => {
-  afterEach(() => {
-    document.body.innerHTML = "";
-  });
-
-  it("starts create-event from the timed grid row surface", () => {
-    const timedGrid = document.createElement("div");
-    const row = document.createElement("div");
-
-    timedGrid.id = ID_GRID_MAIN;
-    row.setAttribute(DATA_CALENDAR_TIMED_GRID_ROW, "true");
-    timedGrid.append(row);
-    document.body.append(timedGrid);
-
-    const rowMouseDown = mock();
-    const gridMouseDown = mock();
-    row.addEventListener("mousedown", rowMouseDown);
-    timedGrid.addEventListener("mousedown", gridMouseDown);
-
-    openEventFormCreateEvent();
-
-    expect(rowMouseDown).toHaveBeenCalledTimes(1);
-    expect(gridMouseDown).toHaveBeenCalledTimes(1);
   });
 });

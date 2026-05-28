@@ -11,7 +11,7 @@ import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   openEventFormCreateEvent,
   openEventFormEditEvent,
-} from "@web/common/utils/event/event.util";
+} from "@web/views/Day/interaction/dayCalendarFocus.util";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";

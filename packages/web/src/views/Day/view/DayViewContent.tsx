@@ -7,7 +7,7 @@ import {
 import {
   focusFirstDayCalendarEvent,
   openEventFormEditEvent,
-} from "@web/common/utils/event/event.util";
+} from "@web/views/Day/interaction/dayCalendarFocus.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
