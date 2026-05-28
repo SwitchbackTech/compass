@@ -9,7 +9,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { CalendarTimedEventCard } from "@web/common/calendar-grid/components/CalendarTimedEventCard";
 import { getCalendarTimedEventPosition } from "@web/common/calendar-grid/layout/calendarEventPosition";
 import {
-  applyCalendarTimedDeckPosition,
+  applyCalendarTimedEventDisplayPosition,
   type CalendarTimedDeckLayout,
 } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { ZIndex } from "@web/common/constants/web.constants";
@@ -94,15 +94,15 @@ const GridEventBase = (
     date,
     key: date.format(YEAR_MONTH_DAY_FORMAT),
   }));
+  const shouldUseDraftSizing = isDraft && !deckLayout;
   const basePosition = getCalendarTimedEventPosition(event, {
-    isDraft,
+    isDraft: shouldUseDraftSizing,
     measurements,
     visibleDates,
   });
-  const position =
-    !isDraft && deckLayout
-      ? applyCalendarTimedDeckPosition(basePosition, deckLayout)
-      : basePosition;
+  const position = shouldUseDraftSizing
+    ? basePosition
+    : applyCalendarTimedEventDisplayPosition(basePosition, deckLayout);
 
   const shouldFloatAboveDeck =
     isDraft || isDragging || isResizing || (isDeck && isFocused);

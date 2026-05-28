@@ -5,11 +5,15 @@ import {
   CALENDAR_DECK_RIGHT_RESERVE,
   CALENDAR_EVENT_WIDTH_MINIMUM,
   CALENDAR_TIMED_EVENT_COLUMN_INSET,
+  CALENDAR_TIMED_EVENT_FAN_GUTTER,
+  CALENDAR_TIMED_EVENT_FAN_INDENT,
+  CALENDAR_TIMED_EVENT_MAX_WIDTH,
 } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   applyCalendarTimedDeckPosition,
+  applyCalendarTimedEventDisplayPosition,
   createCalendarTimedEventLayout,
 } from "./calendarTimedDeckLayout";
 
@@ -232,5 +236,57 @@ describe("applyCalendarTimedDeckPosition", () => {
 
     expect(front.width).toBeGreaterThan(0);
     expect(front.left + front.width).toBe(narrowBase.left + narrowBase.width);
+  });
+});
+
+describe("applyCalendarTimedEventDisplayPosition", () => {
+  const widePosition = { height: 60, left: 20, top: 30, width: 1000 };
+
+  it("keeps solo timed event cards to the shared readable width", () => {
+    const position = applyCalendarTimedEventDisplayPosition(widePosition, null);
+
+    expect(position.width).toBe(CALENDAR_TIMED_EVENT_MAX_WIDTH);
+  });
+
+  it("fans overlapping cards farther without widening the cards", () => {
+    const back = applyCalendarTimedEventDisplayPosition(widePosition, {
+      order: 0,
+      groupSize: 2,
+    });
+    const front = applyCalendarTimedEventDisplayPosition(widePosition, {
+      order: 1,
+      groupSize: 2,
+    });
+
+    expect(front.left - back.left).toBe(CALENDAR_TIMED_EVENT_FAN_INDENT);
+    expect(back.width).toBe(
+      CALENDAR_TIMED_EVENT_MAX_WIDTH -
+        CALENDAR_DECK_RIGHT_RESERVE -
+        CALENDAR_DECK_INDENT,
+    );
+    expect(front.width).toBe(back.width);
+  });
+
+  it("keeps dense fans inside the right-side gutter", () => {
+    const front = applyCalendarTimedEventDisplayPosition(widePosition, {
+      order: 19,
+      groupSize: 20,
+    });
+
+    expect(front.left + front.width).toBeLessThanOrEqual(
+      widePosition.left + widePosition.width - CALENDAR_TIMED_EVENT_FAN_GUTTER,
+    );
+  });
+
+  it("falls back to the available column width when the column is narrow", () => {
+    const narrowPosition = { ...widePosition, width: 90 };
+    const front = applyCalendarTimedEventDisplayPosition(narrowPosition, {
+      order: 1,
+      groupSize: 2,
+    });
+
+    expect(front.left + front.width).toBe(
+      narrowPosition.left + narrowPosition.width,
+    );
   });
 });

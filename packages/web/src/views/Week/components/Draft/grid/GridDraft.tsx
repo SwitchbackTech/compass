@@ -2,6 +2,7 @@ import { FloatingFocusManager } from "@floating-ui/react";
 import { type FC, type MouseEvent, useRef } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type CalendarTimedDeckLayout } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
@@ -15,11 +16,16 @@ import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
 interface Props {
+  deckLayout?: CalendarTimedDeckLayout | null;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
 }
 
-export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
+export const GridDraft: FC<Props> = ({
+  deckLayout = null,
+  measurements,
+  weekProps,
+}) => {
   const titleInputRef = useRef<HTMLInputElement>(null);
   const { actions, setters, state, confirmation } = useDraftContext();
   const { discard, duplicateEvent, repositionDraftByKeyboard, startDragging } =
@@ -99,6 +105,7 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
         />
       ) : (
         <GridEvent
+          deckLayout={deckLayout}
           displayMode="draft"
           event={draft}
           key={`draft-${draft?._id}`}

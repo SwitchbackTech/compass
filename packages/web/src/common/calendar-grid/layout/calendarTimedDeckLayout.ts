@@ -4,6 +4,11 @@ import {
   CALENDAR_DECK_INDENT,
   CALENDAR_DECK_MIN_WIDTH,
   CALENDAR_DECK_RIGHT_RESERVE,
+  CALENDAR_TIMED_EVENT_FAN_GUTTER,
+  CALENDAR_TIMED_EVENT_FAN_INDENT,
+  CALENDAR_TIMED_EVENT_MAX_WIDTH,
+  CALENDAR_TIMED_EVENT_MIN_WIDTH,
+  CALENDAR_TIMED_EVENT_WIDTH_RATIO,
 } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type CalendarEventPosition } from "@web/common/calendar-grid/types/calendarGrid.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -47,11 +52,45 @@ export const createCalendarTimedEventLayout = (
   return items;
 };
 
+export const applyCalendarTimedEventDisplayPosition = (
+  position: CalendarEventPosition,
+  deckLayout: CalendarTimedDeckLayout | null,
+): CalendarEventPosition => {
+  const cardWidth = getCalendarTimedEventCardWidth(position.width);
+
+  if (!deckLayout) {
+    return { ...position, width: cardWidth };
+  }
+
+  const deckWidth = getCalendarTimedEventDeckWidth({
+    availableWidth: position.width,
+    cardWidth,
+    groupSize: deckLayout.groupSize,
+  });
+
+  return applyCalendarTimedDeckPositionWithIndent(
+    { ...position, width: deckWidth },
+    deckLayout,
+    CALENDAR_TIMED_EVENT_FAN_INDENT,
+  );
+};
+
 export const applyCalendarTimedDeckPosition = (
   position: CalendarEventPosition,
   deckLayout: CalendarTimedDeckLayout,
+): CalendarEventPosition =>
+  applyCalendarTimedDeckPositionWithIndent(
+    position,
+    deckLayout,
+    CALENDAR_DECK_INDENT,
+  );
+
+const applyCalendarTimedDeckPositionWithIndent = (
+  position: CalendarEventPosition,
+  deckLayout: CalendarTimedDeckLayout,
+  indentMax: number,
 ): CalendarEventPosition => {
-  const indent = getDeckIndent(position.width, deckLayout.groupSize);
+  const indent = getDeckIndent(position.width, deckLayout.groupSize, indentMax);
   const maxIndent = (deckLayout.groupSize - 1) * indent;
   const fanned = position.width - CALENDAR_DECK_RIGHT_RESERVE - maxIndent;
   const maxWidthWithinColumn = Math.max(0, position.width - maxIndent);
@@ -68,7 +107,43 @@ export const applyCalendarTimedDeckPosition = (
   };
 };
 
-const getDeckIndent = (width: number, groupSize: number) => {
+const getCalendarTimedEventCardWidth = (availableWidth: number) => {
+  const fluidWidth = availableWidth * CALENDAR_TIMED_EVENT_WIDTH_RATIO;
+  const boundedWidth = Math.max(
+    CALENDAR_TIMED_EVENT_MIN_WIDTH,
+    Math.min(fluidWidth, CALENDAR_TIMED_EVENT_MAX_WIDTH),
+  );
+
+  return Math.min(availableWidth, boundedWidth);
+};
+
+const getCalendarTimedEventDeckWidth = ({
+  availableWidth,
+  cardWidth,
+  groupSize,
+}: {
+  availableWidth: number;
+  cardWidth: number;
+  groupSize: number;
+}) => {
+  const extraIndent = Math.max(
+    0,
+    CALENDAR_TIMED_EVENT_FAN_INDENT - CALENDAR_DECK_INDENT,
+  );
+  const spreadWidth = cardWidth + (groupSize - 1) * extraIndent;
+  const gutteredWidth = Math.max(
+    cardWidth,
+    availableWidth - CALENDAR_TIMED_EVENT_FAN_GUTTER,
+  );
+
+  return Math.min(availableWidth, spreadWidth, gutteredWidth);
+};
+
+const getDeckIndent = (
+  width: number,
+  groupSize: number,
+  indentMax: number = CALENDAR_DECK_INDENT,
+) => {
   if (groupSize < 2) return 0;
 
   const minimumVisibleWidth =
@@ -77,7 +152,7 @@ const getDeckIndent = (width: number, groupSize: number) => {
       : width / groupSize;
   const maxIndentForMinWidth = Math.max(0, width - minimumVisibleWidth);
 
-  return Math.min(CALENDAR_DECK_INDENT, maxIndentForMinWidth / (groupSize - 1));
+  return Math.min(indentMax, maxIndentForMinWidth / (groupSize - 1));
 };
 
 const toDeckCandidate = (item: CalendarTimedEventLayoutItem): DeckCandidate => {

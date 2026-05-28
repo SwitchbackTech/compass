@@ -6,7 +6,7 @@ import {
   getCalendarTimedEventPosition,
 } from "@web/common/calendar-grid/layout/calendarEventPosition";
 import {
-  applyCalendarTimedDeckPosition,
+  applyCalendarTimedEventDisplayPosition,
   type CalendarTimedDeckLayout,
 } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import {
@@ -28,6 +28,7 @@ import {
 
 interface DayEventCardProps {
   event: Schema_GridEvent;
+  isActiveDraft: boolean;
   isPending: boolean;
   isPlaceholder: boolean;
   measurements: CalendarGridMeasurements;
@@ -41,6 +42,7 @@ interface DayTimedEventCardProps extends DayEventCardProps {
 
 export const DayAllDayCalendarEvent = ({
   event,
+  isActiveDraft,
   isPending,
   isPlaceholder,
   measurements,
@@ -64,6 +66,12 @@ export const DayAllDayCalendarEvent = ({
     [event._id, isRegistered],
   );
 
+  const position = getCalendarAllDayEventPosition(event, {
+    isDraft: isPlaceholder,
+    measurements,
+    visibleDates,
+  });
+
   return (
     <CalendarAllDayEventCard
       event={event}
@@ -79,11 +87,12 @@ export const DayAllDayCalendarEvent = ({
       onMouseLeave={(mouseEvent) => {
         clearHoveredDayCalendarEventTarget(mouseEvent.currentTarget);
       }}
-      position={getCalendarAllDayEventPosition(event, {
-        isDraft: isPlaceholder,
-        measurements,
-        visibleDates,
-      })}
+      position={{
+        ...position,
+        zIndex: isActiveDraft
+          ? ZIndex.MAX
+          : (position.zIndex ?? ZIndex.LAYER_1),
+      }}
       ref={registrationRef}
     />
   );
@@ -92,6 +101,7 @@ export const DayAllDayCalendarEvent = ({
 export const DayTimedCalendarEvent = ({
   deckLayout,
   event,
+  isActiveDraft,
   isPending,
   isPlaceholder,
   measurements,
@@ -99,7 +109,7 @@ export const DayTimedCalendarEvent = ({
   visibleDates,
 }: DayTimedEventCardProps) => {
   const isRegistered = Boolean(event._id) && !isPending && !isPlaceholder;
-  const isDeck = Boolean(deckLayout);
+  const isDeck = Boolean(deckLayout) && !isActiveDraft;
   const [isFocused, setIsFocused] = useState(false);
   const registrationRef = useDayEventRegistrationRef({
     eventId: event._id,
@@ -125,7 +135,7 @@ export const DayTimedCalendarEvent = ({
     const highlight = `inset 0 1px 0 rgba(255,255,255,${isFocused ? 0.1 : 0.07})`;
     return `${ring}, ${drop}, ${highlight}`;
   })();
-  const shouldFloatAboveDeck = isDeck && isFocused;
+  const shouldFloatAboveDeck = isActiveDraft || (isDeck && isFocused);
   const position = getDayTimedEventPosition({
     deckLayout,
     event,
@@ -144,6 +154,7 @@ export const DayTimedCalendarEvent = ({
       event={event}
       interactionAttributes={interactionAttributes}
       isPending={isPending}
+      isSelected={isActiveDraft}
       motionMode="idle"
       onBlur={isDeck ? () => setIsFocused(false) : undefined}
       onEventKeyDown={onOpenEvent}
@@ -181,9 +192,7 @@ const getDayTimedEventPosition = ({
     visibleDates,
   });
 
-  return deckLayout
-    ? applyCalendarTimedDeckPosition(position, deckLayout)
-    : position;
+  return applyCalendarTimedEventDisplayPosition(position, deckLayout);
 };
 
 const useDayEventRegistrationRef = ({

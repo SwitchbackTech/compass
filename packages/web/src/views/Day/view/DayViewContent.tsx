@@ -186,7 +186,7 @@ export const DayViewContent = memo(() => {
           onToggleSidebar={toggleSidebar}
         />
 
-        <div className="flex w-full max-w-[960px] flex-1 justify-center gap-8 self-center overflow-hidden">
+        <div className="flex w-full flex-1 gap-8 overflow-hidden">
           <TaskList />
 
           <DayCalendarGrid />

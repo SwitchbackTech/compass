@@ -57,6 +57,15 @@ export const isDraftOnlyEvent = (
     event._id && event._id === draft?._id && !savedEventIds.has(event._id),
   );
 
+export const isActiveDraftEvent = (
+  event: Schema_GridEvent,
+  draft: Schema_Event | null,
+  savedEventIds: Set<string>,
+) =>
+  Boolean(
+    event._id && event._id === draft?._id && savedEventIds.has(event._id),
+  );
+
 export const isDraftVisibleOnDate = (
   draft: EventWithDates,
   visibleDates: CalendarGridVisibleDate[],

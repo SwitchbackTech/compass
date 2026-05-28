@@ -11,7 +11,7 @@ import { ThemeProvider } from "styled-components";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import { CALENDAR_DECK_INDENT } from "@web/common/calendar-grid/calendarGrid.constants";
+import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type CalendarGridMeasurements } from "@web/common/calendar-grid/types/calendarGrid.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
@@ -183,7 +183,7 @@ describe("DayCalendarGrid", () => {
 
     expect(parseFloat(early.style.width)).toBe(parseFloat(late.style.width));
     expect(parseFloat(late.style.left) - parseFloat(early.style.left)).toBe(
-      CALENDAR_DECK_INDENT,
+      CALENDAR_TIMED_EVENT_FAN_INDENT,
     );
     expect(early.style.boxShadow).toContain("0 0 0 0.75px");
     expect(late.style.boxShadow).toContain("0 0 0 0.75px");
@@ -220,6 +220,53 @@ describe("DayCalendarGrid", () => {
 
     fireEvent.blur(back);
     expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+  });
+
+  it("raises a clicked overlapping Day event above its group-mates without widening it", async () => {
+    setDayEvents([
+      createTimedEvent({
+        _id: "back",
+        endDate: "2026-05-20T10:30:00.000",
+        startDate: "2026-05-20T09:00:00.000",
+        title: "Back overlap",
+      }),
+      createTimedEvent({
+        _id: "front",
+        endDate: "2026-05-20T10:45:00.000",
+        startDate: "2026-05-20T09:30:00.000",
+        title: "Front overlap",
+      }),
+    ]);
+
+    renderDayCalendarGrid();
+
+    const back = screen.getByRole("button", { name: /back overlap/i });
+    const front = screen.getByRole("button", { name: /front overlap/i });
+    const initialBackWidth = parseFloat(back.style.width);
+    const frontWidth = parseFloat(front.style.width);
+
+    expect(initialBackWidth).toBe(frontWidth);
+    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+
+    fireEvent.pointerDown(back, {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(window, {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+      pointerId: 1,
+    });
+
+    await waitFor(() => {
+      expect(eventsStore.query((state) => getDraft(state))?._id).toBe("back");
+      expect(Number(back.style.zIndex)).toBe(ZIndex.MAX);
+      expect(parseFloat(back.style.width)).toBe(frontWidth);
+    });
   });
 
   it("keeps an existing draft event registered for Day calendar interactions", () => {

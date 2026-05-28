@@ -21,6 +21,7 @@
   --color-border-primary: hsl(219 18 34 / 20%);
   --color-border-primary-dark: hsl(0 0 0 / 50.2%);
   --color-border-secondary: hsl(47 7 73);
+  --color-event-selected: hsl(206 18 72);
   --color-fg-primary: hsl(47 7 73);
   --color-fg-primary-dark: hsl(208 13 71 / 54.9%);
   --color-gradient-accent-light-start: hsl(202 100 67);

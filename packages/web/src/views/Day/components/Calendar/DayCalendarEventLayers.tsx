@@ -24,6 +24,7 @@ import {
 import {
   addVisibleDraftEvent,
   getCalendarEventIdSet,
+  isActiveDraftEvent,
   isDraftOnlyEvent,
 } from "./dayCalendarDraft.util";
 
@@ -70,6 +71,7 @@ export const DayCalendarAllDayEventsLayer = ({
       {renderedEvents.map((event) => (
         <DayAllDayCalendarEvent
           event={event}
+          isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
           key={event._id}
@@ -115,6 +117,7 @@ export const DayCalendarTimedEventsLayer = ({
         <DayTimedCalendarEvent
           deckLayout={deckLayout}
           event={event}
+          isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
           key={event._id}

@@ -625,9 +625,9 @@ describe("saved Week event ownership", () => {
     const solo = screen.getByRole("button", { name: /timed event: solo/i });
 
     expect(parseFloat(early.style.width)).toBe(parseFloat(late.style.width));
-    expect(parseFloat(late.style.left) - parseFloat(early.style.left)).toBe(
-      DECK_INDENT,
-    );
+    const overlapOffset =
+      parseFloat(late.style.left) - parseFloat(early.style.left);
+    expect(overlapOffset).toBeGreaterThan(DECK_INDENT);
 
     expect(Number(early.style.zIndex)).toBeLessThan(Number(late.style.zIndex));
 

@@ -68,8 +68,8 @@ Use conventional commit format: `type(scope): description`
 
 The repository includes Husky hooks that will:
 
-- Run `bunx lint-staged` on pre-commit (formats code with Prettier)
-- Run `bunx prettier . --write` on pre-push (ensures consistent formatting)
+- Run Biome formatting/checks before code is submitted
+- Use `bun run format` for formatting and `bun run lint:fix` for safe fixes
 
 **ALWAYS ensure your commits pass these checks before pushing.**
 
