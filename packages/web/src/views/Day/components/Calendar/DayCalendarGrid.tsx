@@ -9,6 +9,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import {
@@ -141,6 +142,7 @@ export function DayCalendarGrid() {
       top,
     });
   }, [gridRefs.mainGridRef]);
+  const scrollToNowRef = useRef(scrollToNow);
 
   useEffect(() => {
     if (!gridRefs.mainGridRef.current) {
@@ -151,12 +153,26 @@ export function DayCalendarGrid() {
   }, [gridRefs.mainGridRef, scrollToNow]);
 
   useEffect(() => {
-    compassEventEmitter.on(CompassDOMEvents.SCROLL_TO_NOW_LINE, scrollToNow);
+    scrollToNowRef.current = scrollToNow;
+  }, [scrollToNow]);
+
+  useEffect(() => {
+    const handleScrollToNowLine = () => {
+      scrollToNowRef.current();
+    };
+
+    compassEventEmitter.on(
+      CompassDOMEvents.SCROLL_TO_NOW_LINE,
+      handleScrollToNowLine,
+    );
 
     return () => {
-      compassEventEmitter.off(CompassDOMEvents.SCROLL_TO_NOW_LINE, scrollToNow);
+      compassEventEmitter.off(
+        CompassDOMEvents.SCROLL_TO_NOW_LINE,
+        handleScrollToNowLine,
+      );
     };
-  }, [scrollToNow]);
+  }, []);
 
   const openEventFormForEvent = useCallback((event: Schema_GridEvent) => {
     if (!event._id) {
@@ -235,6 +251,28 @@ export function DayCalendarGrid() {
     draft,
     onOpenEvent: openEventFormForEvent,
   });
+  const allDayEventsLayer = useMemo(
+    () => (
+      <DayCalendarAllDayEventsLayer
+        draft={draft}
+        measurements={measurements}
+        onOpenEvent={openEventFormForEvent}
+        visibleDates={visibleDates}
+      />
+    ),
+    [draft, measurements, openEventFormForEvent, visibleDates],
+  );
+  const timedEventsLayer = useMemo(
+    () => (
+      <DayCalendarTimedEventsLayer
+        draft={draft}
+        measurements={measurements}
+        onOpenEvent={openEventFormForEvent}
+        visibleDates={visibleDates}
+      />
+    ),
+    [draft, measurements, openEventFormForEvent, visibleDates],
+  );
 
   return (
     <section
@@ -248,26 +286,12 @@ export function DayCalendarGrid() {
         getLayoutSources={getDayInteractionLayoutSources}
       >
         <CalendarGrid
-          allDayEventsLayer={
-            <DayCalendarAllDayEventsLayer
-              draft={draft}
-              measurements={measurements}
-              onOpenEvent={openEventFormForEvent}
-              visibleDates={visibleDates}
-            />
-          }
+          allDayEventsLayer={allDayEventsLayer}
           allDayRowsCount={allDayRowsCount}
           gridRefs={gridRefs}
           onAllDayMouseDown={onAllDayMouseDown}
           onTimedMouseDown={startTimedDraftCreation}
-          timedEventsLayer={
-            <DayCalendarTimedEventsLayer
-              draft={draft}
-              measurements={measurements}
-              onOpenEvent={openEventFormForEvent}
-              visibleDates={visibleDates}
-            />
-          }
+          timedEventsLayer={timedEventsLayer}
           today={today}
           visibleDates={visibleDates}
         />

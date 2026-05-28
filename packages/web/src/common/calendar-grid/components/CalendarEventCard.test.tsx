@@ -89,6 +89,26 @@ describe("CalendarEventCard", () => {
     expect(onEventMouseDown).not.toHaveBeenCalled();
   });
 
+  it("does not open pending timed events from the keyboard", () => {
+    const onEventKeyDown = mock();
+
+    render(
+      <CalendarTimedEventCard
+        displayMode="saved"
+        event={createEvent()}
+        isPending={true}
+        motionMode="idle"
+        onEventKeyDown={onEventKeyDown}
+        position={position}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByRole("button"), { key: " " });
+
+    expect(onEventKeyDown).not.toHaveBeenCalled();
+  });
+
   it("renders all-day event details, interaction attributes, acknowledgement animation, and resize handles", () => {
     const onEventMouseDown = mock();
     const onScalerMouseDown = mock();
@@ -138,5 +158,27 @@ describe("CalendarEventCard", () => {
 
     expect(onScalerMouseDown).toHaveBeenCalledTimes(2);
     expect(onEventMouseDown).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not open pending all-day events from the keyboard", () => {
+    const onEventKeyDown = mock();
+
+    render(
+      <CalendarAllDayEventCard
+        event={createEvent({
+          isAllDay: true,
+          title: "Conference",
+        })}
+        isPending={true}
+        isPlaceholder={false}
+        onEventKeyDown={onEventKeyDown}
+        position={position}
+      />,
+    );
+
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
+    fireEvent.keyDown(screen.getByRole("button"), { key: " " });
+
+    expect(onEventKeyDown).not.toHaveBeenCalled();
   });
 });

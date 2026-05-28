@@ -1,4 +1,4 @@
-import { type FC, type MutableRefObject, type ReactNode } from "react";
+import { type FC, type MutableRefObject, type ReactNode, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { CalendarTimedGrid } from "@web/common/calendar-grid/components/CalendarTimedGrid";
@@ -47,25 +47,91 @@ export const MainGrid: FC<Props> = ({
 
   useDragEventSmartScroll(mainGridRef);
 
-  const timedEventsLayer = (
-    <MainGridEvents measurements={measurements} weekProps={weekProps} />
-  );
-
   if (children) {
     return (
-      <>
-        {children({
-          onTimedMouseDown: startTimedDraftCreation,
-          timedEventsLayer,
-        })}
-      </>
+      <MainGridChildren
+        measurements={measurements}
+        onTimedMouseDown={startTimedDraftCreation}
+        weekProps={weekProps}
+      >
+        {children}
+      </MainGridChildren>
     );
   }
 
   return (
+    <MainGridCalendar
+      mainGridElementRef={mainGridElementRef}
+      measurements={measurements}
+      onTimedMouseDown={startTimedDraftCreation}
+      timedColumnsElementRef={timedColumnsElementRef}
+      today={today}
+      weekDays={weekDays}
+      weekProps={weekProps}
+    />
+  );
+};
+
+interface MainGridChildrenProps {
+  children: (props: MainGridRenderProps) => ReactNode;
+  measurements: Measurements_Grid;
+  onTimedMouseDown: ReturnType<
+    typeof useTimedGridDraftCreation
+  >["startTimedDraftCreation"];
+  weekProps: WeekProps;
+}
+
+const MainGridChildren: FC<MainGridChildrenProps> = ({
+  children,
+  measurements,
+  onTimedMouseDown,
+  weekProps,
+}) => {
+  const timedEventsLayer = useMemo(
+    () => <MainGridEvents measurements={measurements} weekProps={weekProps} />,
+    [measurements, weekProps],
+  );
+
+  return (
+    <>
+      {children({
+        onTimedMouseDown,
+        timedEventsLayer,
+      })}
+    </>
+  );
+};
+
+interface MainGridCalendarProps {
+  mainGridElementRef: Ref_Callback;
+  measurements: Measurements_Grid;
+  onTimedMouseDown: ReturnType<
+    typeof useTimedGridDraftCreation
+  >["startTimedDraftCreation"];
+  timedColumnsElementRef: Ref_Callback;
+  today: Dayjs;
+  weekDays: Dayjs[];
+  weekProps: WeekProps;
+}
+
+const MainGridCalendar: FC<MainGridCalendarProps> = ({
+  mainGridElementRef,
+  measurements,
+  onTimedMouseDown,
+  timedColumnsElementRef,
+  today,
+  weekDays,
+  weekProps,
+}) => {
+  const timedEventsLayer = useMemo(
+    () => <MainGridEvents measurements={measurements} weekProps={weekProps} />,
+    [measurements, weekProps],
+  );
+
+  return (
     <CalendarTimedGrid
       eventsLayer={timedEventsLayer}
-      onMouseDown={startTimedDraftCreation}
+      onMouseDown={onTimedMouseDown}
       timedColumnsRef={timedColumnsElementRef}
       timedGridRef={mainGridElementRef}
       today={today}

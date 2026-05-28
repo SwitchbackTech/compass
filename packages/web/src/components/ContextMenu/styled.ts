@@ -39,6 +39,8 @@ export const TooltipText = styled.span`
 `;
 
 export const PriorityCircle = styled.div<{ color: string; selected: boolean }>`
+  appearance: none;
+  padding: 0;
   width: 20px;
   height: 20px;
   border-radius: 50%;
@@ -61,7 +63,12 @@ export const PriorityCircle = styled.div<{ color: string; selected: boolean }>`
   }
 `;
 
-export const MenuItem = styled.li`
+export const MenuItem = styled.button`
+  appearance: none;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #eee;
+  width: 100%;
   padding: 10px 12px;
   cursor: pointer;
   user-select: none;
@@ -71,7 +78,7 @@ export const MenuItem = styled.li`
   display: flex;
   align-items: center;
   gap: 8px;
-  border-bottom: 1px solid #eee;
+  text-align: left;
 
   &:last-child {
     border-bottom: none;
@@ -79,6 +86,11 @@ export const MenuItem = styled.li`
 
   &:hover {
     background-color: #f5f5f5;
+  }
+
+  &:disabled {
+    cursor: wait;
+    opacity: 0.5;
   }
 `;
 

@@ -105,7 +105,6 @@ const createStore = (events: Schema_Event[] = []) => {
 const createDateCalcs = () => ({
   getDateByXY: (_x: number, y: number, firstDayInView: Dayjs) =>
     firstDayInView.add(y, "minute"),
-  getDayNumberByX: () => 0,
   getDateStrByXY: (_x: number, y: number, firstDayInView: Dayjs) =>
     firstDayInView.add(y, "minute").format(),
   getMinuteByY: (y: number) => y,

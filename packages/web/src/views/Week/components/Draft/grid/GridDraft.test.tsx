@@ -148,7 +148,7 @@ afterEach(() => {
 });
 
 describe("GridDraft keyboard focus", () => {
-  it("renders all-day drafts that do not carry timed-event position data", () => {
+  it("positions all-day drafts in the all-day row", () => {
     renderGridDraft(
       createDraft({
         endDate: "2026-05-27T00:00:00.000Z",
@@ -160,7 +160,12 @@ describe("GridDraft keyboard focus", () => {
 
     expect(
       screen.getByRole("button", { name: /All-day event: Planning/ }),
-    ).toBeInTheDocument();
+    ).toHaveStyle({
+      height: "20px",
+      left: "200px",
+      top: "23px",
+      width: "90px",
+    });
   });
 
   it("keeps the floating form non-modal while the draft block is a focus target", () => {

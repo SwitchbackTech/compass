@@ -31,27 +31,9 @@ export const useDateCalcs = (
     return calendarDateCalcs.getDateStrByXY(x, y, format);
   };
 
-  const getDayNumberByX = (x: number) => {
-    let dayNumber = 0;
-    const totalWidth = measurements.colWidths.reduce((prev, width, index) => {
-      if (x >= prev && x < prev + width) {
-        dayNumber = index;
-      }
-
-      return prev + width;
-    }, 0);
-
-    if (x >= totalWidth) {
-      dayNumber = measurements.colWidths.length - 1;
-    }
-
-    return dayNumber;
-  };
-
   return {
     getDateByXY,
     getDateStrByXY,
-    getDayNumberByX,
     getMinuteByY: calendarDateCalcs.getMinuteByY,
     getYByDate: calendarDateCalcs.getYByDate,
   };

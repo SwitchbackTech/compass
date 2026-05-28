@@ -162,7 +162,7 @@ export const DayTimedCalendarEvent = ({
   );
 };
 
-export const getDayTimedEventPosition = ({
+const getDayTimedEventPosition = ({
   deckLayout,
   event,
   isPlaceholder,

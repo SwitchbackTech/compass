@@ -6,33 +6,12 @@ import {
   PointerPositionProvider,
   pointerState$,
 } from "@web/common/context/pointer-position";
-import { isDraggingEvent$ } from "@web/common/hooks/useIsDraggingEvent";
-import { useMainGridSelection } from "@web/common/hooks/useMainGridSelection";
-import { selectionId$ } from "@web/common/hooks/useMainGridSelectionId";
-import { selecting$ } from "@web/common/hooks/useMainGridSelectionState";
 import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
-import { resizing$ } from "@web/common/hooks/useResizing";
 import {
   pointerdown$,
   selectionStart$,
 } from "@web/common/utils/dom/event-emitter.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-
-function SelectionHarness({
-  onSelectionStart,
-}: {
-  onSelectionStart: NonNullable<
-    Parameters<typeof useMainGridSelection>[0]
-  >["onSelectionStart"];
-}) {
-  useMainGridSelection({ onSelectionStart });
-
-  return (
-    <div id={ID_ROOT}>
-      <div data-testid="day-grid" id={ID_GRID_MAIN} />
-    </div>
-  );
-}
 
 function renderWithPointerProvider(children: ReactNode) {
   function Wrapper({ children }: { children: ReactNode }) {
@@ -60,17 +39,13 @@ describe("PointerPositionProvider", () => {
       isOverSomedayMonth: false,
       isOverAllDayRow: false,
     });
-    isDraggingEvent$.next(false);
-    resizing$.next(false);
-    selecting$.next(false);
-    selectionId$.next(null);
   });
 
-  it("feeds real grid pointer movement into day-view selection", async () => {
-    const onSelectionStart = mock();
-
+  it("tracks real pointer movement over the main grid", async () => {
     renderWithPointerProvider(
-      <SelectionHarness onSelectionStart={onSelectionStart} />,
+      <div id={ID_ROOT}>
+        <div data-testid="day-grid" id={ID_GRID_MAIN} />
+      </div>,
     );
 
     const grid = screen.getByTestId("day-grid");
@@ -90,10 +65,15 @@ describe("PointerPositionProvider", () => {
     });
 
     await waitFor(() => {
-      expect(onSelectionStart).toHaveBeenCalledWith(
-        expect.any(String),
-        { clientX: 100, clientY: 100 },
-        { clientX: 100, clientY: 130 },
+      expect(cursor$.getValue()).toEqual({ x: 100, y: 130 });
+      expect(pointerState$.getValue()).toEqual(
+        expect.objectContaining({
+          event: expect.objectContaining({ type: "pointermove" }),
+          isOverGrid: true,
+          isOverMainGrid: true,
+          pointerdown: true,
+          selectionStart: { clientX: 100, clientY: 100 },
+        }),
       );
     });
   });

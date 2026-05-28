@@ -163,8 +163,8 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
       <StyledGridWithTimeLabels>
         {getHourLabels(true).map((dayTime) => (
           <StyledGridRow
-            {...{ [DATA_CALENDAR_TIMED_GRID_ROW]: "true" }}
             key={dayTime}
+            {...{ [DATA_CALENDAR_TIMED_GRID_ROW]: "true" }}
             onMouseDown={onMouseDown}
           />
         ))}
@@ -176,7 +176,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
 };
 
 const CalendarTimeColumn = () => {
-  const [currentHour, setCurrentHour] = useState(dayjs().hour());
+  const [currentHour, setCurrentHour] = useState(() => dayjs().hour());
   const colors = useMemo(() => getColorsByHour(currentHour), [currentHour]);
   const hourLabels = useMemo(() => getHourLabels(), []);
 
@@ -204,7 +204,9 @@ const CalendarTimeColumn = () => {
 };
 
 const CalendarNowLine = () => {
-  const [percentOfDay, setPercentOfDay] = useState(getCurrentPercentOfDay());
+  const [percentOfDay, setPercentOfDay] = useState(() =>
+    getCurrentPercentOfDay(),
+  );
 
   useEffect(() => {
     const interval = setInterval(() => {

@@ -117,7 +117,7 @@ describe("ContextMenuItems", () => {
 
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
 
-    const editButton = screen.getByText("Edit");
+    const editButton = screen.getByRole("button", { name: "Edit" });
     await user.click(editButton);
 
     expect(mockSetDraft).toHaveBeenCalled();
@@ -135,7 +135,7 @@ describe("ContextMenuItems", () => {
     currentState = createStateWithPendingEvents(["pending-event-1"]);
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
 
-    const deleteButton = screen.getByText("Delete");
+    const deleteButton = screen.getByRole("button", { name: "Delete" });
     await user.click(deleteButton);
 
     // Delete should not be called for pending events
@@ -153,7 +153,7 @@ describe("ContextMenuItems", () => {
     currentState = createStateWithPendingEvents(["pending-event-1"]);
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
 
-    const editButton = screen.getByText("Edit");
+    const editButton = screen.getByRole("button", { name: "Edit" });
     await user.click(editButton);
 
     // Edit should not be called for pending events
@@ -172,7 +172,7 @@ describe("ContextMenuItems", () => {
     currentState = createStateWithPendingEvents(["pending-event-1"]);
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
 
-    const duplicateButton = screen.getByText("Duplicate");
+    const duplicateButton = screen.getByRole("button", { name: "Duplicate" });
     await user.click(duplicateButton);
 
     // Duplicate should not be called for pending events
@@ -189,7 +189,8 @@ describe("ContextMenuItems", () => {
     currentState = createStateWithPendingEvents(["pending-event-1"]);
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
 
-    const deleteButton = screen.getByText("Delete").closest("li");
+    const deleteButton = screen.getByRole("button", { name: "Delete" });
+    expect(deleteButton).toBeDisabled();
     expect(deleteButton).toHaveStyle({ cursor: "wait" });
   });
 
@@ -203,11 +204,30 @@ describe("ContextMenuItems", () => {
     currentState = createStateWithPendingEvents(["other-pending-event"]);
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
 
-    const deleteButton = screen.getByText("Delete");
+    const deleteButton = screen.getByRole("button", { name: "Delete" });
     await user.click(deleteButton);
 
     // Delete should be called for non-pending events even if others are pending
     expect(mockOnDelete).toHaveBeenCalled();
+    expect(mockClose).toHaveBeenCalled();
+  });
+
+  it("uses priority buttons for pending-safe priority changes", async () => {
+    const user = userEvent.setup();
+    const event = createMockGridEvent({
+      _id: "event-1",
+      title: "Normal Event",
+    });
+
+    renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
+
+    await user.click(
+      screen.getByRole("button", { name: "Set priority to Work" }),
+    );
+
+    expect(mockSubmit).toHaveBeenCalledWith(
+      expect.objectContaining({ priority: "work" }),
+    );
     expect(mockClose).toHaveBeenCalled();
   });
 });

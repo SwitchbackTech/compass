@@ -8,6 +8,10 @@ import {
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { CalendarTimedEventCard } from "@web/common/calendar-grid/components/CalendarTimedEventCard";
 import { getCalendarTimedEventPosition } from "@web/common/calendar-grid/layout/calendarEventPosition";
+import {
+  applyCalendarTimedDeckPosition,
+  type CalendarTimedDeckLayout,
+} from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -20,13 +24,9 @@ import {
   clearHoveredCalendarEventTarget,
   setHoveredCalendarEventTarget,
 } from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
-import {
-  applyWeekTimedDeckPosition,
-  type WeekTimedDeckLayout,
-} from "@web/views/Week/utils/weekTimedOverlapLayout";
 
 interface Props {
-  deckLayout?: WeekTimedDeckLayout | null;
+  deckLayout?: CalendarTimedDeckLayout | null;
   displayMode: GridEventDisplayMode;
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
@@ -101,7 +101,7 @@ const GridEventBase = (
   });
   const position =
     !isDraft && deckLayout
-      ? applyWeekTimedDeckPosition(basePosition, deckLayout)
+      ? applyCalendarTimedDeckPosition(basePosition, deckLayout)
       : basePosition;
 
   const shouldFloatAboveDeck =

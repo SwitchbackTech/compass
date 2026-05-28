@@ -126,6 +126,10 @@ const CalendarAllDayEventCardBase = (
         }
 
         e.preventDefault();
+        if (isPending) {
+          return;
+        }
+
         onEventKeyDown?.(event);
       }}
       onMouseDown={(e: MouseEvent) => {
@@ -152,6 +156,7 @@ const CalendarAllDayEventCardBase = (
           <SpaceCharacter />
         </Text>
       </Flex>
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
       <div
         aria-hidden="true"
         role="presentation"
@@ -162,6 +167,7 @@ const CalendarAllDayEventCardBase = (
           onScalerMouseDown?.(event, e, "startDate");
         }}
       />
+      {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
       <div
         aria-hidden="true"
         role="presentation"

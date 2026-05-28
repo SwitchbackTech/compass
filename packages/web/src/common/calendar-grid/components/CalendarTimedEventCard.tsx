@@ -208,11 +208,15 @@ const CalendarTimedEventCardBase = (
       onBlur={onBlur}
       onFocus={onFocus}
       onKeyDown={(e: KeyboardEvent<HTMLDivElement>) => {
-        if (!onEventKeyDown || (e.key !== "Enter" && e.key !== " ")) {
+        if (e.key !== "Enter" && e.key !== " ") {
           return;
         }
 
         e.preventDefault();
+        if (isPending || !onEventKeyDown) {
+          return;
+        }
+
         onEventKeyDown(event);
       }}
       onMouseDown={(e: MouseEvent) => {
@@ -254,6 +258,7 @@ const CalendarTimedEventCardBase = (
                   {timeRange}
                 </Text>
               )}
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
             <div
               aria-hidden="true"
               role="presentation"
@@ -264,6 +269,7 @@ const CalendarTimedEventCardBase = (
                 onScalerMouseDown?.(event, e, "startDate");
               }}
             />
+            {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
             <div
               aria-hidden="true"
               role="presentation"

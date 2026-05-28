@@ -14,7 +14,6 @@ import {
   TooltipText,
   TooltipWrapper,
 } from "@web/components/ContextMenu/styled";
-import IconButton from "@web/components/IconButton/IconButton";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -91,31 +90,19 @@ export function ContextMenuItemsView({
       id: "edit",
       label: "Edit",
       onClick: handleEdit,
-      icon: (
-        <IconButton>
-          <PenNib />
-        </IconButton>
-      ),
+      icon: <PenNib aria-hidden="true" size={20} />,
     },
     {
       id: "duplicate",
       label: "Duplicate",
       onClick: actions.duplicate,
-      icon: (
-        <IconButton>
-          <Copy />
-        </IconButton>
-      ),
+      icon: <Copy aria-hidden="true" size={20} />,
     },
     {
       id: "delete",
       label: "Delete",
       onClick: actions.delete,
-      icon: (
-        <IconButton>
-          <Trash />
-        </IconButton>
-      ),
+      icon: <Trash aria-hidden="true" size={20} />,
     },
   ];
 
@@ -125,8 +112,13 @@ export function ContextMenuItemsView({
         {priorities.map((priority) => (
           <TooltipWrapper key={priority.id}>
             <PriorityCircle
+              aria-label={`Set priority to ${priority.label}`}
+              aria-pressed={event.priority === priority.value}
+              as="button"
               color={priority.color}
+              disabled={isPending}
               selected={event.priority === priority.value}
+              type="button"
               onClick={() => handleEditPriority(priority.value)}
               style={{
                 opacity: isPending ? 0.5 : 1,
@@ -141,17 +133,12 @@ export function ContextMenuItemsView({
         const disabled = isActionDisabled(item.id);
         return (
           <MenuItem
+            disabled={disabled}
             key={item.id}
+            type="button"
             onClick={() => {
-              if (disabled) {
-                return;
-              }
               item.onClick();
               close();
-            }}
-            style={{
-              opacity: disabled ? 0.5 : 1,
-              cursor: disabled ? "wait" : "pointer",
             }}
           >
             {item.icon}
