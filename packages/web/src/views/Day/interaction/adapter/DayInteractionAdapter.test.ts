@@ -259,7 +259,7 @@ const resizeTimedEvent = (edge: "startDate" | "endDate") => {
   const { source } = registerEvent(timedEvent, "timed");
   const handle = document.createElement("span");
 
-  handle.setAttribute("data-day-event-resize-handle", edge);
+  handle.setAttribute("data-calendar-event-resize-handle", edge);
   source.append(handle);
 
   const { adapter, flushFrame } = createAdapter({
@@ -367,7 +367,7 @@ describe("DayInteractionAdapter", () => {
     const { adapter, flushFrame } = createAdapter();
 
     expect(
-      source.querySelector("[data-day-event-time-label='true']"),
+      source.querySelector("[data-calendar-event-time-label='true']"),
     ).toBeNull();
 
     adapter.handlePointerDown(
@@ -382,7 +382,7 @@ describe("DayInteractionAdapter", () => {
       "[data-calendar-interaction-overlay='true']",
     );
     const timeLabel = overlay?.querySelector(
-      "[data-day-event-time-label='true']",
+      "[data-calendar-event-time-label='true']",
     );
 
     expect(timeLabel).toBeInstanceOf(HTMLElement);

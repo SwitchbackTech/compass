@@ -1,7 +1,7 @@
 import {
   getNearestDayColumn,
-  type WeekLayoutCache,
-} from "../geometry/weekLayoutCache";
+  type CalendarLayoutCache,
+} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import {
   type TimedDragVisual,
   type VisualPoint,
@@ -21,7 +21,7 @@ interface CreateTimedDragVisualInput {
 }
 
 interface UpdateTimedDragVisualInput {
-  layout: WeekLayoutCache;
+  layout: CalendarLayoutCache;
   pointer: VisualPoint;
   scrollDeltaPx?: number;
 }
@@ -99,7 +99,7 @@ const getBoundedVerticalPlacement = ({
   visual,
 }: {
   candidateStartMinutes: number;
-  layout: WeekLayoutCache;
+  layout: CalendarLayoutCache;
   scrollDeltaPx: number;
   visual: TimedDragVisual;
 }) => {
@@ -159,5 +159,8 @@ const getBoundedVerticalPlacement = ({
   };
 };
 
-const getCurrentScrollTop = (layout: WeekLayoutCache, scrollDeltaPx: number) =>
+const getCurrentScrollTop = (
+  layout: CalendarLayoutCache,
+  scrollDeltaPx: number,
+) =>
   (layout.smartScroll?.initialScrollTop ?? 0) + scrollDeltaPx;

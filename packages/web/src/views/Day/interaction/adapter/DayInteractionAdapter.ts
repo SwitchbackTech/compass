@@ -10,6 +10,38 @@ import {
   type CalendarLayoutCache,
   type CalendarLayoutCacheSources,
 } from "@web/common/calendar-grid/interaction/calendarLayoutCache";
+import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
+import {
+  createCalendarInteractionEventOverlayMount,
+  getCalendarResizeHandleEdge,
+  updateCalendarOverlayTimeLabel,
+} from "@web/common/calendar-grid/interaction/calendarInteractionDom";
+import {
+  createAllDayDragVisual,
+  updateAllDayDragVisual,
+} from "@web/common/calendar-grid/interaction/math/allDayDrag";
+import {
+  createAllDayResizeVisual,
+  updateAllDayResizeVisual,
+} from "@web/common/calendar-grid/interaction/math/allDayResize";
+import { getSmartScrollFrame } from "@web/common/calendar-grid/interaction/math/smartScroll";
+import {
+  createTimedDragVisual,
+  updateTimedDragVisual,
+} from "@web/common/calendar-grid/interaction/math/timedDrag";
+import {
+  createTimedResizeVisual,
+  updateTimedResizeVisual,
+} from "@web/common/calendar-grid/interaction/math/timedResize";
+import { type AllDayDragVisual } from "@web/common/calendar-grid/interaction/model/AllDayDragVisual";
+import {
+  type AllDayResizeVisual,
+} from "@web/common/calendar-grid/interaction/model/AllDayResizeVisual";
+import {
+  type TimedDragVisual,
+  type VisualPoint,
+} from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
+import { type TimedResizeVisual } from "@web/common/calendar-grid/interaction/model/TimedResizeVisual";
 import { type CalendarInteractionAdapter } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
 import {
   type CalendarInteractionCancellationTargets,
@@ -23,36 +55,6 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
-import { createWeekInteractionEventOverlayMount } from "@web/views/Week/interaction/adapter/dom/cloneWeekInteractionEventElement";
-import { getLocalMinutes } from "@web/views/Week/interaction/adapter/interactions/weekInteractionDate";
-import {
-  createAllDayDragVisual,
-  updateAllDayDragVisual,
-} from "@web/views/Week/interaction/adapter/math/allDayDrag";
-import {
-  createAllDayResizeVisual,
-  updateAllDayResizeVisual,
-} from "@web/views/Week/interaction/adapter/math/allDayResize";
-import { getSmartScrollFrame } from "@web/views/Week/interaction/adapter/math/smartScroll";
-import {
-  createTimedDragVisual,
-  updateTimedDragVisual,
-} from "@web/views/Week/interaction/adapter/math/timedDrag";
-import {
-  createTimedResizeVisual,
-  updateTimedResizeVisual,
-} from "@web/views/Week/interaction/adapter/math/timedResize";
-import { type AllDayDragVisual } from "@web/views/Week/interaction/adapter/model/AllDayDragVisual";
-import {
-  type AllDayResizeEdge,
-  type AllDayResizeVisual,
-} from "@web/views/Week/interaction/adapter/model/AllDayResizeVisual";
-import {
-  type TimedDragVisual,
-  type VisualPoint,
-} from "@web/views/Week/interaction/adapter/model/TimedDragVisual";
-import { type TimedResizeVisual } from "@web/views/Week/interaction/adapter/model/TimedResizeVisual";
 import {
   type DayInteractionEventType,
   dayCalendarEventRegistry,
@@ -86,11 +88,6 @@ export type {
 } from "./DayInteractionAdapter.types";
 
 const DAY_VISIBLE_DATE_COUNT = 1;
-const DAY_EVENT_RESIZE_HANDLE_ATTRIBUTE = "data-day-event-resize-handle";
-const WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE = "data-week-event-resize-handle";
-const DAY_EVENT_TIME_LABEL_ATTRIBUTE = "data-day-event-time-label";
-const WEEK_EVENT_TIME_LABEL_ATTRIBUTE = "data-week-event-time-label";
-const DAY_EVENT_TIME_LABEL_SELECTOR = `[${DAY_EVENT_TIME_LABEL_ATTRIBUTE}='true'],[${WEEK_EVENT_TIME_LABEL_ATTRIBUTE}='true']`;
 const DAY_SMART_SCROLL_EDGE_THRESHOLD_PX = 50;
 const SMART_SCROLL_BOTTOM_INSET_PX = 100;
 const SMART_SCROLL_SPEED_PX = 10;
@@ -316,7 +313,7 @@ export const createDayInteractionAdapter = ({
         });
       },
       getOverlayMount: ({ sourceElement, target }) =>
-        createWeekInteractionEventOverlayMount({
+        createCalendarInteractionEventOverlayMount({
           cursor: getInteractionCursor(target),
           source: sourceElement,
         }),
@@ -380,7 +377,8 @@ export const createDayInteractionAdapter = ({
           return {
             overlay: {
               height: nextVisual.height,
-              mutate: (node) => updateOverlayTimeLabel(node, nextEvent),
+              mutate: (node) =>
+                updateCalendarOverlayTimeLabel(node, nextEvent),
               transform: nextVisual.transform,
             },
             visual: nextVisual,
@@ -405,7 +403,7 @@ export const createDayInteractionAdapter = ({
 
         return {
           overlay: {
-            mutate: (node) => updateOverlayTimeLabel(node, nextEvent),
+            mutate: (node) => updateCalendarOverlayTimeLabel(node, nextEvent),
             transform: nextVisual.transform,
           },
           shouldContinue: smartScroll.isScrolling,
@@ -464,7 +462,7 @@ export const createDayInteractionAdapter = ({
   function getAllDayDragTarget(
     event: PointerEvent,
   ): DayAllDayDragTarget | null {
-    if (getResizeHandleEdge(event)) {
+    if (getCalendarResizeHandleEdge(event)) {
       return null;
     }
 
@@ -483,7 +481,7 @@ export const createDayInteractionAdapter = ({
   function getAllDayResizeTarget(
     event: PointerEvent,
   ): DayAllDayResizeTarget | null {
-    const edge = getResizeHandleEdge(event);
+    const edge = getCalendarResizeHandleEdge(event);
 
     if (!edge) {
       return null;
@@ -503,7 +501,7 @@ export const createDayInteractionAdapter = ({
   }
 
   function getTimedDragTarget(event: PointerEvent): DayTimedDragTarget | null {
-    if (getResizeHandleEdge(event)) {
+    if (getCalendarResizeHandleEdge(event)) {
       return null;
     }
 
@@ -522,7 +520,7 @@ export const createDayInteractionAdapter = ({
   function getTimedResizeTarget(
     event: PointerEvent,
   ): DayTimedResizeTarget | null {
-    const edge = getResizeHandleEdge(event);
+    const edge = getCalendarResizeHandleEdge(event);
 
     if (!edge) {
       return null;
@@ -815,22 +813,6 @@ const getInteractionCursor = (target: DayInteractionTarget) => {
   }
 };
 
-const getResizeHandleEdge = (event: PointerEvent): AllDayResizeEdge | null => {
-  const pointerTarget = event.target instanceof Element ? event.target : null;
-  const handle = pointerTarget?.closest<HTMLElement>(
-    `[${DAY_EVENT_RESIZE_HANDLE_ATTRIBUTE}],[${WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE}]`,
-  );
-  const edge =
-    handle?.getAttribute(DAY_EVENT_RESIZE_HANDLE_ATTRIBUTE) ??
-    handle?.getAttribute(WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE);
-
-  return isResizeEdge(edge) ? edge : null;
-};
-
-const isResizeEdge = (
-  edge: string | null | undefined,
-): edge is AllDayResizeEdge => edge === "startDate" || edge === "endDate";
-
 const readElementRect = (element: HTMLElement) => {
   const rect = element.getBoundingClientRect();
 
@@ -840,65 +822,4 @@ const readElementRect = (element: HTMLElement) => {
     top: rect.top,
     width: rect.width,
   };
-};
-
-const updateOverlayTimeLabel = (node: HTMLElement, event: Schema_GridEvent) => {
-  if (!event.startDate || !event.endDate) {
-    return;
-  }
-
-  const timeLabel = getOrCreateOverlayTimeLabel(node);
-
-  timeLabel.removeAttribute("aria-hidden");
-  timeLabel.classList.remove("animate-someday-commit-time-exit", "opacity-0");
-  timeLabel.style.display = "block";
-  timeLabel.textContent = getTimesLabel(event.startDate, event.endDate);
-};
-
-const getOrCreateOverlayTimeLabel = (node: HTMLElement) => {
-  const existing = node.querySelector<HTMLElement>(
-    DAY_EVENT_TIME_LABEL_SELECTOR,
-  );
-
-  if (existing) {
-    return existing;
-  }
-
-  const label = document.createElement("span");
-
-  label.setAttribute(DAY_EVENT_TIME_LABEL_ATTRIBUTE, "true");
-  label.style.fontSize = "0.563rem";
-  label.style.position = "relative";
-  label.style.zIndex = "3";
-
-  const parent = getOverlayTimeLabelParent(node);
-  const resizeHandle = getFirstDirectResizeHandle(parent);
-
-  parent.insertBefore(label, resizeHandle);
-
-  return label;
-};
-
-const getOverlayTimeLabelParent = (node: HTMLElement) => {
-  const firstChild = node.firstElementChild;
-
-  if (firstChild instanceof HTMLElement && firstChild.tagName !== "SPAN") {
-    return firstChild;
-  }
-
-  return node;
-};
-
-const getFirstDirectResizeHandle = (node: HTMLElement) => {
-  for (const child of node.children) {
-    if (
-      child instanceof HTMLElement &&
-      (child.hasAttribute(DAY_EVENT_RESIZE_HANDLE_ATTRIBUTE) ||
-        child.hasAttribute(WEEK_EVENT_RESIZE_HANDLE_ATTRIBUTE))
-    ) {
-      return child;
-    }
-  }
-
-  return null;
 };

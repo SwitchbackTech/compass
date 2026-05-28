@@ -97,8 +97,8 @@ const createHarness = ({ isPending = false }: { isPending?: boolean } = {}) => {
   const onMotionActivation = mock();
 
   source.style.visibility = "visible";
-  startHandle.setAttribute("data-week-event-resize-handle", "startDate");
-  endHandle.setAttribute("data-week-event-resize-handle", "endDate");
+  startHandle.setAttribute("data-calendar-event-resize-handle", "startDate");
+  endHandle.setAttribute("data-calendar-event-resize-handle", "endDate");
   mainGrid.id = ID_GRID_MAIN;
   columns.id = ID_GRID_COLUMNS_TIMED;
   source.append(startHandle, endHandle);

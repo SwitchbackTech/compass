@@ -1,8 +1,8 @@
 import {
   getNearestDayColumn,
-  type WeekDayColumnCache,
-  type WeekLayoutCache,
-} from "../geometry/weekLayoutCache";
+  type CalendarDayColumnCache,
+  type CalendarLayoutCache,
+} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import {
   type AllDayResizeEdge,
   type AllDayResizeVisual,
@@ -19,7 +19,7 @@ interface CreateAllDayResizeVisualInput {
 }
 
 interface UpdateAllDayResizeVisualInput {
-  layout: WeekLayoutCache;
+  layout: CalendarLayoutCache;
   pointer: VisualPoint;
 }
 
@@ -119,11 +119,11 @@ const resizeFromEnd = (visual: AllDayResizeVisual, pointerDayIndex: number) => {
   };
 };
 
-const getColumn = (columns: WeekDayColumnCache[], dayIndex: number) =>
+const getColumn = (columns: CalendarDayColumnCache[], dayIndex: number) =>
   columns.find((column) => column.index === dayIndex);
 
 const getSpanWidth = (
-  columns: WeekDayColumnCache[],
+  columns: CalendarDayColumnCache[],
   startDayIndex: number,
   endDayIndex: number,
 ) =>

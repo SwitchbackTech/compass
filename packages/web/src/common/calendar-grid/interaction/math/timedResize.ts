@@ -1,4 +1,4 @@
-import { type WeekLayoutCache } from "../geometry/weekLayoutCache";
+import { type CalendarLayoutCache } from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import { type VisualPoint, type VisualRect } from "../model/TimedDragVisual";
 import {
   type TimedResizeEdge,
@@ -18,7 +18,7 @@ interface CreateTimedResizeVisualInput {
 }
 
 interface UpdateTimedResizeVisualInput {
-  layout: WeekLayoutCache;
+  layout: CalendarLayoutCache;
   pointer: VisualPoint;
 }
 

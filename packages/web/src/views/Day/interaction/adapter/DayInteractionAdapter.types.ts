@@ -1,20 +1,20 @@
 import { type Dayjs } from "@core/util/date/dayjs";
 import { type CalendarLayoutCacheSources } from "@web/common/calendar-grid/interaction/calendarLayoutCache";
+import { type AllDayDragVisual } from "@web/common/calendar-grid/interaction/model/AllDayDragVisual";
+import {
+  type AllDayResizeEdge,
+  type AllDayResizeVisual,
+} from "@web/common/calendar-grid/interaction/model/AllDayResizeVisual";
+import { type TimedDragVisual } from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
+import {
+  type TimedResizeEdge,
+  type TimedResizeVisual,
+} from "@web/common/calendar-grid/interaction/model/TimedResizeVisual";
 import {
   type CalendarInteractionCancellationTargets,
   type CalendarInteractionEngineSchedulerOptions,
 } from "@web/common/calendar-interaction/CalendarInteractionEngine";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { type AllDayDragVisual } from "@web/views/Week/interaction/adapter/model/AllDayDragVisual";
-import {
-  type AllDayResizeEdge,
-  type AllDayResizeVisual,
-} from "@web/views/Week/interaction/adapter/model/AllDayResizeVisual";
-import { type TimedDragVisual } from "@web/views/Week/interaction/adapter/model/TimedDragVisual";
-import {
-  type TimedResizeEdge,
-  type TimedResizeVisual,
-} from "@web/views/Week/interaction/adapter/model/TimedResizeVisual";
 import { type DayInteractionRegisteredTarget } from "../registry/dayCalendarEventRegistry";
 
 export interface DayInteractionPointerOwnership {

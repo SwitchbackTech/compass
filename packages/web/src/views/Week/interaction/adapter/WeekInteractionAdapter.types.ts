@@ -2,19 +2,19 @@ import {
   type CalendarInteractionCancellationTargets,
   type CalendarInteractionEngineSchedulerOptions,
 } from "@web/common/calendar-interaction/CalendarInteractionEngine";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { type WeekInteractionRegisteredTarget } from "../registry/weekEventRegistry";
-import { type WeekLayoutCacheSources } from "./geometry/weekLayoutCache";
-import { type AllDayDragVisual } from "./model/AllDayDragVisual";
+import { type AllDayDragVisual } from "@web/common/calendar-grid/interaction/model/AllDayDragVisual";
 import {
   type AllDayResizeEdge,
   type AllDayResizeVisual,
-} from "./model/AllDayResizeVisual";
-import { type TimedDragVisual } from "./model/TimedDragVisual";
+} from "@web/common/calendar-grid/interaction/model/AllDayResizeVisual";
+import { type TimedDragVisual } from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
 import {
   type TimedResizeEdge,
   type TimedResizeVisual,
-} from "./model/TimedResizeVisual";
+} from "@web/common/calendar-grid/interaction/model/TimedResizeVisual";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type WeekInteractionRegisteredTarget } from "../registry/weekEventRegistry";
+import { type WeekLayoutCacheSources } from "./geometry/weekLayoutCache";
 
 export interface WeekInteractionPointerOwnership {
   reason: string;

@@ -6,6 +6,7 @@ import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
+import { createCalendarInteractionEventOverlayMount } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -22,7 +23,6 @@ import {
   GRID_EVENT_TIME_LABEL_OPACITY,
   GRID_EVENT_TITLE_LINE_HEIGHT,
 } from "@web/views/Week/layout.constants";
-import { createWeekInteractionEventOverlayMount } from "../adapter/dom/cloneWeekInteractionEventElement";
 import {
   createWeekEventRegistry,
   getWeekInteractionTargetAttributes,
@@ -486,7 +486,7 @@ describe("weekEventRegistry", () => {
   });
 });
 
-describe("createWeekInteractionEventOverlayMount", () => {
+describe("createCalendarInteractionEventOverlayMount", () => {
   it("clones a Week event for overlay use without duplicate interactive attributes", () => {
     const source = document.createElement("div");
     const child = document.createElement("button");
@@ -508,7 +508,7 @@ describe("createWeekInteractionEventOverlayMount", () => {
     child.style.transition = "opacity 150ms ease";
     source.append(child);
 
-    const mount = createWeekInteractionEventOverlayMount({
+    const mount = createCalendarInteractionEventOverlayMount({
       cursor: "grabbing",
       source,
     });

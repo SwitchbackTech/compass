@@ -1,7 +1,7 @@
 import {
   getNearestDayColumn,
-  type WeekLayoutCache,
-} from "../geometry/weekLayoutCache";
+  type CalendarLayoutCache,
+} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import { type AllDayDragVisual } from "../model/AllDayDragVisual";
 import { type VisualPoint, type VisualRect } from "../model/TimedDragVisual";
 
@@ -13,7 +13,7 @@ interface CreateAllDayDragVisualInput {
 }
 
 interface UpdateAllDayDragVisualInput {
-  layout: WeekLayoutCache;
+  layout: CalendarLayoutCache;
   pointer: VisualPoint;
 }
 

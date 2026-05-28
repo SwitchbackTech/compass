@@ -1,11 +1,11 @@
 import {
   getNearestDayColumn,
-  type WeekLayoutCache,
-} from "../geometry/weekLayoutCache";
-import { type VisualRect } from "../model/TimedDragVisual";
+  type CalendarLayoutCache,
+} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
+import { type VisualRect } from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
 
 export const getVisibleAllDayRange = (
-  layout: WeekLayoutCache,
+  layout: CalendarLayoutCache,
   sourceRect: VisualRect,
 ) => {
   const startColumn = getNearestDayColumn(
