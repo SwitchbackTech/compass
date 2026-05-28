@@ -12,7 +12,6 @@ import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
-import { getEventPosition } from "@web/common/utils/position/position.util";
 import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -79,25 +78,27 @@ const GridEventBase = (
     !isPlaceholder &&
     !isDraft;
 
-  const visibleDates = (component.weekDays ?? []).map((date) => ({
+  const visibleDates = (
+    component.weekDays?.length
+      ? component.weekDays
+      : Array.from(
+          {
+            length:
+              component.endOfView
+                .startOf("day")
+                .diff(component.startOfView.startOf("day"), "day") + 1,
+          },
+          (_, index) => component.startOfView.startOf("day").add(index, "day"),
+        )
+  ).map((date) => ({
     date,
     key: date.format(YEAR_MONTH_DAY_FORMAT),
   }));
-  const calendarGridPosition = getCalendarTimedEventPosition(event, {
+  const basePosition = getCalendarTimedEventPosition(event, {
     isDraft,
     measurements,
     visibleDates,
   });
-  const basePosition =
-    calendarGridPosition.height > 0 && calendarGridPosition.width > 0
-      ? calendarGridPosition
-      : getEventPosition(
-          event,
-          component.startOfView,
-          component.endOfView,
-          measurements,
-          isDraft,
-        );
   const position =
     !isDraft && deckLayout
       ? applyWeekTimedDeckPosition(basePosition, deckLayout)

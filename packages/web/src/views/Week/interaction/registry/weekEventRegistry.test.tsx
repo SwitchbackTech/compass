@@ -80,6 +80,12 @@ const weekProps = {
     startOfView,
   },
 } as WeekProps;
+const pastWeekProps = {
+  component: {
+    endOfView: pastWeekStart.add(7, "day"),
+    startOfView: pastWeekStart,
+  },
+} as WeekProps;
 
 const position = {
   dragOffset: { x: 0, y: 0 },
@@ -178,10 +184,12 @@ const RegistrationHarness = ({
 };
 
 const RegisteredTimedEventHarness = ({
+  calendarWeekProps = weekProps,
   displayMode = "saved",
   event,
   isPending = false,
 }: {
+  calendarWeekProps?: WeekProps;
   displayMode?: "draft" | "placeholder" | "saved";
   event: Schema_GridEvent;
   isPending?: boolean;
@@ -210,7 +218,7 @@ const RegisteredTimedEventHarness = ({
       onEventMouseDown={mock()}
       onScalerMouseDown={mock()}
       ref={ref}
-      weekProps={weekProps}
+      weekProps={calendarWeekProps}
     />
   );
 };
@@ -465,7 +473,12 @@ describe("weekEventRegistry", () => {
     });
 
     markSomedayCommitAcknowledgement(event._id!);
-    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+    renderWithStore(
+      <RegisteredTimedEventHarness
+        calendarWeekProps={pastWeekProps}
+        event={event}
+      />,
+    );
 
     const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
 

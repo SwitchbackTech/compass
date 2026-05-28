@@ -3,7 +3,6 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { CalendarAllDayEventCard } from "@web/common/calendar-grid/components/CalendarAllDayEventCard";
 import { getCalendarAllDayEventPosition } from "@web/common/calendar-grid/layout/calendarEventPosition";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { getEventPosition } from "@web/common/utils/position/position.util";
 import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -58,15 +57,11 @@ const AllDayEventBase = (
       };
     },
   );
-  const calendarGridPosition = getCalendarAllDayEventPosition(event, {
+  const position = getCalendarAllDayEventPosition(event, {
     isDraft: false,
     measurements,
     visibleDates,
   });
-  const position =
-    calendarGridPosition.height > 0 && calendarGridPosition.width > 0
-      ? calendarGridPosition
-      : getEventPosition(event, startOfView, endOfView, measurements, false);
 
   const shouldAcknowledgeCommit =
     useSomedayCommitAcknowledgement(event._id) && !isPlaceholder && !isPending;

@@ -24,6 +24,18 @@ const measurements = {
 const visibleDates = [
   { date: dayjs("2026-05-20T00:00:00.000"), key: "2026-05-20" },
 ];
+const weekMeasurements = {
+  ...measurements,
+  colWidths: [100, 110, 120, 130, 140, 150, 160],
+};
+const weekVisibleDates = Array.from({ length: 7 }, (_, index) => {
+  const date = dayjs("2026-05-17T00:00:00.000").add(index, "day");
+
+  return {
+    date,
+    key: date.format("YYYY-MM-DD"),
+  };
+});
 
 describe("calendarEventPosition", () => {
   it("positions a timed event inside one visible date", () => {
@@ -127,6 +139,84 @@ describe("calendarEventPosition", () => {
 
     expect(position.left).toBe(0);
     expect(position.width).toBe(100 + 110 + 120 + 130 + 140 - 10);
+  });
+
+  it("clips all-day events that start before the visible range", () => {
+    const position = getCalendarAllDayEventPosition(
+      {
+        endDate: "2026-05-20",
+        isAllDay: true,
+        row: 1,
+        startDate: "2026-05-15",
+      } as never,
+      {
+        measurements: weekMeasurements,
+        visibleDates: weekVisibleDates,
+        isDraft: false,
+      },
+    );
+
+    expect(position.left).toBe(0);
+    expect(position.width).toBe(100 + 110 + 120 - 10);
+  });
+
+  it("clips all-day events that end after the visible range", () => {
+    const position = getCalendarAllDayEventPosition(
+      {
+        endDate: "2026-05-26",
+        isAllDay: true,
+        row: 1,
+        startDate: "2026-05-21",
+      } as never,
+      {
+        measurements: weekMeasurements,
+        visibleDates: weekVisibleDates,
+        isDraft: false,
+      },
+    );
+
+    expect(position.left).toBe(100 + 110 + 120 + 130);
+    expect(position.width).toBe(140 + 150 + 160 - 10);
+  });
+
+  it("clips all-day events that span the whole visible range", () => {
+    const position = getCalendarAllDayEventPosition(
+      {
+        endDate: "2026-05-26",
+        isAllDay: true,
+        row: 1,
+        startDate: "2026-05-15",
+      } as never,
+      {
+        measurements: weekMeasurements,
+        visibleDates: weekVisibleDates,
+        isDraft: false,
+      },
+    );
+
+    expect(position.left).toBe(0);
+    expect(position.width).toBe(100 + 110 + 120 + 130 + 140 + 150 + 160 - 10);
+  });
+
+  it("positions visible timed week events without old day-of-week fallback", () => {
+    const position = getCalendarTimedEventPosition(
+      {
+        endDate: "2026-05-19T11:00:00.000",
+        isAllDay: false,
+        position: { widthMultiplier: 1 },
+        startDate: "2026-05-19T10:00:00.000",
+      } as never,
+      {
+        measurements: weekMeasurements,
+        visibleDates: weekVisibleDates,
+        isDraft: false,
+      },
+    );
+
+    expect(position.left).toBeGreaterThan(100 + 110);
+    expect(position.left).toBeLessThan(100 + 110 + 120);
+    expect(position.width).toBeGreaterThan(0);
+    expect(position.height).toBeGreaterThan(0);
   });
 
   it("returns a zero position for timed events outside visible dates", () => {
