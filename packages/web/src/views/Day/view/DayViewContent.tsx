@@ -4,10 +4,6 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
-import {
-  focusFirstDayCalendarEvent,
-  openEventFormEditEvent,
-} from "@web/views/Day/interaction/dayCalendarFocus.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
@@ -23,6 +19,10 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
+import {
+  focusFirstDayCalendarEvent,
+  openEventFormEditEvent,
+} from "@web/views/Day/interaction/dayCalendarFocus.util";
 import {
   focusOnAddTaskInput,
   focusOnFirstTask,

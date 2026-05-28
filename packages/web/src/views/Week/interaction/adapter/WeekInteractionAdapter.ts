@@ -1,3 +1,13 @@
+import {
+  createCalendarInteractionEventOverlayMount,
+  getCalendarResizeHandleEdge,
+  updateCalendarOverlayTimeLabel,
+} from "@web/common/calendar-grid/interaction/calendarInteractionDom";
+import { getSmartScrollFrame } from "@web/common/calendar-grid/interaction/math/smartScroll";
+import {
+  type VisualPoint,
+  type VisualRect,
+} from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
 import { type CalendarInteractionAdapter } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
 import {
   type CalendarInteractionCancellationTargets,
@@ -5,13 +15,6 @@ import {
   createCalendarInteractionEngine,
 } from "@web/common/calendar-interaction/CalendarInteractionEngine";
 import { isEligibleCalendarInteractionPointerDown } from "@web/common/calendar-interaction/calendarInteractionPointer";
-import {
-  createCalendarInteractionEventOverlayMount,
-  getCalendarResizeHandleEdge,
-  updateCalendarOverlayTimeLabel,
-} from "@web/common/calendar-grid/interaction/calendarInteractionDom";
-import { getSmartScrollFrame } from "@web/common/calendar-grid/interaction/math/smartScroll";
-import { type VisualPoint, type VisualRect } from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
 import {
   type WeekInteractionEventType,
   weekEventRegistry,

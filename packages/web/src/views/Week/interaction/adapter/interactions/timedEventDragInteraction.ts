@@ -1,4 +1,3 @@
-import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
 import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
 import {
   createTimedDragVisual,
@@ -9,6 +8,7 @@ import {
   type VisualPoint,
   type VisualRect,
 } from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
+import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
 import {
   hasTimedDragVisualMoved,
   timedDragVisualToGridEvent,

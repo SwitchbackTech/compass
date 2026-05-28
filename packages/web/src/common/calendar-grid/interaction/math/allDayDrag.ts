@@ -1,6 +1,6 @@
 import {
-  getNearestDayColumn,
   type CalendarLayoutCache,
+  getNearestDayColumn,
 } from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import { type AllDayDragVisual } from "../model/AllDayDragVisual";
 import { type VisualPoint, type VisualRect } from "../model/TimedDragVisual";

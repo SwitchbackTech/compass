@@ -1,7 +1,3 @@
-import {
-  type CalendarInteractionCancellationTargets,
-  type CalendarInteractionEngineSchedulerOptions,
-} from "@web/common/calendar-interaction/CalendarInteractionEngine";
 import { type AllDayDragVisual } from "@web/common/calendar-grid/interaction/model/AllDayDragVisual";
 import {
   type AllDayResizeEdge,
@@ -12,6 +8,10 @@ import {
   type TimedResizeEdge,
   type TimedResizeVisual,
 } from "@web/common/calendar-grid/interaction/model/TimedResizeVisual";
+import {
+  type CalendarInteractionCancellationTargets,
+  type CalendarInteractionEngineSchedulerOptions,
+} from "@web/common/calendar-interaction/CalendarInteractionEngine";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type WeekInteractionRegisteredTarget } from "../registry/weekEventRegistry";
 import { type WeekLayoutCacheSources } from "./geometry/weekLayoutCache";

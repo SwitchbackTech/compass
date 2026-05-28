@@ -147,7 +147,8 @@ export const useDayCalendarContextMenu = ({
         context={floating.context}
         event={contextMenuEvent ?? undefined}
         isPending={Boolean(
-          contextMenuEvent?._id && pendingEventIds.includes(contextMenuEvent._id),
+          contextMenuEvent?._id &&
+            pendingEventIds.includes(contextMenuEvent._id),
         )}
         onOutsideClick={closeContextMenu}
         ref={floating.refs.setFloating}

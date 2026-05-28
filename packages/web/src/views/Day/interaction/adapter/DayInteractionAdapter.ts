@@ -4,18 +4,18 @@ import {
   CALENDAR_GRID_TIME_STEP,
   CALENDAR_TIMED_VISIBLE_HOURS,
 } from "@web/common/calendar-grid/calendarGrid.constants";
-import {
-  buildAllDayCalendarLayoutCache,
-  buildTimedCalendarLayoutCache,
-  type CalendarLayoutCache,
-  type CalendarLayoutCacheSources,
-} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
 import {
   createCalendarInteractionEventOverlayMount,
   getCalendarResizeHandleEdge,
   updateCalendarOverlayTimeLabel,
 } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
+import {
+  buildAllDayCalendarLayoutCache,
+  buildTimedCalendarLayoutCache,
+  type CalendarLayoutCache,
+  type CalendarLayoutCacheSources,
+} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import {
   createAllDayDragVisual,
   updateAllDayDragVisual,
@@ -34,9 +34,7 @@ import {
   updateTimedResizeVisual,
 } from "@web/common/calendar-grid/interaction/math/timedResize";
 import { type AllDayDragVisual } from "@web/common/calendar-grid/interaction/model/AllDayDragVisual";
-import {
-  type AllDayResizeVisual,
-} from "@web/common/calendar-grid/interaction/model/AllDayResizeVisual";
+import { type AllDayResizeVisual } from "@web/common/calendar-grid/interaction/model/AllDayResizeVisual";
 import {
   type TimedDragVisual,
   type VisualPoint,
@@ -377,8 +375,7 @@ export const createDayInteractionAdapter = ({
           return {
             overlay: {
               height: nextVisual.height,
-              mutate: (node) =>
-                updateCalendarOverlayTimeLabel(node, nextEvent),
+              mutate: (node) => updateCalendarOverlayTimeLabel(node, nextEvent),
               transform: nextVisual.transform,
             },
             visual: nextVisual,

@@ -5,8 +5,8 @@ import { Provider } from "react-redux";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
 import { createCalendarInteractionEventOverlayMount } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
+import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
 import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -321,9 +321,7 @@ describe("weekEventRegistry", () => {
       "all-day",
     );
     expect(
-      element.querySelector(
-        '[data-calendar-event-resize-handle="startDate"]',
-      ),
+      element.querySelector('[data-calendar-event-resize-handle="startDate"]'),
     ).toBeTruthy();
     expect(
       element.querySelector('[data-calendar-event-resize-handle="endDate"]'),

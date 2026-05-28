@@ -1,6 +1,6 @@
 import {
-  getNearestDayColumn,
   type CalendarLayoutCache,
+  getNearestDayColumn,
 } from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import {
   type TimedDragVisual,
@@ -162,5 +162,4 @@ const getBoundedVerticalPlacement = ({
 const getCurrentScrollTop = (
   layout: CalendarLayoutCache,
   scrollDeltaPx: number,
-) =>
-  (layout.smartScroll?.initialScrollTop ?? 0) + scrollDeltaPx;
+) => (layout.smartScroll?.initialScrollTop ?? 0) + scrollDeltaPx;

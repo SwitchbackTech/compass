@@ -256,6 +256,7 @@ const CalendarTimedEventCardBase = (
               )}
             <div
               aria-hidden="true"
+              role="presentation"
               {...{ [CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE]: "startDate" }}
               style={scalerStyle({ top: "-0.25px" })}
               onMouseDown={(e) => {
@@ -265,6 +266,7 @@ const CalendarTimedEventCardBase = (
             />
             <div
               aria-hidden="true"
+              role="presentation"
               {...{ [CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE]: "endDate" }}
               style={scalerStyle({ bottom: "-0.25px" })}
               onMouseDown={(e) => {

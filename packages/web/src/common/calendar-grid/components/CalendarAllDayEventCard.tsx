@@ -154,6 +154,7 @@ const CalendarAllDayEventCardBase = (
       </Flex>
       <div
         aria-hidden="true"
+        role="presentation"
         {...{ [CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE]: "startDate" }}
         style={scalerStyle({ left: "-0.25px" })}
         onMouseDown={(e) => {
@@ -163,6 +164,7 @@ const CalendarAllDayEventCardBase = (
       />
       <div
         aria-hidden="true"
+        role="presentation"
         {...{ [CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE]: "endDate" }}
         style={scalerStyle({ right: "-0.25px" })}
         onMouseDown={(e) => {

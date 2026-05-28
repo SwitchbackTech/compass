@@ -18,14 +18,14 @@ import {
 import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import {
+  DayAllDayCalendarEvent,
+  DayTimedCalendarEvent,
+} from "./DayCalendarEventCards";
+import {
   addVisibleDraftEvent,
   getCalendarEventIdSet,
   isDraftOnlyEvent,
 } from "./dayCalendarDraft.util";
-import {
-  DayAllDayCalendarEvent,
-  DayTimedCalendarEvent,
-} from "./DayCalendarEventCards";
 
 interface DayEventsProps {
   draft: Schema_Event | null;

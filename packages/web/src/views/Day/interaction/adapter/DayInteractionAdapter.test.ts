@@ -3,7 +3,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { dayCalendarEventRegistry } from "@web/views/Day/interaction/registry/dayCalendarEventRegistry";
+import { dayCalendarEventRegistry } from "../registry/dayCalendarEventRegistry";
 import {
   createDayInteractionAdapter,
   type DayAllDayDragCommitResult,
