@@ -4,11 +4,7 @@ import {
   useEffect,
   useRef,
 } from "react";
-import {
-  Categories_Event,
-  type Schema_Event,
-  type WithCompassId,
-} from "@core/types/event.types";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { CALENDAR_DRAFT_DURATION_MIN } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type CalendarDateCalcs } from "@web/common/calendar-grid/hooks/useCalendarDateCalcs";
 import {
@@ -21,7 +17,8 @@ import {
   addId,
   assembleDefaultEvent,
 } from "@web/common/utils/event/event.util";
-import { resetDraft, setDraft } from "@web/store/events";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { useAppDispatch } from "@web/store/store.hooks";
 
 const TIMED_DRAFT_CREATE_MOVE_THRESHOLD_PX = 4;
 
@@ -38,6 +35,7 @@ export const useDayTimedDraftCreation = ({
   draft: Schema_Event | null;
   onOpenEvent: (event: Schema_GridEvent) => void;
 }) => {
+  const dispatch = useAppDispatch();
   const timedDraftCreationGestureRef = useRef<TimedDraftCreationGesture | null>(
     null,
   );
@@ -65,7 +63,7 @@ export const useDayTimedDraftCreation = ({
       }
 
       if (draft) {
-        resetDraft();
+        dispatch(draftSlice.actions.discard(undefined));
         closeFloatingAtCursor();
         return;
       }
@@ -130,7 +128,7 @@ export const useDayTimedDraftCreation = ({
               return;
             }
 
-            setDraft(nextEvent as WithCompassId<Schema_Event>);
+            dispatch(draftSlice.actions.startGridClick(nextEvent));
           },
         );
       };
@@ -168,7 +166,7 @@ export const useDayTimedDraftCreation = ({
         cleanup();
 
         if (hasMoved) {
-          resetDraft();
+          dispatch(draftSlice.actions.discard(undefined));
         }
       }
 
@@ -210,7 +208,7 @@ export const useDayTimedDraftCreation = ({
       window.addEventListener("blur", handleWindowBlur);
       timedDraftCreationGestureRef.current = { cancel };
     },
-    [dateCalcs, draft, onOpenEvent],
+    [dateCalcs, dispatch, draft, onOpenEvent],
   );
 
   return {

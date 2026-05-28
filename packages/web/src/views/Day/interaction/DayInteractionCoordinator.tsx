@@ -20,8 +20,8 @@ import {
   selectTimedDayEvents,
 } from "@web/ducks/events/selectors/event.selectors";
 import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
-import { setDraft } from "@web/store/events";
-import { useAppSelector } from "@web/store/store.hooks";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import {
   createDayInteractionAdapter,
   type DayAllDayDragCommitResult,
@@ -45,6 +45,7 @@ export const DayInteractionCoordinator: FC<Props> = ({
   dateInView,
   getLayoutSources,
 }) => {
+  const dispatch = useAppDispatch();
   const dayEvents = useAppSelector(selectDayEvents);
   const allDayEvents = useMemo(
     () => getAllDayDayEvents(dayEvents),
@@ -87,7 +88,7 @@ export const DayInteractionCoordinator: FC<Props> = ({
       return;
     }
 
-    setDraft({ ...event, _id: event._id });
+    dispatch(draftSlice.actions.startGridClick({ ...event, _id: event._id }));
 
     const eventType: DayInteractionEventType = event.isAllDay
       ? "all-day"

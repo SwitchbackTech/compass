@@ -1,65 +1,60 @@
+import { configureStore } from "@reduxjs/toolkit";
 import { renderHook } from "@testing-library/react";
-import { BehaviorSubject } from "rxjs";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { createElement, type PropsWithChildren } from "react";
+import { Provider } from "react-redux";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import {
+  CursorItem,
+  closeFloatingAtCursor,
+  isOpenAtCursor,
+  setFloatingNodeIdAtCursor,
+  setFloatingOpenAtCursor,
+  setFloatingReferenceAtCursor,
+} from "@web/common/hooks/useOpenAtCursor";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { reducers } from "@web/store/reducers";
+import { beforeEach, describe, expect, it } from "bun:test";
 
-const closeFloatingAtCursor = mock();
-const resetActiveEvent = mock();
-const resetDraft = mock();
-const open$ = new BehaviorSubject(false);
-const nodeId$ = new BehaviorSubject(null);
-const placement$ = new BehaviorSubject("right-start");
-const strategy$ = new BehaviorSubject("absolute");
-const reference$ = new BehaviorSubject(null);
+let actions: unknown[] = [];
 
-mock.module("@web/common/hooks/useOpenAtCursor", () => {
-  return {
-    closeFloatingAtCursor,
-    open$,
-    nodeId$,
-    placement$,
-    strategy$,
-    reference$,
-    openFloatingAtCursor: mock(),
-    setFloatingOpenAtCursor: mock(),
-    setFloatingNodeIdAtCursor: mock(),
-    setFloatingPlacementAtCursor: mock(),
-    setFloatingReferenceAtCursor: mock(),
-    setFloatingStrategyAtCursor: mock(),
-    isOpenAtCursor: mock(),
-    CursorItem: {
-      EventContextMenu: "EventContextMenu",
-      EventForm: "EventForm",
-      EventPreview: "EventPreview",
-    },
-  };
-});
-
-mock.module("@web/store/events", () => ({
-  resetActiveEvent,
-  resetDraft,
-}));
+const createStore = () =>
+  configureStore({
+    preloadedState: createInitialState(),
+    reducer: reducers,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        immutableCheck: false,
+        serializableCheck: false,
+        thunk: false,
+      }).concat(() => (next) => (action) => {
+        actions.push(action);
+        return next(action);
+      }),
+  });
 
 const { useCloseEventForm } =
   require("@web/views/Forms/hooks/useCloseEventForm") as typeof import("@web/views/Forms/hooks/useCloseEventForm");
 
 describe("useCloseEventForm", () => {
   beforeEach(() => {
-    closeFloatingAtCursor.mockClear();
-    resetActiveEvent.mockClear();
-    resetDraft.mockClear();
+    actions = [];
+    closeFloatingAtCursor();
   });
 
   it("should close floating at cursor and set draft to null", () => {
-    const { result } = renderHook(() => useCloseEventForm());
+    const store = createStore();
+    const wrapper = ({ children }: PropsWithChildren) =>
+      createElement(Provider, { children, store });
+    const { result } = renderHook(() => useCloseEventForm(), { wrapper });
+    const reference = document.createElement("div");
+
+    setFloatingNodeIdAtCursor(CursorItem.EventForm);
+    setFloatingReferenceAtCursor(reference);
+    setFloatingOpenAtCursor(true);
 
     result.current();
 
-    expect(closeFloatingAtCursor).toHaveBeenCalled();
-    expect(resetDraft).toHaveBeenCalled();
-    expect(resetActiveEvent).toHaveBeenCalled();
+    expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
+    expect(actions).toContainEqual(draftSlice.actions.discard(undefined));
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

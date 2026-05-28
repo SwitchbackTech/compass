@@ -124,13 +124,7 @@ export const useTimedGridDraftCreation = ({
 
           actions.stopResizing();
           actions.stopDragging();
-          dispatch(
-            draftSlice.actions.start({
-              activity: "gridClick",
-              event: nextEvent,
-              eventType: category,
-            }),
-          );
+          dispatch(draftSlice.actions.startGridClick(nextEvent));
         },
       );
     };

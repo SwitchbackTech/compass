@@ -5,7 +5,6 @@ import {
   useMemo,
   useRef,
 } from "react";
-import { Categories_Event } from "@core/types/event.types";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -85,23 +84,11 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   }, [adapter, lastNavigationSource, renderedWeekStartMs]);
 
   const openTimedEvent = (event: Schema_GridEvent) => {
-    dispatch(
-      draftSlice.actions.start({
-        activity: "gridClick",
-        event,
-        eventType: Categories_Event.TIMED,
-      }),
-    );
+    dispatch(draftSlice.actions.startGridClick(event));
   };
 
   const openAllDayEvent = (event: Schema_GridEvent) => {
-    dispatch(
-      draftSlice.actions.start({
-        activity: "gridClick",
-        event,
-        eventType: Categories_Event.ALLDAY,
-      }),
-    );
+    dispatch(draftSlice.actions.startGridClick(event));
   };
 
   const commitSavedMutation = (

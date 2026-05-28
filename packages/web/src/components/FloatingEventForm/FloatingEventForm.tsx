@@ -4,9 +4,8 @@ import {
   type UseInteractionsReturn,
   type useFloating,
 } from "@floating-ui/react";
-import { getEntity } from "@ngneat/elf-entities";
-import { useCallback, useMemo } from "react";
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
+import { useCallback } from "react";
+import { type Schema_Event } from "@core/types/event.types";
 import {
   Z_INDEX_FLOATING_FORM,
   ZIndex,
@@ -17,13 +16,15 @@ import {
   useFloatingNodeIdAtCursor,
   useFloatingOpenAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
-import { eventsStore, setDraft } from "@web/store/events";
+import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
+import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
-import { useDraft } from "@web/views/Week/components/Draft/context/useDraft";
 
 export function FloatingEventForm({
   floating,
@@ -32,7 +33,8 @@ export function FloatingEventForm({
   floating: ReturnType<typeof useFloating>;
   interactions: UseInteractionsReturn;
 }) {
-  const draft = useDraft();
+  const dispatch = useAppDispatch();
+  const draft = useAppSelector(selectDraft);
   const _id = draft?._id;
   const nodeId = useFloatingNodeIdAtCursor();
   const floatingOpenAtCursor = useFloatingOpenAtCursor();
@@ -47,9 +49,8 @@ export function FloatingEventForm({
   );
   const isOpenAtCursor = nodeId === CursorItem.EventForm;
   const open = floatingOpenAtCursor && isOpenAtCursor && !!draft;
-  const existing = useMemo(
-    () => !!_id && !!eventsStore.query(getEntity(_id)),
-    [_id],
+  const existing = useAppSelector((state) =>
+    _id ? Boolean(selectEventById(state, _id)) : false,
   );
 
   const setEvent = useCallback(
@@ -60,9 +61,9 @@ export function FloatingEventForm({
         | null,
     ) => {
       const update = typeof cb === "function" ? cb(draft) : cb;
-      setDraft(update as WithCompassId<Schema_Event>);
+      dispatch(draftSlice.actions.setEvent(update));
     },
-    [draft],
+    [dispatch, draft],
   );
 
   if (!open) return null;

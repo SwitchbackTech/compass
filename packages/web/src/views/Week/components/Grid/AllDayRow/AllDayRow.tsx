@@ -57,13 +57,7 @@ export const AllDayRow: FC<Props> = ({
       startDate,
     );
 
-    dispatch(
-      draftSlice.actions.start({
-        activity: "gridClick",
-        eventType: Categories_Event.ALLDAY,
-        event,
-      }),
-    );
+    dispatch(draftSlice.actions.startGridClick(event));
   };
 
   const onMouseDown = async (e: MouseEvent) => {

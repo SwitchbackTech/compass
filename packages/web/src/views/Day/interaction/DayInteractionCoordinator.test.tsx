@@ -20,7 +20,7 @@ import {
 } from "@web/common/hooks/useOpenAtCursor";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { eventsStore, getDraft, resetDraft } from "@web/store/events";
+import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import { DayInteractionCoordinator } from "./DayInteractionCoordinator";
 import { dayCalendarEventRegistry } from "./registry/dayCalendarEventRegistry";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -164,7 +164,7 @@ const renderCoordinator = () => {
     </Provider>,
   );
 
-  return { dispatch };
+  return { dispatch, store };
 };
 
 beforeEach(() => {
@@ -178,7 +178,6 @@ afterEach(() => {
   document.body.innerHTML = "";
   globalThis.requestAnimationFrame = originalRequestAnimationFrame;
   globalThis.cancelAnimationFrame = originalCancelAnimationFrame;
-  resetDraft();
 });
 
 describe("DayInteractionCoordinator", () => {
@@ -206,7 +205,7 @@ describe("DayInteractionCoordinator", () => {
   });
 
   it("reopens the Day event form with the moved event instead of immediately saving", async () => {
-    const { dispatch } = renderCoordinator();
+    const { dispatch, store } = renderCoordinator();
     const source = screen.getByTestId("timed-source");
     const child = screen.getByTestId("timed-child");
 
@@ -230,13 +229,15 @@ describe("DayInteractionCoordinator", () => {
       pointerId: 1,
     });
 
-    expect(dispatch).not.toHaveBeenCalled();
+    expect(
+      dispatch.mock.calls.some(
+        ([action]) => action.type === editEventSlice.actions.request.type,
+      ),
+    ).toBe(false);
 
     await waitFor(() => {
       expect(isOpenAtCursor(CursorItem.EventForm)).toBe(true);
-      expect(
-        eventsStore.query((state) => getDraft(state))?.startDate,
-      ).toContain("10:00");
+      expect(store.getState().events.draft.event?.startDate).toContain("10:00");
     });
   });
 });

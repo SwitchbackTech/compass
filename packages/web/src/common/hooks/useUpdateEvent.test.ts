@@ -1,4 +1,3 @@
-import { setEntities } from "@ngneat/elf-entities";
 import { configureStore } from "@reduxjs/toolkit";
 import { renderHook } from "@testing-library/react";
 import { createElement, type PropsWithChildren } from "react";
@@ -6,8 +5,11 @@ import { Provider } from "react-redux";
 import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
-import { editEventSlice } from "@web/ducks/events/slices/event.slice";
-import { eventsStore, getDraft, resetDraft } from "@web/store/events";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import {
+  editEventSlice,
+  eventsEntitiesSlice,
+} from "@web/ducks/events/slices/event.slice";
 import { reducers } from "@web/store/reducers";
 import { beforeEach, describe, expect, it } from "bun:test";
 
@@ -45,8 +47,10 @@ describe("useUpdateEvent", () => {
   beforeEach(() => {
     actions = [];
     store = createStore();
-    resetDraft();
-    eventsStore.update(setEntities([mockEvent]));
+    store.dispatch(
+      eventsEntitiesSlice.actions.insert({ [mockEvent._id]: mockEvent }),
+    );
+    actions = [];
   });
 
   it("should update event in store and dispatch request when saveImmediate is true", () => {
@@ -56,7 +60,7 @@ describe("useUpdateEvent", () => {
 
     result.current(payload);
 
-    expect(eventsStore.query(getDraft)).toEqual(changedEvent);
+    expect(store.getState().events.draft.event).toEqual(changedEvent);
     expect(actions).toContainEqual(
       editEventSlice.actions.request({
         ...payload,
@@ -72,8 +76,17 @@ describe("useUpdateEvent", () => {
 
     result.current(payload, false);
 
-    expect(eventsStore.query(getDraft)).toEqual(changedEvent);
-    expect(actions).toEqual([]);
+    expect(store.getState().events.draft.event).toEqual(changedEvent);
+    expect(actions).toContainEqual(draftSlice.actions.setEvent(changedEvent));
+    expect(
+      actions.some(
+        (action) =>
+          typeof action === "object" &&
+          action !== null &&
+          "type" in action &&
+          action.type === editEventSlice.actions.request.type,
+      ),
+    ).toBe(false);
   });
 
   it("should not do anything if event has no _id", () => {
@@ -87,7 +100,7 @@ describe("useUpdateEvent", () => {
 
     result.current(payload);
 
-    expect(eventsStore.query(getDraft)).toBeNull();
+    expect(store.getState().events.draft.event).toBeNull();
     expect(actions).toEqual([]);
   });
 });

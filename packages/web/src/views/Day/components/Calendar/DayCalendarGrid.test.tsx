@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { ThemeProvider } from "styled-components";
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/common/calendar-grid/calendarGrid.constants";
@@ -19,7 +19,7 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
-import { eventsStore, getDraft, resetDraft, setDraft } from "@web/store/events";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -116,6 +116,16 @@ const createTimedEvent = (
 
 const setDayEvents = (events: Schema_Event[]) => {
   store = createStoreWithEvents(events);
+};
+
+const getDraft = () => store.getState().events.draft.event;
+
+const resetDraft = () => {
+  store.dispatch(draftSlice.actions.discard(undefined));
+};
+
+const setDraftEvent = (event: Schema_Event) => {
+  store.dispatch(draftSlice.actions.startGridClick(event));
 };
 
 beforeEach(() => {
@@ -263,7 +273,7 @@ describe("DayCalendarGrid", () => {
     });
 
     await waitFor(() => {
-      expect(eventsStore.query((state) => getDraft(state))?._id).toBe("back");
+      expect(getDraft()?._id).toBe("back");
       expect(Number(back.style.zIndex)).toBe(ZIndex.MAX);
       expect(parseFloat(back.style.width)).toBe(frontWidth);
     });
@@ -278,7 +288,7 @@ describe("DayCalendarGrid", () => {
     });
 
     setDayEvents([event]);
-    setDraft(event as WithCompassId<Schema_Event>);
+    setDraftEvent(event);
 
     renderDayCalendarGrid();
 
@@ -325,7 +335,7 @@ describe("DayCalendarGrid", () => {
       title: "Open draft",
     });
 
-    setDraft(existingDraft as WithCompassId<Schema_Event>);
+    setDraftEvent(existingDraft);
     renderDayCalendarGrid();
 
     const timedGrid = screen.getByRole("region", {
@@ -343,7 +353,7 @@ describe("DayCalendarGrid", () => {
       clientY: 120,
     });
 
-    expect(eventsStore.query((state) => getDraft(state))).toBeNull();
+    expect(getDraft()).toBeNull();
   });
 
   it("dismisses an open draft when clicking empty Day all-day calendar space", () => {
@@ -354,7 +364,7 @@ describe("DayCalendarGrid", () => {
       title: "Open all-day draft",
     });
 
-    setDraft(existingDraft as WithCompassId<Schema_Event>);
+    setDraftEvent(existingDraft);
     renderDayCalendarGrid();
 
     fireEvent.mouseDown(
@@ -366,7 +376,7 @@ describe("DayCalendarGrid", () => {
       },
     );
 
-    expect(eventsStore.query((state) => getDraft(state))).toBeNull();
+    expect(getDraft()).toBeNull();
   });
 
   it("scrolls the Day timed grid to now when the Day view requests it", () => {
@@ -415,7 +425,7 @@ describe("DayCalendarGrid", () => {
     });
 
     await waitFor(() => {
-      const draft = eventsStore.query((state) => getDraft(state));
+      const draft = getDraft();
 
       expect(draft).not.toBeNull();
       expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
