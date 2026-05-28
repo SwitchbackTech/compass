@@ -1,6 +1,7 @@
 import { useState } from "react";
 import _CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
+import { useNavigate } from "react-router-dom";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -8,6 +9,8 @@ import {
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
+import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
 import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
@@ -50,6 +53,7 @@ const CmdPalette = ({
   scrollUtil,
 }: CmdPaletteProps) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const open = useAppSelector(selectIsCmdPaletteOpen);
@@ -88,6 +92,22 @@ const CmdPalette = ({
 
   const filteredItems = filterItems(
     [
+      {
+        heading: "Navigation",
+        id: "navigation",
+        items: getNavigationCommandItems({
+          currentView: "week",
+          onGoToToday: () => {
+            scrollUtil.scrollToNow();
+            _discardDraft();
+            util.goToToday();
+          },
+          onNavigateToView: (viewName) => {
+            navigate(VIEW_SHORTCUTS[viewName].route);
+          },
+          today,
+        }),
+      },
       {
         heading: "Common Tasks",
         id: "general",
@@ -133,16 +153,6 @@ const CmdPalette = ({
             onClick: onEventTargetVisibility(() => {
               void handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH);
             }),
-          },
-          {
-            id: "today",
-            children: `Go to Today (${today.format("dddd, MMMM D")}) [t]`,
-            icon: "ArrowUturnDownIcon",
-            onClick: () => {
-              scrollUtil.scrollToNow();
-              _discardDraft();
-              util.goToToday();
-            },
           },
         ],
       },

@@ -155,6 +155,7 @@ export function NowViewProvider({
     onToggleSidebar,
     onEscape: handleEscape,
     onEditReminder: handleEditReminder,
+    onGoToToday: handleEscape,
   });
 
   const value: NowViewContextValue = {

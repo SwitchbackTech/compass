@@ -1,13 +1,14 @@
 import { useState } from "react";
 import _CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
+import { useNavigate } from "react-router-dom";
 import dayjs from "@core/util/date/dayjs";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
 import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   openEventFormCreateEvent,
   openEventFormEditEvent,
@@ -25,6 +26,7 @@ interface DayCmdPaletteProps {
 
 export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
@@ -38,19 +40,21 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
       {
         heading: "Navigation",
         id: "navigation",
+        items: getNavigationCommandItems({
+          currentView: "day",
+          onGoToToday: () => {
+            onGoToToday?.();
+          },
+          onNavigateToView: (viewName) => {
+            navigate(VIEW_SHORTCUTS[viewName].route);
+          },
+          today,
+        }),
+      },
+      {
+        heading: "Common Tasks",
+        id: "general",
         items: [
-          {
-            id: "go-to-now",
-            children: `Go to Now [${VIEW_SHORTCUTS.now.key}]`,
-            icon: "ClockIcon",
-            onClick: () => pressKey(VIEW_SHORTCUTS.now.key),
-          },
-          {
-            id: "go-to-week",
-            children: `Go to Week [${VIEW_SHORTCUTS.week.key}]`,
-            icon: "CalendarIcon",
-            onClick: () => pressKey(VIEW_SHORTCUTS.week.key),
-          },
           {
             id: "create-event",
             children: "Create event",
@@ -62,14 +66,6 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
             children: "Edit event [m]",
             icon: "PencilSquareIcon",
             onClick: () => queueMicrotask(openEventFormEditEvent),
-          },
-          {
-            id: "today",
-            children: `Go to Today (${today.format("dddd, MMMM D")}) [t]`,
-            icon: "ArrowUturnDownIcon",
-            onClick: () => {
-              onGoToToday?.();
-            },
           },
         ],
       },

@@ -70,6 +70,7 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },
       { k: "Enter", label: "Mark complete" },
+      { k: "t", label: "Go to today" },
     ];
   }
 

@@ -83,6 +83,17 @@ describe("useNowShortcuts", () => {
     });
   });
 
+  it("navigates to today when T is pressed", async () => {
+    const onGoToToday = mock();
+    renderHook(() => useNowShortcuts({ onGoToToday }), { wrapper });
+
+    pressKey("t");
+
+    await waitFor(() => {
+      expect(onGoToToday).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("does not navigate when Escape is pressed inside a textarea", async () => {
     const onEscape = mock();
     renderHook(() => useNowShortcuts({ onEscape }), { wrapper });

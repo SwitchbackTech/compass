@@ -20,6 +20,7 @@ interface Props {
   onToggleSidebar?: () => void;
   onEscape?: () => void;
   onEditReminder?: () => void;
+  onGoToToday?: () => void;
 }
 
 export function useNowShortcuts(props?: Props) {
@@ -32,6 +33,7 @@ export function useNowShortcuts(props?: Props) {
     onToggleSidebar,
     onEscape,
     onEditReminder,
+    onGoToToday,
   } = props || {};
 
   const handleTaskNavigation = useCallback(
@@ -87,6 +89,10 @@ export function useNowShortcuts(props?: Props) {
     },
     { ignoreInputs: true },
   );
+
+  useAppHotkeyUp("T", () => {
+    onGoToToday?.();
+  });
 
   useAppHotkeySequence(["E", "R"], () => {
     onEditReminder?.();

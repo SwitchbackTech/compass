@@ -2,7 +2,9 @@ import { useState } from "react";
 import _CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
 import { useNavigate } from "react-router-dom";
+import dayjs from "@core/util/date/dayjs";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
+import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
@@ -22,6 +24,7 @@ export const NowCmdPalette = () => {
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root">("root");
   const [search, setSearch] = useState("");
+  const today = dayjs();
   const authCmdItems = useAuthCmdItems();
   const googleCmdItems = useGoogleCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
@@ -31,19 +34,19 @@ export const NowCmdPalette = () => {
       {
         heading: "Navigation",
         id: "navigation",
+        items: getNavigationCommandItems({
+          currentView: "now",
+          onGoToToday: () => navigate(VIEW_SHORTCUTS.day.route),
+          onNavigateToView: (viewName) => {
+            navigate(VIEW_SHORTCUTS[viewName].route);
+          },
+          today,
+        }),
+      },
+      {
+        heading: "Common Tasks",
+        id: "general",
         items: [
-          {
-            id: "go-to-day",
-            children: `Go to Day [${VIEW_SHORTCUTS.day.key}]`,
-            icon: "CalendarDaysIcon",
-            onClick: () => navigate(VIEW_SHORTCUTS.day.route),
-          },
-          {
-            id: "go-to-week",
-            children: `Go to Week [${VIEW_SHORTCUTS.week.key}]`,
-            icon: "CalendarIcon",
-            onClick: () => navigate(VIEW_SHORTCUTS.week.route),
-          },
           {
             id: "edit-reminder",
             children: `Edit Reminder [r]`,
