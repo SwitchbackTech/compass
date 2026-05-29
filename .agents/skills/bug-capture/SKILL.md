@@ -63,10 +63,7 @@ label.
 ### 4. Prepare GitHub
 
 - Use GitHub Issues through `gh`, inferred from the current repo remote.
-- Ensure a `bug` label exists; create it if missing.
-- Normal capture: apply `bug` and `needs-triage`.
-- Incomplete capture: apply `bug` and `needs more info`. If an obvious equivalent
-  already exists use it instead of creating a  duplicate.
+- Apply the `bug` type to the issue (do NOT create a `bug` label)
 
 ### 5. Dedupe
 
