@@ -1,3 +1,13 @@
+import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
+import {
+  createTimedDragVisual,
+  updateTimedDragVisual,
+} from "@web/common/calendar-grid/interaction/math/timedDrag";
+import {
+  type TimedDragVisual,
+  type VisualPoint,
+  type VisualRect,
+} from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
 import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
 import {
   hasTimedDragVisualMoved,
@@ -5,19 +15,9 @@ import {
 } from "../commit/timedDragVisualToGridEvent";
 import { type WeekLayoutCache } from "../geometry/weekLayoutCache";
 import {
-  createTimedDragVisual,
-  updateTimedDragVisual,
-} from "../math/timedDrag";
-import {
-  type TimedDragVisual,
-  type VisualPoint,
-  type VisualRect,
-} from "../model/TimedDragVisual";
-import {
   type WeekTimedDragCommitResult,
   type WeekTimedDragTarget,
 } from "../WeekInteractionAdapter.types";
-import { getLocalDayIndex, getLocalMinutes } from "./weekInteractionDate";
 
 export const createTimedDragInteractionVisual = ({
   pointerStart,
@@ -75,4 +75,22 @@ export const commitTimedDragInteraction = (
     hasMoved: hasTimedDragVisualMoved(visual),
     type: "timedDragEnd",
   };
+};
+
+const getLocalDayIndex = (dateString: string | undefined) => {
+  if (!dateString) {
+    return new Date(0).getDay();
+  }
+
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
+
+  if (dateOnly) {
+    return new Date(
+      Number(dateOnly[1]!),
+      Number(dateOnly[2]!) - 1,
+      Number(dateOnly[3]!),
+    ).getDay();
+  }
+
+  return new Date(dateString).getDay();
 };

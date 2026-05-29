@@ -106,8 +106,8 @@ const createHarness = ({
   const onMotionActivation = mock();
 
   source.style.visibility = "visible";
-  startHandle.setAttribute("data-week-event-resize-handle", "startDate");
-  endHandle.setAttribute("data-week-event-resize-handle", "endDate");
+  startHandle.setAttribute("data-calendar-event-resize-handle", "startDate");
+  endHandle.setAttribute("data-calendar-event-resize-handle", "endDate");
   mainGrid.id = ID_GRID_MAIN;
   allDayColumns.id = ID_ALLDAY_COLUMNS;
   source.append(startHandle, endHandle);

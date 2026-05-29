@@ -253,7 +253,7 @@ test(web): add unit tests for login component
 4. **Format Code**
 
    ```bash
-   bunx prettier . --write
+   bun run format
    ```
 
 5. **Generate Documentation** (if you added/modified APIs)

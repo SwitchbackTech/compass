@@ -14,8 +14,6 @@ import { PointerPositionProvider } from "@web/common/context/pointer-position";
 import { theme } from "@web/common/styles/theme";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
-import { DNDContext } from "@web/components/DND/DNDContext";
-import { DNDOverlay } from "@web/components/DND/DNDOverlay";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { store } from "@web/store";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
@@ -41,29 +39,25 @@ export const CompassRequiredProviders = (
           >
             <ThemeProvider theme={theme}>
               <PointerPositionProvider>
-                <DNDContext>
-                  <IconProvider>
-                    <AuthModalProvider>
-                      {props.children}
-                      <AuthModal />
-                      <ToastContainer
-                        position="bottom-left"
-                        autoClose={5000}
-                        hideProgressBar={false}
-                        newestOnTop={false}
-                        closeOnClick
-                        rtl={false}
-                        pauseOnFocusLoss
-                        draggable
-                        pauseOnHover
-                        theme="dark"
-                        limit={1}
-                      />
-                    </AuthModalProvider>
-                  </IconProvider>
-
-                  <DNDOverlay />
-                </DNDContext>
+                <IconProvider>
+                  <AuthModalProvider>
+                    {props.children}
+                    <AuthModal />
+                    <ToastContainer
+                      position="bottom-left"
+                      autoClose={5000}
+                      hideProgressBar={false}
+                      newestOnTop={false}
+                      closeOnClick
+                      rtl={false}
+                      pauseOnFocusLoss
+                      draggable
+                      pauseOnHover
+                      theme="dark"
+                      limit={1}
+                    />
+                  </AuthModalProvider>
+                </IconProvider>
               </PointerPositionProvider>
             </ThemeProvider>
           </GoogleOAuthProvider>

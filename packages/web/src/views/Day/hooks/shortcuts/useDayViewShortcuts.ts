@@ -33,8 +33,8 @@ interface KeyboardShortcutsConfig {
   // Sidebar
   onToggleSidebar?: () => void;
 
-  // Agenda navigation
-  onFocusAgenda?: () => void;
+  // Calendar navigation
+  onFocusCalendar?: () => void;
 
   // Event management
   onEditEvent?: () => void;
@@ -66,7 +66,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onNextDay,
     onPrevDay,
     onGoToToday,
-    onFocusAgenda,
+    onFocusCalendar,
     onEditEvent,
     onToggleSidebar,
     isEditingTask,
@@ -183,9 +183,9 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     },
   );
 
-  // Agenda shortcuts
+  // Calendar shortcuts
   useAppHotkeyUp("I", () => {
-    onFocusAgenda?.();
+    onFocusCalendar?.();
   });
 
   useAppHotkeyUp("M", () => {

@@ -70,11 +70,11 @@ Always use module aliased paths for imports when importing Compass modules.
 
 **Examples:**
 
-- ✅ `import { Component } from '@web/components'`
-- ✅ `import { util } from '@web/common/utils'`
-- ✅ `import { types } from '@core/types'`
+- ✅ `import { Component } from "@web/components"`
+- ✅ `import { util } from "@web/common/utils"`
+- ✅ `import { types } from "@core/types"`
 
-**Import order (enforced by Prettier):**
+**Import order (enforced by Biome):**
 
 1. Third-party modules
 2. Non-Compass internal modules
@@ -107,4 +107,4 @@ Always use module aliased paths for imports when importing Compass modules.
 - Use semantic color tokens (e.g., `bg-bg-primary`)
 - Never use raw Tailwind colors (e.g., `bg-blue-300`)
 - Use module aliased imports (`@web/*`, `@core/*`)
-- Follow import order enforced by Prettier
+- Follow import order enforced by Biome

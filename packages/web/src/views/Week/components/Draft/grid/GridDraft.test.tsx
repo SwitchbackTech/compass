@@ -3,6 +3,8 @@ import userEvent from "@testing-library/user-event";
 import { type PropsWithChildren, type Ref } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
+import { CALENDAR_DECK_MIN_WIDTH } from "@web/common/calendar-grid/calendarGrid.constants";
+import { ZIndex } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -96,7 +98,13 @@ const createFormProps = () => {
   };
 };
 
-const renderGridDraft = (draft = createDraft()) => {
+const renderGridDraft = ({
+  deckLayout = null,
+  draft = createDraft(),
+}: {
+  deckLayout?: { groupSize: number; order: number } | null;
+  draft?: Schema_GridEvent;
+} = {}) => {
   const repositionDraftByKeyboard = mock(() => true);
   const onSubmit = mock();
   const value = {
@@ -128,6 +136,7 @@ const renderGridDraft = (draft = createDraft()) => {
   const result = render(
     <DraftContext.Provider value={value}>
       <GridDraft
+        deckLayout={deckLayout}
         measurements={{
           allDayRow: null,
           colWidths: [100, 100, 100, 100, 100, 100, 100],
@@ -148,25 +157,43 @@ afterEach(() => {
 });
 
 describe("GridDraft keyboard focus", () => {
-  it("renders all-day drafts that do not carry timed-event position data", () => {
-    renderGridDraft(
-      createDraft({
+  it("positions all-day drafts in the all-day row", () => {
+    renderGridDraft({
+      draft: createDraft({
         endDate: "2026-05-27T00:00:00.000Z",
         isAllDay: true,
         position: undefined,
         startDate: "2026-05-26T00:00:00.000Z",
       }),
-    );
+    });
 
     expect(
       screen.getByRole("button", { name: /All-day event: Planning/ }),
-    ).toBeInTheDocument();
+    ).toHaveStyle({
+      height: "20px",
+      left: "200px",
+      top: "23px",
+      width: "90px",
+    });
   });
 
   it("keeps the floating form non-modal while the draft block is a focus target", () => {
     renderGridDraft();
 
     expect(floatingFocusManagerProps?.modal).toBe(false);
+  });
+
+  it("keeps an active overlapping saved draft at its stacked width while raising it", () => {
+    renderGridDraft({
+      deckLayout: { groupSize: 2, order: 0 },
+    });
+
+    const draftBlock = screen.getByRole("button", {
+      name: /Timed event: Planning/,
+    });
+
+    expect(draftBlock.style.width).toBe(`${CALENDAR_DECK_MIN_WIDTH}px`);
+    expect(Number(draftBlock.style.zIndex)).toBe(ZIndex.MAX);
   });
 
   it("submits the draft from title Enter without focusing the draft block", async () => {

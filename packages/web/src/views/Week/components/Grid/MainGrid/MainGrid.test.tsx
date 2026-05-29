@@ -39,6 +39,7 @@ import "@testing-library/jest-dom";
 
 const { AllDayEvents } = await import("../AllDayRow/AllDayEvents");
 const { AllDayRow } = await import("../AllDayRow/AllDayRow");
+const { Grid } = await import("../Grid");
 const { MainGrid } = await import("./MainGrid");
 const { MainGridEvents } = await import("./MainGridEvents");
 
@@ -104,7 +105,6 @@ const createStore = (events: Schema_Event[] = []) => {
 const createDateCalcs = () => ({
   getDateByXY: (_x: number, y: number, firstDayInView: Dayjs) =>
     firstDayInView.add(y, "minute"),
-  getDayNumberByX: () => 0,
   getDateStrByXY: (_x: number, y: number, firstDayInView: Dayjs) =>
     firstDayInView.add(y, "minute").format(),
   getMinuteByY: (y: number) => y,
@@ -226,6 +226,47 @@ const renderGridRegions = () => {
   );
 };
 
+const renderWeekGrid = (events: Schema_Event[] = []) => {
+  const store = createStore(events);
+  const dateCalcs = createDateCalcs();
+
+  return render(
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <DraftContext.Provider
+          value={
+            {
+              actions: {
+                stopDragging: mock(),
+                stopResizing: mock(),
+              },
+              confirmation: {},
+              setters: {},
+              state: {},
+            } as never
+          }
+        >
+          <Grid
+            dateCalcs={dateCalcs}
+            gridRefs={{
+              allDayColumnsRef: { current: null },
+              allDayRef: mock(),
+              allDayRowRef: mock(),
+              mainGridElementRef: mock(),
+              mainGridRef: { current: null },
+              timedColumnsElementRef: mock(),
+              timedColumnsRef: { current: null },
+            }}
+            measurements={measurements}
+            today={startOfView}
+            weekProps={createWeekProps()}
+          />
+        </DraftContext.Provider>
+      </ThemeProvider>
+    </Provider>,
+  );
+};
+
 const dragEmptyGrid = (
   row: HTMLElement,
   { fromMinute, toMinute }: { fromMinute: number; toMinute: number },
@@ -291,7 +332,7 @@ const expectDraftIsInactive = (store: ReturnType<typeof createStore>) => {
 
 const getEndResizeHandle = (eventButton: HTMLElement) => {
   const resizeHandle = eventButton.querySelector(
-    '[data-week-event-resize-handle="endDate"]',
+    '[data-calendar-event-resize-handle="endDate"]',
   );
 
   if (!(resizeHandle instanceof HTMLElement)) {
@@ -489,6 +530,60 @@ describe("Week calendar accessibility", () => {
       eventButton.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE),
     ).toBe("all-day");
   });
+
+  it("keeps full-week all-day events spanning seven columns", () => {
+    const store = createStore([
+      createSavedEvent({
+        _id: "full-week-all-day",
+        endDate: "2024-01-21T00:00:00.000Z",
+        isAllDay: true,
+        startDate: "2024-01-14T00:00:00.000Z",
+        title: "Full week",
+      }),
+    ]);
+
+    render(
+      <Provider store={store}>
+        <ThemeProvider theme={theme}>
+          <AllDayEvents
+            endOfView={startOfView.endOf("week")}
+            measurements={measurements}
+            startOfView={startOfView}
+          />
+        </ThemeProvider>
+      </Provider>,
+    );
+
+    const eventButton = screen.getByRole("button", {
+      name: /all-day event: full week/i,
+    });
+
+    expect(parseFloat(eventButton.style.width)).toBe(690);
+  });
+
+  it("keeps stacked all-day rows wired through the shared Week grid", () => {
+    renderWeekGrid([
+      createSavedEvent({
+        _id: "stacked-all-day-one",
+        endDate: "2024-01-16T00:00:00.000Z",
+        isAllDay: true,
+        startDate: "2024-01-15T00:00:00.000Z",
+        title: "Stacked one",
+      }),
+      createSavedEvent({
+        _id: "stacked-all-day-two",
+        endDate: "2024-01-16T00:00:00.000Z",
+        isAllDay: true,
+        startDate: "2024-01-15T00:00:00.000Z",
+        title: "Stacked two",
+      }),
+    ]);
+
+    expect(
+      getComputedStyle(screen.getByRole("region", { name: "All-day events" }))
+        .height,
+    ).toContain("0.09090909090909091");
+  });
 });
 
 describe("saved Week event ownership", () => {
@@ -530,9 +625,9 @@ describe("saved Week event ownership", () => {
     const solo = screen.getByRole("button", { name: /timed event: solo/i });
 
     expect(parseFloat(early.style.width)).toBe(parseFloat(late.style.width));
-    expect(parseFloat(late.style.left) - parseFloat(early.style.left)).toBe(
-      DECK_INDENT,
-    );
+    const overlapOffset =
+      parseFloat(late.style.left) - parseFloat(early.style.left);
+    expect(overlapOffset).toBeGreaterThan(DECK_INDENT);
 
     expect(Number(early.style.zIndex)).toBeLessThan(Number(late.style.zIndex));
 

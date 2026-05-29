@@ -65,7 +65,7 @@ bun run test:backend   # Run backend tests (~15 seconds)
 ### Code Formatting
 
 ```bash
-bunx prettier . --write  # Format all code (~15 seconds)
+bun run format  # Format all code with Biome (~15 seconds)
 ```
 
 ### CLI Tools
@@ -102,8 +102,8 @@ The backend requires:
 
 The repository includes Husky hooks that automatically:
 
-- Run `bunx lint-staged` on pre-commit (formats code with Prettier)
-- Run `bunx prettier . --write` on pre-push (ensures consistent formatting)
+- Run Biome formatting/checks before code is submitted
+- Use `bun run format` for formatting and `bun run lint:fix` for safe fixes
 
 Your commits will pass these checks automatically.
 
@@ -112,7 +112,7 @@ Your commits will pass these checks automatically.
 - The backend requires external service credentials to run
 - Frontend works standalone without backend services
 - Always use UTC timezone for consistency (`TZ=Etc/UTC`)
-- ESLint and Prettier configurations are already set up
+- Biome is the formatter and linter for this repo
 - The project uses React 18+ with the new JSX transform
 
 ## File Structure
@@ -144,5 +144,5 @@ packages/
 - Install with `bun install`
 - Start frontend: `bun run dev:web` (recommended)
 - Run tests: `bun run test:web`, `bun run test:backend`, `bun run test:core`
-- Format code: `bunx prettier . --write`
+- Format code: `bun run format`
 - Pre-commit hooks run automatically

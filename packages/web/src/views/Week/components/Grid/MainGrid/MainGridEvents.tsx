@@ -1,5 +1,9 @@
 import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
+import {
+  type CalendarTimedDeckLayout,
+  createCalendarTimedEventLayout,
+} from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
@@ -14,10 +18,6 @@ import {
   getWeekInteractionTargetAttributes,
   useWeekEventRegistrationRef,
 } from "@web/views/Week/interaction/registry/weekEventRegistry";
-import {
-  createWeekTimedEventLayout,
-  type WeekTimedDeckLayout,
-} from "@web/views/Week/utils/weekTimedOverlapLayout";
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
 
 interface Props {
@@ -37,7 +37,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   );
   const draftId = useAppSelector(selectDraftId);
   const timedEventItems = useMemo(
-    () => createWeekTimedEventLayout(timedEvents),
+    () => createCalendarTimedEventLayout(timedEvents),
     [timedEvents],
   );
   const category = Categories_Event.TIMED;
@@ -84,7 +84,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 };
 
 interface MainGridEventItemProps {
-  deckLayout: WeekTimedDeckLayout | null;
+  deckLayout: CalendarTimedDeckLayout | null;
   event: Schema_GridEvent;
   isPending: boolean;
   isPlaceholder: boolean;

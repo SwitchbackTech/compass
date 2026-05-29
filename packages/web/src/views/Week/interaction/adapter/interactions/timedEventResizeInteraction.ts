@@ -1,3 +1,13 @@
+import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
+import {
+  createTimedResizeVisual,
+  updateTimedResizeVisual,
+} from "@web/common/calendar-grid/interaction/math/timedResize";
+import {
+  type VisualPoint,
+  type VisualRect,
+} from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
+import { type TimedResizeVisual } from "@web/common/calendar-grid/interaction/model/TimedResizeVisual";
 import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
 import {
   hasTimedResizeVisualMoved,
@@ -5,16 +15,9 @@ import {
 } from "../commit/timedDragVisualToGridEvent";
 import { type WeekLayoutCache } from "../geometry/weekLayoutCache";
 import {
-  createTimedResizeVisual,
-  updateTimedResizeVisual,
-} from "../math/timedResize";
-import { type VisualPoint, type VisualRect } from "../model/TimedDragVisual";
-import { type TimedResizeVisual } from "../model/TimedResizeVisual";
-import {
   type WeekTimedResizeCommitResult,
   type WeekTimedResizeTarget,
 } from "../WeekInteractionAdapter.types";
-import { getLocalMinutes } from "./weekInteractionDate";
 
 export const createTimedResizeInteractionVisual = ({
   pointerStart,

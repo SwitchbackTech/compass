@@ -49,7 +49,11 @@ export const WeekView = () => {
 
   const scrollUtil = useScroll(gridRefs.mainGridRef);
 
-  const dateCalcs = useDateCalcs(measurements, gridRefs.mainGridRef);
+  const dateCalcs = useDateCalcs(
+    measurements,
+    gridRefs.mainGridRef,
+    weekProps.component.weekDays,
+  );
 
   const isCurrentWeek = weekProps.component.isCurrentWeek;
   const util = weekProps.util;

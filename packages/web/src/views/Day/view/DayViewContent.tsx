@@ -1,22 +1,16 @@
 import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
-import { useCompassRefs } from "@web/common/hooks/useCompassRefs";
-import { useEventDNDActions } from "@web/common/hooks/useEventDNDActions";
-import { useGridOrganization } from "@web/common/hooks/useGridOrganization";
-import { useMainGridSelection } from "@web/common/hooks/useMainGridSelection";
-import { useMainGridSelectionActions } from "@web/common/hooks/useMainGridSelectionActions";
 import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
-import { openEventFormEditEvent } from "@web/common/utils/event/event.util";
 import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { Agenda } from "@web/views/Day/components/Agenda/Agenda";
+import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
@@ -25,7 +19,10 @@ import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
-import { focusFirstAgendaEvent } from "@web/views/Day/util/agenda/focus.util";
+import {
+  focusFirstDayCalendarEvent,
+  openEventFormEditEvent,
+} from "@web/views/Day/interaction/dayCalendarFocus.util";
 import {
   focusOnAddTaskInput,
   focusOnFirstTask,
@@ -38,14 +35,7 @@ export const DayViewContent = memo(() => {
   const dispatch = useAppDispatch();
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
 
-  const selectionActions = useMainGridSelectionActions();
-  const { timedEventsGridRef } = useCompassRefs();
-  const grid = timedEventsGridRef.current;
-
   useRefetch();
-  useEventDNDActions();
-  useMainGridSelection(selectionActions);
-  useGridOrganization(grid);
 
   const {
     tasks,
@@ -159,7 +149,7 @@ export const DayViewContent = memo(() => {
     onRestoreTask: restoreTask,
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
-    onFocusAgenda: focusFirstAgendaEvent,
+    onFocusCalendar: focusFirstDayCalendarEvent,
     onEditEvent: openEventFormEditEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
@@ -196,10 +186,10 @@ export const DayViewContent = memo(() => {
           onToggleSidebar={toggleSidebar}
         />
 
-        <div className="flex w-full max-w-[960px] flex-1 justify-center gap-8 self-center overflow-hidden">
+        <div className="flex w-full flex-1 gap-8 overflow-hidden">
           <TaskList />
 
-          <Agenda />
+          <DayCalendarGrid />
         </div>
       </StyledCalendar>
     </Styled>

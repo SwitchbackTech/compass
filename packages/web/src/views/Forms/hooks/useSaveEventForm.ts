@@ -6,15 +6,15 @@ import {
 } from "@core/types/event.types";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
-import { store } from "@web/store";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
 export function useSaveEventForm() {
   const dispatch = useAppDispatch();
+  const eventEntities = useAppSelector(selectEventEntities);
   const closeEventForm = useCloseEventForm();
   const updateEvent = useUpdateEvent();
 
@@ -50,9 +50,7 @@ export function useSaveEventForm() {
     ) => {
       if (!draft) return closeEventForm();
 
-      const existing = draft._id
-        ? !!selectEventById(store.getState(), draft._id)
-        : false;
+      const existing = draft._id ? Boolean(eventEntities[draft._id]) : false;
 
       if (existing) {
         onEdit(draft as Schema_GridEvent, applyTo);
@@ -62,7 +60,7 @@ export function useSaveEventForm() {
 
       closeEventForm();
     },
-    [closeEventForm, onEdit, onCreate],
+    [closeEventForm, eventEntities, onEdit, onCreate],
   );
 
   return saveEventForm;

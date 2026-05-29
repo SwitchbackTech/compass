@@ -9,14 +9,14 @@ import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
 import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
-import {
-  openEventFormCreateEvent,
-  openEventFormEditEvent,
-} from "@web/common/utils/event/event.util";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  openEventFormCreateEvent,
+  openEventFormEditEvent,
+} from "@web/views/Day/interaction/dayCalendarFocus.util";
 
 const CommandPalette = resolveDefaultExport(_CommandPalette);
 

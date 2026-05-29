@@ -2,6 +2,7 @@ import { FloatingFocusManager } from "@floating-ui/react";
 import { type FC, type MouseEvent, useRef } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type CalendarTimedDeckLayout } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
@@ -9,16 +10,22 @@ import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
+import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { useGridEventMouseDown } from "@web/views/Week/hooks/grid/useGridEventMouseDown";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
 interface Props {
+  deckLayout?: CalendarTimedDeckLayout | null;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
 }
 
-export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
+export const GridDraft: FC<Props> = ({
+  deckLayout = null,
+  measurements,
+  weekProps,
+}) => {
   const titleInputRef = useRef<HTMLInputElement>(null);
   const { actions, setters, state, confirmation } = useDraftContext();
   const { discard, duplicateEvent, repositionDraftByKeyboard, startDragging } =
@@ -70,31 +77,60 @@ export const GridDraft: FC<Props> = ({ measurements, weekProps }) => {
 
   return (
     <>
-      <GridEvent
-        displayMode="draft"
-        event={draft}
-        key={`draft-${draft?._id}`}
-        measurements={measurements}
-        motionMode={motionMode}
-        onEventMouseDown={(event: Schema_GridEvent, e: MouseEvent) => {
-          e.preventDefault();
-          onMouseDown(e, event);
-        }}
-        onEventKeyDown={focusTitleInput}
-        onScalerMouseDown={(
-          _event: Schema_GridEvent,
-          e: MouseEvent,
-          dateToChange: "startDate" | "endDate",
-        ) => {
-          e.stopPropagation();
-          e.preventDefault();
-          setDateBeingChanged(dateToChange);
-          setIsResizing(true);
-        }}
-        ref={refs.setReference}
-        weekProps={weekProps}
-        {...getReferenceProps()}
-      />
+      {draft.isAllDay ? (
+        <AllDayEventMemo
+          endOfView={weekProps.component.endOfView}
+          event={draft}
+          isPlaceholder={false}
+          key={`draft-${draft?._id}`}
+          measurements={measurements}
+          onKeyDown={focusTitleInput}
+          onMouseDown={(e: MouseEvent, event: Schema_GridEvent) => {
+            e.preventDefault();
+            onMouseDown(e, event);
+          }}
+          onScalerMouseDown={(
+            _event: Schema_GridEvent,
+            e: MouseEvent,
+            dateToChange: "startDate" | "endDate",
+          ) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setDateBeingChanged(dateToChange);
+            setIsResizing(true);
+          }}
+          ref={refs.setReference}
+          startOfView={weekProps.component.startOfView}
+          {...getReferenceProps()}
+        />
+      ) : (
+        <GridEvent
+          deckLayout={deckLayout}
+          displayMode="draft"
+          event={draft}
+          key={`draft-${draft?._id}`}
+          measurements={measurements}
+          motionMode={motionMode}
+          onEventMouseDown={(event: Schema_GridEvent, e: MouseEvent) => {
+            e.preventDefault();
+            onMouseDown(e, event);
+          }}
+          onEventKeyDown={focusTitleInput}
+          onScalerMouseDown={(
+            _event: Schema_GridEvent,
+            e: MouseEvent,
+            dateToChange: "startDate" | "endDate",
+          ) => {
+            e.stopPropagation();
+            e.preventDefault();
+            setDateBeingChanged(dateToChange);
+            setIsResizing(true);
+          }}
+          ref={refs.setReference}
+          weekProps={weekProps}
+          {...getReferenceProps()}
+        />
+      )}
 
       {isFormOpen && (
         <FloatingFocusManager context={context} modal={false}>

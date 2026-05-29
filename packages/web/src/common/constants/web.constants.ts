@@ -28,6 +28,7 @@ export const DATA_NEW_DRAFT_EVENT = "data-new-draft-event";
 export const DATA_TASK_ELEMENT_ID = "data-task-id";
 export const DATA_OVERLAPPING = "data-overlapping";
 export const DATA_FULL_WIDTH = "data-full-width";
+export const DATA_CALENDAR_TIMED_GRID_ROW = "data-calendar-timed-grid-row";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
 export const ID_ADD_TASK_BUTTON = "add-task-button";
 export const CLASS_ALL_DAY_CALENDAR_EVENT = "all-day-calendar-event";

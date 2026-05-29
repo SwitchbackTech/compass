@@ -1,77 +1,41 @@
 import {
+  createCalendarEventTargeting,
+  type CalendarEventTarget as SharedCalendarEventTarget,
+} from "@web/common/calendar-grid/interaction/createCalendarEventTargeting";
+import {
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
   WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,
+  type WeekInteractionEventType,
   weekEventRegistry,
 } from "@web/views/Week/interaction/registry/weekEventRegistry";
 
-export type CalendarEventTargetType = "all-day" | "timed";
+export type CalendarEventTargetType = WeekInteractionEventType;
 
-export interface CalendarEventTarget {
-  element: HTMLElement;
-  eventId: string;
-  eventType: CalendarEventTargetType;
-}
+export type CalendarEventTarget =
+  SharedCalendarEventTarget<CalendarEventTargetType>;
 
 const TARGET_SELECTOR = `[${WEEK_INTERACTION_EVENT_ID_ATTRIBUTE}][${WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE}]`;
 
-let hoveredCalendarEventElement: HTMLElement | null = null;
+const weekCalendarEventTargeting =
+  createCalendarEventTargeting<CalendarEventTargetType>({
+    registry: weekEventRegistry,
+    targetSelector: TARGET_SELECTOR,
+  });
 
-export const setHoveredCalendarEventTarget = (
-  element: HTMLElement | null,
-): void => {
-  hoveredCalendarEventElement = element;
-};
+export const setHoveredCalendarEventTarget =
+  weekCalendarEventTargeting.setHoveredCalendarEventTarget;
 
-export const clearHoveredCalendarEventTarget = (
-  element?: HTMLElement,
-): void => {
-  if (!element || hoveredCalendarEventElement === element) {
-    hoveredCalendarEventElement = null;
-  }
-};
+export const clearHoveredCalendarEventTarget =
+  weekCalendarEventTargeting.clearHoveredCalendarEventTarget;
 
-export const getFocusedCalendarEventTarget = (): CalendarEventTarget | null =>
-  toCalendarEventTarget(document.activeElement);
+export const getFocusedCalendarEventTarget =
+  weekCalendarEventTargeting.getFocusedCalendarEventTarget;
 
-export const getHoveredCalendarEventTarget = (): CalendarEventTarget | null =>
-  toCalendarEventTarget(hoveredCalendarEventElement);
+export const getHoveredCalendarEventTarget =
+  weekCalendarEventTargeting.getHoveredCalendarEventTarget;
 
-export const getFirstVisibleCalendarEventTarget = (
-  root: ParentNode = document,
-): CalendarEventTarget | null => {
-  const candidates = root.querySelectorAll(TARGET_SELECTOR);
+export const getFirstVisibleCalendarEventTarget =
+  weekCalendarEventTargeting.getFirstVisibleCalendarEventTarget;
 
-  for (const candidate of candidates) {
-    const target = toCalendarEventTarget(candidate);
-    if (target && isVisibleCalendarEventElement(target.element)) return target;
-  }
-
-  return null;
-};
-
-export const focusCalendarEventTarget = (target: CalendarEventTarget): void => {
-  target.element.focus();
-};
-
-const toCalendarEventTarget = (
-  element: Element | null,
-): CalendarEventTarget | null => {
-  if (!(element instanceof HTMLElement)) return null;
-
-  const target = weekEventRegistry.resolveFromTarget(element);
-  if (!target) return null;
-
-  return {
-    element: target.element,
-    eventId: target.eventId,
-    eventType: target.eventType,
-  };
-};
-
-const isVisibleCalendarEventElement = (element: HTMLElement): boolean => {
-  if (element.hidden || element.getAttribute("aria-hidden") === "true") {
-    return false;
-  }
-
-  return element.offsetParent !== null || element.getClientRects().length > 0;
-};
+export const focusCalendarEventTarget =
+  weekCalendarEventTargeting.focusCalendarEventTarget;

@@ -14,7 +14,6 @@ import {
   TooltipText,
   TooltipWrapper,
 } from "@web/components/ContextMenu/styled";
-import IconButton from "@web/components/IconButton/IconButton";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -27,22 +26,29 @@ export interface ContextMenuAction {
   icon: React.ReactNode;
 }
 
+export interface ContextMenuItemsActions {
+  delete: () => void;
+  duplicate: () => void;
+  edit: () => void;
+  editPriority: (priority: Priorities) => void;
+}
+
 interface ContextMenuItemsProps {
   event: Schema_GridEvent;
   close: () => void;
 }
 
-export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
-  const { actions, setters, confirmation } = useDraftContext();
-  const { openForm, duplicateEvent, submit } = actions;
-  const { setDraft } = setters;
+interface ContextMenuItemsViewProps extends ContextMenuItemsProps {
+  actions: ContextMenuItemsActions;
+  isPending: boolean;
+}
 
-  const sidebarContext = useSidebarContext(true);
-  const eventId = event._id;
-  const isPending = useAppSelector((state) =>
-    eventId ? selectIsEventPending(state, eventId) : false,
-  );
-
+export function ContextMenuItemsView({
+  actions,
+  close,
+  event,
+  isPending,
+}: ContextMenuItemsViewProps) {
   const priorities = [
     {
       id: "work",
@@ -66,26 +72,14 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
 
   const handleEditPriority = (priority: Priorities) => {
     if (isPending) return;
-    submit({ ...event, priority });
+    actions.editPriority(priority);
     close();
   };
 
   const handleEdit = () => {
     if (isPending) return;
-    if (!event.isSomeday) {
-      setDraft(assembleGridEvent(event));
-      openForm();
-      close();
-    } else {
-      const sidebarActions = sidebarContext?.actions;
-      if (!sidebarActions) return;
-      const category = getSomedayEventCategory(event);
-      sidebarActions.onDraft(event, category);
-      close();
-    }
+    actions.edit();
   };
-
-  const { onDelete } = confirmation;
 
   const isActionDisabled = (itemId: string) =>
     isPending &&
@@ -96,31 +90,19 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
       id: "edit",
       label: "Edit",
       onClick: handleEdit,
-      icon: (
-        <IconButton>
-          <PenNib />
-        </IconButton>
-      ),
+      icon: <PenNib aria-hidden="true" size={20} />,
     },
     {
       id: "duplicate",
       label: "Duplicate",
-      onClick: duplicateEvent,
-      icon: (
-        <IconButton>
-          <Copy />
-        </IconButton>
-      ),
+      onClick: actions.duplicate,
+      icon: <Copy aria-hidden="true" size={20} />,
     },
     {
       id: "delete",
       label: "Delete",
-      onClick: onDelete,
-      icon: (
-        <IconButton>
-          <Trash />
-        </IconButton>
-      ),
+      onClick: actions.delete,
+      icon: <Trash aria-hidden="true" size={20} />,
     },
   ];
 
@@ -130,8 +112,13 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
         {priorities.map((priority) => (
           <TooltipWrapper key={priority.id}>
             <PriorityCircle
+              aria-label={`Set priority to ${priority.label}`}
+              aria-pressed={event.priority === priority.value}
+              as="button"
               color={priority.color}
+              disabled={isPending}
               selected={event.priority === priority.value}
+              type="button"
               onClick={() => handleEditPriority(priority.value)}
               style={{
                 opacity: isPending ? 0.5 : 1,
@@ -146,17 +133,12 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
         const disabled = isActionDisabled(item.id);
         return (
           <MenuItem
+            disabled={disabled}
             key={item.id}
+            type="button"
             onClick={() => {
-              if (disabled) {
-                return;
-              }
               item.onClick();
               close();
-            }}
-            style={{
-              opacity: disabled ? 0.5 : 1,
-              cursor: disabled ? "wait" : "pointer",
             }}
           >
             {item.icon}
@@ -165,5 +147,44 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
         );
       })}
     </div>
+  );
+}
+
+export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
+  const { actions, setters, confirmation } = useDraftContext();
+  const { openForm, duplicateEvent, submit } = actions;
+  const { setDraft } = setters;
+
+  const sidebarContext = useSidebarContext(true);
+  const eventId = event._id;
+  const isPending = useAppSelector((state) =>
+    eventId ? selectIsEventPending(state, eventId) : false,
+  );
+
+  const menuActions: ContextMenuItemsActions = {
+    delete: confirmation.onDelete,
+    duplicate: duplicateEvent,
+    edit: () => {
+      if (!event.isSomeday) {
+        setDraft(assembleGridEvent(event));
+        openForm();
+        return;
+      }
+
+      const sidebarActions = sidebarContext?.actions;
+      if (!sidebarActions) return;
+      const category = getSomedayEventCategory(event);
+      sidebarActions.onDraft(event, category);
+    },
+    editPriority: (priority) => submit({ ...event, priority }),
+  };
+
+  return (
+    <ContextMenuItemsView
+      actions={menuActions}
+      close={close}
+      event={event}
+      isPending={isPending}
+    />
   );
 }

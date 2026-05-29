@@ -5,6 +5,7 @@ import { Provider } from "react-redux";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { createCalendarInteractionEventOverlayMount } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
 import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -22,7 +23,6 @@ import {
   GRID_EVENT_TIME_LABEL_OPACITY,
   GRID_EVENT_TITLE_LINE_HEIGHT,
 } from "@web/views/Week/layout.constants";
-import { createWeekInteractionEventOverlayMount } from "../adapter/dom/cloneWeekInteractionEventElement";
 import {
   createWeekEventRegistry,
   getWeekInteractionTargetAttributes,
@@ -78,6 +78,12 @@ const weekProps = {
   component: {
     endOfView,
     startOfView,
+  },
+} as WeekProps;
+const pastWeekProps = {
+  component: {
+    endOfView: pastWeekStart.add(7, "day"),
+    startOfView: pastWeekStart,
   },
 } as WeekProps;
 
@@ -178,10 +184,12 @@ const RegistrationHarness = ({
 };
 
 const RegisteredTimedEventHarness = ({
+  calendarWeekProps = weekProps,
   displayMode = "saved",
   event,
   isPending = false,
 }: {
+  calendarWeekProps?: WeekProps;
   displayMode?: "draft" | "placeholder" | "saved";
   event: Schema_GridEvent;
   isPending?: boolean;
@@ -210,7 +218,7 @@ const RegisteredTimedEventHarness = ({
       onEventMouseDown={mock()}
       onScalerMouseDown={mock()}
       ref={ref}
-      weekProps={weekProps}
+      weekProps={calendarWeekProps}
     />
   );
 };
@@ -264,6 +272,18 @@ afterEach(() => {
 });
 
 describe("weekEventRegistry", () => {
+  it("keeps Week event attributes after registry extraction", () => {
+    const attributes = getWeekInteractionTargetAttributes({
+      eventId: "event-1",
+      eventType: "timed",
+    });
+
+    expect(attributes).toEqual({
+      "data-week-interaction-event-id": "event-1",
+      "data-week-interaction-event-type": "timed",
+    });
+  });
+
   it("registers and unregisters saved timed event elements", () => {
     const event = createTimedEvent();
     const { unmount } = renderWithStore(
@@ -301,10 +321,10 @@ describe("weekEventRegistry", () => {
       "all-day",
     );
     expect(
-      element.querySelector('[data-week-event-resize-handle="startDate"]'),
+      element.querySelector('[data-calendar-event-resize-handle="startDate"]'),
     ).toBeTruthy();
     expect(
-      element.querySelector('[data-week-event-resize-handle="endDate"]'),
+      element.querySelector('[data-calendar-event-resize-handle="endDate"]'),
     ).toBeTruthy();
 
     unmount();
@@ -451,7 +471,12 @@ describe("weekEventRegistry", () => {
     });
 
     markSomedayCommitAcknowledgement(event._id!);
-    renderWithStore(<RegisteredTimedEventHarness event={event} />);
+    renderWithStore(
+      <RegisteredTimedEventHarness
+        calendarWeekProps={pastWeekProps}
+        event={event}
+      />,
+    );
 
     const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
 
@@ -474,7 +499,7 @@ describe("weekEventRegistry", () => {
   });
 });
 
-describe("createWeekInteractionEventOverlayMount", () => {
+describe("createCalendarInteractionEventOverlayMount", () => {
   it("clones a Week event for overlay use without duplicate interactive attributes", () => {
     const source = document.createElement("div");
     const child = document.createElement("button");
@@ -496,7 +521,7 @@ describe("createWeekInteractionEventOverlayMount", () => {
     child.style.transition = "opacity 150ms ease";
     source.append(child);
 
-    const mount = createWeekInteractionEventOverlayMount({
+    const mount = createCalendarInteractionEventOverlayMount({
       cursor: "grabbing",
       source,
     });

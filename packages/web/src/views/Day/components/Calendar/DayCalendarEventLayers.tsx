@@ -1,0 +1,131 @@
+import { useMemo } from "react";
+import { type Schema_Event } from "@core/types/event.types";
+import { CALENDAR_GRID_MARGIN_LEFT } from "@web/common/calendar-grid/calendarGrid.constants";
+import { createCalendarTimedEventLayout } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
+import {
+  type CalendarGridMeasurements,
+  type CalendarGridVisibleDate,
+} from "@web/common/calendar-grid/types/calendarGrid.types";
+import {
+  ID_GRID_EVENTS_ALLDAY,
+  ID_GRID_EVENTS_TIMED,
+} from "@web/common/constants/web.constants";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  selectAllDayDayEvents,
+  selectTimedDayEvents,
+} from "@web/ducks/events/selectors/event.selectors";
+import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
+import { useAppSelector } from "@web/store/store.hooks";
+import {
+  DayAllDayCalendarEvent,
+  DayTimedCalendarEvent,
+} from "./DayCalendarEventCards";
+import {
+  addVisibleDraftEvent,
+  getCalendarEventIdSet,
+  isActiveDraftEvent,
+  isDraftOnlyEvent,
+} from "./dayCalendarDraft.util";
+
+interface DayEventsProps {
+  draft: Schema_Event | null;
+  measurements: CalendarGridMeasurements;
+  onOpenEvent: (event: Schema_GridEvent) => void;
+  visibleDates: CalendarGridVisibleDate[];
+}
+
+export const DayCalendarAllDayEventsLayer = ({
+  draft,
+  measurements,
+  onOpenEvent,
+  visibleDates,
+}: DayEventsProps) => {
+  const allDayEvents = useAppSelector(selectAllDayDayEvents);
+  const pendingEventIds = useAppSelector(selectPendingEventIds);
+  const savedEventIds = useMemo(
+    () => getCalendarEventIdSet(allDayEvents),
+    [allDayEvents],
+  );
+  const renderedEvents = useMemo(
+    () =>
+      addVisibleDraftEvent({
+        draft,
+        events: allDayEvents,
+        isAllDay: true,
+        visibleDates,
+      }),
+    [allDayEvents, draft, visibleDates],
+  );
+
+  return (
+    <div
+      id={ID_GRID_EVENTS_ALLDAY}
+      style={{
+        height: "100%",
+        marginLeft: CALENDAR_GRID_MARGIN_LEFT,
+        position: "relative",
+        width: `calc(100% - ${CALENDAR_GRID_MARGIN_LEFT}px)`,
+      }}
+    >
+      {renderedEvents.map((event) => (
+        <DayAllDayCalendarEvent
+          event={event}
+          isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
+          isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
+          isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
+          key={event._id}
+          measurements={measurements}
+          onOpenEvent={onOpenEvent}
+          visibleDates={visibleDates}
+        />
+      ))}
+    </div>
+  );
+};
+
+export const DayCalendarTimedEventsLayer = ({
+  draft,
+  measurements,
+  onOpenEvent,
+  visibleDates,
+}: DayEventsProps) => {
+  const timedEvents = useAppSelector(selectTimedDayEvents);
+  const pendingEventIds = useAppSelector(selectPendingEventIds);
+  const savedEventIds = useMemo(
+    () => getCalendarEventIdSet(timedEvents),
+    [timedEvents],
+  );
+  const renderedEvents = useMemo(
+    () =>
+      addVisibleDraftEvent({
+        draft,
+        events: timedEvents,
+        isAllDay: false,
+        visibleDates,
+      }),
+    [draft, timedEvents, visibleDates],
+  );
+  const timedEventItems = useMemo(
+    () => createCalendarTimedEventLayout(renderedEvents),
+    [renderedEvents],
+  );
+
+  return (
+    <div id={ID_GRID_EVENTS_TIMED}>
+      {timedEventItems.map(({ deckLayout, event }) => (
+        <DayTimedCalendarEvent
+          deckLayout={deckLayout}
+          event={event}
+          isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
+          isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
+          isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
+          key={event._id}
+          measurements={measurements}
+          onOpenEvent={onOpenEvent}
+          visibleDates={visibleDates}
+        />
+      ))}
+    </div>
+  );
+};

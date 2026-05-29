@@ -1,15 +1,18 @@
+import {
+  createAllDayResizeVisual,
+  updateAllDayResizeVisual,
+} from "@web/common/calendar-grid/interaction/math/allDayResize";
+import { type AllDayResizeVisual } from "@web/common/calendar-grid/interaction/model/AllDayResizeVisual";
+import {
+  type VisualPoint,
+  type VisualRect,
+} from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
 import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
 import {
   allDayResizeVisualToGridEvent,
   hasAllDayResizeVisualChanged,
 } from "../commit/allDayVisualToGridEvent";
 import { type WeekLayoutCache } from "../geometry/weekLayoutCache";
-import {
-  createAllDayResizeVisual,
-  updateAllDayResizeVisual,
-} from "../math/allDayResize";
-import { type AllDayResizeVisual } from "../model/AllDayResizeVisual";
-import { type VisualPoint, type VisualRect } from "../model/TimedDragVisual";
 import {
   type WeekAllDayResizeCommitResult,
   type WeekAllDayResizeTarget,

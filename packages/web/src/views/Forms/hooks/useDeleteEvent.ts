@@ -1,11 +1,12 @@
-import { getEntity } from "@ngneat/elf-entities";
 import { useCallback } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
 import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
+import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
+import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { eventsStore, getDraft, resetDraft } from "@web/store/events";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 /**
  * useDeleteEvent
@@ -14,13 +15,15 @@ import { useAppDispatch } from "@web/store/store.hooks";
  */
 export function useDeleteEvent(_id: string) {
   const dispatch = useAppDispatch();
+  const existingEvent = useAppSelector((state) =>
+    _id ? selectEventById(state, _id) : null,
+  );
+  const draft = useAppSelector(selectDraft);
 
   const deleteEvent = useCallback(
     (
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      const existingEvent = eventsStore.query(getEntity(_id));
-      const draft = eventsStore.query((state) => getDraft(state));
       const event = existingEvent ?? draft;
       const { data: _title } = StringV4Schema.safeParse(event?.title);
       const title = _title ?? "this event";
@@ -39,11 +42,11 @@ export function useDeleteEvent(_id: string) {
           );
         }
 
-        resetDraft();
+        dispatch(draftSlice.actions.discard(undefined));
         closeFloatingAtCursor();
       }
     },
-    [dispatch, _id],
+    [dispatch, draft, existingEvent],
   );
 
   return deleteEvent;

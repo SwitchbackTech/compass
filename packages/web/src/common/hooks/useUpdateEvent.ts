@@ -1,16 +1,16 @@
-import { getEntity } from "@ngneat/elf-entities";
 import fastDeepEqual from "fast-deep-equal/es6";
 import { useCallback } from "react";
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
 import { type SliceStateContext } from "@web/common/store/helpers";
 import { type Payload_EditEvent } from "@web/ducks/events/event.types";
+import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
-import { eventsStore, setDraft } from "@web/store/events";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { type Schema_GridEvent } from "../types/web.event.types";
 
 export function useUpdateEvent() {
   const dispatch = useAppDispatch();
+  const eventEntities = useAppSelector(selectEventEntities);
 
   const update = useCallback(
     (
@@ -21,11 +21,11 @@ export function useUpdateEvent() {
 
       if (!event._id) return;
 
-      setDraft(payload.event as WithCompassId<Schema_Event>);
+      dispatch(draftSlice.actions.setEvent(payload.event));
 
       if (!saveImmediate) return;
 
-      const original = eventsStore.query(getEntity(event._id));
+      const original = eventEntities[event._id] ?? {};
       const position = (event as Schema_GridEvent).position;
       const recurrence = event.recurrence;
       const equal = fastDeepEqual(event, { position, recurrence, ...original });
@@ -34,7 +34,7 @@ export function useUpdateEvent() {
 
       dispatch(editEventSlice.actions.request({ ...payload, _id: event._id }));
     },
-    [dispatch],
+    [dispatch, eventEntities],
   );
 
   return update;

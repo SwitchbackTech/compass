@@ -434,7 +434,7 @@ describe("WeekInteractionAdapter timed drag", () => {
       "[data-calendar-interaction-overlay]",
     );
     const timeLabel = overlay?.querySelector<HTMLElement>(
-      "[data-week-event-time-label='true']",
+      "[data-calendar-event-time-label='true']",
     );
 
     expect(timeLabel).toBeTruthy();
