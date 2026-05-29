@@ -65,10 +65,8 @@ label.
 - Use GitHub Issues through `gh`, inferred from the current repo remote.
 - Ensure a `bug` label exists; create it if missing.
 - Normal capture: apply `bug` and `needs-triage`.
-- Incomplete capture: apply `bug` and `needs-info`. If an obvious equivalent
-  already exists, such as `needs more info`, use it instead of creating a
-  duplicate.
-- Never apply `ready-for-agent` automatically.
+- Incomplete capture: apply `bug` and `needs more info`. If an obvious equivalent
+  already exists use it instead of creating a  duplicate.
 
 ### 5. Dedupe
 
