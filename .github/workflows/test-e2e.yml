@@ -7,13 +7,26 @@ on:
 
 permissions:
   contents: read
+
+concurrency:
+  group: e2e-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
+    container:
+      # Keep this tag aligned with the Playwright version in bun.lock.
+      image: mcr.microsoft.com/playwright:v1.60.0-noble
+      options: --ipc=host
 
     steps:
       - name: Check out repository
         uses: actions/checkout@v6
+
+      - name: Install Bun setup prerequisites
+        run: apt-get update && apt-get install -y --no-install-recommends unzip
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -36,10 +49,12 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: bunx playwright install --with-deps chromium
+      - name: Verify Playwright browser install
+        timeout-minutes: 3
+        run: bunx playwright install chromium
 
       - name: Run e2e tests
+        timeout-minutes: 8
         env:
           TZ: Etc/UTC
           GOOGLE_CLIENT_ID: test-client-id
