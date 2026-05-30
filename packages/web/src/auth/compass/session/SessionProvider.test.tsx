@@ -1,4 +1,4 @@
-import { waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { Subject } from "rxjs";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
@@ -101,8 +101,9 @@ const { session } = require("@web/common/classes/Session") as {
   };
 };
 
-const { sessionInit } =
+const { SessionProvider, sessionInit } =
   require("./SessionProvider") as typeof import("./SessionProvider");
+const { useSession } = require("./useSession") as typeof import("./useSession");
 
 describe("SessionProvider sessionInit", () => {
   beforeEach(() => {
@@ -163,6 +164,28 @@ describe("SessionProvider sessionInit", () => {
       userMetadataSlice.actions.clear(undefined),
     );
     expect(closeStream).toHaveBeenCalledTimes(2);
+  });
+
+  it("updates session consumers when SuperTokens creates a session", async () => {
+    getStream.mockReturnValue({} as EventSource);
+    doesSessionExist.mockResolvedValue(false);
+
+    const { result } = renderHook(() => useSession(), {
+      wrapper: SessionProvider,
+    });
+
+    act(() => {
+      result.current.setAuthenticated(false);
+    });
+
+    expect(result.current.authenticated).toBe(false);
+
+    sessionInit();
+    act(() => {
+      session.emit("SESSION_CREATED", { action: "SESSION_CREATED" });
+    });
+
+    expect(result.current.authenticated).toBe(true);
   });
 });
 
