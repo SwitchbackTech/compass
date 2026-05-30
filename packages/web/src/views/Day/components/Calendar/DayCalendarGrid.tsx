@@ -57,6 +57,10 @@ import {
 import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
 
 const isDayInteractionMotionActive = () => false;
+const DAY_EVENT_FORM_DISMISS_OPTIONS = {
+  enabled: true,
+  outsidePressEvent: "click",
+} as const;
 
 export function DayCalendarGrid() {
   const dispatch = useAppDispatch();
@@ -90,7 +94,7 @@ export function DayCalendarGrid() {
       dispatch(draftSlice.actions.discard(undefined));
     }
   });
-  const dismiss = useDismiss(floating.context, { enabled: true });
+  const dismiss = useDismiss(floating.context, DAY_EVENT_FORM_DISMISS_OPTIONS);
   const interactions = useInteractions([dismiss]);
 
   const getDayInteractionLayoutSources = useCallback(

@@ -82,6 +82,15 @@ mock.module("@web/common/calendar-grid/hooks/useCalendarGridLayout", () => ({
   },
 }));
 
+const floatingUi =
+  require("@floating-ui/react") as typeof import("@floating-ui/react");
+const useDismissMock = mock(floatingUi.useDismiss);
+
+mock.module("@floating-ui/react", () => ({
+  ...floatingUi,
+  useDismiss: useDismissMock,
+}));
+
 mock.module("@web/components/FloatingEventForm/FloatingEventForm", () => ({
   FloatingEventForm: () => null,
 }));
@@ -130,6 +139,7 @@ const setDraftEvent = (event: Schema_Event) => {
 
 beforeEach(() => {
   store = createStoreWithEvents([]);
+  useDismissMock.mockClear();
 });
 
 afterEach(() => {
@@ -354,6 +364,18 @@ describe("DayCalendarGrid", () => {
     });
 
     expect(getDraft()).toBeNull();
+  });
+
+  it("dismisses the floating form after empty agenda mouse handlers run", () => {
+    renderDayCalendarGrid();
+
+    expect(useDismissMock).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({
+        enabled: true,
+        outsidePressEvent: "click",
+      }),
+    );
   });
 
   it("dismisses an open draft when clicking empty Day all-day calendar space", () => {
