@@ -1044,7 +1044,10 @@ describe("URL Parameter Support", () => {
 
     mockWindowLocation("/day");
 
-    await user.type(screen.getByLabelText(/new password/i), "updatedpassword");
+    await user.type(
+      screen.getByLabelText(/^new password$/i),
+      "updatedpassword",
+    );
     await user.click(screen.getByRole("button", { name: /set new password/i }));
 
     await waitFor(() => {
@@ -1085,7 +1088,7 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
 
-    await user.type(screen.getByLabelText(/new password/i), "newpassword123");
+    await user.type(screen.getByLabelText(/^new password$/i), "newpassword123");
     await user.click(screen.getByRole("button", { name: /set new password/i }));
 
     await waitFor(() => {
