@@ -32,6 +32,13 @@ const markPageAuthenticated = async (page: Page) => {
   await expect(loginDialog(page)).toHaveCount(0);
 };
 
+const waitForLogoutCommand = async (page: Page) => {
+  await page.getByRole("button", { name: "Open command palette" }).click();
+  await expect(page.getByText("Log Out [z]")).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByText("Log Out [z]")).toHaveCount(0);
+};
+
 const pressLogoutShortcut = async (page: Page) => {
   await page.evaluate(() => {
     (document.activeElement as HTMLElement | null)?.blur?.();
@@ -47,14 +54,17 @@ const expectAuthStoragePresent = async (page: Page) => {
 
 const expectLoggedOut = async (page: Page) => {
   await expect
-    .poll(async () => {
-      const authStorage = await getAuthStorage(page);
-      const isLoginDialogVisible = await loginDialog(page)
-        .isVisible()
-        .catch(() => false);
+    .poll(
+      async () => {
+        const authStorage = await getAuthStorage(page);
+        const isLoginDialogVisible = await loginDialog(page)
+          .isVisible()
+          .catch(() => false);
 
-      return authStorage === null || isLoginDialogVisible;
-    }, { timeout: 10000 })
+        return authStorage === null || isLoginDialogVisible;
+      },
+      { timeout: 10000 },
+    )
     .toBe(true);
 };
 
@@ -66,6 +76,8 @@ test.describe("Logout confirmation", () => {
     await page.goto("/week");
     await waitForAppReady(page);
     await markPageAuthenticated(page);
+    await waitForLogoutCommand(page);
+    await expect(page.getByRole("dialog")).toHaveCount(0);
 
     await pressLogoutShortcut(page);
     await expect(logoutDialog(page)).toBeVisible();
