@@ -3,7 +3,10 @@ import {
   type GoogleAuthCodeRequest,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
-import { type ApiMethodConfig } from "@web/common/apis/api.types";
+import {
+  type ApiError,
+  type ApiMethodConfig,
+} from "@web/common/apis/api.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   GOOGLE_AUTH_SCOPES_REQUIRED,
@@ -63,26 +66,23 @@ const fail = (
   status: "failed",
 });
 
-const parseGoogleConnectErrorMessage = (error: unknown): string | undefined => {
+const getApiError = (error: unknown): ApiError | undefined => {
   if (typeof error !== "object" || error === null || !("response" in error)) {
     return undefined;
   }
 
-  const data = (error as { response?: { data?: unknown } }).response?.data;
+  return error as ApiError;
+};
+
+const parseGoogleConnectErrorMessage = (error: unknown): string | undefined => {
+  const data = getApiError(error)?.response?.data;
   const parsed = GoogleConnectErrorResponseSchema.safeParse(data);
 
   return parsed.success ? parsed.data.message : undefined;
 };
 
 const isUnauthorizedSessionError = (error: unknown): boolean => {
-  if (typeof error !== "object" || error === null || !("response" in error)) {
-    return false;
-  }
-
-  return (
-    (error as { response?: { status?: number } }).response?.status ===
-    Status.UNAUTHORIZED
-  );
+  return getApiError(error)?.response?.status === Status.UNAUTHORIZED;
 };
 
 export async function completeGoogleAuthorization({
