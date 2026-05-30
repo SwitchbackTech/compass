@@ -40,6 +40,23 @@ const getCallbackUrl = (state: string, scope = REQUIRED_SCOPES.join(" ")) =>
     state,
   )}&code=auth-code&scope=${encodeURIComponent(scope)}`;
 
+const expectGoogleAuthRequestBody = (
+  request: CapturedAuthRequest | undefined,
+  state: string,
+) => {
+  expect(request?.body).toMatchObject({
+    thirdPartyId: "google",
+    clientType: "web",
+    redirectURIInfo: {
+      redirectURIOnProviderDashboard: expect.stringContaining(CALLBACK_PATH),
+      redirectURIQueryParams: {
+        code: "auth-code",
+        state,
+      },
+    },
+  });
+};
+
 const writeGoogleAuthorizationIntent = async ({
   intent,
   page,
@@ -65,6 +82,34 @@ const writeGoogleAuthorizationIntent = async ({
       },
     },
   );
+};
+
+const setActiveCompassSession = async (page: Page) => {
+  const now = Date.now();
+  const pageOrigin = new URL(page.url()).origin;
+  const expires = Math.floor(now / 1000) + 60 * 60;
+  const frontToken = Buffer.from(
+    JSON.stringify({
+      ate: now + 60 * 60 * 1000,
+      uid: "test-user-id",
+      up: {},
+    }),
+  ).toString("base64");
+
+  await page.context().addCookies([
+    {
+      expires,
+      name: "st-last-access-token-update",
+      url: pageOrigin,
+      value: now.toString(),
+    },
+    {
+      expires,
+      name: "sFrontToken",
+      url: pageOrigin,
+      value: frontToken,
+    },
+  ]);
 };
 
 const prepareGoogleAuthCallbackPage = async (
@@ -186,17 +231,7 @@ test.describe("Google auth callback", () => {
     expect(apiMocks.loginOrSignup).toHaveLength(1);
     expect(apiMocks.connectGoogle).toHaveLength(0);
     expect(apiMocks.loginOrSignup[0]?.headers.rid).toBe("thirdparty");
-    expect(apiMocks.loginOrSignup[0]?.body).toMatchObject({
-      thirdPartyId: "google",
-      clientType: "web",
-      redirectURIInfo: {
-        redirectURIOnProviderDashboard: expect.stringContaining(CALLBACK_PATH),
-        redirectURIQueryParams: {
-          code: "auth-code",
-          state,
-        },
-      },
-    });
+    expectGoogleAuthRequestBody(apiMocks.loginOrSignup[0], state);
     expect(
       await page.evaluate(
         (key) => sessionStorage.getItem(key),
@@ -205,8 +240,32 @@ test.describe("Google auth callback", () => {
     ).toBeNull();
   });
 
-  test("finishes a saved Google Calendar connect intent", async ({ page }) => {
+  test("finishes a saved Google Calendar connect intent when the Compass session is active", async ({
+    page,
+  }) => {
     const state = "connect-calendar-state";
+    const apiMocks = await prepareGoogleAuthCallbackPage(page);
+
+    await writeGoogleAuthorizationIntent({
+      intent: "connectCalendar",
+      page,
+      returnPath: "/week",
+      state,
+    });
+    await setActiveCompassSession(page);
+
+    await page.goto(getCallbackUrl(state));
+
+    await expect(page).toHaveURL(/\/week$/);
+    expect(apiMocks.loginOrSignup).toHaveLength(0);
+    expect(apiMocks.connectGoogle).toHaveLength(1);
+    expectGoogleAuthRequestBody(apiMocks.connectGoogle[0], state);
+  });
+
+  test("recovers a saved Google Calendar connect intent through Google sign-in when the Compass session is missing", async ({
+    page,
+  }) => {
+    const state = "connect-calendar-session-missing-state";
     const apiMocks = await prepareGoogleAuthCallbackPage(page);
 
     await writeGoogleAuthorizationIntent({
@@ -219,19 +278,10 @@ test.describe("Google auth callback", () => {
     await page.goto(getCallbackUrl(state));
 
     await expect(page).toHaveURL(/\/week$/);
-    expect(apiMocks.loginOrSignup).toHaveLength(0);
-    expect(apiMocks.connectGoogle).toHaveLength(1);
-    expect(apiMocks.connectGoogle[0]?.body).toMatchObject({
-      thirdPartyId: "google",
-      clientType: "web",
-      redirectURIInfo: {
-        redirectURIOnProviderDashboard: expect.stringContaining(CALLBACK_PATH),
-        redirectURIQueryParams: {
-          code: "auth-code",
-          state,
-        },
-      },
-    });
+    expect(apiMocks.connectGoogle).toHaveLength(0);
+    expect(apiMocks.loginOrSignup).toHaveLength(1);
+    expect(apiMocks.loginOrSignup[0]?.headers.rid).toBe("thirdparty");
+    expectGoogleAuthRequestBody(apiMocks.loginOrSignup[0], state);
   });
 
   test("rejects callbacks that are missing required Google Calendar scopes", async ({
