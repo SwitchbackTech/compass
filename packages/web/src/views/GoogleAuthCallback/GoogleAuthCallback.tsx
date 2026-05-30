@@ -4,6 +4,7 @@ import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAu
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { completeGoogleAuthorization } from "@web/auth/google/authorization/complete-google-authorization";
 import { AuthApi } from "@web/common/apis/auth.api";
+import { session } from "@web/common/classes/Session";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
@@ -28,6 +29,7 @@ export async function completeGoogleAuthCallback({
   const result = await completeGoogleAuthorization({
     authApi: AuthApi,
     completeAuthentication,
+    doesSessionExist: () => session.doesSessionExist(),
     refreshUserMetadata,
     requestEventFetch: () => dispatch(triggerFetch()),
     search,

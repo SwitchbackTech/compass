@@ -55,6 +55,10 @@ mock.module("@web/sse/client/sse.client", () => mockSse);
 // Import the module under test after mocking
 const { handleGoogleRevoked, syncLocalEvents, syncPendingLocalEvents } =
   require("./google.auth.util") as typeof import("./google.auth.util");
+const {
+  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
+  LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE,
+} = require("./google.auth.util") as typeof import("./google.auth.util");
 
 describe("google-auth.util", () => {
   beforeEach(() => {
@@ -117,7 +121,31 @@ describe("google-auth.util", () => {
     });
 
     it("shows toast and returns false on sync failure", async () => {
-      expect(mockToast.error).toBeDefined();
+      const error = new Error("Network failed");
+      mockSyncLocalEventsToCloud.mockRejectedValue(error);
+
+      await expect(syncPendingLocalEvents()).resolves.toBe(false);
+
+      expect(mockToast.error).toHaveBeenCalledWith(
+        LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
+        expect.any(Object),
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(error);
+    });
+
+    it("shows session recovery copy when local event sync fails because the Compass session expired", async () => {
+      const error = Object.assign(new Error("Request failed with status 401"), {
+        response: { status: 401 },
+      });
+      mockSyncLocalEventsToCloud.mockRejectedValue(error);
+
+      await expect(syncPendingLocalEvents()).resolves.toBe(false);
+
+      expect(mockToast.error).toHaveBeenCalledWith(
+        LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE,
+        expect.any(Object),
+      );
+      expect(consoleSpy).toHaveBeenCalledWith(error);
     });
   });
 

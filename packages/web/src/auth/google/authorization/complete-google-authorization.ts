@@ -1,7 +1,9 @@
+import { Status } from "@core/errors/status.codes";
 import {
   type GoogleAuthCodeRequest,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
+import { type ApiMethodConfig } from "@web/common/apis/api.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   GOOGLE_AUTH_SCOPES_REQUIRED,
@@ -23,7 +25,10 @@ type CompleteAuthentication = (input: {
 }) => Promise<void>;
 
 export type GoogleAuthorizationAuthAdapter = {
-  connectGoogle(data: GoogleAuthCodeRequest): Promise<unknown>;
+  connectGoogle(
+    data: GoogleAuthCodeRequest,
+    config?: ApiMethodConfig,
+  ): Promise<unknown>;
   loginOrSignup(data: GoogleAuthCodeRequest): Promise<{
     user: { emails?: string[] };
   }>;
@@ -32,6 +37,7 @@ export type GoogleAuthorizationAuthAdapter = {
 export type CompleteGoogleAuthorizationOptions = {
   authApi: GoogleAuthorizationAuthAdapter;
   completeAuthentication: CompleteAuthentication;
+  doesSessionExist?: () => Promise<boolean>;
   refreshUserMetadata: () => Promise<void> | void;
   requestEventFetch?: () => void;
   search: string;
@@ -68,9 +74,21 @@ const parseGoogleConnectErrorMessage = (error: unknown): string | undefined => {
   return parsed.success ? parsed.data.message : undefined;
 };
 
+const isUnauthorizedSessionError = (error: unknown): boolean => {
+  if (typeof error !== "object" || error === null || !("response" in error)) {
+    return false;
+  }
+
+  return (
+    (error as { response?: { status?: number } }).response?.status ===
+    Status.UNAUTHORIZED
+  );
+};
+
 export async function completeGoogleAuthorization({
   authApi,
   completeAuthentication,
+  doesSessionExist,
   refreshUserMetadata,
   requestEventFetch,
   search,
@@ -112,16 +130,36 @@ export async function completeGoogleAuthorization({
     redirectUri: buildGoogleAuthCallbackUrl(),
   });
 
+  const completeGoogleSignIn = async () => {
+    const result = await authApi.loginOrSignup(payload);
+    await completeAuthentication({
+      email: result.user.emails?.[0],
+    });
+  };
+
   try {
     if (savedIntent.intent === "signIn") {
-      const result = await authApi.loginOrSignup(payload);
-      await completeAuthentication({
-        email: result.user.emails?.[0],
-      });
+      await completeGoogleSignIn();
     } else {
-      await authApi.connectGoogle(payload);
-      await refreshUserMetadata();
-      requestEventFetch?.();
+      const hasActiveSession = doesSessionExist
+        ? await doesSessionExist()
+        : true;
+
+      if (!hasActiveSession) {
+        await completeGoogleSignIn();
+      } else {
+        try {
+          await authApi.connectGoogle(payload, { skipSessionRecovery: true });
+          await refreshUserMetadata();
+          requestEventFetch?.();
+        } catch (error) {
+          if (!isUnauthorizedSessionError(error)) {
+            throw error;
+          }
+
+          await completeGoogleSignIn();
+        }
+      }
     }
 
     return {

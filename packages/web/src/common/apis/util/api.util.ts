@@ -138,6 +138,10 @@ export const handleErrorResponse = async <T>(error: ApiError) => {
     throw error;
   }
 
+  if (error.config?.skipSessionRecovery && status === Status.UNAUTHORIZED) {
+    throw error;
+  }
+
   const isAuthEndpoint = requestUrl?.includes("/signinup");
 
   if (

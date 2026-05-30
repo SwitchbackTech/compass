@@ -1,5 +1,6 @@
 import { toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
+import { Status } from "@core/errors/status.codes";
 import { markGoogleAsRevoked } from "@web/auth/google/state/google.auth.state";
 import {
   GOOGLE_REVOKED_TOAST_ID,
@@ -22,6 +23,8 @@ export interface SyncLocalEventsResult {
 
 export const LOCAL_EVENTS_SYNC_ERROR_MESSAGE =
   "We could not sync your local events. Your changes are still saved on this device.";
+export const LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE =
+  "Your session expired before Compass could save your local events. Sign in again to continue. Your changes are still saved on this device.";
 
 /** Idempotent handler for Google access revocation. Safe to call from both API interceptor and socket handler. */
 export const handleGoogleRevoked = () => {
@@ -55,7 +58,14 @@ export const handleGoogleRevoked = () => {
 };
 
 export const showLocalEventsSyncFailure = (error: Error | undefined) => {
-  toast.error(LOCAL_EVENTS_SYNC_ERROR_MESSAGE, toastDefaultOptions);
+  const status = (error as { response?: { status?: number } } | undefined)
+    ?.response?.status;
+  const message =
+    status === Status.UNAUTHORIZED
+      ? LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE
+      : LOCAL_EVENTS_SYNC_ERROR_MESSAGE;
+
+  toast.error(message, toastDefaultOptions);
   console.error(error);
 };
 

@@ -1,28 +1,7 @@
-import morgan from "morgan";
-import { type IncomingMessage, type ServerResponse } from "node:http";
+import { type RequestHandler } from "express";
 import { styleText } from "node:util";
 
 type HttpLogColor = "cyanBright" | "yellow" | "red" | "magentaBright";
-
-const get = (
-  key: string,
-  tokens: morgan.TokenIndexer<IncomingMessage, ServerResponse<IncomingMessage>>,
-  req?: IncomingMessage,
-  res?: ServerResponse<IncomingMessage>,
-): string => {
-  const token = tokens[key];
-  if (token === undefined) {
-    return "unknown";
-  }
-  if (req && res) {
-    if (typeof token === "function") {
-      const val = token(req, res);
-      return val === undefined ? "unknown" : String(val);
-    }
-    return String(token);
-  }
-  return "unknown";
-};
 
 const getStatusColor = (status: string): HttpLogColor => {
   switch (status[0]) {
@@ -43,18 +22,26 @@ const getStatusColor = (status: string): HttpLogColor => {
   }
 };
 
-export const httpLoggingMiddleware = morgan((tokens, req, res) => {
-  const responseTime =
-    get("response-time", tokens, req, res)?.toString() || "unknown";
+export const httpLoggingMiddleware: RequestHandler = (req, res, next) => {
+  const startTime = process.hrtime.bigint();
 
-  const status = get("status", tokens, req, res);
-  const statusColor = getStatusColor(status);
+  res.once("finish", () => {
+    const elapsedMs = Number(process.hrtime.bigint() - startTime) / 1_000_000;
+    const status = String(res.statusCode);
+    const statusColor = getStatusColor(status);
+    const method = req.method || "unknown";
+    const url = req.originalUrl || req.url || "unknown";
 
-  return [
-    styleText(["bold", statusColor], status),
-    styleText(["bold", "whiteBright"], get("method", tokens, req, res)),
-    styleText(["bold", "cyanBright"], get("url", tokens, req, res)),
-    styleText(["bold", "blueBright"], `${responseTime}ms`),
-    styleText(["bold", "magentaBright"], get("date", tokens, req, res)),
-  ].join(" ");
-});
+    console.log(
+      [
+        styleText(["bold", statusColor], status),
+        styleText(["bold", "whiteBright"], method),
+        styleText(["bold", "cyanBright"], url),
+        styleText(["bold", "blueBright"], `${elapsedMs.toFixed(3)}ms`),
+        styleText(["bold", "magentaBright"], new Date().toUTCString()),
+      ].join(" "),
+    );
+  });
+
+  next();
+};

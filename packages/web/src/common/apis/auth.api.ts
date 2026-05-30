@@ -3,6 +3,7 @@ import {
   type GoogleConnectResponse,
   type Result_Auth_Compass,
 } from "@core/types/auth.types";
+import { type ApiMethodConfig } from "@web/common/apis/api.types";
 import { BaseApi } from "@web/common/apis/base/base.api";
 
 const AuthApi = {
@@ -20,10 +21,12 @@ const AuthApi = {
 
   async connectGoogle(
     data: GoogleAuthCodeRequest,
+    config?: ApiMethodConfig,
   ): Promise<GoogleConnectResponse> {
     const response = await BaseApi.post<GoogleConnectResponse>(
       `/auth/google/connect`,
       data,
+      config,
     );
 
     return response.data;

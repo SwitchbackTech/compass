@@ -1,3 +1,4 @@
+import { Status } from "@core/errors/status.codes";
 import { completeGoogleAuthorization } from "./complete-google-authorization";
 import { GOOGLE_AUTH_SCOPES_REQUIRED } from "./google-authorization.constants";
 import {
@@ -84,6 +85,63 @@ describe("completeGoogleAuthorization", () => {
     expect(deps.refreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(deps.requestEventFetch).toHaveBeenCalledTimes(1);
     expect(deps.completeAuthentication).not.toHaveBeenCalled();
+  });
+
+  it("uses Google sign-in recovery for a saved connect intent when the Compass session is missing", async () => {
+    const deps = makeDeps();
+    writeGoogleAuthorizationIntent("state-session-missing", {
+      intent: "connectCalendar",
+      returnPath: "/day",
+      createdAt: Date.now(),
+    });
+
+    await expect(
+      completeGoogleAuthorization({
+        ...deps,
+        doesSessionExist: mock(async () => false),
+        search: callbackSearch("state-session-missing"),
+      }),
+    ).resolves.toEqual({ status: "completed", returnPath: "/day" });
+
+    expect(deps.authApi.connectGoogle).not.toHaveBeenCalled();
+    expect(deps.authApi.loginOrSignup).toHaveBeenCalledTimes(1);
+    expect(deps.completeAuthentication).toHaveBeenCalledWith({
+      email: "user@example.com",
+    });
+    expect(deps.refreshUserMetadata).not.toHaveBeenCalled();
+    expect(deps.requestEventFetch).not.toHaveBeenCalled();
+  });
+
+  it("uses Google sign-in recovery when the connect endpoint rejects an expired Compass session", async () => {
+    const deps = makeDeps();
+    deps.authApi.connectGoogle.mockRejectedValue(
+      Object.assign(new Error("Request failed with status 401"), {
+        response: {
+          data: { message: "unauthorised" },
+          status: Status.UNAUTHORIZED,
+        },
+      }),
+    );
+    writeGoogleAuthorizationIntent("state-session-expired", {
+      intent: "connectCalendar",
+      returnPath: "/day",
+      createdAt: Date.now(),
+    });
+
+    await expect(
+      completeGoogleAuthorization({
+        ...deps,
+        search: callbackSearch("state-session-expired"),
+      }),
+    ).resolves.toEqual({ status: "completed", returnPath: "/day" });
+
+    expect(deps.authApi.connectGoogle).toHaveBeenCalledTimes(1);
+    expect(deps.authApi.loginOrSignup).toHaveBeenCalledTimes(1);
+    expect(deps.completeAuthentication).toHaveBeenCalledWith({
+      email: "user@example.com",
+    });
+    expect(deps.refreshUserMetadata).not.toHaveBeenCalled();
+    expect(deps.requestEventFetch).not.toHaveBeenCalled();
   });
 
   it("rejects callbacks that are missing required Google Calendar scopes", async () => {

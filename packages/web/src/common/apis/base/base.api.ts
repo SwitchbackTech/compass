@@ -30,6 +30,7 @@ const request = async <T>(
   const requestConfig = {
     headers: config.headers,
     method,
+    skipSessionRecovery: config.skipSessionRecovery,
     url,
   } satisfies ApiRequestConfig;
 

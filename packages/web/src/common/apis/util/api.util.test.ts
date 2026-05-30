@@ -1,26 +1,38 @@
+import { Status } from "@core/errors/status.codes";
 import {
   ApiErrorResponseSchema,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
-import { type ApiError, type ApiResponse } from "../api.types";
+import { session } from "@web/common/classes/Session";
+import {
+  type ApiError,
+  type ApiRequestConfig,
+  type ApiResponse,
+} from "../api.types";
 import {
   getApiErrorCode,
+  handleErrorResponse,
   parseApiError,
   parseGoogleConnectError,
 } from "./api.util";
+import { describe, expect, it, spyOn } from "bun:test";
 
-const createApiError = (response: { data?: unknown } | null): ApiError =>
-  ({
+const createApiError = (
+  response: { data?: unknown; status?: number } | null,
+  config: ApiRequestConfig = {},
+): ApiError =>
+  Object.assign(new Error("Request failed"), {
+    config,
     response: response
       ? ({
+          config,
           data: response.data,
-          config: {},
           headers: new Headers(),
-          status: 400,
+          status: response.status ?? 400,
           statusText: "Error",
         } as ApiResponse<unknown>)
       : undefined,
-  }) as ApiError;
+  });
 
 describe("getApiErrorCode", () => {
   it("returns the code when response.data has a string code property", () => {
@@ -143,5 +155,21 @@ describe("parseGoogleConnectError", () => {
     expect(
       parseApiError(error, GoogleConnectErrorResponseSchema),
     ).toBeUndefined();
+  });
+});
+
+describe("handleErrorResponse", () => {
+  it("keeps skipSessionRecovery local to unauthorized responses", async () => {
+    window.history.pushState({}, "", "/day");
+    const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
+    const error = createApiError(
+      { status: Status.NOT_FOUND },
+      { skipSessionRecovery: true, url: "/event" },
+    );
+
+    await expect(handleErrorResponse(error)).rejects.toBe(error);
+
+    expect(signOutSpy).toHaveBeenCalledTimes(1);
+    signOutSpy.mockRestore();
   });
 });

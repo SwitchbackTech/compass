@@ -45,7 +45,7 @@ An authenticated user with usable Google credentials stored by the backend.
 
 **Google authorization**:
 The Google approval step that lets Compass sign a user in with Google or connect
-Google Calendar to an existing Compass session.
+Google Calendar to an active existing Compass session.
 _Avoid_: Google login mode
 
 **Google authorization intent**:
@@ -256,6 +256,10 @@ during Import or Public watch notification handling.
   event changes to Google.
 - A **Google authorization** must preserve its **Google authorization intent**
   instead of inferring the user's goal from the later session state.
+- A Google Calendar connect/reconnect **Google authorization intent** requires
+  an active **Authenticated user** session. If that session is missing or
+  expired at callback time, Compass should recover through Google sign-in
+  instead of calling the authenticated Google connect endpoint.
 - **Public watch notifications** are separate from browser API and **SSE**
   traffic; browser traffic can be local, but Google webhook posts need public
   HTTPS when continuous sync is expected.
