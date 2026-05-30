@@ -1,10 +1,10 @@
 import { type JsonStructureItem } from "react-cmdk";
-import { useLogout } from "@web/auth/compass/hooks/useLogout";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { useLogoutConfirmation } from "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation";
 
 export const useLogoutCmdItems = (): JsonStructureItem[] => {
   const { authenticated } = useSession();
-  const logout = useLogout();
+  const { openLogoutConfirmation } = useLogoutConfirmation();
 
   if (!authenticated) {
     return [];
@@ -15,7 +15,7 @@ export const useLogoutCmdItems = (): JsonStructureItem[] => {
       id: "log-out",
       children: "Log Out [z]",
       icon: "ArrowRightOnRectangleIcon",
-      onClick: logout,
+      onClick: openLogoutConfirmation,
     },
   ];
 };

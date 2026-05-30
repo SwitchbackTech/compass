@@ -1,5 +1,8 @@
 import clsx from "clsx";
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect, useId, useRef } from "react";
+
+const FOCUSABLE_SELECTOR =
+  'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 interface Props {
   /** Icon or element displayed at the top of the panel */
@@ -30,6 +33,20 @@ export const OverlayPanel = ({
   role = "dialog",
   variant = "modal",
 }: Props) => {
+  const panelRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const messageId = useId();
+
+  useEffect(() => {
+    if (role !== "dialog") return;
+    const panel = panelRef.current;
+    if (!panel) return;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+    const firstFocusable = panel.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+    (firstFocusable ?? panel).focus();
+    return () => previouslyFocused?.focus?.();
+  }, [role]);
+
   const backdropClasses = clsx(
     "fixed inset-0 z-20 flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
   );
@@ -58,6 +75,22 @@ export const OverlayPanel = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (onDismiss && e.key === "Escape") {
       onDismiss();
+      return;
+    }
+    if (e.key === "Tab" && panelRef.current) {
+      const focusables = Array.from(
+        panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
     }
   };
 
@@ -72,9 +105,13 @@ export const OverlayPanel = ({
     >
       {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-modal is only set when the panel role is dialog. */}
       <div
+        ref={panelRef}
         className={panelClasses}
         role={role}
+        tabIndex={role === "dialog" ? -1 : undefined}
         aria-modal={role === "dialog" ? true : undefined}
+        aria-labelledby={title ? titleId : undefined}
+        aria-describedby={message ? messageId : undefined}
         aria-live={role === "status" ? "polite" : undefined}
         aria-busy={role === "status" ? true : undefined}
       >
@@ -82,14 +119,22 @@ export const OverlayPanel = ({
         {title && (
           <div className="flex w-full items-center justify-between gap-3">
             {variant === "modal" ? (
-              <h2 className={titleClasses}>{title}</h2>
+              <h2 id={titleId} className={titleClasses}>
+                {title}
+              </h2>
             ) : (
-              <div className={titleClasses}>{title}</div>
+              <div id={titleId} className={titleClasses}>
+                {title}
+              </div>
             )}
             {titleAction}
           </div>
         )}
-        {message && <p className={messageClasses}>{message}</p>}
+        {message && (
+          <p id={messageId} className={messageClasses}>
+            {message}
+          </p>
+        )}
         {children}
       </div>
     </div>

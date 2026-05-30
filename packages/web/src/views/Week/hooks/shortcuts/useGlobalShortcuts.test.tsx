@@ -11,8 +11,9 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const logout = mock();
 const mockOpenModal = mock();
+const mockOpenLogoutConfirmation = mock();
 const mockUseAuthModal = mock();
-const mockUseLogout = mock();
+const mockUseLogoutConfirmation = mock();
 const mockUseSession = mock();
 
 const createStore = () =>
@@ -31,13 +32,16 @@ mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
 
-mock.module("@web/auth/compass/hooks/useLogout", () => ({
-  useLogout: mockUseLogout,
-}));
-
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
   useAuthModal: mockUseAuthModal,
 }));
+
+mock.module(
+  "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation",
+  () => ({
+    useLogoutConfirmation: mockUseLogoutConfirmation,
+  }),
+);
 
 const { useGlobalShortcuts } = await import("./useGlobalShortcuts");
 
@@ -63,24 +67,27 @@ describe("useGlobalShortcuts", () => {
     HotkeyManager.resetInstance();
     logout.mockReset();
     mockOpenModal.mockClear();
+    mockOpenLogoutConfirmation.mockClear();
     mockUseAuthModal.mockReset();
-    mockUseLogout.mockReset();
+    mockUseLogoutConfirmation.mockReset();
     mockUseSession.mockReset();
     mockUseAuthModal.mockReturnValue({ openModal: mockOpenModal });
-    mockUseLogout.mockReturnValue(logout);
+    mockUseLogoutConfirmation.mockReturnValue({
+      openLogoutConfirmation: mockOpenLogoutConfirmation,
+    });
     mockUseSession.mockReturnValue({
       authenticated: true,
       setAuthenticated: mock(),
     });
   });
 
-  it("logs out directly when authenticated users press Z", async () => {
+  it("opens logout confirmation when authenticated users press Z", async () => {
     renderHook(() => useGlobalShortcuts(), { wrapper });
 
     pressKey("z");
 
     await waitFor(() => {
-      expect(logout).toHaveBeenCalledTimes(1);
+      expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);
     });
     expect(mockOpenModal).not.toHaveBeenCalled();
   });
@@ -97,6 +104,6 @@ describe("useGlobalShortcuts", () => {
     await waitFor(() => {
       expect(mockOpenModal).toHaveBeenCalledWith("login");
     });
-    expect(logout).not.toHaveBeenCalled();
+    expect(mockOpenLogoutConfirmation).not.toHaveBeenCalled();
   });
 });

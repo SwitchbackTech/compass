@@ -2,36 +2,35 @@ import { renderHook } from "@testing-library/react";
 import { act, type MouseEvent } from "react";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
-const clearAuthenticationState = mock();
-const signOut = mock();
+const mockOpenLogoutConfirmation = mock();
+const mockUseLogoutConfirmation = mock();
 const mockUseSession = mock();
 
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
 
-mock.module("@web/auth/compass/state/auth.state.util", () => ({
-  clearAuthenticationState,
-}));
-
-mock.module("@web/common/classes/Session", () => ({
-  session: {
-    signOut,
-  },
-}));
+mock.module(
+  "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation",
+  () => ({
+    useLogoutConfirmation: mockUseLogoutConfirmation,
+  }),
+);
 
 const { useLogoutCmdItems } = await import("./useLogoutCmdItems");
 
 describe("useLogoutCmdItems", () => {
   beforeEach(() => {
-    clearAuthenticationState.mockClear();
-    signOut.mockReset();
+    mockOpenLogoutConfirmation.mockClear();
+    mockUseLogoutConfirmation.mockReset();
     mockUseSession.mockReset();
     mockUseSession.mockReturnValue({
       authenticated: true,
       setAuthenticated: mock(),
     });
-    signOut.mockResolvedValue(undefined);
+    mockUseLogoutConfirmation.mockReturnValue({
+      openLogoutConfirmation: mockOpenLogoutConfirmation,
+    });
   });
 
   it("returns no items when logged out", () => {
@@ -45,7 +44,7 @@ describe("useLogoutCmdItems", () => {
     expect(result.current).toEqual([]);
   });
 
-  it("logs out from the command palette item", () => {
+  it("opens logout confirmation from the command palette item", () => {
     const { result } = renderHook(() => useLogoutCmdItems());
     const logoutItem = result.current[0];
 
@@ -53,8 +52,7 @@ describe("useLogoutCmdItems", () => {
       logoutItem.onClick?.({} as MouseEvent<HTMLButtonElement>);
     });
 
-    expect(signOut).toHaveBeenCalledTimes(1);
-    expect(clearAuthenticationState).toHaveBeenCalledTimes(1);
+    expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);
   });
 });
 
