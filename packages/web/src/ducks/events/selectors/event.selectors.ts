@@ -8,9 +8,16 @@ import {
   hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
+import { type Entities_Event } from "@web/ducks/events/event.types";
 import { type RootState } from "@web/store";
 
 type Schema_GridEvent_NoPosition = Omit<Schema_GridEvent, "position">;
+
+const EMPTY_EVENT_ENTITIES: Entities_Event = {};
+const EMPTY_EVENT_IDS: string[] = [];
+
+export const selectEventEntities = (state: RootState) =>
+  state.events.entities.value ?? EMPTY_EVENT_ENTITIES;
 
 export const selectAllDayEvents = createSelector(
   (state: RootState) => state.events.entities.value || {},
@@ -34,9 +41,6 @@ export const selectEventById = (
   state: RootState,
   id: string,
 ): Schema_Event | null => selectEventEntities(state)[id] ?? null;
-
-export const selectEventEntities = (state: RootState) =>
-  state.events.entities.value || {};
 
 export const selectGridEvents = createSelector(
   (state: RootState) => state.events.entities.value || {},
@@ -67,18 +71,11 @@ export const selectRowCount = createSelector(
   },
 );
 
-const selectDayEventIds = (state: RootState) => {
-  const value = state.events.getDayEvents.value;
-
-  if (!value || !("data" in value)) {
-    return [];
-  }
-
-  return value.data ?? [];
-};
+const selectDayEventIds = (state: RootState) =>
+  state.events.getDayEvents.value?.data ?? EMPTY_EVENT_IDS;
 
 export const selectDayEvents = createSelector(
-  (state: RootState) => state.events.entities.value || {},
+  selectEventEntities,
   selectDayEventIds,
   (entities, ids) =>
     ids
