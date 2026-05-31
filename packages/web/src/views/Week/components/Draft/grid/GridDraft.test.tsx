@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type PropsWithChildren, type Ref } from "react";
+import { type PropsWithChildren, type Ref, useState } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { CALENDAR_DECK_MIN_WIDTH } from "@web/common/calendar-grid/calendarGrid.constants";
@@ -11,15 +11,28 @@ import { DraftContext } from "@web/views/Week/components/Draft/context/DraftCont
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-let floatingFocusManagerProps: { modal?: boolean } | null = null;
-
 mock.module("@floating-ui/react", () => ({
   FloatingFocusManager: ({
     children,
-    ...props
-  }: PropsWithChildren<{ modal?: boolean }>) => {
-    floatingFocusManagerProps = props;
-    return <>{children}</>;
+    closeOnFocusOut,
+    modal,
+  }: PropsWithChildren<{ closeOnFocusOut?: boolean; modal?: boolean }>) => {
+    const [isMounted, setIsMounted] = useState(true);
+
+    return (
+      <div
+        data-modal={String(modal)}
+        data-testid="grid-draft-focus-manager"
+        onFocusCapture={(event) => {
+          if (closeOnFocusOut === false) return;
+          if (event.target !== event.currentTarget) {
+            setIsMounted(false);
+          }
+        }}
+      >
+        {isMounted ? children : null}
+      </div>
+    );
   },
 }));
 
@@ -35,20 +48,25 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
     onSubmit?: (event: Schema_GridEvent) => void;
     titleInputRef?: Ref<HTMLInputElement>;
   }) => (
-    <input
-      aria-label="Draft title"
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          onSubmit?.(draftEvent);
-        }
+    <>
+      <input
+        aria-label="Draft title"
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            onSubmit?.(draftEvent);
+          }
 
-        if (event.key === "ArrowDown") {
-          onDraftTitleArrowKey?.(event.key);
-        }
-      }}
-      ref={titleInputRef}
-    />
+          if (event.key === "ArrowDown") {
+            onDraftTitleArrowKey?.(event.key);
+          }
+        }}
+        ref={titleInputRef}
+      />
+      <button type="button" aria-label="Nested action menu item">
+        Nested action
+      </button>
+    </>
   ),
 }));
 
@@ -153,7 +171,6 @@ const renderGridDraft = ({
 
 afterEach(() => {
   document.body.innerHTML = "";
-  floatingFocusManagerProps = null;
 });
 
 describe("GridDraft keyboard focus", () => {
@@ -177,10 +194,23 @@ describe("GridDraft keyboard focus", () => {
     });
   });
 
-  it("keeps the floating form non-modal while the draft block is a focus target", () => {
+  it("keeps the floating form mounted when focus moves into nested menus", async () => {
     renderGridDraft();
 
-    expect(floatingFocusManagerProps?.modal).toBe(false);
+    expect(screen.getByTestId("grid-draft-focus-manager")).toHaveAttribute(
+      "data-modal",
+      "false",
+    );
+
+    fireEvent.focus(
+      screen.getByRole("button", { name: "Nested action menu item" }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("textbox", { name: "Draft title" }),
+      ).toBeVisible();
+    });
   });
 
   it("keeps an active overlapping saved draft at its stacked width while raising it", () => {

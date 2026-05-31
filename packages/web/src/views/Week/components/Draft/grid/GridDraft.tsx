@@ -133,7 +133,11 @@ export const GridDraft: FC<Props> = ({
       )}
 
       {isFormOpen && (
-        <FloatingFocusManager context={context} modal={false}>
+        <FloatingFocusManager
+          context={context}
+          modal={false}
+          closeOnFocusOut={false}
+        >
           <StyledFloatContainer
             ref={refs.setFloating}
             strategy={strategy}

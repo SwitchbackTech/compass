@@ -134,6 +134,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
         setActiveIndex(sparseIndex);
       }
     },
+    focusItemOnHover: false,
     loop: true,
   });
 
@@ -179,6 +180,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
           <FloatingFocusManager
             context={context}
             modal={false}
+            closeOnFocusOut={false}
             initialFocus={openedByMouseRef.current ? -1 : 0}
             returnFocus={false}
           >
