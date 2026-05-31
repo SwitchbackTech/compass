@@ -109,6 +109,29 @@ describe("CalendarEventCard", () => {
     expect(onEventKeyDown).not.toHaveBeenCalled();
   });
 
+  it("keeps timed event keyboard activation from reaching parent shortcuts", () => {
+    const onEventKeyDown = mock();
+    const onParentKeyDown = mock();
+
+    render(
+      // biome-ignore lint/a11y/noStaticElementInteractions: test wrapper simulates a parent shortcut listener.
+      <div onKeyDown={onParentKeyDown}>
+        <CalendarTimedEventCard
+          displayMode="saved"
+          event={createEvent()}
+          motionMode="idle"
+          onEventKeyDown={onEventKeyDown}
+          position={position}
+        />
+      </div>,
+    );
+
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
+
+    expect(onEventKeyDown).toHaveBeenCalledTimes(1);
+    expect(onParentKeyDown).not.toHaveBeenCalled();
+  });
+
   it("renders all-day event details, interaction attributes, acknowledgement animation, and resize handles", () => {
     const onEventMouseDown = mock();
     const onScalerMouseDown = mock();
@@ -180,5 +203,30 @@ describe("CalendarEventCard", () => {
     fireEvent.keyDown(screen.getByRole("button"), { key: " " });
 
     expect(onEventKeyDown).not.toHaveBeenCalled();
+  });
+
+  it("keeps all-day event keyboard activation from reaching parent shortcuts", () => {
+    const onEventKeyDown = mock();
+    const onParentKeyDown = mock();
+
+    render(
+      // biome-ignore lint/a11y/noStaticElementInteractions: test wrapper simulates a parent shortcut listener.
+      <div onKeyDown={onParentKeyDown}>
+        <CalendarAllDayEventCard
+          event={createEvent({
+            isAllDay: true,
+            title: "Conference",
+          })}
+          isPlaceholder={false}
+          onEventKeyDown={onEventKeyDown}
+          position={position}
+        />
+      </div>,
+    );
+
+    fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
+
+    expect(onEventKeyDown).toHaveBeenCalledTimes(1);
+    expect(onParentKeyDown).not.toHaveBeenCalled();
   });
 });

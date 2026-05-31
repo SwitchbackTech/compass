@@ -42,7 +42,9 @@ export const useDraftConfirmation = ({
         _draft.recurrence?.eventId ?? "",
       );
       const draftIsRecurring = Array.isArray(rule) || draftIsInstance;
-      const isRecurringEvent = isRecurrence() || draftIsRecurring;
+      const isExistingDraft = Boolean(_draft._id) || draftIsInstance;
+      const isRecurringEvent =
+        isExistingDraft && (isRecurrence() || draftIsRecurring);
       const instanceEvent = isInstance() || draftIsInstance;
       const toStandAlone = instanceEvent && rule === null;
       const applyTo = toStandAlone

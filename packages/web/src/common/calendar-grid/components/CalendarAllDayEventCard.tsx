@@ -126,6 +126,7 @@ const CalendarAllDayEventCardBase = (
         }
 
         e.preventDefault();
+        e.stopPropagation();
         if (isPending) {
           return;
         }
