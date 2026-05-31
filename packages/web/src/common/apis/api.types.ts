@@ -12,7 +12,6 @@ export interface ApiError extends Error {
 export interface ApiRequestConfig {
   headers?: HeadersInit;
   method?: string;
-  skipSessionRecovery?: boolean;
   url?: string;
 }
 
@@ -24,10 +23,7 @@ export interface ApiResponse<T> {
   statusText: string;
 }
 
-export type ApiMethodConfig = Pick<
-  ApiRequestConfig,
-  "headers" | "skipSessionRecovery"
->;
+export type ApiMethodConfig = Pick<ApiRequestConfig, "headers">;
 
 export type SignoutStatus =
   | Status.UNAUTHORIZED

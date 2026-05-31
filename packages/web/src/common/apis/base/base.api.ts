@@ -27,10 +27,31 @@ const request = async <T>(
   body?: unknown,
   config: ApiMethodConfig = {},
 ): Promise<ApiResponse<T>> => {
+  try {
+    return await sendApiRequestWithoutSharedErrorRecovery<T>(
+      method,
+      url,
+      body,
+      config,
+    );
+  } catch (error) {
+    if (isApiError(error)) {
+      return handleErrorResponse<ApiResponse<T>>(error);
+    }
+
+    throw error;
+  }
+};
+
+export const sendApiRequestWithoutSharedErrorRecovery = async <T>(
+  method: string,
+  url: string,
+  body?: unknown,
+  config: ApiMethodConfig = {},
+): Promise<ApiResponse<T>> => {
   const requestConfig = {
     headers: config.headers,
     method,
-    skipSessionRecovery: config.skipSessionRecovery,
     url,
   } satisfies ApiRequestConfig;
 
@@ -74,7 +95,7 @@ const request = async <T>(
     }
 
     if (isApiError(error)) {
-      return handleErrorResponse<ApiResponse<T>>(error);
+      throw error;
     }
 
     throw createApiError(requestConfig);

@@ -1,10 +1,6 @@
 import { type ZodType } from "zod";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
-import {
-  type GoogleConnectErrorResponse,
-  GoogleConnectErrorResponseSchema,
-} from "@core/types/auth.types";
 import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "../../constants/env.constants";
@@ -63,12 +59,6 @@ export const parseApiError = <T>(
 ): T | undefined => {
   const parsed = schema.safeParse(getApiErrorData(error));
   return parsed.success ? parsed.data : undefined;
-};
-
-export const parseGoogleConnectError = (
-  error: ApiError,
-): GoogleConnectErrorResponse | undefined => {
-  return parseApiError(error, GoogleConnectErrorResponseSchema);
 };
 
 export const signOut = async (status: SignoutStatus) => {
@@ -135,10 +125,6 @@ export const handleErrorResponse = async <T>(error: ApiError) => {
     getApiErrorCode(error) === GOOGLE_REVOKED
   ) {
     handleGoogleRevoked();
-    throw error;
-  }
-
-  if (error.config?.skipSessionRecovery && status === Status.UNAUTHORIZED) {
     throw error;
   }
 

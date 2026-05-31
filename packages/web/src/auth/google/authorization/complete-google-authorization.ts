@@ -3,10 +3,7 @@ import {
   type GoogleAuthCodeRequest,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
-import {
-  type ApiError,
-  type ApiMethodConfig,
-} from "@web/common/apis/api.types";
+import { type ApiError } from "@web/common/apis/api.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   GOOGLE_AUTH_SCOPES_REQUIRED,
@@ -28,10 +25,7 @@ type CompleteAuthentication = (input: {
 }) => Promise<void>;
 
 export type GoogleAuthorizationAuthAdapter = {
-  connectGoogle(
-    data: GoogleAuthCodeRequest,
-    config?: ApiMethodConfig,
-  ): Promise<unknown>;
+  connectGoogle(data: GoogleAuthCodeRequest): Promise<unknown>;
   loginOrSignup(data: GoogleAuthCodeRequest): Promise<{
     user: { emails?: string[] };
   }>;
@@ -149,7 +143,7 @@ export async function completeGoogleAuthorization({
         await completeGoogleSignIn();
       } else {
         try {
-          await authApi.connectGoogle(payload, { skipSessionRecovery: true });
+          await authApi.connectGoogle(payload);
           await refreshUserMetadata();
           requestEventFetch?.();
         } catch (error) {

@@ -21,6 +21,10 @@ type ApiMocks = {
 type ApiMockOptions = {
   beforeConnectGoogleResponse?: Promise<void>;
   beforeLoginOrSignupResponse?: Promise<void>;
+  connectGoogleResponse?: {
+    body?: unknown;
+    status: number;
+  };
 };
 
 const createDeferred = () => {
@@ -158,9 +162,9 @@ const prepareGoogleAuthCallbackPage = async (
       });
       await options.beforeConnectGoogleResponse;
       return route.fulfill({
-        status: 200,
+        status: options.connectGoogleResponse?.status ?? 200,
         contentType: "application/json",
-        body: JSON.stringify({}),
+        body: JSON.stringify(options.connectGoogleResponse?.body ?? {}),
       });
     }
 
@@ -281,6 +285,35 @@ test.describe("Google auth callback", () => {
     expect(apiMocks.connectGoogle).toHaveLength(0);
     expect(apiMocks.loginOrSignup).toHaveLength(1);
     expect(apiMocks.loginOrSignup[0]?.headers.rid).toBe("thirdparty");
+    expectGoogleAuthRequestBody(apiMocks.loginOrSignup[0], state);
+  });
+
+  test("recovers through Google sign-in when Google connect rejects an expired Compass session", async ({
+    page,
+  }) => {
+    const state = "connect-calendar-session-expired-state";
+    const apiMocks = await prepareGoogleAuthCallbackPage(page, {
+      connectGoogleResponse: {
+        status: 401,
+        body: { message: "unauthorized" },
+      },
+    });
+
+    await writeGoogleAuthorizationIntent({
+      intent: "connectCalendar",
+      page,
+      returnPath: "/week",
+      state,
+    });
+    await setActiveCompassSession(page);
+
+    await page.goto(getCallbackUrl(state));
+
+    await expect(page).toHaveURL(/\/week$/);
+    expect(apiMocks.connectGoogle).toHaveLength(1);
+    expect(apiMocks.loginOrSignup).toHaveLength(1);
+    expect(apiMocks.loginOrSignup[0]?.headers.rid).toBe("thirdparty");
+    expectGoogleAuthRequestBody(apiMocks.connectGoogle[0], state);
     expectGoogleAuthRequestBody(apiMocks.loginOrSignup[0], state);
   });
 

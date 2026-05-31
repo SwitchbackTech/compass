@@ -1,31 +1,15 @@
-import { Status } from "@core/errors/status.codes";
-import {
-  ApiErrorResponseSchema,
-  GoogleConnectErrorResponseSchema,
-} from "@core/types/auth.types";
-import { session } from "@web/common/classes/Session";
-import {
-  type ApiError,
-  type ApiRequestConfig,
-  type ApiResponse,
-} from "../api.types";
-import {
-  getApiErrorCode,
-  handleErrorResponse,
-  parseApiError,
-  parseGoogleConnectError,
-} from "./api.util";
-import { describe, expect, it, spyOn } from "bun:test";
+import { ApiErrorResponseSchema } from "@core/types/auth.types";
+import { type ApiError, type ApiResponse } from "../api.types";
+import { getApiErrorCode, parseApiError } from "./api.util";
+import { describe, expect, it } from "bun:test";
 
 const createApiError = (
   response: { data?: unknown; status?: number } | null,
-  config: ApiRequestConfig = {},
 ): ApiError =>
   Object.assign(new Error("Request failed"), {
-    config,
     response: response
       ? ({
-          config,
+          config: {},
           data: response.data,
           headers: new Headers(),
           status: response.status ?? 400,
@@ -111,65 +95,5 @@ describe("parseApiError", () => {
     });
 
     expect(parseApiError(error, ApiErrorResponseSchema)).toBeUndefined();
-  });
-});
-
-describe("parseGoogleConnectError", () => {
-  it("parses typed Google connect errors", () => {
-    const error = createApiError({
-      data: {
-        code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
-        message: "Google account is already connected",
-      },
-    });
-
-    expect(parseGoogleConnectError(error)).toEqual({
-      code: "GOOGLE_ACCOUNT_ALREADY_CONNECTED",
-      message: "Google account is already connected",
-    });
-  });
-
-  it("parses Google not configured connect errors", () => {
-    const error = createApiError({
-      data: {
-        code: "GOOGLE_NOT_CONFIGURED",
-        message: "Google is not configured for this Compass instance",
-      },
-    });
-
-    expect(parseGoogleConnectError(error)).toEqual({
-      code: "GOOGLE_NOT_CONFIGURED",
-      message: "Google is not configured for this Compass instance",
-    });
-  });
-
-  it("returns undefined for non-Google-connect error codes", () => {
-    const error = createApiError({
-      data: {
-        code: "ANY_ERROR",
-        message: "Something went wrong",
-      },
-    });
-
-    expect(parseGoogleConnectError(error)).toBeUndefined();
-    expect(
-      parseApiError(error, GoogleConnectErrorResponseSchema),
-    ).toBeUndefined();
-  });
-});
-
-describe("handleErrorResponse", () => {
-  it("keeps skipSessionRecovery local to unauthorized responses", async () => {
-    window.history.pushState({}, "", "/day");
-    const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
-    const error = createApiError(
-      { status: Status.NOT_FOUND },
-      { skipSessionRecovery: true, url: "/event" },
-    );
-
-    await expect(handleErrorResponse(error)).rejects.toBe(error);
-
-    expect(signOutSpy).toHaveBeenCalledTimes(1);
-    signOutSpy.mockRestore();
   });
 });

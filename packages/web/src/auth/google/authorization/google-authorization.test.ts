@@ -82,6 +82,7 @@ describe("completeGoogleAuthorization", () => {
     ).resolves.toEqual({ status: "completed", returnPath: "/day" });
 
     expect(deps.authApi.connectGoogle).toHaveBeenCalledTimes(1);
+    expect(deps.authApi.connectGoogle.mock.calls[0]).toHaveLength(1);
     expect(deps.refreshUserMetadata).toHaveBeenCalledTimes(1);
     expect(deps.requestEventFetch).toHaveBeenCalledTimes(1);
     expect(deps.completeAuthentication).not.toHaveBeenCalled();
@@ -136,6 +137,7 @@ describe("completeGoogleAuthorization", () => {
     ).resolves.toEqual({ status: "completed", returnPath: "/day" });
 
     expect(deps.authApi.connectGoogle).toHaveBeenCalledTimes(1);
+    expect(deps.authApi.connectGoogle.mock.calls[0]).toHaveLength(1);
     expect(deps.authApi.loginOrSignup).toHaveBeenCalledTimes(1);
     expect(deps.completeAuthentication).toHaveBeenCalledWith({
       email: "user@example.com",

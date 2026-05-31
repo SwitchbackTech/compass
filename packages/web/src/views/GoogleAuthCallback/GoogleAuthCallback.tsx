@@ -3,7 +3,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { completeGoogleAuthorization } from "@web/auth/google/authorization/complete-google-authorization";
-import { AuthApi } from "@web/common/apis/auth.api";
+import { GoogleAuthCallbackApi } from "@web/auth/google/authorization/google-auth-callback.api";
 import { session } from "@web/common/classes/Session";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
@@ -27,7 +27,7 @@ export async function completeGoogleAuthCallback({
   search,
 }: CompleteGoogleAuthCallbackOptions): Promise<void> {
   const result = await completeGoogleAuthorization({
-    authApi: AuthApi,
+    authApi: GoogleAuthCallbackApi,
     completeAuthentication,
     doesSessionExist: () => session.doesSessionExist(),
     refreshUserMetadata,
