@@ -15,6 +15,7 @@ import { theme } from "@web/common/styles/theme";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
+import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
 import { store } from "@web/store";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
 
@@ -41,21 +42,23 @@ export const CompassRequiredProviders = (
               <PointerPositionProvider>
                 <IconProvider>
                   <AuthModalProvider>
-                    {props.children}
-                    <AuthModal />
-                    <ToastContainer
-                      position="bottom-left"
-                      autoClose={5000}
-                      hideProgressBar={false}
-                      newestOnTop={false}
-                      closeOnClick
-                      rtl={false}
-                      pauseOnFocusLoss
-                      draggable
-                      pauseOnHover
-                      theme="dark"
-                      limit={1}
-                    />
+                    <LogoutConfirmationProvider>
+                      {props.children}
+                      <AuthModal />
+                      <ToastContainer
+                        position="bottom-left"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="dark"
+                        limit={1}
+                      />
+                    </LogoutConfirmationProvider>
                   </AuthModalProvider>
                 </IconProvider>
               </PointerPositionProvider>
