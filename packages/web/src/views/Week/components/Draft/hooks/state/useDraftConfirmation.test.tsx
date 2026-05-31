@@ -1,4 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
+import { ObjectId } from "bson";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -87,9 +88,10 @@ describe("useDraftConfirmation", () => {
     expect(discard).toHaveBeenCalledTimes(1);
   });
 
-  it("opens the update scope dialog for existing recurring drafts", async () => {
+  it("opens the update scope dialog for existing multi-occurrence recurring drafts", async () => {
     const draft = createDraft({
       recurrence: {
+        eventId: new ObjectId().toString(),
         rule: ["FREQ=WEEKLY;COUNT=4"],
       },
     });
@@ -103,5 +105,28 @@ describe("useDraftConfirmation", () => {
     expect(result.current.finalDraft).toBe(draft);
     expect(submit).not.toHaveBeenCalled();
     expect(discard).not.toHaveBeenCalled();
+  });
+
+  it("submits a single-occurrence recurring draft without opening the update scope dialog", async () => {
+    const draft = createDraft({
+      recurrence: {
+        eventId: new ObjectId().toString(),
+        rule: ["RRULE:FREQ=WEEKLY;COUNT=1"],
+      },
+    });
+    const { discard, result, submit } = renderDraftConfirmation({ draft });
+
+    await act(async () => {
+      await result.current.onSubmit(draft);
+    });
+
+    expect(result.current.isRecurrenceUpdateScopeDialogOpen).toBe(false);
+    expect(result.current.finalDraft).toBeNull();
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(submit).toHaveBeenCalledWith(
+      draft,
+      RecurringEventUpdateScope.ALL_EVENTS,
+    );
+    expect(discard).toHaveBeenCalledTimes(1);
   });
 });

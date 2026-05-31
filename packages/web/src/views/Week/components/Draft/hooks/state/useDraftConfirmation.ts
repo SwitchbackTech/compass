@@ -1,8 +1,30 @@
 import { ObjectId } from "bson";
 import { useCallback, useState } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
+import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
+
+const hasMultipleRecurrenceOccurrences = (event: Schema_GridEvent): boolean => {
+  const rule = event.recurrence?.rule;
+
+  if (!Array.isArray(rule) || rule.length === 0) {
+    return true;
+  }
+
+  try {
+    const recurrence = new CompassEventRRule({
+      _id: new ObjectId(),
+      startDate: event.startDate,
+      endDate: event.endDate,
+      recurrence: { rule },
+    });
+
+    return recurrence.all((_, index) => index < 2).length > 1;
+  } catch {
+    return true;
+  }
+};
 
 export const useDraftConfirmation = ({
   actions,
@@ -47,11 +69,19 @@ export const useDraftConfirmation = ({
         isExistingDraft && (isRecurrence() || draftIsRecurring);
       const instanceEvent = isInstance() || draftIsInstance;
       const toStandAlone = instanceEvent && rule === null;
-      const applyTo = toStandAlone
-        ? RecurringEventUpdateScope.ALL_EVENTS
-        : RecurringEventUpdateScope.THIS_EVENT;
+      const hasMultipleOccurrences = hasMultipleRecurrenceOccurrences(_draft);
+      const isSingleOccurrenceInstance =
+        isRecurringEvent && instanceEvent && !hasMultipleOccurrences;
+      const shouldAskForUpdateScope =
+        !toStandAlone &&
+        isRecurringEvent &&
+        (hasMultipleOccurrences || !instanceEvent);
+      const applyTo =
+        toStandAlone || isSingleOccurrenceInstance
+          ? RecurringEventUpdateScope.ALL_EVENTS
+          : RecurringEventUpdateScope.THIS_EVENT;
 
-      if (!toStandAlone && isRecurringEvent) {
+      if (shouldAskForUpdateScope) {
         setFinalDraft(_draft);
 
         return setRecurrenceUpdateScopeDialogOpen(true);
