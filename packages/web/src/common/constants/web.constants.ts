@@ -48,6 +48,7 @@ export enum ZIndex {
 
 export const Z_INDEX_FLOATING_FORM = ZIndex.MAX + ZIndex.LAYER_1;
 export const Z_INDEX_FLOATING_MENU = Z_INDEX_FLOATING_FORM + 1;
+export const Z_INDEX_MODAL = Z_INDEX_FLOATING_MENU + ZIndex.LAYER_1;
 
 export const ACCEPTED_TIMES = [
   "12:00 AM",

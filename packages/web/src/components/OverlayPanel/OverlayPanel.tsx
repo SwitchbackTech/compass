@@ -6,6 +6,7 @@ import {
   useId,
   useRef,
 } from "react";
+import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -54,7 +55,7 @@ export const OverlayPanel = ({
   }, [role]);
 
   const backdropClasses = clsx(
-    "fixed inset-0 z-20 flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
+    "fixed inset-0 flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
   );
 
   const panelClasses = clsx("flex flex-col items-center", {
@@ -107,6 +108,7 @@ export const OverlayPanel = ({
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
       role="presentation"
+      style={{ zIndex: Z_INDEX_MODAL }}
       tabIndex={-1}
     >
       {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-modal is only set when the panel role is dialog. */}
