@@ -109,7 +109,7 @@ export const DayTimedCalendarEvent = ({
   visibleDates,
 }: DayTimedEventCardProps) => {
   const isRegistered = Boolean(event._id) && !isPending && !isPlaceholder;
-  const isDeck = Boolean(deckLayout) && !isActiveDraft;
+  const isDeck = Boolean(deckLayout);
   const [isFocused, setIsFocused] = useState(false);
   const registrationRef = useDayEventRegistrationRef({
     eventId: event._id,
@@ -135,7 +135,7 @@ export const DayTimedCalendarEvent = ({
     const highlight = `inset 0 1px 0 rgba(255,255,255,${isFocused ? 0.1 : 0.07})`;
     return `${ring}, ${drop}, ${highlight}`;
   })();
-  const shouldFloatAboveDeck = isActiveDraft || (isDeck && isFocused);
+  const shouldFloatAboveDeck = isActiveDraft && !isDeck;
   const position = getDayTimedEventPosition({
     deckLayout,
     event,

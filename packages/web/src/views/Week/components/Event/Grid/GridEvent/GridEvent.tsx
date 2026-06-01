@@ -69,7 +69,7 @@ const GridEventBase = (
   const isPlaceholder = displayMode === "placeholder";
   const isResizing = motionMode === "resizing";
   const event = _event;
-  const isDeck = Boolean(deckLayout) && !isDraft;
+  const isDeck = Boolean(deckLayout);
   const [isFocused, setIsFocused] = useState(false);
   const shouldAcknowledgeCommit =
     useSomedayCommitAcknowledgement(event._id) &&
@@ -104,8 +104,7 @@ const GridEventBase = (
     ? basePosition
     : applyCalendarTimedEventDisplayPosition(basePosition, deckLayout);
 
-  const shouldFloatAboveDeck =
-    isDraft || isDragging || isResizing || (isDeck && isFocused);
+  const shouldFloatAboveDeck = isDragging || isResizing || (isDraft && !isDeck);
   const zIndex = shouldFloatAboveDeck
     ? ZIndex.MAX
     : (position.zIndex ?? ZIndex.LAYER_1);

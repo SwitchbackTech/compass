@@ -213,7 +213,7 @@ describe("DayCalendarGrid", () => {
     );
   });
 
-  it("raises a focused Day deck card above its group-mates", () => {
+  it("keeps a focused Day deck card in its fan-out stack", () => {
     setDayEvents([
       createTimedEvent({
         _id: "back",
@@ -232,17 +232,18 @@ describe("DayCalendarGrid", () => {
     renderDayCalendarGrid();
 
     const back = screen.getByRole("button", { name: /back overlap/i });
+    const initialBackZIndex = Number(back.style.zIndex);
 
-    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+    expect(initialBackZIndex).toBeLessThan(ZIndex.MAX);
 
     fireEvent.focus(back);
-    expect(Number(back.style.zIndex)).toBe(ZIndex.MAX);
+    expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
 
     fireEvent.blur(back);
-    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+    expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
   });
 
-  it("raises a clicked overlapping Day event above its group-mates without widening it", async () => {
+  it("keeps a clicked overlapping Day event in its fan-out stack without widening it", async () => {
     setDayEvents([
       createTimedEvent({
         _id: "back",
@@ -263,10 +264,11 @@ describe("DayCalendarGrid", () => {
     const back = screen.getByRole("button", { name: /back overlap/i });
     const front = screen.getByRole("button", { name: /front overlap/i });
     const initialBackWidth = parseFloat(back.style.width);
+    const initialBackZIndex = Number(back.style.zIndex);
     const frontWidth = parseFloat(front.style.width);
 
     expect(initialBackWidth).toBe(frontWidth);
-    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+    expect(initialBackZIndex).toBeLessThan(ZIndex.MAX);
 
     fireEvent.pointerDown(back, {
       button: 0,
@@ -284,7 +286,7 @@ describe("DayCalendarGrid", () => {
 
     await waitFor(() => {
       expect(getDraft()?._id).toBe("back");
-      expect(Number(back.style.zIndex)).toBe(ZIndex.MAX);
+      expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
       expect(parseFloat(back.style.width)).toBe(frontWidth);
     });
   });
