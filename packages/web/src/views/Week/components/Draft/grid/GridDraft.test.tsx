@@ -117,9 +117,11 @@ const createFormProps = () => {
 };
 
 const renderGridDraft = ({
+  activeAllDayDraftEvent = null,
   deckLayout = null,
   draft = createDraft(),
 }: {
+  activeAllDayDraftEvent?: Schema_GridEvent | null;
   deckLayout?: { groupSize: number; order: number } | null;
   draft?: Schema_GridEvent;
 } = {}) => {
@@ -154,6 +156,7 @@ const renderGridDraft = ({
   const result = render(
     <DraftContext.Provider value={value}>
       <GridDraft
+        activeAllDayDraftEvent={activeAllDayDraftEvent}
         deckLayout={deckLayout}
         measurements={{
           allDayRow: null,
@@ -191,6 +194,29 @@ describe("GridDraft keyboard focus", () => {
       left: "200px",
       top: "23px",
       width: "90px",
+    });
+  });
+
+  it("uses the positioned all-day draft row when one is provided", () => {
+    const draft = createDraft({
+      endDate: "2026-05-27T00:00:00.000Z",
+      isAllDay: true,
+      position: undefined,
+      startDate: "2026-05-26T00:00:00.000Z",
+    });
+
+    renderGridDraft({
+      activeAllDayDraftEvent: {
+        ...draft,
+        row: 3,
+      },
+      draft,
+    });
+
+    expect(
+      screen.getByRole("button", { name: /All-day event: Planning/ }),
+    ).toHaveStyle({
+      top: "69px",
     });
   });
 

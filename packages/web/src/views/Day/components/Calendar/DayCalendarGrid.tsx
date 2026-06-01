@@ -57,10 +57,6 @@ import {
 import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
 
 const isDayInteractionMotionActive = () => false;
-const DAY_EVENT_FORM_DISMISS_OPTIONS = {
-  enabled: true,
-  outsidePressEvent: "click",
-} as const;
 
 export function DayCalendarGrid() {
   const dispatch = useAppDispatch();
@@ -87,6 +83,7 @@ export function DayCalendarGrid() {
   const dayEvents = useAppSelector(selectDayEvents);
   const allDayRowsCount = useAppSelector(selectDayRowCount);
   const draft = useAppSelector(selectDraft);
+  const allDayCreationPressTargetRef = useRef<HTMLElement | null>(null);
   const floating = useFloatingAtCursor((open, _event, reason) => {
     const dismissed = reason === "escape-key" || reason === "outside-press";
 
@@ -94,7 +91,26 @@ export function DayCalendarGrid() {
       dispatch(draftSlice.actions.discard(undefined));
     }
   });
-  const dismiss = useDismiss(floating.context, DAY_EVENT_FORM_DISMISS_OPTIONS);
+  const shouldDismissEventForm = useCallback((event: MouseEvent) => {
+    const allDayCreationPressTarget = allDayCreationPressTargetRef.current;
+
+    if (!allDayCreationPressTarget) {
+      return true;
+    }
+
+    allDayCreationPressTargetRef.current = null;
+
+    const target = event.target;
+
+    return !(
+      target instanceof Node && allDayCreationPressTarget.contains(target)
+    );
+  }, []);
+  const dismiss = useDismiss(floating.context, {
+    enabled: true,
+    outsidePress: shouldDismissEventForm,
+    outsidePressEvent: "click",
+  });
   const interactions = useInteractions([dismiss]);
 
   const getDayInteractionLayoutSources = useCallback(
@@ -205,7 +221,10 @@ export function DayCalendarGrid() {
         return;
       }
 
+      const allDayCreationPressTarget = event.currentTarget;
+
       if (draft) {
+        allDayCreationPressTargetRef.current = null;
         dispatch(draftSlice.actions.discard(undefined));
         closeFloatingAtCursor();
         return;
@@ -222,6 +241,7 @@ export function DayCalendarGrid() {
         endDate,
       );
 
+      allDayCreationPressTargetRef.current = allDayCreationPressTarget;
       openEventFormForEvent(
         addId(assembleGridEvent(draftEvent as EventWithDates)),
       );
@@ -267,7 +287,7 @@ export function DayCalendarGrid() {
   return (
     <section
       aria-label="Calendar agenda"
-      className="flex h-full min-w-xs flex-1 flex-col bg-bg-primary p-0.5"
+      className="flex h-full min-w-xs flex-1 flex-col bg-bg-primary px-0.5 pb-0.5"
       onContextMenu={handleContextMenu}
     >
       {anchorElement}

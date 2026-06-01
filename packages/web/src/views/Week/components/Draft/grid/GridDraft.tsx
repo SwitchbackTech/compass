@@ -16,12 +16,16 @@ import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
 interface Props {
+  activeAllDayDraftEvent?: Schema_GridEvent | null;
   deckLayout?: CalendarTimedDeckLayout | null;
   measurements: Measurements_Grid;
   weekProps: WeekProps;
 }
 
+const handleGridDraftClick = () => {};
+
 export const GridDraft: FC<Props> = ({
+  activeAllDayDraftEvent = null,
   deckLayout = null,
   measurements,
   weekProps,
@@ -42,7 +46,6 @@ export const GridDraft: FC<Props> = ({
     actions.convert(start, end);
   };
 
-  const handleClick = () => {};
   const focusTitleInput = () => {
     titleInputRef.current?.focus();
   };
@@ -69,18 +72,22 @@ export const GridDraft: FC<Props> = ({
 
   const { onMouseDown } = useGridEventMouseDown(
     draft?.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED,
-    handleClick,
+    handleGridDraftClick,
     handleDrag,
   );
 
   if (!draft) return null;
+
+  const allDayDraftEvent = draft.isAllDay
+    ? (activeAllDayDraftEvent ?? draft)
+    : draft;
 
   return (
     <>
       {draft.isAllDay ? (
         <AllDayEventMemo
           endOfView={weekProps.component.endOfView}
-          event={draft}
+          event={allDayDraftEvent}
           isPlaceholder={false}
           key={`draft-${draft?._id}`}
           measurements={measurements}
