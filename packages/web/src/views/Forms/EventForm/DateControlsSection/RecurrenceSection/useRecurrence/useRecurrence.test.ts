@@ -113,4 +113,30 @@ describe("useRecurrence hook", () => {
     expect(result.current.freq).toBe(Frequency.MONTHLY);
     expect(result.current.interval).toBe(2);
   });
+
+  it("does not rewrite an unchanged recurring rule when the setter changes", () => {
+    const event = {
+      ...baseEvent(),
+      startDate: "2026-05-31T10:00:00.000Z",
+      endDate: "2026-05-31T11:00:00.000Z",
+      recurrence: {
+        rule: ["RRULE:FREQ=WEEKLY;INTERVAL=1;BYDAY=SU;COUNT=4"],
+      },
+    };
+    const setEvent = mock();
+    const nextSetEvent = mock();
+
+    const { rerender } = renderHook(
+      ({ setEventProp }) => useRecurrence(event, { setEvent: setEventProp }),
+      {
+        initialProps: { setEventProp: setEvent },
+      },
+    );
+
+    expect(setEvent).not.toHaveBeenCalled();
+
+    rerender({ setEventProp: nextSetEvent });
+
+    expect(nextSetEvent).not.toHaveBeenCalled();
+  });
 });

@@ -1,4 +1,5 @@
 import { ObjectId } from "bson";
+import fastDeepEqual from "fast-deep-equal/react";
 import {
   type Dispatch,
   type SetStateAction,
@@ -67,6 +68,7 @@ export const useRecurrence = (
   const endDate = _endDate ?? dayjs().add(1, "hour").toRFC3339OffsetString();
   const _startDate = parseCompassEventDate(startDate);
   const hasRecurrence = (event?.recurrence?.rule?.length ?? 0) > 0;
+  const currentRule = event?.recurrence?.rule;
 
   const { options } = useMemo(() => {
     if (!hasRecurrence) {
@@ -169,15 +171,22 @@ export const useRecurrence = (
   useEffect(() => {
     if (!hasRecurrence) return;
 
+    const nextRule = JSON.parse(rule);
+    if (fastDeepEqual(currentRule, nextRule)) return;
+
     setEvent((gridEvent): Schema_Event | null => {
       if (!gridEvent) return gridEvent;
 
+      if (fastDeepEqual(gridEvent.recurrence?.rule, nextRule)) {
+        return gridEvent;
+      }
+
       return {
         ...gridEvent,
-        recurrence: { ...(gridEvent.recurrence ?? {}), rule: JSON.parse(rule) },
+        recurrence: { ...(gridEvent.recurrence ?? {}), rule: nextRule },
       };
     });
-  }, [rule, hasRecurrence, setEvent]);
+  }, [currentRule, rule, hasRecurrence, setEvent]);
 
   return {
     hasRecurrence,
