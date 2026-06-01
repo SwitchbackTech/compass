@@ -1,8 +1,16 @@
+import { configureStore } from "@reduxjs/toolkit";
 import { act, renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
+import { type PropsWithChildren } from "react";
+import { Provider } from "react-redux";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
+import {
+  RecurringEventUpdateScope,
+  type Schema_Event,
+} from "@core/types/event.types";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { reducers } from "@web/store/reducers";
 import { useDraftConfirmation } from "./useDraftConfirmation";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -32,11 +40,13 @@ const createDraft = (
 
 const renderDraftConfirmation = ({
   draft = createDraft(),
+  events = [],
   isInstance = false,
   isRecurrence = false,
   isSomeday = false,
 }: {
   draft?: Schema_GridEvent;
+  events?: Schema_Event[];
   isInstance?: boolean;
   isRecurrence?: boolean;
   isSomeday?: boolean;
@@ -44,6 +54,29 @@ const renderDraftConfirmation = ({
   const discard = mock();
   const deleteEvent = mock();
   const submit = mock();
+  const preloadedState = createInitialState();
+  preloadedState.events.entities!.value = events.reduce<
+    Record<string, Schema_Event>
+  >((entities, event) => {
+    if (event._id) {
+      entities[event._id] = event;
+    }
+
+    return entities;
+  }, {});
+  const store = configureStore({
+    reducer: reducers,
+    preloadedState,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        immutableCheck: false,
+        serializableCheck: false,
+        thunk: false,
+      }),
+  });
+  const wrapper = ({ children }: PropsWithChildren) => (
+    <Provider store={store}>{children}</Provider>
+  );
 
   const context = {
     actions: {
@@ -59,7 +92,9 @@ const renderDraftConfirmation = ({
     },
   } as unknown as Parameters<typeof useDraftConfirmation>[0];
 
-  const { result } = renderHook(() => useDraftConfirmation(context));
+  const { result } = renderHook(() => useDraftConfirmation(context), {
+    wrapper,
+  });
 
   return { deleteEvent, discard, result, submit };
 };
@@ -88,14 +123,23 @@ describe("useDraftConfirmation", () => {
     expect(discard).toHaveBeenCalledTimes(1);
   });
 
-  it("opens the update scope dialog for existing multi-occurrence recurring drafts", async () => {
-    const draft = createDraft({
+  it("opens the update scope dialog for existing multi-occurrence recurring instances", async () => {
+    const baseEventId = new ObjectId().toString();
+    const baseEvent = createDraft({
+      _id: baseEventId,
       recurrence: {
-        eventId: new ObjectId().toString(),
         rule: ["FREQ=WEEKLY;COUNT=4"],
       },
     });
-    const { discard, result, submit } = renderDraftConfirmation({ draft });
+    const draft = createDraft({
+      recurrence: {
+        eventId: baseEventId,
+      },
+    });
+    const { discard, result, submit } = renderDraftConfirmation({
+      draft,
+      events: [baseEvent],
+    });
 
     await act(async () => {
       await result.current.onSubmit(draft);
@@ -107,14 +151,23 @@ describe("useDraftConfirmation", () => {
     expect(discard).not.toHaveBeenCalled();
   });
 
-  it("submits a single-occurrence recurring draft without opening the update scope dialog", async () => {
-    const draft = createDraft({
+  it("submits a single-occurrence recurring instance without opening the update scope dialog", async () => {
+    const baseEventId = new ObjectId().toString();
+    const baseEvent = createDraft({
+      _id: baseEventId,
       recurrence: {
-        eventId: new ObjectId().toString(),
         rule: ["RRULE:FREQ=WEEKLY;COUNT=1"],
       },
     });
-    const { discard, result, submit } = renderDraftConfirmation({ draft });
+    const draft = createDraft({
+      recurrence: {
+        eventId: baseEventId,
+      },
+    });
+    const { discard, result, submit } = renderDraftConfirmation({
+      draft,
+      events: [baseEvent],
+    });
 
     await act(async () => {
       await result.current.onSubmit(draft);
@@ -125,6 +178,36 @@ describe("useDraftConfirmation", () => {
     expect(submit).toHaveBeenCalledTimes(1);
     expect(submit).toHaveBeenCalledWith(
       draft,
+      RecurringEventUpdateScope.ALL_EVENTS,
+    );
+    expect(discard).toHaveBeenCalledTimes(1);
+  });
+
+  it("opens the update scope dialog before deleting recurring timed drafts", async () => {
+    const draft = createDraft({
+      recurrence: {
+        rule: ["RRULE:FREQ=WEEKLY;COUNT=4"],
+      },
+    });
+    const { deleteEvent, discard, result } = renderDraftConfirmation({
+      draft,
+      isRecurrence: true,
+    });
+
+    await act(async () => {
+      await result.current.onDelete();
+    });
+
+    expect(result.current.isRecurrenceUpdateScopeDialogOpen).toBe(true);
+    expect(result.current.finalDraft).toBeNull();
+    expect(deleteEvent).not.toHaveBeenCalled();
+    expect(discard).not.toHaveBeenCalled();
+
+    act(() => {
+      result.current.onUpdateScopeChange(RecurringEventUpdateScope.ALL_EVENTS);
+    });
+
+    expect(deleteEvent).toHaveBeenCalledWith(
       RecurringEventUpdateScope.ALL_EVENTS,
     );
     expect(discard).toHaveBeenCalledTimes(1);

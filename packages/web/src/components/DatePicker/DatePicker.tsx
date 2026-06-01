@@ -68,7 +68,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
 
   return (
     <ReactDatePicker
-      popperClassName="!z-20"
+      popperClassName="!z-22"
       calendarClassName={classNames("calendar", calendarClassName, {
         "calendar--open": isOpen,
         "calendar--animation": animationOnToggle,

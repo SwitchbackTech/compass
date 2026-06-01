@@ -1,7 +1,15 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { afterAll, describe, expect, it, mock } from "bun:test";
+import {
+  afterAll,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  mock,
+  setSystemTime,
+} from "bun:test";
 
 mock.module("@web/components/AbsoluteOverflowLoader", () => ({
   AbsoluteOverflowLoader: () => (
@@ -37,6 +45,10 @@ mock.module("./SomedayEvents/SomedayEvents", () => ({
 const { SomedayEventSections } =
   require("./SomedayEventSections") as typeof import("./SomedayEventSections");
 
+beforeAll(() => {
+  setSystemTime(new Date("2026-05-20T12:00:00.000Z"));
+});
+
 describe("SomedayEventSections", () => {
   it("keeps the planner sidebar stable while someday events refresh", () => {
     render(
@@ -71,5 +83,6 @@ describe("SomedayEventSections", () => {
 });
 
 afterAll(() => {
+  setSystemTime();
   mock.restore();
 });
