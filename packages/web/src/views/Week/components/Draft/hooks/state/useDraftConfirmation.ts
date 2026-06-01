@@ -85,10 +85,9 @@ export const useDraftConfirmation = ({
       const draftIsInstance = ObjectId.isValid(
         _draft.recurrence?.eventId ?? "",
       );
-      const draftIsRecurring = Array.isArray(rule) || draftIsInstance;
       const isExistingDraft = Boolean(_draft._id) || draftIsInstance;
       const isRecurringEvent =
-        isExistingDraft && (isRecurrence() || draftIsRecurring);
+        isExistingDraft && (isRecurrence() || draftIsInstance);
       const instanceEvent = isInstance() || draftIsInstance;
       const toStandAlone = instanceEvent && rule === null;
       const hasMultipleOccurrences = hasMultipleRecurrenceOccurrences(

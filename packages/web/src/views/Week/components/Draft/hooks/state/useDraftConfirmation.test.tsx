@@ -151,6 +151,28 @@ describe("useDraftConfirmation", () => {
     expect(discard).not.toHaveBeenCalled();
   });
 
+  it("submits an existing standalone draft made recurring without opening the update scope dialog", async () => {
+    const draft = createDraft({
+      recurrence: {
+        rule: ["FREQ=WEEKLY;COUNT=4"],
+      },
+    });
+    const { discard, result, submit } = renderDraftConfirmation({ draft });
+
+    await act(async () => {
+      await result.current.onSubmit(draft);
+    });
+
+    expect(result.current.isRecurrenceUpdateScopeDialogOpen).toBe(false);
+    expect(result.current.finalDraft).toBeNull();
+    expect(submit).toHaveBeenCalledTimes(1);
+    expect(submit).toHaveBeenCalledWith(
+      draft,
+      RecurringEventUpdateScope.THIS_EVENT,
+    );
+    expect(discard).toHaveBeenCalledTimes(1);
+  });
+
   it("submits a single-occurrence recurring instance without opening the update scope dialog", async () => {
     const baseEventId = new ObjectId().toString();
     const baseEvent = createDraft({
