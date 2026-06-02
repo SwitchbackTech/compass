@@ -9,6 +9,7 @@ mock.module("@web/common/classes/Session", () => ({
   session: {
     doesSessionExist: mockDoesSessionExist,
     getAccessTokenPayloadSecurely: mockGetAccessTokenPayloadSecurely,
+    signOut: mock().mockResolvedValue(undefined),
   },
 }));
 

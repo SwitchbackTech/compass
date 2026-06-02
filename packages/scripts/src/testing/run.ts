@@ -1,5 +1,5 @@
-import { existsSync, readdirSync, statSync } from "node:fs";
-import { relative, resolve } from "node:path";
+import { existsSync } from "node:fs";
+import { resolve } from "node:path";
 
 type BunRuntime = {
   spawnSync(input: {
@@ -18,10 +18,6 @@ type ProjectConfig = {
 };
 
 const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
-const WEB_ROOT = resolve(process.cwd(), "packages/web");
-const WEB_SRC = resolve(WEB_ROOT, "src");
-const WEB_TEST_FILE_PATTERN = /\.(spec|test)\.[tj]sx?$/;
-const DEFAULT_WEB_TEST_BATCH_SIZE = 3;
 
 const TEST_PROJECTS = {
   backend: {
@@ -40,48 +36,9 @@ const TEST_PROJECTS = {
     cmd: ["./node_modules/.bin/jest", "scripts"],
   },
   web: {
-    cmd: [],
+    cmd: ["bun", "test", "--cwd", "packages/web"],
   },
 } satisfies Record<string, ProjectConfig>;
-
-function findWebTestFiles(dir: string): string[] {
-  return readdirSync(dir)
-    .flatMap((entry) => {
-      const path = resolve(dir, entry);
-      const stats = statSync(path);
-
-      if (stats.isDirectory()) {
-        return findWebTestFiles(path);
-      }
-
-      if (!WEB_TEST_FILE_PATTERN.test(entry)) {
-        return [];
-      }
-
-      return relative(WEB_ROOT, path);
-    })
-    .sort();
-}
-
-function chunk<T>(items: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-
-  for (let index = 0; index < items.length; index += size) {
-    chunks.push(items.slice(index, index + size));
-  }
-
-  return chunks;
-}
-
-function getWebTestBatchSize() {
-  const configuredBatchSize = Number(process.env["WEB_TEST_BATCH_SIZE"]);
-
-  if (Number.isInteger(configuredBatchSize) && configuredBatchSize > 0) {
-    return configuredBatchSize;
-  }
-
-  return DEFAULT_WEB_TEST_BATCH_SIZE;
-}
 
 function assertBackendConfigFile() {
   const configFilePath = resolve(process.cwd(), "compass.yaml");
@@ -113,18 +70,6 @@ function runCommand(cmd: string[], cwd = process.cwd()) {
 }
 
 function runProject(projectName: keyof typeof TEST_PROJECTS) {
-  if (projectName === "web") {
-    const testFileBatches = chunk(
-      findWebTestFiles(WEB_SRC),
-      getWebTestBatchSize(),
-    );
-
-    for (const testFiles of testFileBatches) {
-      runCommand(["bun", "test", "--cwd", WEB_ROOT, ...testFiles]);
-    }
-    return;
-  }
-
   runCommand(TEST_PROJECTS[projectName].cmd);
 }
 

@@ -44,7 +44,7 @@ const request = async <T>(
       return result;
     }
 
-    const response = await fetch(getRequestUrl(url), {
+    const response = await globalThis.fetch(getRequestUrl(url), {
       body: body === undefined ? undefined : JSON.stringify(body),
       credentials: "include",
       headers: {
@@ -69,7 +69,12 @@ const request = async <T>(
 
     return result;
   } catch (error) {
-    if (isBackendUnavailableError(error)) {
+    const apiError = isApiError(error) ? error : createApiError(requestConfig);
+
+    if (
+      isBackendUnavailableError(error) ||
+      isBackendUnavailableError(apiError)
+    ) {
       markBackendUnavailable();
     }
 
@@ -77,7 +82,7 @@ const request = async <T>(
       return handleErrorResponse<ApiResponse<T>>(error);
     }
 
-    throw createApiError(requestConfig);
+    throw apiError;
   }
 };
 

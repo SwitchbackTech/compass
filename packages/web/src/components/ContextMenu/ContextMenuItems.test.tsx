@@ -13,6 +13,7 @@ import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { reducers } from "@web/store/reducers";
+import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockClose = mock();
@@ -21,22 +22,6 @@ const mockDuplicateEvent = mock();
 const mockSetDraft = mock();
 const mockSubmit = mock();
 const mockOnDelete = mock();
-
-mock.module("@web/views/Week/components/Draft/context/useDraftContext", () => ({
-  useDraftContext: () => ({
-    actions: {
-      openForm: mockOpenForm,
-      duplicateEvent: mockDuplicateEvent,
-      submit: mockSubmit,
-    },
-    setters: {
-      setDraft: mockSetDraft,
-    },
-    confirmation: {
-      onDelete: mockOnDelete,
-    },
-  }),
-}));
 
 mock.module(
   "@web/components/PlannerSidebar/draft/context/useSidebarContext",
@@ -91,7 +76,28 @@ const renderWithTheme = (ui: ReactElement) => {
 
   return render(
     <Provider store={store}>
-      <ThemeProvider theme={theme}>{ui}</ThemeProvider>
+      <ThemeProvider theme={theme}>
+        <DraftContext.Provider
+          value={
+            {
+              actions: {
+                duplicateEvent: mockDuplicateEvent,
+                openForm: mockOpenForm,
+                repositionDraftByKeyboard: mock(() => false),
+                submit: mockSubmit,
+              },
+              confirmation: {
+                onDelete: mockOnDelete,
+              },
+              setters: {
+                setDraft: mockSetDraft,
+              },
+            } as never
+          }
+        >
+          {ui}
+        </DraftContext.Provider>
+      </ThemeProvider>
     </Provider>,
   );
 };

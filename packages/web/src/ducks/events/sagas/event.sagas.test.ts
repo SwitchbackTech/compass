@@ -79,6 +79,7 @@ mock.module("@web/ducks/events/event.api", () => ({
 mock.module("@web/common/classes/Session", () => ({
   session: {
     doesSessionExist: mockDoesSessionExist,
+    signOut: mock().mockResolvedValue(undefined),
   },
 }));
 

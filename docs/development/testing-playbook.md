@@ -45,7 +45,8 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 ## Current Test Strategy
 
 - `bun run test:core` uses `bun test` with a small compatibility preload for the core BSON mock setup.
-- `bun run test:web`, `bun run test:backend`, and `bun run test:scripts` intentionally retain the existing Jest harness while their hoist-heavy module-mocking patterns are migrated.
+- `bun run test:web` runs `bun test --cwd packages/web` directly. Web tests should be isolated enough to run in one Bun process without batching.
+- `bun run test:backend` and `bun run test:scripts` intentionally retain the existing Jest harness while their hoist-heavy module-mocking patterns are migrated.
 - `bun run test:<project>` is the stable CI-facing entrypoint for every package; the root dispatcher chooses the correct runner per project.
 
 ## Retained Jest Layout
@@ -115,6 +116,14 @@ Avoid:
 - CSS selectors
 - implementation-detail assertions
 - unnecessary module-wide mocks
+
+Isolation rules:
+
+- Do not use top-level `mock.module` for shared production modules unless the test imports the subject through a local factory and the mock cannot affect later files. Prefer provider wrappers, real stores, explicit dependency factories, or `spyOn` with teardown.
+- Avoid mocking shared UI primitives such as `TooltipWrapper`, `@floating-ui/react`, or session hooks in broad component tests. A mock that only helps one file can change unrelated tests later in the same Bun process.
+- If a test replaces globals (`fetch`, `document.getElementById`, storage, timers, console methods), restore the original value in teardown.
+- Prefer `renderWithStore`, `createStoreWrapper`, or a focused provider harness over mocking `@web/store` or `store.hooks`.
+- `bun test --cwd packages/web` is the acceptance check for web test isolation. A focused test can pass while still leaking into the direct suite.
 
 ### Web Jest Harness Defaults (MSW + Globals)
 

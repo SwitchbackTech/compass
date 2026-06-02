@@ -6,6 +6,7 @@ import {
   shouldShowAnonymousCalendarChangeSignUpPrompt,
 } from "@web/auth/compass/state/auth.state.util";
 import { session } from "@web/common/classes/Session";
+import * as eventSelectors from "@web/ducks/events/selectors/event.selectors";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import {
   afterEach,
@@ -24,14 +25,10 @@ const mockRepository = {
 };
 
 const mockGetEventRepository = mock(() => mockRepository);
-const mockSelectEventById = mock();
+const selectEventByIdSpy = spyOn(eventSelectors, "selectEventById");
 
 mock.module("@web/common/repositories/event/event.repository.util", () => ({
   getEventRepository: mockGetEventRepository,
-}));
-
-mock.module("@web/ducks/events/selectors/event.selectors", () => ({
-  selectEventById: mockSelectEventById,
 }));
 
 const { createEvent, editEvent } =
@@ -55,8 +52,8 @@ describe("event sign-up prompt failure paths", () => {
     mockRepository.create.mockClear();
     mockRepository.delete.mockClear();
     mockRepository.edit.mockClear();
-    mockSelectEventById.mockClear();
-    mockSelectEventById.mockReturnValue(mockEvent);
+    selectEventByIdSpy.mockReset();
+    selectEventByIdSpy.mockReturnValue(mockEvent);
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
     editEventSlice.actions.error = (() => ({
       type: "async/editEvent/error",

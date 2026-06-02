@@ -11,18 +11,12 @@ import { describe, expect, it, mock } from "bun:test";
 mock.module("@web/common/classes/Session", () => ({
   session: {
     doesSessionExist: mock(),
+    signOut: mock().mockResolvedValue(undefined),
   },
 }));
 
 mock.module("@web/common/repositories/event/event.repository.util", () => ({
   getEventRepository: mock(),
-}));
-
-mock.module("@web/common/utils/event/event.util", () => ({
-  addId: (event: Schema_GridEvent) => ({ ...event, _id: "event-1" }),
-  assembleGridEvent: (event: Schema_GridEvent) => event,
-  hasEventDates: (event: Schema_GridEvent) =>
-    typeof event.startDate === "string" && typeof event.endDate === "string",
 }));
 
 const { insertOptimisticEvent } =

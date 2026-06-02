@@ -18,6 +18,7 @@ const mockAlert = mock();
 mock.module("@web/common/classes/Session", () => ({
   session: {
     doesSessionExist: mockDoesSessionExist,
+    signOut: mock().mockResolvedValue(undefined),
   },
 }));
 

@@ -37,13 +37,6 @@ mock.module(
   }),
 );
 
-mock.module(
-  "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection",
-  () => ({
-    RecurrenceSection: () => null,
-  }),
-);
-
 mock.module("@web/views/Forms/EventForm/EventActionMenu", () => ({
   EventActionMenu: () => null,
 }));

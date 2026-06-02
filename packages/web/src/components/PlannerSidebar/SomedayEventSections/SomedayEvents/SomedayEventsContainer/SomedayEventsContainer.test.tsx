@@ -47,12 +47,6 @@ mock.module(
   }),
 );
 
-mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
-  TooltipWrapper: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-}));
-
 const { SomedayEventsContainer } =
   require("./SomedayEventsContainer") as typeof import("./SomedayEventsContainer");
 

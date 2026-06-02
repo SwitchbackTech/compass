@@ -88,6 +88,7 @@ mock.module("@web/common/classes/Session", () => ({
       events$.next(payload as { action: string }),
     on: mock(),
     off: mock(),
+    signOut: mock().mockResolvedValue(undefined),
   },
 }));
 

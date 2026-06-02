@@ -1,26 +1,20 @@
 import { renderHook, waitFor } from "@testing-library/react";
+import { createGoogleAvailability } from "./useIsGoogleAvailable.factory";
 import { describe, expect, it, mock } from "bun:test";
 
 const getConfig = mock();
 
-mock.module("@web/common/apis/app-config.api", () => ({
-  AppConfigApi: {
-    get: getConfig,
-  },
-}));
+const createHook = () => {
+  const { resetGoogleAvailabilityForTests, useIsGoogleAvailable } =
+    createGoogleAvailability({
+      getConfig,
+      isGoogleAuthConfigured: true,
+    });
 
-mock.module("@web/common/constants/env.constants", () => ({
-  IS_GOOGLE_AUTH_CONFIGURED: true,
-}));
+  resetGoogleAvailabilityForTests();
 
-async function importHook() {
-  const moduleUrl = new URL(
-    `./useIsGoogleAvailable.ts?test=${Math.random().toString(36).slice(2)}`,
-    import.meta.url,
-  );
-
-  return import(moduleUrl.href);
-}
+  return useIsGoogleAvailable;
+};
 
 describe("useIsGoogleAvailable", () => {
   it("uses the backend config response before exposing Google UI", async () => {
@@ -30,9 +24,7 @@ describe("useIsGoogleAvailable", () => {
         isConfigured: true,
       },
     });
-    const { resetGoogleAvailabilityForTests, useIsGoogleAvailable } =
-      await importHook();
-    resetGoogleAvailabilityForTests();
+    const useIsGoogleAvailable = createHook();
 
     const { result } = renderHook(() => useIsGoogleAvailable());
 
@@ -53,9 +45,7 @@ describe("useIsGoogleAvailable", () => {
           isConfigured: true,
         },
       });
-    const { resetGoogleAvailabilityForTests, useIsGoogleAvailable } =
-      await importHook();
-    resetGoogleAvailabilityForTests();
+    const useIsGoogleAvailable = createHook();
 
     const firstRender = renderHook(() => useIsGoogleAvailable());
 

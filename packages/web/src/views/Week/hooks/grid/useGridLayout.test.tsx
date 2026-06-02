@@ -1,7 +1,9 @@
+import { configureStore } from "@reduxjs/toolkit";
 import { render, screen, waitFor } from "@testing-library/react";
 import { type FC, useRef } from "react";
 import { Provider } from "react-redux";
-import { store } from "@web/store";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { reducers } from "@web/store/reducers";
 import { useGridLayout } from "./useGridLayout";
 import { describe, expect, it } from "bun:test";
 
@@ -106,12 +108,27 @@ const GridLayoutHarness: FC = () => {
   );
 };
 
-const renderHarness = () =>
-  render(
+const createStore = () =>
+  configureStore({
+    preloadedState: createInitialState(),
+    reducer: reducers,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        immutableCheck: false,
+        serializableCheck: false,
+        thunk: false,
+      }),
+  });
+
+const renderHarness = () => {
+  const store = createStore();
+
+  return render(
     <Provider store={store}>
       <GridLayoutHarness />
     </Provider>,
   );
+};
 
 describe("useGridLayout", () => {
   it("measures grid elements from callback refs and derives column widths", async () => {

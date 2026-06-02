@@ -2,6 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import {
   createInitialState,
   type InitialReduxState,
@@ -10,16 +11,9 @@ import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { type Setters_Sidebar, type State_Sidebar } from "./useSidebarState";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-const mockDispatch = mock();
 let currentState: InitialReduxState = createInitialState();
-
-mock.module("@web/store/store.hooks", () => ({
-  useAppDispatch: () => mockDispatch,
-  useAppSelector: (selector: (state: InitialReduxState) => unknown) =>
-    selector(currentState),
-}));
 
 const { useSidebarActions } =
   require("./useSidebarActions") as typeof import("./useSidebarActions");
@@ -96,20 +90,23 @@ describe("useSidebarActions", () => {
         pageSize: 1,
       },
     };
-    mockDispatch.mockClear();
   });
 
   it("schedules a dropped Someday event immediately", () => {
-    const { result } = renderHook(() =>
-      useSidebarActions(
-        {
-          onGoToDate: mock(),
-          viewEnd: dayjs("2024-01-21"),
-          viewStart: dayjs("2024-01-15"),
-        },
-        createState(),
-        createSetters(),
-      ),
+    const { store, wrapper } = createStoreWrapper(currentState);
+    const dispatchSpy = spyOn(store, "dispatch");
+    const { result } = renderHook(
+      () =>
+        useSidebarActions(
+          {
+            onGoToDate: mock(),
+            viewEnd: dayjs("2024-01-21"),
+            viewStart: dayjs("2024-01-15"),
+          },
+          createState(),
+          createSetters(),
+        ),
+      { wrapper },
     );
 
     result.current.commitSomedayInteraction({
@@ -122,14 +119,17 @@ describe("useSidebarActions", () => {
       type: "schedule",
     });
 
-    const convertAction = mockDispatch.mock.calls.find(
+    const convertAction = dispatchSpy.mock.calls.find(
       ([action]) => action.type === getSomedayEventsSlice.actionNames.convert,
     )?.[0];
-    const draftStartAction = mockDispatch.mock.calls.find(
+    const draftStartAction = dispatchSpy.mock.calls.find(
       ([action]) => action.type === draftSlice.actions.start.type,
     )?.[0];
 
-    expect(convertAction).toBeDefined();
+    if (!convertAction) {
+      throw new Error("Expected someday convert action to be dispatched");
+    }
+
     expect(convertAction.payload.event).toEqual({
       _id: somedayEvent._id,
       endDate: "2024-01-16T12:00:00.000Z",

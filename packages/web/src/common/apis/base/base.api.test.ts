@@ -1,3 +1,4 @@
+import { type ApiRequestConfig } from "../api.types";
 import {
   isBackendUnavailable,
   markBackendUnavailable,
@@ -34,9 +35,15 @@ describe("BaseApi backend availability", () => {
 
   it("marks the backend available when a response arrives", async () => {
     markBackendUnavailable();
-    globalThis.fetch = mock(() =>
-      Promise.resolve(new Response("{}", { status: 200 })),
-    ) as unknown as typeof fetch;
+    BaseApi.defaults.adapter = async <T>(
+      config: ApiRequestConfig & { body?: unknown },
+    ) => ({
+      config,
+      data: {} as T,
+      headers: new Headers(),
+      status: 200,
+      statusText: "OK",
+    });
 
     await BaseApi.get("/config");
 
