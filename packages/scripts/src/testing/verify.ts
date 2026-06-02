@@ -5,7 +5,7 @@ import { execSync } from "node:child_process";
  * Detects which packages changed via git diff and runs the minimum
  * necessary test suites plus type-check.
  *
- * All test execution is delegated to run.ts — no commands are duplicated here.
+ * Test execution is delegated to the root `test:<project>` package.json scripts.
  *
  * Usage:
  *   bun run verify              — auto-detect from git diff
@@ -79,7 +79,7 @@ function mapFilesToPackages(files: string[]): Package[] {
 function runPackage(pkg: Package): boolean {
   console.log(`\n→ test:${pkg}`);
   const result = bunRuntime.spawnSync({
-    cmd: ["bun", "packages/scripts/src/testing/run.ts", pkg],
+    cmd: ["bun", "run", `test:${pkg}`],
     cwd: process.cwd(),
     env: {
       ...process.env,
