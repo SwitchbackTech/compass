@@ -26,13 +26,16 @@ describe("ShortcutsOverlay", () => {
     const overlay = screen.getByRole("dialog", { name: "Keyboard shortcuts" });
 
     expect(overlay.firstElementChild?.className).toContain("translate-x-0");
-    expect(screen.getByText("Shortcuts")).toBeTruthy();
-    expect(screen.getByText("Day")).toBeTruthy();
-    expect(screen.getByText("Previous day")).toBeTruthy();
-    expect(screen.queryByText("Empty")).toBeNull();
+    expect(screen.getByText("Shortcuts")).toBeInTheDocument();
+    expect(
+      screen.getByText("Keyboard shortcuts for Day view"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Day")).toBeInTheDocument();
+    expect(screen.getByText("Previous day")).toBeInTheDocument();
+    expect(screen.queryByText("Empty")).not.toBeInTheDocument();
   });
 
-  it("returns focus to the planner sidebar when closed with Escape", () => {
+  it("calls onClose when closed with Escape", () => {
     const onClose = mock();
 
     render(
