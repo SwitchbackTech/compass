@@ -47,7 +47,6 @@ E2E workflow (`test-e2e.yml`) is separate and runs on pull requests to `main` vi
 - `bun run test:core` uses `bun test` with a small compatibility preload for the core BSON mock setup.
 - `bun run test:web` runs `bun test --cwd packages/web` directly. Web tests should be isolated enough to run in one Bun process without batching.
 - `bun run test:backend` and `bun run test:scripts` intentionally retain the existing Jest harness while their hoist-heavy module-mocking patterns are migrated.
-- `bun run test:<project>` is the stable CI-facing entrypoint for every package; the root dispatcher chooses the correct runner per project.
 
 ## Retained Jest Layout
 
