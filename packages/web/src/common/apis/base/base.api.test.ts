@@ -5,9 +5,7 @@ import {
   resetBackendAvailabilityForTests,
 } from "../util/backend-unavailable-error.util";
 import { BaseApi } from "./base.api";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
-
-const originalFetch = globalThis.fetch;
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
 describe("BaseApi backend availability", () => {
   beforeEach(() => {
@@ -16,21 +14,32 @@ describe("BaseApi backend availability", () => {
   });
 
   afterEach(() => {
-    globalThis.fetch = originalFetch;
     BaseApi.defaults.adapter = undefined;
     resetBackendAvailabilityForTests();
   });
 
   it("marks the backend unavailable when fetch cannot reach it", async () => {
-    globalThis.fetch = mock(() =>
-      Promise.reject(new TypeError("Failed to fetch")),
-    ) as unknown as typeof fetch;
+    BaseApi.defaults.adapter = async () => {
+      throw new TypeError("Failed to fetch");
+    };
 
     await expect(BaseApi.get("/event")).rejects.toMatchObject({
       name: "ApiError",
     });
 
     expect(isBackendUnavailable()).toBe(true);
+  });
+
+  it("does not mark the backend unavailable for non-network request failures", async () => {
+    BaseApi.defaults.adapter = async () => {
+      throw new Error("Unexpected adapter failure");
+    };
+
+    await expect(BaseApi.get("/event")).rejects.toMatchObject({
+      name: "ApiError",
+    });
+
+    expect(isBackendUnavailable()).toBe(false);
   });
 
   it("marks the backend available when a response arrives", async () => {
