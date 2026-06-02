@@ -12,7 +12,6 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -909,7 +908,9 @@ const mockWindowLocation = (url: string) => {
   setTestWindowUrl(url);
 };
 
-const originalReplaceState = window.history.replaceState.bind(window.history);
+const originalReplaceState = Object.getPrototypeOf(
+  window.history,
+).replaceState.bind(window.history) as typeof window.history.replaceState;
 const replaceStateSpy = spyOn(window.history, "replaceState");
 
 describe("URL Parameter Support", () => {
@@ -1105,8 +1106,4 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

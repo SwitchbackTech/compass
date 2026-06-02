@@ -14,7 +14,6 @@ import {
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -774,8 +773,4 @@ describe("createEvent saga - unauthenticated users", () => {
 
     expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(false);
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

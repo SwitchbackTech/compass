@@ -16,7 +16,7 @@ import {
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { getDragDurationMinutes } from "./drag-duration.util";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockDispatch = mock();
 let currentState: InitialReduxState = createInitialState();
@@ -323,8 +323,4 @@ describe("useDraftActions", () => {
 
     expect(setDraft).not.toHaveBeenCalled();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

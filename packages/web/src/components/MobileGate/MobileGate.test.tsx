@@ -8,7 +8,7 @@ describe("MobileGate", () => {
   const mockWindowOpen = mock();
 
   beforeEach(() => {
-    mock.restore();
+    mockWindowOpen.mockClear();
     window.open = mockWindowOpen;
   });
 

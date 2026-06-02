@@ -3,7 +3,7 @@ import {
   type Schema_GridEvent,
   type Schema_SomedayEvent,
 } from "@web/common/types/web.event.types";
-import { afterAll, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 const createMockGridPosition = (): Schema_GridEvent["position"] => ({
   isOverlapping: false,
@@ -392,8 +392,4 @@ describe("submit.parser", () => {
       expect(result.user).toBe(userId); // The function sets user to the provided userId
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

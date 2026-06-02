@@ -3,7 +3,6 @@ import {
   isGoogleRevoked,
 } from "@web/auth/google/state/google.auth.state";
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -191,8 +190,4 @@ describe("google-auth.util", () => {
       expect(mockToast.isActive).toBeDefined();
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

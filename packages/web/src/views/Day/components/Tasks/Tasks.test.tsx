@@ -1,7 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { type ReactNode } from "react";
-import { afterAll, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 const useTasksMock = mock();
 
@@ -65,8 +65,4 @@ describe("Tasks", () => {
     expect(screen.queryByRole("status")).not.toBeInTheDocument();
     expect(screen.getByText("No tasks yet")).toBeInTheDocument();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

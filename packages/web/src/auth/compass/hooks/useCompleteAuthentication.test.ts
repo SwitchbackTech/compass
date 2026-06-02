@@ -1,4 +1,4 @@
-import { afterAll, beforeEach, describe, it, mock } from "bun:test";
+import { beforeEach, describe, it, mock } from "bun:test";
 
 // Pre-define mock functions
 const mockSyncPendingLocalEvents = mock();
@@ -71,8 +71,4 @@ describe("useCompleteAuthentication", () => {
 
     await Promise.resolve(result.current({ email: "test@example.com" }));
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

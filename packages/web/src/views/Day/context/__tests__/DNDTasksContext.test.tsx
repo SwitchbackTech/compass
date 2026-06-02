@@ -7,7 +7,7 @@ import {
 import { render, screen } from "@testing-library/react";
 import React from "react";
 import { type useTasks as useTasksFn } from "@web/views/Day/hooks/tasks/useTasks";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock the useTasks hook
 const mockUseTasks = mock();
@@ -288,8 +288,4 @@ describe("DNDTasksProvider", () => {
 
     expect(mockReorderTasks).not.toHaveBeenCalled();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

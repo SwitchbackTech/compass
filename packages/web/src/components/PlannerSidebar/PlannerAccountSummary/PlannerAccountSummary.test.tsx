@@ -26,11 +26,6 @@ mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
   }),
 }));
 
-mock.module("@phosphor-icons/react", () => ({
-  InfoIcon: () => <span aria-hidden="true">info</span>,
-  PlusIcon: () => <span aria-hidden="true">plus</span>,
-}));
-
 const { PlannerAccountSummary } =
   require("./PlannerAccountSummary") as typeof import("./PlannerAccountSummary");
 

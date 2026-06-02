@@ -1,6 +1,6 @@
 import { act, renderHook } from "@testing-library/react";
 import { type Schema_Event } from "@core/types/event.types";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 let isDNDing = false;
 
@@ -59,8 +59,4 @@ describe("useSidebarState", () => {
 
     expect(result.current.state.isDragging).toBe(false);
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

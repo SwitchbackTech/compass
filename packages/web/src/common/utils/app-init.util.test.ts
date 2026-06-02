@@ -1,6 +1,5 @@
 import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -179,8 +178,4 @@ describe("app-init.util", () => {
       expect(mockToastError).not.toHaveBeenCalled();
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

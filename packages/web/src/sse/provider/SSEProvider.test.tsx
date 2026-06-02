@@ -2,7 +2,7 @@ import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
 import { type EventEmitter2 } from "eventemitter2";
 import { Provider } from "react-redux";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();
 const mockUseUser = mock();
@@ -76,8 +76,4 @@ describe("SSEProvider", () => {
     });
     expect(closeStream).not.toHaveBeenCalled();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

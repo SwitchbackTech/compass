@@ -21,6 +21,7 @@ const bunRuntime = (globalThis as unknown as { Bun: BunRuntime }).Bun;
 const WEB_ROOT = resolve(process.cwd(), "packages/web");
 const WEB_SRC = resolve(WEB_ROOT, "src");
 const WEB_TEST_FILE_PATTERN = /\.(spec|test)\.[tj]sx?$/;
+const DEFAULT_WEB_TEST_BATCH_SIZE = 3;
 
 const TEST_PROJECTS = {
   backend: {
@@ -62,6 +63,26 @@ function findWebTestFiles(dir: string): string[] {
     .sort();
 }
 
+function chunk<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+
+  return chunks;
+}
+
+function getWebTestBatchSize() {
+  const configuredBatchSize = Number(process.env["WEB_TEST_BATCH_SIZE"]);
+
+  if (Number.isInteger(configuredBatchSize) && configuredBatchSize > 0) {
+    return configuredBatchSize;
+  }
+
+  return DEFAULT_WEB_TEST_BATCH_SIZE;
+}
+
 function assertBackendConfigFile() {
   const configFilePath = resolve(process.cwd(), "compass.yaml");
 
@@ -91,15 +112,16 @@ function runCommand(cmd: string[], cwd = process.cwd()) {
   }
 }
 
-function runWebProject() {
-  for (const testFile of findWebTestFiles(WEB_SRC)) {
-    runCommand([process.execPath, "test", "--cwd", WEB_ROOT, testFile]);
-  }
-}
-
 function runProject(projectName: keyof typeof TEST_PROJECTS) {
   if (projectName === "web") {
-    runWebProject();
+    const testFileBatches = chunk(
+      findWebTestFiles(WEB_SRC),
+      getWebTestBatchSize(),
+    );
+
+    for (const testFiles of testFileBatches) {
+      runCommand(["bun", "test", "--cwd", WEB_ROOT, ...testFiles]);
+    }
     return;
   }
 

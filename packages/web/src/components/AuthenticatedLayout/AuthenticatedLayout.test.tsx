@@ -1,14 +1,10 @@
 import { MemoryRouter, Route, Routes } from "react-router-dom";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import { AuthenticatedLayout } from "./AuthenticatedLayout";
 
 describe("AuthenticatedLayout", () => {
-  beforeEach(() => {
-    mock.restore();
-  });
-
   it("should render child routes via Outlet", async () => {
     render(
       <MemoryRouter
@@ -58,8 +54,4 @@ describe("AuthenticatedLayout", () => {
     expect(screen.getByTestId("nested-route")).toBeInTheDocument();
     expect(screen.getByText("Nested Content")).toBeInTheDocument();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

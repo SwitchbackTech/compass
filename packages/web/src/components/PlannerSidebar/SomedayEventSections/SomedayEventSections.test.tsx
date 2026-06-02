@@ -84,5 +84,4 @@ describe("SomedayEventSections", () => {
 
 afterAll(() => {
   setSystemTime();
-  mock.restore();
 });

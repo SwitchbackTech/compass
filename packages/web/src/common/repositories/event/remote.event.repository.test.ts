@@ -8,7 +8,7 @@ import {
   isBackendUnavailable,
   resetBackendAvailabilityForTests,
 } from "@web/common/apis/util/backend-unavailable-error.util";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockCreate = mock();
 const mockGet = mock();
@@ -273,8 +273,4 @@ describe("RemoteEventRepository", () => {
       expect(mockReorder).toHaveBeenCalledTimes(1);
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

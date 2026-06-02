@@ -1,7 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -288,8 +287,4 @@ describe("useVersionCheck", () => {
       });
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

@@ -3,7 +3,7 @@ import "@testing-library/jest-dom";
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
 const actualReactRouterDom = await import("react-router-dom");
@@ -15,7 +15,9 @@ mock.module("react-router-dom", () => ({
 
 mock.module("@web/components/Shortcuts/ShortcutHint", () => ({
   ShortcutHint: ({ children }: { children: ReactNode }) => (
-    <span data-testid="shortcut-hint">{children}</span>
+    <span aria-hidden data-testid="shortcut-hint">
+      {children}
+    </span>
   ),
 }));
 
@@ -570,8 +572,4 @@ describe("SelectView", () => {
       });
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

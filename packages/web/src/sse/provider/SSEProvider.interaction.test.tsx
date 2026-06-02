@@ -18,7 +18,7 @@ import {
 } from "@web/auth/google/state/google.sync.state";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const closeStream = mock();
 const getStream = mock(() => null);
@@ -250,8 +250,4 @@ describe("useGcalSSE", () => {
       expect(mockHandleGoogleRevoked).toHaveBeenCalledTimes(1);
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

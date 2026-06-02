@@ -1,13 +1,5 @@
 import { act, renderHook } from "@testing-library/react";
-import {
-  afterAll,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
 const clearAuthenticationState = mock();
 const setAuthenticated = mock();
@@ -88,8 +80,4 @@ describe("useLogout", () => {
 
     consoleWarn.mockRestore();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

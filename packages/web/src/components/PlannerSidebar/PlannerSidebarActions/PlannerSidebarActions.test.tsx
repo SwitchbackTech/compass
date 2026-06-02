@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { type ReactNode } from "react";
-import { afterAll, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 mock.module("@web/common/hooks/useVersionCheck", () => ({
   useVersionCheck: () => ({
@@ -48,8 +48,4 @@ describe("PlannerSidebarActions", () => {
       screen.getByRole("button", { name: "Close shortcuts" }),
     ).toBeInTheDocument();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });
