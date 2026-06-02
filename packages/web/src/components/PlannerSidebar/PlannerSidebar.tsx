@@ -1,13 +1,11 @@
 import { type HTMLAttributes } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
-import {
-  ShortcutsOverlay,
-  type ShortcutOverlaySection,
-} from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
+import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { PlannerAccountSummary } from "./PlannerAccountSummary/PlannerAccountSummary";
 import { PlannerMonthPicker } from "./PlannerMonthPicker/PlannerMonthPicker";
 import { PlannerSidebarActions } from "./PlannerSidebarActions/PlannerSidebarActions";
+import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
 import { SomedayEventSections } from "./SomedayEventSections/SomedayEventSections";
 
 export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
