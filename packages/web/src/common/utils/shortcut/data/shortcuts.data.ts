@@ -5,15 +5,13 @@ import { type Shortcut } from "@web/common/types/global.shortcut.types";
 interface ShortcutsConfig {
   isHome?: boolean;
   isToday?: boolean;
-  isNow?: boolean;
   currentDate?: dayjs.Dayjs;
 }
 
 export const getShortcuts = (config: ShortcutsConfig = {}) => {
-  const { isHome = false, isToday = true, isNow = false, currentDate } = config;
+  const { isHome = false, isToday = true, currentDate } = config;
 
   const globalShortcuts: Shortcut[] = [
-    { k: VIEW_SHORTCUTS.now.key, label: VIEW_SHORTCUTS.now.label },
     { k: VIEW_SHORTCUTS.day.key, label: VIEW_SHORTCUTS.day.label },
     { k: VIEW_SHORTCUTS.week.key, label: VIEW_SHORTCUTS.week.label },
     { k: "[", label: "Close sidebar" },
@@ -25,7 +23,6 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   let dayShortcuts: Shortcut[] = [];
   let dayTaskShortcuts: Shortcut[] = [];
   let dayAgendaShortcuts: Shortcut[] = [];
-  let nowShortcuts: Shortcut[] = [];
 
   if (isHome) {
     homeShortcuts = [
@@ -62,27 +59,13 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
       { k: "m", label: "Edit event" },
     ];
   }
-  if (isNow) {
-    nowShortcuts = [
-      { k: "e d", label: "Edit description" },
-      { k: "e r", label: "Edit reminder" },
-      { k: "Mod+Enter", label: "Save description" },
-      { k: "j", label: "Previous task" },
-      { k: "k", label: "Next task" },
-      { k: "Enter", label: "Mark complete" },
-      { k: "t", label: "Go to today" },
-    ];
-  }
-
   return {
     globalShortcuts,
     homeShortcuts,
     dayShortcuts,
     dayTaskShortcuts,
     dayAgendaShortcuts,
-    nowShortcuts,
     isHome,
     isToday,
-    isNow,
   };
 };

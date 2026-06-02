@@ -154,17 +154,13 @@ function generateDemoData() {
       order: 2,
     }),
     createTask({
-      title: `Go to Now view (${VIEW_SHORTCUTS.now.key})`,
-      order: 3,
-    }),
-    createTask({
       title: `Go to Week view (${VIEW_SHORTCUTS.week.key})`,
-      order: 4,
+      order: 3,
     }),
     createTask({
       title: "Star the repo =]",
       description: "https://github.com/SwitchbackTech/compass",
-      order: 5,
+      order: 4,
     }),
   ];
 

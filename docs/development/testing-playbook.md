@@ -190,7 +190,6 @@ Files:
 - `packages/web/src/common/hooks/useSidebarState.ts`
 - `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
 - `packages/web/src/views/Day/view/DayViewContent.tsx`
-- `packages/web/src/views/Now/view/NowView.tsx`
 
 Reliable setup pattern:
 

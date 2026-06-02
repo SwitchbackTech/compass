@@ -17,7 +17,6 @@ describe("getNavigationCommandItems", () => {
 
   it("returns the other views and today for the week palette", () => {
     expect(getItemLabels("week")).toEqual([
-      "Go to Now [n]",
       "Go to Day [d]",
       "Go to Today (Thursday, May 28) [t]",
     ]);
@@ -25,15 +24,6 @@ describe("getNavigationCommandItems", () => {
 
   it("returns the other views and today for the day palette", () => {
     expect(getItemLabels("day")).toEqual([
-      "Go to Now [n]",
-      "Go to Week [w]",
-      "Go to Today (Thursday, May 28) [t]",
-    ]);
-  });
-
-  it("returns the other views and today for the now palette", () => {
-    expect(getItemLabels("now")).toEqual([
-      "Go to Day [d]",
       "Go to Week [w]",
       "Go to Today (Thursday, May 28) [t]",
     ]);
@@ -43,7 +33,7 @@ describe("getNavigationCommandItems", () => {
     const navigatedViews: ViewName[] = [];
     let didGoToToday = false;
     const items = getNavigationCommandItems({
-      currentView: "now",
+      currentView: "day",
       onGoToToday: () => {
         didGoToToday = true;
       },
@@ -53,11 +43,10 @@ describe("getNavigationCommandItems", () => {
       today,
     });
 
-    items.find((item) => item.id === "go-to-day")?.onClick?.({} as never);
     items.find((item) => item.id === "go-to-week")?.onClick?.({} as never);
     items.find((item) => item.id === "today")?.onClick?.({} as never);
 
-    expect(navigatedViews).toEqual(["day", "week"]);
+    expect(navigatedViews).toEqual(["week"]);
     expect(didGoToToday).toBe(true);
   });
 });

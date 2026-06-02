@@ -30,12 +30,6 @@ export const SelectView = ({
   const getCurrentView = () => {
     const pathname = location.pathname;
     if (
-      pathname === ROOT_ROUTES.NOW ||
-      pathname.startsWith(`${ROOT_ROUTES.NOW}/`)
-    ) {
-      return "Now";
-    }
-    if (
       pathname === ROOT_ROUTES.DAY ||
       pathname.startsWith(`${ROOT_ROUTES.DAY}/`)
     ) {
@@ -49,9 +43,8 @@ export const SelectView = ({
 
   const getCurrentViewIndex = () => {
     const currentView = getCurrentView();
-    if (currentView === "Now") return 0;
-    if (currentView === "Day") return 1;
-    return 2; // Week
+    if (currentView === "Day") return 0;
+    return 1;
   };
 
   const currentView = getCurrentView();
@@ -92,12 +85,6 @@ export const SelectView = ({
   };
 
   const options = [
-    {
-      route: VIEW_SHORTCUTS.now.route,
-      label: VIEW_SHORTCUTS.now.label,
-      view: "Now" as const,
-      key: VIEW_SHORTCUTS.now.key,
-    },
     {
       route: VIEW_SHORTCUTS.day.route,
       label: VIEW_SHORTCUTS.day.label,

@@ -19,16 +19,9 @@ export function useGlobalShortcuts() {
   const { openLogoutConfirmation } = useLogoutConfirmation();
   const navigate = useNavigate();
   const location = useLocation();
-  const nowHotkey = VIEW_SHORTCUTS.now.key.toUpperCase() as RegisterableHotkey;
   const dayHotkey = VIEW_SHORTCUTS.day.key.toUpperCase() as RegisterableHotkey;
   const weekHotkey =
     VIEW_SHORTCUTS.week.key.toUpperCase() as RegisterableHotkey;
-
-  useAppHotkeyUp(nowHotkey, () => {
-    if (location.pathname !== VIEW_SHORTCUTS.now.route) {
-      navigate(VIEW_SHORTCUTS.now.route);
-    }
-  });
 
   useAppHotkeyUp(dayHotkey, () => {
     if (!location.pathname.startsWith(VIEW_SHORTCUTS.day.route)) {

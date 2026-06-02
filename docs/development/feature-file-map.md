@@ -42,17 +42,14 @@ Use this document to find the first files to inspect for common Compass changes.
 - Drag handle floating placement guard: `packages/web/src/views/Day/components/Task/DraggableTask.tsx`
 - Local storage for tasks: `packages/web/src/common/storage/adapter`
 
-## Day / Week / Now Views
+## Day / Week Views
 
 - Day view route and content: `packages/web/src/views/Day/view`
 - Day view header (includes Planner Sidebar toggle control): `packages/web/src/views/Day/components/Header/Header.tsx`
 - Day keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
 - Day view hooks: `packages/web/src/views/Day/hooks`
 - Week view: `packages/web/src/views/Week`
-- Now view: `packages/web/src/views/Now`
-- Now shortcuts sidebar component: `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
 - Shared responsive sidebar state hook (`xl` breakpoint behavior): `packages/web/src/common/hooks/useSidebarState.ts`
-- Now keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Now/shortcuts/useNowShortcuts.ts`
 - Dedication dialog implementation (native `dialog` + hotkeys): `packages/web/src/views/Week/components/Dedication/Dedication.tsx`
 - Dedication dialog mount points:
   - week view: `packages/web/src/views/Week/WeekView.tsx`

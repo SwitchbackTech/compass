@@ -7,7 +7,6 @@ describe("shortcuts.data", () => {
       const shortcuts = getShortcuts();
 
       expect(shortcuts.globalShortcuts).toEqual([
-        { k: "n", label: "Now" },
         { k: "d", label: "Day" },
         { k: "w", label: "Week" },
         { k: "[", label: "Close sidebar" },
@@ -84,7 +83,6 @@ describe("shortcuts.data", () => {
       const shortcuts = getShortcuts({
         isHome: true,
         isToday: false,
-        isNow: false,
       });
 
       expect(shortcuts.homeShortcuts).toHaveLength(3);
@@ -96,52 +94,6 @@ describe("shortcuts.data", () => {
       expect(shortcuts.homeShortcuts[2]).toEqual({
         k: "Enter",
         label: "Go to Today",
-      });
-
-      expect(shortcuts.dayTaskShortcuts).toHaveLength(0);
-      expect(shortcuts.dayAgendaShortcuts).toHaveLength(0);
-    });
-
-    it("should return now shortcuts when isNow is true", () => {
-      const shortcuts = getShortcuts({
-        isHome: false,
-        isToday: false,
-        isNow: true,
-      });
-
-      expect(shortcuts.globalShortcuts).toContainEqual({
-        k: "d",
-        label: "Day",
-      });
-      expect(shortcuts.nowShortcuts).toHaveLength(7);
-      expect(shortcuts.nowShortcuts[0]).toEqual({
-        k: "e d",
-        label: "Edit description",
-      });
-      expect(shortcuts.nowShortcuts[1]).toEqual({
-        k: "e r",
-        label: "Edit reminder",
-      });
-      expect(shortcuts.nowShortcuts[2]).toEqual({
-        k: "Mod+Enter",
-        label: "Save description",
-      });
-      expect(shortcuts.nowShortcuts[3]).toEqual({
-        k: "j",
-        label: "Previous task",
-      });
-      expect(shortcuts.nowShortcuts[4]).toEqual({ k: "k", label: "Next task" });
-      expect(shortcuts.nowShortcuts[5]).toEqual({
-        k: "Enter",
-        label: "Mark complete",
-      });
-      expect(shortcuts.nowShortcuts[6]).toEqual({
-        k: "t",
-        label: "Go to today",
-      });
-      expect(shortcuts.nowShortcuts).not.toContainEqual({
-        k: "Esc",
-        label: "Back to Today",
       });
 
       expect(shortcuts.dayTaskShortcuts).toHaveLength(0);

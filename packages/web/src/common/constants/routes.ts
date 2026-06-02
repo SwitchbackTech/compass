@@ -6,5 +6,4 @@ export const ROOT_ROUTES = {
   WEEK: "/week",
   DAY: "/day",
   DAY_DATE: "/day/:dateString",
-  NOW: "/now",
 };

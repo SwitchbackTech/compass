@@ -40,15 +40,6 @@ export const router = createBrowserRouter(
       loader: loadAuthenticated,
       children: [
         {
-          path: ROOT_ROUTES.NOW,
-          lazy: async () =>
-            import(
-              /* webpackChunkName: "now" */ "@web/views/Now/view/NowView"
-            ).then((module) => ({
-              Component: module.NowView,
-            })),
-        },
-        {
           path: ROOT_ROUTES.DAY,
           lazy: async () =>
             import(
