@@ -1,10 +1,9 @@
 import { expect, type Page, test } from "@playwright/test";
 
-type ViewName = "day" | "now" | "week";
+type ViewName = "day" | "week";
 
 const shortcutByView = {
   day: "d",
-  now: "n",
   week: "w",
 } as const satisfies Record<ViewName, string>;
 
@@ -59,10 +58,9 @@ test.describe("View dropdown", () => {
 
     await openViewMenu(page, "week");
 
-    await expect(viewOption(page, "now")).toHaveAttribute(
-      "aria-selected",
-      "false",
-    );
+    await expect(
+      page.getByTestId("view-select-dropdown").getByRole("option"),
+    ).toHaveText(["Dayd", "Weekw"]);
     await expect(viewOption(page, "day")).toHaveAttribute(
       "aria-selected",
       "false",
@@ -72,7 +70,6 @@ test.describe("View dropdown", () => {
       "true",
     );
 
-    await expectShortcutHint(page, "now");
     await expectShortcutHint(page, "day");
     await expectShortcutHint(page, "week");
   });
@@ -117,22 +114,6 @@ test.describe("View dropdown", () => {
     expect(consoleErrors).toEqual([]);
   });
 
-  test("switches from Week to Now and paints the Now view", async ({
-    page,
-  }) => {
-    const consoleErrors = collectUnexpectedConsoleErrors(page);
-
-    await page.goto("/week");
-
-    await openViewMenu(page, "week");
-    await viewOption(page, "now").click();
-
-    await expect(page).toHaveURL(/\/now$/);
-    await expect(viewButton(page, "now")).toBeVisible();
-    await expect(viewButton(page, "week")).toHaveCount(0);
-    expect(consoleErrors).toEqual([]);
-  });
-
   test("supports keyboard navigation and Enter selection", async ({ page }) => {
     await page.goto("/week");
 
@@ -141,7 +122,7 @@ test.describe("View dropdown", () => {
     await page.keyboard.press("ArrowDown");
     await page.keyboard.press("Enter");
 
-    await expect(page).toHaveURL(/\/now$/);
-    await expect(viewButton(page, "now")).toBeVisible();
+    await expect(page).toHaveURL(/\/day\/\d{4}-\d{2}-\d{2}$/);
+    await expect(viewButton(page, "day")).toBeVisible();
   });
 });
