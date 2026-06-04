@@ -182,6 +182,22 @@ describe("staging deploy workflow", () => {
     expect(workflow).toContain("profile: selfhosted");
   });
 
+  it("provides a manual production deploy workflow with cloud health checks", () => {
+    const workflow = readRepoFile(".github/workflows/deploy-production.yml");
+
+    expect(workflow).toContain("workflow_dispatch:");
+    expect(workflow).not.toContain("workflow_call:");
+    expect(workflow).toContain(
+      "uses: ./.github/workflows/_deploy-environment.yml",
+    );
+    expect(workflow).toContain("environment: production");
+    expect(workflow).toContain(
+      "uses: ./.github/workflows/deploy-health-check.yml",
+    );
+    expect(workflow).toContain("needs: deploy");
+    expect(workflow).toContain("profile: cloud");
+  });
+
   it("provides a reusable deploy health check workflow with Discord failure alerts", () => {
     const workflow = readRepoFile(".github/workflows/deploy-health-check.yml");
 

@@ -9,6 +9,7 @@ Compass uses GitHub Actions for continuous integration, Docker Hub for image dis
 | Release on main | Push to `main` | Auto-increments patch version, publishes Docker images, then deploys staging |
 | Publish Docker images | Reusable workflow / manual dispatch / manual `v*.*.*` tag push | Builds and pushes Docker images only |
 | Deploy staging | Reusable workflow / manual dispatch | Pulls published images on staging, restarts the stack, then runs deploy health checks |
+| Deploy production | Manual dispatch | Deploys a release tag to production, then runs cloud deploy health checks |
 | Deploy health check | Reusable workflow | Validates the deployed staging stack and alerts Discord on failure |
 | Sync docs to compass-docs | Push to `main` touching `docs/**` | Mirrors this `docs/` directory to docs.compasscalendar.com |
 
@@ -127,3 +128,19 @@ Secrets and variables are split between repository level (shared across workflow
 | `BACKEND_API_URL` | Staging backend API URL |
 | `FRONTEND_URL` | Staging frontend URL |
 | `GOOGLE_CLIENT_ID` | OAuth client ID |
+
+---
+
+## Production Deploy
+
+Source: [`.github/workflows/deploy-production.yml`](../../.github/workflows/deploy-production.yml)
+
+Production deploys are manual-only. Run `Deploy production` from GitHub Actions
+with an existing release tag, such as `v1.2.3`; it is not called by
+`release-on-main.yml` and does not run automatically after PR merges.
+
+The workflow deploys to the GitHub `production` environment through
+`_deploy-environment.yml`, builds an environment-specific web image tagged
+`switchbacktech/compass-web:production-<version>`, then runs
+`deploy-health-check.yml` with the `cloud` profile. Production is expected to use
+external MongoDB and SuperTokens Cloud rather than self-hosted data services.

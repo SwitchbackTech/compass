@@ -3,8 +3,6 @@
 **A daily planner for minimalists. Organize your day and lock-in.**
 
 <img width="1512" height="860" alt="week-view-2026-06" src="https://github.com/user-attachments/assets/6dcfd741-883d-401c-b8e2-97300b1dd925" />
-<img width="1508" height="835" alt="day-view-2026-06" src="https://github.com/user-attachments/assets/adce91f8-40b1-4990-afa1-859ab61a7dab" />
-
 
 ## Why Try Compass?
 
