@@ -87,6 +87,10 @@ Use a single-context domain-doc layout. See `.agents/config/domain.md`.
   and `user-event`; avoid CSS selectors and `data-*` locators.
 - New web styles should use Tailwind semantic colors from
   `packages/web/src/index.css`, not raw colors like `bg-blue-300`.
+- Prefer canonical Tailwind scale utilities over arbitrary values when an
+  equivalent exists. Treat VS Code Tailwind IntelliSense
+  `suggestCanonicalClasses` warnings as actionable cleanup before finishing
+  changes.
 - Do not test login flows without the required backend setup.
 - Keep React components in their own files.
 - Do not add or use barrel files such as `index.ts` / `index.tsx`. Import from

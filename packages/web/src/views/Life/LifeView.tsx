@@ -77,7 +77,7 @@ function ZoomControls({
           -
         </span>
       </ZoomButton>
-      <span className="min-w-[80px] text-center font-medium text-sm text-text-light">
+      <span className="min-w-20 text-center font-medium text-sm text-text-light">
         {Math.round(zoom * 100)}%
       </span>
       <ZoomButton
@@ -335,7 +335,7 @@ export function LifeView({ enableDotTooltips = true, today }: LifeViewProps) {
               style={{ transform: `scale(${effectiveScale})` }}
             >
               <div
-                className="grid gap-[2px]"
+                className="grid gap-0.5"
                 data-total-dots={totalDots}
                 style={{
                   gridTemplateColumns: `repeat(${columns}, ${DOT_SIZE}px)`,
