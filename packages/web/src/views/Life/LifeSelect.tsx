@@ -15,7 +15,7 @@ export function LifeSelect({
   value,
   onChange,
   children,
-  className = "max-w-35",
+  className = "max-w-36",
 }: LifeSelectProps) {
   const handleChange: ChangeEventHandler<HTMLSelectElement> = (event) => {
     onChange(event.target.value);

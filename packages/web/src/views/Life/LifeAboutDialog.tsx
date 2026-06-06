@@ -38,6 +38,8 @@ export function LifeAboutDialog() {
               <a
                 className="text-accent-primary underline hover:no-underline"
                 href={BLOG_LINK}
+                rel="noopener noreferrer"
+                target="_blank"
               >
                 Visualize Your Life in Weeks
               </a>

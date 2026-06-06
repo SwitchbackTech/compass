@@ -126,6 +126,33 @@ export function LifeView({ enableDotTooltips = true, today }: LifeViewProps) {
     [birthYear, birthMonth, birthDay, totalDots, today],
   );
   const columns = getLifeGridColumns({ isMobile, zoom });
+  const dots = useMemo(() => {
+    return Array.from({ length: totalDots }).map((_, index) => {
+      const weekNumber = index + 1;
+      const isFilled = index < weeksLived;
+      const dot = (
+        <span
+          className={`block h-2 w-2 rounded-[1px] transition-colors ${
+            isFilled
+              ? "bg-accent-primary"
+              : "border border-border-primary bg-bg-primary"
+          }`}
+          key={weekNumber}
+          title={`Week ${weekNumber}`}
+        />
+      );
+
+      if (enableDotTooltips) {
+        return (
+          <LifeDotTooltip key={weekNumber} weekNumber={weekNumber}>
+            {dot}
+          </LifeDotTooltip>
+        );
+      }
+
+      return dot;
+    });
+  }, [totalDots, weeksLived, enableDotTooltips]);
 
   useEffect(() => {
     const maxDay = Number.parseInt(validDays.at(-1) ?? "31", 10);
@@ -341,29 +368,7 @@ export function LifeView({ enableDotTooltips = true, today }: LifeViewProps) {
                   gridTemplateColumns: `repeat(${columns}, ${DOT_SIZE}px)`,
                 }}
               >
-                {Array.from({ length: totalDots }).map((_, index) => {
-                  const weekNumber = index + 1;
-                  const isFilled = index < weeksLived;
-                  const dot = (
-                    <span
-                      className={`block h-2 w-2 rounded-[1px] transition-colors ${
-                        isFilled
-                          ? "bg-accent-primary"
-                          : "border border-border-primary bg-bg-primary"
-                      }`}
-                      key={weekNumber}
-                      title={`Week ${weekNumber}`}
-                    />
-                  );
-
-                  return enableDotTooltips ? (
-                    <LifeDotTooltip key={weekNumber} weekNumber={weekNumber}>
-                      {dot}
-                    </LifeDotTooltip>
-                  ) : (
-                    <span key={weekNumber}>{dot}</span>
-                  );
-                })}
+                {dots}
               </div>
             </div>
           </div>
