@@ -1,8 +1,9 @@
 import { type Dispatch, type SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
+import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { useSession } from "@web/auth/compass/session/useSession";
-import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
+import { isBackendUnavailable as getIsBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
 import { FlexDirections } from "@web/components/Flex/styled";
@@ -19,52 +20,68 @@ export interface RecurrenceSectionProps {
   setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
 }
 
-export const RecurrenceSection = ({
-  bgColor,
-  event,
-  setEvent,
-}: RecurrenceSectionProps) => {
-  const { authenticated } = useSession();
-  const recurrenceHook = useRecurrence(event, { setEvent });
-  const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
-  const { weekDays, interval, freq, until, toggleRecurrence } = recurrenceHook;
-  const { hasRecurrence } = recurrenceHook;
-  const isBackendDown = isBackendUnavailable();
-  const isRecurrenceDisabled = !authenticated || isBackendDown;
-  const disabledMessage = "Sign in to use recurring events.";
+interface RecurrenceSectionDependencies {
+  isBackendUnavailable: () => boolean;
+  useSession: () => CompassSession;
+}
 
-  return (
-    <StyledRepeatRow direction={FlexDirections.COLUMN}>
-      <RecurrenceToggle
-        disabled={isRecurrenceDisabled}
-        disabledMessage={disabledMessage}
-        hasRecurrence={hasRecurrence}
-        toggleRecurrence={toggleRecurrence}
-      />
+export function createRecurrenceSection({
+  isBackendUnavailable,
+  useSession,
+}: RecurrenceSectionDependencies) {
+  return function RecurrenceSection({
+    bgColor,
+    event,
+    setEvent,
+  }: RecurrenceSectionProps) {
+    const { authenticated } = useSession();
+    const recurrenceHook = useRecurrence(event, { setEvent });
+    const { setInterval, setFreq, setWeekDays, setUntil } = recurrenceHook;
+    const { weekDays, interval, freq, until, toggleRecurrence } =
+      recurrenceHook;
+    const { hasRecurrence } = recurrenceHook;
+    const isBackendDown = isBackendUnavailable();
+    const isRecurrenceDisabled = !authenticated || isBackendDown;
+    const disabledMessage = "Sign in to use recurring events.";
 
-      <ConditionalRender condition={hasRecurrence && !isRecurrenceDisabled}>
-        <RecurrenceIntervalSelect
-          bgColor={bgColor}
-          initialValue={interval}
-          frequency={freq}
-          onChange={setInterval}
-          onFreqSelect={setFreq}
-          min={1}
-          max={12}
+    return (
+      <StyledRepeatRow direction={FlexDirections.COLUMN}>
+        <RecurrenceToggle
+          disabled={isRecurrenceDisabled}
+          disabledMessage={disabledMessage}
+          hasRecurrence={hasRecurrence}
+          toggleRecurrence={toggleRecurrence}
         />
 
-        <WeekDays bgColor={bgColor} value={weekDays} onChange={setWeekDays} />
+        <ConditionalRender condition={hasRecurrence && !isRecurrenceDisabled}>
+          <RecurrenceIntervalSelect
+            bgColor={bgColor}
+            initialValue={interval}
+            frequency={freq}
+            onChange={setInterval}
+            onFreqSelect={setFreq}
+            min={1}
+            max={12}
+          />
 
-        <EndsOnDate
-          bgColor={bgColor}
-          inputColor={
-            hoverColorByPriority[event.priority ?? Priorities.UNASSIGNED]
-          }
-          until={until}
-          minDate={event.endDate}
-          setUntil={setUntil}
-        />
-      </ConditionalRender>
-    </StyledRepeatRow>
-  );
-};
+          <WeekDays bgColor={bgColor} value={weekDays} onChange={setWeekDays} />
+
+          <EndsOnDate
+            bgColor={bgColor}
+            inputColor={
+              hoverColorByPriority[event.priority ?? Priorities.UNASSIGNED]
+            }
+            until={until}
+            minDate={event.endDate}
+            setUntil={setUntil}
+          />
+        </ConditionalRender>
+      </StyledRepeatRow>
+    );
+  };
+}
+
+export const RecurrenceSection = createRecurrenceSection({
+  isBackendUnavailable: getIsBackendUnavailable,
+  useSession,
+});

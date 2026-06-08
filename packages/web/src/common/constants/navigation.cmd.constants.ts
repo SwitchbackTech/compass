@@ -14,11 +14,10 @@ interface GetNavigationCommandItemsArgs {
 
 const viewIcons: Record<ViewName, IconName> = {
   day: "CalendarDaysIcon",
-  now: "ClockIcon",
   week: "CalendarIcon",
 };
 
-const navigationViewOrder: ViewName[] = ["now", "day", "week"];
+const navigationViewOrder: ViewName[] = ["day", "week"];
 
 export const getNavigationCommandItems = ({
   currentView,

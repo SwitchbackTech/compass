@@ -14,7 +14,6 @@ import {
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -80,6 +79,7 @@ mock.module("@web/ducks/events/event.api", () => ({
 mock.module("@web/common/classes/Session", () => ({
   session: {
     doesSessionExist: mockDoesSessionExist,
+    signOut: mock().mockResolvedValue(undefined),
   },
 }));
 
@@ -774,8 +774,4 @@ describe("createEvent saga - unauthenticated users", () => {
 
     expect(shouldShowAnonymousCalendarChangeSignUpPrompt()).toBe(false);
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

@@ -9,28 +9,40 @@ import {
   isEditableKeyboardTarget,
   isEventFormOpen,
 } from "./form.util";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 
-// Mock DOM methods
 const mockGetElementsByName = mock();
 const mockGetElementById = mock();
 
-// Mock document
-Object.defineProperty(document, "getElementsByName", {
-  value: mockGetElementsByName,
-  writable: true,
-});
-
-Object.defineProperty(document, "getElementById", {
-  value: mockGetElementById,
-  writable: true,
-});
-
 describe("form.util", () => {
+  let getElementByIdSpy: ReturnType<typeof spyOn>;
+  let getElementsByNameSpy: ReturnType<typeof spyOn>;
+
   beforeEach(() => {
-    // Reset all mocks before each test
     mockGetElementById.mockClear();
     mockGetElementsByName.mockClear();
+    getElementByIdSpy = spyOn(document, "getElementById").mockImplementation(
+      mockGetElementById as typeof document.getElementById,
+    );
+    getElementsByNameSpy = spyOn(
+      document,
+      "getElementsByName",
+    ).mockImplementation(
+      mockGetElementsByName as typeof document.getElementsByName,
+    );
+  });
+
+  afterEach(() => {
+    getElementByIdSpy.mockRestore();
+    getElementsByNameSpy.mockRestore();
   });
 
   describe("isEventFormOpen", () => {

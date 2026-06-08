@@ -1,6 +1,6 @@
 import { combineReducers, configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
-import { type EventEmitter2 } from "eventemitter2";
+import { EventEmitter2 } from "eventemitter2";
 import { act } from "react";
 import { Provider } from "react-redux";
 import {
@@ -18,52 +18,22 @@ import {
 } from "@web/auth/google/state/google.sync.state";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { createUseGcalSSE } from "../hooks/useGcalSSE.factory";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-const closeStream = mock();
-const getStream = mock(() => null);
 const mockHandleGoogleRevoked = mock();
-const mockDismissErrorToast = mock();
 const mockShowErrorToast = mock();
-const mockShowSessionExpiredToast = mock();
-const openStream = mock();
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
+const sseEmitter = new EventEmitter2({ maxListeners: 20 });
+let dispatch: (action: unknown) => unknown;
 
-mock.module("@web/auth/google/util/google.auth.util", () => ({
-  authenticate: mock(),
+const useGcalSSE = createUseGcalSSE({
   handleGoogleRevoked: mockHandleGoogleRevoked,
-  showLocalEventsSyncFailure: mock(),
-  syncLocalEvents: mock(),
-  syncPendingLocalEvents: mock(),
-}));
-mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
   refreshUserMetadata,
-}));
-mock.module("@web/common/utils/toast/error-toast.util", () => ({
-  dismissErrorToast: mockDismissErrorToast,
-  ErrorToastSeverity: {
-    CRITICAL: "critical",
-    DEFAULT: "default",
-  },
-  SESSION_EXPIRED_TOAST_ID: "session-expired-api",
   showErrorToast: mockShowErrorToast,
-  showSessionExpiredToast: mockShowSessionExpiredToast,
-}));
-mock.module("../client/sse.client", () => {
-  const { EventEmitter2 } = require("eventemitter2") as {
-    EventEmitter2: new (options?: { maxListeners?: number }) => EventEmitter2;
-  };
-  const sseEmitter = new EventEmitter2({ maxListeners: 20 });
-  return {
-    openStream,
-    closeStream,
-    getStream,
-    sseEmitter,
-  };
+  sseEmitter,
+  useAppDispatch: () => dispatch,
 });
-
-const { useGcalSSE } =
-  require("../hooks/useGcalSSE") as typeof import("../hooks/useGcalSSE");
 
 const HookHost = () => {
   useGcalSSE();
@@ -71,8 +41,7 @@ const HookHost = () => {
 };
 
 const getSseEmitter = () => {
-  return (require("../client/sse.client") as { sseEmitter: EventEmitter2 })
-    .sseEmitter;
+  return sseEmitter;
 };
 
 const fireImportStart = () => {
@@ -105,20 +74,16 @@ describe("useGcalSSE", () => {
     });
 
   beforeEach(() => {
-    closeStream.mockClear();
-    getStream.mockClear();
     getSseEmitter().removeAllListeners();
     mockHandleGoogleRevoked.mockClear();
-    mockDismissErrorToast.mockClear();
     mockShowErrorToast.mockClear();
-    mockShowSessionExpiredToast.mockClear();
-    openStream.mockClear();
     refreshUserMetadata.mockClear();
     resetGoogleSyncUIStateForTests();
   });
 
   it("does not trigger a client-side import when USER_METADATA reports RESTART", () => {
     const store = createStore();
+    dispatch = store.dispatch;
 
     render(
       <Provider store={store}>
@@ -141,6 +106,7 @@ describe("useGcalSSE", () => {
 
   it("stores IMPORTING metadata without starting another import", () => {
     const store = createStore();
+    dispatch = store.dispatch;
 
     render(
       <Provider store={store}>
@@ -163,6 +129,7 @@ describe("useGcalSSE", () => {
 
   it("sets the syncing override when IMPORT_GCAL_START arrives", async () => {
     const store = createStore();
+    dispatch = store.dispatch;
 
     render(
       <Provider store={store}>
@@ -181,6 +148,7 @@ describe("useGcalSSE", () => {
 
   it("clears the syncing override and triggers refetch after REPAIR completion", async () => {
     const store = createStore();
+    dispatch = store.dispatch;
     setRepairingSyncIndicatorOverride();
 
     render(
@@ -206,6 +174,7 @@ describe("useGcalSSE", () => {
 
   it("clears the syncing override and shows the repair toast after REPAIR failure", async () => {
     const store = createStore();
+    dispatch = store.dispatch;
     setRepairingSyncIndicatorOverride();
 
     render(
@@ -233,6 +202,7 @@ describe("useGcalSSE", () => {
 
   it("clears the syncing override when Google is revoked", async () => {
     const store = createStore();
+    dispatch = store.dispatch;
     setRepairingSyncIndicatorOverride();
 
     render(
@@ -250,8 +220,4 @@ describe("useGcalSSE", () => {
       expect(mockHandleGoogleRevoked).toHaveBeenCalledTimes(1);
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

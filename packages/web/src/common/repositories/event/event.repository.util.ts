@@ -9,7 +9,7 @@
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
-import { type EventRepository } from "./event.repository.interface";
+import { createGetEventRepository } from "./event.repository.factory";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
 
@@ -33,23 +33,10 @@ import { RemoteEventRepository } from "./remote.event.repository";
  *
  * @param sessionExists - Whether a session currently exists (from session.doesSessionExist())
  */
-export function getEventRepository(sessionExists: boolean): EventRepository {
-  // If Google disconnected Compass, use local storage until user re-authenticates
-  if (isGoogleRevoked()) {
-    return new LocalEventRepository();
-  }
-
-  if (isBackendUnavailable()) {
-    return new LocalEventRepository();
-  }
-
-  if (hasUserEverAuthenticated()) {
-    return new RemoteEventRepository();
-  }
-
-  if (sessionExists) {
-    return new RemoteEventRepository();
-  }
-
-  return new LocalEventRepository();
-}
+export const getEventRepository = createGetEventRepository({
+  createLocalEventRepository: () => new LocalEventRepository(),
+  createRemoteEventRepository: () => new RemoteEventRepository(),
+  hasUserEverAuthenticated,
+  isBackendUnavailable,
+  isGoogleRevoked,
+});

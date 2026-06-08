@@ -1,9 +1,13 @@
 import { type FC, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Categories_Event } from "@core/types/event.types";
+import { positionAllDayDraftEvent } from "@web/common/calendar-grid/layout/allDayDraftEventPosition";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
-import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
+import {
+  selectAllDayEvents,
+  selectGridEvents,
+} from "@web/ducks/events/selectors/event.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -23,9 +27,18 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   useGridMouseMove();
 
   const category = useAppSelector(selectDraftCategory);
+  const allDayEvents = useAppSelector(selectAllDayEvents);
   const timedEvents = useAppSelector(selectGridEvents);
   const { state } = useDraftContext();
   const { draft } = state;
+  const activeAllDayDraftEvent = useMemo(
+    () =>
+      positionAllDayDraftEvent({
+        draft,
+        events: allDayEvents,
+      }).activeDraftEvent,
+    [allDayEvents, draft],
+  );
   const deckLayout = useMemo(
     () => getActiveTimedDraftDeckLayout(draft, timedEvents),
     [draft, timedEvents],
@@ -45,6 +58,7 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   return createPortal(
     isGridDraft && (
       <GridDraft
+        activeAllDayDraftEvent={activeAllDayDraftEvent}
         deckLayout={deckLayout}
         measurements={measurements}
         weekProps={weekProps}

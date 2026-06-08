@@ -1,125 +1,137 @@
-import {
-  FloatingFocusManager,
-  FloatingOverlay,
-  FloatingPortal,
-  useClick,
-  useDismiss,
-  useFloating,
-  useInteractions,
-  useRole,
-} from "@floating-ui/react";
-import { useCallback, useMemo, useState } from "react";
-import { Priorities } from "@core/constants/core.constants";
+import { useCallback, useState } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
-import { theme } from "@web/common/styles/theme";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  OverlayPanel,
+  OverlayPanelActionButton,
+  OverlayPanelActions,
+} from "@web/components/OverlayPanel/OverlayPanel";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
-import { SaveSection } from "@web/views/Forms/EventForm/SaveSection/SaveSection";
-import { StyledEventForm } from "@web/views/Forms/EventForm/styled";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
-const UPDATE_SCOPE_OPTIONS: Array<[string, RecurringEventUpdateScope]> = [
-  ["this", RecurringEventUpdateScope.THIS_EVENT],
-  ["this-and-following", RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS],
-  ["all", RecurringEventUpdateScope.ALL_EVENTS],
+const UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
+  RecurringEventUpdateScope.THIS_EVENT,
+  RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
+  RecurringEventUpdateScope.ALL_EVENTS,
 ];
+
+const RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
+  RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
+  RecurringEventUpdateScope.ALL_EVENTS,
+];
+
+const updateScopeOptionClassName =
+  "flex min-h-11 cursor-pointer items-center gap-3 rounded px-3 text-base text-text-lighter transition-colors hover:bg-panel-badge-bg";
+
+const selectedUpdateScopeOptionClassName = "bg-panel-badge-bg";
+
+const radioDotClassName =
+  "relative flex size-[18px] flex-none rounded-full border-2 border-border-secondary transition-colors after:absolute after:inset-0 after:m-auto after:size-2 after:scale-0 after:rounded-full after:bg-accent-primary after:transition-transform peer-checked:border-accent-primary peer-checked:after:scale-100 peer-focus-visible:ring-2 peer-focus-visible:ring-accent-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-panel-bg";
 
 export function RecurringEventUpdateScopeDialog() {
   const {
     confirmation,
     state: { draft },
   } = useDraftContext();
-  const { isRecurrenceUpdateScopeDialogOpen } = confirmation;
-  const { setRecurrenceUpdateScopeDialogOpen } = confirmation;
-  const { onUpdateScopeChange } = confirmation;
-  const reduxDraft = useAppSelector(selectDraft);
-  const { UNASSIGNED } = Priorities;
-  const priority = draft?.priority ?? reduxDraft?.priority ?? UNASSIGNED;
+  const {
+    isRecurrenceUpdateScopeDialogOpen,
+    setRecurrenceUpdateScopeDialogOpen,
+    onUpdateScopeChange,
+  } = confirmation;
+  if (!isRecurrenceUpdateScopeDialogOpen) return null;
 
+  return (
+    <RecurringEventUpdateScopeDialogContent
+      draft={draft}
+      onUpdateScopeChange={onUpdateScopeChange}
+      setRecurrenceUpdateScopeDialogOpen={setRecurrenceUpdateScopeDialogOpen}
+    />
+  );
+}
+
+interface RecurringEventUpdateScopeDialogContentProps {
+  draft: Schema_GridEvent | null;
+  onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
+  setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;
+}
+
+function RecurringEventUpdateScopeDialogContent({
+  draft,
+  onUpdateScopeChange,
+  setRecurrenceUpdateScopeDialogOpen,
+}: RecurringEventUpdateScopeDialogContentProps) {
+  const reduxDraft = useAppSelector(selectDraft);
   const currentDraft = draft ?? reduxDraft;
   const recurrenceChanged =
     currentDraft && reduxDraft
       ? DirtyParser.recurrenceChanged(currentDraft, reduxDraft)
       : false;
+  const options = recurrenceChanged
+    ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS
+    : UPDATE_SCOPE_OPTIONS;
+  const [fallbackScope] = options;
 
-  const { context, refs, floatingStyles } = useFloating({
-    open: isRecurrenceUpdateScopeDialogOpen,
-    onOpenChange: setRecurrenceUpdateScopeDialogOpen,
-    strategy: "absolute",
-    placement: "bottom",
-    transform: true,
-  });
+  const [selectedScope, setSelectedScope] =
+    useState<RecurringEventUpdateScope>(fallbackScope);
+  const activeScope = options.includes(selectedScope)
+    ? selectedScope
+    : fallbackScope;
 
-  const [value, setValue] = useState<RecurringEventUpdateScope>(
-    RecurringEventUpdateScope.THIS_EVENT,
-  );
-
-  const click = useClick(context);
-  const role = useRole(context);
-  const dismiss = useDismiss(context, { outsidePressEvent: "mousedown" });
-  const interactions = useInteractions([click, role, dismiss]);
-
-  const options = useMemo<Array<[string, RecurringEventUpdateScope]>>(() => {
-    if (!recurrenceChanged) return UPDATE_SCOPE_OPTIONS;
-
-    return UPDATE_SCOPE_OPTIONS.slice(1);
-  }, [recurrenceChanged]);
+  const closeDialog = useCallback(() => {
+    setRecurrenceUpdateScopeDialogOpen(false);
+  }, [setRecurrenceUpdateScopeDialogOpen]);
 
   const onSubmitHandler = useCallback(() => {
-    onUpdateScopeChange(value);
-    setValue(RecurringEventUpdateScope.THIS_EVENT);
-  }, [value, onUpdateScopeChange]);
-
-  if (!isRecurrenceUpdateScopeDialogOpen) return null;
+    onUpdateScopeChange(activeScope);
+    setSelectedScope(RecurringEventUpdateScope.THIS_EVENT);
+  }, [activeScope, onUpdateScopeChange]);
 
   return (
-    <FloatingPortal>
-      <FloatingOverlay
-        className="dialog-overlay"
-        style={{ background: "rgba(0, 0, 0, 0.8)", zIndex: 4 }}
-        lockScroll
+    <OverlayPanel
+      title="Apply changes to"
+      onDismiss={closeDialog}
+      variant="modal"
+    >
+      <div
+        role="radiogroup"
+        aria-label="Apply changes to"
+        className="flex w-full flex-col gap-1"
       >
-        <FloatingFocusManager context={context}>
-          <div
-            ref={refs.setFloating}
-            style={{ ...floatingStyles, top: "50%", left: "50%" }}
-            {...interactions.getFloatingProps()}
-          >
-            <StyledEventForm role="form" priority={priority}>
-              <fieldset style={{ borderRadius: theme.shape.borderRadius }}>
-                <legend>Apply Changes To</legend>
+        {options.map((option) => {
+          const isSelected = activeScope === option;
 
-                {options.map(([id, option]) => (
-                  <div key={id}>
-                    <input
-                      type="radio"
-                      name="recurring-event-update-scope"
-                      value={option}
-                      onChange={() => setValue(option)}
-                      checked={value === option}
-                      id={`recurring-event-update-scope-select-${id}`}
-                    />
-
-                    <label
-                      htmlFor={`recurring-event-update-scope-select--${id}`}
-                    >
-                      {option}
-                    </label>
-                  </div>
-                ))}
-              </fieldset>
-
-              <SaveSection
-                saveText="Ok"
-                priority={priority}
-                onSubmit={onSubmitHandler}
-                onCancel={() => setRecurrenceUpdateScopeDialogOpen(false)}
+          return (
+            <label
+              key={option}
+              className={`${updateScopeOptionClassName} ${
+                isSelected ? selectedUpdateScopeOptionClassName : ""
+              }`}
+            >
+              <input
+                type="radio"
+                name="recurring-event-update-scope"
+                value={option}
+                checked={isSelected}
+                onChange={() => setSelectedScope(option)}
+                className="peer sr-only"
               />
-            </StyledEventForm>
-          </div>
-        </FloatingFocusManager>
-      </FloatingOverlay>
-    </FloatingPortal>
+              <span aria-hidden="true" className={radioDotClassName} />
+              {option}
+            </label>
+          );
+        })}
+      </div>
+
+      <OverlayPanelActions>
+        <OverlayPanelActionButton onClick={closeDialog}>
+          Cancel
+        </OverlayPanelActionButton>
+        <OverlayPanelActionButton variant="primary" onClick={onSubmitHandler}>
+          Ok
+        </OverlayPanelActionButton>
+      </OverlayPanelActions>
+    </OverlayPanel>
   );
 }

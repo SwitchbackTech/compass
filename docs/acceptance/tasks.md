@@ -12,9 +12,6 @@ Use this guide to validate:
 - deleting tasks and undoing deletions
 - reordering tasks by drag and drop
 - moving tasks to adjacent days
-- Now mode — locking in on a single task
-- navigating and completing tasks in Now mode
-- editing a task description in Now mode
 
 Do not use this guide to validate:
 
@@ -218,90 +215,6 @@ Pressing Ctrl+Meta+ArrowLeft moves the focused task to the previous calendar dat
 
 ---
 
-## Scenario 10: Use Now Mode — Lock In On A Task
-
-### UX
-
-Now mode (`/now`) shows all of today's incomplete tasks. Selecting one locks the view to that single task, removing other distractions.
-
-### Steps
-
-1. Create at least two incomplete tasks for today.
-2. Press `N` to navigate to `/now`.
-3. Select a task from the available task list.
-
-### Expected Results
-
-- Now mode opens and displays all incomplete tasks for today.
-- After selecting a task, the view focuses on that single task with a large title display.
-- The other tasks are hidden from view.
-
----
-
-## Scenario 11: Navigate Tasks In Now Mode (J/K)
-
-### UX
-
-In Now mode with a task focused, pressing `J` and `K` cycles through the available incomplete tasks without leaving the view.
-
-### Steps
-
-1. Enter Now mode with at least three incomplete tasks (see Scenario 10).
-2. Select a task to focus it.
-3. Press `K` to move to the next task.
-4. Press `J` to move to the previous task.
-
-### Expected Results
-
-- `K` advances to the next incomplete task (wrapping around at the end).
-- `J` goes back to the previous incomplete task (wrapping around at the start).
-- The currently focused task is displayed prominently.
-
----
-
-## Scenario 12: Complete A Task In Now Mode And Advance To Next
-
-### UX
-
-Pressing Enter in Now mode marks the focused task complete and automatically moves to the next incomplete task. When all tasks are done, a completion state is shown.
-
-### Steps
-
-1. Enter Now mode with exactly two incomplete tasks.
-2. Select the first task.
-3. Press Enter to mark it complete.
-4. Press Enter again to mark the second task complete.
-
-### Expected Results
-
-- After the first Enter, the view advances to the second task automatically.
-- After the second Enter, the "No tasks available" or all-done state is shown.
-- Both tasks appear as completed in Day view.
-
----
-
-## Scenario 13: Edit A Task Description In Now Mode
-
-### UX
-
-Pressing `E` while a task is focused in Now mode opens an inline description editor (max 255 characters). Pressing Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) saves the description.
-
-### Steps
-
-1. Enter Now mode and select a task.
-2. Press `E`.
-3. Type a description (keep it under 255 characters).
-4. Press Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux) to save.
-
-### Expected Results
-
-- An inline editor appears for the description.
-- After saving, the description is displayed below the task title.
-- The description persists after leaving and re-entering Now mode.
-- Characters beyond 255 are not accepted.
-
----
-
 ## Focused Regression Checks
 
 If time is limited, run these checks before shipping task-related changes:
@@ -313,7 +226,3 @@ If time is limited, run these checks before shipping task-related changes:
 5. Cmd+Z / Ctrl+Z restores the deleted task with its original properties.
 6. Drag-and-drop reordering persists after a page reload.
 7. Ctrl+Meta+ArrowRight moves a task to the next day; Ctrl+Meta+ArrowLeft to the previous day.
-8. Now mode shows all incomplete tasks for today and locks focus to a selected task.
-9. J/K navigate between tasks in Now mode without leaving the view.
-10. Enter in Now mode marks the task complete and auto-advances.
-11. D opens the description editor; Cmd+Enter / Ctrl+Enter saves; max 255 characters is enforced.

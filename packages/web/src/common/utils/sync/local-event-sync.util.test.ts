@@ -1,7 +1,7 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Event_Core } from "@core/types/event.types";
-import { EventApi } from "@web/ducks/events/event.api";
 import { markLocalDemoEvent } from "../../storage/types/local-event.types";
+import { createSyncLocalEventsToCloud } from "./local-event-sync.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const ensureStorageReady = mock();
@@ -9,20 +9,14 @@ const getAllEvents = mock();
 const clearAllEvents = mock();
 const create = mock();
 
-mock.module("@web/common/storage/adapter/adapter", () => ({
+const syncLocalEventsToCloud = createSyncLocalEventsToCloud({
+  createEvents: create,
   ensureStorageReady,
   getStorageAdapter: () => ({
-    getAllEvents,
     clearAllEvents,
+    getAllEvents,
   }),
-}));
-
-mock.module("@web/ducks/events/event.api", () => ({
-  EventApi: { create },
-}));
-
-const { syncLocalEventsToCloud } =
-  require("./local-event-sync.util") as typeof import("./local-event-sync.util");
+});
 
 const makeEvent = (overrides: Partial<Event_Core> = {}): Event_Core => ({
   _id: overrides._id ?? "event-1",
@@ -52,7 +46,7 @@ describe("syncLocalEventsToCloud", () => {
 
     await expect(syncLocalEventsToCloud()).resolves.toBe(1);
 
-    expect(EventApi.create).toHaveBeenCalledWith([userEvent]);
+    expect(create).toHaveBeenCalledWith([userEvent]);
     expect(clearAllEvents).toHaveBeenCalledTimes(1);
   });
 
@@ -63,7 +57,7 @@ describe("syncLocalEventsToCloud", () => {
 
     await expect(syncLocalEventsToCloud()).resolves.toBe(0);
 
-    expect(EventApi.create).not.toHaveBeenCalled();
+    expect(create).not.toHaveBeenCalled();
     expect(clearAllEvents).toHaveBeenCalledTimes(1);
   });
 });

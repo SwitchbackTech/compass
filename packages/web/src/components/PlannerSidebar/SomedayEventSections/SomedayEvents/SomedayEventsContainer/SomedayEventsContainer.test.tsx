@@ -47,24 +47,8 @@ mock.module(
   }),
 );
 
-mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
-  TooltipWrapper: ({ children }: { children: React.ReactNode }) => (
-    <>{children}</>
-  ),
-}));
-
-mock.module("@phosphor-icons/react", () => ({
-  ArrowCounterClockwise: () => <span aria-hidden="true">recurring</span>,
-  CaretLeft: () => <span aria-hidden="true">left</span>,
-  CaretRight: () => <span aria-hidden="true">right</span>,
-  DotsSixVertical: () => <span aria-hidden="true">drag</span>,
-  PlusIcon: () => <span aria-hidden="true">plus</span>,
-}));
-
 const { SomedayEventsContainer } =
   require("./SomedayEventsContainer") as typeof import("./SomedayEventsContainer");
-
-mock.restore();
 
 const renderSomedayEventsContainer = (
   props: React.ComponentProps<typeof SomedayEventsContainer>,

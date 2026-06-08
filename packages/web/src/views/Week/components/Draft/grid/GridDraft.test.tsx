@@ -1,25 +1,37 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type PropsWithChildren, type Ref } from "react";
+import { type PropsWithChildren, type Ref, useState } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { CALENDAR_DECK_MIN_WIDTH } from "@web/common/calendar-grid/calendarGrid.constants";
-import { ZIndex } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-let floatingFocusManagerProps: { modal?: boolean } | null = null;
-
 mock.module("@floating-ui/react", () => ({
   FloatingFocusManager: ({
     children,
-    ...props
-  }: PropsWithChildren<{ modal?: boolean }>) => {
-    floatingFocusManagerProps = props;
-    return <>{children}</>;
+    closeOnFocusOut,
+    modal,
+  }: PropsWithChildren<{ closeOnFocusOut?: boolean; modal?: boolean }>) => {
+    const [isMounted, setIsMounted] = useState(true);
+
+    return (
+      <div
+        data-modal={String(modal)}
+        data-testid="grid-draft-focus-manager"
+        onFocusCapture={(event) => {
+          if (closeOnFocusOut === false) return;
+          if (event.target !== event.currentTarget) {
+            setIsMounted(false);
+          }
+        }}
+      >
+        {isMounted ? children : null}
+      </div>
+    );
   },
 }));
 
@@ -35,20 +47,25 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
     onSubmit?: (event: Schema_GridEvent) => void;
     titleInputRef?: Ref<HTMLInputElement>;
   }) => (
-    <input
-      aria-label="Draft title"
-      onKeyDown={(event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          onSubmit?.(draftEvent);
-        }
+    <>
+      <input
+        aria-label="Draft title"
+        onKeyDown={(event) => {
+          if (event.key === "Enter") {
+            event.preventDefault();
+            onSubmit?.(draftEvent);
+          }
 
-        if (event.key === "ArrowDown") {
-          onDraftTitleArrowKey?.(event.key);
-        }
-      }}
-      ref={titleInputRef}
-    />
+          if (event.key === "ArrowDown") {
+            onDraftTitleArrowKey?.(event.key);
+          }
+        }}
+        ref={titleInputRef}
+      />
+      <button type="button" aria-label="Nested action menu item">
+        Nested action
+      </button>
+    </>
   ),
 }));
 
@@ -99,9 +116,11 @@ const createFormProps = () => {
 };
 
 const renderGridDraft = ({
+  activeAllDayDraftEvent = null,
   deckLayout = null,
   draft = createDraft(),
 }: {
+  activeAllDayDraftEvent?: Schema_GridEvent | null;
   deckLayout?: { groupSize: number; order: number } | null;
   draft?: Schema_GridEvent;
 } = {}) => {
@@ -136,6 +155,7 @@ const renderGridDraft = ({
   const result = render(
     <DraftContext.Provider value={value}>
       <GridDraft
+        activeAllDayDraftEvent={activeAllDayDraftEvent}
         deckLayout={deckLayout}
         measurements={{
           allDayRow: null,
@@ -153,7 +173,6 @@ const renderGridDraft = ({
 
 afterEach(() => {
   document.body.innerHTML = "";
-  floatingFocusManagerProps = null;
 });
 
 describe("GridDraft keyboard focus", () => {
@@ -177,15 +196,53 @@ describe("GridDraft keyboard focus", () => {
     });
   });
 
-  it("keeps the floating form non-modal while the draft block is a focus target", () => {
-    renderGridDraft();
+  it("uses the positioned all-day draft row when one is provided", () => {
+    const draft = createDraft({
+      endDate: "2026-05-27T00:00:00.000Z",
+      isAllDay: true,
+      position: undefined,
+      startDate: "2026-05-26T00:00:00.000Z",
+    });
 
-    expect(floatingFocusManagerProps?.modal).toBe(false);
+    renderGridDraft({
+      activeAllDayDraftEvent: {
+        ...draft,
+        row: 3,
+      },
+      draft,
+    });
+
+    expect(
+      screen.getByRole("button", { name: /All-day event: Planning/ }),
+    ).toHaveStyle({
+      top: "69px",
+    });
   });
 
-  it("keeps an active overlapping saved draft at its stacked width while raising it", () => {
+  it("keeps the floating form mounted when focus moves into nested menus", async () => {
+    renderGridDraft();
+
+    expect(screen.getByTestId("grid-draft-focus-manager")).toHaveAttribute(
+      "data-modal",
+      "false",
+    );
+
+    fireEvent.focus(
+      screen.getByRole("button", { name: "Nested action menu item" }),
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("textbox", { name: "Draft title" }),
+      ).toBeVisible();
+    });
+  });
+
+  it("keeps an active overlapping saved draft at its stacked width and stack order", () => {
+    const deckLayout = { groupSize: 2, order: 0 };
+
     renderGridDraft({
-      deckLayout: { groupSize: 2, order: 0 },
+      deckLayout,
     });
 
     const draftBlock = screen.getByRole("button", {
@@ -193,7 +250,7 @@ describe("GridDraft keyboard focus", () => {
     });
 
     expect(draftBlock.style.width).toBe(`${CALENDAR_DECK_MIN_WIDTH}px`);
-    expect(Number(draftBlock.style.zIndex)).toBe(ZIndex.MAX);
+    expect(Number(draftBlock.style.zIndex)).toBe(deckLayout.order + 1);
   });
 
   it("submits the draft from title Enter without focusing the draft block", async () => {

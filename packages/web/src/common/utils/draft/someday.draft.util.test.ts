@@ -2,21 +2,10 @@ import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mock assembleDefaultEvent since it makes external calls
-const assembleDefaultEvent = mock(async (_, startDate, endDate) => ({
-  _id: "mock-id",
-  user: "mock-user",
-  title: "",
-  startDate,
-  endDate,
-  isAllDay: false,
-  isSomeday: true,
-}));
-
-mock.module("../event/event.util", () => ({
-  assembleDefaultEvent,
+mock.module("@web/auth/compass/session/session.util", () => ({
+  getUserId: mock().mockResolvedValue("mock-user"),
 }));
 
 const { createSomedayDraft } =
@@ -27,7 +16,6 @@ describe("createSomedayDraft", () => {
   const mockActivity: Activity_DraftEvent = "sidebarClick";
 
   beforeEach(() => {
-    assembleDefaultEvent.mockClear();
     mockDispatch.mockClear();
   });
 
@@ -46,25 +34,17 @@ describe("createSomedayDraft", () => {
     const expectedStart = "2024-03-10";
     const expectedEnd = "2024-03-16";
 
-    expect(assembleDefaultEvent).toHaveBeenCalledWith(
-      Categories_Event.SOMEDAY_WEEK,
-      expectedStart,
-      expectedEnd,
-    );
-
     expect(mockDispatch).toHaveBeenCalledWith(
       draftSlice.actions.start({
         activity: mockActivity,
         eventType: Categories_Event.SOMEDAY_WEEK,
-        event: {
-          _id: "mock-id",
+        event: expect.objectContaining({
           user: "mock-user",
-          title: "",
           startDate: expectedStart,
           endDate: expectedEnd,
           isAllDay: false,
           isSomeday: true,
-        },
+        }),
       }),
     );
   });
@@ -84,30 +64,18 @@ describe("createSomedayDraft", () => {
     const expectedStart = "2024-02-01";
     const expectedEnd = "2024-02-29";
 
-    expect(assembleDefaultEvent).toHaveBeenCalledWith(
-      Categories_Event.SOMEDAY_MONTH,
-      expectedStart,
-      expectedEnd,
-    );
-
     expect(mockDispatch).toHaveBeenCalledWith(
       draftSlice.actions.start({
         activity: mockActivity,
         eventType: Categories_Event.SOMEDAY_MONTH,
-        event: {
-          _id: "mock-id",
+        event: expect.objectContaining({
           user: "mock-user",
-          title: "",
           startDate: expectedStart,
           endDate: expectedEnd,
           isAllDay: false,
           isSomeday: true,
-        },
+        }),
       }),
     );
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

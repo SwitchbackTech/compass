@@ -100,7 +100,6 @@ export const WeekView = () => {
         shortcuts: [
           { k: "d", label: "Day" },
           { k: "w", label: "Week" },
-          { k: "n", label: "Now" },
           { k: "[", label: "Toggle sidebar" },
           { k: "?", label: "Toggle shortcuts" },
           { k: "Mod+k", label: "Command Palette" },

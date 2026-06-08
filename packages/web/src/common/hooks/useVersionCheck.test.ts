@@ -1,7 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -14,6 +13,7 @@ import {
 
 let mockIsDev = false;
 const fetchMock = mock();
+const originalFetch = globalThis.fetch;
 
 const MIN_HIDDEN_DURATION_MS = 30_000;
 const BACKUP_CHECK_INTERVAL_MS = 5 * 60 * 1000;
@@ -75,6 +75,7 @@ describe("useVersionCheck", () => {
   });
 
   afterEach(() => {
+    globalThis.fetch = originalFetch;
     setSystemTime();
     setIntervalSpy.mockRestore();
   });
@@ -288,8 +289,4 @@ describe("useVersionCheck", () => {
       });
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

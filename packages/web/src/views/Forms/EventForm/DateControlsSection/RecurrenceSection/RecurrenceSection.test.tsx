@@ -4,16 +4,11 @@ import { useCallback, useState } from "react";
 import { ThemeProvider } from "styled-components";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
-import { SessionContext } from "@web/auth/compass/session/SessionProvider";
-import {
-  markBackendUnavailable,
-  resetBackendAvailabilityForTests,
-} from "@web/common/apis/util/backend-unavailable-error.util";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
-import { RecurrenceSection } from "./RecurrenceSection";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { createRecurrenceSection } from "./RecurrenceSection";
+import { describe, expect, it, mock } from "bun:test";
 
 const baseEvent = (): Schema_GridEvent =>
   assembleGridEvent({
@@ -30,11 +25,17 @@ const baseEvent = (): Schema_GridEvent =>
 
 function renderRecurrenceSection({
   authenticated,
+  isBackendUnavailable = false,
 }: {
   authenticated: boolean;
+  isBackendUnavailable?: boolean;
 }) {
   const setAuthenticated = mock();
   const setEventSpy = mock();
+  const RecurrenceSection = createRecurrenceSection({
+    isBackendUnavailable: () => isBackendUnavailable,
+    useSession: () => ({ authenticated, setAuthenticated }),
+  });
 
   function Harness() {
     const [event, setEvent] = useState<Schema_Event | null>(baseEvent());
@@ -46,15 +47,13 @@ function renderRecurrenceSection({
     if (!event) return null;
 
     return (
-      <SessionContext.Provider value={{ authenticated, setAuthenticated }}>
-        <ThemeProvider theme={theme}>
-          <RecurrenceSection
-            bgColor="#f8d784"
-            event={event}
-            setEvent={handleSetEvent}
-          />
-        </ThemeProvider>
-      </SessionContext.Provider>
+      <ThemeProvider theme={theme}>
+        <RecurrenceSection
+          bgColor="#f8d784"
+          event={event}
+          setEvent={handleSetEvent}
+        />
+      </ThemeProvider>
     );
   }
 
@@ -64,10 +63,6 @@ function renderRecurrenceSection({
 }
 
 describe("RecurrenceSection", () => {
-  beforeEach(() => {
-    resetBackendAvailabilityForTests();
-  });
-
   it("keeps recurrence settings hidden for local users", async () => {
     const user = userEvent.setup();
     const { setEventSpy } = renderRecurrenceSection({ authenticated: false });
@@ -97,9 +92,11 @@ describe("RecurrenceSection", () => {
   });
 
   it("shows the sign-in requirement before sign-in when the backend is unavailable", async () => {
-    markBackendUnavailable();
     const user = userEvent.setup();
-    renderRecurrenceSection({ authenticated: false });
+    renderRecurrenceSection({
+      authenticated: false,
+      isBackendUnavailable: true,
+    });
     const repeatButton = screen.getByRole("button", { name: /repeat/i });
 
     expect(
@@ -122,8 +119,10 @@ describe("RecurrenceSection", () => {
 
   it("keeps recurrence settings hidden with the sign-in message when a signed-in user's backend is unavailable", async () => {
     const user = userEvent.setup();
-    markBackendUnavailable();
-    const { setEventSpy } = renderRecurrenceSection({ authenticated: true });
+    const { setEventSpy } = renderRecurrenceSection({
+      authenticated: true,
+      isBackendUnavailable: true,
+    });
     const repeatButton = screen.getByRole("button", { name: /repeat/i });
 
     expect(repeatButton).toHaveAttribute("aria-disabled", "true");

@@ -1,6 +1,8 @@
+import { configureStore } from "@reduxjs/toolkit";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactElement } from "react";
+import { Provider } from "react-redux";
 import { ThemeProvider } from "styled-components";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
@@ -10,7 +12,9 @@ import {
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { reducers } from "@web/store/reducers";
+import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockClose = mock();
 const mockOpenForm = mock();
@@ -18,22 +22,6 @@ const mockDuplicateEvent = mock();
 const mockSetDraft = mock();
 const mockSubmit = mock();
 const mockOnDelete = mock();
-
-mock.module("@web/views/Week/components/Draft/context/useDraftContext", () => ({
-  useDraftContext: () => ({
-    actions: {
-      openForm: mockOpenForm,
-      duplicateEvent: mockDuplicateEvent,
-      submit: mockSubmit,
-    },
-    setters: {
-      setDraft: mockSetDraft,
-    },
-    confirmation: {
-      onDelete: mockOnDelete,
-    },
-  }),
-}));
 
 mock.module(
   "@web/components/PlannerSidebar/draft/context/useSidebarContext",
@@ -71,17 +59,48 @@ const createStateWithPendingEvents = (
 let currentState = createStateWithPendingEvents();
 currentState.auth.status = "authenticating";
 
-mock.module("@web/store/store.hooks", () => ({
-  useAppDispatch: () => mock(),
-  useAppSelector: (selector: (state: InitialReduxState) => unknown) =>
-    selector(currentState),
-}));
-
 const { ContextMenuItems } =
   require("./ContextMenuItems") as typeof import("./ContextMenuItems");
 
-const renderWithTheme = (ui: ReactElement) =>
-  render(<ThemeProvider theme={theme}>{ui}</ThemeProvider>);
+const renderWithTheme = (ui: ReactElement) => {
+  const store = configureStore({
+    preloadedState: currentState,
+    reducer: reducers,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware({
+        immutableCheck: false,
+        serializableCheck: false,
+        thunk: false,
+      }),
+  });
+
+  return render(
+    <Provider store={store}>
+      <ThemeProvider theme={theme}>
+        <DraftContext.Provider
+          value={
+            {
+              actions: {
+                duplicateEvent: mockDuplicateEvent,
+                openForm: mockOpenForm,
+                repositionDraftByKeyboard: mock(() => false),
+                submit: mockSubmit,
+              },
+              confirmation: {
+                onDelete: mockOnDelete,
+              },
+              setters: {
+                setDraft: mockSetDraft,
+              },
+            } as never
+          }
+        >
+          {ui}
+        </DraftContext.Provider>
+      </ThemeProvider>
+    </Provider>,
+  );
+};
 
 describe("ContextMenuItems", () => {
   beforeEach(() => {
@@ -230,8 +249,4 @@ describe("ContextMenuItems", () => {
     );
     expect(mockClose).toHaveBeenCalled();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

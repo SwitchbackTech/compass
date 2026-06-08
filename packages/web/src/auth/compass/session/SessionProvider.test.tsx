@@ -1,8 +1,9 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
+import { useContext } from "react";
 import { Subject } from "rxjs";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Create mocks at module level
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
@@ -87,6 +88,7 @@ mock.module("@web/common/classes/Session", () => ({
       events$.next(payload as { action: string }),
     on: mock(),
     off: mock(),
+    signOut: mock().mockResolvedValue(undefined),
   },
 }));
 
@@ -101,9 +103,8 @@ const { session } = require("@web/common/classes/Session") as {
   };
 };
 
-const { SessionProvider, sessionInit } =
+const { SessionContext, SessionProvider, sessionInit } =
   require("./SessionProvider") as typeof import("./SessionProvider");
-const { useSession } = require("./useSession") as typeof import("./useSession");
 
 describe("SessionProvider sessionInit", () => {
   beforeEach(() => {
@@ -170,7 +171,7 @@ describe("SessionProvider sessionInit", () => {
     getStream.mockReturnValue({} as EventSource);
     doesSessionExist.mockResolvedValue(false);
 
-    const { result } = renderHook(() => useSession(), {
+    const { result } = renderHook(() => useContext(SessionContext), {
       wrapper: SessionProvider,
     });
 
@@ -187,8 +188,4 @@ describe("SessionProvider sessionInit", () => {
 
     expect(result.current.authenticated).toBe(true);
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

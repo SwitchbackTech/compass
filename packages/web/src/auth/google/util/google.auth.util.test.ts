@@ -1,9 +1,14 @@
 import {
   clearGoogleRevokedState,
   isGoogleRevoked,
+  markGoogleAsRevoked,
 } from "@web/auth/google/state/google.auth.state";
 import {
-  afterAll,
+  createGoogleAuthUtil,
+  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
+  LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE,
+} from "./google.auth.util.factory";
+import {
   afterEach,
   beforeEach,
   describe,
@@ -13,65 +18,36 @@ import {
   spyOn,
 } from "bun:test";
 
-// Mock definitions
-const mockAuthApi = {
-  loginOrSignup: mock(),
-  connectGoogle: mock(),
-};
-
 const mockSyncLocalEventsToCloud = mock();
+const mockToastError = mock();
+const mockIsToastActive = mock(() => false);
+const mockDispatch = mock();
+const mockCloseStream = mock();
+const mockOpenStream = mock();
 
-const mockToast = {
-  error: mock(),
-  isActive: mock(() => false),
-};
-
-const mockStore = {
-  dispatch: mock(),
-};
-
-const mockSse = {
-  closeStream: mock(),
-  openStream: mock(),
-  getStream: mock(() => null),
-};
-
-// Apply mocks
-mock.module("@web/common/apis/auth.api", () => ({
-  AuthApi: mockAuthApi,
-}));
-mock.module("@web/common/utils/sync/local-event-sync.util", () => ({
+const googleAuthUtil = createGoogleAuthUtil({
+  closeStream: mockCloseStream,
+  dispatch: mockDispatch,
+  isToastActive: mockIsToastActive,
+  markGoogleAsRevoked,
+  openStream: mockOpenStream,
   syncLocalEventsToCloud: mockSyncLocalEventsToCloud,
-}));
-mock.module("react-toastify", () => ({
-  ToastContainer: () => null,
-  toast: mockToast,
-}));
-mock.module("@web/store", () => ({
-  store: mockStore,
-}));
-mock.module("@web/sse/client/sse.client", () => mockSse);
+  toastError: mockToastError,
+});
 
-// Import the module under test after mocking
 const { handleGoogleRevoked, syncLocalEvents, syncPendingLocalEvents } =
-  require("./google.auth.util") as typeof import("./google.auth.util");
-const {
-  LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
-  LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE,
-} = require("./google.auth.util") as typeof import("./google.auth.util");
+  googleAuthUtil;
 
 describe("google-auth.util", () => {
   beforeEach(() => {
-    mockAuthApi.loginOrSignup.mockClear();
     mockSyncLocalEventsToCloud.mockClear();
-    mockToast.error.mockClear();
-    mockToast.isActive.mockClear();
-    mockStore.dispatch.mockClear();
-    mockSse.closeStream.mockClear();
-    mockSse.openStream.mockClear();
-    mockSse.getStream.mockClear();
+    mockToastError.mockClear();
+    mockIsToastActive.mockClear();
+    mockIsToastActive.mockReturnValue(false);
+    mockDispatch.mockClear();
+    mockCloseStream.mockClear();
+    mockOpenStream.mockClear();
 
-    // Clear in-memory revoked state between tests
     clearGoogleRevokedState();
   });
 
@@ -83,17 +59,30 @@ describe("google-auth.util", () => {
     it("returns syncedCount and success when sync succeeds", async () => {
       mockSyncLocalEventsToCloud.mockResolvedValue(5);
 
-      await syncLocalEvents();
+      await expect(syncLocalEvents()).resolves.toEqual({
+        syncedCount: 5,
+        success: true,
+      });
     });
 
     it("returns 0 count when no events to sync", async () => {
       mockSyncLocalEventsToCloud.mockResolvedValue(0);
 
-      await syncLocalEvents();
+      await expect(syncLocalEvents()).resolves.toEqual({
+        syncedCount: 0,
+        success: true,
+      });
     });
 
     it("returns error when sync fails", async () => {
-      expect(mockSyncLocalEventsToCloud).toBeDefined();
+      const error = new Error("Network failed");
+      mockSyncLocalEventsToCloud.mockRejectedValue(error);
+
+      await expect(syncLocalEvents()).resolves.toEqual({
+        error,
+        syncedCount: 0,
+        success: false,
+      });
     });
   });
 
@@ -111,13 +100,13 @@ describe("google-auth.util", () => {
     it("returns true when sync succeeds with events", async () => {
       mockSyncLocalEventsToCloud.mockResolvedValue(3);
 
-      await syncPendingLocalEvents();
+      await expect(syncPendingLocalEvents()).resolves.toBe(true);
     });
 
     it("returns true when syncedCount is zero", async () => {
       mockSyncLocalEventsToCloud.mockResolvedValue(0);
 
-      await syncPendingLocalEvents();
+      await expect(syncPendingLocalEvents()).resolves.toBe(true);
     });
 
     it("shows toast and returns false on sync failure", async () => {
@@ -126,7 +115,7 @@ describe("google-auth.util", () => {
 
       await expect(syncPendingLocalEvents()).resolves.toBe(false);
 
-      expect(mockToast.error).toHaveBeenCalledWith(
+      expect(mockToastError).toHaveBeenCalledWith(
         LOCAL_EVENTS_SYNC_ERROR_MESSAGE,
         expect.any(Object),
       );
@@ -141,7 +130,7 @@ describe("google-auth.util", () => {
 
       await expect(syncPendingLocalEvents()).resolves.toBe(false);
 
-      expect(mockToast.error).toHaveBeenCalledWith(
+      expect(mockToastError).toHaveBeenCalledWith(
         LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE,
         expect.any(Object),
       );
@@ -150,49 +139,40 @@ describe("google-auth.util", () => {
   });
 
   describe("handleGoogleRevoked", () => {
-    beforeEach(() => {
-      mockToast.isActive.mockReturnValue(false);
-    });
-
     it("shows toast with GOOGLE_REVOKED_TOAST_ID when not already active", () => {
       handleGoogleRevoked();
-      expect(mockToast.error).toBeDefined();
+
+      expect(mockToastError).toHaveBeenCalledWith(
+        "Google access revoked. Your Google data has been removed.",
+        expect.objectContaining({ autoClose: false }),
+      );
     });
 
-    it("dispatches removeEventsByOrigin for Google origins", () => {
+    it("dispatches the Google revocation state changes", () => {
       handleGoogleRevoked();
-      expect(mockStore.dispatch).toBeDefined();
-    });
 
-    it("clears auth and user metadata state", () => {
-      handleGoogleRevoked();
-      expect(mockStore.dispatch).toBeDefined();
-    });
-
-    it("dispatches triggerFetch with GOOGLE_REVOKED reason", () => {
-      handleGoogleRevoked();
-      expect(mockStore.dispatch).toBeDefined();
+      expect(mockDispatch).toHaveBeenCalledTimes(4);
     });
 
     it("reconnects SSE stream so the client gets a fresh session after revocation", () => {
       handleGoogleRevoked();
-      expect(mockSse.closeStream).toBeDefined();
+
+      expect(mockCloseStream).toHaveBeenCalledTimes(1);
+      expect(mockOpenStream).toHaveBeenCalledTimes(1);
     });
 
     it("marks Google as revoked in session state", () => {
       handleGoogleRevoked();
-      expect(isGoogleRevoked()).toBeDefined();
+
+      expect(isGoogleRevoked()).toBe(true);
     });
 
-    it("does not show toast when one is already active (idempotent)", () => {
-      mockToast.isActive.mockReturnValue(true);
+    it("does not show toast when one is already active", () => {
+      mockIsToastActive.mockReturnValue(true);
 
       handleGoogleRevoked();
-      expect(mockToast.isActive).toBeDefined();
+
+      expect(mockToastError).not.toHaveBeenCalled();
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

@@ -3,7 +3,7 @@ import {
   type Schema_GridEvent,
   type Schema_SomedayEvent,
 } from "@web/common/types/web.event.types";
-import { afterAll, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 const createMockGridPosition = (): Schema_GridEvent["position"] => ({
   isOverlapping: false,
@@ -56,13 +56,6 @@ const validateSomedayEvent = mock(
 const validateSomedayEvents = mock(
   (events: Schema_SomedayEvent[]): Schema_SomedayEvent[] => events,
 );
-const assembleGridEvent = mock((event: Partial<Schema_GridEvent>) =>
-  createMockGridEvent({
-    ...event,
-    position: event.position ?? createMockGridPosition(),
-  }),
-);
-
 mock.module("@web/common/validators/grid.event.validator", () => ({
   validateGridEvent,
 }));
@@ -70,10 +63,6 @@ mock.module("@web/common/validators/grid.event.validator", () => ({
 mock.module("@web/common/validators/someday.event.validator", () => ({
   validateSomedayEvent,
   validateSomedayEvents,
-}));
-
-mock.module("@web/common/utils/event/event.util", () => ({
-  assembleGridEvent,
 }));
 
 const { OnSubmitParser, parseSomedayEventBeforeSubmit, prepEventBeforeSubmit } =
@@ -194,7 +183,7 @@ describe("submit.parser", () => {
       });
       const userId = "test-user-id";
 
-      const result = prepEventBeforeSubmit(draft, userId);
+      const result = prepEventBeforeSubmit(draft, userId) as Schema_GridEvent;
 
       expect(result._id).toBe(draft._id);
       expect(result.user).toBe(userId);
@@ -251,64 +240,65 @@ describe("submit.parser", () => {
     });
 
     it("should assemble grid event when position is missing", () => {
-      assembleGridEvent.mockClear();
-
       const draft = createMockGridEvent({
         position: undefined,
       });
       const userId = "test-user-id";
 
-      prepEventBeforeSubmit(draft, userId);
+      const result = prepEventBeforeSubmit(draft, userId);
 
-      expect(assembleGridEvent).toHaveBeenCalledWith(
+      expect(result).toEqual(
         expect.objectContaining({
           _id: draft._id,
           startDate: draft.startDate,
           endDate: draft.endDate,
           origin: draft.origin,
           user: userId,
-          position: undefined,
+          position: expect.objectContaining({
+            isOverlapping: false,
+            widthMultiplier: 1,
+          }),
         }),
       );
     });
 
     it("should not assemble grid event when position is present", () => {
-      assembleGridEvent.mockClear();
-
-      const draft = createMockGridEvent({
-        position: {
-          isOverlapping: true,
-          totalEventsInGroup: 2,
-          widthMultiplier: 0.5,
-          horizontalOrder: 2,
-          dragOffset: { x: 0, y: 10 },
-          initialX: 100,
-          initialY: 200,
-        },
-      });
+      const position = {
+        isOverlapping: true,
+        totalEventsInGroup: 2,
+        widthMultiplier: 0.5,
+        horizontalOrder: 2,
+        dragOffset: { x: 0, y: 10 },
+        initialX: 100,
+        initialY: 200,
+      };
+      const draft = createMockGridEvent({ position });
       const userId = "test-user-id";
 
-      prepEventBeforeSubmit(draft, userId);
+      const result = prepEventBeforeSubmit(draft, userId) as unknown as {
+        position: Schema_GridEvent["position"];
+      };
 
-      expect(assembleGridEvent).not.toHaveBeenCalled();
+      expect(result.position).toEqual(position);
     });
 
     it("should handle all-day events without position", () => {
-      assembleGridEvent.mockClear();
-
       const draft = createMockGridEvent({
         isAllDay: true,
         position: undefined,
       });
       const userId = "test-user-id";
 
-      prepEventBeforeSubmit(draft, userId);
+      const result = prepEventBeforeSubmit(draft, userId);
 
-      expect(assembleGridEvent).toHaveBeenCalledWith(
+      expect(result).toEqual(
         expect.objectContaining({
           isAllDay: true,
-          position: undefined,
           user: userId,
+          position: expect.objectContaining({
+            isOverlapping: false,
+            widthMultiplier: 1,
+          }),
         }),
       );
     });
@@ -392,8 +382,4 @@ describe("submit.parser", () => {
       expect(result.user).toBe(userId); // The function sets user to the provided userId
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

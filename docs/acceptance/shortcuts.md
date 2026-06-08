@@ -6,7 +6,7 @@ This runbook covers keyboard shortcut parity in Compass. The principle: anything
 
 Use this guide to validate:
 
-- navigating between views with the keyboard (D, W, N)
+- navigating between views with the keyboard (D, W)
 - navigating between days in Day view (J, K, T)
 - navigating between weeks in Week view (J, K, T)
 - opening and using the command palette (Cmd+K)
@@ -20,7 +20,6 @@ Use this guide to validate:
 
 Do not use this guide to validate:
 
-- Now mode navigation shortcuts (see `tasks.md`, Scenarios 10–13)
 - full event CRUD flows (see `events.md`)
 - full task management flows (see `tasks.md`)
 
@@ -45,7 +44,6 @@ Helpful notes:
 | --------------------------- | --------- | --------------------------------- |
 | `D`                         | Global    | Navigate to Day view              |
 | `W`                         | Global    | Navigate to Week view             |
-| `N`                         | Global    | Navigate to Now view              |
 | `R`                         | Global    | Edit personal reminder note       |
 | `Z`                         | Global    | Log out                           |
 | `Cmd+K` / `Ctrl+K`          | Global    | Open command palette              |
@@ -61,8 +59,6 @@ Helpful notes:
 | `Ctrl+Meta+ArrowRight`      | Day view  | Move focused task to next day     |
 | `Ctrl+Meta+ArrowLeft`       | Day view  | Move focused task to previous day |
 | `Cmd+Z` / `Ctrl+Z`          | Day view  | Undo last action                  |
-| `E`                         | Now view  | Edit focused task description     |
-| `Cmd+Enter` / `Ctrl+Enter`  | Now view  | Save focused task description     |
 | `J`                         | Week view | Previous week                     |
 | `K`                         | Week view | Next week                         |
 | `T`                         | Week view | Go to today                       |
@@ -77,23 +73,18 @@ Helpful notes:
 
 ### UX
 
-Pressing `D`, `W`, or `N` from anywhere in the app (while not focused in an input) navigates to Day view, Week view, or Now view respectively.
-
-View shortcuts keep the same meaning in Now mode. `D` still navigates to Day view.
+Pressing `D` or `W` from anywhere in the app (while not focused in an input) navigates to Day view or Week view respectively.
 
 ### Steps
 
 1. Navigate to `/week`.
 2. Press `D`.
 3. Press `W`.
-4. Press `N`.
-5. Press `D` to return to Day view.
 
 ### Expected Results
 
 - `D` navigates to `/day`.
 - `W` navigates to `/week`.
-- `N` navigates to `/now`.
 - Each transition happens without a full page reload.
 
 ---

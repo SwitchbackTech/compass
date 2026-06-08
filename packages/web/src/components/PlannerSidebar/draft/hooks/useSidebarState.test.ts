@@ -1,27 +1,10 @@
-import { act, renderHook } from "@testing-library/react";
+import { act } from "@testing-library/react";
 import { type Schema_Event } from "@core/types/event.types";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { renderHookWithStore } from "@web/__tests__/render-with-store";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 let isDNDing = false;
-
-const emptyCategorizedEvents = {
-  columns: {
-    monthEvents: { eventIds: [], id: "monthEvents" },
-    weekEvents: { eventIds: [], id: "weekEvents" },
-  },
-};
-
-mock.module("@web/ducks/events/selectors/draft.selectors", () => ({
-  selectIsDNDing: () => isDNDing,
-}));
-
-mock.module("@web/ducks/events/selectors/someday.selectors", () => ({
-  selectCategorizedEvents: () => emptyCategorizedEvents,
-}));
-
-mock.module("@web/store/store.hooks", () => ({
-  useAppSelector: (selector: (state: unknown) => unknown) => selector({}),
-}));
 
 const { useSidebarState } =
   require("./useSidebarState") as typeof import("./useSidebarState");
@@ -31,6 +14,24 @@ const draftEvent = {
   title: "Draft",
 } as Schema_Event;
 
+const createSidebarState = () => {
+  const state = createInitialState();
+
+  if (isDNDing) {
+    state.events.draft!.status = {
+      activity: "dnd",
+      dateToResize: null,
+      eventType: null,
+      isDrafting: true,
+    };
+  }
+
+  return state;
+};
+
+const renderSidebarState = () =>
+  renderHookWithStore(() => useSidebarState(), createSidebarState());
+
 describe("useSidebarState", () => {
   beforeEach(() => {
     isDNDing = false;
@@ -39,7 +40,7 @@ describe("useSidebarState", () => {
   it("tracks active dragging when a someday event draft is moving", () => {
     isDNDing = true;
 
-    const { result } = renderHook(() => useSidebarState());
+    const { result } = renderSidebarState();
 
     act(() => {
       result.current.setters.setDraft(draftEvent);
@@ -49,7 +50,7 @@ describe("useSidebarState", () => {
   });
 
   it("does not treat an open sidebar draft form as active dragging", () => {
-    const { result } = renderHook(() => useSidebarState());
+    const { result } = renderSidebarState();
 
     act(() => {
       result.current.setters.setDraft(draftEvent);
@@ -59,8 +60,4 @@ describe("useSidebarState", () => {
 
     expect(result.current.state.isDragging).toBe(false);
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

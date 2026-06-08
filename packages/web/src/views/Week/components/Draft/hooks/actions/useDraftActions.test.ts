@@ -2,6 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import {
   createInitialState,
   type InitialReduxState,
@@ -16,16 +17,9 @@ import {
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { getDragDurationMinutes } from "./drag-duration.util";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
-const mockDispatch = mock();
 let currentState: InitialReduxState = createInitialState();
-
-mock.module("@web/store/store.hooks", () => ({
-  useAppDispatch: () => mockDispatch,
-  useAppSelector: (selector: (state: InitialReduxState) => unknown) =>
-    selector(currentState),
-}));
 
 const { useDraftActions } =
   require("./useDraftActions") as typeof import("./useDraftActions");
@@ -125,15 +119,18 @@ const setDraftActivity = (
 
 const renderDraftActions = (draftOverrides: Partial<Schema_GridEvent>) => {
   const setDraft = mock();
-  const { result } = renderHook(() =>
-    useDraftActions(
-      createState({
-        draft: createDraft(draftOverrides),
-      }),
-      createSetters({ setDraft }),
-      dateCalcs,
-      weekProps,
-    ),
+  const { wrapper } = createStoreWrapper(currentState);
+  const { result } = renderHook(
+    () =>
+      useDraftActions(
+        createState({
+          draft: createDraft(draftOverrides),
+        }),
+        createSetters({ setDraft }),
+        dateCalcs,
+        weekProps,
+      ),
+    { wrapper },
   );
 
   setDraft.mockClear();
@@ -178,21 +175,27 @@ describe("useDraftActions", () => {
         pageSize: 1,
       },
     };
-    mockDispatch.mockClear();
   });
 
   it("creates a new event when duplicating an existing week event", () => {
-    const { result } = renderHook(() =>
-      useDraftActions(createState(), createSetters(), dateCalcs, weekProps),
+    const { store, wrapper } = createStoreWrapper(currentState);
+    const dispatchSpy = spyOn(store, "dispatch");
+    const { result } = renderHook(
+      () =>
+        useDraftActions(createState(), createSetters(), dateCalcs, weekProps),
+      { wrapper },
     );
 
     result.current.duplicateEvent();
 
-    const createAction = mockDispatch.mock.calls.find(
+    const createAction = dispatchSpy.mock.calls.find(
       ([action]) => action.type === createEventSlice.actionNames.request,
     )?.[0];
 
-    expect(createAction).toBeDefined();
+    if (!createAction) {
+      throw new Error("Expected create event action to be dispatched");
+    }
+
     expect(createAction.payload._id).not.toBe("event-1");
     expect(createAction.payload.title).toBe("Seed event");
   });
@@ -323,8 +326,4 @@ describe("useDraftActions", () => {
 
     expect(setDraft).not.toHaveBeenCalled();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

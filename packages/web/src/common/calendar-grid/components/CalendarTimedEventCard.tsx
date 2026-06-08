@@ -218,6 +218,7 @@ const CalendarTimedEventCardBase = (
         }
 
         e.preventDefault();
+        e.stopPropagation();
         if (isPending || !onEventKeyDown) {
           return;
         }

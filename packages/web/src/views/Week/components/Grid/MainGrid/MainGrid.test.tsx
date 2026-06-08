@@ -637,7 +637,7 @@ describe("saved Week event ownership", () => {
     expect(Number(solo.style.zIndex)).toBe(ZIndex.LAYER_1);
   });
 
-  it("raises a focused deck card above its group-mates", () => {
+  it("keeps a focused deck card in its fan-out stack", () => {
     const store = createStore([
       createSavedEvent({
         _id: "back",
@@ -665,13 +665,14 @@ describe("saved Week event ownership", () => {
     );
 
     const back = screen.getByRole("button", { name: /back overlap/i });
-    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+    const initialBackZIndex = Number(back.style.zIndex);
+    expect(initialBackZIndex).toBeLessThan(ZIndex.MAX);
 
     fireEvent.focus(back);
-    expect(Number(back.style.zIndex)).toBe(ZIndex.MAX);
+    expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
 
     fireEvent.blur(back);
-    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+    expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
   });
 
   it("keeps saved timed mouse and resize events out of the draft motion owner", () => {

@@ -1,6 +1,6 @@
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { getUserId } from "./session.util";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockDoesSessionExist = mock();
 const mockGetAccessTokenPayloadSecurely = mock();
@@ -9,6 +9,7 @@ mock.module("@web/common/classes/Session", () => ({
   session: {
     doesSessionExist: mockDoesSessionExist,
     getAccessTokenPayloadSecurely: mockGetAccessTokenPayloadSecurely,
+    signOut: mock().mockResolvedValue(undefined),
   },
 }));
 
@@ -43,8 +44,4 @@ describe("session.util", () => {
       expect(mockGetAccessTokenPayloadSecurely).toHaveBeenCalledTimes(1);
     });
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

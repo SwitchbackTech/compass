@@ -274,6 +274,32 @@ mockNodeModules();
 const sessionModule = await import("supertokens-web-js/recipe/session");
 const { cleanup } = await import("@testing-library/react");
 
+function resetDocument() {
+  document.body.innerHTML = "";
+  document.body.removeAttribute("style");
+  document.body.removeAttribute("class");
+  document.body.removeAttribute("data-app-locked");
+  document.documentElement.removeAttribute("style");
+  for (const style of document.head.querySelectorAll("style")) {
+    if (
+      !style.textContent?.includes(":has(.react-datepicker__day--selected)")
+    ) {
+      continue;
+    }
+
+    style.textContent = style.textContent.replaceAll(
+      /[^{}]+:has\(\.react-datepicker__day--selected\)[^{]*\{[^{}]*\}/g,
+      "",
+    );
+  }
+}
+
+function resetBrowserState() {
+  dom.reconfigure({ url: "http://localhost/" });
+  localStorage.clear();
+  sessionStorage.clear();
+}
+
 beforeEach(() => {
   sessionModule.doesSessionExist?.mockResolvedValue(true);
 });
@@ -282,6 +308,8 @@ beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(async () => {
   await Promise.resolve();
   cleanup();
+  resetDocument();
+  resetBrowserState();
   server.resetHandlers();
 });
 afterAll(() => server.close());

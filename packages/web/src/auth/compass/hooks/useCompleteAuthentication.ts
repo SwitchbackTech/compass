@@ -8,28 +8,15 @@ import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { authSuccess } from "@web/ducks/auth/slices/auth.slice";
 import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
+import { createUseCompleteAuthentication } from "./useCompleteAuthentication.factory";
 
-export function useCompleteAuthentication() {
-  const dispatch = useAppDispatch();
-  const { setAuthenticated } = useSession();
-
-  return async ({
-    email,
-    onComplete,
-  }: {
-    email?: string;
-    onComplete?: () => void;
-  }) => {
-    clearAnonymousCalendarChangeSignUpPrompt();
-    markUserAsAuthenticated(email);
-    setAuthenticated(true);
-    dispatch(authSuccess());
-
-    void refreshUserMetadata();
-
-    await syncPendingLocalEvents();
-
-    dispatch(triggerFetch());
-    onComplete?.();
-  };
-}
+export const useCompleteAuthentication = createUseCompleteAuthentication({
+  authSuccess,
+  clearAnonymousCalendarChangeSignUpPrompt,
+  markUserAsAuthenticated,
+  refreshUserMetadata,
+  syncPendingLocalEvents,
+  triggerFetch,
+  useAppDispatch,
+  useSession,
+});

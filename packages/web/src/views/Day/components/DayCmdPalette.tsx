@@ -86,7 +86,7 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
       search={search}
       isOpen={open}
       page={page}
-      placeholder="Try: 'now', 'week', 'today', 'bug', or 'code'"
+      placeholder="Try: 'week', 'today', 'bug', or 'code'"
     >
       <CommandPalette.Page id="root">
         {filteredItems.length ? (

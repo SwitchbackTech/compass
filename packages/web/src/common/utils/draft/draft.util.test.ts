@@ -107,5 +107,4 @@ describe("shortcut draft creation", () => {
 
 afterAll(() => {
   setSystemTime();
-  mock.restore();
 });

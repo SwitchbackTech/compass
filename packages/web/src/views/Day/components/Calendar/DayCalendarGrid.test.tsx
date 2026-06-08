@@ -123,6 +123,22 @@ const createTimedEvent = (
     ...overrides,
   }) as Schema_Event;
 
+const createAllDayEvent = (
+  overrides: Partial<Schema_Event> & {
+    _id: string;
+    startDate: string;
+    endDate: string;
+  },
+): Schema_Event =>
+  ({
+    isAllDay: true,
+    isSomeday: false,
+    recurrence: undefined,
+    title: overrides._id,
+    user: "user",
+    ...overrides,
+  }) as Schema_Event;
+
 const setDayEvents = (events: Schema_Event[]) => {
   store = createStoreWithEvents(events);
 };
@@ -135,6 +151,18 @@ const resetDraft = () => {
 
 const setDraftEvent = (event: Schema_Event) => {
   store.dispatch(draftSlice.actions.startGridClick(event));
+};
+
+const getDismissOptions = () => {
+  const [, options] = useDismissMock.mock.calls.at(-1) ?? [];
+
+  expect(options).toBeDefined();
+
+  return options as {
+    enabled: boolean;
+    outsidePress?: (event: MouseEvent) => boolean;
+    outsidePressEvent: string;
+  };
 };
 
 beforeEach(() => {
@@ -213,7 +241,7 @@ describe("DayCalendarGrid", () => {
     );
   });
 
-  it("raises a focused Day deck card above its group-mates", () => {
+  it("keeps a focused Day deck card in its fan-out stack", () => {
     setDayEvents([
       createTimedEvent({
         _id: "back",
@@ -232,17 +260,18 @@ describe("DayCalendarGrid", () => {
     renderDayCalendarGrid();
 
     const back = screen.getByRole("button", { name: /back overlap/i });
+    const initialBackZIndex = Number(back.style.zIndex);
 
-    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+    expect(initialBackZIndex).toBeLessThan(ZIndex.MAX);
 
     fireEvent.focus(back);
-    expect(Number(back.style.zIndex)).toBe(ZIndex.MAX);
+    expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
 
     fireEvent.blur(back);
-    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+    expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
   });
 
-  it("raises a clicked overlapping Day event above its group-mates without widening it", async () => {
+  it("keeps a clicked overlapping Day event in its fan-out stack without widening it", async () => {
     setDayEvents([
       createTimedEvent({
         _id: "back",
@@ -263,10 +292,11 @@ describe("DayCalendarGrid", () => {
     const back = screen.getByRole("button", { name: /back overlap/i });
     const front = screen.getByRole("button", { name: /front overlap/i });
     const initialBackWidth = parseFloat(back.style.width);
+    const initialBackZIndex = Number(back.style.zIndex);
     const frontWidth = parseFloat(front.style.width);
 
     expect(initialBackWidth).toBe(frontWidth);
-    expect(Number(back.style.zIndex)).toBeLessThan(ZIndex.MAX);
+    expect(initialBackZIndex).toBeLessThan(ZIndex.MAX);
 
     fireEvent.pointerDown(back, {
       button: 0,
@@ -284,7 +314,7 @@ describe("DayCalendarGrid", () => {
 
     await waitFor(() => {
       expect(getDraft()?._id).toBe("back");
-      expect(Number(back.style.zIndex)).toBe(ZIndex.MAX);
+      expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
       expect(parseFloat(back.style.width)).toBe(frontWidth);
     });
   });
@@ -369,13 +399,41 @@ describe("DayCalendarGrid", () => {
   it("dismisses the floating form after empty agenda mouse handlers run", () => {
     renderDayCalendarGrid();
 
-    expect(useDismissMock).toHaveBeenCalledWith(
-      expect.anything(),
+    expect(getDismissOptions()).toEqual(
       expect.objectContaining({
         enabled: true,
+        outsidePress: expect.any(Function),
         outsidePressEvent: "click",
       }),
     );
+  });
+
+  it("does not dismiss a new all-day draft from the click that created it", async () => {
+    renderDayCalendarGrid();
+
+    const allDayRegion = screen.getByRole("region", { name: "All-day events" });
+
+    fireEvent.mouseDown(allDayRegion, {
+      button: 0,
+      clientX: 100,
+      clientY: 1,
+    });
+
+    await waitFor(() => {
+      expect(getDraft()?.isAllDay).toBe(true);
+    });
+
+    const outsidePress = getDismissOptions().outsidePress;
+    expect(outsidePress).toBeDefined();
+
+    const creationClick = new MouseEvent("click", { bubbles: true });
+    Object.defineProperty(creationClick, "target", {
+      configurable: true,
+      value: allDayRegion,
+    });
+
+    expect(outsidePress?.(creationClick)).toBe(false);
+    expect(outsidePress?.(creationClick)).toBe(true);
   });
 
   it("dismisses an open draft when clicking empty Day all-day calendar space", () => {
@@ -399,6 +457,52 @@ describe("DayCalendarGrid", () => {
     );
 
     expect(getDraft()).toBeNull();
+  });
+
+  it("places a new all-day draft below existing all-day events", async () => {
+    setDayEvents([
+      createAllDayEvent({
+        _id: "first-all-day",
+        endDate: "2026-05-21",
+        startDate: "2026-05-20",
+        title: "First all-day",
+      }),
+      createAllDayEvent({
+        _id: "second-all-day",
+        endDate: "2026-05-21",
+        startDate: "2026-05-20",
+        title: "Second all-day",
+      }),
+    ]);
+    renderDayCalendarGrid();
+
+    fireEvent.mouseDown(
+      screen.getByRole("region", { name: "All-day events" }),
+      {
+        button: 0,
+        clientX: 100,
+        clientY: 80,
+      },
+    );
+
+    await waitFor(() => {
+      const draft = screen.getByRole("button", {
+        name: /all-day event: untitled event/i,
+      });
+      const first = screen.getByRole("button", {
+        name: /all-day event: first all-day/i,
+      });
+      const second = screen.getByRole("button", {
+        name: /all-day event: second all-day/i,
+      });
+
+      expect(parseFloat(draft.style.top)).toBeGreaterThan(
+        parseFloat(first.style.top),
+      );
+      expect(parseFloat(draft.style.top)).toBeGreaterThan(
+        parseFloat(second.style.top),
+      );
+    });
   });
 
   it("scrolls the Day timed grid to now when the Day view requests it", () => {

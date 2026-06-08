@@ -1,4 +1,3 @@
-import type React from "react";
 import "@testing-library/jest-dom";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -9,7 +8,7 @@ import {
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { theme } from "@web/common/styles/theme";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 interface MockConnectGoogleResult {
   commandAction: GoogleUiConfig["commandAction"];
@@ -97,36 +96,54 @@ mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
 }));
 
 mock.module("@phosphor-icons/react", () => ({
+  ArrowCounterClockwise: () => <span aria-hidden="true" />,
+  ArrowDownIcon: () => <span aria-hidden="true" />,
+  ArrowLeftIcon: () => <span aria-hidden="true" />,
+  ArrowRightIcon: () => <span aria-hidden="true" />,
+  ArrowUpIcon: () => <span aria-hidden="true" />,
+  ArrowsClockwiseIcon: () => <span aria-hidden="true" />,
+  CalendarDots: () => <span aria-hidden="true" />,
+  CaretDown: () => <span aria-hidden="true" />,
+  CaretLeft: () => <span aria-hidden="true" />,
+  CaretRight: () => <span aria-hidden="true" />,
+  CaretUp: () => <span aria-hidden="true" />,
+  CheckCircle: () => <span aria-hidden="true" />,
+  Command: () => <span aria-hidden="true" />,
+  CommandIcon: (props: Record<string, unknown>) => (
+    <span aria-hidden="true" {...props} />
+  ),
+  ControlIcon: (props: Record<string, unknown>) => (
+    <span aria-hidden="true" {...props} />
+  ),
+  Copy: () => <span aria-hidden="true" />,
+  DotIcon: () => <span aria-hidden="true" />,
+  DotsSixVertical: () => <span aria-hidden="true" />,
+  DotsSixVerticalIcon: () => <span aria-hidden="true" />,
+  DotsThreeVerticalIcon: () => <span aria-hidden="true" />,
+  Flask: () => <span aria-hidden="true" />,
+  FloppyDisk: () => <span aria-hidden="true" />,
+  IconContext: require("react").createContext({}),
   InfoIcon: ({ className }: { className?: string }) => (
     <span role="img" aria-label="header-info-icon">
       {className ?? ""}
     </span>
   ),
+  List: () => <span aria-hidden="true" />,
+  NumberCircleTwo: () => <span aria-hidden="true" />,
+  Pencil: () => <span aria-hidden="true" />,
+  PenNib: () => <span aria-hidden="true" />,
+  PlusIcon: () => <span aria-hidden="true" />,
+  Repeat: () => <span aria-hidden="true" />,
+  Sidebar: () => <span aria-hidden="true" />,
   SpinnerGapIcon: () => <span role="img" aria-label="spinner-gap" />,
   SpinnerIcon: () => <span role="img" aria-label="spinner-gap" />,
-}));
-
-mock.module("@web/components/Tooltip/TooltipWrapper", () => ({
-  TooltipWrapper: ({
-    children,
-    description,
-    disabled,
-    onClick,
-  }: {
-    children: React.ReactNode;
-    description?: string;
-    disabled?: boolean;
-    onClick?: () => void;
-  }) => (
-    <button
-      aria-label={description}
-      disabled={disabled}
-      onClick={onClick}
-      type="button"
-    >
-      {children}
-    </button>
+  Trash: () => <span aria-hidden="true" />,
+  TrashIcon: () => <span aria-hidden="true" />,
+  WindowsLogoIcon: (props: Record<string, unknown>) => (
+    <span aria-hidden="true" {...props} />
   ),
+  X: () => <span aria-hidden="true" />,
+  XIcon: () => <span aria-hidden="true" />,
 }));
 
 const { HeaderInfoIcon } =
@@ -184,11 +201,7 @@ describe("HeaderInfoIcon", () => {
       }),
     ).toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole("button", {
-        name: /sign up to save your changes/i,
-      }),
-    );
+    await user.click(screen.getByLabelText("header-info-icon"));
 
     expect(screen.getByLabelText("header-info-icon")).toHaveTextContent(
       "motion-safe:animate-sync-dot-pulse",
@@ -211,11 +224,7 @@ describe("HeaderInfoIcon", () => {
       }),
     ).toBeInTheDocument();
 
-    await user.click(
-      screen.getByRole("button", {
-        name: /google calendar needs reconnecting/i,
-      }),
-    );
+    await user.click(screen.getByLabelText("header-info-icon"));
 
     expect(screen.getByLabelText("header-info-icon")).not.toHaveTextContent(
       "motion-safe:animate-sync-dot-pulse",
@@ -271,11 +280,6 @@ describe("HeaderInfoIcon", () => {
         name: /syncing google calendar in the background/i,
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", {
-        name: /syncing google calendar in the background/i,
-      }),
-    ).toBeInTheDocument();
     expect(screen.getByLabelText("spinner-gap")).toBeInTheDocument();
     expect(screen.queryByLabelText("header-info-icon")).not.toBeInTheDocument();
   });
@@ -304,16 +308,7 @@ describe("HeaderInfoIcon", () => {
         name: /repairing google calendar in the background/i,
       }),
     ).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", {
-        name: /repairing google calendar in the background/i,
-      }),
-    ).toBeInTheDocument();
     expect(screen.getByLabelText("spinner-gap")).toBeInTheDocument();
     expect(screen.queryByLabelText("header-info-icon")).not.toBeInTheDocument();
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

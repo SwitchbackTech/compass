@@ -1,28 +1,25 @@
-import * as authState from "@web/auth/compass/state/auth.state.util";
-import * as googleAuthState from "@web/auth/google/state/google.auth.state";
-import {
-  markBackendUnavailable,
-  resetBackendAvailabilityForTests,
-} from "@web/common/apis/util/backend-unavailable-error.util";
-import { beforeEach, describe, expect, it, spyOn } from "bun:test";
-
-const hasUserEverAuthenticatedSpy = spyOn(
-  authState,
-  "hasUserEverAuthenticated",
-);
-const isGoogleRevokedSpy = spyOn(googleAuthState, "isGoogleRevoked");
-
-const { LocalEventRepository } = await import("./local.event.repository");
-const { RemoteEventRepository } = await import("./remote.event.repository");
-const { getEventRepository } = await import("./event.repository.util");
+import { createGetEventRepository } from "./event.repository.factory";
+import { LocalEventRepository } from "./local.event.repository";
+import { RemoteEventRepository } from "./remote.event.repository";
+import { beforeEach, describe, expect, it } from "bun:test";
 
 describe("getEventRepository", () => {
+  let hasUserEverAuthenticated = false;
+  let isBackendUnavailable = false;
+  let isGoogleRevoked = false;
+
+  const getEventRepository = createGetEventRepository({
+    createLocalEventRepository: () => new LocalEventRepository(),
+    createRemoteEventRepository: () => new RemoteEventRepository(),
+    hasUserEverAuthenticated: () => hasUserEverAuthenticated,
+    isBackendUnavailable: () => isBackendUnavailable,
+    isGoogleRevoked: () => isGoogleRevoked,
+  });
+
   beforeEach(() => {
-    hasUserEverAuthenticatedSpy.mockReset();
-    hasUserEverAuthenticatedSpy.mockReturnValue(false);
-    isGoogleRevokedSpy.mockReset();
-    isGoogleRevokedSpy.mockReturnValue(false);
-    resetBackendAvailabilityForTests();
+    hasUserEverAuthenticated = false;
+    isBackendUnavailable = false;
+    isGoogleRevoked = false;
   });
 
   it("uses remote storage when a session exists", () => {
@@ -34,33 +31,33 @@ describe("getEventRepository", () => {
   });
 
   it("uses remote storage when a returning user has no active session", () => {
-    hasUserEverAuthenticatedSpy.mockReturnValue(true);
+    hasUserEverAuthenticated = true;
 
     expect(getEventRepository(false)).toBeInstanceOf(RemoteEventRepository);
   });
 
   it("uses local storage when Google disconnected Compass", () => {
-    isGoogleRevokedSpy.mockReturnValue(true);
+    isGoogleRevoked = true;
 
     expect(getEventRepository(true)).toBeInstanceOf(LocalEventRepository);
   });
 
   it("uses local storage when Google disconnected Compass for a returning user", () => {
-    hasUserEverAuthenticatedSpy.mockReturnValue(true);
-    isGoogleRevokedSpy.mockReturnValue(true);
+    hasUserEverAuthenticated = true;
+    isGoogleRevoked = true;
 
     expect(getEventRepository(false)).toBeInstanceOf(LocalEventRepository);
   });
 
   it("uses local storage for a returning user when the backend is unavailable", () => {
-    hasUserEverAuthenticatedSpy.mockReturnValue(true);
-    markBackendUnavailable();
+    hasUserEverAuthenticated = true;
+    isBackendUnavailable = true;
 
     expect(getEventRepository(false)).toBeInstanceOf(LocalEventRepository);
   });
 
   it("uses local storage for an active session when the backend is unavailable", () => {
-    markBackendUnavailable();
+    isBackendUnavailable = true;
 
     expect(getEventRepository(true)).toBeInstanceOf(LocalEventRepository);
   });

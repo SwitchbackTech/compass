@@ -1,5 +1,12 @@
 import clsx from "clsx";
-import { type ReactNode, useEffect, useId, useRef } from "react";
+import {
+  type ButtonHTMLAttributes,
+  type ReactNode,
+  useEffect,
+  useId,
+  useRef,
+} from "react";
+import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -48,7 +55,7 @@ export const OverlayPanel = ({
   }, [role]);
 
   const backdropClasses = clsx(
-    "fixed inset-0 z-20 flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
+    "fixed inset-0 flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
   );
 
   const panelClasses = clsx("flex flex-col items-center", {
@@ -101,6 +108,7 @@ export const OverlayPanel = ({
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
       role="presentation"
+      style={{ zIndex: Z_INDEX_MODAL }}
       tabIndex={-1}
     >
       {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: aria-modal is only set when the panel role is dialog. */}
@@ -140,3 +148,38 @@ export const OverlayPanel = ({
     </div>
   );
 };
+
+interface OverlayPanelActionsProps {
+  children: ReactNode;
+}
+
+export const OverlayPanelActions = ({ children }: OverlayPanelActionsProps) => (
+  <div className="flex w-full justify-end gap-3">{children}</div>
+);
+
+interface OverlayPanelActionButtonProps
+  extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: "primary" | "secondary";
+}
+
+export const OverlayPanelActionButton = ({
+  children,
+  className,
+  type = "button",
+  variant = "secondary",
+  ...buttonProps
+}: OverlayPanelActionButtonProps) => (
+  <button
+    className={clsx(
+      "h-11 rounded px-4 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg disabled:pointer-events-none disabled:opacity-50",
+      variant === "primary"
+        ? "bg-accent-primary text-text-dark transition hover:brightness-110"
+        : "border border-border-primary bg-panel-badge-bg text-text-lighter transition-colors hover:bg-panel-bg",
+      className,
+    )}
+    type={type}
+    {...buttonProps}
+  >
+    {children}
+  </button>
+);

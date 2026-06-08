@@ -1,6 +1,6 @@
 import { renderHook } from "@testing-library/react";
 import { act, type MouseEvent } from "react";
-import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
 const mockUseAuthModal = mock();
@@ -89,8 +89,4 @@ describe("useAuthCmdItems", () => {
     expect(mockOpenModal).toHaveBeenNthCalledWith(1, "signUp");
     expect(mockOpenModal).toHaveBeenNthCalledWith(2, "login");
   });
-});
-
-afterAll(() => {
-  mock.restore();
 });

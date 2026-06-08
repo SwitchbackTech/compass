@@ -4,7 +4,7 @@ import { ShortcutsOverlay } from "./ShortcutsOverlay";
 
 const baseSections = [
   {
-    title: "Now",
+    title: "Tasks",
     shortcuts: [
       { k: "j", label: "Previous task" },
       { k: "k", label: "Next task" },
@@ -13,7 +13,7 @@ const baseSections = [
   {
     title: "Global",
     shortcuts: [
-      { k: "1", label: "Now" },
+      { k: "1", label: "Tasks" },
       { k: "2", label: "Day" },
     ],
   },
@@ -30,7 +30,7 @@ describe("ShortcutsOverlay", () => {
     expect(overlay).toBeInTheDocument();
     expect(overlay).toHaveAttribute("aria-label", "Shortcut overlay");
     expect(screen.getByText("Shortcuts")).toBeInTheDocument();
-    expect(screen.getAllByText("Now").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Tasks").length).toBeGreaterThan(0);
     expect(screen.getByText("Global")).toBeInTheDocument();
     expect(screen.getByText("Day")).toBeInTheDocument();
   });
@@ -43,7 +43,7 @@ describe("ShortcutsOverlay", () => {
     );
 
     expect(screen.queryByText("Empty")).not.toBeInTheDocument();
-    expect(screen.getAllByText("Now").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Tasks").length).toBeGreaterThan(0);
   });
 
   it("supports custom heading, aria-label, and className", () => {

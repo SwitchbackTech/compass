@@ -4,8 +4,6 @@ import dayjs from "@core/util/date/dayjs";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-mock.restore();
-
 const mockDoesSessionExist = mock();
 const mockGetEventRepository = mock();
 const mockRepository = {
@@ -20,6 +18,7 @@ const mockAlert = mock();
 mock.module("@web/common/classes/Session", () => ({
   session: {
     doesSessionExist: mockDoesSessionExist,
+    signOut: mock().mockResolvedValue(undefined),
   },
 }));
 
