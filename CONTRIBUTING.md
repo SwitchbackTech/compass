@@ -4,10 +4,10 @@
 
 We're laser-focused on two things:
 
-1. Helping minimalists manage their schedule and focus, so they can do more of what matters
+1. Helping minimalists manage their schedule, so they can do more of what matters
 2. Being profitable, so that we can continue doing #1 for decades
 
-We're only accepting contributions that help us reach those goals. If you submit a PR that doesn't align with our goals, it will be rejected. The best way to avoid this scenario is to confirm that your proposed changes align with our priorities. You can verify this by reviewing the quarterly backlog, timeline, and app docs in the main Compass repo (more links and details on how to do this below).
+We're only accepting contributions that help us reach those goals. If you submit a PR that doesn't align with our goals, it will be rejected. The best way to avoid this scenario is to confirm that your proposed changes align with our priorities. You can verify this by reviewing the quarterly backlog and docs in the main Compass repo (more links and details on how to do this below).
 
 If these goals align with your own, we'd love to work with you!
 
@@ -49,13 +49,13 @@ What may be offered after consistent excellence\*:
 1. If this is your first time contributing, pick an issue in the `Ready` state for the _next_ quarter that has a `Good first issue` tag. Working on an issue in the next quarter gives you time to familiarize yourself with the codebase while still working on a priority change. It also gives us the chance to assess the quality of work and your reliability before giving you more responsibility.
 1. Find an issue you'd like to work on.
 1. Ask any clarifying questions in the issue thread.
-1. Start working on the issue. If you're a new contributor, we will NOT assign the issue to you before a PR is submitted. This helps us avoid holding an issue for an extended period of time.
+1. Start working on the issue. Do not request that an issue be assigned to you. If you're a new contributor, we will NOT assign the issue to you before a PR is submitted. This helps us avoid holding an issue for an extended period of time.
 1. Fork the repository
 1. Create a new branch with a descriptive name
 1. Make your changes, following the coding conventions
 1. Manually test your changes. See the testing guide for more info on how to do this sufficiently.
 1. Push your branch to your fork
-1. Create a pull request
+1. Create a pull request, including screenshots/video documenting the behavior. Also explain the steps you took to manually verify the functionality. Blindly submitting AI-generated code without showing evidence of thorough testing will result in the PR being denied.
 1. Link the PR to the issue it solves by including the issue number in the PR description and using a [closing keyword](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/using-keywords-in-issues-and-pull-requests#linking-a-pull-request-to-an-issue). For example: `Fixes #123`
 1. Wait for us to review the PR. You can continue this process with another issue while waiting for feedback.
 
@@ -257,6 +257,7 @@ test(web): add unit tests for login component
    ```
 
 5. **Generate Documentation** (if you added/modified APIs)
+
    ```bash
    bun run docs:generate
    ```
