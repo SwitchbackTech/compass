@@ -14,6 +14,7 @@ import { PointerPositionProvider } from "@web/common/context/pointer-position";
 import { theme } from "@web/common/styles/theme";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
+import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
 import { store } from "@web/store";
@@ -45,6 +46,7 @@ export const CompassRequiredProviders = (
                     <LogoutConfirmationProvider>
                       {props.children}
                       <AuthModal />
+                      <WelcomeModal />
                       <ToastContainer
                         position="bottom-left"
                         autoClose={5000}
