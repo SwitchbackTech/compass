@@ -23,7 +23,10 @@ import EmailVerification from "supertokens-web-js/recipe/emailverification";
 import Session from "supertokens-web-js/recipe/session";
 import ThirdParty from "supertokens-web-js/recipe/thirdparty";
 import { clearGoogleSyncIndicatorOverride } from "../../google/state/google.sync.state";
+import { SessionContext } from "./session.context";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";
+
+export { SessionContext } from "./session.context";
 
 SuperTokens.init({
 	appInfo: {
