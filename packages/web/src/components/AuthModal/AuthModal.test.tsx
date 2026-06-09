@@ -1,4 +1,4 @@
-import { type ReactElement, type ReactNode, useLayoutEffect } from "react";
+import { act, type ReactElement, type ReactNode, useLayoutEffect } from "react";
 import {
   createMemoryRouter,
   MemoryRouter,
@@ -337,7 +337,9 @@ describe("AuthModal", () => {
 
       // Focus the backdrop so it can receive keyboard events
       const backdrop = screen.getByRole("presentation");
-      backdrop.focus();
+      await act(async () => {
+        backdrop.focus();
+      });
 
       await user.keyboard("{Escape}");
       await flushEffects();

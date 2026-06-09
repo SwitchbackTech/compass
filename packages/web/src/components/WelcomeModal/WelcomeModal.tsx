@@ -1,5 +1,10 @@
 import { LinkedinLogo, XLogo } from "@phosphor-icons/react";
-import { useContext, useState } from "react";
+import {
+  type KeyboardEvent,
+  type MouseEvent,
+  useContext,
+  useState,
+} from "react";
 import { SessionContext } from "@web/auth/compass/session/SessionProvider";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
@@ -39,14 +44,17 @@ const FAQ_ITEMS = [
   },
   {
     question: "What makes Compass different from other calendars?",
-    answer: "It's simpler and faster. Instead of doing everything, we do a few things well.",
+    answer:
+      "It's simpler and faster. Instead of doing everything, we do a few things well.",
   },
 ];
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
   const { openModal } = useAuthModal();
-  const [isOpen, setIsOpen] = useState(() => !authenticated && !hasSeenWelcome());
+  const [isOpen, setIsOpen] = useState(
+    () => !authenticated && !hasSeenWelcome(),
+  );
 
   if (!isOpen) return null;
 
@@ -60,25 +68,42 @@ export function WelcomeModal() {
     openModal("login");
   };
 
+  const handleBackdropClick = (event: MouseEvent<HTMLDivElement>) => {
+    if (event.target === event.currentTarget) {
+      dismiss();
+    }
+  };
+
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "Escape") {
+      dismiss();
+    }
+  };
+
   return (
+    // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the welcome modal.
     <div
-      className="fixed inset-0 flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm overflow-y-auto py-8"
+      className="fixed inset-0 flex items-center justify-center overflow-y-auto bg-bg-primary/85 py-8 backdrop-blur-sm"
+      onClick={handleBackdropClick}
+      onKeyDown={handleKeyDown}
       role="presentation"
       style={{ zIndex: Z_INDEX_MODAL }}
+      tabIndex={-1}
     >
       <div
         role="dialog"
         aria-modal
         aria-label="Welcome to Compass Calendar"
-        className="w-[560px] max-w-[90vw] flex flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
+        className="flex w-[560px] max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
       >
         {/* Header */}
         <div className="flex flex-col gap-2">
-          <h2 className="m-0 text-2xl font-bold text-text-lighter">
+          <h2 className="m-0 font-bold text-2xl text-text-lighter">
             Ahoy! You found a simple, fast calendar.
           </h2>
           <p className="m-0 text-base text-text-light">
-            We&apos;re making Compass Calendar the best place to manage your week.
+            We&apos;re making Compass Calendar the best place to manage your
+            week.
           </p>
         </div>
 
@@ -87,7 +112,7 @@ export function WelcomeModal() {
           <button
             type="button"
             onClick={dismiss}
-            className="h-11 flex-1 rounded bg-accent-primary px-4 text-sm font-medium text-text-dark transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg"
+            className="h-11 flex-1 rounded bg-accent-primary px-4 font-medium text-sm text-text-dark transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg"
           >
             Start Now
           </button>
@@ -104,7 +129,7 @@ export function WelcomeModal() {
         <div className="flex flex-col divide-y divide-border-primary">
           {FAQ_ITEMS.map((item) => (
             <details key={item.question} className="group py-3">
-              <summary className="cursor-pointer list-none text-sm font-medium text-text-lighter select-none hover:text-text-lightest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary rounded">
+              <summary className="cursor-pointer select-none list-none rounded font-medium text-sm text-text-lighter hover:text-text-lightest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary">
                 {item.question}
               </summary>
               <div className="mt-2 text-sm text-text-light leading-relaxed">
@@ -112,16 +137,18 @@ export function WelcomeModal() {
                   item.answer
                 ) : (
                   <>
-                    All of it! Compass is a monorepo that includes the API, frontend, CLI, and
-                    more. You can run it yourself too; read the{" "}
+                    All of it! Compass is a monorepo that includes the API,
+                    frontend, CLI, and more. You can run it yourself too; read
+                    the{" "}
                     <a
                       href="/blog/self-host"
                       className="font-medium text-accent-primary underline-offset-4 hover:underline"
                     >
                       self-hosting guide
                     </a>{" "}
-                    to set up your own instance. It&apos;s all available on GitHub (link in
-                    footer), and we&apos;re always looking for contributors :]
+                    to set up your own instance. It&apos;s all available on
+                    GitHub (link in footer), and we&apos;re always looking for
+                    contributors :]
                   </>
                 )}
               </div>
@@ -130,14 +157,14 @@ export function WelcomeModal() {
         </div>
 
         {/* Footer: social + legal */}
-        <div className="flex items-center justify-between border-t border-border-primary pt-4">
+        <div className="flex items-center justify-between border-border-primary border-t pt-4">
           <div className="flex items-center gap-3">
             <a
               href="https://x.com/CompassCalendar"
               target="_blank"
               rel="noopener noreferrer"
               aria-label="X (Twitter)"
-              className="text-text-light transition-colors hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary rounded"
+              className="rounded text-text-light transition-colors hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             >
               <XLogo size={18} weight="bold" />
             </a>
@@ -146,17 +173,17 @@ export function WelcomeModal() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"
-              className="text-text-light transition-colors hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary rounded"
+              className="rounded text-text-light transition-colors hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             >
               <LinkedinLogo size={18} weight="bold" />
             </a>
           </div>
-          <div className="flex items-center gap-4 text-xs text-text-light">
+          <div className="flex items-center gap-4 text-text-light text-xs">
             <a
               href="https://compasscalendar.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-text-lighter hover:underline underline-offset-4"
+              className="underline-offset-4 hover:text-text-lighter hover:underline"
             >
               Privacy
             </a>
@@ -164,7 +191,7 @@ export function WelcomeModal() {
               href="https://compasscalendar.com/terms"
               target="_blank"
               rel="noopener noreferrer"
-              className="hover:text-text-lighter hover:underline underline-offset-4"
+              className="underline-offset-4 hover:text-text-lighter hover:underline"
             >
               Terms
             </a>
