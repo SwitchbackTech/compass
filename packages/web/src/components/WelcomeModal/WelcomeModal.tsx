@@ -1,9 +1,10 @@
-import { LinkedinLogo, XLogo } from "@phosphor-icons/react";
+import { LinkedinLogoIcon, XLogoIcon } from "@phosphor-icons/react";
 import {
   type KeyboardEvent,
   type MouseEvent,
   useContext,
   useEffect,
+  useId,
   useRef,
   useState,
 } from "react";
@@ -54,8 +55,12 @@ const FAQ_ITEMS = [
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
   const { openModal } = useAuthModal();
+  const disclosureIdPrefix = useId();
   const [isOpen, setIsOpen] = useState(
     () => !authenticated && !hasSeenWelcome(),
+  );
+  const [expandedFaqs, setExpandedFaqs] = useState<Set<string>>(
+    () => new Set(),
   );
   const backdropRef = useRef<HTMLDivElement>(null);
 
@@ -87,6 +92,20 @@ export function WelcomeModal() {
     }
   };
 
+  const toggleFaq = (question: string) => {
+    setExpandedFaqs((currentFaqs) => {
+      const nextFaqs = new Set(currentFaqs);
+
+      if (nextFaqs.has(question)) {
+        nextFaqs.delete(question);
+      } else {
+        nextFaqs.add(question);
+      }
+
+      return nextFaqs;
+    });
+  };
+
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the welcome modal.
     <div
@@ -102,7 +121,7 @@ export function WelcomeModal() {
         role="dialog"
         aria-modal
         aria-label="Welcome to Compass Calendar"
-        className="flex w-[560px] max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
+        className="flex w-140 max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
       >
         {/* Header */}
         <div className="flex flex-col gap-2">
@@ -110,8 +129,7 @@ export function WelcomeModal() {
             Ahoy! You found a simple, fast calendar.
           </h2>
           <p className="m-0 text-base text-text-light">
-            We&apos;re making Compass Calendar the best place to manage your
-            week.
+            Compass Calendar is the best place to manage your week.
           </p>
         </div>
 
@@ -120,14 +138,14 @@ export function WelcomeModal() {
           <button
             type="button"
             onClick={dismiss}
-            className="h-11 flex-1 rounded bg-accent-primary px-4 font-medium text-sm text-text-dark transition hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg"
+            className="c-button c-button-primary flex-1"
           >
             Start Now
           </button>
           <button
             type="button"
             onClick={handleLogIn}
-            className="h-11 flex-1 rounded border border-border-primary bg-panel-badge-bg px-4 text-sm text-text-lighter transition-colors hover:bg-panel-bg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg"
+            className="c-button c-button-secondary flex-1"
           >
             Log In
           </button>
@@ -135,33 +153,54 @@ export function WelcomeModal() {
 
         {/* FAQ */}
         <div className="flex flex-col divide-y divide-border-primary">
-          {FAQ_ITEMS.map((item) => (
-            <details key={item.question} className="group py-3">
-              <summary className="cursor-pointer select-none list-none rounded font-medium text-sm text-text-lighter hover:text-text-lightest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary">
-                {item.question}
-              </summary>
-              <div className="mt-2 text-sm text-text-light leading-relaxed">
-                {item.answer !== null ? (
-                  item.answer
-                ) : (
-                  <>
-                    All of it! Compass is a monorepo that includes the API,
-                    frontend, CLI, and more. You can run it yourself too; read
-                    the{" "}
-                    <a
-                      href="/blog/self-host"
-                      className="font-medium text-accent-primary underline-offset-4 hover:underline"
-                    >
-                      self-hosting guide
-                    </a>{" "}
-                    to set up your own instance. It&apos;s all available on
-                    GitHub (link in footer), and we&apos;re always looking for
-                    contributors :]
-                  </>
-                )}
+          {FAQ_ITEMS.map((item, index) => {
+            const isExpanded = expandedFaqs.has(item.question);
+            const answerId = `${disclosureIdPrefix}-faq-answer-${index}`;
+            const state = isExpanded ? "open" : "closed";
+
+            return (
+              <div key={item.question} className="py-3">
+                <button
+                  type="button"
+                  aria-controls={answerId}
+                  aria-expanded={isExpanded}
+                  className="w-full cursor-pointer select-none rounded text-left font-medium text-sm text-text-lighter transition-colors hover:text-text-lightest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                  onClick={() => toggleFaq(item.question)}
+                >
+                  {item.question}
+                </button>
+                <div
+                  id={answerId}
+                  aria-hidden={!isExpanded}
+                  className="c-disclosure-content"
+                  data-state={state}
+                >
+                  <div>
+                    <div className="mt-2 text-sm text-text-light leading-relaxed">
+                      {item.answer !== null ? (
+                        item.answer
+                      ) : (
+                        <>
+                          All of it! Compass is a monorepo that includes the
+                          API, frontend, CLI, and more. You can run it yourself
+                          too; read the{" "}
+                          <a
+                            href="/blog/self-host"
+                            className="font-medium text-accent-primary underline-offset-4 hover:underline"
+                          >
+                            self-hosting guide
+                          </a>{" "}
+                          to set up your own instance. It&apos;s all available
+                          on GitHub (link in footer), and we&apos;re always
+                          looking for contributors :]
+                        </>
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
-            </details>
-          ))}
+            );
+          })}
         </div>
 
         {/* Footer: social + legal */}
@@ -174,7 +213,7 @@ export function WelcomeModal() {
               aria-label="X (Twitter)"
               className="rounded text-text-light transition-colors hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             >
-              <XLogo size={18} weight="bold" />
+              <XLogoIcon size={18} weight="bold" />
             </a>
             <a
               href="https://www.linkedin.com/company/compass-calendar"
@@ -183,7 +222,7 @@ export function WelcomeModal() {
               aria-label="LinkedIn"
               className="rounded text-text-light transition-colors hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
             >
-              <LinkedinLogo size={18} weight="bold" />
+              <LinkedinLogoIcon size={18} weight="bold" />
             </a>
           </div>
           <div className="flex items-center gap-4 text-text-light text-xs">

@@ -67,4 +67,38 @@ describe("WelcomeModal", () => {
     });
     expect(localStorage.getItem(STORAGE_KEY)).toBe("true");
   });
+
+  it("expands and collapses FAQ answers", async () => {
+    const user = userEvent.setup();
+
+    render(<WelcomeModal />);
+
+    const questionButton = screen.getByRole("button", {
+      name: "Who is Compass for?",
+    });
+    const answerId = questionButton.getAttribute("aria-controls");
+    expect(answerId).toBeTruthy();
+
+    const answer = document.getElementById(answerId as string);
+    expect(questionButton).toHaveAttribute("aria-expanded", "false");
+    expect(answer).toHaveAttribute("aria-hidden", "true");
+    expect(answer).toHaveAttribute("data-state", "closed");
+
+    await user.click(questionButton);
+
+    expect(questionButton).toHaveAttribute("aria-expanded", "true");
+    expect(answer).toHaveAttribute("aria-hidden", "false");
+    expect(answer).toHaveAttribute("data-state", "open");
+    expect(
+      screen.getByText(
+        /Compass is designed for minimalists who value efficiency/,
+      ),
+    ).toBeTruthy();
+
+    await user.click(questionButton);
+
+    expect(questionButton).toHaveAttribute("aria-expanded", "false");
+    expect(answer).toHaveAttribute("aria-hidden", "true");
+    expect(answer).toHaveAttribute("data-state", "closed");
+  });
 });
