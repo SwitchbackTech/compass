@@ -9,7 +9,7 @@ import { SessionContext } from "@web/auth/compass/session/SessionProvider";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 
-const STORAGE_KEY = "compass.onboarding.has-seen-welcome";
+export const STORAGE_KEY = "compass.onboarding.has-seen-welcome";
 
 function hasSeenWelcome(): boolean {
   try {

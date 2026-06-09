@@ -4,8 +4,6 @@ import { act, createContext } from "react";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-const STORAGE_KEY = "compass.onboarding.has-seen-welcome";
-
 const mockOpenModal = mock();
 const SessionContext = createContext<CompassSession>({
   authenticated: false,
@@ -22,7 +20,7 @@ mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
   }),
 }));
 
-const { WelcomeModal } =
+const { WelcomeModal, STORAGE_KEY } =
   require("./WelcomeModal") as typeof import("./WelcomeModal");
 
 describe("WelcomeModal", () => {
