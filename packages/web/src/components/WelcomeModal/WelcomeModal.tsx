@@ -164,7 +164,7 @@ export function WelcomeModal() {
                   type="button"
                   aria-controls={answerId}
                   aria-expanded={isExpanded}
-                  className="w-full cursor-pointer select-none rounded text-left font-medium text-sm text-text-lighter transition-colors hover:text-text-lightest focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+                  className="c-focus-ring w-full cursor-pointer select-none text-left font-medium text-sm text-text-lighter transition-colors hover:text-text-lightest"
                   onClick={() => toggleFaq(item.question)}
                 >
                   {item.question}
@@ -186,7 +186,7 @@ export function WelcomeModal() {
                           too; read the{" "}
                           <a
                             href="/blog/self-host"
-                            className="font-medium text-accent-primary underline-offset-4 hover:underline"
+                            className="c-focus-ring font-medium text-accent-primary underline-offset-4 hover:underline"
                           >
                             self-hosting guide
                           </a>{" "}
@@ -211,7 +211,7 @@ export function WelcomeModal() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="X (Twitter)"
-              className="rounded text-text-light transition-colors hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              className="c-focus-ring text-text-light transition-colors hover:text-text-lighter"
             >
               <XLogoIcon size={18} weight="bold" />
             </a>
@@ -220,7 +220,7 @@ export function WelcomeModal() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label="LinkedIn"
-              className="rounded text-text-light transition-colors hover:text-text-lighter focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary"
+              className="c-focus-ring text-text-light transition-colors hover:text-text-lighter"
             >
               <LinkedinLogoIcon size={18} weight="bold" />
             </a>
@@ -230,7 +230,7 @@ export function WelcomeModal() {
               href="https://compasscalendar.com/privacy"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline-offset-4 hover:text-text-lighter hover:underline"
+              className="c-focus-ring underline-offset-4 hover:text-text-lighter hover:underline"
             >
               Privacy
             </a>
@@ -238,7 +238,7 @@ export function WelcomeModal() {
               href="https://compasscalendar.com/terms"
               target="_blank"
               rel="noopener noreferrer"
-              className="underline-offset-4 hover:text-text-lighter hover:underline"
+              className="c-focus-ring underline-offset-4 hover:text-text-lighter hover:underline"
             >
               Terms
             </a>

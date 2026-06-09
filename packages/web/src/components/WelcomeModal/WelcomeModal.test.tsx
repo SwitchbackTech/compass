@@ -101,4 +101,27 @@ describe("WelcomeModal", () => {
     expect(answer).toHaveAttribute("aria-hidden", "true");
     expect(answer).toHaveAttribute("data-state", "closed");
   });
+
+  it("uses the shared focus ring on modal links and FAQ triggers", async () => {
+    const user = userEvent.setup();
+
+    render(<WelcomeModal />);
+
+    const openSourceQuestion = screen.getByRole("button", {
+      name: "How much of the code is open-source?",
+    });
+    expect(openSourceQuestion).toHaveClass("c-focus-ring");
+
+    await user.click(openSourceQuestion);
+
+    expect(
+      screen.getByRole("link", { name: "self-hosting guide" }),
+    ).toHaveClass("c-focus-ring");
+    expect(screen.getByRole("link", { name: "Privacy" })).toHaveClass(
+      "c-focus-ring",
+    );
+    expect(screen.getByRole("link", { name: "Terms" })).toHaveClass(
+      "c-focus-ring",
+    );
+  });
 });

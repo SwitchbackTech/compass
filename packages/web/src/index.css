@@ -192,8 +192,12 @@
   }
 }
 
+@utility c-focus-ring {
+  @apply rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg;
+}
+
 @utility c-button {
-  @apply inline-flex h-11 items-center justify-center rounded px-4 font-medium text-sm transition-[background-color,border-color,box-shadow,filter,transform] duration-150 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg disabled:pointer-events-none disabled:opacity-60;
+  @apply c-focus-ring inline-flex h-11 items-center justify-center px-4 font-medium text-sm transition-[background-color,border-color,box-shadow,filter,transform] duration-150 ease-out disabled:pointer-events-none disabled:opacity-60;
 
   box-shadow:
     0 10px 18px -10px var(--color-shadow-default),
