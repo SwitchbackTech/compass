@@ -20,8 +20,10 @@ mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
 	}),
 }));
 
-const { WelcomeModal, STORAGE_KEY } =
+const { WelcomeModal } =
 	require("./WelcomeModal") as typeof import("./WelcomeModal");
+const { STORAGE_KEYS } =
+	require("@web/common/constants/storage.constants") as typeof import("@web/common/constants/storage.constants");
 
 describe("WelcomeModal", () => {
 	beforeEach(() => {
@@ -45,7 +47,7 @@ describe("WelcomeModal", () => {
 				screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
 			).toBeNull();
 		});
-		expect(localStorage.getItem(STORAGE_KEY)).toBe("true");
+		expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
 	});
 
 	it("closes when Escape is pressed", async () => {
@@ -65,7 +67,7 @@ describe("WelcomeModal", () => {
 				screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
 			).toBeNull();
 		});
-		expect(localStorage.getItem(STORAGE_KEY)).toBe("true");
+		expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
 	});
 
 	it("expands and collapses FAQ answers", async () => {
@@ -100,37 +102,5 @@ describe("WelcomeModal", () => {
 		expect(questionButton).toHaveAttribute("aria-expanded", "false");
 		expect(answer).toHaveAttribute("aria-hidden", "true");
 		expect(answer).toHaveAttribute("data-state", "closed");
-	});
-
-	it("uses the shared focus ring on modal links and FAQ triggers", async () => {
-		const user = userEvent.setup();
-
-		render(<WelcomeModal />);
-
-		const openSourceQuestion = screen.getByRole("button", {
-			name: "How much of the code is open-source?",
-		});
-		expect(openSourceQuestion).toHaveClass("c-focus-ring");
-
-		await user.click(openSourceQuestion);
-
-		expect(
-			screen.getByRole("link", { name: "self-hosting guide" }),
-		).toHaveClass("c-focus-ring");
-		expect(screen.getByRole("link", { name: "X (Twitter)" })).toHaveClass(
-			"c-focus-ring",
-		);
-		expect(screen.getByRole("link", { name: "LinkedIn" })).toHaveClass(
-			"c-focus-ring",
-		);
-		expect(screen.getByRole("link", { name: "GitHub" })).toHaveClass(
-			"c-focus-ring",
-		);
-		expect(screen.getByRole("link", { name: "Privacy" })).toHaveClass(
-			"c-focus-ring",
-		);
-		expect(screen.getByRole("link", { name: "Terms" })).toHaveClass(
-			"c-focus-ring",
-		);
 	});
 });

@@ -15,46 +15,8 @@ import {
 	useRef,
 	useState,
 } from "react";
-
-export const STORAGE_KEY = "compass.onboarding.has-seen-welcome";
-
-function hasSeenWelcome(): boolean {
-	try {
-		return localStorage.getItem(STORAGE_KEY) === "true";
-	} catch {
-		return true;
-	}
-}
-
-function markWelcomeSeen(): void {
-	try {
-		localStorage.setItem(STORAGE_KEY, "true");
-	} catch {
-		// Silently fail if localStorage is unavailable
-	}
-}
-
-const FAQ_ITEMS = [
-	{
-		question: "Who is Compass for?",
-		answer:
-			"Compass is designed for minimalists who value efficiency, keyboard shortcuts, and open-source software. We are focused on helping people do more with less.",
-	},
-	{
-		question: "Does Compass use AI?",
-		answer:
-			"Not currently. Compass gives you the tools to make your own decisions about how to spend your time, without algorithmic suggestions you'll ignore anyway.",
-	},
-	{
-		question: "How much of the code is open-source?",
-		answer: null, // rendered separately
-	},
-	{
-		question: "What makes Compass different from other calendars?",
-		answer:
-			"It's simpler and faster. Instead of doing everything, we do a few things well.",
-	},
-];
+import { FAQ_ITEMS } from "./faq";
+import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
 
 export function WelcomeModal() {
 	const { authenticated } = useContext(SessionContext);
@@ -183,18 +145,15 @@ export function WelcomeModal() {
 												item.answer
 											) : (
 												<>
-													All of it! Compass is a monorepo that includes the
-													API, frontend, CLI, and more. You can run it yourself
-													too; read the{" "}
+													Yes! The repo includes the API, frontend, CLI, and
+													more. You can run it yourself too; read the{" "}
 													<a
 														href="/blog/self-host"
 														className="c-focus-ring font-medium text-accent-primary underline-offset-4 hover:underline"
 													>
 														self-hosting guide
 													</a>{" "}
-													to set up your own instance. It&apos;s all available
-													on GitHub (link in footer), and we&apos;re always
-													looking for contributors :]
+													to set up your own instance.
 												</>
 											)}
 										</div>
