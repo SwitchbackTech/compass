@@ -176,7 +176,6 @@ export function WelcomeModal() {
 									aria-hidden={!isExpanded}
 									className="c-disclosure-content"
 									data-state={state}
-									inert={isExpanded ? undefined : ""}
 								>
 									<div>
 										<div className="mt-2 text-sm text-text-light leading-relaxed">

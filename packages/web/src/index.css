@@ -227,14 +227,15 @@
 }
 
 @utility c-disclosure-content {
-  @apply grid grid-rows-[0fr] overflow-hidden opacity-0 transition-[grid-template-rows,opacity] duration-200 ease-out motion-reduce:transition-none;
+  @apply invisible grid grid-rows-[0fr] overflow-hidden opacity-0 transition-[grid-template-rows,opacity,visibility] duration-200 ease-out motion-reduce:transition-none;
+  transition-behavior: allow-discrete;
 
   & > * {
     min-height: 0;
   }
 
   &[data-state="open"] {
-    @apply grid-rows-[1fr] opacity-100;
+    @apply visible grid-rows-[1fr] opacity-100;
   }
 }
 

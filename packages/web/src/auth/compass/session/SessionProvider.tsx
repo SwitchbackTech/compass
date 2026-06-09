@@ -26,8 +26,6 @@ import { clearGoogleSyncIndicatorOverride } from "../../google/state/google.sync
 import { SessionContext } from "./session.context";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";
 
-export { SessionContext } from "./session.context";
-
 SuperTokens.init({
 	appInfo: {
 		appName: APP_NAME,

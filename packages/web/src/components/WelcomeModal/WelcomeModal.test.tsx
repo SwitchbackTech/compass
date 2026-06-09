@@ -83,14 +83,12 @@ describe("WelcomeModal", () => {
 		expect(questionButton).toHaveAttribute("aria-expanded", "false");
 		expect(answer).toHaveAttribute("aria-hidden", "true");
 		expect(answer).toHaveAttribute("data-state", "closed");
-		expect(answer).toHaveAttribute("inert");
 
 		await user.click(questionButton);
 
 		expect(questionButton).toHaveAttribute("aria-expanded", "true");
 		expect(answer).toHaveAttribute("aria-hidden", "false");
 		expect(answer).toHaveAttribute("data-state", "open");
-		expect(answer).not.toHaveAttribute("inert");
 		expect(
 			screen.getByText(
 				/Compass is designed for minimalists who value efficiency/,
@@ -102,7 +100,6 @@ describe("WelcomeModal", () => {
 		expect(questionButton).toHaveAttribute("aria-expanded", "false");
 		expect(answer).toHaveAttribute("aria-hidden", "true");
 		expect(answer).toHaveAttribute("data-state", "closed");
-		expect(answer).toHaveAttribute("inert");
 	});
 
 	it("uses the shared focus ring on modal links and FAQ triggers", async () => {
