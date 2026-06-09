@@ -5,9 +5,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bunx biome format --write --changed --since=main --no-errors-on-unmatched >/dev/null",
+            "command": "bunx biome check --write --assist-enabled=true --changed --since=main --no-errors-on-unmatched >/dev/null",
             "timeout": 60,
-            "statusMessage": "Formatting branch changes"
+            "statusMessage": "Applying Biome fixes to branch changes"
           }
         ]
       }

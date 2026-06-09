@@ -193,7 +193,7 @@
 }
 
 @utility c-focus-ring {
-  @apply rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary focus-visible:ring-offset-2 focus-visible:ring-offset-panel-bg;
+  @apply rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-accent-primary focus-visible:ring-offset-1 focus-visible:ring-offset-panel-bg;
 }
 
 @utility c-button {
