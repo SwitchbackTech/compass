@@ -3,6 +3,8 @@ import {
   type KeyboardEvent,
   type MouseEvent,
   useContext,
+  useEffect,
+  useRef,
   useState,
 } from "react";
 import { SessionContext } from "@web/auth/compass/session/SessionProvider";
@@ -55,6 +57,11 @@ export function WelcomeModal() {
   const [isOpen, setIsOpen] = useState(
     () => !authenticated && !hasSeenWelcome(),
   );
+  const backdropRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    backdropRef.current?.focus();
+  }, []);
 
   if (!isOpen) return null;
 
@@ -86,6 +93,7 @@ export function WelcomeModal() {
       className="fixed inset-0 flex items-center justify-center overflow-y-auto bg-bg-primary/85 py-8 backdrop-blur-sm"
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
+      ref={backdropRef}
       role="presentation"
       style={{ zIndex: Z_INDEX_MODAL }}
       tabIndex={-1}
