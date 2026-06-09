@@ -110,13 +110,12 @@ export const DayInteractionCoordinator: FC<Props> = ({
       | DayTimedDragCommitResult
       | DayTimedResizeCommitResult,
   ) => {
-    if (!result.hasMoved) {
+    if (result.hadFormOpenBeforeInteraction) {
       openDayCalendarEvent(result.event);
       return;
     }
 
-    if (result.hadFormOpenBeforeInteraction) {
-      openDayCalendarEvent(result.event);
+    if (!result.hasMoved) {
       return;
     }
 

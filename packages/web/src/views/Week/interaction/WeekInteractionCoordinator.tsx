@@ -98,18 +98,13 @@ export const WeekInteractionCoordinator: FC<Props> = ({
       | WeekTimedDragCommitResult
       | WeekTimedResizeCommitResult,
   ) => {
-    if (!result.hasMoved) {
-      if (result.event.isAllDay) {
-        openAllDayEvent(result.event);
-      } else {
-        openTimedEvent(result.event);
-      }
-      return;
-    }
-
     if (result.hadFormOpenBeforeInteraction) {
       setters.setDraft(result.event);
       actions.openForm();
+      return;
+    }
+
+    if (!result.hasMoved) {
       return;
     }
 

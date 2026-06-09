@@ -23,7 +23,15 @@ import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import { DayInteractionCoordinator } from "./DayInteractionCoordinator";
 import { dayCalendarEventRegistry } from "./registry/dayCalendarEventRegistry";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+  spyOn,
+} from "bun:test";
 import "@testing-library/jest-dom";
 
 const timedEvent: Schema_GridEvent = {
@@ -96,6 +104,9 @@ const TestTimedEventTarget: FC = () => {
 let originalRequestAnimationFrame: typeof requestAnimationFrame;
 let originalCancelAnimationFrame: typeof cancelAnimationFrame;
 let flushFrame: (timestamp?: number) => void;
+let flushTimer: () => void;
+let setTimeoutSpy: ReturnType<typeof spyOn>;
+let clearTimeoutSpy: ReturnType<typeof spyOn>;
 
 const installFrameScheduler = () => {
   const frames = new Map<number, FrameRequestCallback>();
@@ -127,6 +138,45 @@ const installFrameScheduler = () => {
   };
 
   return { flushFrame };
+};
+
+const installTimerScheduler = () => {
+  const timers = new Map<number, () => void>();
+  let nextTimerId = 1;
+
+  setTimeoutSpy = spyOn(globalThis, "setTimeout").mockImplementation(((
+    callback: TimerHandler,
+  ) => {
+    const timerId = nextTimerId;
+
+    nextTimerId += 1;
+
+    if (typeof callback === "function") {
+      timers.set(timerId, () => callback());
+    }
+
+    return timerId;
+  }) as unknown as typeof setTimeout);
+  clearTimeoutSpy = spyOn(globalThis, "clearTimeout").mockImplementation(((
+    timerId?: number,
+  ) => {
+    if (timerId !== undefined) {
+      timers.delete(timerId);
+    }
+  }) as unknown as typeof clearTimeout);
+
+  const flushTimer = () => {
+    const [[timerId, callback]] = timers;
+
+    if (!callback) {
+      throw new Error("Expected a timer callback to be scheduled");
+    }
+
+    timers.delete(timerId);
+    callback();
+  };
+
+  return { flushTimer };
 };
 
 const openFloatingForm = (reference: HTMLElement) => {
@@ -169,6 +219,7 @@ const renderCoordinator = () => {
 
 beforeEach(() => {
   ({ flushFrame } = installFrameScheduler());
+  ({ flushTimer } = installTimerScheduler());
 });
 
 afterEach(() => {
@@ -178,6 +229,8 @@ afterEach(() => {
   document.body.innerHTML = "";
   globalThis.requestAnimationFrame = originalRequestAnimationFrame;
   globalThis.cancelAnimationFrame = originalCancelAnimationFrame;
+  setTimeoutSpy.mockRestore();
+  clearTimeoutSpy.mockRestore();
 });
 
 describe("DayInteractionCoordinator", () => {
@@ -228,6 +281,7 @@ describe("DayInteractionCoordinator", () => {
       clientY: 220,
       pointerId: 1,
     });
+    flushTimer();
 
     expect(
       dispatch.mock.calls.some(
@@ -239,5 +293,35 @@ describe("DayInteractionCoordinator", () => {
       expect(isOpenAtCursor(CursorItem.EventForm)).toBe(true);
       expect(store.getState().events.draft.event?.startDate).toContain("10:00");
     });
+  });
+
+  it("does not open the Day event form after a held no-op drag", () => {
+    const { dispatch } = renderCoordinator();
+    const child = screen.getByTestId("timed-child");
+
+    fireEvent.pointerDown(child, {
+      button: 0,
+      clientX: 160,
+      clientY: 160,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    flushTimer();
+
+    expect(document.body.style.cursor).toBe("move");
+    expect(document.documentElement.style.cursor).toBe("move");
+
+    fireEvent.pointerUp(window, {
+      clientX: 160,
+      clientY: 160,
+      pointerId: 1,
+    });
+
+    expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
+    expect(
+      dispatch.mock.calls.some(
+        ([action]) => action.type === editEventSlice.actions.request.type,
+      ),
+    ).toBe(false);
   });
 });
