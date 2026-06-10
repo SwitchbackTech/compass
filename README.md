@@ -77,16 +77,6 @@ Run Compass on a server you control to keep everything on your infrastructure.
 
 See [the self-hosting guide](./docs/self-hosting/README.md) for instructions.
 
-## Contributing
-
-We love contributions! Whether it's bug fixes, new features, or documentation improvements, your help makes Compass better for everyone.
-
-**Issues**: Create an issue to document a bug or feature request.
-
-**Pull Requests**: Fork the repo, follow the the [Contribution Guidelines](./CONTRIBUTING.md), submit PR.
-
-**Feedback**: Share your ideas on [GitHub Discussions](https://github.com/SwitchbackTech/compass/discussions).
-
 ## Resources
 
 - **Docsite**: [docs.compasscalendar.com](https://docs.compasscalendar.com/docs)
