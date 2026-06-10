@@ -38,7 +38,7 @@ It'll be around for the long-term:
 
 ### The Limitations
 
-Current things we don't support (yet):
+Current things we don't support:
 
 - Subcalendar sync (only primary calendar)
 - Sharing, reminders, locations
@@ -55,7 +55,7 @@ Current things we don't support (yet):
 
 ### Option 1: Try Compass Online
 
-[app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) ← No signup required.
+[compasscalendar.com](https://compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) ← No signup required.
 
 ### Option 2: Run Compass Locally
 

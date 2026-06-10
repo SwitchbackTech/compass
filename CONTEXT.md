@@ -20,7 +20,7 @@ Detailed source docs:
 ### Users And Hosting
 
 **Compass Cloud**:
-The managed Compass product at `app.compasscalendar.com`.
+The managed Compass product at `compasscalendar.com`.
 
 **Self-hosted Compass**:
 An operator-run Compass install, usually the local Docker setup served at
