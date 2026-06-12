@@ -18,7 +18,7 @@ const clearAuthenticationState = mock();
 const getAuthState = mock();
 const hasUserEverAuthenticated = mock();
 const markAnonymousCalendarChangeForSignUpPrompt = mock();
-const shouldShowAnonymousCalendarChangeSignUpPrompt = mock();
+const shouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
 const subscribeToAuthState = mock();
 const updateAuthState = mock();
 const doesSessionExist = mock();
@@ -124,6 +124,7 @@ describe("SessionProvider sessionInit", () => {
     hasUserEverAuthenticated.mockClear();
     markAnonymousCalendarChangeForSignUpPrompt.mockClear();
     shouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
+    shouldShowAnonymousCalendarChangeSignUpPrompt.mockReturnValue(false);
     subscribeToAuthState.mockClear();
     updateAuthState.mockClear();
     doesSessionExist.mockClear();
