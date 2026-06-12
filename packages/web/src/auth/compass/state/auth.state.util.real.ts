@@ -155,7 +155,9 @@ export function markAnonymousCalendarChangeForSignUpPrompt(): void {
 
 export function shouldShowAnonymousCalendarChangeSignUpPrompt(): boolean {
   try {
-    return getAuthState().shouldPromptSignUpAfterAnonymousCalendarChange;
+    return (
+      getAuthState().shouldPromptSignUpAfterAnonymousCalendarChange === true
+    );
   } catch {
     return false;
   }
