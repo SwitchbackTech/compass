@@ -103,7 +103,7 @@ export const Tasks = () => {
           id="task-list-drop-zone"
           role="list"
           aria-label="Task list"
-          className="flex flex-col gap-2 overflow-visible"
+          className="flex flex-col gap-2 overflow-y-auto overscroll-contain"
           isActive={isDragging}
         >
           {isInitialLoad ? (

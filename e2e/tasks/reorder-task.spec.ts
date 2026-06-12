@@ -72,8 +72,26 @@ const liftTaskWithKeyboard = async (page: Page, title: string) => {
   await expect(page.locator("#task-list-drop-zone")).toHaveClass(
     /border-border-primary/,
   );
+  // dnd-kit's KeyboardSensor attaches its move/end keydown listener in a
+  // setTimeout (so the activating keydown can't immediately end the drag);
+  // give it a beat before sending further keys.
   await page.waitForTimeout(250);
 };
+
+// dnd-kit applies arrow-key moves through a React render, so dropping
+// immediately after ArrowDown can end the drag with a stale target. Wait for
+// the screen-reader move announcement — what a real keyboard user hears
+// before releasing — to know the move landed.
+const expectDragAnnouncement = (page: Page, pattern: RegExp) =>
+  expect
+    .poll(() =>
+      page.evaluate(() =>
+        Array.from(document.querySelectorAll("[aria-live]"))
+          .map((node) => node.textContent)
+          .join(" "),
+      ),
+    )
+    .toMatch(pattern);
 
 test.describe("Task Reordering", () => {
   test.skip(
@@ -81,11 +99,74 @@ test.describe("Task Reordering", () => {
     "Tasks are not available in the current mobile experience.",
   );
 
+  test("reorders tasks with the keyboard and persists the order", async ({
+    page,
+  }) => {
+    await prepareTwoTasks(page);
+
+    await liftTaskWithKeyboard(page, "Task A");
+    await page.keyboard.press("ArrowDown");
+    await expectDragAnnouncement(page, /at new position below Task B/);
+    await page.keyboard.press("Space");
+
+    await expect(page.locator("#task-list-drop-zone")).not.toHaveClass(
+      /border-border-primary/,
+    );
+    await expectTaskOrder(page, "Task B", "Task A");
+
+    await reloadTaskPage(page);
+
+    await expectTaskOrder(page, "Task B", "Task A");
+  });
+
+  test("scrolls to reveal tasks beyond the visible area", async ({ page }) => {
+    await prepareTaskPage(page);
+
+    const titles = Array.from({ length: 14 }, (_, i) => `Scroll Task ${i + 1}`);
+
+    for (const title of titles) {
+      await createTask(page, title);
+    }
+
+    await expectTaskVisible(page, "Scroll Task 14");
+
+    const dropZone = page.locator("#task-list-drop-zone");
+
+    await expect
+      .poll(() =>
+        dropZone.evaluate(
+          (element) => element.scrollHeight - element.clientHeight,
+        ),
+      )
+      .toBeGreaterThan(0);
+
+    // Wheel-scroll the list and confirm the last task comes into view.
+    await dropZone.hover();
+    await page.mouse.wheel(0, 1000);
+
+    await expect
+      .poll(async () => {
+        const dropZoneBox = await dropZone.boundingBox();
+        const lastTaskBox = await page
+          .getByRole("textbox", { name: "Edit Scroll Task 14" })
+          .boundingBox();
+
+        if (!dropZoneBox || !lastTaskBox) return false;
+
+        return (
+          lastTaskBox.y + lastTaskBox.height <=
+          dropZoneBox.y + dropZoneBox.height + 1
+        );
+      })
+      .toBe(true);
+  });
+
   test("cancels a keyboard reorder with escape", async ({ page }) => {
     await prepareTwoTasks(page);
 
     await liftTaskWithKeyboard(page, "Task A");
     await page.keyboard.press("ArrowDown");
+    await expectDragAnnouncement(page, /at new position below Task B/);
     await page.keyboard.press("Escape");
 
     await expect(page.locator("#task-list-drop-zone")).not.toHaveClass(

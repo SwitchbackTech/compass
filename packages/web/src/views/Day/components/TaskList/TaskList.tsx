@@ -14,7 +14,6 @@ export function TaskList() {
   const [isHoveringAddBlock, setIsHoveringAddBlock] = useState(false);
 
   const addTaskInputRef = useRef<HTMLInputElement>(null);
-  const tasksScrollRef = useRef<HTMLDivElement>(null);
 
   useTaskListInputFocus({
     isAddingTask,
@@ -61,10 +60,7 @@ export function TaskList() {
     >
       <TaskListHeader />
 
-      <div
-        ref={tasksScrollRef}
-        className="flex flex-1 flex-col gap-2 overflow-hidden p-4"
-      >
+      <div className="flex flex-1 flex-col gap-2 overflow-hidden p-4">
         <TaskContextMenuWrapper>
           <Tasks />
         </TaskContextMenuWrapper>
