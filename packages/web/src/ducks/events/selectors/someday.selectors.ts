@@ -61,3 +61,8 @@ export const selectSomedayWeekCount = createSelector(
   selectCategorizedEvents,
   (somedayEvents) => somedayEvents.columns[COLUMN_WEEK].eventIds.length,
 );
+
+export const selectSomedayMonthCount = createSelector(
+  selectCategorizedEvents,
+  (somedayEvents) => somedayEvents.columns[COLUMN_MONTH].eventIds.length,
+);

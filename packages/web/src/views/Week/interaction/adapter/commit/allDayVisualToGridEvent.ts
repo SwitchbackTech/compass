@@ -5,12 +5,32 @@ import { type AllDayResizeVisual } from "@web/common/calendar-grid/interaction/m
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export const hasAllDayDragVisualMoved = (visual: AllDayDragVisual) =>
-  visual.dayIndex !== visual.initialDayIndex || visual.weekOffsetDays !== 0;
+  visual.crossSurfaceDrop?.type === "timed" ||
+  visual.dayIndex !== visual.initialDayIndex ||
+  visual.weekOffsetDays !== 0;
 
 export const allDayDragVisualToGridEvent = (
   event: Schema_GridEvent,
   visual: AllDayDragVisual,
 ): Schema_GridEvent => {
+  if (visual.crossSurfaceDrop?.type === "timed") {
+    const dayDelta =
+      visual.crossSurfaceDrop.dayIndex -
+      visual.initialDayIndex +
+      visual.weekOffsetDays;
+    const startDate = dayjs(event.startDate)
+      .add(dayDelta, "day")
+      .startOf("day")
+      .add(visual.crossSurfaceDrop.startMinutes, "minutes");
+
+    return {
+      ...event,
+      endDate: startDate.add(60, "minutes").format(),
+      isAllDay: false,
+      startDate: startDate.format(),
+    };
+  }
+
   const dayDelta =
     visual.dayIndex - visual.initialDayIndex + visual.weekOffsetDays;
 

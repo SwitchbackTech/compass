@@ -54,7 +54,11 @@ export const useWeekShortcuts = ({
   const dispatch = useAppDispatch();
   const context = useSidebarContext(true);
   const {
-    actions: { repositionDraftByKeyboard },
+    actions: {
+      convertDraftSurfaceByKeyboard,
+      moveDraftToSidebarByKeyboard,
+      repositionDraftByKeyboard,
+    },
   } = useDraftContext();
 
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
@@ -115,8 +119,12 @@ export const useWeekShortcuts = ({
   );
 
   const createAllDayDraftEvent = useCallback(() => {
+    if (convertDraftSurfaceByKeyboard()) {
+      return;
+    }
+
     void createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
-  }, [dispatch, startOfView, endOfView]);
+  }, [convertDraftSurfaceByKeyboard, dispatch, startOfView, endOfView]);
 
   const createTimedDraftEvent = useCallback(() => {
     void createTimedDraft(
@@ -128,12 +136,20 @@ export const useWeekShortcuts = ({
   }, [isCurrentWeek, startOfView, dispatch]);
 
   const createSomedayMonthDraft = useCallback(() => {
+    if (moveDraftToSidebarByKeyboard(Categories_Event.SOMEDAY_MONTH)) {
+      return;
+    }
+
     _createSomedayDraft(Categories_Event.SOMEDAY_MONTH);
-  }, [_createSomedayDraft]);
+  }, [_createSomedayDraft, moveDraftToSidebarByKeyboard]);
 
   const createSomedayWeekDraft = useCallback(() => {
+    if (moveDraftToSidebarByKeyboard(Categories_Event.SOMEDAY_WEEK)) {
+      return;
+    }
+
     _createSomedayDraft(Categories_Event.SOMEDAY_WEEK);
-  }, [_createSomedayDraft]);
+  }, [_createSomedayDraft, moveDraftToSidebarByKeyboard]);
 
   const focusFirstCalendarEvent = useCallback(() => {
     const target = getFirstVisibleCalendarEventTarget();

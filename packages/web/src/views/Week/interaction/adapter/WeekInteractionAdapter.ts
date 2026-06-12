@@ -15,6 +15,15 @@ import {
   createCalendarInteractionEngine,
 } from "@web/common/calendar-interaction/CalendarInteractionEngine";
 import { isEligibleCalendarInteractionPointerDown } from "@web/common/calendar-interaction/calendarInteractionPointer";
+import { somedayDropTargetRegistry } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayDropTargetRegistry";
+import {
+  type SomedayInteractionCategory,
+  somedayEventRegistry,
+} from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
+import {
+  EVENT_ALLDAY_HEIGHT,
+  TIMED_EVENT_COLUMN_INSET,
+} from "../../layout.constants";
 import {
   type WeekInteractionEventType,
   weekEventRegistry,
@@ -27,6 +36,7 @@ import { setWeekInteractionMotionActive } from "../state/weekInteractionMotionSt
 import {
   buildAllDayWeekLayoutCache,
   buildTimedWeekLayoutCache,
+  getNearestDayColumn,
   type WeekLayoutCache,
   type WeekLayoutCacheSources,
 } from "./geometry/weekLayoutCache";
@@ -70,6 +80,7 @@ import { createWeekEdgeNavigationController } from "./weekEdgeNavigation";
 export type {
   WeekAllDayDragCommitResult,
   WeekAllDayResizeCommitResult,
+  WeekCalendarToSidebarCommitResult,
   WeekInteractionAdapter,
   WeekInteractionRuntime,
   WeekTimedDragCommitResult,
@@ -89,6 +100,19 @@ const activeEdgeNavigationIndicatorState = {
   isTimerActive: false,
   progress: 0,
 } as const;
+const CROSS_SURFACE_SNAP_TRANSITION =
+  "height 160ms cubic-bezier(0.16, 1, 0.3, 1), width 160ms cubic-bezier(0.16, 1, 0.3, 1), transform 120ms cubic-bezier(0.16, 1, 0.3, 1)";
+const DEFAULT_CONVERTED_TIMED_DURATION_MINUTES = 60;
+
+interface WeekSidebarDrop {
+  category: SomedayInteractionCategory;
+  index: number;
+  type: "sidebar";
+}
+
+type WeekSidebarDroppableVisual = WeekEdgeNavigableVisual & {
+  sidebarDrop?: WeekSidebarDrop | null;
+};
 
 export const createWeekInteractionAdapter = ({
   engineOptions,
@@ -97,8 +121,10 @@ export const createWeekInteractionAdapter = ({
 }: WeekInteractionAdapterOptions = {}): WeekInteractionAdapter => {
   const edgeNavigation = createWeekEdgeNavigationController();
   let isLayoutRebuildPending = false;
+  let allDayLayout: WeekLayoutCache | null = null;
   let layout: WeekLayoutCache | null = null;
   let scrollTop: number | null = null;
+  let timedLayout: WeekLayoutCache | null = null;
 
   const engine: CalendarInteractionEngine<
     WeekInteractionTarget,
@@ -208,6 +234,11 @@ export const createWeekInteractionAdapter = ({
       return isOwnedPointer;
     }
 
+    if (result.result.type === "calendarToSidebar") {
+      currentRuntime.onCommitCalendarToSidebar?.(result.result);
+      return isOwnedPointer;
+    }
+
     currentRuntime.onCommitTimedResize?.(result.result);
 
     return isOwnedPointer;
@@ -238,8 +269,21 @@ export const createWeekInteractionAdapter = ({
       },
       commit: ({ target, visual }) => {
         let result: WeekInteractionCommitResult;
+        const sidebarDrop = getVisualSidebarDrop(visual);
 
-        if (visual.type === "allDayDrag" && target.type === "allDayDrag") {
+        if (sidebarDrop && isDragTarget(target)) {
+          result = {
+            category: sidebarDrop.category,
+            event: target.event,
+            eventId: target.event._id!,
+            hadFormOpenBeforeInteraction: target.hadFormOpenBeforeInteraction,
+            index: sidebarDrop.index,
+            type: "calendarToSidebar",
+          };
+        } else if (
+          visual.type === "allDayDrag" &&
+          target.type === "allDayDrag"
+        ) {
           result = commitAllDayDragInteraction(target, visual);
         } else if (
           visual.type === "allDayResize" &&
@@ -275,6 +319,11 @@ export const createWeekInteractionAdapter = ({
 
         const sourceRect = readElementRect(sourceElement);
         setLayout(layout);
+        if (isDragTarget(target)) {
+          setCrossSurfaceLayouts(getLayoutSources());
+        } else {
+          clearCrossSurfaceLayouts();
+        }
         if (isDragTarget(target)) {
           setWeekInteractionEdgeNavigationState(
             activeEdgeNavigationIndicatorState,
@@ -350,10 +399,64 @@ export const createWeekInteractionAdapter = ({
             pointer,
             timestamp,
           );
+          const sidebarDrop = resolveSidebarDrop(pointer);
+
+          if (sidebarDrop) {
+            const nextVisual = {
+              ...nextEdgeNavigation.visual,
+              crossSurfaceDrop: null,
+              sidebarDrop,
+              transform: {
+                x: pointer.x - nextEdgeNavigation.visual.pointerStart.x,
+                y: pointer.y - nextEdgeNavigation.visual.pointerStart.y,
+              },
+            };
+
+            return {
+              overlay: {
+                transform: nextVisual.transform,
+              },
+              shouldContinue: nextEdgeNavigation.isDwellActive,
+              visual: nextVisual,
+            };
+          }
+
+          const timedDrop = resolveTimedCrossSurfaceDrop(pointer);
+
+          if (timedDrop) {
+            const overlayRect = getTimedCrossSurfaceOverlayRect(
+              timedDrop,
+              nextEdgeNavigation.visual,
+            );
+            const nextVisual = {
+              ...nextEdgeNavigation.visual,
+              crossSurfaceDrop: timedDrop,
+              transform: {
+                x: overlayRect.left - nextEdgeNavigation.visual.sourceRect.left,
+                y: overlayRect.top - nextEdgeNavigation.visual.sourceRect.top,
+              },
+            };
+
+            return {
+              overlay: {
+                height: overlayRect.height,
+                mutate: applyCrossSurfaceSnapTransition,
+                transform: nextVisual.transform,
+                width: overlayRect.width,
+              },
+              shouldContinue: nextEdgeNavigation.isDwellActive,
+              visual: nextVisual,
+            };
+          }
+
           const nextVisual = updateAllDayDragInteractionVisual({
             layout,
             pointer,
-            visual: nextEdgeNavigation.visual,
+            visual: {
+              ...nextEdgeNavigation.visual,
+              crossSurfaceDrop: null,
+              sidebarDrop: null,
+            },
           });
 
           return {
@@ -415,12 +518,68 @@ export const createWeekInteractionAdapter = ({
           pointer,
           timestamp,
         );
+        const sidebarDrop = resolveSidebarDrop(pointer);
+
+        if (sidebarDrop) {
+          const nextVisual = {
+            ...nextEdgeNavigation.visual,
+            crossSurfaceDrop: null,
+            sidebarDrop,
+            transform: {
+              x: pointer.x - nextEdgeNavigation.visual.pointerStart.x,
+              y: pointer.y - nextEdgeNavigation.visual.pointerStart.y,
+            },
+          };
+
+          return {
+            overlay: {
+              transform: nextVisual.transform,
+            },
+            shouldContinue:
+              smartScroll.isScrolling || nextEdgeNavigation.isDwellActive,
+            visual: nextVisual,
+          };
+        }
+
+        const allDayDrop = resolveAllDayCrossSurfaceDrop(pointer);
+
+        if (allDayDrop) {
+          const overlayRect = getAllDayCrossSurfaceOverlayRect(
+            allDayDrop,
+            nextEdgeNavigation.visual,
+          );
+          const nextVisual = {
+            ...nextEdgeNavigation.visual,
+            crossSurfaceDrop: allDayDrop,
+            transform: {
+              x: overlayRect.left - nextEdgeNavigation.visual.sourceRect.left,
+              y: overlayRect.top - nextEdgeNavigation.visual.sourceRect.top,
+            },
+          };
+
+          return {
+            overlay: {
+              height: overlayRect.height,
+              mutate: applyCrossSurfaceSnapTransition,
+              transform: nextVisual.transform,
+              width: overlayRect.width,
+            },
+            shouldContinue:
+              smartScroll.isScrolling || nextEdgeNavigation.isDwellActive,
+            visual: nextVisual,
+          };
+        }
+
         const next = updateTimedDragInteractionVisual({
           layout,
           pointer,
           scrollDeltaPx: smartScroll.scrollDeltaPx,
           target,
-          visual: nextEdgeNavigation.visual,
+          visual: {
+            ...nextEdgeNavigation.visual,
+            crossSurfaceDrop: null,
+            sidebarDrop: null,
+          },
         });
 
         return {
@@ -678,6 +837,9 @@ export const createWeekInteractionAdapter = ({
     }
 
     setLayout(nextLayout);
+    if (isDragTarget(target)) {
+      setCrossSurfaceLayouts(getLayoutSources());
+    }
     isLayoutRebuildPending = false;
   }
 
@@ -688,6 +850,7 @@ export const createWeekInteractionAdapter = ({
   function clearInteractionState() {
     layout = null;
     scrollTop = null;
+    clearCrossSurfaceLayouts();
     resetEdgeNavigation();
     isLayoutRebuildPending = false;
   }
@@ -695,6 +858,155 @@ export const createWeekInteractionAdapter = ({
   function setLayout(nextLayout: WeekLayoutCache) {
     layout = nextLayout;
     scrollTop = nextLayout.smartScroll?.initialScrollTop ?? null;
+  }
+
+  function setCrossSurfaceLayouts(sources: WeekLayoutCacheSources) {
+    allDayLayout = buildAllDayWeekLayoutCache(sources);
+    timedLayout = buildTimedWeekLayoutCache(sources);
+  }
+
+  function clearCrossSurfaceLayouts() {
+    allDayLayout = null;
+    timedLayout = null;
+  }
+
+  function resolveAllDayCrossSurfaceDrop(pointer: VisualPoint) {
+    const crossLayout = allDayLayout;
+
+    if (!crossLayout || !isPointInLayout(pointer, crossLayout)) {
+      return null;
+    }
+
+    const column = getNearestDayColumn(crossLayout.dayColumns, pointer.x);
+
+    if (!column || !isPointInsideColumns(pointer, crossLayout.dayColumns)) {
+      return null;
+    }
+
+    return {
+      dayIndex: column.index,
+      type: "allDay" as const,
+    };
+  }
+
+  function resolveTimedCrossSurfaceDrop(pointer: VisualPoint) {
+    const crossLayout = timedLayout;
+
+    if (!crossLayout || !isPointInLayout(pointer, crossLayout)) {
+      return null;
+    }
+
+    const column = getNearestDayColumn(crossLayout.dayColumns, pointer.x);
+
+    if (!column || !isPointInsideColumns(pointer, crossLayout.dayColumns)) {
+      return null;
+    }
+
+    const gridY =
+      pointer.y -
+      crossLayout.edgeNavigation.top +
+      (crossLayout.smartScroll?.element.scrollTop ?? 0);
+    const startMinutes = Math.max(
+      0,
+      Math.floor(
+        gridY / crossLayout.pixelsPerMinute / crossLayout.snapMinutes,
+      ) * crossLayout.snapMinutes,
+    );
+
+    return {
+      dayIndex: column.index,
+      startMinutes,
+      type: "timed" as const,
+    };
+  }
+
+  function resolveSidebarDrop(pointer: VisualPoint): WeekSidebarDrop | null {
+    for (const target of somedayDropTargetRegistry.getTargets()) {
+      const rect = target.element.getBoundingClientRect();
+
+      if (!isPointInRect(pointer, rect)) {
+        continue;
+      }
+
+      const events = somedayEventRegistry.getEvents(target.category);
+      const insertionIndex = events.findIndex((event) => {
+        const eventRect = event.element.getBoundingClientRect();
+
+        return pointer.y < eventRect.top + eventRect.height / 2;
+      });
+
+      return {
+        category: target.category,
+        index: insertionIndex === -1 ? events.length : insertionIndex,
+        type: "sidebar",
+      };
+    }
+
+    return null;
+  }
+
+  function getAllDayCrossSurfaceOverlayRect(
+    drop: { dayIndex: number },
+    visual: WeekEdgeNavigableVisual,
+  ) {
+    const crossLayout = allDayLayout;
+    const column = crossLayout?.dayColumns.find(
+      (day) => day.index === drop.dayIndex,
+    );
+
+    if (!crossLayout || !column) {
+      return {
+        height: visual.sourceRect.height,
+        left: visual.sourceRect.left,
+        top: visual.sourceRect.top,
+        width: visual.sourceRect.width,
+      };
+    }
+
+    return {
+      height: EVENT_ALLDAY_HEIGHT,
+      left: column.left,
+      top: crossLayout.edgeNavigation.top,
+      width: visual.sourceRect.width,
+    };
+  }
+
+  function getTimedCrossSurfaceOverlayRect(
+    drop: { dayIndex: number; startMinutes: number },
+    visual: WeekEdgeNavigableVisual,
+  ) {
+    const crossLayout = timedLayout;
+    const column = crossLayout?.dayColumns.find(
+      (day) => day.index === drop.dayIndex,
+    );
+
+    if (!crossLayout || !column) {
+      return {
+        height: visual.sourceRect.height,
+        left: visual.sourceRect.left,
+        top: visual.sourceRect.top,
+        width: visual.sourceRect.width,
+      };
+    }
+
+    const scrollTop = crossLayout.smartScroll?.element.scrollTop ?? 0;
+
+    return {
+      height:
+        DEFAULT_CONVERTED_TIMED_DURATION_MINUTES * crossLayout.pixelsPerMinute,
+      left: column.left + TIMED_EVENT_COLUMN_INSET,
+      top:
+        crossLayout.edgeNavigation.top +
+        drop.startMinutes * crossLayout.pixelsPerMinute -
+        scrollTop,
+      width: Math.max(0, column.width - TIMED_EVENT_COLUMN_INSET * 2),
+    };
+  }
+
+  function applyCrossSurfaceSnapTransition(node: HTMLElement) {
+    node.style.transition = isReducedMotionPreferred()
+      ? "none"
+      : CROSS_SURFACE_SNAP_TRANSITION;
   }
 
   return {
@@ -764,3 +1076,46 @@ const readElementRect = (element: HTMLElement): VisualRect => {
     width: rect.width,
   };
 };
+
+const isPointInLayout = (point: VisualPoint, layout: WeekLayoutCache) =>
+  point.x >= layout.edgeNavigation.left &&
+  point.x <= layout.edgeNavigation.right &&
+  point.y > layout.edgeNavigation.top &&
+  point.y < layout.edgeNavigation.bottom;
+
+const isPointInsideColumns = (
+  point: VisualPoint,
+  columns: WeekLayoutCache["dayColumns"],
+) => {
+  const firstColumn = columns[0];
+  const lastColumn = columns[columns.length - 1];
+
+  if (!firstColumn || !lastColumn) {
+    return false;
+  }
+
+  return (
+    point.x >= firstColumn.left && point.x <= lastColumn.left + lastColumn.width
+  );
+};
+
+const isPointInRect = (
+  point: VisualPoint,
+  rect: Pick<DOMRect, "bottom" | "left" | "right" | "top">,
+) =>
+  point.x >= rect.left &&
+  point.x <= rect.right &&
+  point.y >= rect.top &&
+  point.y <= rect.bottom;
+
+const getVisualSidebarDrop = (
+  visual: WeekInteractionVisual,
+): WeekSidebarDrop | null =>
+  "sidebarDrop" in visual
+    ? ((visual as WeekSidebarDroppableVisual).sidebarDrop ?? null)
+    : null;
+
+const isReducedMotionPreferred = () =>
+  typeof window !== "undefined" &&
+  typeof window.matchMedia === "function" &&
+  window.matchMedia("(prefers-reduced-motion: reduce)").matches;

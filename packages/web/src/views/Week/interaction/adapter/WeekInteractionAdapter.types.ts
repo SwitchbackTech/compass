@@ -13,6 +13,7 @@ import {
   type CalendarInteractionEngineSchedulerOptions,
 } from "@web/common/calendar-interaction/CalendarInteractionEngine";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { type WeekInteractionRegisteredTarget } from "../registry/weekEventRegistry";
 import { type WeekLayoutCacheSources } from "./geometry/weekLayoutCache";
 
@@ -36,6 +37,9 @@ export interface WeekInteractionRuntime {
   onClickTimedEvent: (event: Schema_GridEvent) => void;
   onCommitAllDayDrag?: (result: WeekAllDayDragCommitResult) => void;
   onCommitAllDayResize?: (result: WeekAllDayResizeCommitResult) => void;
+  onCommitCalendarToSidebar?: (
+    result: WeekCalendarToSidebarCommitResult,
+  ) => void;
   onCommitTimedDrag: (result: WeekTimedDragCommitResult) => void;
   onCommitTimedResize?: (result: WeekTimedResizeCommitResult) => void;
   onMotionActivation?: (target: WeekInteractionTarget) => void;
@@ -88,6 +92,15 @@ export interface WeekTimedDragTarget {
   type: "timedDrag";
 }
 
+export interface WeekCalendarToSidebarCommitResult {
+  category: SomedayInteractionCategory;
+  event: Schema_GridEvent;
+  eventId: string;
+  hadFormOpenBeforeInteraction: boolean;
+  index: number;
+  type: "calendarToSidebar";
+}
+
 export interface WeekTimedResizeCommitResult {
   event: Schema_GridEvent;
   eventId: string;
@@ -119,6 +132,7 @@ export type WeekInteractionVisual =
 export type WeekInteractionCommitResult =
   | WeekAllDayDragCommitResult
   | WeekAllDayResizeCommitResult
+  | WeekCalendarToSidebarCommitResult
   | WeekTimedDragCommitResult
   | WeekTimedResizeCommitResult;
 

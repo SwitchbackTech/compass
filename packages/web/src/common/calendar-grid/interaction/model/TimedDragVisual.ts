@@ -11,6 +11,10 @@ export interface VisualRect {
 }
 
 export interface TimedDragVisual {
+  crossSurfaceDrop?: {
+    dayIndex: number;
+    type: "allDay";
+  } | null;
   dayIndex: number;
   durationMinutes: number;
   endMinutes: number;
@@ -19,6 +23,11 @@ export interface TimedDragVisual {
   initialEndMinutes: number;
   initialStartMinutes: number;
   pointerStart: VisualPoint;
+  sidebarDrop?: {
+    category: string;
+    index: number;
+    type: "sidebar";
+  } | null;
   sourceRect: VisualRect;
   startMinutes: number;
   transform: VisualPoint;

@@ -1,8 +1,12 @@
+import { Categories_Event } from "@core/types/event.types";
 import {
   ID_ALLDAY_COLUMNS,
+  ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { somedayDropTargetRegistry } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayDropTargetRegistry";
+import { somedayEventRegistry } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { createWeekInteractionAdapter } from "@web/views/Week/interaction/adapter/WeekInteractionAdapter";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
 import { resetWeekInteractionEdgeNavigationState } from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
@@ -126,7 +130,10 @@ const createHarness = ({
   const child = document.createElement("span");
   const mainGrid = document.createElement("div");
   const allDayColumns = document.createElement("div");
+  const timedColumns = document.createElement("div");
+  const sidebarMonth = document.createElement("div");
   const onClickAllDayEvent = mock();
+  const onCommitCalendarToSidebar = mock();
   const onCommitAllDayDrag = mock();
   const onMotionActivation = mock();
   const onRequestWeekNavigation = mock();
@@ -134,9 +141,11 @@ const createHarness = ({
   source.style.visibility = "visible";
   mainGrid.id = ID_GRID_MAIN;
   allDayColumns.id = ID_ALLDAY_COLUMNS;
+  timedColumns.id = ID_GRID_COLUMNS_TIMED;
   source.append(child);
   allDayColumns.append(source);
-  document.body.append(mainGrid, allDayColumns);
+  mainGrid.append(timedColumns);
+  document.body.append(mainGrid, allDayColumns, sidebarMonth);
   Object.defineProperty(mainGrid, "clientHeight", { value: 1300 });
   Object.defineProperty(mainGrid, "scrollHeight", { value: 2600 });
   mainGrid.scrollTop = 0;
@@ -153,12 +162,28 @@ const createHarness = ({
     top: 20,
     width: 700,
   });
+  setRect(timedColumns, {
+    height: 2400,
+    left: 100,
+    top: 100,
+    width: 700,
+  });
   setRect(source, sourceRect);
+  setRect(sidebarMonth, {
+    height: 400,
+    left: 900,
+    top: 100,
+    width: 300,
+  });
 
   weekEventRegistry.register({
     element: source,
     eventId: event._id!,
     eventType: "all-day",
+  });
+  somedayDropTargetRegistry.register({
+    category: Categories_Event.SOMEDAY_MONTH,
+    element: sidebarMonth,
   });
 
   const adapter = createWeekInteractionAdapter({
@@ -187,6 +212,7 @@ const createHarness = ({
       getTimedEventById: () => null,
       isEventPending: () => isPending,
       onClickAllDayEvent,
+      onCommitCalendarToSidebar,
       onClickTimedEvent: () => undefined,
       onCommitAllDayDrag,
       onCommitTimedDrag: () => undefined,
@@ -213,6 +239,7 @@ const createHarness = ({
     event,
     flushFrame,
     onClickAllDayEvent,
+    onCommitCalendarToSidebar,
     onCommitAllDayDrag,
     onMotionActivation,
     onRequestWeekNavigation,
@@ -223,6 +250,8 @@ const createHarness = ({
 
 afterEach(() => {
   document.body.innerHTML = "";
+  somedayDropTargetRegistry.clear();
+  somedayEventRegistry.clear();
   weekEventRegistry.clear();
   resetWeekInteractionEdgeNavigationState();
 });
@@ -383,6 +412,77 @@ describe("WeekInteractionAdapter all-day drag", () => {
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();
+  });
+
+  it("converts an all-day event to timed when dragged into the timed grid", () => {
+    const { adapter, child, event, flushFrame, onCommitAllDayDrag } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 430, y: 300 }),
+    );
+
+    flushFrame();
+
+    const overlay = document.body.querySelector(
+      "[data-calendar-interaction-overlay]",
+    ) as HTMLElement | null;
+
+    expect(overlay?.style.transition).toContain("transform");
+    expect(overlay?.style.height).toBe("100px");
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 430, y: 300 }),
+    );
+
+    expect(onCommitAllDayDrag).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          _id: event._id,
+          endDate: expect.stringContaining("03:00"),
+          isAllDay: false,
+          startDate: expect.stringContaining("02:00"),
+        }),
+        eventId: event._id,
+        hasMoved: true,
+        type: "allDayDragEnd",
+      }),
+    );
+  });
+
+  it("commits an all-day event to the Someday Month sidebar drop zone", () => {
+    const {
+      adapter,
+      child,
+      event,
+      flushFrame,
+      onCommitAllDayDrag,
+      onCommitCalendarToSidebar,
+    } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 150 }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 950, y: 150 }),
+    );
+
+    expect(onCommitAllDayDrag).not.toHaveBeenCalled();
+    expect(onCommitCalendarToSidebar).toHaveBeenCalledWith({
+      category: Categories_Event.SOMEDAY_MONTH,
+      event,
+      eventId: event._id,
+      hadFormOpenBeforeInteraction: false,
+      index: 0,
+      type: "calendarToSidebar",
+    });
   });
 
   it("requests one all-day edge navigation after the edge dwell", () => {
