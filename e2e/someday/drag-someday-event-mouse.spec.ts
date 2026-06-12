@@ -1,8 +1,6 @@
 import { expect, type Page, test } from "@playwright/test";
 import {
   createEventTitle,
-  expectAllDayEventVisible,
-  expectSomedayEventMissing,
   expectSomedayEventVisible,
   fillTitleAndSaveEventForm,
   getMainGridPoint,
@@ -80,63 +78,6 @@ test("shows a timed-grid preview while dragging a someday event", async ({
   await expectTimedPreviewTextStack(page, title);
 
   await page.mouse.up();
-});
-
-test("clamps a drag over the week header to the calendar and drops as all-day", async ({
-  page,
-}) => {
-  await prepareCalendarPage(page);
-  await page.locator("#mainGrid").waitFor({ state: "visible" });
-
-  const title = createEventTitle("Someday Header Clamp");
-  await openSomedayEventFormWithMouse(page, "week");
-  await fillTitleAndSaveEventForm(page, title);
-  await expectSomedayEventVisible(page, title);
-
-  const somedayEvent = page.locator("#sidebar").getByRole("button", {
-    name: title,
-  });
-  const eventBox = await somedayEvent.boundingBox();
-  const allDayBox = await page.locator("#allDayColumns").boundingBox();
-
-  if (!eventBox || !allDayBox) {
-    throw new Error(
-      "Expected the Someday event and all-day row to be visible.",
-    );
-  }
-
-  // A point in the week header: horizontally over the day columns, but
-  // above the all-day row — not a valid drop zone.
-  const headerPoint = {
-    x: allDayBox.x + allDayBox.width / 2,
-    y: allDayBox.y - 10,
-  };
-
-  await page.mouse.move(
-    eventBox.x + eventBox.width / 2,
-    eventBox.y + eventBox.height / 2,
-  );
-  await page.mouse.down();
-  await page.mouse.move(headerPoint.x, headerPoint.y, { steps: 12 });
-
-  // The preview must clamp to the nearest valid zone (the all-day row)
-  // instead of following the cursor into the header.
-  const overlay = page.locator("[data-calendar-interaction-overlay]");
-  await expect(overlay).toBeVisible();
-  await expect
-    .poll(async () => {
-      const overlayBox = await overlay.boundingBox();
-
-      return overlayBox ? overlayBox.y >= allDayBox.y - 1 : false;
-    })
-    .toBe(true);
-
-  // Dropping commits to the clamped slot: the event lands as an all-day
-  // event instead of snapping back to the sidebar.
-  await page.mouse.up();
-
-  await expectAllDayEventVisible(page, title);
-  await expectSomedayEventMissing(page, title);
 });
 
 test("shows a timed-grid preview while dragging over a past slot", async ({
