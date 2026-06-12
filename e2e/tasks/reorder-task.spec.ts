@@ -35,6 +35,35 @@ const prepareTwoTasks = async (page: Page) => {
   await expectTaskOrder(page, "Task A", "Task B");
 };
 
+const prepareFourTasks = async (page: Page) => {
+  await prepareTaskPage(page);
+
+  for (const title of ["task 1", "task 2", "task 3", "task4"]) {
+    await createTask(page, title);
+    await expectTaskVisible(page, title);
+  }
+
+  await expectTaskOrder(page, "task 1", "task 2");
+  await expectTaskOrder(page, "task 2", "task 3");
+  await expectTaskOrder(page, "task 3", "task4");
+};
+
+const hoverTaskReorderHandle = async (page: Page, title: string) => {
+  const handle = page.getByRole("button", { name: `Reorder ${title}` });
+  const handleBox = await handle.boundingBox();
+
+  if (!handleBox) {
+    throw new Error(`Expected the ${title} drag handle to be in the layout.`);
+  }
+
+  await page.mouse.move(
+    handleBox.x + handleBox.width / 2,
+    handleBox.y + handleBox.height / 2,
+  );
+
+  return handle;
+};
+
 const liftTaskWithKeyboard = async (page: Page, title: string) => {
   const handle = page.getByRole("button", { name: `Reorder ${title}` });
 
@@ -70,10 +99,13 @@ test.describe("Task Reordering", () => {
   }) => {
     await prepareTwoTasks(page);
 
-    // The drag handle floats left of the row and fades in on hover.
-    await page.getByRole("textbox", { name: "Edit Task A" }).hover();
+    const dropZone = page.locator("#task-list-drop-zone");
+    await expect(dropZone).toHaveCSS("scrollbar-gutter", "auto");
 
-    const handle = page.getByRole("button", { name: "Reorder Task A" });
+    // The drag handle floats left of the row and fades in on direct hover.
+    const handle = await hoverTaskReorderHandle(page, "Task A");
+    await expect(handle).toHaveCSS("opacity", "1");
+
     const handleBox = await handle.boundingBox();
     const targetRowBox = await page
       .getByRole("textbox", { name: "Edit Task B" })
@@ -97,8 +129,64 @@ test.describe("Task Reordering", () => {
 
     await expectTaskOrder(page, "Task B", "Task A");
 
+    await page.mouse.move(10, 10);
+    await expect(handle).toHaveCSS("opacity", "0");
+
+    await expect(await hoverTaskReorderHandle(page, "Task A")).toHaveCSS(
+      "opacity",
+      "1",
+    );
+
+    await expect(await hoverTaskReorderHandle(page, "Task B")).toHaveCSS(
+      "opacity",
+      "1",
+    );
+
     await reloadTaskPage(page);
 
     await expectTaskOrder(page, "Task B", "Task A");
+  });
+
+  test("keeps every task handle hoverable after mouse reordering", async ({
+    page,
+  }) => {
+    await prepareFourTasks(page);
+
+    const task3Handle = await hoverTaskReorderHandle(page, "task 3");
+    await expect(task3Handle).toHaveCSS("opacity", "1");
+
+    const task3HandleBox = await task3Handle.boundingBox();
+    const task1RowBox = await page
+      .getByRole("textbox", { name: "Edit task 1" })
+      .boundingBox();
+
+    if (!task3HandleBox || !task1RowBox) {
+      throw new Error("Expected the drag handle and target row to be visible.");
+    }
+
+    await page.mouse.move(
+      task3HandleBox.x + task3HandleBox.width / 2,
+      task3HandleBox.y + task3HandleBox.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      task3HandleBox.x + task3HandleBox.width / 2,
+      task1RowBox.y,
+      { steps: 8 },
+    );
+    await page.mouse.up();
+
+    await expectTaskOrder(page, "task 3", "task 1");
+    await expectTaskOrder(page, "task 1", "task 2");
+    await expectTaskOrder(page, "task 2", "task4");
+
+    await page.mouse.move(10, 10);
+
+    for (const title of ["task 3", "task4", "task 2", "task 1"]) {
+      await expect(await hoverTaskReorderHandle(page, title)).toHaveCSS(
+        "opacity",
+        "1",
+      );
+    }
   });
 });

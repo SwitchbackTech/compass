@@ -1,31 +1,10 @@
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { autoUpdate, inline, offset, useFloating } from "@floating-ui/react";
 import { DotsSixVerticalIcon } from "@phosphor-icons/react";
 import classNames from "classnames";
-import { useLayoutEffect, useRef } from "react";
 import { type Task as ITask } from "@web/common/types/task.types";
 import { Task } from "@web/views/Day/components/Task/Task";
 import { type useTasks } from "@web/views/Day/hooks/tasks/useTasks";
-
-function getFiniteFloatingStyles(
-  styles: ReturnType<typeof useFloating>["floatingStyles"],
-) {
-  const nextStyles = { ...styles };
-
-  if (
-    typeof nextStyles.left === "number" &&
-    !Number.isFinite(nextStyles.left)
-  ) {
-    delete nextStyles.left;
-  }
-
-  if (typeof nextStyles.top === "number" && !Number.isFinite(nextStyles.top)) {
-    delete nextStyles.top;
-  }
-
-  return nextStyles;
-}
 
 export function DraggableTask({
   task,
@@ -50,7 +29,6 @@ export function DraggableTask({
     migrateTask,
   } = tasksProps;
   const isDragHandleVisible = tasks.length > 1;
-  const isFloatingEnabled = isDragHandleVisible;
 
   const {
     attributes,
@@ -65,60 +43,32 @@ export function DraggableTask({
     disabled: !isDragHandleVisible,
   });
 
-  const { refs, floatingStyles } = useFloating({
-    open: isFloatingEnabled,
-    whileElementsMounted: autoUpdate,
-    strategy: "fixed",
-    placement: "left",
-    transform: false,
-    middleware: [offset(8), inline({})],
-  });
-
-  const rootRef = useRef<HTMLDivElement | null>(null);
-
-  useLayoutEffect(() => {
-    refs.setReference(isFloatingEnabled ? rootRef.current : null);
-  }, [isFloatingEnabled, refs]);
-
   return (
     <div
       id={task._id}
-      className={`group relative mr-2 select-none`}
+      className="group relative mr-2 grid select-none grid-cols-[2rem_minmax(0,1fr)] items-center gap-2"
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
         zIndex: isDragging ? 1 : undefined,
       }}
-      ref={(element) => {
-        rootRef.current = element;
-        setNodeRef(element);
-      }}
+      ref={setNodeRef}
     >
       {isDragHandleVisible ? (
         <button
           {...attributes}
           {...listeners}
-          ref={(element) => {
-            setActivatorNodeRef(element);
-
-            if (isFloatingEnabled) {
-              refs.setFloating(element);
-            }
-          }}
-          style={
-            isFloatingEnabled
-              ? getFiniteFloatingStyles(floatingStyles)
-              : undefined
-          }
+          ref={setActivatorNodeRef}
           aria-label={`Reorder ${task.title}`}
           onFocus={() => setSelectedTaskIndex(index)}
           className={classNames(
+            "justify-self-end",
             "opacity-0",
             "hover:cursor-grab hover:bg-border-primary",
             "rounded-xs py-2 transition-colors",
-            "hover:opacity-100 focus:opacity-100 group-hover:opacity-100",
+            "hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100",
             "max-w-48 text-white",
-            "focus:bg-white/20 focus:ring-2 focus:ring-white/50",
+            "focus-visible:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/50",
             "focus:outline-none disabled:cursor-default disabled:opacity-0",
             {
               hidden: tasks.length === 1,
@@ -128,22 +78,26 @@ export function DraggableTask({
         >
           <DotsSixVerticalIcon size={24} />
         </button>
-      ) : null}
+      ) : (
+        <span aria-hidden="true" />
+      )}
 
-      <Task
-        task={task}
-        index={index}
-        isEditing={editingTaskId === task._id}
-        onFocus={setSelectedTaskIndex}
-        onCheckboxKeyDown={onCheckboxKeyDown}
-        onInputBlur={onInputBlur}
-        onInputKeyDown={onInputKeyDown}
-        onInputClick={onInputClick}
-        onTitleChange={onTitleChange}
-        onStatusToggle={onStatusToggle}
-        onMigrate={migrateTask}
-        title={editingTaskId === task._id ? editingTitle : task.title}
-      />
+      <div className="min-w-0">
+        <Task
+          task={task}
+          index={index}
+          isEditing={editingTaskId === task._id}
+          onFocus={setSelectedTaskIndex}
+          onCheckboxKeyDown={onCheckboxKeyDown}
+          onInputBlur={onInputBlur}
+          onInputKeyDown={onInputKeyDown}
+          onInputClick={onInputClick}
+          onTitleChange={onTitleChange}
+          onStatusToggle={onStatusToggle}
+          onMigrate={migrateTask}
+          title={editingTaskId === task._id ? editingTitle : task.title}
+        />
+      </div>
     </div>
   );
 }
