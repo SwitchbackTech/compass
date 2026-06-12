@@ -1,17 +1,14 @@
 import { expect, type Page } from "@playwright/test";
 import { resetLocalEventDb } from "./event-test-utils";
 
-const DEMO_DATA_SEED_FLAG_KEY = "compass.migration.demo-data-seed-v1";
-
 const getTaskInput = (page: Page, title: string) =>
   page.getByRole("textbox", { name: `Edit ${title}` });
 
 export const prepareTaskPage = async (page: Page) => {
   await page.goto("/day", { waitUntil: "domcontentloaded" });
-  await page.evaluate((demoSeedFlagKey) => {
+  await page.evaluate(() => {
     localStorage.removeItem("compass.auth");
-    localStorage.setItem(demoSeedFlagKey, "completed");
-  }, DEMO_DATA_SEED_FLAG_KEY);
+  });
 
   await resetLocalEventDb(page);
   await reloadTaskPage(page);
