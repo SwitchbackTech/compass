@@ -445,9 +445,7 @@ export const createSomedayInteractionAdapter = ({
     }
 
     const gridY =
-      pointer.y -
-      layout.edgeNavigation.top +
-      (layout.smartScroll?.initialScrollTop ?? 0);
+      pointer.y - layout.edgeNavigation.top + getLayoutScrollTop(layout);
     const startMinutes = Math.max(
       0,
       Math.floor(gridY / layout.pixelsPerMinute / GRID_TIME_STEP) *
@@ -684,7 +682,7 @@ export const createSomedayInteractionAdapter = ({
       };
     }
 
-    const scrollTop = layout.smartScroll?.initialScrollTop ?? 0;
+    const scrollTop = getLayoutScrollTop(layout);
 
     return {
       height: Math.max(
@@ -953,6 +951,9 @@ const getLayoutClampZone = (
     top: layout.edgeNavigation.top,
   };
 };
+
+const getLayoutScrollTop = (layout: WeekLayoutCache) =>
+  layout.smartScroll?.element.scrollTop ?? 0;
 
 const isPointInLayout = (
   point: CalendarInteractionPoint,

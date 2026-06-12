@@ -102,8 +102,10 @@ const setReducedMotionPreference = (matches: boolean) => {
 };
 
 const createHarness = ({
+  mainGridScrollTop = 0,
   viewStart = dayjs("2026-05-17"),
 }: {
+  mainGridScrollTop?: number;
   viewStart?: ReturnType<typeof dayjs>;
 } = {}) => {
   document.body.innerHTML = "";
@@ -146,7 +148,7 @@ const createHarness = ({
   document.body.append(weekDropTarget, allDayColumns, mainGrid);
   Object.defineProperty(mainGrid, "clientHeight", { value: 780 });
   Object.defineProperty(mainGrid, "scrollHeight", { value: 1560 });
-  mainGrid.scrollTop = 0;
+  mainGrid.scrollTop = mainGridScrollTop;
 
   setRect(weekDropTarget, {
     height: 200,
@@ -244,6 +246,7 @@ const createHarness = ({
     adapter,
     event,
     flushFrame,
+    mainGrid,
     onClickSomedayEvent,
     onCommitSomedayInteraction,
     onMotionActivation,
@@ -338,6 +341,88 @@ describe("SomedayInteractionAdapter", () => {
       dates: {
         endDate: expect.stringContaining("2026-05-18T03:00"),
         startDate: expect.stringContaining("2026-05-18T02:00"),
+      },
+      eventId: "someday-event",
+      isAllDay: false,
+      type: "schedule",
+    });
+  });
+
+  it("accounts for the main grid scroll position when scheduling a timed drop", () => {
+    const {
+      adapter,
+      flushFrame,
+      onCommitSomedayInteraction,
+      sourceChild,
+      timedColumns,
+    } = createHarness({ mainGridScrollTop: 120 });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: timedColumns, x: 250, y: 220 }),
+    );
+
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      dates: {
+        endDate: expect.stringContaining("2026-05-18T05:00"),
+        startDate: expect.stringContaining("2026-05-18T04:00"),
+      },
+      eventId: "someday-event",
+      isAllDay: false,
+      type: "schedule",
+    });
+  });
+
+  it("uses the latest main grid scroll position when it changes during a timed drag", () => {
+    const {
+      adapter,
+      flushFrame,
+      mainGrid,
+      onCommitSomedayInteraction,
+      sourceChild,
+      timedColumns,
+    } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    mainGrid.scrollTop = 120;
+
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: timedColumns, x: 250, y: 220 }),
+    );
+
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      dates: {
+        endDate: expect.stringContaining("2026-05-18T05:00"),
+        startDate: expect.stringContaining("2026-05-18T04:00"),
       },
       eventId: "someday-event",
       isAllDay: false,
