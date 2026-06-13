@@ -35,6 +35,7 @@ const createState = (): State_Sidebar =>
   ({
     blockedSomedayDropColumn: null,
     draft: somedayEvent,
+    isCalendarDragActive: false,
     isDrafting: true,
     isDraftingExisting: true,
     isDraftingNew: false,

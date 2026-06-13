@@ -136,6 +136,7 @@ const createHarness = ({
   const onCommitCalendarToSidebar = mock();
   const onCommitAllDayDrag = mock();
   const onMotionActivation = mock();
+  const onPreviewCalendarToSidebar = mock();
   const onRequestWeekNavigation = mock();
 
   source.style.visibility = "visible";
@@ -217,6 +218,7 @@ const createHarness = ({
       onCommitAllDayDrag,
       onCommitTimedDrag: () => undefined,
       onMotionActivation,
+      onPreviewCalendarToSidebar,
       onRequestWeekNavigation,
     }),
   });
@@ -242,6 +244,7 @@ const createHarness = ({
     onCommitCalendarToSidebar,
     onCommitAllDayDrag,
     onMotionActivation,
+    onPreviewCalendarToSidebar,
     onRequestWeekNavigation,
     source,
     timerCallbacks,
@@ -503,6 +506,30 @@ describe("WeekInteractionAdapter all-day drag", () => {
         type: "allDayDragEnd",
       }),
     );
+  });
+
+  it("previews the Someday Month sidebar drop zone while an all-day drag hovers it", () => {
+    const { adapter, child, flushFrame, onPreviewCalendarToSidebar } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 150 }),
+    );
+    flushFrame();
+
+    expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith({
+      category: Categories_Event.SOMEDAY_MONTH,
+    });
+
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 360, y: 30 }),
+    );
+    flushFrame();
+
+    expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith(null);
   });
 
   it("commits an all-day event to the Someday Month sidebar drop zone", () => {

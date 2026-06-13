@@ -235,6 +235,7 @@ export const useSidebarActions = (
   const {
     setBlockedSomedayDropColumn,
     setDraft,
+    setIsCalendarDragActive,
     setIsDrafting,
     setIsSomedayFormOpen,
     setSomedayEvents,
@@ -375,6 +376,23 @@ export const useSidebarActions = (
         result,
       }),
     );
+  };
+
+  // Drives the Someday drop-zone styling while a calendar (grid) event is
+  // dragged over the sidebar. Unlike sidebar-originated drags, this path does
+  // not own a sidebar draft, so it toggles a dedicated flag instead of
+  // `isDragging`. Passing `null` clears the styling (pointer left / drag end).
+  const setCalendarSidebarDropPreview = (
+    preview: { column: string; isBlocked: boolean } | null,
+  ) => {
+    if (!preview) {
+      setIsCalendarDragActive(false);
+      setBlockedSomedayDropColumn(null);
+      return;
+    }
+
+    setIsCalendarDragActive(true);
+    setBlockedSomedayDropColumn(preview.isBlocked ? preview.column : null);
   };
 
   const previewBlockedSomedaySidebarDrop = (
@@ -852,6 +870,7 @@ export const useSidebarActions = (
     previewBlockedSomedaySidebarDrop,
     previewSomedaySidebarDrop,
     reset,
+    setCalendarSidebarDropPreview,
     setDraft,
     startSomedayInteraction,
   };

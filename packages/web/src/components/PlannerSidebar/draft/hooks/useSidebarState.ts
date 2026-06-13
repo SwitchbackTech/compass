@@ -28,6 +28,10 @@ export const useSidebarState = () => {
     string | null
   >(null);
   const [isSomedayFormOpen, setIsSomedayFormOpen] = useState(false);
+  // True only while a calendar (grid) event is being dragged over the sidebar.
+  // The grid drag runs through WeekInteractionAdapter, not the sidebar draft
+  // path, so it can't flip `isDragging`; this lets the drop zones light up.
+  const [isCalendarDragActive, setIsCalendarDragActive] = useState(false);
 
   const isDragging = isDNDing && draft !== null;
 
@@ -46,6 +50,7 @@ export const useSidebarState = () => {
     somedayMonthIds,
     somedayWeekIds,
     blockedSomedayDropColumn,
+    isCalendarDragActive,
     isDrafting,
     isDraftingNew,
     isDraftingExisting,
@@ -56,6 +61,7 @@ export const useSidebarState = () => {
   const setters = {
     setDraft,
     setBlockedSomedayDropColumn,
+    setIsCalendarDragActive,
     setIsDrafting,
     setIsDraftingExisting,
     setIsSomedayFormOpen,

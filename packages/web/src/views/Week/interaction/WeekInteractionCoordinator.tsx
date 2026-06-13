@@ -11,8 +11,10 @@ import {
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
+import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleSomedayConversionEvent } from "@web/common/utils/event/someday.event.util";
+import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type Payload_ConvertEvent } from "@web/ducks/events/event.types";
 import {
   selectAllDayEvents,
@@ -60,6 +62,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
   const somedayMonthCount = useAppSelector(selectSomedayMonthCount);
   const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
+  const sidebarContext = useSidebarContext(true);
   const { actions, confirmation, setters, state } = useDraftContext();
   const layoutSourcesRef = useRef(getLayoutSources);
   const timedEventsById = useMemo(() => {
@@ -164,6 +167,21 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     actions.discard();
   };
 
+  const previewCalendarToSidebar: WeekInteractionRuntime["onPreviewCalendarToSidebar"] =
+    (preview) => {
+      if (!preview) {
+        sidebarContext?.actions.setCalendarSidebarDropPreview(null);
+        return;
+      }
+
+      const isWeek = preview.category === Categories_Event.SOMEDAY_WEEK;
+
+      sidebarContext?.actions.setCalendarSidebarDropPreview({
+        column: isWeek ? COLUMN_WEEK : COLUMN_MONTH,
+        isBlocked: isWeek ? isAtWeeklyLimit : isAtMonthlyLimit,
+      });
+    };
+
   runtimeRef.current = {
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
@@ -181,6 +199,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
         actions.closeForm();
       }
     },
+    onPreviewCalendarToSidebar: previewCalendarToSidebar,
     onRequestWeekNavigation: (direction) => {
       if (direction === "prev") {
         weekProps.util.decrementWeek("drag-to-edge");

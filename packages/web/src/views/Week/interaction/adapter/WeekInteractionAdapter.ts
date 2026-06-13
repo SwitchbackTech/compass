@@ -128,6 +128,7 @@ export const createWeekInteractionAdapter = ({
   let isLayoutRebuildPending = false;
   let allDayLayout: WeekLayoutCache | null = null;
   let crossSurfaceScrollTop: number | null = null;
+  let lastReportedSidebarCategory: SomedayInteractionCategory | null = null;
   let layout: WeekLayoutCache | null = null;
   let scrollTop: number | null = null;
   let timedLayout: WeekLayoutCache | null = null;
@@ -402,6 +403,8 @@ export const createWeekInteractionAdapter = ({
         if (visual.type === "allDayDrag") {
           const sidebarDrop = resolveSidebarDrop(pointer);
 
+          reportSidebarPreview(sidebarDrop?.category ?? null);
+
           if (sidebarDrop) {
             return updateSidebarDropVisual(visual, pointer, sidebarDrop);
           }
@@ -509,6 +512,8 @@ export const createWeekInteractionAdapter = ({
         }
 
         const sidebarDrop = resolveSidebarDrop(pointer);
+
+        reportSidebarPreview(sidebarDrop?.category ?? null);
 
         if (sidebarDrop) {
           return updateSidebarDropVisual(visual, pointer, sidebarDrop);
@@ -834,6 +839,9 @@ export const createWeekInteractionAdapter = ({
     layout = null;
     scrollTop = null;
     clearCrossSurfaceLayouts();
+    // Runs on both commit and cancel, so it clears the sidebar drop-zone
+    // styling for Escape, pointercancel, regular grid drops, and sidebar drops.
+    reportSidebarPreview(null);
     resetEdgeNavigation();
     isLayoutRebuildPending = false;
   }
@@ -962,6 +970,18 @@ export const createWeekInteractionAdapter = ({
       startMinutes,
       type: "timed" as const,
     };
+  }
+
+  // Notifies React (sidebar state) which Someday column the drag is over, so
+  // the drop zones can light up. Deduped to one call per category change to
+  // avoid a setState every animation frame.
+  function reportSidebarPreview(category: SomedayInteractionCategory | null) {
+    if (category === lastReportedSidebarCategory) {
+      return;
+    }
+
+    lastReportedSidebarCategory = category;
+    runtime().onPreviewCalendarToSidebar?.(category ? { category } : null);
   }
 
   function resolveSidebarDrop(pointer: VisualPoint): WeekSidebarDrop | null {

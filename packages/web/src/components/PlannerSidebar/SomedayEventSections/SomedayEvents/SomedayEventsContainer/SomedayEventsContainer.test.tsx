@@ -9,11 +9,23 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockCreateSomedayDraft = mock();
 
-mock.module("@web/components/DND/DropZone", () => ({
-  DropZone: ({ children }: { children: React.ReactNode }) => (
-    <div>{children}</div>
-  ),
-}));
+const defaultSidebarState = () => ({
+  blockedSomedayDropColumn: null as string | null,
+  draft: null,
+  isCalendarDragActive: false,
+  isDragging: false,
+  isDraftingNew: false,
+  isSomedayFormOpen: false,
+  somedayEvents: {
+    columns: {
+      weekEvents: { eventIds: [] },
+      monthEvents: { eventIds: [] },
+    },
+    events: {},
+  },
+});
+
+let sidebarState = defaultSidebarState();
 
 mock.module(
   "@web/components/PlannerSidebar/draft/context/useSidebarContext",
@@ -22,20 +34,7 @@ mock.module(
       actions: {
         createSomedayDraft: mockCreateSomedayDraft,
       },
-      state: {
-        blockedSomedayDropColumn: null,
-        draft: null,
-        isDragging: false,
-        isDraftingNew: false,
-        isSomedayFormOpen: false,
-        somedayEvents: {
-          columns: {
-            weekEvents: { eventIds: [] },
-            monthEvents: { eventIds: [] },
-          },
-          events: {},
-        },
-      },
+      state: sidebarState,
     }),
   }),
 );
@@ -74,6 +73,7 @@ const renderSomedayEventsContainer = (
 describe("SomedayEventsContainer", () => {
   beforeEach(() => {
     mockCreateSomedayDraft.mockClear();
+    sidebarState = defaultSidebarState();
   });
 
   it("keeps the visible add label in the week button's accessible name", () => {
@@ -100,5 +100,51 @@ describe("SomedayEventsContainer", () => {
     expect(
       screen.getByRole("button", { name: "Add item to month" }),
     ).toBeTruthy();
+  });
+
+  it("hides the add button while a calendar event is dragged over the sidebar", () => {
+    sidebarState = { ...defaultSidebarState(), isCalendarDragActive: true };
+
+    renderSomedayEventsContainer({
+      category: Categories_Event.SOMEDAY_WEEK,
+      events: [],
+      isDraftingNew: false,
+    });
+
+    expect(
+      screen.queryByRole("button", { name: "Add item to week" }),
+    ).toBeNull();
+  });
+
+  it("marks the drop zone invalid when its column is the blocked target", () => {
+    sidebarState = {
+      ...defaultSidebarState(),
+      blockedSomedayDropColumn: "weekEvents",
+      isCalendarDragActive: true,
+    };
+
+    const { container } = renderSomedayEventsContainer({
+      category: Categories_Event.SOMEDAY_WEEK,
+      events: [],
+      isDraftingNew: false,
+    });
+
+    expect(container.querySelector('[aria-invalid="true"]')).not.toBeNull();
+  });
+
+  it("does not mark the drop zone invalid when another column is blocked", () => {
+    sidebarState = {
+      ...defaultSidebarState(),
+      blockedSomedayDropColumn: "monthEvents",
+      isCalendarDragActive: true,
+    };
+
+    const { container } = renderSomedayEventsContainer({
+      category: Categories_Event.SOMEDAY_WEEK,
+      events: [],
+      isDraftingNew: false,
+    });
+
+    expect(container.querySelector('[aria-invalid="true"]')).toBeNull();
   });
 });

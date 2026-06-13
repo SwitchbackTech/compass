@@ -141,6 +141,7 @@ const createHarness = ({
   const onCommitCalendarToSidebar = mock();
   const onCommitTimedDrag = mock();
   const onMotionActivation = mock();
+  const onPreviewCalendarToSidebar = mock();
   const onRequestWeekNavigation = mock();
 
   source.style.visibility = "visible";
@@ -218,6 +219,7 @@ const createHarness = ({
       onCommitCalendarToSidebar,
       onCommitTimedDrag,
       onMotionActivation,
+      onPreviewCalendarToSidebar,
       onRequestWeekNavigation,
     }),
   });
@@ -257,6 +259,7 @@ const createHarness = ({
     onCommitCalendarToSidebar,
     onCommitTimedDrag,
     onMotionActivation,
+    onPreviewCalendarToSidebar,
     onRequestWeekNavigation,
     source,
     timerCallbacks,
@@ -575,6 +578,71 @@ describe("WeekInteractionAdapter timed drag", () => {
         type: "calendarToSidebar",
       }),
     );
+  });
+
+  it("previews the Someday sidebar drop zone as the pointer enters, leaves, and commits", () => {
+    const { adapter, child, flushFrame, onPreviewCalendarToSidebar } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+
+    // Enter the sidebar zone -> reports the Week category once.
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 150 }),
+    );
+    flushFrame();
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 170 }),
+    );
+    flushFrame();
+
+    expect(onPreviewCalendarToSidebar).toHaveBeenCalledTimes(1);
+    expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith({
+      category: Categories_Event.SOMEDAY_WEEK,
+    });
+
+    // Move back over the grid -> clears the preview.
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 320, y: 800 }),
+    );
+    flushFrame();
+
+    expect(onPreviewCalendarToSidebar).toHaveBeenCalledTimes(2);
+    expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith(null);
+
+    // Re-enter then drop -> preview set again, then cleared on commit.
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 150 }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 950, y: 150 }),
+    );
+
+    expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith(null);
+  });
+
+  it("clears the sidebar preview when the drag is cancelled", () => {
+    const { adapter, child, flushFrame, onPreviewCalendarToSidebar } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 150 }),
+    );
+    flushFrame();
+
+    expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith({
+      category: Categories_Event.SOMEDAY_WEEK,
+    });
+
+    adapter.cancel();
+
+    expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith(null);
   });
 
   it("commits a timed event to the Someday Week sidebar drop zone", () => {
