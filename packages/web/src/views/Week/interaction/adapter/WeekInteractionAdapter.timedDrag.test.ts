@@ -422,7 +422,7 @@ describe("WeekInteractionAdapter timed drag", () => {
     ) as HTMLElement | null;
 
     expect(overlay).toBeTruthy();
-    expect(overlay?.style.transition).toBe("none");
+    expect(overlay?.style.transition).not.toContain("transform");
     expect(overlay?.style.transform).toBe("translate3d(0px, 100px, 0)");
 
     adapter.handlePointerUp(
@@ -482,6 +482,97 @@ describe("WeekInteractionAdapter timed drag", () => {
         eventId: event._id,
         hasMoved: true,
         type: "timedDragEnd",
+      }),
+    );
+  });
+
+  it("stops smart scrolling once the pointer is over the all-day row", () => {
+    const { adapter, child, flushFrame, frameCallbacks, mainGrid } =
+      createHarness({ mainGridScrollTop: 600 });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 430, y: 120 }),
+    );
+    flushFrame();
+
+    expect(mainGrid.scrollTop).toBe(590);
+
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 430, y: 30 }),
+    );
+    flushFrame();
+
+    expect(mainGrid.scrollTop).toBe(590);
+    expect(frameCallbacks.size).toBe(0);
+  });
+
+  it("restores the timed overlay shape after leaving the all-day row", () => {
+    const { adapter, child, flushFrame } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 430, y: 30 }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector(
+      "[data-calendar-interaction-overlay]",
+    ) as HTMLElement | null;
+
+    expect(overlay?.style.height).toBe("20px");
+
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 430, y: 1120 }),
+    );
+    flushFrame();
+
+    expect(overlay?.style.height).toBe("100px");
+    expect(overlay?.style.width).toBe("90px");
+    expect(overlay?.style.transition).not.toContain("transform");
+  });
+
+  it("does not scroll or dwell-navigate while hovering a sidebar drop zone", () => {
+    const {
+      adapter,
+      child,
+      flushFrame,
+      mainGrid,
+      onCommitCalendarToSidebar,
+      onRequestWeekNavigation,
+    } = createHarness({ mainGridScrollTop: 600 });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 120 }),
+    );
+    flushFrame(16);
+
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 121 }),
+    );
+    flushFrame(800);
+
+    expect(mainGrid.scrollTop).toBe(600);
+    expect(onRequestWeekNavigation).not.toHaveBeenCalled();
+    expect(getWeekInteractionEdgeNavigationState().currentEdge).toBeNull();
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 950, y: 121 }),
+    );
+
+    expect(onRequestWeekNavigation).not.toHaveBeenCalled();
+    expect(onCommitCalendarToSidebar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: Categories_Event.SOMEDAY_WEEK,
+        type: "calendarToSidebar",
       }),
     );
   });

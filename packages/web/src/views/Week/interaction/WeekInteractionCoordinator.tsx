@@ -6,22 +6,22 @@ import {
   useRef,
 } from "react";
 import {
-  Priorities,
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { assembleSomedayConversionEvent } from "@web/common/utils/event/someday.event.util";
 import { type Payload_ConvertEvent } from "@web/ducks/events/event.types";
 import {
   selectAllDayEvents,
   selectGridEvents,
 } from "@web/ducks/events/selectors/event.selectors";
 import {
-  selectCategorizedEvents,
   selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
+  selectSomedayMonthCount,
   selectSomedayWeekCount,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -56,9 +56,9 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   const pendingEventIds = useAppSelector(
     (state) => state.events.pendingEvents.eventIds,
   );
-  const categorizedSomedayEvents = useAppSelector(selectCategorizedEvents);
   const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const somedayMonthCount = useAppSelector(selectSomedayMonthCount);
   const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
   const { actions, confirmation, setters, state } = useDraftContext();
   const layoutSourcesRef = useRef(getLayoutSources);
@@ -150,23 +150,18 @@ export const WeekInteractionCoordinator: FC<Props> = ({
       return;
     }
 
-    const order = isWeekDrop
-      ? Math.max(result.index, somedayWeekCount)
-      : Math.max(
-          result.index,
-          categorizedSomedayEvents.columns.month.eventIds.length,
-        );
     const event: Payload_ConvertEvent["event"] = {
-      ...result.event,
+      ...assembleSomedayConversionEvent(result.event, {
+        category: result.category,
+        order: isWeekDrop ? somedayWeekCount : somedayMonthCount,
+        viewEnd: weekProps.component.endOfView,
+        viewStart: weekProps.component.startOfView,
+      }),
       _id: result.eventId,
-      isAllDay: false,
-      isSomeday: true,
-      order,
-      priority: result.event.priority ?? Priorities.UNASSIGNED,
-      user: result.event.user ?? "",
     };
 
     dispatch(getWeekEventsSlice.actions.convert({ event }));
+    actions.discard();
   };
 
   runtimeRef.current = {

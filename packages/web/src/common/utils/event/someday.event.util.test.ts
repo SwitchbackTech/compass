@@ -6,7 +6,7 @@ import {
   RRULE,
   RRULE_COUNT_WEEKS,
 } from "@core/constants/core.constants";
-import { type Schema_Event } from "@core/types/event.types";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
   createMockBaseEvent,
@@ -18,6 +18,7 @@ import {
   type Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";
 import {
+  assembleSomedayConversionEvent,
   categorizeSomedayEvents,
   setSomedayEventsOrder,
 } from "@web/common/utils/event/someday.event.util";
@@ -518,5 +519,104 @@ describe("computeRelativeEventDateRange", () => {
       expect(result.columns[COLUMN_MONTH].eventIds).toHaveLength(0);
       expect(result.columns[COLUMN_WEEK].eventIds).toContain(weekOccurrenceId);
     });
+  });
+});
+
+describe("assembleSomedayConversionEvent", () => {
+  const viewStart = dayjs("2024-03-17");
+  const viewEnd = dayjs("2024-03-23");
+
+  const gridEvent: Schema_Event = {
+    _id: "grid-event-1",
+    title: "Grid event",
+    endDate: "2024-03-19T11:00:00.000Z",
+    isAllDay: false,
+    isSomeday: false,
+    origin: Origin.COMPASS,
+    priority: Priorities.WORK,
+    startDate: "2024-03-19T10:00:00.000Z",
+    user: "user-1",
+  };
+
+  it("uses the view week's date range for a Week conversion", () => {
+    const result = assembleSomedayConversionEvent(gridEvent, {
+      category: Categories_Event.SOMEDAY_WEEK,
+      order: 2,
+      viewEnd,
+      viewStart,
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        endDate: "2024-03-23",
+        isAllDay: false,
+        isSomeday: true,
+        order: 2,
+        priority: Priorities.WORK,
+        startDate: "2024-03-17",
+        title: "Grid event",
+      }),
+    );
+  });
+
+  it("uses the view month's date range for a Month conversion", () => {
+    const result = assembleSomedayConversionEvent(gridEvent, {
+      category: Categories_Event.SOMEDAY_MONTH,
+      order: 0,
+      viewEnd,
+      viewStart,
+    });
+
+    expect(result).toEqual(
+      expect.objectContaining({
+        endDate: "2024-03-31",
+        isSomeday: true,
+        startDate: "2024-03-01",
+      }),
+    );
+  });
+
+  it("rewrites the recurrence frequency to match the destination column", () => {
+    const recurringEvent: Schema_Event = {
+      ...gridEvent,
+      recurrence: { rule: ["RRULE:FREQ=DAILY;COUNT=10;INTERVAL=1"] },
+    };
+
+    const weekResult = assembleSomedayConversionEvent(recurringEvent, {
+      category: Categories_Event.SOMEDAY_WEEK,
+      order: 0,
+      viewEnd,
+      viewStart,
+    });
+    const monthResult = assembleSomedayConversionEvent(recurringEvent, {
+      category: Categories_Event.SOMEDAY_MONTH,
+      order: 0,
+      viewEnd,
+      viewStart,
+    });
+
+    expect(weekResult.recurrence?.rule).toEqual([
+      "RRULE:FREQ=WEEKLY;COUNT=10;INTERVAL=1",
+    ]);
+    expect(monthResult.recurrence?.rule).toEqual([
+      "RRULE:FREQ=MONTHLY;COUNT=10;INTERVAL=1",
+    ]);
+  });
+
+  it("defaults missing priority and user fields", () => {
+    const sparseEvent: Schema_Event = {
+      ...gridEvent,
+      priority: undefined,
+      user: undefined,
+    };
+    const result = assembleSomedayConversionEvent(sparseEvent, {
+      category: Categories_Event.SOMEDAY_WEEK,
+      order: 0,
+      viewEnd,
+      viewStart,
+    });
+
+    expect(result.priority).toBe(Priorities.UNASSIGNED);
+    expect(result.user).toBe("");
   });
 });

@@ -24,6 +24,7 @@ import {
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { assembleSomedayConversionEvent } from "@web/common/utils/event/someday.event.util";
 import {
   type Payload_ConvertEvent,
   type Payload_EditEvent,
@@ -226,36 +227,20 @@ export const useDraftActions = (
       }
 
       const event: Payload_ConvertEvent["event"] = {
-        ...draft,
+        ...assembleSomedayConversionEvent(draft!, {
+          category: Categories_Event.SOMEDAY_WEEK,
+          order: somedayWeekCount,
+          viewEnd: dayjs(end),
+          viewStart: dayjs(start),
+        }),
         _id: draft!._id!,
-        user: draft?.user ?? "",
-        isAllDay: false,
-        isSomeday: true,
-        startDate: start,
-        endDate: end,
-        origin: draft?.origin,
-        priority: draft?.priority ?? Priorities.UNASSIGNED,
-        order: somedayWeekCount,
       };
-
-      if (isRecurrence()) {
-        event.recurrence = {
-          ...event.recurrence,
-          rule: event.recurrence?.rule?.map((rule) => {
-            const isRRule = rule.startsWith("RRULE:");
-
-            if (!isRRule) return rule;
-
-            return rule.replace(/FREQ=\w+;/, "FREQ=WEEKLY;");
-          }) as string[],
-        };
-      }
 
       dispatch(getWeekEventsSlice.actions.convert({ event }));
 
       discard();
     },
-    [discard, dispatch, draft, isAtWeeklyLimit, somedayWeekCount, isRecurrence],
+    [discard, dispatch, draft, isAtWeeklyLimit, somedayWeekCount],
   );
 
   const openForm = useCallback(() => {
@@ -497,13 +482,13 @@ export const useDraftActions = (
       }
 
       const event: Payload_ConvertEvent["event"] = {
-        ...draft,
+        ...assembleSomedayConversionEvent(draft, {
+          category,
+          order: isWeek ? somedayWeekCount : somedayMonthCount,
+          viewEnd: weekProps.component.endOfView,
+          viewStart: weekProps.component.startOfView,
+        }),
         _id: draft._id,
-        isAllDay: false,
-        isSomeday: true,
-        order: isWeek ? somedayWeekCount : somedayMonthCount,
-        priority: draft.priority ?? Priorities.UNASSIGNED,
-        user: draft.user ?? "",
       };
 
       dispatch(getWeekEventsSlice.actions.convert({ event }));
@@ -520,6 +505,8 @@ export const useDraftActions = (
       isAtWeeklyLimit,
       somedayMonthCount,
       somedayWeekCount,
+      weekProps.component.endOfView,
+      weekProps.component.startOfView,
     ],
   );
 

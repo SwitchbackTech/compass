@@ -390,7 +390,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
     ) as HTMLElement | null;
 
     expect(overlay).toBeTruthy();
-    expect(overlay?.style.transition).toBe("none");
+    expect(overlay?.style.transition).not.toContain("transform");
     expect(overlay?.style.transform).toBe("translate3d(100px, 0px, 0)");
 
     adapter.handlePointerUp(
@@ -447,6 +447,58 @@ describe("WeekInteractionAdapter all-day drag", () => {
           startDate: expect.stringContaining("02:00"),
         }),
         eventId: event._id,
+        hasMoved: true,
+        type: "allDayDragEnd",
+      }),
+    );
+  });
+
+  it("smart scrolls the grid while hovering the timed grid near its bottom edge", () => {
+    const { adapter, child, flushFrame } = createHarness();
+    const mainGrid = document.getElementById(ID_GRID_MAIN) as HTMLElement;
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 430, y: 1320 }),
+    );
+
+    flushFrame();
+    expect(mainGrid.scrollTop).toBe(10);
+
+    flushFrame();
+    expect(mainGrid.scrollTop).toBe(20);
+  });
+
+  it("clamps an all-day to timed conversion so it ends within the dropped day", () => {
+    const { adapter, child, event, flushFrame, onCommitAllDayDrag } =
+      createHarness();
+    const mainGrid = document.getElementById(ID_GRID_MAIN) as HTMLElement;
+
+    mainGrid.scrollTop = 1300;
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 30 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 430, y: 1390 }),
+    );
+
+    flushFrame();
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 430, y: 1390 }),
+    );
+
+    expect(onCommitAllDayDrag).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          _id: event._id,
+          endDate: expect.stringContaining("00:00"),
+          isAllDay: false,
+          startDate: expect.stringContaining("23:00"),
+        }),
         hasMoved: true,
         type: "allDayDragEnd",
       }),

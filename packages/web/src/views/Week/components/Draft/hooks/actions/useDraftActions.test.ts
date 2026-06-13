@@ -357,9 +357,13 @@ describe("useDraftActions", () => {
         payload: {
           event: expect.objectContaining({
             _id: "event-1",
+            // Someday events are bucketed into the Week/Month columns by
+            // date, so a Month move must take the view month's date range.
+            endDate: "2024-01-31",
             isAllDay: false,
             isSomeday: true,
             order: 0,
+            startDate: "2024-01-01",
           }),
         },
       }),
