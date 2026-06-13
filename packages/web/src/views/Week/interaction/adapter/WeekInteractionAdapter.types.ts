@@ -44,7 +44,11 @@ export interface WeekInteractionRuntime {
   onCommitTimedResize?: (result: WeekTimedResizeCommitResult) => void;
   onMotionActivation?: (target: WeekInteractionTarget) => void;
   onPreviewCalendarToSidebar?: (
-    preview: { category: SomedayInteractionCategory } | null,
+    preview: {
+      category: SomedayInteractionCategory;
+      event: Schema_GridEvent;
+      index: number;
+    } | null,
   ) => void;
   onRequestWeekNavigation?: (direction: "next" | "prev") => void;
 }

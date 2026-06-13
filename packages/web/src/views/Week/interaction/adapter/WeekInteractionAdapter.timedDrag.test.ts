@@ -581,7 +581,7 @@ describe("WeekInteractionAdapter timed drag", () => {
   });
 
   it("previews the Someday sidebar drop zone as the pointer enters, leaves, and commits", () => {
-    const { adapter, child, flushFrame, onPreviewCalendarToSidebar } =
+    const { adapter, child, event, flushFrame, onPreviewCalendarToSidebar } =
       createHarness();
 
     adapter.handlePointerDown(
@@ -601,6 +601,8 @@ describe("WeekInteractionAdapter timed drag", () => {
     expect(onPreviewCalendarToSidebar).toHaveBeenCalledTimes(1);
     expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith({
       category: Categories_Event.SOMEDAY_WEEK,
+      event: expect.objectContaining({ _id: event._id }),
+      index: 0,
     });
 
     // Move back over the grid -> clears the preview.
@@ -625,7 +627,7 @@ describe("WeekInteractionAdapter timed drag", () => {
   });
 
   it("clears the sidebar preview when the drag is cancelled", () => {
-    const { adapter, child, flushFrame, onPreviewCalendarToSidebar } =
+    const { adapter, child, event, flushFrame, onPreviewCalendarToSidebar } =
       createHarness();
 
     adapter.handlePointerDown(
@@ -638,6 +640,8 @@ describe("WeekInteractionAdapter timed drag", () => {
 
     expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith({
       category: Categories_Event.SOMEDAY_WEEK,
+      event: expect.objectContaining({ _id: event._id }),
+      index: 0,
     });
 
     adapter.cancel();
@@ -675,6 +679,76 @@ describe("WeekInteractionAdapter timed drag", () => {
       index: 0,
       type: "calendarToSidebar",
     });
+  });
+
+  it("snaps to the sidebar list instead of the grid in empty space below the list", () => {
+    const {
+      adapter,
+      child,
+      event,
+      flushFrame,
+      onCommitCalendarToSidebar,
+      onCommitTimedDrag,
+    } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+    // x:950 is within the sidebar column (900-1200) but y:620 is below the
+    // Week list rect (top 100, bottom 500) — far from the grid.
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 620 }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 950, y: 620 }),
+    );
+
+    expect(onCommitTimedDrag).not.toHaveBeenCalled();
+    expect(onCommitCalendarToSidebar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        category: Categories_Event.SOMEDAY_WEEK,
+        eventId: event._id,
+        type: "calendarToSidebar",
+      }),
+    );
+  });
+
+  it("snaps to the vertically nearest list when between two sidebar lists", () => {
+    const { adapter, child, flushFrame, onPreviewCalendarToSidebar } =
+      createHarness();
+    // Register a second (Month) drop zone stacked below the Week list, leaving
+    // a gap between them: Week is y[100,500], Month is y[700,1100].
+    const sidebarMonth = document.createElement("div");
+
+    document.body.append(sidebarMonth);
+    setRect(sidebarMonth, { height: 400, left: 900, top: 700, width: 300 });
+    somedayDropTargetRegistry.register({
+      category: Categories_Event.SOMEDAY_MONTH,
+      element: sidebarMonth,
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+
+    // Just below the Week list (gap is 500-700) -> nearer Week.
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 540 }),
+    );
+    flushFrame();
+    expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith(
+      expect.objectContaining({ category: Categories_Event.SOMEDAY_WEEK }),
+    );
+
+    // Just above the Month list -> nearer Month.
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 950, y: 660 }),
+    );
+    flushFrame();
+    expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith(
+      expect.objectContaining({ category: Categories_Event.SOMEDAY_MONTH }),
+    );
   });
 
   it("adds a temporary time label while dragging a saved timed event that did not render one", () => {

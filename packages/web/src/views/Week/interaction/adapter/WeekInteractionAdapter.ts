@@ -15,6 +15,7 @@ import {
   createCalendarInteractionEngine,
 } from "@web/common/calendar-interaction/CalendarInteractionEngine";
 import { isEligibleCalendarInteractionPointerDown } from "@web/common/calendar-interaction/calendarInteractionPointer";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { somedayDropTargetRegistry } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayDropTargetRegistry";
 import {
   type SomedayInteractionCategory,
@@ -128,7 +129,7 @@ export const createWeekInteractionAdapter = ({
   let isLayoutRebuildPending = false;
   let allDayLayout: WeekLayoutCache | null = null;
   let crossSurfaceScrollTop: number | null = null;
-  let lastReportedSidebarCategory: SomedayInteractionCategory | null = null;
+  let lastReportedSidebarKey: string | null = null;
   let layout: WeekLayoutCache | null = null;
   let scrollTop: number | null = null;
   let timedLayout: WeekLayoutCache | null = null;
@@ -400,10 +401,15 @@ export const createWeekInteractionAdapter = ({
           };
         }
 
-        if (visual.type === "allDayDrag") {
-          const sidebarDrop = resolveSidebarDrop(pointer);
+        const draggedEventId = isDragTarget(target)
+          ? (target.event._id ?? null)
+          : null;
+        const draggedEvent = isDragTarget(target) ? target.event : null;
 
-          reportSidebarPreview(sidebarDrop?.category ?? null);
+        if (visual.type === "allDayDrag") {
+          const sidebarDrop = resolveSidebarDrop(pointer, draggedEventId);
+
+          reportSidebarPreview(sidebarDrop, draggedEvent);
 
           if (sidebarDrop) {
             return updateSidebarDropVisual(visual, pointer, sidebarDrop);
@@ -511,9 +517,9 @@ export const createWeekInteractionAdapter = ({
           throw new Error("Mismatched Week interaction target");
         }
 
-        const sidebarDrop = resolveSidebarDrop(pointer);
+        const sidebarDrop = resolveSidebarDrop(pointer, draggedEventId);
 
-        reportSidebarPreview(sidebarDrop?.category ?? null);
+        reportSidebarPreview(sidebarDrop, draggedEvent);
 
         if (sidebarDrop) {
           return updateSidebarDropVisual(visual, pointer, sidebarDrop);
@@ -841,7 +847,7 @@ export const createWeekInteractionAdapter = ({
     clearCrossSurfaceLayouts();
     // Runs on both commit and cancel, so it clears the sidebar drop-zone
     // styling for Escape, pointercancel, regular grid drops, and sidebar drops.
-    reportSidebarPreview(null);
+    reportSidebarPreview(null, null);
     resetEdgeNavigation();
     isLayoutRebuildPending = false;
   }
@@ -972,41 +978,98 @@ export const createWeekInteractionAdapter = ({
     };
   }
 
-  // Notifies React (sidebar state) which Someday column the drag is over, so
-  // the drop zones can light up. Deduped to one call per category change to
-  // avoid a setState every animation frame.
-  function reportSidebarPreview(category: SomedayInteractionCategory | null) {
-    if (category === lastReportedSidebarCategory) {
+  // Notifies React (sidebar state) where in the Someday lists the drag would
+  // land, so the drop zones can light up and the list can open a live gap.
+  // Deduped to one call per category+index change to avoid a setState every
+  // animation frame.
+  function reportSidebarPreview(
+    preview: { category: SomedayInteractionCategory; index: number } | null,
+    event: Schema_GridEvent | null,
+  ) {
+    const key = preview ? `${preview.category}:${preview.index}` : null;
+
+    if (key === lastReportedSidebarKey) {
       return;
     }
 
-    lastReportedSidebarCategory = category;
-    runtime().onPreviewCalendarToSidebar?.(category ? { category } : null);
+    lastReportedSidebarKey = key;
+    runtime().onPreviewCalendarToSidebar?.(
+      preview && event
+        ? { category: preview.category, event, index: preview.index }
+        : null,
+    );
   }
 
-  function resolveSidebarDrop(pointer: VisualPoint): WeekSidebarDrop | null {
-    for (const target of somedayDropTargetRegistry.getTargets()) {
-      const rect = target.element.getBoundingClientRect();
+  function resolveSidebarDrop(
+    pointer: VisualPoint,
+    draggedEventId: string | null,
+  ): WeekSidebarDrop | null {
+    const targets = somedayDropTargetRegistry.getTargets();
 
-      if (!isPointInRect(pointer, rect)) {
-        continue;
-      }
-
-      const events = somedayEventRegistry.getEvents(target.category);
-      const insertionIndex = events.findIndex((event) => {
-        const eventRect = event.element.getBoundingClientRect();
-
-        return pointer.y < eventRect.top + eventRect.height / 2;
-      });
-
-      return {
-        category: target.category,
-        index: insertionIndex === -1 ? events.length : insertionIndex,
-        type: "sidebar",
-      };
+    if (targets.length === 0) {
+      return null;
     }
 
-    return null;
+    // The sidebar is its own column, horizontally disjoint from the grid, so
+    // "pointer is within the sidebar column" cleanly separates the two. Inside
+    // that column we snap to the vertically nearest zone (Week/Month) rather
+    // than requiring the pointer to be exactly inside a zone — otherwise the
+    // gap between the lists would fall through to the grid.
+    let sidebarLeft = Number.POSITIVE_INFINITY;
+    let sidebarRight = Number.NEGATIVE_INFINITY;
+    let insideTarget: SomedayInteractionCategory | null = null;
+    let nearestTarget: SomedayInteractionCategory | null = null;
+    let nearestDistance = Number.POSITIVE_INFINITY;
+
+    for (const target of targets) {
+      const rect = target.element.getBoundingClientRect();
+
+      sidebarLeft = Math.min(sidebarLeft, rect.left);
+      sidebarRight = Math.max(sidebarRight, rect.right);
+
+      const verticalDistance =
+        pointer.y < rect.top
+          ? rect.top - pointer.y
+          : pointer.y > rect.bottom
+            ? pointer.y - rect.bottom
+            : 0;
+
+      if (verticalDistance === 0) {
+        insideTarget = target.category;
+      }
+
+      if (verticalDistance < nearestDistance) {
+        nearestDistance = verticalDistance;
+        nearestTarget = target.category;
+      }
+    }
+
+    if (pointer.x < sidebarLeft || pointer.x > sidebarRight) {
+      return null;
+    }
+
+    const category = insideTarget ?? nearestTarget;
+
+    if (!category) {
+      return null;
+    }
+
+    // Exclude the dragged event's own preview placeholder from the index math
+    // so the insertion point doesn't oscillate as the placeholder shifts.
+    const events = somedayEventRegistry
+      .getEvents(category)
+      .filter((event) => event.eventId !== draggedEventId);
+    const insertionIndex = events.findIndex((event) => {
+      const eventRect = event.element.getBoundingClientRect();
+
+      return pointer.y < eventRect.top + eventRect.height / 2;
+    });
+
+    return {
+      category,
+      index: insertionIndex === -1 ? events.length : insertionIndex,
+      type: "sidebar",
+    };
   }
 
   function getAllDayCrossSurfaceOverlayRect(
@@ -1168,15 +1231,6 @@ const isPointInsideColumns = (
     point.x >= firstColumn.left && point.x <= lastColumn.left + lastColumn.width
   );
 };
-
-const isPointInRect = (
-  point: VisualPoint,
-  rect: Pick<DOMRect, "bottom" | "left" | "right" | "top">,
-) =>
-  point.x >= rect.left &&
-  point.x <= rect.right &&
-  point.y >= rect.top &&
-  point.y <= rect.bottom;
 
 const getVisualSidebarDrop = (
   visual: WeekInteractionVisual,

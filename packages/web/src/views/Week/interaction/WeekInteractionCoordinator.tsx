@@ -175,9 +175,20 @@ export const WeekInteractionCoordinator: FC<Props> = ({
       }
 
       const isWeek = preview.category === Categories_Event.SOMEDAY_WEEK;
+      // Build the someday-shaped placeholder the list renders while hovering,
+      // so existing rows animate to make room. It mirrors what the drop will
+      // commit (assembleSomedayConversionEvent is also used at commit time).
+      const placeholder = assembleSomedayConversionEvent(preview.event, {
+        category: preview.category,
+        order: preview.index,
+        viewEnd: weekProps.component.endOfView,
+        viewStart: weekProps.component.startOfView,
+      });
 
       sidebarContext?.actions.setCalendarSidebarDropPreview({
         column: isWeek ? COLUMN_WEEK : COLUMN_MONTH,
+        event: { ...placeholder, _id: preview.event._id! },
+        index: preview.index,
         isBlocked: isWeek ? isAtWeeklyLimit : isAtMonthlyLimit,
       });
     };
