@@ -52,6 +52,8 @@ jobs:
           build-args: |
             BASEURL=${{ vars.BACKEND_API_URL }}
             GOOGLE_CLIENT_ID=${{ vars.GOOGLE_CLIENT_ID }}
+            POSTHOG_KEY=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_KEY || '' }}
+            POSTHOG_HOST=${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_HOST || '' }}
             COMPASS_BUILD_REF=${{ steps.version.outputs.image_version }}
           tags: switchbacktech/compass-web:${{ inputs.environment }}-${{ steps.version.outputs.image_version }}
 
@@ -65,6 +67,8 @@ jobs:
           GCAL_NOTIFICATION_EXPIRATION_MIN: ${{ vars.GCAL_NOTIFICATION_EXPIRATION_MIN }}
           GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           IMAGE_VERSION: ${{ steps.version.outputs.image_version }}
+          POSTHOG_KEY: ${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_KEY || '' }}
+          POSTHOG_HOST: ${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_HOST || '' }}
           RELEASE_TAG: ${{ inputs.tag }}
           SSH_HOST: ${{ vars.SSH_HOST }}
           SSH_USER: ${{ vars.SSH_USER }}
@@ -86,39 +90,46 @@ jobs:
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
           ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
-          printf '%s\n' \
-            'runtime:' \
-            "  version: \"${IMAGE_VERSION}\"" \
-            '  nodeEnv: production' \
-            '  timezone: Etc/UTC' \
-            'web:' \
-            '  port: 9080' \
-            "  url: \"${FRONTEND_URL}\"" \
-            "  image: \"${WEB_IMAGE}\"" \
-            'backend:' \
-            '  port: 3000' \
-            "  apiUrl: \"${BACKEND_API_URL}\"" \
-            '  originsAllowed:' \
-            "    - \"${FRONTEND_URL}\"" \
-            "  compassToken: \"${COMPASS_SYNC_TOKEN}\"" \
-            'mongo:' \
-            '  username: compass' \
-            "  password: \"${MONGO_PASSWORD}\"" \
-            ${MONGO_REPLICA_SET_KEY:+"  replicaSetKey: \"${MONGO_REPLICA_SET_KEY}\""} \
-            "  uri: \"${MONGO_URI}\"" \
-            'supertokens:' \
-            "  uri: \"${SUPERTOKENS_URI}\"" \
-            "  key: \"${SUPERTOKENS_KEY}\"" \
-            ${SUPERTOKENS_POSTGRES_PASSWORD:+'  postgres:'} \
-            ${SUPERTOKENS_POSTGRES_PASSWORD:+'    user: supertokens'} \
-            ${SUPERTOKENS_POSTGRES_PASSWORD:+"    password: \"${SUPERTOKENS_POSTGRES_PASSWORD}\""} \
-            ${SUPERTOKENS_POSTGRES_PASSWORD:+'    database: supertokens'} \
-            'google:' \
-            "  clientId: \"${GOOGLE_CLIENT_ID}\"" \
-            "  clientSecret: \"${GOOGLE_CLIENT_SECRET}\"" \
-            "  notificationToken: \"${GCAL_NOTIFICATION_TOKEN}\"" \
-            ${GCAL_NOTIFICATION_EXPIRATION_MIN:+"  channelExpirationMin: ${GCAL_NOTIFICATION_EXPIRATION_MIN}"} \
-            | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
+          {
+            printf '%s\n' \
+              'runtime:' \
+              "  version: \"${IMAGE_VERSION}\"" \
+              '  nodeEnv: production' \
+              '  timezone: Etc/UTC' \
+              'web:' \
+              '  port: 9080' \
+              "  url: \"${FRONTEND_URL}\"" \
+              "  image: \"${WEB_IMAGE}\"" \
+              'backend:' \
+              '  port: 3000' \
+              "  apiUrl: \"${BACKEND_API_URL}\"" \
+              '  originsAllowed:' \
+              "    - \"${FRONTEND_URL}\"" \
+              "  compassToken: \"${COMPASS_SYNC_TOKEN}\"" \
+              'mongo:' \
+              '  username: compass' \
+              "  password: \"${MONGO_PASSWORD}\"" \
+              ${MONGO_REPLICA_SET_KEY:+"  replicaSetKey: \"${MONGO_REPLICA_SET_KEY}\""} \
+              "  uri: \"${MONGO_URI}\"" \
+              'supertokens:' \
+              "  uri: \"${SUPERTOKENS_URI}\"" \
+              "  key: \"${SUPERTOKENS_KEY}\"" \
+              ${SUPERTOKENS_POSTGRES_PASSWORD:+'  postgres:'} \
+              ${SUPERTOKENS_POSTGRES_PASSWORD:+'    user: supertokens'} \
+              ${SUPERTOKENS_POSTGRES_PASSWORD:+"    password: \"${SUPERTOKENS_POSTGRES_PASSWORD}\""} \
+              ${SUPERTOKENS_POSTGRES_PASSWORD:+'    database: supertokens'} \
+              'google:' \
+              "  clientId: \"${GOOGLE_CLIENT_ID}\"" \
+              "  clientSecret: \"${GOOGLE_CLIENT_SECRET}\"" \
+              "  notificationToken: \"${GCAL_NOTIFICATION_TOKEN}\"" \
+              ${GCAL_NOTIFICATION_EXPIRATION_MIN:+"  channelExpirationMin: ${GCAL_NOTIFICATION_EXPIRATION_MIN}"}
+            if [ -n "$POSTHOG_KEY" ] && [ -n "$POSTHOG_HOST" ]; then
+              printf '%s\n' \
+                'posthog:' \
+                "  key: \"${POSTHOG_KEY}\"" \
+                "  host: \"${POSTHOG_HOST}\""
+            fi
+          } | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
                 "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml && chmod 644 ~/compass/compass.yaml"
           COMPOSE_GIT_REF="${COMPOSE_GIT_REF:-${RELEASE_TAG}}"
           compose_url="https://raw.githubusercontent.com/SwitchbackTech/compass/${COMPOSE_GIT_REF}/self-host/compose.yaml"

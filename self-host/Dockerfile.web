@@ -5,6 +5,8 @@ COPY . .
 
 ARG BASEURL=http://localhost:3000/api
 ARG GOOGLE_CLIENT_ID=
+ARG POSTHOG_KEY=
+ARG POSTHOG_HOST=
 ARG COMPASS_BUILD_REF=self-host
 
 ENV COMPASS_BUILD_REF=${COMPASS_BUILD_REF}
@@ -28,6 +30,14 @@ RUN printf '%s\n' \
   'google:' \
   "  clientId: ${GOOGLE_CLIENT_ID}" \
   > compass.yaml
+
+RUN if [ -n "$POSTHOG_KEY" ] && [ -n "$POSTHOG_HOST" ]; then \
+  printf '%s\n' \
+    'posthog:' \
+    "  key: ${POSTHOG_KEY}" \
+    "  host: ${POSTHOG_HOST}" \
+    >> compass.yaml; \
+  fi
 
 RUN bun install --frozen-lockfile
 RUN cd packages/web && bun run build.ts
