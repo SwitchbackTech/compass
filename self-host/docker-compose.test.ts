@@ -85,6 +85,14 @@ describe("self-host docker compose", () => {
     expect(dockerfile).not.toContain("--environment");
   });
 
+  it("keeps PostHog out of the self-host web image", () => {
+    const dockerfile = readRepoFile("self-host/Dockerfile.web");
+
+    expect(dockerfile).not.toContain("COMPASS_WEB_BUILD_CONFIG_B64");
+    expect(dockerfile).not.toContain("POSTHOG_");
+    expect(dockerfile).not.toContain("posthog:");
+  });
+
   it("mounts compass.yaml into the backend container", () => {
     const compose = readFileSync(join(import.meta.dir, "compose.yaml"), {
       encoding: "utf8",
@@ -165,6 +173,51 @@ describe("staging deploy workflow", () => {
     );
     expect(workflow).toContain(
       'notificationToken: \\"$'.concat('{GCAL_NOTIFICATION_TOKEN}\\"'),
+    );
+  });
+
+  it("builds cloud deploy web images from a GitHub-only Dockerfile with PostHog config", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+    const dockerfile = readRepoFile(".github/docker/Dockerfile.web");
+
+    expect(workflow).toContain("file: .github/docker/Dockerfile.web");
+    expect(workflow).toContain("POSTHOG_KEY=$");
+    expect(workflow).toContain("POSTHOG_HOST=$");
+    expect(workflow).not.toContain("COMPASS_WEB_BUILD_CONFIG_B64");
+    expect(workflow).not.toContain("base64");
+    expect(dockerfile).toContain("ARG POSTHOG_KEY=");
+    expect(dockerfile).toContain("ARG POSTHOG_HOST=");
+    expect(dockerfile).toContain("'posthog:'");
+  });
+
+  it("writes Kit email config only for production deploys", () => {
+    const workflow = readRepoFile(".github/workflows/_deploy-environment.yml");
+
+    expect(workflow).toContain(
+      "KIT_USER_TAG_ID: $".concat(
+        "{{ inputs.environment == 'production' && vars.KIT_USER_TAG_ID || '' }}",
+      ),
+    );
+    expect(workflow).toContain(
+      "KIT_API_SECRET: $".concat(
+        "{{ inputs.environment == 'production' && secrets.KIT_API_SECRET || '' }}",
+      ),
+    );
+    expect(workflow).toContain(
+      'if [ "$'.concat('{{ inputs.environment }}" = "production" ]; then'),
+    );
+    expect(workflow).toContain(
+      "Production deploy requires KIT_API_SECRET and KIT_USER_TAG_ID",
+    );
+    expect(workflow).toContain(
+      'if [ -n "$KIT_API_SECRET" ] && [ -n "$KIT_USER_TAG_ID" ]; then',
+    );
+    expect(workflow).toContain("'email:'");
+    expect(workflow).toContain(
+      'kitApiSecret: \\"$'.concat('{KIT_API_SECRET}\\"'),
+    );
+    expect(workflow).toContain(
+      'kitUserTagId: \\"$'.concat('{KIT_USER_TAG_ID}\\"'),
     );
   });
 

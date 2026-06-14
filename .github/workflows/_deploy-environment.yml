@@ -47,7 +47,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: self-host/Dockerfile.web
+          file: .github/docker/Dockerfile.web
           push: true
           build-args: |
             BASEURL=${{ vars.BACKEND_API_URL }}
@@ -67,6 +67,7 @@ jobs:
           GCAL_NOTIFICATION_EXPIRATION_MIN: ${{ vars.GCAL_NOTIFICATION_EXPIRATION_MIN }}
           GOOGLE_CLIENT_ID: ${{ vars.GOOGLE_CLIENT_ID }}
           IMAGE_VERSION: ${{ steps.version.outputs.image_version }}
+          KIT_USER_TAG_ID: ${{ inputs.environment == 'production' && vars.KIT_USER_TAG_ID || '' }}
           POSTHOG_KEY: ${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_KEY || '' }}
           POSTHOG_HOST: ${{ (inputs.environment == 'production' || inputs.environment == 'staging-cloud') && vars.POSTHOG_HOST || '' }}
           RELEASE_TAG: ${{ inputs.tag }}
@@ -77,6 +78,7 @@ jobs:
           COMPASS_SYNC_TOKEN: ${{ secrets.COMPASS_SYNC_TOKEN }}
           GCAL_NOTIFICATION_TOKEN: ${{ secrets.GCAL_NOTIFICATION_TOKEN }}
           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          KIT_API_SECRET: ${{ inputs.environment == 'production' && secrets.KIT_API_SECRET || '' }}
           MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
           MONGO_REPLICA_SET_KEY: ${{ secrets.MONGO_REPLICA_SET_KEY }}
           MONGO_URI: ${{ secrets.MONGO_URI }}
@@ -86,6 +88,12 @@ jobs:
           SUPERTOKENS_URI: ${{ secrets.SUPERTOKENS_URI }}
         run: |
           echo "Deploying Compass ${RELEASE_TAG} (image version: ${IMAGE_VERSION}) to ${{ inputs.environment }}"
+          if [ "${{ inputs.environment }}" = "production" ]; then
+            if [ -z "$KIT_API_SECRET" ] || [ -z "$KIT_USER_TAG_ID" ]; then
+              echo "Production deploy requires KIT_API_SECRET and KIT_USER_TAG_ID." >&2
+              exit 1
+            fi
+          fi
           mkdir -p ~/.ssh
           echo "$SSH_PRIVATE_KEY" > ~/.ssh/staging_key
           chmod 600 ~/.ssh/staging_key
@@ -128,6 +136,12 @@ jobs:
                 'posthog:' \
                 "  key: \"${POSTHOG_KEY}\"" \
                 "  host: \"${POSTHOG_HOST}\""
+            fi
+            if [ -n "$KIT_API_SECRET" ] && [ -n "$KIT_USER_TAG_ID" ]; then
+              printf '%s\n' \
+                'email:' \
+                "  kitApiSecret: \"${KIT_API_SECRET}\"" \
+                "  kitUserTagId: \"${KIT_USER_TAG_ID}\""
             fi
           } | ssh -i ~/.ssh/staging_key "$SSH_USER@$SSH_HOST" \
                 "umask 077 && mkdir -p ~/compass && cat > ~/compass/compass.yaml && chmod 644 ~/compass/compass.yaml"
