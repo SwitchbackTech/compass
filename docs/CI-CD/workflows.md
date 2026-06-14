@@ -144,3 +144,8 @@ The workflow deploys to the GitHub `production` environment through
 `switchbacktech/compass-web:production-<version>`, then runs
 `deploy-health-check.yml` with the `cloud` profile. Production is expected to use
 external MongoDB and SuperTokens Cloud rather than self-hosted data services.
+
+For cloud web image builds, `_deploy-environment.yml` uses
+`.github/docker/Dockerfile.web` so frontend-only cloud config, such as PostHog,
+is baked into the bundle without adding cloud-only settings to the self-host
+Dockerfile.
