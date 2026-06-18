@@ -455,6 +455,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     return (
       <form
         {...props}
+        role="form"
         className="c-event-form"
         name={ID_EVENT_FORM}
         onMouseUp={() => {

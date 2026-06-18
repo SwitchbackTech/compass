@@ -161,6 +161,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   return (
     <form
       {...props}
+      role="form"
       className="c-event-form"
       name={ID_SOMEDAY_EVENT_FORM}
       onClick={stopPropagation}
