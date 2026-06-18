@@ -271,7 +271,7 @@ during Import or Public watch notification handling.
 - Treat recurring event changes as changes to a **Recurring Series**, not just
   isolated event rows.
 - Do not use **Someday Event** and **Task** interchangeably.
-- Do not describe the frontend as Tailwind-only or styled-components-only.
+- Frontend styling uses Tailwind utilities and semantic runtime CSS variables.
 - Do not describe local self-hosting as proving continuous Google sync unless a
   public HTTPS webhook path has been configured and verified.
 - When changing a shared event, sync, API, or error contract, keep the web,
