@@ -27,8 +27,8 @@ import {
   getHourLabels,
 } from "@web/common/utils/datetime/web.date.util";
 import { getCurrentPercentOfDay } from "@web/common/utils/grid/grid.util";
-import { Flex } from "@web/components/Flex";
-import { Text } from "@web/components/Text";
+import { Flex } from "@web/components/Flex/Flex";
+import { Text } from "@web/components/Text/Text";
 
 interface CalendarTimedGridProps {
   columnsId?: string;

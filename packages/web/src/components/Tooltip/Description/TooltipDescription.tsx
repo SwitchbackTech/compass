@@ -1,5 +1,5 @@
 import { type FC } from "react";
-import { Text } from "@web/components/Text";
+import { Text } from "@web/components/Text/Text";
 
 interface Props {
   description: string;

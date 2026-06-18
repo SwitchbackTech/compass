@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { darken } from "@core/util/color.utils";
-import { Divider } from "@web/components/Divider";
+import { Divider } from "@web/components/Divider/Divider";
 
 export interface Props {
   bgColor?: string;

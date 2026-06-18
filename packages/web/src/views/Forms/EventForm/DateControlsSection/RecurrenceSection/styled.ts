@@ -1,6 +1,6 @@
 import styled from "styled-components";
 import { darken } from "@core/util/color.utils";
-import { Flex } from "@web/components/Flex";
+import { Flex } from "@web/components/Flex/Flex";
 
 export const StyledRepeatRow = styled(Flex)`
   align-items: center;

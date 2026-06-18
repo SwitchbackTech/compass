@@ -1,7 +1,9 @@
-import { ArrowsClockwiseIcon } from "@phosphor-icons/react";
-import styled from "styled-components";
-import { iconStyles } from "./styled";
+import { ArrowsClockwiseIcon, type IconProps } from "@phosphor-icons/react";
+import { getInteractiveIconClassName } from "./icon.utils";
 
-export const RefreshIcon = styled(ArrowsClockwiseIcon)`
-  ${iconStyles}
-`;
+export const RefreshIcon = ({ className, ...props }: IconProps) => (
+  <ArrowsClockwiseIcon
+    className={getInteractiveIconClassName(className)}
+    {...props}
+  />
+);

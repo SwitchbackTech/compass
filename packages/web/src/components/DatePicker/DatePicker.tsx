@@ -14,10 +14,9 @@ import {
   StyledHeaderFlex,
   TodayStyledText,
 } from "@web/components/DatePicker/styled";
-import { Flex } from "@web/components/Flex";
-import { AlignItems, JustifyContent } from "@web/components/Flex/styled";
-import { StyledInput } from "@web/components/Input/styled";
-import { Text } from "@web/components/Text";
+import { AlignItems, Flex, JustifyContent } from "@web/components/Flex/Flex";
+import { InputBase } from "@web/components/Input/Input";
+import { Text } from "@web/components/Text/Text";
 import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
 import { Focusable } from "../Focusable/Focusable";
@@ -84,7 +83,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       )}
       customInput={
         <Focusable
-          Component={StyledInput}
+          Component={InputBase}
           underlineColor={darken(bgColor, -15)}
           bgColor={inputColor}
           withUnderline

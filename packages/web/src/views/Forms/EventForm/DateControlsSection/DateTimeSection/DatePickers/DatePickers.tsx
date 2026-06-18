@@ -6,7 +6,7 @@ import dayjs from "@core/util/date/dayjs";
 import { dateIsValid } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { AlignItems } from "@web/components/Flex/styled";
+import { AlignItems } from "@web/components/Flex/Flex";
 import { StyledDateFlex } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/styled";
 import { type SetEventFormField } from "@web/views/Forms/EventForm/types";
 

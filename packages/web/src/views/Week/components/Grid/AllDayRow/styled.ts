@@ -1,5 +1,5 @@
 import styled from "styled-components";
-import { Flex } from "@web/components/Flex";
+import { Flex } from "@web/components/Flex/Flex";
 import {
   GRID_MARGIN_LEFT,
   GRID_PADDING_BOTTOM,

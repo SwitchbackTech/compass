@@ -6,7 +6,7 @@ import { useSession } from "@web/auth/compass/session/useSession";
 import { isBackendUnavailable as getIsBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
-import { FlexDirections } from "@web/components/Flex/styled";
+import { FlexDirections } from "@web/components/Flex/Flex";
 import { EndsOnDate } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate";
 import { RecurrenceIntervalSelect } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceIntervalSelect";
 import { RecurrenceToggle } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceToggle";

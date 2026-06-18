@@ -1,8 +1,8 @@
 import styled from "styled-components";
 import { brighten, darken, isDark } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
-import { Flex } from "@web/components/Flex";
-import { Text } from "@web/components/Text";
+import { Flex } from "@web/components/Flex/Flex";
+import { Text } from "@web/components/Text/Text";
 import { SIDEBAR_MONTH_HEIGHT } from "@web/views/Week/layout.constants";
 
 const SIDEBAR_COMPACT_MONTH_HEIGHT = 252;

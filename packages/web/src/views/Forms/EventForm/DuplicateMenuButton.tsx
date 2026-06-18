@@ -1,7 +1,7 @@
 import { Copy } from "@phosphor-icons/react";
 import type React from "react";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
-import { Text } from "@web/components/Text";
+import { Text } from "@web/components/Text/Text";
 import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
 interface Props {

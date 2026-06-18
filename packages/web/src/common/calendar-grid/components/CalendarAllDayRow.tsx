@@ -16,7 +16,7 @@ import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
 } from "@web/common/constants/web.constants";
-import { Flex } from "@web/components/Flex";
+import { Flex } from "@web/components/Flex/Flex";
 
 interface CalendarAllDayRowProps {
   allDayColumnsRef: RefCallback<HTMLDivElement>;

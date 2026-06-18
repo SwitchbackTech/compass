@@ -1,7 +1,7 @@
 import { type PropsWithChildren } from "react";
 import styled from "styled-components";
 import { ID_MAIN } from "@web/common/constants/web.constants";
-import { Flex } from "@web/components/Flex";
+import { Flex } from "@web/components/Flex/Flex";
 import { WEEK_GRID_TRACK_MIN_WIDTH } from "./layout.constants";
 
 export const Styled = styled(Flex)`

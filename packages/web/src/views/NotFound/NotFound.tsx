@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { Text } from "@web/components/Text";
+import { Text } from "@web/components/Text/Text";
 import { StyledBackButton, StyledNotFoundContainer } from "./styled";
 
 export const NotFoundView = () => {

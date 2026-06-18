@@ -1,21 +1,21 @@
 import {
   type ChangeEventHandler,
+  type ElementType,
   type FocusEvent,
   forwardRef,
   type HTMLAttributes,
   useCallback,
   useState,
 } from "react";
-import { type AnyStyledComponent } from "styled-components";
 import { type UnderlinedInput } from "@web/common/types/component.types";
-import { Divider } from "@web/components/Divider";
+import { Divider } from "@web/components/Divider/Divider";
 
 export interface Props
   extends UnderlinedInput,
     Omit<HTMLAttributes<HTMLElement>, "onChange"> {
   autoFocus?: boolean;
   bgColor?: string;
-  Component: AnyStyledComponent;
+  Component: ElementType;
   name?: string;
   onChange?: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   placeholder?: string;

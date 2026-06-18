@@ -8,7 +8,7 @@ import {
   mapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
-import { AlignItems } from "@web/components/Flex/styled";
+import { AlignItems } from "@web/components/Flex/Flex";
 import { StyledTimeFlex } from "../styled";
 import { TimePicker } from "./TimePicker";
 

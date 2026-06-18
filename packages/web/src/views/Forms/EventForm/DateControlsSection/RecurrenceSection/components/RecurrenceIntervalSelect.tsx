@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { StyledText } from "@web/components/Text/styled";
+import { Text } from "@web/components/Text/Text";
 import { type FrequencyValues } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import {
   StyledIntervalInput,
@@ -43,7 +43,7 @@ export const RecurrenceIntervalSelect = ({
 
   return (
     <StyledRepeatRow>
-      <StyledText size="l">Every</StyledText>
+      <Text size="l">Every</Text>
 
       <StyledIntervalInput
         bgColor={bgColor}

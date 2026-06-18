@@ -1,9 +1,11 @@
-import { SpinnerGapIcon } from "@phosphor-icons/react";
-import styled from "styled-components";
-import { rotateAnimation } from "@web/common/styles/animations/rotate";
-import { iconStyles } from "./styled";
+import { type IconProps, SpinnerGapIcon } from "@phosphor-icons/react";
+import { getInteractiveIconClassName } from "./icon.utils";
 
-export const SpinnerIcon = styled(SpinnerGapIcon)`
-  ${iconStyles}
-  animation: ${rotateAnimation({})};
-`;
+export const SpinnerIcon = ({ className, ...props }: IconProps) => (
+  <SpinnerGapIcon
+    className={getInteractiveIconClassName(
+      `animate-spinner-rotate ${className ?? ""}`,
+    )}
+    {...props}
+  />
+);

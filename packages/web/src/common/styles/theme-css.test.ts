@@ -1,6 +1,6 @@
+import { describe, expect, it } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, expect, it } from "bun:test";
 
 const indexCss = readFileSync(join(import.meta.dir, "../../index.css"), "utf8");
 
@@ -37,6 +37,9 @@ const semanticColorTokens = [
   "text-light-inactive",
   "text-dark",
   "text-dark-placeholder",
+  "text-divider",
+  "text-gradient-start",
+  "text-gradient-end",
 ] as const;
 
 describe("Tailwind theme CSS", () => {

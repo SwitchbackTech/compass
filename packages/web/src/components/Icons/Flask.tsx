@@ -1,7 +1,6 @@
-import { Flask } from "@phosphor-icons/react";
-import styled from "styled-components";
-import { iconStyles } from "./styled";
+import { Flask, type IconProps } from "@phosphor-icons/react";
+import { getInteractiveIconClassName } from "./icon.utils";
 
-export const FlaskIcon = styled(Flask)`
-  ${iconStyles}
-`;
+export const FlaskIcon = ({ className, ...props }: IconProps) => (
+  <Flask className={getInteractiveIconClassName(className)} {...props} />
+);

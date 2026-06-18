@@ -5,7 +5,7 @@ import { getCalendarHeadingLabel } from "@web/common/utils/datetime/web.date.uti
 import { HeaderInfoIcon } from "@web/components/HeaderInfoIcon/HeaderInfoIcon";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
-import { Text } from "@web/components/Text";
+import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";

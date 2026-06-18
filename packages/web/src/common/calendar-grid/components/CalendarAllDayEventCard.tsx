@@ -20,10 +20,9 @@ import {
   gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { Flex } from "@web/components/Flex";
-import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
+import { AlignItems, Flex, FlexDirections } from "@web/components/Flex/Flex";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
-import { Text } from "@web/components/Text";
+import { Text } from "@web/components/Text/Text";
 
 export interface CalendarAllDayEventCardProps {
   event: Schema_GridEvent;

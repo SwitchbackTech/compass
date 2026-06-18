@@ -4,8 +4,8 @@ import { darken } from "@core/util/color.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { theme } from "@web/common/styles/theme";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { Flex } from "@web/components/Flex";
-import { StyledText } from "@web/components/Text/styled";
+import { Flex } from "@web/components/Flex/Flex";
+import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 
@@ -29,7 +29,7 @@ export const EndsOnDate = ({
 
   return (
     <StyledRepeatRow>
-      <StyledText size="l">Ends on:</StyledText>
+      <Text size="l">Ends on:</Text>
 
       <Flex
         style={{

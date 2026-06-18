@@ -1,11 +1,11 @@
 import {
   AlignItems,
+  type FlexProps,
   JustifyContent,
-  type Props,
-} from "@web/components/Flex/styled";
+} from "@web/components/Flex/Flex";
 import { Styled, StyledSpinner } from "./styled";
 
-export const AbsoluteOverflowLoader = (props: Props) => (
+export const AbsoluteOverflowLoader = (props: FlexProps) => (
   <Styled
     justifyContent={JustifyContent.CENTER}
     alignItems={AlignItems.CENTER}

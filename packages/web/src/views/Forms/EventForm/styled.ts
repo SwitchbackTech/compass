@@ -1,10 +1,10 @@
 import styled from "styled-components";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
-import { PriorityButton } from "@web/components/Button/styled";
-import { Flex } from "@web/components/Flex";
+import { PriorityButton } from "@web/components/Button/Button";
+import { Flex } from "@web/components/Flex/Flex";
 import { Input } from "@web/components/Input/Input";
-import { Textarea } from "@web/components/Textarea";
+import { Textarea } from "@web/components/Textarea/Textarea";
 import { EVENT_WIDTH_MINIMUM } from "@web/views/Week/layout.constants";
 import { type StyledFormProps } from "./types";
 

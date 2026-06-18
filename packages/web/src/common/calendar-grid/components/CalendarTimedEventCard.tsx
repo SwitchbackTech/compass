@@ -33,13 +33,13 @@ import {
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
-import { Flex } from "@web/components/Flex";
 import {
   AlignItems,
+  Flex,
   FlexDirections,
   FlexWrap,
-} from "@web/components/Flex/styled";
-import { Text } from "@web/components/Text";
+} from "@web/components/Flex/Flex";
+import { Text } from "@web/components/Text/Text";
 
 export interface CalendarTimedEventCardProps {
   boxShadow?: CSSProperties["boxShadow"];

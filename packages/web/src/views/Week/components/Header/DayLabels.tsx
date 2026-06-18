@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
-import { Text } from "@web/components/Text";
+import { Text } from "@web/components/Text/Text";
 import { Columns } from "../Grid/Columns/styled";
 
 interface Props {

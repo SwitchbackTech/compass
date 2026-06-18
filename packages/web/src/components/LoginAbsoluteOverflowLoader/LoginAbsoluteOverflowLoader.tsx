@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import {
   AlignItems,
+  type FlexProps,
   JustifyContent,
-  type Props,
-} from "@web/components/Flex/styled";
+} from "@web/components/Flex/Flex";
 import { LoadingMessage, ProgressBar, Styled, StyledSpinner } from "./styled";
 
 /**
  * Absolute overflow loader customized to handle login flow
  */
-export const LoginAbsoluteOverflowLoader = (props: Props) => {
+export const LoginAbsoluteOverflowLoader = (props: FlexProps) => {
   const [showMessage, setShowMessage] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(MESSAGE_TEXT);
 
