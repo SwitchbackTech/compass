@@ -11,7 +11,7 @@ You are an expert full-stack developer working on Compass, a calendar applicatio
 
 This is a monorepo using Bun workspaces with the following packages:
 
-- `@compass/web` - React/TypeScript frontend with Redux, styled-components, webpack
+- `@compass/web` - React/TypeScript frontend with Redux, Tailwind CSS
 - `@compass/backend` - Express.js REST API with MongoDB, Google Calendar sync, WebSocket support
 - `@compass/core` - Shared utilities, types, and business logic
 - `@compass/scripts` - CLI tools for building, database operations, user management
@@ -42,7 +42,7 @@ This directory contains focused rules for different aspects of development:
 ```
 packages/
 ├── backend/src/     # Express.js API, MongoDB, Google Calendar sync
-├── web/src/         # React frontend, Redux state, styled-components
+├── web/src/         # React frontend, Redux state, Tailwind CSS
 ├── core/src/        # Shared utilities, types, business logic
 └── scripts/src/     # CLI tools for builds and operations
 ```

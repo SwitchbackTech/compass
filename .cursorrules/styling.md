@@ -60,9 +60,30 @@ The pattern is: CSS variable `--color-{category}-{name}` → Tailwind class `{ca
 
 ### Styling Approach
 
-- Use Tailwind utility classes directly in JSX
-- For complex styles, use styled-components (already configured)
-- Follow existing patterns in `packages/web/src/components/`
+Tailwind is the **sole** styling system. Do not introduce any CSS-in-JS or
+runtime styling library; a guard test (`no-styled-components.test.ts`) enforces
+this.
+
+Use a hybrid of inline utilities and `c-*` recipes:
+
+- **Inline Tailwind utilities** for one-off layout and state, applied directly
+  in JSX (e.g. `className="mb-2.5 items-center justify-end gap-[30px]"`).
+- **`c-*` utilities** for reusable component recipes and complex third-party
+  selectors (datepicker internals, animations, calendar grid selectors). These
+  are defined with Tailwind v4's `@utility c-...` directive in
+  `packages/web/src/index.css` (e.g. `c-event-form`, `c-button`,
+  `c-calendar-now-line`). Name reusable recipes with the `c-` prefix.
+- **Semantic CSS-variable tokens** for all theme-dependent colors (see above),
+  so a future `[data-theme="light"]` rollout needs no component changes.
+- **Inline CSS custom properties** only for runtime values that cannot be known
+  at build time — event colors, positions, and dynamic grid counts (e.g.
+  `style={{ "--event-form-bg": color }}`).
+
+Follow existing patterns in `packages/web/src/components/` and the recipes in
+`packages/web/src/index.css`.
+
+Preserve semantic attributes (`role`, `aria-*`, `title`) when restyling — they
+are load-bearing for assistive tech and e2e selectors, not presentation.
 
 ## Module Imports
 
