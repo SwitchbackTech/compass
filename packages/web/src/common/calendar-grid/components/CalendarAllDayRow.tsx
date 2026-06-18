@@ -4,7 +4,6 @@ import {
   type ReactNode,
   type RefCallback,
 } from "react";
-import styled from "styled-components";
 import {
   CALENDAR_EVENT_WIDTH_MINIMUM,
   CALENDAR_GRID_MARGIN_LEFT,
@@ -16,6 +15,7 @@ import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_ALLDAY_ROW,
 } from "@web/common/constants/web.constants";
+import { type CSSVariables } from "@web/common/styles/css.types";
 import { Flex } from "@web/components/Flex/Flex";
 
 interface CalendarAllDayRowProps {
@@ -38,53 +38,6 @@ const getAllDayRowHeight = (gridOffsetTopPx: number) => {
   return `${gridRowHeight} / ${interval}`;
 };
 
-const StyledAllDayColumns = styled.div<{ $visibleDateCount: number }>`
-  display: grid;
-  grid-template-columns: ${({ $visibleDateCount }) =>
-    `repeat(${$visibleDateCount}, minmax(${CALENDAR_EVENT_WIDTH_MINIMUM}px, 1fr))`};
-  height: 100%;
-  left: ${CALENDAR_GRID_MARGIN_LEFT}px;
-  position: absolute;
-  top: 0;
-  width: calc(100% - ${CALENDAR_GRID_MARGIN_LEFT}px);
-
-  &::before {
-    background: ${({ theme }) => theme.color.gridLine.primary};
-    bottom: 0;
-    content: "";
-    height: 2px;
-    left: 0;
-    pointer-events: none;
-    position: absolute;
-    right: 0;
-  }
-`;
-
-const StyledAllDayRow = styled(Flex)<{
-  $gridOffsetTopPx: number;
-  $rowsCount: number;
-}>`
-  flex-shrink: 0;
-  height: ${({ $gridOffsetTopPx, $rowsCount }) => {
-    const allDayRowHeight = getAllDayRowHeight($gridOffsetTopPx);
-
-    return `calc(${allDayRowHeight} * 2 + ${
-      $rowsCount * 2 || 1
-    } * ${allDayRowHeight})`;
-  }};
-  position: relative;
-  width: 100%;
-`;
-
-const StyledDateColumn = styled.div`
-  border-left: ${({ theme }) => `1px solid ${theme.color.gridLine.primary}`};
-  box-sizing: border-box;
-  display: block;
-  height: 100%;
-  min-width: ${CALENDAR_EVENT_WIDTH_MINIMUM}px;
-  position: relative;
-`;
-
 export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
   allDayColumnsRef,
   allDayRowRef,
@@ -96,28 +49,38 @@ export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
   rowId = ID_GRID_ALLDAY_ROW,
   visibleDates,
 }) => (
-  <StyledAllDayRow
-    $gridOffsetTopPx={gridOffsetTopPx}
-    $rowsCount={rowsCount}
+  <Flex
+    className="relative w-full shrink-0"
     aria-label="All-day events"
     id={rowId}
     ref={allDayRowRef}
     role="region"
     onMouseDown={onMouseDown}
+    style={{
+      height: `calc(${getAllDayRowHeight(gridOffsetTopPx)} * 2 + ${rowsCount * 2 || 1} * ${getAllDayRowHeight(gridOffsetTopPx)})`,
+    }}
   >
-    <StyledAllDayColumns
-      $visibleDateCount={visibleDates.length}
+    <div
+      className="c-calendar-all-day-columns"
       id={columnsId}
       ref={allDayColumnsRef}
+      style={
+        {
+          "--calendar-column-count": visibleDates.length,
+          "--calendar-column-min-width": `${CALENDAR_EVENT_WIDTH_MINIMUM}px`,
+          "--calendar-grid-margin-left": `${CALENDAR_GRID_MARGIN_LEFT}px`,
+        } as CSSVariables
+      }
     >
       {visibleDates.map(({ date, key }) => (
-        <StyledDateColumn
+        <div
+          className="c-calendar-date-column"
           aria-label={date.format("dddd, MMMM D, YYYY")}
           key={key}
           role="columnheader"
         />
       ))}
-    </StyledAllDayColumns>
+    </div>
     {eventsLayer}
-  </StyledAllDayRow>
+  </Flex>
 );

@@ -11,21 +11,11 @@ import {
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { ID_REMINDER_INPUT } from "@web/common/constants/web.constants";
 import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
-import { theme } from "@web/common/styles/theme";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectReminder } from "@web/ducks/events/selectors/view.selectors";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { generateHandDrawnUnderline } from "@web/views/Week/components/Header/Reminder/reminder-util";
-import {
-  StyledCharCounter,
-  StyledPlaceholderUnderline,
-  StyledReminderContainer,
-  StyledReminderPlaceholder,
-  StyledReminderText,
-  StyledReminderWrapper,
-  StyledUnderline,
-} from "./styled";
 
 const MAX_REMINDER_CHARS = 80;
 
@@ -306,27 +296,36 @@ export const Reminder = forwardRef(
     };
 
     return (
-      <StyledReminderContainer>
+      <div className="c-reminder-container">
         {isEditing ? (
           <>
-            <StyledReminderWrapper ref={reminderWrapperRef}>
-              <StyledReminderText
+            <div className="c-reminder-wrapper" ref={reminderWrapperRef}>
+              <div
+                className="c-reminder-text"
+                data-editing="true"
+                data-length={
+                  reminder.length > 100
+                    ? "long"
+                    : reminder.length > 50
+                      ? "medium"
+                      : "short"
+                }
                 id={ID_REMINDER_INPUT}
                 ref={reminderRef}
                 contentEditable
+                role="textbox"
                 suppressContentEditableWarning
-                isEditing={true}
-                textLength={reminder.length}
                 onBlur={handleReminderBlur}
                 onKeyDown={handleReminderKeyDown}
                 onInput={handleReminderChange}
               />
-            </StyledReminderWrapper>
-            <StyledCharCounter
-              isNearLimit={reminder.length > MAX_REMINDER_CHARS * 0.8}
+            </div>
+            <div
+              className="c-reminder-char-counter"
+              data-near-limit={reminder.length > MAX_REMINDER_CHARS * 0.8}
             >
               {reminder.length}/{MAX_REMINDER_CHARS}
-            </StyledCharCounter>
+            </div>
           </>
         ) : reminder ? (
           <TooltipWrapper
@@ -334,20 +333,38 @@ export const Reminder = forwardRef(
             onClick={() => {}}
             shortcut="R"
           >
-            <StyledReminderWrapper
+            <div
+              className="c-reminder-wrapper"
               ref={reminderWrapperRef}
+              role="presentation"
               onMouseEnter={handleMouseEnter}
               onMouseLeave={() => setShowUnderline(false)}
             >
-              <StyledReminderText
-                isEditing={false}
-                textLength={reminder.length}
+              <div
+                className="c-reminder-text"
+                data-editing="false"
+                data-length={
+                  reminder.length > 100
+                    ? "long"
+                    : reminder.length > 50
+                      ? "medium"
+                      : "short"
+                }
                 onClick={handleReminderClick}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    handleReminderClick();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
               >
                 {reminder}
-              </StyledReminderText>
-              <StyledUnderline
-                isVisible={showUnderline}
+              </div>
+              <svg
+                className="c-reminder-underline"
+                data-visible={showUnderline}
                 preserveAspectRatio="none"
               >
                 <defs>
@@ -360,17 +377,17 @@ export const Reminder = forwardRef(
                   >
                     <stop
                       offset="0%"
-                      stopColor={theme.color.gradient.accentLight.start}
+                      stopColor="var(--compass-color-gradient-accent-light-start)"
                     />
                     <stop
                       offset="100%"
-                      stopColor={theme.color.gradient.accentLight.end}
+                      stopColor="var(--compass-color-gradient-accent-light-end)"
                     />
                   </linearGradient>
                 </defs>
                 <path d={underlinePath} stroke="url(#underlineGradient)" />
-              </StyledUnderline>
-            </StyledReminderWrapper>
+              </svg>
+            </div>
           </TooltipWrapper>
         ) : (
           <TooltipWrapper
@@ -378,16 +395,30 @@ export const Reminder = forwardRef(
             onClick={() => {}}
             shortcut="R"
           >
-            <StyledReminderWrapper
+            <div
+              className="c-reminder-wrapper"
               ref={placeholderRef}
+              role="presentation"
               onMouseEnter={handlePlaceholderMouseEnter}
               onMouseLeave={() => setShowPlaceholderUnderline(false)}
             >
-              <StyledReminderPlaceholder onClick={handleReminderClick}>
+              <div
+                className="c-reminder-placeholder"
+                onClick={handleReminderClick}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    handleReminderClick();
+                  }
+                }}
+                role="button"
+                tabIndex={0}
+              >
                 Click to add your reminder
-              </StyledReminderPlaceholder>
-              <StyledPlaceholderUnderline
-                isVisible={showPlaceholderUnderline}
+              </div>
+              <svg
+                className="c-reminder-placeholder-underline"
+                data-visible={showPlaceholderUnderline}
                 preserveAspectRatio="none"
               >
                 <defs>
@@ -400,11 +431,11 @@ export const Reminder = forwardRef(
                   >
                     <stop
                       offset="0%"
-                      stopColor={theme.color.gradient.accentLight.start}
+                      stopColor="var(--compass-color-gradient-accent-light-start)"
                     />
                     <stop
                       offset="100%"
-                      stopColor={theme.color.gradient.accentLight.end}
+                      stopColor="var(--compass-color-gradient-accent-light-end)"
                     />
                   </linearGradient>
                 </defs>
@@ -412,11 +443,11 @@ export const Reminder = forwardRef(
                   d={placeholderUnderlinePath}
                   stroke="url(#placeholderUnderlineGradient)"
                 />
-              </StyledPlaceholderUnderline>
-            </StyledReminderWrapper>
+              </svg>
+            </div>
           </TooltipWrapper>
         )}
-      </StyledReminderContainer>
+      </div>
     );
   },
 );

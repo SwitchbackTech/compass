@@ -912,3 +912,275 @@
     background: var(--someday-event-hover-bg);
   }
 }
+
+@utility c-week-grid-scroller {
+  @apply h-full w-full overflow-x-auto overflow-y-hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+  &:focus-visible {
+    outline: 1px solid var(--compass-color-accent-primary);
+    outline-offset: -1px;
+  }
+}
+
+@utility c-week-grid-track {
+  @apply relative flex h-full w-full min-w-[704px] flex-col;
+  container: week-grid-track / inline-size;
+}
+
+@utility c-week-columns {
+  @apply absolute top-0 grid;
+  left: 50px;
+  width: calc(100% - 50px);
+  grid-template-columns: repeat(7, minmax(80px, 1fr));
+}
+
+@utility c-week-day-labels {
+  @apply relative mt-2.5 min-h-8 w-full;
+
+  & .week-day-number {
+    font-size: clamp(var(--font-size-xl), 2.7cqw, var(--font-size-xxl));
+    line-height: 1;
+  }
+
+  & .week-day-name {
+    font-size: clamp(var(--font-size-m), 2cqw, var(--font-size-l));
+    line-height: 1;
+  }
+}
+
+@utility c-week-edge-zone {
+  @apply pointer-events-none absolute inset-y-0 z-1 transition-[width] duration-50 ease-linear;
+  width: var(--edge-width);
+
+  &[data-position="left"] {
+    left: var(--grid-margin-left);
+    background: linear-gradient(
+      to right,
+      rgb(59 130 246 / var(--edge-opacity)),
+      transparent
+    );
+  }
+
+  &[data-position="right"] {
+    right: 0;
+    background: linear-gradient(
+      to left,
+      rgb(59 130 246 / var(--edge-opacity)),
+      transparent
+    );
+  }
+}
+
+@keyframes c-reminder-underline-draw {
+  from {
+    stroke-dashoffset: 1000;
+    opacity: 0.7;
+  }
+  to {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes c-reminder-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes c-reminder-gradient-wave {
+  0%,
+  100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+@keyframes c-reminder-shadow {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 2px var(--compass-color-bg-primary));
+  }
+  50% {
+    filter: drop-shadow(0 0 4px var(--compass-color-bg-secondary));
+  }
+}
+
+@utility c-reminder-container {
+  @apply z-1 mx-auto flex h-full w-full items-center justify-center;
+}
+
+@utility c-reminder-wrapper {
+  @apply relative inline-block pb-[18px];
+}
+
+@utility c-reminder-char-counter {
+  @apply absolute right-0 bottom-[-2px] left-0 w-full text-center text-xs opacity-80;
+  color: var(--compass-color-text-light-inactive);
+  &[data-near-limit="true"] {
+    color: var(--compass-color-status-warning);
+  }
+}
+
+@utility c-reminder-placeholder {
+  @apply relative cursor-pointer px-2.5 text-center text-[28px] italic;
+  color: var(--compass-color-text-light-inactive);
+  font-family: "Caveat", cursive;
+  animation: c-reminder-fade-in 0.5s ease-out;
+  &:hover {
+    color: var(--compass-color-text-light);
+    transition: color 0.3s ease;
+  }
+}
+
+@utility c-reminder-text {
+  @apply relative min-w-[200px] max-w-[500px] cursor-pointer px-2.5 text-center font-semibold whitespace-pre-wrap break-words;
+  color: transparent;
+  background: linear-gradient(
+    90deg,
+    var(--compass-color-gradient-accent-light-start),
+    var(--compass-color-gradient-accent-light-end)
+  );
+  background-size: 200% 200%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-family: "Caveat", cursive;
+  font-size: 28px;
+  line-height: 1.3;
+  filter: drop-shadow(0 0 2px var(--compass-color-bg-primary));
+  animation:
+    c-reminder-fade-in 0.5s ease-out,
+    c-reminder-gradient-wave 15s ease infinite;
+  &[data-length="medium"] {
+    font-size: 24px;
+  }
+  &[data-length="long"] {
+    font-size: 22px;
+  }
+  &[data-editing="true"] {
+    max-height: 80px;
+    cursor: text;
+    overflow: hidden;
+    outline: none;
+  }
+  &[data-editing="false"] {
+    max-height: 80px;
+    overflow-y: auto;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    animation:
+      c-reminder-shadow 5s ease-in-out infinite,
+      c-reminder-fade-in 0.5s ease-out,
+      c-reminder-gradient-wave 15s ease infinite;
+  }
+}
+
+@utility c-reminder-underline {
+  @apply pointer-events-none absolute bottom-0 left-[-5px] h-5 opacity-0;
+  width: calc(100% + 10px);
+  &[data-visible="true"] {
+    opacity: 1;
+  }
+  & path {
+    fill: none;
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+  }
+  &[data-visible="true"] path {
+    animation: c-reminder-underline-draw 0.8s ease-out forwards;
+  }
+}
+
+@utility c-reminder-placeholder-underline {
+  @apply c-reminder-underline;
+  & path {
+    stroke-width: 2.5;
+  }
+}
+
+@utility c-calendar-all-day-columns {
+  @apply absolute top-0 grid h-full;
+  left: var(--calendar-grid-margin-left);
+  width: calc(100% - var(--calendar-grid-margin-left));
+  grid-template-columns: repeat(
+      var(--calendar-column-count),
+      minmax(var(--calendar-column-min-width), 1fr)
+    );
+  &::before {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    pointer-events: none;
+    background: var(--compass-color-grid-line-primary);
+    content: "";
+  }
+}
+
+@utility c-calendar-date-column {
+  @apply relative block h-full box-border border-l;
+  min-width: var(--calendar-column-min-width);
+  border-color: var(--compass-color-grid-line-primary);
+}
+
+@utility c-calendar-main-grid {
+  @apply relative min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto;
+  --scrollbar-width: 0px;
+}
+@utility c-calendar-timed-columns {
+  @apply absolute top-0 grid;
+  left: var(--calendar-grid-margin-left);
+  width: calc(100% - var(--calendar-grid-margin-left));
+  height: calc(24 * 100% / var(--calendar-visible-hours));
+  grid-template-columns: repeat(
+      var(--calendar-column-count),
+      minmax(var(--calendar-column-min-width), 1fr)
+    );
+}
+@utility c-calendar-grid-rows {
+  position: absolute;
+  left: 50px;
+  width: calc(100% - 50px);
+  height: 100%;
+}
+@utility c-calendar-grid-row {
+  @apply relative w-full border-b border-grid-line-primary;
+  height: calc(100% / 13);
+  & > span {
+    position: absolute;
+    bottom: -5px;
+    left: -50px;
+  }
+}
+@utility c-calendar-day-times {
+  @apply absolute h-full;
+  top: calc(100% / 13 - 5px);
+  z-index: 1;
+  & > div {
+    height: calc(100% / 13);
+  }
+  & > div > span {
+    display: block;
+  }
+}
+@utility c-calendar-now-line {
+  @apply absolute h-px w-full;
+}

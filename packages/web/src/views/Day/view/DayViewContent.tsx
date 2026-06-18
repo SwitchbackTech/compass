@@ -1,5 +1,6 @@
 import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
+import { ID_MAIN } from "@web/common/constants/web.constants";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -29,7 +30,6 @@ import {
 } from "@web/views/Day/util/day.shortcut.util";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { useRefetch } from "@web/views/Week/hooks/useRefetch";
-import { Styled, StyledCalendar } from "@web/views/Week/styled";
 
 export const DayViewContent = memo(() => {
   const dispatch = useAppDispatch();
@@ -160,7 +160,7 @@ export const DayViewContent = memo(() => {
   });
 
   return (
-    <Styled id="day">
+    <div id="day" className="flex h-screen w-screen overflow-hidden">
       <DayCmdPalette onGoToToday={handleGoToToday} />
       <Dedication />
 
@@ -179,7 +179,10 @@ export const DayViewContent = memo(() => {
         />
       ) : null}
 
-      <StyledCalendar>
+      <div
+        id={ID_MAIN}
+        className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-8 pl-8"
+      >
         <Header
           showReminder={false}
           isSidebarOpen={isSidebarOpen}
@@ -191,8 +194,8 @@ export const DayViewContent = memo(() => {
 
           <DayCalendarGrid />
         </div>
-      </StyledCalendar>
-    </Styled>
+      </div>
+    </div>
   );
 });
 

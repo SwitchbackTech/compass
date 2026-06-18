@@ -1,7 +1,6 @@
 import { type FC, useEffect, useRef, useState } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_DATEPICKER_SIDEBAR } from "@web/common/constants/web.constants";
-import { theme } from "@web/common/styles/theme";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
@@ -68,8 +67,8 @@ export const PlannerMonthPicker: FC<Props> = ({
               onClick={onToggleSidebar}
               shortcut="["
             >
-              <span className="flex h-6 w-6 items-center justify-center">
-                <SidebarIcon color={theme.color.text.light} size={21} />
+              <span className="flex h-6 w-6 items-center justify-center text-text-light">
+                <SidebarIcon size={21} />
               </span>
             </TooltipWrapper>
           ) : null
