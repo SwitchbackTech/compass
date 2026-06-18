@@ -55,7 +55,6 @@ export const SomedayRecurrenceSelect = ({
         : DO_NOT_REPEAT_OPTION,
     [hasRecurrence, freq],
   );
-  const selectTheme = theme;
   const selectRef = useRef<SelectInstance<SomedayFrequencyOption, false>>(null);
 
   useEffect(() => {
@@ -109,18 +108,11 @@ export const SomedayRecurrenceSelect = ({
     return (
       <components.SingleValue {...props}>
         <span
-          className="flex items-center gap-1 data-[dimmed=true]:opacity-75"
+          className="c-someday-recurrence-value"
           data-testid="someday-recurrence-value"
           data-dimmed={isDoNotRepeat}
         >
-          <RepeatIcon
-            size={18}
-            color={
-              isDoNotRepeat
-                ? selectTheme.color.text.darkPlaceholder
-                : selectTheme.color.text.dark
-            }
-          />
+          <RepeatIcon size={18} />
           <span>
             {isDoNotRepeat
               ? DO_NOT_REPEAT_OPTION.label
@@ -153,19 +145,19 @@ export const SomedayRecurrenceSelect = ({
           borderRadius: theme.shape.borderRadius,
           fontSize,
           borderColor: state.isFocused
-            ? selectTheme.color.border.primaryDark
+            ? "var(--compass-color-border-primary-dark)"
             : baseStyles.borderColor,
           boxShadow: state.isFocused
-            ? `0 0 0 1px ${selectTheme.color.border.primaryDark}`
+            ? "0 0 0 1px var(--compass-color-border-primary-dark)"
             : baseStyles.boxShadow,
         }),
         valueContainer: (baseStyles) => ({
           ...baseStyles,
-          paddingLeft: selectTheme.spacing.s,
+          paddingLeft: "0.5rem",
         }),
         placeholder: (baseStyles) => ({
           ...baseStyles,
-          color: selectTheme.color.text.dark,
+          color: "var(--compass-color-text-dark)",
         }),
         indicatorSeparator: () => ({
           visibility: "hidden",
@@ -186,8 +178,8 @@ export const SomedayRecurrenceSelect = ({
                 ? bgDark
                 : undefined,
           color: isDisabled
-            ? selectTheme.color.text.lightInactive
-            : theme.color.text.dark,
+            ? "var(--compass-color-text-light-inactive)"
+            : "var(--compass-color-text-dark)",
           cursor: isDisabled ? "not-allowed" : "default",
           ":active": {
             ...styles[":active"],

@@ -671,9 +671,10 @@
 }
 
 @utility c-actions-menu-item {
-  @apply flex w-full cursor-pointer items-center gap-2 border-0 px-2 py-1 text-left text-m outline-none;
+  @apply flex w-full cursor-pointer items-center gap-2 border-0 px-2 py-1 text-left outline-none;
   background-color: var(--actions-menu-item-bg);
   color: var(--compass-color-text-dark);
+  font-size: var(--font-size-m);
 
   &:hover,
   &:focus-visible {
@@ -687,17 +688,24 @@
   @apply rounded-sm px-5 py-[18px] text-xl transition-[var(--compass-transition-default)];
   background: var(--event-form-bg);
   box-shadow: 0 5px 5px var(--compass-color-shadow-default);
+  z-index: 1;
+}
+
+@utility c-floating-form-container {
+  width: max-content;
 }
 
 @utility c-event-form-title {
-  @apply bg-transparent text-5xl font-semibold transition-all duration-300;
+  @apply bg-transparent font-semibold transition-all duration-300;
+  font-size: var(--font-size-5xl);
   &:hover {
     background-color: var(--compass-color-border-primary);
   }
 }
 
 @utility c-event-form-description {
-  @apply relative max-h-[180px] border-hidden bg-transparent text-xxl font-normal transition-all duration-300;
+  @apply relative max-h-[180px] border-hidden bg-transparent font-normal transition-all duration-300;
+  font-size: var(--font-size-xxl);
   width: calc(100% - 20px);
   &:hover {
     background-color: var(--compass-color-border-primary);
@@ -706,7 +714,8 @@
 }
 
 @utility c-time-picker {
-  @apply relative min-w-[90px] text-lg;
+  @apply relative min-w-[90px];
+  font-size: var(--font-size-l);
   & span[aria-live="polite"],
   & .timepicker__indicators {
     display: none;
@@ -767,8 +776,9 @@
 }
 
 @utility c-recurrence-toggle {
-  @apply inline-flex items-center gap-1 rounded-sm border border-transparent bg-transparent px-2 py-0.5 text-m transition-all duration-300;
+  @apply inline-flex items-center gap-1 rounded-sm border border-transparent bg-transparent px-2 py-0.5 transition-all duration-300;
   color: var(--compass-color-text-dark);
+  font-size: var(--font-size-m);
   &[data-repeat="false"] {
     color: var(--compass-color-text-dark-placeholder);
     opacity: 0.85;
@@ -790,9 +800,10 @@
 }
 
 @utility c-recurrence-weekday {
-  @apply size-6 cursor-pointer rounded-full border text-m transition-all duration-300;
+  @apply size-6 cursor-pointer rounded-full border transition-all duration-300;
   border-color: var(--compass-color-border-primary-dark);
   background: var(--weekday-bg);
+  font-size: var(--font-size-m);
   &[data-selected="true"] {
     background: var(--weekday-selected-bg);
     color: var(--weekday-selected-text);
@@ -807,8 +818,9 @@
 }
 
 @utility c-recurrence-interval {
-  @apply ml-1 h-[38px] w-8 rounded-sm border border-transparent px-1 text-center text-s transition-all duration-300;
+  @apply ml-1 h-[38px] w-8 rounded-sm border border-transparent px-1 text-center transition-all duration-300;
   background: var(--recurrence-bg);
+  font-size: var(--font-size-s);
   &::-webkit-outer-spin-button,
   &::-webkit-inner-spin-button {
     margin: 0;
@@ -834,5 +846,69 @@
   }
   &:focus {
     box-shadow: 0 0 0 2px var(--compass-color-border-primary-dark);
+  }
+}
+
+@utility c-someday-recurrence-value {
+  @apply inline-flex items-center gap-1;
+  color: var(--compass-color-text-dark);
+  font-size: var(--font-size-m);
+
+  &[data-dimmed="true"] {
+    color: var(--compass-color-text-dark-placeholder);
+  }
+}
+
+@utility c-planner-month-picker {
+  & .react-datepicker__month-container,
+  & .react-datepicker__month {
+    overflow: visible !important;
+  }
+  & .react-datepicker__day--selected {
+    position: relative !important;
+    isolation: isolate !important;
+    background: transparent !important;
+    color: var(--compass-color-text-dark) !important;
+  }
+  & .react-datepicker__day--selected::before {
+    position: absolute;
+    inset: -2px;
+    z-index: -1;
+    border-radius: var(--radius-default);
+    background: var(--compass-color-accent-primary);
+    content: "";
+  }
+  & .react-datepicker__week:has(.react-datepicker__day--selected) {
+    position: relative !important;
+  }
+  & .react-datepicker__week:has(.react-datepicker__day--selected)::before {
+    position: absolute;
+    inset: 0 -3px;
+    border-radius: var(--radius-default);
+    background: color-mix(
+      in srgb,
+      var(--compass-color-panel-scrollbar-active) 50%,
+      transparent
+    );
+    content: "";
+  }
+  &
+    .react-datepicker__week:has(.react-datepicker__day--selected)
+    .react-datepicker__day {
+    position: relative !important;
+    z-index: 10 !important;
+  }
+}
+
+@utility c-someday-event {
+  @apply w-full cursor-grab rounded-[2px] px-2 py-[3px] text-xs text-text-lighter transition-[background-color_.2s,opacity_.12s,box-shadow_.2s] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-primary;
+  background: var(--someday-event-bg);
+  &[data-dragging="true"] {
+    pointer-events: none;
+    cursor: grabbing;
+    opacity: 0;
+  }
+  &:hover {
+    background: var(--someday-event-hover-bg);
   }
 }
