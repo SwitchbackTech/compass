@@ -12,7 +12,6 @@ const mockCreateSomedayDraft = mock();
 const defaultSidebarState = () => ({
   blockedSomedayDropColumn: null as string | null,
   draft: null,
-  isCalendarDragActive: false,
   isDragging: false,
   isDraftingNew: false,
   isSomedayFormOpen: false,
@@ -102,8 +101,8 @@ describe("SomedayEventsContainer", () => {
     ).toBeTruthy();
   });
 
-  it("hides the add button while a calendar event is dragged over the sidebar", () => {
-    sidebarState = { ...defaultSidebarState(), isCalendarDragActive: true };
+  it("hides the add button while a drag is active over the sidebar", () => {
+    sidebarState = { ...defaultSidebarState(), isDragging: true };
 
     renderSomedayEventsContainer({
       category: Categories_Event.SOMEDAY_WEEK,
@@ -120,7 +119,7 @@ describe("SomedayEventsContainer", () => {
     sidebarState = {
       ...defaultSidebarState(),
       blockedSomedayDropColumn: "weekEvents",
-      isCalendarDragActive: true,
+      isDragging: true,
     };
 
     const { container } = renderSomedayEventsContainer({
@@ -136,7 +135,7 @@ describe("SomedayEventsContainer", () => {
     sidebarState = {
       ...defaultSidebarState(),
       blockedSomedayDropColumn: "monthEvents",
-      isCalendarDragActive: true,
+      isDragging: true,
     };
 
     const { container } = renderSomedayEventsContainer({

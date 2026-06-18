@@ -179,44 +179,6 @@ const getSomedayEventsAfterSidebarDrop = ({
   };
 };
 
-// Inserts a not-yet-someday calendar event into a column at `index` as a
-// preview placeholder. Unlike a sidebar reorder there is no source column to
-// remove from; the event is added to the events map and the target column.
-const getSomedayEventsAfterCalendarDrop = ({
-  baseEvents,
-  column,
-  event,
-  index,
-}: {
-  baseEvents: State_Sidebar["somedayEvents"];
-  column: string;
-  event: Schema_Event;
-  index: number;
-}) => {
-  const targetColumn = baseEvents.columns[column as keyof SomedayEventsColumns];
-  const eventIds = Array.from(targetColumn.eventIds).filter(
-    (id) => id !== event._id,
-  );
-  const clampedIndex = Math.min(Math.max(index, 0), eventIds.length);
-
-  eventIds.splice(clampedIndex, 0, event._id!);
-
-  return {
-    ...baseEvents,
-    columns: {
-      ...baseEvents.columns,
-      [targetColumn.id]: {
-        ...targetColumn,
-        eventIds,
-      },
-    },
-    events: {
-      ...baseEvents.events,
-      [event._id!]: event,
-    },
-  };
-};
-
 const applySomedayColumnOrder = ({
   eventIds,
   events,
@@ -273,8 +235,8 @@ export const useSidebarActions = (
   const {
     setBlockedSomedayDropColumn,
     setDraft,
-    setIsCalendarDragActive,
     setIsDrafting,
+    setIsDraftingExisting,
     setIsSomedayFormOpen,
     setSomedayEvents,
   } = setters;
@@ -416,68 +378,6 @@ export const useSidebarActions = (
     );
   };
 
-  // Drives the Someday list while a calendar (grid) event is dragged over the
-  // sidebar. Unlike sidebar-originated drags, this path does not own a sidebar
-  // draft, so it toggles a dedicated flag instead of `isDragging` and inserts a
-  // placeholder row at the hovered index so existing rows animate to make room.
-  // Passing `null` restores the list and clears the styling (pointer left the
-  // sidebar / drag ended).
-  const setCalendarSidebarDropPreview = (
-    preview: {
-      column: string;
-      event: Schema_Event;
-      index: number;
-      isBlocked: boolean;
-    } | null,
-  ) => {
-    if (!preview) {
-      const snapshot = interactionSnapshotRef.current;
-
-      if (snapshot) {
-        setSomedayEvents(snapshot);
-      }
-
-      interactionSnapshotRef.current = null;
-      interactionPreviewKeyRef.current = null;
-      setIsCalendarDragActive(false);
-      setBlockedSomedayDropColumn(null);
-      return;
-    }
-
-    setIsCalendarDragActive(true);
-
-    const snapshot = getInteractionSnapshot();
-
-    if (preview.isBlocked) {
-      // No room in the target column: show the blocked state and keep the list
-      // unchanged (no placeholder gap).
-      if (interactionPreviewKeyRef.current !== null) {
-        setSomedayEvents(snapshot);
-      }
-
-      interactionPreviewKeyRef.current = null;
-      setBlockedSomedayDropColumn(preview.column);
-      return;
-    }
-
-    const previewKey = `${preview.event._id}:${preview.column}:${preview.index}`;
-
-    if (previewKey === interactionPreviewKeyRef.current) {
-      return;
-    }
-
-    interactionPreviewKeyRef.current = previewKey;
-    setBlockedSomedayDropColumn(null);
-    setSomedayEvents(
-      getSomedayEventsAfterCalendarDrop({
-        baseEvents: snapshot,
-        column: preview.column,
-        event: preview.event,
-        index: preview.index,
-      }),
-    );
-  };
-
   const previewBlockedSomedaySidebarDrop = (
     result: SomedaySidebarCommitResult,
   ) => {
@@ -512,6 +412,46 @@ export const useSidebarActions = (
     setDraft(existingEvent);
     setIsSomedayFormOpen(false);
     setIsDrafting(true);
+  };
+
+  // Grid-event analog of `startSomedayInteraction`: injects a calendar event
+  // into the snapshot as a Week-list row so the native sidebar reorder pipeline
+  // (`previewSomedaySidebarDrop` → `getSomedayEventsAfterSidebarDrop`) treats it
+  // like any someday row. `setDraft` + `startDnd` flip the single `isDragging`
+  // flag; `setIsDraftingExisting(true)` keeps `isDraftingNew` false so no
+  // phantom draft row renders. Returns the synthetic source for preview results.
+  const startCalendarSidebarDrag = (
+    event: Schema_Event,
+  ): SomedayDragLocation | null => {
+    if (!event._id) return null;
+
+    const weekColumn = state.somedayEvents.columns[COLUMN_WEEK];
+    const source: SomedayDragLocation = {
+      droppableId: COLUMN_WEEK,
+      index: weekColumn.eventIds.length,
+    };
+
+    interactionSnapshotRef.current = {
+      ...state.somedayEvents,
+      columns: {
+        ...state.somedayEvents.columns,
+        [COLUMN_WEEK]: {
+          ...weekColumn,
+          eventIds: [...weekColumn.eventIds, event._id],
+        },
+      },
+      events: { ...state.somedayEvents.events, [event._id]: event },
+    };
+    interactionPreviewKeyRef.current = null;
+
+    dispatch(draftSlice.actions.startDnd(undefined));
+    setBlockedSomedayDropColumn(null);
+    setDraft(event);
+    setIsDrafting(true);
+    setIsDraftingExisting(true);
+    setIsSomedayFormOpen(false);
+
+    return source;
   };
 
   const cancelSomedayInteraction = () => {
@@ -953,8 +893,8 @@ export const useSidebarActions = (
     previewBlockedSomedaySidebarDrop,
     previewSomedaySidebarDrop,
     reset,
-    setCalendarSidebarDropPreview,
     setDraft,
+    startCalendarSidebarDrag,
     startSomedayInteraction,
   };
 };

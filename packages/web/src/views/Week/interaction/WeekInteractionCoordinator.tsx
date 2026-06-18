@@ -9,12 +9,14 @@ import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
+import { MapEvent } from "@core/mappers/map.event";
 import { Categories_Event } from "@core/types/event.types";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleSomedayConversionEvent } from "@web/common/utils/event/someday.event.util";
+import { getDatesByCategory } from "@web/common/utils/datetime/web.date.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
+import { type SomedaySidebarCommitResult } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter.types";
 import { type Payload_ConvertEvent } from "@web/ducks/events/event.types";
 import {
   selectAllDayEvents,
@@ -65,6 +67,14 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   const sidebarContext = useSidebarContext(true);
   const { actions, confirmation, setters, state } = useDraftContext();
   const layoutSourcesRef = useRef(getLayoutSources);
+  // Tracks an in-flight grid event dragged over the sidebar. `draggedEvent` is
+  // stashed at drag start; `sidebarSource` is the synthetic source returned by
+  // `startCalendarSidebarDrag` (set once the pointer first enters the sidebar).
+  const draggedEventRef = useRef<Schema_GridEvent | null>(null);
+  const sidebarSourceRef = useRef<{
+    droppableId: string;
+    index: number;
+  } | null>(null);
   const timedEventsById = useMemo(() => {
     return mapEventsById(timedEvents);
   }, [timedEvents]);
@@ -113,6 +123,15 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     dispatch(draftSlice.actions.startGridClick(event));
   };
 
+  // Tears down a sidebar drag that was started (pointer entered the sidebar),
+  // whatever the drag's final destination. Safe no-op if never started.
+  const endSidebarDrag = () => {
+    if (!sidebarSourceRef.current) return;
+
+    sidebarSourceRef.current = null;
+    sidebarContext?.actions.cancelSomedayInteraction();
+  };
+
   const commitSavedMutation = (
     result:
       | WeekAllDayDragCommitResult
@@ -120,6 +139,8 @@ export const WeekInteractionCoordinator: FC<Props> = ({
       | WeekTimedDragCommitResult
       | WeekTimedResizeCommitResult,
   ) => {
+    endSidebarDrag();
+
     if (!result.hasMoved) {
       if (result.event.isAllDay) {
         openAllDayEvent(result.event);
@@ -142,55 +163,71 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     result: WeekCalendarToSidebarCommitResult,
   ) => {
     const isWeekDrop = result.category === Categories_Event.SOMEDAY_WEEK;
+    const isBlocked = isWeekDrop ? isAtWeeklyLimit : isAtMonthlyLimit;
 
-    if (isWeekDrop && isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
+    if (isBlocked) {
+      alert(isWeekDrop ? SOMEDAY_WEEK_LIMIT_MSG : SOMEDAY_MONTH_LIMIT_MSG);
+      endSidebarDrag();
       return;
     }
 
-    if (!isWeekDrop && isAtMonthlyLimit) {
-      alert(SOMEDAY_MONTH_LIMIT_MSG);
-      return;
-    }
-
+    const { startDate, endDate } = getDatesByCategory(
+      result.category,
+      weekProps.component.startOfView,
+      weekProps.component.endOfView,
+    );
     const event: Payload_ConvertEvent["event"] = {
-      ...assembleSomedayConversionEvent(result.event, {
+      ...MapEvent.toSomeday(result.event, {
         category: result.category,
+        endDate,
         order: isWeekDrop ? somedayWeekCount : somedayMonthCount,
-        viewEnd: weekProps.component.endOfView,
-        viewStart: weekProps.component.startOfView,
+        startDate,
       }),
       _id: result.eventId,
     };
 
     dispatch(getWeekEventsSlice.actions.convert({ event }));
-    actions.discard();
+    endSidebarDrag();
   };
 
+  // Drives the native someday reorder pipeline for a grid event hovering the
+  // sidebar: it injects the event into the list on first entry, then reuses the
+  // same preview/blocked actions a someday-to-someday drag uses.
   const previewCalendarToSidebar: WeekInteractionRuntime["onPreviewCalendarToSidebar"] =
     (preview) => {
-      if (!preview) {
-        sidebarContext?.actions.setCalendarSidebarDropPreview(null);
+      const sidebarActions = sidebarContext?.actions;
+      const draggedEvent = draggedEventRef.current;
+
+      if (!preview || !sidebarActions || !draggedEvent?._id) {
+        sidebarActions?.previewSomedaySidebarDrop(null);
         return;
       }
 
-      const isWeek = preview.category === Categories_Event.SOMEDAY_WEEK;
-      // Build the someday-shaped placeholder the list renders while hovering,
-      // so existing rows animate to make room. It mirrors what the drop will
-      // commit (assembleSomedayConversionEvent is also used at commit time).
-      const placeholder = assembleSomedayConversionEvent(preview.event, {
-        category: preview.category,
-        order: preview.index,
-        viewEnd: weekProps.component.endOfView,
-        viewStart: weekProps.component.startOfView,
-      });
+      if (!sidebarSourceRef.current) {
+        sidebarSourceRef.current =
+          sidebarActions.startCalendarSidebarDrag(draggedEvent);
+      }
 
-      sidebarContext?.actions.setCalendarSidebarDropPreview({
-        column: isWeek ? COLUMN_WEEK : COLUMN_MONTH,
-        event: { ...placeholder, _id: preview.event._id! },
-        index: preview.index,
-        isBlocked: isWeek ? isAtWeeklyLimit : isAtMonthlyLimit,
-      });
+      if (!sidebarSourceRef.current) return;
+
+      const isWeek = preview.category === Categories_Event.SOMEDAY_WEEK;
+      const result: SomedaySidebarCommitResult = {
+        destination: {
+          droppableId: isWeek ? COLUMN_WEEK : COLUMN_MONTH,
+          index: preview.index,
+        },
+        eventId: draggedEvent._id,
+        source: sidebarSourceRef.current,
+        type: "sidebarDrop",
+      };
+
+      // Use the live redux limits, not the snapshot (which the injected event
+      // inflates), to decide whether the destination column is full.
+      if (isWeek ? isAtWeeklyLimit : isAtMonthlyLimit) {
+        sidebarActions.previewBlockedSomedaySidebarDrop(result);
+      } else {
+        sidebarActions.previewSomedaySidebarDrop(result);
+      }
     };
 
   runtimeRef.current = {
@@ -198,6 +235,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
     isEventPending: (eventId) => pendingEventIdSet.has(eventId),
     isFormOpen: () => state.isFormOpen,
+    onCancelInteraction: endSidebarDrag,
     onClickAllDayEvent: openAllDayEvent,
     onClickTimedEvent: openTimedEvent,
     onCommitAllDayDrag: commitSavedMutation,
@@ -206,6 +244,11 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     onCommitTimedDrag: commitSavedMutation,
     onCommitTimedResize: commitSavedMutation,
     onMotionActivation: (target) => {
+      // Reset per-drag sidebar tracking and stash the event for a possible
+      // sidebar entry later in this drag.
+      draggedEventRef.current = target.event;
+      sidebarSourceRef.current = null;
+
       if (target.hadFormOpenBeforeInteraction) {
         actions.closeForm();
       }

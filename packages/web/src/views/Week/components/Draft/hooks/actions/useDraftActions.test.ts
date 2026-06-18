@@ -11,7 +11,6 @@ import {
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
-import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import {
   type Setters_Draft,
   type State_Draft_Local,
@@ -308,66 +307,6 @@ describe("useDraftActions", () => {
     result.current.repositionDraftByKeyboard("ArrowDown");
 
     expect(setDraft).not.toHaveBeenCalled();
-  });
-
-  it("converts a timed draft to all-day by keyboard", () => {
-    setDraftActivity("keyboardEdit", Categories_Event.TIMED);
-    const { result, setDraft } = renderDraftActions({
-      _id: "event-1",
-      isAllDay: false,
-      startDate: "2024-01-16T10:00:00.000Z",
-      endDate: "2024-01-16T11:00:00.000Z",
-    });
-
-    expect(result.current.convertDraftSurfaceByKeyboard()).toBe(true);
-
-    expect(setDraft).toHaveBeenCalledWith(
-      expect.objectContaining({
-        endDate: "2024-01-17",
-        isAllDay: true,
-        startDate: "2024-01-16",
-      }),
-    );
-  });
-
-  it("moves a draft to Someday Month by keyboard", () => {
-    setDraftActivity("keyboardEdit", Categories_Event.TIMED);
-    const { dispatch, result } = renderDraftActions({
-      _id: "event-1",
-      isAllDay: false,
-      startDate: "2024-01-16T10:00:00.000Z",
-      endDate: "2024-01-16T11:00:00.000Z",
-    });
-    let didMove = false;
-
-    act(() => {
-      didMove = result.current.moveDraftToSidebarByKeyboard(
-        Categories_Event.SOMEDAY_MONTH,
-      );
-    });
-
-    expect(didMove).toBe(true);
-
-    const convertAction = dispatch.mock.calls
-      .map(([action]) => action)
-      .find((action) => action.type === getWeekEventsSlice.actionNames.convert);
-
-    expect(convertAction).toEqual(
-      expect.objectContaining({
-        payload: {
-          event: expect.objectContaining({
-            _id: "event-1",
-            // Someday events are bucketed into the Week/Month columns by
-            // date, so a Month move must take the view month's date range.
-            endDate: "2024-01-31",
-            isAllDay: false,
-            isSomeday: true,
-            order: 0,
-            startDate: "2024-01-01",
-          }),
-        },
-      }),
-    );
   });
 
   it("moves a shortcut-created all-day draft horizontally and ignores vertical arrows", () => {

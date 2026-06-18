@@ -33,6 +33,7 @@ export interface WeekInteractionRuntime {
   getTimedEventById(eventId: string): Schema_GridEvent | null;
   isEventPending: (eventId: string) => boolean;
   isFormOpen?: () => boolean;
+  onCancelInteraction?: () => void;
   onClickAllDayEvent?: (event: Schema_GridEvent) => void;
   onClickTimedEvent: (event: Schema_GridEvent) => void;
   onCommitAllDayDrag?: (result: WeekAllDayDragCommitResult) => void;
@@ -44,11 +45,7 @@ export interface WeekInteractionRuntime {
   onCommitTimedResize?: (result: WeekTimedResizeCommitResult) => void;
   onMotionActivation?: (target: WeekInteractionTarget) => void;
   onPreviewCalendarToSidebar?: (
-    preview: {
-      category: SomedayInteractionCategory;
-      event: Schema_GridEvent;
-      index: number;
-    } | null,
+    preview: { category: SomedayInteractionCategory; index: number } | null,
   ) => void;
   onRequestWeekNavigation?: (direction: "next" | "prev") => void;
 }

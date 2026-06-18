@@ -3,8 +3,10 @@
 import mergeWith from "lodash.mergewith";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
+import { rewriteRecurrenceFreq } from "@core/mappers/map.recurrence";
 import {
   CalendarProvider,
+  type Categories_Event,
   type Event_Core,
   type Schema_Event,
   type Schema_Event_Recur_Base,
@@ -77,6 +79,31 @@ export namespace MapEvent {
 
     return coreEvent;
   };
+
+  export const toSomeday = (
+    event: Schema_Event,
+    {
+      category,
+      endDate,
+      order,
+      startDate,
+    }: {
+      category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH;
+      endDate: string;
+      order: number;
+      startDate: string;
+    },
+  ): Schema_Event => ({
+    ...event,
+    endDate,
+    isAllDay: false,
+    isSomeday: true,
+    order,
+    priority: event.priority ?? Priorities.UNASSIGNED,
+    recurrence: rewriteRecurrenceFreq(event.recurrence, category),
+    startDate,
+    user: event.user ?? "",
+  });
 
   export const toGcal = (
     event: Schema_Event,

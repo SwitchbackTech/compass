@@ -74,28 +74,24 @@ export const SomedayEventsContainer: FC<Props> = ({
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;
   const isBlockedDropTarget = state.blockedSomedayDropColumn === colName;
-  // A drag is active for styling purposes whether it originates from the
-  // sidebar (`isDragging`) or from a calendar event dragged over the sidebar.
-  const isInteractionActive = state.isDragging || state.isCalendarDragActive;
   const addTargetLabel = getAddTargetLabel(category);
   const addLabel = `Add item to ${addTargetLabel}`;
   const addShortcut =
     category === Categories_Event.SOMEDAY_MONTH ? "Shift+M" : "Shift+W";
-  const activeDropZoneStyle: React.CSSProperties | undefined =
-    isInteractionActive
-      ? {
-          boxSizing: "border-box",
-          height: getActiveDropZoneHeight(events.length, category),
-        }
-      : undefined;
+  const activeDropZoneStyle: React.CSSProperties | undefined = state.isDragging
+    ? {
+        boxSizing: "border-box",
+        height: getActiveDropZoneHeight(events.length, category),
+      }
+    : undefined;
 
   return (
     <DropZone
       id={colName}
       innerRef={dropTargetRef}
-      isActive={isInteractionActive && !state.isSomedayFormOpen}
+      isActive={state.isDragging && !state.isSomedayFormOpen}
       isInvalid={isBlockedDropTarget}
-      className={isInteractionActive ? "overflow-hidden" : undefined}
+      className={state.isDragging ? "overflow-hidden" : undefined}
       style={activeDropZoneStyle}
     >
       <div
@@ -115,7 +111,7 @@ export const SomedayEventsContainer: FC<Props> = ({
         ))}
       </div>
 
-      {!isDraftingNew && !isInteractionActive && (
+      {!isDraftingNew && !state.isDragging && (
         <div className="opacity-100">
           <TooltipWrapper
             description={`Add to ${addTargetLabel}`}

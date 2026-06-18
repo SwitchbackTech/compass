@@ -509,7 +509,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
   });
 
   it("previews the Someday Month sidebar drop zone while an all-day drag hovers it", () => {
-    const { adapter, child, event, flushFrame, onPreviewCalendarToSidebar } =
+    const { adapter, child, flushFrame, onPreviewCalendarToSidebar } =
       createHarness();
 
     adapter.handlePointerDown(
@@ -522,7 +522,6 @@ describe("WeekInteractionAdapter all-day drag", () => {
 
     expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith({
       category: Categories_Event.SOMEDAY_MONTH,
-      event: expect.objectContaining({ _id: event._id }),
       index: 0,
     });
 

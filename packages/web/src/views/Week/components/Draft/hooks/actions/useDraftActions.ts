@@ -2,7 +2,6 @@ import { ObjectId } from "bson";
 import { useCallback } from "react";
 import {
   Priorities,
-  SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
@@ -23,8 +22,8 @@ import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
+import { getDatesByCategory } from "@web/common/utils/datetime/web.date.util";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
-import { assembleSomedayConversionEvent } from "@web/common/utils/event/someday.event.util";
 import {
   type Payload_ConvertEvent,
   type Payload_EditEvent,
@@ -34,9 +33,7 @@ import {
   selectDraftStatus,
 } from "@web/ducks/events/selectors/draft.selectors";
 import {
-  selectIsAtMonthlyLimit,
   selectIsAtWeeklyLimit,
-  selectSomedayMonthCount,
   selectSomedayWeekCount,
 } from "@web/ducks/events/selectors/someday.selectors";
 import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
@@ -87,9 +84,7 @@ export const useDraftActions = (
   weekProps: WeekProps,
 ) => {
   const dispatch = useAppDispatch();
-  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
   const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
-  const somedayMonthCount = useAppSelector(selectSomedayMonthCount);
   const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
   const reduxDraft = useAppSelector(selectDraft);
   const pendingEventIds = useAppSelector(
@@ -226,12 +221,17 @@ export const useDraftActions = (
         return;
       }
 
+      const { startDate, endDate } = getDatesByCategory(
+        Categories_Event.SOMEDAY_WEEK,
+        dayjs(start),
+        dayjs(end),
+      );
       const event: Payload_ConvertEvent["event"] = {
-        ...assembleSomedayConversionEvent(draft!, {
+        ...MapEvent.toSomeday(draft!, {
           category: Categories_Event.SOMEDAY_WEEK,
+          endDate,
           order: somedayWeekCount,
-          viewEnd: dayjs(end),
-          viewStart: dayjs(start),
+          startDate,
         }),
         _id: draft!._id!,
       };
@@ -437,77 +437,6 @@ export const useDraftActions = (
       return true;
     },
     [activity, draft, isInsideVisibleWeek, isTimedDraftInsideOneDay, setDraft],
-  );
-
-  const convertDraftSurfaceByKeyboard = useCallback(() => {
-    if (!canRepositionDraftByKeyboard(activity) || !draft) return false;
-
-    const start = dayjs(draft.startDate).startOf("day");
-
-    if (draft.isAllDay) {
-      setDraft({
-        ...draft,
-        endDate: start.add(10, "hour").format(),
-        isAllDay: false,
-        startDate: start.add(9, "hour").format(),
-      });
-      return true;
-    }
-
-    setDraft({
-      ...draft,
-      endDate: start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
-      isAllDay: true,
-      startDate: start.format(YEAR_MONTH_DAY_FORMAT),
-    });
-    return true;
-  }, [activity, draft, setDraft]);
-
-  const moveDraftToSidebarByKeyboard = useCallback(
-    (
-      category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
-    ) => {
-      if (!canRepositionDraftByKeyboard(activity) || !draft?._id) return false;
-
-      const isWeek = category === Categories_Event.SOMEDAY_WEEK;
-
-      if (isWeek && isAtWeeklyLimit) {
-        alert(SOMEDAY_WEEK_LIMIT_MSG);
-        return true;
-      }
-
-      if (!isWeek && isAtMonthlyLimit) {
-        alert(SOMEDAY_MONTH_LIMIT_MSG);
-        return true;
-      }
-
-      const event: Payload_ConvertEvent["event"] = {
-        ...assembleSomedayConversionEvent(draft, {
-          category,
-          order: isWeek ? somedayWeekCount : somedayMonthCount,
-          viewEnd: weekProps.component.endOfView,
-          viewStart: weekProps.component.startOfView,
-        }),
-        _id: draft._id,
-      };
-
-      dispatch(getWeekEventsSlice.actions.convert({ event }));
-      discard();
-
-      return true;
-    },
-    [
-      activity,
-      discard,
-      dispatch,
-      draft,
-      isAtMonthlyLimit,
-      isAtWeeklyLimit,
-      somedayMonthCount,
-      somedayWeekCount,
-      weekProps.component.endOfView,
-      weekProps.component.startOfView,
-    ],
   );
 
   const drag = useCallback(
@@ -810,9 +739,7 @@ export const useDraftActions = (
     duplicateEvent,
     discard,
     drag,
-    convertDraftSurfaceByKeyboard,
     openForm,
-    moveDraftToSidebarByKeyboard,
     repositionDraftByKeyboard,
     reset,
     resize,

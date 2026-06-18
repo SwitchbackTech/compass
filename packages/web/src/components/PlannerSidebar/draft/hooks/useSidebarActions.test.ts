@@ -35,7 +35,6 @@ const createState = (): State_Sidebar =>
   ({
     blockedSomedayDropColumn: null,
     draft: somedayEvent,
-    isCalendarDragActive: false,
     isDrafting: true,
     isDraftingExisting: true,
     isDraftingNew: false,
@@ -66,7 +65,6 @@ const createSetters = (): Setters_Sidebar =>
   ({
     setBlockedSomedayDropColumn: mock(),
     setDraft: mock(),
-    setIsCalendarDragActive: mock(),
     setIsDrafting: mock(),
     setIsDraftingExisting: mock(),
     setIsSomedayFormOpen: mock(),
@@ -166,70 +164,59 @@ describe("useSidebarActions", () => {
     title: "Grid event",
   };
 
-  it("inserts a placeholder row while a calendar event is previewed over the sidebar", () => {
+  it("starts a calendar sidebar drag by injecting the event and flagging the drag", () => {
+    const setters = createSetters();
+    const { store, wrapper } = createStoreWrapper(currentState);
+    const dispatchSpy = spyOn(store, "dispatch");
+    const { result } = renderHook(
+      () =>
+        useSidebarActions(
+          {
+            onGoToDate: mock(),
+            viewEnd: dayjs("2024-01-21"),
+            viewStart: dayjs("2024-01-15"),
+          },
+          createState(),
+          setters,
+        ),
+      { wrapper },
+    );
+
+    // The Week column starts with one event, so the synthetic source index is 1.
+    const source = result.current.startCalendarSidebarDrag(placeholderEvent);
+
+    expect(source).toEqual({ droppableId: COLUMN_WEEK, index: 1 });
+    expect(setters.setDraft).toHaveBeenCalledWith(placeholderEvent);
+    expect(setters.setIsDraftingExisting).toHaveBeenCalledWith(true);
+
+    const startedDnd = dispatchSpy.mock.calls
+      .map(([action]) => action)
+      .some((action) => action.type === draftSlice.actions.startDnd.type);
+
+    expect(startedDnd).toBe(true);
+  });
+
+  it("reorders the injected event through the native sidebar preview", () => {
     const setters = createSetters();
     const { result } = renderActions(setters);
 
-    result.current.setCalendarSidebarDropPreview({
-      column: COLUMN_WEEK,
-      event: placeholderEvent,
-      index: 0,
-      isBlocked: false,
+    result.current.startCalendarSidebarDrag(placeholderEvent);
+    result.current.previewSomedaySidebarDrop({
+      destination: { droppableId: COLUMN_WEEK, index: 0 },
+      eventId: "grid-event-1",
+      source: { droppableId: COLUMN_WEEK, index: 1 },
+      type: "sidebarDrop",
     });
-
-    expect(setters.setIsCalendarDragActive).toHaveBeenCalledWith(true);
-    expect(setters.setBlockedSomedayDropColumn).toHaveBeenLastCalledWith(null);
 
     const previewState = (
       setters.setSomedayEvents as ReturnType<typeof mock>
     ).mock.calls.at(-1)?.[0] as State_Sidebar["somedayEvents"];
 
+    // The injected event moves to the hovered index, ahead of the existing row.
     expect(previewState.columns[COLUMN_WEEK].eventIds).toEqual([
       "grid-event-1",
       somedayEvent._id!,
     ]);
     expect(previewState.events["grid-event-1"]).toBeTruthy();
-  });
-
-  it("marks the column blocked without inserting a placeholder when full", () => {
-    const setters = createSetters();
-    const { result } = renderActions(setters);
-
-    result.current.setCalendarSidebarDropPreview({
-      column: COLUMN_WEEK,
-      event: placeholderEvent,
-      index: 0,
-      isBlocked: true,
-    });
-
-    expect(setters.setIsCalendarDragActive).toHaveBeenCalledWith(true);
-    expect(setters.setBlockedSomedayDropColumn).toHaveBeenLastCalledWith(
-      COLUMN_WEEK,
-    );
-    expect(setters.setSomedayEvents).not.toHaveBeenCalled();
-  });
-
-  it("restores the list and clears the flags when the preview ends", () => {
-    const setters = createSetters();
-    const { result } = renderActions(setters);
-
-    result.current.setCalendarSidebarDropPreview({
-      column: COLUMN_WEEK,
-      event: placeholderEvent,
-      index: 0,
-      isBlocked: false,
-    });
-    result.current.setCalendarSidebarDropPreview(null);
-
-    const restoredState = (
-      setters.setSomedayEvents as ReturnType<typeof mock>
-    ).mock.calls.at(-1)?.[0] as State_Sidebar["somedayEvents"];
-
-    // Restores the original snapshot (no placeholder).
-    expect(restoredState.columns[COLUMN_WEEK].eventIds).toEqual([
-      somedayEvent._id!,
-    ]);
-    expect(setters.setIsCalendarDragActive).toHaveBeenLastCalledWith(false);
-    expect(setters.setBlockedSomedayDropColumn).toHaveBeenLastCalledWith(null);
   });
 });

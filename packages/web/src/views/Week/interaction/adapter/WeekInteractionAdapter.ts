@@ -15,7 +15,6 @@ import {
   createCalendarInteractionEngine,
 } from "@web/common/calendar-interaction/CalendarInteractionEngine";
 import { isEligibleCalendarInteractionPointerDown } from "@web/common/calendar-interaction/calendarInteractionPointer";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { somedayDropTargetRegistry } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayDropTargetRegistry";
 import {
   type SomedayInteractionCategory,
@@ -109,6 +108,10 @@ const SHAPE_SNAP_TRANSITION =
   "height 160ms cubic-bezier(0.16, 1, 0.3, 1), width 160ms cubic-bezier(0.16, 1, 0.3, 1)";
 const DEFAULT_CONVERTED_TIMED_DURATION_MINUTES = 60;
 const MINUTES_PER_DAY = 24 * 60;
+// Fallbacks for the floating overlay's size while it hovers the sidebar, used
+// only when no existing Someday row can be measured for its real dimensions.
+const SOMEDAY_OVERLAY_FALLBACK_ROW_HEIGHT = 34;
+const SOMEDAY_OVERLAY_FALLBACK_SIDE_INSET = 8;
 
 interface WeekSidebarDrop {
   category: SomedayInteractionCategory;
@@ -274,6 +277,7 @@ export const createWeekInteractionAdapter = ({
         clearInteractionState();
         resetWeekInteractionEdgeNavigationState();
         setWeekInteractionMotionActive(false);
+        runtime().onCancelInteraction?.();
       },
       commit: ({ target, visual }) => {
         let result: WeekInteractionCommitResult;
@@ -404,12 +408,11 @@ export const createWeekInteractionAdapter = ({
         const draggedEventId = isDragTarget(target)
           ? (target.event._id ?? null)
           : null;
-        const draggedEvent = isDragTarget(target) ? target.event : null;
 
         if (visual.type === "allDayDrag") {
           const sidebarDrop = resolveSidebarDrop(pointer, draggedEventId);
 
-          reportSidebarPreview(sidebarDrop, draggedEvent);
+          reportSidebarPreview(sidebarDrop);
 
           if (sidebarDrop) {
             return updateSidebarDropVisual(visual, pointer, sidebarDrop);
@@ -519,7 +522,7 @@ export const createWeekInteractionAdapter = ({
 
         const sidebarDrop = resolveSidebarDrop(pointer, draggedEventId);
 
-        reportSidebarPreview(sidebarDrop, draggedEvent);
+        reportSidebarPreview(sidebarDrop);
 
         if (sidebarDrop) {
           return updateSidebarDropVisual(visual, pointer, sidebarDrop);
@@ -847,7 +850,7 @@ export const createWeekInteractionAdapter = ({
     clearCrossSurfaceLayouts();
     // Runs on both commit and cancel, so it clears the sidebar drop-zone
     // styling for Escape, pointercancel, regular grid drops, and sidebar drops.
-    reportSidebarPreview(null, null);
+    reportSidebarPreview(null);
     resetEdgeNavigation();
     isLayoutRebuildPending = false;
   }
@@ -900,26 +903,73 @@ export const createWeekInteractionAdapter = ({
     resetEdgeNavigation();
     setWeekInteractionEdgeNavigationState(activeEdgeNavigationIndicatorState);
 
+    // Shrink the floating overlay to a Someday-row size while it's over the
+    // sidebar (the grid event's clone is otherwise a tall block that covers
+    // the list and hides the live reorder). Mirrors how the native someday
+    // drag keeps its overlay at its small source-row size. Center the chip on
+    // the pointer so it reads as the item being carried.
+    const overlaySize =
+      getSidebarOverlaySize(sidebarDrop.category, visual.eventId) ??
+      visual.sourceRect;
+    const transform = {
+      x: pointer.x - visual.sourceRect.left - overlaySize.width / 2,
+      y: pointer.y - visual.sourceRect.top - overlaySize.height / 2,
+    };
     const nextVisual = {
       ...visual,
       crossSurfaceDrop: null,
       sidebarDrop,
-      transform: {
-        x: pointer.x - visual.pointerStart.x,
-        y: pointer.y - visual.pointerStart.y,
-      },
+      transform,
     };
 
     return {
       overlay: {
-        height: visual.sourceRect.height,
+        height: overlaySize.height,
         mutate: applyShapeSnapTransition,
-        transform: nextVisual.transform,
-        width: visual.sourceRect.width,
+        transform,
+        width: overlaySize.width,
       },
       shouldContinue: false,
       visual: nextVisual,
     };
+  }
+
+  // Measures a real Someday row in the hovered column for the overlay size, so
+  // the carried chip matches the list. Excludes the drag's own placeholder
+  // row. Falls back to the drop zone's width and a constant row height.
+  function getSidebarOverlaySize(
+    category: SomedayInteractionCategory,
+    excludeEventId: string,
+  ): { height: number; width: number } | null {
+    const sample = somedayEventRegistry
+      .getEvents(category)
+      .find((event) => event.eventId !== excludeEventId);
+
+    if (sample) {
+      const rect = sample.element.getBoundingClientRect();
+
+      if (rect.width > 0 && rect.height > 0) {
+        return { height: rect.height, width: rect.width };
+      }
+    }
+
+    const target = somedayDropTargetRegistry
+      .getTargets()
+      .find((candidate) => candidate.category === category);
+
+    if (target) {
+      const rect = target.element.getBoundingClientRect();
+
+      return {
+        height: SOMEDAY_OVERLAY_FALLBACK_ROW_HEIGHT,
+        width: Math.max(
+          0,
+          rect.width - SOMEDAY_OVERLAY_FALLBACK_SIDE_INSET * 2,
+        ),
+      };
+    }
+
+    return null;
   }
 
   function resolveAllDayCrossSurfaceDrop(pointer: VisualPoint) {
@@ -984,7 +1034,6 @@ export const createWeekInteractionAdapter = ({
   // animation frame.
   function reportSidebarPreview(
     preview: { category: SomedayInteractionCategory; index: number } | null,
-    event: Schema_GridEvent | null,
   ) {
     const key = preview ? `${preview.category}:${preview.index}` : null;
 
@@ -994,9 +1043,7 @@ export const createWeekInteractionAdapter = ({
 
     lastReportedSidebarKey = key;
     runtime().onPreviewCalendarToSidebar?.(
-      preview && event
-        ? { category: preview.category, event, index: preview.index }
-        : null,
+      preview ? { category: preview.category, index: preview.index } : null,
     );
   }
 

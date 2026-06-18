@@ -581,7 +581,7 @@ describe("WeekInteractionAdapter timed drag", () => {
   });
 
   it("previews the Someday sidebar drop zone as the pointer enters, leaves, and commits", () => {
-    const { adapter, child, event, flushFrame, onPreviewCalendarToSidebar } =
+    const { adapter, child, flushFrame, onPreviewCalendarToSidebar } =
       createHarness();
 
     adapter.handlePointerDown(
@@ -601,7 +601,6 @@ describe("WeekInteractionAdapter timed drag", () => {
     expect(onPreviewCalendarToSidebar).toHaveBeenCalledTimes(1);
     expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith({
       category: Categories_Event.SOMEDAY_WEEK,
-      event: expect.objectContaining({ _id: event._id }),
       index: 0,
     });
 
@@ -627,7 +626,7 @@ describe("WeekInteractionAdapter timed drag", () => {
   });
 
   it("clears the sidebar preview when the drag is cancelled", () => {
-    const { adapter, child, event, flushFrame, onPreviewCalendarToSidebar } =
+    const { adapter, child, flushFrame, onPreviewCalendarToSidebar } =
       createHarness();
 
     adapter.handlePointerDown(
@@ -640,7 +639,6 @@ describe("WeekInteractionAdapter timed drag", () => {
 
     expect(onPreviewCalendarToSidebar).toHaveBeenLastCalledWith({
       category: Categories_Event.SOMEDAY_WEEK,
-      event: expect.objectContaining({ _id: event._id }),
       index: 0,
     });
 

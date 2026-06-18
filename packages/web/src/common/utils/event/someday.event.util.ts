@@ -1,4 +1,3 @@
-import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
@@ -10,7 +9,6 @@ import {
   type Schema_SomedayEvent,
   type Schema_SomedayEventsColumn,
 } from "@web/common/types/web.event.types";
-import { getDatesByCategory } from "@web/common/utils/datetime/web.date.util";
 import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
 
 const uniqBy = <T, K>(array: T[], iteratee: (item: T) => K): T[] => {
@@ -143,57 +141,4 @@ export const setSomedayEventsOrder = (
 export const isSomedayEventActionMenuOpen = () => {
   const actionMenu = document.getElementById(ID_SOMEDAY_EVENT_ACTION_MENU);
   return !!actionMenu;
-};
-
-/**
- * Builds the payload for converting a calendar (grid) event into a someday
- * sidebar event. Someday events are categorized into the Week/Month columns
- * by their dates, so the original grid dates must be replaced with the
- * category's date range.
- */
-export const assembleSomedayConversionEvent = <T extends Schema_Event>(
-  event: T,
-  {
-    category,
-    order,
-    viewEnd,
-    viewStart,
-  }: {
-    category: Categories_Event.SOMEDAY_MONTH | Categories_Event.SOMEDAY_WEEK;
-    order: number;
-    viewEnd: Dayjs;
-    viewStart: Dayjs;
-  },
-) => {
-  const { startDate, endDate } = getDatesByCategory(
-    category,
-    viewStart,
-    viewEnd,
-  );
-  const frequency =
-    category === Categories_Event.SOMEDAY_WEEK ? "WEEKLY" : "MONTHLY";
-  const recurrence = event.recurrence?.rule
-    ? {
-        ...event.recurrence,
-        rule: event.recurrence.rule.map((rule) => {
-          const isRRule = rule.startsWith("RRULE:");
-
-          if (!isRRule) return rule;
-
-          return rule.replace(/FREQ=\w+;/, `FREQ=${frequency};`);
-        }),
-      }
-    : event.recurrence;
-
-  return {
-    ...event,
-    endDate,
-    isAllDay: false,
-    isSomeday: true,
-    order,
-    priority: event.priority ?? Priorities.UNASSIGNED,
-    recurrence,
-    startDate,
-    user: event.user ?? "",
-  };
 };
