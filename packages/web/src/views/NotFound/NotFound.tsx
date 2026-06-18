@@ -1,7 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { Text } from "@web/components/Text/Text";
-import { StyledBackButton, StyledNotFoundContainer } from "./styled";
 
 export const NotFoundView = () => {
   const navigate = useNavigate();
@@ -9,7 +8,7 @@ export const NotFoundView = () => {
   const goHome = () => navigate(ROOT_ROUTES.ROOT);
 
   return (
-    <StyledNotFoundContainer>
+    <div className="c-not-found">
       <div>
         <Text size="4xl">🏴‍☠️ Shiver me timbers! </Text>
       </div>
@@ -18,9 +17,13 @@ export const NotFoundView = () => {
         <Text size="xxl">This isn't part of the app, matey</Text>
       </div>
 
-      <StyledBackButton onClick={goHome}>
+      <button
+        className="c-not-found-back-button"
+        onClick={goHome}
+        type="button"
+      >
         Go back to your booty
-      </StyledBackButton>
-    </StyledNotFoundContainer>
+      </button>
+    </div>
   );
 };

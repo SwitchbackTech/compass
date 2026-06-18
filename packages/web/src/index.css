@@ -15,12 +15,20 @@
   --compass-color-border-primary-dark: hsl(0 0 0 / 50.2%);
   --compass-color-border-secondary: hsl(47 7 73);
   --compass-color-event-selected: hsl(206 18 72);
+  --compass-color-date-picker-outside-dark: hsl(47 7 63);
+  --compass-color-date-picker-outside-light: hsl(222 12 17);
   --compass-color-fg-primary: hsl(47 7 73);
   --compass-color-fg-primary-dark: hsl(208 13 71 / 54.9%);
   --compass-color-gradient-accent-light-start: hsl(202 100 67);
   --compass-color-gradient-accent-light-end: hsl(196 45 78);
   --compass-color-grid-line-primary: hsl(219 18 34 / 20%);
   --compass-color-menu-bg: hsl(0 0 98);
+  --compass-color-menu-border: hsl(0 0 93);
+  --compass-color-menu-hover: hsl(0 0 96);
+  --compass-color-menu-text: hsl(0 0 20);
+  --compass-color-menu-tooltip-bg: hsl(0 0 20);
+  --compass-color-menu-tooltip-text: hsl(0 0 100);
+  --compass-color-not-found-gradient-highlight: hsl(218 27 8);
   --compass-color-panel-badge-bg: hsl(0 0 100 / 7%);
   --compass-color-panel-bg: hsl(219 8 46 / 20%);
   --compass-color-panel-scrollbar: hsl(219 8 46 / 20%);
@@ -53,6 +61,12 @@
   --color-border-primary-dark: var(--compass-color-border-primary-dark);
   --color-border-secondary: var(--compass-color-border-secondary);
   --color-event-selected: var(--compass-color-event-selected);
+  --color-date-picker-outside-dark: var(
+    --compass-color-date-picker-outside-dark
+  );
+  --color-date-picker-outside-light: var(
+    --compass-color-date-picker-outside-light
+  );
   --color-fg-primary: var(--compass-color-fg-primary);
   --color-fg-primary-dark: var(--compass-color-fg-primary-dark);
   --color-gradient-accent-light-start: var(
@@ -63,6 +77,14 @@
   );
   --color-grid-line-primary: var(--compass-color-grid-line-primary);
   --color-menu-bg: var(--compass-color-menu-bg);
+  --color-menu-border: var(--compass-color-menu-border);
+  --color-menu-hover: var(--compass-color-menu-hover);
+  --color-menu-text: var(--compass-color-menu-text);
+  --color-menu-tooltip-bg: var(--compass-color-menu-tooltip-bg);
+  --color-menu-tooltip-text: var(--compass-color-menu-tooltip-text);
+  --color-not-found-gradient-highlight: var(
+    --compass-color-not-found-gradient-highlight
+  );
   --color-panel-badge-bg: var(--compass-color-panel-badge-bg);
   --color-panel-bg: var(--compass-color-panel-bg);
   --color-panel-scrollbar: var(--compass-color-panel-scrollbar);
@@ -139,6 +161,9 @@
     cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-someday-cold-fade-in: somedayColdFadeIn 600ms
     cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-loader-spin: loaderSpin 1.1s linear infinite;
+  --animate-login-progress: loginProgress 1.5s ease-in-out infinite;
+  --animate-login-message-in: loginMessageIn 0.8s ease-in-out;
   --animate-spinner-rotate: spinnerRotate 1.1s linear infinite;
 
   @keyframes progressSlide {
@@ -209,6 +234,36 @@
     }
     to {
       transform: rotate(360deg);
+    }
+  }
+
+  @keyframes loaderSpin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @keyframes loginProgress {
+    0% {
+      right: 100%;
+      left: -35%;
+    }
+    60%,
+    100% {
+      right: -90%;
+      left: 100%;
+    }
+  }
+
+  @keyframes loginMessageIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
     }
   }
 }
@@ -322,6 +377,219 @@
     height: 2px;
     background: var(--text-underline-gradient);
     content: " ";
+  }
+}
+
+@utility c-overflow-loader {
+  @apply absolute inset-0 h-full w-full backdrop-blur-[5px];
+}
+
+@utility c-loader-spinner {
+  @apply relative my-15 h-[10em] w-[10em] animate-loader-spin rounded-full border-[1.1em] border-white/20 border-l-text-lighter text-[4px] -indent-[9999em];
+  transform: translateZ(0);
+}
+
+@utility c-login-progress {
+  @apply relative h-[3px] w-full overflow-hidden rounded-[3px] bg-border-primary;
+
+  &::after {
+    @apply absolute top-0 h-full w-[45%] animate-login-progress content-[""];
+    background: linear-gradient(
+      90deg,
+      var(--compass-color-accent-primary),
+      var(--compass-color-tag-three)
+    );
+  }
+}
+
+@utility c-context-menu {
+  @apply absolute z-2 min-w-40 list-none rounded border border-border-primary bg-menu-bg py-[5px] shadow-[0_4px_6px_var(--color-shadow-default)];
+}
+
+@utility c-context-priority-circle {
+  @apply h-5 w-5 cursor-pointer appearance-none rounded-full border-2 border-(--priority-color) bg-transparent p-0 transition-[background-color,box-shadow,filter] duration-300 hover:bg-border-primary focus:outline-none focus:shadow-[0_0_0_2px_var(--color-border-primary-dark)] disabled:cursor-wait;
+
+  &[data-selected="true"] {
+    @apply bg-(--priority-color) hover:brightness-85;
+  }
+}
+
+@utility c-context-tooltip {
+  @apply pointer-events-none invisible absolute bottom-full z-10 mb-1.5 translate-y-[5px] whitespace-nowrap rounded bg-menu-tooltip-bg px-2 py-1 text-[13px] text-menu-tooltip-text opacity-0 transition-all duration-200 ease-in-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100;
+}
+
+@utility c-context-menu-item {
+  @apply flex w-full cursor-pointer appearance-none items-center gap-2 whitespace-nowrap border-0 border-menu-border border-b bg-transparent px-3 py-2.5 text-left text-[14px] text-menu-text select-none last:border-b-0 hover:bg-menu-hover disabled:cursor-wait disabled:opacity-50;
+}
+
+@utility c-not-found {
+  @apply flex h-screen w-screen flex-col items-center justify-center text-text-lighter;
+  background: linear-gradient(
+    to right,
+    var(--compass-color-bg-primary),
+    var(--compass-color-bg-primary),
+    var(--compass-color-bg-secondary),
+    var(--compass-color-not-found-gradient-highlight),
+    var(--compass-color-bg-primary)
+  );
+}
+
+@utility c-not-found-back-button {
+  @apply mt-5 mb-5 cursor-pointer rounded border-2 border-border-primary bg-fg-primary-dark px-4 py-2 font-semibold text-[16px] text-text-lighter transition-all duration-200 ease-in-out hover:brightness-120;
+}
+
+@utility c-date-picker {
+  @apply select-none rounded-[2px] border-0 font-medium shadow-[0_4px_4px_var(--color-shadow-default)];
+  background-color: var(--date-picker-bg);
+  font-size: 12px;
+
+  &[data-view="sidebar"] {
+    background-color: transparent;
+    font-size: 11px;
+  }
+
+  & .react-datepicker__month-container {
+    display: flex;
+    width: 100%;
+    height: 285px;
+    flex-direction: column;
+    padding: 0 15px;
+  }
+
+  &[data-view="sidebar"] .react-datepicker__month-container {
+    height: 252px;
+    padding: 0;
+  }
+
+  & .react-datepicker__month {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    margin: 0;
+  }
+
+  & .react-datepicker__week {
+    display: flex;
+    width: 100%;
+    flex-basis: calc(100% / 6);
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  & .react-datepicker__header {
+    align-items: start;
+    border-bottom: 0;
+    background: unset;
+    padding: 8px 0 0 2px;
+  }
+
+  &[data-view="sidebar"] .react-datepicker__header {
+    padding: 8px 0 0;
+  }
+
+  & .react-datepicker__day-name {
+    margin: 0;
+    color: var(--compass-color-text-dark);
+    font-size: 11px;
+    opacity: 0.8;
+  }
+
+  &[data-dark="true"] .react-datepicker__day-name {
+    color: var(--compass-color-text-light);
+  }
+
+  &[data-view="sidebar"] .react-datepicker__day-name {
+    font-size: 10px;
+  }
+
+  & .react-datepicker__day {
+    width: 1.7rem;
+    height: 1.7rem;
+    margin: 0;
+    border: 0;
+    border-radius: 50%;
+    color: var(--compass-color-text-dark);
+    line-height: 1.7rem;
+  }
+
+  &[data-dark="true"] .react-datepicker__day {
+    color: var(--compass-color-text-lighter);
+  }
+
+  &[data-view="sidebar"] .react-datepicker__day {
+    width: 1.55rem;
+    height: 1.55rem;
+    line-height: 1.55rem;
+  }
+
+  & .react-datepicker__day:hover {
+    background-color: var(--compass-color-fg-primary);
+    color: var(--compass-color-text-dark);
+  }
+
+  & .react-datepicker__day-names {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 6px;
+  }
+
+  & .react-datepicker__day--selected {
+    background-color: var(--compass-color-accent-primary);
+    color: var(--compass-color-text-lighter);
+  }
+
+  & .react-datepicker__day--today:not(.react-datepicker__day--selected) {
+    color: var(--compass-color-text-dark);
+    text-decoration: underline;
+    text-decoration-color: var(--compass-color-text-dark);
+    text-underline-offset: 3px;
+  }
+
+  &[data-view="sidebar"]
+    .react-datepicker__day--today:not(.react-datepicker__day--selected) {
+    color: var(--compass-color-accent-primary);
+    text-decoration-color: var(--compass-color-accent-primary);
+  }
+
+  & .react-datepicker__day--today:hover {
+    color: var(--compass-color-text-dark);
+  }
+
+  & .react-datepicker__day--keyboard-selected {
+    background-color: var(--compass-color-bg-primary);
+  }
+
+  &[data-view="sidebar"] .react-datepicker__day--keyboard-selected {
+    background-color: transparent;
+  }
+
+  & .react-datepicker__day--outside-month {
+    color: var(--compass-color-date-picker-outside-light);
+    opacity: 0.8;
+  }
+
+  &[data-dark="true"] .react-datepicker__day--outside-month {
+    color: var(--compass-color-date-picker-outside-dark);
+  }
+
+  &.calendar {
+    width: 414px;
+    height: 0;
+    overflow: hidden;
+  }
+
+  &.calendar--open {
+    height: 275px;
+  }
+
+  &[data-view="sidebar"].calendar--open {
+    height: 252px;
+  }
+
+  &.calendar--animation {
+    transition: 0.3s;
   }
 }
 

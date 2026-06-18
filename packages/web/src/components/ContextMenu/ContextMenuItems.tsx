@@ -2,18 +2,11 @@ import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import type React from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
+import { type CSSVariables } from "@web/common/styles/css.types";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { getSomedayEventCategory } from "@web/common/utils/event/someday.event.util";
-import {
-  MenuItem,
-  MenuItemLabel,
-  PriorityCircle,
-  PriorityContainer,
-  TooltipText,
-  TooltipWrapper,
-} from "@web/components/ContextMenu/styled";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
@@ -108,31 +101,37 @@ export function ContextMenuItemsView({
 
   return (
     <div id={ID_CONTEXT_MENU_ITEMS}>
-      <PriorityContainer>
+      <div className="flex justify-center gap-2.5 p-2.5">
         {priorities.map((priority) => (
-          <TooltipWrapper key={priority.id}>
-            <PriorityCircle
+          <div
+            className="group relative flex flex-col items-center"
+            key={priority.id}
+          >
+            <button
               aria-label={`Set priority to ${priority.label}`}
               aria-pressed={event.priority === priority.value}
-              as="button"
-              color={priority.color}
+              className="c-context-priority-circle"
+              data-selected={event.priority === priority.value}
               disabled={isPending}
-              selected={event.priority === priority.value}
               type="button"
               onClick={() => handleEditPriority(priority.value)}
-              style={{
-                opacity: isPending ? 0.5 : 1,
-                cursor: isPending ? "wait" : "pointer",
-              }}
+              style={
+                {
+                  "--priority-color": priority.color,
+                  opacity: isPending ? 0.5 : 1,
+                  cursor: isPending ? "wait" : "pointer",
+                } as CSSVariables
+              }
             />
-            <TooltipText>{priority.label}</TooltipText>
-          </TooltipWrapper>
+            <span className="c-context-tooltip">{priority.label}</span>
+          </div>
         ))}
-      </PriorityContainer>
+      </div>
       {menuActions.map((item) => {
         const disabled = isActionDisabled(item.id);
         return (
-          <MenuItem
+          <button
+            className="c-context-menu-item"
             disabled={disabled}
             key={item.id}
             type="button"
@@ -140,10 +139,11 @@ export function ContextMenuItemsView({
               item.onClick();
               close();
             }}
+            style={{ cursor: disabled ? "wait" : undefined }}
           >
             {item.icon}
-            <MenuItemLabel>{item.label}</MenuItemLabel>
-          </MenuItem>
+            <span className="text-l">{item.label}</span>
+          </button>
         );
       })}
     </div>
