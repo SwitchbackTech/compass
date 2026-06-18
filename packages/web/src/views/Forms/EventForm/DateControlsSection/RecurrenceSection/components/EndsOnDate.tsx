@@ -7,7 +7,6 @@ import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { Flex } from "@web/components/Flex/Flex";
 import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 
 export interface EndsOnDateProps {
   bgColor: string;
@@ -28,7 +27,7 @@ export const EndsOnDate = ({
   const miniDate = useMemo(() => parseCompassEventDate(minDate), [minDate]);
 
   return (
-    <StyledRepeatRow>
+    <div className="c-recurrence-row">
       <Text size="l">Ends on:</Text>
 
       <Flex
@@ -61,6 +60,6 @@ export const EndsOnDate = ({
           </div>
         </TooltipWrapper>
       </Flex>
-    </StyledRepeatRow>
+    </div>
   );
 };

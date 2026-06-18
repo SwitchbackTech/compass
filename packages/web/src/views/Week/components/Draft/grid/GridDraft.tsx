@@ -7,7 +7,7 @@ import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
-import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
+import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
@@ -145,7 +145,7 @@ export const GridDraft: FC<Props> = ({
           modal={false}
           closeOnFocusOut={false}
         >
-          <StyledFloatContainer
+          <FloatingFormContainer
             ref={refs.setFloating}
             strategy={strategy}
             top={y ?? 0}
@@ -174,7 +174,7 @@ export const GridDraft: FC<Props> = ({
               titleEditingResetKey={state.draftSessionKey}
               titleInputRef={titleInputRef}
             />
-          </StyledFloatContainer>
+          </FloatingFormContainer>
         </FloatingFocusManager>
       )}
     </>

@@ -1,8 +1,9 @@
 import type React from "react";
 import ReactSelect, { type Props as RSProps } from "react-select";
+import { darken } from "@core/util/color.utils";
+import { type CSSVariables } from "@web/common/styles/css.types";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type Option_Time } from "@web/common/types/util.types";
-import { StyledTimePicker } from "./styled";
 
 export interface Props extends Omit<RSProps, "onChange" | "value"> {
   bgColor: string;
@@ -28,7 +29,16 @@ export const TimePicker = ({
   let scrollTimer: number;
 
   return (
-    <StyledTimePicker bgColor={bgColor}>
+    <div
+      className="c-time-picker"
+      style={
+        {
+          "--time-picker-bg": bgColor,
+          "--time-picker-scrollbar": darken(bgColor, 40),
+          "--time-picker-scrollbar-hover": darken(bgColor, 80),
+        } as CSSVariables
+      }
+    >
       <ReactSelect
         {...props}
         className={selectClassName}
@@ -77,6 +87,6 @@ export const TimePicker = ({
         options={options}
         tabSelectsValue={false}
       />
-    </StyledTimePicker>
+    </div>
   );
 };

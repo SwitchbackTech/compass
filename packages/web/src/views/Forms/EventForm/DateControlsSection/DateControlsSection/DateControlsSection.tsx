@@ -3,7 +3,6 @@ import {
   DateTimeSection,
   type Props as DateTimeSectionProps,
 } from "../DateTimeSection/DateTimeSection";
-import { StyledControlsSection } from "./styled";
 
 interface Props {
   dateTimeSectionProps: DateTimeSectionProps;
@@ -12,8 +11,8 @@ interface Props {
 
 export const DateControlsSection = ({ dateTimeSectionProps }: Props) => {
   return (
-    <StyledControlsSection>
+    <div className="mt-[15px] mb-3 flex flex-wrap gap-2">
       <DateTimeSection {...dateTimeSectionProps} />
-    </StyledControlsSection>
+    </div>
   );
 };

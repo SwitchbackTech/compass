@@ -1,10 +1,7 @@
 import { useState } from "react";
+import { type CSSVariables } from "@web/common/styles/css.types";
 import { Text } from "@web/components/Text/Text";
 import { type FrequencyValues } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
-import {
-  StyledIntervalInput,
-  StyledRepeatRow,
-} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 import { CaretInput } from "./CaretInput";
 import { FreqSelect } from "./FreqSelect";
 
@@ -42,11 +39,12 @@ export const RecurrenceIntervalSelect = ({
   };
 
   return (
-    <StyledRepeatRow>
+    <div className="c-recurrence-row">
       <Text size="l">Every</Text>
 
-      <StyledIntervalInput
-        bgColor={bgColor}
+      <input
+        className="c-recurrence-interval"
+        style={{ "--recurrence-bg": bgColor } as CSSVariables}
         type="number"
         max={max}
         min={min}
@@ -62,6 +60,6 @@ export const RecurrenceIntervalSelect = ({
         plural={value > 1}
         onFreqSelect={onFreqSelect}
       />
-    </StyledRepeatRow>
+    </div>
   );
 };

@@ -9,16 +9,17 @@ import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
-import { colorByPriority } from "@web/common/styles/theme.util";
+import { type CSSVariables } from "@web/common/styles/css.types";
+import {
+  colorByPriority,
+  hoverColorByPriority,
+} from "@web/common/styles/theme.util";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import { Flex } from "@web/components/Flex/Flex";
+import { Input } from "@web/components/Input/Input";
+import { Textarea } from "@web/components/Textarea/Textarea";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
-import {
-  StyledDescription,
-  StyledEventForm,
-  StyledIconRow,
-  StyledTitle,
-} from "@web/views/Forms/EventForm/styled";
 import {
   type FormProps,
   type SetEventFormField,
@@ -158,8 +159,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   return (
-    <StyledEventForm
+    <form
       {...props}
+      className="c-event-form"
       name={ID_SOMEDAY_EVENT_FORM}
       onClick={stopPropagation}
       onKeyDown={onKeyDown}
@@ -167,10 +169,11 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onMouseUp={(e) => {
         e.stopPropagation();
       }}
-      priority={priority}
-      role="form"
+      style={
+        { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
+      }
     >
-      <StyledIconRow>
+      <Flex className="mb-2.5 items-center justify-end gap-[30px]">
         <SomedayEventActionMenu
           bgColor={darken(colorByPriority[priority])}
           target={target}
@@ -189,9 +192,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
           onDuplicateClick={onDuplicateEvent}
           onDeleteClick={onDelete}
         />
-      </StyledIconRow>
+      </Flex>
 
-      <StyledTitle
+      <Input
+        className="c-event-form-title"
         autoFocus
         onChange={onChangeEventTextField("title")}
         onKeyDown={ignoreDelete}
@@ -209,16 +213,16 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         setEvent={setLatestEvent}
       />
 
-      <StyledDescription
+      <Textarea
         onChange={onChangeEventTextField("description")}
         onKeyDown={ignoreDelete}
         placeholder="Description"
         underlineColor={colorByPriority[priority]}
         value={event.description || ""}
-        className="overflow-y-auto"
+        className="c-event-form-description overflow-y-auto"
       />
 
       <SaveSection priority={priority} onSubmit={_onSubmit} />
-    </StyledEventForm>
+    </form>
   );
 };

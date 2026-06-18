@@ -1,7 +1,6 @@
 import type React from "react";
 import { Text } from "@web/components/Text/Text";
 import { WEEKDAYS } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
-import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 import { WeekDay } from "./WeekDay";
 
 export interface WeekDaysProps {
@@ -16,7 +15,7 @@ export const WeekDays: React.FC<WeekDaysProps> = ({
   onChange,
 }) => {
   return (
-    <StyledRepeatRow>
+    <div className="c-recurrence-row">
       <Text size="l">On: </Text>
 
       {WEEKDAYS.map((day) => (
@@ -34,6 +33,6 @@ export const WeekDays: React.FC<WeekDaysProps> = ({
           selected={value.includes(day)}
         />
       ))}
-    </StyledRepeatRow>
+    </div>
   );
 };

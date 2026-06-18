@@ -6,8 +6,7 @@ import dayjs from "@core/util/date/dayjs";
 import { dateIsValid } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { AlignItems } from "@web/components/Flex/Flex";
-import { StyledDateFlex } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/styled";
+import { AlignItems, Flex } from "@web/components/Flex/Flex";
 import { type SetEventFormField } from "@web/views/Forms/EventForm/types";
 
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -178,7 +177,7 @@ export const DatePickers: FC<Props> = ({
 
   return (
     <>
-      <StyledDateFlex alignItems={AlignItems.CENTER}>
+      <Flex className="w-[120px]" alignItems={AlignItems.CENTER}>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker
@@ -204,9 +203,9 @@ export const DatePickers: FC<Props> = ({
             view="grid"
           />
         </div>
-      </StyledDateFlex>
+      </Flex>
 
-      <StyledDateFlex alignItems={AlignItems.CENTER}>
+      <Flex className="w-[120px]" alignItems={AlignItems.CENTER}>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker
@@ -230,7 +229,7 @@ export const DatePickers: FC<Props> = ({
             view="grid"
           />
         </div>
-      </StyledDateFlex>
+      </Flex>
     </>
   );
 };

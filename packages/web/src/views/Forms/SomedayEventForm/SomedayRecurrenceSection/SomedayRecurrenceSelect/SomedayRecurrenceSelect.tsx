@@ -6,12 +6,10 @@ import ReactSelect, {
   type SingleValueProps,
 } from "react-select";
 import { Frequency } from "rrule";
-import { useTheme } from "styled-components";
 import { brighten, darken } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { type FrequencyValues } from "../../../EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
-import { SelectContent } from "./styled";
 
 export type SomedayFrequencyOption = {
   label: string;
@@ -57,7 +55,7 @@ export const SomedayRecurrenceSelect = ({
         : DO_NOT_REPEAT_OPTION,
     [hasRecurrence, freq],
   );
-  const selectTheme = useTheme();
+  const selectTheme = theme;
   const selectRef = useRef<SelectInstance<SomedayFrequencyOption, false>>(null);
 
   useEffect(() => {
@@ -110,10 +108,10 @@ export const SomedayRecurrenceSelect = ({
 
     return (
       <components.SingleValue {...props}>
-        <SelectContent
+        <span
+          className="flex items-center gap-1 data-[dimmed=true]:opacity-75"
           data-testid="someday-recurrence-value"
           data-dimmed={isDoNotRepeat}
-          dimmed={isDoNotRepeat}
         >
           <RepeatIcon
             size={18}
@@ -128,7 +126,7 @@ export const SomedayRecurrenceSelect = ({
               ? DO_NOT_REPEAT_OPTION.label
               : `Repeats every ${props.data.label.toLowerCase()}`}
           </span>
-        </SelectContent>
+        </span>
       </components.SingleValue>
     );
   };

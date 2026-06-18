@@ -51,6 +51,9 @@
   --compass-color-text-divider: #5f5f5f;
   --compass-color-text-gradient-start: hsl(202 100 67);
   --compass-color-text-gradient-end: hsl(195 78 56);
+  --compass-radius: 4px;
+  --compass-text-m: 0.8125rem;
+  --compass-transition-default: 0.3s;
 }
 
 @theme inline {
@@ -659,4 +662,177 @@
 
 @utility overflow-y-auto {
   @apply compass-scroll;
+}
+
+@utility c-actions-menu {
+  @apply flex flex-col gap-2 rounded-sm p-2;
+  background-color: var(--actions-menu-bg);
+  box-shadow: 0 4px 8px rgb(0 0 0 / 10%);
+}
+
+@utility c-actions-menu-item {
+  @apply flex w-full cursor-pointer items-center gap-2 border-0 px-2 py-1 text-left text-m outline-none;
+  background-color: var(--actions-menu-item-bg);
+  color: var(--compass-color-text-dark);
+
+  &:hover,
+  &:focus-visible {
+    text-shadow:
+      0 0 0.5px var(--compass-color-text-dark),
+      0 0 0.5px var(--compass-color-text-dark);
+  }
+}
+
+@utility c-event-form {
+  @apply rounded-sm px-5 py-[18px] text-xl transition-[var(--compass-transition-default)];
+  background: var(--event-form-bg);
+  box-shadow: 0 5px 5px var(--compass-color-shadow-default);
+}
+
+@utility c-event-form-title {
+  @apply bg-transparent text-5xl font-semibold transition-all duration-300;
+  &:hover {
+    background-color: var(--compass-color-border-primary);
+  }
+}
+
+@utility c-event-form-description {
+  @apply relative max-h-[180px] border-hidden bg-transparent text-xxl font-normal transition-all duration-300;
+  width: calc(100% - 20px);
+  &:hover {
+    background-color: var(--compass-color-border-primary);
+    filter: brightness(90%);
+  }
+}
+
+@utility c-time-picker {
+  @apply relative min-w-[90px] text-lg;
+  & span[aria-live="polite"],
+  & .timepicker__indicators {
+    display: none;
+  }
+  & .timepicker__option--is-selected,
+  & .timepicker__option--is-focused {
+    background: var(--time-picker-bg);
+    color: black;
+    filter: brightness(140%);
+  }
+  & .timepicker__control {
+    min-height: 38px;
+    border: 0;
+    border-radius: var(--compass-radius);
+    background: var(--time-picker-bg);
+    box-shadow: none;
+    transition: var(--compass-transition-default);
+  }
+  & .timepicker__control:hover {
+    filter: brightness(90%);
+  }
+  & .timepicker__control--is-focused {
+    box-shadow: 0 0 0 2px var(--compass-color-border-primary-dark);
+  }
+  & .timepicker__value-container {
+    height: 100%;
+    padding: 0 8px;
+  }
+  & .timepicker__single-value {
+    color: var(--compass-color-text-dark);
+  }
+  & .timepicker__menu {
+    min-width: 150px;
+    border-radius: 2px;
+    background: var(--time-picker-bg);
+    filter: brightness(87%);
+  }
+  & .timepicker__menu-list {
+    padding: 0;
+    font-size: var(--compass-text-m);
+    transition: var(--compass-transition-default);
+  }
+  & .timepicker__menu-list::-webkit-scrollbar {
+    width: 8px;
+  }
+  & .timepicker__menu-list::-webkit-scrollbar-thumb {
+    border-radius: var(--compass-radius);
+    background: var(--time-picker-scrollbar);
+  }
+  & .timepicker__menu-list::-webkit-scrollbar-thumb:hover {
+    background: var(--time-picker-scrollbar-hover);
+    transition: background-color 0.2s;
+  }
+}
+
+@utility c-recurrence-row {
+  @apply mb-1 flex w-full basis-full items-center gap-2 p-0;
+}
+
+@utility c-recurrence-toggle {
+  @apply inline-flex items-center gap-1 rounded-sm border border-transparent bg-transparent px-2 py-0.5 text-m transition-all duration-300;
+  color: var(--compass-color-text-dark);
+  &[data-repeat="false"] {
+    color: var(--compass-color-text-dark-placeholder);
+    opacity: 0.85;
+  }
+  &[data-disabled="true"] {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+  &:not([data-disabled="true"]):hover {
+    background: var(--compass-color-border-primary);
+  }
+  &:focus-visible {
+    box-shadow: 0 0 0 2px var(--compass-color-border-primary-dark);
+  }
+  & svg {
+    margin-right: 0.25rem;
+    color: inherit;
+  }
+}
+
+@utility c-recurrence-weekday {
+  @apply size-6 cursor-pointer rounded-full border text-m transition-all duration-300;
+  border-color: var(--compass-color-border-primary-dark);
+  background: var(--weekday-bg);
+  &[data-selected="true"] {
+    background: var(--weekday-selected-bg);
+    color: var(--weekday-selected-text);
+  }
+  &[data-selected="false"]:hover {
+    background: var(--compass-color-bg-primary);
+    color: var(--compass-color-text-light);
+  }
+  &:focus {
+    box-shadow: 0 0 0 2px var(--compass-color-border-primary-dark);
+  }
+}
+
+@utility c-recurrence-interval {
+  @apply ml-1 h-[38px] w-8 rounded-sm border border-transparent px-1 text-center text-s transition-all duration-300;
+  background: var(--recurrence-bg);
+  &::-webkit-outer-spin-button,
+  &::-webkit-inner-spin-button {
+    margin: 0;
+    appearance: none;
+  }
+  &[type="number"] {
+    appearance: textfield;
+  }
+  &:hover {
+    filter: brightness(90%);
+  }
+  &:focus {
+    box-shadow: 0 0 0 2px var(--compass-color-border-primary-dark);
+  }
+}
+
+@utility c-recurrence-caret {
+  @apply flex size-[19px] cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent p-0 transition-[var(--compass-transition-default)];
+  color: inherit;
+  &:hover {
+    background: var(--compass-color-bg-primary);
+    color: var(--compass-color-text-light);
+  }
+  &:focus {
+    box-shadow: 0 0 0 2px var(--compass-color-border-primary-dark);
+  }
 }
