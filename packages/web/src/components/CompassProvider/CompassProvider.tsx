@@ -3,7 +3,6 @@ import { PostHogProvider } from "@web/auth/posthog/posthog-react";
 import { type PropsWithChildren } from "react";
 import { Provider } from "react-redux";
 import { ToastContainer } from "react-toastify";
-import { ThemeProvider } from "styled-components";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
@@ -11,7 +10,6 @@ import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/context/compass-refs";
 import { PointerPositionProvider } from "@web/common/context/pointer-position";
-import { theme } from "@web/common/styles/theme";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
@@ -39,32 +37,30 @@ export const CompassRequiredProviders = (
           <GoogleOAuthProvider
             clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
           >
-            <ThemeProvider theme={theme}>
-              <PointerPositionProvider>
-                <IconProvider>
-                  <AuthModalProvider>
-                    <LogoutConfirmationProvider>
-                      {props.children}
-                      <AuthModal />
-                      <WelcomeModal />
-                      <ToastContainer
-                        position="bottom-left"
-                        autoClose={5000}
-                        hideProgressBar={false}
-                        newestOnTop={false}
-                        closeOnClick
-                        rtl={false}
-                        pauseOnFocusLoss
-                        draggable
-                        pauseOnHover
-                        theme="dark"
-                        limit={1}
-                      />
-                    </LogoutConfirmationProvider>
-                  </AuthModalProvider>
-                </IconProvider>
-              </PointerPositionProvider>
-            </ThemeProvider>
+            <PointerPositionProvider>
+              <IconProvider>
+                <AuthModalProvider>
+                  <LogoutConfirmationProvider>
+                    {props.children}
+                    <AuthModal />
+                    <WelcomeModal />
+                    <ToastContainer
+                      position="bottom-left"
+                      autoClose={5000}
+                      hideProgressBar={false}
+                      newestOnTop={false}
+                      closeOnClick
+                      rtl={false}
+                      pauseOnFocusLoss
+                      draggable
+                      pauseOnHover
+                      theme="dark"
+                      limit={1}
+                    />
+                  </LogoutConfirmationProvider>
+                </AuthModalProvider>
+              </IconProvider>
+            </PointerPositionProvider>
           </GoogleOAuthProvider>
         </Provider>
       </SessionProvider>

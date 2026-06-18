@@ -7,7 +7,6 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { Provider } from "react-redux";
-import { ThemeProvider } from "styled-components";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
@@ -15,7 +14,6 @@ import {
   ID_GRID_COLUMNS_TIMED,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { theme } from "@web/common/styles/theme";
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -155,28 +153,26 @@ const renderMainGrid = () => {
 
   const view = render(
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <DraftContext.Provider
-          value={
-            {
-              actions,
-              confirmation: {},
-              setters: {},
-              state: {},
-            } as never
-          }
-        >
-          <MainGrid
-            dateCalcs={dateCalcs}
-            mainGridElementRef={mock()}
-            mainGridRef={mainGridRef}
-            measurements={measurements}
-            timedColumnsElementRef={mock()}
-            today={startOfView}
-            weekProps={createWeekProps()}
-          />
-        </DraftContext.Provider>
-      </ThemeProvider>
+      <DraftContext.Provider
+        value={
+          {
+            actions,
+            confirmation: {},
+            setters: {},
+            state: {},
+          } as never
+        }
+      >
+        <MainGrid
+          dateCalcs={dateCalcs}
+          mainGridElementRef={mock()}
+          mainGridRef={mainGridRef}
+          measurements={measurements}
+          timedColumnsElementRef={mock()}
+          today={startOfView}
+          weekProps={createWeekProps()}
+        />
+      </DraftContext.Provider>
     </Provider>,
   );
 
@@ -190,38 +186,36 @@ const renderGridRegions = () => {
 
   return render(
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <DraftContext.Provider
-          value={
-            {
-              actions: {
-                stopDragging: mock(),
-                stopResizing: mock(),
-              },
-              confirmation: {},
-              setters: {},
-              state: {},
-            } as never
-          }
-        >
-          <AllDayRow
-            allDayRef={mock()}
-            allDayRowRef={mock()}
-            dateCalcs={dateCalcs}
-            measurements={measurements}
-            weekProps={createWeekProps()}
-          />
-          <MainGrid
-            dateCalcs={dateCalcs}
-            mainGridElementRef={mock()}
-            mainGridRef={mainGridRef}
-            measurements={measurements}
-            timedColumnsElementRef={mock()}
-            today={startOfView}
-            weekProps={createWeekProps()}
-          />
-        </DraftContext.Provider>
-      </ThemeProvider>
+      <DraftContext.Provider
+        value={
+          {
+            actions: {
+              stopDragging: mock(),
+              stopResizing: mock(),
+            },
+            confirmation: {},
+            setters: {},
+            state: {},
+          } as never
+        }
+      >
+        <AllDayRow
+          allDayRef={mock()}
+          allDayRowRef={mock()}
+          dateCalcs={dateCalcs}
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
+        <MainGrid
+          dateCalcs={dateCalcs}
+          mainGridElementRef={mock()}
+          mainGridRef={mainGridRef}
+          measurements={measurements}
+          timedColumnsElementRef={mock()}
+          today={startOfView}
+          weekProps={createWeekProps()}
+        />
+      </DraftContext.Provider>
     </Provider>,
   );
 };
@@ -232,37 +226,35 @@ const renderWeekGrid = (events: Schema_Event[] = []) => {
 
   return render(
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <DraftContext.Provider
-          value={
-            {
-              actions: {
-                stopDragging: mock(),
-                stopResizing: mock(),
-              },
-              confirmation: {},
-              setters: {},
-              state: {},
-            } as never
-          }
-        >
-          <Grid
-            dateCalcs={dateCalcs}
-            gridRefs={{
-              allDayColumnsRef: { current: null },
-              allDayRef: mock(),
-              allDayRowRef: mock(),
-              mainGridElementRef: mock(),
-              mainGridRef: { current: null },
-              timedColumnsElementRef: mock(),
-              timedColumnsRef: { current: null },
-            }}
-            measurements={measurements}
-            today={startOfView}
-            weekProps={createWeekProps()}
-          />
-        </DraftContext.Provider>
-      </ThemeProvider>
+      <DraftContext.Provider
+        value={
+          {
+            actions: {
+              stopDragging: mock(),
+              stopResizing: mock(),
+            },
+            confirmation: {},
+            setters: {},
+            state: {},
+          } as never
+        }
+      >
+        <Grid
+          dateCalcs={dateCalcs}
+          gridRefs={{
+            allDayColumnsRef: { current: null },
+            allDayRef: mock(),
+            allDayRowRef: mock(),
+            mainGridElementRef: mock(),
+            mainGridRef: { current: null },
+            timedColumnsElementRef: mock(),
+            timedColumnsRef: { current: null },
+          }}
+          measurements={measurements}
+          today={startOfView}
+          weekProps={createWeekProps()}
+        />
+      </DraftContext.Provider>
     </Provider>,
   );
 };
@@ -422,12 +414,10 @@ describe("Week calendar accessibility", () => {
 
     render(
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <MainGridEvents
-            measurements={measurements}
-            weekProps={createWeekProps()}
-          />
-        </ThemeProvider>
+        <MainGridEvents
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
       </Provider>,
     );
 
@@ -448,12 +438,10 @@ describe("Week calendar accessibility", () => {
 
     render(
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <MainGridEvents
-            measurements={measurements}
-            weekProps={createWeekProps()}
-          />
-        </ThemeProvider>
+        <MainGridEvents
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
       </Provider>,
     );
 
@@ -474,12 +462,10 @@ describe("Week calendar accessibility", () => {
 
     render(
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <MainGridEvents
-            measurements={measurements}
-            weekProps={createWeekProps()}
-          />
-        </ThemeProvider>
+        <MainGridEvents
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
       </Provider>,
     );
 
@@ -509,13 +495,11 @@ describe("Week calendar accessibility", () => {
 
     render(
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <AllDayEvents
-            endOfView={startOfView.endOf("week")}
-            measurements={measurements}
-            startOfView={startOfView}
-          />
-        </ThemeProvider>
+        <AllDayEvents
+          endOfView={startOfView.endOf("week")}
+          measurements={measurements}
+          startOfView={startOfView}
+        />
       </Provider>,
     );
 
@@ -544,13 +528,11 @@ describe("Week calendar accessibility", () => {
 
     render(
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <AllDayEvents
-            endOfView={startOfView.endOf("week")}
-            measurements={measurements}
-            startOfView={startOfView}
-          />
-        </ThemeProvider>
+        <AllDayEvents
+          endOfView={startOfView.endOf("week")}
+          measurements={measurements}
+          startOfView={startOfView}
+        />
       </Provider>,
     );
 
@@ -611,12 +593,10 @@ describe("saved Week event ownership", () => {
 
     render(
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <MainGridEvents
-            measurements={measurements}
-            weekProps={createWeekProps()}
-          />
-        </ThemeProvider>
+        <MainGridEvents
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
       </Provider>,
     );
 
@@ -655,12 +635,10 @@ describe("saved Week event ownership", () => {
 
     render(
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <MainGridEvents
-            measurements={measurements}
-            weekProps={createWeekProps()}
-          />
-        </ThemeProvider>
+        <MainGridEvents
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
       </Provider>,
     );
 
@@ -681,12 +659,10 @@ describe("saved Week event ownership", () => {
 
     render(
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <MainGridEvents
-            measurements={measurements}
-            weekProps={createWeekProps()}
-          />
-        </ThemeProvider>
+        <MainGridEvents
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
       </Provider>,
     );
 
@@ -704,13 +680,11 @@ describe("saved Week event ownership", () => {
 
     render(
       <Provider store={store}>
-        <ThemeProvider theme={theme}>
-          <AllDayEvents
-            endOfView={startOfView.endOf("week")}
-            measurements={measurements}
-            startOfView={startOfView}
-          />
-        </ThemeProvider>
+        <AllDayEvents
+          endOfView={startOfView.endOf("week")}
+          measurements={measurements}
+          startOfView={startOfView}
+        />
       </Provider>,
     );
 

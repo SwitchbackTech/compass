@@ -1,8 +1,6 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
 import { type RefCallback } from "react";
-import { ThemeProvider } from "styled-components";
 import dayjs from "@core/util/date/dayjs";
-import { theme } from "@web/common/styles/theme";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 import { CalendarGrid } from "./CalendarGrid";
@@ -19,20 +17,18 @@ const createGridRefs = () => ({
 
 const renderGrid = (count: number) =>
   render(
-    <ThemeProvider theme={theme}>
-      <CalendarGrid
-        allDayEventsLayer={<div data-testid="all-day-events-layer" />}
-        gridRefs={createGridRefs()}
-        onAllDayMouseDown={mock()}
-        onTimedMouseDown={mock()}
-        timedEventsLayer={<div data-testid="timed-events-layer" />}
-        today={dayjs("2026-05-20T00:00:00.000")}
-        visibleDates={Array.from({ length: count }, (_, index) => ({
-          date: dayjs("2026-05-18T00:00:00.000").add(index, "day"),
-          key: `date-${index}`,
-        }))}
-      />
-    </ThemeProvider>,
+    <CalendarGrid
+      allDayEventsLayer={<div data-testid="all-day-events-layer" />}
+      gridRefs={createGridRefs()}
+      onAllDayMouseDown={mock()}
+      onTimedMouseDown={mock()}
+      timedEventsLayer={<div data-testid="timed-events-layer" />}
+      today={dayjs("2026-05-20T00:00:00.000")}
+      visibleDates={Array.from({ length: count }, (_, index) => ({
+        date: dayjs("2026-05-18T00:00:00.000").add(index, "day"),
+        key: `date-${index}`,
+      }))}
+    />,
   );
 
 afterEach(() => {
@@ -67,24 +63,22 @@ describe("CalendarGrid", () => {
 
   it("passes the all-day row count to the shared all-day surface", () => {
     render(
-      <ThemeProvider theme={theme}>
-        <CalendarGrid
-          allDayEventsLayer={<div />}
-          allDayGridOffsetTopPx={123}
-          allDayRowsCount={3}
-          gridRefs={createGridRefs()}
-          onAllDayMouseDown={mock()}
-          onTimedMouseDown={mock()}
-          timedEventsLayer={<div />}
-          today={dayjs("2026-05-20T00:00:00.000")}
-          visibleDates={[
-            {
-              date: dayjs("2026-05-20T00:00:00.000"),
-              key: "date-0",
-            },
-          ]}
-        />
-      </ThemeProvider>,
+      <CalendarGrid
+        allDayEventsLayer={<div />}
+        allDayGridOffsetTopPx={123}
+        allDayRowsCount={3}
+        gridRefs={createGridRefs()}
+        onAllDayMouseDown={mock()}
+        onTimedMouseDown={mock()}
+        timedEventsLayer={<div />}
+        today={dayjs("2026-05-20T00:00:00.000")}
+        visibleDates={[
+          {
+            date: dayjs("2026-05-20T00:00:00.000"),
+            key: "date-0",
+          },
+        ]}
+      />,
     );
 
     expect(

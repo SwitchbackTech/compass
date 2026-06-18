@@ -3,13 +3,11 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type ReactElement } from "react";
 import { Provider } from "react-redux";
-import { ThemeProvider } from "styled-components";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import {
   createInitialState,
   type InitialReduxState,
 } from "@web/__tests__/utils/state/store.test.util";
-import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { reducers } from "@web/store/reducers";
@@ -76,28 +74,26 @@ const renderWithTheme = (ui: ReactElement) => {
 
   return render(
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <DraftContext.Provider
-          value={
-            {
-              actions: {
-                duplicateEvent: mockDuplicateEvent,
-                openForm: mockOpenForm,
-                repositionDraftByKeyboard: mock(() => false),
-                submit: mockSubmit,
-              },
-              confirmation: {
-                onDelete: mockOnDelete,
-              },
-              setters: {
-                setDraft: mockSetDraft,
-              },
-            } as never
-          }
-        >
-          {ui}
-        </DraftContext.Provider>
-      </ThemeProvider>
+      <DraftContext.Provider
+        value={
+          {
+            actions: {
+              duplicateEvent: mockDuplicateEvent,
+              openForm: mockOpenForm,
+              repositionDraftByKeyboard: mock(() => false),
+              submit: mockSubmit,
+            },
+            confirmation: {
+              onDelete: mockOnDelete,
+            },
+            setters: {
+              setDraft: mockSetDraft,
+            },
+          } as never
+        }
+      >
+        {ui}
+      </DraftContext.Provider>
     </Provider>,
   );
 };

@@ -1,10 +1,8 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useCallback, useState } from "react";
-import { ThemeProvider } from "styled-components";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
-import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { createRecurrenceSection } from "./RecurrenceSection";
@@ -47,13 +45,11 @@ function renderRecurrenceSection({
     if (!event) return null;
 
     return (
-      <ThemeProvider theme={theme}>
-        <RecurrenceSection
-          bgColor="#f8d784"
-          event={event}
-          setEvent={handleSetEvent}
-        />
-      </ThemeProvider>
+      <RecurrenceSection
+        bgColor="#f8d784"
+        event={event}
+        setEvent={handleSetEvent}
+      />
     );
   }
 
