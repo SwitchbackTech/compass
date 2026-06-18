@@ -3,6 +3,86 @@
 /* Dynamic z-index css to support up to 100 overlapping agenda events */
 @source inline("{hover:,focus:,}z-{{0..100..1}}");
 
+/*
+ * Runtime theme values. Future themes override these variables without
+ * changing component classes or rebuilding Tailwind utilities.
+ */
+:root {
+  --compass-color-accent-primary: hsl(202 100 67);
+  --compass-color-bg-primary: hsl(222 28 7);
+  --compass-color-bg-secondary: hsl(218 24 9);
+  --compass-color-border-primary: hsl(219 18 34 / 20%);
+  --compass-color-border-primary-dark: hsl(0 0 0 / 50.2%);
+  --compass-color-border-secondary: hsl(47 7 73);
+  --compass-color-event-selected: hsl(206 18 72);
+  --compass-color-fg-primary: hsl(47 7 73);
+  --compass-color-fg-primary-dark: hsl(208 13 71 / 54.9%);
+  --compass-color-gradient-accent-light-start: hsl(202 100 67);
+  --compass-color-gradient-accent-light-end: hsl(196 45 78);
+  --compass-color-grid-line-primary: hsl(219 18 34 / 20%);
+  --compass-color-menu-bg: hsl(0 0 98);
+  --compass-color-panel-badge-bg: hsl(0 0 100 / 7%);
+  --compass-color-panel-bg: hsl(219 8 46 / 20%);
+  --compass-color-panel-scrollbar: hsl(219 8 46 / 20%);
+  --compass-color-panel-scrollbar-active: hsl(221 9 37);
+  --compass-color-panel-shadow: hsl(221 9 37);
+  --compass-color-panel-text: hsl(0 0 98);
+  --compass-color-shadow-default: hsla(0 0 0 / 25%);
+  --compass-color-status-success: hsl(105 61 62);
+  --compass-color-status-error: hsl(0 63 60);
+  --compass-color-status-warning: hsl(25 100 63);
+  --compass-color-status-info: hsl(202 100 67);
+  --compass-color-tag-one: hsl(202 100 67);
+  --compass-color-tag-two: hsl(105 61 62);
+  --compass-color-tag-three: hsl(270 100 83);
+  --compass-color-text-light: hsl(47 7 73);
+  --compass-color-text-lighter: hsl(0 0 100);
+  --compass-color-text-light-inactive: hsl(208 13 71 / 54.9%);
+  --compass-color-text-dark: hsl(222 28 7);
+  --compass-color-text-dark-placeholder: hsl(219 8 46 / 90.2%);
+}
+
+@theme inline {
+  --color-accent-primary: var(--compass-color-accent-primary);
+  --color-bg-primary: var(--compass-color-bg-primary);
+  --color-bg-secondary: var(--compass-color-bg-secondary);
+  --color-border-primary: var(--compass-color-border-primary);
+  --color-border-primary-dark: var(--compass-color-border-primary-dark);
+  --color-border-secondary: var(--compass-color-border-secondary);
+  --color-event-selected: var(--compass-color-event-selected);
+  --color-fg-primary: var(--compass-color-fg-primary);
+  --color-fg-primary-dark: var(--compass-color-fg-primary-dark);
+  --color-gradient-accent-light-start: var(
+    --compass-color-gradient-accent-light-start
+  );
+  --color-gradient-accent-light-end: var(
+    --compass-color-gradient-accent-light-end
+  );
+  --color-grid-line-primary: var(--compass-color-grid-line-primary);
+  --color-menu-bg: var(--compass-color-menu-bg);
+  --color-panel-badge-bg: var(--compass-color-panel-badge-bg);
+  --color-panel-bg: var(--compass-color-panel-bg);
+  --color-panel-scrollbar: var(--compass-color-panel-scrollbar);
+  --color-panel-scrollbar-active: var(
+    --compass-color-panel-scrollbar-active
+  );
+  --color-panel-shadow: var(--compass-color-panel-shadow);
+  --color-panel-text: var(--compass-color-panel-text);
+  --color-shadow-default: var(--compass-color-shadow-default);
+  --color-status-success: var(--compass-color-status-success);
+  --color-status-error: var(--compass-color-status-error);
+  --color-status-warning: var(--compass-color-status-warning);
+  --color-status-info: var(--compass-color-status-info);
+  --color-tag-one: var(--compass-color-tag-one);
+  --color-tag-two: var(--compass-color-tag-two);
+  --color-tag-three: var(--compass-color-tag-three);
+  --color-text-light: var(--compass-color-text-light);
+  --color-text-lighter: var(--compass-color-text-lighter);
+  --color-text-light-inactive: var(--compass-color-text-light-inactive);
+  --color-text-dark: var(--compass-color-text-dark);
+  --color-text-dark-placeholder: var(--compass-color-text-dark-placeholder);
+}
+
 @theme {
   /* Font families */
   --font-sans:
@@ -13,40 +93,6 @@
   --font-mono:
     ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
     "Courier New";
-
-  /* Semantic colors */
-  --color-accent-primary: hsl(202 100 67);
-  --color-bg-primary: hsl(222 28 7);
-  --color-bg-secondary: hsl(218 24 9);
-  --color-border-primary: hsl(219 18 34 / 20%);
-  --color-border-primary-dark: hsl(0 0 0 / 50.2%);
-  --color-border-secondary: hsl(47 7 73);
-  --color-event-selected: hsl(206 18 72);
-  --color-fg-primary: hsl(47 7 73);
-  --color-fg-primary-dark: hsl(208 13 71 / 54.9%);
-  --color-gradient-accent-light-start: hsl(202 100 67);
-  --color-gradient-accent-light-end: hsl(196 45 78);
-  --color-grid-line-primary: hsl(219 18 34 / 20%);
-  --color-menu-bg: hsl(0 0 98);
-  --color-panel-badge-bg: hsl(0 0 100 / 7%);
-  --color-panel-bg: hsl(219 8 46 / 20%);
-  --color-panel-scrollbar: hsl(219 8 46 / 20%);
-  --color-panel-scrollbar-active: hsl(221 9 37);
-  --color-panel-shadow: hsl(221 9 37);
-  --color-panel-text: hsl(0 0 98);
-  --color-shadow-default: hsla(0 0 0 / 25%);
-  --color-status-success: hsl(105 61 62);
-  --color-status-error: hsl(0 63 60);
-  --color-status-warning: hsl(25 100 63);
-  --color-status-info: hsl(202 100 67);
-  --color-tag-one: hsl(202 100 67);
-  --color-tag-two: hsl(105 61 62);
-  --color-tag-three: hsl(270 100 83);
-  --color-text-light: hsl(47 7 73);
-  --color-text-lighter: hsl(0 0 100);
-  --color-text-light-inactive: hsl(208 13 71 / 54.9%);
-  --color-text-dark: hsl(222 28 7);
-  --color-text-dark-placeholder: hsl(219 8 46 / 90.2%);
 
   /* Font sizes */
   --font-size-xs: 0.563rem;
