@@ -661,7 +661,7 @@
 }
 
 @utility c-event-form {
-  @apply rounded-sm px-5 py-[18px] text-xl transition-[var(--compass-transition-default)];
+  @apply rounded-sm px-5 py-4.5 text-xl transition-(--compass-transition-default);
   background: var(--event-form-bg);
   box-shadow: 0 5px 5px var(--compass-color-shadow-default);
   z-index: 1;
@@ -677,7 +677,6 @@
 
 @utility c-event-form-description {
   @apply relative max-h-45 border-hidden bg-transparent transition-all duration-300;
-  font-size: var(--font-size-l);
   width: calc(100% - 20px);
   &:hover {
     background-color: var(--compass-color-border-primary);
@@ -714,7 +713,13 @@
  * (.timepicker__*) and react-datepicker (.react-datepicker__*), which cannot
  * take Tailwind classes directly, so they stay as global recipes here.
  */
-@utility c-time-picker {
+/*
+ * Unlayered (plain rule, not @utility) on purpose: react-select injects its
+ * default styles unlayered at runtime, and unlayered rules beat any @layer
+ * regardless of specificity. A layered @utility here loses and the dropdown
+ * renders with react-select's defaults.
+ */
+.c-time-picker {
   @apply relative min-w-22.5;
   font-size: var(--font-size-l);
   & span[aria-live="polite"],
