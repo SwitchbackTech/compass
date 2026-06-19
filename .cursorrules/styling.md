@@ -60,10 +60,6 @@ The pattern is: CSS variable `--color-{category}-{name}` → Tailwind class `{ca
 
 ### Styling Approach
 
-Tailwind is the **sole** styling system. Do not introduce any CSS-in-JS or
-runtime styling library; a guard test (`no-styled-components.test.ts`) enforces
-this.
-
 Use a hybrid of inline utilities and `c-*` recipes:
 
 - **Inline Tailwind utilities** for one-off layout and state, applied directly

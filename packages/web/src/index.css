@@ -393,7 +393,7 @@
 }
 
 @utility c-login-progress {
-  @apply relative h-[3px] w-full overflow-hidden rounded-[3px] bg-border-primary;
+  @apply relative h-0.75 w-full overflow-hidden rounded-[3px] bg-border-primary;
 
   &::after {
     @apply absolute top-0 h-full w-[45%] animate-login-progress content-[""];
@@ -442,7 +442,7 @@
 }
 
 @utility c-date-picker {
-  @apply select-none rounded-[2px] border-0 font-medium shadow-[0_4px_4px_var(--color-shadow-default)];
+  @apply select-none rounded-xs border-0 font-medium shadow-[0_4px_4px_var(--color-shadow-default)];
   background-color: var(--date-picker-bg);
   font-size: 12px;
 
@@ -704,7 +704,7 @@
 }
 
 @utility c-event-form-description {
-  @apply relative max-h-[180px] border-hidden bg-transparent font-normal transition-all duration-300;
+  @apply relative max-h-45 border-hidden bg-transparent font-normal transition-all duration-300;
   font-size: var(--font-size-xxl);
   width: calc(100% - 20px);
   &:hover {
@@ -714,7 +714,7 @@
 }
 
 @utility c-time-picker {
-  @apply relative min-w-[90px];
+  @apply relative min-w-22.5;
   font-size: var(--font-size-l);
   & span[aria-live="polite"],
   & .timepicker__indicators {
@@ -818,7 +818,7 @@
 }
 
 @utility c-recurrence-interval {
-  @apply ml-1 h-[38px] w-8 rounded-sm border border-transparent px-1 text-center transition-all duration-300;
+  @apply ml-1 h-9.5 w-8 rounded-sm border border-transparent px-1 text-center transition-all duration-300;
   background: var(--recurrence-bg);
   font-size: var(--font-size-s);
   &::-webkit-outer-spin-button,
@@ -901,7 +901,7 @@
 }
 
 @utility c-someday-event {
-  @apply w-full cursor-grab rounded-[2px] px-2 py-[3px] text-xs text-text-lighter transition-[background-color_.2s,opacity_.12s,box-shadow_.2s] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-primary;
+  @apply w-full cursor-grab rounded-xs px-2 py-0.75 text-xs text-text-lighter transition-[background-color_.2s,opacity_.12s,box-shadow_.2s] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-primary;
   background: var(--someday-event-bg);
   &[data-dragging="true"] {
     pointer-events: none;
@@ -929,7 +929,7 @@
 }
 
 @utility c-week-grid-track {
-  @apply relative flex h-full w-full min-w-[704px] flex-col;
+  @apply relative flex h-full w-full min-w-176 flex-col;
   container: week-grid-track / inline-size;
 }
 
@@ -1024,7 +1024,7 @@
 }
 
 @utility c-reminder-wrapper {
-  @apply relative inline-block pb-[18px];
+  @apply relative inline-block pb-4.5;
 }
 
 @utility c-reminder-char-counter {
