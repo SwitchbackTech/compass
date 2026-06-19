@@ -13,7 +13,7 @@ export const FloatingFormContainer = forwardRef<
 >(({ strategy, left, top, style, ...props }, ref) => (
   <div
     {...props}
-    className="c-floating-form-container"
+    className="w-max"
     ref={ref}
     style={{
       ...style,

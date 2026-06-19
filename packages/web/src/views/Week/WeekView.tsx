@@ -164,7 +164,7 @@ export const WeekView = () => {
                 <Header scrollUtil={scrollUtil} weekProps={weekProps} />
 
                 <WeekGridScrollArea>
-                  <div className="c-week-grid-track">
+                  <div className="relative flex h-full w-full min-w-176 flex-col [container-name:week-grid-track] [container-type:inline-size]">
                     <DayLabels
                       startOfView={weekProps.component.startOfView}
                       today={today}

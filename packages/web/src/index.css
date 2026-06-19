@@ -691,10 +691,6 @@
   z-index: 1;
 }
 
-@utility c-floating-form-container {
-  width: max-content;
-}
-
 @utility c-event-form-title {
   @apply bg-transparent font-semibold transition-all duration-300;
   font-size: var(--font-size-5xl);
@@ -928,18 +924,6 @@
   }
 }
 
-@utility c-week-grid-track {
-  @apply relative flex h-full w-full min-w-176 flex-col;
-  container: week-grid-track / inline-size;
-}
-
-@utility c-week-columns {
-  @apply absolute top-0 grid;
-  left: 50px;
-  width: calc(100% - 50px);
-  grid-template-columns: repeat(7, minmax(80px, 1fr));
-}
-
 @utility c-week-day-labels {
   @apply relative mt-2.5 min-h-8 w-full;
 
@@ -1003,26 +987,6 @@
   border-color: var(--compass-color-grid-line-primary);
 }
 
-@utility c-calendar-main-grid {
-  @apply relative min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto;
-  --scrollbar-width: 0px;
-}
-@utility c-calendar-timed-columns {
-  @apply absolute top-0 grid;
-  left: var(--calendar-grid-margin-left);
-  width: calc(100% - var(--calendar-grid-margin-left));
-  height: calc(24 * 100% / var(--calendar-visible-hours));
-  grid-template-columns: repeat(
-      var(--calendar-column-count),
-      minmax(var(--calendar-column-min-width), 1fr)
-    );
-}
-@utility c-calendar-grid-rows {
-  position: absolute;
-  left: 50px;
-  width: calc(100% - 50px);
-  height: 100%;
-}
 @utility c-calendar-grid-row {
   @apply relative w-full border-b border-grid-line-primary;
   height: calc(100% / 13);
