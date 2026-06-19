@@ -437,10 +437,6 @@
   );
 }
 
-@utility c-not-found-back-button {
-  @apply mt-5 mb-5 cursor-pointer rounded border-2 border-border-primary bg-fg-primary-dark px-4 py-2 font-semibold text-[16px] text-text-lighter transition-all duration-200 ease-in-out hover:brightness-120;
-}
-
 @utility c-date-picker {
   @apply select-none rounded-xs border-0 font-medium shadow-[0_4px_4px_var(--color-shadow-default)];
   background-color: var(--date-picker-bg);
@@ -680,8 +676,8 @@
 }
 
 @utility c-event-form-description {
-  @apply relative max-h-45 border-hidden bg-transparent font-normal transition-all duration-300;
-  font-size: var(--font-size-xxl);
+  @apply relative max-h-45 border-hidden bg-transparent transition-all duration-300;
+  font-size: var(--font-size-l);
   width: calc(100% - 20px);
   &:hover {
     background-color: var(--compass-color-border-primary);

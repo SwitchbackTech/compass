@@ -18,7 +18,7 @@ export const NotFoundView = () => {
       </div>
 
       <button
-        className="c-not-found-back-button"
+        className="mt-5 mb-5 cursor-pointer rounded border-2 border-border-primary bg-fg-primary-dark px-4 py-2 font-semibold text-[16px] text-text-lighter transition-all duration-200 ease-in-out hover:brightness-120"
         onClick={goHome}
         type="button"
       >
