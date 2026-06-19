@@ -60,19 +60,38 @@ The pattern is: CSS variable `--color-{category}-{name}` → Tailwind class `{ca
 
 ### Styling Approach
 
-Use a hybrid of inline utilities and `c-*` recipes:
+Use a hybrid of inline utilities and `c-*` recipes. **Inline is the default.**
 
-- **Inline Tailwind utilities** for one-off layout and state, applied directly
-  in JSX (e.g. `className="mb-2.5 items-center justify-end gap-[30px]"`).
-- **`c-*` utilities** for reusable component recipes and complex third-party
-  selectors (datepicker internals, animations, calendar grid selectors). These
-  are defined with Tailwind v4's `@utility c-...` directive in
-  `packages/web/src/index.css` (e.g. `c-event-form`, `c-button`,
-  `c-calendar-now-line`). Name reusable recipes with the `c-` prefix.
+The deciding question for extracting a `c-*` recipe is *"can this be expressed
+inline at all?"* — **not** "is it long?" or "is it used twice?". Reach for a
+`c-*` recipe (Tailwind v4 `@utility c-...` in `packages/web/src/index.css`) only
+when inline utilities genuinely cannot do the job, i.e. it has any of:
+
+1. **Third-party descendant selectors** you don't control — `.react-datepicker__*`,
+   `.timepicker__*` (e.g. `c-date-picker`, `c-time-picker`).
+2. **Pseudo-elements / vendor scrollbars** — `::before`, `::after`,
+   `::-webkit-scrollbar` (e.g. `compass-scroll`). Prefer the Tailwind `before:` /
+   `after:` variants inline first; only extract if that gets unreadable.
+3. **Keyframe-driven animation bundles** (e.g. `c-loader-spinner`).
+4. **Genuine reuse** across components, or a coherent variant set
+   (e.g. `c-button*`, `c-event-form`).
+
+Otherwise, **inline it**:
+
+- **Inline Tailwind utilities** for one-off layout and state, in JSX directly
+  (e.g. `className="mb-2.5 items-center justify-end gap-[30px]"`). Use `data-[…]:`
+  and `hover:` variants instead of `&[data-…]`/`&:hover` recipe blocks. Arbitrary
+  values are fine for runtime vars: `grid-cols-[repeat(7,minmax(80px,1fr))]`,
+  `w-[calc(100%_-_50px)]`.
+- If a recipe exists only to reach into children via `& .child` / `& > *`, put
+  the utilities **on the child elements** instead and delete the descendant rule.
+- **Do not** create one-off `c-*` recipes named after their implementation
+  (`c-week-columns`, `c-calendar-grid-rows`); that just recreates a global CSS
+  layer. Inline them.
 - **Semantic CSS-variable tokens** for all theme-dependent colors (see above),
   so a future `[data-theme="light"]` rollout needs no component changes.
 - **Inline CSS custom properties** only for runtime values that cannot be known
-  at build time — event colors, positions, and dynamic grid counts (e.g.
+  at build time — event colors, positions, dynamic grid counts (e.g.
   `style={{ "--event-form-bg": color }}`).
 
 Follow existing patterns in `packages/web/src/components/` and the recipes in
