@@ -161,7 +161,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   return (
     <form
       {...props}
-      role="form"
       className="c-event-form"
       name={ID_SOMEDAY_EVENT_FORM}
       onClick={stopPropagation}
@@ -174,7 +173,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
       }
     >
-      <Flex className="mb-2.5 items-center justify-end gap-[30px]">
+      <Flex className="mb-2.5 items-center justify-end gap-7.5">
         <SomedayEventActionMenu
           bgColor={darken(colorByPriority[priority])}
           target={target}

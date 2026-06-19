@@ -437,7 +437,11 @@
   );
 }
 
-@utility c-date-picker {
+/*
+ * Keep this unlayered so it can override react-datepicker's unlayered CSS.
+ * Rules inside a Tailwind @utility lose to unlayered library defaults.
+ */
+.c-date-picker {
   @apply select-none rounded-xs border-0 font-medium shadow-[0_4px_4px_var(--color-shadow-default)];
   background-color: var(--date-picker-bg);
   font-size: 12px;
@@ -709,15 +713,8 @@
 }
 
 /*
- * Third-party widget recipes. These style the internal DOM of react-select
- * (.timepicker__*) and react-datepicker (.react-datepicker__*), which cannot
- * take Tailwind classes directly, so they stay as global recipes here.
- */
-/*
- * Unlayered (plain rule, not @utility) on purpose: react-select injects its
- * default styles unlayered at runtime, and unlayered rules beat any @layer
- * regardless of specificity. A layered @utility here loses and the dropdown
- * renders with react-select's defaults.
+ * Keep this unlayered so it can override react-select's unlayered CSS.
+ * Rules inside a Tailwind @utility lose to unlayered library defaults.
  */
 .c-time-picker {
   @apply relative min-w-22.5;
