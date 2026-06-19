@@ -180,11 +180,7 @@ export const DayViewContent = memo(() => {
       ) : null}
 
       <StyledCalendar>
-        <Header
-          showReminder={false}
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={toggleSidebar}
-        />
+        <Header isSidebarOpen={isSidebarOpen} onToggleSidebar={toggleSidebar} />
 
         <div className="flex w-full flex-1 gap-8 overflow-hidden">
           <TaskList />

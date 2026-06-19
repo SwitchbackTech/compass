@@ -10,17 +10,10 @@ interface State_View {
   sidebar: {
     isOpen: boolean;
   };
-  header: {
-    reminder: string | boolean;
-  };
 }
 
 interface Action_DatesChange extends Action {
   payload: State_View["dates"];
-}
-
-interface Action_ReminderChange extends Action {
-  payload: State_View["header"]["reminder"];
 }
 
 const initialState: State_View = {
@@ -29,7 +22,6 @@ const initialState: State_View = {
     end: dayjs().endOf("week").format(),
   },
   sidebar: { isOpen: true },
-  header: { reminder: "" },
 };
 
 export const viewSlice = createSlice({
@@ -41,9 +33,6 @@ export const viewSlice = createSlice({
     },
     updateDates: (state, action: Action_DatesChange) => {
       state.dates = action.payload;
-    },
-    updateReminder: (state, action: Action_ReminderChange) => {
-      state.header.reminder = action?.payload ?? !state.header.reminder;
     },
   },
 });
