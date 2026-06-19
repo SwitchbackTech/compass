@@ -58,7 +58,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
   return (
     <div
       aria-label="Timed events grid"
-      className="compass-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px]"
+      className="c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px]"
       id={timedGridId}
       ref={timedGridRef}
       role="region"

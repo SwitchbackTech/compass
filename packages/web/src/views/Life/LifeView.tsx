@@ -344,7 +344,7 @@ export function LifeView({ enableDotTooltips = true, today }: LifeViewProps) {
         <section
           aria-label="Life in weeks visualization"
           className={`h-[60vh] rounded border border-border-primary p-4 md:p-6 ${
-            allowScroll ? "compass-scroll overflow-auto" : "overflow-hidden"
+            allowScroll ? "c-scroll overflow-auto" : "overflow-hidden"
           }`}
           ref={containerRef}
         >

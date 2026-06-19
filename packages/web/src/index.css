@@ -596,7 +596,7 @@
   }
 }
 
-@utility compass-scroll {
+@utility c-scroll {
   @layer components {
     :focus-visible {
       outline: none;
@@ -645,23 +645,23 @@
 }
 
 @utility overflow-auto {
-  @apply compass-scroll;
+  @apply c-scroll;
 }
 
 @utility overflow-x-scroll {
-  @apply compass-scroll;
+  @apply c-scroll;
 }
 
 @utility overflow-x-auto {
-  @apply compass-scroll;
+  @apply c-scroll;
 }
 
 @utility overflow-y-scroll {
-  @apply compass-scroll;
+  @apply c-scroll;
 }
 
 @utility overflow-y-auto {
-  @apply compass-scroll;
+  @apply c-scroll;
 }
 
 @utility c-event-form {
