@@ -183,11 +183,7 @@ export const DayViewContent = memo(() => {
         id={ID_MAIN}
         className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-8 pl-8"
       >
-        <Header
-          showReminder={false}
-          isSidebarOpen={isSidebarOpen}
-          onToggleSidebar={toggleSidebar}
-        />
+        <Header isSidebarOpen={isSidebarOpen} onToggleSidebar={toggleSidebar} />
 
         <div className="flex w-full flex-1 gap-8 overflow-hidden">
           <TaskList />

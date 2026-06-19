@@ -110,9 +110,6 @@ export const createInitialState = (
         tab: "tasks",
         isOpen: true,
       },
-      header: {
-        reminder: "",
-      },
     },
     settings: {
       isCmdPaletteOpen: false,

@@ -23,7 +23,6 @@ It'll be around for the long-term:
 
 - **Day Mode**: See your tasks and events side-by-side
 - **Now Mode**: Lock-in on a single task
-- **Custom Note**: Display a note-to-self for motivation or reminders
 - **Someday/Maybe List**: Organize future tasks without cluttering your schedule
 - **One-Click Adjustments**: Move events forwards or back effortlessly
 
