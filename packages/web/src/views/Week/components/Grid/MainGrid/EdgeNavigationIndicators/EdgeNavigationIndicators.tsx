@@ -11,7 +11,7 @@ export const EdgeNavigationIndicators: FC = () => {
 
   return (
     <div
-      className="c-week-edge-zone"
+      className="pointer-events-none absolute inset-y-0 z-1 w-[var(--edge-width)] transition-[width] duration-50 ease-linear data-[position=right]:right-0 data-[position=left]:left-[var(--grid-margin-left)] data-[position=left]:bg-[linear-gradient(to_right,rgb(59_130_246_/_var(--edge-opacity)),transparent)] data-[position=right]:bg-[linear-gradient(to_left,rgb(59_130_246_/_var(--edge-opacity)),transparent)]"
       data-position={currentEdge}
       style={
         {

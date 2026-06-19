@@ -14,7 +14,7 @@ export const WeekDay = ({ day, bgColor, onClick, selected }: WeekDayProps) => {
   return (
     <button
       type="button"
-      className="c-recurrence-weekday"
+      className="size-6 cursor-pointer rounded-full border border-[var(--compass-color-border-primary-dark)] bg-[var(--weekday-bg)] text-m transition-all duration-300 focus:shadow-[0_0_0_2px_var(--compass-color-border-primary-dark)] data-[selected=true]:bg-[var(--weekday-selected-bg)] data-[selected=true]:text-[var(--weekday-selected-text)] data-[selected=false]:hover:bg-bg-primary data-[selected=false]:hover:text-text-light"
       data-selected={selected}
       style={
         {

@@ -43,7 +43,7 @@ export function createRecurrenceSection({
     const disabledMessage = "Sign in to use recurring events.";
 
     return (
-      <div className="c-recurrence-row flex-col">
+      <div className="mb-1 flex w-full basis-full flex-col items-center gap-2 p-0">
         <RecurrenceToggle
           disabled={isRecurrenceDisabled}
           disabledMessage={disabledMessage}

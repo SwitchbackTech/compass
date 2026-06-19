@@ -15,7 +15,7 @@ export const WeekDays: React.FC<WeekDaysProps> = ({
   onChange,
 }) => {
   return (
-    <div className="c-recurrence-row">
+    <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
       <Text size="l">On: </Text>
 
       {WEEKDAYS.map((day) => (

@@ -78,7 +78,7 @@ export const SomedayRecurrenceSection = ({
   const shouldShowSelect = hasRecurrence || isEditing;
 
   return (
-    <div className="c-recurrence-row">
+    <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
       {shouldShowSelect ? (
         <SomedayRecurrenceSelect
           bgColor={bgColor}

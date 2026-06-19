@@ -36,7 +36,7 @@ export const RecurrenceToggle = ({
   );
 
   return (
-    <div className="c-recurrence-row">
+    <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
       {disabled && disabledMessage ? (
         <TooltipWrapper description={disabledMessage}>{toggle}</TooltipWrapper>
       ) : (

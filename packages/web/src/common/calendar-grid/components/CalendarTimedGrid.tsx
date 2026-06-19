@@ -81,7 +81,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
         {isTodayVisible ? <CalendarNowLine /> : null}
         {visibleDates.map(({ date, key }) => (
           <div
-            className="c-calendar-date-column data-[past=true]:bg-bg-secondary"
+            className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l data-[past=true]:bg-bg-secondary"
             data-past={date.isBefore(today, "day")}
             aria-label={date.format("dddd, MMMM D, YYYY")}
             key={key}

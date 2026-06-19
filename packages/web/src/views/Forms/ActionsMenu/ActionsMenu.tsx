@@ -182,7 +182,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
             returnFocus={false}
           >
             <div
-              className="c-actions-menu"
+              className="flex flex-col gap-2 rounded-sm bg-[var(--actions-menu-bg)] p-2 shadow-[0_4px_8px_rgb(0_0_0/10%)]"
               ref={refs.setFloating}
               style={{
                 ...context.floatingStyles,

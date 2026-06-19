@@ -74,7 +74,7 @@ export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
     >
       {visibleDates.map(({ date, key }) => (
         <div
-          className="c-calendar-date-column"
+          className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l"
           aria-label={date.format("dddd, MMMM D, YYYY")}
           key={key}
           role="columnheader"
