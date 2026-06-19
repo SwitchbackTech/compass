@@ -40,8 +40,8 @@ export const DayLabels: FC<Props> = ({
   };
 
   return (
-    <div className="c-week-day-labels">
-      <div className="absolute top-0 grid left-[50px] w-[calc(100%_-_50px)] grid-cols-[repeat(7,minmax(80px,1fr))] h-full items-end">
+    <div className="relative mt-2.5 min-h-8 w-full">
+      <div className="absolute top-0 left-[50px] grid h-full w-[calc(100%_-_50px)] grid-cols-[repeat(7,minmax(80px,1fr))] items-end">
         {weekDays.map((day) => {
           const dayNumber = getDayNumber(day);
           const { isToday, color } = getColor(day);
@@ -53,10 +53,15 @@ export const DayLabels: FC<Props> = ({
               style={{ color }}
               title={getWeekDayLabel(day)}
             >
-              <Text className="week-day-number" withGradient={isToday}>
+              <Text
+                className="text-[clamp(var(--font-size-xl),2.7cqw,var(--font-size-xxl))] leading-none"
+                withGradient={isToday}
+              >
                 {dayNumber}
               </Text>
-              <Text className="week-day-name">{day.format("ddd")}</Text>
+              <Text className="text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none">
+                {day.format("ddd")}
+              </Text>
             </div>
           );
         })}

@@ -58,7 +58,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
   return (
     <div
       aria-label="Timed events grid"
-      className="relative min-h-0 w-full flex-1 overflow-x-hidden overflow-y-auto [--scrollbar-width:0px] compass-scroll"
+      className="compass-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px]"
       id={timedGridId}
       ref={timedGridRef}
       role="region"
@@ -66,7 +66,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
     >
       <CalendarTimeColumn />
       <div
-        className="absolute top-0 grid left-[var(--calendar-grid-margin-left)] w-[calc(100%_-_var(--calendar-grid-margin-left))] h-[calc(24*100%/var(--calendar-visible-hours))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))]"
+        className="absolute top-0 left-[var(--calendar-grid-margin-left)] grid h-[calc(24*100%/var(--calendar-visible-hours))] w-[calc(100%_-_var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))]"
         id={columnsId}
         ref={timedColumnsRef}
         style={
@@ -93,7 +93,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
       <div className="absolute left-[50px] h-full w-[calc(100%_-_50px)]">
         {getHourLabels(true).map((dayTime) => (
           <Flex
-            className="c-calendar-grid-row"
+            className="relative h-[calc(100%/13)] w-full border-grid-line-primary border-b"
             key={dayTime}
             {...{ [DATA_CALENDAR_TIMED_GRID_ROW]: "true" }}
             onMouseDown={onMouseDown}
@@ -124,10 +124,16 @@ const CalendarTimeColumn = () => {
   }, [currentHour]);
 
   return (
-    <div className="c-calendar-day-times">
+    <div className="absolute top-[calc(100%/13_-_5px)] z-1 h-full">
       {hourLabels.map((label, index) => (
-        <div style={{ color: colors[index] }} key={label}>
-          <Text size="xs">{label}</Text>
+        <div
+          className="h-[calc(100%/13)]"
+          style={{ color: colors[index] }}
+          key={label}
+        >
+          <Text size="xs" className="block">
+            {label}
+          </Text>
         </div>
       ))}
     </div>
@@ -149,7 +155,7 @@ const CalendarNowLine = () => {
 
   return (
     <div
-      className="c-calendar-now-line"
+      className="absolute h-px w-full"
       role="separator"
       title="now line"
       style={{

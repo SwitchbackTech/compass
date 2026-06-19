@@ -61,7 +61,7 @@ export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
     }}
   >
     <div
-      className="c-calendar-all-day-columns"
+      className="absolute top-0 left-[var(--calendar-grid-margin-left)] grid h-full w-[calc(100%_-_var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))] before:pointer-events-none before:absolute before:inset-x-0 before:bottom-0 before:h-0.5 before:bg-grid-line-primary before:content-['']"
       id={columnsId}
       ref={allDayColumnsRef}
       style={

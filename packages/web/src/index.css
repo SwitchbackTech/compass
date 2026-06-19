@@ -901,20 +901,6 @@
   }
 }
 
-@utility c-week-day-labels {
-  @apply relative mt-2.5 min-h-8 w-full;
-
-  & .week-day-number {
-    font-size: clamp(var(--font-size-xl), 2.7cqw, var(--font-size-xxl));
-    line-height: 1;
-  }
-
-  & .week-day-name {
-    font-size: clamp(var(--font-size-m), 2cqw, var(--font-size-l));
-    line-height: 1;
-  }
-}
-
 @utility c-week-edge-zone {
   @apply pointer-events-none absolute inset-y-0 z-1 transition-[width] duration-50 ease-linear;
   width: var(--edge-width);
@@ -938,52 +924,8 @@
   }
 }
 
-@utility c-calendar-all-day-columns {
-  @apply absolute top-0 grid h-full;
-  left: var(--calendar-grid-margin-left);
-  width: calc(100% - var(--calendar-grid-margin-left));
-  grid-template-columns: repeat(
-      var(--calendar-column-count),
-      minmax(var(--calendar-column-min-width), 1fr)
-    );
-  &::before {
-    position: absolute;
-    right: 0;
-    bottom: 0;
-    left: 0;
-    height: 2px;
-    pointer-events: none;
-    background: var(--compass-color-grid-line-primary);
-    content: "";
-  }
-}
-
 @utility c-calendar-date-column {
   @apply relative block h-full box-border border-l;
   min-width: var(--calendar-column-min-width);
   border-color: var(--compass-color-grid-line-primary);
-}
-
-@utility c-calendar-grid-row {
-  @apply relative w-full border-b border-grid-line-primary;
-  height: calc(100% / 13);
-  & > span {
-    position: absolute;
-    bottom: -5px;
-    left: -50px;
-  }
-}
-@utility c-calendar-day-times {
-  @apply absolute h-full;
-  top: calc(100% / 13 - 5px);
-  z-index: 1;
-  & > div {
-    height: calc(100% / 13);
-  }
-  & > div > span {
-    display: block;
-  }
-}
-@utility c-calendar-now-line {
-  @apply absolute h-px w-full;
 }
