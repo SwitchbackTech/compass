@@ -845,16 +845,6 @@
   }
 }
 
-@utility c-someday-recurrence-value {
-  @apply inline-flex items-center gap-1;
-  color: var(--compass-color-text-dark);
-  font-size: var(--font-size-m);
-
-  &[data-dimmed="true"] {
-    color: var(--compass-color-text-dark-placeholder);
-  }
-}
-
 @utility c-planner-month-picker {
   & .react-datepicker__month-container,
   & .react-datepicker__month {
@@ -893,19 +883,6 @@
     .react-datepicker__day {
     position: relative !important;
     z-index: 10 !important;
-  }
-}
-
-@utility c-someday-event {
-  @apply w-full cursor-grab rounded-xs px-2 py-0.75 text-xs text-text-lighter transition-[background-color_.2s,opacity_.12s,box-shadow_.2s] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent-primary;
-  background: var(--someday-event-bg);
-  &[data-dragging="true"] {
-    pointer-events: none;
-    cursor: grabbing;
-    opacity: 0;
-  }
-  &:hover {
-    background: var(--someday-event-hover-bg);
   }
 }
 

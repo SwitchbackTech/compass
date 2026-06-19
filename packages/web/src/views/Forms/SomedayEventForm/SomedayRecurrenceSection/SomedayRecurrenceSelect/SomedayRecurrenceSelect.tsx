@@ -108,7 +108,7 @@ export const SomedayRecurrenceSelect = ({
     return (
       <components.SingleValue {...props}>
         <span
-          className="c-someday-recurrence-value"
+          className="inline-flex items-center gap-1 text-m text-text-dark data-[dimmed=true]:text-text-dark-placeholder"
           data-testid="someday-recurrence-value"
           data-dimmed={isDoNotRepeat}
         >
