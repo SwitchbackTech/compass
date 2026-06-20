@@ -163,7 +163,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   return (
     <form
       {...props}
-      className="c-event-form"
+      className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 text-xl shadow-[0_5px_5px_var(--color-shadow-default)] transition-(--compass-transition-default)"
       name={ID_SOMEDAY_EVENT_FORM}
       onClick={stopPropagation}
       onKeyDown={onKeyDown}
@@ -178,7 +178,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       <TitleActionsRow
         title={
           <Input
-            className="c-event-form-title"
+            className="w-full bg-transparent font-semibold text-[length:var(--font-size-5xl)] transition-all duration-300 hover:bg-border-primary"
             autoFocus
             onChange={onChangeEventTextField("title")}
             onKeyDown={ignoreDelete}
@@ -224,7 +224,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         placeholder="Description"
         underlineColor={colorByPriority[priority]}
         value={event.description || ""}
-        className="c-event-form-description overflow-y-auto"
+        className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent transition-all duration-300 hover:bg-border-primary hover:brightness-90"
       />
 
       <SaveSection priority={priority} onSubmit={_onSubmit} />

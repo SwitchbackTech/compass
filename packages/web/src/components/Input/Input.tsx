@@ -27,7 +27,7 @@ export const InputBase = forwardRef<HTMLInputElement, Props>(
     <input
       {...props}
       className={classNames(
-        "h-[34px] w-full border-0 px-2 text-l outline-none transition-colors duration-300 placeholder:text-text-dark-placeholder hover:bg-border-primary",
+        "h-8.5 border-0 px-2 outline-none transition-colors duration-300 placeholder:text-text-dark-placeholder hover:bg-border-primary",
         className,
       )}
       ref={ref}

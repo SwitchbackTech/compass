@@ -23,7 +23,7 @@ const TextareaBase = forwardRef<HTMLTextAreaElement, TextareaProps>(
     <TextareaAutoSize
       {...props}
       className={classNames(
-        "w-full resize-none border-0 font-semibold outline-none placeholder:text-text-dark-placeholder",
+        "resize-none border-0 outline-none placeholder:text-text-dark-placeholder",
         className,
       )}
       ref={ref}

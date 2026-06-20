@@ -455,8 +455,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     return (
       <form
         {...props}
-        role="form"
-        className="c-event-form"
+        className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 shadow-[0_5px_5px_var(--color-shadow-default)] transition-(--compass-transition-default)"
         name={ID_EVENT_FORM}
         onMouseUp={() => {
           if (isStartDatePickerOpen) {
@@ -477,7 +476,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         <TitleActionsRow
           title={
             <Input
-              className="c-event-form-title"
+              className="bg-transparent font-semibold text-2xl transition-all duration-300 hover:bg-border-primary"
               autoFocus
               onChange={onChangeEventTextField("title")}
               onKeyDown={handleTitleKeyDown}
@@ -522,7 +521,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           placeholder="Description"
           ref={descriptionRef}
           value={event.description || ""}
-          className="c-event-form-description overflow-y-auto"
+          className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent transition-all duration-300 hover:bg-border-primary hover:brightness-90"
         />
 
         <SaveSection priority={priority} onSubmit={onSubmitForm} />

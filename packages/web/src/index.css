@@ -664,30 +664,6 @@
   @apply c-scroll;
 }
 
-@utility c-event-form {
-  @apply rounded-sm px-5 py-4.5 text-xl transition-(--compass-transition-default);
-  background: var(--event-form-bg);
-  box-shadow: 0 5px 5px var(--compass-color-shadow-default);
-  z-index: 1;
-}
-
-@utility c-event-form-title {
-  @apply bg-transparent font-semibold transition-all duration-300;
-  font-size: var(--font-size-5xl);
-  &:hover {
-    background-color: var(--compass-color-border-primary);
-  }
-}
-
-@utility c-event-form-description {
-  @apply relative max-h-45 border-hidden bg-transparent transition-all duration-300;
-  width: calc(100% - 20px);
-  &:hover {
-    background-color: var(--compass-color-border-primary);
-    filter: brightness(90%);
-  }
-}
-
 @utility c-recurrence-toggle {
   @apply inline-flex items-center gap-1 rounded-sm border border-transparent bg-transparent px-2 py-0.5 transition-all duration-300;
   color: var(--compass-color-text-dark);
