@@ -36,7 +36,7 @@ mock.module(
 );
 
 mock.module("@web/views/Forms/EventForm/EventActionMenu", () => ({
-  EventActionMenu: () => null,
+  EventActionMenu: () => <button type="button">Event actions</button>,
 }));
 
 mock.module("@web/views/Forms/EventForm/PrioritySection", () => ({
@@ -95,6 +95,32 @@ describe("EventForm", () => {
     HotkeyManager.resetInstance();
     capturedDateControlsSectionProps = null;
     document.body.removeAttribute("data-app-locked");
+  });
+
+  it("renders the description before the actions on the same row", () => {
+    render(
+      <EventForm
+        event={createEvent({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    const description = screen.getByPlaceholderText("Description");
+    const actions = screen.getByRole("button", { name: "Event actions" });
+    const row = description.parentElement?.parentElement;
+
+    expect(row).toBe(actions.parentElement?.parentElement);
+    expect(row).toHaveClass("flex");
+    expect(description.parentElement).toHaveClass("flex-1");
+    expect(actions.parentElement).toHaveClass("shrink-0");
+    expect(row?.firstElementChild?.contains(description)).toBe(true);
+    expect(row?.lastElementChild?.contains(actions)).toBe(true);
   });
 
   it("duplicates the event with Mod+D while the title field is focused", async () => {

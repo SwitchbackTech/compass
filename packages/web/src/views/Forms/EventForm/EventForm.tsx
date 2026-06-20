@@ -23,12 +23,12 @@ import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import { getCategory } from "@web/common/utils/event/event.util";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
-import { Flex } from "@web/components/Flex/Flex";
 import { Input } from "@web/components/Input/Input";
 import { Textarea } from "@web/components/Textarea/Textarea";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
+import { DescriptionActionsRow } from "@web/views/Forms/EventForm/DescriptionActionsRow";
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
@@ -474,19 +474,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
         }
       >
-        <Flex className="mb-2.5 items-center justify-end gap-[30px]">
-          <EventActionMenu
-            bgColor={darken(priorityColor)}
-            isDraft={isDraft}
-            isExistingEvent={isExistingEvent}
-            onConvert={() => {
-              onConvert?.();
-            }}
-            onDuplicate={onDuplicateEvent}
-            onDelete={onDelete}
-          />
-        </Flex>
-
         <Input
           className="c-event-form-title"
           autoFocus
@@ -512,14 +499,30 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
         <RecurrenceSection {...recurrenceSectionProps} />
 
-        <Textarea
-          underlineColor={priorityColor}
-          onChange={onChangeEventTextField("description")}
-          onKeyDown={handleIgnoredKeys}
-          placeholder="Description"
-          ref={descriptionRef}
-          value={event.description || ""}
-          className="c-event-form-description overflow-y-auto"
+        <DescriptionActionsRow
+          description={
+            <Textarea
+              underlineColor={priorityColor}
+              onChange={onChangeEventTextField("description")}
+              onKeyDown={handleIgnoredKeys}
+              placeholder="Description"
+              ref={descriptionRef}
+              value={event.description || ""}
+              className="c-event-form-description overflow-y-auto"
+            />
+          }
+          actions={
+            <EventActionMenu
+              bgColor={darken(priorityColor)}
+              isDraft={isDraft}
+              isExistingEvent={isExistingEvent}
+              onConvert={() => {
+                onConvert?.();
+              }}
+              onDuplicate={onDuplicateEvent}
+              onDelete={onDelete}
+            />
+          }
         />
 
         <SaveSection priority={priority} onSubmit={onSubmitForm} />

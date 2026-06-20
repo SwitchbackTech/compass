@@ -15,9 +15,9 @@ import {
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
-import { Flex } from "@web/components/Flex/Flex";
 import { Input } from "@web/components/Input/Input";
 import { Textarea } from "@web/components/Textarea/Textarea";
+import { DescriptionActionsRow } from "@web/views/Forms/EventForm/DescriptionActionsRow";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import {
@@ -31,6 +31,8 @@ import { useSomedayFormShortcuts } from "@web/views/Forms/SomedayEventForm/useSo
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   category,
+  isDraft: _isDraft,
+  isExistingEvent: _isExistingEvent,
   onClose,
   onMigrate,
   onSubmit,
@@ -173,27 +175,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
       }
     >
-      <Flex className="mb-2.5 items-center justify-end gap-7.5">
-        <SomedayEventActionMenu
-          bgColor={darken(colorByPriority[priority])}
-          target={target}
-          onMigrateBackwardClick={() => {
-            onMigrate?.(event, category, "back");
-          }}
-          onMigrateForwardClick={() => {
-            onMigrate?.(event, category, "forward");
-          }}
-          onMigrateAboveClick={() => {
-            onMigrate?.(event, category, "up");
-          }}
-          onMigrateBelowClick={() => {
-            onMigrate?.(event, category, "down");
-          }}
-          onDuplicateClick={onDuplicateEvent}
-          onDeleteClick={onDelete}
-        />
-      </Flex>
-
       <Input
         className="c-event-form-title"
         autoFocus
@@ -213,13 +194,37 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         setEvent={setLatestEvent}
       />
 
-      <Textarea
-        onChange={onChangeEventTextField("description")}
-        onKeyDown={ignoreDelete}
-        placeholder="Description"
-        underlineColor={colorByPriority[priority]}
-        value={event.description || ""}
-        className="c-event-form-description overflow-y-auto"
+      <DescriptionActionsRow
+        description={
+          <Textarea
+            onChange={onChangeEventTextField("description")}
+            onKeyDown={ignoreDelete}
+            placeholder="Description"
+            underlineColor={colorByPriority[priority]}
+            value={event.description || ""}
+            className="c-event-form-description overflow-y-auto"
+          />
+        }
+        actions={
+          <SomedayEventActionMenu
+            bgColor={darken(colorByPriority[priority])}
+            target={target}
+            onMigrateBackwardClick={() => {
+              onMigrate?.(event, category, "back");
+            }}
+            onMigrateForwardClick={() => {
+              onMigrate?.(event, category, "forward");
+            }}
+            onMigrateAboveClick={() => {
+              onMigrate?.(event, category, "up");
+            }}
+            onMigrateBelowClick={() => {
+              onMigrate?.(event, category, "down");
+            }}
+            onDuplicateClick={onDuplicateEvent}
+            onDeleteClick={onDelete}
+          />
+        }
       />
 
       <SaveSection priority={priority} onSubmit={_onSubmit} />
