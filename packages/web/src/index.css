@@ -750,16 +750,22 @@
   }
 }
 
-@utility c-planner-month-picker {
+/*
+ * Unlayered (plain rule, not @utility) so it overrides react-datepicker's
+ * unlayered defaults and the c-date-picker base. Being unlayered + defined
+ * after c-date-picker, it wins on source order, so the !important hacks the
+ * @utility form needed are no longer required.
+ */
+.c-planner-month-picker {
   & .react-datepicker__month-container,
   & .react-datepicker__month {
-    overflow: visible !important;
+    overflow: visible;
   }
   & .react-datepicker__day--selected {
-    position: relative !important;
-    isolation: isolate !important;
-    background: transparent !important;
-    color: var(--compass-color-text-dark) !important;
+    position: relative;
+    isolation: isolate;
+    background: transparent;
+    color: var(--compass-color-text-dark);
   }
   & .react-datepicker__day--selected::before {
     position: absolute;
@@ -770,7 +776,7 @@
     content: "";
   }
   & .react-datepicker__week:has(.react-datepicker__day--selected) {
-    position: relative !important;
+    position: relative;
   }
   & .react-datepicker__week:has(.react-datepicker__day--selected)::before {
     position: absolute;
@@ -786,7 +792,7 @@
   &
     .react-datepicker__week:has(.react-datepicker__day--selected)
     .react-datepicker__day {
-    position: relative !important;
-    z-index: 10 !important;
+    position: relative;
+    z-index: 10;
   }
 }
