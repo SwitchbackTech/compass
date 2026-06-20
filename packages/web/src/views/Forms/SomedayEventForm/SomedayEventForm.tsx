@@ -17,9 +17,9 @@ import {
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
 import { Input } from "@web/components/Input/Input";
 import { Textarea } from "@web/components/Textarea/Textarea";
-import { DescriptionActionsRow } from "@web/views/Forms/EventForm/DescriptionActionsRow";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
+import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
   type FormProps,
   type SetEventFormField,
@@ -175,34 +175,17 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
       }
     >
-      <Input
-        className="c-event-form-title"
-        autoFocus
-        onChange={onChangeEventTextField("title")}
-        onKeyDown={ignoreDelete}
-        placeholder="Title"
-        title="title"
-        underlineColor={colorByPriority[priority]}
-        value={title}
-      />
-
-      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
-
-      <SomedayRecurrenceSection
-        bgColor={bgColor}
-        event={event}
-        setEvent={setLatestEvent}
-      />
-
-      <DescriptionActionsRow
-        description={
-          <Textarea
-            onChange={onChangeEventTextField("description")}
+      <TitleActionsRow
+        title={
+          <Input
+            className="c-event-form-title"
+            autoFocus
+            onChange={onChangeEventTextField("title")}
             onKeyDown={ignoreDelete}
-            placeholder="Description"
+            placeholder="Title"
+            title="title"
             underlineColor={colorByPriority[priority]}
-            value={event.description || ""}
-            className="c-event-form-description overflow-y-auto"
+            value={title}
           />
         }
         actions={
@@ -225,6 +208,23 @@ export const SomedayEventForm: React.FC<FormProps> = ({
             onDeleteClick={onDelete}
           />
         }
+      />
+
+      <PrioritySection onSetEventField={onSetEventField} priority={priority} />
+
+      <SomedayRecurrenceSection
+        bgColor={bgColor}
+        event={event}
+        setEvent={setLatestEvent}
+      />
+
+      <Textarea
+        onChange={onChangeEventTextField("description")}
+        onKeyDown={ignoreDelete}
+        placeholder="Description"
+        underlineColor={colorByPriority[priority]}
+        value={event.description || ""}
+        className="c-event-form-description overflow-y-auto"
       />
 
       <SaveSection priority={priority} onSubmit={_onSubmit} />

@@ -97,7 +97,7 @@ describe("EventForm", () => {
     document.body.removeAttribute("data-app-locked");
   });
 
-  it("renders the description before the actions on the same row", () => {
+  it("renders the title before the actions on the same row", () => {
     render(
       <EventForm
         event={createEvent({ description: "Plan the launch" })}
@@ -111,15 +111,15 @@ describe("EventForm", () => {
       />,
     );
 
-    const description = screen.getByPlaceholderText("Description");
+    const title = screen.getByPlaceholderText("Title");
     const actions = screen.getByRole("button", { name: "Event actions" });
-    const row = description.parentElement?.parentElement;
+    const row = title.parentElement?.parentElement;
 
     expect(row).toBe(actions.parentElement?.parentElement);
     expect(row).toHaveClass("flex");
-    expect(description.parentElement).toHaveClass("flex-1");
+    expect(title.parentElement).toHaveClass("flex-1");
     expect(actions.parentElement).toHaveClass("shrink-0");
-    expect(row?.firstElementChild?.contains(description)).toBe(true);
+    expect(row?.firstElementChild?.contains(title)).toBe(true);
     expect(row?.lastElementChild?.contains(actions)).toBe(true);
   });
 

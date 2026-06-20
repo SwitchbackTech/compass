@@ -28,10 +28,10 @@ import { Textarea } from "@web/components/Textarea/Textarea";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
-import { DescriptionActionsRow } from "@web/views/Forms/EventForm/DescriptionActionsRow";
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
+import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
   type FormProps,
   type SetEventFormField,
@@ -474,41 +474,19 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
         }
       >
-        <Input
-          className="c-event-form-title"
-          autoFocus
-          onChange={onChangeEventTextField("title")}
-          onKeyDown={handleTitleKeyDown}
-          onPointerDown={() => setIsTitleEditingStarted(true)}
-          placeholder="Title"
-          name="Event Title"
-          ref={titleInputRef}
-          underlineColor={priorityColor}
-          value={title ?? ""}
-        />
-
-        <PrioritySection
-          onSetEventField={onSetEventField}
-          priority={priority}
-        />
-
-        <DateControlsSection
-          dateTimeSectionProps={dateTimeSectionProps}
-          eventCategory={category}
-        />
-
-        <RecurrenceSection {...recurrenceSectionProps} />
-
-        <DescriptionActionsRow
-          description={
-            <Textarea
+        <TitleActionsRow
+          title={
+            <Input
+              className="c-event-form-title"
+              autoFocus
+              onChange={onChangeEventTextField("title")}
+              onKeyDown={handleTitleKeyDown}
+              onPointerDown={() => setIsTitleEditingStarted(true)}
+              placeholder="Title"
+              name="Event Title"
+              ref={titleInputRef}
               underlineColor={priorityColor}
-              onChange={onChangeEventTextField("description")}
-              onKeyDown={handleIgnoredKeys}
-              placeholder="Description"
-              ref={descriptionRef}
-              value={event.description || ""}
-              className="c-event-form-description overflow-y-auto"
+              value={title ?? ""}
             />
           }
           actions={
@@ -523,6 +501,28 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
               onDelete={onDelete}
             />
           }
+        />
+
+        <PrioritySection
+          onSetEventField={onSetEventField}
+          priority={priority}
+        />
+
+        <DateControlsSection
+          dateTimeSectionProps={dateTimeSectionProps}
+          eventCategory={category}
+        />
+
+        <RecurrenceSection {...recurrenceSectionProps} />
+
+        <Textarea
+          underlineColor={priorityColor}
+          onChange={onChangeEventTextField("description")}
+          onKeyDown={handleIgnoredKeys}
+          placeholder="Description"
+          ref={descriptionRef}
+          value={event.description || ""}
+          className="c-event-form-description overflow-y-auto"
         />
 
         <SaveSection priority={priority} onSubmit={onSubmitForm} />
