@@ -41,7 +41,7 @@ export const DayLabels: FC<Props> = ({
 
   return (
     <div className="relative mt-2.5 min-h-8 w-full">
-      <div className="absolute top-0 left-[50px] grid h-full w-[calc(100%_-_50px)] grid-cols-[repeat(7,minmax(80px,1fr))] items-end">
+      <div className="absolute top-0 left-12.5 grid h-full w-[calc(100%-50px)] grid-cols-[repeat(7,minmax(80px,1fr))] items-end">
         {weekDays.map((day) => {
           const dayNumber = getDayNumber(day);
           const { isToday, color } = getColor(day);
