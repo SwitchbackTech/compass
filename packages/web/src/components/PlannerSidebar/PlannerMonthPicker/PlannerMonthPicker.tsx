@@ -51,7 +51,7 @@ export const PlannerMonthPicker: FC<Props> = ({
 
   return (
     <fieldset
-      className={`c-planner-month-picker ${plannerMonthPickerClassName}`}
+      className={`c-month-picker ${plannerMonthPickerClassName}`}
       data-testid="Planner month picker"
       aria-label="Date navigation"
     >
@@ -77,7 +77,7 @@ export const PlannerMonthPicker: FC<Props> = ({
         inline
         isOpen={true}
         monthContainerClassName="!w-auto"
-        monthTextClassName="!text-l !font-medium"
+        monthTextClassName="text-[14px] font-medium"
         monthsShown={monthsShown}
         onChange={(date) => {
           if (!date) return;

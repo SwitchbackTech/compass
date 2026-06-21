@@ -11,7 +11,7 @@ interface Props {
 
 export const DateControlsSection = ({ dateTimeSectionProps }: Props) => {
   return (
-    <div className="mt-[15px] mb-3 flex flex-wrap gap-2">
+    <div className="mt-3.75 mb-3 flex flex-wrap">
       <DateTimeSection {...dateTimeSectionProps} />
     </div>
   );

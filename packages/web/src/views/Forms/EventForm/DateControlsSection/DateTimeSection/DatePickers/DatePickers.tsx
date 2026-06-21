@@ -177,7 +177,7 @@ export const DatePickers: FC<Props> = ({
 
   return (
     <>
-      <Flex className="w-[120px]" alignItems={AlignItems.CENTER}>
+      <Flex alignItems={AlignItems.CENTER}>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker
@@ -185,6 +185,7 @@ export const DatePickers: FC<Props> = ({
             calendarClassName="startDatePicker"
             inputColor={inputColor}
             isOpen={isStartDatePickerOpen}
+            monthTextClassName="text-base"
             onCalendarClose={closeStartDatePicker}
             onCalendarOpen={() => {
               setIsStartDatePickerOpen(true);
@@ -205,7 +206,7 @@ export const DatePickers: FC<Props> = ({
         </div>
       </Flex>
 
-      <Flex className="w-[120px]" alignItems={AlignItems.CENTER}>
+      <Flex className="w-30" alignItems={AlignItems.CENTER}>
         {/* biome-ignore lint/a11y/noStaticElementInteractions: This wrapper only stops date picker mouse events from bubbling to the form. */}
         <div onMouseUp={stopPropagation} onMouseDown={stopPropagation}>
           <DatePicker

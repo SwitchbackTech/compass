@@ -84,6 +84,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       customInput={
         <Focusable
           Component={InputBase}
+          className="w-28"
           underlineColor={darken(resolvedBgColor, -15)}
           bgColor={inputColor}
           withUnderline
@@ -120,12 +121,8 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
             className={classNames("px-2 pt-0 pb-1.25", headerClassName)}
             justifyContent={JustifyContent.LEFT}
           >
-            <Flex className={classNames("w-[97px]", monthContainerClassName)}>
-              <Text
-                className={monthTextClassName}
-                color={headerColor}
-                size="xl"
-              >
+            <Flex className={classNames("w-24.25", monthContainerClassName)}>
+              <Text className={monthTextClassName} color={headerColor}>
                 {selectedMonth}
               </Text>
             </Flex>

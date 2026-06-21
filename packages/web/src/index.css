@@ -442,21 +442,20 @@
  * Rules inside a Tailwind @utility lose to unlayered library defaults.
  */
 .c-date-picker {
-  @apply select-none rounded-xs border-0 font-medium shadow-[0_4px_4px_var(--color-shadow-default)];
+  @apply select-none rounded-xs border-0 shadow-[0_4px_4px_var(--color-shadow-default)];
   background-color: var(--date-picker-bg);
-  font-size: 12px;
+  font-size: 11px;
 
   &[data-view="sidebar"] {
     background-color: transparent;
-    font-size: 11px;
   }
 
   & .react-datepicker__month-container {
     display: flex;
     width: 100%;
-    height: 285px;
+    height: 240px;
     flex-direction: column;
-    padding: 0 15px;
+    padding: 0 12px;
   }
 
   &[data-view="sidebar"] .react-datepicker__month-container {
@@ -506,13 +505,13 @@
   }
 
   & .react-datepicker__day {
-    width: 1.7rem;
-    height: 1.7rem;
+    width: 1.5rem;
+    height: 1.5rem;
     margin: 0;
     border: 0;
     border-radius: 50%;
     color: var(--compass-color-text-dark);
-    line-height: 1.7rem;
+    line-height: 1.5rem;
   }
 
   &[data-dark="true"] .react-datepicker__day {
@@ -578,13 +577,13 @@
   }
 
   &.calendar {
-    width: 414px;
+    width: 320px;
     height: 0;
     overflow: hidden;
   }
 
   &.calendar--open {
-    height: 275px;
+    height: 230px;
   }
 
   &[data-view="sidebar"].calendar--open {
@@ -756,7 +755,7 @@
  * after c-date-picker, it wins on source order, so the !important hacks the
  * @utility form needed are no longer required.
  */
-.c-planner-month-picker {
+.c-month-picker {
   & .react-datepicker__month-container,
   & .react-datepicker__month {
     overflow: visible;
