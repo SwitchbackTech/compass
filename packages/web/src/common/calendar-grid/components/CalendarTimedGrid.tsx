@@ -28,7 +28,6 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import { getCurrentPercentOfDay } from "@web/common/utils/grid/grid.util";
 import { Flex } from "@web/components/Flex/Flex";
-import { Text } from "@web/components/Text/Text";
 
 interface CalendarTimedGridProps {
   columnsId?: string;
@@ -66,7 +65,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
     >
       <CalendarTimeColumn />
       <div
-        className="absolute top-0 left-[var(--calendar-grid-margin-left)] grid h-[calc(24*100%/var(--calendar-visible-hours))] w-[calc(100%_-_var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))]"
+        className="absolute top-0 left-(--calendar-grid-margin-left) grid h-[calc(24*100%/var(--calendar-visible-hours))] w-[calc(100%-var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))]"
         id={columnsId}
         ref={timedColumnsRef}
         style={
@@ -90,7 +89,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
         ))}
       </div>
 
-      <div className="absolute left-[50px] h-full w-[calc(100%_-_50px)]">
+      <div className="absolute left-12.5 h-full w-[calc(100%-50px)]">
         {getHourLabels(true).map((dayTime) => (
           <Flex
             className="relative h-[calc(100%/13)] w-full border-grid-line-primary border-b"
@@ -124,16 +123,14 @@ const CalendarTimeColumn = () => {
   }, [currentHour]);
 
   return (
-    <div className="absolute top-[calc(100%/13_-_5px)] z-1 h-full">
+    <div className="absolute top-[calc(100%/13-5px)] z-1 h-full">
       {hourLabels.map((label, index) => (
         <div
           className="h-[calc(100%/13)]"
           style={{ color: colors[index] }}
           key={label}
         >
-          <Text size="xs" className="block">
-            {label}
-          </Text>
+          <span className="block text-[10px]">{label}</span>
         </div>
       ))}
     </div>
