@@ -17,7 +17,7 @@ export function ShortcutHint({
       title={title}
       className={classNames(
         "inline-flex items-center text-text-light text-xs",
-        variant === "keycap" && "rounded bg-gray-700 px-1.5 py-0.5",
+        variant === "keycap" && "rounded bg-kbd-bg px-1.5 py-0.5",
         className,
       )}
       aria-hidden

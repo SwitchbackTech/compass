@@ -19,19 +19,22 @@ export const TaskListHeader = () => {
   const isToday = dateInView.isSame(dayjs(), "day");
 
   return (
-    <div className="border-gray-400/20 border-b p-4">
+    <div className="border-panel-shadow/20 border-b p-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <h2 aria-live="polite">
             <SelectView
               displayLabel={header}
-              buttonClassName="flex items-center gap-2 rounded px-0 py-0 text-xl font-semibold text-white-100 transition-colors hover:bg-white/10"
+              buttonClassName="flex items-center gap-2 rounded px-0 py-0 text-xl font-semibold text-text-lighter transition-colors hover:bg-white/10"
             />
           </h2>
         </div>
       </div>
       <div className="flex items-center justify-between">
-        <h3 className="font-medium text-sm text-white-100" aria-live="polite">
+        <h3
+          className="font-medium text-sm text-text-lighter"
+          aria-live="polite"
+        >
           {subheader}
         </h3>
         <div className="flex items-center gap-2">

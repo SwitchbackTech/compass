@@ -19,18 +19,18 @@ export function AddTaskPreviewButton({
     <button
       id={ID_ADD_TASK_BUTTON}
       type="button"
-      className="group flex w-full cursor-pointer items-start gap-3 rounded border border-gray-400/30 bg-gray-400/5 p-2 text-left transition-colors hover:border-blue-200/30 hover:bg-blue-200/5 focus:border-blue-200/50 focus:bg-blue-200/10 focus:outline-none focus:ring-2 focus:ring-blue-200/30"
+      className="group flex w-full cursor-pointer items-start gap-3 rounded border border-panel-shadow/30 bg-panel-shadow/5 p-2 text-left transition-colors hover:border-interactive-accent/30 hover:bg-interactive-accent/5 focus:border-interactive-accent/50 focus:bg-interactive-accent/10 focus:outline-none focus:ring-2 focus:ring-interactive-accent/30"
       onClick={onBeginAddingTask}
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
       aria-label="Create new task"
     >
       <PlusIcon
-        className="h-4 w-4 text-gray-200 transition-colors group-hover:text-blue-200 group-focus:text-blue-200"
+        className="h-4 w-4 text-fg-primary-dark transition-colors group-hover:text-interactive-accent group-focus:text-interactive-accent"
         aria-hidden={true}
       />
       <div className="flex flex-1 items-center justify-between">
-        <span className="text-gray-200 text-sm transition-colors group-hover:text-white-100 group-focus:text-white-100">
+        <span className="text-fg-primary-dark text-sm transition-colors group-hover:text-text-lighter group-focus:text-text-lighter">
           Create task
         </span>
         {isHoveringAddBlock && (

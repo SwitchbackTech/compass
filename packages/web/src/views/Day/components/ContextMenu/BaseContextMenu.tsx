@@ -45,7 +45,7 @@ export const BaseContextMenu = forwardRef<HTMLUListElement, Props>(
       ...getFloatingProps(props),
       className: classNames(
         "bg-bg-secondary absolute z-30 min-w-[160px] list-none rounded",
-        "border border-gray-600 shadow-md",
+        "border border-panel-bg shadow-md",
       ),
       style: props.style,
       ref,

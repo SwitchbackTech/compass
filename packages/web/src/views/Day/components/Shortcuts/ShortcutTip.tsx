@@ -14,7 +14,7 @@ const ShortcutBadge = ({
   ariaLabel?: string;
 }) => (
   <span
-    className="rounded bg-gray-400 px-1.5 py-0.5 text-gray-300 text-xs"
+    className="rounded bg-panel-shadow px-1.5 py-0.5 text-text-dark-placeholder text-xs"
     title={ariaLabel}
   >
     {displayShortcut}
