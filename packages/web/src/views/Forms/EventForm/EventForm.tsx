@@ -456,7 +456,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       <form
         {...props}
         role="form"
-        className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 shadow-[0_5px_5px_var(--color-shadow-default)] transition-(--compass-transition-default)"
+        className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
         name={ID_EVENT_FORM}
         onMouseUp={() => {
           if (isStartDatePickerOpen) {

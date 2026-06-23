@@ -7,7 +7,6 @@ type FontSize = "xs" | "s" | "m" | "l" | "xl" | "xxl" | "xxxl" | "4xl" | "5xl";
 
 export interface TextProps
   extends Omit<HTMLAttributes<HTMLSpanElement>, "color"> {
-  bgColor?: string;
   withBottomBorder?: boolean;
   color?: string;
   cursor?: string;
@@ -34,7 +33,6 @@ const sizeClasses: Record<FontSize, string> = {
 export const Text = forwardRef<HTMLSpanElement, PropsWithChildren<TextProps>>(
   (
     {
-      bgColor: _bgColor,
       className,
       color,
       cursor,

@@ -164,7 +164,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     <form
       {...props}
       role="form"
-      className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 text-xl shadow-[0_5px_5px_var(--color-shadow-default)] transition-(--compass-transition-default)"
+      className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 text-xl shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
       name={ID_SOMEDAY_EVENT_FORM}
       onClick={stopPropagation}
       onKeyDown={onKeyDown}
@@ -179,7 +179,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       <TitleActionsRow
         title={
           <Input
-            className="w-full bg-transparent font-semibold text-[length:var(--font-size-5xl)] transition-all duration-300 hover:bg-border-primary"
+            className="text-(length:--font-size-5xl) w-full bg-transparent font-semibold transition-all duration-300 hover:bg-border-primary"
             autoFocus
             onChange={onChangeEventTextField("title")}
             onKeyDown={ignoreDelete}

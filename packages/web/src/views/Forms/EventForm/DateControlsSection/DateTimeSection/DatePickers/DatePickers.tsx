@@ -214,6 +214,7 @@ export const DatePickers: FC<Props> = ({
             calendarClassName="endDatePicker"
             inputColor={inputColor}
             isOpen={isEndDatePickerOpen}
+            monthTextClassName="text-base"
             onCalendarClose={closeEndDatePicker}
             onCalendarOpen={() => setIsEndDatePickerOpen(true)}
             onChange={() => null}

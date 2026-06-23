@@ -89,10 +89,17 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
         ))}
       </div>
 
-      <div className="absolute left-12.5 h-full w-[calc(100%-50px)]">
+      <div
+        className="absolute left-12.5 h-full w-[calc(100%-50px)]"
+        style={
+          {
+            "--calendar-visible-hours": CALENDAR_TIMED_VISIBLE_HOURS,
+          } as CSSVariables
+        }
+      >
         {getHourLabels(true).map((dayTime) => (
           <Flex
-            className="relative h-[calc(100%/13)] w-full border-grid-line-primary border-b"
+            className="relative h-[calc(100%/var(--calendar-visible-hours))] w-full border-grid-line-primary border-b"
             key={dayTime}
             {...{ [DATA_CALENDAR_TIMED_GRID_ROW]: "true" }}
             onMouseDown={onMouseDown}
@@ -123,10 +130,17 @@ const CalendarTimeColumn = () => {
   }, [currentHour]);
 
   return (
-    <div className="absolute top-[calc(100%/13-5px)] z-1 h-full">
+    <div
+      className="absolute top-[calc(100%/var(--calendar-visible-hours)-5px)] z-1 h-full"
+      style={
+        {
+          "--calendar-visible-hours": CALENDAR_TIMED_VISIBLE_HOURS,
+        } as CSSVariables
+      }
+    >
       {hourLabels.map((label, index) => (
         <div
-          className="h-[calc(100%/13)]"
+          className="h-[calc(100%/var(--calendar-visible-hours))]"
           style={{ color: colors[index] }}
           key={label}
         >
