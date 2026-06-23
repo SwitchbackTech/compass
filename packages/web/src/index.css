@@ -48,6 +48,8 @@
   --compass-color-text-light-inactive: hsl(208 13 71 / 54.9%);
   --compass-color-text-dark: hsl(222 28 7);
   --compass-color-text-dark-placeholder: hsl(219 8 46 / 90.2%);
+  --compass-color-interactive-accent: hsl(196 60 59);
+  --compass-color-kbd-bg: hsl(219 18 34 / 25.1%);
   --compass-color-text-divider: #5f5f5f;
   --compass-color-text-gradient-start: hsl(202 100 67);
   --compass-color-text-gradient-end: hsl(195 78 56);
@@ -107,6 +109,8 @@
   --color-text-light-inactive: var(--compass-color-text-light-inactive);
   --color-text-dark: var(--compass-color-text-dark);
   --color-text-dark-placeholder: var(--compass-color-text-dark-placeholder);
+  --color-interactive-accent: var(--compass-color-interactive-accent);
+  --color-kbd-bg: var(--compass-color-kbd-bg);
   --color-text-divider: var(--compass-color-text-divider);
   --color-text-gradient-start: var(--compass-color-text-gradient-start);
   --color-text-gradient-end: var(--compass-color-text-gradient-end);
