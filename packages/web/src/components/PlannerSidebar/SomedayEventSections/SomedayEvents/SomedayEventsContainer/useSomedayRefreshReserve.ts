@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { SOMEDAY_EVENT_ROW_FOOTPRINT } from "../SomedayEvent/styled";
+import { SOMEDAY_EVENT_ROW_FOOTPRINT } from "../SomedayEvent/someday-event.constants";
 
 interface Result {
   reservedMinHeight: number | undefined;

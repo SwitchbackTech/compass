@@ -7,14 +7,12 @@ import {
   within,
 } from "@testing-library/react";
 import { Provider } from "react-redux";
-import { ThemeProvider } from "styled-components";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type CalendarGridMeasurements } from "@web/common/calendar-grid/types/calendarGrid.types";
 import { ZIndex } from "@web/common/constants/web.constants";
-import { theme } from "@web/common/styles/theme";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -101,9 +99,7 @@ const { DayCalendarGrid } =
 const renderDayCalendarGrid = () =>
   render(
     <Provider store={store}>
-      <ThemeProvider theme={theme}>
-        <DayCalendarGrid />
-      </ThemeProvider>
+      <DayCalendarGrid />
     </Provider>,
   );
 

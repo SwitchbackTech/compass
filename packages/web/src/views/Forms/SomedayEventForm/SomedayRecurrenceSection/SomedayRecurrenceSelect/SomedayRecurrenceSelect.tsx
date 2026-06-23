@@ -6,12 +6,10 @@ import ReactSelect, {
   type SingleValueProps,
 } from "react-select";
 import { Frequency } from "rrule";
-import { useTheme } from "styled-components";
 import { brighten, darken } from "@core/util/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { type FrequencyValues } from "../../../EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
-import { SelectContent } from "./styled";
 
 export type SomedayFrequencyOption = {
   label: string;
@@ -57,7 +55,6 @@ export const SomedayRecurrenceSelect = ({
         : DO_NOT_REPEAT_OPTION,
     [hasRecurrence, freq],
   );
-  const selectTheme = useTheme();
   const selectRef = useRef<SelectInstance<SomedayFrequencyOption, false>>(null);
 
   useEffect(() => {
@@ -110,25 +107,18 @@ export const SomedayRecurrenceSelect = ({
 
     return (
       <components.SingleValue {...props}>
-        <SelectContent
+        <span
+          className="inline-flex items-center gap-1 text-m text-text-dark data-[dimmed=true]:text-text-dark-placeholder"
           data-testid="someday-recurrence-value"
           data-dimmed={isDoNotRepeat}
-          dimmed={isDoNotRepeat}
         >
-          <RepeatIcon
-            size={18}
-            color={
-              isDoNotRepeat
-                ? selectTheme.color.text.darkPlaceholder
-                : selectTheme.color.text.dark
-            }
-          />
+          <RepeatIcon size={18} />
           <span>
             {isDoNotRepeat
               ? DO_NOT_REPEAT_OPTION.label
               : `Repeats every ${props.data.label.toLowerCase()}`}
           </span>
-        </SelectContent>
+        </span>
       </components.SingleValue>
     );
   };
@@ -155,19 +145,19 @@ export const SomedayRecurrenceSelect = ({
           borderRadius: theme.shape.borderRadius,
           fontSize,
           borderColor: state.isFocused
-            ? selectTheme.color.border.primaryDark
+            ? "var(--compass-color-border-primary-dark)"
             : baseStyles.borderColor,
           boxShadow: state.isFocused
-            ? `0 0 0 1px ${selectTheme.color.border.primaryDark}`
+            ? "0 0 0 1px var(--compass-color-border-primary-dark)"
             : baseStyles.boxShadow,
         }),
         valueContainer: (baseStyles) => ({
           ...baseStyles,
-          paddingLeft: selectTheme.spacing.s,
+          paddingLeft: "0.5rem",
         }),
         placeholder: (baseStyles) => ({
           ...baseStyles,
-          color: selectTheme.color.text.dark,
+          color: "var(--compass-color-text-dark)",
         }),
         indicatorSeparator: () => ({
           visibility: "hidden",
@@ -188,8 +178,8 @@ export const SomedayRecurrenceSelect = ({
                 ? bgDark
                 : undefined,
           color: isDisabled
-            ? selectTheme.color.text.lightInactive
-            : theme.color.text.dark,
+            ? "var(--compass-color-text-light-inactive)"
+            : "var(--compass-color-text-dark)",
           cursor: isDisabled ? "not-allowed" : "default",
           ":active": {
             ...styles[":active"],

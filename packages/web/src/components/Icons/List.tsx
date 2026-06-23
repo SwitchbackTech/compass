@@ -1,12 +1,11 @@
-import { List } from "@phosphor-icons/react";
-import styled from "styled-components";
+import { type IconProps, List } from "@phosphor-icons/react";
+import { getInteractiveIconClassName } from "./icon.utils";
 
-export const StyledListIcon = styled(List)`
-  color: ${({ theme }) => theme.color.text.light};
-  transition: filter 0.2s ease;
-
-  &:hover {
-    cursor: pointer;
-    filter: brightness(130%);
-  }
-`;
+export const ListIcon = ({ className, ...props }: IconProps) => (
+  <List
+    className={getInteractiveIconClassName(
+      `cursor-pointer text-text-light ${className ?? ""}`,
+    )}
+    {...props}
+  />
+);

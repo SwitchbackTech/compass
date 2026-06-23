@@ -144,7 +144,7 @@
       },
       "script": {
         "displayName": "Script",
-        "purpose": "Caveat handwriting on the weekly Reminder and Dedication only."
+        "purpose": "Caveat handwriting on the Dedication only."
       }
     },
     "shadows": [
@@ -213,19 +213,11 @@
       "description": "A row in the keyboard-first command palette; a floating light surface above the dark canvas.",
       "html": "<div class=\"ds-cmd\"><div class=\"ds-cmd-row ds-cmd-active\">Go to Today</div><div class=\"ds-cmd-row\">Create event</div><div class=\"ds-cmd-row\">Open Now mode</div></div>",
       "css": ".ds-cmd { width: 320px; padding: 6px; border-radius: 6px; background: #fafafa; box-shadow: 0 6px 24px hsla(0 0% 0% / 0.35); font-family: Rubik, ui-sans-serif, system-ui, sans-serif; } .ds-cmd-row { padding: 8px 10px; border-radius: 4px; color: #0d1017; font-size: 0.875rem; cursor: pointer; transition: background-color 0.15s; } .ds-cmd-row:hover { background: hsl(219 18% 34% / 0.12); } .ds-cmd-active { background: #57c1ff; color: #0d1017; }"
-    },
-    {
-      "name": "Handwritten Reminder",
-      "kind": "custom",
-      "refersTo": "button-priority",
-      "description": "The weekly Reminder/Dedication; Caveat handwriting as the single human accent in an otherwise precise system.",
-      "html": "<p class=\"ds-reminder\">Lock in. One thing at a time.</p>",
-      "css": ".ds-reminder { margin: 0; font-family: \"Caveat\", cursive; font-size: 1.6rem; line-height: 1.2; color: #bfbdb5; }"
     }
   ],
   "narrative": {
     "northStar": "The Dark Calendar Canvas, One Accent",
-    "overview": "Compass is a near-black blue canvas where the only truly saturated color is a single sky-blue accent (#57c1ff). Everything structural, the grid lines, panels, borders, and most text, lives in a narrow blue-gray band against a deep #0d1017 background. Color enters the screen only where it carries meaning: the accent marks selection and primary actions, and a small set of muted priority colors tints the event blocks themselves. The interface is dim and low-contrast at rest so the user's events and current task are the brightest things on screen. The one deliberately human note is handwriting: the Caveat script font on the weekly Reminder and Dedication, a personal touch at the margin of an otherwise precise instrument.",
+    "overview": "Compass is a near-black blue canvas where the only truly saturated color is a single sky-blue accent (#57c1ff). Everything structural, the grid lines, panels, borders, and most text, lives in a narrow blue-gray band against a deep #0d1017 background. Color enters the screen only where it carries meaning: the accent marks selection and primary actions, and a small set of muted priority colors tints the event blocks themselves. The interface is dim and low-contrast at rest so the user's events and current task are the brightest things on screen. The one deliberately human note is handwriting: the Caveat script font on the Dedication, a personal touch at the margin of an otherwise precise instrument.",
     "keyCharacteristics": [
       "Deep blue-black surface (#0d1017), built up by tonal layering, not boxes.",
       "Exactly one bright accent (#57c1ff); meaning, not decoration.",
@@ -246,7 +238,7 @@
       },
       {
         "name": "The One Voice Rule",
-        "body": "Rubik is the only UI typeface. Display fonts in labels, buttons, or data are forbidden. Caveat is the single exception, on the Reminder/Dedication only.",
+        "body": "Rubik is the only UI typeface. Display fonts in labels, buttons, or data are forbidden. Caveat is the single exception, on the Dedication only.",
         "section": "typography"
       },
       {
@@ -266,7 +258,7 @@
       "Do leave controls borderless at rest and reveal them via background/color shift on hover and focus.",
       "Do reserve priority colors (Work/Relations/Self/Unassigned) for event blocks and tags, not chrome.",
       "Do carry all UI in Rubik, using weight (400/500/700) and the fixed rem scale for hierarchy.",
-      "Do confine Caveat handwriting to the Reminder and Dedication.",
+      "Do confine Caveat handwriting to the Dedication.",
       "Do hold body/label text to WCAG AA contrast against the dark surfaces; bump muted blue-grays toward fg-primary when contrast is close."
     ],
     "donts": [

@@ -102,8 +102,10 @@ const setReducedMotionPreference = (matches: boolean) => {
 };
 
 const createHarness = ({
+  mainGridScrollTop = 0,
   viewStart = dayjs("2026-05-17"),
 }: {
+  mainGridScrollTop?: number;
   viewStart?: ReturnType<typeof dayjs>;
 } = {}) => {
   document.body.innerHTML = "";
@@ -146,7 +148,7 @@ const createHarness = ({
   document.body.append(weekDropTarget, allDayColumns, mainGrid);
   Object.defineProperty(mainGrid, "clientHeight", { value: 780 });
   Object.defineProperty(mainGrid, "scrollHeight", { value: 1560 });
-  mainGrid.scrollTop = 0;
+  mainGrid.scrollTop = mainGridScrollTop;
 
   setRect(weekDropTarget, {
     height: 200,
@@ -244,10 +246,12 @@ const createHarness = ({
     adapter,
     event,
     flushFrame,
+    mainGrid,
     onClickSomedayEvent,
     onCommitSomedayInteraction,
     onMotionActivation,
     onPreviewSomedaySidebarDrop,
+    onRequestWeekNavigation,
     source,
     sourceButton,
     sourceChild,
@@ -337,6 +341,88 @@ describe("SomedayInteractionAdapter", () => {
       dates: {
         endDate: expect.stringContaining("2026-05-18T03:00"),
         startDate: expect.stringContaining("2026-05-18T02:00"),
+      },
+      eventId: "someday-event",
+      isAllDay: false,
+      type: "schedule",
+    });
+  });
+
+  it("accounts for the main grid scroll position when scheduling a timed drop", () => {
+    const {
+      adapter,
+      flushFrame,
+      onCommitSomedayInteraction,
+      sourceChild,
+      timedColumns,
+    } = createHarness({ mainGridScrollTop: 120 });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: timedColumns, x: 250, y: 220 }),
+    );
+
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      dates: {
+        endDate: expect.stringContaining("2026-05-18T05:00"),
+        startDate: expect.stringContaining("2026-05-18T04:00"),
+      },
+      eventId: "someday-event",
+      isAllDay: false,
+      type: "schedule",
+    });
+  });
+
+  it("uses the latest main grid scroll position when it changes during a timed drag", () => {
+    const {
+      adapter,
+      flushFrame,
+      mainGrid,
+      onCommitSomedayInteraction,
+      sourceChild,
+      timedColumns,
+    } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+
+    mainGrid.scrollTop = 120;
+
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: timedColumns, x: 250, y: 220 }),
+    );
+
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      dates: {
+        endDate: expect.stringContaining("2026-05-18T05:00"),
+        startDate: expect.stringContaining("2026-05-18T04:00"),
       },
       eventId: "someday-event",
       isAllDay: false,
@@ -511,6 +597,104 @@ describe("SomedayInteractionAdapter", () => {
       isAllDay: true,
       type: "schedule",
     });
+  });
+
+  it("clamps a drop over the week header to the nearest all-day slot", () => {
+    const { adapter, flushFrame, onCommitSomedayInteraction, sourceChild } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    // (450, 20) is in the dead header band: above the all-day row (top 50),
+    // right of the sidebar (right 260). The clamp should land it on the
+    // all-day row's nearest column instead of noop-restoring.
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: document.body, x: 450, y: 20 }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: document.body, x: 450, y: 20 }),
+    );
+
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      dates: {
+        endDate: "2026-05-21",
+        startDate: "2026-05-20",
+      },
+      eventId: "someday-event",
+      isAllDay: true,
+      type: "schedule",
+    });
+  });
+
+  it("anchors the preview to the grid while the pointer is over the header", () => {
+    const { adapter, flushFrame, sourceChild } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: document.body, x: 400, y: 20 }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector<HTMLElement>(
+      "[data-calendar-interaction-overlay]",
+    );
+    const expectedHoverColor = normalizeCssColor(
+      gridHoverColorByPriority[Priorities.UNASSIGNED],
+    );
+
+    // Anchored (grid-hover) styling proves the preview snapped to a valid
+    // slot rather than floating under the cursor in the header.
+    expect(overlay?.style.backgroundColor).toBe(expectedHoverColor);
+    expect(overlay?.style.scale).toBe("1");
+  });
+
+  it("clamps drags in the gap between the all-day row and the timed grid", () => {
+    const { adapter, flushFrame, onCommitSomedayInteraction, sourceChild } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    // y=93 sits between the all-day bottom (90) and the grid top (100);
+    // the all-day row is nearer.
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: document.body, x: 450, y: 93 }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: document.body, x: 450, y: 93 }),
+    );
+
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      dates: {
+        endDate: "2026-05-21",
+        startDate: "2026-05-20",
+      },
+      eventId: "someday-event",
+      isAllDay: true,
+      type: "schedule",
+    });
+  });
+
+  it("does not start edge navigation while the pointer is in the header", () => {
+    const { adapter, flushFrame, onRequestWeekNavigation, sourceChild } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    // Near the grid's right edge horizontally, but in the header band: the
+    // clamp must not turn this into a phantom edge dwell.
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: document.body, x: 790, y: 20 }),
+    );
+    flushFrame();
+
+    expect(onRequestWeekNavigation).not.toHaveBeenCalled();
   });
 
   it("commits a sidebar reorder through the interaction engine", () => {

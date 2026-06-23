@@ -1,7 +1,6 @@
-import { Sidebar } from "@phosphor-icons/react";
-import styled from "styled-components";
-import { iconStyles } from "./styled";
+import { type IconProps, Sidebar } from "@phosphor-icons/react";
+import { getInteractiveIconClassName } from "./icon.utils";
 
-export const SidebarIcon = styled(Sidebar)`
-  ${iconStyles}
-`;
+export const SidebarIcon = ({ className, ...props }: IconProps) => (
+  <Sidebar className={getInteractiveIconClassName(className)} {...props} />
+);

@@ -19,7 +19,20 @@ export default defineConfig({
   projects: [
     {
       name: "chromium-desktop",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        storageState: {
+          cookies: [],
+          origins: [
+            {
+              origin: `http://localhost:${TEST_PORT}`,
+              localStorage: [
+                { name: "compass.onboarding.has-seen-welcome", value: "true" },
+              ],
+            },
+          ],
+        },
+      },
     },
   ],
   webServer: {

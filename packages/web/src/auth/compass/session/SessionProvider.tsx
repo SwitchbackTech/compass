@@ -1,9 +1,4 @@
-import {
-  createContext,
-  type PropsWithChildren,
-  useEffect,
-  useState,
-} from "react";
+import { type PropsWithChildren, useEffect, useState } from "react";
 import { BehaviorSubject } from "rxjs";
 import {
   distinctUntilChanged,
@@ -29,7 +24,7 @@ import * as sse from "@web/sse/provider/SSEProvider";
 import { store } from "@web/store";
 import { clearGoogleSyncIndicatorOverride } from "../../google/state/google.sync.state";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";
-import { type CompassSession } from "./session.types";
+import { SessionContext } from "./session.context";
 
 SuperTokens.init({
   appInfo: {
@@ -50,11 +45,6 @@ SuperTokens.init({
       },
     }),
   ],
-});
-
-export const SessionContext = createContext<CompassSession>({
-  authenticated: false,
-  setAuthenticated: () => {},
 });
 
 const authenticated$ = new BehaviorSubject(false);

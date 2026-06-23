@@ -1,10 +1,7 @@
 import { type FC } from "react";
-import styled from "styled-components";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { theme } from "@web/common/styles/theme";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
-import { Text } from "@web/components/Text";
-import { Columns } from "../Grid/Columns/styled";
+import { Text } from "@web/components/Text/Text";
 
 interface Props {
   today: Dayjs;
@@ -23,10 +20,10 @@ export const DayLabels: FC<Props> = ({
     const isCurrentWeek = today.week() === week;
     const isToday = isCurrentWeek && today.format("DD") === day.format("DD");
     const color = day.isBefore(today, "day")
-      ? theme.color.text.lightInactive
+      ? "var(--compass-color-text-light-inactive)"
       : isToday
-        ? theme.color.text.accent
-        : theme.color.text.light;
+        ? "var(--compass-color-accent-primary)"
+        : "var(--compass-color-text-light)";
 
     return { isToday, color };
   };
@@ -43,59 +40,32 @@ export const DayLabels: FC<Props> = ({
   };
 
   return (
-    <StyledDayLabels>
-      <StyledDayLabelColumns>
+    <div className="relative mt-2.5 min-h-8 w-full">
+      <div className="absolute top-0 left-12.5 grid h-full w-[calc(100%-50px)] grid-cols-[repeat(7,minmax(80px,1fr))] items-end">
         {weekDays.map((day) => {
           const dayNumber = getDayNumber(day);
           const { isToday, color } = getColor(day);
 
           return (
-            <StyledDayLabel
+            <div
+              className="flex items-end justify-center gap-1"
               key={getWeekDayLabel(day)}
               style={{ color }}
               title={getWeekDayLabel(day)}
             >
-              <Text className="week-day-number" withGradient={isToday}>
+              <Text
+                className="text-[clamp(var(--font-size-xl),2.7cqw,var(--font-size-xxl))] leading-none"
+                withGradient={isToday}
+              >
                 {dayNumber}
               </Text>
-              <Text className="week-day-name">{day.format("ddd")}</Text>
-            </StyledDayLabel>
+              <Text className="text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none">
+                {day.format("ddd")}
+              </Text>
+            </div>
           );
         })}
-      </StyledDayLabelColumns>
-    </StyledDayLabels>
+      </div>
+    </div>
   );
 };
-
-const StyledDayLabels = styled.div`
-  // min-height (not height) so the box grows when clamp() resolves
-  // .week-day-number to xxl at wide viewports.
-  min-height: 32px;
-  margin-top: 10px;
-  position: relative;
-  width: 100%;
-
-  .week-day-number {
-    font-size: ${({ theme }) =>
-      `clamp(${theme.text.size.xl}, 2.7cqw, ${theme.text.size.xxl})`};
-    line-height: 1;
-  }
-
-  .week-day-name {
-    font-size: ${({ theme }) =>
-      `clamp(${theme.text.size.m}, 2cqw, ${theme.text.size.l})`};
-    line-height: 1;
-  }
-`;
-
-const StyledDayLabelColumns = styled(Columns)`
-  align-items: end;
-  height: 100%;
-`;
-
-const StyledDayLabel = styled.div`
-  align-items: end;
-  display: flex;
-  gap: 4px;
-  justify-content: center;
-`;

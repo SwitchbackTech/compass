@@ -1,7 +1,6 @@
-import { type DefaultTheme } from "styled-components";
 import { c, textDark, textLight } from "@web/common/styles/colors";
 
-export const theme: DefaultTheme = {
+export const theme = {
   color: {
     common: {
       white: c.white100,

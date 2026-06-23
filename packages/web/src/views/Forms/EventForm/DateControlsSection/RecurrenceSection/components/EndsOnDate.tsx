@@ -2,12 +2,10 @@ import type React from "react";
 import { useMemo, useState } from "react";
 import { darken } from "@core/util/color.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
-import { theme } from "@web/common/styles/theme";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { Flex } from "@web/components/Flex";
-import { StyledText } from "@web/components/Text/styled";
+import { Flex } from "@web/components/Flex/Flex";
+import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 
 export interface EndsOnDateProps {
   bgColor: string;
@@ -28,13 +26,13 @@ export const EndsOnDate = ({
   const miniDate = useMemo(() => parseCompassEventDate(minDate), [minDate]);
 
   return (
-    <StyledRepeatRow>
-      <StyledText size="l">Ends on:</StyledText>
+    <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
+      <Text size="l">Ends on:</Text>
 
       <Flex
         style={{
           cursor: "pointer",
-          borderColor: theme.color.border.primaryDark,
+          borderColor: "var(--compass-color-border-primary-dark)",
           borderBottomWidth: 1,
           borderBottomStyle: "solid",
         }}
@@ -61,6 +59,6 @@ export const EndsOnDate = ({
           </div>
         </TooltipWrapper>
       </Flex>
-    </StyledRepeatRow>
+    </div>
   );
 };

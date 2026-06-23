@@ -1,13 +1,9 @@
 import type React from "react";
 import { Priorities, type Priority } from "@core/constants/core.constants";
+import { type CSSVariables } from "@web/common/styles/css.types";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import {
-  PriorityCircle,
-  TooltipText,
-  TooltipWrapper,
-} from "@web/components/ContextMenu/styled";
+import { Flex } from "@web/components/Flex/Flex";
 import { type SetEventFormField } from "../types";
-import { StyledPriorityFlex } from "./styled";
 
 interface Props {
   priority: Priority;
@@ -18,47 +14,37 @@ export const PrioritySection: React.FC<Props> = ({
   onSetEventField,
   priority,
 }) => {
+  const priorities = [
+    { color: colorByPriority.work, label: "Work", value: Priorities.WORK },
+    { color: colorByPriority.self, label: "Self", value: Priorities.SELF },
+    {
+      color: colorByPriority.relationships,
+      label: "Relationships",
+      value: Priorities.RELATIONS,
+    },
+  ];
+
   return (
-    <StyledPriorityFlex>
-      <TooltipWrapper>
-        <PriorityCircle
-          color={colorByPriority.work}
-          selected={priority === Priorities.WORK}
-          onClick={() => {
-            onSetEventField({ priority: Priorities.WORK });
-          }}
-          onFocus={() => onSetEventField({ priority: Priorities.WORK })}
-          role="tab"
-          tabIndex={0}
-        />
-        <TooltipText>Work</TooltipText>
-      </TooltipWrapper>
-
-      <TooltipWrapper>
-        <PriorityCircle
-          color={colorByPriority.self}
-          selected={priority === Priorities.SELF}
-          onClick={() => onSetEventField({ priority: Priorities.SELF })}
-          onFocus={() => onSetEventField({ priority: Priorities.SELF })}
-          role="tab"
-          tabIndex={0}
-        />
-        <TooltipText>Self</TooltipText>
-      </TooltipWrapper>
-
-      <TooltipWrapper>
-        <PriorityCircle
-          color={colorByPriority.relationships}
-          selected={priority === Priorities.RELATIONS}
-          onClick={() => {
-            onSetEventField({ priority: Priorities.RELATIONS });
-          }}
-          onFocus={() => onSetEventField({ priority: Priorities.RELATIONS })}
-          role="tab"
-          tabIndex={0}
-        />
-        <TooltipText>Relationships</TooltipText>
-      </TooltipWrapper>
-    </StyledPriorityFlex>
+    <Flex className="my-[15px] gap-2.5">
+      {priorities.map((item) => (
+        <div
+          className="group relative flex flex-col items-center"
+          key={item.value}
+        >
+          <button
+            aria-label={`Set priority to ${item.label}`}
+            aria-selected={priority === item.value}
+            className="c-context-priority-circle"
+            data-selected={priority === item.value}
+            onClick={() => onSetEventField({ priority: item.value })}
+            onFocus={() => onSetEventField({ priority: item.value })}
+            role="tab"
+            style={{ "--priority-color": item.color } as CSSVariables}
+            type="button"
+          />
+          <span className="c-context-tooltip">{item.label}</span>
+        </div>
+      ))}
+    </Flex>
   );
 };

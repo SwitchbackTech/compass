@@ -2,10 +2,6 @@ import React, { type Dispatch, type SetStateAction, useRef } from "react";
 import { Frequency } from "rrule";
 import { type Schema_Event } from "@core/types/event.types";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
-import {
-  StyledRepeatButton,
-  StyledRepeatRow,
-} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 import { useRecurrence } from "../../EventForm/DateControlsSection/RecurrenceSection/useRecurrence/useRecurrence";
 import {
   type SomedayFrequencyOption,
@@ -82,7 +78,7 @@ export const SomedayRecurrenceSection = ({
   const shouldShowSelect = hasRecurrence || isEditing;
 
   return (
-    <StyledRepeatRow>
+    <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
       {shouldShowSelect ? (
         <SomedayRecurrenceSelect
           bgColor={bgColor}
@@ -94,16 +90,18 @@ export const SomedayRecurrenceSection = ({
           onCancel={cancelEdit}
         />
       ) : (
-        <StyledRepeatButton
+        <button
+          className="c-recurrence-toggle"
           aria-label="Edit recurrence"
-          hasRepeat={hasRecurrence}
+          data-repeat={hasRecurrence}
+          data-disabled={false}
           onClick={openSelect}
           type="button"
         >
           <RepeatIcon size={18} />
           <span>Repeat</span>
-        </StyledRepeatButton>
+        </button>
       )}
-    </StyledRepeatRow>
+    </div>
   );
 };

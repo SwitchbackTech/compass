@@ -7,7 +7,6 @@ import {
   useMemo,
   useState,
 } from "react";
-import styled from "styled-components";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   CALENDAR_EVENT_WIDTH_MINIMUM,
@@ -21,14 +20,14 @@ import {
   ID_GRID_MAIN,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { type CSSVariables } from "@web/common/styles/css.types";
 import { blueGradient } from "@web/common/styles/theme.util";
 import {
   getColorsByHour,
   getHourLabels,
 } from "@web/common/utils/datetime/web.date.util";
 import { getCurrentPercentOfDay } from "@web/common/utils/grid/grid.util";
-import { Flex } from "@web/components/Flex";
-import { Text } from "@web/components/Text";
+import { Flex } from "@web/components/Flex/Flex";
 
 interface CalendarTimedGridProps {
   columnsId?: string;
@@ -40,85 +39,6 @@ interface CalendarTimedGridProps {
   timedGridRef: RefCallback<HTMLDivElement>;
   visibleDates: CalendarGridVisibleDate[];
 }
-
-const StyledGridRow = styled(Flex)`
-  height: calc(100% / ${CALENDAR_TIMED_VISIBLE_HOURS});
-  border-bottom: ${({ theme }) => `1px solid ${theme.color.gridLine.primary}`};
-  width: 100%;
-  position: relative;
-
-  & > span {
-    position: absolute;
-    bottom: -5px;
-    left: -${CALENDAR_GRID_MARGIN_LEFT}px;
-  }
-`;
-
-const StyledGridWithTimeLabels = styled.div`
-  height: 100%;
-  left: ${CALENDAR_GRID_MARGIN_LEFT}px;
-  position: absolute;
-  width: calc(100% - ${CALENDAR_GRID_MARGIN_LEFT}px);
-`;
-
-const StyledMainGrid = styled.div`
-  --scrollbar-width: 0px;
-  flex: 1;
-  min-height: 0;
-  overflow-x: hidden;
-  overflow-y: auto;
-  position: relative;
-  width: 100%;
-`;
-
-const StyledTimedColumns = styled.div<{ $visibleDateCount: number }>`
-  display: grid;
-  grid-template-columns: ${({ $visibleDateCount }) =>
-    `repeat(${$visibleDateCount}, minmax(${CALENDAR_EVENT_WIDTH_MINIMUM}px, 1fr))`};
-  height: calc(24 * 100% / ${CALENDAR_TIMED_VISIBLE_HOURS});
-  left: ${CALENDAR_GRID_MARGIN_LEFT}px;
-  position: absolute;
-  top: 0;
-  width: calc(100% - ${CALENDAR_GRID_MARGIN_LEFT}px);
-`;
-
-const StyledDateColumn = styled.div<{ $isPast: boolean }>`
-  background: ${({ $isPast, theme }) =>
-    $isPast ? theme.color.bg.secondary : "transparent"};
-  border-left: ${({ theme }) => `1px solid ${theme.color.gridLine.primary}`};
-  box-sizing: border-box;
-  height: 100%;
-  min-width: ${CALENDAR_EVENT_WIDTH_MINIMUM}px;
-  position: relative;
-`;
-
-const StyledTimesLabel = styled.div<{ color: string }>`
-  color: ${({ color }) => color};
-`;
-
-const StyledDayTimes = styled.div`
-  height: 100%;
-  position: absolute;
-  top: calc(100% / ${CALENDAR_TIMED_VISIBLE_HOURS} + -5px);
-  z-index: ${ZIndex.LAYER_1};
-
-  & > div {
-    height: calc(100% / ${CALENDAR_TIMED_VISIBLE_HOURS});
-
-    & > span {
-      display: block;
-    }
-  }
-`;
-
-const StyledNowLine = styled.div<{ top: number }>`
-  background: ${blueGradient};
-  height: 1px;
-  position: absolute;
-  top: ${({ top }) => top}%;
-  width: 100%;
-  z-index: ${ZIndex.LAYER_2};
-`;
 
 export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
   columnsId = ID_GRID_COLUMNS_TIMED,
@@ -135,43 +55,60 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
   );
 
   return (
-    <StyledMainGrid
+    <div
       aria-label="Timed events grid"
-      className="compass-scroll"
+      className="c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px]"
       id={timedGridId}
       ref={timedGridRef}
       role="region"
       tabIndex={-1}
     >
       <CalendarTimeColumn />
-      <StyledTimedColumns
-        $visibleDateCount={visibleDates.length}
+      <div
+        className="absolute top-0 left-(--calendar-grid-margin-left) grid h-[calc(24*100%/var(--calendar-visible-hours))] w-[calc(100%-var(--calendar-grid-margin-left))] grid-cols-[repeat(var(--calendar-column-count),minmax(var(--calendar-column-min-width),1fr))]"
         id={columnsId}
         ref={timedColumnsRef}
+        style={
+          {
+            "--calendar-column-count": visibleDates.length,
+            "--calendar-column-min-width": `${CALENDAR_EVENT_WIDTH_MINIMUM}px`,
+            "--calendar-grid-margin-left": `${CALENDAR_GRID_MARGIN_LEFT}px`,
+            "--calendar-visible-hours": CALENDAR_TIMED_VISIBLE_HOURS,
+          } as CSSVariables
+        }
       >
         {isTodayVisible ? <CalendarNowLine /> : null}
         {visibleDates.map(({ date, key }) => (
-          <StyledDateColumn
-            $isPast={date.isBefore(today, "day")}
+          <div
+            className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l data-[past=true]:bg-bg-secondary"
+            data-past={date.isBefore(today, "day")}
             aria-label={date.format("dddd, MMMM D, YYYY")}
             key={key}
             role="columnheader"
           />
         ))}
-      </StyledTimedColumns>
+      </div>
 
-      <StyledGridWithTimeLabels>
+      <div
+        className="absolute left-12.5 h-full w-[calc(100%-50px)]"
+        style={
+          {
+            "--calendar-visible-hours": CALENDAR_TIMED_VISIBLE_HOURS,
+          } as CSSVariables
+        }
+      >
         {getHourLabels(true).map((dayTime) => (
-          <StyledGridRow
+          <Flex
+            className="relative h-[calc(100%/var(--calendar-visible-hours))] w-full border-grid-line-primary border-b"
             key={dayTime}
             {...{ [DATA_CALENDAR_TIMED_GRID_ROW]: "true" }}
             onMouseDown={onMouseDown}
           />
         ))}
-      </StyledGridWithTimeLabels>
+      </div>
 
       {eventsLayer}
-    </StyledMainGrid>
+    </div>
   );
 };
 
@@ -193,13 +130,24 @@ const CalendarTimeColumn = () => {
   }, [currentHour]);
 
   return (
-    <StyledDayTimes>
+    <div
+      className="absolute top-[calc(100%/var(--calendar-visible-hours)-5px)] z-1 h-full"
+      style={
+        {
+          "--calendar-visible-hours": CALENDAR_TIMED_VISIBLE_HOURS,
+        } as CSSVariables
+      }
+    >
       {hourLabels.map((label, index) => (
-        <StyledTimesLabel color={colors[index]} key={label}>
-          <Text size="xs">{label}</Text>
-        </StyledTimesLabel>
+        <div
+          className="h-[calc(100%/var(--calendar-visible-hours))]"
+          style={{ color: colors[index] }}
+          key={label}
+        >
+          <span className="block text-[10px]">{label}</span>
+        </div>
       ))}
-    </StyledDayTimes>
+    </div>
   );
 };
 
@@ -216,5 +164,16 @@ const CalendarNowLine = () => {
     return () => clearInterval(interval);
   }, []);
 
-  return <StyledNowLine role="separator" title="now line" top={percentOfDay} />;
+  return (
+    <div
+      className="absolute h-px w-full"
+      role="separator"
+      title="now line"
+      style={{
+        background: blueGradient,
+        top: `${percentOfDay}%`,
+        zIndex: ZIndex.LAYER_2,
+      }}
+    />
+  );
 };

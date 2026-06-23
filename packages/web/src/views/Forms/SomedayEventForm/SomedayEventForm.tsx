@@ -9,16 +9,17 @@ import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
-import { colorByPriority } from "@web/common/styles/theme.util";
+import { type CSSVariables } from "@web/common/styles/css.types";
+import {
+  colorByPriority,
+  hoverColorByPriority,
+} from "@web/common/styles/theme.util";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import { Input } from "@web/components/Input/Input";
+import { Textarea } from "@web/components/Textarea/Textarea";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
-import {
-  StyledDescription,
-  StyledEventForm,
-  StyledIconRow,
-  StyledTitle,
-} from "@web/views/Forms/EventForm/styled";
+import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
   type FormProps,
   type SetEventFormField,
@@ -30,6 +31,8 @@ import { useSomedayFormShortcuts } from "@web/views/Forms/SomedayEventForm/useSo
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   category,
+  isDraft: _isDraft,
+  isExistingEvent: _isExistingEvent,
   onClose,
   onMigrate,
   onSubmit,
@@ -158,8 +161,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   return (
-    <StyledEventForm
+    <form
       {...props}
+      role="form"
+      className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 text-xl shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
       name={ID_SOMEDAY_EVENT_FORM}
       onClick={stopPropagation}
       onKeyDown={onKeyDown}
@@ -167,38 +172,43 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onMouseUp={(e) => {
         e.stopPropagation();
       }}
-      priority={priority}
-      role="form"
+      style={
+        { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
+      }
     >
-      <StyledIconRow>
-        <SomedayEventActionMenu
-          bgColor={darken(colorByPriority[priority])}
-          target={target}
-          onMigrateBackwardClick={() => {
-            onMigrate?.(event, category, "back");
-          }}
-          onMigrateForwardClick={() => {
-            onMigrate?.(event, category, "forward");
-          }}
-          onMigrateAboveClick={() => {
-            onMigrate?.(event, category, "up");
-          }}
-          onMigrateBelowClick={() => {
-            onMigrate?.(event, category, "down");
-          }}
-          onDuplicateClick={onDuplicateEvent}
-          onDeleteClick={onDelete}
-        />
-      </StyledIconRow>
-
-      <StyledTitle
-        autoFocus
-        onChange={onChangeEventTextField("title")}
-        onKeyDown={ignoreDelete}
-        placeholder="Title"
-        title="title"
-        underlineColor={colorByPriority[priority]}
-        value={title}
+      <TitleActionsRow
+        title={
+          <Input
+            className="text-(length:--font-size-5xl) w-full bg-transparent font-semibold transition-all duration-300 hover:bg-border-primary"
+            autoFocus
+            onChange={onChangeEventTextField("title")}
+            onKeyDown={ignoreDelete}
+            placeholder="Title"
+            title="title"
+            underlineColor={colorByPriority[priority]}
+            value={title}
+          />
+        }
+        actions={
+          <SomedayEventActionMenu
+            bgColor={darken(colorByPriority[priority])}
+            target={target}
+            onMigrateBackwardClick={() => {
+              onMigrate?.(event, category, "back");
+            }}
+            onMigrateForwardClick={() => {
+              onMigrate?.(event, category, "forward");
+            }}
+            onMigrateAboveClick={() => {
+              onMigrate?.(event, category, "up");
+            }}
+            onMigrateBelowClick={() => {
+              onMigrate?.(event, category, "down");
+            }}
+            onDuplicateClick={onDuplicateEvent}
+            onDeleteClick={onDelete}
+          />
+        }
       />
 
       <PrioritySection onSetEventField={onSetEventField} priority={priority} />
@@ -209,16 +219,16 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         setEvent={setLatestEvent}
       />
 
-      <StyledDescription
+      <Textarea
         onChange={onChangeEventTextField("description")}
         onKeyDown={ignoreDelete}
         placeholder="Description"
         underlineColor={colorByPriority[priority]}
         value={event.description || ""}
-        className="overflow-y-auto"
+        className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent transition-all duration-300 hover:bg-border-primary hover:brightness-90"
       />
 
       <SaveSection priority={priority} onSubmit={_onSubmit} />
-    </StyledEventForm>
+    </form>
   );
 };

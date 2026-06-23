@@ -95,11 +95,7 @@ export const preloadedState: InitialReduxState = {
       end: "2025-12-13T23:59:59Z",
     },
     sidebar: {
-      tab: "tasks",
       isOpen: true,
-    },
-    header: {
-      reminder: "",
     },
   },
 };

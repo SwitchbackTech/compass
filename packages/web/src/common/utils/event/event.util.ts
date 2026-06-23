@@ -1,4 +1,3 @@
-import { type DropResult } from "@hello-pangea/dnd";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
@@ -234,26 +233,6 @@ export const getEventCursorClass = (
   if (isDragging) return "cursor-move";
   if (isPending) return "cursor-wait";
   return "cursor-pointer";
-};
-
-export const prepEvtAfterDraftDrop = (
-  category: Categories_Event,
-  dropItem: DropResult & Schema_Event,
-  dates: { startDate: string; endDate: string },
-) => {
-  const baseEvent = assembleDefaultEvent(category);
-
-  const event: Schema_Event = {
-    ...baseEvent,
-    description: dropItem.description,
-    endDate: dates.endDate,
-    origin: Origin.COMPASS,
-    priority: dropItem.priority,
-    title: dropItem.title,
-    startDate: dates.startDate,
-  };
-
-  return event;
 };
 
 const _assembleBaseEvent = (

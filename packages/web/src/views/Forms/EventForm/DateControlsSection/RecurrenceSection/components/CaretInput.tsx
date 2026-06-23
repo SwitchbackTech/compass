@@ -1,9 +1,5 @@
 import { CaretDown, CaretUp } from "@phosphor-icons/react";
 import type React from "react";
-import {
-  StyledCaretButton,
-  StyledCaretInputContainer,
-} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 
 export interface CaretInputProps {
   onChange: (type: "increase" | "decrease") => void;
@@ -11,8 +7,10 @@ export interface CaretInputProps {
 
 export const CaretInput = ({ onChange }: CaretInputProps) => {
   return (
-    <StyledCaretInputContainer>
-      <StyledCaretButton
+    <div className="ml-1 flex flex-col justify-between">
+      <button
+        className="flex size-[19px] cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent p-0 text-[inherit] transition-[var(--compass-transition-default)] hover:bg-bg-primary hover:text-text-light focus:shadow-[0_0_0_2px_var(--compass-color-border-primary-dark)]"
+        type="button"
         onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
           event.preventDefault();
           event.stopPropagation();
@@ -20,9 +18,11 @@ export const CaretInput = ({ onChange }: CaretInputProps) => {
         }}
       >
         <CaretUp size={14} />
-      </StyledCaretButton>
+      </button>
 
-      <StyledCaretButton
+      <button
+        className="flex size-[19px] cursor-pointer items-center justify-center rounded-sm border-0 bg-transparent p-0 text-[inherit] transition-[var(--compass-transition-default)] hover:bg-bg-primary hover:text-text-light focus:shadow-[0_0_0_2px_var(--compass-color-border-primary-dark)]"
+        type="button"
         onClick={(event: React.MouseEvent<HTMLButtonElement>) => {
           event.preventDefault();
           event.stopPropagation();
@@ -30,7 +30,7 @@ export const CaretInput = ({ onChange }: CaretInputProps) => {
         }}
       >
         <CaretDown size={14} />
-      </StyledCaretButton>
-    </StyledCaretInputContainer>
+      </button>
+    </div>
   );
 };

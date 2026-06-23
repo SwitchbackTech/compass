@@ -48,6 +48,10 @@ import {
   somedayEventRegistry,
 } from "../registry/somedayEventRegistry";
 import {
+  type ClampZoneRect,
+  clampPointToZones,
+} from "./geometry/clampPointToZones";
+import {
   type SomedayAllDayDrop,
   type SomedayInteractionAdapter,
   type SomedayInteractionAdapterOptions,
@@ -278,7 +282,15 @@ export const createSomedayInteractionAdapter = ({
           pointer,
           timestamp,
         );
-        const nextDrop = resolveDrop(pointer, edgeNavigationUpdate.visual);
+        // Edge navigation reads the raw pointer (it only engages inside grid
+        // layouts). Drop resolution and the floating preview use the clamped
+        // pointer so the overlay can't wander into dead zones like the week
+        // header — it slides along the nearest valid drop zone instead.
+        const clampedPointer = clampPointToZones(pointer, getClampZones());
+        const nextDrop = resolveDrop(
+          clampedPointer,
+          edgeNavigationUpdate.visual,
+        );
         previewSidebarDrop(target, edgeNavigationUpdate.visual, nextDrop);
         const overlayRect = getCalendarOverlayRect(nextDrop);
         const nextVisual = {
@@ -292,8 +304,10 @@ export const createSomedayInteractionAdapter = ({
                 y: overlayRect.top - edgeNavigationUpdate.visual.sourceRect.top,
               }
             : {
-                x: pointer.x - edgeNavigationUpdate.visual.pointerStart.x,
-                y: pointer.y - edgeNavigationUpdate.visual.pointerStart.y,
+                x:
+                  clampedPointer.x - edgeNavigationUpdate.visual.pointerStart.x,
+                y:
+                  clampedPointer.y - edgeNavigationUpdate.visual.pointerStart.y,
               },
         };
 
@@ -340,6 +354,35 @@ export const createSomedayInteractionAdapter = ({
       event: somedayEvent,
       registered,
     };
+  }
+
+  function getClampZones(): ClampZoneRect[] {
+    const zones: ClampZoneRect[] = [];
+
+    for (const target of somedayDropTargetRegistry.getTargets()) {
+      const rect = target.element.getBoundingClientRect();
+
+      zones.push({
+        bottom: rect.bottom,
+        left: rect.left,
+        right: rect.right,
+        top: rect.top,
+      });
+    }
+
+    const allDayZone = getLayoutClampZone(allDayLayout);
+
+    if (allDayZone) {
+      zones.push(allDayZone);
+    }
+
+    const timedZone = getLayoutClampZone(timedLayout);
+
+    if (timedZone) {
+      zones.push(timedZone);
+    }
+
+    return zones;
   }
 
   function resolveDrop(
@@ -402,9 +445,7 @@ export const createSomedayInteractionAdapter = ({
     }
 
     const gridY =
-      pointer.y -
-      layout.edgeNavigation.top +
-      (layout.smartScroll?.initialScrollTop ?? 0);
+      pointer.y - layout.edgeNavigation.top + getLayoutScrollTop(layout);
     const startMinutes = Math.max(
       0,
       Math.floor(gridY / layout.pixelsPerMinute / GRID_TIME_STEP) *
@@ -641,7 +682,7 @@ export const createSomedayInteractionAdapter = ({
       };
     }
 
-    const scrollTop = layout.smartScroll?.initialScrollTop ?? 0;
+    const scrollTop = getLayoutScrollTop(layout);
 
     return {
       height: Math.max(
@@ -878,6 +919,41 @@ const readElementRect = (element: HTMLElement) => {
     width: rect.width,
   };
 };
+
+// Intersects the layout's vertical bounds with its day-column span so a
+// point clamped into the zone always satisfies both isPointInLayout and
+// isPointInsideColumns during drop resolution.
+const getLayoutClampZone = (
+  layout: WeekLayoutCache | null,
+): ClampZoneRect | null => {
+  if (!layout) {
+    return null;
+  }
+
+  const first = layout.dayColumns[0];
+  const last = layout.dayColumns[layout.dayColumns.length - 1];
+
+  if (!first || !last) {
+    return null;
+  }
+
+  const left = Math.max(layout.edgeNavigation.left, first.left);
+  const right = Math.min(layout.edgeNavigation.right, last.left + last.width);
+
+  if (right < left) {
+    return null;
+  }
+
+  return {
+    bottom: layout.edgeNavigation.bottom,
+    left,
+    right,
+    top: layout.edgeNavigation.top,
+  };
+};
+
+const getLayoutScrollTop = (layout: WeekLayoutCache) =>
+  layout.smartScroll?.element.scrollTop ?? 0;
 
 const isPointInLayout = (
   point: CalendarInteractionPoint,

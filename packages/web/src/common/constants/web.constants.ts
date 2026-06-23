@@ -13,7 +13,6 @@ export const ID_GRID_COLUMNS_TIMED = "timedColumns";
 export const ID_WEEK_GRID_SCROLLER = "weekGridScroller";
 export const ID_SOMEDAY_WEEK_COLUMN = "somedayWeekColumn";
 export const ID_GRID_MAIN = "mainGrid";
-export const ID_REMINDER_INPUT = "reminderInput";
 export const ID_MAIN = "mainSection";
 export const ID_DATEPICKER_SIDEBAR = "sidebarDatePicker";
 export const ID_SIDEBAR = "sidebar";

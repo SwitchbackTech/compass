@@ -1,10 +1,7 @@
 import { useState } from "react";
-import { StyledText } from "@web/components/Text/styled";
+import { type CSSVariables } from "@web/common/styles/css.types";
+import { Text } from "@web/components/Text/Text";
 import { type FrequencyValues } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
-import {
-  StyledIntervalInput,
-  StyledRepeatRow,
-} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 import { CaretInput } from "./CaretInput";
 import { FreqSelect } from "./FreqSelect";
 
@@ -42,11 +39,12 @@ export const RecurrenceIntervalSelect = ({
   };
 
   return (
-    <StyledRepeatRow>
-      <StyledText size="l">Every</StyledText>
+    <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
+      <Text size="l">Every</Text>
 
-      <StyledIntervalInput
-        bgColor={bgColor}
+      <input
+        className="ml-1 h-9.5 w-8 rounded-sm border border-transparent bg-[var(--recurrence-bg)] px-1 text-center text-s transition-all duration-300 hover:brightness-90 focus:shadow-[0_0_0_2px_var(--compass-color-border-primary-dark)] [&::-webkit-inner-spin-button]:m-0 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:m-0 [&::-webkit-outer-spin-button]:appearance-none [&[type=number]]:[appearance:textfield]"
+        style={{ "--recurrence-bg": bgColor } as CSSVariables}
         type="number"
         max={max}
         min={min}
@@ -62,6 +60,6 @@ export const RecurrenceIntervalSelect = ({
         plural={value > 1}
         onFreqSelect={onFreqSelect}
       />
-    </StyledRepeatRow>
+    </div>
   );
 };

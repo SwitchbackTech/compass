@@ -9,7 +9,6 @@ import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/sel
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
-import { StyledEvents } from "@web/views/Week/components/Grid/AllDayRow/styled";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
@@ -54,7 +53,10 @@ export const AllDayEvents = ({
     isProcessing && reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE;
 
   return (
-    <StyledEvents id={ID_GRID_EVENTS_ALLDAY}>
+    <div
+      className="relative ml-[50px] h-full w-full"
+      id={ID_GRID_EVENTS_ALLDAY}
+    >
       {!isLoadingWeekView &&
         allDayEvents.map((event: Schema_GridEvent) => {
           const isPending = Boolean(
@@ -75,7 +77,7 @@ export const AllDayEvents = ({
             />
           );
         })}
-    </StyledEvents>
+    </div>
   );
 };
 

@@ -5,14 +5,14 @@ import {
   DotsSixVertical,
 } from "@phosphor-icons/react";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import { Flex } from "@web/components/Flex";
 import {
   AlignItems,
+  Flex,
   FlexDirections,
   JustifyContent,
-} from "@web/components/Flex/styled";
+} from "@web/components/Flex/Flex";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
-import { Text } from "@web/components/Text";
+import { Text } from "@web/components/Text/Text";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
 
 const ACTIONS_CLASS_NAME =

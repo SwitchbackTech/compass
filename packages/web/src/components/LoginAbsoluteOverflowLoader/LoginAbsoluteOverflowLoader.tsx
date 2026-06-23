@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import {
   AlignItems,
+  Flex,
+  type FlexProps,
   JustifyContent,
-  type Props,
-} from "@web/components/Flex/styled";
-import { LoadingMessage, ProgressBar, Styled, StyledSpinner } from "./styled";
+} from "@web/components/Flex/Flex";
 
 /**
  * Absolute overflow loader customized to handle login flow
  */
-export const LoginAbsoluteOverflowLoader = (props: Props) => {
+export const LoginAbsoluteOverflowLoader = (props: FlexProps) => {
   const [showMessage, setShowMessage] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(MESSAGE_TEXT);
 
@@ -29,19 +29,23 @@ export const LoginAbsoluteOverflowLoader = (props: Props) => {
   }, []);
 
   return (
-    <Styled
+    <Flex
+      className="c-overflow-loader"
       justifyContent={JustifyContent.CENTER}
       alignItems={AlignItems.CENTER}
       {...props}
     >
-      <StyledSpinner />
+      <div className="c-loader-spinner" />
       {showMessage && (
-        <LoadingMessage key={currentMessage}>
-          <div>{currentMessage}</div>
-          <ProgressBar />
-        </LoadingMessage>
+        <div
+          className="absolute bottom-2/5 left-1/2 w-full max-w-100 -translate-x-1/2 animate-login-message-in text-center text-l text-text-lighter"
+          key={currentMessage}
+        >
+          <div className="mb-3.75">{currentMessage}</div>
+          <div className="c-login-progress" />
+        </div>
       )}
-    </Styled>
+    </Flex>
   );
 };
 

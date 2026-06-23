@@ -29,10 +29,6 @@ import {
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import IconButton from "@web/components/IconButton/IconButton";
-import {
-  StyledMenu,
-  TriggerWrapper,
-} from "@web/views/Forms/ActionsMenu/styled";
 
 interface MenuContextValue {
   getItemProps: (
@@ -153,7 +149,8 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
 
   return (
     <>
-      <TriggerWrapper
+      <div
+        className="inline-flex"
         ref={refs.setReference}
         {...getReferenceProps({
           onClick: (e: MouseEvent<HTMLDivElement>) => {
@@ -174,7 +171,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
         >
           <DotsThreeVerticalIcon />
         </IconButton>
-      </TriggerWrapper>
+      </div>
       {open && (
         <FloatingPortal>
           <FloatingFocusManager
@@ -184,17 +181,18 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
             initialFocus={openedByMouseRef.current ? -1 : 0}
             returnFocus={false}
           >
-            <StyledMenu
+            <div
+              className="flex flex-col gap-2 rounded-sm bg-[var(--actions-menu-bg)] p-2 shadow-[0_4px_8px_rgb(0_0_0/10%)]"
               ref={refs.setFloating}
               style={{
                 ...context.floatingStyles,
+                backgroundColor: bgColor,
                 zIndex: menuZIndex,
               }}
               {...getFloatingProps()}
               id={menuId}
               role="menu"
               aria-labelledby={triggerId}
-              bgColor={bgColor}
             >
               <MenuContext.Provider
                 value={{
@@ -205,7 +203,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
               >
                 {children(closeMenu)}
               </MenuContext.Provider>
-            </StyledMenu>
+            </div>
           </FloatingFocusManager>
         </FloatingPortal>
       )}

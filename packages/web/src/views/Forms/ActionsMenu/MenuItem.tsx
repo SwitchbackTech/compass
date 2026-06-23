@@ -7,7 +7,6 @@ import {
   TooltipTrigger,
 } from "@web/components/Tooltip";
 import { useMenuContext } from "./ActionsMenu";
-import { StyledMenuItem } from "./styled";
 
 export interface MenuItemProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -82,17 +81,18 @@ const MenuItem: React.FC<MenuItemProps> = ({
       placement="right-end"
     >
       <TooltipTrigger asChild>
-        <StyledMenuItem
+        <button
           {...rest}
           {...itemProps}
           ref={itemRef}
           role="menuitem"
           tabIndex={tabIndex}
           type={type}
-          bgColor={bgColor}
+          className="flex w-full cursor-pointer items-center gap-2 border-0 bg-[var(--actions-menu-item-bg)] px-2 py-1 text-left text-m text-text-dark outline-none hover:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)] focus-visible:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)]"
+          style={{ backgroundColor: bgColor }}
         >
           {children}
-        </StyledMenuItem>
+        </button>
       </TooltipTrigger>
       <TooltipContent>
         <LegacyShortcutHint>{tooltipContent}</LegacyShortcutHint>

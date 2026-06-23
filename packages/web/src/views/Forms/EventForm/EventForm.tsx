@@ -14,6 +14,7 @@ import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
+import { type CSSVariables } from "@web/common/styles/css.types";
 import {
   colorByPriority,
   hoverColorByPriority,
@@ -22,18 +23,15 @@ import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import { getCategory } from "@web/common/utils/event/event.util";
 import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import { Input } from "@web/components/Input/Input";
+import { Textarea } from "@web/components/Textarea/Textarea";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
-import {
-  StyledDescription,
-  StyledEventForm,
-  StyledIconRow,
-  StyledTitle,
-} from "@web/views/Forms/EventForm/styled";
+import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
   type FormProps,
   type SetEventFormField,
@@ -455,8 +453,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     );
 
     return (
-      <StyledEventForm
+      <form
         {...props}
+        role="form"
+        className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
         name={ID_EVENT_FORM}
         onMouseUp={() => {
           if (isStartDatePickerOpen) {
@@ -470,32 +470,37 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onMouseDown={(e) => {
           e.stopPropagation();
         }}
-        priority={priority}
-        role="form"
+        style={
+          { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
+        }
       >
-        <StyledIconRow>
-          <EventActionMenu
-            bgColor={darken(priorityColor)}
-            isDraft={isDraft}
-            isExistingEvent={isExistingEvent}
-            onConvert={() => {
-              onConvert?.();
-            }}
-            onDuplicate={onDuplicateEvent}
-            onDelete={onDelete}
-          />
-        </StyledIconRow>
-
-        <StyledTitle
-          autoFocus
-          onChange={onChangeEventTextField("title")}
-          onKeyDown={handleTitleKeyDown}
-          onPointerDown={() => setIsTitleEditingStarted(true)}
-          placeholder="Title"
-          name="Event Title"
-          ref={titleInputRef}
-          underlineColor={priorityColor}
-          value={title ?? ""}
+        <TitleActionsRow
+          title={
+            <Input
+              className="bg-transparent font-semibold text-2xl transition-all duration-300 hover:bg-border-primary"
+              autoFocus
+              onChange={onChangeEventTextField("title")}
+              onKeyDown={handleTitleKeyDown}
+              onPointerDown={() => setIsTitleEditingStarted(true)}
+              placeholder="Title"
+              name="Event Title"
+              ref={titleInputRef}
+              underlineColor={priorityColor}
+              value={title ?? ""}
+            />
+          }
+          actions={
+            <EventActionMenu
+              bgColor={darken(priorityColor)}
+              isDraft={isDraft}
+              isExistingEvent={isExistingEvent}
+              onConvert={() => {
+                onConvert?.();
+              }}
+              onDuplicate={onDuplicateEvent}
+              onDelete={onDelete}
+            />
+          }
         />
 
         <PrioritySection
@@ -510,18 +515,18 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
         <RecurrenceSection {...recurrenceSectionProps} />
 
-        <StyledDescription
+        <Textarea
           underlineColor={priorityColor}
           onChange={onChangeEventTextField("description")}
           onKeyDown={handleIgnoredKeys}
           placeholder="Description"
           ref={descriptionRef}
           value={event.description || ""}
-          className="overflow-y-auto"
+          className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent transition-all duration-300 hover:bg-border-primary hover:brightness-90"
         />
 
         <SaveSection priority={priority} onSubmit={onSubmitForm} />
-      </StyledEventForm>
+      </form>
     );
   },
   fastDeepEqual,

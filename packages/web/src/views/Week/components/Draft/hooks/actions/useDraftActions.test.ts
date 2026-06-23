@@ -1,4 +1,5 @@
 import { renderHook } from "@testing-library/react";
+import { act } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -186,7 +187,9 @@ describe("useDraftActions", () => {
       { wrapper },
     );
 
-    result.current.duplicateEvent();
+    act(() => {
+      result.current.duplicateEvent();
+    });
 
     const createAction = dispatchSpy.mock.calls.find(
       ([action]) => action.type === createEventSlice.actionNames.request,

@@ -1,10 +1,6 @@
-import { Repeat } from "@phosphor-icons/react";
-import styled from "styled-components";
+import { type IconProps, Repeat } from "@phosphor-icons/react";
+import { getInteractiveIconClassName } from "./icon.utils";
 
-export const RepeatIcon = styled(Repeat)`
-  transition: filter 0.2s ease;
-
-  &:hover {
-    filter: brightness(130%);
-  }
-`;
+export const RepeatIcon = ({ className, ...props }: IconProps) => (
+  <Repeat className={getInteractiveIconClassName(className)} {...props} />
+);

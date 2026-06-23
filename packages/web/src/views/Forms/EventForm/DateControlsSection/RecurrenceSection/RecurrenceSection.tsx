@@ -6,12 +6,10 @@ import { useSession } from "@web/auth/compass/session/useSession";
 import { isBackendUnavailable as getIsBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
-import { FlexDirections } from "@web/components/Flex/styled";
 import { EndsOnDate } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate";
 import { RecurrenceIntervalSelect } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceIntervalSelect";
 import { RecurrenceToggle } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceToggle";
 import { WeekDays } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/WeekDays";
-import { StyledRepeatRow } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/useRecurrence/useRecurrence";
 
 export interface RecurrenceSectionProps {
@@ -45,7 +43,7 @@ export function createRecurrenceSection({
     const disabledMessage = "Sign in to use recurring events.";
 
     return (
-      <StyledRepeatRow direction={FlexDirections.COLUMN}>
+      <div className="mb-1 flex w-full basis-full flex-col items-center gap-2 p-0">
         <RecurrenceToggle
           disabled={isRecurrenceDisabled}
           disabledMessage={disabledMessage}
@@ -76,7 +74,7 @@ export function createRecurrenceSection({
             setUntil={setUntil}
           />
         </ConditionalRender>
-      </StyledRepeatRow>
+      </div>
     );
   };
 }

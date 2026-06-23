@@ -214,10 +214,10 @@ Important consequence:
 
 The web app currently uses two styling systems in parallel:
 
-- longstanding `styled-components` for much of the existing UI
+- Tailwind utilities for component styling
 - Tailwind v4 utilities and semantic theme tokens from `packages/web/src/index.css` for newer or migrated surfaces
 
-Do not describe the frontend as Tailwind-only or styled-components-only. Follow the local pattern of the area you are editing unless the change is explicitly migrating that area.
+Use the existing `c-*` component utility convention and semantic colors from `packages/web/src/index.css`. Runtime theme values belong in `--compass-*` CSS variables so alternate themes can override values without rebuilding component styles.
 
 ## Day Task Drag Handle Positioning
 

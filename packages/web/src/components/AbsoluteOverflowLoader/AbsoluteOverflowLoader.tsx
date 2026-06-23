@@ -1,16 +1,17 @@
 import {
   AlignItems,
+  Flex,
+  type FlexProps,
   JustifyContent,
-  type Props,
-} from "@web/components/Flex/styled";
-import { Styled, StyledSpinner } from "./styled";
+} from "@web/components/Flex/Flex";
 
-export const AbsoluteOverflowLoader = (props: Props) => (
-  <Styled
+export const AbsoluteOverflowLoader = (props: FlexProps) => (
+  <Flex
+    className="c-overflow-loader"
     justifyContent={JustifyContent.CENTER}
     alignItems={AlignItems.CENTER}
     {...props}
   >
-    <StyledSpinner />
-  </Styled>
+    <div className="c-loader-spinner" />
+  </Flex>
 );

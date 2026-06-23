@@ -2,11 +2,9 @@ import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createRef, type SetStateAction, useState } from "react";
-import { ThemeProvider } from "styled-components";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { theme } from "@web/common/styles/theme";
 import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -38,7 +36,7 @@ mock.module(
 );
 
 mock.module("@web/views/Forms/EventForm/EventActionMenu", () => ({
-  EventActionMenu: () => null,
+  EventActionMenu: () => <button type="button">Event actions</button>,
 }));
 
 mock.module("@web/views/Forms/EventForm/PrioritySection", () => ({
@@ -99,23 +97,47 @@ describe("EventForm", () => {
     document.body.removeAttribute("data-app-locked");
   });
 
+  it("renders the title before the actions on the same row", () => {
+    render(
+      <EventForm
+        event={createEvent({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    const title = screen.getByPlaceholderText("Title");
+    const actions = screen.getByRole("button", { name: "Event actions" });
+    const row = title.parentElement?.parentElement;
+
+    expect(row).toBe(actions.parentElement?.parentElement);
+    expect(row).toHaveClass("flex");
+    expect(title.parentElement).toHaveClass("flex-1");
+    expect(actions.parentElement).toHaveClass("shrink-0");
+    expect(row?.firstElementChild?.contains(title)).toBe(true);
+    expect(row?.lastElementChild?.contains(actions)).toBe(true);
+  });
+
   it("duplicates the event with Mod+D while the title field is focused", async () => {
     const event = createEvent();
     const onDuplicate = mock();
 
     render(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={event}
-          isDraft={false}
-          isExistingEvent={true}
-          onClose={mock()}
-          onDelete={mock()}
-          onDuplicate={onDuplicate}
-          onSubmit={mock()}
-          setEvent={mock()}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={event}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={onDuplicate}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
     );
 
     const titleField = screen.getByPlaceholderText("Title");
@@ -135,19 +157,17 @@ describe("EventForm", () => {
     const onDraftTitleArrowKey = mock(() => true);
 
     render(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={event}
-          isDraft={true}
-          isExistingEvent={false}
-          onClose={mock()}
-          onDelete={mock()}
-          onDuplicate={mock()}
-          onDraftTitleArrowKey={onDraftTitleArrowKey}
-          onSubmit={mock()}
-          setEvent={mock()}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={event}
+        isDraft={true}
+        isExistingEvent={false}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onDraftTitleArrowKey={onDraftTitleArrowKey}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
     );
 
     const titleField = screen.getByPlaceholderText("Title");
@@ -171,20 +191,18 @@ describe("EventForm", () => {
     const onDraftTitleArrowKey = mock(() => true);
 
     const { rerender } = render(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={event}
-          isDraft={true}
-          isExistingEvent={false}
-          onClose={mock()}
-          onDelete={mock()}
-          onDuplicate={mock()}
-          onDraftTitleArrowKey={onDraftTitleArrowKey}
-          onSubmit={mock()}
-          setEvent={mock()}
-          titleEditingResetKey={1}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={event}
+        isDraft={true}
+        isExistingEvent={false}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onDraftTitleArrowKey={onDraftTitleArrowKey}
+        onSubmit={mock()}
+        setEvent={mock()}
+        titleEditingResetKey={1}
+      />,
     );
 
     const titleField = screen.getByPlaceholderText("Title");
@@ -194,20 +212,18 @@ describe("EventForm", () => {
     expect(onDraftTitleArrowKey).not.toHaveBeenCalled();
 
     rerender(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={event}
-          isDraft={true}
-          isExistingEvent={false}
-          onClose={mock()}
-          onDelete={mock()}
-          onDuplicate={mock()}
-          onDraftTitleArrowKey={onDraftTitleArrowKey}
-          onSubmit={mock()}
-          setEvent={mock()}
-          titleEditingResetKey={2}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={event}
+        isDraft={true}
+        isExistingEvent={false}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onDraftTitleArrowKey={onDraftTitleArrowKey}
+        onSubmit={mock()}
+        setEvent={mock()}
+        titleEditingResetKey={2}
+      />,
     );
 
     await waitFor(() => {
@@ -225,33 +241,29 @@ describe("EventForm", () => {
     };
 
     const { rerender } = render(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={event}
-          isDraft={false}
-          isExistingEvent={true}
-          onClose={mock()}
-          onDelete={mock()}
-          onDuplicate={mock()}
-          onSubmit={mock()}
-          setEvent={mock()}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={event}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
     );
 
     rerender(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={nextEvent}
-          isDraft={false}
-          isExistingEvent={true}
-          onClose={mock()}
-          onDelete={mock()}
-          onDuplicate={mock()}
-          onSubmit={mock()}
-          setEvent={mock()}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={nextEvent}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
     );
 
     const expected = getFormDates(nextEvent.startDate, nextEvent.endDate);
@@ -271,19 +283,17 @@ describe("EventForm", () => {
     const onDraftTitleArrowKey = mock(() => true);
 
     render(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={event}
-          isDraft={true}
-          isExistingEvent={false}
-          onClose={mock()}
-          onDelete={mock()}
-          onDraftTitleArrowKey={onDraftTitleArrowKey}
-          onDuplicate={mock()}
-          onSubmit={mock()}
-          setEvent={mock()}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={event}
+        isDraft={true}
+        isExistingEvent={false}
+        onClose={mock()}
+        onDelete={mock()}
+        onDraftTitleArrowKey={onDraftTitleArrowKey}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
     );
 
     const titleField = screen.getByPlaceholderText("Title");
@@ -298,19 +308,17 @@ describe("EventForm", () => {
     const onDraftTitleArrowKey = mock(() => true);
 
     render(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={event}
-          isDraft={false}
-          isExistingEvent={true}
-          onClose={mock()}
-          onDelete={mock()}
-          onDraftTitleArrowKey={onDraftTitleArrowKey}
-          onDuplicate={mock()}
-          onSubmit={mock()}
-          setEvent={mock()}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={event}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDraftTitleArrowKey={onDraftTitleArrowKey}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
     );
 
     const titleField = screen.getByPlaceholderText("Title");
@@ -325,19 +333,17 @@ describe("EventForm", () => {
     const onDraftTitleArrowKey = mock(() => true);
 
     render(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={event}
-          isDraft={false}
-          isExistingEvent={true}
-          onClose={mock()}
-          onDelete={mock()}
-          onDraftTitleArrowKey={onDraftTitleArrowKey}
-          onDuplicate={mock()}
-          onSubmit={mock()}
-          setEvent={mock()}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={event}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDraftTitleArrowKey={onDraftTitleArrowKey}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
     );
 
     const titleField = screen.getByPlaceholderText("Title");
@@ -370,18 +376,16 @@ describe("EventForm", () => {
       };
 
       return (
-        <ThemeProvider theme={theme}>
-          <EventForm
-            event={event}
-            isDraft={true}
-            isExistingEvent={false}
-            onClose={mock()}
-            onDelete={mock()}
-            onDuplicate={mock()}
-            onSubmit={onSubmit}
-            setEvent={setEventFromForm}
-          />
-        </ThemeProvider>
+        <EventForm
+          event={event}
+          isDraft={true}
+          isExistingEvent={false}
+          onClose={mock()}
+          onDelete={mock()}
+          onDuplicate={mock()}
+          onSubmit={onSubmit}
+          setEvent={setEventFromForm}
+        />
       );
     }
 
@@ -404,18 +408,16 @@ describe("EventForm", () => {
     const onSubmit = mock();
 
     render(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={createEvent()}
-          isDraft={true}
-          isExistingEvent={true}
-          onClose={mock()}
-          onDelete={mock()}
-          onDuplicate={mock()}
-          onSubmit={onSubmit}
-          setEvent={mock()}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={createEvent()}
+        isDraft={true}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={onSubmit}
+        setEvent={mock()}
+      />,
     );
 
     const titleField = screen.getByPlaceholderText("Title");
@@ -431,7 +433,7 @@ describe("EventForm", () => {
     const onSubmit = mock();
 
     render(
-      <ThemeProvider theme={theme}>
+      <>
         <button type="button">Draft block</button>
         <EventForm
           event={createEvent()}
@@ -443,7 +445,7 @@ describe("EventForm", () => {
           onSubmit={onSubmit}
           setEvent={mock()}
         />
-      </ThemeProvider>,
+      </>,
     );
 
     await user.click(screen.getByRole("button", { name: "Draft block" }));
@@ -457,19 +459,17 @@ describe("EventForm", () => {
     const titleInputRef = createRef<HTMLInputElement>();
 
     render(
-      <ThemeProvider theme={theme}>
-        <EventForm
-          event={createEvent()}
-          isDraft={true}
-          isExistingEvent={false}
-          onClose={mock()}
-          onDelete={mock()}
-          onDuplicate={mock()}
-          onSubmit={mock()}
-          setEvent={mock()}
-          titleInputRef={titleInputRef}
-        />
-      </ThemeProvider>,
+      <EventForm
+        event={createEvent()}
+        isDraft={true}
+        isExistingEvent={false}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+        titleInputRef={titleInputRef}
+      />,
     );
 
     expect(titleInputRef.current).toBe(screen.getByPlaceholderText("Title"));

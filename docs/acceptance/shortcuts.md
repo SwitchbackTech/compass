@@ -44,7 +44,6 @@ Helpful notes:
 | --------------------------- | --------- | --------------------------------- |
 | `D`                         | Global    | Navigate to Day view              |
 | `W`                         | Global    | Navigate to Week view             |
-| `R`                         | Global    | Edit personal reminder note       |
 | `Z`                         | Global    | Log out                           |
 | `Cmd+K` / `Ctrl+K`          | Global    | Open command palette              |
 | `[`                         | Global    | Toggle sidebar                    |

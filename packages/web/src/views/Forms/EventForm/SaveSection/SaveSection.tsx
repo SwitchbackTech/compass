@@ -2,10 +2,10 @@ import type React from "react";
 import { useCallback } from "react";
 import { type Priority } from "@core/constants/core.constants";
 import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
-import { Btn, StyledSaveBtn } from "@web/components/Button/styled";
-import { Text } from "@web/components/Text";
+import { Btn, SaveButton } from "@web/components/Button/Button";
+import { Flex } from "@web/components/Flex/Flex";
+import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { StyledSubmitRow } from "@web/views/Forms/EventForm/styled";
 
 interface Props {
   saveText?: string;
@@ -25,7 +25,7 @@ export const SaveSection: React.FC<Props> = ({
   const onSave = useCallback(() => _onSubmit(), [_onSubmit]);
 
   return (
-    <StyledSubmitRow>
+    <Flex className="justify-end pt-[18px]">
       {onCancel && (
         <TooltipWrapper onClick={onCancel} description={cancelText}>
           <Btn
@@ -47,7 +47,7 @@ export const SaveSection: React.FC<Props> = ({
           </Text>
         }
       >
-        <StyledSaveBtn
+        <SaveButton
           minWidth={110}
           priority={priority!}
           role="button"
@@ -55,8 +55,8 @@ export const SaveSection: React.FC<Props> = ({
           aria-keyshortcuts="Meta+Enter"
         >
           {saveText}
-        </StyledSaveBtn>
+        </SaveButton>
       </TooltipWrapper>
-    </StyledSubmitRow>
+    </Flex>
   );
 };

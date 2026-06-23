@@ -13,8 +13,8 @@ import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/
 import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/SomedayEvent";
+import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
-import { StyledFloatContainer } from "@web/views/Forms/SomedayEventForm/styled";
 import { useDraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
 import { getSidebarOpenWidth } from "@web/views/Week/layout.constants";
 
@@ -120,7 +120,7 @@ export const SomedayEventContainer = ({
       {state.isSomedayFormOpen && isDraftingThisEvent && (
         <FloatingPortal>
           <FloatingFocusManager context={formProps.context}>
-            <StyledFloatContainer
+            <FloatingFormContainer
               ref={formProps.refs.setFloating}
               strategy={formProps.strategy}
               top={formProps.y}
@@ -150,7 +150,7 @@ export const SomedayEventContainer = ({
                 onSubmit={onSubmit}
                 setEvent={setEvent}
               />
-            </StyledFloatContainer>
+            </FloatingFormContainer>
           </FloatingFocusManager>
         </FloatingPortal>
       )}

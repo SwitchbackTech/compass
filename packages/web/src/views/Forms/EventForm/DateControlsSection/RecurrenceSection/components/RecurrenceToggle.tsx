@@ -1,10 +1,6 @@
 import { useCallback } from "react";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import {
-  StyledRepeatButton,
-  StyledRepeatRow,
-} from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/styled";
 
 export interface RecurrenceToggleProps {
   disabled?: boolean;
@@ -25,26 +21,27 @@ export const RecurrenceToggle = ({
   }, [disabled, toggleRecurrence]);
 
   const toggle = (
-    <StyledRepeatButton
+    <button
+      className="c-recurrence-toggle"
       aria-disabled={disabled || undefined}
       aria-label={hasRecurrence || disabled ? "Repeat" : "Edit recurrence"}
-      hasRepeat={hasRecurrence}
-      $disabled={disabled}
+      data-repeat={hasRecurrence}
+      data-disabled={disabled}
       onClick={onToggle}
       type="button"
     >
       <RepeatIcon size={18} />
       <span>Repeat</span>
-    </StyledRepeatButton>
+    </button>
   );
 
   return (
-    <StyledRepeatRow>
+    <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
       {disabled && disabledMessage ? (
         <TooltipWrapper description={disabledMessage}>{toggle}</TooltipWrapper>
       ) : (
         toggle
       )}
-    </StyledRepeatRow>
+    </div>
   );
 };

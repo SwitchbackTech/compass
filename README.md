@@ -23,7 +23,6 @@ It'll be around for the long-term:
 
 - **Day Mode**: See your tasks and events side-by-side
 - **Now Mode**: Lock-in on a single task
-- **Custom Note**: Display a note-to-self for motivation or reminders
 - **Someday/Maybe List**: Organize future tasks without cluttering your schedule
 - **One-Click Adjustments**: Move events forwards or back effortlessly
 
@@ -38,7 +37,7 @@ It'll be around for the long-term:
 
 ### The Limitations
 
-Current things we don't support (yet):
+Current things we don't support:
 
 - Subcalendar sync (only primary calendar)
 - Sharing, reminders, locations
@@ -55,7 +54,7 @@ Current things we don't support (yet):
 
 ### Option 1: Try Compass Online
 
-[app.compasscalendar.com](https://app.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) ← No signup required.
+[compasscalendar.com](https://compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) ← No signup required.
 
 ### Option 2: Run Compass Locally
 
@@ -76,16 +75,6 @@ bun run test:e2e
 Run Compass on a server you control to keep everything on your infrastructure.
 
 See [the self-hosting guide](./docs/self-hosting/README.md) for instructions.
-
-## Contributing
-
-We love contributions! Whether it's bug fixes, new features, or documentation improvements, your help makes Compass better for everyone.
-
-**Issues**: Create an issue to document a bug or feature request.
-
-**Pull Requests**: Fork the repo, follow the the [Contribution Guidelines](./CONTRIBUTING.md), submit PR.
-
-**Feedback**: Share your ideas on [GitHub Discussions](https://github.com/SwitchbackTech/compass/discussions).
 
 ## Resources
 

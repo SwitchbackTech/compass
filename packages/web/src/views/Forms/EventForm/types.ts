@@ -40,8 +40,3 @@ export type SetEventFormField = (
   field: Partial<Schema_Event>,
   value?: Schema_Event[EventField],
 ) => void;
-
-export interface StyledFormProps {
-  priority?: Priority;
-  title?: string;
-}

@@ -1,7 +1,6 @@
 name: Bug Report
 description: You found something wrong
-labels: [ bug ]
-projects: [ SwitchbackTech/4 ]
+labels: [bug]
 type: bug
 
 body:

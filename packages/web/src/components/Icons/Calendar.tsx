@@ -1,7 +1,6 @@
-import { CalendarDots } from "@phosphor-icons/react";
-import styled from "styled-components";
-import { iconStyles } from "./styled";
+import { CalendarDots, type IconProps } from "@phosphor-icons/react";
+import { getInteractiveIconClassName } from "./icon.utils";
 
-export const CalendarIcon = styled(CalendarDots)`
-  ${iconStyles}
-`;
+export const CalendarIcon = ({ className, ...props }: IconProps) => (
+  <CalendarDots className={getInteractiveIconClassName(className)} {...props} />
+);

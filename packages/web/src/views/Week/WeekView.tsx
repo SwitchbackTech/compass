@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from "react";
+import { ID_MAIN } from "@web/common/constants/web.constants";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
@@ -25,7 +26,6 @@ import { useRefetch } from "@web/views/Week/hooks/useRefetch";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
-import { Styled, StyledCalendar, WeekGridTrack } from "@web/views/Week/styled";
 
 export const WeekView = () => {
   useRefetch();
@@ -126,7 +126,7 @@ export const WeekView = () => {
   );
 
   return (
-    <Styled id="cal">
+    <div id="cal" className="flex h-screen w-screen overflow-hidden">
       <CmdPalette {...cmdPaletteProps} />
       <Dedication />
 
@@ -157,11 +157,14 @@ export const WeekView = () => {
                   />
                 ) : null}
               </ContextMenuWrapper>
-              <StyledCalendar>
+              <div
+                id={ID_MAIN}
+                className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-8 pr-0 pb-0 pl-8"
+              >
                 <Header scrollUtil={scrollUtil} weekProps={weekProps} />
 
                 <WeekGridScrollArea>
-                  <WeekGridTrack>
+                  <div className="relative flex h-full w-full min-w-176 flex-col [container-name:week-grid-track] [container-type:inline-size]">
                     <DayLabels
                       startOfView={weekProps.component.startOfView}
                       today={today}
@@ -183,15 +186,15 @@ export const WeekView = () => {
                         />
                       </ContextMenuWrapper>
                     </WeekInteractionCoordinator>
-                  </WeekGridTrack>
+                  </div>
                 </WeekGridScrollArea>
-              </StyledCalendar>
+              </div>
             </Shortcuts>
           </SomedayInteractionCoordinator>
 
           <RecurringEventUpdateScopeDialog />
         </SidebarDraftProvider>
       </DraftProvider>
-    </Styled>
+    </div>
   );
 };

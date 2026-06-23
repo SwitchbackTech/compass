@@ -1,7 +1,9 @@
-import { NumberCircleTwo } from "@phosphor-icons/react";
-import styled from "styled-components";
-import { iconStyles } from "./styled";
+import { type IconProps, NumberCircleTwo } from "@phosphor-icons/react";
+import { getInteractiveIconClassName } from "./icon.utils";
 
-export const CircleTwoIcon = styled(NumberCircleTwo)`
-  ${iconStyles}
-`;
+export const CircleTwoIcon = ({ className, ...props }: IconProps) => (
+  <NumberCircleTwo
+    className={getInteractiveIconClassName(className)}
+    {...props}
+  />
+);

@@ -1,10 +1,9 @@
-import { X } from "@phosphor-icons/react";
-import styled from "styled-components";
+import { type IconProps, X } from "@phosphor-icons/react";
+import { getInteractiveIconClassName } from "./icon.utils";
 
-export const StyledXIcon = styled(X)`
-  transition: filter 0.2s ease;
-
-  &:hover {
-    filter: brightness(150%);
-  }
-`;
+export const XIcon = ({ className, ...props }: IconProps) => (
+  <X
+    className={getInteractiveIconClassName(className, "hover:brightness-150")}
+    {...props}
+  />
+);

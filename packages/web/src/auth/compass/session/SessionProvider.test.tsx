@@ -18,7 +18,7 @@ const clearAuthenticationState = mock();
 const getAuthState = mock();
 const hasUserEverAuthenticated = mock();
 const markAnonymousCalendarChangeForSignUpPrompt = mock();
-const shouldShowAnonymousCalendarChangeSignUpPrompt = mock();
+const shouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
 const subscribeToAuthState = mock();
 const updateAuthState = mock();
 const doesSessionExist = mock();
@@ -103,7 +103,9 @@ const { session } = require("@web/common/classes/Session") as {
   };
 };
 
-const { SessionContext, SessionProvider, sessionInit } =
+const { SessionContext } =
+  require("./session.context") as typeof import("./session.context");
+const { SessionProvider, sessionInit } =
   require("./SessionProvider") as typeof import("./SessionProvider");
 
 describe("SessionProvider sessionInit", () => {
@@ -122,6 +124,7 @@ describe("SessionProvider sessionInit", () => {
     hasUserEverAuthenticated.mockClear();
     markAnonymousCalendarChangeForSignUpPrompt.mockClear();
     shouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
+    shouldShowAnonymousCalendarChangeSignUpPrompt.mockReturnValue(false);
     subscribeToAuthState.mockClear();
     updateAuthState.mockClear();
     doesSessionExist.mockClear();

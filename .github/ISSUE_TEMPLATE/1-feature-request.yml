@@ -1,7 +1,6 @@
 name: Feature Request
 description: You want something added to the app
 labels: [enhancement]
-projects: [SwitchbackTech/4]
 
 body:
   - type: markdown

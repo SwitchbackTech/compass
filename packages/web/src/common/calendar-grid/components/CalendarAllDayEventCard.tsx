@@ -20,10 +20,9 @@ import {
   gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { Flex } from "@web/components/Flex";
-import { AlignItems, FlexDirections } from "@web/components/Flex/styled";
+import { AlignItems, Flex, FlexDirections } from "@web/components/Flex/Flex";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
-import { Text } from "@web/components/Text";
+import { Text } from "@web/components/Text/Text";
 
 export interface CalendarAllDayEventCardProps {
   event: Schema_GridEvent;
@@ -113,7 +112,7 @@ const CalendarAllDayEventCardBase = (
       role="button"
       tabIndex={0}
       className={cn(
-        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+        "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-260 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
         {
           "animate-someday-commit-acknowledge": isCommitAcknowledged,
         },
@@ -152,7 +151,7 @@ const CalendarAllDayEventCardBase = (
         alignItems={AlignItems.FLEX_START}
         direction={FlexDirections.COLUMN}
       >
-        <Text size="m">
+        <Text size="xs">
           {event.title}
           <SpaceCharacter />
         </Text>
