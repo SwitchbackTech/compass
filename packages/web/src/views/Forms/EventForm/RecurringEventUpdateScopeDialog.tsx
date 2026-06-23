@@ -1,9 +1,18 @@
-import { useCallback, useState } from "react";
+import {
+  FloatingFocusManager,
+  FloatingOverlay,
+  FloatingPortal,
+  useDismiss,
+  useFloating,
+  useInteractions,
+  useRole,
+} from "@floating-ui/react";
+import { useCallback, useId, useState } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
+import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
-  OverlayPanel,
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
@@ -51,13 +60,13 @@ export function RecurringEventUpdateScopeDialog() {
   );
 }
 
-interface RecurringEventUpdateScopeDialogContentProps {
+export interface RecurringEventUpdateScopeDialogContentProps {
   draft: Schema_GridEvent | null;
   onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
   setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;
 }
 
-function RecurringEventUpdateScopeDialogContent({
+export function RecurringEventUpdateScopeDialogContent({
   draft,
   onUpdateScopeChange,
   setRecurrenceUpdateScopeDialogOpen,
@@ -79,6 +88,8 @@ function RecurringEventUpdateScopeDialogContent({
     ? selectedScope
     : fallbackScope;
 
+  const titleId = useId();
+
   const closeDialog = useCallback(() => {
     setRecurrenceUpdateScopeDialogOpen(false);
   }, [setRecurrenceUpdateScopeDialogOpen]);
@@ -88,50 +99,96 @@ function RecurringEventUpdateScopeDialogContent({
     setSelectedScope(RecurringEventUpdateScope.THIS_EVENT);
   }, [activeScope, onUpdateScopeChange]);
 
+  const { refs, context } = useFloating({
+    open: true,
+    onOpenChange: (open) => {
+      if (!open) closeDialog();
+    },
+  });
+
+  const dismiss = useDismiss(context);
+  const role = useRole(context, { role: "dialog" });
+  const { getFloatingProps } = useInteractions([dismiss, role]);
+
+  const handleRadioGroupKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        onSubmitHandler();
+      }
+    },
+    [onSubmitHandler],
+  );
+
   return (
-    <OverlayPanel
-      title="Apply changes to"
-      onDismiss={closeDialog}
-      variant="modal"
-    >
-      <div
-        role="radiogroup"
-        aria-label="Apply changes to"
-        className="flex w-full flex-col gap-1"
+    <FloatingPortal>
+      <FloatingOverlay
+        className="flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm"
+        lockScroll
+        style={{ zIndex: Z_INDEX_MODAL }}
       >
-        {options.map((option) => {
-          const isSelected = activeScope === option;
+        <FloatingFocusManager context={context} modal>
+          {/* biome-ignore lint/a11y/useAriaPropsSupportedByRole: role="dialog" is injected at runtime via getFloatingProps() */}
+          <div
+            ref={refs.setFloating}
+            {...getFloatingProps()}
+            className="flex w-[400px] max-w-[90vw] flex-col items-center gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
+            aria-labelledby={titleId}
+          >
+            <div className="flex w-full items-center justify-between gap-3">
+              <h2
+                id={titleId}
+                className="m-0 line-clamp-2 w-full min-w-0 font-semibold text-lg text-text-lighter"
+              >
+                Apply changes to
+              </h2>
+            </div>
 
-          return (
-            <label
-              key={option}
-              className={`${updateScopeOptionClassName} ${
-                isSelected ? selectedUpdateScopeOptionClassName : ""
-              }`}
+            <div
+              role="radiogroup"
+              aria-label="Apply changes to"
+              className="flex w-full flex-col gap-1"
+              onKeyDown={handleRadioGroupKeyDown}
             >
-              <input
-                type="radio"
-                name="recurring-event-update-scope"
-                value={option}
-                checked={isSelected}
-                onChange={() => setSelectedScope(option)}
-                className="peer sr-only"
-              />
-              <span aria-hidden="true" className={radioDotClassName} />
-              {option}
-            </label>
-          );
-        })}
-      </div>
+              {options.map((option) => {
+                const isSelected = activeScope === option;
 
-      <OverlayPanelActions>
-        <OverlayPanelActionButton onClick={closeDialog}>
-          Cancel
-        </OverlayPanelActionButton>
-        <OverlayPanelActionButton variant="primary" onClick={onSubmitHandler}>
-          Ok
-        </OverlayPanelActionButton>
-      </OverlayPanelActions>
-    </OverlayPanel>
+                return (
+                  <label
+                    key={option}
+                    className={`${updateScopeOptionClassName} ${
+                      isSelected ? selectedUpdateScopeOptionClassName : ""
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="recurring-event-update-scope"
+                      value={option}
+                      checked={isSelected}
+                      onChange={() => setSelectedScope(option)}
+                      className="peer sr-only"
+                    />
+                    <span aria-hidden="true" className={radioDotClassName} />
+                    {option}
+                  </label>
+                );
+              })}
+            </div>
+
+            <OverlayPanelActions>
+              <OverlayPanelActionButton onClick={closeDialog}>
+                Cancel
+              </OverlayPanelActionButton>
+              <OverlayPanelActionButton
+                variant="primary"
+                onClick={onSubmitHandler}
+              >
+                Ok
+              </OverlayPanelActionButton>
+            </OverlayPanelActions>
+          </div>
+        </FloatingFocusManager>
+      </FloatingOverlay>
+    </FloatingPortal>
   );
 }
