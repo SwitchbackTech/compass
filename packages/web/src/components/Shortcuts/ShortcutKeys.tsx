@@ -38,6 +38,9 @@ export function ShortcutKeys({ combo, title, className }: Props) {
     .map((key) => key.trim())
     .filter(Boolean);
 
+  // Nothing to render -> emit nothing, rather than an empty chip row.
+  if (keys.length === 0) return null;
+
   return (
     <span
       title={title}

@@ -74,29 +74,35 @@ const MenuItem: React.FC<MenuItemProps> = ({
       onKeyDown: handleKeyDown,
     }) || {};
 
-  // With tooltip
+  const button = (
+    <button
+      {...rest}
+      {...itemProps}
+      ref={itemRef}
+      role="menuitem"
+      tabIndex={tabIndex}
+      type={type}
+      className="flex w-full cursor-pointer items-center gap-2 border-0 bg-[var(--actions-menu-item-bg)] px-2 py-1 text-left text-m text-text-dark outline-none hover:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)] focus-visible:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)]"
+      style={{ backgroundColor: bgColor }}
+    >
+      {children}
+    </button>
+  );
+
+  // No combo to show -> render the bare button (no empty tooltip surface).
+  if (!tooltipContent) {
+    return button;
+  }
+
   return (
     <Tooltip
       open={isTooltipOpen}
       onOpenChange={setIsTooltipOpen}
       placement="right-end"
     >
-      <TooltipTrigger asChild>
-        <button
-          {...rest}
-          {...itemProps}
-          ref={itemRef}
-          role="menuitem"
-          tabIndex={tabIndex}
-          type={type}
-          className="flex w-full cursor-pointer items-center gap-2 border-0 bg-[var(--actions-menu-item-bg)] px-2 py-1 text-left text-m text-text-dark outline-none hover:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)] focus-visible:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)]"
-          style={{ backgroundColor: bgColor }}
-        >
-          {children}
-        </button>
-      </TooltipTrigger>
+      <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent>
-        <ShortcutKeys combo={tooltipContent ?? ""} />
+        <ShortcutKeys combo={tooltipContent} />
       </TooltipContent>
     </Tooltip>
   );

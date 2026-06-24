@@ -3,8 +3,8 @@ import { expect, type Page, test } from "@playwright/test";
 type ViewName = "day" | "week";
 
 const shortcutByView = {
-  day: "d",
-  week: "w",
+  day: "D",
+  week: "W",
 } as const satisfies Record<ViewName, string>;
 
 const collectUnexpectedConsoleErrors = (page: Page) => {
@@ -60,7 +60,7 @@ test.describe("View dropdown", () => {
 
     await expect(
       page.getByTestId("view-select-dropdown").getByRole("option"),
-    ).toHaveText(["Dayd", "Weekw"]);
+    ).toHaveText(["DayD", "WeekW"]);
     await expect(viewOption(page, "day")).toHaveAttribute(
       "aria-selected",
       "false",
