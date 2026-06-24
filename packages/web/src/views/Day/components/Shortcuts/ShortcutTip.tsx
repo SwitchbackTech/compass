@@ -1,4 +1,5 @@
 import { type ReactNode, useState } from "react";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 
 interface ShortcutProps {
   shortcut: string | string[];
@@ -13,12 +14,9 @@ const ShortcutBadge = ({
   displayShortcut: string;
   ariaLabel?: string;
 }) => (
-  <span
-    className="rounded bg-gray-400 px-1.5 py-0.5 text-gray-300 text-xs"
-    title={ariaLabel}
-  >
+  <ShortcutHint variant="keycap" title={ariaLabel}>
     {displayShortcut}
-  </span>
+  </ShortcutHint>
 );
 
 export const ShortcutTip = ({

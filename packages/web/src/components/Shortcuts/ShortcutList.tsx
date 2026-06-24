@@ -34,10 +34,7 @@ export const ShortcutList = ({ shortcuts }: { shortcuts: Shortcut[] }) => {
           className="flex min-h-9 items-center justify-between gap-4 rounded-default py-1.5 text-[13px] text-text-lighter leading-tight"
         >
           <span className="min-w-0 flex-1 break-words">{it.label}</span>
-          <ShortcutHint
-            className="shrink-0 whitespace-nowrap border border-border-primary bg-panel-bg px-1.5 py-0.5 font-medium text-[11px] text-text-light-inactive"
-            variant="keycap"
-          >
+          <ShortcutHint className="shrink-0 whitespace-nowrap" variant="keycap">
             <ShortcutKeySequence shortcutKey={it.k} />
           </ShortcutHint>
         </li>

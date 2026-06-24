@@ -426,6 +426,11 @@
   @apply c-tooltip pointer-events-none invisible absolute bottom-full z-10 mb-1.5 translate-y-1.25 whitespace-nowrap opacity-0 transition-all duration-200 ease-in-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100;
 }
 
+@utility c-keycap {
+  @apply inline-flex items-center rounded border border-border-primary bg-panel-bg px-1.5 py-0.5 font-medium text-text-light leading-none;
+  font-size: var(--font-size-s);
+}
+
 @utility c-context-menu-item {
   @apply flex w-full cursor-pointer appearance-none items-center gap-2 whitespace-nowrap border-0 border-menu-border border-b bg-transparent px-3 py-2.5 text-left text-[14px] text-menu-text select-none last:border-b-0 hover:bg-menu-hover disabled:cursor-wait disabled:opacity-50;
 }

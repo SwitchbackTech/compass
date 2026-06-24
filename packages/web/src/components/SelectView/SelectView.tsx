@@ -6,6 +6,7 @@ import {
   useListNavigation,
   useRole,
 } from "@floating-ui/react";
+import classNames from "classnames";
 import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -171,22 +172,14 @@ export const SelectView = ({
                 role="option"
                 aria-selected={isSelected}
                 tabIndex={isActive ? 0 : -1}
-                className={`flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm transition-colors ${
-                  isSelected
-                    ? "bg-fg-primary text-text-dark"
-                    : "text-fg-primary hover:bg-fg-primary-dark"
-                } ${
-                  isActive && !isSelected
-                    ? "bg-fg-primary-dark ring-1 ring-fg-primary-dark"
-                    : ""
-                }`}
+                className={classNames(
+                  "flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
+                  isSelected ? "text-accent-primary" : "text-text-light",
+                  isActive ? "bg-white/10" : "hover:bg-white/10",
+                )}
               >
                 <span>{option.label}</span>
-                <ShortcutHint
-                  className={`${isSelected ? "text-text-dark" : "text-text-light"}`}
-                >
-                  {option.key}
-                </ShortcutHint>
+                <ShortcutHint>{option.key}</ShortcutHint>
               </div>
             );
           })}

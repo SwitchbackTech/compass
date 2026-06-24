@@ -185,7 +185,7 @@ describe("SelectView", () => {
 
       const dayOption = screen.getByRole("option", { name: /day/i });
       expect(dayOption).toHaveAttribute("aria-selected", "true");
-      expect(dayOption).toHaveClass("bg-fg-primary");
+      expect(dayOption).toHaveClass("text-accent-primary");
 
       const weekOption = screen.getByRole("option", { name: /week/i });
       expect(weekOption).toHaveAttribute("aria-selected", "false");
@@ -287,7 +287,7 @@ describe("SelectView", () => {
 
       await waitFor(() => {
         const weekOption = screen.getByRole("option", { name: /week/i });
-        expect(weekOption.className).toContain("ring-1");
+        expect(weekOption.className).toContain("bg-white/10");
       });
     });
 
@@ -303,7 +303,7 @@ describe("SelectView", () => {
 
       await waitFor(() => {
         const weekOption = screen.getByRole("option", { name: /week/i });
-        expect(weekOption.className).toContain("ring-1");
+        expect(weekOption.className).toContain("bg-white/10");
       });
     });
 
@@ -348,13 +348,13 @@ describe("SelectView", () => {
       dayOption.focus();
 
       expect(dayOption).toHaveAttribute("aria-selected", "true");
-      expect(dayOption).toHaveClass("bg-fg-primary");
+      expect(dayOption).toHaveClass("text-accent-primary");
 
       await user.keyboard("{ArrowDown}");
 
       await waitFor(() => {
         const weekOption = screen.getByRole("option", { name: /week/i });
-        expect(weekOption.className).toContain("ring-1");
+        expect(weekOption.className).toContain("bg-white/10");
       });
     });
 
@@ -370,7 +370,7 @@ describe("SelectView", () => {
 
       await waitFor(() => {
         const dayOption = screen.getByRole("option", { name: /day/i });
-        expect(dayOption.className).toContain("ring-1");
+        expect(dayOption.className).toContain("bg-white/10");
       });
     });
 
@@ -386,7 +386,7 @@ describe("SelectView", () => {
 
       await waitFor(() => {
         const weekOption = screen.getByRole("option", { name: /week/i });
-        expect(weekOption.className).toContain("ring-1");
+        expect(weekOption.className).toContain("bg-white/10");
       });
     });
   });
