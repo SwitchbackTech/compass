@@ -1,9 +1,6 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import {
-  ShortcutKeys,
-  toKeyArray,
-} from "@web/components/Shortcuts/ShortcutKeys";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   Tooltip,
   TooltipContent,
@@ -93,10 +90,8 @@ const MenuItem: React.FC<MenuItemProps> = ({
     </button>
   );
 
-  const tooltipKeys = tooltipContent ? toKeyArray(tooltipContent) : [];
-
   // No keys to show -> render the bare button (no empty tooltip surface).
-  if (tooltipKeys.length === 0) {
+  if (!tooltipContent || tooltipContent.length === 0) {
     return button;
   }
 
@@ -108,7 +103,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
     >
       <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent>
-        <ShortcutKeys keys={tooltipKeys} />
+        <ShortcutKeys keys={tooltipContent} />
       </TooltipContent>
     </Tooltip>
   );

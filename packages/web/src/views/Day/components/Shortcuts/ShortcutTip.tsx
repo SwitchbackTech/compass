@@ -1,8 +1,5 @@
 import { type ReactNode, useState } from "react";
-import {
-  ShortcutKeys,
-  toKeyArray,
-} from "@web/components/Shortcuts/ShortcutKeys";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 interface ShortcutProps {
   shortcut: string | string[];
@@ -11,19 +8,18 @@ interface ShortcutProps {
 }
 
 const ShortcutBadge = ({
-  keys,
+  shortcut,
   ariaLabel,
 }: {
-  keys: string[];
+  shortcut: string | string[];
   ariaLabel?: string;
-}) => <ShortcutKeys keys={keys} title={ariaLabel} />;
+}) => <ShortcutKeys keys={shortcut} title={ariaLabel} />;
 
 export const ShortcutTip = ({
   shortcut,
   "aria-label": ariaLabel,
   children,
 }: ShortcutProps) => {
-  const keys = toKeyArray(shortcut);
   const [isHovered, setIsHovered] = useState(false);
 
   if (children != null) {
@@ -35,10 +31,12 @@ export const ShortcutTip = ({
         onMouseLeave={() => setIsHovered(false)}
       >
         {children}
-        {isHovered && <ShortcutBadge keys={keys} ariaLabel={ariaLabel} />}
+        {isHovered && (
+          <ShortcutBadge shortcut={shortcut} ariaLabel={ariaLabel} />
+        )}
       </span>
     );
   }
 
-  return <ShortcutBadge keys={keys} ariaLabel={ariaLabel} />;
+  return <ShortcutBadge shortcut={shortcut} ariaLabel={ariaLabel} />;
 };

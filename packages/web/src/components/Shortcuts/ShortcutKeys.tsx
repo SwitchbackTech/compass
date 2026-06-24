@@ -23,16 +23,16 @@ function normalizeKeyToken(key: string): string {
 
 /**
  * Normalizes a `string | string[]` shortcut to a key array. A lone string is
- * treated as a single key (never split), so callers can pass `"?"` for a
- * one-key hint and `["Mod", "K"]` for a combo — no `"+"` parsing involved.
+ * treated as a single key (never split), so callers pass `"?"` for a one-key
+ * hint and `["Mod", "K"]` for a combo — no `"+"` parsing involved.
  */
-export function toKeyArray(keys: string | string[]): string[] {
+function toKeyArray(keys: string | string[]): string[] {
   return Array.isArray(keys) ? keys : [keys];
 }
 
 interface Props {
-  /** One key per entry, e.g. `["Mod", "K"]`, `["Shift", "W"]`, `["?"]`. */
-  keys: string[];
+  /** A single key (`"?"`) or one key per entry (`["Mod", "K"]`). */
+  keys: string | string[];
   title?: string;
   className?: string;
 }
@@ -42,7 +42,9 @@ interface Props {
  * read as distinct keys (`[⌘] [K]`) rather than a single `"+"`-joined string.
  */
 export function ShortcutKeys({ keys, title, className }: Props) {
-  const cleaned = keys.map((key) => key.trim()).filter(Boolean);
+  const cleaned = toKeyArray(keys)
+    .map((key) => key.trim())
+    .filter(Boolean);
 
   // Nothing to render -> emit nothing, rather than an empty chip row.
   if (cleaned.length === 0) return null;

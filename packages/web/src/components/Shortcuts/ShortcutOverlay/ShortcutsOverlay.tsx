@@ -36,7 +36,7 @@ export const ShortcutsOverlay = ({
       className={classNames(
         "fixed top-24 left-3 border-border-primary bg-bg-secondary",
         "border p-3 shadow-lg backdrop-blur-sm md:block",
-        `hidden w-[240px] rounded-lg ${className}`,
+        `hidden w-60 rounded-lg ${className}`,
       )}
       style={{ zIndex: maxZIndex }}
     >

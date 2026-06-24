@@ -179,7 +179,7 @@ export const SelectView = ({
                 )}
               >
                 <span>{option.label}</span>
-                <ShortcutKeys keys={[option.key]} />
+                <ShortcutKeys keys={option.key} />
               </div>
             );
           })}

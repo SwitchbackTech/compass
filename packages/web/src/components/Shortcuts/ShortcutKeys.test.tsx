@@ -15,6 +15,14 @@ describe("ShortcutKeys", () => {
     expect(chips[1]?.textContent).toBe("W");
   });
 
+  it("accepts a single key as a bare string (one chip)", () => {
+    const { container } = render(<ShortcutKeys keys="?" />);
+
+    const chips = keycaps(container);
+    expect(chips).toHaveLength(1);
+    expect(chips[0]?.textContent).toBe("?");
+  });
+
   it("resolves the `cmd` alias to the Meta (Command) icon", () => {
     render(<ShortcutKeys keys={["cmd", "K"]} />);
 
@@ -27,7 +35,10 @@ describe("ShortcutKeys", () => {
     const { container } = render(<ShortcutKeys keys={[]} />);
     expect(keycaps(container)).toHaveLength(0);
 
-    // Blank/whitespace entries are dropped, leaving nothing to render.
+    // Blank/whitespace entries (string or array) are dropped.
+    const { container: emptyString } = render(<ShortcutKeys keys="" />);
+    expect(keycaps(emptyString)).toHaveLength(0);
+
     const { container: whitespace } = render(
       <ShortcutKeys keys={["", "  "]} />,
     );
