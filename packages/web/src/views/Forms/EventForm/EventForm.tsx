@@ -97,6 +97,23 @@ const resolveDateTimeState = (
   return createDateTimeState(sourceStartDate, sourceEndDate);
 };
 
+const handleEventFormDelete = ({
+  isDraft,
+  onClose,
+  onDelete,
+}: {
+  isDraft: boolean;
+  onClose: () => void;
+  onDelete: () => void;
+}) => {
+  if (isDraft) {
+    onClose();
+    return;
+  }
+
+  onDelete();
+};
+
 export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
   ({
     event,
@@ -262,6 +279,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       }, 1);
     }, [_onClose]);
 
+    const onDeleteEvent = useCallback(() => {
+      handleEventFormDelete({ isDraft, onClose, onDelete });
+    }, [isDraft, onClose, onDelete]);
+
     const onDuplicateEvent = useCallback(() => {
       onDuplicate?.(event);
       onClose();
@@ -389,18 +410,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setEvent: setLatestEvent,
     };
 
-    useAppHotkey(
-      "Delete",
-      () => {
-        if (isDraft) {
-          onClose();
-          return;
-        }
-
-        onDelete();
-      },
-      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
-    );
+    useAppHotkey("Delete", onDeleteEvent, EVENT_FORM_PLAIN_HOTKEY_OPTIONS);
 
     useAppHotkey(
       "Enter",
@@ -498,7 +508,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
                 onConvert?.();
               }}
               onDuplicate={onDuplicateEvent}
-              onDelete={onDelete}
+              onDelete={onDeleteEvent}
             />
           }
         />

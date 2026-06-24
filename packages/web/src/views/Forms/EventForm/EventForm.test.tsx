@@ -7,7 +7,7 @@ import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 type CapturedDateTimeSectionProps = Pick<
   DateTimeSectionProps,
@@ -36,7 +36,14 @@ mock.module(
 );
 
 mock.module("@web/views/Forms/EventForm/EventActionMenu", () => ({
-  EventActionMenu: () => <button type="button">Event actions</button>,
+  EventActionMenu: ({ onDelete }: { onDelete: () => void }) => (
+    <>
+      <button type="button">Event actions</button>
+      <button type="button" onClick={onDelete}>
+        Delete event
+      </button>
+    </>
+  ),
 }));
 
 mock.module("@web/views/Forms/EventForm/PrioritySection", () => ({
@@ -91,10 +98,16 @@ const createEvent = (overrides: Partial<Schema_Event> = {}): Schema_Event => ({
 });
 
 describe("EventForm", () => {
+  const originalConfirm = window.confirm;
+
   beforeEach(() => {
     HotkeyManager.resetInstance();
     capturedDateControlsSectionProps = null;
     document.body.removeAttribute("data-app-locked");
+  });
+
+  afterEach(() => {
+    window.confirm = originalConfirm;
   });
 
   it("renders the title before the actions on the same row", () => {
@@ -183,6 +196,33 @@ describe("EventForm", () => {
 
     expect(onDraftTitleArrowKey).not.toHaveBeenCalled();
     expect(afterTyping.defaultPrevented).toBe(false);
+  });
+
+  it("closes a draft event immediately when deleting from the menu", async () => {
+    const user = userEvent.setup();
+    const onClose = mock();
+    const onDelete = mock();
+    const confirm = mock(() => true);
+    window.confirm = confirm;
+
+    render(
+      <EventForm
+        event={createEvent({ _id: undefined, title: "Unsaved draft" })}
+        isDraft={true}
+        isExistingEvent={false}
+        onClose={onClose}
+        onDelete={onDelete}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    await user.click(screen.getByRole("button", { name: "Delete event" }));
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 
   it("resets title editing state when an unsaved draft session changes", async () => {

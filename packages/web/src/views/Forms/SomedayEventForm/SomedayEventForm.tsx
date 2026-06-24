@@ -31,7 +31,7 @@ import { useSomedayFormShortcuts } from "@web/views/Forms/SomedayEventForm/useSo
 export const SomedayEventForm: React.FC<FormProps> = ({
   event,
   category,
-  isDraft: _isDraft,
+  isDraft,
   isExistingEvent: _isExistingEvent,
   onClose,
   onMigrate,
@@ -128,9 +128,14 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     };
 
   const onDelete = useCallback(() => {
+    if (isDraft) {
+      onClose();
+      return;
+    }
+
     onDeleteEvent();
     onClose();
-  }, [onDeleteEvent, onClose]);
+  }, [isDraft, onDeleteEvent, onClose]);
 
   const onKeyDown = (e: KeyboardEvent<HTMLFormElement>) => {
     if (e.key === "Backspace") {

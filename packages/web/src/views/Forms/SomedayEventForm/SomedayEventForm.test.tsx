@@ -17,8 +17,17 @@ mock.module(
 );
 
 mock.module("@web/views/Forms/SomedayEventForm/SomedayEventActionMenu", () => ({
-  SomedayEventActionMenu: () => (
-    <button type="button">Someday event actions</button>
+  SomedayEventActionMenu: ({
+    onDeleteClick,
+  }: {
+    onDeleteClick: () => void;
+  }) => (
+    <>
+      <button type="button">Someday event actions</button>
+      <button type="button" onClick={onDeleteClick}>
+        Delete someday event
+      </button>
+    </>
   ),
 }));
 
@@ -71,5 +80,29 @@ describe("SomedayEventForm", () => {
     expect(actions.parentElement).toHaveClass("shrink-0");
     expect(row?.firstElementChild?.contains(title)).toBe(true);
     expect(row?.lastElementChild?.contains(actions)).toBe(true);
+  });
+
+  it("closes a someday draft immediately when deleting from the menu", () => {
+    const onClose = mock();
+    const onDelete = mock();
+
+    render(
+      <SomedayEventForm
+        category={Categories_Event.SOMEDAY_WEEK}
+        event={{ ...event, _id: undefined, title: "Someday draft" }}
+        isDraft={true}
+        isExistingEvent={false}
+        onClose={onClose}
+        onDelete={onDelete}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    screen.getByRole("button", { name: "Delete someday event" }).click();
+
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
   });
 });
