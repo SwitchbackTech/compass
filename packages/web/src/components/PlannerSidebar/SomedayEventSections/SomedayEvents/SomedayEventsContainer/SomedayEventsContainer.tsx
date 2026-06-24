@@ -77,7 +77,9 @@ export const SomedayEventsContainer: FC<Props> = ({
   const addTargetLabel = getAddTargetLabel(category);
   const addLabel = `Add item to ${addTargetLabel}`;
   const addShortcut =
-    category === Categories_Event.SOMEDAY_MONTH ? "Shift+M" : "Shift+W";
+    category === Categories_Event.SOMEDAY_MONTH
+      ? ["Shift", "M"]
+      : ["Shift", "W"];
   const activeDropZoneStyle: React.CSSProperties | undefined = state.isDragging
     ? {
         boxSizing: "border-box",

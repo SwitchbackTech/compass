@@ -33,7 +33,7 @@ const MigrationToast: React.FC<MigrationToastProps> = ({
         <span className="text-sm text-white">{message}</span>
         <div className="flex items-center gap-2">
           <span className="text-gray-300 text-xs">Undo</span>
-          <ShortcutKeys combo="Mod+Z" />
+          <ShortcutKeys keys={["Mod", "Z"]} />
         </div>
       </button>
       <button

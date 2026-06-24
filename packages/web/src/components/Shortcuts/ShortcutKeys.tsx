@@ -21,9 +21,18 @@ function normalizeKeyToken(key: string): string {
   return key;
 }
 
+/**
+ * Normalizes a `string | string[]` shortcut to a key array. A lone string is
+ * treated as a single key (never split), so callers can pass `"?"` for a
+ * one-key hint and `["Mod", "K"]` for a combo — no `"+"` parsing involved.
+ */
+export function toKeyArray(keys: string | string[]): string[] {
+  return Array.isArray(keys) ? keys : [keys];
+}
+
 interface Props {
-  /** A `+`-joined combo, e.g. "Mod+K", "Shift+W", "Control+Meta+ArrowRight". */
-  combo: string;
+  /** One key per entry, e.g. `["Mod", "K"]`, `["Shift", "W"]`, `["?"]`. */
+  keys: string[];
   title?: string;
   className?: string;
 }
@@ -32,21 +41,18 @@ interface Props {
  * Renders a keyboard shortcut as one keycap chip per key, so multi-step combos
  * read as distinct keys (`[⌘] [K]`) rather than a single `"+"`-joined string.
  */
-export function ShortcutKeys({ combo, title, className }: Props) {
-  const keys = combo
-    .split("+")
-    .map((key) => key.trim())
-    .filter(Boolean);
+export function ShortcutKeys({ keys, title, className }: Props) {
+  const cleaned = keys.map((key) => key.trim()).filter(Boolean);
 
   // Nothing to render -> emit nothing, rather than an empty chip row.
-  if (keys.length === 0) return null;
+  if (cleaned.length === 0) return null;
 
   return (
     <span
       title={title}
       className={classNames("inline-flex items-center gap-1", className)}
     >
-      {keys.map((key) => (
+      {cleaned.map((key) => (
         <ShortcutHint key={key} variant="keycap">
           <ShortCutLabel k={normalizeKeyToken(key)} size={13} />
         </ShortcutHint>

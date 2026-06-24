@@ -7,7 +7,7 @@ const keycaps = (container: HTMLElement) =>
 
 describe("ShortcutKeys", () => {
   it("renders one keycap chip per key and uppercases lone letters", () => {
-    const { container } = render(<ShortcutKeys combo="Shift+w" />);
+    const { container } = render(<ShortcutKeys keys={["Shift", "w"]} />);
 
     const chips = keycaps(container);
     expect(chips).toHaveLength(2);
@@ -16,18 +16,21 @@ describe("ShortcutKeys", () => {
   });
 
   it("resolves the `cmd` alias to the Meta (Command) icon", () => {
-    render(<ShortcutKeys combo="cmd+K" />);
+    render(<ShortcutKeys keys={["cmd", "K"]} />);
 
     // `cmd` -> Meta, which renders an icon rather than literal text.
     expect(screen.getByTestId("meta-icon")).toBeInTheDocument();
     expect(screen.getByText("K")).toBeInTheDocument();
   });
 
-  it("renders nothing when the combo has no keys", () => {
-    const { container } = render(<ShortcutKeys combo="" />);
+  it("renders nothing when there are no keys", () => {
+    const { container } = render(<ShortcutKeys keys={[]} />);
     expect(keycaps(container)).toHaveLength(0);
 
-    const { container: whitespace } = render(<ShortcutKeys combo="  +  " />);
+    // Blank/whitespace entries are dropped, leaving nothing to render.
+    const { container: whitespace } = render(
+      <ShortcutKeys keys={["", "  "]} />,
+    );
     expect(keycaps(whitespace)).toHaveLength(0);
   });
 });

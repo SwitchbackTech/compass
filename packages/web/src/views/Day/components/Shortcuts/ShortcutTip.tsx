@@ -1,5 +1,8 @@
 import { type ReactNode, useState } from "react";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import {
+  ShortcutKeys,
+  toKeyArray,
+} from "@web/components/Shortcuts/ShortcutKeys";
 
 interface ShortcutProps {
   shortcut: string | string[];
@@ -8,21 +11,19 @@ interface ShortcutProps {
 }
 
 const ShortcutBadge = ({
-  displayShortcut,
+  keys,
   ariaLabel,
 }: {
-  displayShortcut: string;
+  keys: string[];
   ariaLabel?: string;
-}) => <ShortcutKeys combo={displayShortcut} title={ariaLabel} />;
+}) => <ShortcutKeys keys={keys} title={ariaLabel} />;
 
 export const ShortcutTip = ({
   shortcut,
   "aria-label": ariaLabel,
   children,
 }: ShortcutProps) => {
-  const displayShortcut = Array.isArray(shortcut)
-    ? shortcut.join("+")
-    : shortcut;
+  const keys = toKeyArray(shortcut);
   const [isHovered, setIsHovered] = useState(false);
 
   if (children != null) {
@@ -34,17 +35,10 @@ export const ShortcutTip = ({
         onMouseLeave={() => setIsHovered(false)}
       >
         {children}
-        {isHovered && (
-          <ShortcutBadge
-            displayShortcut={displayShortcut}
-            ariaLabel={ariaLabel}
-          />
-        )}
+        {isHovered && <ShortcutBadge keys={keys} ariaLabel={ariaLabel} />}
       </span>
     );
   }
 
-  return (
-    <ShortcutBadge displayShortcut={displayShortcut} ariaLabel={ariaLabel} />
-  );
+  return <ShortcutBadge keys={keys} ariaLabel={ariaLabel} />;
 };

@@ -6,7 +6,9 @@ describe("ShortcutList", () => {
   it("renders each key of a combo as its own keycap chip", () => {
     render(
       <ShortcutList
-        shortcuts={[{ k: "Shift+w", label: "Create Someday week event" }]}
+        shortcuts={[
+          { keys: ["Shift", "w"], label: "Create Someday week event" },
+        ]}
       />,
     );
 

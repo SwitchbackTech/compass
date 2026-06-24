@@ -7,8 +7,8 @@ const sections = [
   {
     title: "Day",
     shortcuts: [
-      { k: "j", label: "Previous day" },
-      { k: "k", label: "Next day" },
+      { keys: ["j"], label: "Previous day" },
+      { keys: ["k"], label: "Next day" },
     ],
   },
   {

@@ -7,26 +7,26 @@ describe("shortcuts.data", () => {
       const shortcuts = getShortcuts();
 
       expect(shortcuts.globalShortcuts).toEqual([
-        { k: "d", label: "Day" },
-        { k: "w", label: "Week" },
-        { k: "[", label: "Close sidebar" },
-        { k: "?", label: "Show shortcuts" },
-        { k: "Mod+k", label: "Command Palette" },
+        { keys: ["d"], label: "Day" },
+        { keys: ["w"], label: "Week" },
+        { keys: ["["], label: "Close sidebar" },
+        { keys: ["?"], label: "Show shortcuts" },
+        { keys: ["Mod", "k"], label: "Command Palette" },
       ]);
 
       expect(shortcuts.dayAgendaShortcuts).toHaveLength(2);
       expect(shortcuts.dayAgendaShortcuts[0]).toEqual({
-        k: "i",
+        keys: ["i"],
         label: "Focus on calendar",
       });
       expect(shortcuts.dayAgendaShortcuts[1]).toEqual({
-        k: "m",
+        keys: ["m"],
         label: "Edit event",
       });
 
       expect(shortcuts.dayShortcuts).toHaveLength(3);
       expect(shortcuts.dayShortcuts[2]).toEqual({
-        k: "t",
+        keys: ["t"],
         label: "Go to today",
       });
     });
@@ -37,7 +37,7 @@ describe("shortcuts.data", () => {
         currentDate: dayjs(),
       });
 
-      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.keys[0] === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Scroll to now");
     });
@@ -50,7 +50,7 @@ describe("shortcuts.data", () => {
         currentDate: yesterday,
       });
 
-      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.keys[0] === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
     });
@@ -63,7 +63,7 @@ describe("shortcuts.data", () => {
         currentDate: tomorrow,
       });
 
-      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.keys[0] === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
     });
@@ -74,7 +74,7 @@ describe("shortcuts.data", () => {
         currentDate: undefined,
       });
 
-      const tShortcut = shortcuts.dayShortcuts.find((s) => s.k === "t");
+      const tShortcut = shortcuts.dayShortcuts.find((s) => s.keys[0] === "t");
       expect(tShortcut).toBeDefined();
       expect(tShortcut?.label).toBe("Go to today");
     });
@@ -87,12 +87,15 @@ describe("shortcuts.data", () => {
 
       expect(shortcuts.homeShortcuts).toHaveLength(3);
       expect(shortcuts.homeShortcuts[0]).toEqual({
-        k: "j",
+        keys: ["j"],
         label: "Previous day",
       });
-      expect(shortcuts.homeShortcuts[1]).toEqual({ k: "k", label: "Next day" });
+      expect(shortcuts.homeShortcuts[1]).toEqual({
+        keys: ["k"],
+        label: "Next day",
+      });
       expect(shortcuts.homeShortcuts[2]).toEqual({
-        k: "Enter",
+        keys: ["Enter"],
         label: "Go to Today",
       });
 

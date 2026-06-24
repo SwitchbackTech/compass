@@ -18,7 +18,7 @@ export const MoveToSidebarMenuButton: React.FC<Props> = ({
       bgColor={bgColor}
       onClick={onClick}
       aria-label={label}
-      tooltipContent="Control+Meta+ArrowLeft"
+      tooltipContent={["Control", "Meta", "ArrowLeft"]}
     >
       <ArrowLeftIcon size={14} />
       <span>{label}</span>

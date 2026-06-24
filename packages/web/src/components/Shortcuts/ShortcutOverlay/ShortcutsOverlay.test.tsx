@@ -6,15 +6,15 @@ const baseSections = [
   {
     title: "Tasks",
     shortcuts: [
-      { k: "j", label: "Previous task" },
-      { k: "k", label: "Next task" },
+      { keys: ["j"], label: "Previous task" },
+      { keys: ["k"], label: "Next task" },
     ],
   },
   {
     title: "Global",
     shortcuts: [
-      { k: "1", label: "Tasks" },
-      { k: "2", label: "Day" },
+      { keys: ["1"], label: "Tasks" },
+      { keys: ["2"], label: "Day" },
     ],
   },
 ];

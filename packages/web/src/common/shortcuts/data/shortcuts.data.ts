@@ -12,11 +12,11 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
   const { isHome = false, isToday = true, currentDate } = config;
 
   const globalShortcuts: Shortcut[] = [
-    { k: VIEW_SHORTCUTS.day.key, label: VIEW_SHORTCUTS.day.label },
-    { k: VIEW_SHORTCUTS.week.key, label: VIEW_SHORTCUTS.week.label },
-    { k: "[", label: "Close sidebar" },
-    { k: "?", label: "Show shortcuts" },
-    { k: "Mod+k", label: "Command Palette" },
+    { keys: [VIEW_SHORTCUTS.day.key], label: VIEW_SHORTCUTS.day.label },
+    { keys: [VIEW_SHORTCUTS.week.key], label: VIEW_SHORTCUTS.week.label },
+    { keys: ["["], label: "Close sidebar" },
+    { keys: ["?"], label: "Show shortcuts" },
+    { keys: ["Mod", "k"], label: "Command Palette" },
   ];
 
   let homeShortcuts: Shortcut[] = [];
@@ -26,18 +26,18 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
 
   if (isHome) {
     homeShortcuts = [
-      { k: "j", label: "Previous day" },
-      { k: "k", label: "Next day" },
-      { k: "Enter", label: "Go to Today" },
+      { keys: ["j"], label: "Previous day" },
+      { keys: ["k"], label: "Next day" },
+      { keys: ["Enter"], label: "Go to Today" },
     ];
   }
 
   if (isToday) {
     dayShortcuts = [
-      { k: "j", label: "Previous day" },
-      { k: "k", label: "Next day" },
+      { keys: ["j"], label: "Previous day" },
+      { keys: ["k"], label: "Next day" },
       {
-        k: "t",
+        keys: ["t"],
         label: (() => {
           if (!currentDate) return "Go to today";
 
@@ -49,14 +49,14 @@ export const getShortcuts = (config: ShortcutsConfig = {}) => {
     ];
 
     dayTaskShortcuts = [
-      { k: "u", label: "Focus on tasks" },
-      { k: "c", label: "Create task" },
-      { k: "e", label: "Edit task" },
-      { k: "Delete", label: "Delete task" },
+      { keys: ["u"], label: "Focus on tasks" },
+      { keys: ["c"], label: "Create task" },
+      { keys: ["e"], label: "Edit task" },
+      { keys: ["Delete"], label: "Delete task" },
     ];
     dayAgendaShortcuts = [
-      { k: "i", label: "Focus on calendar" },
-      { k: "m", label: "Edit event" },
+      { keys: ["i"], label: "Focus on calendar" },
+      { keys: ["m"], label: "Edit event" },
     ];
   }
   return {

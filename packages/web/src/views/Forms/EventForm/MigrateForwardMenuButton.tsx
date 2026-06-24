@@ -18,7 +18,7 @@ export const MigrateForwardMenuButton: React.FC<Props> = ({
       onClick={onClick}
       aria-label={tooltipText}
       bgColor={bgColor}
-      tooltipContent="Control+Meta+ArrowRight"
+      tooltipContent={["Control", "Meta", "ArrowRight"]}
     >
       <ArrowRightIcon size={14} />
       <span>{tooltipText}</span>

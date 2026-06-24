@@ -47,10 +47,10 @@ describe("TooltipWrapper", () => {
     });
   });
 
-  it("shows shortcut when string shortcut provided", async () => {
+  it("shows shortcut when key array shortcut provided", async () => {
     const user = userEvent.setup();
     render(
-      <TooltipWrapper shortcut="Shift+S">
+      <TooltipWrapper shortcut={["Shift", "S"]}>
         <button type="button">Save</button>
       </TooltipWrapper>,
     );

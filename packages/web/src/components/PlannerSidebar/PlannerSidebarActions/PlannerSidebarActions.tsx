@@ -64,7 +64,7 @@ export const PlannerSidebarActions = ({
       <div className="flex items-center gap-2">
         <TooltipWrapper
           description="Open command palette"
-          shortcut="Mod+K"
+          shortcut={["Mod", "K"]}
           onClick={toggleCmdPalette}
         >
           <button

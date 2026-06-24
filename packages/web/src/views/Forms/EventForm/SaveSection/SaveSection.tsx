@@ -37,7 +37,7 @@ export const SaveSection: React.FC<Props> = ({
         </TooltipWrapper>
       )}
 
-      <TooltipWrapper onClick={onSave} shortcut="Mod+Enter">
+      <TooltipWrapper onClick={onSave} shortcut={["Mod", "Enter"]}>
         <SaveButton
           minWidth={110}
           priority={priority!}

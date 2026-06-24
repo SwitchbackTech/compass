@@ -1,6 +1,9 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import {
+  ShortcutKeys,
+  toKeyArray,
+} from "@web/components/Shortcuts/ShortcutKeys";
 import {
   Tooltip,
   TooltipContent,
@@ -11,10 +14,11 @@ import { useMenuContext } from "./ActionsMenu";
 export interface MenuItemProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /**
-   * A `+`-joined shortcut combo (e.g. "Mod+D") rendered as per-key chips in the
-   * delayed tooltip. If omitted, the tooltip is disabled.
+   * Shortcut shown as per-key chips in the delayed tooltip: a single key
+   * (`"Delete"`) or a combo as a key array (`["Mod", "D"]`). If omitted (or
+   * empty), the tooltip is disabled.
    */
-  tooltipContent?: string;
+  tooltipContent?: string | string[];
   bgColor: string;
 }
 
@@ -89,8 +93,10 @@ const MenuItem: React.FC<MenuItemProps> = ({
     </button>
   );
 
-  // No combo to show -> render the bare button (no empty tooltip surface).
-  if (!tooltipContent) {
+  const tooltipKeys = tooltipContent ? toKeyArray(tooltipContent) : [];
+
+  // No keys to show -> render the bare button (no empty tooltip surface).
+  if (tooltipKeys.length === 0) {
     return button;
   }
 
@@ -102,7 +108,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
     >
       <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent>
-        <ShortcutKeys combo={tooltipContent} />
+        <ShortcutKeys keys={tooltipKeys} />
       </TooltipContent>
     </Tooltip>
   );
