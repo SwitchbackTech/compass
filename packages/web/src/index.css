@@ -417,8 +417,13 @@
   }
 }
 
+@utility c-tooltip {
+  @apply rounded bg-menu-tooltip-bg px-2 py-1 font-medium text-menu-tooltip-text leading-snug shadow-[0_4px_6px_var(--color-shadow-default)];
+  font-size: var(--font-size-s);
+}
+
 @utility c-context-tooltip {
-  @apply pointer-events-none invisible absolute bottom-full z-10 mb-1.5 translate-y-[5px] whitespace-nowrap rounded bg-menu-tooltip-bg px-2 py-1 text-[13px] text-menu-tooltip-text opacity-0 transition-all duration-200 ease-in-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100;
+  @apply c-tooltip pointer-events-none invisible absolute bottom-full z-10 mb-1.5 translate-y-1.25 whitespace-nowrap opacity-0 transition-all duration-200 ease-in-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100;
 }
 
 @utility c-context-menu-item {

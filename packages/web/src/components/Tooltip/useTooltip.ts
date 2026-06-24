@@ -9,6 +9,7 @@ import {
   useHover,
   useInteractions,
   useRole,
+  useTransitionStyles,
 } from "@floating-ui/react";
 import { createContext, useContext, useMemo, useState } from "react";
 import { type TooltipOptions } from "./tooltip.types";
@@ -53,14 +54,30 @@ export function useTooltip({
 
   const interactions = useInteractions([hover, focus, dismiss, role]);
 
+  // App-native fade + rise on appear, using the shared ease-out-expo curve.
+  const transition = useTransitionStyles(context, {
+    duration: { open: 160, close: 120 },
+    initial: { opacity: 0, transform: "translateY(4px) scale(0.98)" },
+    common: { transitionTimingFunction: "cubic-bezier(0.16, 1, 0.3, 1)" },
+  });
+
   return useMemo(
     () => ({
       open,
       setOpen,
+      isMounted: transition.isMounted,
+      transitionStyles: transition.styles,
       ...interactions,
       ...data,
     }),
-    [open, setOpen, interactions, data],
+    [
+      open,
+      setOpen,
+      transition.isMounted,
+      transition.styles,
+      interactions,
+      data,
+    ],
   );
 }
 

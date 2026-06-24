@@ -8,7 +8,7 @@ import {
   TooltipTrigger,
 } from "@web/components/Tooltip";
 import { type TooltipOptions } from "@web/components/Tooltip/tooltip.types";
-import { LegacyShortcutHint } from "../Shortcuts/ShortcutHint";
+import { ShortcutHint } from "../Shortcuts/ShortcutHint";
 import { TooltipDescription } from "./Description/TooltipDescription";
 
 export interface Props {
@@ -37,19 +37,17 @@ export const TooltipWrapper: React.FC<Props> = ({
         {children}
       </TooltipTrigger>
 
-      <TooltipContent
-        className={`${description ? "bg-fg-primary" : ""} rounded p-1`}
-      >
+      <TooltipContent>
         <Flex alignItems={AlignItems.CENTER}>
           {description && <TooltipDescription description={description} />}
           {shortcut && (
-            <LegacyShortcutHint>
+            <ShortcutHint variant="keycap">
               {typeof shortcut === "string" ? (
                 <Text size="s">{shortcut}</Text>
               ) : (
                 shortcut
               )}
-            </LegacyShortcutHint>
+            </ShortcutHint>
           )}
         </Flex>
       </TooltipContent>

@@ -1,4 +1,5 @@
 import { FloatingPortal, useMergeRefs } from "@floating-ui/react";
+import classNames from "classnames";
 import {
   cloneElement,
   forwardRef,
@@ -7,7 +8,7 @@ import {
   type ReactNode,
   type Ref,
 } from "react";
-import { ZIndex } from "@web/common/constants/web.constants";
+import { Z_INDEX_TOOLTIP, ZIndex } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { type TooltipOptions } from "./tooltip.types";
 import { TooltipContext, useTooltip, useTooltipContext } from "./useTooltip";
@@ -65,22 +66,24 @@ export const TooltipTrigger = forwardRef<
 export const TooltipContent = forwardRef<
   HTMLDivElement,
   HTMLProps<HTMLDivElement>
->(function TooltipContent({ children, style, ...props }, propRef) {
+>(function TooltipContent({ children, className, style, ...props }, propRef) {
   const context = useTooltipContext();
   const maxZIndex = useGridMaxZIndex();
   const ref = useMergeRefs([context.refs.setFloating, propRef]);
 
   return (
     <FloatingPortal>
-      {context.open && (
+      {context.isMounted && (
         <div
           ref={ref}
+          className={classNames("c-tooltip", className)}
           style={{
             left: context.x ?? 0,
             position: context.strategy,
             top: context.y ?? 0,
             visibility: context.x == null ? "hidden" : "visible",
-            zIndex: maxZIndex + ZIndex.LAYER_3,
+            zIndex: Math.max(maxZIndex + ZIndex.LAYER_3, Z_INDEX_TOOLTIP),
+            ...context.transitionStyles,
             ...style,
           }}
           {...context.getFloatingProps(props)}

@@ -1,6 +1,6 @@
 import type React from "react";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { LegacyShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
 import {
   Tooltip,
   TooltipContent,
@@ -95,7 +95,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         </button>
       </TooltipTrigger>
       <TooltipContent>
-        <LegacyShortcutHint>{tooltipContent}</LegacyShortcutHint>
+        <ShortcutHint variant="keycap">{tooltipContent}</ShortcutHint>
       </TooltipContent>
     </Tooltip>
   );

@@ -49,7 +49,7 @@ export function LifeDotTooltip({ weekNumber, children }: LifeDotTooltipProps) {
       {children}
       {open ? (
         <span
-          className="pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap rounded border border-border-primary bg-bg-secondary px-2 py-1 text-text-lighter text-xs shadow-lg"
+          className="c-tooltip pointer-events-none absolute bottom-full left-1/2 z-50 mb-1 -translate-x-1/2 whitespace-nowrap"
           role="tooltip"
         >
           {label}
