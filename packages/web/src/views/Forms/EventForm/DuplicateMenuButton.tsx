@@ -1,7 +1,5 @@
 import { Copy } from "@phosphor-icons/react";
 import type React from "react";
-import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
-import { Text } from "@web/components/Text/Text";
 import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
 interface Props {
@@ -20,11 +18,7 @@ export const DuplicateMenuButton: React.FC<Props> = ({
       onClick={onClick}
       aria-label={label}
       bgColor={bgColor}
-      tooltipContent={
-        <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-          {getModifierKeyIcon()} + D
-        </Text>
-      }
+      tooltipContent="Mod+D"
     >
       <Copy size={16} />
       <span>{label}</span>

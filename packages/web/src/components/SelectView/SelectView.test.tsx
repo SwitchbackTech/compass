@@ -96,12 +96,12 @@ describe("SelectView", () => {
         withinDropdown
           .getAllByRole("option")
           .map((option) => option.textContent),
-      ).toEqual(["Dayd", "Weekw"]);
+      ).toEqual(["DayD", "WeekW"]);
 
       const shortcutHints = withinDropdown.getAllByTestId("shortcut-hint");
       expect(shortcutHints).toHaveLength(2);
-      expect(shortcutHints[0]).toHaveTextContent("d");
-      expect(shortcutHints[1]).toHaveTextContent("w");
+      expect(shortcutHints[0]).toHaveTextContent("D");
+      expect(shortcutHints[1]).toHaveTextContent("W");
     });
   });
 
@@ -258,7 +258,7 @@ describe("SelectView", () => {
       const shortcutHint = dayOption.querySelector(
         '[data-testid="shortcut-hint"]',
       );
-      expect(shortcutHint).toHaveTextContent("d");
+      expect(shortcutHint).toHaveTextContent("D");
     });
 
     it("displays w shortcut hint for Week option", async () => {
@@ -270,7 +270,7 @@ describe("SelectView", () => {
       const shortcutHint = weekOption.querySelector(
         '[data-testid="shortcut-hint"]',
       );
-      expect(shortcutHint).toHaveTextContent("w");
+      expect(shortcutHint).toHaveTextContent("W");
     });
   });
 

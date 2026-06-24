@@ -1,10 +1,8 @@
 import type React from "react";
 import { useCallback } from "react";
 import { type Priority } from "@core/constants/core.constants";
-import { getModifierKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
 import { Btn, SaveButton } from "@web/components/Button/Button";
 import { Flex } from "@web/components/Flex/Flex";
-import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface Props {
@@ -39,14 +37,7 @@ export const SaveSection: React.FC<Props> = ({
         </TooltipWrapper>
       )}
 
-      <TooltipWrapper
-        onClick={onSave}
-        shortcut={
-          <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-            {getModifierKeyIcon()} + Enter
-          </Text>
-        }
-      >
+      <TooltipWrapper onClick={onSave} shortcut="Mod+Enter">
         <SaveButton
           minWidth={110}
           priority={priority!}

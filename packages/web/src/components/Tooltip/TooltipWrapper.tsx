@@ -1,7 +1,7 @@
 import type React from "react";
 import { type ReactNode } from "react";
 import { AlignItems, Flex } from "@web/components/Flex/Flex";
-import { Text } from "@web/components/Text/Text";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   Tooltip,
   TooltipContent,
@@ -40,15 +40,12 @@ export const TooltipWrapper: React.FC<Props> = ({
       <TooltipContent>
         <Flex alignItems={AlignItems.CENTER}>
           {description && <TooltipDescription description={description} />}
-          {shortcut && (
-            <ShortcutHint variant="keycap">
-              {typeof shortcut === "string" ? (
-                <Text size="s">{shortcut}</Text>
-              ) : (
-                shortcut
-              )}
-            </ShortcutHint>
-          )}
+          {shortcut &&
+            (typeof shortcut === "string" ? (
+              <ShortcutKeys combo={shortcut} />
+            ) : (
+              <ShortcutHint variant="keycap">{shortcut}</ShortcutHint>
+            ))}
         </Flex>
       </TooltipContent>
     </Tooltip>

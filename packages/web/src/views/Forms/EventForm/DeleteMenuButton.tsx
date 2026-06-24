@@ -13,7 +13,7 @@ export const DeleteMenuButton: React.FC<Props> = ({ onClick, bgColor }) => {
       onClick={onClick}
       aria-label="Delete Event"
       bgColor={bgColor}
-      tooltipContent={<span>DEL</span>}
+      tooltipContent="Delete"
     >
       <Trash size={16} />
       <span>Delete</span>

@@ -1,4 +1,8 @@
 import {
+  ArrowDownIcon,
+  ArrowLeftIcon,
+  ArrowRightIcon,
+  ArrowUpIcon,
   CommandIcon,
   ControlIcon,
   type Icon,
@@ -10,9 +14,17 @@ import {
   resolveModifier,
 } from "@tanstack/react-hotkeys";
 
+// `Meta` is the platform "command" key: ⌘ on macOS, the Windows logo elsewhere.
+const metaIcon: Icon =
+  detectPlatform() === "mac" ? CommandIcon : WindowsLogoIcon;
+
 const keyIconMap: Record<string, Icon> = {
-  Meta: CommandIcon,
+  Meta: metaIcon,
   Control: ControlIcon,
+  ArrowUp: ArrowUpIcon,
+  ArrowDown: ArrowDownIcon,
+  ArrowLeft: ArrowLeftIcon,
+  ArrowRight: ArrowRightIcon,
 };
 
 /** Resolves TanStack `Mod` tokens to `Meta` / `Control` for icons and labels. */
@@ -39,8 +51,10 @@ export function ShortCutLabel({ k, size = 14 }: { k: string; size?: number }) {
       return <IconComponent key={key} size={size} data-testid={testId} />;
     }
 
+    // Text keys inherit the surrounding font size (e.g. the keycap chip's 11px)
+    // so letters and modifier icons read consistently together.
     return (
-      <span key={key} data-testid={testId} style={{ fontSize: `${size}px` }}>
+      <span key={key} data-testid={testId}>
         {key}
       </span>
     );
@@ -58,20 +72,3 @@ export const getModifierKeyLabel = (): string => {
 
 export const getModifierKeyTestId = () =>
   `${resolveModifier("Mod").toLowerCase()}-icon`;
-
-export const getModifierKeyIcon = ({ size = 14 }: { size?: number } = {}) => {
-  const k = resolveModifier("Mod");
-
-  return <ShortCutLabel k={k} size={size} />;
-};
-
-export const getMetaKeyIcon = ({ size = 14 }: { size?: number } = {}) => {
-  const platform = detectPlatform();
-  const testId = `${platform}-icon`;
-
-  if (platform === "mac") {
-    return <CommandIcon size={size} data-testid={testId} />;
-  }
-
-  return <WindowsLogoIcon size={size} data-testid={testId} />;
-};

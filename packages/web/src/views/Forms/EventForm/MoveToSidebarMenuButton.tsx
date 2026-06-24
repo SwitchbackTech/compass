@@ -1,7 +1,5 @@
 import { ArrowLeftIcon } from "@phosphor-icons/react";
 import type React from "react";
-import { getMetaKeyIcon } from "@web/common/utils/shortcut/shortcut.util";
-import { Text } from "@web/components/Text/Text";
 import MenuItem from "@web/views/Forms/ActionsMenu/MenuItem";
 
 interface Props {
@@ -20,11 +18,7 @@ export const MoveToSidebarMenuButton: React.FC<Props> = ({
       bgColor={bgColor}
       onClick={onClick}
       aria-label={label}
-      tooltipContent={
-        <Text size="s" style={{ display: "flex", alignItems: "center" }}>
-          CTRL + {getMetaKeyIcon({ size: 14 })} + <ArrowLeftIcon size={14} />
-        </Text>
-      }
+      tooltipContent="Control+Meta+ArrowLeft"
     >
       <ArrowLeftIcon size={14} />
       <span>{label}</span>

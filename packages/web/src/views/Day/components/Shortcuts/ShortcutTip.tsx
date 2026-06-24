@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from "react";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 interface ShortcutProps {
   shortcut: string | string[];
@@ -13,11 +13,7 @@ const ShortcutBadge = ({
 }: {
   displayShortcut: string;
   ariaLabel?: string;
-}) => (
-  <ShortcutHint variant="keycap" title={ariaLabel}>
-    {displayShortcut}
-  </ShortcutHint>
-);
+}) => <ShortcutKeys combo={displayShortcut} title={ariaLabel} />;
 
 export const ShortcutTip = ({
   shortcut,
@@ -25,7 +21,7 @@ export const ShortcutTip = ({
   children,
 }: ShortcutProps) => {
   const displayShortcut = Array.isArray(shortcut)
-    ? shortcut.join(" + ")
+    ? shortcut.join("+")
     : shortcut;
   const [isHovered, setIsHovered] = useState(false);
 

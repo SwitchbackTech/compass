@@ -3,7 +3,7 @@ import { ShortcutList } from "./ShortcutList";
 import { describe, expect, it } from "bun:test";
 
 describe("ShortcutList", () => {
-  it("renders modified shortcuts in one compact keycap", () => {
+  it("renders each key of a combo as its own keycap chip", () => {
     render(
       <ShortcutList
         shortcuts={[{ k: "Shift+w", label: "Create Someday week event" }]}
@@ -16,8 +16,10 @@ describe("ShortcutList", () => {
     const keycaps = row.querySelectorAll("[aria-hidden='true']");
     const label = screen.getByText("Create Someday week event");
 
-    expect(keycaps).toHaveLength(1);
-    expect(keycaps[0]?.textContent).toBe("Shift + w");
+    // One chip per key — "Shift" and "W" — rather than a single "Shift + w".
+    expect(keycaps).toHaveLength(2);
+    expect(keycaps[0]?.textContent).toBe("Shift");
+    expect(keycaps[1]?.textContent).toBe("W");
     expect(label).toHaveClass("flex-1");
     expect(label).not.toHaveClass("truncate");
     expect(row).toHaveClass("justify-between");

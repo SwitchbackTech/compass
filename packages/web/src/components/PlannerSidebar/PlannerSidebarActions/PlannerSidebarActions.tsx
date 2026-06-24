@@ -5,7 +5,6 @@ import {
 } from "@phosphor-icons/react";
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
-import { getModifierKeyLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -65,7 +64,7 @@ export const PlannerSidebarActions = ({
       <div className="flex items-center gap-2">
         <TooltipWrapper
           description="Open command palette"
-          shortcut={`${getModifierKeyLabel()}+K`}
+          shortcut="Mod+K"
           onClick={toggleCmdPalette}
         >
           <button

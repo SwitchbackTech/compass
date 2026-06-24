@@ -45,7 +45,7 @@ describe("UndoDeleteToast", () => {
         <UndoDeleteToast onRestore={mockOnRestore} toastId="test-toast-id" />,
       );
 
-      expect(screen.getByText("+ Z")).toBeInTheDocument();
+      expect(screen.getByText("Z")).toBeInTheDocument();
       expect(screen.getByTestId(getModifierKeyTestId())).toBeInTheDocument();
     });
 

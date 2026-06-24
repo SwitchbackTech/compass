@@ -11,7 +11,7 @@ import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 
 interface SelectViewProps {
   displayLabel?: string;
@@ -179,7 +179,7 @@ export const SelectView = ({
                 )}
               >
                 <span>{option.label}</span>
-                <ShortcutHint>{option.key}</ShortcutHint>
+                <ShortcutKeys combo={option.key} />
               </div>
             );
           })}

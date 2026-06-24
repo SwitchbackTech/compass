@@ -50,14 +50,16 @@ describe("TooltipWrapper", () => {
   it("shows shortcut when string shortcut provided", async () => {
     const user = userEvent.setup();
     render(
-      <TooltipWrapper shortcut="Ctrl+S">
+      <TooltipWrapper shortcut="Shift+S">
         <button type="button">Save</button>
       </TooltipWrapper>,
     );
     const button = screen.getByRole("button", { name: /save/i });
     await user.hover(button);
+    // The combo renders one chip per key — "Shift" and "S" — not "Shift+S".
     await waitFor(() => {
-      expect(screen.getByText("Ctrl+S")).toBeInTheDocument();
+      expect(screen.getByText("Shift")).toBeInTheDocument();
+      expect(screen.getByText("S")).toBeInTheDocument();
     });
   });
 

@@ -1,6 +1,6 @@
 import type React from "react";
-import { type ReactNode, useEffect, useRef, useState } from "react";
-import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { useEffect, useRef, useState } from "react";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   Tooltip,
   TooltipContent,
@@ -11,9 +11,10 @@ import { useMenuContext } from "./ActionsMenu";
 export interface MenuItemProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   /**
-   * Content to render inside the delayed tooltip. If omitted, the tooltip is disabled.
+   * A `+`-joined shortcut combo (e.g. "Mod+D") rendered as per-key chips in the
+   * delayed tooltip. If omitted, the tooltip is disabled.
    */
-  tooltipContent?: ReactNode;
+  tooltipContent?: string;
   bgColor: string;
 }
 
@@ -95,7 +96,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
         </button>
       </TooltipTrigger>
       <TooltipContent>
-        <ShortcutHint variant="keycap">{tooltipContent}</ShortcutHint>
+        <ShortcutKeys combo={tooltipContent ?? ""} />
       </TooltipContent>
     </Tooltip>
   );

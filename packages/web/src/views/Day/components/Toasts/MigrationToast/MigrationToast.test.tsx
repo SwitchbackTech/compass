@@ -59,7 +59,7 @@ describe("MigrationToast", () => {
       render(toastCall);
 
       expect(screen.getByText("Undo")).toBeInTheDocument();
-      expect(screen.getByText("+ Z")).toBeInTheDocument();
+      expect(screen.getByText("Z")).toBeInTheDocument();
       expect(screen.getByTestId(getModifierKeyTestId())).toBeInTheDocument();
     });
 
