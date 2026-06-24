@@ -54,7 +54,6 @@ export function useTooltip({
 
   const interactions = useInteractions([hover, focus, dismiss, role]);
 
-  // App-native fade + rise on appear, using the shared ease-out-expo curve.
   const transition = useTransitionStyles(context, {
     duration: { open: 160, close: 120 },
     initial: { opacity: 0, transform: "translateY(4px) scale(0.98)" },

@@ -1,11 +1,11 @@
 import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
+import { getShortcuts } from "@web/common/shortcuts/data/shortcuts.data";
 import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
-import { getShortcuts } from "@web/common/utils/shortcut/data/shortcuts.data";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";

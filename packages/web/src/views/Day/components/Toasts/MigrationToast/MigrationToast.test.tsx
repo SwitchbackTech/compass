@@ -1,6 +1,6 @@
 import "@testing-library/jest-dom";
 import { fireEvent, render, screen } from "@testing-library/react";
-import { getModifierKeyTestId } from "@web/common/utils/shortcut/shortcut.util";
+import { getModifierKeyTestId } from "@web/common/shortcuts/shortcut.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOnNavigate = mock();

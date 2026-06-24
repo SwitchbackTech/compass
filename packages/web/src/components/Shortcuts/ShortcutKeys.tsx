@@ -1,6 +1,6 @@
 import classNames from "classnames";
-import { ShortCutLabel } from "@web/common/utils/shortcut/shortcut.util";
 import { ShortcutHint } from "@web/components/Shortcuts/ShortcutHint";
+import { ShortCutLabel } from "./ShortcutLabel";
 
 /** Aliases for keys users might write differently than the canonical token. */
 const keyAliases: Record<string, string> = {
