@@ -18,7 +18,7 @@ export const MigrateBackwardMenuButton: React.FC<Props> = ({
       onClick={onClick}
       aria-label={tooltipText}
       bgColor={bgColor}
-      tooltipContent={["Control", "Meta", "ArrowLeft"]}
+      tooltip={["Control", "Meta", "ArrowLeft"]}
     >
       <ArrowLeftIcon size={14} />
       <span>{tooltipText}</span>

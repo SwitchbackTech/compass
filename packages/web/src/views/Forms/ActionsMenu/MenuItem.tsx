@@ -15,12 +15,12 @@ export interface MenuItemProps
    * (`"Delete"`) or a combo as a key array (`["Mod", "D"]`). If omitted (or
    * empty), the tooltip is disabled.
    */
-  tooltipContent?: string | string[];
+  tooltip?: string | string[];
   bgColor: string;
 }
 
 const MenuItem: React.FC<MenuItemProps> = ({
-  tooltipContent,
+  tooltip,
   children,
   onClick,
   bgColor,
@@ -91,7 +91,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
   );
 
   // No keys to show -> render the bare button (no empty tooltip surface).
-  if (!tooltipContent || tooltipContent.length === 0) {
+  if (!tooltip || tooltip.length === 0) {
     return button;
   }
 
@@ -103,7 +103,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
     >
       <TooltipTrigger asChild>{button}</TooltipTrigger>
       <TooltipContent>
-        <ShortcutKeys keys={tooltipContent} />
+        <ShortcutKeys keys={tooltip} />
       </TooltipContent>
     </Tooltip>
   );

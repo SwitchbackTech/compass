@@ -18,7 +18,7 @@ export const DuplicateMenuButton: React.FC<Props> = ({
       onClick={onClick}
       aria-label={label}
       bgColor={bgColor}
-      tooltipContent={["Mod", "D"]}
+      tooltip={["Mod", "D"]}
     >
       <Copy size={16} />
       <span>{label}</span>
