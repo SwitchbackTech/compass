@@ -6,14 +6,18 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { act } from "react";
 import { Provider } from "react-redux";
-import { type Schema_Event } from "@core/types/event.types";
+import { Priorities } from "@core/constants/core.constants";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import {
   ID_GRID_COLUMNS_TIMED,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { gridColorByPriority } from "@web/common/styles/theme.util";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -65,7 +69,10 @@ const measurements = {
   },
 } satisfies Measurements_Grid;
 
-const createStore = (events: Schema_Event[] = []) => {
+const createStore = (
+  events: Schema_Event[] = [],
+  draftEvent: Schema_Event | null = null,
+) => {
   const preloadedState = createInitialState();
   const eventIds: string[] = [];
   const eventEntities: Record<string, Schema_Event> = {};
@@ -87,6 +94,20 @@ const createStore = (events: Schema_Event[] = []) => {
     page: 1,
     pageSize: eventIds.length || 1,
   };
+
+  if (draftEvent) {
+    preloadedState.events.draft = {
+      event: draftEvent,
+      status: {
+        activity: "keyboardEdit",
+        dateToResize: null,
+        eventType: draftEvent.isAllDay
+          ? Categories_Event.ALLDAY
+          : Categories_Event.TIMED,
+        isDrafting: true,
+      },
+    };
+  }
 
   return configureStore({
     preloadedState,
@@ -482,6 +503,46 @@ describe("Week calendar accessibility", () => {
     expect(getHoveredCalendarEventTarget()).toBeNull();
   });
 
+  it("updates the timed placeholder color when the active draft priority changes", async () => {
+    const savedEvent = createSavedEvent({
+      _id: "priority-event",
+      title: "Priority event",
+    });
+    const store = createStore([savedEvent], savedEvent);
+
+    render(
+      <Provider store={store}>
+        <MainGridEvents
+          measurements={measurements}
+          weekProps={createWeekProps()}
+        />
+      </Provider>,
+    );
+
+    const eventButton = screen.getByRole("button", {
+      name: /priority event/i,
+    });
+
+    expect(eventButton.style.getPropertyValue("--event-bg")).toBe(
+      gridColorByPriority[Priorities.UNASSIGNED],
+    );
+
+    act(() => {
+      store.dispatch(
+        draftSlice.actions.setEvent({
+          ...savedEvent,
+          priority: Priorities.WORK,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(eventButton.style.getPropertyValue("--event-bg")).toBe(
+        gridColorByPriority[Priorities.WORK],
+      );
+    });
+  });
+
   it("gives all-day events an all-day accessible name and target type", () => {
     const store = createStore([
       createSavedEvent({
@@ -513,6 +574,50 @@ describe("Week calendar accessibility", () => {
     expect(
       eventButton.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE),
     ).toBe("all-day");
+  });
+
+  it("updates the all-day placeholder color when the active draft priority changes", async () => {
+    const savedEvent = createSavedEvent({
+      _id: "all-day-priority-event",
+      isAllDay: true,
+      startDate: "2024-01-15T00:00:00.000Z",
+      endDate: "2024-01-16T00:00:00.000Z",
+      title: "All-day priority event",
+    });
+    const store = createStore([savedEvent], savedEvent);
+
+    render(
+      <Provider store={store}>
+        <AllDayEvents
+          endOfView={startOfView.endOf("week")}
+          measurements={measurements}
+          startOfView={startOfView}
+        />
+      </Provider>,
+    );
+
+    const eventButton = screen.getByRole("button", {
+      name: /all-day event: all-day priority event/i,
+    });
+
+    expect(eventButton.style.getPropertyValue("--event-bg")).toBe(
+      gridColorByPriority[Priorities.UNASSIGNED],
+    );
+
+    act(() => {
+      store.dispatch(
+        draftSlice.actions.setEvent({
+          ...savedEvent,
+          priority: Priorities.RELATIONS,
+        }),
+      );
+    });
+
+    await waitFor(() => {
+      expect(eventButton.style.getPropertyValue("--event-bg")).toBe(
+        gridColorByPriority[Priorities.RELATIONS],
+      );
+    });
   });
 
   it("keeps full-week all-day events spanning seven columns", () => {

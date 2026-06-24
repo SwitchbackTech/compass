@@ -3,7 +3,10 @@ import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
-import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
+import {
+  selectDraft,
+  selectDraftId,
+} from "@web/ducks/events/selectors/draft.selectors";
 import { selectAllDayEvents } from "@web/ducks/events/selectors/event.selectors";
 import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -27,6 +30,7 @@ export const AllDayEvents = ({
   endOfView,
 }: Props) => {
   const allDayEvents = useAppSelector(selectAllDayEvents);
+  const draft = useAppSelector(selectDraft);
   const { isProcessing, reason } = useAppSelector(
     selectIsGetWeekEventsProcessingWithReason,
   );
@@ -63,11 +67,15 @@ export const AllDayEvents = ({
             event._id && pendingEventIds.includes(event._id),
           );
           const isPlaceholder = event._id === draftId;
+          const eventForDisplay =
+            isPlaceholder && draft && draft._id === event._id
+              ? { ...event, ...draft }
+              : event;
 
           return (
             <AllDayEventItem
               endOfView={endOfView}
-              event={event}
+              event={eventForDisplay}
               isPending={isPending}
               isPlaceholder={isPlaceholder}
               key={event._id}

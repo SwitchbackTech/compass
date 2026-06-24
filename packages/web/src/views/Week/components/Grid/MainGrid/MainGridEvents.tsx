@@ -7,7 +7,10 @@ import {
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
-import { selectDraftId } from "@web/ducks/events/selectors/draft.selectors";
+import {
+  selectDraft,
+  selectDraftId,
+} from "@web/ducks/events/selectors/draft.selectors";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
 import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -29,6 +32,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const dispatch = useAppDispatch();
 
   const timedEvents = useAppSelector(selectGridEvents);
+  const draft = useAppSelector(selectDraft);
   const { isProcessing, reason } = useAppSelector(
     selectIsGetWeekEventsProcessingWithReason,
   );
@@ -65,11 +69,15 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             event._id && pendingEventIds.includes(event._id),
           );
           const isPlaceholder = event._id === draftId;
+          const eventForDisplay =
+            isPlaceholder && draft && draft._id === event._id
+              ? { ...event, ...draft }
+              : event;
 
           return (
             <MainGridEventItem
               deckLayout={deckLayout}
-              event={event}
+              event={eventForDisplay}
               isPending={isPending}
               isPlaceholder={isPlaceholder}
               key={`initial-${event._id}`}
