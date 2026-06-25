@@ -106,6 +106,7 @@ const CalendarTimedEventCardBase = (
   const baseColor = gridColorByPriority[priority];
   const draftColor = darken(baseColor, 18);
   const hoverColor = gridHoverColorByPriority[priority];
+  const selectedBoxShadow = "0 0 0 1px rgba(255,255,255,0.55)";
 
   const bgColor = (() => {
     if (isDraft) return draftColor;
@@ -113,6 +114,11 @@ const CalendarTimedEventCardBase = (
     if (isResizing || isDragging) return brighten(baseColor);
     return baseColor;
   })();
+  const eventBoxShadow = isSelected
+    ? boxShadow
+      ? `${selectedBoxShadow}, ${boxShadow}`
+      : selectedBoxShadow
+    : boxShadow;
 
   const hoverBgColor =
     !isDraft && !isPlaceholder && !isResizing
@@ -139,7 +145,7 @@ const CalendarTimedEventCardBase = (
     top: position.top,
     width: position.width || 0,
     zIndex: position.zIndex ?? ZIndex.LAYER_1,
-    boxShadow,
+    boxShadow: eventBoxShadow,
     filter: isDraft
       ? "drop-shadow(2px 4px 4px black)"
       : isInPast
@@ -201,9 +207,7 @@ const CalendarTimedEventCardBase = (
       tabIndex={0}
       className={cn(
         "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
-        isSelected
-          ? "bg-event-selected shadow-[0_4px_10px_-4px_#00000080]"
-          : "bg-(--event-bg) hover:bg-(--event-hover-bg)",
+        "bg-(--event-bg) hover:bg-(--event-hover-bg)",
         {
           "animate-someday-commit-acknowledge": isCommitAcknowledged,
         },

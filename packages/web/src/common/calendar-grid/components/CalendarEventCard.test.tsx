@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Priorities } from "@core/constants/core.constants";
+import { gridColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
@@ -87,6 +88,31 @@ describe("CalendarEventCard", () => {
 
     fireEvent.mouseDown(card);
     expect(onEventMouseDown).not.toHaveBeenCalled();
+  });
+
+  it("keeps the timed selected state on the priority color", () => {
+    render(
+      <CalendarTimedEventCard
+        displayMode="saved"
+        event={createEvent({
+          priority: Priorities.WORK,
+        })}
+        isSelected={true}
+        motionMode="idle"
+        position={position}
+      />,
+    );
+
+    const card = screen.getByRole("button", {
+      name: "Timed event: Planning block, 9 - 10 AM",
+    });
+
+    expect(card).toHaveClass("bg-(--event-bg)");
+    expect(card).not.toHaveClass("bg-event-selected");
+    expect(card.style.getPropertyValue("--event-bg")).toBe(
+      gridColorByPriority[Priorities.WORK],
+    );
+    expect(card.style.boxShadow).toContain("rgba(255,255,255,0.55)");
   });
 
   it("does not open pending timed events from the keyboard", () => {

@@ -13,7 +13,6 @@ const semanticColorTokens = [
   "border-secondary",
   "date-picker-outside-dark",
   "date-picker-outside-light",
-  "event-selected",
   "fg-primary",
   "fg-primary-dark",
   "gradient-accent-light-start",

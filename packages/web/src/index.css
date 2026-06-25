@@ -14,7 +14,6 @@
   --compass-color-border-primary: hsl(219 18 34 / 20%);
   --compass-color-border-primary-dark: hsl(0 0 0 / 50.2%);
   --compass-color-border-secondary: hsl(47 7 73);
-  --compass-color-event-selected: hsl(206 18 72);
   --compass-color-date-picker-outside-dark: hsl(47 7 63);
   --compass-color-date-picker-outside-light: hsl(222 12 17);
   --compass-color-fg-primary: hsl(47 7 73);
@@ -63,7 +62,6 @@
   --color-border-primary: var(--compass-color-border-primary);
   --color-border-primary-dark: var(--compass-color-border-primary-dark);
   --color-border-secondary: var(--compass-color-border-secondary);
-  --color-event-selected: var(--compass-color-event-selected);
   --color-date-picker-outside-dark: var(
     --compass-color-date-picker-outside-dark
   );
