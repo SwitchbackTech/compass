@@ -6,6 +6,10 @@ import {
 } from "./CalendarInteractionAdapter";
 import { createCalendarInteractionEngine } from "./CalendarInteractionEngine";
 import { createInteractionClone } from "./dom/clone/createInteractionClone";
+import {
+  getIsDraggingEvent,
+  setIsDraggingEvent,
+} from "./dom/cursor/eventDragCursorState";
 import { FloatingInteractionOverlay } from "./dom/overlay/FloatingInteractionOverlay";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
@@ -425,6 +429,25 @@ describe("FloatingInteractionOverlay", () => {
 
     expect(clone.parentElement).toBeNull();
     expect(document.body.style.cursor).toBe("");
+  });
+
+  it("routes the move cursor through the shared drag signal instead of the body cursor", () => {
+    setIsDraggingEvent(false);
+    const overlay = new FloatingInteractionOverlay();
+
+    overlay.mount({
+      clone: document.createElement("div"),
+      cursor: "move",
+      rect: { height: 20, left: 10, top: 12, width: 60 },
+    });
+
+    // The single writer (useEventDragCursor) owns the body cursor for `move`.
+    expect(getIsDraggingEvent()).toBe(true);
+    expect(document.body.style.cursor).toBe("");
+
+    overlay.unmount();
+
+    expect(getIsDraggingEvent()).toBe(false);
   });
 });
 

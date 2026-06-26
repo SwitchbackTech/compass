@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from "react";
+import { useCallback } from "react";
 import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 import { useEventListener } from "@web/views/Week/hooks/mouse/useEventListener";
@@ -19,24 +19,11 @@ export const useGridMouseMove = () => {
         resize(e);
       } else if (isDragging) {
         e.preventDefault();
-        document.body.style.cursor = "move";
         drag(e);
       }
     },
     [drag, isDrafting, isDragging, isResizing, resize],
   );
 
-  const _onMouseUp = useCallback(() => {
-    document.body.style.cursor = "";
-  }, []);
-
   useEventListener("mousemove", _onMouseMove);
-  useEventListener("mouseup", _onMouseUp);
-
-  // Ensure cursor resets when the component unmounts
-  useEffect(() => {
-    return () => {
-      document.body.style.cursor = "";
-    };
-  }, []);
 };

@@ -1,5 +1,6 @@
 import { ZIndex } from "@web/common/constants/web.constants";
 import { type CalendarInteractionPoint } from "../../CalendarInteractionSession";
+import { setIsDraggingEvent } from "../cursor/eventDragCursorState";
 
 export class FloatingInteractionOverlay {
   #node: HTMLElement | null = null;
@@ -40,7 +41,11 @@ export class FloatingInteractionOverlay {
     document.body.append(clone);
     this.#node = clone;
 
-    if (cursor) {
+    if (cursor === "move") {
+      // The `move` cursor is owned by the shared drag signal + `useEventDragCursor`,
+      // so the engine and legacy draft paths apply it in exactly one place.
+      setIsDraggingEvent(true);
+    } else if (cursor) {
       this.#previousCursor = {
         body: document.body.style.cursor,
         documentElement: document.documentElement.style.cursor,
@@ -82,6 +87,8 @@ export class FloatingInteractionOverlay {
   }
 
   unmount() {
+    setIsDraggingEvent(false);
+
     if (this.#previousCursor) {
       document.body.style.cursor = this.#previousCursor.body;
       document.documentElement.style.cursor =
