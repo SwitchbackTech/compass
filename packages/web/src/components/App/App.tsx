@@ -1,5 +1,4 @@
 import React from "react";
-import { useEventDragCursor } from "@web/common/calendar-interaction/dom/cursor/useEventDragCursor";
 import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import {
   CompassOptionalProviders,
@@ -9,7 +8,6 @@ import { CompassRouterProvider } from "@web/routers";
 
 export const App = () => {
   useSetupMovementEvents();
-  useEventDragCursor();
 
   return (
     <React.StrictMode>

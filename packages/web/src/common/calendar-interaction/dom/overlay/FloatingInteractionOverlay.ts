@@ -1,13 +1,10 @@
 import { ZIndex } from "@web/common/constants/web.constants";
 import { type CalendarInteractionPoint } from "../../CalendarInteractionSession";
-import { setIsDraggingEvent } from "../cursor/eventDragCursorState";
+import { lockGlobalCursor } from "../cursor/globalCursorLock";
 
 export class FloatingInteractionOverlay {
   #node: HTMLElement | null = null;
-  #previousCursor: {
-    body: string;
-    documentElement: string;
-  } | null = null;
+  #releaseCursor: (() => void) | null = null;
 
   mount({
     clone,
@@ -41,17 +38,8 @@ export class FloatingInteractionOverlay {
     document.body.append(clone);
     this.#node = clone;
 
-    if (cursor === "move") {
-      // The `move` cursor is owned by the shared drag signal + `useEventDragCursor`,
-      // so the engine and legacy draft paths apply it in exactly one place.
-      setIsDraggingEvent(true);
-    } else if (cursor) {
-      this.#previousCursor = {
-        body: document.body.style.cursor,
-        documentElement: document.documentElement.style.cursor,
-      };
-      document.body.style.cursor = cursor;
-      document.documentElement.style.cursor = cursor;
+    if (cursor) {
+      this.#releaseCursor = lockGlobalCursor(cursor);
     }
   }
 
@@ -87,14 +75,8 @@ export class FloatingInteractionOverlay {
   }
 
   unmount() {
-    setIsDraggingEvent(false);
-
-    if (this.#previousCursor) {
-      document.body.style.cursor = this.#previousCursor.body;
-      document.documentElement.style.cursor =
-        this.#previousCursor.documentElement;
-      this.#previousCursor = null;
-    }
+    this.#releaseCursor?.();
+    this.#releaseCursor = null;
 
     this.#node?.remove();
     this.#node = null;

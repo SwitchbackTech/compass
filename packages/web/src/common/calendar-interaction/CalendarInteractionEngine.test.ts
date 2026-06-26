@@ -6,10 +6,6 @@ import {
 } from "./CalendarInteractionAdapter";
 import { createCalendarInteractionEngine } from "./CalendarInteractionEngine";
 import { createInteractionClone } from "./dom/clone/createInteractionClone";
-import {
-  getIsDraggingEvent,
-  setIsDraggingEvent,
-} from "./dom/cursor/eventDragCursorState";
 import { FloatingInteractionOverlay } from "./dom/overlay/FloatingInteractionOverlay";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
@@ -55,8 +51,7 @@ const createHarness = ({
   sourceOverlayMode?: SourceElementOverlayMode;
 } = {}) => {
   document.body.innerHTML = "";
-  document.body.style.cursor = "";
-  document.documentElement.style.cursor = "";
+  document.documentElement.className = "";
 
   let now = 100;
   let nextFrameId = 1;
@@ -187,8 +182,7 @@ const createHarness = ({
 
 afterEach(() => {
   document.body.innerHTML = "";
-  document.body.style.cursor = "";
-  document.documentElement.style.cursor = "";
+  document.documentElement.className = "";
 });
 
 describe("CalendarInteractionEngine", () => {
@@ -325,7 +319,9 @@ describe("CalendarInteractionEngine", () => {
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();
-    expect(document.body.style.cursor).toBe("");
+    expect(document.documentElement.classList.contains("cursor-grabbing")).toBe(
+      false,
+    );
     expect(engine.getMetrics()).toMatchObject({
       active: false,
       phase: "commit",
@@ -423,31 +419,16 @@ describe("FloatingInteractionOverlay", () => {
     expect(clone.style.height).toBe("24px");
     expect(clone.style.width).toBe("70px");
     expect(clone.style.zIndex).toBe(`${ZIndex.MAX}`);
-    expect(document.body.style.cursor).toBe("grabbing");
+    expect(document.documentElement.classList.contains("cursor-grabbing")).toBe(
+      true,
+    );
 
     overlay.unmount();
 
     expect(clone.parentElement).toBeNull();
-    expect(document.body.style.cursor).toBe("");
-  });
-
-  it("routes the move cursor through the shared drag signal instead of the body cursor", () => {
-    setIsDraggingEvent(false);
-    const overlay = new FloatingInteractionOverlay();
-
-    overlay.mount({
-      clone: document.createElement("div"),
-      cursor: "move",
-      rect: { height: 20, left: 10, top: 12, width: 60 },
-    });
-
-    // The single writer (useEventDragCursor) owns the body cursor for `move`.
-    expect(getIsDraggingEvent()).toBe(true);
-    expect(document.body.style.cursor).toBe("");
-
-    overlay.unmount();
-
-    expect(getIsDraggingEvent()).toBe(false);
+    expect(document.documentElement.classList.contains("cursor-grabbing")).toBe(
+      false,
+    );
   });
 });
 
