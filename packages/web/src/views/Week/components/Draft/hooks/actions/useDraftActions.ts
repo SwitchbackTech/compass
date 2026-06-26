@@ -15,7 +15,6 @@ import {
 import { StringV4Schema } from "@core/types/type.utils";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { setIsDraggingEvent } from "@web/common/calendar-interaction/dom/cursor/eventDragCursorState";
 import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { EventInViewParser } from "@web/common/parsers/view.parser";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
@@ -126,7 +125,6 @@ export const useDraftActions = (
 
   const startDragging = useCallback(() => {
     setIsDragging(true);
-    setIsDraggingEvent(true);
   }, [setIsDragging]);
 
   const startResizing = useCallback(() => {
@@ -136,7 +134,6 @@ export const useDraftActions = (
 
   const stopDragging = useCallback(() => {
     setIsDragging(false);
-    setIsDraggingEvent(false);
     setDragStatus(null);
     setIsFormOpenBeforeDragging(null);
   }, [setIsDragging, setDragStatus, setIsFormOpenBeforeDragging]);
@@ -168,7 +165,6 @@ export const useDraftActions = (
   const reset = useCallback(() => {
     setDraft(null);
     setIsDragging(false);
-    setIsDraggingEvent(false);
     closeForm();
     setIsResizing(false);
     setDragStatus(null);

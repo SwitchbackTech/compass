@@ -1,4 +1,5 @@
-import { type Dispatch, type SetStateAction, useState } from "react";
+import { type Dispatch, type SetStateAction, useEffect, useState } from "react";
+import { setIsDraggingEvent } from "@web/common/calendar-interaction/dom/cursor/eventDragCursorState";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export interface Status_Drag {
@@ -37,6 +38,17 @@ export interface Setters_Draft {
 export const useDraftState = () => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+
+  // Mirror the draft drag state into the shared cursor signal so the `move`
+  // cursor is driven from a single place (useEventDragCursor). Callers only
+  // toggle `setIsDragging`; the signal follows automatically. The equality
+  // guard in setIsDraggingEvent makes the cleanup re-set a no-op.
+  useEffect(() => {
+    setIsDraggingEvent(isDragging);
+
+    return () => setIsDraggingEvent(false);
+  }, [isDragging]);
+
   const [draft, setDraft] = useState<Schema_GridEvent | null>(null);
   const [draftSessionKey, setDraftSessionKey] = useState(0);
   const [dragStatus, setDragStatus] = useState<Status_Drag | null>(null);
