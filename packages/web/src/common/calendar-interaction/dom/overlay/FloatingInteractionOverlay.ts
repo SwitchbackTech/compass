@@ -3,14 +3,9 @@ import { type CalendarInteractionPoint } from "../../CalendarInteractionSession"
 
 export class FloatingInteractionOverlay {
   #node: HTMLElement | null = null;
-  #previousCursor: {
-    body: string;
-    documentElement: string;
-  } | null = null;
 
   mount({
     clone,
-    cursor,
     rect,
   }: {
     clone: HTMLElement;
@@ -30,7 +25,6 @@ export class FloatingInteractionOverlay {
     clone.style.position = "fixed";
     clone.style.pointerEvents = "none";
     clone.style.top = `${rect.top}px`;
-    clone.style.cursor = cursor ?? "";
     clone.style.transition = "none";
     clone.style.transform = "translate3d(0px, 0px, 0)";
     clone.style.willChange = "transform";
@@ -39,15 +33,6 @@ export class FloatingInteractionOverlay {
 
     document.body.append(clone);
     this.#node = clone;
-
-    if (cursor) {
-      this.#previousCursor = {
-        body: document.body.style.cursor,
-        documentElement: document.documentElement.style.cursor,
-      };
-      document.body.style.cursor = cursor;
-      document.documentElement.style.cursor = cursor;
-    }
   }
 
   update({
@@ -82,13 +67,6 @@ export class FloatingInteractionOverlay {
   }
 
   unmount() {
-    if (this.#previousCursor) {
-      document.body.style.cursor = this.#previousCursor.body;
-      document.documentElement.style.cursor =
-        this.#previousCursor.documentElement;
-      this.#previousCursor = null;
-    }
-
     this.#node?.remove();
     this.#node = null;
   }

@@ -41,7 +41,7 @@ import {
 } from "@web/components/Flex/Flex";
 import { Text } from "@web/components/Text/Text";
 
-export interface CalendarTimedEventCardProps {
+interface CalendarTimedEventCardProps {
   boxShadow?: CSSProperties["boxShadow"];
   displayMode: "draft" | "placeholder" | "saved";
   event: Schema_GridEvent;
@@ -163,6 +163,7 @@ const CalendarTimedEventCardBase = (
 
   const showResizeCursor =
     !isPlaceholder && !isResizing && !isDragging && !isPending;
+
   const scalerStyle = (
     placement: Pick<CSSProperties, "top" | "bottom">,
   ): CSSProperties => ({
