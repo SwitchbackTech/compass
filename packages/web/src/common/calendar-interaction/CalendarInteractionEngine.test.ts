@@ -51,8 +51,6 @@ const createHarness = ({
   sourceOverlayMode?: SourceElementOverlayMode;
 } = {}) => {
   document.body.innerHTML = "";
-  document.body.style.cursor = "";
-  document.documentElement.style.cursor = "";
 
   let now = 100;
   let nextFrameId = 1;
@@ -93,7 +91,6 @@ const createHarness = ({
 
         return {
           clone,
-          cursor: "grabbing",
           rect: {
             height: 40,
             left: 10,
@@ -183,8 +180,6 @@ const createHarness = ({
 
 afterEach(() => {
   document.body.innerHTML = "";
-  document.body.style.cursor = "";
-  document.documentElement.style.cursor = "";
 });
 
 describe("CalendarInteractionEngine", () => {
@@ -321,7 +316,6 @@ describe("CalendarInteractionEngine", () => {
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
     ).toBeNull();
-    expect(document.body.style.cursor).toBe("");
     expect(engine.getMetrics()).toMatchObject({
       active: false,
       phase: "commit",
@@ -394,7 +388,6 @@ describe("FloatingInteractionOverlay", () => {
 
     overlay.mount({
       clone,
-      cursor: "grabbing",
       rect: {
         height: 20,
         left: 10,
@@ -419,12 +412,10 @@ describe("FloatingInteractionOverlay", () => {
     expect(clone.style.height).toBe("24px");
     expect(clone.style.width).toBe("70px");
     expect(clone.style.zIndex).toBe(`${ZIndex.MAX}`);
-    expect(document.body.style.cursor).toBe("grabbing");
 
     overlay.unmount();
 
     expect(clone.parentElement).toBeNull();
-    expect(document.body.style.cursor).toBe("");
   });
 });
 

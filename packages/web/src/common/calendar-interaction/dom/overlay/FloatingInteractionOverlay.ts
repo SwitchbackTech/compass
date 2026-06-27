@@ -9,7 +9,6 @@ export class FloatingInteractionOverlay {
     rect,
   }: {
     clone: HTMLElement;
-    cursor?: string;
     rect: {
       height: number;
       left: number;

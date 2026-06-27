@@ -522,7 +522,6 @@ describe("createCalendarInteractionEventOverlayMount", () => {
     source.append(child);
 
     const mount = createCalendarInteractionEventOverlayMount({
-      cursor: "grabbing",
       source,
     });
     const clonedChild = mount.clone.querySelector("button");
