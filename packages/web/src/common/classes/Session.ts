@@ -1,5 +1,4 @@
 import { EventEmitter2, type ListenerFn } from "eventemitter2";
-import { fromEventPattern } from "rxjs";
 import SuperTokensSession from "supertokens-web-js/recipe/session";
 import { type Event } from "supertokens-website/lib/build/types";
 
@@ -29,18 +28,15 @@ class Session {
   getAccessTokenPayloadSecurely =
     SuperTokensSession.getAccessTokenPayloadSecurely;
 
-  #handleAllEvents(handler: ListenerFn) {
-    this.#emitter.addListener("*", handler);
-  }
+  /**
+   * Subscribe to every emitted session event (wildcard listener).
+   * Returns an unsubscribe function.
+   */
+  onAnyEvent(listener: (event: Event) => void): () => void {
+    this.#emitter.addListener("*", listener as ListenerFn);
 
-  #removeAllEventsHandler(handler: ListenerFn) {
-    this.#emitter.removeListener("*", handler);
+    return () => this.#emitter.removeListener("*", listener as ListenerFn);
   }
-
-  events = fromEventPattern<Event>(
-    this.#handleAllEvents.bind(this),
-    this.#removeAllEventsHandler.bind(this),
-  );
 
   emit(event: Event["action"], payload: Event) {
     this.#emitter.emit(event, payload);

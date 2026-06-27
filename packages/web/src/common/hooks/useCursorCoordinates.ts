@@ -1,19 +1,6 @@
-import { useEffect, useState } from "react";
-import { cursor$ } from "@web/common/context/pointer-position";
+import { useSyncExternalStore } from "react";
+import { cursorStore } from "@web/common/context/pointer-position";
 
 export function useCursorCoordinates() {
-  const cursor = cursor$.getValue();
-  const [x, setX] = useState<number>(cursor.x);
-  const [y, setY] = useState<number>(cursor.y);
-
-  useEffect(() => {
-    const subscription = cursor$.subscribe((value) => {
-      setX(value.x);
-      setY(value.y);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
-  return { x, y };
+  return useSyncExternalStore(cursorStore.subscribe, cursorStore.get);
 }

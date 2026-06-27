@@ -1,13 +1,13 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
-import { maxGridZIndex$ } from "@web/common/utils/dom/grid-organization.util";
+import { maxGridZIndexStore } from "@web/common/utils/dom/grid-organization.util";
 import { useGridMaxZIndex } from "./useGridMaxZIndex";
 
 describe("useGridMaxZIndex", () => {
   beforeEach(() => {
-    // Reset the subject to initial state before each test
+    // Reset the store to initial state before each test
     act(() => {
-      maxGridZIndex$.next(0);
+      maxGridZIndexStore.set(0);
     });
   });
 
@@ -16,11 +16,11 @@ describe("useGridMaxZIndex", () => {
     expect(result.current).toBe(0);
   });
 
-  it("should update when maxGridZIndex$ emits a new value", () => {
+  it("should update when maxGridZIndexStore emits a new value", () => {
     const { result } = renderHook(() => useGridMaxZIndex());
 
     act(() => {
-      maxGridZIndex$.next(10);
+      maxGridZIndexStore.set(10);
     });
 
     expect(result.current).toBe(10);
@@ -30,13 +30,13 @@ describe("useGridMaxZIndex", () => {
     const { result } = renderHook(() => useGridMaxZIndex());
 
     act(() => {
-      maxGridZIndex$.next(5);
+      maxGridZIndexStore.set(5);
     });
     expect(result.current).toBe(5);
 
     // Emitting the same value again
     act(() => {
-      maxGridZIndex$.next(5);
+      maxGridZIndexStore.set(5);
     });
     expect(result.current).toBe(5);
   });
@@ -45,17 +45,17 @@ describe("useGridMaxZIndex", () => {
     const { result } = renderHook(() => useGridMaxZIndex());
 
     act(() => {
-      maxGridZIndex$.next(1);
+      maxGridZIndexStore.set(1);
     });
     expect(result.current).toBe(1);
 
     act(() => {
-      maxGridZIndex$.next(100);
+      maxGridZIndexStore.set(100);
     });
     expect(result.current).toBe(100);
 
     act(() => {
-      maxGridZIndex$.next(50);
+      maxGridZIndexStore.set(50);
     });
     expect(result.current).toBe(50);
   });

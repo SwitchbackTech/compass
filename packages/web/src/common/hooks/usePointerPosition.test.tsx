@@ -50,7 +50,7 @@ const pointerPositionHookUrl = await loadTempModule(
   "ts",
 );
 
-const { cursor$, PointerPositionContext, pointerState$ } = await import(
+const { cursorStore, PointerPositionContext, pointerStateStore } = await import(
   pointerPositionUrl.href
 );
 const { usePointerPosition } = await import(pointerPositionHookUrl.href);
@@ -58,7 +58,7 @@ const { usePointerPosition } = await import(pointerPositionHookUrl.href);
 describe("usePointerPosition hooks", () => {
   beforeEach(() => {
     // Reset subjects
-    pointerState$.next({
+    pointerStateStore.set({
       pointerdown: false,
       selectionStart: null,
       isOverGrid: false,
@@ -68,7 +68,7 @@ describe("usePointerPosition hooks", () => {
       isOverSomedayMonth: false,
       isOverAllDayRow: false,
     });
-    cursor$.next({ x: 0, y: 0 });
+    cursorStore.set({ x: 0, y: 0 });
   });
 
   describe("usePointerPosition", () => {

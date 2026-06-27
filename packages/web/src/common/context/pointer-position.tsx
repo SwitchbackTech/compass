@@ -4,7 +4,6 @@ import {
   type PropsWithChildren,
   useCallback,
 } from "react";
-import { BehaviorSubject } from "rxjs";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
@@ -18,6 +17,7 @@ import {
   type DomMovement,
   getElementAtPoint,
 } from "@web/common/utils/dom/event-emitter.util";
+import { createExternalStore } from "@web/common/utils/external-store.util";
 
 export interface PointerState {
   event: PointerEvent;
@@ -35,12 +35,12 @@ interface PointerPosition {
   togglePointerMovementTracking: (pauseTracking?: boolean) => void;
 }
 
-export const cursor$ = new BehaviorSubject<Pick<DomMovement, "x" | "y">>({
+export const cursorStore = createExternalStore<Pick<DomMovement, "x" | "y">>({
   x: 0,
   y: 0,
 });
 
-export const pointerState$ = new BehaviorSubject<PointerState>({
+export const pointerStateStore = createExternalStore<PointerState>({
   event: new MouseEvent("none", { button: 1 }) as unknown as PointerEvent,
   pointerdown: false,
   selectionStart: null,
@@ -82,7 +82,7 @@ export function getPointerPosition(): Pick<
   PointerEvent,
   "clientX" | "clientY"
 > {
-  const { x: clientX, y: clientY } = cursor$.getValue();
+  const { x: clientX, y: clientY } = cursorStore.get();
 
   return { clientX, clientY };
 }
@@ -132,7 +132,7 @@ export function isOverCalendarGrid(element = getElementAtPointer()) {
 export function PointerPositionProvider({ children }: PropsWithChildren) {
   const handler = useCallback(
     ({ x, y, element, pointerdown, selectionStart, event }: DomMovement) => {
-      cursor$.next({ x, y });
+      cursorStore.set({ x, y });
       const overSidebar = isOverSidebar(element);
       const overSomedayWeek = isOverSomedayWeek(element);
       const overSomedayMonth = isOverSomedayMonth(element);
@@ -140,7 +140,7 @@ export function PointerPositionProvider({ children }: PropsWithChildren) {
       const overMainGrid = isOverMainGrid(element);
       const overCalendarGrid = isOverCalendarGrid(element);
 
-      pointerState$.next({
+      pointerStateStore.set({
         event,
         pointerdown,
         selectionStart,

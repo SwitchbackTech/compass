@@ -1,6 +1,5 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { useContext } from "react";
-import { Subject } from "rxjs";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -22,7 +21,7 @@ const shouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
 const subscribeToAuthState = mock();
 const updateAuthState = mock();
 const doesSessionExist = mock();
-const events$ = new Subject<{ action: string }>();
+const eventListeners = new Set<(event: { action: string }) => void>();
 const mockRecipeInit = mock(() => ({}));
 const mockSuperTokensInit = mock(() => ({}));
 
@@ -83,9 +82,15 @@ mock.module("@web/auth/compass/state/auth.state.util", () => ({
 mock.module("@web/common/classes/Session", () => ({
   session: {
     doesSessionExist,
-    events: events$,
+    onAnyEvent: (listener: (event: { action: string }) => void) => {
+      eventListeners.add(listener);
+
+      return () => eventListeners.delete(listener);
+    },
     emit: (_action: string, payload: unknown) =>
-      events$.next(payload as { action: string }),
+      eventListeners.forEach((listener) =>
+        listener(payload as { action: string }),
+      ),
     on: mock(),
     off: mock(),
     signOut: mock().mockResolvedValue(undefined),
@@ -96,7 +101,7 @@ mock.module("@web/common/classes/Session", () => ({
 const { session } = require("@web/common/classes/Session") as {
   session: {
     doesSessionExist: ReturnType<typeof mock>;
-    events: Subject<{ action: string }>;
+    onAnyEvent: (listener: (event: { action: string }) => void) => () => void;
     emit: (action: string, payload: unknown) => void;
     on: ReturnType<typeof mock>;
     off: ReturnType<typeof mock>;

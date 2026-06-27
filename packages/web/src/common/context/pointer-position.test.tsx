@@ -2,14 +2,14 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { type ReactNode } from "react";
 import { ID_GRID_MAIN, ID_ROOT } from "@web/common/constants/web.constants";
 import {
-  cursor$,
+  cursorStore,
   PointerPositionProvider,
-  pointerState$,
+  pointerStateStore,
 } from "@web/common/context/pointer-position";
 import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
 import {
-  pointerdown$,
-  selectionStart$,
+  setPointerDown,
+  setSelectionStart,
 } from "@web/common/utils/dom/event-emitter.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -25,10 +25,10 @@ function renderWithPointerProvider(children: ReactNode) {
 
 describe("PointerPositionProvider", () => {
   beforeEach(() => {
-    pointerdown$.next(false);
-    selectionStart$.next(null);
-    cursor$.next({ x: 0, y: 0 });
-    pointerState$.next({
+    setPointerDown(false);
+    setSelectionStart(null);
+    cursorStore.set({ x: 0, y: 0 });
+    pointerStateStore.set({
       event: new PointerEvent("none", { button: 1 }) as never,
       pointerdown: false,
       selectionStart: null,
@@ -65,8 +65,8 @@ describe("PointerPositionProvider", () => {
     });
 
     await waitFor(() => {
-      expect(cursor$.getValue()).toEqual({ x: 100, y: 130 });
-      expect(pointerState$.getValue()).toEqual(
+      expect(cursorStore.get()).toEqual({ x: 100, y: 130 });
+      expect(pointerStateStore.get()).toEqual(
         expect.objectContaining({
           event: expect.objectContaining({ type: "pointermove" }),
           isOverGrid: true,
