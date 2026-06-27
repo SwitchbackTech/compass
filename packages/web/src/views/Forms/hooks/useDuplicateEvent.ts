@@ -25,25 +25,25 @@ export function useDuplicateEvent(_id: string) {
   );
   const onClose = useCloseEventForm();
 
-  const duplicateEvent = useCallback(() => {
+  const duplicateEvent = useCallback(async () => {
     if (!event) return;
 
     onClose();
 
-    void delay(10).then(() => {
-      const newId = new ObjectId().toString();
-      const duplicate = { ...event, _id: newId };
+    await delay(10);
 
-      dispatch(draftSlice.actions.startGridClick(duplicate));
+    const newId = new ObjectId().toString();
+    const duplicate = { ...event, _id: newId };
 
-      void delay(10).then(() => {
-        const reference = getCalendarEventElementFromGrid(newId);
+    dispatch(draftSlice.actions.startGridClick(duplicate));
 
-        if (!reference) return;
+    await delay(10);
 
-        openFloatingAtCursor({ nodeId: CursorItem.EventForm, reference });
-      });
-    });
+    const reference = getCalendarEventElementFromGrid(newId);
+
+    if (!reference) return;
+
+    openFloatingAtCursor({ nodeId: CursorItem.EventForm, reference });
   }, [dispatch, event, onClose]);
 
   return duplicateEvent;

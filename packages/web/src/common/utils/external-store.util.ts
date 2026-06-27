@@ -7,7 +7,9 @@
  *
  * Behavioral notes (these replace what rxjs operators used to provide):
  * - `set` no-ops when the next value is `Object.is`-equal to the current one,
- *   so subscribers only fire on real changes (≈ `distinctUntilChanged`).
+ *   so subscribers only fire on real changes (≈ `distinctUntilChanged`). Note
+ *   this is reference equality: a store whose value is an object only dedupes
+ *   if callers pass a referentially-stable value, not a fresh literal each set.
  * - New subscribers are NOT replayed the current value on subscribe
  *   (≈ `skip(1)` on a `BehaviorSubject`).
  *
