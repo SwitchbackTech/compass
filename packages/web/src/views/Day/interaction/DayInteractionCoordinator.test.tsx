@@ -204,7 +204,7 @@ describe("DayInteractionCoordinator", () => {
     expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
   });
 
-  it("reopens the Day event form with the moved event instead of immediately saving", async () => {
+  it("saves a moved event without reopening its previously open form", async () => {
     const { dispatch, store } = renderCoordinator();
     const source = screen.getByTestId("timed-source");
     const child = screen.getByTestId("timed-child");
@@ -229,15 +229,14 @@ describe("DayInteractionCoordinator", () => {
       pointerId: 1,
     });
 
-    expect(
-      dispatch.mock.calls.some(
-        ([action]) => action.type === editEventSlice.actions.request.type,
-      ),
-    ).toBe(false);
-
     await waitFor(() => {
-      expect(isOpenAtCursor(CursorItem.EventForm)).toBe(true);
-      expect(store.getState().events.draft.event?.startDate).toContain("10:00");
+      expect(
+        dispatch.mock.calls.some(
+          ([action]) => action.type === editEventSlice.actions.request.type,
+        ),
+      ).toBe(true);
     });
+    expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
+    expect(store.getState().events.draft.event).toBeNull();
   });
 });
