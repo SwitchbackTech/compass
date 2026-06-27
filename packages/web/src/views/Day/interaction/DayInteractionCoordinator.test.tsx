@@ -239,4 +239,61 @@ describe("DayInteractionCoordinator", () => {
     expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
     expect(store.getState().events.draft.event).toBeNull();
   });
+
+  it("saves a moved event without opening a form", async () => {
+    const { dispatch, store } = renderCoordinator();
+    const child = screen.getByTestId("timed-child");
+
+    fireEvent.pointerDown(child, {
+      button: 0,
+      clientX: 160,
+      clientY: 160,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    fireEvent.pointerMove(window, {
+      clientX: 160,
+      clientY: 220,
+      pointerId: 1,
+    });
+    flushFrame();
+    fireEvent.pointerUp(window, {
+      clientX: 160,
+      clientY: 220,
+      pointerId: 1,
+    });
+
+    await waitFor(() => {
+      expect(
+        dispatch.mock.calls.some(
+          ([action]) => action.type === editEventSlice.actions.request.type,
+        ),
+      ).toBe(true);
+    });
+    expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
+    expect(store.getState().events.draft.event).toBeNull();
+  });
+
+  it("opens the event form when pointer interaction does not move the event", async () => {
+    const { store } = renderCoordinator();
+    const child = screen.getByTestId("timed-child");
+
+    fireEvent.pointerDown(child, {
+      button: 0,
+      clientX: 160,
+      clientY: 160,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(window, {
+      clientX: 160,
+      clientY: 160,
+      pointerId: 1,
+    });
+
+    await waitFor(() => {
+      expect(isOpenAtCursor(CursorItem.EventForm)).toBe(true);
+    });
+    expect(store.getState().events.draft.event?._id).toBe(timedEvent._id);
+  });
 });
