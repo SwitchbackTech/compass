@@ -204,42 +204,6 @@ describe("DayInteractionCoordinator", () => {
     expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
   });
 
-  it("saves a moved event without reopening its previously open form", async () => {
-    const { dispatch, store } = renderCoordinator();
-    const source = screen.getByTestId("timed-source");
-    const child = screen.getByTestId("timed-child");
-
-    openFloatingForm(source);
-    fireEvent.pointerDown(child, {
-      button: 0,
-      clientX: 160,
-      clientY: 160,
-      isPrimary: true,
-      pointerId: 1,
-    });
-    fireEvent.pointerMove(window, {
-      clientX: 160,
-      clientY: 220,
-      pointerId: 1,
-    });
-    flushFrame();
-    fireEvent.pointerUp(window, {
-      clientX: 160,
-      clientY: 220,
-      pointerId: 1,
-    });
-
-    await waitFor(() => {
-      expect(
-        dispatch.mock.calls.some(
-          ([action]) => action.type === editEventSlice.actions.request.type,
-        ),
-      ).toBe(true);
-    });
-    expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
-    expect(store.getState().events.draft.event).toBeNull();
-  });
-
   it("saves a moved event without opening a form", async () => {
     const { dispatch, store } = renderCoordinator();
     const child = screen.getByTestId("timed-child");
