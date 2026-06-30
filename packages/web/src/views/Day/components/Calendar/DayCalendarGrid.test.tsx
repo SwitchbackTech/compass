@@ -669,6 +669,97 @@ describe("DayCalendarGrid", () => {
       expect(draft).not.toBeNull();
       expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
       expect(dayjs(draft?.endDate).format("HH:mm")).toBe("05:00");
+      expect(getIsFormOpen()).toBe(true);
     });
+  });
+
+  it("opens the timed draft form after stray zero-button mousemove events", async () => {
+    renderDayCalendarGrid();
+
+    const timedGrid = screen.getByRole("region", {
+      name: "Timed events grid",
+    });
+    const timedGridRow = timedGrid.querySelector(
+      "[data-calendar-timed-grid-row='true']",
+    );
+
+    expect(timedGridRow).toBeInstanceOf(HTMLElement);
+
+    fireEvent.mouseDown(timedGridRow!, {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+    });
+    fireEvent.mouseMove(window, {
+      buttons: 1,
+      clientX: 100,
+      clientY: 300,
+    });
+    fireEvent.mouseMove(window, {
+      buttons: 0,
+      clientX: 20,
+      clientY: 20,
+    });
+    fireEvent.mouseUp(window, {
+      button: 0,
+      clientX: 100,
+      clientY: 300,
+    });
+
+    await waitFor(() => {
+      const draft = getDraft();
+
+      expect(draft).not.toBeNull();
+      expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
+      expect(dayjs(draft?.endDate).format("HH:mm")).toBe("05:00");
+      expect(getIsFormOpen()).toBe(true);
+    });
+  });
+
+  it("keeps the timed draft form open for the opening click after a drag create", async () => {
+    renderDayCalendarGrid();
+
+    const timedGrid = screen.getByRole("region", {
+      name: "Timed events grid",
+    });
+    const timedGridRow = timedGrid.querySelector(
+      "[data-calendar-timed-grid-row='true']",
+    );
+
+    expect(timedGridRow).toBeInstanceOf(HTMLElement);
+
+    fireEvent.mouseDown(timedGridRow!, {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+    });
+    fireEvent.mouseMove(window, {
+      buttons: 1,
+      clientX: 100,
+      clientY: 300,
+    });
+    fireEvent.mouseUp(window, {
+      button: 0,
+      clientX: 100,
+      clientY: 300,
+    });
+
+    await waitFor(() => {
+      expect(getIsFormOpen()).toBe(true);
+    });
+
+    const outsidePress = getDismissOptions().outsidePress;
+    const openingClick = new MouseEvent("click", {
+      bubbles: true,
+      clientX: 100,
+      clientY: 300,
+    });
+    Object.defineProperty(openingClick, "target", {
+      configurable: true,
+      value: timedGrid,
+    });
+
+    expect(outsidePress?.(openingClick)).toBe(false);
+    expect(outsidePress?.(openingClick)).toBe(true);
   });
 });

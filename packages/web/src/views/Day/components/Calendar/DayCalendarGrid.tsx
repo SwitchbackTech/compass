@@ -109,8 +109,14 @@ export function DayCalendarGrid() {
     ? Categories_Event.ALLDAY
     : Categories_Event.TIMED;
   const allDayCreationPressTargetRef = useRef<HTMLElement | null>(null);
+  const shouldIgnoreNextOutsidePressRef = useRef(false);
   const shouldDismissEventForm = useCallback(
     (event: MouseEvent) => {
+      if (shouldIgnoreNextOutsidePressRef.current) {
+        shouldIgnoreNextOutsidePressRef.current = false;
+        return false;
+      }
+
       const eventElement = draft?._id
         ? getCalendarEventElementFromGrid(draft._id)
         : null;
@@ -218,10 +224,16 @@ export function DayCalendarGrid() {
   }, []);
 
   const openEventFormForEvent = useCallback(
-    (event: Schema_GridEvent) => {
+    (
+      event: Schema_GridEvent,
+      options?: { ignoreNextOutsidePress?: boolean },
+    ) => {
       if (!event._id) {
         return;
       }
+
+      shouldIgnoreNextOutsidePressRef.current =
+        options?.ignoreNextOutsidePress ?? false;
 
       const eventElement = getCalendarEventElementFromGrid(event._id);
       setFormReference(eventElement);
