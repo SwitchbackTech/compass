@@ -86,20 +86,13 @@ mock.module("@web/common/calendar-grid/hooks/useCalendarGridLayout", () => ({
   },
 }));
 
-const floatingUi =
-  require("@floating-ui/react") as typeof import("@floating-ui/react");
-const useDismissMock = mock(floatingUi.useDismiss);
 let latestEventForm: EventFormProps | null = null;
-
-mock.module("@floating-ui/react", () => ({
-  ...floatingUi,
-  useDismiss: useDismissMock,
-}));
 
 mock.module("@web/components/FloatingEventForm/FloatingEventForm", () => ({
   FloatingEventForm: ({ form }: { form: EventFormProps }) => {
     latestEventForm = form;
-    return null;
+
+    return getIsFormOpen() ? <dialog aria-label="Event form" open /> : null;
   },
 }));
 
@@ -109,9 +102,12 @@ const { DayCalendarGrid } =
 const renderDayCalendarGrid = () => ({
   user: userEvent.setup(),
   ...render(
-    <Provider store={store}>
-      <DayCalendarGrid />
-    </Provider>,
+    <>
+      <Provider store={store}>
+        <DayCalendarGrid />
+      </Provider>
+      <button type="button">Outside calendar</button>
+    </>,
   ),
 });
 
@@ -180,18 +176,6 @@ const setDraftEvent = (event: Schema_Event) => {
   store.dispatch(draftSlice.actions.startGridClick(event));
 };
 
-const getDismissOptions = () => {
-  const [, options] = useDismissMock.mock.calls.at(-1) ?? [];
-
-  expect(options).toBeDefined();
-
-  return options as {
-    enabled: boolean;
-    outsidePress?: (event: MouseEvent) => boolean;
-    outsidePressEvent: string;
-  };
-};
-
 const expectFormAnchoredTo = (card: HTMLElement, cardRect: DOMRect) => {
   const positionReference = latestEventForm?.refs.reference.current;
   const domReference = latestEventForm?.refs.domReference.current;
@@ -210,7 +194,6 @@ const expectFormAnchoredTo = (card: HTMLElement, cardRect: DOMRect) => {
 beforeEach(() => {
   store = createStoreWithEvents([]);
   latestEventForm = null;
-  useDismissMock.mockClear();
 });
 
 afterEach(() => {
@@ -460,52 +443,33 @@ describe("DayCalendarGrid", () => {
     expect(getDraft()).toBeNull();
   });
 
-  it("dismisses on click after empty agenda handlers run", () => {
-    renderDayCalendarGrid();
-
-    expect(getDismissOptions()).toEqual(
-      expect.objectContaining({
-        enabled: true,
-        outsidePress: expect.any(Function),
-        outsidePressEvent: "click",
-      }),
-    );
-  });
-
-  it("keeps the form open when pointer capture retargets the opening click", async () => {
+  it("dismisses the event form when pressing outside the calendar", async () => {
     const event = createTimedEvent({
-      _id: "retargeted-opening-click",
+      _id: "outside-press",
       endDate: "2026-05-20T10:00:00.000",
       startDate: "2026-05-20T09:00:00.000",
-      title: "Retargeted opening click",
+      title: "Outside press",
     });
 
     setDayEvents([event]);
     const { user } = renderDayCalendarGrid();
+    await user.click(
+      screen.getByRole("button", { name: /timed event: outside press/i }),
+    );
+    expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
 
-    const card = screen.getByRole("button", {
-      name: /retargeted opening click/i,
+    await user.pointer({
+      keys: "[MouseLeft>]",
+      target: screen.getByRole("button", { name: "Outside calendar" }),
     });
-    card.getBoundingClientRect = () => new DOMRect(20, 40, 160, 60);
-
-    card.focus();
-    await user.keyboard("{Enter}");
 
     await waitFor(() => {
-      expect(getDraft()?._id).toBe(event._id);
+      expect(
+        screen.queryByRole("dialog", { name: "Event form" }),
+      ).not.toBeInTheDocument();
     });
 
-    const openingClick = new MouseEvent("click", {
-      bubbles: true,
-      clientX: 100,
-      clientY: 70,
-    });
-    Object.defineProperty(openingClick, "target", {
-      configurable: true,
-      value: screen.getByLabelText("Calendar agenda"),
-    });
-
-    expect(getDismissOptions().outsidePress?.(openingClick)).toBe(false);
+    await user.pointer({ keys: "[/MouseLeft]" });
   });
 
   it("opens the form for a new all-day draft", async () => {
@@ -521,18 +485,8 @@ describe("DayCalendarGrid", () => {
 
     await waitFor(() => {
       expect(getDraft()?.isAllDay).toBe(true);
-      expect(getIsFormOpen()).toBe(true);
+      expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
     });
-
-    const outsidePress = getDismissOptions().outsidePress;
-    const openingClick = new MouseEvent("click", { bubbles: true });
-    Object.defineProperty(openingClick, "target", {
-      configurable: true,
-      value: allDayRegion,
-    });
-
-    expect(outsidePress?.(openingClick)).toBe(false);
-    expect(outsidePress?.(openingClick)).toBe(true);
   });
 
   it("dismisses an open draft when clicking empty Day all-day calendar space", () => {
@@ -640,7 +594,7 @@ describe("DayCalendarGrid", () => {
       expect(draft).not.toBeNull();
       expect(dayjs(draft?.startDate).format("HH:mm")).toBe("02:00");
       expect(dayjs(draft?.endDate).format("HH:mm")).toBe("05:00");
-      expect(getIsFormOpen()).toBe(true);
+      expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
     });
   });
 
@@ -676,46 +630,5 @@ describe("DayCalendarGrid", () => {
       expect(dayjs(draft?.endDate).format("HH:mm")).toBe("05:00");
       expect(getIsFormOpen()).toBe(true);
     });
-  });
-
-  it("keeps the timed draft form open for the opening click after a drag create", async () => {
-    renderDayCalendarGrid();
-
-    const timedGrid = getTimedGrid();
-    const timedSlot = getTimedSlot(3);
-
-    fireEvent.mouseDown(timedSlot, {
-      button: 0,
-      clientX: 100,
-      clientY: 120,
-    });
-    fireEvent.mouseMove(window, {
-      buttons: 1,
-      clientX: 100,
-      clientY: 300,
-    });
-    fireEvent.mouseUp(window, {
-      button: 0,
-      clientX: 100,
-      clientY: 300,
-    });
-
-    await waitFor(() => {
-      expect(getIsFormOpen()).toBe(true);
-    });
-
-    const outsidePress = getDismissOptions().outsidePress;
-    const openingClick = new MouseEvent("click", {
-      bubbles: true,
-      clientX: 100,
-      clientY: 300,
-    });
-    Object.defineProperty(openingClick, "target", {
-      configurable: true,
-      value: timedGrid,
-    });
-
-    expect(outsidePress?.(openingClick)).toBe(false);
-    expect(outsidePress?.(openingClick)).toBe(true);
   });
 });

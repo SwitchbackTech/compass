@@ -32,10 +32,7 @@ export const useDayTimedDraftCreation = ({
 }: {
   dateCalcs: CalendarDateCalcs;
   draft: Schema_Event | null;
-  onOpenEvent: (
-    event: Schema_GridEvent,
-    options?: { ignoreNextOutsidePress?: boolean },
-  ) => void;
+  onOpenEvent: (event: Schema_GridEvent) => void;
 }) => {
   const dispatch = useAppDispatch();
   const timedDraftCreationGestureRef = useRef<TimedDraftCreationGesture | null>(
@@ -141,7 +138,7 @@ export const useDayTimedDraftCreation = ({
               return;
             }
 
-            onOpenEvent(nextEvent, { ignoreNextOutsidePress: true });
+            onOpenEvent(nextEvent);
           },
         );
       };
