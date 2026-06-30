@@ -5,17 +5,17 @@ import {
   CursorItem,
   closeFloatingAtCursor,
   isOpenAtCursor,
-  nodeId$,
-  open$,
+  nodeIdStore,
   openFloatingAtCursor,
-  placement$,
-  reference$,
+  openStore,
+  placementStore,
+  referenceStore,
   setFloatingNodeIdAtCursor,
   setFloatingOpenAtCursor,
   setFloatingPlacementAtCursor,
   setFloatingReferenceAtCursor,
   setFloatingStrategyAtCursor,
-  strategy$,
+  strategyStore,
   useFloatingNodeIdAtCursor,
   useFloatingOpenAtCursor,
   useFloatingPlacementAtCursor,
@@ -40,11 +40,11 @@ describe("useOpenAtCursor", () => {
     }) as unknown as typeof setTimeout);
 
     // Reset state before each test
-    open$.next(false);
-    nodeId$.next(null);
-    placement$.next("right-start");
-    strategy$.next("absolute");
-    reference$.next(null);
+    openStore.set(false);
+    nodeIdStore.set(null);
+    placementStore.set("right-start");
+    strategyStore.set("absolute");
+    referenceStore.set(null);
   });
 
   afterEach(() => {
@@ -131,22 +131,22 @@ describe("useOpenAtCursor", () => {
       openFloatingAtCursor(config);
 
       // Initially shouldn't be set due to timeout
-      expect(open$.getValue()).toBe(false);
+      expect(openStore.get()).toBe(false);
 
       // Fast-forward microtasks and timers
       runAllTimers();
 
-      expect(nodeId$.getValue()).toBe(config.nodeId);
-      expect(placement$.getValue()).toBe(config.placement);
-      expect(strategy$.getValue()).toBe(config.strategy);
-      expect(reference$.getValue()).toBe(config.reference);
-      expect(open$.getValue()).toBe(true);
+      expect(nodeIdStore.get()).toBe(config.nodeId);
+      expect(placementStore.get()).toBe(config.placement);
+      expect(strategyStore.get()).toBe(config.strategy);
+      expect(referenceStore.get()).toBe(config.reference);
+      expect(openStore.get()).toBe(true);
     });
 
     it("openFloatingAtCursor should close existing floating before opening new one", () => {
       // Set initial state
-      open$.next(true);
-      nodeId$.next(CursorItem.EventForm);
+      openStore.set(true);
+      nodeIdStore.set(CursorItem.EventForm);
 
       const element = document.createElement("div");
       openFloatingAtCursor({
@@ -155,45 +155,45 @@ describe("useOpenAtCursor", () => {
       });
 
       // Should be closed immediately
-      expect(open$.getValue()).toBe(false);
-      expect(nodeId$.getValue()).toBe(null);
+      expect(openStore.get()).toBe(false);
+      expect(nodeIdStore.get()).toBe(null);
 
       // Then opened after delay
       runAllTimers();
 
-      expect(open$.getValue()).toBe(true);
-      expect(nodeId$.getValue()).toBe(CursorItem.EventPreview);
+      expect(openStore.get()).toBe(true);
+      expect(nodeIdStore.get()).toBe(CursorItem.EventPreview);
     });
 
     it("closeFloatingAtCursor should reset all values", () => {
       // Set some values first
-      open$.next(true);
-      nodeId$.next(CursorItem.EventForm);
-      placement$.next("bottom");
-      reference$.next(document.createElement("div"));
+      openStore.set(true);
+      nodeIdStore.set(CursorItem.EventForm);
+      placementStore.set("bottom");
+      referenceStore.set(document.createElement("div"));
 
       closeFloatingAtCursor();
 
-      expect(open$.getValue()).toBe(false);
-      expect(nodeId$.getValue()).toBe(null);
-      expect(placement$.getValue()).toBe("right-start");
-      expect(reference$.getValue()).toBe(null);
+      expect(openStore.get()).toBe(false);
+      expect(nodeIdStore.get()).toBe(null);
+      expect(placementStore.get()).toBe("right-start");
+      expect(referenceStore.get()).toBe(null);
     });
 
     it("isOpenAtCursor should return true only when open and nodeId matches", () => {
       // Case 1: Closed
-      open$.next(false);
-      nodeId$.next(CursorItem.EventForm);
+      openStore.set(false);
+      nodeIdStore.set(CursorItem.EventForm);
       expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
 
       // Case 2: Open but different nodeId
-      open$.next(true);
-      nodeId$.next(CursorItem.EventPreview);
+      openStore.set(true);
+      nodeIdStore.set(CursorItem.EventPreview);
       expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
 
       // Case 3: Open and matching nodeId
-      open$.next(true);
-      nodeId$.next(CursorItem.EventForm);
+      openStore.set(true);
+      nodeIdStore.set(CursorItem.EventForm);
       expect(isOpenAtCursor(CursorItem.EventForm)).toBe(true);
     });
   });

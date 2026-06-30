@@ -1,6 +1,5 @@
 import { ObjectId } from "bson";
 import { useCallback } from "react";
-import { lastValueFrom, timer } from "rxjs";
 import {
   CursorItem,
   openFloatingAtCursor,
@@ -28,19 +27,20 @@ export function useDuplicateEvent(_id: string) {
 
     onClose();
 
-    lastValueFrom(timer(10)).then(() => {
-      const newId = new ObjectId().toString();
-      const duplicate = { ...event, _id: newId };
+    const newId = new ObjectId().toString();
+    const duplicate = { ...event, _id: newId };
 
-      dispatch(draftSlice.actions.startGridClick(duplicate));
+    dispatch(draftSlice.actions.startGridClick(duplicate));
 
-      lastValueFrom(timer(10)).then(() => {
-        const reference = getCalendarEventElementFromGrid(newId);
+    // Wait for the new draft to render into the grid before anchoring the
+    // form to its element. A microtask runs after React flushes the dispatch
+    // above, so the element exists without an arbitrary timeout.
+    queueMicrotask(() => {
+      const reference = getCalendarEventElementFromGrid(newId);
 
-        if (!reference) return;
+      if (!reference) return;
 
-        openFloatingAtCursor({ nodeId: CursorItem.EventForm, reference });
-      });
+      openFloatingAtCursor({ nodeId: CursorItem.EventForm, reference });
     });
   }, [dispatch, event, onClose]);
 

@@ -1,13 +1,13 @@
 import { renderHook } from "@testing-library/react";
 import { act } from "react";
-import { cursor$ } from "@web/common/context/pointer-position";
+import { cursorStore } from "@web/common/context/pointer-position";
 import { useCursorCoordinates } from "./useCursorCoordinates";
 
 describe("useCursorCoordinates", () => {
   beforeEach(() => {
     // Reset to a known state
     act(() => {
-      cursor$.next({ x: 0, y: 0 });
+      cursorStore.set({ x: 0, y: 0 });
     });
   });
 
@@ -16,17 +16,17 @@ describe("useCursorCoordinates", () => {
     expect(result.current).toEqual({ x: 0, y: 0 });
   });
 
-  it("should update coordinates when cursor$ emits new values", () => {
+  it("should update coordinates when the cursor store emits new values", () => {
     const { result } = renderHook(() => useCursorCoordinates());
 
     act(() => {
-      cursor$.next({ x: 100, y: 200 });
+      cursorStore.set({ x: 100, y: 200 });
     });
 
     expect(result.current).toEqual({ x: 100, y: 200 });
 
     act(() => {
-      cursor$.next({ x: 50, y: 50 });
+      cursorStore.set({ x: 50, y: 50 });
     });
 
     expect(result.current).toEqual({ x: 50, y: 50 });

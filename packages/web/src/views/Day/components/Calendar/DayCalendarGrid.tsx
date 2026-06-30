@@ -17,7 +17,7 @@ import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
 import {
   CursorItem,
   closeFloatingAtCursor,
-  nodeId$,
+  nodeIdStore,
   openFloatingAtCursor,
 } from "@web/common/hooks/useOpenAtCursor";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -87,7 +87,7 @@ export function DayCalendarGrid() {
   const floating = useFloatingAtCursor((open, _event, reason) => {
     const dismissed = reason === "escape-key" || reason === "outside-press";
 
-    if (!open && dismissed && nodeId$.getValue() === CursorItem.EventForm) {
+    if (!open && dismissed && nodeIdStore.get() === CursorItem.EventForm) {
       dispatch(draftSlice.actions.discard(undefined));
     }
   });

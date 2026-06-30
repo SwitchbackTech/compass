@@ -217,24 +217,6 @@ export const isEventInRange = (
   return isStartDateInRange || isEndDateInRange;
 };
 
-export const getEventCursorStyle = (
-  isDragging: boolean,
-  isPending = false,
-): string => {
-  if (isDragging) return "move";
-  if (isPending) return "wait";
-  return "pointer";
-};
-
-export const getEventCursorClass = (
-  isDragging: boolean,
-  isPending = false,
-): string => {
-  if (isDragging) return "cursor-move";
-  if (isPending) return "cursor-wait";
-  return "cursor-pointer";
-};
-
 const _assembleBaseEvent = (
   userId: string,
   event: Partial<Schema_Event>,

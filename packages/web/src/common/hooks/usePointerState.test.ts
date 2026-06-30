@@ -2,7 +2,7 @@ import { renderHook } from "@testing-library/react";
 import { act, type PointerEvent } from "react";
 import {
   type PointerState,
-  pointerState$,
+  pointerStateStore,
 } from "@web/common/context/pointer-position";
 import { usePointerState } from "@web/common/hooks/usePointerState";
 
@@ -25,7 +25,7 @@ describe("usePointerState", () => {
   beforeEach(() => {
     // Reset the subject to initial state before each test
     act(() => {
-      pointerState$.next(initialState);
+      pointerStateStore.set(initialState);
     });
   });
 
@@ -44,7 +44,7 @@ describe("usePointerState", () => {
     };
 
     act(() => {
-      pointerState$.next(newState);
+      pointerStateStore.set(newState);
     });
 
     expect(result.current).toEqual(newState);
@@ -66,7 +66,7 @@ describe("usePointerState", () => {
     };
 
     act(() => {
-      pointerState$.next(allTrueState);
+      pointerStateStore.set(allTrueState);
     });
 
     expect(result.current).toEqual(allTrueState);

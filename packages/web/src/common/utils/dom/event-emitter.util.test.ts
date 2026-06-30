@@ -1,8 +1,8 @@
 import {
-  domMovement$,
   getElementAtPoint,
   globalMovementHandler,
   pressKey,
+  subscribeDomMovement,
 } from "@web/common/utils/dom/event-emitter.util";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -31,12 +31,12 @@ describe("event-emitter.util", () => {
       });
 
       return new Promise<void>((resolve) => {
-        const subscription = domMovement$.subscribe((val) => {
+        const unsubscribe = subscribeDomMovement((val) => {
           expect(val.x).toBe(100);
           expect(val.y).toBe(100);
           expect(val.element).toBe(mockElement);
           expect(val.event as unknown).toBe(event);
-          subscription.unsubscribe();
+          unsubscribe();
           resolve();
         });
 

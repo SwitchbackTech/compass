@@ -1,11 +1,6 @@
 import { type Placement, type Strategy } from "@floating-ui/react";
-import { useEffect, useState } from "react";
-import {
-  BehaviorSubject,
-  distinctUntilChanged,
-  type Observable,
-  share,
-} from "rxjs";
+import { useSyncExternalStore } from "react";
+import { createExternalStore } from "@web/common/utils/external-store.util";
 
 export enum CursorItem {
   EventForm = "EventForm",
@@ -13,73 +8,50 @@ export enum CursorItem {
   EventContextMenu = "EventContextMenu",
 }
 
-export const open$ = new BehaviorSubject<boolean>(false);
-export const nodeId$ = new BehaviorSubject<CursorItem | null>(null);
-export const placement$ = new BehaviorSubject<Placement>("right-start");
-export const strategy$ = new BehaviorSubject<Strategy>("absolute");
-export const reference$ = new BehaviorSubject<Element | null>(null);
-
-const $open = open$.pipe(distinctUntilChanged(), share());
-const $nodeId = nodeId$.pipe(distinctUntilChanged(), share());
-const $placement = placement$.pipe(distinctUntilChanged(), share());
-const $strategy = strategy$.pipe(distinctUntilChanged(), share());
-const $reference = reference$.pipe(distinctUntilChanged(), share());
-
-function useValue<T>(
-  subject: BehaviorSubject<T>,
-  sharedSubject: Observable<T>,
-): T {
-  const [value, setValue] = useState<T>(subject.getValue());
-
-  useEffect(() => {
-    const subscription = sharedSubject.subscribe((v) => {
-      setValue(v);
-    });
-
-    return () => subscription.unsubscribe();
-  });
-
-  return value;
-}
+export const openStore = createExternalStore<boolean>(false);
+export const nodeIdStore = createExternalStore<CursorItem | null>(null);
+export const placementStore = createExternalStore<Placement>("right-start");
+export const strategyStore = createExternalStore<Strategy>("absolute");
+export const referenceStore = createExternalStore<Element | null>(null);
 
 export function useFloatingOpenAtCursor(): boolean {
-  return useValue<boolean>(open$, $open);
+  return useSyncExternalStore(openStore.subscribe, openStore.get);
 }
 
 export function useFloatingNodeIdAtCursor(): CursorItem | null {
-  return useValue<CursorItem | null>(nodeId$, $nodeId);
+  return useSyncExternalStore(nodeIdStore.subscribe, nodeIdStore.get);
 }
 
 export function useFloatingPlacementAtCursor(): Placement {
-  return useValue<Placement>(placement$, $placement);
+  return useSyncExternalStore(placementStore.subscribe, placementStore.get);
 }
 
 export function useFloatingStrategyAtCursor(): Strategy {
-  return useValue<Strategy>(strategy$, $strategy);
+  return useSyncExternalStore(strategyStore.subscribe, strategyStore.get);
 }
 
 export function useFloatingReferenceAtCursor(): Element | null {
-  return useValue<Element | null>(reference$, $reference);
+  return useSyncExternalStore(referenceStore.subscribe, referenceStore.get);
 }
 
 export function setFloatingOpenAtCursor(open: boolean) {
-  open$.next(open);
+  openStore.set(open);
 }
 
 export function setFloatingNodeIdAtCursor(nodeId: CursorItem | null) {
-  nodeId$.next(nodeId);
+  nodeIdStore.set(nodeId);
 }
 
 export function setFloatingPlacementAtCursor(placement: Placement) {
-  placement$.next(placement);
+  placementStore.set(placement);
 }
 
 export function setFloatingStrategyAtCursor(strategy: Strategy) {
-  strategy$.next(strategy);
+  strategyStore.set(strategy);
 }
 
 export function setFloatingReferenceAtCursor(reference: Element | null) {
-  reference$.next(reference);
+  referenceStore.set(reference);
 }
 
 export function openFloatingAtCursor({
@@ -93,7 +65,7 @@ export function openFloatingAtCursor({
   placement?: Placement;
   strategy?: Strategy;
 }) {
-  if (open$.getValue()) closeFloatingAtCursor();
+  if (openStore.get()) closeFloatingAtCursor();
 
   const timeout = setTimeout(() => {
     setFloatingNodeIdAtCursor(nodeId);
@@ -113,8 +85,8 @@ export function closeFloatingAtCursor() {
 }
 
 export function isOpenAtCursor(item: CursorItem): boolean {
-  const eventFormOpen = nodeId$.getValue() === item;
-  const openAtCursor = open$.getValue();
+  const eventFormOpen = nodeIdStore.get() === item;
+  const openAtCursor = openStore.get();
   const open = eventFormOpen && openAtCursor;
 
   return open;

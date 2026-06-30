@@ -41,7 +41,7 @@ import {
 } from "@web/components/Flex/Flex";
 import { Text } from "@web/components/Text/Text";
 
-export interface CalendarTimedEventCardProps {
+interface CalendarTimedEventCardProps {
   boxShadow?: CSSProperties["boxShadow"];
   displayMode: "draft" | "placeholder" | "saved";
   event: Schema_GridEvent;
@@ -127,14 +127,9 @@ const CalendarTimedEventCardBase = (
         : hoverColor
       : bgColor;
 
-  const hoverCursorClass =
-    !isPlaceholder && !isResizing
-      ? isDragging
-        ? "hover:cursor-move"
-        : isPending
-          ? "hover:cursor-wait"
-          : "hover:cursor-pointer"
-      : "";
+  const hoverCursorClass = isPending
+    ? "hover:cursor-wait"
+    : "hover:cursor-pointer";
 
   const eventStyle = {
     "--event-bg": bgColor,
@@ -174,6 +169,7 @@ const CalendarTimedEventCardBase = (
 
   const showResizeCursor =
     !isPlaceholder && !isResizing && !isDragging && !isPending;
+
   const scalerStyle = (
     placement: Pick<CSSProperties, "top" | "bottom">,
   ): CSSProperties => ({

@@ -310,9 +310,8 @@ export const createDayInteractionAdapter = ({
           startMinutes: getLocalMinutes(target.event.startDate),
         });
       },
-      getOverlayMount: ({ sourceElement, target }) =>
+      getOverlayMount: ({ sourceElement }) =>
         createCalendarInteractionEventOverlayMount({
-          cursor: getInteractionCursor(target),
           source: sourceElement,
         }),
       getSourceElement: (target) => target.registered.element,
@@ -795,18 +794,6 @@ const getOwnershipReason = (target: DayInteractionTarget) => {
       return "saved-timed-resize";
     case "timedDrag":
       return "saved-timed-drag";
-  }
-};
-
-const getInteractionCursor = (target: DayInteractionTarget) => {
-  switch (target.type) {
-    case "allDayResize":
-      return "col-resize";
-    case "timedResize":
-      return "row-resize";
-    case "allDayDrag":
-    case "timedDrag":
-      return "move";
   }
 };
 

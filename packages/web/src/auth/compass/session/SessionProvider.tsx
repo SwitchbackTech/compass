@@ -1,10 +1,4 @@
-import { type PropsWithChildren, useEffect, useState } from "react";
-import { BehaviorSubject } from "rxjs";
-import {
-  distinctUntilChanged,
-  distinctUntilKeyChanged,
-  skip,
-} from "rxjs/operators";
+import { type PropsWithChildren, useEffect, useSyncExternalStore } from "react";
 import SuperTokens from "supertokens-web-js";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
 import EmailVerification from "supertokens-web-js/recipe/emailverification";
@@ -18,6 +12,7 @@ import {
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { createExternalStore } from "@web/common/utils/external-store.util";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import * as sse from "@web/sse/provider/SSEProvider";
@@ -47,15 +42,13 @@ SuperTokens.init({
   ],
 });
 
-const authenticated$ = new BehaviorSubject(false);
+const authStore = createExternalStore(false);
 let isCheckingSession = false;
 let isSessionInitialized = false;
 let sessionEventVersion = 0;
 
-const $authenticated = authenticated$.pipe(skip(1), distinctUntilChanged());
-
 const handleAuthenticatedSession = () => {
-  authenticated$.next(true);
+  authStore.set(true);
   markUserAsAuthenticated(getLastKnownEmail());
   void refreshUserMetadata();
 };
@@ -68,7 +61,7 @@ const handleSessionExists = () => {
 };
 
 const handleSessionMissing = () => {
-  authenticated$.next(false);
+  authStore.set(false);
   store.dispatch(authSlice.actions.resetAuth());
   store.dispatch(userMetadataSlice.actions.clear(undefined));
   clearGoogleSyncIndicatorOverride();
@@ -81,7 +74,7 @@ async function checkIfSessionExists(): Promise<boolean> {
     return false;
   }
 
-  if (isCheckingSession) return authenticated$.value;
+  if (isCheckingSession) return authStore.get();
 
   isCheckingSession = true;
   const eventVersionAtCheckStart = sessionEventVersion;
@@ -90,7 +83,7 @@ async function checkIfSessionExists(): Promise<boolean> {
     const exists = await session.doesSessionExist();
 
     if (sessionEventVersion !== eventVersionAtCheckStart) {
-      return authenticated$.value;
+      return authStore.get();
     }
 
     if (exists) {
@@ -102,7 +95,7 @@ async function checkIfSessionExists(): Promise<boolean> {
     return exists;
   } catch (error) {
     console.error("Error checking auth status:", error);
-    authenticated$.next(false);
+    authStore.set(false);
     return false;
   } finally {
     isCheckingSession = false;
@@ -117,8 +110,13 @@ export function sessionInit() {
   isSessionInitialized = true;
   void checkIfSessionExists();
 
+  let lastAction: string | undefined;
+
   // No need to unsubscribe as this runs for the lifetime of the app
-  session.events.pipe(distinctUntilKeyChanged("action")).subscribe((e) => {
+  session.onAnyEvent((e) => {
+    if (e.action === lastAction) return;
+    lastAction = e.action;
+
     switch (e.action) {
       case "REFRESH_SESSION":
       case "SESSION_CREATED":
@@ -141,21 +139,16 @@ export function sessionInit() {
 }
 
 export function SessionProvider({ children }: PropsWithChildren<object>) {
-  const [authenticated, setAuthenticated] = useState(authenticated$.value);
-
-  useEffect(() => {
-    const authSub = $authenticated.subscribe(setAuthenticated);
-
-    return () => {
-      authSub.unsubscribe();
-    };
-  }, []);
+  const authenticated = useSyncExternalStore(
+    authStore.subscribe,
+    authStore.get,
+  );
 
   // Expose test hooks for e2e testing
   useEffect(() => {
     if (typeof window !== "undefined" && window.__COMPASS_E2E_TEST__) {
       window.__COMPASS_E2E_HOOKS__ = {
-        setAuthenticated: (value: boolean) => authenticated$.next(value),
+        setAuthenticated: (value: boolean) => authStore.set(value),
       };
     }
   }, []);
@@ -164,7 +157,7 @@ export function SessionProvider({ children }: PropsWithChildren<object>) {
     <SessionContext.Provider
       value={{
         authenticated,
-        setAuthenticated: (value: boolean) => authenticated$.next(value),
+        setAuthenticated: (value: boolean) => authStore.set(value),
       }}
     >
       {children}

@@ -8,11 +8,11 @@ import {
   collisionWidth,
   findOptimalPlacement,
   getOrder,
-  gridOrganization$,
   isTimedEventNode,
   processNode,
   reorderGrid,
   resetPosition,
+  setGridOrganization,
   sortByOrderAndWidthAttribute,
 } from "@web/common/utils/dom/grid-organization.util";
 import {
@@ -285,12 +285,12 @@ describe("grid-organization.util", () => {
   });
 
   describe("getOrder", () => {
-    it("should return the order from gridOrganization$", () => {
+    it("should return the order from gridOrganization", () => {
       const node = document.createElement("div");
       const id = "test-event-id";
       node.setAttribute(DATA_EVENT_ELEMENT_ID, id);
 
-      gridOrganization$.next({
+      setGridOrganization({
         [id]: { order: 5, isOverlapping: false, style: {}, fullWidth: false },
       });
 
@@ -302,11 +302,11 @@ describe("grid-organization.util", () => {
       expect(getOrder(node)).toBe(0);
     });
 
-    it("should return 0 if order is missing in gridOrganization$", () => {
+    it("should return 0 if order is missing in gridOrganization", () => {
       const node = document.createElement("div");
       const id = "test-event-id-2";
       node.setAttribute(DATA_EVENT_ELEMENT_ID, id);
-      // gridOrganization$ doesn't have this id
+      // gridOrganization doesn't have this id
       expect(getOrder(node)).toBe(0);
     });
   });

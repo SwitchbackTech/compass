@@ -17,12 +17,12 @@ import {
 } from "@web/common/constants/web.constants";
 import {
   closeFloatingAtCursor,
-  nodeId$,
-  open$,
+  nodeIdStore,
   openFloatingAtCursor,
-  placement$,
-  reference$,
-  strategy$,
+  openStore,
+  placementStore,
+  referenceStore,
+  strategyStore,
   useFloatingNodeIdAtCursor,
   useFloatingOpenAtCursor,
   useFloatingPlacementAtCursor,
@@ -51,7 +51,7 @@ export function useFloatingAtCursor(
 
   const handleOpenChange = useCallback(
     (stateOpen: boolean, event?: Event, reason?: OpenChangeReason) => {
-      const alreadyOpen = open$.getValue();
+      const alreadyOpen = openStore.get();
       const stateMismatch = stateOpen && alreadyOpen;
 
       if (!stateOpen) {
@@ -62,10 +62,10 @@ export function useFloatingAtCursor(
 
       if (stateMismatch) {
         openFloatingAtCursor({
-          nodeId: nodeId$.getValue()!,
-          reference: reference$.getValue()!,
-          placement: placement$.getValue(),
-          strategy: strategy$.getValue(),
+          nodeId: nodeIdStore.get()!,
+          reference: referenceStore.get()!,
+          placement: placementStore.get(),
+          strategy: strategyStore.get(),
         });
       }
 

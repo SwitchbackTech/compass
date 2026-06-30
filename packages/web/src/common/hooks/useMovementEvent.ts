@@ -3,14 +3,12 @@ import {
   type PointerEvent,
   useCallback,
   useEffect,
-  useMemo,
+  useRef,
 } from "react";
-import { BehaviorSubject, EMPTY, fromEvent, iif, merge, NEVER, of } from "rxjs";
-import { filter, map, switchMap } from "rxjs/operators";
 import {
   type DomMovement,
-  domMovement$,
   globalMovementHandler,
+  subscribeDomMovement,
 } from "@web/common/utils/dom/event-emitter.util";
 
 interface Options {
@@ -60,39 +58,30 @@ export function useMovementEvent({
     [selectors],
   );
 
-  const pause = useMemo(() => new BehaviorSubject<boolean>(false), []);
+  // Pause state is read inside the live subscription, so a ref lets us toggle
+  // tracking without tearing down and re-creating the listener.
+  const pausedRef = useRef(false);
 
   const togglePointerMovementTracking = useCallback(
-    (pauseTracking?: boolean) => pause.next(pauseTracking ?? !pause.getValue()),
-    [pause],
+    (pauseTracking?: boolean) => {
+      pausedRef.current = pauseTracking ?? !pausedRef.current;
+    },
+    [],
   );
 
   useEffect(() => {
-    const pointerMovement$ = of(handler).pipe(
-      switchMap((handle = () => {}) =>
-        iif(
-          () => !!handler,
-          domMovement$.pipe(
-            filter(typeFilter),
-            filter(elementsFilter),
-            map(handle),
-          ),
-          EMPTY,
-        ),
-      ),
-    );
+    if (!handler) return;
 
-    const movement$ = pause.pipe(
-      switchMap((paused) => iif(() => paused, NEVER, pointerMovement$)),
-    );
+    return subscribeDomMovement((movement) => {
+      if (pausedRef.current) return;
+      if (!typeFilter(movement)) return;
+      if (!elementsFilter(movement)) return;
 
-    const subscription = movement$.subscribe();
-
-    return () => subscription.unsubscribe();
+      handler(movement);
+    });
   }, [
     elementsFilter,
     handler,
-    pause,
     typeFilter,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     ...(deps ?? []),
@@ -109,14 +98,18 @@ export function useMovementEvent({
  */
 export function useSetupMovementEvents() {
   useEffect(() => {
-    const pointerdown = fromEvent<PointerEvent>(window, "pointerdown");
-    const pointerup = fromEvent<PointerEvent>(window, "pointerup");
-    const pointermove = fromEvent<PointerEvent>(window, "pointermove");
-    const pointer = merge(pointerdown, pointerup, pointermove);
+    const onPointer = (event: globalThis.PointerEvent) =>
+      globalMovementHandler(event as unknown as PointerEvent);
 
-    const events = pointer.subscribe(globalMovementHandler);
+    window.addEventListener("pointerdown", onPointer);
+    window.addEventListener("pointerup", onPointer);
+    window.addEventListener("pointermove", onPointer);
 
-    return () => events.unsubscribe();
+    return () => {
+      window.removeEventListener("pointerdown", onPointer);
+      window.removeEventListener("pointerup", onPointer);
+      window.removeEventListener("pointermove", onPointer);
+    };
   }, []);
 }
 

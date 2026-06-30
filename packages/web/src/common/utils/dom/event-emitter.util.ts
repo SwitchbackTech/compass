@@ -1,6 +1,5 @@
 import { EventEmitter2 } from "eventemitter2";
 import { type PointerEvent } from "react";
-import { BehaviorSubject, Subject } from "rxjs";
 import { isLeftClick } from "../mouse/mouse.util";
 
 export interface DomMovement {
@@ -24,13 +23,41 @@ export const compassEventEmitter = new EventEmitter2({
   verboseMemoryLeak: true,
 });
 
-export const domMovement$ = new Subject<DomMovement>();
+// Fire-and-forget bus for pointer movements.
+const movementEmitter = new EventEmitter2();
+const MOVEMENT_EVENT = "movement";
 
-export const pointerdown$ = new BehaviorSubject<boolean>(false);
+export function emitDomMovement(movement: DomMovement): void {
+  movementEmitter.emit(MOVEMENT_EVENT, movement);
+}
 
-export const selectionStart$ = new BehaviorSubject<
-  DomMovement["selectionStart"]
->(null);
+export function subscribeDomMovement(
+  listener: (movement: DomMovement) => void,
+): () => void {
+  movementEmitter.on(MOVEMENT_EVENT, listener);
+
+  return () => movementEmitter.off(MOVEMENT_EVENT, listener);
+}
+
+// Internal drag state. Not observed by React, just plain module state w/ accessors
+let pointerDown = false;
+let selectionStart: DomMovement["selectionStart"] = null;
+
+export function getPointerDown(): boolean {
+  return pointerDown;
+}
+
+export function setPointerDown(value: boolean): void {
+  pointerDown = value;
+}
+
+export function getSelectionStart(): DomMovement["selectionStart"] {
+  return selectionStart;
+}
+
+export function setSelectionStart(value: DomMovement["selectionStart"]): void {
+  selectionStart = value;
+}
 
 export function getElementAtPoint({
   clientX,
@@ -53,19 +80,19 @@ function checkPointerDown(event: PointerEvent): {
   // This avoids incorrectly entering pointerdown state for right-clicks or
   // other non-primary button interactions (e.g. context menu).
   if (isPointerDownEvent && isLeftClick(event)) {
-    pointerdown$.next(true);
-    selectionStart$.next({ clientX, clientY });
+    setPointerDown(true);
+    setSelectionStart({ clientX, clientY });
   }
 
   if (isPointerUpEvent) {
-    pointerdown$.next(false);
-    selectionStart$.next(null);
+    setPointerDown(false);
+    setSelectionStart(null);
   }
 
-  const isPointerDown = pointerdown$.getValue();
-  const selectionStart = selectionStart$.getValue();
-
-  return { pointerdown: isPointerDown, selectionStart };
+  return {
+    pointerdown: getPointerDown(),
+    selectionStart: getSelectionStart(),
+  };
 }
 
 function processMovement(e: PointerEvent) {
@@ -82,7 +109,7 @@ function processMovement(e: PointerEvent) {
 export function globalMovementHandler(event: PointerEvent) {
   const movement = processMovement(event);
 
-  domMovement$.next({ event, ...movement });
+  emitDomMovement({ event, ...movement });
 }
 
 export function pressKey(

@@ -1,5 +1,4 @@
 import { type CSSProperties } from "react";
-import { BehaviorSubject } from "rxjs";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
@@ -8,6 +7,7 @@ import {
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
+import { createExternalStore } from "@web/common/utils/external-store.util";
 
 interface Placement {
   isOverlapping: boolean;
@@ -19,11 +19,19 @@ interface GridData extends Placement {
   order: number;
 }
 
-export const gridOrganization$ = new BehaviorSubject<Record<string, GridData>>(
-  {},
-);
+// Layout map keyed by event id
+let gridOrganization: Record<string, GridData> = {};
 
-export const maxGridZIndex$ = new BehaviorSubject<number>(0);
+export function getGridOrganization(): Record<string, GridData> {
+  return gridOrganization;
+}
+
+export function setGridOrganization(value: Record<string, GridData>): void {
+  gridOrganization = value;
+}
+
+// Observed by React (useGridMaxZIndex), so it lives in an external store.
+export const maxGridZIndexStore = createExternalStore<number>(0);
 
 const borderRingSpace = 2;
 const fullWidthFactorThreshold = 1.75;
@@ -70,11 +78,11 @@ export const getNodeId = (node: HTMLElement): string | null => {
 
 export const getOrder = (node: HTMLElement): number => {
   const id = getNodeId(node);
-  const gridOrganization = gridOrganization$.getValue();
+  const organization = getGridOrganization();
 
   if (!id) return 0;
 
-  return gridOrganization[id]?.order ?? 0;
+  return organization[id]?.order ?? 0;
 };
 
 export const sortByOrderAndWidthAttribute = (
@@ -193,11 +201,11 @@ function resetPlacements(nodes: HTMLElement[]) {
     resetPosition(node);
 
     const id = getNodeId(node);
-    const gridOrganization = gridOrganization$.getValue();
+    const organization = getGridOrganization();
 
     if (id) {
-      gridOrganization$.next({
-        ...gridOrganization,
+      setGridOrganization({
+        ...organization,
         [id]: { ...defaultGridData, order: index },
       });
     }
@@ -276,11 +284,11 @@ export function reorderGrid(
 
   const maxZIndex = Math.max(...zIndexes) + 1;
 
-  maxGridZIndex$.next(maxZIndex);
+  maxGridZIndexStore.set(maxZIndex);
 
   const organization = updatePlacements(nodes, placements, maxZIndex);
 
-  gridOrganization$.next(organization);
+  setGridOrganization(organization);
 }
 
 function observeGridEvents(mutations: MutationRecord[]): void {

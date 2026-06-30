@@ -316,9 +316,8 @@ export const createWeekInteractionAdapter = ({
           target,
         });
       },
-      getOverlayMount: ({ sourceElement, target }) =>
+      getOverlayMount: ({ sourceElement }) =>
         createCalendarInteractionEventOverlayMount({
-          cursor: getInteractionCursor(target),
           source: sourceElement,
         }),
       getSourceElement: (target) => target.registered.element,
@@ -729,18 +728,6 @@ const getOwnershipReason = (target: WeekInteractionTarget) => {
       return "saved-timed-resize";
     case "timedDrag":
       return "saved-timed-drag";
-  }
-};
-
-const getInteractionCursor = (target: WeekInteractionTarget) => {
-  switch (target.type) {
-    case "allDayResize":
-      return "col-resize";
-    case "timedResize":
-      return "row-resize";
-    case "allDayDrag":
-    case "timedDrag":
-      return "move";
   }
 };
 

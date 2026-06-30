@@ -1,4 +1,3 @@
-import { type CSSProperties } from "react";
 import { type FloatingInteractionOverlayMount } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
 import { createInteractionClone } from "@web/common/calendar-interaction/dom/clone/createInteractionClone";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -41,10 +40,8 @@ export const updateCalendarOverlayTimeLabel = (
 };
 
 export const createCalendarInteractionEventOverlayMount = ({
-  cursor,
   source,
 }: {
-  cursor?: CSSProperties["cursor"];
   source: HTMLElement;
 }): FloatingInteractionOverlayMount => {
   const rect = source.getBoundingClientRect();
@@ -61,7 +58,6 @@ export const createCalendarInteractionEventOverlayMount = ({
 
   return {
     clone,
-    cursor,
     rect: {
       height: rect.height,
       left: rect.left,
