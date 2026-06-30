@@ -6,13 +6,17 @@ import {
   waitFor,
   within,
 } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { Provider } from "react-redux";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type CalendarGridMeasurements } from "@web/common/calendar-grid/types/calendarGrid.types";
-import { ZIndex } from "@web/common/constants/web.constants";
+import {
+  DATA_CALENDAR_TIMED_GRID_ROW,
+  ZIndex,
+} from "@web/common/constants/web.constants";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -102,12 +106,14 @@ mock.module("@web/components/FloatingEventForm/FloatingEventForm", () => ({
 const { DayCalendarGrid } =
   require("./DayCalendarGrid") as typeof import("./DayCalendarGrid");
 
-const renderDayCalendarGrid = () =>
-  render(
+const renderDayCalendarGrid = () => ({
+  user: userEvent.setup(),
+  ...render(
     <Provider store={store}>
       <DayCalendarGrid />
     </Provider>,
-  );
+  ),
+});
 
 const createTimedEvent = (
   overrides: Partial<Schema_Event> & {
@@ -151,6 +157,24 @@ const getIsFormOpen = () => selectIsEventFormOpen(store.getState());
 const resetDraft = () => {
   store.dispatch(draftSlice.actions.discard(undefined));
 };
+
+const getTimedGrid = () =>
+  screen.getByRole("region", {
+    name: "Timed events grid",
+  });
+
+const getTimedSlot = (index = 0) => {
+  const slot = getTimedGrid().querySelectorAll<HTMLElement>(
+    `[${DATA_CALENDAR_TIMED_GRID_ROW}='true']`,
+  )[index];
+
+  expect(slot).toBeDefined();
+
+  return slot;
+};
+
+const getAllDayRegion = () =>
+  screen.getByRole("region", { name: "All-day events" });
 
 const setDraftEvent = (event: Schema_Event) => {
   store.dispatch(draftSlice.actions.startGridClick(event));
@@ -203,18 +227,14 @@ describe("DayCalendarGrid", () => {
   it("renders one timed column", () => {
     renderDayCalendarGrid();
 
-    const timedGrid = screen.getByRole("region", {
-      name: "Timed events grid",
-    });
+    const timedGrid = getTimedGrid();
     expect(within(timedGrid).getAllByRole("columnheader")).toHaveLength(1);
   });
 
   it("renders all-day and timed regions without rendering tasks", () => {
     renderDayCalendarGrid();
 
-    expect(
-      screen.getByRole("region", { name: "All-day events" }),
-    ).toBeInTheDocument();
+    expect(getAllDayRegion()).toBeInTheDocument();
     expect(
       screen.queryByRole("list", { name: "Task list" }),
     ).not.toBeInTheDocument();
@@ -283,10 +303,10 @@ describe("DayCalendarGrid", () => {
 
     expect(initialBackZIndex).toBeLessThan(ZIndex.MAX);
 
-    fireEvent.focus(back);
+    back.focus();
     expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
 
-    fireEvent.blur(back);
+    back.blur();
     expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
   });
 
@@ -305,8 +325,7 @@ describe("DayCalendarGrid", () => {
         title: "Front overlap",
       }),
     ]);
-
-    renderDayCalendarGrid();
+    const { user } = renderDayCalendarGrid();
 
     const back = screen.getByRole("button", { name: /back overlap/i });
     const front = screen.getByRole("button", { name: /front overlap/i });
@@ -317,19 +336,7 @@ describe("DayCalendarGrid", () => {
     expect(initialBackWidth).toBe(frontWidth);
     expect(initialBackZIndex).toBeLessThan(ZIndex.MAX);
 
-    fireEvent.pointerDown(back, {
-      button: 0,
-      clientX: 100,
-      clientY: 120,
-      isPrimary: true,
-      pointerId: 1,
-    });
-    fireEvent.pointerUp(window, {
-      button: 0,
-      clientX: 100,
-      clientY: 120,
-      pointerId: 1,
-    });
+    await user.click(back);
 
     await waitFor(() => {
       expect(getDraft()?._id).toBe("back");
@@ -368,12 +375,13 @@ describe("DayCalendarGrid", () => {
     const cardRect = new DOMRect(20, 40, 160, 60);
 
     setDayEvents([event]);
-    renderDayCalendarGrid();
+    const { user } = renderDayCalendarGrid();
 
     const card = screen.getByRole("button", { name: /virtual reference/i });
     card.getBoundingClientRect = () => cardRect;
 
-    fireEvent.keyDown(card, { key: "Enter" });
+    card.focus();
+    await user.keyboard("{Enter}");
 
     await waitFor(() => {
       expect(getDraft()?._id).toBe(event._id);
@@ -392,24 +400,12 @@ describe("DayCalendarGrid", () => {
     const cardRect = new DOMRect(20, 40, 160, 60);
 
     setDayEvents([event]);
-    renderDayCalendarGrid();
+    const { user } = renderDayCalendarGrid();
 
     const card = screen.getByRole("button", { name: /pointer reference/i });
     card.getBoundingClientRect = () => cardRect;
 
-    fireEvent.pointerDown(card, {
-      button: 0,
-      clientX: 100,
-      clientY: 120,
-      isPrimary: true,
-      pointerId: 1,
-    });
-    fireEvent.pointerUp(window, {
-      button: 0,
-      clientX: 100,
-      clientY: 120,
-      pointerId: 1,
-    });
+    await user.click(card);
 
     await waitFor(() => {
       expect(getDraft()?._id).toBe(event._id);
@@ -427,16 +423,14 @@ describe("DayCalendarGrid", () => {
         title: "Right click event",
       }),
     ]);
-
-    renderDayCalendarGrid();
-
-    fireEvent.contextMenu(
-      screen.getByRole("button", { name: /right click event/i }),
+    const { user } = renderDayCalendarGrid();
+    await user.pointer([
       {
-        clientX: 100,
-        clientY: 120,
+        keys: "[MouseRight>]",
+        target: screen.getByRole("button", { name: /right click event/i }),
       },
-    );
+      { keys: "[/MouseRight]" },
+    ]);
 
     await waitFor(() => {
       expect(screen.getByText("Edit")).toBeInTheDocument();
@@ -457,16 +451,7 @@ describe("DayCalendarGrid", () => {
     setDraftEvent(existingDraft);
     renderDayCalendarGrid();
 
-    const timedGrid = screen.getByRole("region", {
-      name: "Timed events grid",
-    });
-    const timedGridRow = timedGrid.querySelector(
-      "[data-calendar-timed-grid-row='true']",
-    );
-
-    expect(timedGridRow).toBeInstanceOf(HTMLElement);
-
-    fireEvent.mouseDown(timedGridRow!, {
+    fireEvent.mouseDown(getTimedSlot(3), {
       button: 0,
       clientX: 100,
       clientY: 120,
@@ -496,14 +481,15 @@ describe("DayCalendarGrid", () => {
     });
 
     setDayEvents([event]);
-    renderDayCalendarGrid();
+    const { user } = renderDayCalendarGrid();
 
     const card = screen.getByRole("button", {
       name: /retargeted opening click/i,
     });
     card.getBoundingClientRect = () => new DOMRect(20, 40, 160, 60);
 
-    fireEvent.keyDown(card, { key: "Enter" });
+    card.focus();
+    await user.keyboard("{Enter}");
 
     await waitFor(() => {
       expect(getDraft()?._id).toBe(event._id);
@@ -525,7 +511,7 @@ describe("DayCalendarGrid", () => {
   it("opens the form for a new all-day draft", async () => {
     renderDayCalendarGrid();
 
-    const allDayRegion = screen.getByRole("region", { name: "All-day events" });
+    const allDayRegion = getAllDayRegion();
 
     fireEvent.mouseDown(allDayRegion, {
       button: 0,
@@ -560,14 +546,11 @@ describe("DayCalendarGrid", () => {
     setDraftEvent(existingDraft);
     renderDayCalendarGrid();
 
-    fireEvent.mouseDown(
-      screen.getByRole("region", { name: "All-day events" }),
-      {
-        button: 0,
-        clientX: 100,
-        clientY: 20,
-      },
-    );
+    fireEvent.mouseDown(getAllDayRegion(), {
+      button: 0,
+      clientX: 100,
+      clientY: 20,
+    });
 
     expect(getDraft()).toBeNull();
   });
@@ -589,14 +572,11 @@ describe("DayCalendarGrid", () => {
     ]);
     renderDayCalendarGrid();
 
-    fireEvent.mouseDown(
-      screen.getByRole("region", { name: "All-day events" }),
-      {
-        button: 0,
-        clientX: 100,
-        clientY: 80,
-      },
-    );
+    fireEvent.mouseDown(getAllDayRegion(), {
+      button: 0,
+      clientX: 100,
+      clientY: 80,
+    });
 
     await waitFor(() => {
       const draft = screen.getByRole("button", {
@@ -638,16 +618,7 @@ describe("DayCalendarGrid", () => {
   it("creates the selected timed range when dragging from an empty timed slot", async () => {
     renderDayCalendarGrid();
 
-    const timedGrid = screen.getByRole("region", {
-      name: "Timed events grid",
-    });
-    const timedGridRow = timedGrid.querySelector(
-      "[data-calendar-timed-grid-row='true']",
-    );
-
-    expect(timedGridRow).toBeInstanceOf(HTMLElement);
-
-    fireEvent.mouseDown(timedGridRow!, {
+    fireEvent.mouseDown(getTimedSlot(3), {
       button: 0,
       clientX: 100,
       clientY: 120,
@@ -676,16 +647,7 @@ describe("DayCalendarGrid", () => {
   it("opens the timed draft form after stray zero-button mousemove events", async () => {
     renderDayCalendarGrid();
 
-    const timedGrid = screen.getByRole("region", {
-      name: "Timed events grid",
-    });
-    const timedGridRow = timedGrid.querySelector(
-      "[data-calendar-timed-grid-row='true']",
-    );
-
-    expect(timedGridRow).toBeInstanceOf(HTMLElement);
-
-    fireEvent.mouseDown(timedGridRow!, {
+    fireEvent.mouseDown(getTimedSlot(3), {
       button: 0,
       clientX: 100,
       clientY: 120,
@@ -719,16 +681,10 @@ describe("DayCalendarGrid", () => {
   it("keeps the timed draft form open for the opening click after a drag create", async () => {
     renderDayCalendarGrid();
 
-    const timedGrid = screen.getByRole("region", {
-      name: "Timed events grid",
-    });
-    const timedGridRow = timedGrid.querySelector(
-      "[data-calendar-timed-grid-row='true']",
-    );
+    const timedGrid = getTimedGrid();
+    const timedSlot = getTimedSlot(3);
 
-    expect(timedGridRow).toBeInstanceOf(HTMLElement);
-
-    fireEvent.mouseDown(timedGridRow!, {
+    fireEvent.mouseDown(timedSlot, {
       button: 0,
       clientX: 100,
       clientY: 120,
