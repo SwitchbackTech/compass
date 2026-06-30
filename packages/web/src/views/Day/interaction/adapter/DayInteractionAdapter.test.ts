@@ -389,6 +389,39 @@ describe("DayInteractionAdapter", () => {
     expect(timeLabel?.textContent).not.toBe("");
   });
 
+  it("uses the latest timed grid scroll position when it changes before timed drag commit", () => {
+    const result: { current?: DayTimedDragCommitResult } = {};
+    const { child } = registerEvent(timedEvent, "timed");
+    const { adapter, flushFrame, mainGridElement } = createAdapter({
+      onTimedDrag: (nextResult) => {
+        result.current = nextResult;
+      },
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 160, y: 160 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 160, y: 220 }),
+    );
+    flushFrame();
+
+    mainGridElement.scrollTop = 120;
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 160, y: 220 }),
+    );
+
+    expect(result.current).toMatchObject({
+      event: expect.objectContaining({
+        endDate: expect.stringContaining("13:00"),
+        startDate: expect.stringContaining("12:00"),
+      }),
+      hasMoved: true,
+      type: "timedDragEnd",
+    });
+  });
+
   it("continues timed smart scroll while dragging a saved timed event", () => {
     const result: { current?: DayTimedDragCommitResult } = {};
     const { child } = registerEvent(timedEvent, "timed");

@@ -190,9 +190,21 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     }
 
     const motionSession = session;
+    const finalUpdate = resolvedOptions.adapter.updateVisual({
+      pointer: getPointerPoint(event),
+      target: motionSession.target,
+      timestamp: resolvedOptions.now(),
+      visual: motionSession.visual,
+    });
+
+    if (finalUpdate.overlay) {
+      overlay?.update(finalUpdate.overlay);
+      metrics.styleWritesDuringMotion += 1;
+    }
+
     const result = resolvedOptions.adapter.commit({
       target: motionSession.target,
-      visual: motionSession.visual,
+      visual: finalUpdate.visual,
     });
     teardownActiveSession("commit");
     session = { phase: "idle" };

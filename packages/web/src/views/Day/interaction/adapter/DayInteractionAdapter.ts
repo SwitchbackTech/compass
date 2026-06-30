@@ -414,6 +414,8 @@ export const createDayInteractionAdapter = ({
       return { isScrolling: false, scrollDeltaPx: 0 };
     }
 
+    scrollTop = layout.smartScroll.element.scrollTop;
+
     const frame = getSmartScrollFrame({
       cache: layout.smartScroll,
       pointerY: pointer.y,

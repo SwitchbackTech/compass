@@ -444,6 +444,35 @@ describe("WeekInteractionAdapter timed drag", () => {
     );
   });
 
+  it("uses the latest timed grid scroll position when it changes before timed drag commit", () => {
+    const { adapter, child, flushFrame, mainGrid, onCommitTimedDrag } =
+      createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 320, y: 1120 }),
+    );
+
+    flushFrame();
+
+    mainGrid.scrollTop = 120;
+
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 320, y: 1120 }),
+    );
+
+    expect(onCommitTimedDrag).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          endDate: expect.stringContaining("12:15"),
+          startDate: expect.stringContaining("11:15"),
+        }),
+      }),
+    );
+  });
+
   it("continues timed smart scroll in the RAF loop and feeds scroll delta into commit time", () => {
     const { adapter, child, flushFrame, mainGrid, onCommitTimedDrag } =
       createHarness();

@@ -190,7 +190,9 @@ describe("CalendarInteractionEngine", () => {
       true,
     );
 
-    const result = engine.handlePointerUp(makePointerEvent("pointerup"));
+    const result = engine.handlePointerUp(
+      makePointerEvent("pointerup", { x: 35, y: 45 }),
+    );
 
     expect(result).toEqual({ target, type: "click" });
     expect(commit).not.toHaveBeenCalled();
@@ -299,7 +301,9 @@ describe("CalendarInteractionEngine", () => {
     engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
     flushFrame(16);
 
-    const result = engine.handlePointerUp(makePointerEvent("pointerup"));
+    const result = engine.handlePointerUp(
+      makePointerEvent("pointerup", { x: 35, y: 45 }),
+    );
 
     expect(result).toMatchObject({ type: "commit" });
     expect(commit).toHaveBeenCalledWith(
@@ -320,6 +324,27 @@ describe("CalendarInteractionEngine", () => {
       active: false,
       phase: "commit",
     });
+  });
+
+  it("recomputes the visual from the release pointer before commit", () => {
+    const { commit, engine, flushFrame } = createHarness();
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
+    flushFrame(16);
+
+    engine.handlePointerUp(makePointerEvent("pointerup", { x: 55, y: 65 }));
+
+    expect(commit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        visual: expect.objectContaining({
+          transform: {
+            x: 50,
+            y: 60,
+          },
+        }),
+      }),
+    );
   });
 
   it("cancels cleanly on blur and can be cancelled repeatedly", () => {
