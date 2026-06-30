@@ -159,6 +159,10 @@ const renderCoordinator = () => {
           mainGridElement,
           timedColumnsElement,
         })}
+        onOpenEvent={(event) => {
+          store.dispatch(draftSlice.actions.startGridClick(event));
+          store.dispatch(draftSlice.actions.setFormOpen(true));
+        }}
       >
         <TestTimedEventTarget />
       </DayInteractionCoordinator>

@@ -1,4 +1,4 @@
-import { type OpenChangeReason } from "@floating-ui/react";
+import { type OpenChangeReason, type VirtualElement } from "@floating-ui/react";
 import {
   type MouseEvent as ReactMouseEvent,
   useCallback,
@@ -23,6 +23,7 @@ import {
   assembleDefaultEvent,
   assembleGridEvent,
   type EventWithDates,
+  getCalendarEventElementFromGrid,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
@@ -52,6 +53,31 @@ import {
 import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
 
 const isDayInteractionMotionActive = () => false;
+
+const createEventFormAnchor = (eventId: string): VirtualElement => {
+  const getEventElement = () => getCalendarEventElementFromGrid(eventId);
+
+  return {
+    getBoundingClientRect: () =>
+      getEventElement()?.getBoundingClientRect() ?? new DOMRect(),
+    get contextElement() {
+      return getEventElement() ?? undefined;
+    },
+  };
+};
+
+const isPointInsideElement = (event: MouseEvent, element: Element) => {
+  const rect = element.getBoundingClientRect();
+
+  return (
+    rect.width > 0 &&
+    rect.height > 0 &&
+    event.clientX >= rect.left &&
+    event.clientX <= rect.right &&
+    event.clientY >= rect.top &&
+    event.clientY <= rect.bottom
+  );
+};
 
 export function DayCalendarGrid() {
   const dispatch = useAppDispatch();
@@ -83,21 +109,32 @@ export function DayCalendarGrid() {
     ? Categories_Event.ALLDAY
     : Categories_Event.TIMED;
   const allDayCreationPressTargetRef = useRef<HTMLElement | null>(null);
-  const shouldDismissEventForm = useCallback((event: MouseEvent) => {
-    const allDayCreationPressTarget = allDayCreationPressTargetRef.current;
+  const shouldDismissEventForm = useCallback(
+    (event: MouseEvent) => {
+      const eventElement = draft?._id
+        ? getCalendarEventElementFromGrid(draft._id)
+        : null;
 
-    if (!allDayCreationPressTarget) {
-      return true;
-    }
+      if (eventElement && isPointInsideElement(event, eventElement)) {
+        return false;
+      }
 
-    allDayCreationPressTargetRef.current = null;
+      const allDayCreationPressTarget = allDayCreationPressTargetRef.current;
 
-    const target = event.target;
+      if (!allDayCreationPressTarget) {
+        return true;
+      }
 
-    return !(
-      target instanceof Node && allDayCreationPressTarget.contains(target)
-    );
-  }, []);
+      allDayCreationPressTargetRef.current = null;
+
+      const target = event.target;
+
+      return !(
+        target instanceof Node && allDayCreationPressTarget.contains(target)
+      );
+    },
+    [draft?._id],
+  );
   const handleFormOpenChange = useCallback(
     (open: boolean, _event: Event, reason?: OpenChangeReason) => {
       const dismissed = reason === "escape-key" || reason === "outside-press";
@@ -120,6 +157,8 @@ export function DayCalendarGrid() {
       },
     },
   );
+  const setFormPositionReference = form.refs.setPositionReference;
+  const setFormReference = form.refs.setReference;
 
   const getDayInteractionLayoutSources = useCallback(
     () => ({
@@ -184,13 +223,13 @@ export function DayCalendarGrid() {
         return;
       }
 
-      // The draft renders into the grid and its card attaches the floating
-      // reference (`activeDraftRef`), so the form anchors itself once mounted —
-      // no manual element lookup or timing needed.
+      const eventElement = getCalendarEventElementFromGrid(event._id);
+      setFormReference(eventElement);
+      setFormPositionReference(createEventFormAnchor(event._id));
       dispatch(draftSlice.actions.startGridClick({ ...event, _id: event._id }));
       dispatch(draftSlice.actions.setFormOpen(true));
     },
-    [dispatch],
+    [dispatch, setFormPositionReference, setFormReference],
   );
 
   const getDayEventById = useCallback(
@@ -256,42 +295,27 @@ export function DayCalendarGrid() {
     draft,
     onOpenEvent: openEventFormForEvent,
   });
-  const setFormReference = form.refs.setReference;
   const allDayEventsLayer = useMemo(
     () => (
       <DayCalendarAllDayEventsLayer
-        activeDraftRef={setFormReference}
         draft={draft}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
         visibleDates={visibleDates}
       />
     ),
-    [
-      draft,
-      measurements,
-      openEventFormForEvent,
-      setFormReference,
-      visibleDates,
-    ],
+    [draft, measurements, openEventFormForEvent, visibleDates],
   );
   const timedEventsLayer = useMemo(
     () => (
       <DayCalendarTimedEventsLayer
-        activeDraftRef={setFormReference}
         draft={draft}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
         visibleDates={visibleDates}
       />
     ),
-    [
-      draft,
-      measurements,
-      openEventFormForEvent,
-      setFormReference,
-      visibleDates,
-    ],
+    [draft, measurements, openEventFormForEvent, visibleDates],
   );
 
   return (
@@ -303,6 +327,7 @@ export function DayCalendarGrid() {
       <DayInteractionCoordinator
         dateInView={dateInView}
         getLayoutSources={getDayInteractionLayoutSources}
+        onOpenEvent={openEventFormForEvent}
       >
         <CalendarGrid
           allDayEventsLayer={allDayEventsLayer}

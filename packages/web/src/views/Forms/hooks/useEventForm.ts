@@ -67,10 +67,15 @@ export const useEventForm = (
             case "top": {
               const top =
                 -rects.reference.height / 2 - rects.floating.height / 2;
-              const ref = elements.reference as HTMLDivElement;
-              const isFullWidth = ref.getAttribute(DATA_FULL_WIDTH) === "true";
+              const reference = elements.reference;
+              const referenceElement =
+                reference instanceof Element
+                  ? reference
+                  : reference.contextElement;
+              const isFullWidth =
+                referenceElement?.getAttribute(DATA_FULL_WIDTH) === "true";
               const isOverlapping =
-                ref.getAttribute(DATA_OVERLAPPING) === "true";
+                referenceElement?.getAttribute(DATA_OVERLAPPING) === "true";
 
               if (isFullWidth && isOverlapping) {
                 return top - rects.reference.height / 2;

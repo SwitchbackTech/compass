@@ -29,12 +29,14 @@ import {
 interface Props extends PropsWithChildren {
   dateInView: Dayjs;
   getLayoutSources: () => CalendarLayoutCacheSources;
+  onOpenEvent: (event: Schema_GridEvent) => void;
 }
 
 export const DayInteractionCoordinator: FC<Props> = ({
   children,
   dateInView,
   getLayoutSources,
+  onOpenEvent,
 }) => {
   const dispatch = useAppDispatch();
   const dayEvents = useAppSelector(selectDayEvents);
@@ -82,10 +84,7 @@ export const DayInteractionCoordinator: FC<Props> = ({
       return;
     }
 
-    // The draft's rendered card attaches the floating reference, so opening the
-    // form is just flagging it open — no element lookup required.
-    dispatch(draftSlice.actions.startGridClick({ ...event, _id: event._id }));
-    dispatch(draftSlice.actions.setFormOpen(true));
+    onOpenEvent(event);
   };
 
   const commitSavedMutation = (

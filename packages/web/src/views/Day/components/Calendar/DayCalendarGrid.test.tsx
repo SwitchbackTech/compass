@@ -17,7 +17,9 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import { selectIsEventFormOpen } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { type EventFormProps } from "@web/views/Forms/hooks/useEventForm";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -83,6 +85,7 @@ mock.module("@web/common/calendar-grid/hooks/useCalendarGridLayout", () => ({
 const floatingUi =
   require("@floating-ui/react") as typeof import("@floating-ui/react");
 const useDismissMock = mock(floatingUi.useDismiss);
+let latestEventForm: EventFormProps | null = null;
 
 mock.module("@floating-ui/react", () => ({
   ...floatingUi,
@@ -90,7 +93,10 @@ mock.module("@floating-ui/react", () => ({
 }));
 
 mock.module("@web/components/FloatingEventForm/FloatingEventForm", () => ({
-  FloatingEventForm: () => null,
+  FloatingEventForm: ({ form }: { form: EventFormProps }) => {
+    latestEventForm = form;
+    return null;
+  },
 }));
 
 const { DayCalendarGrid } =
@@ -140,6 +146,7 @@ const setDayEvents = (events: Schema_Event[]) => {
 };
 
 const getDraft = () => store.getState().events.draft.event;
+const getIsFormOpen = () => selectIsEventFormOpen(store.getState());
 
 const resetDraft = () => {
   store.dispatch(draftSlice.actions.discard(undefined));
@@ -161,8 +168,24 @@ const getDismissOptions = () => {
   };
 };
 
+const expectFormAnchoredTo = (card: HTMLElement, cardRect: DOMRect) => {
+  const positionReference = latestEventForm?.refs.reference.current;
+  const domReference = latestEventForm?.refs.domReference.current;
+
+  expect(domReference).toBe(card);
+  expect(positionReference).toBeDefined();
+  expect(positionReference).not.toBeInstanceOf(Element);
+  expect(positionReference?.getBoundingClientRect()).toEqual(cardRect);
+  expect(
+    positionReference && "contextElement" in positionReference
+      ? positionReference.contextElement
+      : undefined,
+  ).toBe(card);
+};
+
 beforeEach(() => {
   store = createStoreWithEvents([]);
+  latestEventForm = null;
   useDismissMock.mockClear();
 });
 
@@ -335,6 +358,66 @@ describe("DayCalendarGrid", () => {
     ).toBe("existing-draft");
   });
 
+  it("anchors the event form through a virtual element that tracks the Day card", async () => {
+    const event = createTimedEvent({
+      _id: "virtual-reference",
+      endDate: "2026-05-20T10:00:00.000",
+      startDate: "2026-05-20T09:00:00.000",
+      title: "Virtual reference",
+    });
+    const cardRect = new DOMRect(20, 40, 160, 60);
+
+    setDayEvents([event]);
+    renderDayCalendarGrid();
+
+    const card = screen.getByRole("button", { name: /virtual reference/i });
+    card.getBoundingClientRect = () => cardRect;
+
+    fireEvent.keyDown(card, { key: "Enter" });
+
+    await waitFor(() => {
+      expect(getDraft()?._id).toBe(event._id);
+    });
+
+    expectFormAnchoredTo(card, cardRect);
+  });
+
+  it("anchors the event form opened by a Day card pointer interaction", async () => {
+    const event = createTimedEvent({
+      _id: "pointer-reference",
+      endDate: "2026-05-20T10:00:00.000",
+      startDate: "2026-05-20T09:00:00.000",
+      title: "Pointer reference",
+    });
+    const cardRect = new DOMRect(20, 40, 160, 60);
+
+    setDayEvents([event]);
+    renderDayCalendarGrid();
+
+    const card = screen.getByRole("button", { name: /pointer reference/i });
+    card.getBoundingClientRect = () => cardRect;
+
+    fireEvent.pointerDown(card, {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+      isPrimary: true,
+      pointerId: 1,
+    });
+    fireEvent.pointerUp(window, {
+      button: 0,
+      clientX: 100,
+      clientY: 120,
+      pointerId: 1,
+    });
+
+    await waitFor(() => {
+      expect(getDraft()?._id).toBe(event._id);
+    });
+
+    expectFormAnchoredTo(card, cardRect);
+  });
+
   it("opens the shared event action menu from a Day timed event right-click", async () => {
     setDayEvents([
       createTimedEvent({
@@ -392,7 +475,7 @@ describe("DayCalendarGrid", () => {
     expect(getDraft()).toBeNull();
   });
 
-  it("dismisses the floating form after empty agenda mouse handlers run", () => {
+  it("dismisses on click after empty agenda handlers run", () => {
     renderDayCalendarGrid();
 
     expect(getDismissOptions()).toEqual(
@@ -404,7 +487,42 @@ describe("DayCalendarGrid", () => {
     );
   });
 
-  it("does not dismiss a new all-day draft from the click that created it", async () => {
+  it("keeps the form open when pointer capture retargets the opening click", async () => {
+    const event = createTimedEvent({
+      _id: "retargeted-opening-click",
+      endDate: "2026-05-20T10:00:00.000",
+      startDate: "2026-05-20T09:00:00.000",
+      title: "Retargeted opening click",
+    });
+
+    setDayEvents([event]);
+    renderDayCalendarGrid();
+
+    const card = screen.getByRole("button", {
+      name: /retargeted opening click/i,
+    });
+    card.getBoundingClientRect = () => new DOMRect(20, 40, 160, 60);
+
+    fireEvent.keyDown(card, { key: "Enter" });
+
+    await waitFor(() => {
+      expect(getDraft()?._id).toBe(event._id);
+    });
+
+    const openingClick = new MouseEvent("click", {
+      bubbles: true,
+      clientX: 100,
+      clientY: 70,
+    });
+    Object.defineProperty(openingClick, "target", {
+      configurable: true,
+      value: screen.getByLabelText("Calendar agenda"),
+    });
+
+    expect(getDismissOptions().outsidePress?.(openingClick)).toBe(false);
+  });
+
+  it("opens the form for a new all-day draft", async () => {
     renderDayCalendarGrid();
 
     const allDayRegion = screen.getByRole("region", { name: "All-day events" });
@@ -417,19 +535,18 @@ describe("DayCalendarGrid", () => {
 
     await waitFor(() => {
       expect(getDraft()?.isAllDay).toBe(true);
+      expect(getIsFormOpen()).toBe(true);
     });
 
     const outsidePress = getDismissOptions().outsidePress;
-    expect(outsidePress).toBeDefined();
-
-    const creationClick = new MouseEvent("click", { bubbles: true });
-    Object.defineProperty(creationClick, "target", {
+    const openingClick = new MouseEvent("click", { bubbles: true });
+    Object.defineProperty(openingClick, "target", {
       configurable: true,
       value: allDayRegion,
     });
 
-    expect(outsidePress?.(creationClick)).toBe(false);
-    expect(outsidePress?.(creationClick)).toBe(true);
+    expect(outsidePress?.(openingClick)).toBe(false);
+    expect(outsidePress?.(openingClick)).toBe(true);
   });
 
   it("dismisses an open draft when clicking empty Day all-day calendar space", () => {
