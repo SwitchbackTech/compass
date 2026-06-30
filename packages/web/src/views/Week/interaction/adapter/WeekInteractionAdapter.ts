@@ -99,6 +99,7 @@ export const createWeekInteractionAdapter = ({
   let isLayoutRebuildPending = false;
   let layout: WeekLayoutCache | null = null;
   let scrollTop: number | null = null;
+  let detachScrollSync: (() => void) | null = null;
 
   const engine: CalendarInteractionEngine<
     WeekInteractionTarget,
@@ -694,11 +695,31 @@ export const createWeekInteractionAdapter = ({
     scrollTop = null;
     resetEdgeNavigation();
     isLayoutRebuildPending = false;
+    detachScrollSync?.();
+    detachScrollSync = null;
   }
 
   function setLayout(nextLayout: WeekLayoutCache) {
     layout = nextLayout;
     scrollTop = nextLayout.smartScroll?.initialScrollTop ?? null;
+
+    detachScrollSync?.();
+    detachScrollSync = null;
+
+    const scrollElement = nextLayout.smartScroll?.element;
+
+    if (scrollElement) {
+      const handleScroll = () => {
+        engine.syncVisual();
+      };
+
+      scrollElement.addEventListener("scroll", handleScroll, {
+        passive: true,
+      });
+      detachScrollSync = () => {
+        scrollElement.removeEventListener("scroll", handleScroll);
+      };
+    }
   }
 
   return {

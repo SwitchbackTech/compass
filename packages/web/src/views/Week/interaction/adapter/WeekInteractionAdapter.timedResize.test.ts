@@ -480,6 +480,32 @@ describe("WeekInteractionAdapter timed resize", () => {
     );
   });
 
+  it("re-syncs the overlay position when the grid scrolls without further pointer movement", () => {
+    const { adapter, endHandle, flushFrame, mainGrid } = createHarness();
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: endHandle, x: 320, y: 1100 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: endHandle, x: 320, y: 1150 }),
+    );
+    flushFrame();
+
+    const overlay = document.body.querySelector(
+      "[data-calendar-interaction-overlay]",
+    ) as HTMLElement | null;
+
+    expect(overlay?.style.transform).toBe("translate3d(0px, 0px, 0)");
+    expect(overlay?.style.height).toBe("150px");
+
+    mainGrid.scrollTop = 100;
+    mainGrid.dispatchEvent(new Event("scroll"));
+    flushFrame();
+
+    expect(overlay?.style.transform).toBe("translate3d(0px, -100px, 0)");
+    expect(overlay?.style.height).toBe("250px");
+  });
+
   it("uses the latest timed grid scroll position when it changes before timed resize commit", () => {
     const { adapter, endHandle, flushFrame, mainGrid, onCommitTimedResize } =
       createHarness();

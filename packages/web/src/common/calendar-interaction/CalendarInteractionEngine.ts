@@ -57,6 +57,7 @@ export interface CalendarInteractionEngine<TTarget, TVisual, TResult> {
     event: PointerEvent,
   ): CalendarInteractionPointerUpResult<TTarget, TResult>;
   ownsPointer(event: Pick<PointerEvent, "pointerId">): boolean;
+  syncVisual(): void;
 }
 
 const defaultOptions = {
@@ -205,6 +206,14 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     session = { phase: "idle" };
 
     return { result, type: "commit" };
+  }
+
+  function syncVisual() {
+    if (session.phase !== "motion") {
+      return;
+    }
+
+    scheduleFrame();
   }
 
   function handlePointerCancel(event: PointerEvent) {
@@ -436,6 +445,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     handlePointerMove,
     handlePointerUp,
     ownsPointer,
+    syncVisual,
   };
 };
 
