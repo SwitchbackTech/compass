@@ -1,4 +1,3 @@
-import { useDismiss, useInteractions } from "@floating-ui/react";
 import {
   type MouseEvent as ReactMouseEvent,
   useCallback,
@@ -13,13 +12,6 @@ import { CALENDAR_TIMED_VISIBLE_HOURS } from "@web/common/calendar-grid/calendar
 import { CalendarGrid } from "@web/common/calendar-grid/components/CalendarGrid";
 import { useCalendarDateCalcs } from "@web/common/calendar-grid/hooks/useCalendarDateCalcs";
 import { useCalendarGridLayout } from "@web/common/calendar-grid/hooks/useCalendarGridLayout";
-import { useFloatingAtCursor } from "@web/common/hooks/useFloatingAtCursor";
-import {
-  CursorItem,
-  closeFloatingAtCursor,
-  nodeIdStore,
-  openFloatingAtCursor,
-} from "@web/common/hooks/useOpenAtCursor";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   CompassDOMEvents,
@@ -30,12 +22,10 @@ import {
   assembleDefaultEvent,
   assembleGridEvent,
   type EventWithDates,
-  getCalendarEventElementFromGrid,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
-import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import {
   selectDayEvents,
@@ -45,15 +35,13 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
-import {
-  type DayInteractionEventType,
-  dayCalendarEventRegistry,
-} from "@web/views/Day/interaction/registry/dayCalendarEventRegistry";
+import { useCalendarEventForm } from "@web/views/Forms/hooks/useCalendarEventForm";
 import { useDayCalendarContextMenu } from "./DayCalendarContextMenu";
 import {
   DayCalendarAllDayEventsLayer,
   DayCalendarTimedEventsLayer,
 } from "./DayCalendarEventLayers";
+import { DayFloatingEventForm } from "./DayFloatingEventForm";
 import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
 
 const isDayInteractionMotionActive = () => false;
@@ -84,13 +72,10 @@ export function DayCalendarGrid() {
   const allDayRowsCount = useAppSelector(selectDayRowCount);
   const draft = useAppSelector(selectDraft);
   const allDayCreationPressTargetRef = useRef<HTMLElement | null>(null);
-  const floating = useFloatingAtCursor((open, _event, reason) => {
-    const dismissed = reason === "escape-key" || reason === "outside-press";
-
-    if (!open && dismissed && nodeIdStore.get() === CursorItem.EventForm) {
-      dispatch(draftSlice.actions.discard(undefined));
-    }
-  });
+  const discardDraft = useCallback(
+    () => dispatch(draftSlice.actions.discard(undefined)),
+    [dispatch],
+  );
   const shouldDismissEventForm = useCallback((event: MouseEvent) => {
     const allDayCreationPressTarget = allDayCreationPressTargetRef.current;
 
@@ -106,12 +91,14 @@ export function DayCalendarGrid() {
       target instanceof Node && allDayCreationPressTarget.contains(target)
     );
   }, []);
-  const dismiss = useDismiss(floating.context, {
-    enabled: true,
+  const eventForm = useCalendarEventForm({
+    onDismiss: discardDraft,
     outsidePress: shouldDismissEventForm,
-    outsidePressEvent: "click",
   });
-  const interactions = useInteractions([dismiss]);
+  const closeEventForm = useCallback(() => {
+    eventForm.closeForm();
+    discardDraft();
+  }, [discardDraft, eventForm.closeForm]);
 
   const getDayInteractionLayoutSources = useCallback(
     () => ({
@@ -177,22 +164,9 @@ export function DayCalendarGrid() {
       }
 
       dispatch(draftSlice.actions.startGridClick({ ...event, _id: event._id }));
-
-      queueMicrotask(() => {
-        const eventType = getDayInteractionEventType(event);
-        const reference =
-          dayCalendarEventRegistry.resolve(event._id!, eventType) ??
-          getCalendarEventElementFromGrid(event._id!);
-
-        if (reference) {
-          openFloatingAtCursor({
-            nodeId: CursorItem.EventForm,
-            reference,
-          });
-        }
-      });
+      eventForm.openForm();
     },
-    [dispatch],
+    [dispatch, eventForm.openForm],
   );
 
   const getDayEventById = useCallback(
@@ -208,12 +182,12 @@ export function DayCalendarGrid() {
     [dayEvents],
   );
 
-  const { anchorElement, contextMenu, handleContextMenu } =
-    useDayCalendarContextMenu({
-      floating,
-      getDayEventById,
-      onOpenEvent: openEventFormForEvent,
-    });
+  const { contextMenu, handleContextMenu } = useDayCalendarContextMenu({
+    getDayEventById,
+    onCloseEventForm: closeEventForm,
+    onOpenEvent: openEventFormForEvent,
+    onOpenForm: eventForm.openForm,
+  });
 
   const onAllDayMouseDown = useCallback(
     async (event: ReactMouseEvent<HTMLElement>) => {
@@ -225,8 +199,7 @@ export function DayCalendarGrid() {
 
       if (draft) {
         allDayCreationPressTargetRef.current = null;
-        dispatch(draftSlice.actions.discard(undefined));
-        closeFloatingAtCursor();
+        closeEventForm();
         return;
       }
 
@@ -249,7 +222,7 @@ export function DayCalendarGrid() {
     [
       dateCalcs,
       dateInView,
-      dispatch,
+      closeEventForm,
       draft,
       openEventFormForEvent,
       visibleDates,
@@ -257,6 +230,7 @@ export function DayCalendarGrid() {
   );
 
   const { startTimedDraftCreation } = useDayTimedDraftCreation({
+    closeForm: eventForm.closeForm,
     dateCalcs,
     draft,
     onOpenEvent: openEventFormForEvent,
@@ -265,23 +239,37 @@ export function DayCalendarGrid() {
     () => (
       <DayCalendarAllDayEventsLayer
         draft={draft}
+        eventFormReference={eventForm.refs.setReference}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
         visibleDates={visibleDates}
       />
     ),
-    [draft, measurements, openEventFormForEvent, visibleDates],
+    [
+      draft,
+      eventForm.refs.setReference,
+      measurements,
+      openEventFormForEvent,
+      visibleDates,
+    ],
   );
   const timedEventsLayer = useMemo(
     () => (
       <DayCalendarTimedEventsLayer
         draft={draft}
+        eventFormReference={eventForm.refs.setReference}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
         visibleDates={visibleDates}
       />
     ),
-    [draft, measurements, openEventFormForEvent, visibleDates],
+    [
+      draft,
+      eventForm.refs.setReference,
+      measurements,
+      openEventFormForEvent,
+      visibleDates,
+    ],
   );
 
   return (
@@ -290,10 +278,12 @@ export function DayCalendarGrid() {
       className="flex h-full min-w-xs flex-1 flex-col bg-bg-primary px-0.5 pb-0.5"
       onContextMenu={handleContextMenu}
     >
-      {anchorElement}
       <DayInteractionCoordinator
         dateInView={dateInView}
         getLayoutSources={getDayInteractionLayoutSources}
+        isFormOpen={eventForm.isOpen}
+        onCloseForm={eventForm.closeForm}
+        onOpenEvent={openEventFormForEvent}
       >
         <CalendarGrid
           allDayEventsLayer={allDayEventsLayer}
@@ -307,11 +297,7 @@ export function DayCalendarGrid() {
         />
       </DayInteractionCoordinator>
       {contextMenu}
-      <FloatingEventForm floating={floating} interactions={interactions} />
+      <DayFloatingEventForm controller={eventForm} onClose={closeEventForm} />
     </section>
   );
 }
-
-const getDayInteractionEventType = (
-  event: Schema_GridEvent,
-): DayInteractionEventType => (event.isAllDay ? "all-day" : "timed");

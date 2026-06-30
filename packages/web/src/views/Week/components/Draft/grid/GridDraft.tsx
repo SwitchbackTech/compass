@@ -1,4 +1,3 @@
-import { FloatingFocusManager } from "@floating-ui/react";
 import { type FC, type MouseEvent, useRef } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
@@ -6,8 +5,7 @@ import { type CalendarTimedDeckLayout } from "@web/common/calendar-grid/layout/c
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getEventDragOffset } from "@web/common/utils/event/event.util";
-import { EventForm } from "@web/views/Forms/EventForm/EventForm";
-import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
+import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
@@ -35,9 +33,7 @@ export const GridDraft: FC<Props> = ({
   const { discard, duplicateEvent, repositionDraftByKeyboard, startDragging } =
     actions;
   const { setDraft, setDateBeingChanged, setIsResizing } = setters;
-  const { draft, isDragging, formProps, isFormOpen, isResizing } = state;
-  const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
-    formProps;
+  const { draft, form, isDragging, isResizing } = state;
 
   const onConvert = () => {
     const start = weekProps.component.startOfView.format(YEAR_MONTH_DAY_FORMAT);
@@ -106,9 +102,9 @@ export const GridDraft: FC<Props> = ({
             setDateBeingChanged(dateToChange);
             setIsResizing(true);
           }}
-          ref={refs.setReference}
+          ref={form.refs.setReference}
           startOfView={weekProps.component.startOfView}
-          {...getReferenceProps()}
+          {...form.getReferenceProps()}
         />
       ) : (
         <GridEvent
@@ -133,50 +129,33 @@ export const GridDraft: FC<Props> = ({
             setDateBeingChanged(dateToChange);
             setIsResizing(true);
           }}
-          ref={refs.setReference}
+          ref={form.refs.setReference}
           weekProps={weekProps}
-          {...getReferenceProps()}
+          {...form.getReferenceProps()}
         />
       )}
 
-      {isFormOpen && (
-        <FloatingFocusManager
-          context={context}
-          modal={false}
-          closeOnFocusOut={false}
-        >
-          <FloatingFormContainer
-            ref={refs.setFloating}
-            strategy={strategy}
-            top={y ?? 0}
-            left={x ?? 0}
-            {...getFloatingProps()}
-          >
-            <EventForm
-              event={draft as Schema_Event}
-              onClose={discard}
-              onConvert={onConvert}
-              onDelete={onDelete}
-              onDuplicate={duplicateEvent}
-              onDraftTitleArrowKey={repositionDraftByKeyboard}
-              isDraft={!draft._id}
-              isExistingEvent={!!draft._id}
-              onSubmit={(event) => {
-                if (event) void onSubmit(event as Schema_GridEvent);
-              }}
-              setEvent={(nextEvent) => {
-                const event =
-                  typeof nextEvent === "function"
-                    ? nextEvent(draft)
-                    : nextEvent;
-                setDraft(event as Schema_GridEvent | null);
-              }}
-              titleEditingResetKey={state.draftSessionKey}
-              titleInputRef={titleInputRef}
-            />
-          </FloatingFormContainer>
-        </FloatingFocusManager>
-      )}
+      <FloatingEventForm
+        controller={form}
+        event={draft as Schema_Event}
+        onClose={discard}
+        onConvert={onConvert}
+        onDelete={onDelete}
+        onDuplicate={duplicateEvent}
+        onDraftTitleArrowKey={repositionDraftByKeyboard}
+        isDraft={!draft._id}
+        isExistingEvent={!!draft._id}
+        onSubmit={(event) => {
+          if (event) void onSubmit(event as Schema_GridEvent);
+        }}
+        setEvent={(nextEvent) => {
+          const event =
+            typeof nextEvent === "function" ? nextEvent(draft) : nextEvent;
+          setDraft(event as Schema_GridEvent | null);
+        }}
+        titleEditingResetKey={state.draftSessionKey}
+        titleInputRef={titleInputRef}
+      />
     </>
   );
 };

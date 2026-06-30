@@ -10,16 +10,9 @@ import { Provider } from "react-redux";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import {
-  CursorItem,
-  closeFloatingAtCursor,
-  isOpenAtCursor,
-  setFloatingNodeIdAtCursor,
-  setFloatingOpenAtCursor,
-  setFloatingReferenceAtCursor,
-} from "@web/common/hooks/useOpenAtCursor";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import { DayInteractionCoordinator } from "./DayInteractionCoordinator";
 import { dayCalendarEventRegistry } from "./registry/dayCalendarEventRegistry";
@@ -129,13 +122,7 @@ const installFrameScheduler = () => {
   return { flushFrame };
 };
 
-const openFloatingForm = (reference: HTMLElement) => {
-  setFloatingNodeIdAtCursor(CursorItem.EventForm);
-  setFloatingReferenceAtCursor(reference);
-  setFloatingOpenAtCursor(true);
-};
-
-const renderCoordinator = () => {
+const renderCoordinator = (isFormOpen = false) => {
   const allDayColumnsElement = elementWithRect(0, 0, 320, 40);
   const mainGridElement = elementWithRect(0, 40, 320, 780);
   const timedColumnsElement = elementWithRect(0, 40, 320, 780);
@@ -146,6 +133,10 @@ const renderCoordinator = () => {
   );
 
   store.dispatch = dispatch as typeof store.dispatch;
+  const onCloseForm = mock();
+  const onOpenEvent = mock((event: Schema_GridEvent) => {
+    store.dispatch(draftSlice.actions.startGridClick(event));
+  });
   Object.defineProperty(mainGridElement, "clientHeight", { value: 780 });
   Object.defineProperty(mainGridElement, "scrollHeight", { value: 1560 });
 
@@ -158,13 +149,16 @@ const renderCoordinator = () => {
           mainGridElement,
           timedColumnsElement,
         })}
+        isFormOpen={isFormOpen}
+        onCloseForm={onCloseForm}
+        onOpenEvent={onOpenEvent}
       >
         <TestTimedEventTarget />
       </DayInteractionCoordinator>
     </Provider>,
   );
 
-  return { dispatch, store };
+  return { dispatch, onCloseForm, onOpenEvent, store };
 };
 
 beforeEach(() => {
@@ -173,7 +167,6 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  closeFloatingAtCursor();
   dayCalendarEventRegistry.clear();
   document.body.innerHTML = "";
   globalThis.requestAnimationFrame = originalRequestAnimationFrame;
@@ -182,12 +175,10 @@ afterEach(() => {
 
 describe("DayInteractionCoordinator", () => {
   it("closes an open Day event form when saved-event motion activates", () => {
-    renderCoordinator();
+    const { onCloseForm } = renderCoordinator(true);
 
-    const source = screen.getByTestId("timed-source");
     const child = screen.getByTestId("timed-child");
 
-    openFloatingForm(source);
     fireEvent.pointerDown(child, {
       button: 0,
       clientX: 160,
@@ -201,11 +192,11 @@ describe("DayInteractionCoordinator", () => {
       pointerId: 1,
     });
 
-    expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
+    expect(onCloseForm).toHaveBeenCalledTimes(1);
   });
 
   it("saves a moved event without opening a form", async () => {
-    const { dispatch, store } = renderCoordinator();
+    const { dispatch, onOpenEvent, store } = renderCoordinator();
     const child = screen.getByTestId("timed-child");
 
     fireEvent.pointerDown(child, {
@@ -234,12 +225,12 @@ describe("DayInteractionCoordinator", () => {
         ),
       ).toBe(true);
     });
-    expect(isOpenAtCursor(CursorItem.EventForm)).toBe(false);
+    expect(onOpenEvent).not.toHaveBeenCalled();
     expect(store.getState().events.draft.event).toBeNull();
   });
 
   it("opens the event form when pointer interaction does not move the event", async () => {
-    const { store } = renderCoordinator();
+    const { onOpenEvent, store } = renderCoordinator();
     const child = screen.getByTestId("timed-child");
 
     fireEvent.pointerDown(child, {
@@ -256,7 +247,7 @@ describe("DayInteractionCoordinator", () => {
     });
 
     await waitFor(() => {
-      expect(isOpenAtCursor(CursorItem.EventForm)).toBe(true);
+      expect(onOpenEvent).toHaveBeenCalledWith(timedEvent);
     });
     expect(store.getState().events.draft.event?._id).toBe(timedEvent._id);
   });

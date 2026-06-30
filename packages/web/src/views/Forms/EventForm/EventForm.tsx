@@ -285,8 +285,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
 
     const onDuplicateEvent = useCallback(() => {
       onDuplicate?.(event);
-      onClose();
-    }, [onDuplicate, onClose, event]);
+    }, [onDuplicate, event]);
 
     const handleIgnoredKeys = (e: KeyboardEvent) => {
       // Ignores certain keys and key combinations to prevent default behavior.

@@ -1,12 +1,8 @@
 import type React from "react";
-import { Categories_Event } from "@core/types/event.types";
-import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { useDraftActions } from "../hooks/actions/useDraftActions";
 import { useDraftConfirmation } from "../hooks/state/useDraftConfirmation";
-import { useDraftForm } from "../hooks/state/useDraftForm";
 import { useDraftState } from "../hooks/state/useDraftState";
 import { DraftContext, type State_Draft } from "./DraftContext";
 
@@ -22,24 +18,10 @@ export const DraftProvider = ({
 }: DraftProviderProps) => {
   const { state: originalState, setters } = useDraftState();
   const actions = useDraftActions(originalState, setters, dateCalcs, weekProps);
-  const { discard, reset } = actions;
-  const { isFormOpen } = originalState;
-  const { setIsFormOpen } = setters;
-
-  const _category = useAppSelector(selectDraftCategory);
-  const category = _category || Categories_Event.TIMED;
-
-  const formProps = useDraftForm(
-    category,
-    isFormOpen,
-    discard,
-    reset,
-    setIsFormOpen,
-  );
 
   const state: State_Draft = {
     ...originalState,
-    formProps,
+    form: actions.form,
   };
 
   const confirmation = useDraftConfirmation({ actions, state });

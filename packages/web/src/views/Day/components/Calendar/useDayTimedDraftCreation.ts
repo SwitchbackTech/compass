@@ -11,7 +11,6 @@ import {
   hasExceededCalendarInteractionMoveThreshold,
   isEligibleCalendarInteractionPointerDown,
 } from "@web/common/calendar-interaction/calendarInteractionPointer";
-import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   addId,
@@ -27,10 +26,12 @@ interface TimedDraftCreationGesture {
 }
 
 export const useDayTimedDraftCreation = ({
+  closeForm,
   dateCalcs,
   draft,
   onOpenEvent,
 }: {
+  closeForm: () => void;
   dateCalcs: CalendarDateCalcs;
   draft: Schema_Event | null;
   onOpenEvent: (event: Schema_GridEvent) => void;
@@ -64,7 +65,7 @@ export const useDayTimedDraftCreation = ({
 
       if (draft) {
         dispatch(draftSlice.actions.discard(undefined));
-        closeFloatingAtCursor();
+        closeForm();
         return;
       }
 
@@ -208,7 +209,7 @@ export const useDayTimedDraftCreation = ({
       window.addEventListener("blur", handleWindowBlur);
       timedDraftCreationGestureRef.current = { cancel };
     },
-    [dateCalcs, dispatch, draft, onOpenEvent],
+    [closeForm, dateCalcs, dispatch, draft, onOpenEvent],
   );
 
   return {

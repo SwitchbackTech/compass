@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
-import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -13,7 +12,7 @@ import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
  *
  * **important** use within Day View for now
  */
-export function useDeleteEvent(_id: string) {
+export function useDeleteEvent(_id: string, onDelete?: () => void) {
   const dispatch = useAppDispatch();
   const existingEvent = useAppSelector((state) =>
     _id ? selectEventById(state, _id) : null,
@@ -43,10 +42,10 @@ export function useDeleteEvent(_id: string) {
         }
 
         dispatch(draftSlice.actions.discard(undefined));
-        closeFloatingAtCursor();
+        onDelete?.();
       }
     },
-    [dispatch, draft, existingEvent],
+    [dispatch, draft, existingEvent, onDelete],
   );
 
   return deleteEvent;

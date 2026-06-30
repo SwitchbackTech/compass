@@ -1,4 +1,5 @@
 import { createContext } from "react";
+import { type CalendarEventFormController } from "@web/views/Forms/hooks/useCalendarEventForm";
 import { type Actions_Draft } from "../hooks/actions/useDraftActions";
 import { type useDraftConfirmation } from "../hooks/state/useDraftConfirmation";
 import { type useDraftForm } from "../hooks/state/useDraftForm";
@@ -10,7 +11,7 @@ import {
 export type Props_DraftForm = ReturnType<typeof useDraftForm>;
 
 export interface State_Draft extends State_Draft_Local {
-  formProps: Props_DraftForm;
+  form: CalendarEventFormController;
 }
 interface DraftContextValue {
   state: State_Draft;

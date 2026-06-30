@@ -120,7 +120,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
     isEventPending: (eventId) => pendingEventIdSet.has(eventId),
-    isFormOpen: () => state.isFormOpen,
+    isFormOpen: () => state.form.isOpen,
     onClickAllDayEvent: openAllDayEvent,
     onClickTimedEvent: openTimedEvent,
     onCommitAllDayDrag: commitSavedMutation,

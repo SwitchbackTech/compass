@@ -9,13 +9,11 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
-export function useSaveEventForm() {
+export function useSaveEventForm(closeEventForm: () => void) {
   const dispatch = useAppDispatch();
   const eventEntities = useAppSelector(selectEventEntities);
-  const closeEventForm = useCloseEventForm();
   const updateEvent = useUpdateEvent();
 
   const onCreate = useCallback(

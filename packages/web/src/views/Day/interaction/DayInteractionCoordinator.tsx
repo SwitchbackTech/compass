@@ -2,12 +2,6 @@ import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { type CalendarLayoutCacheSources } from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
-import {
-  CursorItem,
-  closeFloatingAtCursor,
-  isOpenAtCursor,
-  openFloatingAtCursor,
-} from "@web/common/hooks/useOpenAtCursor";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -30,20 +24,22 @@ import {
   type DayTimedDragCommitResult,
   type DayTimedResizeCommitResult,
 } from "./adapter/DayInteractionAdapter";
-import {
-  type DayInteractionEventType,
-  dayCalendarEventRegistry,
-} from "./registry/dayCalendarEventRegistry";
 
 interface Props extends PropsWithChildren {
   dateInView: Dayjs;
   getLayoutSources: () => CalendarLayoutCacheSources;
+  isFormOpen: boolean;
+  onCloseForm: () => void;
+  onOpenEvent: (event: Schema_GridEvent) => void;
 }
 
 export const DayInteractionCoordinator: FC<Props> = ({
   children,
   dateInView,
   getLayoutSources,
+  isFormOpen,
+  onCloseForm,
+  onOpenEvent,
 }) => {
   const dispatch = useAppDispatch();
   const dayEvents = useAppSelector(selectDayEvents);
@@ -83,26 +79,6 @@ export const DayInteractionCoordinator: FC<Props> = ({
 
   layoutSourcesRef.current = getLayoutSources;
 
-  const openDayCalendarEvent = (event: Schema_GridEvent) => {
-    if (!event._id) {
-      return;
-    }
-
-    dispatch(draftSlice.actions.startGridClick({ ...event, _id: event._id }));
-
-    const eventType: DayInteractionEventType = event.isAllDay
-      ? "all-day"
-      : "timed";
-    const reference = dayCalendarEventRegistry.resolve(event._id, eventType);
-
-    if (reference) {
-      openFloatingAtCursor({
-        nodeId: CursorItem.EventForm,
-        reference,
-      });
-    }
-  };
-
   const commitSavedMutation = (
     result:
       | DayAllDayDragCommitResult
@@ -111,11 +87,11 @@ export const DayInteractionCoordinator: FC<Props> = ({
       | DayTimedResizeCommitResult,
   ) => {
     if (!result.hasMoved) {
-      openDayCalendarEvent(result.event);
+      onOpenEvent(result.event);
       return;
     }
 
-    closeFloatingAtCursor();
+    onCloseForm();
     updateEvent({ event: result.event }, true);
     dispatch(draftSlice.actions.discard(undefined));
   };
@@ -124,16 +100,16 @@ export const DayInteractionCoordinator: FC<Props> = ({
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
     isEventPending: (eventId) => pendingEventIdSet.has(eventId),
-    isFormOpen: () => isOpenAtCursor(CursorItem.EventForm),
-    onClickAllDayEvent: openDayCalendarEvent,
-    onClickTimedEvent: openDayCalendarEvent,
+    isFormOpen: () => isFormOpen,
+    onClickAllDayEvent: onOpenEvent,
+    onClickTimedEvent: onOpenEvent,
     onCommitAllDayDrag: commitSavedMutation,
     onCommitAllDayResize: commitSavedMutation,
     onCommitTimedDrag: commitSavedMutation,
     onCommitTimedResize: commitSavedMutation,
     onMotionActivation: (target) => {
       if (target.hadFormOpenBeforeInteraction) {
-        closeFloatingAtCursor();
+        onCloseForm();
       }
     },
   };

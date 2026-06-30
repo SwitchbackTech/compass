@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { type Ref, useMemo } from "react";
 import { type Schema_Event } from "@core/types/event.types";
 import { CALENDAR_GRID_MARGIN_LEFT } from "@web/common/calendar-grid/calendarGrid.constants";
 import { createCalendarTimedEventLayout } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
@@ -30,6 +30,7 @@ import {
 
 interface DayEventsProps {
   draft: Schema_Event | null;
+  eventFormReference: Ref<HTMLDivElement>;
   measurements: CalendarGridMeasurements;
   onOpenEvent: (event: Schema_GridEvent) => void;
   visibleDates: CalendarGridVisibleDate[];
@@ -37,6 +38,7 @@ interface DayEventsProps {
 
 export const DayCalendarAllDayEventsLayer = ({
   draft,
+  eventFormReference,
   measurements,
   onOpenEvent,
   visibleDates,
@@ -71,6 +73,7 @@ export const DayCalendarAllDayEventsLayer = ({
       {renderedEvents.map((event) => (
         <DayAllDayCalendarEvent
           event={event}
+          eventFormReference={eventFormReference}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
@@ -86,6 +89,7 @@ export const DayCalendarAllDayEventsLayer = ({
 
 export const DayCalendarTimedEventsLayer = ({
   draft,
+  eventFormReference,
   measurements,
   onOpenEvent,
   visibleDates,
@@ -117,6 +121,7 @@ export const DayCalendarTimedEventsLayer = ({
         <DayTimedCalendarEvent
           deckLayout={deckLayout}
           event={event}
+          eventFormReference={eventFormReference}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}

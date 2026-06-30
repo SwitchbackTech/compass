@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { type PropsWithChildren, type Ref, useState } from "react";
+import { type Ref } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { CALENDAR_DECK_MIN_WIDTH } from "@web/common/calendar-grid/calendarGrid.constants";
@@ -10,33 +10,8 @@ import { DraftContext } from "@web/views/Week/components/Draft/context/DraftCont
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-mock.module("@floating-ui/react", () => ({
-  FloatingFocusManager: ({
-    children,
-    closeOnFocusOut,
-    modal,
-  }: PropsWithChildren<{ closeOnFocusOut?: boolean; modal?: boolean }>) => {
-    const [isMounted, setIsMounted] = useState(true);
-
-    return (
-      <div
-        data-modal={String(modal)}
-        data-testid="grid-draft-focus-manager"
-        onFocusCapture={(event) => {
-          if (closeOnFocusOut === false) return;
-          if (event.target !== event.currentTarget) {
-            setIsMounted(false);
-          }
-        }}
-      >
-        {isMounted ? children : null}
-      </div>
-    );
-  },
-}));
-
-mock.module("@web/views/Forms/EventForm/EventForm", () => ({
-  EventForm: ({
+mock.module("@web/components/FloatingEventForm/FloatingEventForm", () => ({
+  FloatingEventForm: ({
     event: draftEvent,
     onDraftTitleArrowKey,
     onSubmit,
@@ -47,7 +22,7 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
     onSubmit?: (event: Schema_GridEvent) => void;
     titleInputRef?: Ref<HTMLInputElement>;
   }) => (
-    <>
+    <div data-modal="false" data-testid="grid-draft-focus-manager">
       <input
         aria-label="Draft title"
         onKeyDown={(event) => {
@@ -65,7 +40,7 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
       <button type="button" aria-label="Nested action menu item">
         Nested action
       </button>
-    </>
+    </div>
   ),
 }));
 
@@ -100,8 +75,12 @@ const createFormProps = () => {
 
   return {
     context: {},
+    closeForm: mock(),
+    floatingStyles: {},
     getFloatingProps: () => ({}),
     getReferenceProps: () => ({}),
+    isOpen: true,
+    openForm: mock(),
     refs: {
       reference,
       setFloating: mock(),
@@ -109,9 +88,6 @@ const createFormProps = () => {
         reference.current = node;
       },
     },
-    strategy: "fixed",
-    x: 0,
-    y: 0,
   };
 };
 
@@ -145,9 +121,8 @@ const renderGridDraft = ({
     },
     state: {
       draft,
-      formProps: createFormProps(),
+      form: createFormProps(),
       isDragging: false,
-      isFormOpen: true,
       isResizing: false,
     },
   } as never;

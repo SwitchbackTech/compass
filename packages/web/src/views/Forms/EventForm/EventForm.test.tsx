@@ -36,9 +36,18 @@ mock.module(
 );
 
 mock.module("@web/views/Forms/EventForm/EventActionMenu", () => ({
-  EventActionMenu: ({ onDelete }: { onDelete: () => void }) => (
+  EventActionMenu: ({
+    onDelete,
+    onDuplicate,
+  }: {
+    onDelete: () => void;
+    onDuplicate: () => void;
+  }) => (
     <>
       <button type="button">Event actions</button>
+      <button type="button" onClick={onDuplicate}>
+        Duplicate event
+      </button>
       <button type="button" onClick={onDelete}>
         Delete event
       </button>
@@ -162,6 +171,32 @@ describe("EventForm", () => {
       expect(onDuplicate).toHaveBeenCalledTimes(1);
     });
     expect(onDuplicate).toHaveBeenCalledWith(event);
+  });
+
+  it("keeps the form open while its duplicate replaces the active draft", async () => {
+    const onClose = mock();
+    const onDuplicate = mock();
+
+    render(
+      <EventForm
+        event={createEvent()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={onClose}
+        onDelete={mock()}
+        onDuplicate={onDuplicate}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    await userEvent.click(
+      screen.getByRole("button", { name: "Duplicate event" }),
+    );
+
+    expect(onDuplicate).toHaveBeenCalledTimes(1);
+    await new Promise((resolve) => setTimeout(resolve, 5));
+    expect(onClose).not.toHaveBeenCalled();
   });
 
   it("marks the title field as text editing after the user changes it", async () => {

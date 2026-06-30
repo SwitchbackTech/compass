@@ -1,4 +1,5 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useMergeRefs } from "@floating-ui/react";
+import { type Ref, useCallback, useMemo, useRef, useState } from "react";
 import { CalendarAllDayEventCard } from "@web/common/calendar-grid/components/CalendarAllDayEventCard";
 import { CalendarTimedEventCard } from "@web/common/calendar-grid/components/CalendarTimedEventCard";
 import {
@@ -28,6 +29,7 @@ import {
 
 interface DayEventCardProps {
   event: Schema_GridEvent;
+  eventFormReference?: Ref<HTMLDivElement>;
   isActiveDraft: boolean;
   isPending: boolean;
   isPlaceholder: boolean;
@@ -42,6 +44,7 @@ interface DayTimedEventCardProps extends DayEventCardProps {
 
 export const DayAllDayCalendarEvent = ({
   event,
+  eventFormReference,
   isActiveDraft,
   isPending,
   isPlaceholder,
@@ -55,6 +58,10 @@ export const DayAllDayCalendarEvent = ({
     eventType: "all-day",
     isEnabled: isRegistered,
   });
+  const ref = useMergeRefs([
+    registrationRef,
+    isActiveDraft ? eventFormReference : null,
+  ]);
   const interactionAttributes = useMemo(
     () =>
       isRegistered
@@ -93,7 +100,7 @@ export const DayAllDayCalendarEvent = ({
           ? ZIndex.MAX
           : (position.zIndex ?? ZIndex.LAYER_1),
       }}
-      ref={registrationRef}
+      ref={ref}
     />
   );
 };
@@ -101,6 +108,7 @@ export const DayAllDayCalendarEvent = ({
 export const DayTimedCalendarEvent = ({
   deckLayout,
   event,
+  eventFormReference,
   isActiveDraft,
   isPending,
   isPlaceholder,
@@ -116,6 +124,10 @@ export const DayTimedCalendarEvent = ({
     eventType: "timed",
     isEnabled: isRegistered,
   });
+  const ref = useMergeRefs([
+    registrationRef,
+    isActiveDraft ? eventFormReference : null,
+  ]);
   const interactionAttributes = useMemo(
     () =>
       isRegistered
@@ -168,7 +180,7 @@ export const DayTimedCalendarEvent = ({
         clearHoveredDayCalendarEventTarget(mouseEvent.currentTarget);
       }}
       position={{ ...position, zIndex }}
-      ref={registrationRef}
+      ref={ref}
     />
   );
 };

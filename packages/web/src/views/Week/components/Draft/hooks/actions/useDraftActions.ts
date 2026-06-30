@@ -23,6 +23,8 @@ import {
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { isSomedayEventActionMenuOpen } from "@web/common/utils/event/someday.event.util";
+import { isContextMenuOpen } from "@web/common/utils/form/form.util";
 import {
   type Payload_ConvertEvent,
   type Payload_EditEvent,
@@ -44,6 +46,7 @@ import {
 } from "@web/ducks/events/slices/event.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useCalendarEventForm } from "@web/views/Forms/hooks/useCalendarEventForm";
 import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
 import {
@@ -76,6 +79,9 @@ const canRepositionDraftByKeyboard = (activity: string | null | undefined) =>
   activity === "gridClick" ||
   activity === "keyboardEdit";
 
+const shouldDismissForm = () =>
+  !isContextMenuOpen() && !isSomedayEventActionMenuOpen();
+
 export const useDraftActions = (
   draftState: State_Draft_Local,
   setters: Setters_Draft,
@@ -107,7 +113,6 @@ export const useDraftActions = (
     isDragging,
     isResizing,
     resizeStatus,
-    isFormOpen,
     isFormOpenBeforeDragging,
   } = draftState;
 
@@ -119,7 +124,6 @@ export const useDraftActions = (
     setDateBeingChanged,
     setDraft,
     setDraftSessionKey,
-    setIsFormOpen,
     setIsFormOpenBeforeDragging,
   } = setters;
 
@@ -158,20 +162,14 @@ export const useDraftActions = (
     return hasRRule || isInstance();
   }, [reduxDraft?.recurrence?.rule, isInstance]);
 
-  const closeForm = useCallback(() => {
-    setIsFormOpen(false);
-  }, [setIsFormOpen]);
-
-  const reset = useCallback(() => {
+  const resetDraft = useCallback(() => {
     setDraft(null);
     setIsDragging(false);
-    closeForm();
     setIsResizing(false);
     setDragStatus(null);
     setResizeStatus(null);
     setDateBeingChanged(null);
   }, [
-    closeForm,
     setDateBeingChanged,
     setDraft,
     setDragStatus,
@@ -180,13 +178,26 @@ export const useDraftActions = (
     setResizeStatus,
   ]);
 
-  const discard = useCallback(() => {
-    reset();
+  const discardDraft = useCallback(() => {
+    resetDraft();
 
     if (reduxDraft || reduxDraftType) {
       dispatch(draftSlice.actions.discard(undefined));
     }
-  }, [dispatch, reduxDraft, reduxDraftType, reset]);
+  }, [dispatch, reduxDraft, reduxDraftType, resetDraft]);
+  const form = useCalendarEventForm({
+    onDismiss: discardDraft,
+    outsidePress: shouldDismissForm,
+  });
+  const { closeForm, isOpen: isFormOpen, openForm } = form;
+  const reset = useCallback(() => {
+    closeForm();
+    resetDraft();
+  }, [closeForm, resetDraft]);
+  const discard = useCallback(() => {
+    closeForm();
+    discardDraft();
+  }, [closeForm, discardDraft]);
 
   const deleteEvent = useCallback(
     (
@@ -252,10 +263,6 @@ export const useDraftActions = (
     },
     [discard, dispatch, draft, isAtWeeklyLimit, somedayWeekCount, isRecurrence],
   );
-
-  const openForm = useCallback(() => {
-    setIsFormOpen(true);
-  }, [setIsFormOpen]);
 
   const determineSubmitAction = useCallback(
     (draft: Schema_WebEvent) => {
@@ -749,6 +756,7 @@ export const useDraftActions = (
     duplicateEvent,
     discard,
     drag,
+    form,
     openForm,
     repositionDraftByKeyboard,
     reset,
@@ -768,7 +776,14 @@ export const useDraftActions = (
     stopResizing,
   };
 
-  useDraftEffects(draftState, setters, weekProps, isDrafting, handleChange);
+  useDraftEffects(
+    draftState,
+    setters,
+    weekProps,
+    isDrafting,
+    handleChange,
+    closeForm,
+  );
 
   return actions;
 };

@@ -12,12 +12,12 @@ export const useDraftEffects = (
   weekProps: WeekProps,
   isDrafting: boolean,
   handleChange: () => Promise<void>,
+  closeForm: () => void,
 ) => {
   const { draft, isDragging, isResizing, dateBeingChanged } = state;
   const {
     setDraft,
     setIsDragging,
-    setIsFormOpen,
     setIsResizing,
     setResizeStatus,
     setDragStatus,
@@ -42,7 +42,7 @@ export const useDraftEffects = (
 
     setDraft(null);
     setIsDragging(false);
-    setIsFormOpen(false);
+    closeForm();
     setIsResizing(false);
     setDragStatus(null);
     setResizeStatus(null);
@@ -52,16 +52,16 @@ export const useDraftEffects = (
   useEffect(() => {
     if (isResizing) {
       setDateBeingChanged(dateBeingChanged);
-      setIsFormOpen(false);
+      closeForm();
     }
-  }, [dateBeingChanged, isResizing, setDateBeingChanged, setIsFormOpen]);
+  }, [closeForm, dateBeingChanged, isResizing, setDateBeingChanged]);
 
   useEffect(() => {
     const isStaleDraft = !isDrafting;
     if (isStaleDraft) {
       setDraft(null);
       setIsDragging(false);
-      setIsFormOpen(false);
+      closeForm();
       setIsResizing(false);
       setDragStatus(null);
       setResizeStatus(null);
@@ -73,7 +73,7 @@ export const useDraftEffects = (
     setDraft,
     setDragStatus,
     setIsDragging,
-    setIsFormOpen,
+    closeForm,
     setIsResizing,
     setResizeStatus,
   ]);
@@ -84,7 +84,7 @@ export const useDraftEffects = (
 
   useEffect(() => {
     if (isDragging && draft) {
-      setIsFormOpen(false);
+      closeForm();
       const durationMin = dayjs(draft.endDate).diff(draft.startDate, "minutes");
 
       setDragStatus((dragStatus) => ({
@@ -92,5 +92,5 @@ export const useDraftEffects = (
         hasMoved: dragStatus?.hasMoved,
       }));
     }
-  }, [isDragging, setDragStatus, draft?.endDate, draft, setIsFormOpen]);
+  }, [closeForm, isDragging, setDragStatus, draft?.endDate, draft]);
 };

@@ -42,7 +42,6 @@ const createState = (
   draftSessionKey: 0,
   dragStatus: { durationMin: 60, hasMoved: true },
   isDragging: true,
-  isFormOpen: false,
   isFormOpenBeforeDragging: null,
   isResizing: false,
   resizeStatus: null,
@@ -57,7 +56,6 @@ const createSetters = (
   setDraftSessionKey: mock(),
   setDragStatus: mock(),
   setIsDragging: mock(),
-  setIsFormOpen: mock(),
   setIsFormOpenBeforeDragging: mock(),
   setIsResizing: mock(),
   setResizeStatus: mock(),
@@ -77,7 +75,14 @@ describe("useDraftEffects", () => {
     const setters = createSetters({ setDragStatus });
 
     renderHook(() =>
-      useDraftEffects(createState(), setters, weekProps, true, async () => {}),
+      useDraftEffects(
+        createState(),
+        setters,
+        weekProps,
+        true,
+        async () => {},
+        mock(),
+      ),
     );
 
     await waitFor(() => expect(setDragStatus).toHaveBeenCalled());
@@ -91,5 +96,22 @@ describe("useDraftEffects", () => {
         hasMoved: true,
       }),
     ).toEqual({ durationMin: 60, hasMoved: true });
+  });
+
+  it("closes the shared form controller while resizing", async () => {
+    const closeForm = mock();
+
+    renderHook(() =>
+      useDraftEffects(
+        createState({ isResizing: true }),
+        createSetters(),
+        weekProps,
+        true,
+        async () => {},
+        closeForm,
+      ),
+    );
+
+    await waitFor(() => expect(closeForm).toHaveBeenCalled());
   });
 });
