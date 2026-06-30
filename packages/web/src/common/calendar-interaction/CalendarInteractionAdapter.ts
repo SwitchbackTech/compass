@@ -34,6 +34,8 @@ export interface CalendarInteractionAdapter<TTarget, TVisual, TResult> {
     target: TTarget;
     visual: TVisual;
   }): FloatingInteractionOverlayMount;
+  // Must be idempotent for a given pointer: the engine re-invokes this at
+  // pointerup with the same pointer to recompute the visual before commit.
   updateVisual(input: {
     pointer: CalendarInteractionPoint;
     target: TTarget;

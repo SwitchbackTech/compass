@@ -31,9 +31,9 @@ export const createAllDayResizeVisual = ({
   sourceRect,
   startDayIndex,
 }: CreateAllDayResizeVisualInput): AllDayResizeVisual => ({
-  activeEdge: edge,
   endDayIndex,
   eventId,
+  initialEdge: edge,
   initialEndDayIndex: endDayIndex,
   initialStartDayIndex: startDayIndex,
   pointerStart,
@@ -51,7 +51,7 @@ export const updateAllDayResizeVisual = (
   const pointerColumn = getNearestDayColumn(layout.dayColumns, pointer.x);
   const pointerDayIndex = pointerColumn?.index ?? visual.initialStartDayIndex;
   const nextRange =
-    visual.activeEdge === "startDate"
+    visual.initialEdge === "startDate"
       ? resizeFromStart(visual, pointerDayIndex)
       : resizeFromEnd(visual, pointerDayIndex);
   const initialStartColumn = getColumn(
@@ -73,7 +73,6 @@ export const updateAllDayResizeVisual = (
 
   return {
     ...visual,
-    activeEdge: nextRange.activeEdge,
     endDayIndex: nextRange.endDayIndex,
     startDayIndex: nextRange.startDayIndex,
     transform: {
@@ -90,14 +89,12 @@ const resizeFromStart = (
 ) => {
   if (pointerDayIndex <= visual.initialEndDayIndex) {
     return {
-      activeEdge: "startDate" as const,
       endDayIndex: visual.initialEndDayIndex,
       startDayIndex: pointerDayIndex,
     };
   }
 
   return {
-    activeEdge: "endDate" as const,
     endDayIndex: pointerDayIndex,
     startDayIndex: visual.initialEndDayIndex,
   };
@@ -106,14 +103,12 @@ const resizeFromStart = (
 const resizeFromEnd = (visual: AllDayResizeVisual, pointerDayIndex: number) => {
   if (pointerDayIndex >= visual.initialStartDayIndex) {
     return {
-      activeEdge: "endDate" as const,
       endDayIndex: pointerDayIndex,
       startDayIndex: visual.initialStartDayIndex,
     };
   }
 
   return {
-    activeEdge: "startDate" as const,
     endDayIndex: visual.initialStartDayIndex,
     startDayIndex: pointerDayIndex,
   };

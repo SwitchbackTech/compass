@@ -197,11 +197,6 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
       visual: motionSession.visual,
     });
 
-    if (finalUpdate.overlay) {
-      overlay?.update(finalUpdate.overlay);
-      metrics.styleWritesDuringMotion += 1;
-    }
-
     const result = resolvedOptions.adapter.commit({
       target: motionSession.target,
       visual: finalUpdate.visual,
