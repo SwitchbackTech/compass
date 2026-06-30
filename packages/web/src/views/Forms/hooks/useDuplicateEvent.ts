@@ -10,9 +10,6 @@ import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 
-const delay = (ms: number) =>
-  new Promise<void>((resolve) => setTimeout(resolve, ms));
-
 /**
  * useDuplicateEvent
  *
@@ -25,25 +22,26 @@ export function useDuplicateEvent(_id: string) {
   );
   const onClose = useCloseEventForm();
 
-  const duplicateEvent = useCallback(async () => {
+  const duplicateEvent = useCallback(() => {
     if (!event) return;
 
     onClose();
-
-    await delay(10);
 
     const newId = new ObjectId().toString();
     const duplicate = { ...event, _id: newId };
 
     dispatch(draftSlice.actions.startGridClick(duplicate));
 
-    await delay(10);
+    // Wait for the new draft to render into the grid before anchoring the
+    // form to its element. A microtask runs after React flushes the dispatch
+    // above, so the element exists without an arbitrary timeout.
+    queueMicrotask(() => {
+      const reference = getCalendarEventElementFromGrid(newId);
 
-    const reference = getCalendarEventElementFromGrid(newId);
+      if (!reference) return;
 
-    if (!reference) return;
-
-    openFloatingAtCursor({ nodeId: CursorItem.EventForm, reference });
+      openFloatingAtCursor({ nodeId: CursorItem.EventForm, reference });
+    });
   }, [dispatch, event, onClose]);
 
   return duplicateEvent;
