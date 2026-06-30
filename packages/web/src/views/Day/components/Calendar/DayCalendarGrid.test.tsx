@@ -457,6 +457,9 @@ describe("DayCalendarGrid", () => {
     });
 
     expect(screen.queryByRole("dialog", { name: "Event form" })).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: /timed event: untitled event/i }),
+    ).not.toBeInTheDocument();
   });
 
   it("dismisses the event form when pressing outside the calendar", async () => {
@@ -489,40 +492,91 @@ describe("DayCalendarGrid", () => {
   });
 
   it("opens the form for a new all-day draft", async () => {
-    renderDayCalendarGrid();
+    const { user } = renderDayCalendarGrid();
 
-    const allDayRegion = getAllDayRegion();
-
-    fireEvent.mouseDown(allDayRegion, {
-      button: 0,
-      clientX: 100,
-      clientY: 1,
+    await user.pointer({
+      coords: { clientX: 100, clientY: 1 },
+      keys: "[MouseLeft>]",
+      target: getAllDayRegion(),
     });
 
     await waitFor(() => {
-      expect(getDraft()?.isAllDay).toBe(true);
+      expect(
+        screen.getByRole("button", {
+          name: /all-day event: untitled event/i,
+        }),
+      ).toBeVisible();
       expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
     });
+
+    await user.pointer({ keys: "[/MouseLeft]" });
   });
 
-  it("dismisses an open draft when clicking empty Day all-day calendar space", () => {
-    const existingDraft = createTimedEvent({
-      _id: "open-all-day-draft",
+  it("dismisses an open form when pressing empty Day all-day calendar space", async () => {
+    const event = createTimedEvent({
+      _id: "open-from-all-day-grid",
       endDate: "2026-05-20T10:00:00.000",
       startDate: "2026-05-20T09:00:00.000",
-      title: "Open all-day draft",
+      title: "Open from all-day grid",
     });
 
-    setDraftEvent(existingDraft);
-    renderDayCalendarGrid();
+    setDayEvents([event]);
+    const { user } = renderDayCalendarGrid();
+    await user.click(
+      screen.getByRole("button", {
+        name: /timed event: open from all-day grid/i,
+      }),
+    );
+    expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
 
-    fireEvent.mouseDown(getAllDayRegion(), {
-      button: 0,
-      clientX: 100,
-      clientY: 20,
+    await user.pointer([
+      {
+        coords: { clientX: 100, clientY: 20 },
+        keys: "[MouseLeft>]",
+        target: getAllDayRegion(),
+      },
+      {
+        coords: { clientX: 100, clientY: 20 },
+        keys: "[/MouseLeft]",
+        target: getAllDayRegion(),
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Event form" }),
+      ).not.toBeInTheDocument();
     });
+    expect(
+      screen.queryByRole("button", {
+        name: /all-day event: untitled event/i,
+      }),
+    ).not.toBeInTheDocument();
+  });
 
-    expect(getDraft()).toBeNull();
+  it("opens the form for a new timed draft", async () => {
+    const { user } = renderDayCalendarGrid();
+    const emptySlot = getTimedSlot(3);
+
+    await user.pointer([
+      {
+        coords: { clientX: 100, clientY: 120 },
+        keys: "[MouseLeft>]",
+        target: emptySlot,
+      },
+      {
+        coords: { clientX: 100, clientY: 120 },
+        keys: "[/MouseLeft]",
+        target: emptySlot,
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("button", { name: /timed event: untitled event/i }),
+      ).toBeVisible();
+      expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
+    });
   });
 
   it("places a new all-day draft below existing all-day events", async () => {
