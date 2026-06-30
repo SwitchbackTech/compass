@@ -432,6 +432,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       "Mod+D",
       (keyboardEvent) => {
         keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
         onDuplicate?.(event);
       },
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
