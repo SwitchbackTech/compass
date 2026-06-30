@@ -386,9 +386,11 @@ export const createWeekInteractionAdapter = ({
             throw new Error("Mismatched Week interaction target");
           }
 
+          const smartScroll = applySmartScroll(pointer);
           const next = updateTimedResizeInteractionVisual({
             layout,
             pointer,
+            scrollDeltaPx: smartScroll.scrollDeltaPx,
             target,
             visual,
           });
@@ -400,6 +402,7 @@ export const createWeekInteractionAdapter = ({
                 updateCalendarOverlayTimeLabel(node, next.event),
               transform: next.visual.transform,
             },
+            shouldContinue: smartScroll.isScrolling,
             visual: next.visual,
           };
         }

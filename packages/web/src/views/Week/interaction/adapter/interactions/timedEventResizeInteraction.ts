@@ -40,17 +40,20 @@ export const createTimedResizeInteractionVisual = ({
 export const updateTimedResizeInteractionVisual = ({
   layout,
   pointer,
+  scrollDeltaPx,
   target,
   visual,
 }: {
   layout: WeekLayoutCache;
   pointer: VisualPoint;
+  scrollDeltaPx?: number;
   target: WeekTimedResizeTarget;
   visual: TimedResizeVisual;
 }) => {
   const nextVisual = updateTimedResizeVisual(visual, {
     layout,
     pointer,
+    scrollDeltaPx,
   });
 
   return {

@@ -361,9 +361,11 @@ export const createDayInteractionAdapter = ({
             throw new Error("Mismatched Day interaction target");
           }
 
+          const smartScroll = applySmartScroll(pointer);
           const nextVisual = updateTimedResizeVisual(visual, {
             layout,
             pointer,
+            scrollDeltaPx: smartScroll.scrollDeltaPx,
           });
           const nextEvent = timedResizeVisualToDayGridEvent(
             target.event,
@@ -377,6 +379,7 @@ export const createDayInteractionAdapter = ({
               mutate: (node) => updateCalendarOverlayTimeLabel(node, nextEvent),
               transform: nextVisual.transform,
             },
+            shouldContinue: smartScroll.isScrolling,
             visual: nextVisual,
           };
         }

@@ -20,6 +20,7 @@ interface CreateTimedResizeVisualInput {
 interface UpdateTimedResizeVisualInput {
   layout: CalendarLayoutCache;
   pointer: VisualPoint;
+  scrollDeltaPx?: number;
 }
 
 export const createTimedResizeVisual = ({
@@ -46,11 +47,11 @@ export const createTimedResizeVisual = ({
 
 export const updateTimedResizeVisual = (
   visual: TimedResizeVisual,
-  { layout, pointer }: UpdateTimedResizeVisualInput,
+  { layout, pointer, scrollDeltaPx = 0 }: UpdateTimedResizeVisualInput,
 ): TimedResizeVisual => {
   const deltaY = pointer.y - visual.pointerStart.y;
   const deltaMinutes = snapToStep(
-    deltaY / layout.pixelsPerMinute,
+    (deltaY + scrollDeltaPx) / layout.pixelsPerMinute,
     layout.snapMinutes,
   );
   const nextTimes = getNextResizeTimes(
@@ -73,7 +74,8 @@ export const updateTimedResizeVisual = (
       x: 0,
       y:
         (nextTimes.startMinutes - visual.initialStartMinutes) *
-        layout.pixelsPerMinute,
+          layout.pixelsPerMinute -
+        scrollDeltaPx,
     },
   };
 };
