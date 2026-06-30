@@ -108,7 +108,10 @@ export const useEventForm = (
     },
   });
 
-  const dismiss = useDismiss(context, options?.dismiss);
+  const dismiss = useDismiss(context, {
+    outsidePressEvent: "mousedown",
+    ...options?.dismiss,
+  });
   const { getReferenceProps, getFloatingProps } = useInteractions([dismiss]);
 
   return {

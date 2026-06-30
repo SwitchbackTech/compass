@@ -1,4 +1,5 @@
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -423,24 +424,39 @@ describe("DayCalendarGrid", () => {
     expect(screen.queryByText("Delete Event")).not.toBeInTheDocument();
   });
 
-  it("dismisses an open draft when clicking empty Day timed calendar space", () => {
-    const existingDraft = createTimedEvent({
+  it("dismisses an open form when pressing empty Day timed calendar space", async () => {
+    const event = createTimedEvent({
       _id: "open-draft",
       endDate: "2026-05-20T10:00:00.000",
       startDate: "2026-05-20T09:00:00.000",
       title: "Open draft",
     });
 
-    setDraftEvent(existingDraft);
-    renderDayCalendarGrid();
+    setDayEvents([event]);
+    const { user } = renderDayCalendarGrid();
+    await user.click(
+      screen.getByRole("button", { name: /timed event: open draft/i }),
+    );
+    expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
 
-    fireEvent.mouseDown(getTimedSlot(3), {
-      button: 0,
-      clientX: 100,
-      clientY: 120,
+    const emptySlot = getTimedSlot(3);
+    await user.pointer([
+      {
+        coords: { clientX: 100, clientY: 120 },
+        keys: "[MouseLeft>]",
+        target: emptySlot,
+      },
+      {
+        coords: { clientX: 100, clientY: 120 },
+        keys: "[/MouseLeft]",
+        target: emptySlot,
+      },
+    ]);
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
-    expect(getDraft()).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Event form" })).toBeNull();
   });
 
   it("dismisses the event form when pressing outside the calendar", async () => {
