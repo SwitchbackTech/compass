@@ -1,9 +1,8 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { Provider } from "react-redux";
-import { MemoryRouter, useLocation } from "react-router-dom";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { reducers } from "@web/store/reducers";
@@ -15,6 +14,8 @@ const mockOpenLogoutConfirmation = mock();
 const mockUseAuthModal = mock();
 const mockUseLogoutConfirmation = mock();
 const mockUseSession = mock();
+const mockNavigate = mock();
+const mockPathname = { value: "/week" };
 
 const createStore = () =>
   configureStore({
@@ -43,29 +44,26 @@ mock.module(
   }),
 );
 
+// react-router-dom's useNavigate/useLocation are mocked directly (rather than
+// relying on a real MemoryRouter) because Bun's `mock.module` is process-wide:
+// another test file mocking "react-router-dom" can otherwise silently replace
+// `useNavigate` for every file that runs afterward in the same test run.
+const actualReactRouterDom = await import("react-router-dom");
+
+mock.module("react-router-dom", () => ({
+  ...actualReactRouterDom,
+  useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: mockPathname.value }),
+}));
+
 const { useGlobalShortcuts } = await import("./useGlobalShortcuts");
-
-const currentPathname = { value: "" };
-
-function LocationSpy() {
-  currentPathname.value = useLocation().pathname;
-  return null;
-}
 
 function wrapper({ children }: PropsWithChildren) {
   const store = createStore();
 
   return (
     <HotkeysProvider>
-      <Provider store={store}>
-        <MemoryRouter
-          initialEntries={["/week"]}
-          future={{ v7_relativeSplatPath: true, v7_startTransition: true }}
-        >
-          <LocationSpy />
-          {children}
-        </MemoryRouter>
-      </Provider>
+      <Provider store={store}>{children}</Provider>
     </HotkeysProvider>
   );
 }
@@ -79,6 +77,7 @@ describe("useGlobalShortcuts", () => {
     mockUseAuthModal.mockReset();
     mockUseLogoutConfirmation.mockReset();
     mockUseSession.mockReset();
+    mockNavigate.mockClear();
     mockUseAuthModal.mockReturnValue({ openModal: mockOpenModal });
     mockUseLogoutConfirmation.mockReturnValue({
       openLogoutConfirmation: mockOpenLogoutConfirmation,
@@ -87,18 +86,24 @@ describe("useGlobalShortcuts", () => {
       authenticated: true,
       setAuthenticated: mock(),
     });
-    currentPathname.value = "";
+    mockPathname.value = "/week";
   });
 
   it("opens logout confirmation when authenticated users press Z", async () => {
-    renderHook(() => useGlobalShortcuts(), { wrapper });
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
 
-    pressKey("z");
+    act(() => {
+      pressKey("z");
+    });
 
     await waitFor(() => {
       expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);
     });
     expect(mockOpenModal).not.toHaveBeenCalled();
+
+    act(() => {
+      unmount();
+    });
   });
 
   it("opens login when logged-out users press Z", async () => {
@@ -106,66 +111,76 @@ describe("useGlobalShortcuts", () => {
       authenticated: false,
       setAuthenticated: mock(),
     });
-    renderHook(() => useGlobalShortcuts(), { wrapper });
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
 
-    pressKey("z");
+    act(() => {
+      pressKey("z");
+    });
 
     await waitFor(() => {
       expect(mockOpenModal).toHaveBeenCalledWith("login");
     });
     expect(mockOpenLogoutConfirmation).not.toHaveBeenCalled();
+
+    act(() => {
+      unmount();
+    });
   });
 
   it("does not navigate to Day view when a held-Cmd D keyup is replayed after a Mod+D press", async () => {
-    renderHook(() => useGlobalShortcuts(), { wrapper });
-
-    await waitFor(() => {
-      expect(currentPathname.value).toBe("/week");
-    });
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
 
     // Mod+D pressed (e.g. Event Form duplicate shortcut). The test platform
     // resolves "Mod" to Control, so use ctrlKey here to match. Dispatched
     // directly (rather than via the paired `pressKey` helper) so the
     // modifier-swallowed keyup below isn't preceded by an extra, unwanted
     // unmodified keyup.
-    document.dispatchEvent(
-      new KeyboardEvent("keydown", {
-        bubbles: true,
-        cancelable: true,
-        key: "d",
-        ctrlKey: true,
-      }),
-    );
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent("keydown", {
+          bubbles: true,
+          cancelable: true,
+          key: "d",
+          ctrlKey: true,
+        }),
+      );
+    });
 
     // macOS swallows the "d" keyup while the modifier is held, then replays
     // it once the modifier is released — by then the modifier flag is
     // already false, matching the bare "D" Day-view shortcut unless
     // explicitly suppressed.
-    document.dispatchEvent(
-      new KeyboardEvent("keyup", {
-        bubbles: true,
-        cancelable: true,
-        key: "d",
-        ctrlKey: false,
-      }),
-    );
+    act(() => {
+      document.dispatchEvent(
+        new KeyboardEvent("keyup", {
+          bubbles: true,
+          cancelable: true,
+          key: "d",
+          ctrlKey: false,
+        }),
+      );
+    });
 
-    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockNavigate).not.toHaveBeenCalled();
 
-    expect(currentPathname.value).toBe("/week");
+    act(() => {
+      unmount();
+    });
   });
 
   it("still navigates to Day view for a plain D press", async () => {
-    renderHook(() => useGlobalShortcuts(), { wrapper });
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
 
-    await waitFor(() => {
-      expect(currentPathname.value).toBe("/week");
+    act(() => {
+      pressKey("d");
     });
 
-    pressKey("d");
-
     await waitFor(() => {
-      expect(currentPathname.value).toBe("/day");
+      expect(mockNavigate).toHaveBeenCalledWith("/day");
+    });
+
+    act(() => {
+      unmount();
     });
   });
 });

@@ -26,25 +26,15 @@ export function useGlobalShortcuts() {
 
   // macOS swallows the keyup for a letter held with Cmd until Cmd itself is
   // released, then replays it with metaKey already false — which matches the
-  // bare "D" view shortcut below and incorrectly navigates to Day view after
-  // a Cmd+D (duplicate event) press. Suppress that replayed keyup.
-  const suppressDayShortcutRef = useRef(false);
-  const suppressDayShortcutTimeoutRef = useRef<ReturnType<
-    typeof setTimeout
-  > | null>(null);
+  // bare "D" view shortcut below and incorrectly navigates to Day view right
+  // after a Cmd+D (duplicate event) press. Ignore the Day shortcut for a
+  // short window after Mod+D fires to filter out that replayed keyup.
+  const suppressDayShortcutUntilRef = useRef(0);
 
   useAppHotkey(
     "Mod+D",
     () => {
-      suppressDayShortcutRef.current = true;
-
-      if (suppressDayShortcutTimeoutRef.current) {
-        clearTimeout(suppressDayShortcutTimeoutRef.current);
-      }
-
-      suppressDayShortcutTimeoutRef.current = setTimeout(() => {
-        suppressDayShortcutRef.current = false;
-      }, 1000);
+      suppressDayShortcutUntilRef.current = Date.now() + 1000;
     },
     {
       ignoreInputs: false,
@@ -55,14 +45,8 @@ export function useGlobalShortcuts() {
   );
 
   useAppHotkeyUp(dayHotkey, () => {
-    if (suppressDayShortcutRef.current) {
-      suppressDayShortcutRef.current = false;
-
-      if (suppressDayShortcutTimeoutRef.current) {
-        clearTimeout(suppressDayShortcutTimeoutRef.current);
-        suppressDayShortcutTimeoutRef.current = null;
-      }
-
+    if (Date.now() < suppressDayShortcutUntilRef.current) {
+      suppressDayShortcutUntilRef.current = 0;
       return;
     }
 
