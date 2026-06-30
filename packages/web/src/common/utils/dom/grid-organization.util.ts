@@ -19,9 +19,7 @@ interface GridData extends Placement {
   order: number;
 }
 
-// Layout map keyed by event id. Mutated by the MutationObserver-driven
-// reorder pass and read by pure helpers below — not observed by React, so
-// plain module state with accessors is the right fit.
+// Layout map keyed by event id
 let gridOrganization: Record<string, GridData> = {};
 
 export function getGridOrganization(): Record<string, GridData> {

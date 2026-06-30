@@ -1,22 +1,13 @@
 /**
- * createExternalStore
  *
  * Minimal mutable value container designed for React's `useSyncExternalStore`.
  * Read it imperatively with `get()`, update it with `set()`, and observe it via
  * `subscribe()` (which returns an unsubscribe function).
  *
- * Behavioral notes (these replace what rxjs operators used to provide):
- * - `set` no-ops when the next value is `Object.is`-equal to the current one,
- *   so subscribers only fire on real changes (≈ `distinctUntilChanged`). Note
- *   this is reference equality: a store whose value is an object only dedupes
- *   if callers pass a referentially-stable value, not a fresh literal each set.
- * - New subscribers are NOT replayed the current value on subscribe
- *   (≈ `skip(1)` on a `BehaviorSubject`).
- *
  * Usage in a component/hook:
  *   useSyncExternalStore(store.subscribe, store.get)
  */
-export interface ExternalStore<T> {
+interface ExternalStore<T> {
   get: () => T;
   set: (next: T) => void;
   subscribe: (onChange: () => void) => () => void;

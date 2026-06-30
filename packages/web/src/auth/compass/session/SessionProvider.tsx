@@ -110,8 +110,6 @@ export function sessionInit() {
   isSessionInitialized = true;
   void checkIfSessionExists();
 
-  // Dedupe consecutive events that share the same action (was
-  // `distinctUntilKeyChanged("action")`).
   let lastAction: string | undefined;
 
   // No need to unsubscribe as this runs for the lifetime of the app

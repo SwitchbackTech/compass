@@ -23,8 +23,7 @@ export const compassEventEmitter = new EventEmitter2({
   verboseMemoryLeak: true,
 });
 
-// Fire-and-forget bus for pointer movements. Backed by EventEmitter2 (already
-// used elsewhere in the app) rather than a reactive-streams library.
+// Fire-and-forget bus for pointer movements.
 const movementEmitter = new EventEmitter2();
 const MOVEMENT_EVENT = "movement";
 
@@ -40,8 +39,7 @@ export function subscribeDomMovement(
   return () => movementEmitter.off(MOVEMENT_EVENT, listener);
 }
 
-// Internal drag state. Not observed by React, so plain module state with
-// accessors is the simplest fit.
+// Internal drag state. Not observed by React, just plain module state w/ accessors
 let pointerDown = false;
 let selectionStart: DomMovement["selectionStart"] = null;
 
