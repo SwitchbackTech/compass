@@ -1,9 +1,4 @@
-import {
-  FloatingFocusManager,
-  FloatingPortal,
-  type UseInteractionsReturn,
-  type useFloating,
-} from "@floating-ui/react";
+import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { useCallback } from "react";
 import { type Schema_Event } from "@core/types/event.types";
 import {
@@ -12,11 +7,9 @@ import {
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import {
-  CursorItem,
-  useFloatingNodeIdAtCursor,
-  useFloatingOpenAtCursor,
-} from "@web/common/hooks/useOpenAtCursor";
-import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
+  selectDraft,
+  selectIsEventFormOpen,
+} from "@web/ducks/events/selectors/draft.selectors";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -24,20 +17,18 @@ import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
+import { type useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { useSaveEventForm } from "@web/views/Forms/hooks/useSaveEventForm";
 
 export function FloatingEventForm({
-  floating,
-  interactions,
+  form,
 }: {
-  floating: ReturnType<typeof useFloating>;
-  interactions: UseInteractionsReturn;
+  form: ReturnType<typeof useEventForm>;
 }) {
   const dispatch = useAppDispatch();
   const draft = useAppSelector(selectDraft);
+  const isFormOpen = useAppSelector(selectIsEventFormOpen);
   const _id = draft?._id;
-  const nodeId = useFloatingNodeIdAtCursor();
-  const floatingOpenAtCursor = useFloatingOpenAtCursor();
   const onSave = useSaveEventForm();
   const onDelete = useDeleteEvent(draft?._id as string);
   const onDuplicate = useDuplicateEvent(draft?._id as string);
@@ -47,8 +38,7 @@ export function FloatingEventForm({
     maxZIndex + ZIndex.LAYER_1,
     Z_INDEX_FLOATING_FORM,
   );
-  const isOpenAtCursor = nodeId === CursorItem.EventForm;
-  const open = floatingOpenAtCursor && isOpenAtCursor && !!draft;
+  const open = isFormOpen && !!draft;
   const existing = useAppSelector((state) =>
     _id ? Boolean(selectEventById(state, _id)) : false,
   );
@@ -71,16 +61,16 @@ export function FloatingEventForm({
   return (
     <FloatingPortal>
       <FloatingFocusManager
-        context={floating.context}
+        context={form.context}
         closeOnFocusOut={false}
         order={["reference"]}
       >
         <div
-          {...interactions.getFloatingProps()}
-          ref={floating.refs.setFloating}
+          {...form.getFloatingProps()}
+          ref={form.refs.setFloating}
           className="floating-event-form"
           style={{
-            ...floating.context.floatingStyles,
+            ...form.floatingStyles,
             zIndex: formZIndex,
           }}
         >

@@ -23,6 +23,7 @@ const createSidebarState = () => {
       dateToResize: null,
       eventType: null,
       isDrafting: true,
+      isFormOpen: false,
     };
   }
 

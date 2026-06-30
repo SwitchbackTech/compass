@@ -11,6 +11,7 @@ const initialDraft = {
   status: {
     activity: null,
     isDrafting: false,
+    isFormOpen: false,
     eventType: null,
     dateToResize: null,
   },
@@ -27,9 +28,10 @@ export const draftSlice = createSlice({
 
       state.event = event;
       state.status = {
-        ...state.status,
+        ...(state.status ?? initialDraft.status),
         activity,
         isDrafting: true,
+        isFormOpen: false,
         eventType,
       };
     },
@@ -44,6 +46,7 @@ export const draftSlice = createSlice({
           dateToResize: dateToChange,
           eventType: category,
           isDrafting: true,
+          isFormOpen: false,
         },
       };
     },
@@ -53,6 +56,7 @@ export const draftSlice = createSlice({
         ...state.status,
         activity: "dnd",
         isDrafting: true,
+        isFormOpen: false,
       };
     },
     startGridClick: (state, action: PayloadAction<Schema_Event>) => {
@@ -77,7 +81,7 @@ export const draftSlice = createSlice({
       }
 
       state.status = {
-        ...state.status,
+        ...(state.status ?? initialDraft.status),
         activity: state.status?.activity ?? "gridClick",
         eventType: getEventType(event),
         isDrafting: true,
@@ -91,6 +95,13 @@ export const draftSlice = createSlice({
         ...initialDraft.status,
         isDrafting: true,
         eventType: category,
+      };
+    },
+
+    setFormOpen: (state, action: PayloadAction<boolean>) => {
+      state.status = {
+        ...(state.status ?? initialDraft.status),
+        isFormOpen: action.payload,
       };
     },
   },

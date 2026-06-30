@@ -1,3 +1,4 @@
+import { useMergeRefs } from "@floating-ui/react";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { CalendarAllDayEventCard } from "@web/common/calendar-grid/components/CalendarAllDayEventCard";
 import { CalendarTimedEventCard } from "@web/common/calendar-grid/components/CalendarTimedEventCard";
@@ -27,6 +28,12 @@ import {
 } from "@web/views/Day/interaction/targeting/dayCalendarEventTargeting";
 
 interface DayEventCardProps {
+  /**
+   * Floating-ui reference setter for the active draft. Attached to whichever
+   * card represents the current draft so the event form anchors to it (mirrors
+   * the Week view's `ref={refs.setReference}`).
+   */
+  activeDraftRef?: (node: HTMLDivElement | null) => void;
   event: Schema_GridEvent;
   isActiveDraft: boolean;
   isPending: boolean;
@@ -41,6 +48,7 @@ interface DayTimedEventCardProps extends DayEventCardProps {
 }
 
 export const DayAllDayCalendarEvent = ({
+  activeDraftRef,
   event,
   isActiveDraft,
   isPending,
@@ -55,6 +63,11 @@ export const DayAllDayCalendarEvent = ({
     eventType: "all-day",
     isEnabled: isRegistered,
   });
+  const isDraftCard = isActiveDraft || isPlaceholder;
+  const cardRef = useMergeRefs([
+    registrationRef,
+    isDraftCard ? (activeDraftRef ?? null) : null,
+  ]);
   const interactionAttributes = useMemo(
     () =>
       isRegistered
@@ -93,12 +106,13 @@ export const DayAllDayCalendarEvent = ({
           ? ZIndex.MAX
           : (position.zIndex ?? ZIndex.LAYER_1),
       }}
-      ref={registrationRef}
+      ref={cardRef}
     />
   );
 };
 
 export const DayTimedCalendarEvent = ({
+  activeDraftRef,
   deckLayout,
   event,
   isActiveDraft,
@@ -116,6 +130,11 @@ export const DayTimedCalendarEvent = ({
     eventType: "timed",
     isEnabled: isRegistered,
   });
+  const isDraftCard = isActiveDraft || isPlaceholder;
+  const cardRef = useMergeRefs([
+    registrationRef,
+    isDraftCard ? (activeDraftRef ?? null) : null,
+  ]);
   const interactionAttributes = useMemo(
     () =>
       isRegistered
@@ -168,7 +187,7 @@ export const DayTimedCalendarEvent = ({
         clearHoveredDayCalendarEventTarget(mouseEvent.currentTarget);
       }}
       position={{ ...position, zIndex }}
-      ref={registrationRef}
+      ref={cardRef}
     />
   );
 };

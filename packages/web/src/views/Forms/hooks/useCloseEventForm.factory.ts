@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 
 type CloseEventFormDependencies = {
@@ -14,7 +13,6 @@ export function createUseCloseEventForm({
 
     const closeEventForm = useCallback(() => {
       dispatch(draftSlice.actions.discard(undefined));
-      closeFloatingAtCursor();
     }, [dispatch]);
 
     return closeEventForm;

@@ -29,6 +29,7 @@ import {
 } from "./dayCalendarDraft.util";
 
 interface DayEventsProps {
+  activeDraftRef?: (node: HTMLDivElement | null) => void;
   draft: Schema_Event | null;
   measurements: CalendarGridMeasurements;
   onOpenEvent: (event: Schema_GridEvent) => void;
@@ -36,6 +37,7 @@ interface DayEventsProps {
 }
 
 export const DayCalendarAllDayEventsLayer = ({
+  activeDraftRef,
   draft,
   measurements,
   onOpenEvent,
@@ -70,6 +72,7 @@ export const DayCalendarAllDayEventsLayer = ({
     >
       {renderedEvents.map((event) => (
         <DayAllDayCalendarEvent
+          activeDraftRef={activeDraftRef}
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
@@ -85,6 +88,7 @@ export const DayCalendarAllDayEventsLayer = ({
 };
 
 export const DayCalendarTimedEventsLayer = ({
+  activeDraftRef,
   draft,
   measurements,
   onOpenEvent,
@@ -115,6 +119,7 @@ export const DayCalendarTimedEventsLayer = ({
     <div id={ID_GRID_EVENTS_TIMED}>
       {timedEventItems.map(({ deckLayout, event }) => (
         <DayTimedCalendarEvent
+          activeDraftRef={activeDraftRef}
           deckLayout={deckLayout}
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}

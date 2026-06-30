@@ -105,6 +105,7 @@ const createStore = (
           ? Categories_Event.ALLDAY
           : Categories_Event.TIMED,
         isDrafting: true,
+        isFormOpen: false,
       },
     };
   }

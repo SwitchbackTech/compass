@@ -1,15 +1,37 @@
 import {
   autoUpdate,
   flip,
+  hide,
   type OpenChangeReason,
   offset,
+  type Placement,
   shift,
+  type UseDismissProps,
   type UseFloatingOptions,
   useDismiss,
   useFloating,
   useInteractions,
 } from "@floating-ui/react";
 import { Categories_Event } from "@core/types/event.types";
+import {
+  DATA_FULL_WIDTH,
+  DATA_OVERLAPPING,
+} from "@web/common/constants/web.constants";
+import { theme } from "@web/common/styles/theme";
+
+const themeSpacing = parseInt(theme.spacing.xs, 10);
+
+const fallbackPlacements: Placement[] = [
+  "right-start",
+  "bottom-start",
+  "top-start",
+  "left-start",
+];
+
+export interface UseEventFormOptions {
+  /** Options forwarded to floating-ui's `useDismiss`. */
+  dismiss?: UseDismissProps;
+}
 
 export const useEventForm = (
   category: Categories_Event,
@@ -19,8 +41,9 @@ export const useEventForm = (
     event: Event,
     reason?: OpenChangeReason,
   ) => void,
+  options?: UseEventFormOptions,
 ) => {
-  let options: Partial<UseFloatingOptions>;
+  let positioning: Partial<UseFloatingOptions>;
   const isSomeday =
     category === Categories_Event.SOMEDAY_WEEK ||
     category === Categories_Event.SOMEDAY_MONTH;
@@ -28,45 +51,64 @@ export const useEventForm = (
   if (isSomeday) {
     const placement =
       category === Categories_Event.SOMEDAY_WEEK ? "right-start" : "right";
-    options = { strategy: "absolute", placement };
+    positioning = { strategy: "absolute", placement };
   } else {
-    options = {
+    // Shared positioning for grid (Day + Week) event forms. Anchors the form
+    // beside the draft event, flips it clear of viewport edges, and nudges it
+    // off full-width / overlapping events.
+    positioning = {
       strategy: "fixed",
-      middleware: [
-        flip({
-          fallbackPlacements: [
-            "right-start",
-            "right",
-            "left-start",
-            "left",
-            "top-start",
-            "bottom-start",
-            "top",
-            "bottom",
-          ],
-          fallbackStrategy: "bestFit",
-        }),
-        offset(7),
-        shift(),
-      ],
       placement: "right-start",
       whileElementsMounted: autoUpdate,
+      middleware: [
+        offset(({ rects, placement, elements }) => {
+          switch (placement) {
+            case "bottom":
+            case "top": {
+              const top =
+                -rects.reference.height / 2 - rects.floating.height / 2;
+              const ref = elements.reference as HTMLDivElement;
+              const isFullWidth = ref.getAttribute(DATA_FULL_WIDTH) === "true";
+              const isOverlapping =
+                ref.getAttribute(DATA_OVERLAPPING) === "true";
+
+              if (isFullWidth && isOverlapping) {
+                return top - rects.reference.height / 2;
+              }
+
+              return top;
+            }
+            default:
+              return themeSpacing;
+          }
+        }),
+        flip(({ placement }) => ({
+          fallbackPlacements: fallbackPlacements.filter((p) => p !== placement),
+          fallbackStrategy: "bestFit",
+          fallbackAxisSideDirection: "start",
+          crossAxis: placement.includes("-"),
+        })),
+        shift(),
+        hide({ strategy: "referenceHidden" }),
+        hide({ strategy: "escaped" }),
+      ],
     };
   }
 
-  const { context, x, y, refs, strategy } = useFloating({
-    ...options,
+  const { context, floatingStyles, x, y, refs, strategy } = useFloating({
+    ...positioning,
     open: isOpen,
     onOpenChange(newIsOpen: boolean, event: Event, reason?: OpenChangeReason) {
       onIsFormOpenChange(newIsOpen, event, reason);
     },
   });
 
-  const dismiss = useDismiss(context);
+  const dismiss = useDismiss(context, options?.dismiss);
   const { getReferenceProps, getFloatingProps } = useInteractions([dismiss]);
 
   return {
     context,
+    floatingStyles,
     getFloatingProps,
     getReferenceProps,
     refs,

@@ -11,7 +11,6 @@ import {
   hasExceededCalendarInteractionMoveThreshold,
   isEligibleCalendarInteractionPointerDown,
 } from "@web/common/calendar-interaction/calendarInteractionPointer";
-import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   addId,
@@ -64,7 +63,6 @@ export const useDayTimedDraftCreation = ({
 
       if (draft) {
         dispatch(draftSlice.actions.discard(undefined));
-        closeFloatingAtCursor();
         return;
       }
 

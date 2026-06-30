@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
-import { closeFloatingAtCursor } from "@web/common/hooks/useOpenAtCursor";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -43,7 +42,6 @@ export function useDeleteEvent(_id: string) {
         }
 
         dispatch(draftSlice.actions.discard(undefined));
-        closeFloatingAtCursor();
       }
     },
     [dispatch, draft, existingEvent],

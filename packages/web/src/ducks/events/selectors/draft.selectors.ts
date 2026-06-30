@@ -15,6 +15,10 @@ export const selectDraftId = (state: RootState) =>
 export const selectDraftStatus = (state: RootState) =>
   state.events.draft.status;
 
+export const selectIsEventFormOpen = (state: RootState) =>
+  Boolean(state.events.draft.status?.isFormOpen) &&
+  state.events.draft.event !== null;
+
 export const selectIsDNDing = (state: RootState) =>
   state.events.draft.status?.activity === "dnd";
 

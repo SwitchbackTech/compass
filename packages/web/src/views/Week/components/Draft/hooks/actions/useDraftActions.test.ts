@@ -115,6 +115,7 @@ const setDraftActivity = (
     dateToResize: null,
     eventType,
     isDrafting: true,
+    isFormOpen: false,
   };
 };
 
@@ -161,6 +162,7 @@ describe("useDraftActions", () => {
         dateToResize: null,
         eventType: Categories_Event.TIMED,
         isDrafting: true,
+        isFormOpen: false,
       },
     };
     currentState.events.getWeekEvents = {
