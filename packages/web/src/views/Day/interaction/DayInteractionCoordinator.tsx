@@ -115,12 +115,9 @@ export const DayInteractionCoordinator: FC<Props> = ({
       return;
     }
 
-    if (result.hadFormOpenBeforeInteraction) {
-      openDayCalendarEvent(result.event);
-      return;
-    }
-
+    closeFloatingAtCursor();
     updateEvent({ event: result.event }, true);
+    dispatch(draftSlice.actions.discard(undefined));
   };
 
   runtimeRef.current = {
