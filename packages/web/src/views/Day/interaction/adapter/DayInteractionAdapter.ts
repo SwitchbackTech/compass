@@ -105,7 +105,6 @@ export const createDayInteractionAdapter = ({
 }: DayInteractionAdapterOptions = {}): DayInteractionAdapter => {
   let layout: CalendarLayoutCache | null = null;
   let scrollTop: number | null = null;
-  let detachScrollSync: (() => void) | null = null;
 
   const engine: CalendarInteractionEngine<
     DayInteractionTarget,
@@ -227,8 +226,6 @@ export const createDayInteractionAdapter = ({
       cancel: () => {
         layout = null;
         scrollTop = null;
-        detachScrollSync?.();
-        detachScrollSync = null;
       },
       commit: ({ target, visual }) => {
         let result: DayInteractionCommitResult;
@@ -254,8 +251,6 @@ export const createDayInteractionAdapter = ({
 
         layout = null;
         scrollTop = null;
-        detachScrollSync?.();
-        detachScrollSync = null;
 
         return result;
       },
@@ -273,25 +268,6 @@ export const createDayInteractionAdapter = ({
 
         layout = nextLayout;
         scrollTop = nextLayout.smartScroll?.initialScrollTop ?? null;
-
-        detachScrollSync?.();
-        detachScrollSync = null;
-
-        const scrollElement = nextLayout.smartScroll?.element;
-
-        if (scrollElement) {
-          const handleScroll = () => {
-            engine.syncVisual();
-          };
-
-          scrollElement.addEventListener("scroll", handleScroll, {
-            passive: true,
-          });
-          detachScrollSync = () => {
-            scrollElement.removeEventListener("scroll", handleScroll);
-          };
-        }
-
         runtime().onMotionActivation?.(target);
 
         if (target.type === "allDayDrag") {

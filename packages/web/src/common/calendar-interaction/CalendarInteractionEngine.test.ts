@@ -46,8 +46,10 @@ const makePointerEvent = (
 const SOURCE_ELEMENT_INTERACTION_ATTRIBUTE = "data-calendar-interaction-source";
 
 const createHarness = ({
+  scrollableAncestor,
   sourceOverlayMode,
 }: {
+  scrollableAncestor?: { clientHeight: number; scrollHeight: number };
   sourceOverlayMode?: SourceElementOverlayMode;
 } = {}) => {
   document.body.innerHTML = "";
@@ -64,7 +66,24 @@ const createHarness = ({
   source.style.visibility = "visible";
   source.style.height = "40px";
   source.style.width = "120px";
-  document.body.append(source);
+
+  let scrollContainer: HTMLDivElement | null = null;
+
+  if (scrollableAncestor) {
+    scrollContainer = document.createElement("div");
+    Object.defineProperty(scrollContainer, "clientHeight", {
+      configurable: true,
+      value: scrollableAncestor.clientHeight,
+    });
+    Object.defineProperty(scrollContainer, "scrollHeight", {
+      configurable: true,
+      value: scrollableAncestor.scrollHeight,
+    });
+    document.body.append(scrollContainer);
+    scrollContainer.append(source);
+  } else {
+    document.body.append(source);
+  }
 
   const target = {
     id: "target-id",
@@ -172,6 +191,7 @@ const createHarness = ({
     fireHoldTimer,
     flushFrame,
     frameCallbacks,
+    scrollContainer,
     source,
     target,
     timerCallbacks,
@@ -403,6 +423,67 @@ describe("CalendarInteractionEngine", () => {
     flushFrame(32);
 
     expect(engine.getMetrics().frameGaps).toEqual([16]);
+  });
+
+  it("re-syncs the visual when the source element's scrollable ancestor scrolls during motion", () => {
+    const { adapter, engine, flushFrame, scrollContainer } = createHarness({
+      scrollableAncestor: { clientHeight: 500, scrollHeight: 1000 },
+    });
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
+    flushFrame(16);
+
+    expect(adapter.updateVisual).toHaveBeenCalledTimes(1);
+
+    scrollContainer?.dispatchEvent(new Event("scroll"));
+    flushFrame(32);
+
+    expect(adapter.updateVisual).toHaveBeenCalledTimes(2);
+    expect(adapter.updateVisual).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pointer: { x: 35, y: 45 } }),
+    );
+  });
+
+  it("ignores scroll events on the scrollable ancestor outside of an active motion session", () => {
+    const { engine, frameCallbacks, scrollContainer } = createHarness({
+      scrollableAncestor: { clientHeight: 500, scrollHeight: 1000 },
+    });
+
+    scrollContainer?.dispatchEvent(new Event("scroll"));
+
+    expect(frameCallbacks.size).toBe(0);
+  });
+
+  it("stops listening to the scrollable ancestor after commit", () => {
+    const { engine, flushFrame, frameCallbacks, scrollContainer } =
+      createHarness({
+        scrollableAncestor: { clientHeight: 500, scrollHeight: 1000 },
+      });
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
+    flushFrame(16);
+    engine.handlePointerUp(makePointerEvent("pointerup", { x: 35, y: 45 }));
+
+    scrollContainer?.dispatchEvent(new Event("scroll"));
+
+    expect(frameCallbacks.size).toBe(0);
+  });
+
+  it("does not treat a non-scrollable ancestor as a scroll sync target", () => {
+    const { engine, flushFrame, frameCallbacks, scrollContainer } =
+      createHarness({
+        scrollableAncestor: { clientHeight: 500, scrollHeight: 500 },
+      });
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
+    flushFrame(16);
+
+    scrollContainer?.dispatchEvent(new Event("scroll"));
+
+    expect(frameCallbacks.size).toBe(0);
   });
 });
 
