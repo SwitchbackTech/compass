@@ -2,7 +2,7 @@
 import { PostHogProvider } from "@web/auth/posthog/posthog-react";
 import { type PropsWithChildren } from "react";
 import { Provider } from "react-redux";
-import { ToastContainer } from "react-toastify";
+import { Slide, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
@@ -56,6 +56,7 @@ export const CompassRequiredProviders = (
                       pauseOnHover
                       theme="dark"
                       limit={1}
+                      transition={Slide}
                     />
                   </LogoutConfirmationProvider>
                 </AuthModalProvider>

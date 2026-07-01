@@ -1,5 +1,4 @@
 import { useCallback } from "react";
-import { toast } from "react-toastify";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import {
   getFocusedTaskId,
@@ -13,7 +12,6 @@ interface KeyboardShortcutsConfig {
   onEditTask?: () => void;
   onCompleteTask?: () => void;
   onDeleteTask?: () => void;
-  onRestoreTask?: () => void;
   onFocusTasks?: () => void;
 
   // Task migration
@@ -39,14 +37,8 @@ interface KeyboardShortcutsConfig {
   // Event management
   onEditEvent?: () => void;
 
-  // Event undo
-  onRestoreEvent?: () => void;
-
   // Conditions
-  isEditingTask?: boolean;
   hasFocusedTask?: boolean;
-  undoToastId?: string | number | null;
-  eventUndoToastId?: string | number | null;
 }
 
 /**
@@ -58,8 +50,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onEditTask,
     onCompleteTask,
     onDeleteTask,
-    onRestoreTask,
-    onRestoreEvent,
     onMigrateTask,
     onEscape,
     onFocusTasks,
@@ -69,10 +59,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onFocusCalendar,
     onEditEvent,
     onToggleSidebar,
-    isEditingTask,
     hasFocusedTask,
-    undoToastId,
-    eventUndoToastId,
   } = config;
 
   const handleDeleteTask = useCallback(() => {
@@ -82,7 +69,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   }, [onDeleteTask]);
 
   const handleEnterKey = useCallback(() => {
-    if (hasFocusedTask && !isEditingTask) {
+    if (hasFocusedTask) {
       const activeElement = document.activeElement as HTMLElement | null;
       const isTaskButton =
         activeElement?.getAttribute("role") === "checkbox" &&
@@ -91,7 +78,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
       // Let the task button handle Enter if it's focused
       if (!isTaskButton) onCompleteTask?.();
     }
-  }, [hasFocusedTask, isEditingTask, onCompleteTask]);
+  }, [hasFocusedTask, onCompleteTask]);
 
   const handleMigrationNavigation = useCallback(
     (direction: "forward" | "backward") => () => {
@@ -104,16 +91,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     },
     [onMigrateTask],
   );
-
-  const handleRestore = useCallback(() => {
-    if (eventUndoToastId && onRestoreEvent) {
-      onRestoreEvent();
-      toast.dismiss(eventUndoToastId);
-    } else if (undoToastId && onRestoreTask) {
-      onRestoreTask();
-      toast.dismiss(undoToastId);
-    }
-  }, [onRestoreTask, onRestoreEvent, undoToastId, eventUndoToastId]);
 
   useAppHotkeyUp("J", () => {
     onPrevDay?.();
@@ -150,9 +127,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   useAppHotkeyUp("Backspace", handleDeleteTask);
 
   useAppHotkeyUp("Enter", handleEnterKey);
-
-  useAppHotkeyUp("Mod+Z", handleRestore);
-  useAppHotkeyUp("Mod+Shift+Z", handleRestore);
 
   useAppHotkey(
     "Escape",

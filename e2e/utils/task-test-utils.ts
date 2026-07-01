@@ -72,13 +72,8 @@ export const deleteTaskWithKeyboard = async (page: Page, title: string) => {
   await page.keyboard.press("Delete");
 };
 
-export const restoreDeletedTaskFromUndoToast = async (page: Page) => {
-  const undoDeleteToast = page
-    .getByRole("button", { name: /deleted/i })
-    .first();
-
-  await expect(undoDeleteToast).toBeVisible();
-  await undoDeleteToast.click();
+export const expectDeleteToastVisible = async (page: Page) => {
+  await expect(page.getByText("Deleted", { exact: true })).toBeVisible();
 };
 
 export const expectTaskSavedToIndexedDB = async (page: Page, title: string) => {

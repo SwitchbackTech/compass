@@ -1,7 +1,7 @@
 import type React from "react";
 import { createContext } from "react";
 import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
-import { type Task, type UndoOperation } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useTaskActions } from "@web/views/Day/hooks/tasks/useTaskActions";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
@@ -15,11 +15,8 @@ interface TaskContextValue {
   isAddingTask: boolean;
   isCancellingEdit: boolean;
   selectedTaskIndex: number;
-  undoState: UndoOperation | null;
-  undoToastId: string | number | null;
   addTask: (title: string) => Task;
   deleteTask: (taskId: string) => void;
-  restoreTask: () => void;
   focusOnCheckbox: (taskId: string) => void;
   focusOnInput: (taskId: string) => void;
   onCheckboxKeyDown: (
@@ -52,8 +49,7 @@ interface TaskProviderProps {
 }
 
 export function TaskProvider({ children }: TaskProviderProps) {
-  const { dateInView, navigateToNextDay, navigateToPreviousDay } =
-    useDateNavigation();
+  const { dateInView } = useDateNavigation();
   const state = useTaskState({
     currentDate: dateInView.toDate(),
     taskRepository: localTaskRepository,
@@ -69,13 +65,7 @@ export function TaskProvider({ children }: TaskProviderProps) {
     isCancellingEdit: state.isCancellingEdit,
     isCancellingEditRef: state.isCancellingEditRef,
     setIsCancellingEdit: state.setIsCancellingEdit,
-    undoState: state.undoState,
-    setUndoState: state.setUndoState,
-    undoToastId: state.undoToastId,
-    setUndoToastId: state.setUndoToastId,
     dateInView,
-    navigateToNextDay,
-    navigateToPreviousDay,
   });
 
   const value: TaskContextValue = {
@@ -87,11 +77,8 @@ export function TaskProvider({ children }: TaskProviderProps) {
     selectedTaskIndex: state.selectedTaskIndex,
     isAddingTask: state.isAddingTask,
     isCancellingEdit: state.isCancellingEdit,
-    undoState: state.undoState,
-    undoToastId: state.undoToastId,
     addTask: actions.addTask,
     deleteTask: actions.deleteTask,
-    restoreTask: actions.restoreTask,
     focusOnCheckbox: actions.focusOnCheckbox,
     focusOnInput: actions.focusOnInput,
     onCheckboxKeyDown: actions.onCheckboxKeyDown,
