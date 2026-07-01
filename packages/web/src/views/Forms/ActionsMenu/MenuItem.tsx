@@ -32,20 +32,24 @@ const MenuItem: React.FC<MenuItemProps> = ({
   const itemRef = useRef<HTMLButtonElement | null>(null);
   const indexRef = useRef<number | null>(null);
 
-  // Register with menu context
+  // Register with menu context. Depend on the stable `listRef` object
+  // (not `menuContext` itself, which is a new object every render because
+  // it carries `activeIndex`) so this doesn't tear down and re-register on
+  // every arrow-key press.
+  const listRef = menuContext?.listRef;
   useEffect(() => {
-    if (menuContext && itemRef.current) {
-      const index = menuContext.listRef.current.length;
+    if (listRef && itemRef.current) {
+      const index = listRef.current.length;
       indexRef.current = index;
-      menuContext.listRef.current[index] = itemRef.current;
+      listRef.current[index] = itemRef.current;
 
       return () => {
         if (indexRef.current !== null) {
-          menuContext.listRef.current[indexRef.current] = null;
+          listRef.current[indexRef.current] = null;
         }
       };
     }
-  }, [menuContext]);
+  }, [listRef]);
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>) => {
     // Handle Enter/Space for activation
@@ -83,7 +87,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
       role="menuitem"
       tabIndex={tabIndex}
       type={type}
-      className="flex w-full cursor-pointer items-center gap-2 border-0 bg-[var(--actions-menu-item-bg)] px-2 py-1 text-left text-m text-text-dark outline-none hover:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)] focus-visible:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)]"
+      className="flex w-full cursor-pointer items-center gap-2 border-0 bg-(--actions-menu-item-bg) px-2 py-1 text-left text-m text-text-dark outline-none hover:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)] focus-visible:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)]"
       style={{ backgroundColor: bgColor }}
     >
       {children}

@@ -18,7 +18,6 @@ import {
   createContext,
   type MouseEvent,
   useContext,
-  useEffect,
   useRef,
   useState,
 } from "react";
@@ -89,47 +88,11 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
   const click = useClick(context);
   const dismiss = useDismiss(context);
   const role = useRole(context, { role: "menu" });
-  // Create a dense array for FloatingUI and mapping back to sparse array
-  const denseListRef = useRef<Array<HTMLElement>>([]);
-  const sparseToCompactMap = useRef<Map<number, number>>(new Map());
-  const compactToSparseMap = useRef<Map<number, number>>(new Map());
-
-  // Update dense list and mappings when listRef changes
-  useEffect(() => {
-    const denseArray: HTMLElement[] = [];
-    sparseToCompactMap.current.clear();
-    compactToSparseMap.current.clear();
-
-    listRef.current.forEach((item, sparseIndex) => {
-      if (item !== null) {
-        const compactIndex = denseArray.length;
-        denseArray.push(item);
-        sparseToCompactMap.current.set(sparseIndex, compactIndex);
-        compactToSparseMap.current.set(compactIndex, sparseIndex);
-      }
-    });
-
-    denseListRef.current = denseArray;
-  });
-
-  // Convert sparse activeIndex to compact activeIndex for FloatingUI
-  const compactActiveIndex =
-    activeIndex !== null
-      ? (sparseToCompactMap.current.get(activeIndex) ?? null)
-      : null;
 
   const listNavigation = useListNavigation(context, {
-    listRef: denseListRef,
-    activeIndex: compactActiveIndex,
-    onNavigate: (compactIndex) => {
-      const sparseIndex =
-        compactIndex !== null && compactIndex !== undefined
-          ? (compactToSparseMap.current.get(compactIndex) ?? null)
-          : null;
-      if (sparseIndex !== null) {
-        setActiveIndex(sparseIndex);
-      }
-    },
+    listRef,
+    activeIndex,
+    onNavigate: setActiveIndex,
     focusItemOnHover: false,
     loop: true,
   });
