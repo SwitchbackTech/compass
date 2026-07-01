@@ -7,7 +7,7 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";

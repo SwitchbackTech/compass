@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import {
   createAlldayDraft,
   createTimedDraft,

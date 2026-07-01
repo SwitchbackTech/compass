@@ -3,7 +3,7 @@ import { useRef } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { useLogoutConfirmation } from "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";

@@ -1,5 +1,5 @@
 import { type MutableRefObject, useCallback, useEffect } from "react";
-import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { WEEK_TIMED_VISIBLE_HOURS } from "@web/views/Week/layout.constants";
 

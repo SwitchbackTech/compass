@@ -1,6 +1,6 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { renderHook, waitFor } from "@testing-library/react";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 function dispatchKeyEvent(

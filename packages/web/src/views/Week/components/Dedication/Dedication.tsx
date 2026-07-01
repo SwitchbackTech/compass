@@ -1,7 +1,7 @@
 import { XIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import derekImg from "@web/assets/png/derek.png";
-import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 
 export const Dedication = () => {
   const dialogRef = useRef<HTMLDialogElement>(null);

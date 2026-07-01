@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 
 const TOGGLE_SHORTCUTS_HOTKEY = { key: "?", shift: true } as const;
 const TOGGLE_SHORTCUTS_SLASH_HOTKEY = { key: "/", shift: true } as const;

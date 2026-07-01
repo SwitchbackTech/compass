@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { toast } from "react-toastify";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import {
   getFocusedTaskId,
   isFocusedOnTaskCheckbox,

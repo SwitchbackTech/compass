@@ -3,7 +3,7 @@ import {
   type Direction_Migrate,
   type Schema_Event,
 } from "@core/types/event.types";
-import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
+import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
