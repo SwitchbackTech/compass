@@ -4,6 +4,7 @@ import {
   createMockBaseEvent,
   createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
+import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { DirtyParser } from "./dirty.parser";
 
 describe("WebEventParser", () => {
