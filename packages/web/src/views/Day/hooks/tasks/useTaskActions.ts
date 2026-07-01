@@ -1,13 +1,16 @@
 import type dayjs from "dayjs";
 import { type MutableRefObject, useCallback } from "react";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
+import {
+  TASK_DELETED_TOAST_ID,
+  TASK_MIGRATION_TOAST_ID,
+} from "@web/common/constants/toast.constants";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { type Task } from "@web/common/types/task.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
-import { showDeleteToast } from "@web/views/Day/components/Toasts/DeleteToast/DeleteToast";
-import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
+import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 
 interface UseTaskActionsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
@@ -96,7 +99,7 @@ export function useTaskActions({
     // Remove task from the list
     setTasks((prev) => prev.filter((task) => task._id !== taskId));
 
-    showDeleteToast();
+    showStatusToast(TASK_DELETED_TOAST_ID, "Deleted");
   };
 
   const focusOnCheckbox = (taskId: string) => {
@@ -261,7 +264,7 @@ export function useTaskActions({
       // Remove from current view
       setTasks((prev) => prev.filter((task) => task._id !== taskId));
 
-      showMigrationToast(direction);
+      showStatusToast(TASK_MIGRATION_TOAST_ID, `Migrated ${direction}`);
     },
     [tasks, dateInView, setTasks, taskRepository, isEditingBlocked],
   );

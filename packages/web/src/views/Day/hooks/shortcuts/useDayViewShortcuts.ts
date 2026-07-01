@@ -38,7 +38,6 @@ interface KeyboardShortcutsConfig {
   onEditEvent?: () => void;
 
   // Conditions
-  isEditingTask?: boolean;
   hasFocusedTask?: boolean;
 }
 
@@ -60,7 +59,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onFocusCalendar,
     onEditEvent,
     onToggleSidebar,
-    isEditingTask,
     hasFocusedTask,
   } = config;
 
@@ -71,7 +69,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   }, [onDeleteTask]);
 
   const handleEnterKey = useCallback(() => {
-    if (hasFocusedTask && !isEditingTask) {
+    if (hasFocusedTask) {
       const activeElement = document.activeElement as HTMLElement | null;
       const isTaskButton =
         activeElement?.getAttribute("role") === "checkbox" &&
@@ -80,7 +78,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
       // Let the task button handle Enter if it's focused
       if (!isTaskButton) onCompleteTask?.();
     }
-  }, [hasFocusedTask, isEditingTask, onCompleteTask]);
+  }, [hasFocusedTask, onCompleteTask]);
 
   const handleMigrationNavigation = useCallback(
     (direction: "forward" | "backward") => () => {
