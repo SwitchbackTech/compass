@@ -8,6 +8,7 @@ interface CompassRefs {
 }
 
 export const CompassRefsContext = createContext<CompassRefs | null>(null);
+CompassRefsContext.displayName = "CompassRefsProvider";
 
 export function CompassRefsProvider({ children }: PropsWithChildren) {
   const nowLineRef = useRef<HTMLDivElement | null>(null);
