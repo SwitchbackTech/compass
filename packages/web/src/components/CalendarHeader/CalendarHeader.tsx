@@ -56,7 +56,7 @@ export const CalendarHeader: FC<Props> = ({
         </TooltipWrapper>
       ) : null}
 
-      <h1 className="pl-5 text-text-light" aria-live="polite">
+      <h1 className="pl-5 text-text-lighter" aria-live="polite">
         <Text size="xl">{label}</Text>
       </h1>
 
