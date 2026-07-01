@@ -12,7 +12,7 @@ import {
   ID_ROOT,
   ID_SIDEBAR,
 } from "@web/common/constants/web.constants";
-import { useMovementEvent } from "@web/common/hooks/useMovementEvent";
+import { useMovementEvent } from "@web/common/pointer/useMovementEvent";
 import {
   type DomMovement,
   getElementAtPoint,
@@ -56,38 +56,13 @@ export const PointerPositionContext = createContext<PointerPosition | null>(
   null,
 );
 
-export function getPointerRef(
-  cursor: Pick<PointerEvent, "clientX" | "clientY">,
-) {
-  const { clientX: x, clientY: y } = cursor;
-
-  return {
-    getBoundingClientRect: () => {
-      return {
-        x,
-        y,
-        top: y,
-        left: x,
-        bottom: y,
-        right: x,
-        width: 0,
-        height: 0,
-        toJSON: () => ({}),
-      };
-    },
-  };
-}
-
-export function getPointerPosition(): Pick<
-  PointerEvent,
-  "clientX" | "clientY"
-> {
+function getPointerPosition(): Pick<PointerEvent, "clientX" | "clientY"> {
   const { x: clientX, y: clientY } = cursorStore.get();
 
   return { clientX, clientY };
 }
 
-export function getElementAtPointer() {
+function getElementAtPointer() {
   return getElementAtPoint(getPointerPosition());
 }
 

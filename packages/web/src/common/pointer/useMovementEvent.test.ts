@@ -4,7 +4,7 @@ import { ID_MAIN, ID_ROOT } from "@web/common/constants/web.constants";
 import {
   useMovementEvent,
   useSetupMovementEvents,
-} from "@web/common/hooks/useMovementEvent";
+} from "@web/common/pointer/useMovementEvent";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 describe("useMovementEvent", () => {

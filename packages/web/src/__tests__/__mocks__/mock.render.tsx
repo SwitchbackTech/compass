@@ -12,7 +12,7 @@ import {
 } from "react";
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { ID_ROOT } from "@web/common/constants/web.constants";
-import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
+import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";

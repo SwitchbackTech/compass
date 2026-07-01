@@ -1,5 +1,5 @@
 import React from "react";
-import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
+import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import {
   CompassOptionalProviders,
   CompassRequiredProviders,

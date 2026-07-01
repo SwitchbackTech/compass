@@ -5,8 +5,8 @@ import {
   cursorStore,
   PointerPositionProvider,
   pointerStateStore,
-} from "@web/common/context/pointer-position";
-import { useSetupMovementEvents } from "@web/common/hooks/useMovementEvent";
+} from "@web/common/pointer/pointer-position";
+import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import {
   setPointerDown,
   setSelectionStart,
