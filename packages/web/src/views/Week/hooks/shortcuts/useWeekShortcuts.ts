@@ -7,6 +7,7 @@ import {
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
 import {
+  isDeleteTextEditingTarget,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
   isEventFormOpen,
@@ -184,7 +185,7 @@ export const useWeekShortcuts = ({
   const deleteTargetedCalendarEvent = useCallback(
     (keyboardEvent: KeyboardEvent) => {
       if (
-        isEditableKeyboardTarget(keyboardEvent) ||
+        isDeleteTextEditingTarget(keyboardEvent) ||
         isEventFormKeyboardTarget(keyboardEvent)
       ) {
         return;

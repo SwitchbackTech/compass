@@ -8,8 +8,10 @@ import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
+import {
+  deleteEventSlice,
+  eventsEntitiesSlice,
+} from "@web/ducks/events/slices/event.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";

@@ -13,12 +13,21 @@ export const isContextMenuOpen = () => {
   return !!contextMenuItems;
 };
 
+const EVENT_FORM_SELECTOR = `form[name="${ID_EVENT_FORM}"], form[name="${ID_SOMEDAY_EVENT_FORM}"]`;
+
+const getKeyboardTarget = (
+  keyboardEvent: Pick<KeyboardEvent, "target">,
+): HTMLElement | null => {
+  const target = keyboardEvent.target as HTMLElement | null;
+
+  return target instanceof HTMLElement ? target : null;
+};
+
 export const isComboboxInteraction = (
   keyboardEvent: Pick<KeyboardEvent, "target">,
 ) => {
-  const target = keyboardEvent.target as HTMLElement | null;
-
-  if (!target || !(target instanceof HTMLElement)) {
+  const target = getKeyboardTarget(keyboardEvent);
+  if (!target) {
     return false;
   }
 
@@ -43,8 +52,8 @@ export const isEditableKeyboardTarget = (
 ) => {
   if (isComboboxInteraction(keyboardEvent)) return true;
 
-  const target = keyboardEvent.target as HTMLElement | null;
-  if (!target || !(target instanceof HTMLElement)) return false;
+  const target = getKeyboardTarget(keyboardEvent);
+  if (!target) return false;
 
   if (target.isContentEditable) return true;
 
@@ -56,15 +65,12 @@ export const isEditableKeyboardTarget = (
 export const isEventFormKeyboardTarget = (
   keyboardEvent: Pick<KeyboardEvent, "target">,
 ) => {
-  const target = keyboardEvent.target as HTMLElement | null;
-
-  if (!target || !(target instanceof HTMLElement)) {
+  const target = getKeyboardTarget(keyboardEvent);
+  if (!target) {
     return false;
   }
 
-  const formContainer = target.closest(
-    `form[name="${ID_EVENT_FORM}"], form[name="${ID_SOMEDAY_EVENT_FORM}"]`,
-  );
+  const formContainer = target.closest(EVENT_FORM_SELECTOR);
 
   return Boolean(formContainer);
 };

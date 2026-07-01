@@ -1,7 +1,7 @@
+import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { render, screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 mock.module("@web/views/Forms/EventForm/PrioritySection", () => ({

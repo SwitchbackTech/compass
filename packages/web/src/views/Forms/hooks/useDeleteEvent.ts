@@ -8,8 +8,8 @@ import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { type AppDispatch } from "@web/store/store";
+import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 
 export function confirmAndDeleteEvent({
   applyTo = RecurringEventUpdateScope.THIS_EVENT,
