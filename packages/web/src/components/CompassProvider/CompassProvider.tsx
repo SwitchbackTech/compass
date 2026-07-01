@@ -8,7 +8,7 @@ import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
-import { CompassRefsProvider } from "@web/common/context/compass-refs";
+import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { PointerPositionProvider } from "@web/common/context/pointer-position";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
