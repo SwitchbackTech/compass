@@ -1,5 +1,9 @@
+sandbox_mode = "workspace-write"
 [features]
 hooks = true
 goals = true
 
 
+
+[sandbox_workspace_write]
+network_access = true
