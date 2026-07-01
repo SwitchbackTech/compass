@@ -20,11 +20,3 @@ export const normalizeTask = (task: Task): Task => TaskSchema.parse(task);
 
 export const normalizeTasks = (tasks: Task[]): Task[] =>
   tasks.map(normalizeTask);
-
-export type UndoOperation = {
-  type: "delete" | "migrate";
-  task: Task;
-  // Migration-specific metadata
-  fromDate?: string;
-  direction?: "forward" | "backward";
-};

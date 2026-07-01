@@ -1,14 +1,13 @@
 import type dayjs from "dayjs";
 import { type MutableRefObject, useCallback } from "react";
-import { toast } from "react-toastify";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
-import { type Task, type UndoOperation } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
+import { showDeleteToast } from "@web/views/Day/components/Toasts/DeleteToast/DeleteToast";
 import { showMigrationToast } from "@web/views/Day/components/Toasts/MigrationToast/MigrationToast";
-import { showUndoDeleteToast } from "@web/views/Day/components/Toasts/UndoToast/UndoDeleteToast";
 
 interface UseTaskActionsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;
@@ -21,13 +20,7 @@ interface UseTaskActionsProps {
   isCancellingEdit?: boolean;
   isCancellingEditRef?: MutableRefObject<boolean>;
   setIsCancellingEdit?: (isCancelling: boolean) => void;
-  undoState?: UndoOperation | null;
-  setUndoState?: (state: UndoOperation | null) => void;
-  undoToastId?: string | number | null;
-  setUndoToastId?: (toastId: string | number | null) => void;
   dateInView?: dayjs.Dayjs;
-  navigateToNextDay?: () => void;
-  navigateToPreviousDay?: () => void;
 }
 
 export function useTaskActions({
@@ -41,13 +34,7 @@ export function useTaskActions({
   isCancellingEdit,
   isCancellingEditRef,
   setIsCancellingEdit,
-  undoState,
-  setUndoState,
-  undoToastId,
-  setUndoToastId,
   dateInView,
-  navigateToNextDay,
-  navigateToPreviousDay,
 }: UseTaskActionsProps) {
   const isEditingBlocked = Boolean(isLoadingTasks);
 
@@ -100,96 +87,16 @@ export function useTaskActions({
     });
   };
 
-  const restoreTask = useCallback(
-    (operation: UndoOperation | null = undoState ?? null) => {
-      if (isEditingBlocked) return;
-      if (!operation) return;
-
-      if (operation.type === "delete") {
-        // Restore deleted task
-        setTasks((prev) => sortTasksByStatus([...prev, operation.task]));
-      } else if (
-        operation.type === "migrate" &&
-        operation.fromDate &&
-        operation.direction &&
-        dateInView
-      ) {
-        const currentDateKey = getDateKey(dateInView.toDate());
-
-        const fromDate = operation.fromDate;
-        // Only restore if we're still on the same date where the migration happened
-        if (currentDateKey === fromDate) {
-          // Add the task back to the list
-          setTasks((prev) => sortTasksByStatus([...prev, operation.task]));
-
-          // Calculate the target date (where the task was migrated to)
-          const targetDate = dateInView.add(
-            operation.direction === "forward" ? 1 : -1,
-            "day",
-          );
-          const targetDateKey = getDateKey(targetDate.toDate());
-
-          // Async storage operations (fire and forget since we're in a callback)
-          const restoreInStorage = async () => {
-            try {
-              // Remove the task from the target date in storage
-              const targetDateTasks = await taskRepository.get(targetDateKey);
-              const updatedTargetTasks = targetDateTasks.filter(
-                (t: Task) => t._id !== operation.task._id,
-              );
-              await taskRepository.save(targetDateKey, updatedTargetTasks);
-
-              // Restore the task to the original date in storage (single write, no read)
-              await taskRepository.save(fromDate, operation.task);
-            } catch (error) {
-              console.error("Failed to restore task in repository:", error);
-            }
-          };
-          restoreInStorage();
-        }
-      }
-
-      // Clear the undo state
-      setUndoState?.(null);
-      setUndoToastId?.(null);
-    },
-    [
-      undoState,
-      dateInView,
-      setUndoState,
-      setUndoToastId,
-      setTasks,
-      taskRepository,
-      isEditingBlocked,
-    ],
-  );
-
   const deleteTask = (taskId: string) => {
     if (isEditingBlocked) return;
 
     const taskToDelete = tasks.find((task) => task._id === taskId);
     if (!taskToDelete) return;
 
-    // Dismiss any existing undo toast before showing new one
-    if (undoToastId) {
-      toast.dismiss(undoToastId);
-    }
-
-    const deleteUndoOperation: UndoOperation = {
-      type: "delete",
-      task: taskToDelete,
-    };
-
-    // Store the deleted task in unified undo state
-    setUndoState?.(deleteUndoOperation);
-
     // Remove task from the list
     setTasks((prev) => prev.filter((task) => task._id !== taskId));
 
-    const toastId = showUndoDeleteToast(() => restoreTask(deleteUndoOperation));
-
-    // Store the toast ID for potential dismissal
-    setUndoToastId?.(toastId);
+    showDeleteToast();
   };
 
   const focusOnCheckbox = (taskId: string) => {
@@ -336,11 +243,6 @@ export function useTaskActions({
       const taskToMigrate = tasks.find((task) => task._id === taskId);
       if (!taskToMigrate) return;
 
-      // Dismiss any existing undo toast before showing new one
-      if (undoToastId) {
-        toast.dismiss(undoToastId);
-      }
-
       // Calculate target date
       const currentDateKey = getDateKey(dateInView.toDate());
       const targetDate =
@@ -348,16 +250,6 @@ export function useTaskActions({
           ? dateInView.add(1, "day")
           : dateInView.subtract(1, "day");
       const targetDateKey = getDateKey(targetDate.toDate());
-
-      const migrationUndoOperation: UndoOperation = {
-        type: "migrate",
-        task: taskToMigrate,
-        fromDate: currentDateKey,
-        direction,
-      };
-
-      // Store the migrated task operation
-      setUndoState?.(migrationUndoOperation);
 
       // Move task in storage (async, fire and forget)
       taskRepository
@@ -369,29 +261,9 @@ export function useTaskActions({
       // Remove from current view
       setTasks((prev) => prev.filter((task) => task._id !== taskId));
 
-      // Show toast with navigation and undo options
-      const onNavigate =
-        direction === "forward" ? navigateToNextDay : navigateToPreviousDay;
-      if (onNavigate) {
-        const toastId = showMigrationToast(direction, onNavigate, () =>
-          restoreTask(migrationUndoOperation),
-        );
-        setUndoToastId?.(toastId);
-      }
+      showMigrationToast(direction);
     },
-    [
-      tasks,
-      dateInView,
-      setTasks,
-      navigateToNextDay,
-      navigateToPreviousDay,
-      undoToastId,
-      setUndoState,
-      setUndoToastId,
-      restoreTask,
-      taskRepository,
-      isEditingBlocked,
-    ],
+    [tasks, dateInView, setTasks, taskRepository, isEditingBlocked],
   );
 
   return {
@@ -400,7 +272,6 @@ export function useTaskActions({
     updateTaskDescription,
     toggleTaskStatus,
     deleteTask,
-    restoreTask,
     focusOnCheckbox,
     focusOnInput,
     onCheckboxKeyDown,

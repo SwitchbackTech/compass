@@ -45,9 +45,7 @@ export const DayViewContent = memo(() => {
     setEditingTaskId,
     setEditingTitle,
     deleteTask,
-    restoreTask,
     migrateTask,
-    undoToastId,
   } = useTasks();
   const dateInView = useDateInView();
   const shortcuts = getShortcuts({
@@ -146,7 +144,6 @@ export const DayViewContent = memo(() => {
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
     onDeleteTask: handleDeleteTask,
-    onRestoreTask: restoreTask,
     onMigrateTask: migrateTask,
     onFocusTasks: focusOnFirstTask,
     onFocusCalendar: focusFirstDayCalendarEvent,
@@ -156,7 +153,6 @@ export const DayViewContent = memo(() => {
     onGoToToday: handleGoToToday,
     onToggleSidebar: toggleSidebar,
     hasFocusedTask,
-    undoToastId,
   });
 
   return (

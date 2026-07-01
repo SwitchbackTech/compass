@@ -1,6 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
-import { type Task, type UndoOperation } from "@web/common/types/task.types";
+import { type Task } from "@web/common/types/task.types";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { useLoadTasksByDateEffect } from "@web/views/Day/hooks/tasks/useLoadTasksByDateEffect";
 import { useSaveTasksByDateEffect } from "@web/views/Day/hooks/tasks/useSaveTasksByDateEffect";
@@ -27,8 +27,6 @@ export function useTaskState({
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [isCancellingEdit, setIsCancellingEdit] = useState(false);
   const isCancellingEditRef = useRef(false);
-  const [undoState, setUndoState] = useState<UndoOperation | null>(null);
-  const [undoToastId, setUndoToastId] = useState<string | number | null>(null);
 
   const dateKey = getDateKey(currentDate);
 
@@ -100,10 +98,6 @@ export function useTaskState({
     isCancellingEdit,
     isCancellingEditRef,
     setIsCancellingEdit,
-    undoState,
-    setUndoState,
-    undoToastId,
-    setUndoToastId,
     dateKey,
   };
 }
