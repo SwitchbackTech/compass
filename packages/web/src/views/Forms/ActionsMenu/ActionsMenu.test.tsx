@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { type ReactElement } from "react";
+import userEvent from "@testing-library/user-event";
+import { act, type ReactElement } from "react";
 import { ActionsMenu, useMenuContext } from "./ActionsMenu";
 import { describe, expect, it } from "bun:test";
 
@@ -17,7 +18,9 @@ const TestMenuItem = () => {
 };
 
 describe("ActionsMenu", () => {
-  it("keeps mouse hover from stealing focus from the editor action trigger", () => {
+  it("keeps mouse hover from stealing focus from the editor action trigger", async () => {
+    const user = userEvent.setup();
+
     renderMenu(
       <ActionsMenu bgColor="#fff">{() => <TestMenuItem />}</ActionsMenu>,
     );
@@ -25,20 +28,54 @@ describe("ActionsMenu", () => {
     const trigger = screen.getByLabelText("Open actions menu");
     trigger.focus();
 
-    fireEvent.click(trigger);
-    fireEvent.mouseMove(screen.getByText("Delete Event"));
+    await user.click(trigger);
+
+    act(() => {
+      fireEvent.mouseMove(screen.getByText("Delete Event"));
+    });
 
     expect(document.activeElement).toBe(trigger);
   });
 
-  it("keeps the menu mounted when focus moves inside it", () => {
+  it("keeps the menu mounted when focus moves inside it", async () => {
+    const user = userEvent.setup();
+
     renderMenu(
       <ActionsMenu bgColor="#fff">{() => <TestMenuItem />}</ActionsMenu>,
     );
 
-    fireEvent.click(screen.getByLabelText("Open actions menu"));
-    fireEvent.focus(screen.getByText("Delete Event"));
+    await user.click(screen.getByLabelText("Open actions menu"));
+
+    act(() => {
+      fireEvent.focus(screen.getByText("Delete Event"));
+    });
 
     expect(screen.getByText("Delete Event")).toBeInTheDocument();
+  });
+
+  it("closes the menu when focus leaves the menu tree", async () => {
+    const user = userEvent.setup();
+
+    renderMenu(
+      <div>
+        <ActionsMenu bgColor="#fff">{() => <TestMenuItem />}</ActionsMenu>
+        <button type="button">Priority</button>
+      </div>,
+    );
+
+    await user.click(screen.getByLabelText("Open actions menu"));
+
+    const menuItem = screen.getByRole("menuitem", { name: "Delete Event" });
+    const priorityButton = screen.getByRole("button", { name: "Priority" });
+
+    await act(async () => {
+      fireEvent.focus(menuItem);
+      fireEvent.blur(menuItem, { relatedTarget: priorityButton });
+      priorityButton.focus();
+      await Promise.resolve();
+    });
+
+    expect(screen.queryByRole("menu")).toBeNull();
+    expect(priorityButton).toHaveFocus();
   });
 });

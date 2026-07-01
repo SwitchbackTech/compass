@@ -16,6 +16,7 @@ import { DotsThreeVerticalIcon } from "@phosphor-icons/react";
 import type React from "react";
 import {
   createContext,
+  type FocusEvent,
   type MouseEvent,
   useContext,
   useEffect,
@@ -138,6 +139,28 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
     [click, dismiss, role, listNavigation],
   );
 
+  const referenceElement =
+    refs.reference.current instanceof HTMLElement
+      ? refs.reference.current
+      : null;
+
+  const isFocusWithinMenuTree = (nextFocused: EventTarget | null) => {
+    if (!(nextFocused instanceof HTMLElement)) {
+      return false;
+    }
+
+    return Boolean(
+      referenceElement?.contains(nextFocused) ||
+        refs.floating.current?.contains(nextFocused),
+    );
+  };
+
+  const closeOnBlurOutsideMenuTree = (event: FocusEvent<HTMLElement>) => {
+    if (!isFocusWithinMenuTree(event.relatedTarget)) {
+      setOpen(false);
+    }
+  };
+
   const closeMenu = () => {
     setOpen(false);
     // Return focus to trigger when menu closes
@@ -153,6 +176,7 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
         className="inline-flex"
         ref={refs.setReference}
         {...getReferenceProps({
+          onBlur: closeOnBlurOutsideMenuTree,
           onClick: (e: MouseEvent<HTMLDivElement>) => {
             // Prevent default behaviour (like focusing inputs) and stop bubbling to parent form
             e.preventDefault();
@@ -177,7 +201,6 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
           <FloatingFocusManager
             context={context}
             modal={false}
-            closeOnFocusOut={false}
             initialFocus={openedByMouseRef.current ? -1 : 0}
             returnFocus={false}
           >
@@ -189,7 +212,9 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
                 backgroundColor: bgColor,
                 zIndex: menuZIndex,
               }}
-              {...getFloatingProps()}
+              {...getFloatingProps({
+                onBlur: closeOnBlurOutsideMenuTree,
+              })}
               id={menuId}
               role="menu"
               aria-labelledby={triggerId}
