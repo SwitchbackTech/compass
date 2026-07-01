@@ -2,6 +2,9 @@ import { session } from "@web/common/classes/Session";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "@web/common/utils/storage/storage.util";
 
+const isCompassStorageKey = (key: string) =>
+  key.startsWith("compass.") || key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX);
+
 /**
  * Clears all Compass-related browser storage including:
  * - LocalStorage (tasks, preferences, auth flags)
@@ -24,11 +27,7 @@ export async function clearAllBrowserStorage(): Promise<void> {
     // 2. Clear all localStorage keys that start with 'compass.'
     persistentBrowserStore
       .keys()
-      .filter(
-        (key) =>
-          key.startsWith("compass.") ||
-          key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX),
-      )
+      .filter(isCompassStorageKey)
       .forEach((key) => persistentBrowserStore.remove(key));
 
     // 3. Clear IndexedDB 'compass-local' database if it exists
@@ -61,12 +60,5 @@ export async function clearAllBrowserStorage(): Promise<void> {
  * Checks if the browser has any Compass-related storage
  */
 export function hasCompassStorage(): boolean {
-  // Check localStorage
-  return persistentBrowserStore
-    .keys()
-    .some(
-      (key) =>
-        key.startsWith("compass.") ||
-        key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX),
-    );
+  return persistentBrowserStore.keys().some(isCompassStorageKey);
 }

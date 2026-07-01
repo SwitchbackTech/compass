@@ -70,13 +70,7 @@ export async function ensureOfflineDataStoreReady(): Promise<void> {
  * Reset the offline data store state. Used for testing only.
  */
 export function resetOfflineDataStore(): void {
-  if (
-    store &&
-    "close" in store &&
-    typeof (store as { close?: unknown }).close === "function"
-  ) {
-    (store as { close: () => void }).close();
-  }
+  store?.close?.();
   store = null;
   initPromise = null;
 }

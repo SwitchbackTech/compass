@@ -26,7 +26,7 @@ export interface StoredTask extends Task {
  * Benefits:
  * - Storage-agnostic application code
  * - Easy to swap implementations (IndexedDB → SQLite)
- * - Testable via mock adapters
+ * - Testable via mock stores
  */
 export interface OfflineDataStore {
   /**
@@ -39,6 +39,9 @@ export interface OfflineDataStore {
    * Check if storage has been initialized and is ready for operations.
    */
   isReady(): boolean;
+
+  /** Close any active storage connection. */
+  close?(): void;
 
   // ─── Task Operations ───────────────────────────────────────────────────────
 

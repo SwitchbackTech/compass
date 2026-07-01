@@ -1,4 +1,3 @@
-import classNames from "classnames";
 import { type FC } from "react";
 import { theme } from "@web/common/styles/theme";
 import { ArrowButton } from "@web/components/Button/ArrowButton";

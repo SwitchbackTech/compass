@@ -9,50 +9,47 @@ export interface BrowserKeyValueStore {
 class NativeBrowserKeyValueStore implements BrowserKeyValueStore {
   constructor(private readonly getStorage: () => Storage) {}
 
-  isAvailable(): boolean {
+  private withStorage<T>(operation: (storage: Storage) => T, fallback: T): T {
     try {
-      void this.getStorage().length;
-      return true;
+      return operation(this.getStorage());
     } catch {
-      return false;
+      return fallback;
     }
+  }
+
+  isAvailable(): boolean {
+    return this.withStorage((storage) => {
+      void storage.length;
+      return true;
+    }, false);
   }
 
   get(key: string): string | null {
-    try {
-      return this.getStorage().getItem(key);
-    } catch {
-      return null;
-    }
+    return this.withStorage((storage) => storage.getItem(key), null);
   }
 
   set(key: string, value: string): boolean {
-    try {
-      this.getStorage().setItem(key, value);
+    return this.withStorage((storage) => {
+      storage.setItem(key, value);
       return true;
-    } catch {
-      return false;
-    }
+    }, false);
   }
 
   remove(key: string): boolean {
-    try {
-      this.getStorage().removeItem(key);
+    return this.withStorage((storage) => {
+      storage.removeItem(key);
       return true;
-    } catch {
-      return false;
-    }
+    }, false);
   }
 
   keys(): string[] {
-    try {
-      const storage = this.getStorage();
-      return Array.from({ length: storage.length }, (_, index) =>
-        storage.key(index),
-      ).filter((key): key is string => key !== null);
-    } catch {
-      return [];
-    }
+    return this.withStorage(
+      (storage) =>
+        Array.from({ length: storage.length }, (_, index) =>
+          storage.key(index),
+        ).filter((key): key is string => key !== null),
+      [],
+    );
   }
 }
 
