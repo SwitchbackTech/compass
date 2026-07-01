@@ -46,7 +46,7 @@ export function DraggableTask({
   return (
     <div
       id={task._id}
-      className="group relative mr-2 grid select-none grid-cols-[2rem_minmax(0,1fr)] items-center gap-2"
+      className="group relative select-none"
       style={{
         transform: CSS.Transform.toString(transform),
         transition,
@@ -62,42 +62,38 @@ export function DraggableTask({
           aria-label={`Reorder ${task.title}`}
           onFocus={() => setSelectedTaskIndex(index)}
           className={classNames(
-            "justify-self-end",
+            // Floats in the DropZone's pl-8 gutter so it reserves no row space
+            "absolute top-1/2 right-full mr-1 -translate-y-1/2",
             "opacity-0",
             "hover:cursor-grab hover:bg-border-primary",
             "rounded-xs py-2 transition-colors",
             "hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100",
-            "max-w-48 text-white",
+            "text-white",
             "focus-visible:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/50",
-            "focus:outline-none disabled:cursor-default disabled:opacity-0",
+            "focus:outline-none",
             {
-              hidden: tasks.length === 1,
               "cursor-grabbing opacity-100": isDragging,
             },
           )}
         >
           <DotsSixVerticalIcon size={24} />
         </button>
-      ) : (
-        <span aria-hidden="true" />
-      )}
+      ) : null}
 
-      <div className="min-w-0">
-        <Task
-          task={task}
-          index={index}
-          isEditing={editingTaskId === task._id}
-          onFocus={setSelectedTaskIndex}
-          onCheckboxKeyDown={onCheckboxKeyDown}
-          onInputBlur={onInputBlur}
-          onInputKeyDown={onInputKeyDown}
-          onInputClick={onInputClick}
-          onTitleChange={onTitleChange}
-          onStatusToggle={onStatusToggle}
-          onMigrate={migrateTask}
-          title={editingTaskId === task._id ? editingTitle : task.title}
-        />
-      </div>
+      <Task
+        task={task}
+        index={index}
+        isEditing={editingTaskId === task._id}
+        onFocus={setSelectedTaskIndex}
+        onCheckboxKeyDown={onCheckboxKeyDown}
+        onInputBlur={onInputBlur}
+        onInputKeyDown={onInputKeyDown}
+        onInputClick={onInputClick}
+        onTitleChange={onTitleChange}
+        onStatusToggle={onStatusToggle}
+        onMigrate={migrateTask}
+        title={editingTaskId === task._id ? editingTitle : task.title}
+      />
     </div>
   );
 }

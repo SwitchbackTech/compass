@@ -103,18 +103,15 @@ export const Tasks = () => {
           id="task-list-drop-zone"
           role="list"
           aria-label="Task list"
-          className="flex flex-col gap-2 overflow-y-auto overscroll-contain"
+          className="flex flex-col gap-2 overflow-y-auto overscroll-contain pr-2 pl-8"
           isActive={isDragging}
         >
           {isInitialLoad ? (
-            <p
-              className="px-2 py-1 text-sm text-text-light-inactive"
-              role="status"
-            >
+            <p className="py-1 text-sm text-text-light-inactive" role="status">
               Loading tasks&hellip;
             </p>
           ) : tasksProps.tasks.length === 0 ? (
-            <p className="px-2 py-1 text-sm text-text-light-inactive">
+            <p className="py-1 text-sm text-text-light-inactive">
               No tasks yet
             </p>
           ) : (

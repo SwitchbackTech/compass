@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
@@ -16,6 +17,11 @@ import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
+import {
+  TASK_LIST_MAX_WIDTH,
+  TASK_LIST_MIN_WIDTH,
+  useResizableTaskList,
+} from "@web/views/Day/hooks/layout/useResizableTaskList";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
@@ -34,6 +40,11 @@ import { useRefetch } from "@web/views/Week/hooks/useRefetch";
 export const DayViewContent = memo(() => {
   const dispatch = useAppDispatch();
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+  const {
+    width: taskListWidth,
+    isResizing,
+    dividerProps,
+  } = useResizableTaskList();
 
   useRefetch();
 
@@ -185,8 +196,34 @@ export const DayViewContent = memo(() => {
       >
         <Header />
 
-        <div className="flex w-full flex-1 gap-8 overflow-hidden">
-          <TaskList />
+        <div
+          className={classNames("flex w-full flex-1 overflow-hidden", {
+            "cursor-col-resize select-none": isResizing,
+          })}
+        >
+          <TaskList width={taskListWidth} />
+
+          {/* biome-ignore lint/a11y/useSemanticElements: An hr cannot host the focusable, draggable window-splitter interaction. */}
+          <div
+            {...dividerProps}
+            role="separator"
+            aria-orientation="vertical"
+            aria-label="Resize task list"
+            aria-valuemin={TASK_LIST_MIN_WIDTH}
+            aria-valuemax={TASK_LIST_MAX_WIDTH}
+            aria-valuenow={taskListWidth}
+            tabIndex={0}
+            className="group relative w-8 shrink-0 cursor-col-resize touch-none focus:outline-none"
+          >
+            <div
+              className={classNames(
+                "absolute inset-y-0 left-0 w-px bg-gray-400/20 transition-colors",
+                "group-hover:w-0.5 group-hover:bg-blue-200/50",
+                "group-focus-visible:w-0.5 group-focus-visible:bg-blue-200",
+                { "w-0.5 bg-blue-200/70": isResizing },
+              )}
+            />
+          </div>
 
           <DayCalendarGrid />
         </div>
