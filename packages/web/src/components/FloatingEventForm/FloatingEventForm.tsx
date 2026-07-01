@@ -62,6 +62,10 @@ export function FloatingEventForm({
     <FloatingPortal>
       <FloatingFocusManager
         context={form.context}
+        // Must stay false: this form hosts nested floating trees (e.g.
+        // ActionsMenu) with their own focus managers, so the default
+        // close-on-blur here would close the form while focus is still
+        // moving within a child menu's separate floating tree.
         closeOnFocusOut={false}
         order={["reference"]}
       >
