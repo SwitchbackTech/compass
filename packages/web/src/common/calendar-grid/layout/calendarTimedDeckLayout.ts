@@ -6,7 +6,6 @@ import {
   CALENDAR_DECK_RIGHT_RESERVE,
   CALENDAR_TIMED_EVENT_FAN_GUTTER,
   CALENDAR_TIMED_EVENT_FAN_INDENT,
-  CALENDAR_TIMED_EVENT_MAX_WIDTH,
   CALENDAR_TIMED_EVENT_MIN_WIDTH,
   CALENDAR_TIMED_EVENT_WIDTH_RATIO,
 } from "@web/common/calendar-grid/calendarGrid.constants";
@@ -109,10 +108,10 @@ const applyCalendarTimedDeckPositionWithIndent = (
 
 const getCalendarTimedEventCardWidth = (availableWidth: number) => {
   const fluidWidth = availableWidth * CALENDAR_TIMED_EVENT_WIDTH_RATIO;
-  const boundedWidth = Math.max(
-    CALENDAR_TIMED_EVENT_MIN_WIDTH,
-    Math.min(fluidWidth, CALENDAR_TIMED_EVENT_MAX_WIDTH),
-  );
+  // Scale proportionally with the column (no upper cap) so cards track the
+  // grid width when the day-view column is resized. The floor keeps cards
+  // readable; the final min prevents overflowing a narrow week column.
+  const boundedWidth = Math.max(CALENDAR_TIMED_EVENT_MIN_WIDTH, fluidWidth);
 
   return Math.min(availableWidth, boundedWidth);
 };

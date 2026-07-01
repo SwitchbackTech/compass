@@ -7,7 +7,7 @@ import {
   CALENDAR_TIMED_EVENT_COLUMN_INSET,
   CALENDAR_TIMED_EVENT_FAN_GUTTER,
   CALENDAR_TIMED_EVENT_FAN_INDENT,
-  CALENDAR_TIMED_EVENT_MAX_WIDTH,
+  CALENDAR_TIMED_EVENT_WIDTH_RATIO,
 } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
@@ -242,13 +242,26 @@ describe("applyCalendarTimedDeckPosition", () => {
 describe("applyCalendarTimedEventDisplayPosition", () => {
   const widePosition = { height: 60, left: 20, top: 30, width: 1000 };
 
-  it("keeps solo timed event cards to the shared readable width", () => {
+  it("sizes solo timed event cards proportionally to the column", () => {
     const position = applyCalendarTimedEventDisplayPosition(widePosition, null);
 
-    expect(position.width).toBe(CALENDAR_TIMED_EVENT_MAX_WIDTH);
+    expect(position.width).toBe(
+      widePosition.width * CALENDAR_TIMED_EVENT_WIDTH_RATIO,
+    );
+  });
+
+  it("keeps scaling solo cards on very wide columns without an upper cap", () => {
+    const extraWide = { ...widePosition, width: 2400 };
+
+    const position = applyCalendarTimedEventDisplayPosition(extraWide, null);
+
+    expect(position.width).toBe(
+      extraWide.width * CALENDAR_TIMED_EVENT_WIDTH_RATIO,
+    );
   });
 
   it("fans overlapping cards farther without widening the cards", () => {
+    const cardWidth = widePosition.width * CALENDAR_TIMED_EVENT_WIDTH_RATIO;
     const back = applyCalendarTimedEventDisplayPosition(widePosition, {
       order: 0,
       groupSize: 2,
@@ -260,9 +273,7 @@ describe("applyCalendarTimedEventDisplayPosition", () => {
 
     expect(front.left - back.left).toBe(CALENDAR_TIMED_EVENT_FAN_INDENT);
     expect(back.width).toBe(
-      CALENDAR_TIMED_EVENT_MAX_WIDTH -
-        CALENDAR_DECK_RIGHT_RESERVE -
-        CALENDAR_DECK_INDENT,
+      cardWidth - CALENDAR_DECK_RIGHT_RESERVE - CALENDAR_DECK_INDENT,
     );
     expect(front.width).toBe(back.width);
   });
