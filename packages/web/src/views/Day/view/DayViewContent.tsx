@@ -217,10 +217,10 @@ export const DayViewContent = memo(() => {
           >
             <div
               className={classNames(
-                "absolute inset-y-0 left-0 w-px bg-gray-400/20 transition-colors",
-                "group-hover:w-0.5 group-hover:bg-blue-200/50",
-                "group-focus-visible:w-0.5 group-focus-visible:bg-blue-200",
-                { "w-0.5 bg-blue-200/70": isResizing },
+                "absolute inset-y-1 left-0 w-px rounded-full bg-grid-line-primary transition-[width,background-color] duration-200 ease-out motion-reduce:transition-none",
+                "group-hover:w-0.5 group-hover:bg-text-lighter/60",
+                "group-focus-visible:w-0.5 group-focus-visible:bg-text-lighter/60",
+                { "w-0.5 bg-text-lighter/60": isResizing },
               )}
             />
           </div>
