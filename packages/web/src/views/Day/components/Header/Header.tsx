@@ -1,21 +1,12 @@
 import { type FC } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { CalendarHeader } from "@web/components/CalendarHeader/CalendarHeader";
-import { Text } from "@web/components/Text/Text";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 
 const DAY_LABEL_FORMAT = "dddd, MMMM D";
 
-interface Props {
-  isSidebarOpen?: boolean;
-  onToggleSidebar?: () => void;
-}
-
-export const Header: FC<Props> = ({
-  isSidebarOpen = true,
-  onToggleSidebar,
-}) => {
+export const Header: FC = () => {
   const dateInView = useDateInView();
   const { navigateToPreviousDay, navigateToNextDay, navigateToToday } =
     useDateNavigation();
@@ -25,13 +16,7 @@ export const Header: FC<Props> = ({
 
   return (
     <CalendarHeader
-      label={
-        <h1 className="pl-5 text-text-light" aria-live="polite">
-          <Text size="xl">{label}</Text>
-        </h1>
-      }
-      isSidebarOpen={isSidebarOpen}
-      onToggleSidebar={() => onToggleSidebar?.()}
+      label={label}
       onPrev={navigateToPreviousDay}
       onNext={navigateToNextDay}
       onToday={navigateToToday}
