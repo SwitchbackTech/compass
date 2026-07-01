@@ -2,26 +2,26 @@ import { test } from "@playwright/test";
 import {
   createTask,
   deleteTaskWithKeyboard,
+  expectDeleteToastVisible,
   expectTaskMissing,
   expectTaskSavedToIndexedDB,
   expectTaskVisible,
   prepareTaskPage,
   reloadTaskPage,
-  restoreDeletedTaskFromUndoToast,
 } from "../utils/task-test-utils";
 
-test.describe("Task Delete + Restore", () => {
+test.describe("Task Delete", () => {
   test.skip(
     ({ isMobile }) => isMobile,
     "Tasks are not available in the current mobile experience.",
   );
 
-  test("should restore a deleted task from the undo toast", async ({
+  test("should delete a task and keep it deleted after reload", async ({
     page,
   }) => {
     await prepareTaskPage(page);
 
-    const taskTitle = `Delete Restore Task ${Date.now()}`;
+    const taskTitle = `Delete Task ${Date.now()}`;
     await createTask(page, taskTitle);
 
     await expectTaskVisible(page, taskTitle);
@@ -29,13 +29,9 @@ test.describe("Task Delete + Restore", () => {
 
     await deleteTaskWithKeyboard(page, taskTitle);
     await expectTaskMissing(page, taskTitle);
-
-    await restoreDeletedTaskFromUndoToast(page);
-    await expectTaskVisible(page, taskTitle);
-    await expectTaskSavedToIndexedDB(page, taskTitle);
+    await expectDeleteToastVisible(page);
 
     await reloadTaskPage(page);
-    await expectTaskVisible(page, taskTitle, 10000);
-    await expectTaskSavedToIndexedDB(page, taskTitle);
+    await expectTaskMissing(page, taskTitle);
   });
 });
