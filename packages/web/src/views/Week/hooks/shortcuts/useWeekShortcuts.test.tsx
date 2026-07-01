@@ -278,6 +278,20 @@ describe("useWeekShortcuts calendar event targeting", () => {
     expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
   });
 
+  it("moves the draft when arrow keys are pressed from a non-text event form control", () => {
+    const form = document.createElement("form");
+    form.setAttribute("name", ID_EVENT_FORM);
+    const button = document.createElement("button");
+    form.appendChild(button);
+    document.body.appendChild(form);
+    button.focus();
+    renderShortcuts();
+
+    pressKey("ArrowRight", {}, button);
+
+    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowRight");
+  });
+
   it("deletes the focused timed calendar event with Delete", () => {
     const confirm = mock(() => true);
     window.confirm = confirm;

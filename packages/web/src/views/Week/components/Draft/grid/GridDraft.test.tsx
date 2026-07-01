@@ -38,12 +38,10 @@ mock.module("@floating-ui/react", () => ({
 mock.module("@web/views/Forms/EventForm/EventForm", () => ({
   EventForm: ({
     event: draftEvent,
-    onDraftTitleArrowKey,
     onSubmit,
     titleInputRef,
   }: {
     event: Schema_GridEvent;
-    onDraftTitleArrowKey?: (key: string) => boolean;
     onSubmit?: (event: Schema_GridEvent) => void;
     titleInputRef?: Ref<HTMLInputElement>;
   }) => (
@@ -54,10 +52,6 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
           if (event.key === "Enter") {
             event.preventDefault();
             onSubmit?.(draftEvent);
-          }
-
-          if (event.key === "ArrowDown") {
-            onDraftTitleArrowKey?.(event.key);
           }
         }}
         ref={titleInputRef}
@@ -273,13 +267,4 @@ describe("GridDraft keyboard focus", () => {
     expect(document.activeElement).not.toBe(draftBlock);
   });
 
-  it("routes draft title arrow movement through the draft action", async () => {
-    const user = userEvent.setup();
-    const { repositionDraftByKeyboard } = renderGridDraft();
-
-    screen.getByRole("textbox", { name: "Draft title" }).focus();
-    await user.keyboard("{ArrowDown}");
-
-    expect(repositionDraftByKeyboard).toHaveBeenCalledWith("ArrowDown");
-  });
 });

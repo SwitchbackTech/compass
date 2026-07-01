@@ -44,19 +44,6 @@ const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,
   ignoreInputs: false,
 } as const;
-const DRAFT_TITLE_MOVEMENT_KEYS = new Set([
-  "ArrowDown",
-  "ArrowLeft",
-  "ArrowRight",
-  "ArrowUp",
-]);
-
-type TitleEditingResetKey = string | number | null | undefined;
-
-interface TitleEditingState {
-  isStarted: boolean;
-  resetKey: TitleEditingResetKey;
-}
 
 interface EventFormDateTimeState {
   displayEndDate: Date;
@@ -125,9 +112,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     onDelete,
     onSubmit,
     onDuplicate,
-    onDraftTitleArrowKey,
     setEvent,
-    titleEditingResetKey,
     titleInputRef,
     isDraft,
     isExistingEvent,
@@ -138,7 +123,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     const priorityColor = colorByPriority[priority];
     const category = getCategory(event);
     const latestEventRef = useRef(event);
-    const currentTitleEditingResetKey = titleEditingResetKey ?? event._id;
     const eventStartDate = event.startDate as string;
     const eventEndDate = event.endDate as string;
 
@@ -147,11 +131,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
      ********/
     const [isEndDatePickerOpen, setIsEndDatePickerOpen] = useState(false);
     const [isStartDatePickerOpen, setIsStartDatePickerOpen] = useState(false);
-    const [titleEditingState, setTitleEditingState] =
-      useState<TitleEditingState>({
-        isStarted: false,
-        resetKey: currentTitleEditingResetKey,
-      });
     const [dateTimeState, setDateTimeState] = useState<EventFormDateTimeState>(
       () => createDateTimeState(eventStartDate, eventEndDate),
     );
@@ -168,28 +147,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       selectedStartDate,
       startTime,
     } = currentDateTimeState;
-    const isTitleEditingStarted =
-      titleEditingState.resetKey === currentTitleEditingResetKey &&
-      titleEditingState.isStarted;
-
-    const setIsTitleEditingStarted = useCallback(
-      (isStarted: boolean) => {
-        setTitleEditingState((state) => {
-          if (
-            state.isStarted === isStarted &&
-            state.resetKey === currentTitleEditingResetKey
-          ) {
-            return state;
-          }
-
-          return {
-            isStarted,
-            resetKey: currentTitleEditingResetKey,
-          };
-        });
-      },
-      [currentTitleEditingResetKey],
-    );
 
     const updateDateTimeState = useCallback(
       (
@@ -269,10 +226,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
         e: React.ChangeEvent<T>,
       ) => {
-        if (fieldName === "title" && !isTitleEditingStarted) {
-          setIsTitleEditingStarted(true);
-        }
-
         onSetEventField({ [fieldName]: e.target.value });
       };
 
@@ -313,29 +266,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       }
     };
 
-    const handleDraftTitleArrowKey = (e: KeyboardEvent<HTMLInputElement>) => {
-      if (
-        !onDraftTitleArrowKey ||
-        (!isDraft && !isExistingEvent) ||
-        isTitleEditingStarted ||
-        !DRAFT_TITLE_MOVEMENT_KEYS.has(e.key)
-      ) {
-        return false;
-      }
-
-      const didMove = onDraftTitleArrowKey(e.key);
-      if (!didMove) return false;
-
-      e.preventDefault();
-      e.stopPropagation();
-      return true;
-    };
-
     const handleTitleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-      if (handleDraftTitleArrowKey(e)) {
-        return;
-      }
-
       if (
         isDraft &&
         !isExistingEvent &&
@@ -345,7 +276,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       ) {
         e.preventDefault();
         e.stopPropagation();
-        setIsTitleEditingStarted(false);
         onSubmitForm();
         return;
       }
@@ -507,7 +437,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
               autoFocus
               onChange={onChangeEventTextField("title")}
               onKeyDown={handleTitleKeyDown}
-              onPointerDown={() => setIsTitleEditingStarted(true)}
               placeholder="Title"
               name="Event Title"
               ref={titleInputRef}

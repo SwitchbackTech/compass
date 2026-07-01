@@ -175,40 +175,6 @@ describe("EventForm", () => {
     expect(onDuplicate).toHaveBeenCalledWith(event);
   });
 
-  it("marks the title field as text editing after the user changes it", async () => {
-    const user = userEvent.setup();
-    const event = { ...createEvent(), title: "" };
-    const onDraftTitleArrowKey = mock(() => true);
-
-    render(
-      <EventForm
-        event={event}
-        isDraft={true}
-        isExistingEvent={false}
-        onClose={mock()}
-        onDelete={mock()}
-        onDuplicate={mock()}
-        onDraftTitleArrowKey={onDraftTitleArrowKey}
-        onSubmit={mock()}
-        setEvent={mock()}
-      />,
-    );
-
-    const titleField = screen.getByPlaceholderText("Title");
-
-    const beforeTyping = dispatchArrowDown(titleField);
-
-    expect(onDraftTitleArrowKey).toHaveBeenCalledTimes(1);
-    expect(beforeTyping.defaultPrevented).toBe(true);
-
-    await user.type(titleField, "Plan");
-    onDraftTitleArrowKey.mockClear();
-    const afterTyping = dispatchArrowDown(titleField);
-
-    expect(onDraftTitleArrowKey).not.toHaveBeenCalled();
-    expect(afterTyping.defaultPrevented).toBe(false);
-  });
-
   it("closes a draft event immediately when deleting from the menu", async () => {
     const user = userEvent.setup();
     const onClose = mock();
@@ -321,53 +287,6 @@ describe("EventForm", () => {
     });
   });
 
-  it("resets title editing state when an unsaved draft session changes", async () => {
-    const user = userEvent.setup();
-    const event = { ...createEvent(), _id: undefined, title: "" };
-    const onDraftTitleArrowKey = mock(() => true);
-
-    const { rerender } = render(
-      <EventForm
-        event={event}
-        isDraft={true}
-        isExistingEvent={false}
-        onClose={mock()}
-        onDelete={mock()}
-        onDuplicate={mock()}
-        onDraftTitleArrowKey={onDraftTitleArrowKey}
-        onSubmit={mock()}
-        setEvent={mock()}
-        titleEditingResetKey={1}
-      />,
-    );
-
-    const titleField = screen.getByPlaceholderText("Title");
-    await user.type(titleField, "Plan");
-    onDraftTitleArrowKey.mockClear();
-    dispatchArrowDown(titleField);
-    expect(onDraftTitleArrowKey).not.toHaveBeenCalled();
-
-    rerender(
-      <EventForm
-        event={event}
-        isDraft={true}
-        isExistingEvent={false}
-        onClose={mock()}
-        onDelete={mock()}
-        onDuplicate={mock()}
-        onDraftTitleArrowKey={onDraftTitleArrowKey}
-        onSubmit={mock()}
-        setEvent={mock()}
-        titleEditingResetKey={2}
-      />,
-    );
-
-    await waitFor(() => {
-      dispatchArrowDown(titleField);
-      expect(onDraftTitleArrowKey).toHaveBeenCalledTimes(1);
-    });
-  });
-
   it("rebases date and time controls during render when event dates change", () => {
     const event = createEvent();
     const nextEvent = {
@@ -414,9 +333,8 @@ describe("EventForm", () => {
     );
   });
 
-  it("moves an untouched empty draft title with arrow keys", () => {
+  it("lets an untouched empty draft title keep normal arrow-key behavior", () => {
     const event = { ...createEvent(), title: "" };
-    const onDraftTitleArrowKey = mock(() => true);
 
     render(
       <EventForm
@@ -425,7 +343,6 @@ describe("EventForm", () => {
         isExistingEvent={false}
         onClose={mock()}
         onDelete={mock()}
-        onDraftTitleArrowKey={onDraftTitleArrowKey}
         onDuplicate={mock()}
         onSubmit={mock()}
         setEvent={mock()}
@@ -435,13 +352,11 @@ describe("EventForm", () => {
     const titleField = screen.getByPlaceholderText("Title");
     const eventResult = dispatchArrowDown(titleField);
 
-    expect(onDraftTitleArrowKey).toHaveBeenCalledWith("ArrowDown");
-    expect(eventResult.defaultPrevented).toBe(true);
+    expect(eventResult.defaultPrevented).toBe(false);
   });
 
-  it("moves an untouched existing event draft title with arrow keys", () => {
+  it("lets an untouched existing event title keep normal arrow-key behavior", () => {
     const event = { ...createEvent(), title: "Planning" };
-    const onDraftTitleArrowKey = mock(() => true);
 
     render(
       <EventForm
@@ -450,7 +365,6 @@ describe("EventForm", () => {
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
-        onDraftTitleArrowKey={onDraftTitleArrowKey}
         onDuplicate={mock()}
         onSubmit={mock()}
         setEvent={mock()}
@@ -460,13 +374,31 @@ describe("EventForm", () => {
     const titleField = screen.getByPlaceholderText("Title");
     const eventResult = dispatchArrowDown(titleField);
 
-    expect(onDraftTitleArrowKey).toHaveBeenCalledWith("ArrowDown");
-    expect(eventResult.defaultPrevented).toBe(true);
+    expect(eventResult.defaultPrevented).toBe(false);
+  });
+
+  it("lets the description field keep normal arrow-key behavior", () => {
+    render(
+      <EventForm
+        event={createEvent({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={mock()}
+        onDelete={mock()}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    const descriptionField = screen.getByPlaceholderText("Description");
+    const eventResult = dispatchArrowDown(descriptionField);
+
+    expect(eventResult.defaultPrevented).toBe(false);
   });
 
   it("lets directly edited existing event titles keep normal arrow-key behavior", () => {
     const event = { ...createEvent(), title: "Planning" };
-    const onDraftTitleArrowKey = mock(() => true);
 
     render(
       <EventForm
@@ -475,7 +407,6 @@ describe("EventForm", () => {
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
-        onDraftTitleArrowKey={onDraftTitleArrowKey}
         onDuplicate={mock()}
         onSubmit={mock()}
         setEvent={mock()}
@@ -486,7 +417,6 @@ describe("EventForm", () => {
     fireEvent.pointerDown(titleField);
     const eventResult = dispatchArrowDown(titleField);
 
-    expect(onDraftTitleArrowKey).not.toHaveBeenCalled();
     expect(eventResult.defaultPrevented).toBe(false);
   });
 
