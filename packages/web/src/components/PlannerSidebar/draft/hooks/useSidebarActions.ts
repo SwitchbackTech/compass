@@ -16,7 +16,6 @@ import {
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import {
   computeCurrentEventDateRange,
   computeRelativeEventDateRange,
@@ -29,6 +28,7 @@ import {
 } from "@web/common/utils/event/event.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import { showMigrationToast } from "@web/components/PlannerSidebar/draft/hooks/MigrationToast";
 import {
   type Setters_Sidebar,

@@ -15,14 +15,14 @@ import {
 import { StringV4Schema } from "@core/types/type.utils";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { DirtyParser } from "@web/common/parsers/dirty.parser";
-import { EventInViewParser } from "@web/common/parsers/view.parser";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
+import { EventInViewParser } from "@web/common/utils/parse/view.parser";
 import {
   type Payload_ConvertEvent,
   type Payload_EditEvent,

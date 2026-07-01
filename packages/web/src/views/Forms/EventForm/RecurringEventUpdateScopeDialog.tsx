@@ -1,7 +1,7 @@
 import { useCallback, useState } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
-import { DirtyParser } from "@web/common/parsers/dirty.parser";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
