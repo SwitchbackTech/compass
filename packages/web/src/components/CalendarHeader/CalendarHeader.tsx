@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import { type FC } from "react";
 import { theme } from "@web/common/styles/theme";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
@@ -43,7 +44,7 @@ export const CalendarHeader: FC<Props> = ({
   const dispatch = useAppDispatch();
 
   return (
-    <div className="relative flex h-12 w-full shrink-0 items-center justify-between text-text-light">
+    <div className="flex h-12 w-full shrink-0 items-center text-text-light">
       {!isSidebarOpen ? (
         <TooltipWrapper
           description="Open sidebar"
@@ -56,11 +57,11 @@ export const CalendarHeader: FC<Props> = ({
         </TooltipWrapper>
       ) : null}
 
-      <h1 className="pl-5 text-text-lighter" aria-live="polite">
+      <h1 className="pl-8 text-text-lighter" aria-live="polite">
         <Text size="xl">{label}</Text>
       </h1>
 
-      <div className="z-2 flex items-center gap-3 pr-5">
+      <div className="z-2 ml-auto flex items-center gap-3 pr-5">
         <HeaderInfoIcon />
         <SelectView />
         <TodayButton navigateToToday={onToday} isToday={isToday} />
