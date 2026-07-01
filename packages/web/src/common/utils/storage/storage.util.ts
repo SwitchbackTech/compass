@@ -1,6 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
-import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
+import { ensureOfflineDataStoreReady } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { type Task } from "@web/common/types/task.types";
 import { type CompassTasksSavedEventDetail } from "./storage.types";
 
@@ -21,7 +21,7 @@ export async function loadTasksFromStorage(dateKey: string): Promise<Task[]> {
   }
 
   try {
-    await ensureStorageReady();
+    await ensureOfflineDataStoreReady();
     return await getTaskRepository("local").get(dateKey);
   } catch (error) {
     console.error("Error loading tasks from storage:", error);

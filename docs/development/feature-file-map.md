@@ -40,7 +40,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Day task hooks: `packages/web/src/views/Day/hooks/tasks`
 - Task UI components: `packages/web/src/views/Day/components/TaskList`
 - Drag handle floating placement guard: `packages/web/src/views/Day/components/Task/DraggableTask.tsx`
-- Local storage for tasks: `packages/web/src/common/storage/adapter`
+- Local storage for tasks: `packages/web/src/common/storage/offline-data`
 
 ## Day / Week Views
 
@@ -68,10 +68,11 @@ Use this document to find the first files to inspect for common Compass changes.
 
 ## Offline Storage
 
-- Adapter singleton and readiness: `packages/web/src/common/storage/adapter/adapter.ts`
-- IndexedDB implementation: `packages/web/src/common/storage/adapter/indexeddb.adapter.ts`
-- Legacy schema migration: `packages/web/src/common/storage/adapter/legacy-primary-key.migration.ts`
+- Offline data store singleton and readiness: `packages/web/src/common/storage/offline-data/offline-data.store.registry.ts`
+- IndexedDB implementation: `packages/web/src/common/storage/offline-data/indexeddb-offline-data.store.ts`
+- Legacy schema migration: `packages/web/src/common/storage/offline-data/legacy-primary-key.migration.ts`
 - Data/external migrations: `packages/web/src/common/storage/migrations`
+- Browser key-value state: `packages/web/src/common/storage/browser-key-value.store.ts`
 
 ## Sync And SSE
 

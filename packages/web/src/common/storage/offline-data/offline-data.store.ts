@@ -17,7 +17,7 @@ export interface StoredTask extends Task {
 }
 
 /**
- * Abstract storage adapter interface.
+ * Abstract store for structured offline event and task data.
  *
  * This interface defines storage operations independently of the underlying
  * storage technology (IndexedDB, SQLite, etc.). Implementations handle
@@ -28,7 +28,7 @@ export interface StoredTask extends Task {
  * - Easy to swap implementations (IndexedDB → SQLite)
  * - Testable via mock adapters
  */
-export interface StorageAdapter {
+export interface OfflineDataStore {
   /**
    * Initialize storage and run internal schema migrations.
    * Must be called before any other operations.

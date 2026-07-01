@@ -17,11 +17,7 @@ import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
-import {
-  TASK_LIST_MAX_WIDTH,
-  TASK_LIST_MIN_WIDTH,
-  useResizableTaskList,
-} from "@web/views/Day/hooks/layout/useResizableTaskList";
+import { useResizableTaskList } from "@web/views/Day/hooks/layout/useResizableTaskList";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
@@ -30,6 +26,10 @@ import {
   focusFirstDayCalendarEvent,
   openEventFormEditEvent,
 } from "@web/views/Day/interaction/dayCalendarFocus.util";
+import {
+  TASK_LIST_MAX_WIDTH,
+  TASK_LIST_MIN_WIDTH,
+} from "@web/views/Day/storage/task-list-width.constants";
 import {
   focusOnAddTaskInput,
   focusOnFirstTask,

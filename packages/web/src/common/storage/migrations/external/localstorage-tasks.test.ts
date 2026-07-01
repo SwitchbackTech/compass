@@ -3,7 +3,7 @@
  */
 
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
-import { type StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
+import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store";
 import { localStorageTasksMigration } from "./localstorage-tasks";
 import {
   afterEach,
@@ -17,11 +17,11 @@ import {
 
 const TASK_KEY_PREFIX = "compass.today.tasks.";
 
-type MockedStorageAdapter = {
-  [K in keyof StorageAdapter]: ReturnType<typeof mock>;
+type MockedOfflineDataStore = {
+  [K in keyof OfflineDataStore]: ReturnType<typeof mock>;
 };
 
-function createMockAdapter(): MockedStorageAdapter {
+function createMockStore(): MockedOfflineDataStore {
   const tasksByDate = new Map<string, ReturnType<typeof createMockTask>[]>();
 
   return {
@@ -75,15 +75,15 @@ describe("localStorageTasksMigration", () => {
   });
 
   it("skips when no task keys exist in localStorage", async () => {
-    const adapter = createMockAdapter();
+    const store = createMockStore();
 
-    await localStorageTasksMigration.migrate(adapter);
+    await localStorageTasksMigration.migrate(store);
 
-    expect(adapter.getTasks).not.toHaveBeenCalled();
-    expect(adapter.putTasks).not.toHaveBeenCalled();
+    expect(store.getTasks).not.toHaveBeenCalled();
+    expect(store.putTasks).not.toHaveBeenCalled();
   });
 
-  it("imports tasks from localStorage to adapter", async () => {
+  it("imports tasks from localStorage to store", async () => {
     const task = createMockTask({ _id: "task-1", title: "Test Task" });
     const dateKey = "2025-01-15";
     localStorage.setItem(
@@ -91,13 +91,13 @@ describe("localStorageTasksMigration", () => {
       JSON.stringify([task]),
     );
 
-    const adapter = createMockAdapter();
-    adapter.getTasks.mockResolvedValue([]);
+    const store = createMockStore();
+    store.getTasks.mockResolvedValue([]);
 
-    await localStorageTasksMigration.migrate(adapter);
+    await localStorageTasksMigration.migrate(store);
 
-    expect(adapter.getTasks).toHaveBeenCalledWith(dateKey);
-    expect(adapter.putTasks).toHaveBeenCalledWith(dateKey, [task]);
+    expect(store.getTasks).toHaveBeenCalledWith(dateKey);
+    expect(store.putTasks).toHaveBeenCalledWith(dateKey, [task]);
   });
 
   it("removes successfully migrated keys from localStorage", async () => {
@@ -106,10 +106,10 @@ describe("localStorageTasksMigration", () => {
     const storageKey = `${TASK_KEY_PREFIX}${dateKey}`;
     localStorage.setItem(storageKey, JSON.stringify([task]));
 
-    const adapter = createMockAdapter();
-    adapter.getTasks.mockResolvedValue([]);
+    const store = createMockStore();
+    store.getTasks.mockResolvedValue([]);
 
-    await localStorageTasksMigration.migrate(adapter);
+    await localStorageTasksMigration.migrate(store);
 
     expect(localStorage.getItem(storageKey)).toBeNull();
   });
@@ -129,12 +129,12 @@ describe("localStorageTasksMigration", () => {
       JSON.stringify([legacyTask]),
     );
 
-    const adapter = createMockAdapter();
-    adapter.getTasks.mockResolvedValue([]);
+    const store = createMockStore();
+    store.getTasks.mockResolvedValue([]);
 
-    await localStorageTasksMigration.migrate(adapter);
+    await localStorageTasksMigration.migrate(store);
 
-    expect(adapter.putTasks).toHaveBeenCalledWith(
+    expect(store.putTasks).toHaveBeenCalledWith(
       dateKey,
       expect.arrayContaining([
         expect.objectContaining({ _id: "legacy-task-1", title: "Legacy Task" }),
@@ -142,7 +142,7 @@ describe("localStorageTasksMigration", () => {
     );
   });
 
-  it("does not duplicate tasks that already exist in adapter", async () => {
+  it("does not duplicate tasks that already exist in store", async () => {
     const task = createMockTask({ _id: "task-1", title: "Existing" });
     const dateKey = "2025-01-15";
     localStorage.setItem(
@@ -150,12 +150,12 @@ describe("localStorageTasksMigration", () => {
       JSON.stringify([task]),
     );
 
-    const adapter = createMockAdapter();
-    adapter.getTasks.mockResolvedValue([task]);
+    const store = createMockStore();
+    store.getTasks.mockResolvedValue([task]);
 
-    await localStorageTasksMigration.migrate(adapter);
+    await localStorageTasksMigration.migrate(store);
 
-    expect(adapter.putTasks).not.toHaveBeenCalled();
+    expect(store.putTasks).not.toHaveBeenCalled();
   });
 
   it("merges new tasks with existing tasks for same date", async () => {
@@ -167,12 +167,12 @@ describe("localStorageTasksMigration", () => {
       JSON.stringify([newTask]),
     );
 
-    const adapter = createMockAdapter();
-    adapter.getTasks.mockResolvedValue([existingTask]);
+    const store = createMockStore();
+    store.getTasks.mockResolvedValue([existingTask]);
 
-    await localStorageTasksMigration.migrate(adapter);
+    await localStorageTasksMigration.migrate(store);
 
-    expect(adapter.putTasks).toHaveBeenCalledWith(dateKey, [
+    expect(store.putTasks).toHaveBeenCalledWith(dateKey, [
       existingTask,
       newTask,
     ]);
@@ -191,10 +191,10 @@ describe("localStorageTasksMigration", () => {
     localStorage.setItem(validKey, JSON.stringify([validTask]));
     localStorage.setItem(invalidKey, "invalid json {{{");
 
-    const adapter = createMockAdapter();
-    adapter.getTasks.mockResolvedValue([]);
+    const store = createMockStore();
+    store.getTasks.mockResolvedValue([]);
 
-    await localStorageTasksMigration.migrate(adapter);
+    await localStorageTasksMigration.migrate(store);
 
     expect(localStorage.getItem(validKey)).toBeNull();
     expect(localStorage.getItem(invalidKey)).toBe("invalid json {{{");
@@ -206,11 +206,11 @@ describe("localStorageTasksMigration", () => {
     const storageKey = `${TASK_KEY_PREFIX}${dateKey}`;
     localStorage.setItem(storageKey, JSON.stringify("not an array"));
 
-    const adapter = createMockAdapter();
+    const store = createMockStore();
 
-    await localStorageTasksMigration.migrate(adapter);
+    await localStorageTasksMigration.migrate(store);
 
-    expect(adapter.putTasks).not.toHaveBeenCalled();
+    expect(store.putTasks).not.toHaveBeenCalled();
     expect(localStorage.getItem(storageKey)).toBeTruthy();
   });
 
@@ -232,10 +232,10 @@ describe("localStorageTasksMigration", () => {
       JSON.stringify([task]),
     );
 
-    const adapter = createMockAdapter();
-    adapter.getTasks.mockResolvedValue([]);
+    const store = createMockStore();
+    store.getTasks.mockResolvedValue([]);
 
-    await localStorageTasksMigration.migrate(adapter);
+    await localStorageTasksMigration.migrate(store);
 
     expect(localStorageTasksMigration.isComplete?.()).toBe(true);
   });

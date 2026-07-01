@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { sessionBrowserStore } from "@web/common/storage/browser-key-value.store";
 import {
   GOOGLE_AUTH_INTENT_MAX_AGE_MS,
   GOOGLE_AUTH_INTENT_STORAGE_PREFIX,
@@ -24,14 +25,14 @@ export function writeGoogleAuthorizationIntent(
   state: string,
   intent: GoogleAuthorizationIntent,
 ): void {
-  sessionStorage.setItem(getStorageKey(state), JSON.stringify(intent));
+  sessionBrowserStore.set(getStorageKey(state), JSON.stringify(intent));
 }
 
 export function readGoogleAuthorizationIntent(
   state: string,
 ): GoogleAuthorizationIntent | null {
   const key = getStorageKey(state);
-  const stored = sessionStorage.getItem(key);
+  const stored = sessionBrowserStore.get(key);
 
   if (!stored) {
     return null;
@@ -42,14 +43,14 @@ export function readGoogleAuthorizationIntent(
   try {
     storedIntent = JSON.parse(stored);
   } catch {
-    sessionStorage.removeItem(key);
+    sessionBrowserStore.remove(key);
     return null;
   }
 
   const parsed = GoogleAuthorizationIntentSchema.safeParse(storedIntent);
 
   if (!parsed.success) {
-    sessionStorage.removeItem(key);
+    sessionBrowserStore.remove(key);
     return null;
   }
 
@@ -57,7 +58,7 @@ export function readGoogleAuthorizationIntent(
     Date.now() - parsed.data.createdAt > GOOGLE_AUTH_INTENT_MAX_AGE_MS;
 
   if (isExpired) {
-    sessionStorage.removeItem(key);
+    sessionBrowserStore.remove(key);
     return null;
   }
 
@@ -65,5 +66,5 @@ export function readGoogleAuthorizationIntent(
 }
 
 export function clearGoogleAuthorizationIntent(state: string): void {
-  sessionStorage.removeItem(getStorageKey(state));
+  sessionBrowserStore.remove(getStorageKey(state));
 }

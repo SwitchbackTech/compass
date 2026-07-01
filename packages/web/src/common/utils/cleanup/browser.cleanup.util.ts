@@ -1,4 +1,5 @@
 import { session } from "@web/common/classes/Session";
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "@web/common/utils/storage/storage.util";
 
 /**
@@ -21,17 +22,14 @@ export async function clearAllBrowserStorage(): Promise<void> {
     }
 
     // 2. Clear all localStorage keys that start with 'compass.'
-    const keysToRemove: string[] = [];
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (
-        key?.startsWith("compass.") ||
-        key?.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX)
-      ) {
-        keysToRemove.push(key);
-      }
-    }
-    keysToRemove.forEach((key) => localStorage.removeItem(key));
+    persistentBrowserStore
+      .keys()
+      .filter(
+        (key) =>
+          key.startsWith("compass.") ||
+          key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX),
+      )
+      .forEach((key) => persistentBrowserStore.remove(key));
 
     // 3. Clear IndexedDB 'compass-local' database if it exists
     if (window.indexedDB) {
@@ -64,14 +62,11 @@ export async function clearAllBrowserStorage(): Promise<void> {
  */
 export function hasCompassStorage(): boolean {
   // Check localStorage
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (
-      key?.startsWith("compass.") ||
-      key?.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX)
-    ) {
-      return true;
-    }
-  }
-  return false;
+  return persistentBrowserStore
+    .keys()
+    .some(
+      (key) =>
+        key.startsWith("compass.") ||
+        key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX),
+    );
 }

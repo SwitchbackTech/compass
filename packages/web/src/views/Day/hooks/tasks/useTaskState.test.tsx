@@ -4,11 +4,19 @@ import { type Task } from "@web/common/types/task.types";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
 import { describe, expect, it, mock } from "bun:test";
 
-const ensureStorageReadyMock = mock(() => Promise.resolve());
+const ensureOfflineDataStoreReadyMock = mock(() => Promise.resolve());
 
-mock.module("@web/common/storage/adapter/adapter", () => ({
-  ensureStorageReady: ensureStorageReadyMock,
-}));
+mock.module(
+  "@web/common/storage/offline-data/offline-data.store.registry",
+  () => ({
+    ensureOfflineDataStoreReady: ensureOfflineDataStoreReadyMock,
+    getOfflineDataStore: mock(),
+    initializeOfflineDataStore: mock().mockResolvedValue(undefined),
+    isOfflineDataStoreReady: mock().mockReturnValue(true),
+    resetOfflineDataStore: mock(),
+    resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
+  }),
+);
 
 const makeTask = (overrides: Partial<Task> = {}): Task => ({
   _id: "task-1",
@@ -32,7 +40,7 @@ function deferred<T>() {
 
 describe("useTaskState", () => {
   it("keeps loaded tasks visible while the next date loads", async () => {
-    ensureStorageReadyMock.mockResolvedValue(undefined);
+    ensureOfflineDataStoreReadyMock.mockResolvedValue(undefined);
 
     const firstDateTasks = deferred<Task[]>();
     const nextDateTasks = deferred<Task[]>();

@@ -1,8 +1,8 @@
+import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store";
 import {
-  ensureStorageReady,
-  getStorageAdapter,
-} from "@web/common/storage/adapter/adapter";
-import { type StorageAdapter } from "@web/common/storage/adapter/storage.adapter";
+  ensureOfflineDataStoreReady,
+  getOfflineDataStore,
+} from "@web/common/storage/offline-data/offline-data.store.registry";
 import {
   isLocalDemoEvent,
   stripLocalOnlyEventFields,
@@ -10,25 +10,25 @@ import {
 import { EventApi } from "@web/ducks/events/event.api";
 
 type LocalEventSyncStorage = Pick<
-  StorageAdapter,
+  OfflineDataStore,
   "clearAllEvents" | "getAllEvents"
 >;
 
 type LocalEventSyncDependencies = {
   createEvents: typeof EventApi.create;
-  ensureStorageReady: typeof ensureStorageReady;
-  getStorageAdapter: () => LocalEventSyncStorage;
+  ensureOfflineDataStoreReady: typeof ensureOfflineDataStoreReady;
+  getOfflineDataStore: () => LocalEventSyncStorage;
 };
 
 export function createSyncLocalEventsToCloud({
   createEvents,
-  ensureStorageReady,
-  getStorageAdapter,
+  ensureOfflineDataStoreReady,
+  getOfflineDataStore,
 }: LocalEventSyncDependencies) {
   return async function syncLocalEventsToCloud(): Promise<number> {
-    await ensureStorageReady();
-    const adapter = getStorageAdapter();
-    const events = await adapter.getAllEvents();
+    await ensureOfflineDataStoreReady();
+    const store = getOfflineDataStore();
+    const events = await store.getAllEvents();
 
     if (events.length === 0) {
       return 0;
@@ -42,7 +42,7 @@ export function createSyncLocalEventsToCloud({
       await createEvents(eventsToSync);
     }
 
-    await adapter.clearAllEvents();
+    await store.clearAllEvents();
 
     return eventsToSync.length;
   };
@@ -50,6 +50,6 @@ export function createSyncLocalEventsToCloud({
 
 export const syncLocalEventsToCloud = createSyncLocalEventsToCloud({
   createEvents: EventApi.create,
-  ensureStorageReady,
-  getStorageAdapter,
+  ensureOfflineDataStoreReady,
+  getOfflineDataStore,
 });

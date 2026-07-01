@@ -1,8 +1,8 @@
 import { type Task } from "@web/common/types/task.types";
 import {
-  type StorageAdapter,
+  type OfflineDataStore,
   type StoredTask,
-} from "../../adapter/storage.adapter";
+} from "../../offline-data/offline-data.store";
 import { type DataMigration } from "../migration.types";
 
 type RawStoredTask = StoredTask & { id?: string };
@@ -35,8 +35,8 @@ export const taskIdToUnderscoreIdMigration: DataMigration = {
   id: "task-id-to-underscore-id-v1",
   description: "Migrate task 'id' field to '_id' for stored tasks",
 
-  async migrate(adapter: StorageAdapter): Promise<void> {
-    const allTasks = (await adapter.getAllTasks()) as RawStoredTask[];
+  async migrate(store: OfflineDataStore): Promise<void> {
+    const allTasks = (await store.getAllTasks()) as RawStoredTask[];
     if (allTasks.length === 0) return;
 
     const affectedDateKeys = new Set<string>();
@@ -57,7 +57,7 @@ export const taskIdToUnderscoreIdMigration: DataMigration = {
     for (const dateKey of affectedDateKeys) {
       const tasks = byDate.get(dateKey) ?? [];
       const sorted = [...tasks].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-      await adapter.putTasks(dateKey, sorted);
+      await store.putTasks(dateKey, sorted);
     }
   },
 };

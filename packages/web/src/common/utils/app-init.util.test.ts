@@ -9,13 +9,21 @@ import {
   spyOn,
 } from "bun:test";
 
-// Mock the storage adapter
+// Mock the offline data store
 const mockInitializeStorage = mock();
 const mockToastError = mock();
 
-mock.module("@web/common/storage/adapter/adapter", () => ({
-  initializeStorage: mockInitializeStorage,
-}));
+mock.module(
+  "@web/common/storage/offline-data/offline-data.store.registry",
+  () => ({
+    ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
+    getOfflineDataStore: mock(),
+    initializeOfflineDataStore: mockInitializeStorage,
+    isOfflineDataStoreReady: mock().mockReturnValue(true),
+    resetOfflineDataStore: mock(),
+    resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
+  }),
+);
 
 // Mock react-toastify
 mock.module("react-toastify", () => ({

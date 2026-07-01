@@ -1,5 +1,5 @@
 import { toast } from "react-toastify";
-import { initializeStorage } from "@web/common/storage/adapter/adapter";
+import { initializeOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { DatabaseInitError } from "./storage/db-errors.util";
 
 export interface AppInitResult {
@@ -10,7 +10,7 @@ export interface AppInitResult {
  * Initialize storage for the application.
  *
  * This:
- * 1. Initializes the storage adapter (IndexedDB with Dexie schema migrations)
+ * 1. Initializes the offline data store (IndexedDB with Dexie schema migrations)
  * 2. Runs data migrations (storage-agnostic transformations)
  * 3. Runs external migrations (imports from localStorage, etc.)
  *
@@ -20,7 +20,7 @@ export async function initializeDatabaseWithErrorHandling(): Promise<AppInitResu
   let dbInitError: DatabaseInitError | null = null;
 
   try {
-    await initializeStorage();
+    await initializeOfflineDataStore();
   } catch (error) {
     if (error instanceof DatabaseInitError) {
       dbInitError = error;

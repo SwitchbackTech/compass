@@ -1,4 +1,5 @@
-import { type StorageAdapter } from "../adapter/storage.adapter";
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
+import { type OfflineDataStore } from "../offline-data/offline-data.store";
 import { taskIdToUnderscoreIdMigration } from "./data/task-id-to-underscore-id";
 import { demoDataSeedMigration } from "./external/demo-data-seed";
 import { localStorageTasksMigration } from "./external/localstorage-tasks";
@@ -9,7 +10,7 @@ import { type DataMigration, type ExternalMigration } from "./migration.types";
 
 /**
  * Data migrations transform existing data within storage.
- * Tracked via the storage adapter's migration records.
+ * Tracked via the offline data store's migration records.
  */
 export const dataMigrations: DataMigration[] = [taskIdToUnderscoreIdMigration];
 
@@ -27,15 +28,15 @@ export const externalMigrations: ExternalMigration[] = [
 /**
  * Run all pending data migrations.
  *
- * Data migrations are tracked in the storage adapter's _migrations table.
+ * Data migrations are tracked in the offline data store's _migrations table.
  * Each migration only runs once - its ID is recorded after completion.
  */
 export async function runDataMigrations(
-  adapter: StorageAdapter,
+  store: OfflineDataStore,
 ): Promise<void> {
   if (dataMigrations.length === 0) return;
 
-  const completedRecords = await adapter.getMigrationRecords();
+  const completedRecords = await store.getMigrationRecords();
   const completedIds = new Set(completedRecords.map((r) => r.id));
 
   for (const migration of dataMigrations) {
@@ -44,8 +45,8 @@ export async function runDataMigrations(
     }
 
     try {
-      await migration.migrate(adapter);
-      await adapter.setMigrationRecord(migration.id);
+      await migration.migrate(store);
+      await store.setMigrationRecord(migration.id);
     } catch (error) {
       console.error(`[Migration] Failed: ${migration.id}`, error);
       throw error; // Data migrations are critical - fail fast
@@ -57,25 +58,25 @@ export async function runDataMigrations(
  * Run all pending external migrations.
  *
  * External migrations are tracked via localStorage flags since they
- * import data from sources outside the storage adapter. Failures are
+ * import data from sources outside the offline data store. Failures are
  * logged but don't block app startup - data stays in source for retry.
  */
 export async function runExternalMigrations(
-  adapter: StorageAdapter,
+  store: OfflineDataStore,
 ): Promise<void> {
-  if (typeof localStorage === "undefined") {
+  if (!persistentBrowserStore.isAvailable()) {
     return;
   }
 
   for (const migration of externalMigrations) {
     const flagKey = `compass.migration.${migration.id}`;
 
-    if (localStorage.getItem(flagKey) === "completed") {
+    if (persistentBrowserStore.get(flagKey) === "completed") {
       continue;
     }
 
     try {
-      await migration.migrate(adapter);
+      await migration.migrate(store);
       const isComplete = migration.isComplete
         ? await migration.isComplete()
         : true;
@@ -85,7 +86,7 @@ export async function runExternalMigrations(
         continue;
       }
 
-      localStorage.setItem(flagKey, "completed");
+      persistentBrowserStore.set(flagKey, "completed");
     } catch (error) {
       // External migrations are non-blocking - data stays in source for retry
       console.error(
@@ -103,9 +104,9 @@ export async function runExternalMigrations(
  * 1. Data migrations (storage-agnostic transformations)
  * 2. External migrations (imports from localStorage, etc.)
  */
-export async function runAllMigrations(adapter: StorageAdapter): Promise<void> {
-  await runDataMigrations(adapter);
-  await runExternalMigrations(adapter);
+export async function runAllMigrations(store: OfflineDataStore): Promise<void> {
+  await runDataMigrations(store);
+  await runExternalMigrations(store);
 }
 
 // Re-export types for convenience

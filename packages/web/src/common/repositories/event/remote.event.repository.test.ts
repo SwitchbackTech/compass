@@ -28,12 +28,20 @@ mock.module("@web/ducks/events/event.api", () => ({
   },
 }));
 
-mock.module("@web/common/storage/adapter/adapter", () => ({
-  getStorageAdapter: () => ({
-    getEvents: mockGetEvents,
-    putEvent: mockPutEvent,
+mock.module(
+  "@web/common/storage/offline-data/offline-data.store.registry",
+  () => ({
+    ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
+    getOfflineDataStore: () => ({
+      getEvents: mockGetEvents,
+      putEvent: mockPutEvent,
+    }),
+    initializeOfflineDataStore: mock().mockResolvedValue(undefined),
+    isOfflineDataStoreReady: mock().mockReturnValue(true),
+    resetOfflineDataStore: mock(),
+    resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
   }),
-}));
+);
 
 const { RemoteEventRepository } =
   require("./remote.event.repository") as typeof import("./remote.event.repository");

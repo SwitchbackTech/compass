@@ -13,9 +13,9 @@ import {
 } from "./legacy-primary-key.migration";
 import {
   type MigrationRecord,
-  type StorageAdapter,
+  type OfflineDataStore,
   type StoredTask,
-} from "./storage.adapter";
+} from "./offline-data.store";
 
 /**
  * Dexie database schema for Compass local storage.
@@ -51,14 +51,14 @@ class CompassDB extends Dexie {
 }
 
 /**
- * IndexedDB implementation of StorageAdapter using Dexie.
+ * IndexedDB implementation of OfflineDataStore using Dexie.
  *
- * This adapter encapsulates all IndexedDB-specific logic, including:
+ * This store encapsulates all IndexedDB-specific logic, including:
  * - Schema versioning via Dexie
  * - Dexie transaction management
  * - Query optimization using indexes
  */
-export class IndexedDBAdapter implements StorageAdapter {
+export class IndexedDbOfflineDataStore implements OfflineDataStore {
   private db = new CompassDB();
   private initialized = false;
 

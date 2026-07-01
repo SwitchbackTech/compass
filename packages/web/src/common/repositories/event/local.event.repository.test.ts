@@ -10,12 +10,20 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 const putEvent = mock();
 const getAllEvents = mock();
 
-mock.module("@web/common/storage/adapter/adapter", () => ({
-  getStorageAdapter: () => ({
-    putEvent,
-    getAllEvents,
+mock.module(
+  "@web/common/storage/offline-data/offline-data.store.registry",
+  () => ({
+    ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
+    getOfflineDataStore: () => ({
+      putEvent,
+      getAllEvents,
+    }),
+    initializeOfflineDataStore: mock().mockResolvedValue(undefined),
+    isOfflineDataStoreReady: mock().mockReturnValue(true),
+    resetOfflineDataStore: mock(),
+    resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
   }),
-}));
+);
 
 const makeEvent = (overrides: Partial<Event_Core> = {}): Event_Core => ({
   _id: "event-1",

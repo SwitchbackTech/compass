@@ -1,5 +1,6 @@
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { isTask, type Task } from "@web/common/types/task.types";
-import { type StorageAdapter } from "../../adapter/storage.adapter";
+import { type OfflineDataStore } from "../../offline-data/offline-data.store";
 import { type ExternalMigration } from "../migration.types";
 
 const TASK_KEY_PREFIX = "compass.today.tasks.";
@@ -35,25 +36,20 @@ function normalizeTaskWithLegacyId(item: unknown): Task | null {
  * Get all localStorage keys that contain task data.
  */
 function getTaskStorageKeys(): string[] {
-  const keys: string[] = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key?.startsWith(TASK_KEY_PREFIX)) {
-      keys.push(key);
-    }
-  }
-  return keys;
+  return persistentBrowserStore
+    .keys()
+    .filter((key) => key.startsWith(TASK_KEY_PREFIX));
 }
 
 /**
- * Migration to import tasks from localStorage to the storage adapter.
+ * Migration to import tasks from localStorage to the offline data store.
  *
  * This handles the transition from the original localStorage-based task
  * storage to IndexedDB. It:
  *
  * 1. Finds all task entries in localStorage (compass.today.tasks.YYYY-MM-DD)
  * 2. Parses and validates each task (including legacy 'id' → '_id' mapping)
- * 3. Saves valid tasks to the storage adapter
+ * 3. Saves valid tasks to the offline data store
  * 4. Removes successfully migrated entries from localStorage
  *
  * Partial failures are handled gracefully - only successfully migrated
@@ -61,11 +57,11 @@ function getTaskStorageKeys(): string[] {
  */
 export const localStorageTasksMigration: ExternalMigration = {
   id: "localstorage-tasks-v1",
-  description: "Migrate tasks from localStorage to storage adapter",
+  description: "Migrate tasks from localStorage to offline data store",
 
-  async migrate(adapter: StorageAdapter): Promise<void> {
+  async migrate(store: OfflineDataStore): Promise<void> {
     // Skip when localStorage is unavailable
-    if (typeof localStorage === "undefined") {
+    if (!persistentBrowserStore.isAvailable()) {
       return;
     }
 
@@ -79,7 +75,7 @@ export const localStorageTasksMigration: ExternalMigration = {
 
     for (const key of keys) {
       const dateKey = key.replace(TASK_KEY_PREFIX, "");
-      const raw = localStorage.getItem(key);
+      const raw = persistentBrowserStore.get(key);
 
       if (!raw) {
         continue;
@@ -97,14 +93,14 @@ export const localStorageTasksMigration: ExternalMigration = {
 
         if (tasks.length > 0) {
           // Get existing tasks for this date to merge
-          const existingTasks = await adapter.getTasks(dateKey);
+          const existingTasks = await store.getTasks(dateKey);
           const existingIds = new Set(existingTasks.map((t) => t._id));
 
           // Only add tasks that don't already exist
           const newTasks = tasks.filter((t) => !existingIds.has(t._id));
 
           if (newTasks.length > 0) {
-            await adapter.putTasks(dateKey, [...existingTasks, ...newTasks]);
+            await store.putTasks(dateKey, [...existingTasks, ...newTasks]);
             _totalMigrated += newTasks.length;
           }
         }
@@ -118,12 +114,12 @@ export const localStorageTasksMigration: ExternalMigration = {
 
     // Remove successfully migrated entries from localStorage
     for (const key of keysToRemove) {
-      localStorage.removeItem(key);
+      persistentBrowserStore.remove(key);
     }
   },
 
   isComplete(): boolean {
-    if (typeof localStorage === "undefined") {
+    if (!persistentBrowserStore.isAvailable()) {
       return true;
     }
 

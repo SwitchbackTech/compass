@@ -5,20 +5,20 @@ import {
   type RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
+import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { preserveLocalEventMarker } from "@web/common/storage/types/local-event.types";
 import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
 import { type EventRepository } from "./event.repository.interface";
 
 /**
- * Local event repository implementation using the storage adapter.
+ * Local event repository implementation using the offline data store.
  *
- * This repository delegates all storage operations to the StorageAdapter,
+ * This repository delegates all storage operations to the OfflineDataStore,
  * making it independent of the underlying storage technology.
  */
 export class LocalEventRepository implements EventRepository {
-  private get adapter() {
-    return getStorageAdapter();
+  private get store() {
+    return getOfflineDataStore();
   }
 
   async create(event: Schema_Event | Schema_Event[]): Promise<void> {
@@ -29,7 +29,7 @@ export class LocalEventRepository implements EventRepository {
 
     for (const e of events) {
       try {
-        await this.adapter.putEvent(e as Event_Core);
+        await this.store.putEvent(e as Event_Core);
       } catch (error) {
         errors.push({ event: e, error });
       }
@@ -44,7 +44,7 @@ export class LocalEventRepository implements EventRepository {
   }
 
   async get(params: Params_Events): Promise<Response_GetEventsSuccess> {
-    const events = await this.adapter.getEvents(
+    const events = await this.store.getEvents(
       params.startDate,
       params.endDate,
       params.someday,
@@ -67,7 +67,7 @@ export class LocalEventRepository implements EventRepository {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _params: { applyTo?: RecurringEventUpdateScope },
   ): Promise<void> {
-    const existingEvent = (await this.adapter.getAllEvents()).find(
+    const existingEvent = (await this.store.getAllEvents()).find(
       (storedEvent) => storedEvent._id === _id,
     );
     const eventToSave = preserveLocalEventMarker(
@@ -75,7 +75,7 @@ export class LocalEventRepository implements EventRepository {
       event as Event_Core,
     );
 
-    await this.adapter.putEvent(eventToSave);
+    await this.store.putEvent(eventToSave);
   }
 
   async delete(
@@ -84,11 +84,11 @@ export class LocalEventRepository implements EventRepository {
     _applyTo?: RecurringEventUpdateScope,
   ): Promise<void> {
     // For local repository, applyTo is not relevant
-    await this.adapter.deleteEvent(_id);
+    await this.store.deleteEvent(_id);
   }
 
   async reorder(order: Payload_Order[]): Promise<void> {
-    const allEvents = await this.adapter.getAllEvents();
+    const allEvents = await this.store.getAllEvents();
     const orderMap = new Map(order.map((o) => [o._id, o.order]));
 
     // Track errors for individual event saves
@@ -101,7 +101,7 @@ export class LocalEventRepository implements EventRepository {
         const eventWithOrder = event as unknown as Schema_Event;
         eventWithOrder.order = orderMap.get(eventId);
         try {
-          await this.adapter.putEvent(event);
+          await this.store.putEvent(event);
         } catch (error) {
           errors.push({ eventId, error });
         }

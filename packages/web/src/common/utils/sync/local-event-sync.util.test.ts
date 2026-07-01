@@ -4,15 +4,15 @@ import { markLocalDemoEvent } from "../../storage/types/local-event.types";
 import { createSyncLocalEventsToCloud } from "./local-event-sync.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-const ensureStorageReady = mock();
+const ensureOfflineDataStoreReady = mock();
 const getAllEvents = mock();
 const clearAllEvents = mock();
 const create = mock();
 
 const syncLocalEventsToCloud = createSyncLocalEventsToCloud({
   createEvents: create,
-  ensureStorageReady,
-  getStorageAdapter: () => ({
+  ensureOfflineDataStoreReady,
+  getOfflineDataStore: () => ({
     clearAllEvents,
     getAllEvents,
   }),
@@ -31,7 +31,7 @@ const makeEvent = (overrides: Partial<Event_Core> = {}): Event_Core => ({
 
 describe("syncLocalEventsToCloud", () => {
   beforeEach(() => {
-    ensureStorageReady.mockClear();
+    ensureOfflineDataStoreReady.mockClear();
     getAllEvents.mockClear();
     clearAllEvents.mockClear();
     create.mockClear();

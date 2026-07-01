@@ -2,7 +2,7 @@
  * Tests for the migration runners.
  */
 
-import { createMockStorageAdapter } from "@web/__tests__/utils/storage/mock-storage-adapter.util";
+import { createMockOfflineDataStore } from "@web/__tests__/utils/storage/mock-offline-data-store.util";
 import { DEMO_DATA_SEED_FLAG_KEY } from "@web/common/storage/migrations/external/demo-data-seed";
 import {
   runAllMigrations,
@@ -51,18 +51,18 @@ describe("storage migrations", () => {
 
   describe("runDataMigrations", () => {
     it("skips migrations that are already completed", async () => {
-      const adapter = createMockStorageAdapter();
-      adapter.getMigrationRecords.mockResolvedValue([
+      const store = createMockOfflineDataStore();
+      store.getMigrationRecords.mockResolvedValue([
         {
           id: "task-id-to-underscore-id-v1",
           completedAt: new Date().toISOString(),
         },
       ]);
-      adapter.getAllTasks.mockResolvedValue([]);
+      store.getAllTasks.mockResolvedValue([]);
 
-      await runDataMigrations(adapter);
+      await runDataMigrations(store);
 
-      expect(adapter.putTasks).not.toHaveBeenCalled();
+      expect(store.putTasks).not.toHaveBeenCalled();
     });
   });
 
@@ -71,19 +71,19 @@ describe("storage migrations", () => {
       localStorage.setItem(localStorageMigrationFlagKey, "completed");
       localStorage.setItem(DEMO_DATA_SEED_FLAG_KEY, "completed");
 
-      const adapter = createMockStorageAdapter();
+      const store = createMockOfflineDataStore();
 
-      await runExternalMigrations(adapter);
+      await runExternalMigrations(store);
 
-      expect(adapter.putTasks).not.toHaveBeenCalled();
+      expect(store.putTasks).not.toHaveBeenCalled();
     });
 
     it("runs migrations and sets flags when not previously completed", async () => {
-      const adapter = createMockStorageAdapter();
-      adapter.getTasks.mockResolvedValue([]);
-      adapter.putTasks.mockResolvedValue(undefined);
+      const store = createMockOfflineDataStore();
+      store.getTasks.mockResolvedValue([]);
+      store.putTasks.mockResolvedValue(undefined);
 
-      await runExternalMigrations(adapter);
+      await runExternalMigrations(store);
 
       expect(localStorage.getItem(localStorageMigrationFlagKey)).toBe(
         "completed",
@@ -99,9 +99,9 @@ describe("storage migrations", () => {
         "invalid json {{{",
       );
 
-      const adapter = createMockStorageAdapter();
+      const store = createMockOfflineDataStore();
 
-      await expect(runExternalMigrations(adapter)).resolves.toBeUndefined();
+      await expect(runExternalMigrations(store)).resolves.toBeUndefined();
       // localStorage migration should not be marked completed due to invalid JSON
       expect(localStorage.getItem(localStorageMigrationFlagKey)).toBeNull();
     });
@@ -109,10 +109,10 @@ describe("storage migrations", () => {
 
   describe("runAllMigrations", () => {
     it("runs data then external migrations without error", async () => {
-      const adapter = createMockStorageAdapter();
-      adapter.getTasks.mockResolvedValue([]);
+      const store = createMockOfflineDataStore();
+      store.getTasks.mockResolvedValue([]);
 
-      await expect(runAllMigrations(adapter)).resolves.toBeUndefined();
+      await expect(runAllMigrations(store)).resolves.toBeUndefined();
       expect(localStorage.getItem(localStorageMigrationFlagKey)).toBe(
         "completed",
       );

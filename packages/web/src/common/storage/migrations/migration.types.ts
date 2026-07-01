@@ -1,9 +1,9 @@
-import { type StorageAdapter } from "../adapter/storage.adapter";
+import { type OfflineDataStore } from "../offline-data/offline-data.store";
 
 /**
  * Data migration - transforms existing data within storage.
  *
- * Data migrations work through the abstract StorageAdapter interface,
+ * Data migrations work through the abstract OfflineDataStore interface,
  * making them storage-agnostic. They're tracked in the storage's
  * _migrations table and only run once.
  *
@@ -17,8 +17,8 @@ import { type StorageAdapter } from "../adapter/storage.adapter";
  * const addUserIdMigration: DataMigration = {
  *   id: "add-user-id-v1",
  *   description: "Add user field to tasks missing it",
- *   async migrate(adapter) {
- *     const tasks = await adapter.getAllTasks();
+ *   async migrate(store) {
+ *     const tasks = await store.getAllTasks();
  *     // transform and save tasks...
  *   }
  * };
@@ -30,15 +30,16 @@ export interface DataMigration {
   /** Human-readable description */
   description: string;
   /** Migration function that transforms data */
-  migrate: (adapter: StorageAdapter) => Promise<void>;
+  migrate: (store: OfflineDataStore) => Promise<void>;
 }
 
 /**
  * External migration - imports data from external sources.
  *
  * External migrations import data from sources outside the storage
- * adapter (localStorage, files, APIs, etc.). They're tracked via
- * localStorage flags since the source may not be the storage adapter.
+ * store (browser key-value state, files, APIs, etc.). They're tracked via
+ * persistent browser-store flags since the source may not be the offline data
+ * store.
  *
  * Use cases:
  * - Migrating from localStorage to IndexedDB
@@ -50,10 +51,10 @@ export interface DataMigration {
  * const importSettingsMigration: ExternalMigration = {
  *   id: "import-settings-v1",
  *   description: "Import user settings from localStorage",
- *   async migrate(adapter) {
- *     const settings = localStorage.getItem("settings");
+ *   async migrate(store) {
+ *     const settings = persistentBrowserStore.get("settings");
  *     if (settings) {
- *       await adapter.putSettings(JSON.parse(settings));
+ *       await store.putSettings(JSON.parse(settings));
  *     }
  *   }
  * };
@@ -65,7 +66,7 @@ export interface ExternalMigration {
   /** Human-readable description */
   description: string;
   /** Migration function that imports external data */
-  migrate: (adapter: StorageAdapter) => Promise<void>;
+  migrate: (store: OfflineDataStore) => Promise<void>;
   /**
    * Optional completion check.
    *

@@ -1,18 +1,20 @@
 import type React from "react";
 import { useCallback, useRef, useState } from "react";
-import { z } from "zod";
-import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import {
+  clampTaskListWidth,
+  TASK_LIST_DEFAULT_WIDTH,
+  TASK_LIST_MAX_WIDTH,
+  TASK_LIST_MIN_WIDTH,
+} from "@web/views/Day/storage/task-list-width.constants";
+import {
+  readTaskListWidth,
+  writeTaskListWidth,
+} from "@web/views/Day/storage/task-list-width.storage";
 
-export const TASK_LIST_DEFAULT_WIDTH = 360;
-export const TASK_LIST_MIN_WIDTH = 240;
-export const TASK_LIST_MAX_WIDTH = 600;
 // Matches the calendar grid's min-w-xs so a drag can never squeeze it below
 // its own minimum.
 const CALENDAR_MIN_WIDTH = 320;
 const KEYBOARD_STEP = 16;
-
-const clampWidth = (width: number) =>
-  Math.min(TASK_LIST_MAX_WIDTH, Math.max(TASK_LIST_MIN_WIDTH, width));
 
 const clampDragWidth = (width: number, dynamicMax: number) =>
   Math.max(
@@ -26,28 +28,8 @@ const KEYBOARD_WIDTHS = {
   Home: TASK_LIST_MIN_WIDTH,
 } as const;
 
-const readStoredWidth = (): number => {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.DAY_TASK_LIST_WIDTH);
-    if (raw === null) return TASK_LIST_DEFAULT_WIDTH;
-    const parsed = z.coerce.number().int().safeParse(raw);
-    if (!parsed.success) return TASK_LIST_DEFAULT_WIDTH;
-    return clampWidth(parsed.data);
-  } catch {
-    return TASK_LIST_DEFAULT_WIDTH;
-  }
-};
-
-const persistWidth = (width: number) => {
-  try {
-    localStorage.setItem(STORAGE_KEYS.DAY_TASK_LIST_WIDTH, String(width));
-  } catch {
-    // Persistence is best-effort; resizing still works for the session.
-  }
-};
-
 export function useResizableTaskList() {
-  const [width, setWidth] = useState(readStoredWidth);
+  const [width, setWidth] = useState(readTaskListWidth);
   const [isResizing, setIsResizing] = useState(false);
   const dragRef = useRef<{
     startX: number;
@@ -66,9 +48,9 @@ export function useResizableTaskList() {
   // Clamp, apply, and persist in one step — shared by keyboard and reset paths.
   const commitWidth = useCallback(
     (next: number) => {
-      const clamped = clampWidth(next);
+      const clamped = clampTaskListWidth(next);
       applyWidth(clamped);
-      persistWidth(clamped);
+      writeTaskListWidth(clamped);
     },
     [applyWidth],
   );
@@ -109,7 +91,7 @@ export function useResizableTaskList() {
     if (e.currentTarget.hasPointerCapture(e.pointerId)) {
       e.currentTarget.releasePointerCapture(e.pointerId);
     }
-    persistWidth(widthRef.current);
+    writeTaskListWidth(widthRef.current);
   }, []);
 
   const onKeyDown = useCallback(

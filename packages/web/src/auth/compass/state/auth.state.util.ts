@@ -4,6 +4,7 @@ import {
   DEFAULT_AUTH_STATE,
 } from "@web/common/constants/auth.constants";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
+import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { clearGoogleRevokedState } from "../../google/state/google.auth.state";
 
 const authStateListeners = new Set<() => void>();
@@ -44,14 +45,14 @@ function normalizeStoredAuthState(parsed: unknown): AuthState {
 }
 
 /**
- * Get the current authentication state from localStorage.
+ * Get the current authentication state from persistent browser storage.
  * Returns default state if not found or invalid.
  */
 export function getAuthState(): AuthState {
   if (typeof window === "undefined") return DEFAULT_AUTH_STATE;
 
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.AUTH);
+    const stored = persistentBrowserStore.get(STORAGE_KEYS.AUTH);
     if (stored) {
       const parsed: unknown = JSON.parse(stored);
       return normalizeStoredAuthState(parsed);
@@ -64,7 +65,7 @@ export function getAuthState(): AuthState {
 }
 
 /**
- * Update authentication state in localStorage.
+ * Update authentication state in persistent browser storage.
  * Merges partial updates into existing state.
  */
 export function updateAuthState(updates: Partial<AuthState>): void {
@@ -80,8 +81,14 @@ export function updateAuthState(updates: Partial<AuthState>): void {
     // Validate with zod schema
     const result = AuthStateSchema.safeParse(updated);
     if (result.success) {
-      localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(result.data));
-      emitAuthStateChange();
+      if (
+        persistentBrowserStore.set(
+          STORAGE_KEYS.AUTH,
+          JSON.stringify(result.data),
+        )
+      ) {
+        emitAuthStateChange();
+      }
     }
   } catch {
     // Silently fail if localStorage is unavailable
@@ -138,8 +145,9 @@ export function clearAuthenticationState(): void {
   if (typeof window === "undefined") return;
 
   try {
-    localStorage.removeItem(STORAGE_KEYS.AUTH);
-    emitAuthStateChange();
+    if (persistentBrowserStore.remove(STORAGE_KEYS.AUTH)) {
+      emitAuthStateChange();
+    }
   } catch {
     // Silently fail if localStorage is unavailable
   }

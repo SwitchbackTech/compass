@@ -8,7 +8,7 @@ import { type Task } from "@web/common/types/task.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { type StorageAdapter } from "../../adapter/storage.adapter";
+import { type OfflineDataStore } from "../../offline-data/offline-data.store";
 import { markLocalDemoEvent } from "../../types/local-event.types";
 import { type ExternalMigration } from "../migration.types";
 
@@ -232,10 +232,10 @@ export const demoDataSeedMigration: ExternalMigration = {
   id: DEMO_DATA_SEED_MIGRATION_ID,
   description: "Seed demo data for first-time users",
 
-  async migrate(adapter: StorageAdapter): Promise<void> {
+  async migrate(store: OfflineDataStore): Promise<void> {
     // Check if user already has data
-    const existingEvents = await adapter.getAllEvents();
-    const existingTasks = await adapter.getAllTasks();
+    const existingEvents = await store.getAllEvents();
+    const existingTasks = await store.getAllTasks();
 
     if (existingEvents.length > 0 || existingTasks.length > 0) {
       return;
@@ -244,11 +244,11 @@ export const demoDataSeedMigration: ExternalMigration = {
     const demoData = generateDemoData();
 
     // Save events
-    await adapter.putEvents(demoData.events);
+    await store.putEvents(demoData.events);
 
     // Save tasks by date
     for (const [dateKey, tasks] of Object.entries(demoData.tasks)) {
-      await adapter.putTasks(dateKey, tasks);
+      await store.putTasks(dateKey, tasks);
     }
   },
 };

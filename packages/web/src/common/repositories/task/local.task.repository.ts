@@ -1,30 +1,30 @@
-import { getStorageAdapter } from "@web/common/storage/adapter/adapter";
+import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { type Task } from "@web/common/types/task.types";
 import { dispatchTasksSavedEvent } from "@web/common/utils/storage/storage.util";
 import { type TaskRepository } from "./task.repository";
 
 /**
- * Local task repository implementation using the storage adapter.
+ * Local task repository implementation using the offline data store.
  *
- * This repository delegates all storage operations to the StorageAdapter,
- * making it independent of the underlying storage technology. The adapter
+ * This repository delegates all storage operations to the OfflineDataStore,
+ * making it independent of the underlying storage technology. The store
  * can be IndexedDB, SQLite, or any other implementation.
  */
 export class LocalTaskRepository implements TaskRepository {
-  private get adapter() {
-    return getStorageAdapter();
+  private get store() {
+    return getOfflineDataStore();
   }
 
   async get(dateKey: string): Promise<Task[]> {
-    return this.adapter.getTasks(dateKey);
+    return this.store.getTasks(dateKey);
   }
 
   async save(dateKey: string, taskOrTasks: Task | Task[]): Promise<void> {
     const tasks = Array.isArray(taskOrTasks) ? taskOrTasks : [taskOrTasks];
     if (tasks.length === 1 && !Array.isArray(taskOrTasks)) {
-      await this.adapter.putTask(dateKey, tasks[0]);
+      await this.store.putTask(dateKey, tasks[0]);
     } else {
-      await this.adapter.putTasks(dateKey, tasks);
+      await this.store.putTasks(dateKey, tasks);
     }
     dispatchTasksSavedEvent(dateKey);
   }
@@ -37,7 +37,7 @@ export class LocalTaskRepository implements TaskRepository {
       return;
     }
 
-    await this.adapter.deleteTask(taskId);
+    await this.store.deleteTask(taskId);
   }
 
   async move(
@@ -45,7 +45,7 @@ export class LocalTaskRepository implements TaskRepository {
     fromDateKey: string,
     toDateKey: string,
   ): Promise<void> {
-    await this.adapter.moveTask(task, fromDateKey, toDateKey);
+    await this.store.moveTask(task, fromDateKey, toDateKey);
   }
 
   async reorder(

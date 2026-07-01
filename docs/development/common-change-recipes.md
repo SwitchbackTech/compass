@@ -61,10 +61,10 @@ Do not edit recurring behavior from one layer only.
 
 ## Add Or Change Local Storage Data
 
-1. Update `packages/web/src/common/storage/adapter/storage.adapter.ts` if the public adapter contract changes.
-2. Update `packages/web/src/common/storage/adapter/indexeddb.adapter.ts`.
+1. Update `packages/web/src/common/storage/offline-data/offline-data.store.ts` if the public store contract changes.
+2. Update `packages/web/src/common/storage/offline-data/indexeddb-offline-data.store.ts`.
 3. Add a migration if existing user data could become invalid.
-4. Add adapter and migration tests.
+4. Add offline data store and migration tests.
 
 ### Common Mistakes
 

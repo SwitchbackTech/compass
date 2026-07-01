@@ -1,6 +1,6 @@
 import Dexie, { type Table } from "dexie";
 import { type Event_Core } from "@core/types/event.types";
-import { type StoredTask } from "./storage.adapter";
+import { type StoredTask } from "./offline-data.store";
 
 const DB_NAME = "compass-local";
 

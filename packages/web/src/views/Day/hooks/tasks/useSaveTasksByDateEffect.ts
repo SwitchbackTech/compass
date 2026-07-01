@@ -1,6 +1,6 @@
 import { type MutableRefObject, useEffect } from "react";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
-import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
+import { ensureOfflineDataStoreReady } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { type Task } from "@web/common/types/task.types";
 
 interface UseSaveTasksByDateEffectProps {
@@ -35,7 +35,7 @@ export function useSaveTasksByDateEffect({
     saveRequestIdRef.current = requestId;
 
     void (async () => {
-      await ensureStorageReady();
+      await ensureOfflineDataStoreReady();
       await taskRepository.save(dateKey, tasks);
     })()
       .then(() => {

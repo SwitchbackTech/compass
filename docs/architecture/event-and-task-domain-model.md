@@ -115,18 +115,19 @@ Task fields:
 - `description`
 - `user`
 
-Tasks are currently local-storage centric and are stored with a `dateKey` in the adapter layer, not in the public `Task` shape.
+Tasks are stored with a `dateKey` in the offline data store, not in the public
+`Task` shape.
 
 ## Storage-Specific Task Shape
 
-The IndexedDB adapter wraps tasks as `StoredTask`:
+The IndexedDB offline data store wraps tasks as `StoredTask`:
 
 - public task data
 - plus `dateKey`
 
 Source:
 
-- `packages/web/src/common/storage/adapter/storage.adapter.ts`
+- `packages/web/src/common/storage/offline-data/offline-data.store.ts`
 
 ## Invariants To Preserve
 

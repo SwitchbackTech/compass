@@ -176,7 +176,7 @@ The web app uses multiple state layers:
 | Loading states, modal visibility, async status | Redux Toolkit slices | `packages/web/src/ducks/events/slices/` |
 | Async sequences and persistence orchestration | redux-saga | `packages/web/src/ducks/events/sagas/event.sagas.ts` |
 | Event entity CRUD, active event, and draft state | Elf store | `packages/web/src/store/events.ts` |
-| Offline persistence | IndexedDB adapter | `packages/web/src/common/storage/adapter/indexeddb.adapter.ts` |
+| Offline persistence | IndexedDB offline data store | `packages/web/src/common/storage/offline-data/indexeddb-offline-data.store.ts` |
 | Local vs remote persistence choice | Repository factory | `packages/web/src/common/repositories/event/event.repository.util.ts` |
 
 These layers are intentional. Do not collapse event entities into Redux slices
@@ -251,12 +251,12 @@ Revoked state details:
 
 Files:
 
-- `packages/web/src/common/storage/adapter/adapter.ts`
+- `packages/web/src/common/storage/offline-data/offline-data.store.registry.ts`
 - `packages/web/src/common/storage/migrations/migrations.ts`
 
 Startup storage flow:
 
-1. create or reuse the storage adapter singleton
+1. create or reuse the offline data store singleton
 2. open IndexedDB and run internal schema migrations
 3. run data migrations
 4. run external import migrations

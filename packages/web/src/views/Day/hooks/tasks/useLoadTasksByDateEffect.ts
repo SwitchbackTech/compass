@@ -1,6 +1,6 @@
 import { type MutableRefObject, useEffect } from "react";
 import { type TaskRepository } from "@web/common/repositories/task/task.repository";
-import { ensureStorageReady } from "@web/common/storage/adapter/adapter";
+import { ensureOfflineDataStoreReady } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { type Task } from "@web/common/types/task.types";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 
@@ -32,7 +32,7 @@ export function useLoadTasksByDateEffect({
     onTaskLoadStart();
 
     void (async () => {
-      await ensureStorageReady();
+      await ensureOfflineDataStoreReady();
       return taskRepository.get(dateKey);
     })()
       .then((loadedTasks) => {
