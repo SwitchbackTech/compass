@@ -83,6 +83,17 @@ function dispatchArrowDown(target: HTMLElement) {
   return event;
 }
 
+function dispatchDelete(target: HTMLElement) {
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    key: "Delete",
+  });
+  target.dispatchEvent(event);
+  return event;
+}
+
 const createEvent = (overrides: Partial<Schema_Event> = {}): Schema_Event => ({
   _id: "event-1",
   description: "",
@@ -223,6 +234,91 @@ describe("EventForm", () => {
     expect(confirm).not.toHaveBeenCalled();
     expect(onDelete).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not delete an existing event when Delete is pressed in the title field", async () => {
+    const onClose = mock();
+    const onDelete = mock();
+
+    render(
+      <EventForm
+        event={createEvent()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={onClose}
+        onDelete={onDelete}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    titleField.focus();
+
+    const event = dispatchDelete(titleField);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("does not delete an existing event when Delete is pressed in the description field", async () => {
+    const onClose = mock();
+    const onDelete = mock();
+
+    render(
+      <EventForm
+        event={createEvent({ description: "Plan the launch" })}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={onClose}
+        onDelete={onDelete}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    const descriptionField = screen.getByPlaceholderText("Description");
+    descriptionField.focus();
+
+    const event = dispatchDelete(descriptionField);
+
+    expect(event.defaultPrevented).toBe(false);
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("still deletes an existing event when Delete is pressed on a non-text form target", async () => {
+    const onClose = mock();
+    const onDelete = mock();
+    const confirm = mock(() => true);
+    window.confirm = confirm;
+
+    render(
+      <EventForm
+        event={createEvent()}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={onClose}
+        onDelete={onDelete}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    const form = screen.getByRole("form");
+    form.focus();
+
+    const event = dispatchDelete(form);
+
+    expect(event.defaultPrevented).toBe(true);
+
+    await waitFor(() => {
+      expect(onDelete).toHaveBeenCalledTimes(1);
+    });
   });
 
   it("resets title editing state when an unsaved draft session changes", async () => {

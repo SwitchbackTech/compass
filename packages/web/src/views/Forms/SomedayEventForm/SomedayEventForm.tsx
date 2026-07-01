@@ -14,7 +14,10 @@ import {
   colorByPriority,
   hoverColorByPriority,
 } from "@web/common/styles/theme.util";
-import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import {
+  isComboboxInteraction,
+  isDeleteTextEditingTarget,
+} from "@web/common/utils/form/form.util";
 import { Input } from "@web/components/Input/Input";
 import { Textarea } from "@web/components/Textarea/Textarea";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
@@ -65,7 +68,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   );
 
   const ignoreDelete = (e: KeyboardEvent) => {
-    if (e.key === "Backspace") {
+    if (e.key === "Backspace" || e.key === "Delete") {
       e.stopPropagation();
     }
 
@@ -144,6 +147,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     }
 
     if (e.defaultPrevented || e.key !== "Delete") {
+      return;
+    }
+
+    if (isDeleteTextEditingTarget(e)) {
       return;
     }
 

@@ -1,7 +1,8 @@
-import { render, screen } from "@testing-library/react";
+import { render, screen, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import { describe, expect, it, mock } from "bun:test";
+import { HotkeyManager } from "@tanstack/react-hotkeys";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 mock.module("@web/views/Forms/EventForm/PrioritySection", () => ({
   PrioritySection: () => null,
@@ -31,11 +32,6 @@ mock.module("@web/views/Forms/SomedayEventForm/SomedayEventActionMenu", () => ({
   ),
 }));
 
-mock.module(
-  "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts",
-  () => ({ useSomedayFormShortcuts: () => undefined }),
-);
-
 const { SomedayEventForm } =
   require("./SomedayEventForm") as typeof import("./SomedayEventForm");
 
@@ -52,7 +48,27 @@ const event: Schema_Event = {
   user: "user-1",
 };
 
+function dispatchDelete(target: HTMLElement) {
+  const event = new KeyboardEvent("keydown", {
+    bubbles: true,
+    cancelable: true,
+    composed: true,
+    key: "Delete",
+  });
+  target.dispatchEvent(event);
+  return event;
+}
+
 describe("SomedayEventForm", () => {
+  beforeEach(() => {
+    HotkeyManager.resetInstance();
+    document.body.removeAttribute("data-app-locked");
+  });
+
+  afterEach(() => {
+    HotkeyManager.resetInstance();
+  });
+
   it("renders the title before the actions on the same row", () => {
     render(
       <SomedayEventForm
@@ -103,6 +119,93 @@ describe("SomedayEventForm", () => {
     screen.getByRole("button", { name: "Delete someday event" }).click();
 
     expect(onDelete).not.toHaveBeenCalled();
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not delete an existing someday event when Delete is pressed in the title field", () => {
+    const onClose = mock();
+    const onDelete = mock();
+
+    render(
+      <SomedayEventForm
+        category={Categories_Event.SOMEDAY_WEEK}
+        event={event}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={onClose}
+        onDelete={onDelete}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    const titleField = screen.getByPlaceholderText("Title");
+    titleField.focus();
+
+    const eventResult = dispatchDelete(titleField);
+
+    expect(eventResult.defaultPrevented).toBe(false);
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("does not delete an existing someday event when Delete is pressed in the description field", () => {
+    const onClose = mock();
+    const onDelete = mock();
+
+    render(
+      <SomedayEventForm
+        category={Categories_Event.SOMEDAY_WEEK}
+        event={event}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={onClose}
+        onDelete={onDelete}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    const descriptionField = screen.getByPlaceholderText("Description");
+    descriptionField.focus();
+
+    const eventResult = dispatchDelete(descriptionField);
+
+    expect(eventResult.defaultPrevented).toBe(false);
+    expect(onDelete).not.toHaveBeenCalled();
+    expect(onClose).not.toHaveBeenCalled();
+  });
+
+  it("still deletes an existing someday event when Delete is pressed on a non-text form target", async () => {
+    const onClose = mock();
+    const onDelete = mock();
+
+    render(
+      <SomedayEventForm
+        category={Categories_Event.SOMEDAY_WEEK}
+        event={event}
+        isDraft={false}
+        isExistingEvent={true}
+        onClose={onClose}
+        onDelete={onDelete}
+        onDuplicate={mock()}
+        onSubmit={mock()}
+        setEvent={mock()}
+      />,
+    );
+
+    const form = screen.getByRole("form");
+    form.focus();
+
+    const eventResult = dispatchDelete(form);
+
+    expect(eventResult.defaultPrevented).toBe(true);
+
+    await waitFor(() => {
+      expect(onDelete).toHaveBeenCalledTimes(1);
+    });
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 });

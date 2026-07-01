@@ -52,3 +52,23 @@ export const isEditableKeyboardTarget = (
 
   return tagName === "input" || tagName === "textarea" || tagName === "select";
 };
+
+export const isEventFormKeyboardTarget = (
+  keyboardEvent: Pick<KeyboardEvent, "target">,
+) => {
+  const target = keyboardEvent.target as HTMLElement | null;
+
+  if (!target || !(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  const formContainer = target.closest(
+    `form[name="${ID_EVENT_FORM}"], form[name="${ID_SOMEDAY_EVENT_FORM}"]`,
+  );
+
+  return Boolean(formContainer);
+};
+
+export const isDeleteTextEditingTarget = (
+  keyboardEvent: Pick<KeyboardEvent, "target">,
+) => isEditableKeyboardTarget(keyboardEvent);

@@ -3,9 +3,12 @@ import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { Provider } from "react-redux";
+import { RecurringEventUpdateScope } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { deleteEventSlice } from "@web/ducks/events/slices/event.slice";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -113,6 +116,13 @@ const renderShortcuts = (options?: {
   includeAllDayEvent?: boolean;
 }) => {
   const store = createStore(options);
+  const dispatchedActions: unknown[] = [];
+  const originalDispatch = store.dispatch;
+
+  store.dispatch = ((action) => {
+    dispatchedActions.push(action);
+    return originalDispatch(action);
+  }) as typeof store.dispatch;
 
   function wrapper({ children }: PropsWithChildren) {
     return (
@@ -152,7 +162,7 @@ const renderShortcuts = (options?: {
     { wrapper },
   );
 
-  return store;
+  return { dispatchedActions, store };
 };
 
 describe("useWeekShortcuts calendar event targeting", () => {
@@ -171,7 +181,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget();
     button.focus();
 
-    const store = renderShortcuts();
+    const { store } = renderShortcuts();
     pressKey("M");
 
     await waitFor(() => {
@@ -187,7 +197,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget(editableAllDayEvent._id, "all-day");
     button.focus();
 
-    const store = renderShortcuts({ includeAllDayEvent: true });
+    const { store } = renderShortcuts({ includeAllDayEvent: true });
     pressKey("M");
 
     await waitFor(() => {
@@ -203,7 +213,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget();
     setHoveredCalendarEventTarget(button);
 
-    const store = renderShortcuts();
+    const { store } = renderShortcuts();
     pressKey("M");
 
     await waitFor(() => {
@@ -219,7 +229,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget();
     button.focus();
 
-    const store = renderShortcuts();
+    const { store } = renderShortcuts();
     pressKey("M");
 
     expect(store.getState().events.draft?.status?.activity).toBeNull();
@@ -229,7 +239,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget();
     button.focus();
 
-    const store = renderShortcuts({ includeEditableEvent: false });
+    const { store } = renderShortcuts({ includeEditableEvent: false });
     await act(async () => {
       store.dispatch(
         eventsEntitiesSlice.actions.insert({
@@ -264,5 +274,119 @@ describe("useWeekShortcuts calendar event targeting", () => {
     pressKey("ArrowRight", {}, input);
 
     expect(repositionDraftByKeyboard).not.toHaveBeenCalled();
+  });
+
+  it("deletes the focused timed calendar event with Delete", () => {
+    const confirm = mock(() => true);
+    window.confirm = confirm;
+    const button = addCalendarTarget();
+    button.focus();
+
+    const { dispatchedActions } = renderShortcuts();
+    pressKey("Delete");
+
+    expect(confirm).toHaveBeenCalledWith("Delete Editable event?");
+    expect(dispatchedActions).toContainEqual(
+      deleteEventSlice.actions.request({
+        _id: "event-1",
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+  });
+
+  it("deletes the focused all-day calendar event with Delete", () => {
+    const confirm = mock(() => true);
+    window.confirm = confirm;
+    const button = addCalendarTarget(editableAllDayEvent._id, "all-day");
+    button.focus();
+
+    const { dispatchedActions } = renderShortcuts({ includeAllDayEvent: true });
+    pressKey("Delete");
+
+    expect(confirm).toHaveBeenCalledWith("Delete Editable all-day event?");
+    expect(dispatchedActions).toContainEqual(
+      deleteEventSlice.actions.request({
+        _id: "all-day-event-1",
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+  });
+
+  it("deletes the hovered calendar event with Delete when no event is focused", () => {
+    const confirm = mock(() => true);
+    window.confirm = confirm;
+    const button = addCalendarTarget();
+    setHoveredCalendarEventTarget(button);
+
+    const { dispatchedActions } = renderShortcuts();
+    pressKey("Delete");
+
+    expect(confirm).toHaveBeenCalledWith("Delete Editable event?");
+    expect(dispatchedActions).toContainEqual(
+      deleteEventSlice.actions.request({
+        _id: "event-1",
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+  });
+
+  it("does not delete pending calendar events with Delete", () => {
+    const confirm = mock(() => true);
+    window.confirm = confirm;
+    pendingEventIds = ["event-1"];
+    const button = addCalendarTarget();
+    button.focus();
+
+    const { dispatchedActions } = renderShortcuts();
+    pressKey("Delete");
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(dispatchedActions).not.toContainEqual(
+      expect.objectContaining({
+        type: deleteEventSlice.actions.request.type,
+      }),
+    );
+  });
+
+  it("does not delete calendar events when Delete is pressed inside an editable field", () => {
+    const confirm = mock(() => true);
+    window.confirm = confirm;
+    addCalendarTarget();
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+
+    const { dispatchedActions } = renderShortcuts();
+    pressKey("Delete", {}, input);
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(dispatchedActions).not.toContainEqual(
+      expect.objectContaining({
+        type: deleteEventSlice.actions.request.type,
+      }),
+    );
+  });
+
+  it("does not delete a grid event when Delete is pressed inside an open event form", () => {
+    const confirm = mock(() => true);
+    window.confirm = confirm;
+    addCalendarTarget();
+
+    const form = document.createElement("form");
+    form.setAttribute("name", ID_EVENT_FORM);
+    const button = document.createElement("button");
+    form.appendChild(button);
+    document.body.appendChild(form);
+    button.focus();
+
+    const { dispatchedActions } = renderShortcuts();
+    pressKey("Delete", {}, button);
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(dispatchedActions).not.toContainEqual(
+      expect.objectContaining({
+        type: deleteEventSlice.actions.request.type,
+      }),
+    );
   });
 });

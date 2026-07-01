@@ -7,6 +7,7 @@ import {
   isComboboxInteraction,
   isContextMenuOpen,
   isEditableKeyboardTarget,
+  isEventFormKeyboardTarget,
   isEventFormOpen,
 } from "./form.util";
 import {
@@ -219,6 +220,38 @@ describe("form.util", () => {
       const select = document.createElement("select");
 
       expect(isEditableKeyboardTarget(createEvent(select))).toBe(true);
+    });
+  });
+
+  describe("isEventFormKeyboardTarget", () => {
+    const createEvent = (element: HTMLElement | null) =>
+      ({ target: element }) as unknown as KeyboardEvent;
+
+    it("returns true when the target is inside the event form", () => {
+      const form = document.createElement("form");
+      form.setAttribute("name", ID_EVENT_FORM);
+      const button = document.createElement("button");
+      form.appendChild(button);
+      document.body.appendChild(form);
+
+      expect(isEventFormKeyboardTarget(createEvent(button))).toBe(true);
+    });
+
+    it("returns true when the target is inside the someday event form", () => {
+      const form = document.createElement("form");
+      form.setAttribute("name", ID_SOMEDAY_EVENT_FORM);
+      const button = document.createElement("button");
+      form.appendChild(button);
+      document.body.appendChild(form);
+
+      expect(isEventFormKeyboardTarget(createEvent(button))).toBe(true);
+    });
+
+    it("returns false when the target is outside event forms", () => {
+      const button = document.createElement("button");
+      document.body.appendChild(button);
+
+      expect(isEventFormKeyboardTarget(createEvent(button))).toBe(false);
     });
   });
 });

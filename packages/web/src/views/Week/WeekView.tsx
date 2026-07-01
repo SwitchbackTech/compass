@@ -88,7 +88,7 @@ export const WeekView = () => {
         shortcuts: [
           { keys: ["c"], label: "Create timed event" },
           { keys: ["a"], label: "Create all-day event" },
-          { keys: ["Arrow keys"], label: "Move draft event" },
+          { keys: ["Arrow keys"], label: "Move event" },
           { keys: ["I"], label: "Focus calendar event" },
           { keys: ["M"], label: "Edit calendar event" },
           { keys: ["Shift", "w"], label: "Create Someday week event" },

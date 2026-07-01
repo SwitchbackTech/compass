@@ -4,7 +4,10 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { useAppHotkey } from "@web/common/hooks/useAppHotkey";
-import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import {
+  isComboboxInteraction,
+  isDeleteTextEditingTarget,
+} from "@web/common/utils/form/form.util";
 
 export const SOMEDAY_HOTKEY_OPTIONS = {
   enabled: true,
@@ -54,6 +57,10 @@ export const handleMigration =
 
 export const stopPropagationWrapper =
   (callback: () => void) => (event: KeyboardEvent) => {
+    if (isDeleteTextEditingTarget(event)) {
+      return;
+    }
+
     event.preventDefault();
     event.stopPropagation();
     callback();

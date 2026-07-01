@@ -22,7 +22,10 @@ import {
 import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import { getCategory } from "@web/common/utils/event/event.util";
-import { isComboboxInteraction } from "@web/common/utils/form/form.util";
+import {
+  isComboboxInteraction,
+  isDeleteTextEditingTarget,
+} from "@web/common/utils/form/form.util";
 import { Input } from "@web/components/Input/Input";
 import { Textarea } from "@web/components/Textarea/Textarea";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
@@ -292,7 +295,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       // Ignores certain keys and key combinations to prevent default behavior.
       // Allows some of them to be used as hotkeys
 
-      if (e.key === "Backspace") {
+      if (e.key === "Backspace" || e.key === "Delete") {
         e.stopPropagation();
       }
 
@@ -410,7 +413,19 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setEvent: setLatestEvent,
     };
 
-    useAppHotkey("Delete", onDeleteEvent, EVENT_FORM_PLAIN_HOTKEY_OPTIONS);
+    useAppHotkey(
+      "Delete",
+      (keyboardEvent) => {
+        if (isDeleteTextEditingTarget(keyboardEvent)) {
+          return;
+        }
+
+        keyboardEvent.preventDefault();
+        keyboardEvent.stopPropagation();
+        onDeleteEvent();
+      },
+      EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
+    );
 
     useAppHotkey(
       "Enter",
