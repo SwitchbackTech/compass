@@ -3,7 +3,6 @@ import { useRef, useState } from "react";
 import { AddTaskActiveButton } from "@web/views/Day/components/AddTask/AddTaskActiveButton";
 import { AddTaskPreviewButton } from "@web/views/Day/components/AddTask/AddTaskPreviewButton";
 import { TaskContextMenuWrapper } from "@web/views/Day/components/ContextMenu/TaskContextMenuWrapper";
-import { TaskListHeader } from "@web/views/Day/components/TaskList/TaskListHeader";
 import { Tasks } from "@web/views/Day/components/Tasks/Tasks";
 import { useTaskListInputFocus } from "@web/views/Day/components/Tasks/useTaskListInputFocus";
 import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
@@ -58,8 +57,6 @@ export function TaskList() {
       aria-label="daily-tasks"
       className="flex h-full w-90 shrink-0 flex-col border-gray-400/20 border-r bg-darkBlue-400 text-white"
     >
-      <TaskListHeader />
-
       <div className="flex flex-1 flex-col gap-2 overflow-hidden p-4">
         <TaskContextMenuWrapper>
           <Tasks />

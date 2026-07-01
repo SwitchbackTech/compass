@@ -159,7 +159,7 @@ export const WeekView = () => {
               </ContextMenuWrapper>
               <div
                 id={ID_MAIN}
-                className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-8 pr-0 pb-0 pl-8"
+                className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pr-0 pb-0 pl-8"
               >
                 <Header scrollUtil={scrollUtil} weekProps={weekProps} />
 
