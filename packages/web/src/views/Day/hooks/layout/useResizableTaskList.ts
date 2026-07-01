@@ -14,6 +14,18 @@ const KEYBOARD_STEP = 16;
 const clampWidth = (width: number) =>
   Math.min(TASK_LIST_MAX_WIDTH, Math.max(TASK_LIST_MIN_WIDTH, width));
 
+const clampDragWidth = (width: number, dynamicMax: number) =>
+  Math.max(
+    TASK_LIST_MIN_WIDTH,
+    Math.min(width, TASK_LIST_MAX_WIDTH, dynamicMax),
+  );
+
+const KEYBOARD_WIDTHS = {
+  End: TASK_LIST_MAX_WIDTH,
+  Enter: TASK_LIST_DEFAULT_WIDTH,
+  Home: TASK_LIST_MIN_WIDTH,
+} as const;
+
 const readStoredWidth = (): number => {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.DAY_TASK_LIST_WIDTH);
@@ -37,10 +49,13 @@ const persistWidth = (width: number) => {
 export function useResizableTaskList() {
   const [width, setWidth] = useState(readStoredWidth);
   const [isResizing, setIsResizing] = useState(false);
-  const dragRef = useRef<{ startX: number; startWidth: number } | null>(null);
-  // Synced in the handlers rather than on render: pointermove state updates
-  // are batched asynchronously, so a render-time sync would let pointerup
-  // persist a stale width.
+  const dragRef = useRef<{
+    startX: number;
+    startWidth: number;
+    dynamicMax: number;
+  } | null>(null);
+  // Tracked in a ref, not read from render: pointermove state updates are
+  // batched asynchronously, so pointerup would otherwise persist a stale width.
   const widthRef = useRef(width);
 
   const applyWidth = useCallback((next: number) => {
@@ -48,29 +63,44 @@ export function useResizableTaskList() {
     setWidth(next);
   }, []);
 
+  // Clamp, apply, and persist in one step — shared by keyboard and reset paths.
+  const commitWidth = useCallback(
+    (next: number) => {
+      const clamped = clampWidth(next);
+      applyWidth(clamped);
+      persistWidth(clamped);
+    },
+    [applyWidth],
+  );
+
   const onPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!e.isPrimary) return;
     e.preventDefault();
     e.currentTarget.setPointerCapture(e.pointerId);
-    dragRef.current = { startX: e.clientX, startWidth: widthRef.current };
+    // The container width is stable for the duration of a drag, so measure the
+    // calendar's minimum-width headroom once here instead of on every move.
+    const container = e.currentTarget.parentElement;
+    const dynamicMax = container
+      ? container.clientWidth - CALENDAR_MIN_WIDTH - e.currentTarget.offsetWidth
+      : TASK_LIST_MAX_WIDTH;
+    dragRef.current = {
+      startX: e.clientX,
+      startWidth: widthRef.current,
+      dynamicMax,
+    };
     setIsResizing(true);
   }, []);
 
-  const onPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    if (!dragRef.current) return;
+  const onPointerMove = useCallback(
+    (e: React.PointerEvent<HTMLDivElement>) => {
+      const drag = dragRef.current;
+      if (!drag) return;
 
-    const divider = e.currentTarget;
-    const container = divider.parentElement;
-    const dynamicMax = container
-      ? container.clientWidth - CALENDAR_MIN_WIDTH - divider.offsetWidth
-      : TASK_LIST_MAX_WIDTH;
-    const next =
-      dragRef.current.startWidth + (e.clientX - dragRef.current.startX);
-
-    applyWidth(
-      Math.max(TASK_LIST_MIN_WIDTH, Math.min(clampWidth(next), dynamicMax)),
-    );
-  }, [applyWidth]);
+      const next = drag.startWidth + (e.clientX - drag.startX);
+      applyWidth(clampDragWidth(next, drag.dynamicMax));
+    },
+    [applyWidth],
+  );
 
   const endResize = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     if (!dragRef.current) return;
@@ -82,38 +112,24 @@ export function useResizableTaskList() {
     persistWidth(widthRef.current);
   }, []);
 
-  const onKeyDown = useCallback((e: React.KeyboardEvent) => {
-    let next: number | null = null;
-    switch (e.key) {
-      case "ArrowLeft":
-        next = widthRef.current - KEYBOARD_STEP;
-        break;
-      case "ArrowRight":
-        next = widthRef.current + KEYBOARD_STEP;
-        break;
-      case "Home":
-        next = TASK_LIST_MIN_WIDTH;
-        break;
-      case "End":
-        next = TASK_LIST_MAX_WIDTH;
-        break;
-      case "Enter":
-        next = TASK_LIST_DEFAULT_WIDTH;
-        break;
-      default:
-        return;
-    }
-
-    e.preventDefault();
-    const clamped = clampWidth(next);
-    applyWidth(clamped);
-    persistWidth(clamped);
-  }, [applyWidth]);
+  const onKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      const direction =
+        e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+      const next =
+        direction !== 0
+          ? widthRef.current + direction * KEYBOARD_STEP
+          : KEYBOARD_WIDTHS[e.key as keyof typeof KEYBOARD_WIDTHS];
+      if (next === undefined) return;
+      e.preventDefault();
+      commitWidth(next);
+    },
+    [commitWidth],
+  );
 
   const onDoubleClick = useCallback(() => {
-    applyWidth(TASK_LIST_DEFAULT_WIDTH);
-    persistWidth(TASK_LIST_DEFAULT_WIDTH);
-  }, [applyWidth]);
+    commitWidth(TASK_LIST_DEFAULT_WIDTH);
+  }, [commitWidth]);
 
   return {
     width,
