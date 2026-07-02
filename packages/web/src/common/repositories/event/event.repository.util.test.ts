@@ -16,10 +16,8 @@ mock.module("@web/ducks/events/event.api", () => ({
   },
 }));
 
-// biome-ignore lint/suspicious/noExplicitAny: Lazy import to avoid TDZ with mocked EventApi
-const { LocalEventRepository } = require("./local.event.repository") as any;
-// biome-ignore lint/suspicious/noExplicitAny: Lazy import to avoid TDZ with mocked EventApi
-const { RemoteEventRepository } = require("./remote.event.repository") as any;
+const { LocalEventRepository } = await import("./local.event.repository");
+const { RemoteEventRepository } = await import("./remote.event.repository");
 
 describe("getEventRepositorySource", () => {
   let hasUserEverAuthenticated = false;
