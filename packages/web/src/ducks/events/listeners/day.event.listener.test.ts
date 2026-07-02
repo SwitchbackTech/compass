@@ -65,12 +65,6 @@ mock.module("@web/ducks/events/queries/day.event.query", () => ({
   }),
 }));
 
-mock.module("@web/common/classes/Session", () => ({
-  session: {
-    doesSessionExist: mockGetSessionExists,
-  },
-}));
-
 mock.module("@web/common/repositories/event/event.repository.util", () => ({
   getEventRepository: mockGetEventRepository,
   getEventRepositorySource: mockGetEventRepositorySource,
@@ -91,6 +85,11 @@ const { eventQueryKeys } = await import(
 );
 const { reducers } = await import("@web/store/reducers");
 const { registerCompassListeners } = await import("@web/store/listeners");
+// Import the real session singleton and override only `doesSessionExist`
+// per-test (restored in afterEach). Avoids mock.module, which is global and
+// would leak a partial Session (dropping `signOut`) into other test files.
+const { session } = await import("@web/common/classes/Session");
+const realDoesSessionExist = session.doesSessionExist;
 
 // Create a store with listeners, avoiding the circular dependency of store/index.ts
 function createStoreWithListeners(
@@ -134,10 +133,13 @@ describe("day.event.listener", () => {
     mockLocalEventRepository.get.mockClear();
     mockRemoteEventRepository.get.mockClear();
     global.alert = mockAlert;
+    // Override only doesSessionExist; leaves signOut and the rest intact.
+    session.doesSessionExist = mockGetSessionExists;
   });
 
   afterEach(() => {
     queryClient.clear();
+    session.doesSessionExist = realDoesSessionExist;
   });
 
   describe("success path", () => {
