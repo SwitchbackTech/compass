@@ -1,5 +1,4 @@
 import {
-  act,
   cleanup,
   fireEvent,
   render,
@@ -8,6 +7,7 @@ import {
   within,
 } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { act } from "react";
 import { Provider } from "react-redux";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -508,6 +508,17 @@ describe("DayCalendarGrid", () => {
       ).toBeVisible();
       expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
     });
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(
+      screen.getByRole("button", {
+        name: /all-day event: untitled event/i,
+      }),
+    ).toBeVisible();
+    expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
 
     await user.pointer({ keys: "[/MouseLeft]" });
   });

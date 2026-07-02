@@ -69,6 +69,7 @@ const createEventFormAnchor = (eventId: string): VirtualElement => {
 export function DayCalendarGrid() {
   const dispatch = useAppDispatch();
   const dateInView = useDateInView();
+  const allDayCreationPressTargetRef = useRef<HTMLElement | null>(null);
   const visibleDates = useMemo(
     () => [
       {
@@ -105,10 +106,28 @@ export function DayCalendarGrid() {
     },
     [dispatch],
   );
+  const shouldDismissEventForm = useCallback((event: MouseEvent) => {
+    const pressTarget = allDayCreationPressTargetRef.current;
+
+    if (!pressTarget) {
+      return true;
+    }
+
+    allDayCreationPressTargetRef.current = null;
+
+    return !(
+      event.target instanceof Node && pressTarget.contains(event.target)
+    );
+  }, []);
   const form: EventFormProps = useEventForm(
     draftCategory,
     isFormOpen,
     handleFormOpenChange,
+    {
+      dismiss: {
+        outsidePress: shouldDismissEventForm,
+      },
+    },
   );
   const setFormPositionReference = form.refs.setPositionReference;
   const setFormReference = form.refs.setReference;
@@ -210,10 +229,12 @@ export function DayCalendarGrid() {
       }
 
       if (draft) {
+        allDayCreationPressTargetRef.current = null;
         dispatch(draftSlice.actions.discard(undefined));
         return;
       }
 
+      allDayCreationPressTargetRef.current = event.currentTarget;
       const selectedDate =
         visibleDates[dateCalcs.getVisibleDateIndexByX(event.clientX)]?.date ??
         dateInView;
