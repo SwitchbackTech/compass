@@ -6,7 +6,6 @@ import {
   offset,
   type Placement,
   shift,
-  type UseDismissProps,
   type UseFloatingOptions,
   useDismiss,
   useFloating,
@@ -28,11 +27,6 @@ const fallbackPlacements: Placement[] = [
   "left-start",
 ];
 
-export interface UseEventFormOptions {
-  /** Options forwarded to floating-ui's `useDismiss`. */
-  dismiss?: UseDismissProps;
-}
-
 export const useEventForm = (
   category: Categories_Event,
   isOpen: boolean,
@@ -41,7 +35,6 @@ export const useEventForm = (
     event: Event,
     reason?: OpenChangeReason,
   ) => void,
-  options?: UseEventFormOptions,
 ) => {
   let positioning: Partial<UseFloatingOptions>;
   const isSomeday =
@@ -111,7 +104,6 @@ export const useEventForm = (
   const dismiss = useDismiss(context, {
     capture: { outsidePress: false },
     outsidePressEvent: "mousedown",
-    ...options?.dismiss,
   });
   const { getReferenceProps, getFloatingProps } = useInteractions([dismiss]);
 

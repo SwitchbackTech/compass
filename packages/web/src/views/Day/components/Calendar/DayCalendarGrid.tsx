@@ -7,10 +7,11 @@ import {
   useRef,
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CALENDAR_TIMED_VISIBLE_HOURS } from "@web/common/calendar-grid/calendarGrid.constants";
 import { CalendarGrid } from "@web/common/calendar-grid/components/CalendarGrid";
+import { useAllDayDraftCreation } from "@web/common/calendar-grid/hooks/useAllDayDraftCreation";
 import { useCalendarDateCalcs } from "@web/common/calendar-grid/hooks/useCalendarDateCalcs";
 import { useCalendarGridLayout } from "@web/common/calendar-grid/hooks/useCalendarGridLayout";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -20,14 +21,11 @@ import {
 } from "@web/common/utils/dom/event-emitter.util";
 import {
   addId,
-  assembleDefaultEvent,
   assembleGridEvent,
-  type EventWithDates,
   getCalendarEventElementFromGrid,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
-import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import {
   selectDraft,
@@ -69,7 +67,6 @@ const createEventFormAnchor = (eventId: string): VirtualElement => {
 export function DayCalendarGrid() {
   const dispatch = useAppDispatch();
   const dateInView = useDateInView();
-  const allDayCreationPressTargetRef = useRef<HTMLElement | null>(null);
   const visibleDates = useMemo(
     () => [
       {
@@ -106,28 +103,10 @@ export function DayCalendarGrid() {
     },
     [dispatch],
   );
-  const shouldDismissEventForm = useCallback((event: MouseEvent) => {
-    const pressTarget = allDayCreationPressTargetRef.current;
-
-    if (!pressTarget) {
-      return true;
-    }
-
-    allDayCreationPressTargetRef.current = null;
-
-    return !(
-      event.target instanceof Node && pressTarget.contains(event.target)
-    );
-  }, []);
   const form: EventFormProps = useEventForm(
     draftCategory,
     isFormOpen,
     handleFormOpenChange,
-    {
-      dismiss: {
-        outsidePress: shouldDismissEventForm,
-      },
-    },
   );
   const setFormPositionReference = form.refs.setPositionReference;
   const setFormReference = form.refs.setReference;
@@ -222,43 +201,30 @@ export function DayCalendarGrid() {
     onOpenEvent: openEventFormForEvent,
   });
 
-  const onAllDayMouseDown = useCallback(
-    async (event: ReactMouseEvent<HTMLElement>) => {
-      if (isRightClick(event)) {
-        return;
-      }
-
-      if (draft) {
-        allDayCreationPressTargetRef.current = null;
-        dispatch(draftSlice.actions.discard(undefined));
-        return;
-      }
-
-      allDayCreationPressTargetRef.current = event.currentTarget;
+  const getAllDayDraftStartDate = useCallback(
+    (event: ReactMouseEvent<HTMLElement>) => {
       const selectedDate =
         visibleDates[dateCalcs.getVisibleDateIndexByX(event.clientX)]?.date ??
         dateInView;
-      const startDate = selectedDate.format(YEAR_MONTH_DAY_FORMAT);
-      const endDate = selectedDate.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
-      const draftEvent = await assembleDefaultEvent(
-        Categories_Event.ALLDAY,
-        startDate,
-        endDate,
-      );
 
-      openEventFormForEvent(
-        addId(assembleGridEvent(draftEvent as EventWithDates)),
-      );
+      return selectedDate.format(YEAR_MONTH_DAY_FORMAT);
     },
-    [
-      dateCalcs,
-      dateInView,
-      dispatch,
-      draft,
-      openEventFormForEvent,
-      visibleDates,
-    ],
+    [dateCalcs, dateInView, visibleDates],
   );
+  const openAllDayDraft = useCallback(
+    (event: Schema_Event) => {
+      if (!hasEventDates(event)) {
+        return;
+      }
+
+      openEventFormForEvent(addId(assembleGridEvent(event)));
+    },
+    [openEventFormForEvent],
+  );
+  const onAllDayMouseDown = useAllDayDraftCreation({
+    getStartDate: getAllDayDraftStartDate,
+    onCreateDraft: openAllDayDraft,
+  });
 
   const { startTimedDraftCreation } = useDayTimedDraftCreation({
     dateCalcs,

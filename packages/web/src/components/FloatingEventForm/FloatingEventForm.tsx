@@ -67,7 +67,6 @@ export function FloatingEventForm({
         // close-on-blur here would close the form while focus is still
         // moving within a child menu's separate floating tree.
         closeOnFocusOut={false}
-        order={["reference"]}
       >
         <div
           {...form.getFloatingProps()}

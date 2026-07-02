@@ -125,8 +125,12 @@ const createStore = (
 const createDateCalcs = () => ({
   getDateByXY: (_x: number, y: number, firstDayInView: Dayjs) =>
     firstDayInView.add(y, "minute"),
-  getDateStrByXY: (_x: number, y: number, firstDayInView: Dayjs) =>
-    firstDayInView.add(y, "minute").format(),
+  getDateStrByXY: (
+    _x: number,
+    y: number,
+    firstDayInView: Dayjs,
+    format?: string,
+  ) => firstDayInView.add(y, "minute").format(format),
   getMinuteByY: (y: number) => y,
   getYByDate: () => 0,
 });
@@ -206,7 +210,7 @@ const renderGridRegions = () => {
   const dateCalcs = createDateCalcs();
   const mainGridRef = { current: null };
 
-  return render(
+  const view = render(
     <Provider store={store}>
       <DraftContext.Provider
         value={
@@ -240,6 +244,8 @@ const renderGridRegions = () => {
       </DraftContext.Provider>
     </Provider>,
   );
+
+  return { ...view, store };
 };
 
 const renderWeekGrid = (events: Schema_Event[] = []) => {
@@ -413,6 +419,25 @@ describe("MainGrid empty-grid draft creation", () => {
 });
 
 describe("Week calendar accessibility", () => {
+  it("creates a one-day draft from empty all-day space", async () => {
+    const { store } = renderGridRegions();
+
+    fireEvent.mouseDown(
+      screen.getByRole("region", { name: "All-day events" }),
+      { button: 0, clientX: 100, clientY: 0 },
+    );
+
+    await waitFor(() =>
+      expect(store.getState().events.draft.event).toEqual(
+        expect.objectContaining({
+          endDate: "2024-01-15",
+          isAllDay: true,
+          startDate: "2024-01-14",
+        }),
+      ),
+    );
+  });
+
   it("labels timed and all-day calendar regions", () => {
     renderGridRegions();
 

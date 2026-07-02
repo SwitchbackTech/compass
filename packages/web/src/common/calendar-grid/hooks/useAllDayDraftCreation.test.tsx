@@ -1,0 +1,117 @@
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
+import { Provider } from "react-redux";
+import { type Schema_Event } from "@core/types/event.types";
+import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { useAllDayDraftCreation } from "./useAllDayDraftCreation";
+import { afterEach, describe, expect, it, mock } from "bun:test";
+
+mock.module("@web/auth/compass/session/session.util", () => ({
+  getUserId: mock().mockResolvedValue("user"),
+}));
+
+const existingDraft: Schema_Event = {
+  _id: "existing-draft",
+  endDate: "2026-05-21",
+  isAllDay: true,
+  isSomeday: false,
+  startDate: "2026-05-20",
+  title: "Existing draft",
+  user: "user",
+};
+
+const renderHarness = ({
+  draft = null,
+  onCreateDraft = mock(),
+  onParentMouseDown = mock(),
+}: {
+  draft?: Schema_Event | null;
+  onCreateDraft?: (event: Schema_Event) => void;
+  onParentMouseDown?: () => void;
+} = {}) => {
+  const store = createStoreWithEvents([]);
+
+  if (draft) {
+    store.dispatch(draftSlice.actions.startGridClick(draft));
+  }
+
+  const Harness = () => {
+    const onMouseDown = useAllDayDraftCreation({
+      getStartDate: () => "2026-05-20",
+      onCreateDraft,
+    });
+
+    return (
+      <section aria-label="Parent surface" onMouseDown={onParentMouseDown}>
+        <button onMouseDown={onMouseDown} type="button">
+          Empty all-day space
+        </button>
+      </section>
+    );
+  };
+
+  render(
+    <Provider store={store}>
+      <Harness />
+    </Provider>,
+  );
+
+  return { onCreateDraft, onParentMouseDown, store };
+};
+
+afterEach(cleanup);
+
+describe("useAllDayDraftCreation", () => {
+  it("creates a one-day all-day draft and stops the opening press", async () => {
+    const { onCreateDraft, onParentMouseDown } = renderHarness();
+
+    const wasNotCancelled = fireEvent.mouseDown(
+      screen.getByRole("button", { name: "Empty all-day space" }),
+      { button: 0 },
+    );
+
+    expect(wasNotCancelled).toBe(false);
+    expect(onParentMouseDown).not.toHaveBeenCalled();
+    await waitFor(() => expect(onCreateDraft).toHaveBeenCalledTimes(1));
+    expect(onCreateDraft).toHaveBeenCalledWith(
+      expect.objectContaining({
+        endDate: "2026-05-21",
+        isAllDay: true,
+        startDate: "2026-05-20",
+      }),
+    );
+  });
+
+  it("ignores right-click presses", () => {
+    const { onCreateDraft, onParentMouseDown } = renderHarness();
+
+    fireEvent.mouseDown(
+      screen.getByRole("button", { name: "Empty all-day space" }),
+      { button: 2 },
+    );
+
+    expect(onCreateDraft).not.toHaveBeenCalled();
+    expect(onParentMouseDown).toHaveBeenCalledTimes(1);
+  });
+
+  it("dismisses an existing draft without creating a replacement", async () => {
+    const { onCreateDraft, onParentMouseDown, store } = renderHarness({
+      draft: existingDraft,
+    });
+
+    fireEvent.mouseDown(
+      screen.getByRole("button", { name: "Empty all-day space" }),
+      { button: 0 },
+    );
+
+    await waitFor(() => expect(store.getState().events.draft.event).toBeNull());
+    expect(onCreateDraft).not.toHaveBeenCalled();
+    expect(onParentMouseDown).not.toHaveBeenCalled();
+  });
+});

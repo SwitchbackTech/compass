@@ -93,7 +93,11 @@ mock.module("@web/components/FloatingEventForm/FloatingEventForm", () => ({
   FloatingEventForm: ({ form }: { form: EventFormProps }) => {
     latestEventForm = form;
 
-    return getIsFormOpen() ? <dialog aria-label="Event form" open /> : null;
+    return getIsFormOpen() ? (
+      <dialog aria-label="Event form" open>
+        <input aria-label="Event Title" autoFocus />
+      </dialog>
+    ) : null;
   },
 }));
 
@@ -519,6 +523,7 @@ describe("DayCalendarGrid", () => {
       }),
     ).toBeVisible();
     expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
+    expect(screen.getByRole("textbox", { name: "Event Title" })).toHaveFocus();
 
     await user.pointer({ keys: "[/MouseLeft]" });
   });
