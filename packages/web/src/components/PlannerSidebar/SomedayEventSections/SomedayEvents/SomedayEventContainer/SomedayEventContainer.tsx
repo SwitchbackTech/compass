@@ -1,5 +1,5 @@
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
-import { type Ref, useRef } from "react";
+import { type Ref, useEffect, useRef } from "react";
 import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
 import {
@@ -13,6 +13,10 @@ import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/
 import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/SomedayEvent";
+import {
+  consumeSomedayEventFocus,
+  requestSomedayEventFocus,
+} from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventContainer/somedayEventFocus";
 import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 import { useDraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
@@ -58,6 +62,15 @@ export const SomedayEventContainer = ({
 
   const isFocusedRef = useRef(false);
 
+  // After a migration remounts this event in the destination column, restore
+  // focus so the user can chain migrations (e.g. week -> month) without clicking
+  // back into the event.
+  useEffect(() => {
+    if (event._id) {
+      consumeSomedayEventFocus(event._id);
+    }
+  }, [event._id]);
+
   useAppHotkey("Enter", () => {
     if (!isFocusedRef.current) return;
     actions.onDraft(event, category);
@@ -74,6 +87,9 @@ export const SomedayEventContainer = ({
       direction === "up"
         ? (["week", Categories_Event.SOMEDAY_WEEK] as const)
         : (["month", Categories_Event.SOMEDAY_MONTH] as const);
+    if (event._id) {
+      requestSomedayEventFocus(event._id);
+    }
     void actions.onSubmit(
       targetCategory,
       computeCurrentEventDateRange({ duration }, event, weekViewRange),

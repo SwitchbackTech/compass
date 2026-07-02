@@ -1,0 +1,72 @@
+import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
+import { cleanup, renderHook, waitFor } from "@testing-library/react";
+import { type PropsWithChildren } from "react";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { useDayViewShortcuts } from "./useDayViewShortcuts";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+
+const TASK_ID = "507f1f77bcf86cd799439011";
+
+const wrapper = ({ children }: PropsWithChildren) => (
+  <HotkeysProvider>{children}</HotkeysProvider>
+);
+
+const focusTaskCheckbox = () => {
+  const checkbox = document.createElement("button");
+  checkbox.setAttribute("role", "checkbox");
+  checkbox.dataset.taskId = TASK_ID;
+  document.body.appendChild(checkbox);
+  checkbox.focus();
+  return checkbox;
+};
+
+const pressMigrate = (key: "ArrowRight" | "ArrowLeft") =>
+  pressKey(key, {
+    keyDownInit: { ctrlKey: true, metaKey: true },
+    keyUpInit: { ctrlKey: true, metaKey: true },
+  });
+
+beforeEach(() => {
+  HotkeyManager.resetInstance();
+});
+
+afterEach(() => {
+  cleanup();
+  document.body.innerHTML = "";
+});
+
+describe("useDayViewShortcuts migration", () => {
+  it("migrates the focused task forward with Control+Meta+ArrowRight", async () => {
+    const onMigrateTask = mock();
+    focusTaskCheckbox();
+
+    renderHook(() => useDayViewShortcuts({ onMigrateTask }), { wrapper });
+    pressMigrate("ArrowRight");
+
+    await waitFor(() => {
+      expect(onMigrateTask).toHaveBeenCalledWith(TASK_ID, "forward");
+    });
+  });
+
+  it("migrates the focused task backward with Control+Meta+ArrowLeft", async () => {
+    const onMigrateTask = mock();
+    focusTaskCheckbox();
+
+    renderHook(() => useDayViewShortcuts({ onMigrateTask }), { wrapper });
+    pressMigrate("ArrowLeft");
+
+    await waitFor(() => {
+      expect(onMigrateTask).toHaveBeenCalledWith(TASK_ID, "backward");
+    });
+  });
+
+  it("does not migrate when no task is focused", async () => {
+    const onMigrateTask = mock();
+
+    renderHook(() => useDayViewShortcuts({ onMigrateTask }), { wrapper });
+    pressMigrate("ArrowRight");
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onMigrateTask).not.toHaveBeenCalled();
+  });
+});
