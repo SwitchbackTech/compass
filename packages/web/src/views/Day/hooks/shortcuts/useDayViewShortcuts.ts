@@ -139,11 +139,8 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     },
   );
 
-  // Note: these must not use `blurOnTrigger`. Blurring happens before the
-  // handler runs, which would clear the focused task and make
-  // `isFocusedWithinTask()` fail, so the migration would never fire. Migrating
-  // removes the task from the current day, which unmounts (and blurs) the
-  // focused element on its own.
+  // No `blurOnTrigger` here: it blurs before the handler runs, which would
+  // clear the focused task and stop the migration from ever firing.
   useAppHotkey(
     "Control+Meta+ArrowRight",
     handleMigrationNavigation("forward"),

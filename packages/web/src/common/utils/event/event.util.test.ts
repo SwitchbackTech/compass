@@ -1,10 +1,15 @@
 import { ObjectId } from "bson";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import {
   type Schema_GridEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
-import { addId, isEventInRange } from "@web/common/utils/event/event.util";
+import {
+  addId,
+  isEventInRange,
+  refocusEventElement,
+} from "@web/common/utils/event/event.util";
 import { _assembleGridEvent } from "@web/ducks/events/sagas/saga.util";
 import {
   afterEach,
@@ -103,5 +108,68 @@ describe("addId", () => {
     expect(result._id).toBeDefined();
     expect(ObjectId.isValid(result._id)).toBe(true);
     expect(result._id).toMatch(/^[a-f0-9]{24}$/);
+  });
+});
+
+describe("refocusEventElement", () => {
+  const EVENT_ID = "507f1f77bcf86cd799439011";
+  let pendingFrames: FrameRequestCallback[];
+  let originalRequestAnimationFrame: typeof requestAnimationFrame;
+
+  const addEventElement = () => {
+    const element = document.createElement("div");
+    element.setAttribute(DATA_EVENT_ELEMENT_ID, EVENT_ID);
+    element.tabIndex = 0;
+    document.body.appendChild(element);
+    return element;
+  };
+
+  const flushFrame = () => {
+    const frames = pendingFrames.splice(0);
+    frames.forEach((frame) => frame(performance.now()));
+  };
+
+  beforeEach(() => {
+    pendingFrames = [];
+    originalRequestAnimationFrame = globalThis.requestAnimationFrame;
+    globalThis.requestAnimationFrame = ((frame: FrameRequestCallback) =>
+      pendingFrames.push(frame)) as typeof requestAnimationFrame;
+  });
+
+  afterEach(() => {
+    globalThis.requestAnimationFrame = originalRequestAnimationFrame;
+    document.body.innerHTML = "";
+  });
+
+  it("focuses the event's element once it is replaced", () => {
+    const staleElement = addEventElement();
+    staleElement.focus();
+
+    refocusEventElement(EVENT_ID);
+    flushFrame();
+
+    // Simulate React replacing the element on the next render.
+    staleElement.remove();
+    const newElement = addEventElement();
+    flushFrame();
+
+    expect(document.activeElement).toBe(newElement);
+  });
+
+  it("does not refocus the stale element and stops retrying", () => {
+    const staleElement = addEventElement();
+    staleElement.focus();
+    staleElement.blur();
+
+    refocusEventElement(EVENT_ID);
+
+    let flushes = 0;
+    while (pendingFrames.length > 0 && flushes < 100) {
+      flushFrame();
+      flushes += 1;
+    }
+
+    expect(document.activeElement).not.toBe(staleElement);
+    expect(flushes).toBeLessThanOrEqual(31);
   });
 });
