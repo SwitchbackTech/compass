@@ -11,13 +11,14 @@ import {
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
 
-function getAuthTokenQueryParams(): { token?: string } {
+const AUTH_TOKEN_QUERY_SCHEMA = z.object({
+  token: z.string().min(1).optional(),
+});
+
+function getAuthTokenQueryParams(): z.infer<typeof AUTH_TOKEN_QUERY_SCHEMA> {
   if (typeof window === "undefined") return {};
   const searchParams = new URLSearchParams(window.location.search);
-  const schema = z.object({
-    token: z.string().min(1).optional(),
-  });
-  const parsed = schema.safeParse({
+  const parsed = AUTH_TOKEN_QUERY_SCHEMA.safeParse({
     token: searchParams.get("token") ?? undefined,
   });
   return parsed.success ? parsed.data : {};

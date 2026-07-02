@@ -7,8 +7,7 @@ import {
 import { BaseApi } from "./base.api";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-// TODO: These tests hang with massive timeouts - investigate BaseApi.get() hanging
-describe.skip("BaseApi backend availability", () => {
+describe("BaseApi backend availability", () => {
   beforeEach(() => {
     BaseApi.defaults.adapter = undefined;
     resetBackendAvailabilityForTests();

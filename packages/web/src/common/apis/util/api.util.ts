@@ -1,6 +1,10 @@
+import { type ZodType } from "zod";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
-import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
+import {
+  type GoogleConnectErrorResponse,
+  GoogleConnectErrorResponseSchema,
+} from "@core/types/auth.types";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "../../constants/env.constants";
 import { ROOT_ROUTES } from "../../constants/routes";
@@ -15,11 +19,6 @@ import {
   type ApiResponse,
   type SignoutStatus,
 } from "../api.types";
-import {
-  getApiErrorCode,
-  parseApiError,
-  parseGoogleConnectError,
-} from "./api-error-parsing.util";
 
 export const createApiError = (
   config: ApiRequestConfig,
@@ -34,6 +33,10 @@ export const createApiError = (
   return error;
 };
 
+const getApiErrorData = (error: ApiError): unknown => {
+  return error?.response?.data;
+};
+
 export const isApiError = (error: unknown): error is ApiError => {
   return (
     typeof error === "object" &&
@@ -42,7 +45,30 @@ export const isApiError = (error: unknown): error is ApiError => {
   );
 };
 
-export { getApiErrorCode, parseApiError, parseGoogleConnectError };
+/**
+ * Extracts the error code from an API error's response data.
+ * Returns undefined when the response has no object body with a string `code` property.
+ */
+export const getApiErrorCode = (error: ApiError): string | undefined => {
+  const data = getApiErrorData(error);
+  if (!data || typeof data !== "object" || !("code" in data)) return undefined;
+  const code = (data as { code?: unknown }).code;
+  return typeof code === "string" ? code : undefined;
+};
+
+export const parseApiError = <T>(
+  error: ApiError,
+  schema: ZodType<T>,
+): T | undefined => {
+  const parsed = schema.safeParse(getApiErrorData(error));
+  return parsed.success ? parsed.data : undefined;
+};
+
+export const parseGoogleConnectError = (
+  error: ApiError,
+): GoogleConnectErrorResponse | undefined => {
+  return parseApiError(error, GoogleConnectErrorResponseSchema);
+};
 
 export const signOut = async (status: SignoutStatus) => {
   // since there are currently duplicate event fetches,
@@ -107,6 +133,12 @@ export const handleErrorResponse = async <T>(error: ApiError) => {
     (status === Status.GONE || status === Status.UNAUTHORIZED) &&
     getApiErrorCode(error) === GOOGLE_REVOKED
   ) {
+    // Lazy import to avoid a static dependency from this low-level API utility
+    // back into the store/auth graph (base.api -> api.util -> google.auth.util
+    // -> store -> listeners -> ... -> base.api forms a module-init cycle).
+    const { handleGoogleRevoked } = await import(
+      "@web/auth/google/util/google.auth.util"
+    );
     handleGoogleRevoked();
     throw error;
   }

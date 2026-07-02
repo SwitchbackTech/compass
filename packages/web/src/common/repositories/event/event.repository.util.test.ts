@@ -61,25 +61,23 @@ describe("getEventRepositorySource", () => {
   });
 });
 
-// TODO: These tests trigger circular dependency TDZ error with RemoteEventRepository
-describe.skip("getEventRepository", () => {
+describe("getEventRepository", () => {
   let hasUserEverAuthenticated = false;
   let isBackendUnavailable = false;
   let isGoogleRevoked = false;
-  let getEventRepository: ReturnType<typeof createGetEventRepository>;
+
+  const getEventRepository = createGetEventRepository({
+    createLocalEventRepository: () => new LocalEventRepository(),
+    createRemoteEventRepository: () => new RemoteEventRepository(),
+    hasUserEverAuthenticated: () => hasUserEverAuthenticated,
+    isBackendUnavailable: () => isBackendUnavailable,
+    isGoogleRevoked: () => isGoogleRevoked,
+  });
 
   beforeEach(() => {
     hasUserEverAuthenticated = false;
     isBackendUnavailable = false;
     isGoogleRevoked = false;
-
-    getEventRepository = createGetEventRepository({
-      createLocalEventRepository: () => new LocalEventRepository(),
-      createRemoteEventRepository: () => new RemoteEventRepository(),
-      hasUserEverAuthenticated: () => hasUserEverAuthenticated,
-      isBackendUnavailable: () => isBackendUnavailable,
-      isGoogleRevoked: () => isGoogleRevoked,
-    });
   });
 
   it("uses remote storage when a session exists", () => {
