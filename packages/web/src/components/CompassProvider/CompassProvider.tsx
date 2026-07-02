@@ -38,34 +38,34 @@ export const CompassRequiredProviders = (
         <QueryClientProvider client={props?.queryClient ?? queryClient}>
           <Provider store={props?.store ?? store}>
             <GoogleOAuthProvider
-            clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
-          >
-            <PointerPositionProvider>
-              <IconProvider>
-                <AuthModalProvider>
-                  <LogoutConfirmationProvider>
-                    {props.children}
-                    <AuthModal />
-                    <WelcomeModal />
-                    <ToastContainer
-                      position="bottom-left"
-                      autoClose={5000}
-                      hideProgressBar={false}
-                      newestOnTop={false}
-                      closeOnClick
-                      rtl={false}
-                      pauseOnFocusLoss
-                      draggable
-                      pauseOnHover
-                      theme="dark"
-                      limit={1}
-                      transition={Slide}
-                    />
-                  </LogoutConfirmationProvider>
-                </AuthModalProvider>
-              </IconProvider>
-            </PointerPositionProvider>
-          </GoogleOAuthProvider>
+              clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
+            >
+              <PointerPositionProvider>
+                <IconProvider>
+                  <AuthModalProvider>
+                    <LogoutConfirmationProvider>
+                      {props.children}
+                      <AuthModal />
+                      <WelcomeModal />
+                      <ToastContainer
+                        position="bottom-left"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="dark"
+                        limit={1}
+                        transition={Slide}
+                      />
+                    </LogoutConfirmationProvider>
+                  </AuthModalProvider>
+                </IconProvider>
+              </PointerPositionProvider>
+            </GoogleOAuthProvider>
           </Provider>
         </QueryClientProvider>
       </SessionProvider>
