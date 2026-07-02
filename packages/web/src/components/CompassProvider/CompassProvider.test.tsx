@@ -1,11 +1,11 @@
-import { expect, test } from "bun:test";
-import { render, screen } from "@testing-library/react";
 import { useQueryClient } from "@tanstack/react-query";
+import { render, screen } from "@testing-library/react";
 import { rest } from "msw";
 import { server } from "@web/__tests__/__mocks__/server/mock.server";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { createCompassQueryClient } from "@web/common/query/query-client";
 import { CompassRequiredProviders } from "./CompassProvider";
+import { expect, test } from "bun:test";
 
 test("provides the injected query client", () => {
   server.use(

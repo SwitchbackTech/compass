@@ -1,5 +1,5 @@
-import { describe, expect, test } from "bun:test";
 import { createCompassQueryClient } from "./query-client";
+import { describe, expect, test } from "bun:test";
 
 describe("createCompassQueryClient", () => {
   test("disables retries and treats completed queries as stale", () => {
@@ -17,7 +17,7 @@ describe("createCompassQueryClient", () => {
 
     first.setQueryData(["probe"], "first");
 
-    expect(first.getQueryData(["probe"])).toBe("first");
+    expect(first.getQueryData<string>(["probe"])).toBe("first");
     expect(second.getQueryData(["probe"])).toBeUndefined();
   });
 });

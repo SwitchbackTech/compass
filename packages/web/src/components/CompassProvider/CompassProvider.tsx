@@ -2,6 +2,7 @@
 import { PostHogProvider } from "@web/auth/posthog/posthog-react";
 import { type PropsWithChildren } from "react";
 import { Provider } from "react-redux";
+import { type Store } from "redux";
 import { Slide, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
@@ -17,7 +18,7 @@ import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
-import { store } from "@web/store";
+import { store, type RootState } from "@web/store";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
 
 /**
@@ -31,7 +32,7 @@ export function GlobalShortcutsHost() {
 
 interface CompassRequiredProvidersProps extends PropsWithChildren {
   queryClient?: QueryClient;
-  store?: typeof store;
+  store?: Store<RootState>;
 }
 
 export const CompassRequiredProviders = ({

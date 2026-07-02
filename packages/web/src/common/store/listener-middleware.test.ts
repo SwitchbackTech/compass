@@ -1,7 +1,7 @@
-import { describe, expect, test } from "bun:test";
 import { configureStore, createAction } from "@reduxjs/toolkit";
 import { createCompassQueryClient } from "@web/common/query/query-client";
 import { createCompassListenerMiddleware } from "./listener-middleware";
+import { describe, expect, test } from "bun:test";
 
 describe("createCompassListenerMiddleware", () => {
   test("observes actions with the injected query client", async () => {

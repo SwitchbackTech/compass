@@ -11,12 +11,13 @@ import {
   type ReactElement,
 } from "react";
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
+import { type Store } from "redux";
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
-import { type store as compassStore, type RootState } from "@web/store";
+import { type RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { sagas } from "@web/store/sagas";
 import { mock } from "bun:test";
@@ -28,7 +29,7 @@ mock.module("@react-oauth/google", () => ({
 
 interface CustomRenderOptions extends RenderOptions {
   state?: PreloadedState<RootState>;
-  store?: typeof compassStore;
+  store?: Store<RootState>;
   router?: RouterProviderProps["router"];
   wrapper?: ComponentType<PropsWithChildren>;
 }
@@ -39,7 +40,7 @@ interface CustomRenderHookOptions<Props>
 
 interface TestProvidersProps {
   router?: RouterProviderProps["router"];
-  store?: typeof compassStore;
+  store?: Store<RootState>;
 }
 
 function TestProvidersWrapper({
