@@ -139,12 +139,14 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     },
   );
 
+  // No `blurOnTrigger` here: it blurs before the handler runs, which would
+  // clear the focused task and stop the migration from ever firing.
   useAppHotkey(
     "Control+Meta+ArrowRight",
     handleMigrationNavigation("forward"),
     {
       ignoreInputs: false,
-      blurOnTrigger: true,
+      preventDefault: true,
     },
   );
 
@@ -153,7 +155,7 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     handleMigrationNavigation("backward"),
     {
       ignoreInputs: false,
-      blurOnTrigger: true,
+      preventDefault: true,
     },
   );
 

@@ -9,6 +9,7 @@ import {
 } from "@core/types/event.types";
 import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
+import { refocusEventElement } from "@web/common/utils/event/event.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
@@ -78,6 +79,9 @@ export const SomedayEventContainer = ({
       targetCategory,
       computeCurrentEventDateRange({ duration }, event, weekViewRange),
     );
+    if (event._id) {
+      refocusEventElement(event._id);
+    }
   };
 
   useAppHotkey("Control+Meta+ArrowUp", () => {
