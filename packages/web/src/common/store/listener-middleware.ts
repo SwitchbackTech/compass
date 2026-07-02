@@ -1,4 +1,7 @@
-import { createListenerMiddleware, type TypedStartListening } from "@reduxjs/toolkit";
+import {
+  createListenerMiddleware,
+  type TypedStartListening,
+} from "@reduxjs/toolkit";
 import { type QueryClient } from "@tanstack/react-query";
 import { type AppDispatch, type RootState } from "@web/store";
 

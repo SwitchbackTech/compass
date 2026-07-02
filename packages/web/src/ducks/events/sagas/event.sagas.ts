@@ -299,4 +299,3 @@ export function* getWeekEvents({ payload }: Action_GetEvents) {
     handleError(error as Error);
   }
 }
-

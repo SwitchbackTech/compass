@@ -1,8 +1,11 @@
 import { normalize } from "normalizr";
 import { type Schema_Event } from "@core/types/event.types";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
-import { EventDateUtils, normalizedEventsSchema } from "@web/ducks/events/sagas/saga.util";
 import { type Action_GetEvents } from "@web/ducks/events/event.types";
+import {
+  EventDateUtils,
+  normalizedEventsSchema,
+} from "@web/ducks/events/sagas/saga.util";
 
 type FetchDayEventsPayload = Omit<
   Action_GetEvents["payload"],

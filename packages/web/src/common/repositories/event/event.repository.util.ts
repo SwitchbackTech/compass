@@ -9,7 +9,10 @@
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
-import { createGetEventRepository, createGetEventRepositorySource } from "./event.repository.factory";
+import {
+  createGetEventRepository,
+  createGetEventRepositorySource,
+} from "./event.repository.factory";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
 

@@ -1,11 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { type QueryClient } from "@tanstack/react-query";
-import { type CompassStartListening } from "@web/common/store/listener-middleware";
-import { createCompassListenerMiddleware } from "@web/common/store/listener-middleware";
-import { sagaMiddleware } from "@web/common/store/middlewares";
-import { reducers } from "./reducers";
-import { registerCompassListeners } from "./listeners";
 import { queryClient as defaultQueryClient } from "@web/common/query/query-client";
+import {
+  type CompassStartListening,
+  createCompassListenerMiddleware,
+} from "@web/common/store/listener-middleware";
+import { sagaMiddleware } from "@web/common/store/middlewares";
+import { registerCompassListeners } from "./listeners";
+import { reducers } from "./reducers";
 
 export interface CreateCompassStoreOptions {
   queryClient?: QueryClient;
