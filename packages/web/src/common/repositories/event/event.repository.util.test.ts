@@ -65,19 +65,20 @@ describe("getEventRepository", () => {
   let hasUserEverAuthenticated = false;
   let isBackendUnavailable = false;
   let isGoogleRevoked = false;
-
-  const getEventRepository = createGetEventRepository({
-    createLocalEventRepository: () => new LocalEventRepository(),
-    createRemoteEventRepository: () => new RemoteEventRepository(),
-    hasUserEverAuthenticated: () => hasUserEverAuthenticated,
-    isBackendUnavailable: () => isBackendUnavailable,
-    isGoogleRevoked: () => isGoogleRevoked,
-  });
+  let getEventRepository: ReturnType<typeof createGetEventRepository>;
 
   beforeEach(() => {
     hasUserEverAuthenticated = false;
     isBackendUnavailable = false;
     isGoogleRevoked = false;
+
+    getEventRepository = createGetEventRepository({
+      createLocalEventRepository: () => new LocalEventRepository(),
+      createRemoteEventRepository: () => new RemoteEventRepository(),
+      hasUserEverAuthenticated: () => hasUserEverAuthenticated,
+      isBackendUnavailable: () => isBackendUnavailable,
+      isGoogleRevoked: () => isGoogleRevoked,
+    });
   });
 
   it("uses remote storage when a session exists", () => {

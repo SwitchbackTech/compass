@@ -43,9 +43,11 @@ mock.module(
   }),
 );
 
-const { RemoteEventRepository } =
-  require("./remote.event.repository") as typeof import("./remote.event.repository");
-type RemoteEventRepositoryInstance = InstanceType<typeof RemoteEventRepository>;
+type RemoteEventRepositoryInstance = InstanceType<
+  typeof import("./remote.event.repository").RemoteEventRepository
+>;
+
+const { RemoteEventRepository } = await import("./remote.event.repository");
 
 function createBackendUnavailableError(): Error {
   const error = new Error("Request failed");
