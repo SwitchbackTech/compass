@@ -5,7 +5,6 @@ import {
   getEventRepositorySource,
 } from "@web/common/repositories/event/event.repository.util";
 import { type CompassStartListening } from "@web/common/store/listener-middleware";
-import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import { handleError } from "@web/common/utils/event/event.util";
 import { fetchDayEvents } from "@web/ducks/events/queries/day.event.query";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
@@ -33,6 +32,7 @@ export async function registerDayEventQueryListeners(
         );
         const source = getEventRepositorySource(sessionExists);
         const repository = getEventRepository(sessionExists);
+        const { startDate, endDate } = action.payload;
 
         // Guard: abort if superseded before fetchQuery
         if (listenerApi.signal.aborted) return;
@@ -42,8 +42,8 @@ export async function registerDayEventQueryListeners(
           listenerApi.extra.queryClient.fetchQuery({
             queryKey: eventQueryKeys.day({
               source,
-              startDate: action.payload.startDate,
-              endDate: action.payload.endDate,
+              startDate,
+              endDate,
             }),
             queryFn: () => fetchDayEvents(action.payload, repository),
             staleTime: 0, // always refetch settled entries (SSE re-dispatch refetches)
@@ -60,13 +60,13 @@ export async function registerDayEventQueryListeners(
         );
         listenerApi.dispatch(
           getDayEventsSlice.actions.success({
-            data: result.ids as Payload_NormalizedAsyncAction,
+            data: result.ids,
             count: result.ids.length,
             pageSize: result.ids.length,
             page: 1,
             offset: 0,
-            startDate: action.payload.startDate,
-            endDate: action.payload.endDate,
+            startDate,
+            endDate,
             priorities: [],
           }),
         );
