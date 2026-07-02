@@ -43,11 +43,9 @@ mock.module(
   }),
 );
 
-type RemoteEventRepositoryInstance = InstanceType<
-  typeof import("./remote.event.repository").RemoteEventRepository
->;
-
-const { RemoteEventRepository } = await import("./remote.event.repository");
+// biome-ignore lint/suspicious/noExplicitAny: Lazy import to avoid TDZ with mocked dependencies
+const { RemoteEventRepository } = require("./remote.event.repository") as any;
+type RemoteEventRepositoryInstance = InstanceType<typeof RemoteEventRepository>;
 
 function createBackendUnavailableError(): Error {
   const error = new Error("Request failed");
