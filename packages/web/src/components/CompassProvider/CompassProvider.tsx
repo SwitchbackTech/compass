@@ -7,6 +7,7 @@ import { Slide, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
@@ -78,6 +79,7 @@ export const CompassRequiredProviders = ({
         </SessionProvider>
       </CompassRefsProvider>
     </HotkeysProvider>
+    <ReactQueryDevtools initialIsOpen={false} />
   </QueryClientProvider>
 );
 
