@@ -1,9 +1,7 @@
 /**
- * Redux-saga middleware — bridge between Redux actions and the Elf event store.
- * Orchestrates: Redux action → repository call (API or IndexedDB) → Elf store update.
+ * Redux-saga middleware
+ * Orchestrates: Redux action → repository call (API or IndexedDB) → store update.
  * All async event operations (create, edit, delete, fetch) go through here.
- * Do not update the Elf store from reducers or components — only sagas do this.
- * Related: docs/frontend/frontend-runtime-flow.md
  */
 
 import { call, put, select } from "@redux-saga/core/effects";
