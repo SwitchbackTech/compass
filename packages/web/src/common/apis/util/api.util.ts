@@ -114,7 +114,14 @@ export const getResponseData = async (response: Response): Promise<unknown> => {
   }
 };
 
-export const handleErrorResponse = async <T>(error: ApiError) => {
+interface ApiErrorResponseDependencies {
+  onGoogleRevoked?: () => void;
+}
+
+export const handleErrorResponse = async <T>(
+  error: ApiError,
+  { onGoogleRevoked }: ApiErrorResponseDependencies,
+) => {
   const requestUrl = error.config?.url;
   const status = error.response?.status;
 
@@ -133,13 +140,11 @@ export const handleErrorResponse = async <T>(error: ApiError) => {
     (status === Status.GONE || status === Status.UNAUTHORIZED) &&
     getApiErrorCode(error) === GOOGLE_REVOKED
   ) {
-    // Lazy import to avoid a static dependency from this low-level API utility
-    // back into the store/auth graph (base.api -> api.util -> google.auth.util
-    // -> store -> listeners -> ... -> base.api forms a module-init cycle).
-    const { handleGoogleRevoked } = await import(
-      "@web/auth/google/util/google.auth.util"
-    );
-    handleGoogleRevoked();
+    if (!onGoogleRevoked) {
+      throw new Error("Google revocation handler is not configured");
+    }
+
+    onGoogleRevoked();
     throw error;
   }
 
