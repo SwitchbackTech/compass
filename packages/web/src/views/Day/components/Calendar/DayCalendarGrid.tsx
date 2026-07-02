@@ -1,11 +1,5 @@
 import { type OpenChangeReason, type VirtualElement } from "@floating-ui/react";
-import {
-  type MouseEvent as ReactMouseEvent,
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -201,26 +195,15 @@ export function DayCalendarGrid() {
     onOpenEvent: openEventFormForEvent,
   });
 
-  const getAllDayDraftStartDate = useCallback(
-    (event: ReactMouseEvent<HTMLElement>) => {
-      const selectedDate =
-        visibleDates[dateCalcs.getVisibleDateIndexByX(event.clientX)]?.date ??
-        dateInView;
+  const getAllDayDraftStartDate = (clientX: number) =>
+    dateCalcs.getDateStrByXY(clientX, 0, YEAR_MONTH_DAY_FORMAT);
+  const openAllDayDraft = (event: Schema_Event) => {
+    if (!hasEventDates(event)) {
+      return;
+    }
 
-      return selectedDate.format(YEAR_MONTH_DAY_FORMAT);
-    },
-    [dateCalcs, dateInView, visibleDates],
-  );
-  const openAllDayDraft = useCallback(
-    (event: Schema_Event) => {
-      if (!hasEventDates(event)) {
-        return;
-      }
-
-      openEventFormForEvent(addId(assembleGridEvent(event)));
-    },
-    [openEventFormForEvent],
-  );
+    openEventFormForEvent(addId(assembleGridEvent(event)));
+  };
   const onAllDayMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,
     onCreateDraft: openAllDayDraft,

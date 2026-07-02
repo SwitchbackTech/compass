@@ -5,6 +5,7 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
+import { useEffect } from "react";
 import { Provider } from "react-redux";
 import { type Schema_Event } from "@core/types/event.types";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
@@ -47,12 +48,15 @@ const renderHarness = ({
       onCreateDraft,
     });
 
+    useEffect(() => {
+      document.addEventListener("mousedown", onParentMouseDown);
+      return () => document.removeEventListener("mousedown", onParentMouseDown);
+    }, []);
+
     return (
-      <section aria-label="Parent surface" onMouseDown={onParentMouseDown}>
-        <button onMouseDown={onMouseDown} type="button">
-          Empty all-day space
-        </button>
-      </section>
+      <button onMouseDown={onMouseDown} type="button">
+        Empty all-day space
+      </button>
     );
   };
 

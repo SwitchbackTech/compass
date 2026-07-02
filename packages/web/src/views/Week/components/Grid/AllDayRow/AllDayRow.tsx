@@ -1,10 +1,4 @@
-import {
-  type FC,
-  type MouseEvent,
-  type ReactNode,
-  useCallback,
-  useMemo,
-} from "react";
+import { type FC, type MouseEvent, type ReactNode, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import { CalendarAllDayRow } from "@web/common/calendar-grid/components/CalendarAllDayRow";
@@ -46,22 +40,16 @@ export const AllDayRow: FC<Props> = ({
 
   const { startOfView } = weekProps.component;
   const rowsCount = useAppSelector(selectRowCount);
-  const getAllDayDraftStartDate = useCallback(
-    (event: MouseEvent<HTMLElement>) =>
-      dateCalcs.getDateStrByXY(
-        event.clientX,
-        event.clientY,
-        startOfView,
-        YEAR_MONTH_DAY_FORMAT,
-      ),
-    [dateCalcs, startOfView],
-  );
-  const openAllDayDraft = useCallback(
-    (event: Schema_Event) => {
-      dispatch(draftSlice.actions.startGridClick(event));
-    },
-    [dispatch],
-  );
+  const getAllDayDraftStartDate = (clientX: number, clientY: number) =>
+    dateCalcs.getDateStrByXY(
+      clientX,
+      clientY,
+      startOfView,
+      YEAR_MONTH_DAY_FORMAT,
+    );
+  const openAllDayDraft = (event: Schema_Event) => {
+    dispatch(draftSlice.actions.startGridClick(event));
+  };
   const onMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,
     onCreateDraft: openAllDayDraft,
