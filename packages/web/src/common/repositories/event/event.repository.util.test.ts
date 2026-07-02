@@ -1,25 +1,19 @@
 import { createGetEventRepository, createGetEventRepositorySource } from "./event.repository.factory";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-// Mocks must be set up before importing repository classes
-const mockCreate = () => ({});
-const mockEdit = () => ({});
-const mockDelete = () => ({});
-
+// Mock EventApi before importing repositories to avoid TDZ
 mock.module("@web/ducks/events/event.api", () => ({
   EventApi: {
-    create: mockCreate,
-    get: () => ({}),
-    edit: mockEdit,
-    delete: mockDelete,
-    reorder: () => ({}),
+    create: mock(),
+    get: mock(),
+    edit: mock(),
+    delete: mock(),
+    reorder: mock(),
   },
 }));
 
-// biome-ignore lint/suspicious/noExplicitAny: Lazy import to avoid TDZ with mocked EventApi
-const { LocalEventRepository } = require("./local.event.repository") as any;
-// biome-ignore lint/suspicious/noExplicitAny: Lazy import to avoid TDZ with mocked EventApi
-const { RemoteEventRepository } = require("./remote.event.repository") as any;
+const { LocalEventRepository } = await import("./local.event.repository");
+const { RemoteEventRepository } = await import("./remote.event.repository");
 
 describe("getEventRepositorySource", () => {
   let hasUserEverAuthenticated = false;
