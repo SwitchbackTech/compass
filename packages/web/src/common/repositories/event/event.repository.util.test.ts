@@ -1,7 +1,23 @@
 import { createGetEventRepository, createGetEventRepositorySource } from "./event.repository.factory";
-import { LocalEventRepository } from "./local.event.repository";
-import { RemoteEventRepository } from "./remote.event.repository";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+// Mocks must be set up before importing repository classes
+const mockCreate = () => ({});
+const mockEdit = () => ({});
+const mockDelete = () => ({});
+
+mock.module("@web/ducks/events/event.api", () => ({
+  EventApi: {
+    create: mockCreate,
+    get: () => ({}),
+    edit: mockEdit,
+    delete: mockDelete,
+    reorder: () => ({}),
+  },
+}));
+
+const { LocalEventRepository } = await import("./local.event.repository");
+const { RemoteEventRepository } = await import("./remote.event.repository");
 
 describe("getEventRepositorySource", () => {
   let hasUserEverAuthenticated = false;
