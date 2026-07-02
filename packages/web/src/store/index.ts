@@ -1,12 +1,29 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { type QueryClient } from "@tanstack/react-query";
+import { queryClient as defaultQueryClient } from "@web/common/query/query-client";
+import { createCompassListenerMiddleware } from "@web/common/store/listener-middleware";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { reducers } from "./reducers";
 
-export const store = configureStore({
-  reducer: reducers,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(sagaMiddleware),
-});
+export interface CreateCompassStoreOptions {
+  queryClient?: QueryClient;
+}
+
+export const createCompassStore = ({
+  queryClient = defaultQueryClient,
+}: CreateCompassStoreOptions = {}) => {
+  const listenerMiddleware = createCompassListenerMiddleware(queryClient);
+
+  return configureStore({
+    reducer: reducers,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware()
+        .prepend(listenerMiddleware.middleware)
+        .concat(sagaMiddleware),
+  });
+};
+
+export const store = createCompassStore();
 
 // Expose store for e2e testing (always expose, let tests opt-in via flag)
 if (typeof window !== "undefined") {

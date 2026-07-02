@@ -2,20 +2,24 @@
 import { PostHogProvider } from "@web/auth/posthog/posthog-react";
 import { type PropsWithChildren } from "react";
 import { Provider } from "react-redux";
+import { type Store } from "redux";
 import { Slide, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
+import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { PointerPositionProvider } from "@web/common/pointer/pointer-position";
+import { queryClient as defaultQueryClient } from "@web/common/query/query-client";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
-import { store } from "@web/store";
+import { store, type RootState } from "@web/store";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
 
 /**
@@ -27,46 +31,56 @@ export function GlobalShortcutsHost() {
   return null;
 }
 
-export const CompassRequiredProviders = (
-  props: PropsWithChildren<{ store?: typeof store }>,
-) => (
-  <HotkeysProvider>
-    <CompassRefsProvider>
-      <SessionProvider>
-        <Provider store={props?.store ?? store}>
-          <GoogleOAuthProvider
-            clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
-          >
-            <PointerPositionProvider>
-              <IconProvider>
-                <AuthModalProvider>
-                  <LogoutConfirmationProvider>
-                    {props.children}
-                    <AuthModal />
-                    <WelcomeModal />
-                    <ToastContainer
-                      position="bottom-left"
-                      autoClose={5000}
-                      hideProgressBar={false}
-                      newestOnTop={false}
-                      closeOnClick
-                      rtl={false}
-                      pauseOnFocusLoss
-                      draggable
-                      pauseOnHover
-                      theme="dark"
-                      limit={1}
-                      transition={Slide}
-                    />
-                  </LogoutConfirmationProvider>
-                </AuthModalProvider>
-              </IconProvider>
-            </PointerPositionProvider>
-          </GoogleOAuthProvider>
-        </Provider>
-      </SessionProvider>
-    </CompassRefsProvider>
-  </HotkeysProvider>
+interface CompassRequiredProvidersProps extends PropsWithChildren {
+  queryClient?: QueryClient;
+  store?: Store<RootState>;
+}
+
+export const CompassRequiredProviders = ({
+  children,
+  queryClient = defaultQueryClient,
+  store: reduxStore = store,
+}: CompassRequiredProvidersProps) => (
+  <QueryClientProvider client={queryClient}>
+    <HotkeysProvider>
+      <CompassRefsProvider>
+        <SessionProvider>
+          <Provider store={reduxStore}>
+            <GoogleOAuthProvider
+              clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
+            >
+              <PointerPositionProvider>
+                <IconProvider>
+                  <AuthModalProvider>
+                    <LogoutConfirmationProvider>
+                      {children}
+                      <AuthModal />
+                      <WelcomeModal />
+                      <ToastContainer
+                        position="bottom-left"
+                        autoClose={5000}
+                        hideProgressBar={false}
+                        newestOnTop={false}
+                        closeOnClick
+                        rtl={false}
+                        pauseOnFocusLoss
+                        draggable
+                        pauseOnHover
+                        theme="dark"
+                        limit={1}
+                        transition={Slide}
+                      />
+                    </LogoutConfirmationProvider>
+                  </AuthModalProvider>
+                </IconProvider>
+              </PointerPositionProvider>
+            </GoogleOAuthProvider>
+          </Provider>
+        </SessionProvider>
+      </CompassRefsProvider>
+    </HotkeysProvider>
+    <ReactQueryDevtools initialIsOpen={false} />
+  </QueryClientProvider>
 );
 
 export const CompassOptionalProviders = ({ children }: PropsWithChildren) => {
