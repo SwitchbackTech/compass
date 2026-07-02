@@ -61,6 +61,13 @@ export async function registerDayEventQueryListeners(
         listenerApi.dispatch(
           getDayEventsSlice.actions.success({
             data: result.ids as Payload_NormalizedAsyncAction,
+            count: result.ids.length,
+            pageSize: result.ids.length,
+            page: 1,
+            offset: 0,
+            startDate: action.payload.startDate,
+            endDate: action.payload.endDate,
+            priorities: [],
           }),
         );
       } catch (error) {
