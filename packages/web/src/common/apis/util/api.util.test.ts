@@ -11,10 +11,10 @@ import {
 } from "../api.types";
 import {
   getApiErrorCode,
-  handleErrorResponse,
   parseApiError,
   parseGoogleConnectError,
-} from "./api.util";
+} from "./api-error-parsing.util";
+import { handleErrorResponse } from "./api.util";
 import { describe, expect, it, spyOn } from "bun:test";
 
 const createApiError = (
