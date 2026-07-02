@@ -1,9 +1,11 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { type QueryClient } from "@tanstack/react-query";
-import { queryClient as defaultQueryClient } from "@web/common/query/query-client";
+import { type CompassStartListening } from "@web/common/store/listener-middleware";
 import { createCompassListenerMiddleware } from "@web/common/store/listener-middleware";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import { reducers } from "./reducers";
+import { registerCompassListeners } from "./listeners";
+import { queryClient as defaultQueryClient } from "@web/common/query/query-client";
 
 export interface CreateCompassStoreOptions {
   queryClient?: QueryClient;
@@ -14,13 +16,20 @@ export const createCompassStore = ({
 }: CreateCompassStoreOptions = {}) => {
   const listenerMiddleware = createCompassListenerMiddleware(queryClient);
 
-  return configureStore({
+  const baseStore = configureStore({
     reducer: reducers,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware()
         .prepend(listenerMiddleware.middleware)
         .concat(sagaMiddleware),
   });
+
+  // Register listeners against this store's middleware
+  registerCompassListeners(
+    listenerMiddleware.startListening as CompassStartListening,
+  );
+
+  return baseStore;
 };
 
 export const store = createCompassStore();
