@@ -2,6 +2,7 @@ import "react-datepicker/dist/react-datepicker.css";
 import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import { sessionInit } from "@web/auth/compass/session/SessionProvider";
+import { configureGoogleRevocationApiHandler } from "@web/auth/google/util/google-revocation-api.config";
 import { sagaMiddleware } from "@web/common/store/middlewares";
 import {
   initializeDatabaseWithErrorHandling,
@@ -10,6 +11,8 @@ import {
 import { App } from "@web/components/App/App";
 import { sagas } from "@web/store/sagas";
 import "./index.css";
+
+configureGoogleRevocationApiHandler();
 
 const container = document.getElementById("root");
 
