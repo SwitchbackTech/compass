@@ -23,6 +23,23 @@ const createMockRepository = (): any => ({
 const mockLocalEventRepository = createMockRepository();
 const mockRemoteEventRepository = createMockRepository();
 
+const eventResponse = (data: unknown, startDate = "", endDate = "") => {
+  const count = Array.isArray(data) ? data.length : 0;
+
+  return {
+    data,
+    count,
+    page: 1,
+    pageSize: count,
+    offset: 0,
+    startDate,
+    endDate,
+  };
+};
+
+const waitForEffects = (ms = 100) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
 const mockGetEventRepository = mock((sessionExists: boolean) =>
   sessionExists ? mockRemoteEventRepository : mockLocalEventRepository,
 );
@@ -123,6 +140,14 @@ describe("day.event.listener", () => {
   let queryClient: ReturnType<typeof createCompassQueryClient>;
   const startDate = "2025-01-01";
   const endDate = "2025-01-31";
+  const requestDayEvents = (reason = "DAY_VIEW_CHANGE") =>
+    store.dispatch(
+      getDayEventsSlice.actions.request({
+        startDate,
+        endDate,
+        __context: { reason },
+      }),
+    );
 
   beforeEach(() => {
     queryClient = createCompassQueryClient();
@@ -155,26 +180,14 @@ describe("day.event.listener", () => {
 
       mockGetSessionExists.mockResolvedValueOnce(true);
       mockGetEventRepositorySource.mockReturnValueOnce("remote");
-      mockRemoteEventRepository.get.mockResolvedValueOnce({
-        data: [event1, event2],
-        count: 2,
-        page: 1,
-        pageSize: 2,
-        offset: 0,
-        startDate,
-        endDate,
-      });
-
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
+      mockRemoteEventRepository.get.mockResolvedValueOnce(
+        eventResponse([event1, event2], startDate, endDate),
       );
 
+      requestDayEvents();
+
       // Wait for async effects to settle
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await waitForEffects();
 
       const state = store.getState();
       const dayEventsSlice = state.events.getDayEvents;
@@ -202,25 +215,13 @@ describe("day.event.listener", () => {
 
       mockGetSessionExists.mockResolvedValueOnce(true);
       mockGetEventRepositorySource.mockReturnValueOnce("remote");
-      mockRemoteEventRepository.get.mockResolvedValueOnce({
-        data: [inRangeEvent, outOfRangeEvent],
-        count: 2,
-        page: 1,
-        pageSize: 2,
-        offset: 0,
-        startDate,
-        endDate,
-      });
-
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
+      mockRemoteEventRepository.get.mockResolvedValueOnce(
+        eventResponse([inRangeEvent, outOfRangeEvent], startDate, endDate),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      requestDayEvents();
+
+      await waitForEffects();
 
       const state = store.getState();
       // Out-of-range event should be filtered out before normalization
@@ -238,15 +239,9 @@ describe("day.event.listener", () => {
       mockGetEventRepositorySource.mockReturnValueOnce("local");
       mockLocalEventRepository.get.mockRejectedValueOnce(testError);
 
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
-      );
+      requestDayEvents();
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await waitForEffects();
 
       const state = store.getState();
       expect(state.events.getDayEvents.isSuccess).toBe(false);
@@ -256,25 +251,13 @@ describe("day.event.listener", () => {
     it("handles malformed response (data is null)", async () => {
       mockGetSessionExists.mockResolvedValueOnce(true);
       mockGetEventRepositorySource.mockReturnValueOnce("remote");
-      mockRemoteEventRepository.get.mockResolvedValueOnce({
-        data: null,
-        count: 0,
-        page: 1,
-        pageSize: 0,
-        offset: 0,
-        startDate,
-        endDate,
-      });
-
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
+      mockRemoteEventRepository.get.mockResolvedValueOnce(
+        eventResponse(null, startDate, endDate),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      requestDayEvents();
+
+      await waitForEffects();
 
       const state = store.getState();
       expect(state.events.getDayEvents.isSuccess).toBe(false);
@@ -284,25 +267,13 @@ describe("day.event.listener", () => {
     it("handles malformed response (data is not an array)", async () => {
       mockGetSessionExists.mockResolvedValueOnce(true);
       mockGetEventRepositorySource.mockReturnValueOnce("remote");
-      mockRemoteEventRepository.get.mockResolvedValueOnce({
-        data: { invalid: "object" },
-        count: 0,
-        page: 1,
-        pageSize: 0,
-        offset: 0,
-        startDate,
-        endDate,
-      });
-
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
+      mockRemoteEventRepository.get.mockResolvedValueOnce(
+        eventResponse({ invalid: "object" }, startDate, endDate),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      requestDayEvents();
+
+      await waitForEffects();
 
       const state = store.getState();
       expect(state.events.getDayEvents.isSuccess).toBe(false);
@@ -314,25 +285,13 @@ describe("day.event.listener", () => {
     it("uses local repository when session does not exist", async () => {
       mockGetSessionExists.mockResolvedValueOnce(false);
       mockGetEventRepositorySource.mockReturnValueOnce("local");
-      mockLocalEventRepository.get.mockResolvedValueOnce({
-        data: [],
-        count: 0,
-        page: 1,
-        pageSize: 0,
-        offset: 0,
-        startDate,
-        endDate,
-      });
-
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
+      mockLocalEventRepository.get.mockResolvedValueOnce(
+        eventResponse([], startDate, endDate),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      requestDayEvents();
+
+      await waitForEffects();
 
       expect(mockLocalEventRepository.get).toHaveBeenCalled();
       expect(mockRemoteEventRepository.get).not.toHaveBeenCalled();
@@ -341,25 +300,13 @@ describe("day.event.listener", () => {
     it("uses remote repository when session exists", async () => {
       mockGetSessionExists.mockResolvedValueOnce(true);
       mockGetEventRepositorySource.mockReturnValueOnce("remote");
-      mockRemoteEventRepository.get.mockResolvedValueOnce({
-        data: [],
-        count: 0,
-        page: 1,
-        pageSize: 0,
-        offset: 0,
-        startDate,
-        endDate,
-      });
-
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
+      mockRemoteEventRepository.get.mockResolvedValueOnce(
+        eventResponse([], startDate, endDate),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      requestDayEvents();
+
+      await waitForEffects();
 
       expect(mockRemoteEventRepository.get).toHaveBeenCalled();
       expect(mockLocalEventRepository.get).not.toHaveBeenCalled();
@@ -382,48 +329,20 @@ describe("day.event.listener", () => {
         // First call: slow
         // Second call: fast
         if (currentCall === 1) {
-          await new Promise((resolve) => setTimeout(resolve, 150));
-          return {
-            data: [event1],
-            count: 1,
-            page: 1,
-            pageSize: 1,
-            offset: 0,
-            startDate,
-            endDate,
-          };
-        } else {
-          return {
-            data: [event2],
-            count: 1,
-            page: 1,
-            pageSize: 1,
-            offset: 0,
-            startDate,
-            endDate,
-          };
+          await waitForEffects(150);
+          return eventResponse([event1], startDate, endDate);
         }
+
+        return eventResponse([event2], startDate, endDate);
       });
 
       // Dispatch two rapid requests
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
-      );
+      requestDayEvents();
 
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
-      );
+      requestDayEvents();
 
       // Wait for both to settle
-      await new Promise((resolve) => setTimeout(resolve, 300));
+      await waitForEffects(300);
 
       const state = store.getState();
       // With takeLatest and dedup, should have used the second request's result
@@ -439,34 +358,16 @@ describe("day.event.listener", () => {
 
       mockGetSessionExists.mockResolvedValue(true);
       mockGetEventRepositorySource.mockReturnValue("remote");
-      mockRemoteEventRepository.get.mockResolvedValue({
-        data: [event],
-        count: 1,
-        page: 1,
-        pageSize: 1,
-        offset: 0,
-        startDate,
-        endDate,
-      });
+      mockRemoteEventRepository.get.mockResolvedValue(
+        eventResponse([event], startDate, endDate),
+      );
 
       // Dispatch identical payload twice
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
-      );
+      requestDayEvents();
 
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
-      );
+      requestDayEvents();
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await waitForEffects();
 
       // Repository.get should only be called once due to dedup
       expect(mockRemoteEventRepository.get).toHaveBeenCalledTimes(1);
@@ -479,39 +380,21 @@ describe("day.event.listener", () => {
 
       mockGetSessionExists.mockResolvedValue(true);
       mockGetEventRepositorySource.mockReturnValue("remote");
-      mockRemoteEventRepository.get.mockResolvedValue({
-        data: [event],
-        count: 1,
-        page: 1,
-        pageSize: 1,
-        offset: 0,
-        startDate,
-        endDate,
-      });
-
-      // First dispatch
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "DAY_VIEW_CHANGE" },
-        }),
+      mockRemoteEventRepository.get.mockResolvedValue(
+        eventResponse([event], startDate, endDate),
       );
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      // First dispatch
+      requestDayEvents();
+
+      await waitForEffects();
 
       mockRemoteEventRepository.get.mockClear();
 
       // Second dispatch same payload (e.g., SSE refetch)
-      store.dispatch(
-        getDayEventsSlice.actions.request({
-          startDate,
-          endDate,
-          __context: { reason: "SYNC" },
-        }),
-      );
+      requestDayEvents("SYNC");
 
-      await new Promise((resolve) => setTimeout(resolve, 100));
+      await waitForEffects();
 
       // Should refetch, not use cache (staleTime: 0)
       expect(mockRemoteEventRepository.get).toHaveBeenCalledTimes(1);
