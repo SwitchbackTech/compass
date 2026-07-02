@@ -1,3 +1,4 @@
-import createSagaMiddleware from "redux-saga";
+import { queryClient } from "@web/common/query/query-client";
+import { createEventListenerMiddleware } from "@web/ducks/events/listeners/event.listeners";
 
-export const sagaMiddleware = createSagaMiddleware();
+export const eventListenerMiddleware = createEventListenerMiddleware(queryClient);

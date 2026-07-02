@@ -90,7 +90,7 @@ The web talks to the backend through:
 `packages/web/src/index.tsx` does this in order:
 
 1. initialize storage
-2. start saga middleware
+2. start listener middleware
 3. initialize session tracking
 4. render `<App />`
 
@@ -119,7 +119,7 @@ This is the standard pattern for new HTTP behavior.
 Web state is not single-system:
 
 - Redux Toolkit slices hold app state and async state
-- redux-saga handles side effects
+- Redux Toolkit listener middleware handles side effects
 - Elf stores are used for event entity management and draft/active state
 - IndexedDB stores offline events/tasks
 

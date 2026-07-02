@@ -5,9 +5,11 @@ import { Provider } from "react-redux";
 import { Slide, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
+import { QueryClientProvider, type QueryClient } from "@tanstack/react-query";
 import { SessionProvider } from "@web/auth/compass/session/SessionProvider";
 import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
+import { queryClient } from "@web/common/query/query-client";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { PointerPositionProvider } from "@web/common/pointer/pointer-position";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
@@ -28,13 +30,14 @@ export function GlobalShortcutsHost() {
 }
 
 export const CompassRequiredProviders = (
-  props: PropsWithChildren<{ store?: typeof store }>,
+  props: PropsWithChildren<{ store?: typeof store; queryClient?: QueryClient }>,
 ) => (
   <HotkeysProvider>
     <CompassRefsProvider>
       <SessionProvider>
-        <Provider store={props?.store ?? store}>
-          <GoogleOAuthProvider
+        <QueryClientProvider client={props?.queryClient ?? queryClient}>
+          <Provider store={props?.store ?? store}>
+            <GoogleOAuthProvider
             clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
           >
             <PointerPositionProvider>
@@ -63,7 +66,8 @@ export const CompassRequiredProviders = (
               </IconProvider>
             </PointerPositionProvider>
           </GoogleOAuthProvider>
-        </Provider>
+          </Provider>
+        </QueryClientProvider>
       </SessionProvider>
     </CompassRefsProvider>
   </HotkeysProvider>

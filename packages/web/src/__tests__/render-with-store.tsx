@@ -1,4 +1,4 @@
-import { configureStore, type PreloadedState } from "@reduxjs/toolkit";
+import { type PreloadedState } from "@reduxjs/toolkit";
 import {
   type RenderHookOptions,
   render,
@@ -6,20 +6,13 @@ import {
 } from "@testing-library/react";
 import { type PropsWithChildren, type ReactElement } from "react";
 import { Provider } from "react-redux";
-import { sagaMiddleware } from "@web/common/store/middlewares";
-import { type RootState } from "@web/store";
-import { reducers } from "@web/store/reducers";
+import { createCompassQueryClient } from "@web/common/query/query-client";
+import { createCompassStore, type RootState } from "@web/store";
 
 export function createTestStore(preloadedState?: PreloadedState<RootState>) {
-  return configureStore({
-    reducer: reducers,
+  return createCompassStore({
     preloadedState,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        thunk: false,
-        serializableCheck: false,
-        immutableCheck: false,
-      }).concat(sagaMiddleware),
+    queryClient: createCompassQueryClient(),
   });
 }
 

@@ -1,17 +1,35 @@
-import { configureStore } from "@reduxjs/toolkit";
-import { sagaMiddleware } from "@web/common/store/middlewares";
+import { configureStore, type PreloadedState } from "@reduxjs/toolkit";
+import { type QueryClient } from "@tanstack/react-query";
+import { combineReducers } from "redux";
+import { queryClient } from "@web/common/query/query-client";
+import { createEventListenerMiddleware } from "@web/ducks/events/listeners/event.listeners";
 import { reducers } from "./reducers";
 
-export const store = configureStore({
-  reducer: reducers,
-  middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(sagaMiddleware),
-});
+const rootReducer = combineReducers(reducers);
+export type RootState = ReturnType<typeof rootReducer>;
 
-// Expose store for e2e testing (always expose, let tests opt-in via flag)
+interface CreateCompassStoreOptions {
+  preloadedState?: PreloadedState<RootState>;
+  queryClient?: QueryClient;
+}
+
+export const createCompassStore = (options: CreateCompassStoreOptions = {}) => {
+  const eventListenerMiddleware = createEventListenerMiddleware(
+    options.queryClient ?? queryClient,
+  );
+
+  return configureStore({
+    reducer: rootReducer,
+    preloadedState: options.preloadedState,
+    middleware: (getDefaultMiddleware) =>
+      getDefaultMiddleware().prepend(eventListenerMiddleware.middleware),
+  });
+};
+
+export const store = createCompassStore();
+
 if (typeof window !== "undefined") {
   window.__COMPASS_E2E_STORE__ = store;
 }
 
-export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

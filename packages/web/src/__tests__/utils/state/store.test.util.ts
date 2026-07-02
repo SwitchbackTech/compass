@@ -1,8 +1,7 @@
-import { configureStore, type PreloadedState } from "@reduxjs/toolkit";
+import { type PreloadedState } from "@reduxjs/toolkit";
 import { type Schema_Event } from "@core/types/event.types";
-import { sagaMiddleware } from "@web/common/store/middlewares";
-import { type RootState } from "@web/store";
-import { reducers } from "@web/store/reducers";
+import { createCompassQueryClient } from "@web/common/query/query-client";
+import { createCompassStore, type RootState } from "@web/store";
 
 // Type for the simplified test state that matches our mock
 type TestState = {
@@ -157,15 +156,9 @@ export const createStoreWithEvents = (
     reason: null,
   };
 
-  return configureStore({
-    reducer: reducers,
-    preloadedState: preloadedState,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        thunk: false,
-        serializableCheck: false,
-        immutableCheck: false,
-      }).concat(sagaMiddleware),
+  return createCompassStore({
+    preloadedState,
+    queryClient: createCompassQueryClient(),
   });
 };
 

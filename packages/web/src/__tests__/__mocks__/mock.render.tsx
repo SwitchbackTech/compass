@@ -1,4 +1,4 @@
-import { configureStore, type PreloadedState } from "@reduxjs/toolkit";
+import { type PreloadedState } from "@reduxjs/toolkit";
 import {
   type RenderHookOptions,
   type RenderOptions,
@@ -12,13 +12,11 @@ import {
 } from "react";
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { ID_ROOT } from "@web/common/constants/web.constants";
+import { createCompassQueryClient } from "@web/common/query/query-client";
 import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
-import { sagaMiddleware } from "@web/common/store/middlewares";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
-import { type store as compassStore, type RootState } from "@web/store";
-import { reducers } from "@web/store/reducers";
-import { sagas } from "@web/store/sagas";
+import { createCompassStore, type store as compassStore, type RootState } from "@web/store";
 import { mock } from "bun:test";
 
 mock.module("@react-oauth/google", () => ({
@@ -81,18 +79,14 @@ const customRender = (
   {
     state,
     router,
-    store = configureStore({
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(sagaMiddleware),
-      reducer: reducers,
+    store = createCompassStore({
       preloadedState: state,
+      queryClient: createCompassQueryClient(),
     }),
     wrapper: CustomWrapper,
     ...renderOptions
   }: CustomRenderOptions = {},
 ) => {
-  sagaMiddleware.run(sagas);
-
   const options: RenderOptions = { ...renderOptions };
   const Wrapper = ({ children }: PropsWithChildren) => {
     if (!CustomWrapper) {
@@ -123,17 +117,13 @@ const customRenderHook = <ReturnType, Props>(
     wrapper: WrapperComponent,
     state,
     router,
-    store = configureStore({
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(sagaMiddleware),
-      reducer: reducers,
+    store = createCompassStore({
       preloadedState: state,
+      queryClient: createCompassQueryClient(),
     }),
     ...renderOptions
   }: CustomRenderHookOptions<Props> = {},
 ) => {
-  sagaMiddleware.run(sagas);
-
   const options: RenderHookOptions<Props> = { ...renderOptions };
 
   const Wrapper = (props: PropsWithChildren) => {

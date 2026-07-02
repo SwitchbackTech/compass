@@ -98,12 +98,12 @@ export interface Payload_GetEvents extends SliceStateContext {
   endDate: string;
 }
 
-export type Response_CreateEventSaga =
+export type Response_CreateEventOperation =
   // $$ either break out into separate `Response_CreateEventSuccess` type,
   // like is done for `GetEventsSuccess` or ignore and delete this comment
   Response_HttpPaginatedSuccess<Schema_Event> & Schema_Event;
 
-export type Response_GetEventsSaga =
+export type Response_GetEventsOperation =
   Response_GetEventsSuccess<Payload_NormalizedAsyncAction> &
     Payload_GetPaginatedEvents;
 

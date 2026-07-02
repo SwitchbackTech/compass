@@ -11,12 +11,12 @@ Primary entrypoint:
 Boot order:
 
 1. initialize local storage through `initializeDatabaseWithErrorHandling()`
-2. start redux-saga with `sagaMiddleware.run(sagas)`
+2. register Redux listener middleware during store construction
 3. initialize session tracking with `sessionInit()`
 4. render `<App />`
 5. show a toast if local database initialization failed
 
-This order matters because storage should be ready before sagas and repositories perform local operations.
+This order matters because storage should be ready before listeners and repositories perform local operations.
 
 ## App Provider Tree
 
@@ -174,7 +174,7 @@ The web app uses multiple state layers:
 | Concern | Use | Key files |
 | --- | --- | --- |
 | Loading states, modal visibility, async status | Redux Toolkit slices | `packages/web/src/ducks/events/slices/` |
-| Async sequences and persistence orchestration | redux-saga | `packages/web/src/ducks/events/sagas/event.sagas.ts` |
+| Async sequences and persistence orchestration | Redux Toolkit listener middleware + TanStack Query | `packages/web/src/ducks/events/listeners/event.operations.ts` |
 | Event entity CRUD, active event, and draft state | Elf store | `packages/web/src/store/events.ts` |
 | Offline persistence | IndexedDB offline data store | `packages/web/src/common/storage/offline-data/indexeddb-offline-data.store.ts` |
 | Local vs remote persistence choice | Repository factory | `packages/web/src/common/repositories/event/event.repository.util.ts` |
@@ -185,8 +185,8 @@ or call IndexedDB directly from components.
 Read these together for event work:
 
 - `packages/web/src/store/index.ts`
-- `packages/web/src/store/sagas.ts`
-- `packages/web/src/ducks/events/sagas`
+- `packages/web/src/ducks/events/listeners/event.listeners.ts`
+- `packages/web/src/ducks/events/listeners`
 - `packages/web/src/store/events.ts`
 
 ## Event Flow
@@ -194,9 +194,9 @@ Read these together for event work:
 Typical event flow:
 
 1. a route view, hook, or component dispatches a Redux action
-2. redux-saga handles the async side effect
+2. Redux listener middleware handles the async side effect
 3. the selected repository writes locally or remotely
-4. the saga updates the Elf event store
+4. the listener updates the Redux event state
 5. Redux slices update async status
 6. React re-renders from observables/selectors
 7. SSE events can trigger refetch or metadata refresh later
@@ -208,7 +208,7 @@ or treat them as stable.
 Important consequence:
 
 - event behavior is not owned by a single state system
-- when debugging, inspect the action, saga, repository, and store layer together
+- when debugging, inspect the action, listener, repository, and store layer together
 
 ## Styling Systems
 
@@ -319,6 +319,6 @@ Connect-later guardrail:
 ## What To Read Before Editing
 
 - Auth/session issue: read session provider, user provider, router loaders.
-- Event refresh issue: read SSE hooks, sync slice, event sagas.
+- Event refresh issue: read SSE hooks, sync slice, event listeners.
 - Offline issue: read storage adapter and migration runner.
 - Rendering issue in day/week: start at the route view, then its hooks.
