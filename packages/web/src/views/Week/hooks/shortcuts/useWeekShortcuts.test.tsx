@@ -11,6 +11,7 @@ import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 
 const DELETE_EVENT_REQUEST = "deleteEvent/request";
 
+import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
@@ -142,10 +143,7 @@ const renderShortcuts = (options?: {
     ...(options?.includeAllDayEvent ? [editableAllDayEvent] : []),
   ];
   queryClient.setQueryDefaults(["events"], {
-    initialData: {
-      ids: events.map(({ _id }) => _id),
-      entities: Object.fromEntries(events.map((event) => [event._id, event])),
-    },
+    initialData: toNormalizedEventQueryData(events),
   });
   const dispatchedActions: unknown[] = [];
   const originalDispatch = store.dispatch;

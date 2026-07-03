@@ -11,6 +11,7 @@ import { createCompassQueryClient } from "@web/common/query/query-client";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { type RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";
+import { toNormalizedEventQueryData } from "./utils/event-query-test-data";
 
 export function createTestStore(preloadedState?: PreloadedState<RootState>) {
   const legacyEvents = Object.values(
@@ -36,12 +37,7 @@ export function createStoreWrapper(preloadedState?: PreloadedState<RootState>) {
   if (store.__eventQueryTestEvents.length > 0) {
     const events = store.__eventQueryTestEvents as Array<{ _id?: string }>;
     queryClient.setQueryDefaults(eventQueryKeys.all, {
-      initialData: {
-        ids: events.flatMap((event) => (event._id ? [event._id] : [])),
-        entities: Object.fromEntries(
-          events.flatMap((event) => (event._id ? [[event._id, event]] : [])),
-        ),
-      },
+      initialData: toNormalizedEventQueryData(events),
     });
   }
   const legacyEvents = (preloadedState as { events?: Record<string, unknown> })

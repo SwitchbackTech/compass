@@ -13,6 +13,7 @@ import {
 } from "react";
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { type Store } from "redux";
+import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import { createCompassQueryClient } from "@web/common/query/query-client";
@@ -115,16 +116,7 @@ const customRender = (
   ).__eventQueryTestEvents;
   if (eventQueryTestEvents?.length) {
     queryClient.setQueryDefaults(["events"], {
-      initialData: {
-        ids: eventQueryTestEvents.flatMap((event) =>
-          event._id ? [event._id] : [],
-        ),
-        entities: Object.fromEntries(
-          eventQueryTestEvents.flatMap((event) =>
-            event._id ? [[event._id, event]] : [],
-          ),
-        ),
-      },
+      initialData: toNormalizedEventQueryData(eventQueryTestEvents),
     });
   }
   const options: RenderOptions = { ...renderOptions };

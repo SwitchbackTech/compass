@@ -28,7 +28,10 @@ import {
 } from "@web/ducks/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { type EventQuerySnapshot } from "@web/ducks/events/queries/event.query.types";
-import { eventMutationKeys } from "./event.mutation.keys";
+import {
+  type EventMutationOperation,
+  eventMutationKeys,
+} from "./event.mutation.keys";
 import { markAnonymousEventWrite } from "./event.mutation.runtime";
 
 type MutationContext = { snapshots: EventQuerySnapshot[] };
@@ -89,7 +92,21 @@ export function useEventMutations(
     await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
     return { snapshots: snapshotEventQueries(queryClient, { source }) };
   };
-  const lifecycle = { onError: rollback, onSettled: settle };
+  const buildMutation = <Variables>(
+    operation: EventMutationOperation,
+    mutationFn: (variables: Variables) => Promise<unknown>,
+    optimistic: (variables: Variables) => void,
+  ) => ({
+    mutationKey: eventMutationKeys.operation(operation),
+    mutationFn,
+    onMutate: async (variables: Variables) => {
+      const context = await snapshot();
+      optimistic(variables);
+      return context;
+    },
+    onError: rollback,
+    onSettled: settle,
+  });
   const convertedEvent = (
     event: Payload_ConvertEvent["event"],
     isSomeday: boolean,
@@ -103,141 +120,128 @@ export function useEventMutations(
     return converted;
   };
 
-  const createMutation = useMutation({
-    mutationKey: eventMutationKeys.operation("create"),
-    mutationFn: async (event: Schema_Event) => {
-      await repository.create(event);
-      await markWrite();
-      return event;
-    },
-    onMutate: async (event) => {
-      const context = await snapshot();
-      insertEventIntoQueries(queryClient, event, ({ metadata, scope }) => {
-        if (metadata.source !== source) return false;
-        if (event.isSomeday) return scope === "someday";
-        return (
-          scope !== "someday" &&
-          eventMatchesRange(event, metadata.startDate, metadata.endDate)
+  const createMutation = useMutation(
+    buildMutation<Schema_Event>(
+      "create",
+      async (event) => {
+        await repository.create(event);
+        await markWrite();
+        return event;
+      },
+      (event) =>
+        insertEventIntoQueries(queryClient, event, ({ metadata, scope }) => {
+          if (metadata.source !== source) return false;
+          if (event.isSomeday) return scope === "someday";
+          return (
+            scope !== "someday" &&
+            eventMatchesRange(event, metadata.startDate, metadata.endDate)
+          );
+        }),
+    ),
+  );
+
+  const editMutation = useMutation(
+    buildMutation<Payload_EditEvent>(
+      "edit",
+      async ({ _id, event, applyTo }) => {
+        await repository.edit(_id, event, { applyTo });
+        await markWrite();
+      },
+      ({ _id, event, shouldRemove }) => {
+        if (shouldRemove) removeEventFromQueries(queryClient, _id, { source });
+        else patchEventInQueries(queryClient, _id, event, { source });
+      },
+    ),
+  );
+
+  const deleteMutation = useMutation(
+    buildMutation<Payload_DeleteEvent>(
+      "delete",
+      async ({ _id, applyTo }) => {
+        await repository.delete(_id, applyTo);
+        await markWrite();
+      },
+      ({ _id }) => removeEventFromQueries(queryClient, _id, { source }),
+    ),
+  );
+
+  const convertToSomedayMutation = useMutation(
+    buildMutation<Payload_ConvertEvent>(
+      "convert-to-someday",
+      async ({ event }) => {
+        const converted = convertedEvent(event, true);
+        if (!converted) {
+          throw new Error(`Event ${event._id} not found for conversion`);
+        }
+        const applyTo = converted.recurrence?.eventId
+          ? RecurringEventUpdateScope.ALL_EVENTS
+          : RecurringEventUpdateScope.THIS_EVENT;
+        await repository.edit(event._id, converted, { applyTo });
+        await markWrite();
+      },
+      ({ event }) => {
+        const converted = convertedEvent(event, true);
+        if (!converted) return;
+        removeEventFromQueries(queryClient, event._id, { source });
+        insertEventIntoQueries(
+          queryClient,
+          converted,
+          ({ metadata, scope }) =>
+            metadata.source === source && scope === "someday",
         );
-      });
-      return context;
-    },
-    ...lifecycle,
-  });
+      },
+    ),
+  );
 
-  const editMutation = useMutation({
-    mutationKey: eventMutationKeys.operation("edit"),
-    mutationFn: async ({ _id, event, applyTo }: Payload_EditEvent) => {
-      await repository.edit(_id, event, { applyTo });
-      await markWrite();
-    },
-    onMutate: async ({ _id, event, shouldRemove }) => {
-      const context = await snapshot();
-      if (shouldRemove) removeEventFromQueries(queryClient, _id, { source });
-      else patchEventInQueries(queryClient, _id, event, { source });
-      return context;
-    },
-    ...lifecycle,
-  });
+  const convertToCalendarMutation = useMutation(
+    buildMutation<Payload_ConvertEvent>(
+      "convert-to-calendar",
+      async ({ event }) => {
+        const converted = convertedEvent(event, false);
+        if (!converted) {
+          throw new Error(`Event ${event._id} not found for conversion`);
+        }
+        await repository.edit(event._id, converted, {});
+        await markWrite();
+      },
+      ({ event }) => {
+        const converted = convertedEvent(event, false);
+        if (!converted) return;
+        removeEventFromQueries(queryClient, event._id, { source });
+        insertEventIntoQueries(
+          queryClient,
+          converted,
+          ({ metadata, scope }) =>
+            metadata.source === source &&
+            scope !== "someday" &&
+            eventMatchesRange(converted, metadata.startDate, metadata.endDate),
+        );
+      },
+    ),
+  );
 
-  const deleteMutation = useMutation({
-    mutationKey: eventMutationKeys.operation("delete"),
-    mutationFn: async ({ _id, applyTo }: Payload_DeleteEvent) => {
-      await repository.delete(_id, applyTo);
-      await markWrite();
-    },
-    onMutate: async ({ _id }) => {
-      const context = await snapshot();
-      removeEventFromQueries(queryClient, _id, { source });
-      return context;
-    },
-    ...lifecycle,
-  });
+  const deleteSomedayMutation = useMutation(
+    buildMutation<Payload_DeleteEvent>(
+      "delete-someday",
+      async ({ _id, applyTo }) => {
+        await repository.delete(_id, applyTo);
+        await markWrite();
+      },
+      ({ _id }) =>
+        removeEventFromQueries(queryClient, _id, { source, scope: "someday" }),
+    ),
+  );
 
-  const convertToSomedayMutation = useMutation({
-    mutationKey: eventMutationKeys.operation("convert-to-someday"),
-    mutationFn: async ({ event }: Payload_ConvertEvent) => {
-      const converted = convertedEvent(event, true);
-      if (!converted) {
-        throw new Error(`Event ${event._id} not found for conversion`);
-      }
-      const applyTo = converted.recurrence?.eventId
-        ? RecurringEventUpdateScope.ALL_EVENTS
-        : RecurringEventUpdateScope.THIS_EVENT;
-      await repository.edit(event._id, converted, { applyTo });
-      await markWrite();
-    },
-    onMutate: async ({ event }) => {
-      const context = await snapshot();
-      const converted = convertedEvent(event, true);
-      if (!converted) return context;
-      removeEventFromQueries(queryClient, event._id, { source });
-      insertEventIntoQueries(
-        queryClient,
-        converted,
-        ({ metadata, scope }) =>
-          metadata.source === source && scope === "someday",
-      );
-      return context;
-    },
-    ...lifecycle,
-  });
-
-  const convertToCalendarMutation = useMutation({
-    mutationKey: eventMutationKeys.operation("convert-to-calendar"),
-    mutationFn: async ({ event }: Payload_ConvertEvent) => {
-      const converted = convertedEvent(event, false);
-      if (!converted) {
-        throw new Error(`Event ${event._id} not found for conversion`);
-      }
-      await repository.edit(event._id, converted, {});
-      await markWrite();
-    },
-    onMutate: async ({ event }) => {
-      const context = await snapshot();
-      const converted = convertedEvent(event, false);
-      if (!converted) return context;
-      removeEventFromQueries(queryClient, event._id, { source });
-      insertEventIntoQueries(
-        queryClient,
-        converted,
-        ({ metadata, scope }) =>
-          metadata.source === source &&
-          scope !== "someday" &&
-          eventMatchesRange(converted, metadata.startDate, metadata.endDate),
-      );
-      return context;
-    },
-    ...lifecycle,
-  });
-
-  const deleteSomedayMutation = useMutation({
-    mutationKey: eventMutationKeys.operation("delete-someday"),
-    mutationFn: async ({ _id, applyTo }: Payload_DeleteEvent) => {
-      await repository.delete(_id, applyTo);
-      await markWrite();
-    },
-    onMutate: async ({ _id }) => {
-      const context = await snapshot();
-      removeEventFromQueries(queryClient, _id, { source, scope: "someday" });
-      return context;
-    },
-    ...lifecycle,
-  });
-
-  const reorderSomedayMutation = useMutation({
-    mutationKey: eventMutationKeys.operation("reorder-someday"),
-    mutationFn: async (order: Payload_Order[]) => {
-      await repository.reorder(order);
-      await markWrite();
-    },
-    onMutate: async (order) => {
-      const context = await snapshot();
-      reorderSomedayEventsInQueries(queryClient, order, source);
-      return context;
-    },
-    ...lifecycle,
-  });
+  const reorderSomedayMutation = useMutation(
+    buildMutation<Payload_Order[]>(
+      "reorder-someday",
+      async (order) => {
+        await repository.reorder(order);
+        await markWrite();
+      },
+      (order) => reorderSomedayEventsInQueries(queryClient, order, source),
+    ),
+  );
 
   return useMemo(
     () => ({
