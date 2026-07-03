@@ -1,4 +1,4 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -9,7 +9,6 @@ import {
 } from "@web/__tests__/utils/state/store.test.util";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { type Setters_Sidebar, type State_Sidebar } from "./useSidebarState";
 import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
 
@@ -92,8 +91,8 @@ describe("useSidebarActions", () => {
     };
   });
 
-  it("schedules a dropped Someday event immediately", () => {
-    const { store, wrapper } = createStoreWrapper(currentState);
+  it("schedules a dropped Someday event immediately", async () => {
+    const { queryClient, store, wrapper } = createStoreWrapper(currentState);
     const dispatchSpy = spyOn(store, "dispatch");
     const { result } = renderHook(
       () =>
@@ -119,23 +118,22 @@ describe("useSidebarActions", () => {
       type: "schedule",
     });
 
-    const convertAction = dispatchSpy.mock.calls.find(
-      ([action]) => action.type === getSomedayEventsSlice.actionNames.convert,
-    )?.[0];
     const draftStartAction = dispatchSpy.mock.calls.find(
       ([action]) => action.type === draftSlice.actions.start.type,
     )?.[0];
 
-    if (!convertAction) {
-      throw new Error("Expected someday convert action to be dispatched");
-    }
-
-    expect(convertAction.payload.event).toEqual({
-      _id: somedayEvent._id,
-      endDate: "2024-01-16T12:00:00.000Z",
-      isAllDay: false,
-      isSomeday: false,
-      startDate: "2024-01-16T11:00:00.000Z",
+    await waitFor(() => {
+      expect(
+        queryClient
+          .getMutationCache()
+          .getAll()
+          .some(
+            (mutation) =>
+              mutation.options.mutationKey?.[2] === "convert-to-calendar" &&
+              (mutation.state.variables as { event?: { _id?: string } }).event
+                ?._id === somedayEvent._id,
+          ),
+      ).toBe(true);
     });
     expect(draftStartAction).toBeUndefined();
   });

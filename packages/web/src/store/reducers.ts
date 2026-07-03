@@ -1,30 +1,12 @@
 import { combineReducers } from "redux";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import {
-  createEventSlice,
-  deleteEventSlice,
-  editEventSlice,
-  eventsEntitiesSlice,
-} from "@web/ducks/events/slices/event.slice";
-import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
-import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
-import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
 
 const eventsReducer = combineReducers({
-  createEvent: createEventSlice.reducer,
   draft: draftSlice.reducer,
-  deleteEvent: deleteEventSlice.reducer,
-  editEvent: editEventSlice.reducer,
-  entities: eventsEntitiesSlice.reducer,
-  getSomedayEvents: getSomedayEventsSlice.reducer,
-  getWeekEvents: getWeekEventsSlice.reducer,
-  getDayEvents: getDayEventsSlice.reducer,
-  pendingEvents: pendingEventsSlice.reducer,
 });
 
 export const reducers = {

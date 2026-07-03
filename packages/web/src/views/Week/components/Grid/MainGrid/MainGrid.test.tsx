@@ -1,17 +1,17 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { QueryClientProvider } from "@tanstack/react-query";
+import { act, type ComponentProps } from "react";
+import { Provider as ReduxProvider } from "react-redux";
+import { Priorities } from "@core/constants/core.constants";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   cleanup,
   fireEvent,
   render,
   screen,
   waitFor,
-} from "@testing-library/react";
-import { act, type ComponentProps } from "react";
-import { Provider as ReduxProvider } from "react-redux";
-import { Priorities } from "@core/constants/core.constants";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+} from "@web/__tests__/__mocks__/mock.render";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import {
   ID_GRID_COLUMNS_TIMED,
@@ -21,7 +21,6 @@ import { createCompassQueryClient } from "@web/common/query/query-client";
 import { gridColorByPriority } from "@web/common/styles/theme.util";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -42,10 +41,40 @@ import {
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
+let pendingEventIds: string[] = [];
+
 function Provider(props: ComponentProps<typeof ReduxProvider>) {
   const queryClient = createCompassQueryClient();
+  for (const eventId of pendingEventIds) {
+    queryClient.getMutationCache().build(
+      queryClient,
+      { mutationKey: ["events", "mutation"] },
+      {
+        context: undefined,
+        data: undefined,
+        error: null,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        status: "pending",
+        variables: { _id: eventId },
+        submittedAt: Date.now(),
+      },
+    );
+  }
+  const events =
+    (
+      props.store as typeof props.store & {
+        __eventQueryTestEvents?: Schema_Event[];
+      }
+    ).__eventQueryTestEvents ?? [];
   queryClient.setQueryDefaults(eventQueryKeys.scope("week"), {
-    initialData: { entities: {}, ids: [] },
+    initialData: {
+      ids: events.flatMap((event) => (event._id ? [event._id] : [])),
+      entities: Object.fromEntries(
+        events.flatMap((event) => (event._id ? [[event._id, event]] : [])),
+      ),
+    },
   });
 
   return (
@@ -66,6 +95,7 @@ afterEach(() => {
   cleanup();
   setWeekInteractionMotionActive(false);
   weekEventRegistry.clear();
+  pendingEventIds = [];
 });
 
 const startOfView = dayjs("2024-01-14T00:00:00.000");
@@ -126,7 +156,7 @@ const createStore = (
     };
   }
 
-  return configureStore({
+  const store = configureStore({
     preloadedState,
     reducer: reducers,
     middleware: (getDefaultMiddleware) =>
@@ -136,6 +166,7 @@ const createStore = (
         thunk: false,
       }),
   });
+  return Object.assign(store, { __eventQueryTestEvents: events });
 };
 
 const createDateCalcs = () => ({
@@ -497,7 +528,7 @@ describe("Week calendar accessibility", () => {
       title: "Pending save",
     });
     const store = createStore([event]);
-    store.dispatch(pendingEventsSlice.actions.add("pending-event"));
+    pendingEventIds = ["pending-event"];
 
     render(
       <Provider store={store}>

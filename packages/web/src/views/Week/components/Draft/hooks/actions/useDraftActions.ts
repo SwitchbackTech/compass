@@ -27,22 +27,14 @@ import {
   type Payload_ConvertEvent,
   type Payload_EditEvent,
 } from "@web/ducks/events/event.types";
+import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
+import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
+import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import {
   selectDraft,
   selectDraftStatus,
 } from "@web/ducks/events/selectors/draft.selectors";
-import {
-  selectIsAtWeeklyLimit,
-  selectSomedayWeekCount,
-} from "@web/ducks/events/selectors/someday.selectors";
-import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import {
-  createEventSlice,
-  deleteEventSlice,
-  editEventSlice,
-} from "@web/ducks/events/slices/event.slice";
-import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
@@ -83,15 +75,14 @@ export const useDraftActions = (
   weekProps: WeekProps,
 ) => {
   const dispatch = useAppDispatch();
-  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
-  const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
+  const eventMutations = useEventMutations();
+  const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
+    useSomedayEventViewModel(
+      weekProps.component.startOfView,
+      weekProps.component.endOfView,
+    );
   const reduxDraft = useAppSelector(selectDraft);
-  const pendingEventIds = useAppSelector(
-    (state) => state.events.pendingEvents.eventIds,
-  );
-  const currentWeekEvents = useAppSelector((state) =>
-    selectPaginatedEventsBySectionType(state, "week"),
-  );
+  const pendingEventIds = usePendingEventIds();
 
   const {
     activity,
@@ -201,16 +192,11 @@ export const useDraftActions = (
       const confirmed = window.confirm(`Delete ${prefix}${title}?`);
 
       if (confirmed && eventToDelete?._id) {
-        dispatch(
-          deleteEventSlice.actions.request({
-            _id: eventToDelete._id,
-            applyTo,
-          }),
-        );
+        eventMutations.delete({ _id: eventToDelete._id, applyTo });
       }
       discard();
     },
-    [dispatch, draft, reduxDraft, discard],
+    [draft, reduxDraft, discard, eventMutations],
   );
 
   const convert = useCallback(
@@ -246,11 +232,18 @@ export const useDraftActions = (
         };
       }
 
-      dispatch(getWeekEventsSlice.actions.convert({ event }));
+      eventMutations.convertToSomeday({ event });
 
       discard();
     },
-    [discard, dispatch, draft, isAtWeeklyLimit, somedayWeekCount, isRecurrence],
+    [
+      discard,
+      draft,
+      eventMutations,
+      isAtWeeklyLimit,
+      somedayWeekCount,
+      isRecurrence,
+    ],
   );
 
   const openForm = useCallback(() => {
@@ -306,29 +299,6 @@ export const useDraftActions = (
     [weekProps.component.endOfView, weekProps.component.startOfView],
   );
 
-  const shouldAddToView = useCallback(
-    (event: Schema_WebEvent) => {
-      const viewParser = new EventInViewParser(
-        event,
-        weekProps.component.startOfView,
-        weekProps.component.endOfView,
-      );
-      const lastNavSource = weekProps.util.getLastNavigationSource();
-      const idsInView = currentWeekEvents?.data ?? [];
-      const shouldAddToView = viewParser.shouldAddToViewAfterDragToEdge(
-        lastNavSource,
-        idsInView,
-      );
-      return shouldAddToView;
-    },
-    [
-      weekProps.component.startOfView,
-      weekProps.component.endOfView,
-      weekProps.util,
-      currentWeekEvents?.data,
-    ],
-  );
-
   const submit = useCallback(
     async (
       draft: Schema_GridEvent,
@@ -344,12 +314,10 @@ export const useDraftActions = (
           return;
         case "CREATE": {
           const event = new OnSubmitParser(draft).parse();
-          dispatch(
-            createEventSlice.actions.request({
-              ...event,
-              recurrence: event.recurrence as Recurrence["recurrence"],
-            }),
-          );
+          eventMutations.create({
+            ...event,
+            recurrence: event.recurrence as Recurrence["recurrence"],
+          });
           return;
         }
         case "UPDATE": {
@@ -360,11 +328,7 @@ export const useDraftActions = (
 
           const event = new OnSubmitParser(draft).parse();
           const payload = getEditSlicePayload(event, applyTo);
-          dispatch(editEventSlice.actions.request(payload));
-
-          if (shouldAddToView(event)) {
-            dispatch(getWeekEventsSlice.actions.insert(event._id!));
-          }
+          eventMutations.edit(payload);
 
           if (isFormOpenBeforeDragging) {
             openForm();
@@ -380,11 +344,10 @@ export const useDraftActions = (
     [
       determineSubmitAction,
       discard,
-      dispatch,
+      eventMutations,
       getEditSlicePayload,
       isFormOpenBeforeDragging,
       openForm,
-      shouldAddToView,
     ],
   );
 

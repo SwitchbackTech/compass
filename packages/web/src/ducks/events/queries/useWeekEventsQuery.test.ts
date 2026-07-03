@@ -37,18 +37,18 @@ describe("useWeekEventsQuery", () => {
     fetchWeekEvents.mockClear();
   });
 
-  it("syncs fetched week events into Redux", async () => {
+  it("returns fetched week events without syncing Redux", async () => {
     const queryClient = createCompassQueryClient();
     const store = createCompassStore({ queryClient });
 
-    renderHook(() => useWeekEventsQuery(range()), { queryClient, store });
+    const result = renderHook(() => useWeekEventsQuery(range()), {
+      queryClient,
+      store,
+    });
 
     await waitFor(() => {
-      expect(store.getState().events.getWeekEvents.value?.data).toEqual([
-        "week-1",
-      ]);
+      expect(result.result.current.data?.ids).toEqual(["week-1"]);
     });
-    expect(store.getState().events.entities.value["week-1"]).toBeDefined();
   });
 
   it("serves a cached remount from cache without a second fetch", async () => {
@@ -60,32 +60,36 @@ describe("useWeekEventsQuery", () => {
       store,
     });
     await waitFor(() => {
-      expect(store.getState().events.getWeekEvents.isSuccess).toBe(true);
+      expect(first.result.current.isSuccess).toBe(true);
     });
     first.unmount();
     const callsAfterFirst = fetchWeekEvents.mock.calls.length;
 
     // Same key within staleTime → cache hit, no network.
-    renderHook(() => useWeekEventsQuery(range()), { queryClient, store });
+    const second = renderHook(() => useWeekEventsQuery(range()), {
+      queryClient,
+      store,
+    });
     await waitFor(() => {
-      expect(store.getState().events.getWeekEvents.value?.data).toEqual([
-        "week-1",
-      ]);
+      expect(second.result.current.data?.ids).toEqual(["week-1"]);
     });
     expect(fetchWeekEvents.mock.calls.length).toBe(callsAfterFirst);
   });
 
-  it("dispatches slice error when the fetch rejects", async () => {
+  it("returns query error when the fetch rejects", async () => {
     fetchWeekEvents.mockImplementationOnce(async () => {
       throw new Error("boom");
     });
     const queryClient = createCompassQueryClient();
     const store = createCompassStore({ queryClient });
 
-    renderHook(() => useWeekEventsQuery(range()), { queryClient, store });
+    const result = renderHook(() => useWeekEventsQuery(range()), {
+      queryClient,
+      store,
+    });
 
     await waitFor(() => {
-      expect(store.getState().events.getWeekEvents.error).not.toBeNull();
+      expect(result.result.current.error?.message).toBe("boom");
     });
   });
 });

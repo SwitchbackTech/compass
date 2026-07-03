@@ -7,12 +7,10 @@ import {
 } from "react";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  selectAllDayEvents,
-  selectGridEvents,
-} from "@web/ducks/events/selectors/event.selectors";
+import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
+import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { type WeekLayoutCacheSources } from "./adapter/geometry/weekLayoutCache";
@@ -36,11 +34,11 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   weekProps,
 }) => {
   const dispatch = useAppDispatch();
-  const allDayEvents = useAppSelector(selectAllDayEvents);
-  const timedEvents = useAppSelector(selectGridEvents);
-  const pendingEventIds = useAppSelector(
-    (state) => state.events.pendingEvents.eventIds,
-  );
+  const { allDayEvents, timedEvents } = useWeekEventViewModel({
+    startOfView: weekProps.component.startOfView,
+    endOfView: weekProps.component.endOfView,
+  });
+  const pendingEventIds = usePendingEventIds();
   const { actions, confirmation, setters, state } = useDraftContext();
   const layoutSourcesRef = useRef(getLayoutSources);
   const timedEventsById = useMemo(() => {

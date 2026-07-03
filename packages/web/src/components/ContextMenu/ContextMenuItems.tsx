@@ -8,8 +8,7 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { getSomedayEventCategory } from "@web/common/utils/event/someday.event.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import { selectIsEventPending } from "@web/ducks/events/selectors/pending.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { useIsEventPending } from "@web/ducks/events/mutations/useEventPending";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 export interface ContextMenuAction {
@@ -157,9 +156,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
 
   const sidebarContext = useSidebarContext(true);
   const eventId = event._id;
-  const isPending = useAppSelector((state) =>
-    eventId ? selectIsEventPending(state, eventId) : false,
-  );
+  const isPending = useIsEventPending(eventId);
 
   const menuActions: ContextMenuItemsActions = {
     delete: confirmation.onDelete,

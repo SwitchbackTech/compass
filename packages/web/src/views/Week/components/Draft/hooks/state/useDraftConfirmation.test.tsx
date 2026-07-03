@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
 import { type PropsWithChildren } from "react";
@@ -55,15 +56,17 @@ const renderDraftConfirmation = ({
   const deleteEvent = mock();
   const submit = mock();
   const preloadedState = createInitialState();
-  preloadedState.events.entities!.value = events.reduce<
-    Record<string, Schema_Event>
-  >((entities, event) => {
-    if (event._id) {
-      entities[event._id] = event;
-    }
+  const eventEntities = events.reduce<Record<string, Schema_Event>>(
+    (entities, event) => {
+      if (event._id) {
+        entities[event._id] = event;
+      }
 
-    return entities;
-  }, {});
+      return entities;
+    },
+    {},
+  );
+  preloadedState.events.entities!.value = eventEntities;
   const store = configureStore({
     reducer: reducers,
     preloadedState,
@@ -74,8 +77,15 @@ const renderDraftConfirmation = ({
         thunk: false,
       }),
   });
+  const queryClient = new QueryClient();
+  queryClient.setQueryData(["events", "week", { source: "local" }], {
+    ids: Object.keys(eventEntities),
+    entities: eventEntities,
+  });
   const wrapper = ({ children }: PropsWithChildren) => (
-    <Provider store={store}>{children}</Provider>
+    <QueryClientProvider client={queryClient}>
+      <Provider store={store}>{children}</Provider>
+    </QueryClientProvider>
   );
 
   const context = {

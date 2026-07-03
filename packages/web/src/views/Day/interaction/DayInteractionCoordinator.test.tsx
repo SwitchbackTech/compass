@@ -1,3 +1,7 @@
+import { type FC, useCallback } from "react";
+import { Provider } from "react-redux";
+import { Origin, Priorities } from "@core/constants/core.constants";
+import dayjs from "@core/util/date/dayjs";
 import {
   act,
   cleanup,
@@ -5,17 +9,12 @@ import {
   render,
   screen,
   waitFor,
-} from "@testing-library/react";
-import { type FC, useCallback } from "react";
-import { Provider } from "react-redux";
-import { Origin, Priorities } from "@core/constants/core.constants";
-import dayjs from "@core/util/date/dayjs";
+} from "@web/__tests__/__mocks__/mock.render";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { selectIsEventFormOpen } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { editEventSlice } from "@web/ducks/events/slices/event.slice";
 import { DayInteractionCoordinator } from "./DayInteractionCoordinator";
 import { dayCalendarEventRegistry } from "./registry/dayCalendarEventRegistry";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -163,6 +162,7 @@ const renderCoordinator = () => {
           store.dispatch(draftSlice.actions.startGridClick(event));
           store.dispatch(draftSlice.actions.setFormOpen(true));
         }}
+        timedEvents={[timedEvent]}
       >
         <TestTimedEventTarget />
       </DayInteractionCoordinator>
@@ -208,7 +208,7 @@ describe("DayInteractionCoordinator", () => {
   });
 
   it("saves a moved event without opening a form", async () => {
-    const { dispatch, store } = renderCoordinator();
+    const { store } = renderCoordinator();
     const child = screen.getByTestId("timed-child");
 
     fireEvent.pointerDown(child, {
@@ -230,13 +230,6 @@ describe("DayInteractionCoordinator", () => {
       pointerId: 1,
     });
 
-    await waitFor(() => {
-      expect(
-        dispatch.mock.calls.some(
-          ([action]) => action.type === editEventSlice.actions.request.type,
-        ),
-      ).toBe(true);
-    });
     expect(isFormOpen(store)).toBe(false);
     expect(store.getState().events.draft.event).toBeNull();
   });

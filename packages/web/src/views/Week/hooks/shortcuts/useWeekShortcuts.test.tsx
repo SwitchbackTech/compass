@@ -1,17 +1,17 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
 import { Provider } from "react-redux";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import {
-  deleteEventSlice,
-  eventsEntitiesSlice,
-} from "@web/ducks/events/slices/event.slice";
+
+const DELETE_EVENT_REQUEST = "deleteEvent/request";
+
+import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
@@ -19,7 +19,6 @@ import {
   clearHoveredCalendarEventTarget,
   setHoveredCalendarEventTarget,
 } from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
-import { useWeekShortcuts } from "./useWeekShortcuts";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const editableEvent = {
@@ -38,6 +37,9 @@ const editableAllDayEvent = {
 };
 let pendingEventIds: string[] = [];
 let repositionDraftByKeyboard = mock();
+
+const { useWeekShortcuts } =
+  require("./useWeekShortcuts") as typeof import("./useWeekShortcuts");
 
 const createState = ({
   includeEditableEvent = true,
@@ -118,6 +120,31 @@ const renderShortcuts = (options?: {
   includeAllDayEvent?: boolean;
 }) => {
   const store = createStore(options);
+  const queryClient = new QueryClient();
+  for (const eventId of pendingEventIds) {
+    queryClient.getMutationCache().build(
+      queryClient,
+      { mutationKey: ["events", "mutation"] },
+      {
+        context: undefined,
+        data: undefined,
+        error: null,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        status: "pending",
+        variables: { _id: eventId },
+        submittedAt: Date.now(),
+      },
+    );
+  }
+  const events = [
+    ...(options?.includeEditableEvent === false ? [] : [editableEvent]),
+    ...(options?.includeAllDayEvent ? [editableAllDayEvent] : []),
+  ];
+  queryClient.setQueryDefaults(["events"], {
+    initialData: toNormalizedEventQueryData(events),
+  });
   const dispatchedActions: unknown[] = [];
   const originalDispatch = store.dispatch;
 
@@ -128,22 +155,24 @@ const renderShortcuts = (options?: {
 
   function wrapper({ children }: PropsWithChildren) {
     return (
-      <HotkeysProvider>
-        <Provider store={store}>
-          <DraftContext.Provider
-            value={
-              {
-                actions: { repositionDraftByKeyboard },
-                confirmation: {},
-                setters: {},
-                state: {},
-              } as never
-            }
-          >
-            {children}
-          </DraftContext.Provider>
-        </Provider>
-      </HotkeysProvider>
+      <QueryClientProvider client={queryClient}>
+        <HotkeysProvider>
+          <Provider store={store}>
+            <DraftContext.Provider
+              value={
+                {
+                  actions: { repositionDraftByKeyboard },
+                  confirmation: {},
+                  setters: {},
+                  state: {},
+                } as never
+              }
+            >
+              {children}
+            </DraftContext.Provider>
+          </Provider>
+        </HotkeysProvider>
+      </QueryClientProvider>
     );
   }
 
@@ -164,7 +193,7 @@ const renderShortcuts = (options?: {
     { wrapper },
   );
 
-  return { dispatchedActions, store };
+  return { dispatchedActions, queryClient, store };
 };
 
 describe("useWeekShortcuts calendar event targeting", () => {
@@ -241,13 +270,25 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget();
     button.focus();
 
-    const { store } = renderShortcuts({ includeEditableEvent: false });
+    const { queryClient, store } = renderShortcuts({
+      includeEditableEvent: false,
+    });
     await act(async () => {
-      store.dispatch(
-        eventsEntitiesSlice.actions.insert({
-          [editableEvent._id]: editableEvent,
-        }),
+      await queryClient.cancelQueries({ queryKey: ["events", "week"] });
+      queryClient.setQueriesData(
+        { queryKey: ["events", "week"] },
+        {
+          ids: [editableEvent._id],
+          entities: { [editableEvent._id]: editableEvent },
+        },
       );
+    });
+    await waitFor(() => {
+      expect(
+        queryClient
+          .getQueriesData<{ ids: string[] }>({ queryKey: ["events", "week"] })
+          .some(([, data]) => data?.ids.includes(editableEvent._id)),
+      ).toBe(true);
     });
     pressKey("M");
 
@@ -298,16 +339,19 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget();
     button.focus();
 
-    const { dispatchedActions } = renderShortcuts();
+    const { queryClient } = renderShortcuts();
     pressKey("Delete");
 
     expect(confirm).toHaveBeenCalledWith("Delete Editable event?");
-    expect(dispatchedActions).toContainEqual(
-      deleteEventSlice.actions.request({
-        _id: "event-1",
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
-    );
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some(
+          (mutation) =>
+            (mutation.state.variables as { _id?: string })._id === "event-1",
+        ),
+    ).toBe(true);
   });
 
   it("deletes the focused all-day calendar event with Delete", () => {
@@ -316,16 +360,20 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget(editableAllDayEvent._id, "all-day");
     button.focus();
 
-    const { dispatchedActions } = renderShortcuts({ includeAllDayEvent: true });
+    const { queryClient } = renderShortcuts({ includeAllDayEvent: true });
     pressKey("Delete");
 
     expect(confirm).toHaveBeenCalledWith("Delete Editable all-day event?");
-    expect(dispatchedActions).toContainEqual(
-      deleteEventSlice.actions.request({
-        _id: "all-day-event-1",
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
-    );
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some(
+          (mutation) =>
+            (mutation.state.variables as { _id?: string })._id ===
+            "all-day-event-1",
+        ),
+    ).toBe(true);
   });
 
   it("deletes the hovered calendar event with Delete when no event is focused", () => {
@@ -334,16 +382,19 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget();
     setHoveredCalendarEventTarget(button);
 
-    const { dispatchedActions } = renderShortcuts();
+    const { queryClient } = renderShortcuts();
     pressKey("Delete");
 
     expect(confirm).toHaveBeenCalledWith("Delete Editable event?");
-    expect(dispatchedActions).toContainEqual(
-      deleteEventSlice.actions.request({
-        _id: "event-1",
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
-    );
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some(
+          (mutation) =>
+            (mutation.state.variables as { _id?: string })._id === "event-1",
+        ),
+    ).toBe(true);
   });
 
   it("does not delete pending calendar events with Delete", () => {
@@ -359,7 +410,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     expect(confirm).not.toHaveBeenCalled();
     expect(dispatchedActions).not.toContainEqual(
       expect.objectContaining({
-        type: deleteEventSlice.actions.request.type,
+        type: DELETE_EVENT_REQUEST,
       }),
     );
   });
@@ -378,7 +429,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     expect(confirm).not.toHaveBeenCalled();
     expect(dispatchedActions).not.toContainEqual(
       expect.objectContaining({
-        type: deleteEventSlice.actions.request.type,
+        type: DELETE_EVENT_REQUEST,
       }),
     );
   });
@@ -401,7 +452,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     expect(confirm).not.toHaveBeenCalled();
     expect(dispatchedActions).not.toContainEqual(
       expect.objectContaining({
-        type: deleteEventSlice.actions.request.type,
+        type: DELETE_EVENT_REQUEST,
       }),
     );
   });

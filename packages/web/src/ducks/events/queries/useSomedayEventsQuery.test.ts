@@ -3,14 +3,19 @@ import dayjs from "@core/util/date/dayjs";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const fetchSomedayEvents = mock(async () => ({
-  ids: ["someday-1"],
+  ids: ["664e21f9a6b3f0b1c2d3e4f5"],
   entities: {
-    "someday-1": {
-      _id: "someday-1",
+    "664e21f9a6b3f0b1c2d3e4f5": {
+      _id: "664e21f9a6b3f0b1c2d3e4f5",
       title: "Read a book",
       isSomeday: true,
       startDate: "2025-11-10",
       endDate: "2025-11-12",
+      origin: "compass",
+      priority: "unassigned",
+      user: "user-1",
+      order: 0,
+      updatedAt: new Date("2025-11-01T00:00:00Z"),
     },
   },
   pagination: {
@@ -40,23 +45,25 @@ describe("useSomedayEventsQuery", () => {
     fetchSomedayEvents.mockClear();
   });
 
-  it("syncs fetched someday events (with pagination) into Redux", async () => {
+  it("returns fetched someday events without syncing Redux", async () => {
     const queryClient = createCompassQueryClient();
     const store = createCompassStore({ queryClient });
     const start = dayjs.utc("2025-11-10T00:00:00Z");
 
-    renderHook(() => useSomedayEventsQuery(start), { queryClient, store });
+    const result = renderHook(() => useSomedayEventsQuery(start), {
+      queryClient,
+      store,
+    });
 
     await waitFor(() => {
-      expect(store.getState().events.getSomedayEvents.value?.data).toEqual([
-        "someday-1",
+      expect(result.result.current.data?.ids).toEqual([
+        "664e21f9a6b3f0b1c2d3e4f5",
       ]);
     });
-    expect(store.getState().events.entities.value["someday-1"]).toBeDefined();
-    expect(store.getState().events.getSomedayEvents.value?.count).toBe(1);
+    expect(result.result.current.data?.pagination.count).toBe(1);
   });
 
-  it("dispatches slice error when the fetch rejects", async () => {
+  it("returns query error without reporting it globally", async () => {
     fetchSomedayEvents.mockImplementationOnce(async () => {
       throw new Error("boom");
     });
@@ -64,10 +71,13 @@ describe("useSomedayEventsQuery", () => {
     const store = createCompassStore({ queryClient });
     const start = dayjs.utc("2025-11-10T00:00:00Z");
 
-    renderHook(() => useSomedayEventsQuery(start), { queryClient, store });
+    const result = renderHook(() => useSomedayEventsQuery(start), {
+      queryClient,
+      store,
+    });
 
     await waitFor(() => {
-      expect(store.getState().events.getSomedayEvents.error).not.toBeNull();
+      expect(result.result.current.error?.message).toBe("boom");
     });
   });
 });

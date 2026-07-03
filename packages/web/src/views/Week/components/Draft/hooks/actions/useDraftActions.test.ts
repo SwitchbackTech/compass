@@ -1,7 +1,7 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import {
@@ -10,7 +10,6 @@ import {
 } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
-import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import {
   type Setters_Draft,
   type State_Draft_Local,
@@ -18,7 +17,7 @@ import {
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { getDragDurationMinutes } from "./drag-duration.util";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 let currentState: InitialReduxState = createInitialState();
 
@@ -180,9 +179,8 @@ describe("useDraftActions", () => {
     };
   });
 
-  it("creates a new event when duplicating an existing week event", () => {
-    const { store, wrapper } = createStoreWrapper(currentState);
-    const dispatchSpy = spyOn(store, "dispatch");
+  it("creates a new event when duplicating an existing week event", async () => {
+    const { queryClient, wrapper } = createStoreWrapper(currentState);
     const { result } = renderHook(
       () =>
         useDraftActions(createState(), createSetters(), dateCalcs, weekProps),
@@ -193,16 +191,16 @@ describe("useDraftActions", () => {
       result.current.duplicateEvent();
     });
 
-    const createAction = dispatchSpy.mock.calls.find(
-      ([action]) => action.type === createEventSlice.actionNames.request,
-    )?.[0];
-
-    if (!createAction) {
-      throw new Error("Expected create event action to be dispatched");
-    }
-
-    expect(createAction.payload._id).not.toBe("event-1");
-    expect(createAction.payload.title).toBe("Seed event");
+    await waitFor(() => {
+      const created = queryClient
+        .getMutationCache()
+        .getAll()
+        .map((mutation) => mutation.state.variables as Schema_Event)
+        .find(
+          (event) => event._id !== "event-1" && event.title === "Seed event",
+        );
+      expect(created).toBeDefined();
+    });
   });
 
   it("moves a shortcut-created timed draft by keyboard while preserving duration", () => {

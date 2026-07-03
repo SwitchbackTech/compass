@@ -1,8 +1,8 @@
 import { ObjectId } from "bson";
 import { useCallback } from "react";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
+import { useEventById } from "@web/ducks/events/queries/useEventById";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 
 /**
@@ -12,9 +12,7 @@ import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
  */
 export function useDuplicateEvent(_id: string) {
   const dispatch = useAppDispatch();
-  const event = useAppSelector((state) =>
-    _id ? selectEventById(state, _id) : null,
-  );
+  const event = useEventById(_id);
   const onClose = useCloseEventForm();
 
   const duplicateEvent = useCallback(() => {

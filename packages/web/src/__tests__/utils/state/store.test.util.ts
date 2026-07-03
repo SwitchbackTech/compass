@@ -36,7 +36,13 @@ type TestState = {
       reason: string | null;
     };
     getDayEvents?: {
-      value: null;
+      value: {
+        data: string[];
+        count: number;
+        pageSize: number;
+        offset?: number;
+        page?: number;
+      } | null;
       isProcessing: boolean;
       isSuccess: boolean;
       error: unknown;
@@ -45,15 +51,16 @@ type TestState = {
     entities?: {
       value: Record<string, Schema_Event>;
     };
+    pendingEvents?: { eventIds: string[] };
     [key: string]: unknown;
   };
 };
 // Type for the initial state that can be passed to PreloadedState
-export type InitialReduxState = PreloadedState<RootState>;
+export type InitialReduxState = PreloadedState<RootState> & TestState;
 
 // Helper to create initial state with sensible defaults
 export const createInitialState = (
-  partialState: Partial<RootState> = {},
+  partialState: Record<string, unknown> = {},
 ): InitialReduxState => {
   const now = new Date();
   const oneWeekLater = new Date(now);
@@ -118,7 +125,7 @@ export const createInitialState = (
       status: "idle",
     },
     ...partialState,
-  } as InitialReduxState;
+  } as unknown as InitialReduxState;
 };
 
 export const createStoreWithEvents = (
@@ -150,9 +157,9 @@ export const createStoreWithEvents = (
     reason: null,
   };
 
-  return configureStore({
+  const store = configureStore({
     reducer: reducers,
-    preloadedState: preloadedState,
+    preloadedState: preloadedState as PreloadedState<RootState>,
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware({
         thunk: false,
@@ -160,6 +167,7 @@ export const createStoreWithEvents = (
         immutableCheck: false,
       }),
   });
+  return Object.assign(store, { __eventQueryTestEvents: events });
 };
 
 export const findAndUpdateEventInPreloadedState = (

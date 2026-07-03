@@ -8,7 +8,6 @@ import {
 } from "@web/common/constants/toast.constants";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
 
 export interface SyncLocalEventsResult {
   syncedCount: number;
@@ -28,6 +27,7 @@ type GoogleAuthUtilDependencies = {
   markGoogleAsRevoked: () => void;
   openStream: () => void;
   refreshEventRepositorySource: (sessionExists?: boolean) => void;
+  removeEventsByOrigin: (origins: Origin[]) => void;
   removeEventQueries: () => void;
   syncLocalEventsToCloud: () => Promise<number>;
   toastError: typeof toast.error;
@@ -43,6 +43,7 @@ export function createGoogleAuthUtil({
   markGoogleAsRevoked,
   openStream,
   refreshEventRepositorySource,
+  removeEventsByOrigin,
   removeEventQueries,
   syncLocalEventsToCloud,
   toastError,
@@ -63,11 +64,7 @@ export function createGoogleAuthUtil({
     dispatch(authSlice.actions.resetAuth());
     dispatch(userMetadataSlice.actions.clear(undefined));
 
-    dispatch(
-      eventsEntitiesSlice.actions.removeEventsByOrigin({
-        origins: [Origin.GOOGLE, Origin.GOOGLE_IMPORT],
-      }),
-    );
+    removeEventsByOrigin([Origin.GOOGLE, Origin.GOOGLE_IMPORT]);
     removeEventQueries();
 
     closeStream();

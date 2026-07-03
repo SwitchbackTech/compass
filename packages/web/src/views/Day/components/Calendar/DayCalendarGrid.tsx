@@ -21,14 +21,11 @@ import {
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
+import { useDayEventViewModel } from "@web/ducks/events/queries/useDayEventsQuery";
 import {
   selectDraft,
   selectIsEventFormOpen,
 } from "@web/ducks/events/selectors/draft.selectors";
-import {
-  selectDayEvents,
-  selectDayRowCount,
-} from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -80,8 +77,15 @@ export function DayCalendarGrid() {
     visibleDates,
   );
   const today = useMemo(() => dayjs(), []);
-  const dayEvents = useAppSelector(selectDayEvents);
-  const allDayRowsCount = useAppSelector(selectDayRowCount);
+  const {
+    allDayEvents,
+    events: dayEvents,
+    rowCount: allDayRowsCount,
+    timedEvents,
+  } = useDayEventViewModel({
+    startDate: dateInView.startOf("day").utc(true).format(),
+    endDate: dateInView.endOf("day").utc(true).format(),
+  });
   const draft = useAppSelector(selectDraft);
   const isFormOpen = useAppSelector(selectIsEventFormOpen);
   const draftCategory = draft?.isAllDay
@@ -217,24 +221,26 @@ export function DayCalendarGrid() {
   const allDayEventsLayer = useMemo(
     () => (
       <DayCalendarAllDayEventsLayer
+        events={allDayEvents}
         draft={draft}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
         visibleDates={visibleDates}
       />
     ),
-    [draft, measurements, openEventFormForEvent, visibleDates],
+    [allDayEvents, draft, measurements, openEventFormForEvent, visibleDates],
   );
   const timedEventsLayer = useMemo(
     () => (
       <DayCalendarTimedEventsLayer
+        events={timedEvents}
         draft={draft}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
         visibleDates={visibleDates}
       />
     ),
-    [draft, measurements, openEventFormForEvent, visibleDates],
+    [draft, measurements, openEventFormForEvent, timedEvents, visibleDates],
   );
 
   return (
@@ -244,9 +250,11 @@ export function DayCalendarGrid() {
       onContextMenu={handleContextMenu}
     >
       <DayInteractionCoordinator
+        allDayEvents={allDayEvents}
         dateInView={dateInView}
         getLayoutSources={getDayInteractionLayoutSources}
         onOpenEvent={openEventFormForEvent}
+        timedEvents={timedEvents}
       >
         <CalendarGrid
           allDayEventsLayer={allDayEventsLayer}

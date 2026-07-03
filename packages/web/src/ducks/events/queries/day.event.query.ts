@@ -1,20 +1,12 @@
-import { type Schema_Event } from "@core/types/event.types";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
 import { type Payload_GetEvents } from "@web/ducks/events/event.types";
-import {
-  EventDateUtils,
-  normalizeEventList,
-} from "@web/ducks/events/operations/event.operation.utils";
+import { EventDateUtils, normalizeEventList } from "./event.query.normalize";
+import { type NormalizedEventQueryData } from "./event.query.types";
 
 type FetchDayEventsPayload = Omit<
   Payload_GetEvents,
   "dontAdjustDates" | "someday"
 >;
-
-type FetchDayEventsResult = {
-  ids: string[];
-  entities: Record<string, Schema_Event>;
-};
 
 /**
  * Pure async day-events read. No dispatching.
@@ -26,7 +18,7 @@ type FetchDayEventsResult = {
 export async function fetchDayEvents(
   payload: FetchDayEventsPayload,
   repository: EventRepository,
-): Promise<FetchDayEventsResult> {
+): Promise<NormalizedEventQueryData> {
   if (!payload.startDate || !payload.endDate) {
     throw new Error("Event query requires startDate and endDate");
   }
