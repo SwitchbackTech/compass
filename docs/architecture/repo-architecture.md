@@ -120,7 +120,6 @@ Web state is not single-system:
 - Redux Toolkit slices hold app state and async state
 - Redux Toolkit listeners coordinate event side effects
 - TanStack Query deduplicates keyed event reads
-- Elf stores are used for event entity management and draft/active state
 - IndexedDB stores offline events/tasks
 
 Treat this as an intentional mixed architecture, not an inconsistency to "fix" casually.

@@ -175,7 +175,7 @@ The web app uses multiple state layers:
 | Loading states, modal visibility, async status | Redux Toolkit slices | `packages/web/src/ducks/events/slices/` |
 | Async sequences and persistence orchestration | Redux Toolkit listeners and async operations | `packages/web/src/ducks/events/listeners/`, `packages/web/src/ducks/events/operations/` |
 | Keyed event-read deduplication | TanStack Query | `packages/web/src/ducks/events/queries/` |
-| Event entity CRUD, active event, and draft state | Elf store | `packages/web/src/store/events.ts` |
+| Event entity CRUD, active event, and draft state | `packages/web/src/store/events.ts` |
 | Offline persistence | IndexedDB offline data store | `packages/web/src/common/storage/offline-data/indexeddb-offline-data.store.ts` |
 | Local vs remote persistence choice | Repository factory | `packages/web/src/common/repositories/event/event.repository.util.ts` |
 
