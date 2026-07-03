@@ -11,6 +11,7 @@ import {
 } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { eventMutationKeys } from "@web/ducks/events/mutations/event.mutation.keys";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -66,7 +67,7 @@ const renderWithTheme = (ui: ReactElement) => {
   for (const eventId of currentState.events.pendingEvents?.eventIds ?? []) {
     queryClient.getMutationCache().build(
       queryClient,
-      { mutationKey: ["events", "mutation"] },
+      { mutationKey: eventMutationKeys.operation("edit") },
       {
         context: undefined,
         data: undefined,

@@ -269,6 +269,102 @@ describe("useEventMutations", () => {
     toCalendar.pending.resolve();
   });
 
+  test("marks the converting event pending during convertToSomeday", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(),
+      pagination: { data: [], page: 1, pageSize: 10, count: 0, offset: 0 },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.convertToSomeday({
+        event: { _id: "event-1" },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual(["event-1"]);
+    });
+    context.pending.resolve();
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual([]);
+    });
+  });
+
+  test("marks the converting event pending during convertToCalendar", async () => {
+    const context = setup();
+    const someday = event({ _id: "someday", isSomeday: true });
+    context.queryClient.setQueryData(calendarKey, normalized());
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(someday),
+      pagination: {
+        data: [someday],
+        page: 1,
+        pageSize: 10,
+        count: 1,
+        offset: 0,
+      },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.convertToCalendar({
+        event: {
+          _id: "someday",
+          startDate: "2026-07-03T16:00:00.000Z",
+          endDate: "2026-07-03T17:00:00.000Z",
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual(["someday"]);
+    });
+    context.pending.resolve();
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual([]);
+    });
+  });
+
+  test("does not mark individual events pending during reorderSomeday", async () => {
+    const context = setup();
+    const first = event({ _id: "first", isSomeday: true, order: 0 });
+    const second = event({ _id: "second", isSomeday: true, order: 1 });
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(first, second),
+      pagination: {
+        data: [first, second],
+        page: 1,
+        pageSize: 10,
+        count: 2,
+        offset: 0,
+      },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.reorderSomeday([
+        { _id: "first", order: 1 },
+        { _id: "second", order: 0 },
+      ]),
+    );
+
+    // Deliberate: a reorder repositions the whole Someday list and must not
+    // disable editing/deleting the reordered events, so it marks none pending.
+    await waitFor(() => {
+      expect(context.calls).toEqual([
+        {
+          method: "reorder",
+          value: [
+            { _id: "first", order: 1 },
+            { _id: "second", order: 0 },
+          ],
+        },
+      ]);
+    });
+    expect(context.hook.result.current.pendingIds).toEqual([]);
+    context.pending.resolve();
+  });
+
   test("reorders Someday events optimistically", async () => {
     const context = setup();
     const first = event({ _id: "first", isSomeday: true, order: 0 });
