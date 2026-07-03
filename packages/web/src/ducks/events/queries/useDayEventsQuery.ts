@@ -1,5 +1,5 @@
-import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { handleError } from "@web/common/utils/event/event.util";
 import { dayEventsQueryOptions } from "@web/ducks/events/queries/event.query.options";

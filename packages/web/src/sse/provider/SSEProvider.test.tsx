@@ -3,8 +3,8 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { render, waitFor } from "@testing-library/react";
 import { type EventEmitter2 } from "eventemitter2";
 import { Provider } from "react-redux";
-import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { createCompassQueryClient } from "@web/common/query/query-client";
+import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();

@@ -1,5 +1,8 @@
+import { configureStore } from "@reduxjs/toolkit";
 import { waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { reducers } from "@web/store/reducers";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const fetchDayEvents = mock(async () => ({
@@ -22,10 +25,14 @@ const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
 const { createCompassQueryClient } =
   require("@web/common/query/query-client") as typeof import("@web/common/query/query-client");
-const { createCompassStore } =
-  require("@web/store") as typeof import("@web/store");
 const { useDayEvents } =
   require("@web/views/Day/hooks/events/useDayEvents") as typeof import("@web/views/Day/hooks/events/useDayEvents");
+
+const createStore = () =>
+  configureStore({
+    preloadedState: createInitialState(),
+    reducer: reducers,
+  });
 
 describe("useDayEvents", () => {
   beforeEach(() => {
@@ -34,7 +41,7 @@ describe("useDayEvents", () => {
 
   it("fetches day events and syncs them into Redux", async () => {
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
+    const store = createStore();
     const date = dayjs.utc("2025-11-11T00:00:00Z");
 
     renderHook(() => useDayEvents(date), { queryClient, store });
@@ -50,7 +57,7 @@ describe("useDayEvents", () => {
 
   it("re-fetches with a new key when the date changes", async () => {
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
+    const store = createStore();
     const initialDate = dayjs.utc("2025-11-11T00:00:00Z");
 
     const { rerender } = renderHook(({ date }) => useDayEvents(date), {

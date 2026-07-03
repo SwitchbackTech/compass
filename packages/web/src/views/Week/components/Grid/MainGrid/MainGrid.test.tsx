@@ -1,4 +1,5 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { QueryClientProvider } from "@tanstack/react-query";
 import {
   cleanup,
   fireEvent,
@@ -6,8 +7,8 @@ import {
   screen,
   waitFor,
 } from "@testing-library/react";
-import { act } from "react";
-import { Provider } from "react-redux";
+import { act, type ComponentProps } from "react";
+import { Provider as ReduxProvider } from "react-redux";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
@@ -16,7 +17,9 @@ import {
   ID_GRID_COLUMNS_TIMED,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { createCompassQueryClient } from "@web/common/query/query-client";
 import { gridColorByPriority } from "@web/common/styles/theme.util";
+import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { reducers } from "@web/store/reducers";
@@ -38,6 +41,19 @@ import {
 } from "@web/views/Week/layout.constants";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
+
+function Provider(props: ComponentProps<typeof ReduxProvider>) {
+  const queryClient = createCompassQueryClient();
+  queryClient.setQueryDefaults(eventQueryKeys.scope("week"), {
+    initialData: { entities: {}, ids: [] },
+  });
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <ReduxProvider {...props} />
+    </QueryClientProvider>
+  );
+}
 
 const { AllDayEvents } = await import("../AllDayRow/AllDayEvents");
 const { AllDayRow } = await import("../AllDayRow/AllDayRow");

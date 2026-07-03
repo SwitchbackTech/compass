@@ -29,7 +29,10 @@ export function dayEventsQueryOptions({
   return queryOptions({
     queryKey: eventQueryKeys.day({ source, startDate, endDate }),
     queryFn: () =>
-      fetchDayEvents({ startDate, endDate }, getEventRepositoryBySource(source)),
+      fetchDayEvents(
+        { startDate, endDate },
+        getEventRepositoryBySource(source),
+      ),
     staleTime: STALE_TIME,
     gcTime: GC_TIME,
     refetchOnWindowFocus: false,

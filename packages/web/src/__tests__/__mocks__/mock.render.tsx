@@ -1,4 +1,5 @@
 import { type PreloadedState } from "@reduxjs/toolkit";
+import { type QueryClient } from "@tanstack/react-query";
 import {
   type RenderHookOptions,
   type RenderOptions,
@@ -10,7 +11,6 @@ import {
   type PropsWithChildren,
   type ReactElement,
 } from "react";
-import { type QueryClient } from "@tanstack/react-query";
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { type Store } from "redux";
 import { ID_ROOT } from "@web/common/constants/web.constants";
