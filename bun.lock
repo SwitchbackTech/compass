@@ -119,7 +119,6 @@
         "react-textarea-autosize": "^8.3.3",
         "react-toastify": "^9.1.3",
         "redux": "^4.1.1",
-        "redux-saga": "^1.1.3",
         "supertokens-web-js": "^0.16.0",
       },
       "devDependencies": {
@@ -607,18 +606,6 @@
     "@posthog/types": ["@posthog/types@1.392.0", "", {}, "sha512-nctNujXL3FC1v99FktaTMSugSD9ZOZekEpahUSafkU2TSvW+XGKNkQZbokuJtiWvPBK208dwMJva8UfBkChqpw=="],
 
     "@react-oauth/google": ["@react-oauth/google@0.7.3", "", { "peerDependencies": { "react": ">=16.8.0", "react-dom": ">=16.8.0" } }, "sha512-sGlysUSEH5cQu6mRgXA/3deYDMl0YIn/OWM1H3QiPVVJxGNlPLACe5J6s/jKGaxVWb+8OMNrVE573+tWMJFCFw=="],
-
-    "@redux-saga/core": ["@redux-saga/core@1.4.2", "", { "dependencies": { "@babel/runtime": "^7.28.4", "@redux-saga/deferred": "^1.3.1", "@redux-saga/delay-p": "^1.3.1", "@redux-saga/is": "^1.2.1", "@redux-saga/symbols": "^1.2.1", "@redux-saga/types": "^1.3.1", "typescript-tuple": "^2.2.1" } }, "sha512-nIMLGKo6jV6Wc1sqtVQs1iqbB3Kq20udB/u9XEaZQisT6YZ0NRB8+4L6WqD/E+YziYutd27NJbG8EWUPkb7c6Q=="],
-
-    "@redux-saga/deferred": ["@redux-saga/deferred@1.3.1", "", {}, "sha512-0YZ4DUivWojXBqLB/TmuRRpDDz7tyq1I0AuDV7qi01XlLhM5m51W7+xYtIckH5U2cMlv9eAuicsfRAi1XHpXIg=="],
-
-    "@redux-saga/delay-p": ["@redux-saga/delay-p@1.3.1", "", { "dependencies": { "@redux-saga/symbols": "^1.2.1" } }, "sha512-597I7L5MXbD/1i3EmcaOOjL/5suxJD7p5tnbV1PiWnE28c2cYiIHqmSMK2s7us2/UrhOL2KTNBiD0qBg6KnImg=="],
-
-    "@redux-saga/is": ["@redux-saga/is@1.2.1", "", { "dependencies": { "@redux-saga/symbols": "^1.2.1", "@redux-saga/types": "^1.3.1" } }, "sha512-x3aWtX3GmQfEvn8dh0ovPbsXgK9JjpiR24wKztpGbZP8JZUWWvUgKrvnWZ/T/4iphOBftyVc9VrIwhAnsM+OFA=="],
-
-    "@redux-saga/symbols": ["@redux-saga/symbols@1.2.1", "", {}, "sha512-3dh+uDvpBXi7EUp/eO+N7eFM4xKaU4yuGBXc50KnZGzIrR/vlvkTFQsX13zsY8PB6sCFYAgROfPSRUj8331QSA=="],
-
-    "@redux-saga/types": ["@redux-saga/types@1.3.1", "", {}, "sha512-YRCrJdhQLobGIQ8Cj1sta3nn6DrZDTSUnrIYhS2e5V590BmfVDleKoAquclAiKSBKWJwmuXTb+b4BL6rSHnahw=="],
 
     "@reduxjs/toolkit": ["@reduxjs/toolkit@1.9.7", "", { "dependencies": { "immer": "^9.0.21", "redux": "^4.2.1", "redux-thunk": "^2.4.2", "reselect": "^4.1.8" }, "peerDependencies": { "react": "^16.9.0 || ^17.0.0 || ^18", "react-redux": "^7.2.1 || ^8.0.2" }, "optionalPeers": ["react", "react-redux"] }, "sha512-t7v8ZPxhhKgOKtU+uyJT13lu4vL7az5aFi4IdoDs/eS548edn2M8Ik9h8fxgvMjGoAUVFSt6ZC1P5cWmQ014QQ=="],
 
@@ -1836,8 +1823,6 @@
 
     "redux": ["redux@4.2.1", "", { "dependencies": { "@babel/runtime": "^7.9.2" } }, "sha512-LAUYz4lc+Do8/g7aeRa8JkyDErK6ekstQaqWQrNRW//MY1TvCEpMtpTWvlQ+FPbWCx+Xixu/6SHt5N0HR+SB4w=="],
 
-    "redux-saga": ["redux-saga@1.4.2", "", { "dependencies": { "@redux-saga/core": "^1.4.2" } }, "sha512-QLIn/q+7MX/B+MkGJ/K6R3//60eJ4QNy65eqPsJrfGezbxdh1Jx+37VRKE2K4PsJnNET5JufJtgWdT30WBa+6w=="],
-
     "redux-thunk": ["redux-thunk@2.4.2", "", { "peerDependencies": { "redux": "^4" } }, "sha512-+P3TjtnP0k/FEjcBL5FZpoovtvrTNT/UXd4/sluaSyrURlSlhLSzEdfsTBW7WsKB6yPvgd7q/iZPICFjW4o57Q=="],
 
     "regenerate": ["regenerate@1.4.2", "", {}, "sha512-zrceR/XhGYU/d/opr2EKO7aRHUeiBI8qjtfHqADTwZd6Szfy16la6kqD0MIUs5z5hx6AaKa+PixpPrR289+I0A=="],
@@ -2060,13 +2045,7 @@
 
     "typescript": ["typescript@6.0.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-y2TvuxSZPDyQakkFRPZHKFm+KKVqIisdg9/CZwm9ftvKXLP8NRWj38/ODjNbr43SsoXqNuAisEf1GdCxqWcdBw=="],
 
-    "typescript-compare": ["typescript-compare@0.0.2", "", { "dependencies": { "typescript-logic": "^0.0.0" } }, "sha512-8ja4j7pMHkfLJQO2/8tut7ub+J3Lw2S3061eJLFQcvs3tsmJKp8KG5NtpLn7KcY2w08edF74BSVN7qJS0U6oHA=="],
-
-    "typescript-logic": ["typescript-logic@0.0.0", "", {}, "sha512-zXFars5LUkI3zP492ls0VskH3TtdeHCqu0i7/duGt60i5IGPIpAHE/DWo5FqJ6EjQ15YKXrt+AETjv60Dat34Q=="],
-
     "typescript-plugin-css-modules": ["typescript-plugin-css-modules@5.2.0", "", { "dependencies": { "@types/postcss-modules-local-by-default": "^4.0.2", "@types/postcss-modules-scope": "^3.0.4", "dotenv": "^16.4.2", "icss-utils": "^5.1.0", "less": "^4.2.0", "lodash.camelcase": "^4.3.0", "postcss": "^8.4.35", "postcss-load-config": "^3.1.4", "postcss-modules-extract-imports": "^3.0.0", "postcss-modules-local-by-default": "^4.0.4", "postcss-modules-scope": "^3.1.1", "reserved-words": "^0.1.2", "sass": "^1.70.0", "source-map-js": "^1.0.2", "tsconfig-paths": "^4.2.0" }, "optionalDependencies": { "stylus": "^0.62.0" }, "peerDependencies": { "typescript": ">=4.0.0" } }, "sha512-c5pAU5d+m3GciDr/WhkFldz1NIEGBafuP/3xhFt9BEXS2gmn/LvjkoZ11vEBIuP8LkXfPNhOt1BUhM5efFuwOw=="],
-
-    "typescript-tuple": ["typescript-tuple@2.2.1", "", { "dependencies": { "typescript-compare": "^0.0.2" } }, "sha512-Zcr0lbt8z5ZdEzERHAMAniTiIKerFCMgd7yjq1fPnDJ43et/k9twIFQMUYff9k5oXcsQ0WpvFcgzK2ZKASoW6Q=="],
 
     "umzug": ["umzug@3.8.2", "", { "dependencies": { "@rushstack/ts-command-line": "^4.12.2", "emittery": "^0.13.0", "fast-glob": "^3.3.2", "pony-cause": "^2.1.4", "type-fest": "^4.0.0" } }, "sha512-BEWEF8OJjTYVC56GjELeHl/1XjFejrD7aHzn+HldRJTx+pL1siBrKHZC8n4K/xL3bEzVA9o++qD1tK2CpZu4KA=="],
 

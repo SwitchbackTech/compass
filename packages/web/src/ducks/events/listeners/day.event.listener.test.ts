@@ -49,7 +49,7 @@ const _mockHandleError = mock();
 mock.module("@web/ducks/events/queries/day.event.query", () => ({
   fetchDayEvents: mock(async (payload, repository) => {
     const { EventDateUtils, normalizedEventsSchema } = await import(
-      "@web/ducks/events/sagas/saga.util"
+      "@web/ducks/events/operations/event.operation.utils"
     );
     const { normalize } = await import("normalizr");
 
@@ -90,7 +90,6 @@ mock.module("@web/common/repositories/event/event.repository.util", () => ({
 const { createCompassListenerMiddleware } = await import(
   "@web/common/store/listener-middleware"
 );
-const { sagaMiddleware } = await import("@web/common/store/middlewares");
 const { createCompassQueryClient } = await import(
   "@web/common/query/query-client"
 );
@@ -121,9 +120,7 @@ function createStoreWithListeners(
         thunk: false,
         serializableCheck: false,
         immutableCheck: false,
-      })
-        .prepend(listenerMiddleware.middleware)
-        .concat(sagaMiddleware),
+      }).prepend(listenerMiddleware.middleware),
   });
 
   // Register listeners

@@ -1,3 +1,4 @@
+import { type Params_Events } from "@core/types/event.types";
 import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
 
 export const eventQueryKeys = {
@@ -15,6 +16,21 @@ export const eventQueryKeys = {
         startDate: args.startDate,
         endDate: args.endDate,
         someday: false,
+      },
+    ] as const,
+  list: (args: {
+    source: EventRepositorySource;
+    scope: "week" | "month" | "someday";
+    params: Partial<Params_Events>;
+  }) =>
+    [
+      ...eventQueryKeys.all,
+      args.scope,
+      {
+        source: args.source,
+        startDate: args.params.startDate,
+        endDate: args.params.endDate,
+        someday: args.params.someday,
       },
     ] as const,
 };

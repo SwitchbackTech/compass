@@ -12,16 +12,9 @@ import {
   type Response_HttpPaginatedSuccess,
 } from "@web/common/types/api.types";
 import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
-import {
-  type Schema_GridEvent,
-  type Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 
 export type Action_ConvertEvent = PayloadAction<Payload_ConvertEvent>;
-
-export interface Action_CreateEvent extends Action {
-  payload: Schema_GridEvent;
-}
 
 export interface Action_DeleteEvent extends Action {
   payload: Payload_DeleteEvent;
@@ -30,21 +23,6 @@ export interface Action_DeleteEvent extends Action {
 export interface Action_EditEvent extends Action {
   payload: Payload_EditEvent;
 }
-export interface Action_GetEvents extends Action {
-  payload: Payload_GetEvents;
-}
-export interface Action_GetPaginatedEvents extends Action {
-  payload: Payload_GetPaginatedEvents;
-}
-
-export interface Action_GetSomedayEvents extends Action {
-  payload: Action_GetSomedayEvents;
-}
-
-export interface Action_InsertEventId extends Action {
-  payload: { _id: string };
-}
-
 export interface Action_InsertEvents extends Action {
   payload: Entities_Event | undefined;
 }
@@ -98,12 +76,7 @@ export interface Payload_GetEvents extends SliceStateContext {
   endDate: string;
 }
 
-export type Response_CreateEventSaga =
-  // $$ either break out into separate `Response_CreateEventSuccess` type,
-  // like is done for `GetEventsSuccess` or ignore and delete this comment
-  Response_HttpPaginatedSuccess<Schema_Event> & Schema_Event;
-
-export type Response_GetEventsSaga =
+export type Response_GetEventsOperation =
   Response_GetEventsSuccess<Payload_NormalizedAsyncAction> &
     Payload_GetPaginatedEvents;
 

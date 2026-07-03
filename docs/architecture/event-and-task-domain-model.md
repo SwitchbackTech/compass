@@ -94,7 +94,7 @@ For someday events, Compass often behaves as the provider of record instead of G
 
 The web can create optimistic ids using a prefix, and the backend strips that prefix before persisting:
 
-- web optimistic flow: `packages/web/src/ducks/events/sagas/event.sagas.ts`
+- web optimistic flow: `packages/web/src/ducks/events/operations/event.mutation.operations.ts`
 - backend normalization: `packages/backend/src/event/controllers/event.controller.ts`
 
 Do not assume every incoming `_id` is already a durable Mongo id.

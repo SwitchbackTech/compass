@@ -54,7 +54,7 @@ export async function registerDayEventQueryListeners(
         // Guard: abort if superseded after fetchQuery
         if (listenerApi.signal.aborted) return;
 
-        // Dispatch in order: entities first, then success (same order as saga)
+        // Dispatch entities first so selectors resolve before success renders.
         listenerApi.dispatch(
           eventsEntitiesSlice.actions.insert(result.entities),
         );

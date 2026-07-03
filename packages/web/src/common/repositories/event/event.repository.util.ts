@@ -2,7 +2,7 @@
  * Repository selection entry point.
  * This factory decides whether event reads/writes go to local IndexedDB or the remote API.
  * Google connection state, remembered auth state, and current session state decide the target.
- * Never call this directly from components; always go through sagas.
+ * Never call this directly from components; always go through event listeners.
  * Start debugging "why isn't this event saving?" here.
  * Related: docs/frontend/frontend-runtime-flow.md
  */
