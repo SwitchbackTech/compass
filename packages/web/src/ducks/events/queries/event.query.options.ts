@@ -12,8 +12,11 @@ import { fetchWeekEvents } from "./week.event.query";
  * (mutations, SSE, auth transitions) invalidate explicitly, so fetch triggers
  * stay identical to the pre-migration behavior (mount, key change, invalidation).
  */
-const STALE_TIME = 2 * 60 * 1000; // 2 minutes
-const GC_TIME = 10 * 60 * 1000; // 10 minutes
+const EVENT_QUERY_CACHE_OPTIONS = {
+  staleTime: 2 * 60 * 1000, // 2 minutes
+  gcTime: 10 * 60 * 1000, // 10 minutes
+  refetchOnWindowFocus: false,
+} as const;
 
 type EventsQueryArgs = {
   source: EventRepositorySource;
@@ -33,9 +36,7 @@ export function dayEventsQueryOptions({
         { startDate, endDate },
         getEventRepositoryBySource(source),
       ),
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
+    ...EVENT_QUERY_CACHE_OPTIONS,
   });
 }
 
@@ -55,9 +56,7 @@ export function weekEventsQueryOptions({
         { startDate, endDate },
         getEventRepositoryBySource(source),
       ),
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
+    ...EVENT_QUERY_CACHE_OPTIONS,
   });
 }
 
@@ -77,8 +76,6 @@ export function somedayEventsQueryOptions({
         { startDate, endDate },
         getEventRepositoryBySource(source),
       ),
-    staleTime: STALE_TIME,
-    gcTime: GC_TIME,
-    refetchOnWindowFocus: false,
+    ...EVENT_QUERY_CACHE_OPTIONS,
   });
 }

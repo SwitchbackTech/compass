@@ -26,7 +26,11 @@ let hasComputed = false;
 // availability flag before it finishes initializing (temporal dead zone).
 const sourceStore = createExternalStore<EventRepositorySource>("local");
 
-function recompute(sessionExists?: boolean): void {
+/**
+ * Recompute the repository source and notify subscribers.
+ * @param sessionExists Optional session flag; defaults to the last remembered value.
+ */
+export function refreshEventRepositorySource(sessionExists?: boolean): void {
   if (sessionExists !== undefined) {
     lastSessionExists = sessionExists;
   }
@@ -36,20 +40,12 @@ function recompute(sessionExists?: boolean): void {
 }
 
 /**
- * Recompute the repository source and notify subscribers.
- * @param sessionExists Optional session flag; defaults to the last remembered value.
- */
-export function refreshEventRepositorySource(sessionExists?: boolean): void {
-  recompute(sessionExists);
-}
-
-/**
  * React hook: subscribe to the current event repository source.
  */
 export function useEventRepositorySource(): EventRepositorySource {
   // Compute the real source on first use (see note on lazy init above).
   if (!hasComputed) {
-    recompute();
+    refreshEventRepositorySource();
   }
 
   return useSyncExternalStore(sourceStore.subscribe, sourceStore.get);
