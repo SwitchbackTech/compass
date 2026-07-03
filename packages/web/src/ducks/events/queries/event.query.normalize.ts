@@ -1,17 +1,18 @@
-import { normalize, schema } from "normalizr";
 import { type Params_Events, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 
-const normalizedEventSchema = () =>
-  new schema.Entity("events", {}, { idAttribute: "_id" });
-
-export const normalizeEventList = (events: Schema_Event[]) => {
-  const normalized = normalize<Schema_Event>(events, [normalizedEventSchema()]);
-  return {
-    ids: normalized.result as string[],
-    entities: normalized.entities.events ?? {},
-  };
-};
+/**
+ * Normalize a list of events into the `{ ids, entities }` shape the query caches
+ * store, keyed by `_id`. Duplicate ids resolve last-write-wins in `entities`,
+ * matching the prior `normalizr` behavior this replaced.
+ */
+export const normalizeEventList = (events: Schema_Event[]) => ({
+  ids: events.map((event) => event._id as string),
+  entities: events.reduce<Record<string, Schema_Event>>((entities, event) => {
+    entities[event._id as string] = event;
+    return entities;
+  }, {}),
+});
 
 /**
  * Single source of truth for "does this event belong in a [startDate, endDate]

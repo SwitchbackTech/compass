@@ -1,46 +1,11 @@
-import { type PayloadAction } from "@reduxjs/toolkit";
-import { type Action } from "redux";
-import { type Priorities } from "@core/constants/core.constants";
 import {
   type RecurringEventUpdateScope,
   type Schema_Event,
   type WithCompassId,
 } from "@core/types/event.types";
 import { type SliceStateContext } from "@web/common/store/helpers";
-import {
-  type Filters_Pagination,
-  type Response_HttpPaginatedSuccess,
-} from "@web/common/types/api.types";
-import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
+import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
-
-export type Action_ConvertEvent = PayloadAction<Payload_ConvertEvent>;
-
-export interface Action_DeleteEvent extends Action {
-  payload: Payload_DeleteEvent;
-}
-
-export interface Action_EditEvent extends Action {
-  payload: Payload_EditEvent;
-}
-export interface Action_InsertEvents extends Action {
-  payload: Entities_Event | undefined;
-}
-
-export interface Action_ReplaceEvent extends Action {
-  payload: Payload_ReplaceEvent;
-}
-
-export interface Action_TimezoneChange extends Action {
-  payload: { timezone: string };
-}
-
-export enum Category {
-  ThisWeekOnly = "thisWeekOnly",
-  ThisToFutureWeek = "thisToFutureWeek",
-  PastToThisWeek = "pastToThisWeek",
-  PastToFutureWeek = "pastToFutureWeek",
-}
 
 export interface Entities_Event {
   [key: string]: Schema_Event;
@@ -62,23 +27,10 @@ export interface Payload_EditEvent {
   shouldRemove?: boolean;
 }
 
-export interface Payload_ReplaceEvent {
-  oldEventId: string;
-  newEventId: string;
-}
-
-export interface Payload_GetPaginatedEvents extends Filters_Pagination {
-  priorities: Priorities[];
-}
-
 export interface Payload_GetEvents extends SliceStateContext {
   startDate: string;
   endDate: string;
 }
-
-export type Response_GetEventsOperation =
-  Response_GetEventsSuccess<Payload_NormalizedAsyncAction> &
-    Payload_GetPaginatedEvents;
 
 export type Response_GetEventsSuccess<T = Schema_Event[]> =
   Response_HttpPaginatedSuccess<T> & Payload_GetEvents;
