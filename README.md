@@ -1,6 +1,6 @@
 # Compass Calendar
 
-A daily planner for minimalists. Organize your day and lock-in.
+A simple app that helps you manage your time.
 
 <img width="1512" height="860" alt="week-view-2026-06" src="https://github.com/user-attachments/assets/6dcfd741-883d-401c-b8e2-97300b1dd925" />
 
