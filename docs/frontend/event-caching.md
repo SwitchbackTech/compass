@@ -1,6 +1,6 @@
 # Event Caching
 
-How the web app caches calendar/Someday events, and where TanStack Query fits.
+How Compass caches events.
 
 ## The one-sentence model
 
