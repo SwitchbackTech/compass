@@ -4,8 +4,6 @@ import { type Origin } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createAsyncSlice } from "@web/common/store/helpers";
-import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import { type Payload_NormalizedAsyncAction } from "@web/common/types/entity.types";
 import {
   type Action_DeleteEvent,
   type Action_EditEvent,
@@ -15,7 +13,6 @@ import {
   type Entities_Event,
   type Payload_DeleteEvent,
   type Payload_EditEvent,
-  type Payload_GetPaginatedEvents,
 } from "@web/ducks/events/event.types";
 
 const changeTimezones = produce((draft, newTimeZone) => {
@@ -79,11 +76,4 @@ export const eventsEntitiesSlice = createSlice({
       }
     },
   },
-});
-
-export const getCurrentMonthEventsSlice = createAsyncSlice<
-  Payload_GetPaginatedEvents,
-  Response_HttpPaginatedSuccess<Payload_NormalizedAsyncAction>
->({
-  name: "getCurrentMonthEvents",
 });

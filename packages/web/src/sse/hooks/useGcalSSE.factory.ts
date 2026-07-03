@@ -16,13 +16,12 @@ import {
 } from "@web/auth/google/state/google.sync.state";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 
 type Dispatch = (action: unknown) => unknown;
 
 export type GcalSSEDependencies = {
   handleGoogleRevoked: () => void;
+  invalidateEventQueries: () => void;
   refreshUserMetadata: () => Promise<unknown> | unknown;
   showErrorToast: (
     message: string | undefined,
@@ -56,11 +55,7 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
         }
 
         void dependencies.refreshUserMetadata();
-        dispatch(
-          triggerFetch({
-            reason: Sync_AsyncStateContextReason.IMPORT_COMPLETE,
-          }),
-        );
+        dependencies.invalidateEventQueries();
       },
       [dispatch],
     );

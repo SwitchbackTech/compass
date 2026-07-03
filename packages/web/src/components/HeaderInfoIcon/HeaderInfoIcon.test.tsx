@@ -6,6 +6,7 @@ import {
   type GoogleUiConfig,
   type GoogleUiState,
 } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
+import { DEFAULT_AUTH_STATE } from "@web/common/constants/auth.constants";
 import { theme } from "@web/common/styles/theme";
 import { type AuthView } from "@web/components/AuthModal/hooks/useAuthModal";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -49,7 +50,7 @@ const mockShouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
 const mockSubscribeToAuthState = mock((_listener: () => void) => () => {});
 const mockClearAnonymousCalendarChangeSignUpPrompt = mock();
 const mockClearAuthenticationState = mock();
-const mockGetAuthState = mock();
+const mockGetAuthState = mock(() => DEFAULT_AUTH_STATE);
 const mockGetLastKnownEmail = mock();
 const mockHasUserEverAuthenticated = mock();
 const mockMarkAnonymousCalendarChangeForSignUpPrompt = mock();

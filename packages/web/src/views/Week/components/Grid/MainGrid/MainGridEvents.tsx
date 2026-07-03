@@ -6,13 +6,12 @@ import {
 } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
+import { useWeekEventsQueryStatus } from "@web/ducks/events/queries/useWeekEventsQuery";
 import {
   selectDraft,
   selectDraftId,
 } from "@web/ducks/events/selectors/draft.selectors";
 import { selectGridEvents } from "@web/ducks/events/selectors/event.selectors";
-import { selectIsGetWeekEventsProcessingWithReason } from "@web/ducks/events/selectors/util.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -33,9 +32,10 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 
   const timedEvents = useAppSelector(selectGridEvents);
   const draft = useAppSelector(selectDraft);
-  const { isProcessing, reason } = useAppSelector(
-    selectIsGetWeekEventsProcessingWithReason,
-  );
+  const { isPending: isLoadingWeekView } = useWeekEventsQueryStatus({
+    startOfView: weekProps.component.startOfView,
+    endOfView: weekProps.component.endOfView,
+  });
   const pendingEventIds = useAppSelector(
     (state) => state.events.pendingEvents.eventIds,
   );
@@ -57,9 +57,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
       }),
     );
   };
-
-  const isLoadingWeekView =
-    isProcessing && reason === Week_AsyncStateContextReason.WEEK_VIEW_CHANGE;
 
   return (
     <div id={ID_GRID_EVENTS_TIMED}>

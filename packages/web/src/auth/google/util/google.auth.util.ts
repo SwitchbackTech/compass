@@ -1,6 +1,9 @@
 import { toast } from "react-toastify";
 import { markGoogleAsRevoked } from "@web/auth/google/state/google.auth.state";
+import { queryClient } from "@web/common/query/query-client";
+import { refreshEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
+import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { store } from "@web/store";
 import {
@@ -16,6 +19,9 @@ const googleAuthUtil = createGoogleAuthUtil({
   isToastActive: toast.isActive,
   markGoogleAsRevoked,
   openStream,
+  refreshEventRepositorySource,
+  removeEventQueries: () =>
+    queryClient.removeQueries({ queryKey: eventQueryKeys.all }),
   syncLocalEventsToCloud: () => syncLocalEventsToCloud(),
   toastError: toast.error,
 });

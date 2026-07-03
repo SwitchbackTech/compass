@@ -117,12 +117,6 @@ export const createInitialState = (
       current: null,
       status: "idle",
     },
-    sync: {
-      importLatest: {
-        isFetchNeeded: false,
-        reason: null,
-      },
-    },
     ...partialState,
   } as InitialReduxState;
 };

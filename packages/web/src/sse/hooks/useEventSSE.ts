@@ -1,29 +1,35 @@
-import { useCallback, useEffect } from "react";
-import { useDispatch } from "react-redux";
+import { useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/sse.constants";
-import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
+import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { sseEmitter } from "../client/sse.client";
 
+/**
+ * Refetches event reads when the backend pushes change events over SSE.
+ * Invalidating the relevant scope refetches whichever query is active for the
+ * current view/range — replacing the old view/date-range branching in useRefetch.
+ */
 export const useEventSSE = () => {
-  const dispatch = useDispatch();
-
-  const onEventChanged = useCallback(
-    (reason: Sync_AsyncStateContextReason) => {
-      dispatch(triggerFetch({ reason }));
-    },
-    [dispatch],
-  );
+  const queryClient = useQueryClient();
 
   useEffect(() => {
-    const eventChangedHandler = () =>
-      onEventChanged(Sync_AsyncStateContextReason.EVENT_CHANGED);
+    const eventChangedHandler = () => {
+      void queryClient.invalidateQueries({
+        queryKey: eventQueryKeys.scope("day"),
+      });
+      void queryClient.invalidateQueries({
+        queryKey: eventQueryKeys.scope("week"),
+      });
+    };
 
-    const somedayChangedHandler = () =>
-      onEventChanged(Sync_AsyncStateContextReason.SOMEDAY_EVENT_CHANGED);
+    const somedayChangedHandler = () => {
+      void queryClient.invalidateQueries({
+        queryKey: eventQueryKeys.scope("someday"),
+      });
+    };
 
     sseEmitter.on(EVENT_CHANGED, eventChangedHandler);
     sseEmitter.on(SOMEDAY_EVENT_CHANGED, somedayChangedHandler);
@@ -32,5 +38,5 @@ export const useEventSSE = () => {
       sseEmitter.off(EVENT_CHANGED, eventChangedHandler);
       sseEmitter.off(SOMEDAY_EVENT_CHANGED, somedayChangedHandler);
     };
-  }, [onEventChanged]);
+  }, [queryClient]);
 };

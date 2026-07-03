@@ -22,14 +22,11 @@ import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
 import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
-import { useRefetch } from "@web/views/Week/hooks/useRefetch";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 
 export const WeekView = () => {
-  useRefetch();
-
   const dispatch = useAppDispatch();
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
   const toggleSidebar = useCallback(() => {

@@ -4,9 +4,9 @@ export type CompleteAuthenticationDependencies = {
   authSuccess: () => unknown;
   clearAnonymousCalendarChangeSignUpPrompt: () => void;
   markUserAsAuthenticated: (email?: string) => void;
+  onEventSourceChanged: () => void;
   refreshUserMetadata: () => Promise<unknown> | unknown;
   syncPendingLocalEvents: () => Promise<unknown>;
-  triggerFetch: () => unknown;
   useAppDispatch: () => Dispatch;
   useSession: () => {
     setAuthenticated: (isAuthenticated: boolean) => void;
@@ -36,7 +36,7 @@ export function createUseCompleteAuthentication(
 
       await dependencies.syncPendingLocalEvents();
 
-      dispatch(dependencies.triggerFetch());
+      dependencies.onEventSourceChanged();
       onComplete?.();
     };
   };

@@ -1,4 +1,5 @@
 import { type PreloadedState } from "@reduxjs/toolkit";
+import { type QueryClient } from "@tanstack/react-query";
 import {
   type RenderHookOptions,
   type RenderOptions,
@@ -27,6 +28,7 @@ mock.module("@react-oauth/google", () => ({
 
 interface CustomRenderOptions extends RenderOptions {
   state?: PreloadedState<RootState>;
+  queryClient?: QueryClient;
   store?: Store<RootState>;
   router?: RouterProviderProps["router"];
   wrapper?: ComponentType<PropsWithChildren>;
@@ -37,12 +39,14 @@ interface CustomRenderHookOptions<Props>
     Omit<RenderHookOptions<Props>, "wrapper"> {}
 
 interface TestProvidersProps {
+  queryClient?: QueryClient;
   router?: RouterProviderProps["router"];
   store?: Store<RootState>;
 }
 
 function TestProvidersWrapper({
   children,
+  queryClient,
   router,
   store,
 }: PropsWithChildren<TestProvidersProps>) {
@@ -51,7 +55,7 @@ function TestProvidersWrapper({
   if (!router) {
     return (
       <div id={ID_ROOT} data-testid={ID_ROOT}>
-        <CompassRequiredProviders store={store}>
+        <CompassRequiredProviders queryClient={queryClient} store={store}>
           {children}
         </CompassRequiredProviders>
       </div>
@@ -60,7 +64,7 @@ function TestProvidersWrapper({
 
   return (
     <div id={ID_ROOT} data-testid={ID_ROOT}>
-      <CompassRequiredProviders store={store}>
+      <CompassRequiredProviders queryClient={queryClient} store={store}>
         <RouterProvider
           router={router}
           fallbackElement={<AbsoluteOverflowLoader />}
@@ -80,9 +84,10 @@ const customRender = (
   {
     state,
     router,
+    queryClient = createCompassQueryClient(),
     store = createCompassStore({
       preloadedState: state,
-      queryClient: createCompassQueryClient(),
+      queryClient,
     }),
     wrapper: CustomWrapper,
     ...renderOptions
@@ -92,14 +97,22 @@ const customRender = (
   const Wrapper = ({ children }: PropsWithChildren) => {
     if (!CustomWrapper) {
       return (
-        <TestProvidersWrapper router={router} store={store}>
+        <TestProvidersWrapper
+          queryClient={queryClient}
+          router={router}
+          store={store}
+        >
           {children}
         </TestProvidersWrapper>
       );
     }
 
     return (
-      <TestProvidersWrapper router={router} store={store}>
+      <TestProvidersWrapper
+        queryClient={queryClient}
+        router={router}
+        store={store}
+      >
         <CustomWrapper>{children}</CustomWrapper>
       </TestProvidersWrapper>
     );
@@ -118,9 +131,10 @@ const customRenderHook = <ReturnType, Props>(
     wrapper: WrapperComponent,
     state,
     router,
+    queryClient = createCompassQueryClient(),
     store = createCompassStore({
       preloadedState: state,
-      queryClient: createCompassQueryClient(),
+      queryClient,
     }),
     ...renderOptions
   }: CustomRenderHookOptions<Props> = {},
@@ -130,14 +144,22 @@ const customRenderHook = <ReturnType, Props>(
   const Wrapper = (props: PropsWithChildren) => {
     if (!WrapperComponent) {
       return (
-        <TestProvidersWrapper router={router} store={store}>
+        <TestProvidersWrapper
+          queryClient={queryClient}
+          router={router}
+          store={store}
+        >
           {props.children}
         </TestProvidersWrapper>
       );
     }
 
     return (
-      <TestProvidersWrapper router={router} store={store}>
+      <TestProvidersWrapper
+        queryClient={queryClient}
+        router={router}
+        store={store}
+      >
         <WrapperComponent {...options.initialProps} {...props} />
       </TestProvidersWrapper>
     );

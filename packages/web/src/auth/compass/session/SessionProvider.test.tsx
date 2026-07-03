@@ -1,5 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { useContext } from "react";
+import { DEFAULT_AUTH_STATE } from "@web/common/constants/auth.constants";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -14,7 +15,7 @@ const markUserAsAuthenticated = mock();
 const getLastKnownEmail = mock().mockReturnValue("test@example.com");
 const clearAnonymousCalendarChangeSignUpPrompt = mock();
 const clearAuthenticationState = mock();
-const getAuthState = mock();
+const getAuthState = mock(() => DEFAULT_AUTH_STATE);
 const hasUserEverAuthenticated = mock();
 const markAnonymousCalendarChangeForSignUpPrompt = mock();
 const shouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
@@ -125,7 +126,7 @@ describe("SessionProvider sessionInit", () => {
     getLastKnownEmail.mockClear().mockReturnValue("test@example.com");
     clearAnonymousCalendarChangeSignUpPrompt.mockClear();
     clearAuthenticationState.mockClear();
-    getAuthState.mockClear();
+    getAuthState.mockClear().mockReturnValue(DEFAULT_AUTH_STATE);
     hasUserEverAuthenticated.mockClear();
     markAnonymousCalendarChangeForSignUpPrompt.mockClear();
     shouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();

@@ -21,6 +21,7 @@ import {
   type Payload_DeleteEvent,
   type Payload_EditEvent,
 } from "@web/ducks/events/event.types";
+import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
 import {
@@ -44,6 +45,15 @@ import { normalizedEventsSchema } from "./event.operation.utils";
 
 const getEventById = (runtime: EventOperationRuntime, eventId: string) =>
   selectEventById(runtime.getState(), eventId) ?? null;
+
+/**
+ * Mark all cached event reads stale after a persisted mutation so the next query
+ * access refetches instead of re-syncing pre-mutation ids into Redux. Only call
+ * on success paths — revert/error paths never touched the repository.
+ */
+const invalidateEventQueries = (runtime: EventOperationRuntime) => {
+  void runtime.queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+};
 
 const insertOptimisticEvent = (
   runtime: EventOperationRuntime,
@@ -126,6 +136,7 @@ export async function createCalendarEvent(
       eventsEntitiesSlice.actions.edit({ _id: event._id, event }),
     );
     runtime.dispatch(createEventSlice.actions.success());
+    invalidateEventQueries(runtime);
   } catch (error) {
     if (isOperationCancelled(runtime)) return;
     runtime.dispatch(getWeekEventsSlice.actions.delete({ _id: event._id }));
@@ -160,6 +171,7 @@ export async function editCalendarEvent(
     markAnonymousChangeAfterWrite(runtime, sessionExists);
     if (!isOperationCancelled(runtime)) {
       runtime.dispatch(editEventSlice.actions.success());
+      invalidateEventQueries(runtime);
     }
   } catch (error) {
     if (isOperationCancelled(runtime)) return;
@@ -193,6 +205,7 @@ export async function deleteCalendarEvent(
     }
     if (!isOperationCancelled(runtime)) {
       runtime.dispatch(deleteEventSlice.actions.success());
+      invalidateEventQueries(runtime);
     }
   } catch (error) {
     if (isOperationCancelled(runtime)) return;
@@ -223,6 +236,7 @@ export async function convertCalendarToSomedayEvent(
       }),
     );
     runtime.dispatch(editEventSlice.actions.success());
+    invalidateEventQueries(runtime);
   } catch (error) {
     if (isOperationCancelled(runtime)) return;
     if (optimisticEvent) {
@@ -260,6 +274,7 @@ export async function convertSomedayToCalendarEvent(
       }),
     );
     runtime.dispatch(editEventSlice.actions.success());
+    invalidateEventQueries(runtime);
   } catch (error) {
     if (isOperationCancelled(runtime)) return;
     if (optimisticEvent) {
@@ -294,6 +309,7 @@ export async function deleteSomedayEvent(
       payload._id,
       payload.applyTo,
     );
+    invalidateEventQueries(runtime);
   } catch (error) {
     runtime.dispatch(
       getSomedayEventsSlice.actions.error({
@@ -328,6 +344,7 @@ export async function reorderSomedayEvents(
     }
     const sessionExists = await doesSessionExist(runtime);
     await repositoryFor(runtime, sessionExists).reorder(payload);
+    invalidateEventQueries(runtime);
   } catch (error) {
     runtime.dispatch(
       getSomedayEventsSlice.actions.error({

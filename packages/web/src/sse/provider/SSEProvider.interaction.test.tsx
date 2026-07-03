@@ -1,4 +1,4 @@
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
 import { EventEmitter2 } from "eventemitter2";
 import { act } from "react";
@@ -17,11 +17,11 @@ import {
   setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { importLatestSlice } from "@web/ducks/events/slices/sync.slice";
 import { createUseGcalSSE } from "../hooks/useGcalSSE.factory";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockHandleGoogleRevoked = mock();
+const mockInvalidateEventQueries = mock();
 const mockShowErrorToast = mock();
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
 const sseEmitter = new EventEmitter2({ maxListeners: 20 });
@@ -29,6 +29,7 @@ let dispatch: (action: unknown) => unknown;
 
 const useGcalSSE = createUseGcalSSE({
   handleGoogleRevoked: mockHandleGoogleRevoked,
+  invalidateEventQueries: mockInvalidateEventQueries,
   refreshUserMetadata,
   showErrorToast: mockShowErrorToast,
   sseEmitter,
@@ -66,9 +67,6 @@ describe("useGcalSSE", () => {
   const createStore = () =>
     configureStore({
       reducer: {
-        sync: combineReducers({
-          importLatest: importLatestSlice.reducer,
-        }),
         userMetadata: userMetadataSlice.reducer,
       },
     });
@@ -76,6 +74,7 @@ describe("useGcalSSE", () => {
   beforeEach(() => {
     getSseEmitter().removeAllListeners();
     mockHandleGoogleRevoked.mockClear();
+    mockInvalidateEventQueries.mockClear();
     mockShowErrorToast.mockClear();
     refreshUserMetadata.mockClear();
     resetGoogleSyncUIStateForTests();
@@ -168,7 +167,7 @@ describe("useGcalSSE", () => {
 
     await waitFor(() => {
       expect(getGoogleSyncIndicatorOverride()).toBe(null);
-      expect(store.getState().sync.importLatest.isFetchNeeded).toBe(true);
+      expect(mockInvalidateEventQueries).toHaveBeenCalled();
     });
   });
 

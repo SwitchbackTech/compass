@@ -1,7 +1,10 @@
-import { combineReducers, configureStore } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { render, waitFor } from "@testing-library/react";
 import { type EventEmitter2 } from "eventemitter2";
 import { Provider } from "react-redux";
+import { createCompassQueryClient } from "@web/common/query/query-client";
+import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();
@@ -33,8 +36,6 @@ mock.module("../client/sse.client", () => {
   };
 });
 
-const { importLatestSlice } =
-  require("@web/ducks/events/slices/sync.slice") as typeof import("@web/ducks/events/slices/sync.slice");
 const { default: SSEProvider } =
   require("./SSEProvider") as typeof import("./SSEProvider");
 
@@ -56,19 +57,19 @@ describe("SSEProvider", () => {
     mockUseUser.mockReturnValue({ userId: undefined });
 
     render(
-      <Provider
-        store={configureStore({
-          reducer: {
-            sync: combineReducers({
-              importLatest: importLatestSlice.reducer,
-            }),
-          },
-        })}
-      >
-        <SSEProvider>
-          <div>Test</div>
-        </SSEProvider>
-      </Provider>,
+      <QueryClientProvider client={createCompassQueryClient()}>
+        <Provider
+          store={configureStore({
+            reducer: {
+              userMetadata: userMetadataSlice.reducer,
+            },
+          })}
+        >
+          <SSEProvider>
+            <div>Test</div>
+          </SSEProvider>
+        </Provider>
+      </QueryClientProvider>,
     );
 
     await waitFor(() => {

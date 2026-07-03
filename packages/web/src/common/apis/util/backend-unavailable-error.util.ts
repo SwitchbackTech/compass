@@ -1,3 +1,5 @@
+import { refreshEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
+
 let isBackendUnavailableFlag = false;
 
 export function isBackendUnavailableError(error: unknown): boolean {
@@ -21,6 +23,8 @@ export function markBackendAvailable(): void {
 
 export function markBackendUnavailable(): void {
   isBackendUnavailableFlag = true;
+  // Source flips to "local" once the backend is unavailable; re-key active queries.
+  refreshEventRepositorySource();
 }
 
 export function resetBackendAvailabilityForTests(): void {
