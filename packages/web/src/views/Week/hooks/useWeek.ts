@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
+import { weekEventsQueryOptions } from "@web/ducks/events/queries/event.query.options";
+import { usePrefetchAdjacentEvents } from "@web/ducks/events/queries/usePrefetchAdjacentEvents";
 import { useSomedayEventsQuery } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import { useWeekEventsQuery } from "@web/ducks/events/queries/useWeekEventsQuery";
 import { updateDates } from "@web/ducks/events/slices/view.slice";
@@ -29,6 +32,24 @@ export const useWeek = (today: Dayjs) => {
   // revisits). Redux stays the render source of truth via the hooks' sync.
   useWeekEventsQuery({ startOfView: start, endOfView: end });
   useSomedayEventsQuery(start);
+
+  // Warm the previous/next week so the next prev/next click resolves from
+  // cache. Uses the same toUTCOffset formatting useWeekEventsQuery uses for
+  // the current range, so the prefetched entries land under the exact keys a
+  // subsequent read looks up.
+  const previousStart = useMemo(() => start.subtract(7, "day"), [start]);
+  const nextStart = useMemo(() => start.add(7, "day"), [start]);
+  usePrefetchAdjacentEvents(
+    weekEventsQueryOptions,
+    {
+      startDate: toUTCOffset(previousStart),
+      endDate: toUTCOffset(previousStart.endOf("week")),
+    },
+    {
+      startDate: toUTCOffset(nextStart),
+      endDate: toUTCOffset(nextStart.endOf("week")),
+    },
+  );
 
   useEffect(() => {
     dispatch(

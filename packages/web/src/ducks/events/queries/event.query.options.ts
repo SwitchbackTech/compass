@@ -18,7 +18,7 @@ const EVENT_QUERY_CACHE_OPTIONS = {
   refetchOnWindowFocus: false,
 } as const;
 
-type EventsQueryArgs = {
+export type EventsQueryArgs = {
   source: EventRepositorySource;
   startDate: string;
   endDate: string;
