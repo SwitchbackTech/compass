@@ -1,6 +1,6 @@
 # Compass Calendar
 
-**A daily planner for minimalists. Organize your day and lock-in.**
+A daily planner for minimalists. Organize your day and lock-in.
 
 <img width="1512" height="860" alt="week-view-2026-06" src="https://github.com/user-attachments/assets/6dcfd741-883d-401c-b8e2-97300b1dd925" />
 
@@ -22,8 +22,7 @@ It'll be around for the long-term:
 ### The Unique Stuff
 
 - **Day Mode**: See your tasks and events side-by-side
-- **Now Mode**: Lock-in on a single task
-- **Someday/Maybe List**: Organize future tasks without cluttering your schedule
+- **Someday Lists**: Organize future tasks without cluttering your schedule
 - **One-Click Adjustments**: Move events forwards or back effortlessly
 
 ### The Essentials
@@ -37,7 +36,7 @@ It'll be around for the long-term:
 
 ### The Limitations
 
-Current things we don't support:
+Things we don't support (yet):
 
 - Subcalendar sync (only primary calendar)
 - Sharing, reminders, locations
@@ -54,7 +53,7 @@ Current things we don't support:
 
 ### Option 1: Try Compass Online
 
-[compasscalendar.com](https://compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) ← No signup required.
+[compasscalendar.com](https://www.compasscalendar.com?utm_source=github&utm_medium=referral&utm_campaign=readme) ← No signup required.
 
 ### Option 2: Run Compass Locally
 
