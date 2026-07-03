@@ -502,6 +502,100 @@ describe("useEventMutations", () => {
     context.pending.resolve();
   });
 
+  test("converts the source-scoped event, never a cross-source cache entry", async () => {
+    const context = setup();
+    const remoteCalendarKey = eventQueryKeys.list({
+      source: "remote",
+      scope: "week",
+      params: {
+        startDate: "2026-07-01T00:00:00.000Z",
+        endDate: "2026-07-08T00:00:00.000Z",
+        someday: false,
+      },
+    });
+    // Same id in both sources with divergent fields; the active source is local.
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(event({ title: "Local" })),
+    );
+    context.queryClient.setQueryData(
+      remoteCalendarKey,
+      normalized(event({ title: "Remote" })),
+    );
+
+    act(() =>
+      context.hook.result.current.mutations.convertToSomeday({
+        event: { _id: "event-1" },
+      }),
+    );
+
+    await waitFor(() => {
+      const editCall = context.calls.find(({ method }) => method === "edit");
+      expect(editCall).toBeDefined();
+      expect((editCall?.value as { event: Schema_Event }).event.title).toBe(
+        "Local",
+      );
+    });
+    context.pending.resolve();
+  });
+
+  test("persists the payload captured at mutate time despite later cache changes", async () => {
+    const context = setup();
+    const someday = event({
+      _id: "someday",
+      isSomeday: true,
+      title: "Original",
+    });
+    context.queryClient.setQueryData(calendarKey, normalized());
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(someday),
+      pagination: {
+        data: [someday],
+        page: 1,
+        pageSize: 10,
+        count: 1,
+        offset: 0,
+      },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.convertToCalendar({
+        event: {
+          _id: "someday",
+          startDate: "2026-07-03T16:00:00.000Z",
+          endDate: "2026-07-03T17:00:00.000Z",
+        },
+      }),
+    );
+
+    // Simulate an SSE/refetch landing between mutate and settle.
+    act(() =>
+      context.queryClient.setQueryData(somedayKey, {
+        ...normalized(
+          event({ _id: "someday", isSomeday: true, title: "Changed" }),
+        ),
+        pagination: {
+          data: [],
+          page: 1,
+          pageSize: 10,
+          count: 1,
+          offset: 0,
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      const editCall = context.calls.find(({ method }) => method === "edit");
+      expect(editCall).toBeDefined();
+      // The persisted value is the one snapshotted at mutate time, not the
+      // post-mutate cache value.
+      expect((editCall?.value as { event: Schema_Event }).event.title).toBe(
+        "Original",
+      );
+    });
+    context.pending.resolve();
+  });
+
   test("reorders Someday events optimistically", async () => {
     const context = setup();
     const first = event({ _id: "first", isSomeday: true, order: 0 });
