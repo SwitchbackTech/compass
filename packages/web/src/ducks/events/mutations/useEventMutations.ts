@@ -45,6 +45,13 @@ type ConvertVariables = {
   converted: Schema_Event | null;
 };
 
+// Delete mutations capture, at the `.mutate()` boundary, whether the backend
+// delete must be skipped: an event whose optimistic create is still in flight
+// has no server-side id yet (deleting it would 404), and a Someday event absent
+// from the cache has nothing to delete. In both cases we still remove
+// optimistically but do not issue a repository write.
+type DeleteVariables = Payload_DeleteEvent & { skipRepository: boolean };
+
 export type EventMutations = {
   create: (event: Schema_Event) => void;
   edit: (payload: Payload_EditEvent) => void;
@@ -104,6 +111,22 @@ export function useEventMutations(
     onError: rollback,
     onSettled: settle,
   });
+  // Non-hook check for an in-flight optimistic create of `id`, so the delete
+  // wrapper can decide (at call time) whether the backend still lacks this id.
+  const isCreateInFlight = useCallback(
+    (id: string) =>
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some((mutation) => {
+          if (mutation.state.status !== "pending") return false;
+          const key = mutation.options.mutationKey;
+          if (!Array.isArray(key) || key[2] !== "create") return false;
+          return (mutation.state.variables as { _id?: string })?._id === id;
+        }),
+    [queryClient],
+  );
+
   const convertedEvent = useCallback(
     (event: Payload_ConvertEvent["event"], isSomeday: boolean) => {
       const existing = findEventInCache(queryClient, event._id, source);
@@ -156,10 +179,10 @@ export function useEventMutations(
   );
 
   const deleteMutation = useMutation(
-    buildMutation<Payload_DeleteEvent>(
+    buildMutation<DeleteVariables>(
       "delete",
-      async ({ _id, applyTo }) => {
-        await repository.delete(_id, applyTo);
+      async ({ _id, applyTo, skipRepository }) => {
+        if (!skipRepository) await repository.delete(_id, applyTo);
         await markWrite();
       },
       ({ _id }) => removeEventFromQueries(queryClient, _id, { source }),
@@ -213,10 +236,10 @@ export function useEventMutations(
   );
 
   const deleteSomedayMutation = useMutation(
-    buildMutation<Payload_DeleteEvent>(
+    buildMutation<DeleteVariables>(
       "delete-someday",
-      async ({ _id, applyTo }) => {
-        await repository.delete(_id, applyTo);
+      async ({ _id, applyTo, skipRepository }) => {
+        if (!skipRepository) await repository.delete(_id, applyTo);
         await markWrite();
       },
       ({ _id }) =>
@@ -243,7 +266,11 @@ export function useEventMutations(
           _id: event._id ?? createObjectIdString(),
         }),
       edit: editMutation.mutate,
-      delete: deleteMutation.mutate,
+      delete: (payload: Payload_DeleteEvent) =>
+        deleteMutation.mutate({
+          ...payload,
+          skipRepository: isCreateInFlight(payload._id),
+        }),
       convertToSomeday: (payload: Payload_ConvertEvent) =>
         convertToSomedayMutation.mutate({
           event: payload.event,
@@ -254,11 +281,18 @@ export function useEventMutations(
           event: payload.event,
           converted: convertedEvent(payload.event, false),
         }),
-      deleteSomeday: deleteSomedayMutation.mutate,
+      deleteSomeday: (payload: Payload_DeleteEvent) =>
+        deleteSomedayMutation.mutate({
+          ...payload,
+          skipRepository: !findEventInCache(queryClient, payload._id, source),
+        }),
       reorderSomeday: reorderSomedayMutation.mutate,
     }),
     [
       convertedEvent,
+      isCreateInFlight,
+      queryClient,
+      source,
       createMutation.mutate,
       deleteMutation.mutate,
       deleteSomedayMutation.mutate,

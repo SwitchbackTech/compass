@@ -269,6 +269,48 @@ describe("useEventMutations", () => {
     toCalendar.pending.resolve();
   });
 
+  test("does not persist deletion of an event whose create is still pending", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+    const created = event({ _id: "created", title: "Created" });
+
+    act(() => context.hook.result.current.mutations.create(created));
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual(["created"]);
+    });
+
+    act(() => context.hook.result.current.mutations.delete({ _id: "created" }));
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.ids,
+      ).toEqual([]);
+    });
+    // The create has not persisted, so no backend delete should be issued.
+    expect(context.calls.some(({ method }) => method === "delete")).toBe(false);
+    context.pending.resolve();
+  });
+
+  test("does not persist Someday deletion for an event absent from cache", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(),
+      pagination: { data: [], page: 1, pageSize: 10, count: 0, offset: 0 },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.deleteSomeday({ _id: "ghost" }),
+    );
+
+    await waitFor(() => {
+      expect(context.markedWrites).toEqual(["marked"]);
+    });
+    expect(context.calls.some(({ method }) => method === "delete")).toBe(false);
+    expect(context.errors).toEqual([]);
+  });
+
   test("inserts an edited event into a newly-matching cached range", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());
