@@ -6,7 +6,6 @@ import {
 } from "@testing-library/react";
 import { type PropsWithChildren, type ReactElement } from "react";
 import { Provider } from "react-redux";
-import { sagaMiddleware } from "@web/common/store/middlewares";
 import { type RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";
 
@@ -19,7 +18,7 @@ export function createTestStore(preloadedState?: PreloadedState<RootState>) {
         thunk: false,
         serializableCheck: false,
         immutableCheck: false,
-      }).concat(sagaMiddleware),
+      }),
   });
 }
 

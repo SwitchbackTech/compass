@@ -1,14 +1,14 @@
 import { normalize } from "normalizr";
 import { type Schema_Event } from "@core/types/event.types";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
-import { type Action_GetEvents } from "@web/ducks/events/event.types";
+import { type Payload_GetEvents } from "@web/ducks/events/event.types";
 import {
   EventDateUtils,
   normalizedEventsSchema,
-} from "@web/ducks/events/sagas/saga.util";
+} from "@web/ducks/events/operations/event.operation.utils";
 
 type FetchDayEventsPayload = Omit<
-  Action_GetEvents["payload"],
+  Payload_GetEvents,
   "dontAdjustDates" | "someday"
 >;
 

@@ -282,7 +282,7 @@ For SSE or sync work:
 
 - test backend emitters/handlers where possible
 - test web SSE hooks for listener registration and dispatch behavior
-- test event sagas if refetch or optimistic behavior changed
+- test event listeners and operations if refetch or optimistic behavior changed
 
 ## Common Gaps To Watch
 

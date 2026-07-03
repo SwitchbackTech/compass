@@ -1,12 +1,12 @@
 import { type CompassStartListening } from "@web/common/store/listener-middleware";
-import { registerDayEventQueryListeners } from "@web/ducks/events/listeners/day.event.listener";
+import { registerEventListeners } from "@web/ducks/events/listeners/event.listeners";
 
 /**
  * Registers all listener middleware handlers.
- * Mirrors store/sagas.ts structure for saga registration.
+ * Central registration point for Redux Toolkit listener middleware.
  */
 export function registerCompassListeners(
   startListening: CompassStartListening,
 ) {
-  registerDayEventQueryListeners(startListening);
+  registerEventListeners(startListening);
 }

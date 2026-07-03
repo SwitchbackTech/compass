@@ -27,7 +27,7 @@ Use this document to find the first files to inspect for common Compass changes.
 
 - Shared event schema/types: `packages/core/src/types/event.types.ts`
 - Event helpers and recurrence utilities: `packages/core/src/util/event`
-- Web event sagas: `packages/web/src/ducks/events/sagas`
+- Web event listeners/operations: `packages/web/src/ducks/events/listeners`, `packages/web/src/ducks/events/operations`
 - Web event slices/selectors: `packages/web/src/ducks/events/slices`, `packages/web/src/ducks/events/selectors`
 - Elf event entity store: `packages/web/src/store/events.ts`
 - Event API/repositories: `packages/web/src/ducks/events/event.api.ts`, `packages/web/src/common/repositories/event`

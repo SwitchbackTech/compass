@@ -3,13 +3,11 @@ import { createRoot } from "react-dom/client";
 import "react-toastify/dist/ReactToastify.css";
 import { sessionInit } from "@web/auth/compass/session/SessionProvider";
 import { configureGoogleRevocationApiHandler } from "@web/auth/google/util/google-revocation-api.config";
-import { sagaMiddleware } from "@web/common/store/middlewares";
 import {
   initializeDatabaseWithErrorHandling,
   showDbInitErrorToast,
 } from "@web/common/utils/app-init.util";
 import { App } from "@web/components/App/App";
-import { sagas } from "@web/store/sagas";
 import "./index.css";
 
 configureGoogleRevocationApiHandler();
@@ -23,7 +21,7 @@ if (!container) {
 const root = createRoot(container);
 
 /**
- * Initialize the application with database setup before starting sagas.
+ * Initialize the application after local storage is ready.
  * This ensures IndexedDB is ready before any database operations occur.
  */
 async function initializeApp() {
@@ -32,7 +30,6 @@ async function initializeApp() {
   console.debug(
     "aHR0cHM6Ly9jb21wYXNzY2FsZW5kYXIubm90aW9uLnNpdGUvaDNsbDAtZGF0LTMwYzIzN2JkZThmNDgwNTdhZmYxZDRiODU0YjAzMjYz",
   );
-  sagaMiddleware.run(sagas);
   sessionInit();
 
   root.render(<App />);

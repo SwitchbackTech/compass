@@ -1,29 +1,30 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { configureStore, type PreloadedState } from "@reduxjs/toolkit";
 import { type QueryClient } from "@tanstack/react-query";
+import { type StateFromReducersMapObject } from "redux";
 import { queryClient as defaultQueryClient } from "@web/common/query/query-client";
 import {
   type CompassStartListening,
   createCompassListenerMiddleware,
 } from "@web/common/store/listener-middleware";
-import { sagaMiddleware } from "@web/common/store/middlewares";
 import { registerCompassListeners } from "./listeners";
 import { reducers } from "./reducers";
 
 export interface CreateCompassStoreOptions {
   queryClient?: QueryClient;
+  preloadedState?: PreloadedState<StateFromReducersMapObject<typeof reducers>>;
 }
 
 export const createCompassStore = ({
   queryClient = defaultQueryClient,
+  preloadedState,
 }: CreateCompassStoreOptions = {}) => {
   const listenerMiddleware = createCompassListenerMiddleware(queryClient);
 
   const baseStore = configureStore({
     reducer: reducers,
+    preloadedState,
     middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware()
-        .prepend(listenerMiddleware.middleware)
-        .concat(sagaMiddleware),
+      getDefaultMiddleware().prepend(listenerMiddleware.middleware),
   });
 
   // Register listeners against this store's middleware
