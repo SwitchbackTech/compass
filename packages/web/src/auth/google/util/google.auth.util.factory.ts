@@ -8,9 +8,7 @@ import {
 } from "@web/common/constants/toast.constants";
 import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
 import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
 
 export interface SyncLocalEventsResult {
   syncedCount: number;
@@ -29,6 +27,8 @@ type GoogleAuthUtilDependencies = {
   isToastActive: (toastId: Id) => boolean;
   markGoogleAsRevoked: () => void;
   openStream: () => void;
+  refreshEventRepositorySource: (sessionExists?: boolean) => void;
+  removeEventQueries: () => void;
   syncLocalEventsToCloud: () => Promise<number>;
   toastError: typeof toast.error;
 };
@@ -42,6 +42,8 @@ export function createGoogleAuthUtil({
   isToastActive,
   markGoogleAsRevoked,
   openStream,
+  refreshEventRepositorySource,
+  removeEventQueries,
   syncLocalEventsToCloud,
   toastError,
 }: GoogleAuthUtilDependencies) {
@@ -54,6 +56,9 @@ export function createGoogleAuthUtil({
     }
 
     markGoogleAsRevoked();
+    // Source now resolves to "local"; re-key active queries so their next fetch
+    // hits IndexedDB, then drop the stale remote cache entries.
+    refreshEventRepositorySource();
 
     dispatch(authSlice.actions.resetAuth());
     dispatch(userMetadataSlice.actions.clear(undefined));
@@ -63,9 +68,7 @@ export function createGoogleAuthUtil({
         origins: [Origin.GOOGLE, Origin.GOOGLE_IMPORT],
       }),
     );
-    dispatch(
-      triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
-    );
+    removeEventQueries();
 
     closeStream();
     openStream();

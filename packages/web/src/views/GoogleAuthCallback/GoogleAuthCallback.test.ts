@@ -29,7 +29,6 @@ const { completeGoogleAuthCallback } =
 
 describe("completeGoogleAuthCallback", () => {
   const completeAuthentication = mock();
-  const dispatch = mock();
   const navigate = mock();
 
   beforeEach(() => {
@@ -38,7 +37,6 @@ describe("completeGoogleAuthCallback", () => {
     mockConnectGoogle.mockClear();
     mockShowErrorToast.mockClear();
     completeAuthentication.mockClear();
-    dispatch.mockClear();
     navigate.mockClear();
   });
 
@@ -51,7 +49,6 @@ describe("completeGoogleAuthCallback", () => {
 
     await completeGoogleAuthCallback({
       completeAuthentication,
-      dispatch,
       navigate,
       search: `?state=state-1&code=auth-code&scope=${encodeURIComponent(
         GOOGLE_AUTH_SCOPES_REQUIRED[0],
@@ -61,7 +58,6 @@ describe("completeGoogleAuthCallback", () => {
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
     expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
-    expect(dispatch).not.toHaveBeenCalled();
     expect(mockShowErrorToast).toHaveBeenCalledWith(
       "Missing Google Calendar permissions. Please grant all requested permissions.",
     );

@@ -1,6 +1,5 @@
 import { createSelector } from "@reduxjs/toolkit";
 import { type Schema_Event } from "@core/types/event.types";
-import { isProcessing } from "@web/common/store/helpers";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
@@ -82,9 +81,6 @@ export const selectDayEvents = createSelector(
       .map((id: string) => entities[id])
       .filter((event): event is Schema_Event => Boolean(event)),
 );
-
-export const selectIsDayEventsProcessing = (state: RootState) =>
-  isProcessing(state.events.getDayEvents);
 
 export const selectTimedDayEvents = createSelector(selectDayEvents, (events) =>
   events

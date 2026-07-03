@@ -1,5 +1,4 @@
 import { QueryClient } from "@tanstack/react-query";
-import { type AnyAction } from "redux";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
@@ -12,67 +11,10 @@ import {
   editCalendarEvent,
   reorderSomedayEvents,
 } from "@web/ducks/events/operations/event.mutation.operations";
-import { readWeekEvents } from "@web/ducks/events/operations/event.read.operations";
+import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
-import { describe, expect, mock, test } from "bun:test";
-
-describe("readWeekEvents", () => {
-  test("deduplicates identical repository reads and writes normalized results", async () => {
-    let resolveRead:
-      | ((value: { data: Array<Record<string, unknown>> }) => void)
-      | undefined;
-    const get = mock(
-      () =>
-        new Promise<{ data: Array<Record<string, unknown>> }>((resolve) => {
-          resolveRead = resolve;
-        }),
-    );
-    const dispatched: unknown[] = [];
-    const runtime = {
-      dispatch: (action: AnyAction) => {
-        dispatched.push(action);
-        return action;
-      },
-      getState: () => ({}) as never,
-      queryClient: new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-      }),
-      signal: new AbortController().signal,
-      doesSessionExist: async () => false,
-      getRepository: () => ({ get }) as never,
-      getRepositorySource: () => "local" as const,
-      reportError: mock(() => undefined),
-    };
-    const payload = {
-      startDate: "2026-07-01",
-      endDate: "2026-07-08",
-      __context: {},
-    };
-
-    const first = readWeekEvents(runtime, payload);
-    const second = readWeekEvents(runtime, payload);
-    await Promise.resolve();
-    resolveRead?.({
-      data: [
-        {
-          _id: "event-1",
-          title: "Focus",
-          startDate: "2026-07-02T09:00:00",
-          endDate: "2026-07-02T10:00:00",
-        },
-      ],
-    });
-    await Promise.all([first, second]);
-
-    expect(get).toHaveBeenCalledTimes(1);
-    expect(dispatched).toContainEqual(
-      expect.objectContaining({
-        payload: expect.objectContaining({ data: ["event-1"] }),
-      }),
-    );
-  });
-});
+import { describe, expect, mock, spyOn, test } from "bun:test";
 
 const createRepository = () => ({
   create: mock(async () => undefined),
@@ -96,16 +38,19 @@ const createStoreRuntime = (
   const store = createStoreWithEvents(events);
   const repository = createRepository();
   const reportError = mock(() => undefined);
+  const queryClient = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const invalidateQueries = spyOn(queryClient, "invalidateQueries");
   return {
     store,
     repository,
     reportError,
+    invalidateQueries,
     runtime: {
       dispatch: store.dispatch,
       getState: store.getState,
-      queryClient: new QueryClient({
-        defaultOptions: { queries: { retry: false } },
-      }),
+      queryClient,
       signal: new AbortController().signal,
       doesSessionExist: async () => true,
       getRepository: () => repository,
@@ -121,9 +66,8 @@ describe("event mutation operations", () => {
       _id: "event-1",
       title: "Before",
     });
-    const { runtime, repository, store, reportError } = createStoreRuntime([
-      previous,
-    ]);
+    const { runtime, repository, store, reportError, invalidateQueries } =
+      createStoreRuntime([previous]);
     const failure = new Error("edit failed");
     repository.edit.mockImplementation(async () => Promise.reject(failure));
 
@@ -137,6 +81,8 @@ describe("event mutation operations", () => {
     );
     expect(store.getState().events.pendingEvents.eventIds).toEqual([]);
     expect(reportError).toHaveBeenCalledWith(failure);
+    // Revert paths never touched the repository, so they must not invalidate.
+    expect(invalidateQueries).not.toHaveBeenCalled();
   });
 
   test("does not persist deletion of an event that is still pending", async () => {
@@ -201,6 +147,21 @@ describe("event mutation operations", () => {
     expect(repository.reorder).toHaveBeenCalledWith([
       { _id: "event-1", order: 4 },
     ]);
+  });
+
+  test("invalidates all event reads after a persisted mutation succeeds", async () => {
+    const event = createMockStandaloneEvent({
+      _id: "event-1",
+      isSomeday: true,
+      order: 1,
+    });
+    const { runtime, invalidateQueries } = createStoreRuntime([event]);
+
+    await reorderSomedayEvents(runtime, [{ _id: "event-1", order: 4 }]);
+
+    expect(invalidateQueries).toHaveBeenCalledWith({
+      queryKey: eventQueryKeys.all,
+    });
   });
 });
 

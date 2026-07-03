@@ -1,13 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
-import {
-  computeSomedayEventsRequestFilter,
-  toUTCOffset,
-} from "@web/common/utils/datetime/web.date.util";
-import { Week_AsyncStateContextReason } from "@web/ducks/events/context/week.context";
-import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
+import { useSomedayEventsQuery } from "@web/ducks/events/queries/useSomedayEventsQuery";
+import { useWeekEventsQuery } from "@web/ducks/events/queries/useWeekEventsQuery";
 import { updateDates } from "@web/ducks/events/slices/view.slice";
-import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
 import { type Category_View } from "@web/views/Week/week-view.types";
 
@@ -29,35 +24,11 @@ export const useWeek = (today: Dayjs) => {
     return start.add(index, "day");
   });
 
-  useEffect(() => {
-    dispatch(
-      getWeekEventsSlice.actions.request({
-        startDate: toUTCOffset(start),
-        endDate: toUTCOffset(end),
-        __context: {
-          reason: Week_AsyncStateContextReason.WEEK_VIEW_CHANGE,
-        },
-      }),
-    );
-  }, [dispatch, end, start]);
-
-  const somedayEventsRequestFilter = useMemo(() => {
-    return computeSomedayEventsRequestFilter(start, start.endOf("month"));
-  }, [start]);
-
-  useEffect(() => {
-    dispatch(
-      getSomedayEventsSlice.actions.request({
-        ...somedayEventsRequestFilter,
-      }),
-    );
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    dispatch,
-    somedayEventsRequestFilter.startDate,
-    somedayEventsRequestFilter.endDate,
-    somedayEventsRequestFilter,
-  ]);
+  // Week + someday reads are driven by TanStack Query: changing start/end
+  // re-keys the queries (fetch on new ranges, instant render from cache on
+  // revisits). Redux stays the render source of truth via the hooks' sync.
+  useWeekEventsQuery({ startOfView: start, endOfView: end });
+  useSomedayEventsQuery(start);
 
   useEffect(() => {
     dispatch(

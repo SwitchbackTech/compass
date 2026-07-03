@@ -83,12 +83,6 @@ export const preloadedState: InitialReduxState = {
     current: null,
     status: "idle",
   },
-  sync: {
-    importLatest: {
-      isFetchNeeded: false,
-      reason: null,
-    },
-  },
   view: {
     dates: {
       start: "2025-12-07T00:00:00Z",

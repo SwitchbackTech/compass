@@ -14,20 +14,13 @@ import {
 } from "@web/ducks/events/operations/event.mutation.operations";
 import { type EventOperationRuntime } from "@web/ducks/events/operations/event.operation.runtime";
 import {
-  readCurrentMonthEvents,
-  readSomedayEvents,
-  readWeekEvents,
-} from "@web/ducks/events/operations/event.read.operations";
-import {
   createEventSlice,
   deleteEventSlice,
   editEventSlice,
-  getCurrentMonthEventsSlice,
 } from "@web/ducks/events/slices/event.slice";
 import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
 import { type AppDispatch, type RootState } from "@web/store";
-import { registerDayEventQueryListeners } from "./day.event.listener";
 
 type EventListenerApi = ListenerEffectAPI<
   RootState,
@@ -60,22 +53,6 @@ const registerLatest = <Payload>(
 };
 
 export function registerEventListeners(startListening: CompassStartListening) {
-  registerDayEventQueryListeners(startListening);
-  registerLatest(
-    startListening,
-    getWeekEventsSlice.actions.request,
-    readWeekEvents,
-  );
-  registerLatest(
-    startListening,
-    getCurrentMonthEventsSlice.actions.request,
-    readCurrentMonthEvents,
-  );
-  registerLatest(
-    startListening,
-    getSomedayEventsSlice.actions.request,
-    readSomedayEvents,
-  );
   registerLatest(
     startListening,
     createEventSlice.actions.request,

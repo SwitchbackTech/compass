@@ -24,6 +24,8 @@ const mockIsToastActive = mock(() => false);
 const mockDispatch = mock();
 const mockCloseStream = mock();
 const mockOpenStream = mock();
+const mockRefreshEventRepositorySource = mock();
+const mockRemoveEventQueries = mock();
 
 const googleAuthUtil = createGoogleAuthUtil({
   closeStream: mockCloseStream,
@@ -31,6 +33,8 @@ const googleAuthUtil = createGoogleAuthUtil({
   isToastActive: mockIsToastActive,
   markGoogleAsRevoked,
   openStream: mockOpenStream,
+  refreshEventRepositorySource: mockRefreshEventRepositorySource,
+  removeEventQueries: mockRemoveEventQueries,
   syncLocalEventsToCloud: mockSyncLocalEventsToCloud,
   toastError: mockToastError,
 });
@@ -47,6 +51,8 @@ describe("google-auth.util", () => {
     mockDispatch.mockClear();
     mockCloseStream.mockClear();
     mockOpenStream.mockClear();
+    mockRefreshEventRepositorySource.mockClear();
+    mockRemoveEventQueries.mockClear();
 
     clearGoogleRevokedState();
   });
@@ -151,7 +157,14 @@ describe("google-auth.util", () => {
     it("dispatches the Google revocation state changes", () => {
       handleGoogleRevoked();
 
-      expect(mockDispatch).toHaveBeenCalledTimes(4);
+      expect(mockDispatch).toHaveBeenCalledTimes(3);
+    });
+
+    it("re-keys queries to local and removes stale remote cache entries", () => {
+      handleGoogleRevoked();
+
+      expect(mockRefreshEventRepositorySource).toHaveBeenCalledTimes(1);
+      expect(mockRemoveEventQueries).toHaveBeenCalledTimes(1);
     });
 
     it("reconnects SSE stream so the client gets a fresh session after revocation", () => {

@@ -41,6 +41,22 @@ export function createGetEventRepositorySource({
   };
 }
 
+export function createGetEventRepositoryBySource({
+  createLocalEventRepository,
+  createRemoteEventRepository,
+}: Pick<
+  EventRepositoryDependencies,
+  "createLocalEventRepository" | "createRemoteEventRepository"
+>) {
+  return function getEventRepositoryBySource(
+    source: EventRepositorySource,
+  ): EventRepository {
+    return source === "remote"
+      ? createRemoteEventRepository()
+      : createLocalEventRepository();
+  };
+}
+
 export function createGetEventRepository({
   createLocalEventRepository,
   createRemoteEventRepository,
@@ -53,11 +69,12 @@ export function createGetEventRepository({
     isBackendUnavailable,
     isGoogleRevoked,
   });
+  const getEventRepositoryBySource = createGetEventRepositoryBySource({
+    createLocalEventRepository,
+    createRemoteEventRepository,
+  });
 
   return function getEventRepository(sessionExists: boolean): EventRepository {
-    const source = getEventRepositorySource(sessionExists);
-    return source === "remote"
-      ? createRemoteEventRepository()
-      : createLocalEventRepository();
+    return getEventRepositoryBySource(getEventRepositorySource(sessionExists));
   };
 }

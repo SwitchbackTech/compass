@@ -18,8 +18,8 @@ import { SomedayEventItem } from "@web/components/PlannerSidebar/SomedayEventSec
 import { AddSomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
 import { useSomedayRefreshReserve } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/useSomedayRefreshReserve";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
+import { useSomedayEventsQueryStatus } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
-import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 
 const getColName = (category: SomedayInteractionCategory) => {
@@ -65,11 +65,9 @@ export const SomedayEventsContainer: FC<Props> = ({
     category,
   });
 
-  const isProcessing = Boolean(
-    useAppSelector(selectIsGetSomedayEventsProcessing),
-  );
+  const { isFetching } = useSomedayEventsQueryStatus();
   const { reservedMinHeight, shouldAnimateRowEntrance } =
-    useSomedayRefreshReserve(events.length, isProcessing);
+    useSomedayRefreshReserve(events.length, isFetching);
 
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;

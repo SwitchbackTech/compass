@@ -35,7 +35,6 @@ import {
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
-import { useRefetch } from "@web/views/Week/hooks/useRefetch";
 
 export const DayViewContent = memo(() => {
   const dispatch = useAppDispatch();
@@ -45,8 +44,6 @@ export const DayViewContent = memo(() => {
     isResizing,
     dividerProps,
   } = useResizableTaskList();
-
-  useRefetch();
 
   const {
     tasks,

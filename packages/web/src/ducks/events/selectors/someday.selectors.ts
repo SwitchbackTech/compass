@@ -5,15 +5,11 @@ import {
 } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { isProcessing } from "@web/common/store/helpers";
 import { type Schema_SomedayEventsColumn } from "@web/common/types/web.event.types";
 import { categorizeSomedayEvents } from "@web/common/utils/event/someday.event.util";
 import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
 import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { type RootState } from "@web/store";
-
-export const selectIsGetSomedayEventsProcessing = (state: RootState) =>
-  isProcessing(state.events.getSomedayEvents);
 
 const selectSomedayIds = (state: RootState): string[] =>
   state.events.getSomedayEvents.value?.data || [];

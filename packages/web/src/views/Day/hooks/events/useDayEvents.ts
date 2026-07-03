@@ -1,12 +1,8 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import type dayjs from "@core/util/date/dayjs";
-import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
-import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useDayEventsQuery } from "@web/ducks/events/queries/useDayEventsQuery";
 
 export function useDayEvents(dateInView: dayjs.Dayjs) {
-  const dispatch = useAppDispatch();
-
   const { startDateUtc, endDateUtc } = useMemo(() => {
     return {
       startDateUtc: dateInView.startOf("day").utc(true).format(),
@@ -14,13 +10,5 @@ export function useDayEvents(dateInView: dayjs.Dayjs) {
     };
   }, [dateInView]);
 
-  useEffect(() => {
-    dispatch(
-      getDayEventsSlice.actions.request({
-        startDate: startDateUtc,
-        endDate: endDateUtc,
-        __context: { reason: Day_AsyncStateContextReason.DAY_VIEW_CHANGE },
-      }),
-    );
-  }, [dispatch, startDateUtc, endDateUtc]);
+  useDayEventsQuery({ startDate: startDateUtc, endDate: endDateUtc });
 }
