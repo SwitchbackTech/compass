@@ -13,7 +13,7 @@ import { reducers } from "@web/store/reducers";
 import { seedEventQueries } from "./utils/event-query-test-data";
 
 type StoreOptions = {
-  /** Seed the event query cache directly (replaces the Redux→query bridge). */
+  /** Seed the event query cache  */
   events?: Array<{ _id?: string }>;
 };
 

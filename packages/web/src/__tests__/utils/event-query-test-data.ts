@@ -19,8 +19,7 @@ export const toNormalizedEventQueryData = (
 /**
  * First-class query-seeding entry point for tests: registers the given events
  * as `initialData` for every event read scope (day/week/someday), so any event
- * query a component mounts resolves from the cache. Replaces the old
- * Redux→query translation bridge — tests seed the real query layer directly.
+ * query a component mounts resolves from the cache.
  */
 export const seedEventQueries = (
   queryClient: QueryClient,
