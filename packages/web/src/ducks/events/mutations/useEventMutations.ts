@@ -6,6 +6,8 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
+import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
 import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { getEventRepositoryBySource } from "@web/common/repositories/event/event.repository.util";
 import { handleError, hasEventDates } from "@web/common/utils/event/event.util";
@@ -41,6 +43,13 @@ export type EventMutations = {
   reorderSomeday: (payload: Payload_Order[]) => void;
 };
 
+export type EventMutationDependencies = {
+  source?: EventRepositorySource;
+  repository?: EventRepository;
+  markWrite?: () => Promise<unknown>;
+  reportError?: (error: Error) => void;
+};
+
 const eventMatchesRange = (
   event: Schema_Event,
   startDate?: string,
@@ -53,13 +62,18 @@ const eventMatchesRange = (
   );
 };
 
-export function useEventMutations(): EventMutations {
+export function useEventMutations(
+  dependencies: EventMutationDependencies = {},
+): EventMutations {
   const queryClient = useQueryClient();
-  const source = useEventRepositorySource();
+  const activeSource = useEventRepositorySource();
+  const source = dependencies.source ?? activeSource;
   const repository = useMemo(
-    () => getEventRepositoryBySource(source),
-    [source],
+    () => dependencies.repository ?? getEventRepositoryBySource(source),
+    [dependencies.repository, source],
   );
+  const markWrite = dependencies.markWrite ?? markAnonymousEventWrite;
+  const reportError = dependencies.reportError ?? handleError;
 
   const settle = () =>
     queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
@@ -69,7 +83,7 @@ export function useEventMutations(): EventMutations {
     context?: MutationContext,
   ) => {
     if (context) restoreEventQueries(queryClient, context.snapshots);
-    handleError(error);
+    reportError(error);
   };
   const snapshot = async () => {
     await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
@@ -80,7 +94,7 @@ export function useEventMutations(): EventMutations {
     mutationKey: eventMutationKeys.operation("create"),
     mutationFn: async (event: Schema_Event) => {
       await repository.create(event);
-      await markAnonymousEventWrite();
+      await markWrite();
       return event;
     },
     onMutate: async (event) => {
@@ -103,7 +117,7 @@ export function useEventMutations(): EventMutations {
     mutationKey: eventMutationKeys.operation("edit"),
     mutationFn: async ({ _id, event, applyTo }: Payload_EditEvent) => {
       await repository.edit(_id, event, { applyTo });
-      await markAnonymousEventWrite();
+      await markWrite();
     },
     onMutate: async ({ _id, event, shouldRemove }) => {
       const context = await snapshot();
@@ -119,7 +133,7 @@ export function useEventMutations(): EventMutations {
     mutationKey: eventMutationKeys.operation("delete"),
     mutationFn: async ({ _id, applyTo }: Payload_DeleteEvent) => {
       await repository.delete(_id, applyTo);
-      await markAnonymousEventWrite();
+      await markWrite();
     },
     onMutate: async ({ _id }) => {
       const context = await snapshot();
@@ -147,7 +161,7 @@ export function useEventMutations(): EventMutations {
         ? RecurringEventUpdateScope.ALL_EVENTS
         : RecurringEventUpdateScope.THIS_EVENT;
       await repository.edit(event._id, converted, { applyTo });
-      await markAnonymousEventWrite();
+      await markWrite();
     },
     onMutate: async ({ event }) => {
       const context = await snapshot();
@@ -188,7 +202,7 @@ export function useEventMutations(): EventMutations {
       } as Schema_Event;
       delete converted.recurrence;
       await repository.edit(event._id, converted, {});
-      await markAnonymousEventWrite();
+      await markWrite();
     },
     onMutate: async ({ event }) => {
       const context = await snapshot();
@@ -221,7 +235,7 @@ export function useEventMutations(): EventMutations {
     mutationKey: eventMutationKeys.operation("delete-someday"),
     mutationFn: async ({ _id, applyTo }: Payload_DeleteEvent) => {
       await repository.delete(_id, applyTo);
-      await markAnonymousEventWrite();
+      await markWrite();
     },
     onMutate: async ({ _id }) => {
       const context = await snapshot();
@@ -236,7 +250,7 @@ export function useEventMutations(): EventMutations {
     mutationKey: eventMutationKeys.operation("reorder-someday"),
     mutationFn: async (order: Payload_Order[]) => {
       await repository.reorder(order);
-      await markAnonymousEventWrite();
+      await markWrite();
     },
     onMutate: async (order) => {
       const context = await snapshot();
