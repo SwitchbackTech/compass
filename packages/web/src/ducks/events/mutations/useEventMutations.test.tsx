@@ -269,6 +269,101 @@ describe("useEventMutations", () => {
     toCalendar.pending.resolve();
   });
 
+  test("inserts an edited event into a newly-matching cached range", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+    const movedIn = event({
+      _id: "mover",
+      title: "Moved In",
+      startDate: "2026-07-04T16:00:00.000Z",
+      endDate: "2026-07-04T17:00:00.000Z",
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "mover",
+        event: movedIn as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.entities.mover?.title,
+      ).toBe("Moved In");
+    });
+    context.pending.resolve();
+  });
+
+  test("removes an edited event from a range it no longer belongs to", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const movedOut = event({
+      // Push the event well outside the cached 2026-07-01..08 week.
+      startDate: "2026-09-01T16:00:00.000Z",
+      endDate: "2026-09-01T17:00:00.000Z",
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: movedOut as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.ids,
+      ).toEqual([]);
+    });
+    context.pending.resolve();
+  });
+
+  test("convertToCalendar to an off-screen range persists without throwing", async () => {
+    const context = setup();
+    const someday = event({ _id: "someday", isSomeday: true });
+    context.queryClient.setQueryData(calendarKey, normalized());
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(someday),
+      pagination: {
+        data: [someday],
+        page: 1,
+        pageSize: 10,
+        count: 1,
+        offset: 0,
+      },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.convertToCalendar({
+        event: {
+          _id: "someday",
+          // Target date is outside the cached 2026-07 week range.
+          startDate: "2026-08-20T16:00:00.000Z",
+          endDate: "2026-08-20T17:00:00.000Z",
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<SomedayEventQueryData>(somedayKey)
+          ?.ids,
+      ).toEqual([]);
+    });
+    context.pending.resolve();
+
+    await waitFor(() => {
+      expect(context.calls.some(({ method }) => method === "edit")).toBe(true);
+      expect(context.errors).toEqual([]);
+    });
+  });
+
   test("marks the converting event pending during convertToSomeday", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized(event()));
