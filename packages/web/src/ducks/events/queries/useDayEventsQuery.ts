@@ -3,7 +3,7 @@ import { useEffect, useMemo } from "react";
 import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { handleError } from "@web/common/utils/event/event.util";
 import { dayEventsQueryOptions } from "@web/ducks/events/queries/event.query.options";
-import { deriveDayEventViewModel } from "./event.view-model";
+import { deriveCalendarEventViewModel } from "./event.view-model";
 
 type DayEventsQueryArgs = {
   startDate: string;
@@ -30,7 +30,7 @@ export function useDayEventsQuery({ startDate, endDate }: DayEventsQueryArgs) {
 export function useDayEventViewModel(args: DayEventsQueryArgs) {
   const query = useDayEventsQuery(args);
   const viewModel = useMemo(
-    () => deriveDayEventViewModel(query.data),
+    () => deriveCalendarEventViewModel(query.data),
     [query.data],
   );
   return { ...query, ...viewModel };

@@ -3,9 +3,8 @@ import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { COLUMN_WEEK } from "@web/common/constants/web.constants";
 import {
-  deriveDayEventViewModel,
+  deriveCalendarEventViewModel,
   deriveSomedayEventViewModel,
-  deriveWeekEventViewModel,
 } from "./event.view-model";
 
 const event = (overrides: Partial<Schema_Event>): Schema_Event => ({
@@ -37,8 +36,8 @@ describe("Event query view models", () => {
     });
     const data = normalized(timed, allDay);
 
-    const week = deriveWeekEventViewModel(data);
-    const day = deriveDayEventViewModel(data);
+    const week = deriveCalendarEventViewModel(data);
+    const day = deriveCalendarEventViewModel(data);
 
     expect(week.timedEvents.map(({ _id }) => _id)).toEqual(["timed"]);
     expect(week.allDayEvents.map(({ _id }) => _id)).toEqual(["all-day"]);
@@ -81,7 +80,7 @@ describe("Event query view models", () => {
   });
 
   test("returns stable empty shapes", () => {
-    const week = deriveWeekEventViewModel();
+    const week = deriveCalendarEventViewModel();
     expect(week).toEqual({
       entities: {},
       events: [],

@@ -47,7 +47,9 @@ const rowCountFrom = (events: Schema_GridEvent[]) => {
   return rows.length === 0 ? 1 : Math.max(...rows);
 };
 
-export function deriveWeekEventViewModel(data?: NormalizedEventQueryData) {
+export const deriveCalendarEventViewModel = (
+  data?: NormalizedEventQueryData,
+) => {
   const events = eventsFrom(data);
   const timedEvents = timedEventsFrom(events);
   const allDayEvents = allDayEventsFrom(events);
@@ -58,20 +60,7 @@ export function deriveWeekEventViewModel(data?: NormalizedEventQueryData) {
     allDayEvents,
     rowCount: rowCountFrom(allDayEvents),
   };
-}
-
-export function deriveDayEventViewModel(data?: NormalizedEventQueryData) {
-  const events = eventsFrom(data);
-  const timedEvents = timedEventsFrom(events);
-  const allDayEvents = allDayEventsFrom(events);
-  return {
-    entities: data?.entities ?? {},
-    events,
-    timedEvents,
-    allDayEvents,
-    rowCount: rowCountFrom(allDayEvents),
-  };
-}
+};
 
 export function deriveSomedayEventViewModel(
   data: NormalizedEventQueryData | undefined,

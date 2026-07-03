@@ -5,7 +5,7 @@ import { useEventRepositorySource } from "@web/common/repositories/event/event.r
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { handleError } from "@web/common/utils/event/event.util";
 import { weekEventsQueryOptions } from "@web/ducks/events/queries/event.query.options";
-import { deriveWeekEventViewModel } from "./event.view-model";
+import { deriveCalendarEventViewModel } from "./event.view-model";
 
 type WeekEventsQueryArgs = {
   startOfView: Dayjs;
@@ -42,7 +42,7 @@ export function useWeekEventsQuery(args: WeekEventsQueryArgs) {
 export function useWeekEventViewModel(args: WeekEventsQueryArgs) {
   const query = useWeekEventsQuery(args);
   const viewModel = useMemo(
-    () => deriveWeekEventViewModel(query.data),
+    () => deriveCalendarEventViewModel(query.data),
     [query.data],
   );
   return { ...query, ...viewModel };

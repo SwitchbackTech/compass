@@ -89,6 +89,19 @@ export function useEventMutations(
     await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
     return { snapshots: snapshotEventQueries(queryClient, { source }) };
   };
+  const lifecycle = { onError: rollback, onSettled: settle };
+  const convertedEvent = (
+    event: Payload_ConvertEvent["event"],
+    isSomeday: boolean,
+  ) => {
+    const existing =
+      findEventInCache(queryClient, event._id, source) ??
+      findEventInCache(queryClient, event._id);
+    if (!existing) return null;
+    const converted = { ...existing, ...event, isSomeday } as Schema_Event;
+    if (!isSomeday) delete converted.recurrence;
+    return converted;
+  };
 
   const createMutation = useMutation({
     mutationKey: eventMutationKeys.operation("create"),
@@ -109,8 +122,7 @@ export function useEventMutations(
       });
       return context;
     },
-    onError: rollback,
-    onSettled: settle,
+    ...lifecycle,
   });
 
   const editMutation = useMutation({
@@ -125,8 +137,7 @@ export function useEventMutations(
       else patchEventInQueries(queryClient, _id, event, { source });
       return context;
     },
-    onError: rollback,
-    onSettled: settle,
+    ...lifecycle,
   });
 
   const deleteMutation = useMutation({
@@ -140,23 +151,16 @@ export function useEventMutations(
       removeEventFromQueries(queryClient, _id, { source });
       return context;
     },
-    onError: rollback,
-    onSettled: settle,
+    ...lifecycle,
   });
 
   const convertToSomedayMutation = useMutation({
     mutationKey: eventMutationKeys.operation("convert-to-someday"),
     mutationFn: async ({ event }: Payload_ConvertEvent) => {
-      const existing =
-        findEventInCache(queryClient, event._id, source) ??
-        findEventInCache(queryClient, event._id);
-      if (!existing)
+      const converted = convertedEvent(event, true);
+      if (!converted) {
         throw new Error(`Event ${event._id} not found for conversion`);
-      const converted = {
-        ...existing,
-        ...event,
-        isSomeday: true,
-      } as Schema_Event;
+      }
       const applyTo = converted.recurrence?.eventId
         ? RecurringEventUpdateScope.ALL_EVENTS
         : RecurringEventUpdateScope.THIS_EVENT;
@@ -165,15 +169,8 @@ export function useEventMutations(
     },
     onMutate: async ({ event }) => {
       const context = await snapshot();
-      const existing =
-        findEventInCache(queryClient, event._id, source) ??
-        findEventInCache(queryClient, event._id);
-      if (!existing) return context;
-      const converted = {
-        ...existing,
-        ...event,
-        isSomeday: true,
-      } as Schema_Event;
+      const converted = convertedEvent(event, true);
+      if (!converted) return context;
       removeEventFromQueries(queryClient, event._id, { source });
       insertEventIntoQueries(
         queryClient,
@@ -183,39 +180,23 @@ export function useEventMutations(
       );
       return context;
     },
-    onError: rollback,
-    onSettled: settle,
+    ...lifecycle,
   });
 
   const convertToCalendarMutation = useMutation({
     mutationKey: eventMutationKeys.operation("convert-to-calendar"),
     mutationFn: async ({ event }: Payload_ConvertEvent) => {
-      const existing =
-        findEventInCache(queryClient, event._id, source) ??
-        findEventInCache(queryClient, event._id);
-      if (!existing)
+      const converted = convertedEvent(event, false);
+      if (!converted) {
         throw new Error(`Event ${event._id} not found for conversion`);
-      const converted = {
-        ...existing,
-        ...event,
-        isSomeday: false,
-      } as Schema_Event;
-      delete converted.recurrence;
+      }
       await repository.edit(event._id, converted, {});
       await markWrite();
     },
     onMutate: async ({ event }) => {
       const context = await snapshot();
-      const existing =
-        findEventInCache(queryClient, event._id, source) ??
-        findEventInCache(queryClient, event._id);
-      if (!existing) return context;
-      const converted = {
-        ...existing,
-        ...event,
-        isSomeday: false,
-      } as Schema_Event;
-      delete converted.recurrence;
+      const converted = convertedEvent(event, false);
+      if (!converted) return context;
       removeEventFromQueries(queryClient, event._id, { source });
       insertEventIntoQueries(
         queryClient,
@@ -227,8 +208,7 @@ export function useEventMutations(
       );
       return context;
     },
-    onError: rollback,
-    onSettled: settle,
+    ...lifecycle,
   });
 
   const deleteSomedayMutation = useMutation({
@@ -242,8 +222,7 @@ export function useEventMutations(
       removeEventFromQueries(queryClient, _id, { source, scope: "someday" });
       return context;
     },
-    onError: rollback,
-    onSettled: settle,
+    ...lifecycle,
   });
 
   const reorderSomedayMutation = useMutation({
@@ -257,8 +236,7 @@ export function useEventMutations(
       reorderSomedayEventsInQueries(queryClient, order, source);
       return context;
     },
-    onError: rollback,
-    onSettled: settle,
+    ...lifecycle,
   });
 
   return useMemo(
