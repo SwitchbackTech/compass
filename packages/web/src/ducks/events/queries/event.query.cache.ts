@@ -3,6 +3,7 @@ import { type Origin } from "@core/constants/core.constants";
 import { type Payload_Order, type Schema_Event } from "@core/types/event.types";
 import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
 import { eventQueryKeys } from "./event.query.keys";
+import { eventMatchesRange } from "./event.query.normalize";
 import {
   type EventQueryData,
   type EventQueryKey,
@@ -23,7 +24,9 @@ type EventQueryFilter = {
   scope?: EventQueryScope;
 };
 
-const isEventQueryKey = (queryKey: QueryKey): queryKey is EventQueryKey => {
+export const isEventQueryKey = (
+  queryKey: QueryKey,
+): queryKey is EventQueryKey => {
   if (queryKey[0] !== eventQueryKeys.all[0] || queryKey.length !== 3) {
     return false;
   }
@@ -93,6 +96,28 @@ export function restoreEventQueries(
   }
 }
 
+/**
+ * Canonical "does this event belong in this cached entry" test, combining the
+ * repository source, the scope (someday vs. timed), and the range predicate
+ * shared with reads ({@link eventMatchesRange}). Used by every optimistic
+ * insert/upsert so a mutation lands events in exactly the entries a subsequent
+ * read would return them from.
+ */
+export function eventBelongsToEntry(
+  event: Schema_Event,
+  entry: EventQueryEntry,
+  source: EventRepositorySource,
+): boolean {
+  if (entry.metadata.source !== source) return false;
+  if (event.isSomeday) return entry.scope === "someday";
+  if (entry.scope === "someday") return false;
+  return eventMatchesRange(
+    event,
+    entry.metadata.startDate,
+    entry.metadata.endDate,
+  );
+}
+
 export function insertEventIntoQueries(
   queryClient: QueryClient,
   event: Schema_Event,
@@ -109,6 +134,50 @@ export function insertEventIntoQueries(
         ...current,
         ids: isPresent ? current.ids : [...current.ids, event._id as string],
         entities: { ...current.entities, [event._id as string]: event },
+      };
+    });
+  }
+}
+
+/**
+ * Reconcile an edited event against every cached entry for its source: insert
+ * it into ranges it now belongs to, patch it where already present, and remove
+ * it from ranges it no longer belongs to. Restores the pre-migration behavior
+ * where an event dragged/edited into the current view rendered optimistically
+ * instead of only after the settle-time refetch.
+ */
+export function upsertEventAcrossQueries(
+  queryClient: QueryClient,
+  event: Schema_Event,
+  isMember: (entry: EventQueryEntry) => boolean,
+  filter: EventQueryFilter = {},
+) {
+  const id = event._id;
+  if (!id) throw new Error("Cached Event upsert requires an id");
+
+  for (const entry of getEventQueryEntries(queryClient, filter)) {
+    const member = isMember(entry);
+    queryClient.setQueryData<EventQueryData>(entry.queryKey, (current) => {
+      if (!current) return current;
+      const present = current.ids.includes(id) || Boolean(current.entities[id]);
+      if (member) {
+        const existing = current.entities[id];
+        return {
+          ...current,
+          ids: present ? current.ids : [...current.ids, id],
+          entities: {
+            ...current.entities,
+            [id]: existing ? { ...existing, ...event } : event,
+          },
+        };
+      }
+      if (!present) return current;
+      const entities = { ...current.entities };
+      delete entities[id];
+      return {
+        ...current,
+        ids: current.ids.filter((entryId) => entryId !== id),
+        entities,
       };
     });
   }

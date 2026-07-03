@@ -8,17 +8,17 @@ import {
 import { type PropsWithChildren, type ReactElement } from "react";
 import { Provider } from "react-redux";
 import { createCompassQueryClient } from "@web/common/query/query-client";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { type RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";
-import { toNormalizedEventQueryData } from "./utils/event-query-test-data";
+import { seedEventQueries } from "./utils/event-query-test-data";
+
+type StoreOptions = {
+  /** Seed the event query cache  */
+  events?: Array<{ _id?: string }>;
+};
 
 export function createTestStore(preloadedState?: PreloadedState<RootState>) {
-  const legacyEvents = Object.values(
-    ((preloadedState as { events?: { entities?: { value?: object } } })?.events
-      ?.entities?.value ?? {}) as Record<string, never>,
-  );
-  const store = configureStore({
+  return configureStore({
     reducer: reducers,
     preloadedState,
     middleware: (getDefaultMiddleware) =>
@@ -28,54 +28,15 @@ export function createTestStore(preloadedState?: PreloadedState<RootState>) {
         immutableCheck: false,
       }),
   });
-  return Object.assign(store, { __eventQueryTestEvents: legacyEvents });
 }
 
-export function createStoreWrapper(preloadedState?: PreloadedState<RootState>) {
+export function createStoreWrapper(
+  preloadedState?: PreloadedState<RootState>,
+  { events }: StoreOptions = {},
+) {
   const store = createTestStore(preloadedState);
   const queryClient = createCompassQueryClient();
-  if (store.__eventQueryTestEvents.length > 0) {
-    const events = store.__eventQueryTestEvents as Array<{ _id?: string }>;
-    queryClient.setQueryDefaults(eventQueryKeys.all, {
-      initialData: toNormalizedEventQueryData(events),
-    });
-  }
-  const legacyEvents = (preloadedState as { events?: Record<string, unknown> })
-    ?.events;
-  const entities =
-    (legacyEvents?.entities as { value?: Record<string, never> })?.value ?? {};
-  const dates = preloadedState?.view?.dates;
-  if (dates) {
-    const setLegacyQuery = (
-      scope: "day" | "week" | "someday",
-      sliceName: "getDayEvents" | "getWeekEvents" | "getSomedayEvents",
-    ) => {
-      const ids = (
-        legacyEvents?.[sliceName] as { value?: { data?: string[] } | null }
-      )?.value?.data;
-      if (!ids) return;
-      const queryKey =
-        scope === "day"
-          ? eventQueryKeys.day({
-              source: "local",
-              startDate: dates.start,
-              endDate: dates.end,
-            })
-          : eventQueryKeys.list({
-              source: "local",
-              scope,
-              params: {
-                startDate: dates.start,
-                endDate: dates.end,
-                someday: scope === "someday",
-              },
-            });
-      queryClient.setQueryData(queryKey, { ids, entities });
-    };
-    setLegacyQuery("day", "getDayEvents");
-    setLegacyQuery("week", "getWeekEvents");
-    setLegacyQuery("someday", "getSomedayEvents");
-  }
+  if (events?.length) seedEventQueries(queryClient, events);
 
   function StoreWrapper({ children }: PropsWithChildren) {
     return (
@@ -91,8 +52,9 @@ export function createStoreWrapper(preloadedState?: PreloadedState<RootState>) {
 export function renderWithStore(
   ui: ReactElement,
   preloadedState?: PreloadedState<RootState>,
+  options?: StoreOptions,
 ) {
-  const { store, wrapper } = createStoreWrapper(preloadedState);
+  const { store, wrapper } = createStoreWrapper(preloadedState, options);
 
   return {
     store,
@@ -103,12 +65,13 @@ export function renderWithStore(
 export function renderHookWithStore<Result, Props>(
   hook: (initialProps: Props) => Result,
   preloadedState?: PreloadedState<RootState>,
-  options?: Omit<RenderHookOptions<Props>, "wrapper">,
+  options?: Omit<RenderHookOptions<Props>, "wrapper"> & StoreOptions,
 ) {
-  const { store, wrapper } = createStoreWrapper(preloadedState);
+  const { events, ...renderHookOptions } = options ?? {};
+  const { store, wrapper } = createStoreWrapper(preloadedState, { events });
 
   return {
     store,
-    ...renderHook(hook, { ...options, wrapper }),
+    ...renderHook(hook, { ...renderHookOptions, wrapper }),
   };
 }

@@ -157,7 +157,7 @@ export const createStoreWithEvents = (
     reason: null,
   };
 
-  const store = configureStore({
+  return configureStore({
     reducer: reducers,
     preloadedState: preloadedState as PreloadedState<RootState>,
     middleware: (getDefaultMiddleware) =>
@@ -167,41 +167,4 @@ export const createStoreWithEvents = (
         immutableCheck: false,
       }),
   });
-  return Object.assign(store, { __eventQueryTestEvents: events });
-};
-
-export const findAndUpdateEventInPreloadedState = (
-  preloadedState: TestState,
-  eventId: string,
-  callback: (event: Schema_Event) => Schema_Event,
-): TestState => {
-  // Safely access the events with proper null checks
-  const events = preloadedState?.events?.entities?.value;
-  if (!events) {
-    throw new Error("Events state is not properly initialized");
-  }
-
-  const event = events[eventId];
-  if (!event) {
-    throw new Error(`Event with id ${eventId} not found`);
-  }
-
-  // Create a deep copy of the event to avoid mutations
-  const eventCopy = structuredClone(event);
-  const updatedEvent = callback(eventCopy);
-
-  // Return new state with updated event
-  return {
-    ...preloadedState,
-    events: {
-      ...preloadedState.events,
-      entities: {
-        ...preloadedState.events.entities,
-        value: {
-          ...events,
-          [eventId]: updatedEvent,
-        },
-      },
-    },
-  };
 };

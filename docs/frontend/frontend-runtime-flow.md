@@ -190,6 +190,10 @@ Read these together for event work:
 
 ## Event Flow
 
+For a high-level tour of the caching model (cache-key anatomy, reads, optimistic
+writes, and what refreshes the cache), see [Event Caching](./event-caching.md).
+The summary below is the runtime sequence.
+
 Typical event **read** flow:
 
 1. a view hook mounts a `useXEventsQuery` hook (day/week/someday)

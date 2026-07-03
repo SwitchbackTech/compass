@@ -167,6 +167,7 @@ const renderCoordinator = () => {
         <TestTimedEventTarget />
       </DayInteractionCoordinator>
     </Provider>,
+    { events: [timedEvent] },
   );
 
   return { dispatch, store };

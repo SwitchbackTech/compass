@@ -269,6 +269,333 @@ describe("useEventMutations", () => {
     toCalendar.pending.resolve();
   });
 
+  test("does not persist deletion of an event whose create is still pending", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+    const created = event({ _id: "created", title: "Created" });
+
+    act(() => context.hook.result.current.mutations.create(created));
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual(["created"]);
+    });
+
+    act(() => context.hook.result.current.mutations.delete({ _id: "created" }));
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.ids,
+      ).toEqual([]);
+    });
+    // The create has not persisted, so no backend delete should be issued.
+    expect(context.calls.some(({ method }) => method === "delete")).toBe(false);
+    context.pending.resolve();
+  });
+
+  test("does not persist Someday deletion for an event absent from cache", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(),
+      pagination: { data: [], page: 1, pageSize: 10, count: 0, offset: 0 },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.deleteSomeday({ _id: "ghost" }),
+    );
+
+    await waitFor(() => {
+      expect(context.markedWrites).toEqual(["marked"]);
+    });
+    expect(context.calls.some(({ method }) => method === "delete")).toBe(false);
+    expect(context.errors).toEqual([]);
+  });
+
+  test("inserts an edited event into a newly-matching cached range", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+    const movedIn = event({
+      _id: "mover",
+      title: "Moved In",
+      startDate: "2026-07-04T16:00:00.000Z",
+      endDate: "2026-07-04T17:00:00.000Z",
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "mover",
+        event: movedIn as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.entities.mover?.title,
+      ).toBe("Moved In");
+    });
+    context.pending.resolve();
+  });
+
+  test("removes an edited event from a range it no longer belongs to", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const movedOut = event({
+      // Push the event well outside the cached 2026-07-01..08 week.
+      startDate: "2026-09-01T16:00:00.000Z",
+      endDate: "2026-09-01T17:00:00.000Z",
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: movedOut as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.ids,
+      ).toEqual([]);
+    });
+    context.pending.resolve();
+  });
+
+  test("convertToCalendar to an off-screen range persists without throwing", async () => {
+    const context = setup();
+    const someday = event({ _id: "someday", isSomeday: true });
+    context.queryClient.setQueryData(calendarKey, normalized());
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(someday),
+      pagination: {
+        data: [someday],
+        page: 1,
+        pageSize: 10,
+        count: 1,
+        offset: 0,
+      },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.convertToCalendar({
+        event: {
+          _id: "someday",
+          // Target date is outside the cached 2026-07 week range.
+          startDate: "2026-08-20T16:00:00.000Z",
+          endDate: "2026-08-20T17:00:00.000Z",
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<SomedayEventQueryData>(somedayKey)
+          ?.ids,
+      ).toEqual([]);
+    });
+    context.pending.resolve();
+
+    await waitFor(() => {
+      expect(context.calls.some(({ method }) => method === "edit")).toBe(true);
+      expect(context.errors).toEqual([]);
+    });
+  });
+
+  test("marks the converting event pending during convertToSomeday", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(),
+      pagination: { data: [], page: 1, pageSize: 10, count: 0, offset: 0 },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.convertToSomeday({
+        event: { _id: "event-1" },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual(["event-1"]);
+    });
+    context.pending.resolve();
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual([]);
+    });
+  });
+
+  test("marks the converting event pending during convertToCalendar", async () => {
+    const context = setup();
+    const someday = event({ _id: "someday", isSomeday: true });
+    context.queryClient.setQueryData(calendarKey, normalized());
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(someday),
+      pagination: {
+        data: [someday],
+        page: 1,
+        pageSize: 10,
+        count: 1,
+        offset: 0,
+      },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.convertToCalendar({
+        event: {
+          _id: "someday",
+          startDate: "2026-07-03T16:00:00.000Z",
+          endDate: "2026-07-03T17:00:00.000Z",
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual(["someday"]);
+    });
+    context.pending.resolve();
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual([]);
+    });
+  });
+
+  test("does not mark individual events pending during reorderSomeday", async () => {
+    const context = setup();
+    const first = event({ _id: "first", isSomeday: true, order: 0 });
+    const second = event({ _id: "second", isSomeday: true, order: 1 });
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(first, second),
+      pagination: {
+        data: [first, second],
+        page: 1,
+        pageSize: 10,
+        count: 2,
+        offset: 0,
+      },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.reorderSomeday([
+        { _id: "first", order: 1 },
+        { _id: "second", order: 0 },
+      ]),
+    );
+
+    // Deliberate: a reorder repositions the whole Someday list and must not
+    // disable editing/deleting the reordered events, so it marks none pending.
+    await waitFor(() => {
+      expect(context.calls).toEqual([
+        {
+          method: "reorder",
+          value: [
+            { _id: "first", order: 1 },
+            { _id: "second", order: 0 },
+          ],
+        },
+      ]);
+    });
+    expect(context.hook.result.current.pendingIds).toEqual([]);
+    context.pending.resolve();
+  });
+
+  test("converts the source-scoped event, never a cross-source cache entry", async () => {
+    const context = setup();
+    const remoteCalendarKey = eventQueryKeys.list({
+      source: "remote",
+      scope: "week",
+      params: {
+        startDate: "2026-07-01T00:00:00.000Z",
+        endDate: "2026-07-08T00:00:00.000Z",
+        someday: false,
+      },
+    });
+    // Same id in both sources with divergent fields; the active source is local.
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(event({ title: "Local" })),
+    );
+    context.queryClient.setQueryData(
+      remoteCalendarKey,
+      normalized(event({ title: "Remote" })),
+    );
+
+    act(() =>
+      context.hook.result.current.mutations.convertToSomeday({
+        event: { _id: "event-1" },
+      }),
+    );
+
+    await waitFor(() => {
+      const editCall = context.calls.find(({ method }) => method === "edit");
+      expect(editCall).toBeDefined();
+      expect((editCall?.value as { event: Schema_Event }).event.title).toBe(
+        "Local",
+      );
+    });
+    context.pending.resolve();
+  });
+
+  test("persists the payload captured at mutate time despite later cache changes", async () => {
+    const context = setup();
+    const someday = event({
+      _id: "someday",
+      isSomeday: true,
+      title: "Original",
+    });
+    context.queryClient.setQueryData(calendarKey, normalized());
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(someday),
+      pagination: {
+        data: [someday],
+        page: 1,
+        pageSize: 10,
+        count: 1,
+        offset: 0,
+      },
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.convertToCalendar({
+        event: {
+          _id: "someday",
+          startDate: "2026-07-03T16:00:00.000Z",
+          endDate: "2026-07-03T17:00:00.000Z",
+        },
+      }),
+    );
+
+    // Simulate an SSE/refetch landing between mutate and settle.
+    act(() =>
+      context.queryClient.setQueryData(somedayKey, {
+        ...normalized(
+          event({ _id: "someday", isSomeday: true, title: "Changed" }),
+        ),
+        pagination: {
+          data: [],
+          page: 1,
+          pageSize: 10,
+          count: 1,
+          offset: 0,
+        },
+      }),
+    );
+
+    await waitFor(() => {
+      const editCall = context.calls.find(({ method }) => method === "edit");
+      expect(editCall).toBeDefined();
+      // The persisted value is the one snapshotted at mutate time, not the
+      // post-mutate cache value.
+      expect((editCall?.value as { event: Schema_Event }).event.title).toBe(
+        "Original",
+      );
+    });
+    context.pending.resolve();
+  });
+
   test("reorders Someday events optimistically", async () => {
     const context = setup();
     const first = event({ _id: "first", isSomeday: true, order: 0 });

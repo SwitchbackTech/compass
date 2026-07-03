@@ -12,6 +12,7 @@ import {
   screen,
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
+import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import {
   ID_GRID_COLUMNS_TIMED,
@@ -19,7 +20,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { createCompassQueryClient } from "@web/common/query/query-client";
 import { gridColorByPriority } from "@web/common/styles/theme.util";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
+import { eventMutationKeys } from "@web/ducks/events/mutations/event.mutation.keys";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -42,13 +43,14 @@ import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
 let pendingEventIds: string[] = [];
+let seededWeekEvents: Schema_Event[] = [];
 
 function Provider(props: ComponentProps<typeof ReduxProvider>) {
   const queryClient = createCompassQueryClient();
   for (const eventId of pendingEventIds) {
     queryClient.getMutationCache().build(
       queryClient,
-      { mutationKey: ["events", "mutation"] },
+      { mutationKey: eventMutationKeys.operation("edit") },
       {
         context: undefined,
         data: undefined,
@@ -62,20 +64,7 @@ function Provider(props: ComponentProps<typeof ReduxProvider>) {
       },
     );
   }
-  const events =
-    (
-      props.store as typeof props.store & {
-        __eventQueryTestEvents?: Schema_Event[];
-      }
-    ).__eventQueryTestEvents ?? [];
-  queryClient.setQueryDefaults(eventQueryKeys.scope("week"), {
-    initialData: {
-      ids: events.flatMap((event) => (event._id ? [event._id] : [])),
-      entities: Object.fromEntries(
-        events.flatMap((event) => (event._id ? [[event._id, event]] : [])),
-      ),
-    },
-  });
+  seedEventQueries(queryClient, seededWeekEvents);
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -96,6 +85,7 @@ afterEach(() => {
   setWeekInteractionMotionActive(false);
   weekEventRegistry.clear();
   pendingEventIds = [];
+  seededWeekEvents = [];
 });
 
 const startOfView = dayjs("2024-01-14T00:00:00.000");
@@ -120,26 +110,9 @@ const createStore = (
   draftEvent: Schema_Event | null = null,
 ) => {
   const preloadedState = createInitialState();
-  const eventIds: string[] = [];
-  const eventEntities: Record<string, Schema_Event> = {};
-
-  for (const event of events) {
-    if (!event._id) {
-      continue;
-    }
-
-    eventIds.push(event._id);
-    eventEntities[event._id] = event;
-  }
-
-  preloadedState.events.entities!.value = eventEntities;
-  preloadedState.events.getWeekEvents!.value = {
-    count: eventIds.length,
-    data: eventIds,
-    offset: 0,
-    page: 1,
-    pageSize: eventIds.length || 1,
-  };
+  // Seed the real event query cache (not the deleted Redux event slices) when
+  // the local Provider mounts its QueryClient.
+  seededWeekEvents = events;
 
   if (draftEvent) {
     preloadedState.events.draft = {
@@ -156,7 +129,7 @@ const createStore = (
     };
   }
 
-  const store = configureStore({
+  return configureStore({
     preloadedState,
     reducer: reducers,
     middleware: (getDefaultMiddleware) =>
@@ -166,7 +139,6 @@ const createStore = (
         thunk: false,
       }),
   });
-  return Object.assign(store, { __eventQueryTestEvents: events });
 };
 
 const createDateCalcs = () => ({

@@ -12,6 +12,7 @@ import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 const DELETE_EVENT_REQUEST = "deleteEvent/request";
 
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
+import { eventMutationKeys } from "@web/ducks/events/mutations/event.mutation.keys";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
@@ -124,7 +125,7 @@ const renderShortcuts = (options?: {
   for (const eventId of pendingEventIds) {
     queryClient.getMutationCache().build(
       queryClient,
-      { mutationKey: ["events", "mutation"] },
+      { mutationKey: eventMutationKeys.operation("edit") },
       {
         context: undefined,
         data: undefined,

@@ -1,16 +1,15 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import {
   type Payload_Order,
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
 import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
 import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { getEventRepositoryBySource } from "@web/common/repositories/event/event.repository.util";
-import { handleError, hasEventDates } from "@web/common/utils/event/event.util";
+import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   type Payload_ConvertEvent,
@@ -18,13 +17,14 @@ import {
   type Payload_EditEvent,
 } from "@web/ducks/events/event.types";
 import {
+  eventBelongsToEntry,
   findEventInCache,
   insertEventIntoQueries,
-  patchEventInQueries,
   removeEventFromQueries,
   reorderSomedayEventsInQueries,
   restoreEventQueries,
   snapshotEventQueries,
+  upsertEventAcrossQueries,
 } from "@web/ducks/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { type EventQuerySnapshot } from "@web/ducks/events/queries/event.query.types";
@@ -35,6 +35,22 @@ import {
 import { markAnonymousEventWrite } from "./event.mutation.runtime";
 
 type MutationContext = { snapshots: EventQuerySnapshot[] };
+
+// Convert mutations capture the fully-resolved converted event at the
+// `.mutate()` boundary (see wrappers below) so `onMutate` and the async
+// `mutationFn` operate on the identical snapshot even if the cache changes
+// (SSE/refetch) between them.
+type ConvertVariables = {
+  event: Payload_ConvertEvent["event"];
+  converted: Schema_Event | null;
+};
+
+// Delete mutations capture, at the `.mutate()` boundary, whether the backend
+// delete must be skipped: an event whose optimistic create is still in flight
+// has no server-side id yet (deleting it would 404), and a Someday event absent
+// from the cache has nothing to delete. In both cases we still remove
+// optimistically but do not issue a repository write.
+type DeleteVariables = Payload_DeleteEvent & { skipRepository: boolean };
 
 export type EventMutations = {
   create: (event: Schema_Event) => void;
@@ -51,18 +67,6 @@ export type EventMutationDependencies = {
   repository?: EventRepository;
   markWrite?: () => Promise<unknown>;
   reportError?: (error: Error) => void;
-};
-
-const eventMatchesRange = (
-  event: Schema_Event,
-  startDate?: string,
-  endDate?: string,
-) => {
-  if (!hasEventDates(event) || !startDate || !endDate) return false;
-  return (
-    dayjs(event.startDate).isBefore(dayjs(endDate)) &&
-    dayjs(event.endDate).isAfter(dayjs(startDate))
-  );
 };
 
 export function useEventMutations(
@@ -107,18 +111,32 @@ export function useEventMutations(
     onError: rollback,
     onSettled: settle,
   });
-  const convertedEvent = (
-    event: Payload_ConvertEvent["event"],
-    isSomeday: boolean,
-  ) => {
-    const existing =
-      findEventInCache(queryClient, event._id, source) ??
-      findEventInCache(queryClient, event._id);
-    if (!existing) return null;
-    const converted = { ...existing, ...event, isSomeday } as Schema_Event;
-    if (!isSomeday) delete converted.recurrence;
-    return converted;
-  };
+  // Non-hook check for an in-flight optimistic create of `id`, so the delete
+  // wrapper can decide (at call time) whether the backend still lacks this id.
+  const isCreateInFlight = useCallback(
+    (id: string) =>
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some((mutation) => {
+          if (mutation.state.status !== "pending") return false;
+          const key = mutation.options.mutationKey;
+          if (!Array.isArray(key) || key[2] !== "create") return false;
+          return (mutation.state.variables as { _id?: string })?._id === id;
+        }),
+    [queryClient],
+  );
+
+  const convertedEvent = useCallback(
+    (event: Payload_ConvertEvent["event"], isSomeday: boolean) => {
+      const existing = findEventInCache(queryClient, event._id, source);
+      if (!existing) return null;
+      const converted = { ...existing, ...event, isSomeday } as Schema_Event;
+      if (!isSomeday) delete converted.recurrence;
+      return converted;
+    },
+    [queryClient, source],
+  );
 
   const createMutation = useMutation(
     buildMutation<Schema_Event>(
@@ -129,14 +147,9 @@ export function useEventMutations(
         return event;
       },
       (event) =>
-        insertEventIntoQueries(queryClient, event, ({ metadata, scope }) => {
-          if (metadata.source !== source) return false;
-          if (event.isSomeday) return scope === "someday";
-          return (
-            scope !== "someday" &&
-            eventMatchesRange(event, metadata.startDate, metadata.endDate)
-          );
-        }),
+        insertEventIntoQueries(queryClient, event, (entry) =>
+          eventBelongsToEntry(event, entry, source),
+        ),
     ),
   );
 
@@ -148,17 +161,28 @@ export function useEventMutations(
         await markWrite();
       },
       ({ _id, event, shouldRemove }) => {
-        if (shouldRemove) removeEventFromQueries(queryClient, _id, { source });
-        else patchEventInQueries(queryClient, _id, event, { source });
+        if (shouldRemove) {
+          removeEventFromQueries(queryClient, _id, { source });
+          return;
+        }
+        // Upsert (not patch) so an event edited/dragged into a currently-cached
+        // range it wasn't previously a member of renders optimistically, and
+        // one dragged out of a range is removed from it.
+        upsertEventAcrossQueries(
+          queryClient,
+          { ...event, _id },
+          (entry) => eventBelongsToEntry({ ...event, _id }, entry, source),
+          { source },
+        );
       },
     ),
   );
 
   const deleteMutation = useMutation(
-    buildMutation<Payload_DeleteEvent>(
+    buildMutation<DeleteVariables>(
       "delete",
-      async ({ _id, applyTo }) => {
-        await repository.delete(_id, applyTo);
+      async ({ _id, applyTo, skipRepository }) => {
+        if (!skipRepository) await repository.delete(_id, applyTo);
         await markWrite();
       },
       ({ _id }) => removeEventFromQueries(queryClient, _id, { source }),
@@ -166,10 +190,9 @@ export function useEventMutations(
   );
 
   const convertToSomedayMutation = useMutation(
-    buildMutation<Payload_ConvertEvent>(
+    buildMutation<ConvertVariables>(
       "convert-to-someday",
-      async ({ event }) => {
-        const converted = convertedEvent(event, true);
+      async ({ event, converted }) => {
         if (!converted) {
           throw new Error(`Event ${event._id} not found for conversion`);
         }
@@ -179,52 +202,44 @@ export function useEventMutations(
         await repository.edit(event._id, converted, { applyTo });
         await markWrite();
       },
-      ({ event }) => {
-        const converted = convertedEvent(event, true);
+      ({ event, converted }) => {
         if (!converted) return;
         removeEventFromQueries(queryClient, event._id, { source });
-        insertEventIntoQueries(
-          queryClient,
-          converted,
-          ({ metadata, scope }) =>
-            metadata.source === source && scope === "someday",
+        insertEventIntoQueries(queryClient, converted, (entry) =>
+          eventBelongsToEntry(converted, entry, source),
         );
       },
     ),
   );
 
   const convertToCalendarMutation = useMutation(
-    buildMutation<Payload_ConvertEvent>(
+    buildMutation<ConvertVariables>(
       "convert-to-calendar",
-      async ({ event }) => {
-        const converted = convertedEvent(event, false);
+      async ({ event, converted }) => {
         if (!converted) {
           throw new Error(`Event ${event._id} not found for conversion`);
         }
+        // Persist the captured event even when it overlaps no cached calendar
+        // range (off-screen target): the optimistic insert simply matches
+        // nothing, and settle-time invalidation establishes canonical membership.
         await repository.edit(event._id, converted, {});
         await markWrite();
       },
-      ({ event }) => {
-        const converted = convertedEvent(event, false);
+      ({ event, converted }) => {
         if (!converted) return;
         removeEventFromQueries(queryClient, event._id, { source });
-        insertEventIntoQueries(
-          queryClient,
-          converted,
-          ({ metadata, scope }) =>
-            metadata.source === source &&
-            scope !== "someday" &&
-            eventMatchesRange(converted, metadata.startDate, metadata.endDate),
+        insertEventIntoQueries(queryClient, converted, (entry) =>
+          eventBelongsToEntry(converted, entry, source),
         );
       },
     ),
   );
 
   const deleteSomedayMutation = useMutation(
-    buildMutation<Payload_DeleteEvent>(
+    buildMutation<DeleteVariables>(
       "delete-someday",
-      async ({ _id, applyTo }) => {
-        await repository.delete(_id, applyTo);
+      async ({ _id, applyTo, skipRepository }) => {
+        if (!skipRepository) await repository.delete(_id, applyTo);
         await markWrite();
       },
       ({ _id }) =>
@@ -251,13 +266,33 @@ export function useEventMutations(
           _id: event._id ?? createObjectIdString(),
         }),
       edit: editMutation.mutate,
-      delete: deleteMutation.mutate,
-      convertToSomeday: convertToSomedayMutation.mutate,
-      convertToCalendar: convertToCalendarMutation.mutate,
-      deleteSomeday: deleteSomedayMutation.mutate,
+      delete: (payload: Payload_DeleteEvent) =>
+        deleteMutation.mutate({
+          ...payload,
+          skipRepository: isCreateInFlight(payload._id),
+        }),
+      convertToSomeday: (payload: Payload_ConvertEvent) =>
+        convertToSomedayMutation.mutate({
+          event: payload.event,
+          converted: convertedEvent(payload.event, true),
+        }),
+      convertToCalendar: (payload: Payload_ConvertEvent) =>
+        convertToCalendarMutation.mutate({
+          event: payload.event,
+          converted: convertedEvent(payload.event, false),
+        }),
+      deleteSomeday: (payload: Payload_DeleteEvent) =>
+        deleteSomedayMutation.mutate({
+          ...payload,
+          skipRepository: !findEventInCache(queryClient, payload._id, source),
+        }),
       reorderSomeday: reorderSomedayMutation.mutate,
     }),
     [
+      convertedEvent,
+      isCreateInFlight,
+      queryClient,
+      source,
       createMutation.mutate,
       deleteMutation.mutate,
       deleteSomedayMutation.mutate,

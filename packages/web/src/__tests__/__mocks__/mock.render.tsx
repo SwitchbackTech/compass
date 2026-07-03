@@ -13,7 +13,7 @@ import {
 } from "react";
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { type Store } from "redux";
-import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
+import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import { createCompassQueryClient } from "@web/common/query/query-client";
@@ -33,6 +33,8 @@ interface CustomRenderOptions extends RenderOptions {
   store?: Store<RootState>;
   router?: RouterProviderProps["router"];
   wrapper?: ComponentType<PropsWithChildren>;
+  /** Seed the event query cache directly (replaces the Redux→query bridge). */
+  events?: Array<{ _id?: string }>;
 }
 
 interface CustomRenderHookOptions<Props>
@@ -91,34 +93,11 @@ const customRender = (
       queryClient,
     }),
     wrapper: CustomWrapper,
+    events,
     ...renderOptions
   }: CustomRenderOptions = {},
 ) => {
-  const findNestedStore = (node: unknown): Store<RootState> | undefined => {
-    if (!node || typeof node !== "object" || !("props" in node)) return;
-    const props = (
-      node as { props: { children?: unknown; store?: Store<RootState> } }
-    ).props;
-    if (props.store) return props.store;
-    const children = Array.isArray(props.children)
-      ? props.children
-      : [props.children];
-    for (const child of children) {
-      const childStore = findNestedStore(child);
-      if (childStore) return childStore;
-    }
-  };
-  const nestedStore = findNestedStore(ui);
-  const eventQueryTestEvents = (
-    (nestedStore ?? store) as Store<RootState> & {
-      __eventQueryTestEvents?: Array<{ _id?: string }>;
-    }
-  ).__eventQueryTestEvents;
-  if (eventQueryTestEvents?.length) {
-    queryClient.setQueryDefaults(["events"], {
-      initialData: toNormalizedEventQueryData(eventQueryTestEvents),
-    });
-  }
+  if (events?.length) seedEventQueries(queryClient, events);
   const options: RenderOptions = { ...renderOptions };
   const Wrapper = ({ children }: PropsWithChildren) => {
     if (!CustomWrapper) {
@@ -162,9 +141,11 @@ const customRenderHook = <ReturnType, Props>(
       preloadedState: state,
       queryClient,
     }),
+    events,
     ...renderOptions
   }: CustomRenderHookOptions<Props> = {},
 ) => {
+  if (events?.length) seedEventQueries(queryClient, events);
   const options: RenderHookOptions<Props> = { ...renderOptions };
 
   const Wrapper = (props: PropsWithChildren) => {

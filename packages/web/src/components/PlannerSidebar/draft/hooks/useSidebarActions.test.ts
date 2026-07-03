@@ -73,26 +73,12 @@ const createSetters = (): Setters_Sidebar =>
 describe("useSidebarActions", () => {
   beforeEach(() => {
     currentState = createInitialState();
-    currentState.events.entities!.value = {
-      [somedayEvent._id!]: somedayEvent,
-    };
-    currentState.events.getSomedayEvents = {
-      error: null,
-      isProcessing: false,
-      isSuccess: true,
-      reason: null,
-      value: {
-        count: 1,
-        data: [somedayEvent._id!],
-        offset: 0,
-        page: 1,
-        pageSize: 1,
-      },
-    };
   });
 
   it("schedules a dropped Someday event immediately", async () => {
-    const { queryClient, store, wrapper } = createStoreWrapper(currentState);
+    const { queryClient, store, wrapper } = createStoreWrapper(currentState, {
+      events: [somedayEvent],
+    });
     const dispatchSpy = spyOn(store, "dispatch");
     const { result } = renderHook(
       () =>
