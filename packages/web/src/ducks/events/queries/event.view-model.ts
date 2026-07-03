@@ -47,9 +47,17 @@ const rowCountFrom = (events: Schema_GridEvent[]) => {
   return rows.length === 0 ? 1 : Math.max(...rows);
 };
 
-export const deriveCalendarEventViewModel = (
+type CalendarEventViewModel = {
+  entities: NormalizedEventQueryData["entities"];
+  events: Schema_Event[];
+  timedEvents: Schema_GridEvent[];
+  allDayEvents: Schema_GridEvent[];
+  rowCount: number;
+};
+
+const computeCalendarEventViewModel = (
   data?: NormalizedEventQueryData,
-) => {
+): CalendarEventViewModel => {
   const events = eventsFrom(data);
   const timedEvents = timedEventsFrom(events);
   const allDayEvents = allDayEventsFrom(events);
@@ -60,6 +68,29 @@ export const deriveCalendarEventViewModel = (
     allDayEvents,
     rowCount: rowCountFrom(allDayEvents),
   };
+};
+
+// Module-level memo keyed on the `query.data` object reference. The Week view
+// model is consumed by many components; a per-hook `useMemo` recomputes the
+// filter + grid assembly independently in each. Caching on the data reference
+// (stable while the cache entry is unchanged) collapses that to a single
+// derivation shared by every consumer, and keeps the result referentially
+// stable across renders.
+const viewModelCache = new WeakMap<
+  NormalizedEventQueryData,
+  CalendarEventViewModel
+>();
+const EMPTY_CALENDAR_VIEW_MODEL = computeCalendarEventViewModel(undefined);
+
+export const deriveCalendarEventViewModel = (
+  data?: NormalizedEventQueryData,
+): CalendarEventViewModel => {
+  if (!data) return EMPTY_CALENDAR_VIEW_MODEL;
+  const cached = viewModelCache.get(data);
+  if (cached) return cached;
+  const result = computeCalendarEventViewModel(data);
+  viewModelCache.set(data, result);
+  return result;
 };
 
 export function deriveSomedayEventViewModel(

@@ -24,7 +24,9 @@ type EventQueryFilter = {
   scope?: EventQueryScope;
 };
 
-const isEventQueryKey = (queryKey: QueryKey): queryKey is EventQueryKey => {
+export const isEventQueryKey = (
+  queryKey: QueryKey,
+): queryKey is EventQueryKey => {
   if (queryKey[0] !== eventQueryKeys.all[0] || queryKey.length !== 3) {
     return false;
   }

@@ -19,6 +19,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { createCompassQueryClient } from "@web/common/query/query-client";
 import { gridColorByPriority } from "@web/common/styles/theme.util";
+import { eventMutationKeys } from "@web/ducks/events/mutations/event.mutation.keys";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { reducers } from "@web/store/reducers";
@@ -48,7 +49,7 @@ function Provider(props: ComponentProps<typeof ReduxProvider>) {
   for (const eventId of pendingEventIds) {
     queryClient.getMutationCache().build(
       queryClient,
-      { mutationKey: ["events", "mutation"] },
+      { mutationKey: eventMutationKeys.operation("edit") },
       {
         context: undefined,
         data: undefined,
