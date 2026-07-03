@@ -74,7 +74,9 @@ const request = async <T>(
     }
 
     if (isApiError(error)) {
-      return handleErrorResponse<ApiResponse<T>>(error);
+      return handleErrorResponse<ApiResponse<T>>(error, {
+        onGoogleRevoked: BaseApi.defaults.onGoogleRevoked,
+      });
     }
 
     throw createApiError(requestConfig);
@@ -84,6 +86,7 @@ const request = async <T>(
 export const BaseApi = {
   defaults: {
     adapter: undefined as ApiAdapter | undefined,
+    onGoogleRevoked: undefined as (() => void) | undefined,
     withCredentials: true,
   },
   delete<T>(url: string, config?: ApiMethodConfig) {

@@ -5,7 +5,6 @@ import {
   type GoogleConnectErrorResponse,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
-import { handleGoogleRevoked } from "@web/auth/google/util/google.auth.util";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "../../constants/env.constants";
 import { ROOT_ROUTES } from "../../constants/routes";
@@ -115,7 +114,14 @@ export const getResponseData = async (response: Response): Promise<unknown> => {
   }
 };
 
-export const handleErrorResponse = async <T>(error: ApiError) => {
+interface ApiErrorResponseDependencies {
+  onGoogleRevoked?: () => void;
+}
+
+export const handleErrorResponse = async <T>(
+  error: ApiError,
+  { onGoogleRevoked }: ApiErrorResponseDependencies,
+) => {
   const requestUrl = error.config?.url;
   const status = error.response?.status;
 
@@ -134,7 +140,11 @@ export const handleErrorResponse = async <T>(error: ApiError) => {
     (status === Status.GONE || status === Status.UNAUTHORIZED) &&
     getApiErrorCode(error) === GOOGLE_REVOKED
   ) {
-    handleGoogleRevoked();
+    if (!onGoogleRevoked) {
+      throw new Error("Google revocation handler is not configured");
+    }
+
+    onGoogleRevoked();
     throw error;
   }
 

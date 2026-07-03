@@ -9,9 +9,21 @@
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
-import { createGetEventRepository } from "./event.repository.factory";
+import {
+  createGetEventRepository,
+  createGetEventRepositorySource,
+} from "./event.repository.factory";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
+
+/**
+ * Determines the repository source (local or remote) based on session and authentication state.
+ */
+export const getEventRepositorySource = createGetEventRepositorySource({
+  hasUserEverAuthenticated,
+  isBackendUnavailable,
+  isGoogleRevoked,
+});
 
 /**
  * Factory function to get the appropriate event repository based on session and authentication state.

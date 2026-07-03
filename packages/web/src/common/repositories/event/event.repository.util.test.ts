@@ -1,7 +1,68 @@
-import { createGetEventRepository } from "./event.repository.factory";
+import {
+  createGetEventRepository,
+  createGetEventRepositorySource,
+} from "./event.repository.factory";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
 import { beforeEach, describe, expect, it } from "bun:test";
+
+describe("getEventRepositorySource", () => {
+  let hasUserEverAuthenticated = false;
+  let isBackendUnavailable = false;
+  let isGoogleRevoked = false;
+
+  const getEventRepositorySource = createGetEventRepositorySource({
+    hasUserEverAuthenticated: () => hasUserEverAuthenticated,
+    isBackendUnavailable: () => isBackendUnavailable,
+    isGoogleRevoked: () => isGoogleRevoked,
+  });
+
+  beforeEach(() => {
+    hasUserEverAuthenticated = false;
+    isBackendUnavailable = false;
+    isGoogleRevoked = false;
+  });
+
+  it("returns 'remote' when a session exists", () => {
+    expect(getEventRepositorySource(true)).toBe("remote");
+  });
+
+  it("returns 'local' when no session exists", () => {
+    expect(getEventRepositorySource(false)).toBe("local");
+  });
+
+  it("returns 'remote' when a returning user has no active session", () => {
+    hasUserEverAuthenticated = true;
+
+    expect(getEventRepositorySource(false)).toBe("remote");
+  });
+
+  it("returns 'local' when Google disconnected Compass", () => {
+    isGoogleRevoked = true;
+
+    expect(getEventRepositorySource(true)).toBe("local");
+  });
+
+  it("returns 'local' when Google disconnected Compass for a returning user", () => {
+    hasUserEverAuthenticated = true;
+    isGoogleRevoked = true;
+
+    expect(getEventRepositorySource(false)).toBe("local");
+  });
+
+  it("returns 'local' for a returning user when the backend is unavailable", () => {
+    hasUserEverAuthenticated = true;
+    isBackendUnavailable = true;
+
+    expect(getEventRepositorySource(false)).toBe("local");
+  });
+
+  it("returns 'local' for an active session when the backend is unavailable", () => {
+    isBackendUnavailable = true;
+
+    expect(getEventRepositorySource(true)).toBe("local");
+  });
+});
 
 describe("getEventRepository", () => {
   let hasUserEverAuthenticated = false;
