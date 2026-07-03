@@ -164,19 +164,6 @@ describe("useDraftActions", () => {
         isFormOpen: false,
       },
     };
-    currentState.events.getWeekEvents = {
-      error: null,
-      isProcessing: false,
-      isSuccess: true,
-      reason: null,
-      value: {
-        count: 1,
-        data: ["event-1"],
-        offset: 0,
-        page: 1,
-        pageSize: 1,
-      },
-    };
   });
 
   it("creates a new event when duplicating an existing week event", async () => {

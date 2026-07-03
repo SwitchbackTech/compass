@@ -29,6 +29,7 @@ import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
 let store: ReturnType<typeof createStoreWithEvents>;
+let seededEvents: Schema_Event[] = [];
 const originalScroll = HTMLElement.prototype.scroll;
 
 const measurements = {
@@ -113,6 +114,7 @@ const renderDayCalendarGrid = () => ({
       </Provider>
       <button type="button">Outside calendar</button>
     </>,
+    { events: seededEvents },
   ),
 });
 
@@ -149,6 +151,7 @@ const createAllDayEvent = (
   }) as Schema_Event;
 
 const setDayEvents = (events: Schema_Event[]) => {
+  seededEvents = events;
   store = createStoreWithEvents(events);
 };
 
@@ -197,6 +200,7 @@ const expectFormAnchoredTo = (card: HTMLElement, cardRect: DOMRect) => {
 };
 
 beforeEach(() => {
+  seededEvents = [];
   store = createStoreWithEvents([]);
   latestEventForm = null;
 });
