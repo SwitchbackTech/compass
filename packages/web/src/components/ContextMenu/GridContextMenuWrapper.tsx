@@ -5,6 +5,7 @@ import {
   shift,
   useFloating,
 } from "@floating-ui/react";
+import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useState } from "react";
 import { Categories_Event } from "@core/types/event.types";
@@ -13,12 +14,9 @@ import {
   getCalendarEventIdFromElement,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
+import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
+import { findEventInCache } from "@web/ducks/events/queries/event.query.cache";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
-import {
-  selectAllDayEvents,
-  selectGridEvents,
-} from "@web/ducks/events/selectors/event.selectors";
-import { selectSomedayEvents } from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { ContextMenu } from "./ContextMenu";
@@ -31,12 +29,8 @@ export const ContextMenuWrapper = ({
   children: React.ReactNode;
 }) => {
   const dispatch = useAppDispatch();
-  const timedEvents = useAppSelector(selectGridEvents);
-  const allDayEvents = useAppSelector(selectAllDayEvents);
-  const somedayEvents = useAppSelector(selectSomedayEvents);
-  const pendingEventIds = useAppSelector(
-    (state) => state.events.pendingEvents.eventIds,
-  );
+  const queryClient = useQueryClient();
+  const pendingEventIds = usePendingEventIds();
 
   const draftEvent = useAppSelector(selectDraft);
 
@@ -56,10 +50,7 @@ export const ContextMenuWrapper = ({
   });
 
   const getSelectedEvent = (eventId: string) => {
-    const selectedEvent =
-      timedEvents.find((ev) => ev._id === eventId) ||
-      allDayEvents.find((ev) => ev._id === eventId) ||
-      Object.values(somedayEvents).find((ev) => ev._id === eventId);
+    const selectedEvent = findEventInCache(queryClient, eventId);
 
     if (!selectedEvent) {
       throw new Error("Selected event not found");

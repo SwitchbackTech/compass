@@ -38,24 +38,16 @@ import {
   type SomedayInteractionCommitResult,
   type SomedaySidebarCommitResult,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter.types";
+import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
+import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import {
   selectDraft,
   selectDraftActivity,
   selectDraftCategory,
   selectIsDrafting,
 } from "@web/ducks/events/selectors/draft.selectors";
-import {
-  selectIsAtMonthlyLimit,
-  selectIsAtWeeklyLimit,
-} from "@web/ducks/events/selectors/someday.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
-import {
-  createEventSlice,
-  deleteEventSlice,
-  editEventSlice,
-} from "@web/ducks/events/slices/event.slice";
-import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { parseSomedayEventBeforeSubmit } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
@@ -214,14 +206,17 @@ export const useSidebarActions = (
   setters: Setters_Sidebar,
 ) => {
   const dispatch = useAppDispatch();
+  const eventMutations = useEventMutations();
   const interactionPreviewKeyRef = useRef<string | null>(null);
   const interactionSnapshotRef = useRef<State_Sidebar["somedayEvents"] | null>(
     null,
   );
 
   const isDrafting = useAppSelector(selectIsDrafting);
-  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
-  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
+  const { isAtMonthlyLimit, isAtWeeklyLimit } = useSomedayEventViewModel(
+    view.viewStart,
+    view.viewEnd,
+  );
   const reduxDraft = useAppSelector(selectDraft);
   const draftType = useAppSelector(selectDraftCategory);
   const activity = useAppSelector(selectDraftActivity);
@@ -421,16 +416,14 @@ export const useSidebarActions = (
   const commitSomedayInteraction = (result: SomedayInteractionCommitResult) => {
     if (result.type === "schedule") {
       clearSomedayInteractionPreview({ shouldRestore: true });
-      dispatch(
-        getSomedayEventsSlice.actions.convert({
-          event: {
-            ...result.dates,
-            _id: result.eventId,
-            isAllDay: result.isAllDay,
-            isSomeday: false,
-          },
-        }),
-      );
+      eventMutations.convertToCalendar({
+        event: {
+          ...result.dates,
+          _id: result.eventId,
+          isAllDay: result.isAllDay,
+          isSomeday: false,
+        },
+      });
       discardSomedayInteraction();
       return;
     }
@@ -471,12 +464,7 @@ export const useSidebarActions = (
     const confirmed = window.confirm(`Delete ${prefix}${title}?`);
 
     if (confirmed && eventToDelete?._id) {
-      dispatch(
-        deleteEventSlice.actions.request({
-          _id: eventToDelete._id,
-          applyTo,
-        }),
-      );
+      eventMutations.deleteSomeday({ _id: eventToDelete._id, applyTo });
     }
 
     close();
@@ -489,7 +477,7 @@ export const useSidebarActions = (
     const { _id: _duplicatedEventId, ...duplicateEvent } =
       MapEvent.removeProviderData(eventToDuplicate);
 
-    dispatch(createEventSlice.actions.request(duplicateEvent));
+    eventMutations.create(duplicateEvent);
     close();
   };
 
@@ -544,14 +532,12 @@ export const useSidebarActions = (
       if (!hasEventDates(_event)) return;
 
       const eventId = _event._id;
-      dispatch(
-        editEventSlice.actions.request({
-          _id: eventId,
-          event: assembleWebEvent(_event),
-        }),
-      );
+      eventMutations.edit({
+        _id: eventId,
+        event: assembleWebEvent(_event),
+      });
     } else {
-      dispatch(createEventSlice.actions.request(_event));
+      eventMutations.create(_event);
     }
 
     close();
@@ -641,13 +627,7 @@ export const useSidebarActions = (
           ? RecurringEventUpdateScope.ALL_EVENTS
           : RecurringEventUpdateScope.THIS_EVENT;
 
-      dispatch(
-        editEventSlice.actions.request({
-          _id: eventId,
-          event: parsedEvent,
-          applyTo,
-        }),
-      );
+      eventMutations.edit({ _id: eventId, event: parsedEvent, applyTo });
     } else {
       const columnName = getSomedayColumnName(category);
       const column = state.somedayEvents.columns[columnName];
@@ -675,7 +655,7 @@ export const useSidebarActions = (
         },
       });
 
-      dispatch(createEventSlice.actions.request(eventWithOrder));
+      eventMutations.create(eventWithOrder);
     }
 
     close();
@@ -771,14 +751,12 @@ export const useSidebarActions = (
       },
     };
     setSomedayEvents(newState);
-    dispatch(getSomedayEventsSlice.actions.reorder(orderUpdates));
+    eventMutations.reorderSomeday(orderUpdates);
 
-    dispatch(
-      editEventSlice.actions.request({
-        _id: draggedEventId,
-        event: assembleWebEvent(draggedEvent),
-      }),
-    );
+    eventMutations.edit({
+      _id: draggedEventId,
+      event: assembleWebEvent(draggedEvent),
+    });
   };
 
   const handleSameColumnReordering = (
@@ -811,7 +789,7 @@ export const useSidebarActions = (
       _id,
       order: index,
     }));
-    dispatch(getSomedayEventsSlice.actions.reorder(newOrder));
+    eventMutations.reorderSomeday(newOrder);
   };
 
   const reorderSomedayEvent = (result: SomedayReorderResult) => {

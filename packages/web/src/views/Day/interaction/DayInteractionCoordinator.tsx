@@ -4,17 +4,8 @@ import { type CalendarLayoutCacheSources } from "@web/common/calendar-grid/inter
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  assembleGridEvent,
-  type EventWithDates,
-  hasEventDates,
-} from "@web/common/utils/event/event.util";
+import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import { selectIsEventFormOpen } from "@web/ducks/events/selectors/draft.selectors";
-import {
-  selectDayEvents,
-  selectTimedDayEvents,
-} from "@web/ducks/events/selectors/event.selectors";
-import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import {
@@ -27,25 +18,25 @@ import {
 } from "./adapter/DayInteractionAdapter";
 
 interface Props extends PropsWithChildren {
+  allDayEvents?: Schema_GridEvent[];
   dateInView: Dayjs;
   getLayoutSources: () => CalendarLayoutCacheSources;
   onOpenEvent: (event: Schema_GridEvent) => void;
+  timedEvents?: Schema_GridEvent[];
 }
 
+const EMPTY_GRID_EVENTS: Schema_GridEvent[] = [];
+
 export const DayInteractionCoordinator: FC<Props> = ({
+  allDayEvents = EMPTY_GRID_EVENTS,
   children,
   dateInView,
   getLayoutSources,
   onOpenEvent,
+  timedEvents = EMPTY_GRID_EVENTS,
 }) => {
   const dispatch = useAppDispatch();
-  const dayEvents = useAppSelector(selectDayEvents);
-  const allDayEvents = useMemo(
-    () => getAllDayDayEvents(dayEvents),
-    [dayEvents],
-  );
-  const timedEvents = useAppSelector(selectTimedDayEvents);
-  const pendingEventIds = useAppSelector(selectPendingEventIds);
+  const pendingEventIds = usePendingEventIds();
   const updateEvent = useUpdateEvent();
   const isFormOpen = useAppSelector(selectIsEventFormOpen);
   const isFormOpenRef = useRef(isFormOpen);
@@ -127,14 +118,6 @@ export const DayInteractionCoordinator: FC<Props> = ({
     </CalendarInteractionPointerCaptureBoundary>
   );
 };
-
-const getAllDayDayEvents = (events: ReturnType<typeof selectDayEvents>) =>
-  events
-    .filter(
-      (event): event is EventWithDates =>
-        Boolean(event.isAllDay) && hasEventDates(event),
-    )
-    .map(assembleGridEvent);
 
 const mapEventsById = (events: Schema_GridEvent[]) => {
   const eventsById = new Map<string, Schema_GridEvent>();

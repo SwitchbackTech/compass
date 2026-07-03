@@ -17,8 +17,7 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import { ContextMenu } from "@web/components/ContextMenu/ContextMenu";
 import { type ContextMenuItemsActions } from "@web/components/ContextMenu/ContextMenuItems";
-import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 
@@ -29,7 +28,7 @@ export const useDayCalendarContextMenu = ({
   getDayEventById: (eventId: string) => Schema_GridEvent | null;
   onOpenEvent: (event: Schema_GridEvent) => void;
 }) => {
-  const pendingEventIds = useAppSelector(selectPendingEventIds);
+  const pendingEventIds = usePendingEventIds();
   const [contextMenuEvent, setContextMenuEvent] =
     useState<Schema_GridEvent | null>(null);
   const [isOpen, setIsOpen] = useState(false);

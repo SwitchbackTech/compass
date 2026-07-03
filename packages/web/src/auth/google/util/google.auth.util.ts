@@ -3,6 +3,7 @@ import { markGoogleAsRevoked } from "@web/auth/google/state/google.auth.state";
 import { queryClient } from "@web/common/query/query-client";
 import { refreshEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
+import { removeEventsByOriginFromQueries } from "@web/ducks/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
 import { store } from "@web/store";
@@ -20,8 +21,21 @@ const googleAuthUtil = createGoogleAuthUtil({
   markGoogleAsRevoked,
   openStream,
   refreshEventRepositorySource,
+  removeEventsByOrigin: (origins) =>
+    removeEventsByOriginFromQueries(queryClient, origins),
   removeEventQueries: () =>
-    queryClient.removeQueries({ queryKey: eventQueryKeys.all }),
+    queryClient.removeQueries({
+      queryKey: eventQueryKeys.all,
+      predicate: ({ queryKey }) => {
+        const metadata = queryKey[2];
+        return (
+          typeof metadata === "object" &&
+          metadata !== null &&
+          "source" in metadata &&
+          metadata.source === "remote"
+        );
+      },
+    }),
   syncLocalEventsToCloud: () => syncLocalEventsToCloud(),
   toastError: toast.error,
 });

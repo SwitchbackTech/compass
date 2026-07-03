@@ -172,23 +172,21 @@ The web app uses multiple state layers:
 
 | Concern | Use | Key files |
 | --- | --- | --- |
-| Loading states, modal visibility, async status | Redux Toolkit slices | `packages/web/src/ducks/events/slices/` |
-| Event mutation orchestration (create/edit/delete/convert/reorder) | Redux Toolkit listeners and async operations | `packages/web/src/ducks/events/listeners/`, `packages/web/src/ducks/events/operations/` |
-| Event read fetching + caching (day, week, someday) | TanStack Query `useQuery` hooks + `queryOptions` | `packages/web/src/ducks/events/queries/` |
-| Event entity CRUD, active event, and draft state | `packages/web/src/store/events.ts` |
+| Event loading, fetching, read errors, and persisted entities | TanStack Query range caches | `packages/web/src/ducks/events/queries/` |
+| Event create/edit/delete/convert/reorder state | TanStack Query mutations | `packages/web/src/ducks/events/mutations/` |
+| Draft Event and calendar interaction state | Redux Toolkit draft slice | `packages/web/src/ducks/events/slices/draft.slice.ts` |
 | Offline persistence | IndexedDB offline data store | `packages/web/src/common/storage/offline-data/indexeddb-offline-data.store.ts` |
 | Local vs remote persistence choice | Repository factory | `packages/web/src/common/repositories/event/event.repository.util.ts` |
 
-These layers are intentional. Do not collapse event entities into Redux slices
+These layers are intentional. Do not mirror persisted Event entities into Redux
 or call IndexedDB directly from components.
 
 Read these together for event work:
 
 - `packages/web/src/store/index.ts`
-- `packages/web/src/ducks/events/queries` (reads)
-- `packages/web/src/ducks/events/listeners`
-- `packages/web/src/ducks/events/operations`
-- `packages/web/src/store/events.ts`
+- `packages/web/src/ducks/events/queries` (reads, cache utilities, and view models)
+- `packages/web/src/ducks/events/mutations` (persisted writes and pending state)
+- `packages/web/src/ducks/events/slices/draft.slice.ts` (transient drafts only)
 
 ## Event Flow
 
@@ -197,22 +195,20 @@ Typical event **read** flow:
 1. a view hook mounts a `useXEventsQuery` hook (day/week/someday)
 2. TanStack Query fetches via the pure query function against the repository
    for the reactive source (`event.repository.source.store.ts`)
-3. a per-hook effect syncs the normalized result into Redux (entities +
-   id-list slice), so selectors/grid render unchanged
+3. the normalized result remains in the source- and range-aware query entry;
+   pure view models derive render data directly from it
 4. changing the view range re-keys the query (fetch on new ranges, instant
    render from cache on revisits within `staleTime`)
 
 Typical event **mutation** flow:
 
-1. a hook or component dispatches a Redux mutation action
-2. Redux Toolkit listener middleware invokes an async event operation
-3. the selected repository writes locally or remotely
-4. the operation updates the event entity store and, on success, calls
-   `queryClient.invalidateQueries` so reads refetch instead of re-syncing
-   pre-mutation cache into Redux
-5. Redux slices update async status
-6. React re-renders from selectors
-7. SSE events invalidate the relevant query scope (day/week/someday) to
+1. a hook or interaction calls the narrow `EventMutations` interface
+2. the mutation captures the active repository source, cancels Event reads,
+   and snapshots affected query entries
+3. immutable cache utilities apply the optimistic update to matching ranges
+4. failures restore every snapshot; settlement invalidates `eventQueryKeys.all`
+5. pending guards derive Event IDs from TanStack Query mutation state
+6. SSE events invalidate the relevant query scope (day/week/someday) to
    refetch later; auth transitions refresh the source store and drop stale
    cache entries
 
@@ -222,8 +218,8 @@ or treat them as stable.
 
 Important consequence:
 
-- event behavior is not owned by a single state system
-- when debugging, inspect the action, listener, operation, repository, and store layer together
+- persisted Event behavior is owned by TanStack Query; Redux owns only draft and interaction state
+- when debugging, inspect the query key, cache utility, mutation lifecycle, and repository source together
 
 ## Styling Systems
 
@@ -334,6 +330,6 @@ Connect-later guardrail:
 ## What To Read Before Editing
 
 - Auth/session issue: read session provider, user provider, router loaders.
-- Event refresh issue: read the SSE hooks (which invalidate query scopes), the `useXEventsQuery` read hooks, `event.query.options.ts`, and the mutation operations (which invalidate on success).
+- Event refresh issue: read the SSE hooks (which invalidate query scopes), the `useXEventsQuery` read hooks, `event.query.options.ts`, and `useEventMutations.ts` (which invalidates after settlement).
 - Offline issue: read storage adapter and migration runner.
 - Rendering issue in day/week: start at the route view, then its hooks.

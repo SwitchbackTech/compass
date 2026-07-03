@@ -22,10 +22,7 @@ import {
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
-import {
-  selectIsAtMonthlyLimit,
-  selectIsAtWeeklyLimit,
-} from "@web/ducks/events/selectors/someday.selectors";
+import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
 import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
@@ -54,8 +51,10 @@ const CmdPalette = ({
 }: CmdPaletteProps) => {
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const isAtMonthlyLimit = useAppSelector(selectIsAtMonthlyLimit);
-  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
+  const { isAtMonthlyLimit, isAtWeeklyLimit } = useSomedayEventViewModel(
+    startOfView,
+    endOfView,
+  );
   const open = useAppSelector(selectIsCmdPaletteOpen);
   const [page] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");

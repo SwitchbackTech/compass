@@ -1,9 +1,10 @@
 import { configureStore } from "@reduxjs/toolkit";
-import { render, screen } from "@testing-library/react";
+import { QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { type ReactElement } from "react";
 import { Provider } from "react-redux";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import {
   createInitialState,
   type InitialReduxState,
@@ -61,6 +62,24 @@ const { ContextMenuItems } =
   require("./ContextMenuItems") as typeof import("./ContextMenuItems");
 
 const renderWithTheme = (ui: ReactElement) => {
+  const queryClient = new QueryClient();
+  for (const eventId of currentState.events.pendingEvents?.eventIds ?? []) {
+    queryClient.getMutationCache().build(
+      queryClient,
+      { mutationKey: ["events", "mutation"] },
+      {
+        context: undefined,
+        data: undefined,
+        error: null,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        status: "pending",
+        variables: { _id: eventId },
+        submittedAt: Date.now(),
+      },
+    );
+  }
   const store = configureStore({
     preloadedState: currentState,
     reducer: reducers,
@@ -95,6 +114,7 @@ const renderWithTheme = (ui: ReactElement) => {
         {ui}
       </DraftContext.Provider>
     </Provider>,
+    { queryClient },
   );
 };
 

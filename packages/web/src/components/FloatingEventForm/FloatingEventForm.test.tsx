@@ -1,6 +1,11 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import {
+  cleanup,
+  render,
+  screen,
+  waitFor,
+} from "@web/__tests__/__mocks__/mock.render";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";

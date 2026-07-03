@@ -6,11 +6,11 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import { useEventById } from "@web/ducks/events/queries/useEventById";
 import {
   selectDraft,
   selectIsEventFormOpen,
 } from "@web/ducks/events/selectors/draft.selectors";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
@@ -39,9 +39,7 @@ export function FloatingEventForm({
     Z_INDEX_FLOATING_FORM,
   );
   const open = isFormOpen && !!draft;
-  const existing = useAppSelector((state) =>
-    _id ? Boolean(selectEventById(state, _id)) : false,
-  );
+  const existing = Boolean(useEventById(_id));
 
   const setEvent = useCallback(
     (

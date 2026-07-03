@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
 import {
   type Recurrence,
@@ -6,29 +7,26 @@ import {
 } from "@core/types/event.types";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
-import { createEventSlice } from "@web/ducks/events/slices/event.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
+import { findEventInCache } from "@web/ducks/events/queries/event.query.cache";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
 export function useSaveEventForm() {
-  const dispatch = useAppDispatch();
-  const eventEntities = useAppSelector(selectEventEntities);
   const closeEventForm = useCloseEventForm();
+  const queryClient = useQueryClient();
   const updateEvent = useUpdateEvent();
+  const { create } = useEventMutations();
 
   const onCreate = useCallback(
     (draft: Schema_GridEvent) => {
       const event = new OnSubmitParser(draft).parse();
-      dispatch(
-        createEventSlice.actions.request({
-          ...event,
-          recurrence: event.recurrence as Recurrence["recurrence"],
-        }),
-      );
+      create({
+        ...event,
+        recurrence: event.recurrence as Recurrence["recurrence"],
+      });
     },
-    [dispatch],
+    [create],
   );
 
   const onEdit = useCallback(
@@ -50,7 +48,9 @@ export function useSaveEventForm() {
     ) => {
       if (!draft) return closeEventForm();
 
-      const existing = draft._id ? Boolean(eventEntities[draft._id]) : false;
+      const existing = Boolean(
+        draft._id && findEventInCache(queryClient, draft._id),
+      );
 
       if (existing) {
         onEdit(draft as Schema_GridEvent, applyTo);
@@ -60,7 +60,7 @@ export function useSaveEventForm() {
 
       closeEventForm();
     },
-    [closeEventForm, eventEntities, onEdit, onCreate],
+    [closeEventForm, onEdit, onCreate, queryClient],
   );
 
   return saveEventForm;

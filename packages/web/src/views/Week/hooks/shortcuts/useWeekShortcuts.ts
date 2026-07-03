@@ -13,11 +13,9 @@ import {
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import {
-  selectAllDayEvents,
-  selectGridEvents,
-} from "@web/ducks/events/selectors/event.selectors";
-import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
+import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
+import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
+import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { viewSlice } from "@web/ducks/events/slices/view.slice";
@@ -55,15 +53,18 @@ export const useWeekShortcuts = ({
   scrollUtil,
 }: ShortcutProps) => {
   const dispatch = useAppDispatch();
+  const { delete: deleteEvent } = useEventMutations();
   const context = useSidebarContext(true);
   const {
     actions: { repositionDraftByKeyboard },
   } = useDraftContext();
 
   const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
-  const allDayEvents = useAppSelector(selectAllDayEvents);
-  const pendingEventIds = useAppSelector(selectPendingEventIds);
-  const timedEvents = useAppSelector(selectGridEvents);
+  const { allDayEvents, timedEvents } = useWeekEventViewModel({
+    startOfView,
+    endOfView,
+  });
+  const pendingEventIds = usePendingEventIds();
   const allDayEventsRef = useRef(allDayEvents);
   const pendingEventIdsRef = useRef(pendingEventIds);
   const timedEventsRef = useRef(timedEvents);
@@ -200,11 +201,12 @@ export const useWeekShortcuts = ({
       keyboardEvent.stopPropagation();
 
       confirmAndDeleteEvent({
+        deleteEvent,
         dispatch,
         existingEvent: resolvedTarget.event,
       });
     },
-    [dispatch, getTargetedCalendarEvent],
+    [deleteEvent, dispatch, getTargetedCalendarEvent],
   );
 
   const moveShortcutCreatedDraft = useCallback(

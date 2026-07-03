@@ -39,7 +39,7 @@ describe("useDayEvents", () => {
     fetchDayEvents.mockClear();
   });
 
-  it("fetches day events and syncs them into Redux", async () => {
+  it("fetches day events into the query cache", async () => {
     const queryClient = createCompassQueryClient();
     const store = createStore();
     const date = dayjs.utc("2025-11-11T00:00:00Z");
@@ -47,12 +47,11 @@ describe("useDayEvents", () => {
     renderHook(() => useDayEvents(date), { queryClient, store });
 
     await waitFor(() => {
-      expect(store.getState().events.getDayEvents.value?.data).toEqual([
-        "event-1",
-      ]);
+      expect(fetchDayEvents).toHaveBeenCalledTimes(1);
     });
-    expect(store.getState().events.entities.value["event-1"]).toBeDefined();
-    expect(store.getState().events.getDayEvents.isSuccess).toBe(true);
+    expect(
+      queryClient.getQueriesData({ queryKey: ["events", "day"] })[0]?.[1],
+    ).toEqual(expect.objectContaining({ ids: ["event-1"] }));
   });
 
   it("re-fetches with a new key when the date changes", async () => {
@@ -67,7 +66,7 @@ describe("useDayEvents", () => {
     });
 
     await waitFor(() => {
-      expect(store.getState().events.getDayEvents.isSuccess).toBe(true);
+      expect(fetchDayEvents).toHaveBeenCalledTimes(1);
     });
     const callsAfterFirst = fetchDayEvents.mock.calls.length;
 

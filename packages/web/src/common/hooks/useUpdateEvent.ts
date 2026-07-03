@@ -1,16 +1,18 @@
+import { useQueryClient } from "@tanstack/react-query";
 import fastDeepEqual from "fast-deep-equal/es6";
 import { useCallback } from "react";
 import { type SliceStateContext } from "@web/common/store/helpers";
 import { type Payload_EditEvent } from "@web/ducks/events/event.types";
-import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
+import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
+import { findEventInCache } from "@web/ducks/events/queries/event.query.cache";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { editEventSlice } from "@web/ducks/events/slices/event.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { type Schema_GridEvent } from "../types/web.event.types";
 
 export function useUpdateEvent() {
   const dispatch = useAppDispatch();
-  const eventEntities = useAppSelector(selectEventEntities);
+  const queryClient = useQueryClient();
+  const { edit } = useEventMutations();
 
   const update = useCallback(
     (
@@ -25,16 +27,16 @@ export function useUpdateEvent() {
 
       if (!saveImmediate) return;
 
-      const original = eventEntities[event._id] ?? {};
+      const original = findEventInCache(queryClient, event._id) ?? {};
       const position = (event as Schema_GridEvent).position;
       const recurrence = event.recurrence;
       const equal = fastDeepEqual(event, { position, recurrence, ...original });
 
       if (equal) return;
 
-      dispatch(editEventSlice.actions.request({ ...payload, _id: event._id }));
+      edit({ ...payload, _id: event._id });
     },
-    [dispatch, eventEntities],
+    [dispatch, edit, queryClient],
   );
 
   return update;

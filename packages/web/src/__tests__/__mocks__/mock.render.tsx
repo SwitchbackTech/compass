@@ -93,6 +93,40 @@ const customRender = (
     ...renderOptions
   }: CustomRenderOptions = {},
 ) => {
+  const findNestedStore = (node: unknown): Store<RootState> | undefined => {
+    if (!node || typeof node !== "object" || !("props" in node)) return;
+    const props = (
+      node as { props: { children?: unknown; store?: Store<RootState> } }
+    ).props;
+    if (props.store) return props.store;
+    const children = Array.isArray(props.children)
+      ? props.children
+      : [props.children];
+    for (const child of children) {
+      const childStore = findNestedStore(child);
+      if (childStore) return childStore;
+    }
+  };
+  const nestedStore = findNestedStore(ui);
+  const eventQueryTestEvents = (
+    (nestedStore ?? store) as Store<RootState> & {
+      __eventQueryTestEvents?: Array<{ _id?: string }>;
+    }
+  ).__eventQueryTestEvents;
+  if (eventQueryTestEvents?.length) {
+    queryClient.setQueryDefaults(["events"], {
+      initialData: {
+        ids: eventQueryTestEvents.flatMap((event) =>
+          event._id ? [event._id] : [],
+        ),
+        entities: Object.fromEntries(
+          eventQueryTestEvents.flatMap((event) =>
+            event._id ? [[event._id, event]] : [],
+          ),
+        ),
+      },
+    });
+  }
   const options: RenderOptions = { ...renderOptions };
   const Wrapper = ({ children }: PropsWithChildren) => {
     if (!CustomWrapper) {

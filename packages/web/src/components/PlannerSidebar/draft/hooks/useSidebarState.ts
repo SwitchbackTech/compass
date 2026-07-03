@@ -1,14 +1,22 @@
 import { useCallback, useEffect, useState } from "react";
 import { type Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
-import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
+import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
 import { useAppSelector } from "@web/store/store.hooks";
 
-type SidebarSomedayEvents = ReturnType<typeof selectCategorizedEvents>;
+type SidebarSomedayEvents = ReturnType<
+  typeof useSomedayEventViewModel
+>["categorized"];
 
 export const useSidebarState = () => {
-  const categorizedEvents = useAppSelector(selectCategorizedEvents);
+  const dates = useAppSelector(selectDatesInView);
+  const { categorized: categorizedEvents } = useSomedayEventViewModel(
+    dayjs(dates.start),
+    dayjs(dates.end),
+  );
   const [somedayEvents, setSomedayEventsState] = useState(categorizedEvents);
 
   useEffect(() => {

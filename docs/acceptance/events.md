@@ -18,6 +18,9 @@ Use this guide to validate:
 - scheduling Someday events onto the grid by drag
 - duplicating events (Cmd+D)
 - undoing an event deletion (Cmd+Z / Ctrl+Z)
+- failed-write optimistic rollback
+- Week/Day navigation cache reuse
+- Google revocation and SSE-driven query refresh
 
 Do not use this guide to validate:
 
@@ -36,6 +39,9 @@ Helpful notes:
 - All event interactions require a loaded calendar grid. If the grid is blank, reload and wait for events to fetch.
 - The right-click context menu on an event opens a small overlay. It closes if you click elsewhere.
 - The Someday sidebar must be open (toggle with `[`) for sidebar drag scenarios.
+- For rollback checks, reject one repository write and verify the optimistic Event returns exactly to its prior state.
+- Navigate away from and back to a recently viewed Week/Day range; cached Events should render immediately.
+- Validate both anonymous local writes and authenticated remote writes so query and mutation sources remain aligned.
 
 ---
 

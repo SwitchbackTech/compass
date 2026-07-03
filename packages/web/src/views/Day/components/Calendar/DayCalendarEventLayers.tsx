@@ -11,12 +11,7 @@ import {
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  selectAllDayDayEvents,
-  selectTimedDayEvents,
-} from "@web/ducks/events/selectors/event.selectors";
-import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import {
   DayAllDayCalendarEvent,
   DayTimedCalendarEvent,
@@ -30,6 +25,7 @@ import {
 
 interface DayEventsProps {
   draft: Schema_Event | null;
+  events: Schema_GridEvent[];
   measurements: CalendarGridMeasurements;
   onOpenEvent: (event: Schema_GridEvent) => void;
   visibleDates: CalendarGridVisibleDate[];
@@ -37,12 +33,12 @@ interface DayEventsProps {
 
 export const DayCalendarAllDayEventsLayer = ({
   draft,
+  events: allDayEvents,
   measurements,
   onOpenEvent,
   visibleDates,
 }: DayEventsProps) => {
-  const allDayEvents = useAppSelector(selectAllDayDayEvents);
-  const pendingEventIds = useAppSelector(selectPendingEventIds);
+  const pendingEventIds = usePendingEventIds();
   const savedEventIds = useMemo(
     () => getCalendarEventIdSet(allDayEvents),
     [allDayEvents],
@@ -86,12 +82,12 @@ export const DayCalendarAllDayEventsLayer = ({
 
 export const DayCalendarTimedEventsLayer = ({
   draft,
+  events: timedEvents,
   measurements,
   onOpenEvent,
   visibleDates,
 }: DayEventsProps) => {
-  const timedEvents = useAppSelector(selectTimedDayEvents);
-  const pendingEventIds = useAppSelector(selectPendingEventIds);
+  const pendingEventIds = usePendingEventIds();
   const savedEventIds = useMemo(
     () => getCalendarEventIdSet(timedEvents),
     [timedEvents],

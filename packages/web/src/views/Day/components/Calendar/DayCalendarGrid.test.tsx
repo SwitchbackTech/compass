@@ -1,3 +1,8 @@
+import userEvent from "@testing-library/user-event";
+import { act } from "react";
+import { Provider } from "react-redux";
+import { type Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import {
   cleanup,
   fireEvent,
@@ -5,12 +10,7 @@ import {
   screen,
   waitFor,
   within,
-} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { act } from "react";
-import { Provider } from "react-redux";
-import { type Schema_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
+} from "@web/__tests__/__mocks__/mock.render";
 import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type CalendarGridMeasurements } from "@web/common/calendar-grid/types/calendarGrid.types";
