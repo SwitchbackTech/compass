@@ -1,10 +1,9 @@
-import { normalize } from "normalizr";
 import { type Schema_Event } from "@core/types/event.types";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
 import { type Payload_GetEvents } from "@web/ducks/events/event.types";
 import {
   EventDateUtils,
-  normalizedEventsSchema,
+  normalizeEventList,
 } from "@web/ducks/events/operations/event.operation.utils";
 
 type FetchDayEventsPayload = Omit<
@@ -51,12 +50,5 @@ export async function fetchDayEvents(
     payload.endDate,
   );
 
-  const normalizedEvents = normalize<Schema_Event>(events, [
-    normalizedEventsSchema(),
-  ]);
-
-  return {
-    ids: normalizedEvents.result,
-    entities: normalizedEvents.entities.events || {},
-  };
+  return normalizeEventList(events);
 }

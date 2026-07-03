@@ -120,7 +120,7 @@ High-level path:
 Primary files:
 
 - `packages/web/src/ducks/events/listeners/event.listeners.ts`
-- `packages/web/src/ducks/events/operations/event.operations.ts`
+- `packages/web/src/ducks/events/operations/event.mutation.operations.ts`
 - `packages/web/src/common/repositories/event`
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`

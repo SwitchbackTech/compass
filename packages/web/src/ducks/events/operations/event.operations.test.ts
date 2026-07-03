@@ -10,9 +10,9 @@ import {
   deleteCalendarEvent,
   deleteSomedayEvent,
   editCalendarEvent,
-  readWeekEvents,
   reorderSomedayEvents,
-} from "@web/ducks/events/operations/event.operations";
+} from "@web/ducks/events/operations/event.mutation.operations";
+import { readWeekEvents } from "@web/ducks/events/operations/event.read.operations";
 import { createEventSlice } from "@web/ducks/events/slices/event.slice";
 import { pendingEventsSlice } from "@web/ducks/events/slices/pending.slice";
 import { describe, expect, mock, test } from "bun:test";

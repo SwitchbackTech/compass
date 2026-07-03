@@ -1,9 +1,19 @@
-import { schema } from "normalizr";
+import { normalize, schema } from "normalizr";
 import { type Params_Events, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 
 export const normalizedEventsSchema = () =>
   new schema.Entity("events", {}, { idAttribute: "_id" });
+
+export const normalizeEventList = (events: Schema_Event[]) => {
+  const normalized = normalize<Schema_Event>(events, [
+    normalizedEventsSchema(),
+  ]);
+  return {
+    ids: normalized.result as string[],
+    entities: normalized.entities.events ?? {},
+  };
+};
 
 // Workaround for inconsistent backend date filtering.
 // See https://github.com/SwitchbackTech/compass/issues/428

@@ -9,13 +9,15 @@ import {
   createCalendarEvent,
   deleteCalendarEvent,
   deleteSomedayEvent,
-  type EventOperationRuntime,
   editCalendarEvent,
+  reorderSomedayEvents,
+} from "@web/ducks/events/operations/event.mutation.operations";
+import { type EventOperationRuntime } from "@web/ducks/events/operations/event.operation.runtime";
+import {
   readCurrentMonthEvents,
   readSomedayEvents,
   readWeekEvents,
-  reorderSomedayEvents,
-} from "@web/ducks/events/operations/event.operations";
+} from "@web/ducks/events/operations/event.read.operations";
 import {
   createEventSlice,
   deleteEventSlice,
