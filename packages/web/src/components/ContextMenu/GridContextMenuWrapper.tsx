@@ -14,7 +14,6 @@ import {
   getCalendarEventIdFromElement,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
-import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import { findEventInCache } from "@web/ducks/events/queries/event.query.cache";
 import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -30,7 +29,6 @@ export const ContextMenuWrapper = ({
 }) => {
   const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
-  const pendingEventIds = usePendingEventIds();
 
   const draftEvent = useAppSelector(selectDraft);
 
@@ -77,8 +75,6 @@ export const ContextMenuWrapper = ({
       e.preventDefault();
 
       const event = getSelectedEvent(eventId);
-      const isPending = pendingEventIds.includes(eventId);
-      if (isPending) return;
 
       // Create a virtual element where the user clicked
       refs.setReference({

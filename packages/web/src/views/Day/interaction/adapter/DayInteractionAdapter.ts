@@ -92,7 +92,6 @@ const SMART_SCROLL_SPEED_PX = 10;
 
 const inertRuntime: DayInteractionRuntime = {
   getTimedEventById: () => null,
-  isEventPending: () => false,
   onClickTimedEvent: () => undefined,
   onCommitTimedDrag: () => undefined,
 };
@@ -552,11 +551,7 @@ export const createDayInteractionAdapter = ({
     const currentRuntime = runtime();
     const allDayEvent = currentRuntime.getAllDayEventById?.(registered.eventId);
 
-    if (
-      !allDayEvent?._id ||
-      !allDayEvent.isAllDay ||
-      currentRuntime.isEventPending(allDayEvent._id)
-    ) {
+    if (!allDayEvent?._id || !allDayEvent.isAllDay) {
       return null;
     }
 
@@ -579,11 +574,7 @@ export const createDayInteractionAdapter = ({
     const currentRuntime = runtime();
     const timedEvent = currentRuntime.getTimedEventById(registered.eventId);
 
-    if (
-      !timedEvent?._id ||
-      timedEvent.isAllDay ||
-      currentRuntime.isEventPending(timedEvent._id)
-    ) {
+    if (!timedEvent?._id || timedEvent.isAllDay) {
       return null;
     }
 

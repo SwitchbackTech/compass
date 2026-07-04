@@ -29,7 +29,6 @@ import {
 interface DayEventCardProps {
   event: Schema_GridEvent;
   isActiveDraft: boolean;
-  isPending: boolean;
   isPlaceholder: boolean;
   measurements: CalendarGridMeasurements;
   onOpenEvent: (event: Schema_GridEvent) => void;
@@ -43,13 +42,12 @@ interface DayTimedEventCardProps extends DayEventCardProps {
 export const DayAllDayCalendarEvent = ({
   event,
   isActiveDraft,
-  isPending,
   isPlaceholder,
   measurements,
   onOpenEvent,
   visibleDates,
 }: DayEventCardProps) => {
-  const isRegistered = Boolean(event._id) && !isPending && !isPlaceholder;
+  const isRegistered = Boolean(event._id) && !isPlaceholder;
   const registrationRef = useDayEventRegistrationRef({
     eventId: event._id,
     eventType: "all-day",
@@ -76,7 +74,6 @@ export const DayAllDayCalendarEvent = ({
     <CalendarAllDayEventCard
       event={event}
       interactionAttributes={interactionAttributes}
-      isPending={isPending}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onOpenEvent}
       onMouseEnter={(mouseEvent) => {
@@ -102,13 +99,12 @@ export const DayTimedCalendarEvent = ({
   deckLayout,
   event,
   isActiveDraft,
-  isPending,
   isPlaceholder,
   measurements,
   onOpenEvent,
   visibleDates,
 }: DayTimedEventCardProps) => {
-  const isRegistered = Boolean(event._id) && !isPending && !isPlaceholder;
+  const isRegistered = Boolean(event._id) && !isPlaceholder;
   const isDeck = Boolean(deckLayout);
   const [isFocused, setIsFocused] = useState(false);
   const registrationRef = useDayEventRegistrationRef({
@@ -153,7 +149,6 @@ export const DayTimedCalendarEvent = ({
       displayMode={isPlaceholder ? "placeholder" : "saved"}
       event={event}
       interactionAttributes={interactionAttributes}
-      isPending={isPending}
       isSelected={isActiveDraft}
       motionMode="idle"
       onBlur={isDeck ? () => setIsFocused(false) : undefined}

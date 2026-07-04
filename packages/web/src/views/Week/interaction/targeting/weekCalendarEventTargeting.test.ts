@@ -18,16 +18,13 @@ afterEach(() => {
 const addEventButton = ({
   eventId,
   eventType = "timed",
-  isPending = false,
   isVisible = true,
 }: {
   eventId?: string;
   eventType?: "all-day" | "timed";
-  isPending?: boolean;
   isVisible?: boolean;
 }) => {
   const button = document.createElement("button");
-  if (isPending) button.setAttribute("aria-disabled", "true");
   if (isVisible) {
     Object.defineProperty(button, "offsetParent", {
       configurable: true,
@@ -36,7 +33,7 @@ const addEventButton = ({
   }
   document.body.appendChild(button);
 
-  if (eventId && !isPending) {
+  if (eventId) {
     weekEventRegistry.register({
       element: button,
       eventId,
@@ -74,8 +71,7 @@ describe("weekCalendarEventTargeting", () => {
     });
   });
 
-  it("falls back to the first visible non-pending event", () => {
-    addEventButton({ eventId: "pending", isPending: true });
+  it("falls back to the first visible registered event", () => {
     addEventButton({});
     addEventButton({ eventId: "hidden", isVisible: false });
     const firstVisible = addEventButton({ eventId: "visible" });

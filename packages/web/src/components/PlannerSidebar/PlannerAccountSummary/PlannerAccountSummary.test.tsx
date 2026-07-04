@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -34,6 +35,21 @@ mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
 const { PlannerAccountSummary } =
   require("./PlannerAccountSummary") as typeof import("./PlannerAccountSummary");
 
+const renderSummary = ({
+  pendingEventIds = [],
+}: {
+  pendingEventIds?: string[];
+} = {}) => {
+  const queryClient = new QueryClient();
+  seedPendingEventMutations(queryClient, pendingEventIds);
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <PlannerAccountSummary />
+    </QueryClientProvider>,
+  );
+};
+
 describe("PlannerAccountSummary", () => {
   beforeEach(() => {
     mockEmail = undefined;
@@ -47,7 +63,7 @@ describe("PlannerAccountSummary", () => {
   it("shows a sign up prompt for temporary accounts", async () => {
     const user = userEvent.setup();
 
-    render(<PlannerAccountSummary />);
+    renderSummary();
 
     await user.click(
       screen.getByRole("button", {
@@ -65,7 +81,7 @@ describe("PlannerAccountSummary", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "NOT_CONNECTED";
 
-    render(<PlannerAccountSummary />);
+    renderSummary();
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email.tagName).toBe("SPAN");
@@ -160,5 +176,44 @@ describe("PlannerAccountSummary", () => {
     });
     await user.click(reconnectButton);
     expect(mockOnOpenGoogleAuth).toHaveBeenCalledTimes(1);
+  });
+
+  it("shows a syncing-changes spinner instead of the healthy dot while an event mutation is pending", () => {
+    mockEmail = "ahab@pequod.com.com";
+    mockGoogleState = "HEALTHY";
+
+    renderSummary({ pendingEventIds: ["event-1"] });
+
+    expect(screen.getByText("Syncing changes…")).toBeTruthy();
+    expect(screen.queryByText("Synced with Google")).toBeNull();
+  });
+
+  it("shows the syncing-changes spinner for pending mutations even without Google", () => {
+    mockEmail = "ahab@pequod.com.com";
+    mockGoogleState = "NOT_CONNECTED";
+
+    renderSummary({ pendingEventIds: ["event-1"] });
+
+    expect(screen.getByText("Syncing changes…")).toBeTruthy();
+  });
+
+  it("keeps actionable Google states visible over pending event mutations", () => {
+    mockEmail = "ahab@pequod.com.com";
+    mockGoogleState = "RECONNECT_REQUIRED";
+
+    renderSummary({ pendingEventIds: ["event-1"] });
+
+    expect(screen.getByText("Reconnect needed")).toBeTruthy();
+    expect(screen.queryByText("Syncing changes…")).toBeNull();
+  });
+
+  it("keeps Google's own syncing label over pending event mutations", () => {
+    mockEmail = "ahab@pequod.com.com";
+    mockGoogleState = "IMPORTING";
+
+    renderSummary({ pendingEventIds: ["event-1"] });
+
+    expect(screen.getByText("Syncing...")).toBeTruthy();
+    expect(screen.queryByText("Syncing changes…")).toBeNull();
   });
 });

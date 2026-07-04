@@ -67,22 +67,37 @@ Mutations go through the narrow `EventMutations` interface
 ```
 mutate(payload)
    │
-   ├─ onMutate:   cancel in-flight reads → snapshot affected entries
+   ├─ onMutate:   cancel in-flight reads
    │              → apply optimistic edit to matching cache entries   (instant UI)
    │
    ├─ mutationFn: persist via repository (captured source)
    │
-   ├─ onError:    restore every snapshot                              (rollback)
+   ├─ onError:    report the error (no cache rollback)
    │
-   └─ onSettled:  invalidate ["events"] → refetch to get canonical data
+   └─ onSettled:  once NO event mutation remains in flight (checked on a
+                  deferred macrotask), invalidate ["events"] → refetch to
+                  get canonical data
 ```
 
 - **Optimistic edits** insert/patch/remove events across exactly the entries they
   belong to, so a created or dragged-in event shows immediately — before the
   server responds.
-- **Pending state** (e.g. to disable actions on a not-yet-saved event) is derived
-  from TanStack Query's mutation state via `usePendingEventIds`, not stored
-  separately.
+- **No per-mutation rollback.** Rapid successive edits are allowed (events stay
+  interactive while pending), so a failed mutation must not restore a snapshot —
+  that would clobber a newer edit's optimistic write. Instead, failures leave the
+  optimistic value in place and the settle-time refetch converges the cache to
+  server truth. Invalidation is deferred to a macrotask and gated on
+  `queryClient.isMutating(...) === 0` so a refetch never overwrites another
+  mutation's live optimistic update (the TanStack Query recipe for concurrent
+  optimistic updates, deferred so simultaneous settles cannot all skip).
+- **Writes racing their own create wait.** Editing or deleting a just-created
+  event defers its repository call via `waitForPendingEventCreate` until the
+  create settles: the id doesn't exist server-side before then, and a skipped
+  delete would resurrect the event once the create landed. When the create
+  fails, the dependent write is skipped entirely.
+- **Pending state** is derived from TanStack Query's mutation state via
+  `usePendingEventIds`, not stored separately. It never blocks interaction; its
+  only UI is the "Syncing changes…" spinner in `PlannerAccountSummary`.
 
 ## One membership rule for reads and writes
 
@@ -101,6 +116,26 @@ sides call the **same** predicate:
   relevant scope so it refetches. See [SSE Runtime](./frontend-runtime-flow.md#sse-runtime).
 - **Auth / source transitions** — refresh the repository source store and drop
   stale entries (e.g. Google revoked → fall back to `local`).
+
+## Navigation: placeholder data + prefetch
+
+Two small TanStack features make prev/next navigation feel instant:
+
+- **Someday keeps the previous month's list visible** while a new month
+  fetches (`placeholderData: keepPreviousData` on `somedayEventsQueryOptions`).
+  Deliberately *not* applied to day/week: the calendar grid gates its entire
+  render on `query.isPending` and positions events by absolute date, so
+  keeping stale data visible there would transiently render the previous
+  range's events in the new range's grid columns. Extending this to the grid
+  needs those consumers rewired to treat `isPlaceholderData` as still-loading.
+- **The adjacent day/week is prefetched** as soon as the current one renders
+  (`usePrefetchAdjacentEvents`, wired into `useWeek`/`useDayEvents`). It calls
+  `queryClient.prefetchQuery` with the *same* options builder and date
+  formatting the real read hook uses, so the warmed entry lands under the
+  exact key a subsequent read looks up. `prefetchQuery` is a no-op for
+  entries that are already cached and fresh, so this adds no extra fetches on
+  repeat renders of the same range — only the next click resolves from cache
+  instead of paying a fetch.
 
 ## What the cache is *not*
 

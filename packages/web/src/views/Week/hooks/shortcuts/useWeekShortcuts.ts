@@ -14,7 +14,6 @@ import {
 } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
 import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
@@ -64,18 +63,15 @@ export const useWeekShortcuts = ({
     startOfView,
     endOfView,
   });
-  const pendingEventIds = usePendingEventIds();
   const allDayEventsRef = useRef(allDayEvents);
-  const pendingEventIdsRef = useRef(pendingEventIds);
   const timedEventsRef = useRef(timedEvents);
   const { decrementWeek, incrementWeek, goToToday } = util;
   const { scrollToNow } = scrollUtil;
 
   useEffect(() => {
     allDayEventsRef.current = allDayEvents;
-    pendingEventIdsRef.current = pendingEventIds;
     timedEventsRef.current = timedEvents;
-  }, [allDayEvents, pendingEventIds, timedEvents]);
+  }, [allDayEvents, timedEvents]);
 
   const _createSomedayDraft = useCallback(
     (
@@ -153,7 +149,6 @@ export const useWeekShortcuts = ({
       getFirstVisibleCalendarEventTarget();
 
     if (!target) return null;
-    if (pendingEventIdsRef.current.includes(target.eventId)) return null;
 
     const events =
       target.eventType === "all-day"

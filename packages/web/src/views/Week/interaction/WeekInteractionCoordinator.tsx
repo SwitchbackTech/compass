@@ -7,7 +7,6 @@ import {
 } from "react";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch } from "@web/store/store.hooks";
@@ -38,7 +37,6 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
   });
-  const pendingEventIds = usePendingEventIds();
   const { actions, confirmation, setters, state } = useDraftContext();
   const layoutSourcesRef = useRef(getLayoutSources);
   const timedEventsById = useMemo(() => {
@@ -47,13 +45,8 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   const allDayEventsById = useMemo(() => {
     return mapEventsById(allDayEvents);
   }, [allDayEvents]);
-  const pendingEventIdSet = useMemo(
-    () => new Set(pendingEventIds),
-    [pendingEventIds],
-  );
   const runtimeRef = useRef<WeekInteractionRuntime>({
     getTimedEventById: () => null,
-    isEventPending: () => false,
     onClickTimedEvent: () => undefined,
     onCommitTimedDrag: () => undefined,
   });
@@ -117,7 +110,6 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   runtimeRef.current = {
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
-    isEventPending: (eventId) => pendingEventIdSet.has(eventId),
     isFormOpen: () => state.isFormOpen,
     onClickAllDayEvent: openAllDayEvent,
     onClickTimedEvent: openTimedEvent,

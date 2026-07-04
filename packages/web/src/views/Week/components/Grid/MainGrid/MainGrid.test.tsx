@@ -12,7 +12,10 @@ import {
   screen,
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
-import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
+import {
+  seedEventQueries,
+  seedPendingEventMutations,
+} from "@web/__tests__/utils/event-query-test-data";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import {
   ID_GRID_COLUMNS_TIMED,
@@ -20,7 +23,6 @@ import {
 } from "@web/common/constants/web.constants";
 import { createCompassQueryClient } from "@web/common/query/query-client";
 import { gridColorByPriority } from "@web/common/styles/theme.util";
-import { eventMutationKeys } from "@web/ducks/events/mutations/event.mutation.keys";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -47,23 +49,7 @@ let seededWeekEvents: Schema_Event[] = [];
 
 function Provider(props: ComponentProps<typeof ReduxProvider>) {
   const queryClient = createCompassQueryClient();
-  for (const eventId of pendingEventIds) {
-    queryClient.getMutationCache().build(
-      queryClient,
-      { mutationKey: eventMutationKeys.operation("edit") },
-      {
-        context: undefined,
-        data: undefined,
-        error: null,
-        failureCount: 0,
-        failureReason: null,
-        isPaused: false,
-        status: "pending",
-        variables: { _id: eventId },
-        submittedAt: Date.now(),
-      },
-    );
-  }
+  seedPendingEventMutations(queryClient, pendingEventIds);
   seedEventQueries(queryClient, seededWeekEvents);
 
   return (
@@ -494,7 +480,7 @@ describe("Week calendar accessibility", () => {
     ).toBeInTheDocument();
   });
 
-  it("marks pending saved events as unavailable", () => {
+  it("keeps pending saved events fully interactive", () => {
     const event = createSavedEvent({
       _id: "pending-event",
       title: "Pending save",
@@ -511,11 +497,12 @@ describe("Week calendar accessibility", () => {
       </Provider>,
     );
 
-    expect(
-      screen
-        .getByRole("button", { name: /pending save/i })
-        .getAttribute("aria-disabled"),
-    ).toBe("true");
+    const card = screen.getByRole("button", { name: /pending save/i });
+    expect(card).not.toHaveAttribute("aria-disabled");
+    expect(card).toHaveAttribute(
+      WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
+      "pending-event",
+    );
   });
 
   it("marks hovered saved timed events as targeting candidates", () => {

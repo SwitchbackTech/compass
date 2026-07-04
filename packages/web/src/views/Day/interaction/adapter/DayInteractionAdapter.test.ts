@@ -173,7 +173,6 @@ const createAdapter = ({
             : null,
       getTimedEventById: (eventId) =>
         eventId === timedEvent._id ? timedEvent : null,
-      isEventPending: () => false,
       onClickAllDayEvent: () => undefined,
       onClickTimedEvent: () => undefined,
       onCommitAllDayDrag: (result) => onAllDayDrag?.(result),

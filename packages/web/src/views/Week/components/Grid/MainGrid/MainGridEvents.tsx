@@ -6,7 +6,6 @@ import {
 } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
 import {
   selectDraft,
@@ -35,7 +34,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
   });
-  const pendingEventIds = usePendingEventIds();
   const draftId = useAppSelector(selectDraftId);
   const timedEventItems = useMemo(
     () => createCalendarTimedEventLayout(timedEvents),
@@ -44,8 +42,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const category = Categories_Event.TIMED;
 
   const handleKeyDown = (event: Schema_GridEvent) => {
-    if (event._id && pendingEventIds.includes(event._id)) return;
-
     dispatch(
       draftSlice.actions.start({
         activity: "keyboardEdit",
@@ -59,9 +55,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     <div id={ID_GRID_EVENTS_TIMED}>
       {!isLoadingWeekView &&
         timedEventItems.map(({ deckLayout, event }) => {
-          const isPending = Boolean(
-            event._id && pendingEventIds.includes(event._id),
-          );
           const isPlaceholder = event._id === draftId;
           const eventForDisplay =
             isPlaceholder && draft && draft._id === event._id
@@ -72,7 +65,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
             <MainGridEventItem
               deckLayout={deckLayout}
               event={eventForDisplay}
-              isPending={isPending}
               isPlaceholder={isPlaceholder}
               key={`initial-${event._id}`}
               measurements={measurements}
@@ -88,7 +80,6 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 interface MainGridEventItemProps {
   deckLayout: CalendarTimedDeckLayout | null;
   event: Schema_GridEvent;
-  isPending: boolean;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
   onEventKeyDown: (event: Schema_GridEvent) => void;
@@ -98,14 +89,12 @@ interface MainGridEventItemProps {
 const MainGridEventItem = ({
   deckLayout,
   event,
-  isPending,
   isPlaceholder,
   measurements,
   onEventKeyDown,
   weekProps,
 }: MainGridEventItemProps) => {
-  const isRegisteredForWeekInteraction =
-    Boolean(event._id) && !isPlaceholder && !isPending;
+  const isRegisteredForWeekInteraction = Boolean(event._id) && !isPlaceholder;
   const registrationRef = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "timed",
@@ -128,7 +117,6 @@ const MainGridEventItem = ({
       displayMode={isPlaceholder ? "placeholder" : "saved"}
       event={event}
       interactionAttributes={interactionAttributes}
-      isPending={isPending}
       measurements={measurements}
       onEventKeyDown={onEventKeyDown}
       ref={registrationRef}

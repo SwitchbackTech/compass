@@ -42,6 +42,20 @@ describe("handleError", () => {
     expect(consoleErrorSpy).not.toHaveBeenCalled();
     expect(alertMock).not.toHaveBeenCalled();
   });
+
+  it("alerts exactly once and does not reload on a server error", () => {
+    const error = new Error("Request failed with status 500");
+    error.name = "ApiError";
+
+    handleError(error);
+
+    // No reload: the mutation layer reconciles the cache after failures, and
+    // a reload would wipe every live optimistic update.
+    expect(alertMock).toHaveBeenCalledTimes(1);
+    expect(alertMock).toHaveBeenCalledWith(
+      "Something went wrong behind the scenes. Please try again later.",
+    );
+  });
 });
 
 describe("isEventInRange", () => {

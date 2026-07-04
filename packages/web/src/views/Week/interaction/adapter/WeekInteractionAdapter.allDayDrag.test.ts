@@ -102,7 +102,6 @@ const expectSourceRestored = (source: HTMLElement) => {
 
 const createHarness = ({
   eventOverrides,
-  isPending = false,
   sourceRect = {
     height: 20,
     left: 300,
@@ -111,7 +110,6 @@ const createHarness = ({
   },
 }: {
   eventOverrides?: Partial<Schema_GridEvent>;
-  isPending?: boolean;
   sourceRect?: Pick<DOMRect, "height" | "left" | "top" | "width">;
 } = {}) => {
   document.body.innerHTML = "";
@@ -185,7 +183,6 @@ const createHarness = ({
     runtime: () => ({
       getAllDayEventById: (eventId) => (eventId === event._id ? event : null),
       getTimedEventById: () => null,
-      isEventPending: () => isPending,
       onClickAllDayEvent,
       onClickTimedEvent: () => undefined,
       onCommitAllDayDrag,
@@ -247,23 +244,6 @@ describe("WeekInteractionAdapter all-day drag", () => {
 
     expect(onClickAllDayEvent).toHaveBeenCalledWith(event);
     expect(onCommitAllDayDrag).not.toHaveBeenCalled();
-  });
-
-  it("keeps pending all-day events on the existing Week path", () => {
-    const pendingHarness = createHarness({ isPending: true });
-
-    expect(
-      pendingHarness.adapter.handlePointerDown(
-        makePointerEvent("pointerdown", {
-          target: pendingHarness.child,
-          x: 320,
-          y: 30,
-        }),
-      ),
-    ).toEqual({
-      reason: "no-week-interaction-target",
-      shouldOwn: false,
-    });
   });
 
   it("does not own right-click, non-primary, or modifier pointerdowns", () => {

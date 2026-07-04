@@ -76,7 +76,6 @@ const makePointerEvent = (
 
 const createHarness = ({
   eventOverrides,
-  isPending = false,
   sourceRect = {
     height: 20,
     left: 400,
@@ -85,7 +84,6 @@ const createHarness = ({
   },
 }: {
   eventOverrides?: Partial<Schema_GridEvent>;
-  isPending?: boolean;
   sourceRect?: Pick<DOMRect, "height" | "left" | "top" | "width">;
 } = {}) => {
   document.body.innerHTML = "";
@@ -158,7 +156,6 @@ const createHarness = ({
     runtime: () => ({
       getAllDayEventById: (eventId) => (eventId === event._id ? event : null),
       getTimedEventById: () => null,
-      isEventPending: () => isPending,
       onClickAllDayEvent,
       onClickTimedEvent: () => undefined,
       onCommitAllDayResize,
@@ -226,23 +223,6 @@ describe("WeekInteractionAdapter all-day resize", () => {
 
     expect(onClickAllDayEvent).toHaveBeenCalledWith(event);
     expect(onCommitAllDayResize).not.toHaveBeenCalled();
-  });
-
-  it("keeps pending all-day resize handles on the existing Week path", () => {
-    const { adapter, endHandle } = createHarness({ isPending: true });
-
-    expect(
-      adapter.handlePointerDown(
-        makePointerEvent("pointerdown", {
-          target: endHandle,
-          x: 490,
-          y: 30,
-        }),
-      ),
-    ).toEqual({
-      reason: "no-week-interaction-target",
-      shouldOwn: false,
-    });
   });
 
   it("commits an activated no-op all-day resize as not moved", () => {

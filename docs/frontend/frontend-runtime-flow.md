@@ -207,11 +207,13 @@ Typical event **read** flow:
 Typical event **mutation** flow:
 
 1. a hook or interaction calls the narrow `EventMutations` interface
-2. the mutation captures the active repository source, cancels Event reads,
-   and snapshots affected query entries
+2. the mutation captures the active repository source and cancels Event reads
 3. immutable cache utilities apply the optimistic update to matching ranges
-4. failures restore every snapshot; settlement invalidates `eventQueryKeys.all`
-5. pending guards derive Event IDs from TanStack Query mutation state
+4. failures only report the error (no rollback — a snapshot restore could
+   clobber a newer concurrent edit); the last settling mutation invalidates
+   `eventQueryKeys.all` so the refetch converges to canonical data
+5. pending Event IDs derive from TanStack Query mutation state; they never
+   block interaction — the sidebar account summary shows a syncing spinner
 6. SSE events invalidate the relevant query scope (day/week/someday) to
    refetch later; auth transitions refresh the source store and drop stale
    cache entries
