@@ -18,7 +18,7 @@ Read [AGENTS.md](./AGENTS.md) first for the shared repo rules and
 
 ## Easy Misses
 
-- The web state layers are intentional: Redux slices/listeners, TanStack Query, and
+- The web state layers are intentional: Zustand stores, TanStack Query, and
   IndexedDB each have a role. See
   [docs/frontend/frontend-runtime-flow.md](./docs/frontend/frontend-runtime-flow.md).
 - Repository selection prefers remote event storage once a user has

@@ -22,8 +22,6 @@ const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
 const { createCompassQueryClient } =
   require("@web/common/query/query-client") as typeof import("@web/common/query/query-client");
-const { createCompassStore } =
-  require("@web/store") as typeof import("@web/store");
 const { eventQueryKeys } =
   require("@web/events/queries/event.query.keys") as typeof import("@web/events/queries/event.query.keys");
 const { weekEventsQueryOptions } =
@@ -71,11 +69,10 @@ describe("usePrefetchAdjacentEvents", () => {
 
   it("populates the cache for the previous and next range under the read hook's own keys", async () => {
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
 
     renderHook(
       () => usePrefetchAdjacentEvents(weekEventsQueryOptions, previous, next),
-      { queryClient, store },
+      { queryClient },
     );
 
     type CachedWeekData = { ids: string[]; entities: Record<string, unknown> };
@@ -95,11 +92,10 @@ describe("usePrefetchAdjacentEvents", () => {
 
   it("does not refetch an already-cached, fresh adjacent range", async () => {
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
 
     const first = renderHook(
       () => usePrefetchAdjacentEvents(weekEventsQueryOptions, previous, next),
-      { queryClient, store },
+      { queryClient },
     );
     await waitFor(() => {
       expect(fetchWeekEvents.mock.calls.length).toBe(2);
@@ -108,7 +104,7 @@ describe("usePrefetchAdjacentEvents", () => {
 
     renderHook(
       () => usePrefetchAdjacentEvents(weekEventsQueryOptions, previous, next),
-      { queryClient, store },
+      { queryClient },
     );
 
     // Give the effect a tick to (not) fire additional fetches.

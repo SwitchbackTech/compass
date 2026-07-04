@@ -3,9 +3,21 @@ import {
   type Schema_Event,
   type WithCompassId,
 } from "@core/types/event.types";
-import { type SliceStateContext } from "@web/common/store/helpers";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
+
+export interface SliceStateContext {
+  /**
+   * Extra context attached to event payloads. Persisted for a single
+   * operation; carries the reason for the change.
+   */
+  __context?: {
+    /**
+     * The reason for the action, could be anything
+     */
+    reason?: string | null;
+  };
+}
 
 export interface Entities_Event {
   [key: string]: Schema_Event;

@@ -44,7 +44,7 @@ Things we don't support (yet):
 
 ## Tech Stack
 
-- **Frontend**: React, Redux, Tailwind CSS, TypeScript
+- **Frontend**: React, Zustand, TanStack Query, Tailwind CSS, TypeScript
 - **Backend**: Node.js, Express, TypeScript, MongoDB
 - **Integrations**: Google Calendar API, Google OAuth2
 - **Testing**: React Testing Library, Playwright

@@ -117,9 +117,8 @@ This is the standard pattern for new HTTP behavior.
 
 Web state is not single-system:
 
-- Redux Toolkit slices hold app state and async state
-- Redux Toolkit listeners coordinate event side effects
-- TanStack Query deduplicates keyed event reads
+- Zustand stores hold transient client state (draft, view dates/sidebar, cmd palette, user metadata)
+- TanStack Query owns persisted event reads/mutations and deduplicates keyed event reads
 - IndexedDB stores offline events/tasks
 
 Treat this as an intentional mixed architecture, not an inconsistency to "fix" casually.

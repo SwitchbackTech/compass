@@ -4,10 +4,7 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
-import {
-  createInitialState,
-  type InitialReduxState,
-} from "@web/__tests__/utils/state/store.test.util";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type Activity_DraftEvent } from "@web/events/stores/draft.store";
 import {
@@ -19,7 +16,7 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { getDragDurationMinutes } from "./drag-duration.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-let currentState: InitialReduxState = createInitialState();
+let currentState = createInitialState();
 
 const { useDraftActions } =
   require("./useDraftActions") as typeof import("./useDraftActions");

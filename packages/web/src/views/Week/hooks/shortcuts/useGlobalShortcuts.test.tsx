@@ -1,11 +1,7 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
-import { Provider } from "react-redux";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import { reducers } from "@web/store/reducers";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const logout = mock();
@@ -16,18 +12,6 @@ const mockUseLogoutConfirmation = mock();
 const mockUseSession = mock();
 const mockNavigate = mock();
 const mockPathname = { value: "/week" };
-
-const createStore = () =>
-  configureStore({
-    preloadedState: createInitialState(),
-    reducer: reducers,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        immutableCheck: false,
-        serializableCheck: false,
-        thunk: false,
-      }),
-  });
 
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
@@ -59,13 +43,7 @@ mock.module("react-router-dom", () => ({
 const { useGlobalShortcuts } = await import("./useGlobalShortcuts");
 
 function wrapper({ children }: PropsWithChildren) {
-  const store = createStore();
-
-  return (
-    <HotkeysProvider>
-      <Provider store={store}>{children}</Provider>
-    </HotkeysProvider>
-  );
+  return <HotkeysProvider>{children}</HotkeysProvider>;
 }
 
 describe("useGlobalShortcuts", () => {

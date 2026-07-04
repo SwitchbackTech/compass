@@ -3,16 +3,13 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
-import {
-  createInitialState,
-  type InitialReduxState,
-} from "@web/__tests__/utils/state/store.test.util";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { type Setters_Sidebar, type State_Sidebar } from "./useSidebarState";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-let currentState: InitialReduxState = createInitialState();
+let currentState = createInitialState();
 
 const { useSidebarActions } =
   require("./useSidebarActions") as typeof import("./useSidebarActions");

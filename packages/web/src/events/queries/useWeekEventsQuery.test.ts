@@ -22,8 +22,6 @@ const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
 const { createCompassQueryClient } =
   require("@web/common/query/query-client") as typeof import("@web/common/query/query-client");
-const { createCompassStore } =
-  require("@web/store") as typeof import("@web/store");
 const { useWeekEventsQuery } =
   require("@web/events/queries/useWeekEventsQuery") as typeof import("@web/events/queries/useWeekEventsQuery");
 
@@ -39,11 +37,9 @@ describe("useWeekEventsQuery", () => {
 
   it("returns fetched week events without syncing Redux", async () => {
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
 
     const result = renderHook(() => useWeekEventsQuery(range()), {
       queryClient,
-      store,
     });
 
     await waitFor(() => {
@@ -53,11 +49,9 @@ describe("useWeekEventsQuery", () => {
 
   it("serves a cached remount from cache without a second fetch", async () => {
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
 
     const first = renderHook(() => useWeekEventsQuery(range()), {
       queryClient,
-      store,
     });
     await waitFor(() => {
       expect(first.result.current.isSuccess).toBe(true);
@@ -68,7 +62,6 @@ describe("useWeekEventsQuery", () => {
     // Same key within staleTime → cache hit, no network.
     const second = renderHook(() => useWeekEventsQuery(range()), {
       queryClient,
-      store,
     });
     await waitFor(() => {
       expect(second.result.current.data?.ids).toEqual(["week-1"]);
@@ -81,11 +74,9 @@ describe("useWeekEventsQuery", () => {
       throw new Error("boom");
     });
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
 
     const result = renderHook(() => useWeekEventsQuery(range()), {
       queryClient,
-      store,
     });
 
     await waitFor(() => {

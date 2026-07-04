@@ -39,8 +39,6 @@ const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
 const { createCompassQueryClient } =
   require("@web/common/query/query-client") as typeof import("@web/common/query/query-client");
-const { createCompassStore } =
-  require("@web/store") as typeof import("@web/store");
 const { useSomedayEventsQuery } =
   require("@web/events/queries/useSomedayEventsQuery") as typeof import("@web/events/queries/useSomedayEventsQuery");
 
@@ -51,12 +49,10 @@ describe("useSomedayEventsQuery", () => {
 
   it("returns fetched someday events without syncing Redux", async () => {
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
     const start = dayjs.utc("2025-11-10T00:00:00Z");
 
     const result = renderHook(() => useSomedayEventsQuery(start), {
       queryClient,
-      store,
     });
 
     await waitFor(() => {
@@ -95,14 +91,12 @@ describe("useSomedayEventsQuery", () => {
 
     fetchSomedayEvents.mockImplementationOnce(async () => monthA);
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
 
     const { rerender, result } = renderHook(
       ({ start }: { start: Dayjs }) => useSomedayEventsQuery(start),
       {
         initialProps: { start: dayjs.utc("2025-11-10T00:00:00Z") },
         queryClient,
-        store,
       },
     );
 
@@ -131,12 +125,10 @@ describe("useSomedayEventsQuery", () => {
       throw new Error("boom");
     });
     const queryClient = createCompassQueryClient();
-    const store = createCompassStore({ queryClient });
     const start = dayjs.utc("2025-11-10T00:00:00Z");
 
     const result = renderHook(() => useSomedayEventsQuery(start), {
       queryClient,
-      store,
     });
 
     await waitFor(() => {

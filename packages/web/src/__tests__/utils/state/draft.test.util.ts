@@ -1,5 +1,4 @@
 import { act } from "react";
-import { useDispatch } from "react-redux";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
@@ -31,7 +30,6 @@ export function setupDraftState(event: Schema_WebEvent) {
 
   const weekHook = renderHook(() => useWeek(useToday().today), { state });
   const weekProps = weekHook.result.current;
-  const dispatch = renderHook(useDispatch, { state }).result.current;
 
   const gridHook = renderHook(() => useGridLayout(), {
     state,
@@ -76,7 +74,6 @@ export function setupDraftState(event: Schema_WebEvent) {
     weekProps,
     dateCalcs,
     deleteEvent,
-    dispatch,
     submit,
     draft,
     rerenderActions: actions.rerender,

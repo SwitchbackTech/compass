@@ -18,7 +18,7 @@ flowchart LR
     Prov[SSEProvider]
     Ev[useEventSSE]
     Gc[useGcalSSE]
-    Slice[Redux sync slice]
+    Store[userMetadata store]
   end
   subgraph Backend["packages/backend"]
     Stream[events.controller stream]
@@ -34,8 +34,8 @@ flowchart LR
   Prov --> ES
   Ev --> ES
   Gc --> ES
-  Ev --> Slice
-  Gc --> Slice
+  Ev --> Store
+  Gc --> Store
 ```
 
 ## Connection And First Events
@@ -185,11 +185,11 @@ Files:
 The client:
 
 - opens `EventSource` when a session exists (`SessionProvider` + `SSEProvider`)
-- refetches events when `EVENT_CHANGED` / `SOMEDAY_EVENT_CHANGED` arrive (via `Sync_AsyncStateContextReason` aligned with those names)
+- refetches events when `EVENT_CHANGED` / `SOMEDAY_EVENT_CHANGED` arrive (by invalidating the matching event query scopes)
 - tracks Google import status from `IMPORT_GCAL_*` and `USER_METADATA`
 - handles `GOOGLE_REVOKED` consistently with REST error payloads
 
-Redux reasons for refetch (`Sync_AsyncStateContextReason`) reuse the same string values as SSE event names where they correspond (`EVENT_CHANGED`, `SOMEDAY_EVENT_CHANGED`, `GOOGLE_REVOKED`), plus app-local reasons such as `IMPORT_COMPLETE`.
+Refetches are driven by TanStack Query invalidation keyed to the SSE event names (`EVENT_CHANGED`, `SOMEDAY_EVENT_CHANGED`, `GOOGLE_REVOKED`); `USER_METADATA` payloads land in the userMetadata Zustand store.
 
 ## Revoked Token And Reconnect Lifecycle
 

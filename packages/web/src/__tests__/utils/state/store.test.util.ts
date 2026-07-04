@@ -4,9 +4,6 @@ import {
 } from "@web/__tests__/utils/state/seed-stores";
 import { initialDraftState } from "@web/events/stores/draft.store";
 
-/** @deprecated use TestAppState directly */
-export type InitialReduxState = TestAppState;
-
 /**
  * Build a baseline test state (draft empty) merged with overrides. Pass the
  * result to the render helpers' `state` option or seed it directly via
@@ -20,7 +17,7 @@ export const createInitialState = (
       draft: initialDraftState,
     },
     ...partialState,
-  } as TestAppState;
+  };
 };
 
 /** Seed the Zustand stores directly (outside the render helpers). */

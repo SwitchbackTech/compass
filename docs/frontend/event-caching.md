@@ -9,7 +9,7 @@ cache entry holds one *window* of events — a `(source, scope, date range)` sli
 stored in a normalized `{ ids, entities }` shape. Views render from these entries;
 mutations edit them optimistically and then let the server reconcile.
 
-Redux does **not** hold persisted events (only transient drafts/interaction). See
+The Zustand stores do **not** hold persisted events (only transient drafts/interaction). See
 [State Systems](./frontend-runtime-flow.md#state-systems).
 
 ## Cache-key anatomy
@@ -139,14 +139,15 @@ Two small TanStack features make prev/next navigation feel instant:
 
 ## What the cache is *not*
 
-- **Not Redux.** Redux owns only the in-progress draft and calendar interaction
-  state (`draft.slice.ts`). Do not mirror persisted events into Redux.
+- **Not client stores.** The draft Zustand store owns only the in-progress
+  draft and calendar interaction state (`draft.store.ts`). Do not mirror
+  persisted events into client stores.
 - **Not IndexedDB directly.** IndexedDB is the *offline store behind the `local`
   repository*; components never touch it — they read through the query cache.
 
 ## Testing note
 
-Tests seed the query cache directly (there is no Redux→query bridge): pass an
+Tests seed the query cache directly (there is no store→query bridge): pass an
 `events` array to the render/store harnesses, which calls `seedEventQueries`
 (`__tests__/utils/event-query-test-data.ts`). See the
 [Testing Playbook](../development/testing-playbook.md).
