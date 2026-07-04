@@ -182,7 +182,15 @@ const AuthenticatedAccountSummary: FC<{ email: string }> = ({ email }) => {
         </span>
       )}
       {syncStatus ? (
-        <span aria-live="polite" className="sr-only" role="status">
+        // `status` doesn't derive its accessible name from text content per the
+        // ARIA spec, so an explicit aria-label is required for the name to be
+        // announced/queryable (e.g. by role+name in tests).
+        <span
+          aria-label={syncStatus.tooltip}
+          aria-live="polite"
+          className="sr-only"
+          role="status"
+        >
           {syncStatus.tooltip}
         </span>
       ) : null}

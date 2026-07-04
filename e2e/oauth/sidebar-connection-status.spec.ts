@@ -1,4 +1,4 @@
-import { expect, type Page, test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 import {
   expectGoogleConnectionStateInStore,
   type GoogleConnectionState,
@@ -10,11 +10,13 @@ import {
 } from "../utils/oauth-test-utils";
 
 /**
- * E2E tests for Google Calendar connection state (Redux + header status when visible).
+ * E2E tests for Google Calendar connection state (Redux + the sidebar
+ * account summary's sync-status live region when visible).
  *
- * HeaderInfoIcon only renders role="status" for warning/error states (reconnect required,
- * needs repair). Other states are reflected in Redux only; command palette still exposes
- * connect/repair actions.
+ * `PlannerAccountSummary`'s status live region only renders once the sidebar
+ * shows `AuthenticatedAccountSummary` (i.e. `useUser().email` is set), and
+ * only for connection states other than NOT_CONNECTED — see
+ * `getGoogleAccountSummaryStatus`.
  *
  * NOTE: These tests are skipped on mobile because the MobileGate component
  * blocks the entire app on mobile viewports.
@@ -26,30 +28,26 @@ test.describe("Sidebar Connection Status", () => {
   // Run tests serially to avoid state interference
   test.describe.configure({ mode: "serial" });
 
-  const getHeaderGoogleStatus = (page: Page) =>
-    page.locator("#cal").getByRole("status", { name: /Google Calendar/i });
-
   test.beforeEach(async ({ page }) => {
     await prepareOAuthTestPage(page);
     await page.goto("/week");
     await waitForAppReady(page);
+    await markUserAsAuthenticated(page);
 
     // Reset to a clean NOT_CONNECTED state and wait for React to render
     // This prevents race conditions between cleanup and test state changes
     await setGoogleConnectionState(page, "NOT_CONNECTED");
   });
 
-  test("stores NOT_CONNECTED in Redux (header icon hidden for muted state)", async ({
+  test("stores NOT_CONNECTED in Redux (sidebar shows a plain email for the muted state)", async ({
     page,
   }) => {
     await expectGoogleConnectionStateInStore(page, "NOT_CONNECTED");
   });
 
-  test("checking path: authenticated user with metadata loading", async ({
+  test("checking path: authenticated user with metadata loading shows the syncing status", async ({
     page,
   }) => {
-    await markUserAsAuthenticated(page);
-
     await page.evaluate(() => {
       const store = window.__COMPASS_E2E_STORE__;
       if (!store) return;
@@ -64,8 +62,10 @@ test.describe("Sidebar Connection Status", () => {
       { timeout: 5000 },
     );
 
-    // "Checking" does not render HeaderInfoIcon (muted / no warning-error icon).
-    await expect(getHeaderGoogleStatus(page)).toHaveCount(0);
+    // "Checking" renders the same syncing shimmer/tooltip as IMPORTING.
+    await expect(
+      page.getByRole("status", { name: SIDEBAR_STATUS_LABELS.syncing }),
+    ).toBeAttached();
   });
 
   test("shows IMPORTING status", async ({ page }) => {
@@ -96,6 +96,7 @@ test.describe("Sidebar Connection Status - State Transitions", () => {
     await prepareOAuthTestPage(page);
     await page.goto("/week");
     await waitForAppReady(page);
+    await markUserAsAuthenticated(page);
 
     // Reset to a clean NOT_CONNECTED state and wait for React to render
     // This prevents race conditions between cleanup and test state changes
@@ -110,12 +111,12 @@ test.describe("Sidebar Connection Status - State Transitions", () => {
       page.getByRole("status", {
         name: SIDEBAR_STATUS_LABELS.reconnectRequired,
       }),
-    ).toBeVisible();
+    ).toBeAttached();
 
     await setGoogleConnectionState(page, "ATTENTION");
     await expect(
-      page.getByRole("status", { name: SIDEBAR_STATUS_LABELS.needsRepair }),
-    ).toBeVisible();
+      page.getByRole("status", { name: SIDEBAR_STATUS_LABELS.needsSync }),
+    ).toBeAttached();
   });
 
   test("cycles through connection states without visual glitches", async ({
@@ -137,6 +138,6 @@ test.describe("Sidebar Connection Status - State Transitions", () => {
       page.getByRole("status", {
         name: SIDEBAR_STATUS_LABELS.reconnectRequired,
       }),
-    ).toBeVisible();
+    ).toBeAttached();
   });
 });
