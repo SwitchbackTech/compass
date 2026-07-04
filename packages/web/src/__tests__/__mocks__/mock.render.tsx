@@ -1,4 +1,3 @@
-import { type PreloadedState } from "@reduxjs/toolkit";
 import { type QueryClient } from "@tanstack/react-query";
 import {
   type RenderHookOptions,
@@ -14,6 +13,10 @@ import {
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { type Store } from "redux";
 import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
+import {
+  seedStoresFromState,
+  type TestAppState,
+} from "@web/__tests__/utils/state/seed-stores";
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import { createCompassQueryClient } from "@web/common/query/query-client";
@@ -28,7 +31,7 @@ mock.module("@react-oauth/google", () => ({
 }));
 
 interface CustomRenderOptions extends RenderOptions {
-  state?: PreloadedState<RootState>;
+  state?: TestAppState;
   queryClient?: QueryClient;
   store?: Store<RootState>;
   router?: RouterProviderProps["router"];
@@ -88,15 +91,16 @@ const customRender = (
     state,
     router,
     queryClient = createCompassQueryClient(),
-    store = createCompassStore({
-      preloadedState: state,
-      queryClient,
-    }),
+    store,
     wrapper: CustomWrapper,
     events,
     ...renderOptions
   }: CustomRenderOptions = {},
 ) => {
+  store ??= createCompassStore({
+    preloadedState: seedStoresFromState(state),
+    queryClient,
+  });
   if (events?.length) seedEventQueries(queryClient, events);
   const options: RenderOptions = { ...renderOptions };
   const Wrapper = ({ children }: PropsWithChildren) => {
@@ -137,14 +141,15 @@ const customRenderHook = <ReturnType, Props>(
     state,
     router,
     queryClient = createCompassQueryClient(),
-    store = createCompassStore({
-      preloadedState: state,
-      queryClient,
-    }),
+    store,
     events,
     ...renderOptions
   }: CustomRenderHookOptions<Props> = {},
 ) => {
+  store ??= createCompassStore({
+    preloadedState: seedStoresFromState(state),
+    queryClient,
+  });
   if (events?.length) seedEventQueries(queryClient, events);
   const options: RenderHookOptions<Props> = { ...renderOptions };
 

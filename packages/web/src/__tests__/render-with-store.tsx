@@ -11,6 +11,10 @@ import { createCompassQueryClient } from "@web/common/query/query-client";
 import { type RootState } from "@web/store";
 import { reducers } from "@web/store/reducers";
 import { seedEventQueries } from "./utils/event-query-test-data";
+import {
+  seedStoresFromState,
+  type TestAppState,
+} from "./utils/state/seed-stores";
 
 type StoreOptions = {
   /** Seed the event query cache  */
@@ -31,10 +35,10 @@ export function createTestStore(preloadedState?: PreloadedState<RootState>) {
 }
 
 export function createStoreWrapper(
-  preloadedState?: PreloadedState<RootState>,
+  preloadedState?: TestAppState,
   { events }: StoreOptions = {},
 ) {
-  const store = createTestStore(preloadedState);
+  const store = createTestStore(seedStoresFromState(preloadedState));
   const queryClient = createCompassQueryClient();
   if (events?.length) seedEventQueries(queryClient, events);
 
@@ -51,7 +55,7 @@ export function createStoreWrapper(
 
 export function renderWithStore(
   ui: ReactElement,
-  preloadedState?: PreloadedState<RootState>,
+  preloadedState?: TestAppState,
   options?: StoreOptions,
 ) {
   const { store, wrapper } = createStoreWrapper(preloadedState, options);
@@ -64,7 +68,7 @@ export function renderWithStore(
 
 export function renderHookWithStore<Result, Props>(
   hook: (initialProps: Props) => Result,
-  preloadedState?: PreloadedState<RootState>,
+  preloadedState?: TestAppState,
   options?: Omit<RenderHookOptions<Props>, "wrapper"> & StoreOptions,
 ) {
   const { events, ...renderHookOptions } = options ?? {};
