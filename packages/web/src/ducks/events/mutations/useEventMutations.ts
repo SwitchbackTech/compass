@@ -81,11 +81,10 @@ export function useEventMutations(
   // No per-mutation rollback: failed mutations leave their optimistic write
   // in place and rely on the settle-time refetch to restore server truth.
   // Invalidation only runs once NO event mutation remains in flight, so a
-  // refetch never overwrites another mutation's live optimistic update (the
-  // TanStack Query recipe for concurrent optimistic updates). The check is
-  // deferred to a macrotask because a settling mutation still counts as
-  // pending during its own onSettled — deferring lets simultaneous settles
-  // reliably observe count 0 instead of each seeing the other and skipping.
+  // refetch never overwrites another mutation's live optimistic update.
+  // The check is deferred to a macrotask because a settling mutation still
+  // counts as pending during its own onSettled — deferring lets simultaneous
+  // settles reliably observe count 0 instead of each seeing the other and skipping.
   const settle = () => {
     setTimeout(() => {
       if (

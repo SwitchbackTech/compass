@@ -1,6 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { act, renderHook, waitFor } from "@testing-library/react";
-import { type PropsWithChildren } from "react";
+import { renderHook, waitFor } from "@testing-library/react";
+import { act, type PropsWithChildren } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
   type Payload_Order,
@@ -51,9 +51,8 @@ const normalized = (...events: Schema_Event[]) => ({
 });
 
 // Each repository call blocks on its own waiter (FIFO). `resolve`/`reject`
-// settle every current and future call, matching the old shared-promise
-// harness; `resolveNext`/`rejectNext` settle only the oldest in-flight call so
-// tests can interleave outcomes of concurrent mutations.
+// settle every current and future call. `resolveNext`/`rejectNext` settle
+// only the oldest in-flight call so tests can interleave outcomes of concurrent mutations.
 const pendingControl = () => {
   type Waiter = { resolve: () => void; reject: (reason?: unknown) => void };
   const waiters: Waiter[] = [];

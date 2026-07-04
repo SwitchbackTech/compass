@@ -72,17 +72,17 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("shows a plain account identity for authenticated accounts", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
 
     renderSummary();
 
-    expect(screen.getByText("ugur@example.com")).toBeTruthy();
+    expect(screen.getByText("ahab@pequod.com.com")).toBeTruthy();
     expect(screen.queryByRole("button")).toBeNull();
     expect(mockUseConnectGoogle).toHaveBeenCalledTimes(1);
   });
 
   it("shows the Google sync status without a status landmark when synced", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "HEALTHY";
 
     renderSummary();
@@ -92,7 +92,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("shows a syncing label while Google is importing", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "IMPORTING";
 
     renderSummary();
@@ -101,7 +101,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("shows the syncing label while Google repair is running", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "repairing";
 
     renderSummary();
@@ -110,7 +110,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("shows syncing copy before Google metadata loads", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "checking";
 
     renderSummary();
@@ -119,7 +119,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("shows repair copy when Google sync needs attention", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "ATTENTION";
 
     renderSummary();
@@ -129,7 +129,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("shows reconnect copy only when Google credentials need reconnecting", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "RECONNECT_REQUIRED";
 
     renderSummary();
@@ -138,7 +138,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("hides the sync line when Google is not connected", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "NOT_CONNECTED";
 
     renderSummary();
@@ -148,7 +148,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("shows a syncing-changes spinner instead of the healthy dot while an event mutation is pending", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "HEALTHY";
 
     renderSummary({ pendingEventIds: ["event-1"] });
@@ -158,7 +158,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("shows the syncing-changes spinner for pending mutations even without Google", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "NOT_CONNECTED";
 
     renderSummary({ pendingEventIds: ["event-1"] });
@@ -167,7 +167,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("keeps actionable Google states visible over pending event mutations", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "RECONNECT_REQUIRED";
 
     renderSummary({ pendingEventIds: ["event-1"] });
@@ -177,7 +177,7 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("keeps Google's own syncing label over pending event mutations", () => {
-    mockEmail = "ugur@example.com";
+    mockEmail = "ahab@pequod.com.com";
     mockGoogleState = "IMPORTING";
 
     renderSummary({ pendingEventIds: ["event-1"] });
