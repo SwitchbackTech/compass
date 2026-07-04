@@ -5,9 +5,9 @@ export type GoogleUiState = "checking" | "repairing" | GoogleConnectionState;
 export type CommandActionIcon = "CloudArrowUpIcon";
 
 export type GoogleAccountSummaryStatus = {
-  label: string;
-  isHealthy: boolean;
-  isLoading: boolean;
+  variant: "syncing" | "healthy" | "warning" | "error";
+  tooltip: string;
+  action?: { label: string; onClick: () => void };
 } | null;
 
 export type GoogleUiConfig = {
@@ -17,22 +17,11 @@ export type GoogleUiConfig = {
     isDisabled: boolean;
     onSelect?: () => void;
   };
-  sidebarStatus: {
-    tooltip: string;
-    isDisabled: boolean;
-    iconColor?: string;
-    dialog?: {
-      title: string;
-      description: string;
-      repairLabel: string;
-      onRepair: () => void;
-    };
-    onSelect?: () => void;
-  };
 };
 
 export type UseConnectGoogleResult = GoogleUiConfig & {
   isAvailable: boolean;
-  isRepairing: boolean;
   state: GoogleUiState;
+  onRepairGoogle: () => void;
+  onOpenGoogleAuth: () => void;
 };

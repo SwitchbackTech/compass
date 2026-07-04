@@ -1,9 +1,15 @@
 import { InfoIcon } from "@phosphor-icons/react";
+import classNames from "classnames";
 import { type FC, useCallback } from "react";
 import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { getGoogleAccountSummaryStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@web/components/Tooltip";
 
 const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save changes";
 
@@ -55,37 +61,83 @@ const TemporaryAccountSummary: FC = () => {
   );
 };
 
+const SYNC_STATUS_VARIANT_CLASSNAME: Record<
+  NonNullable<ReturnType<typeof getGoogleAccountSummaryStatus>>["variant"],
+  string
+> = {
+  syncing: "c-sync-text-wave",
+  healthy: "text-text-light",
+  warning: "text-status-warning",
+  error: "text-status-error",
+};
+
 const AuthenticatedAccountSummary: FC<{ email: string }> = ({ email }) => {
-  const { state } = useConnectGoogle();
+  const { state, onRepairGoogle, onOpenGoogleAuth } = useConnectGoogle();
   const accountLabel = email;
-  const syncStatus = getGoogleAccountSummaryStatus(state);
+  const syncStatus = getGoogleAccountSummaryStatus(state, {
+    onRepairGoogle,
+    onOpenGoogleAuth,
+  });
+
+  const emailClassName = classNames(
+    "truncate font-normal text-xs leading-tight",
+    syncStatus
+      ? SYNC_STATUS_VARIANT_CLASSNAME[syncStatus.variant]
+      : "text-text-light",
+  );
 
   return (
-    <div
-      className="flex w-full min-w-0 shrink-0 flex-col border-border-primary border-t px-4 py-2 text-text-light"
-      title={accountLabel}
-    >
-      <span
-        className="truncate font-normal text-text-light text-xs leading-tight"
-        translate="no"
-      >
-        {accountLabel}
-      </span>
+    <div className="flex w-full min-w-0 shrink-0 items-center border-border-primary border-t px-4 py-2 text-text-light">
       {syncStatus ? (
-        <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] text-text-light-inactive leading-tight motion-safe:animate-account-sync-status-in">
-          {syncStatus.isHealthy ? (
-            <span
-              aria-hidden="true"
-              className="size-1.5 shrink-0 rounded-full bg-status-success"
-            />
-          ) : null}
-          {syncStatus.isLoading ? (
-            <span
-              aria-hidden="true"
-              className="size-2 shrink-0 animate-spin rounded-full border border-text-light-inactive/40 border-t-text-lighter motion-reduce:animate-none"
-            />
-          ) : null}
-          <span className="truncate">{syncStatus.label}</span>
+        <Tooltip interactive={!!syncStatus.action}>
+          <TooltipTrigger asChild>
+            {syncStatus.action ? (
+              <button
+                className={classNames(
+                  emailClassName,
+                  "min-w-0 appearance-none border-0 bg-transparent p-0 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+                )}
+                onClick={syncStatus.action.onClick}
+                translate="no"
+                type="button"
+              >
+                {accountLabel}
+              </button>
+            ) : (
+              <span
+                className={classNames(
+                  emailClassName,
+                  "min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
+                )}
+                // biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so useFocus can reveal the status tooltip via keyboard; there is no action to trigger here.
+                tabIndex={0}
+                translate="no"
+              >
+                {accountLabel}
+              </span>
+            )}
+          </TooltipTrigger>
+          <TooltipContent className="flex max-w-55 flex-col gap-1.5">
+            <span>{syncStatus.tooltip}</span>
+            {syncStatus.action ? (
+              <button
+                className="c-focus-ring self-start rounded bg-accent-primary px-2 py-1 font-medium text-text-dark text-xs hover:brightness-110"
+                onClick={syncStatus.action.onClick}
+                type="button"
+              >
+                {syncStatus.action.label}
+              </button>
+            ) : null}
+          </TooltipContent>
+        </Tooltip>
+      ) : (
+        <span className={emailClassName} translate="no">
+          {accountLabel}
+        </span>
+      )}
+      {syncStatus ? (
+        <span aria-live="polite" className="sr-only" role="status">
+          {syncStatus.tooltip}
         </span>
       ) : null}
     </div>

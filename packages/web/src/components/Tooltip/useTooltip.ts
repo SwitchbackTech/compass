@@ -2,6 +2,7 @@ import {
   autoUpdate,
   flip,
   offset,
+  safePolygon,
   shift,
   useDismiss,
   useFloating,
@@ -19,6 +20,7 @@ export function useTooltip({
   placement = "top",
   open: controlledOpen,
   onOpenChange: setControlledOpen,
+  interactive = false,
 }: TooltipOptions = {}) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(initialOpen);
 
@@ -45,6 +47,7 @@ export function useTooltip({
   const hover = useHover(context, {
     delay: 120,
     enabled: true,
+    handleClose: interactive ? safePolygon() : null,
   });
   const focus = useFocus(context, {
     enabled: controlledOpen == null,

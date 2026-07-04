@@ -7,12 +7,6 @@ import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { clearGoogleRevokedState } from "../../google/state/google.auth.state";
 
-const authStateListeners = new Set<() => void>();
-
-function emitAuthStateChange(): void {
-  authStateListeners.forEach((listener) => listener());
-}
-
 function normalizeStoredAuthState(parsed: unknown): AuthState {
   if (typeof parsed !== "object" || parsed === null) {
     return DEFAULT_AUTH_STATE;
@@ -71,13 +65,7 @@ export function updateAuthState(updates: Partial<AuthState>): void {
   const result = AuthStateSchema.safeParse({ ...getAuthState(), ...updates });
   if (!result.success) return;
 
-  const wasStored = persistentBrowserStore.set(
-    STORAGE_KEYS.AUTH,
-    JSON.stringify(result.data),
-  );
-  if (wasStored) {
-    emitAuthStateChange();
-  }
+  persistentBrowserStore.set(STORAGE_KEYS.AUTH, JSON.stringify(result.data));
 }
 
 /**
@@ -117,9 +105,7 @@ export function getLastKnownEmail(): string | undefined {
 export function clearAuthenticationState(): void {
   if (typeof window === "undefined") return;
 
-  if (persistentBrowserStore.remove(STORAGE_KEYS.AUTH)) {
-    emitAuthStateChange();
-  }
+  persistentBrowserStore.remove(STORAGE_KEYS.AUTH);
 }
 
 export function clearAnonymousCalendarChangeSignUpPrompt(): void {
@@ -128,31 +114,4 @@ export function clearAnonymousCalendarChangeSignUpPrompt(): void {
 
 export function markAnonymousCalendarChangeForSignUpPrompt(): void {
   updateAuthState({ shouldPromptSignUpAfterAnonymousCalendarChange: true });
-}
-
-export function shouldShowAnonymousCalendarChangeSignUpPrompt(): boolean {
-  return getAuthState().shouldPromptSignUpAfterAnonymousCalendarChange === true;
-}
-
-export function subscribeToAuthState(listener: () => void): () => void {
-  authStateListeners.add(listener);
-
-  if (typeof window === "undefined") {
-    return () => {
-      authStateListeners.delete(listener);
-    };
-  }
-
-  const handleStorage = (event: StorageEvent) => {
-    if (event.key === STORAGE_KEYS.AUTH) {
-      listener();
-    }
-  };
-
-  window.addEventListener("storage", handleStorage);
-
-  return () => {
-    authStateListeners.delete(listener);
-    window.removeEventListener("storage", handleStorage);
-  };
 }

@@ -1,7 +1,6 @@
 import { type FC } from "react";
 import { theme } from "@web/common/styles/theme";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
-import { HeaderInfoIcon } from "@web/components/HeaderInfoIcon/HeaderInfoIcon";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { Text } from "@web/components/Text/Text";
@@ -26,7 +25,7 @@ interface Props {
 
 /**
  * Shared header for the Day and Week views: a left-aligned heading and a
- * right-aligned control cluster (info icon, view switcher, today, prev/next).
+ * right-aligned control cluster (view switcher, today, prev/next).
  * Owns the heading markup, sidebar-toggle state, and the control layout so both
  * views stay consistent without re-wiring these concerns per caller.
  */
@@ -61,7 +60,6 @@ export const CalendarHeader: FC<Props> = ({
       </h1>
 
       <div className="z-2 ml-auto flex items-center gap-3 pr-5">
-        <HeaderInfoIcon />
         <SelectView />
         <TodayButton navigateToToday={onToday} isToday={isToday} />
         <TooltipWrapper shortcut="J">
