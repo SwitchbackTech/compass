@@ -62,10 +62,6 @@ export type InitialReduxState = PreloadedState<RootState> & TestState;
 export const createInitialState = (
   partialState: Record<string, unknown> = {},
 ): InitialReduxState => {
-  const now = new Date();
-  const oneWeekLater = new Date(now);
-  oneWeekLater.setDate(now.getDate() + 7);
-
   return {
     events: {
       entities: { value: {} },
@@ -102,23 +98,6 @@ export const createInitialState = (
       pendingEvents: {
         eventIds: [],
       },
-    },
-    view: {
-      dates: {
-        start: now.toISOString(),
-        end: oneWeekLater.toISOString(),
-      },
-      sidebar: {
-        tab: "tasks",
-        isOpen: true,
-      },
-    },
-    settings: {
-      isCmdPaletteOpen: false,
-    },
-    userMetadata: {
-      current: null,
-      status: "idle",
     },
     ...partialState,
   } as unknown as InitialReduxState;

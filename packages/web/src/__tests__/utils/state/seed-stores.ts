@@ -1,9 +1,11 @@
 import { type PreloadedState } from "@reduxjs/toolkit";
+import { useUserMetadataStore } from "@web/auth/state/user-metadata.store";
 import { useViewStore } from "@web/events/stores/view.store";
 import { useSettingsStore } from "@web/settings/settings.store";
 import { type RootState } from "@web/store";
 
 type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+type UserMetadataState = ReturnType<typeof useUserMetadataStore.getState>;
 type ViewState = ReturnType<typeof useViewStore.getState>;
 
 /**
@@ -14,6 +16,7 @@ type ViewState = ReturnType<typeof useViewStore.getState>;
  */
 export type TestAppState = PreloadedState<RootState> & {
   settings?: Partial<SettingsState>;
+  userMetadata?: Partial<UserMetadataState>;
   view?: Partial<ViewState>;
 };
 
@@ -26,8 +29,9 @@ export function seedStoresFromState(
 ): PreloadedState<RootState> | undefined {
   if (!state) return state;
 
-  const { settings, view, ...remaining } = state;
+  const { settings, userMetadata, view, ...remaining } = state;
   if (settings) useSettingsStore.setState(settings);
+  if (userMetadata) useUserMetadataStore.setState(userMetadata);
   if (view) useViewStore.setState(view);
   return remaining;
 }

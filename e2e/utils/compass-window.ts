@@ -1,23 +1,25 @@
 import { z } from "zod";
 
-type CompassE2EState = {
-  userMetadata?: {
-    current?: {
-      google?: {
-        connectionState?: string;
-      };
+type CompassE2EUserMetadataState = {
+  current?: {
+    google?: {
+      connectionState?: string;
     };
-    status?: string;
-  };
+  } | null;
+  status?: string;
 };
 
 /**
- * Zod schema for the Redux store subset exposed on window for e2e testing.
- * Validates that the store is available and has the expected dispatch/getState surface.
+ * Zod schema for the semantic user-metadata bridge exposed on window for e2e
+ * testing. Validates that the bridge is available with its action surface.
  */
 const CompassStoreSchema = z.object({
-  dispatch: z.function(),
-  getState: z.function(),
+  userMetadata: z.object({
+    getState: z.function(),
+    set: z.function(),
+    setLoading: z.function(),
+    clear: z.function(),
+  }),
 });
 
 /**
@@ -46,15 +48,19 @@ export type CompassWindow = z.infer<typeof CompassWindowSchema>;
  *
  * These are set by the app when __COMPASS_E2E_TEST__ is true:
  * - __COMPASS_E2E_TEST__   set by prepareOAuthTestPage via addInitScript
- * - __COMPASS_E2E_STORE__  set by packages/web/src/store/index.ts
+ * - __COMPASS_E2E_STORE__  set by packages/web/src/auth/state/user-metadata.store.ts
  * - __COMPASS_E2E_HOOKS__  set by SessionProvider.tsx
  */
 declare global {
   interface Window {
     __COMPASS_E2E_TEST__?: boolean;
     __COMPASS_E2E_STORE__?: {
-      dispatch: (action: unknown) => unknown;
-      getState: () => CompassE2EState;
+      userMetadata: {
+        getState: () => CompassE2EUserMetadataState;
+        set: (metadata: { google?: { connectionState?: string } }) => void;
+        setLoading: () => void;
+        clear: () => void;
+      };
     };
     __COMPASS_E2E_HOOKS__?: {
       setAuthenticated: (value: boolean) => void;

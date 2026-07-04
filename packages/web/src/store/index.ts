@@ -21,10 +21,5 @@ export const createCompassStore = ({
 
 export const store = createCompassStore();
 
-// Expose store for e2e testing (always expose, let tests opt-in via flag)
-if (typeof window !== "undefined") {
-  window.__COMPASS_E2E_STORE__ = store;
-}
-
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

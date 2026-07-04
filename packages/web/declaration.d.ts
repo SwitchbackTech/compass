@@ -37,10 +37,14 @@ declare const BUILD_VERSION: string;
 interface Window {
   /** Set by Playwright prepareOAuthTestPage; disables SuperTokens session checks in e2e mode. */
   __COMPASS_E2E_TEST__?: boolean;
-  /** Redux store exposed for test action dispatch. Set by packages/web/src/store/index.ts. */
+  /** Semantic user-metadata bridge for e2e tests. Set by packages/web/src/auth/state/user-metadata.store.ts. */
   __COMPASS_E2E_STORE__?: {
-    dispatch: import("@web/store").AppDispatch;
-    getState: () => import("@web/store").RootState;
+    userMetadata: {
+      getState: () => import("@web/auth/state/user-metadata.store").UserMetadataState;
+      set: (metadata: import("@core/types/user.types").UserMetadata) => void;
+      setLoading: () => void;
+      clear: () => void;
+    };
   };
   /** Session test hooks exposed by SessionProvider for e2e auth control. */
   __COMPASS_E2E_HOOKS__?: {

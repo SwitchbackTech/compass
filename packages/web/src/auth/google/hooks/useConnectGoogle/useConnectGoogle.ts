@@ -1,6 +1,5 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
-import { type GoogleConnectionState } from "@core/types/user.types";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
@@ -10,18 +9,16 @@ import {
   subscribeToGoogleSyncUIState,
 } from "@web/auth/google/state/google.sync.state";
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
+import {
+  selectGoogleConnectionState,
+  selectUserMetadataStatus,
+  useUserMetadataStore,
+} from "@web/auth/state/user-metadata.store";
 import { SyncApi } from "@web/common/apis/sync.api";
 import { getApiErrorCode, isApiError } from "@web/common/apis/util/api.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-import {
-  selectGoogleConnectionState,
-  selectUserMetadataStatus,
-} from "@web/ducks/auth/selectors/user-metadata.selectors";
-import { type UserMetadataStatus } from "@web/ducks/auth/slices/user-metadata.slice";
 import { settingsActions } from "@web/settings/settings.store";
-import { type RootState } from "@web/store";
-import { useAppSelector } from "@web/store/store.hooks";
 import { useIsGoogleAvailable } from "../useIsGoogleAvailable/useIsGoogleAvailable";
 import {
   type GoogleUiState,
@@ -29,18 +26,14 @@ import {
 } from "./useConnectGoogle.types";
 import { getGoogleConnectionConfig } from "./useConnectGoogle.util";
 
-// Merges Redux-derived Google connection state with transient UI overrides from
+// Merges store-derived Google connection state with transient UI overrides from
 // google.sync.ui.state.ts; the override is read via useSyncExternalStore so React
 // stays aligned with that external store (see comments there).
 
 export const useConnectGoogle = (): UseConnectGoogleResult => {
   const isAvailable = useIsGoogleAvailable();
-  const connectionState = useAppSelector(
-    selectGoogleConnectionState as (state: RootState) => GoogleConnectionState,
-  );
-  const userMetadataStatus = useAppSelector(
-    selectUserMetadataStatus as (state: RootState) => UserMetadataStatus,
-  );
+  const connectionState = useUserMetadataStore(selectGoogleConnectionState);
+  const userMetadataStatus = useUserMetadataStore(selectUserMetadataStatus);
   const syncIndicator = useSyncExternalStore(
     subscribeToGoogleSyncUIState,
     getGoogleSyncIndicatorOverride,
