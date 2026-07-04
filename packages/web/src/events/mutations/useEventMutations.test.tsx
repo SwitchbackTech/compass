@@ -7,7 +7,7 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
+import { type EventRepository } from "@web/common/repositories/event/event.repository.types";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type SomedayEventQueryData } from "@web/events/queries/event.query.types";

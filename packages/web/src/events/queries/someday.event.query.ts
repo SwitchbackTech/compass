@@ -1,4 +1,4 @@
-import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
+import { type EventRepository } from "@web/common/repositories/event/event.repository.types";
 import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
 import { type Payload_GetEvents } from "@web/events/event.types";
 import { normalizeEventList } from "./event.query.normalize";
