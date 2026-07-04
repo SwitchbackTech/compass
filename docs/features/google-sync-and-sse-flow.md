@@ -109,9 +109,9 @@ Operational constraints:
 
 High-level path:
 
-1. UI dispatches an event action.
-2. An event listener invokes an async operation that performs optimistic updates.
-3. The selected repository writes locally or remotely.
+1. UI calls a mutation from `useEventMutations`.
+2. The mutation's `onMutate` applies an optimistic update to the TanStack Query cache.
+3. The mutation's `mutationFn` writes through the selected repository.
 4. Remote event writes hit backend event routes.
 5. `EventController` packages the change as a `CompassEvent`.
 6. `CompassToGoogleEventPropagation.processEvents()` loads the DB event, plans work, applies persistence, and runs Google side effects.
@@ -119,8 +119,7 @@ High-level path:
 
 Primary files:
 
-- `packages/web/src/ducks/events/listeners/event.listeners.ts`
-- `packages/web/src/ducks/events/operations/event.mutation.operations.ts`
+- `packages/web/src/events/mutations/useEventMutations.ts`
 - `packages/web/src/common/repositories/event`
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
