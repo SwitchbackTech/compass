@@ -5,11 +5,17 @@
  * resetAllStores() in a global afterEach so individual test files never need
  * to remember it.
  */
+import {
+  initialSettingsState,
+  useSettingsStore,
+} from "@web/settings/settings.store";
+
 type StoreReset = () => void;
 
 const storeResets: StoreReset[] = [
   // Populated as slices migrate to Zustand:
   // settings, view, auth, userMetadata, draft
+  () => useSettingsStore.setState(initialSettingsState, true),
 ];
 
 export function resetAllStores() {

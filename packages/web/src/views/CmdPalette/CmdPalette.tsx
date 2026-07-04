@@ -24,9 +24,12 @@ import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  selectIsCmdPaletteOpen,
+  settingsActions,
+  useSettingsStore,
+} from "@web/settings/settings.store";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
@@ -55,7 +58,7 @@ const CmdPalette = ({
     startOfView,
     endOfView,
   );
-  const open = useAppSelector(selectIsCmdPaletteOpen);
+  const open = useSettingsStore(selectIsCmdPaletteOpen);
   const [page] = useState<"root" | "projects">("root");
   const [search, setSearch] = useState("");
   const authCmdItems = useAuthCmdItems();
@@ -168,7 +171,7 @@ const CmdPalette = ({
   return (
     <CommandPalette
       onChangeSearch={setSearch}
-      onChangeOpen={() => dispatch(settingsSlice.actions.closeCmdPalette())}
+      onChangeOpen={() => settingsActions.closeCmdPalette()}
       search={search}
       isOpen={open}
       page={page}

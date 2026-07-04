@@ -19,9 +19,9 @@ import {
   selectUserMetadataStatus,
 } from "@web/ducks/auth/selectors/user-metadata.selectors";
 import { type UserMetadataStatus } from "@web/ducks/auth/slices/user-metadata.slice";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
+import { settingsActions } from "@web/settings/settings.store";
 import { type RootState } from "@web/store";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useAppSelector } from "@web/store/store.hooks";
 import { useIsGoogleAvailable } from "../useIsGoogleAvailable/useIsGoogleAvailable";
 import {
   type GoogleUiState,
@@ -34,7 +34,6 @@ import { getGoogleConnectionConfig } from "./useConnectGoogle.util";
 // stays aligned with that external store (see comments there).
 
 export const useConnectGoogle = (): UseConnectGoogleResult => {
-  const dispatch = useAppDispatch();
   const isAvailable = useIsGoogleAvailable();
   const connectionState = useAppSelector(
     selectGoogleConnectionState as (state: RootState) => GoogleConnectionState,
@@ -60,16 +59,16 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
         return;
       }
 
-      dispatch(settingsSlice.actions.closeCmdPalette());
+      settingsActions.closeCmdPalette();
       void startGoogleAuthorization();
     };
 
     void start();
-  }, [dispatch, startGoogleAuthorization]);
+  }, [startGoogleAuthorization]);
 
   const onRepairGoogle = useCallback(() => {
     const startRepair = async () => {
-      dispatch(settingsSlice.actions.closeCmdPalette());
+      settingsActions.closeCmdPalette();
       setRepairingSyncIndicatorOverride();
 
       try {
@@ -90,7 +89,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
     };
 
     void startRepair();
-  }, [dispatch]);
+  }, []);
 
   // "checking" is a UI-only state until we have loaded metadata from the server.
   // Covers both "idle" and "loading" so returning users do not briefly see

@@ -130,7 +130,7 @@ Layout contract:
 Control mapping:
 
 - Open shortcuts opens an in-sidebar keyboard shortcuts overlay.
-- Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`.
+- Command palette toggle (`modifier + K`) calls open/close palette actions from the settings Zustand store (`packages/web/src/settings/settings.store.ts`).
 - Refresh appears only when `useVersionCheck()` reports an available update.
 - The account row shows temporary-account or signed-in account context above the Someday sections.
 - Background Google import state is not shown in the Planner Sidebar footer.
