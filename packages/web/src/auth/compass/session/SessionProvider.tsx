@@ -14,7 +14,6 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { refreshEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { createExternalStore } from "@web/common/utils/external-store.util";
-import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import * as sse from "@web/sse/provider/SSEProvider";
 import { store } from "@web/store";
@@ -65,7 +64,6 @@ const handleSessionExists = () => {
 const handleSessionMissing = () => {
   authStore.set(false);
   refreshEventRepositorySource(false);
-  store.dispatch(authSlice.actions.resetAuth());
   store.dispatch(userMetadataSlice.actions.clear(undefined));
   clearGoogleSyncIndicatorOverride();
 };

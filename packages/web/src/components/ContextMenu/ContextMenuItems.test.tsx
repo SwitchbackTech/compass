@@ -48,7 +48,6 @@ const renderWithTheme = (
   const queryClient = new QueryClient();
   seedPendingEventMutations(queryClient, pendingEventIds);
   const currentState = createInitialState();
-  currentState.auth.status = "authenticating";
   const store = configureStore({
     preloadedState: currentState,
     reducer: reducers,

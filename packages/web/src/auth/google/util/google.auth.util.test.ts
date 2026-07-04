@@ -160,7 +160,7 @@ describe("google-auth.util", () => {
     it("dispatches the Google revocation state changes", () => {
       handleGoogleRevoked();
 
-      expect(mockDispatch).toHaveBeenCalledTimes(2);
+      expect(mockDispatch).toHaveBeenCalledTimes(1);
       expect(mockRemoveEventsByOrigin).toHaveBeenCalledTimes(1);
     });
 

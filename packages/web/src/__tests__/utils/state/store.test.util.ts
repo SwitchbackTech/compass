@@ -67,10 +67,6 @@ export const createInitialState = (
   oneWeekLater.setDate(now.getDate() + 7);
 
   return {
-    auth: {
-      status: "idle",
-      error: null,
-    },
     events: {
       entities: { value: {} },
       getWeekEvents: {

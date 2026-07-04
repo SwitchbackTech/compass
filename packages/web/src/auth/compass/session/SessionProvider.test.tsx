@@ -1,7 +1,6 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { useContext } from "react";
 import { DEFAULT_AUTH_STATE } from "@web/common/constants/auth.constants";
-import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -169,7 +168,6 @@ describe("SessionProvider sessionInit", () => {
     // Simulate SIGN_OUT event
     session.emit("SIGN_OUT", { action: "SIGN_OUT" });
 
-    expect(dispatch).toHaveBeenCalledWith(authSlice.actions.resetAuth());
     expect(dispatch).toHaveBeenCalledWith(
       userMetadataSlice.actions.clear(undefined),
     );

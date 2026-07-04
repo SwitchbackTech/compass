@@ -6,7 +6,6 @@ import {
   GOOGLE_REVOKED_TOAST_ID,
   toastDefaultOptions,
 } from "@web/common/constants/toast.constants";
-import { authSlice } from "@web/ducks/auth/slices/auth.slice";
 import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 
 export interface SyncLocalEventsResult {
@@ -61,7 +60,6 @@ export function createGoogleAuthUtil({
     // hits IndexedDB, then drop the stale remote cache entries.
     refreshEventRepositorySource();
 
-    dispatch(authSlice.actions.resetAuth());
     dispatch(userMetadataSlice.actions.clear(undefined));
 
     removeEventsByOrigin([Origin.GOOGLE, Origin.GOOGLE_IMPORT]);
