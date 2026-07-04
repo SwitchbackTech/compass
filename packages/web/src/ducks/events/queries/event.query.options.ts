@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
 import { getEventRepositoryBySource } from "@web/common/repositories/event/event.repository.util";
 import { fetchDayEvents } from "./day.event.query";
@@ -18,7 +18,7 @@ const EVENT_QUERY_CACHE_OPTIONS = {
   refetchOnWindowFocus: false,
 } as const;
 
-type EventsQueryArgs = {
+export type EventsQueryArgs = {
   source: EventRepositorySource;
   startDate: string;
   endDate: string;
@@ -77,5 +77,17 @@ export function somedayEventsQueryOptions({
         getEventRepositoryBySource(source),
       ),
     ...EVENT_QUERY_CACHE_OPTIONS,
+    // Keep the previous month's Someday list visible while a new month range
+    // fetches, instead of a momentary empty list. Safe here because the
+    // sidebar renders straight from the derived list with no isPending gate.
+    //
+    // Deliberately NOT applied to day/week options: the calendar grid gates
+    // its entire render on `query.isPending` and positions events by absolute
+    // date (see MainGridEvents/AllDayEvents/DayCalendarGrid), so keeping stale
+    // data visible there would transiently render the previous range's events
+    // in the new range's grid columns. Extending this to the grid needs those
+    // consumers rewired to treat `isPlaceholderData` as still-loading — a
+    // separate, larger change.
+    placeholderData: keepPreviousData,
   });
 }

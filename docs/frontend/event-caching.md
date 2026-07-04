@@ -102,6 +102,26 @@ sides call the **same** predicate:
 - **Auth / source transitions** — refresh the repository source store and drop
   stale entries (e.g. Google revoked → fall back to `local`).
 
+## Navigation: placeholder data + prefetch
+
+Two small TanStack features make prev/next navigation feel instant:
+
+- **Someday keeps the previous month's list visible** while a new month
+  fetches (`placeholderData: keepPreviousData` on `somedayEventsQueryOptions`).
+  Deliberately *not* applied to day/week: the calendar grid gates its entire
+  render on `query.isPending` and positions events by absolute date, so
+  keeping stale data visible there would transiently render the previous
+  range's events in the new range's grid columns. Extending this to the grid
+  needs those consumers rewired to treat `isPlaceholderData` as still-loading.
+- **The adjacent day/week is prefetched** as soon as the current one renders
+  (`usePrefetchAdjacentEvents`, wired into `useWeek`/`useDayEvents`). It calls
+  `queryClient.prefetchQuery` with the *same* options builder and date
+  formatting the real read hook uses, so the warmed entry lands under the
+  exact key a subsequent read looks up. `prefetchQuery` is a no-op for
+  entries that are already cached and fresh, so this adds no extra fetches on
+  repeat renders of the same range — only the next click resolves from cache
+  instead of paying a fetch.
+
 ## What the cache is *not*
 
 - **Not Redux.** Redux owns only the in-progress draft and calendar interaction

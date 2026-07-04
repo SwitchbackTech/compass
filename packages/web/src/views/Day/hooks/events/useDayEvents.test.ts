@@ -1,7 +1,9 @@
 import { configureStore } from "@reduxjs/toolkit";
+import { type QueryClient } from "@tanstack/react-query";
 import { waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { reducers } from "@web/store/reducers";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -39,6 +41,26 @@ describe("useDayEvents", () => {
     fetchDayEvents.mockClear();
   });
 
+  // Source-agnostic: the active repository source can be "local" or "remote"
+  // depending on process-wide auth state, so match cache entries by their
+  // date-range metadata (like the read hooks' own keys do) rather than
+  // asserting a specific source.
+  const findDayEntry = (queryClient: QueryClient, date: dayjs.Dayjs) => {
+    const startDate = date.startOf("day").utc(true).format();
+    const endDate = date.endOf("day").utc(true).format();
+    const match = queryClient
+      .getQueriesData({ queryKey: eventQueryKeys.scope("day") })
+      .find(([key]) => {
+        const metadata = key[2] as
+          | { startDate?: string; endDate?: string }
+          | undefined;
+        return (
+          metadata?.startDate === startDate && metadata?.endDate === endDate
+        );
+      });
+    return match?.[1];
+  };
+
   it("fetches day events into the query cache", async () => {
     const queryClient = createCompassQueryClient();
     const store = createStore();
@@ -47,11 +69,19 @@ describe("useDayEvents", () => {
     renderHook(() => useDayEvents(date), { queryClient, store });
 
     await waitFor(() => {
-      expect(fetchDayEvents).toHaveBeenCalledTimes(1);
+      expect(findDayEntry(queryClient, date)).toEqual(
+        expect.objectContaining({ ids: ["event-1"] }),
+      );
     });
-    expect(
-      queryClient.getQueriesData({ queryKey: ["events", "day"] })[0]?.[1],
-    ).toEqual(expect.objectContaining({ ids: ["event-1"] }));
+    // Also prefetches the adjacent days (see usePrefetchAdjacentEvents).
+    await waitFor(() => {
+      expect(findDayEntry(queryClient, date.subtract(1, "day"))).toEqual(
+        expect.objectContaining({ ids: ["event-1"] }),
+      );
+      expect(findDayEntry(queryClient, date.add(1, "day"))).toEqual(
+        expect.objectContaining({ ids: ["event-1"] }),
+      );
+    });
   });
 
   it("re-fetches with a new key when the date changes", async () => {
@@ -66,14 +96,16 @@ describe("useDayEvents", () => {
     });
 
     await waitFor(() => {
-      expect(fetchDayEvents).toHaveBeenCalledTimes(1);
+      expect(findDayEntry(queryClient, initialDate)).toBeDefined();
     });
-    const callsAfterFirst = fetchDayEvents.mock.calls.length;
 
-    rerender({ date: initialDate.add(1, "day") });
+    const nextDate = initialDate.add(1, "day");
+    rerender({ date: nextDate });
 
     await waitFor(() => {
-      expect(fetchDayEvents.mock.calls.length).toBeGreaterThan(callsAfterFirst);
+      expect(findDayEntry(queryClient, nextDate)).toEqual(
+        expect.objectContaining({ ids: ["event-1"] }),
+      );
     });
   });
 });
