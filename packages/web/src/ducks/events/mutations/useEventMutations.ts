@@ -22,19 +22,17 @@ import {
   insertEventIntoQueries,
   removeEventFromQueries,
   reorderSomedayEventsInQueries,
-  restoreEventQueries,
-  snapshotEventQueries,
   upsertEventAcrossQueries,
 } from "@web/ducks/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
-import { type EventQuerySnapshot } from "@web/ducks/events/queries/event.query.types";
 import {
   type EventMutationOperation,
   eventMutationKeys,
 } from "./event.mutation.keys";
-import { markAnonymousEventWrite } from "./event.mutation.runtime";
-
-type MutationContext = { snapshots: EventQuerySnapshot[] };
+import {
+  markAnonymousEventWrite,
+  waitForPendingEventCreate,
+} from "./event.mutation.runtime";
 
 // Convert mutations capture the fully-resolved converted event at the
 // `.mutate()` boundary (see wrappers below) so `onMutate` and the async
@@ -45,12 +43,10 @@ type ConvertVariables = {
   converted: Schema_Event | null;
 };
 
-// Delete mutations capture, at the `.mutate()` boundary, whether the backend
-// delete must be skipped: an event whose optimistic create is still in flight
-// has no server-side id yet (deleting it would 404), and a Someday event absent
-// from the cache has nothing to delete. In both cases we still remove
-// optimistically but do not issue a repository write.
-type DeleteVariables = Payload_DeleteEvent & { skipRepository: boolean };
+// Someday deletes capture, at the `.mutate()` boundary, whether the event is
+// absent from the cache (nothing to delete server-side); the optimistic
+// removal still runs but no repository write is issued.
+type DeleteSomedayVariables = Payload_DeleteEvent & { skipRepository: boolean };
 
 export type EventMutations = {
   create: (event: Schema_Event) => void;
@@ -82,19 +78,21 @@ export function useEventMutations(
   const markWrite = dependencies.markWrite ?? markAnonymousEventWrite;
   const reportError = dependencies.reportError ?? handleError;
 
-  const settle = () =>
-    queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
-  const rollback = (
-    error: Error,
-    _variables: unknown,
-    context?: MutationContext,
-  ) => {
-    if (context) restoreEventQueries(queryClient, context.snapshots);
-    reportError(error);
-  };
-  const snapshot = async () => {
-    await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
-    return { snapshots: snapshotEventQueries(queryClient, { source }) };
+  // No per-mutation rollback: failed mutations leave their optimistic write
+  // in place and rely on the settle-time refetch to restore server truth.
+  // Invalidation only runs once NO event mutation remains in flight, so a
+  // refetch never overwrites another mutation's live optimistic update.
+  // The check is deferred to a macrotask because a settling mutation still
+  // counts as pending during its own onSettled — deferring lets simultaneous
+  // settles reliably observe count 0 instead of each seeing the other and skipping.
+  const settle = () => {
+    setTimeout(() => {
+      if (
+        queryClient.isMutating({ mutationKey: eventMutationKeys.all }) === 0
+      ) {
+        void queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+      }
+    }, 0);
   };
   const buildMutation = <Variables>(
     operation: EventMutationOperation,
@@ -104,29 +102,12 @@ export function useEventMutations(
     mutationKey: eventMutationKeys.operation(operation),
     mutationFn,
     onMutate: async (variables: Variables) => {
-      const context = await snapshot();
+      await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
       optimistic(variables);
-      return context;
     },
-    onError: rollback,
+    onError: (error: Error) => reportError(error),
     onSettled: settle,
   });
-  // Non-hook check for an in-flight optimistic create of `id`, so the delete
-  // wrapper can decide (at call time) whether the backend still lacks this id.
-  const isCreateInFlight = useCallback(
-    (id: string) =>
-      queryClient
-        .getMutationCache()
-        .getAll()
-        .some((mutation) => {
-          if (mutation.state.status !== "pending") return false;
-          const key = mutation.options.mutationKey;
-          if (!Array.isArray(key) || key[2] !== "create") return false;
-          return (mutation.state.variables as { _id?: string })?._id === id;
-        }),
-    [queryClient],
-  );
-
   const convertedEvent = useCallback(
     (event: Payload_ConvertEvent["event"], isSomeday: boolean) => {
       const existing = findEventInCache(queryClient, event._id, source);
@@ -157,7 +138,10 @@ export function useEventMutations(
     buildMutation<Payload_EditEvent>(
       "edit",
       async ({ _id, event, applyTo }) => {
-        await repository.edit(_id, event, { applyTo });
+        const createOutcome = await waitForPendingEventCreate(queryClient, _id);
+        if (createOutcome !== "error") {
+          await repository.edit(_id, event, { applyTo });
+        }
         await markWrite();
       },
       ({ _id, event, shouldRemove }) => {
@@ -179,10 +163,13 @@ export function useEventMutations(
   );
 
   const deleteMutation = useMutation(
-    buildMutation<DeleteVariables>(
+    buildMutation<Payload_DeleteEvent>(
       "delete",
-      async ({ _id, applyTo, skipRepository }) => {
-        if (!skipRepository) await repository.delete(_id, applyTo);
+      async ({ _id, applyTo }) => {
+        const createOutcome = await waitForPendingEventCreate(queryClient, _id);
+        if (createOutcome !== "error") {
+          await repository.delete(_id, applyTo);
+        }
         await markWrite();
       },
       ({ _id }) => removeEventFromQueries(queryClient, _id, { source }),
@@ -199,7 +186,13 @@ export function useEventMutations(
         const applyTo = converted.recurrence?.eventId
           ? RecurringEventUpdateScope.ALL_EVENTS
           : RecurringEventUpdateScope.THIS_EVENT;
-        await repository.edit(event._id, converted, { applyTo });
+        const createOutcome = await waitForPendingEventCreate(
+          queryClient,
+          event._id,
+        );
+        if (createOutcome !== "error") {
+          await repository.edit(event._id, converted, { applyTo });
+        }
         await markWrite();
       },
       ({ event, converted }) => {
@@ -222,7 +215,13 @@ export function useEventMutations(
         // Persist the captured event even when it overlaps no cached calendar
         // range (off-screen target): the optimistic insert simply matches
         // nothing, and settle-time invalidation establishes canonical membership.
-        await repository.edit(event._id, converted, {});
+        const createOutcome = await waitForPendingEventCreate(
+          queryClient,
+          event._id,
+        );
+        if (createOutcome !== "error") {
+          await repository.edit(event._id, converted, {});
+        }
         await markWrite();
       },
       ({ event, converted }) => {
@@ -236,10 +235,13 @@ export function useEventMutations(
   );
 
   const deleteSomedayMutation = useMutation(
-    buildMutation<DeleteVariables>(
+    buildMutation<DeleteSomedayVariables>(
       "delete-someday",
       async ({ _id, applyTo, skipRepository }) => {
-        if (!skipRepository) await repository.delete(_id, applyTo);
+        const createOutcome = await waitForPendingEventCreate(queryClient, _id);
+        if (!skipRepository && createOutcome !== "error") {
+          await repository.delete(_id, applyTo);
+        }
         await markWrite();
       },
       ({ _id }) =>
@@ -266,11 +268,7 @@ export function useEventMutations(
           _id: event._id ?? createObjectIdString(),
         }),
       edit: editMutation.mutate,
-      delete: (payload: Payload_DeleteEvent) =>
-        deleteMutation.mutate({
-          ...payload,
-          skipRepository: isCreateInFlight(payload._id),
-        }),
+      delete: deleteMutation.mutate,
       convertToSomeday: (payload: Payload_ConvertEvent) =>
         convertToSomedayMutation.mutate({
           event: payload.event,
@@ -290,7 +288,6 @@ export function useEventMutations(
     }),
     [
       convertedEvent,
-      isCreateInFlight,
       queryClient,
       source,
       createMutation.mutate,

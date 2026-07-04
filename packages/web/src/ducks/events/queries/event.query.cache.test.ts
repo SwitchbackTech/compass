@@ -9,8 +9,6 @@ import {
   removeEventFromQueries,
   removeEventsByOriginFromQueries,
   reorderSomedayEventsInQueries,
-  restoreEventQueries,
-  snapshotEventQueries,
 } from "./event.query.cache";
 import { eventQueryKeys } from "./event.query.keys";
 import { type SomedayEventQueryData } from "./event.query.types";
@@ -158,20 +156,5 @@ describe("event query cache", () => {
     expect(result?.ids).toEqual(["second", "first"]);
     expect(result?.entities.first.order).toBe(1);
     expect(result?.pagination).toBe(pagination);
-  });
-
-  test("restores exact snapshots after optimistic changes", () => {
-    const client = new QueryClient();
-    const local = normalized(event());
-    const remote = normalized(event({ title: "Remote" }));
-    client.setQueryData(keys.localWeek, local);
-    client.setQueryData(keys.remoteWeek, remote);
-    const snapshots = snapshotEventQueries(client);
-
-    patchEventInQueries(client, "event-1", { title: "Changed" });
-    restoreEventQueries(client, snapshots);
-
-    expect(client.getQueryData(keys.localWeek)).toEqual(local);
-    expect(client.getQueryData(keys.remoteWeek)).toEqual(remote);
   });
 });

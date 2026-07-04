@@ -187,14 +187,12 @@ const RegisteredTimedEventHarness = ({
   calendarWeekProps = weekProps,
   displayMode = "saved",
   event,
-  isPending = false,
 }: {
   calendarWeekProps?: WeekProps;
   displayMode?: "draft" | "placeholder" | "saved";
   event: Schema_GridEvent;
-  isPending?: boolean;
 }) => {
-  const isEnabled = Boolean(event._id) && displayMode === "saved" && !isPending;
+  const isEnabled = Boolean(event._id) && displayMode === "saved";
   const ref = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "timed",
@@ -213,7 +211,6 @@ const RegisteredTimedEventHarness = ({
             })
           : undefined
       }
-      isPending={isPending}
       measurements={measurements}
       onEventMouseDown={mock()}
       onScalerMouseDown={mock()}
@@ -225,14 +222,12 @@ const RegisteredTimedEventHarness = ({
 
 const RegisteredAllDayEventHarness = ({
   event,
-  isPending = false,
   isPlaceholder = false,
 }: {
   event: Schema_GridEvent;
-  isPending?: boolean;
   isPlaceholder?: boolean;
 }) => {
-  const isEnabled = Boolean(event._id) && !isPlaceholder && !isPending;
+  const isEnabled = Boolean(event._id) && !isPlaceholder;
   const ref = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "all-day",
@@ -251,7 +246,6 @@ const RegisteredAllDayEventHarness = ({
             })
           : undefined
       }
-      isPending={isPending}
       isPlaceholder={isPlaceholder}
       measurements={measurements}
       onMouseDown={mock()}
@@ -396,20 +390,14 @@ describe("weekEventRegistry", () => {
     });
   });
 
-  it("does not register draft or pending timed events as saved targets", () => {
+  it("does not register draft timed events as saved targets", () => {
     const draftEvent = createTimedEvent({ _id: "draft-event" });
-    const pendingEvent = createTimedEvent({ _id: "pending-event" });
 
     renderWithStore(
-      <>
-        <RegisteredTimedEventHarness displayMode="draft" event={draftEvent} />
-        <RegisteredTimedEventHarness event={pendingEvent} isPending />
-      </>,
-      ["pending-event"],
+      <RegisteredTimedEventHarness displayMode="draft" event={draftEvent} />,
     );
 
     expect(weekEventRegistry.resolve("draft-event", "timed")).toBeNull();
-    expect(weekEventRegistry.resolve("pending-event", "timed")).toBeNull();
   });
 
   it("acknowledges a dropped timed event without moving the text", () => {

@@ -11,7 +11,6 @@ import {
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import {
   DayAllDayCalendarEvent,
   DayTimedCalendarEvent,
@@ -38,7 +37,6 @@ export const DayCalendarAllDayEventsLayer = ({
   onOpenEvent,
   visibleDates,
 }: DayEventsProps) => {
-  const pendingEventIds = usePendingEventIds();
   const savedEventIds = useMemo(
     () => getCalendarEventIdSet(allDayEvents),
     [allDayEvents],
@@ -68,7 +66,6 @@ export const DayCalendarAllDayEventsLayer = ({
         <DayAllDayCalendarEvent
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
-          isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
           key={event._id}
           measurements={measurements}
@@ -87,7 +84,6 @@ export const DayCalendarTimedEventsLayer = ({
   onOpenEvent,
   visibleDates,
 }: DayEventsProps) => {
-  const pendingEventIds = usePendingEventIds();
   const savedEventIds = useMemo(
     () => getCalendarEventIdSet(timedEvents),
     [timedEvents],
@@ -114,7 +110,6 @@ export const DayCalendarTimedEventsLayer = ({
           deckLayout={deckLayout}
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
-          isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
           key={event._id}
           measurements={measurements}

@@ -106,7 +106,6 @@ const expectSourceRestored = (source: HTMLElement) => {
 };
 
 const createHarness = ({
-  isPending = false,
   mainGridScrollTop = 0,
   sourceRect = {
     height: 100,
@@ -115,7 +114,6 @@ const createHarness = ({
     width: 90,
   },
 }: {
-  isPending?: boolean;
   mainGridScrollTop?: number;
   sourceRect?: Pick<DOMRect, "height" | "left" | "top" | "width">;
 } = {}) => {
@@ -189,7 +187,6 @@ const createHarness = ({
     },
     runtime: () => ({
       getTimedEventById: (eventId) => (eventId === event._id ? event : null),
-      isEventPending: () => isPending,
       onClickTimedEvent,
       onCommitTimedDrag,
       onMotionActivation,
@@ -264,23 +261,6 @@ describe("WeekInteractionAdapter timed drag", () => {
 
     expect(onClickTimedEvent).toHaveBeenCalledWith(event);
     expect(onCommitTimedDrag).not.toHaveBeenCalled();
-  });
-
-  it("keeps pending events on the existing Week path", () => {
-    const pendingHarness = createHarness({ isPending: true });
-
-    expect(
-      pendingHarness.adapter.handlePointerDown(
-        makePointerEvent("pointerdown", {
-          target: pendingHarness.child,
-          x: 320,
-          y: 1020,
-        }),
-      ),
-    ).toEqual({
-      reason: "no-week-interaction-target",
-      shouldOwn: false,
-    });
   });
 
   it("does not own right-click, non-primary, or modifier pointerdowns", () => {

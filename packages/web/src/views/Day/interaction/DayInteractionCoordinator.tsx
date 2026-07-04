@@ -4,7 +4,6 @@ import { type CalendarLayoutCacheSources } from "@web/common/calendar-grid/inter
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import { selectIsEventFormOpen } from "@web/ducks/events/selectors/draft.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
@@ -36,7 +35,6 @@ export const DayInteractionCoordinator: FC<Props> = ({
   timedEvents = EMPTY_GRID_EVENTS,
 }) => {
   const dispatch = useAppDispatch();
-  const pendingEventIds = usePendingEventIds();
   const updateEvent = useUpdateEvent();
   const isFormOpen = useAppSelector(selectIsEventFormOpen);
   const isFormOpenRef = useRef(isFormOpen);
@@ -48,13 +46,8 @@ export const DayInteractionCoordinator: FC<Props> = ({
   const allDayEventsById = useMemo(() => {
     return mapEventsById(allDayEvents);
   }, [allDayEvents]);
-  const pendingEventIdSet = useMemo(
-    () => new Set(pendingEventIds),
-    [pendingEventIds],
-  );
   const runtimeRef = useRef<DayInteractionRuntime>({
     getTimedEventById: () => null,
-    isEventPending: () => false,
     onClickTimedEvent: () => undefined,
     onCommitTimedDrag: () => undefined,
   });
@@ -97,7 +90,6 @@ export const DayInteractionCoordinator: FC<Props> = ({
   runtimeRef.current = {
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
-    isEventPending: (eventId) => pendingEventIdSet.has(eventId),
     isFormOpen: () => isFormOpenRef.current,
     onClickAllDayEvent: openDayCalendarEvent,
     onClickTimedEvent: openDayCalendarEvent,

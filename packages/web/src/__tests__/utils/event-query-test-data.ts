@@ -1,4 +1,8 @@
 import { type QueryClient } from "@tanstack/react-query";
+import {
+  type EventMutationOperation,
+  eventMutationKeys,
+} from "@web/ducks/events/mutations/event.mutation.keys";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { type NormalizedEventQueryData } from "@web/ducks/events/queries/event.query.types";
 
@@ -28,4 +32,33 @@ export const seedEventQueries = (
   queryClient.setQueryDefaults(eventQueryKeys.all, {
     initialData: toNormalizedEventQueryData(events),
   });
+};
+
+/**
+ * Seeds an in-flight (status "pending") mutation into the mutation cache for
+ * each event id, so hooks deriving pending state from TanStack Query mutation
+ * state (e.g. `useHasPendingEventMutations`) see the events as syncing.
+ */
+export const seedPendingEventMutations = (
+  queryClient: QueryClient,
+  eventIds: string[],
+  operation: EventMutationOperation = "edit",
+) => {
+  for (const eventId of eventIds) {
+    queryClient.getMutationCache().build(
+      queryClient,
+      { mutationKey: eventMutationKeys.operation(operation) },
+      {
+        context: undefined,
+        data: undefined,
+        error: null,
+        failureCount: 0,
+        failureReason: null,
+        isPaused: false,
+        status: "pending",
+        variables: { _id: eventId },
+        submittedAt: Date.now(),
+      },
+    );
+  }
 };

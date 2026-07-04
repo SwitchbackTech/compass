@@ -47,7 +47,6 @@ interface CalendarTimedEventCardProps {
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
   isCommitAcknowledged?: boolean;
-  isPending?: boolean;
   isSelected?: boolean;
   motionMode: "dragging" | "idle" | "resizing";
   onBlur?: () => void;
@@ -71,7 +70,6 @@ const CalendarTimedEventCardBase = (
     event,
     interactionAttributes,
     isCommitAcknowledged = false,
-    isPending = false,
     isSelected = false,
     motionMode,
     onBlur,
@@ -121,15 +119,7 @@ const CalendarTimedEventCardBase = (
     : boxShadow;
 
   const hoverBgColor =
-    !isDraft && !isPlaceholder && !isResizing
-      ? isPending && bgColor
-        ? darken(bgColor)
-        : hoverColor
-      : bgColor;
-
-  const hoverCursorClass = isPending
-    ? "hover:cursor-wait"
-    : "hover:cursor-pointer";
+    !isDraft && !isPlaceholder && !isResizing ? hoverColor : bgColor;
 
   const eventStyle = {
     "--event-bg": bgColor,
@@ -167,8 +157,7 @@ const CalendarTimedEventCardBase = (
     whiteSpace: "nowrap",
   };
 
-  const showResizeCursor =
-    !isPlaceholder && !isResizing && !isDragging && !isPending;
+  const showResizeCursor = !isPlaceholder && !isResizing && !isDragging;
 
   const scalerStyle = (
     placement: Pick<CSSProperties, "top" | "bottom">,
@@ -196,7 +185,6 @@ const CalendarTimedEventCardBase = (
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
       {...interactionAttributes}
-      aria-disabled={isPending ? "true" : undefined}
       aria-label={accessibleLabel}
       ref={ref}
       role="button"
@@ -207,7 +195,7 @@ const CalendarTimedEventCardBase = (
         {
           "animate-someday-commit-acknowledge": isCommitAcknowledged,
         },
-        hoverCursorClass,
+        "hover:cursor-pointer",
       )}
       style={eventStyle}
       onBlur={onBlur}
@@ -219,17 +207,13 @@ const CalendarTimedEventCardBase = (
 
         e.preventDefault();
         e.stopPropagation();
-        if (isPending || !onEventKeyDown) {
+        if (!onEventKeyDown) {
           return;
         }
 
         onEventKeyDown(event);
       }}
       onMouseDown={(e: MouseEvent) => {
-        if (isPending) {
-          return;
-        }
-
         if (!onEventMouseDown) {
           e.stopPropagation();
           return;

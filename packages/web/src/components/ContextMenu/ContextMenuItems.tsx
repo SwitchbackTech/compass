@@ -8,7 +8,6 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { getSomedayEventCategory } from "@web/common/utils/event/someday.event.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import { useIsEventPending } from "@web/ducks/events/mutations/useEventPending";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 export interface ContextMenuAction {
@@ -32,14 +31,12 @@ interface ContextMenuItemsProps {
 
 interface ContextMenuItemsViewProps extends ContextMenuItemsProps {
   actions: ContextMenuItemsActions;
-  isPending: boolean;
 }
 
 export function ContextMenuItemsView({
   actions,
   close,
   event,
-  isPending,
 }: ContextMenuItemsViewProps) {
   const priorities = [
     {
@@ -63,25 +60,15 @@ export function ContextMenuItemsView({
   ];
 
   const handleEditPriority = (priority: Priorities) => {
-    if (isPending) return;
     actions.editPriority(priority);
     close();
   };
-
-  const handleEdit = () => {
-    if (isPending) return;
-    actions.edit();
-  };
-
-  const isActionDisabled = (itemId: string) =>
-    isPending &&
-    (itemId === "edit" || itemId === "duplicate" || itemId === "delete");
 
   const menuActions: ContextMenuAction[] = [
     {
       id: "edit",
       label: "Edit",
-      onClick: handleEdit,
+      onClick: actions.edit,
       icon: <PenNib aria-hidden="true" size={20} />,
     },
     {
@@ -111,14 +98,12 @@ export function ContextMenuItemsView({
               aria-pressed={event.priority === priority.value}
               className="c-context-priority-circle"
               data-selected={event.priority === priority.value}
-              disabled={isPending}
               type="button"
               onClick={() => handleEditPriority(priority.value)}
               style={
                 {
                   "--priority-color": priority.color,
-                  opacity: isPending ? 0.5 : 1,
-                  cursor: isPending ? "wait" : "pointer",
+                  cursor: "pointer",
                 } as CSSVariables
               }
             />
@@ -126,25 +111,20 @@ export function ContextMenuItemsView({
           </div>
         ))}
       </div>
-      {menuActions.map((item) => {
-        const disabled = isActionDisabled(item.id);
-        return (
-          <button
-            className="c-context-menu-item"
-            disabled={disabled}
-            key={item.id}
-            type="button"
-            onClick={() => {
-              item.onClick();
-              close();
-            }}
-            style={{ cursor: disabled ? "wait" : undefined }}
-          >
-            {item.icon}
-            <span className="text-l">{item.label}</span>
-          </button>
-        );
-      })}
+      {menuActions.map((item) => (
+        <button
+          className="c-context-menu-item"
+          key={item.id}
+          type="button"
+          onClick={() => {
+            item.onClick();
+            close();
+          }}
+        >
+          {item.icon}
+          <span className="text-l">{item.label}</span>
+        </button>
+      ))}
     </div>
   );
 }
@@ -155,8 +135,6 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const { setDraft } = setters;
 
   const sidebarContext = useSidebarContext(true);
-  const eventId = event._id;
-  const isPending = useIsEventPending(eventId);
 
   const menuActions: ContextMenuItemsActions = {
     delete: confirmation.onDelete,
@@ -177,11 +155,6 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   };
 
   return (
-    <ContextMenuItemsView
-      actions={menuActions}
-      close={close}
-      event={event}
-      isPending={isPending}
-    />
+    <ContextMenuItemsView actions={menuActions} close={close} event={event} />
   );
 }

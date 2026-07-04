@@ -2,7 +2,6 @@ import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
 import {
   selectDraft,
@@ -36,11 +35,8 @@ export const AllDayEvents = ({
 
   const draftId = useAppSelector(selectDraftId);
   const dispatch = useAppDispatch();
-  const pendingEventIds = usePendingEventIds();
 
   const handleKeyDown = (event: Schema_GridEvent) => {
-    if (event._id && pendingEventIds.includes(event._id)) return;
-
     dispatch(
       draftSlice.actions.start({
         activity: "keyboardEdit",
@@ -57,9 +53,6 @@ export const AllDayEvents = ({
     >
       {!isLoadingWeekView &&
         allDayEvents.map((event: Schema_GridEvent) => {
-          const isPending = Boolean(
-            event._id && pendingEventIds.includes(event._id),
-          );
           const isPlaceholder = event._id === draftId;
           const eventForDisplay =
             isPlaceholder && draft && draft._id === event._id
@@ -70,7 +63,6 @@ export const AllDayEvents = ({
             <AllDayEventItem
               endOfView={endOfView}
               event={eventForDisplay}
-              isPending={isPending}
               isPlaceholder={isPlaceholder}
               key={event._id}
               measurements={measurements}
@@ -86,7 +78,6 @@ export const AllDayEvents = ({
 interface AllDayEventItemProps {
   endOfView: WeekProps["component"]["endOfView"];
   event: Schema_GridEvent;
-  isPending: boolean;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
   onKeyDown: (event: Schema_GridEvent) => void;
@@ -96,14 +87,12 @@ interface AllDayEventItemProps {
 const AllDayEventItem = ({
   endOfView,
   event,
-  isPending,
   isPlaceholder,
   measurements,
   onKeyDown,
   startOfView,
 }: AllDayEventItemProps) => {
-  const isRegisteredForWeekInteraction =
-    Boolean(event._id) && !isPlaceholder && !isPending;
+  const isRegisteredForWeekInteraction = Boolean(event._id) && !isPlaceholder;
   const registrationRef = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "all-day",
@@ -126,7 +115,6 @@ const AllDayEventItem = ({
       endOfView={endOfView}
       event={event}
       interactionAttributes={interactionAttributes}
-      isPending={isPending}
       isPlaceholder={isPlaceholder}
       measurements={measurements}
       onKeyDown={onKeyDown}

@@ -30,7 +30,6 @@ interface Props {
   displayMode: GridEventDisplayMode;
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
-  isPending?: boolean;
   measurements: Measurements_Grid;
   motionMode?: GridEventMotionMode;
   onEventMouseDown?: (event: Schema_GridEvent, e: MouseEvent) => void;
@@ -52,7 +51,6 @@ const GridEventBase = (
     displayMode,
     event: _event,
     interactionAttributes,
-    isPending = false,
     measurements,
     motionMode = "idle",
     onEventMouseDown,
@@ -118,8 +116,7 @@ const GridEventBase = (
     const highlight = `inset 0 1px 0 rgba(255,255,255,${isFocused ? 0.1 : 0.07})`;
     return `${ring}, ${drop}, ${highlight}`;
   })();
-  const shouldTrackCalendarHover =
-    !isPending && !isPlaceholder && Boolean(event._id);
+  const shouldTrackCalendarHover = !isPlaceholder && Boolean(event._id);
   const handleEventMouseDown = (
     selectedEvent: Schema_GridEvent,
     e: MouseEvent,
@@ -150,7 +147,6 @@ const GridEventBase = (
       onFocus={isDeck ? () => setIsFocused(true) : undefined}
       interactionAttributes={interactionAttributes}
       isCommitAcknowledged={shouldAcknowledgeCommit}
-      isPending={isPending}
       motionMode={motionMode}
       onEventKeyDown={onEventKeyDown}
       onEventMouseDown={handleEventMouseDown}
@@ -176,7 +172,6 @@ export const GridEventMemo = memo(GridEvent, (prev, next) => {
     prev.deckLayout === next.deckLayout &&
     prev.event === next.event &&
     prev.interactionAttributes === next.interactionAttributes &&
-    prev.isPending === next.isPending &&
     prev.measurements === next.measurements &&
     prev.motionMode === next.motionMode
   );

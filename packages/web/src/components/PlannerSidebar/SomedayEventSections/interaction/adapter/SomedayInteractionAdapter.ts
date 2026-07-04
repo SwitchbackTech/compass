@@ -342,10 +342,7 @@ export const createSomedayInteractionAdapter = ({
     const currentRuntime = runtime();
     const somedayEvent = currentRuntime.getSomedayEventById(registered.eventId);
 
-    if (
-      !somedayEvent?._id ||
-      currentRuntime.isEventPending?.(somedayEvent._id)
-    ) {
+    if (!somedayEvent?._id) {
       return null;
     }
 
