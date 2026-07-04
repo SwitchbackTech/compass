@@ -20,7 +20,6 @@ import {
   type Schema_WebEvent,
   type WithId,
 } from "@web/common/types/web.event.types";
-import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 
 export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
@@ -212,8 +211,11 @@ export const handleError = (error: Error) => {
   console.error(error);
 
   if (code === Status.INTERNAL_SERVER) {
+    // No reload: events stay interactive while syncing, and the mutation
+    // layer already reconciles the cache with server truth once all in-flight
+    // mutations settle — a reload would wipe every live optimistic update.
     alert("Something went wrong behind the scenes. Please try again later.");
-    reloadLocation();
+    return;
   }
 
   alert(error);
