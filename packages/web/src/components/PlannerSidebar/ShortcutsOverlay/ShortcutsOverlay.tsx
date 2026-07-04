@@ -8,9 +8,15 @@ interface Props {
   isOpen: boolean;
   onClose: () => void;
   sections: ShortcutOverlaySection[];
+  viewLabel?: string;
 }
 
-export function ShortcutsOverlay({ isOpen, onClose, sections }: Props) {
+export function ShortcutsOverlay({
+  isOpen,
+  onClose,
+  sections,
+  viewLabel,
+}: Props) {
   useEffect(() => {
     if (!isOpen) return;
 
@@ -27,7 +33,6 @@ export function ShortcutsOverlay({ isOpen, onClose, sections }: Props) {
   const visibleSections = sections.filter(
     (section) => section.shortcuts.length > 0,
   );
-  const viewLabel = visibleSections[0]?.title;
   const subtitle = viewLabel
     ? `Keyboard shortcuts for ${viewLabel} view`
     : "Keyboard shortcuts";

@@ -2,7 +2,7 @@ import classNames from "classnames";
 import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
-import { getShortcuts } from "@web/common/shortcuts/data/shortcuts.data";
+import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -57,9 +57,7 @@ export const DayViewContent = memo(() => {
     migrateTask,
   } = useTasks();
   const dateInView = useDateInView();
-  const shortcuts = getShortcuts({
-    currentDate: dateInView,
-  });
+  const isViewingToday = dateInView.isSame(dayjs(), "day");
 
   const {
     navigateToDate,
@@ -82,18 +80,12 @@ export const DayViewContent = memo(() => {
     });
 
   const shortcutSections = useMemo(
-    () => [
-      { title: "Day", shortcuts: shortcuts.dayShortcuts },
-      { title: "Tasks", shortcuts: shortcuts.dayTaskShortcuts },
-      { title: "Calendar", shortcuts: shortcuts.dayAgendaShortcuts },
-      { title: "Global", shortcuts: shortcuts.globalShortcuts },
-    ],
-    [
-      shortcuts.dayAgendaShortcuts,
-      shortcuts.dayShortcuts,
-      shortcuts.dayTaskShortcuts,
-      shortcuts.globalShortcuts,
-    ],
+    () =>
+      getShortcutMenuSections({
+        view: "day",
+        isViewingCurrentPeriod: isViewingToday,
+      }),
+    [isViewingToday],
   );
 
   const hasFocusedTask =
@@ -149,7 +141,12 @@ export const DayViewContent = memo(() => {
     }
   }, [dateInView, navigateToToday]);
 
+  const handleCreateAllDayEvent = useCallback(() => {
+    compassEventEmitter.emit(CompassDOMEvents.CREATE_ALLDAY_DRAFT);
+  }, []);
+
   useDayViewShortcuts({
+    onCreateAllDayEvent: handleCreateAllDayEvent,
     onAddTask: focusOnAddTaskInput,
     onEditTask: handleEditTask,
     onDeleteTask: handleDeleteTask,
@@ -178,6 +175,7 @@ export const DayViewContent = memo(() => {
           onSelectDate={navigateToDate}
           onToggleSidebar={toggleSidebar}
           shortcutSections={shortcutSections}
+          shortcutsViewLabel="Day"
           showSomedayEventSections={false}
           viewEnd={plannerViewEnd}
           viewStart={plannerViewStart}

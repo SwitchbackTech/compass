@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import {
   createAlldayDraft,
@@ -13,6 +14,7 @@ import {
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
+import { focusFirstSomedaySidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
@@ -128,6 +130,17 @@ export const useWeekShortcuts = ({
     _createSomedayDraft(Categories_Event.SOMEDAY_WEEK);
   }, [_createSomedayDraft]);
 
+  const focusSidebar = useCallback(() => {
+    if (!isSidebarOpen) {
+      viewActions.toggleSidebar();
+      // The sidebar renders conditionally; focus after the open commits
+      requestAnimationFrame(() => focusFirstSomedaySidebarItem());
+      return;
+    }
+
+    focusFirstSomedaySidebarItem();
+  }, [isSidebarOpen]);
+
   const focusFirstCalendarEvent = useCallback(() => {
     const target = getFirstVisibleCalendarEventTarget();
     if (!target) return;
@@ -178,6 +191,12 @@ export const useWeekShortcuts = ({
         return;
       }
 
+      // Focus inside the sidebar (e.g. via the "u" shortcut) means the user
+      // is acting on someday events, not grid events
+      if (document.activeElement?.closest(`#${ID_SIDEBAR}`)) {
+        return;
+      }
+
       const resolvedTarget = getTargetedCalendarEvent();
       if (!resolvedTarget) {
         return;
@@ -213,6 +232,7 @@ export const useWeekShortcuts = ({
   useAppHotkeyUp("T", toToday);
   useAppHotkeyUp("A", createAllDayDraftEvent);
   useAppHotkeyUp("C", createTimedDraftEvent);
+  useAppHotkeyUp("U", focusSidebar);
   useAppHotkeyUp("I", focusFirstCalendarEvent);
   useAppHotkeyUp("M", editTargetedCalendarEvent);
   useAppHotkey("Delete", deleteTargetedCalendarEvent, {

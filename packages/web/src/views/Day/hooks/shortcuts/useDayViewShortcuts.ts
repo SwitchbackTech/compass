@@ -7,6 +7,9 @@ import {
 } from "@web/views/Day/util/day.shortcut.util";
 
 interface KeyboardShortcutsConfig {
+  // Event management
+  onCreateAllDayEvent?: () => void;
+
   // Task management
   onAddTask?: () => void;
   onEditTask?: () => void;
@@ -46,6 +49,7 @@ interface KeyboardShortcutsConfig {
  */
 export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   const {
+    onCreateAllDayEvent,
     onAddTask,
     onEditTask,
     onCompleteTask,
@@ -116,6 +120,10 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
 
   useAppHotkeyUp("C", () => {
     onAddTask?.();
+  });
+
+  useAppHotkeyUp("A", () => {
+    onCreateAllDayEvent?.();
   });
 
   useAppHotkeyUp("E", () => {

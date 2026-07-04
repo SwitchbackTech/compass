@@ -15,6 +15,7 @@ import {
 } from "@web/common/utils/dom/event-emitter.util";
 import {
   addId,
+  assembleDefaultEvent,
   assembleGridEvent,
   getCalendarEventElementFromGrid,
   hasEventDates,
@@ -200,13 +201,52 @@ export function DayCalendarGrid() {
 
   const getAllDayDraftStartDate = (clientX: number) =>
     dateCalcs.getDateStrByXY(clientX, 0, YEAR_MONTH_DAY_FORMAT);
-  const openAllDayDraft = (event: Schema_Event) => {
-    if (!hasEventDates(event)) {
+  const openAllDayDraft = useCallback(
+    (event: Schema_Event) => {
+      if (!hasEventDates(event)) {
+        return;
+      }
+
+      openEventFormForEvent(addId(assembleGridEvent(event)));
+    },
+    [openEventFormForEvent],
+  );
+
+  const createAllDayDraftFromShortcut = useCallback(() => {
+    if (draft) {
       return;
     }
 
-    openEventFormForEvent(addId(assembleGridEvent(event)));
-  };
+    const startDate = dateInView.format(YEAR_MONTH_DAY_FORMAT);
+    const endDate = dateInView.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
+
+    void assembleDefaultEvent(Categories_Event.ALLDAY, startDate, endDate).then(
+      openAllDayDraft,
+    );
+  }, [dateInView, draft, openAllDayDraft]);
+  const createAllDayDraftRef = useRef(createAllDayDraftFromShortcut);
+
+  useEffect(() => {
+    createAllDayDraftRef.current = createAllDayDraftFromShortcut;
+  }, [createAllDayDraftFromShortcut]);
+
+  useEffect(() => {
+    const handleCreateAllDayDraft = () => {
+      createAllDayDraftRef.current();
+    };
+
+    compassEventEmitter.on(
+      CompassDOMEvents.CREATE_ALLDAY_DRAFT,
+      handleCreateAllDayDraft,
+    );
+
+    return () => {
+      compassEventEmitter.off(
+        CompassDOMEvents.CREATE_ALLDAY_DRAFT,
+        handleCreateAllDayDraft,
+      );
+    };
+  }, []);
   const onAllDayMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,
     onCreateDraft: openAllDayDraft,

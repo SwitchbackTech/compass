@@ -7,9 +7,16 @@ import {
   seedPendingEventMutations,
   toNormalizedEventQueryData,
 } from "@web/__tests__/utils/event-query-test-data";
-import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
+import {
+  COLUMN_MONTH,
+  COLUMN_WEEK,
+  DATA_EVENT_ELEMENT_ID,
+  ID_EVENT_FORM,
+  ID_SIDEBAR,
+} from "@web/common/constants/web.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { useDraftStore } from "@web/events/stores/draft.store";
+import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
 import {
@@ -49,6 +56,7 @@ afterEach(() => {
   document.body.innerHTML = "";
   pendingEventIds = [];
   weekEventRegistry.clear();
+  useViewStore.setState(initialViewState);
 });
 
 const addCalendarTarget = (
@@ -376,6 +384,114 @@ describe("useWeekShortcuts calendar event targeting", () => {
 
     const { queryClient } = renderShortcuts();
     pressKey("Delete", {}, button);
+
+    expect(confirm).not.toHaveBeenCalled();
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some((mutation) => mutation.options.mutationKey?.[2] === "delete"),
+    ).toBe(false);
+  });
+});
+
+const addSidebarFixture = (options?: {
+  includeWeekItem?: boolean;
+  includeMonthItem?: boolean;
+}) => {
+  const sidebar = document.createElement("aside");
+  sidebar.id = ID_SIDEBAR;
+
+  const buildItem = () => {
+    const item = document.createElement("div");
+    item.setAttribute("role", "button");
+    item.setAttribute(DATA_EVENT_ELEMENT_ID, "someday-1");
+    item.tabIndex = 0;
+    return item;
+  };
+
+  const weekColumn = document.createElement("div");
+  weekColumn.id = COLUMN_WEEK;
+  const weekItem = options?.includeWeekItem ? buildItem() : null;
+  if (weekItem) weekColumn.appendChild(weekItem);
+  sidebar.appendChild(weekColumn);
+
+  const monthColumn = document.createElement("div");
+  monthColumn.id = COLUMN_MONTH;
+  const monthItem = options?.includeMonthItem ? buildItem() : null;
+  if (monthItem) monthColumn.appendChild(monthItem);
+  sidebar.appendChild(monthColumn);
+
+  const addButton = document.createElement("button");
+  addButton.setAttribute("aria-label", "Add item to week");
+  sidebar.appendChild(addButton);
+
+  document.body.appendChild(sidebar);
+  return { addButton, monthItem, sidebar, weekItem };
+};
+
+describe("useWeekShortcuts sidebar focus", () => {
+  it("focuses the first week someday event with U", async () => {
+    const { weekItem, monthItem } = addSidebarFixture({
+      includeWeekItem: true,
+      includeMonthItem: true,
+    });
+
+    renderShortcuts();
+    pressKey("U");
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(weekItem);
+    });
+    expect(document.activeElement).not.toBe(monthItem);
+  });
+
+  it("falls back to the month someday event when the week list is empty", async () => {
+    const { monthItem } = addSidebarFixture({ includeMonthItem: true });
+
+    renderShortcuts();
+    pressKey("U");
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(monthItem);
+    });
+  });
+
+  it("falls back to the add button when there are no someday events", async () => {
+    const { addButton } = addSidebarFixture();
+
+    renderShortcuts();
+    pressKey("U");
+
+    await waitFor(() => {
+      expect(document.activeElement).toBe(addButton);
+    });
+  });
+
+  it("opens the sidebar first when it is closed", async () => {
+    useViewStore.setState({ sidebar: { isOpen: false } });
+    const { weekItem } = addSidebarFixture({ includeWeekItem: true });
+
+    renderShortcuts();
+    pressKey("U");
+
+    await waitFor(() => {
+      expect(useViewStore.getState().sidebar.isOpen).toBe(true);
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(weekItem);
+    });
+  });
+
+  it("does not delete a grid event when Delete is pressed with sidebar focus", async () => {
+    const confirm = mock(() => true);
+    window.confirm = confirm;
+    addCalendarTarget();
+    const { weekItem } = addSidebarFixture({ includeWeekItem: true });
+    weekItem?.focus();
+
+    const { queryClient } = renderShortcuts();
+    pressKey("Delete", {}, weekItem ?? document);
 
     expect(confirm).not.toHaveBeenCalled();
     expect(

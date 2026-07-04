@@ -9,6 +9,10 @@ import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
 import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
+import {
+  CompassDOMEvents,
+  compassEventEmitter,
+} from "@web/common/utils/dom/event-emitter.util";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import {
   selectIsCmdPaletteOpen,
@@ -61,6 +65,15 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
             children: "Create event",
             icon: "PlusIcon",
             onClick: () => queueMicrotask(openEventFormCreateEvent),
+          },
+          {
+            id: "create-allday-event",
+            children: "Create all-day event [a]",
+            icon: "PlusIcon",
+            onClick: () =>
+              queueMicrotask(() =>
+                compassEventEmitter.emit(CompassDOMEvents.CREATE_ALLDAY_DRAFT),
+              ),
           },
           {
             id: "edit-event",
