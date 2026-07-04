@@ -12,7 +12,7 @@ import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
 import { type SomedayEventQueryData } from "@web/ducks/events/queries/event.query.types";
 import { useEventMutations } from "./useEventMutations";
-import { usePendingEventIds } from "./useEventPending";
+import { useHasPendingEventMutations } from "./useEventPending";
 
 const calendarKey = eventQueryKeys.list({
   source: "local",
@@ -129,7 +129,7 @@ const setup = () => {
         markWrite: async () => markedWrites.push("marked"),
         reportError: (error) => errors.push(error),
       }),
-      pendingIds: usePendingEventIds(),
+      hasPending: useHasPendingEventMutations(),
     }),
     { wrapper },
   );
@@ -145,7 +145,7 @@ describe("useEventMutations", () => {
     act(() => context.hook.result.current.mutations.create(created));
 
     await waitFor(() => {
-      expect(context.hook.result.current.pendingIds).toEqual(["created"]);
+      expect(context.hook.result.current.hasPending).toBe(true);
       expect(
         context.queryClient.getQueryData<ReturnType<typeof normalized>>(
           calendarKey,
@@ -159,7 +159,7 @@ describe("useEventMutations", () => {
     context.pending.resolve();
 
     await waitFor(() => {
-      expect(context.hook.result.current.pendingIds).toEqual([]);
+      expect(context.hook.result.current.hasPending).toBe(false);
       expect(context.markedWrites).toEqual(["marked"]);
       expect(
         context.queryClient.getQueryState(calendarKey)?.isInvalidated,
@@ -246,7 +246,7 @@ describe("useEventMutations", () => {
 
     act(() => context.pending.resolveNext());
     await waitFor(() => {
-      expect(context.hook.result.current.pendingIds).toEqual([]);
+      expect(context.hook.result.current.hasPending).toBe(false);
       expect(
         context.queryClient.getQueryState(calendarKey)?.isInvalidated,
       ).toBe(true);
@@ -298,7 +298,7 @@ describe("useEventMutations", () => {
 
     act(() => context.pending.resolveNext());
     await waitFor(() => {
-      expect(context.hook.result.current.pendingIds).toEqual([]);
+      expect(context.hook.result.current.hasPending).toBe(false);
     });
   });
 
@@ -408,7 +408,7 @@ describe("useEventMutations", () => {
 
     act(() => context.hook.result.current.mutations.create(created));
     await waitFor(() => {
-      expect(context.hook.result.current.pendingIds).toEqual(["created"]);
+      expect(context.hook.result.current.hasPending).toBe(true);
     });
 
     act(() => context.hook.result.current.mutations.delete({ _id: "created" }));
@@ -553,11 +553,11 @@ describe("useEventMutations", () => {
     );
 
     await waitFor(() => {
-      expect(context.hook.result.current.pendingIds).toEqual(["event-1"]);
+      expect(context.hook.result.current.hasPending).toBe(true);
     });
     context.pending.resolve();
     await waitFor(() => {
-      expect(context.hook.result.current.pendingIds).toEqual([]);
+      expect(context.hook.result.current.hasPending).toBe(false);
     });
   });
 
@@ -587,15 +587,15 @@ describe("useEventMutations", () => {
     );
 
     await waitFor(() => {
-      expect(context.hook.result.current.pendingIds).toEqual(["someday"]);
+      expect(context.hook.result.current.hasPending).toBe(true);
     });
     context.pending.resolve();
     await waitFor(() => {
-      expect(context.hook.result.current.pendingIds).toEqual([]);
+      expect(context.hook.result.current.hasPending).toBe(false);
     });
   });
 
-  test("does not mark individual events pending during reorderSomeday", async () => {
+  test("counts an in-flight reorderSomeday toward the pending sync state", async () => {
     const context = setup();
     const first = event({ _id: "first", isSomeday: true, order: 0 });
     const second = event({ _id: "second", isSomeday: true, order: 1 });
@@ -617,8 +617,6 @@ describe("useEventMutations", () => {
       ]),
     );
 
-    // Deliberate: a reorder repositions the whole Someday list and must not
-    // disable editing/deleting the reordered events, so it marks none pending.
     await waitFor(() => {
       expect(context.calls).toEqual([
         {
@@ -630,8 +628,11 @@ describe("useEventMutations", () => {
         },
       ]);
     });
-    expect(context.hook.result.current.pendingIds).toEqual([]);
+    expect(context.hook.result.current.hasPending).toBe(true);
     context.pending.resolve();
+    await waitFor(() => {
+      expect(context.hook.result.current.hasPending).toBe(false);
+    });
   });
 
   test("converts the source-scoped event, never a cross-source cache entry", async () => {

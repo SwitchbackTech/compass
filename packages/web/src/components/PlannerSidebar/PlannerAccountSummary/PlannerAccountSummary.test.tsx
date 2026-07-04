@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
-import { eventMutationKeys } from "@web/ducks/events/mutations/event.mutation.keys";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
@@ -37,23 +37,7 @@ const renderSummary = ({
   pendingEventIds?: string[];
 } = {}) => {
   const queryClient = new QueryClient();
-  for (const eventId of pendingEventIds) {
-    queryClient.getMutationCache().build(
-      queryClient,
-      { mutationKey: eventMutationKeys.operation("edit") },
-      {
-        context: undefined,
-        data: undefined,
-        error: null,
-        failureCount: 0,
-        failureReason: null,
-        isPaused: false,
-        status: "pending",
-        variables: { _id: eventId },
-        submittedAt: Date.now(),
-      },
-    );
-  }
+  seedPendingEventMutations(queryClient, pendingEventIds);
 
   return render(
     <QueryClientProvider client={queryClient}>

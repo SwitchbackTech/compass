@@ -5,10 +5,10 @@ import { type ReactElement } from "react";
 import { Provider } from "react-redux";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
+import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { eventMutationKeys } from "@web/ducks/events/mutations/event.mutation.keys";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -46,23 +46,7 @@ const renderWithTheme = (
   { pendingEventIds = [] }: { pendingEventIds?: string[] } = {},
 ) => {
   const queryClient = new QueryClient();
-  for (const eventId of pendingEventIds) {
-    queryClient.getMutationCache().build(
-      queryClient,
-      { mutationKey: eventMutationKeys.operation("edit") },
-      {
-        context: undefined,
-        data: undefined,
-        error: null,
-        failureCount: 0,
-        failureReason: null,
-        isPaused: false,
-        status: "pending",
-        variables: { _id: eventId },
-        submittedAt: Date.now(),
-      },
-    );
-  }
+  seedPendingEventMutations(queryClient, pendingEventIds);
   const currentState = createInitialState();
   currentState.auth.status = "authenticating";
   const store = configureStore({

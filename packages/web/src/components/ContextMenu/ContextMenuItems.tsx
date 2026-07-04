@@ -64,15 +64,11 @@ export function ContextMenuItemsView({
     close();
   };
 
-  const handleEdit = () => {
-    actions.edit();
-  };
-
   const menuActions: ContextMenuAction[] = [
     {
       id: "edit",
       label: "Edit",
-      onClick: handleEdit,
+      onClick: actions.edit,
       icon: <PenNib aria-hidden="true" size={20} />,
     },
     {

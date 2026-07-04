@@ -11,8 +11,10 @@ import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 
 const DELETE_EVENT_REQUEST = "deleteEvent/request";
 
-import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
-import { eventMutationKeys } from "@web/ducks/events/mutations/event.mutation.keys";
+import {
+  seedPendingEventMutations,
+  toNormalizedEventQueryData,
+} from "@web/__tests__/utils/event-query-test-data";
 import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
@@ -66,7 +68,6 @@ const createState = ({
     data: weekEventIds,
     pageSize: weekEventIds.length,
   };
-  state.events.pendingEvents!.eventIds = pendingEventIds;
   return state;
 };
 
@@ -122,23 +123,7 @@ const renderShortcuts = (options?: {
 }) => {
   const store = createStore(options);
   const queryClient = new QueryClient();
-  for (const eventId of pendingEventIds) {
-    queryClient.getMutationCache().build(
-      queryClient,
-      { mutationKey: eventMutationKeys.operation("edit") },
-      {
-        context: undefined,
-        data: undefined,
-        error: null,
-        failureCount: 0,
-        failureReason: null,
-        isPaused: false,
-        status: "pending",
-        variables: { _id: eventId },
-        submittedAt: Date.now(),
-      },
-    );
-  }
+  seedPendingEventMutations(queryClient, pendingEventIds);
   const events = [
     ...(options?.includeEditableEvent === false ? [] : [editableEvent]),
     ...(options?.includeAllDayEvent ? [editableAllDayEvent] : []),
