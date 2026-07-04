@@ -4,7 +4,7 @@ import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
-import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
+import { selectDatesInView, useViewStore } from "@web/events/stores/view.store";
 import { useAppSelector } from "@web/store/store.hooks";
 
 type SidebarSomedayEvents = ReturnType<
@@ -12,7 +12,7 @@ type SidebarSomedayEvents = ReturnType<
 >["categorized"];
 
 export const useSidebarState = () => {
-  const dates = useAppSelector(selectDatesInView);
+  const dates = useViewStore(selectDatesInView);
   const { categorized: categorizedEvents } = useSomedayEventViewModel(
     dayjs(dates.start),
     dayjs(dates.end),

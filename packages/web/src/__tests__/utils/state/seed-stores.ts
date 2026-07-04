@@ -1,8 +1,10 @@
 import { type PreloadedState } from "@reduxjs/toolkit";
+import { useViewStore } from "@web/events/stores/view.store";
 import { useSettingsStore } from "@web/settings/settings.store";
 import { type RootState } from "@web/store";
 
 type SettingsState = ReturnType<typeof useSettingsStore.getState>;
+type ViewState = ReturnType<typeof useViewStore.getState>;
 
 /**
  * Transitional shape for the render helpers' `state` option. While slices
@@ -12,6 +14,7 @@ type SettingsState = ReturnType<typeof useSettingsStore.getState>;
  */
 export type TestAppState = PreloadedState<RootState> & {
   settings?: Partial<SettingsState>;
+  view?: Partial<ViewState>;
 };
 
 /**
@@ -23,7 +26,8 @@ export function seedStoresFromState(
 ): PreloadedState<RootState> | undefined {
   if (!state) return state;
 
-  const { settings, ...remaining } = state;
+  const { settings, view, ...remaining } = state;
   if (settings) useSettingsStore.setState(settings);
+  if (view) useViewStore.setState(view);
   return remaining;
 }

@@ -15,10 +15,13 @@ import {
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
 import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
-import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
 import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
+import { useAppDispatch } from "@web/store/store.hooks";
 import { confirmAndDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
@@ -58,7 +61,7 @@ export const useWeekShortcuts = ({
     actions: { repositionDraftByKeyboard },
   } = useDraftContext();
 
-  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
     startOfView,
     endOfView,
@@ -81,10 +84,10 @@ export const useWeekShortcuts = ({
 
       // If sidebar is closed, open it first
       if (!isSidebarOpen) {
-        dispatch(viewSlice.actions.toggleSidebar());
+        viewActions.toggleSidebar();
       }
     },
-    [context, isSidebarOpen, dispatch],
+    [context, isSidebarOpen],
   );
 
   const _discardDraft = useCallback(() => {
@@ -109,10 +112,7 @@ export const useWeekShortcuts = ({
     incrementWeek();
   }, [incrementWeek, _discardDraft]);
 
-  const openSidebar = useCallback(
-    () => dispatch(viewSlice.actions.toggleSidebar()),
-    [dispatch],
-  );
+  const openSidebar = useCallback(() => viewActions.toggleSidebar(), []);
 
   const createAllDayDraftEvent = useCallback(() => {
     void createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);

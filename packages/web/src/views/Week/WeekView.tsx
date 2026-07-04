@@ -5,9 +5,11 @@ import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/conte
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { SomedayInteractionCoordinator } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/SomedayInteractionCoordinator";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
-import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
 import { CmdPalette } from "@web/views/CmdPalette";
 import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
@@ -27,11 +29,10 @@ import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 
 export const WeekView = () => {
-  const dispatch = useAppDispatch();
-  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const toggleSidebar = useCallback(() => {
-    dispatch(viewSlice.actions.toggleSidebar());
-  }, [dispatch]);
+    viewActions.toggleSidebar();
+  }, []);
   const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
     usePlannerShortcuts({
       isSidebarOpen,

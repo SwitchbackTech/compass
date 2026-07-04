@@ -1,5 +1,5 @@
 import { createCompassQueryClient } from "@web/common/query/query-client";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
+import { draftSlice } from "@web/ducks/events/slices/draft.slice";
 import { createCompassStore } from "./index";
 import { describe, expect, test } from "bun:test";
 
@@ -12,10 +12,10 @@ describe("createCompassStore", () => {
       queryClient: createCompassQueryClient(),
     });
 
-    first.dispatch(viewSlice.actions.toggleSidebar());
+    first.dispatch(draftSlice.actions.startDnd(undefined));
 
     expect(first).not.toBe(second);
-    expect(first.getState().view.sidebar.isOpen).toBe(false);
-    expect(second.getState().view.sidebar.isOpen).toBe(true);
+    expect(first.getState().events.draft.status?.isDrafting).toBe(true);
+    expect(second.getState().events.draft.status?.isDrafting).toBe(false);
   });
 });

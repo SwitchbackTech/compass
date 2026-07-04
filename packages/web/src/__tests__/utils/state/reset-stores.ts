@@ -5,6 +5,7 @@
  * resetAllStores() in a global afterEach so individual test files never need
  * to remember it.
  */
+import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import {
   initialSettingsState,
   useSettingsStore,
@@ -16,6 +17,7 @@ const storeResets: StoreReset[] = [
   // Populated as slices migrate to Zustand:
   // settings, view, auth, userMetadata, draft
   () => useSettingsStore.setState(initialSettingsState, true),
+  () => useViewStore.setState(initialViewState, true),
 ];
 
 export function resetAllStores() {

@@ -5,8 +5,7 @@ import {
   type SomedayInteractionCategory,
   useSomedayEventRegistrationRef,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
-import { selectDatesInView } from "@web/ducks/events/selectors/view.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { selectDatesInView, useViewStore } from "@web/events/stores/view.store";
 import { SomedayEventContainer } from "../SomedayEventContainer/SomedayEventContainer";
 
 const SOMEDAY_SORT_ANIMATION_MS = 180;
@@ -122,7 +121,7 @@ export const SomedayEventItem: FC<Props> = ({
   const enterAnimationRef = useRef(animateEnter);
   const layoutAnimationRef = useSomedayRowLayoutAnimation();
   const { actions, setters, state } = useSidebarContext();
-  const { start, end } = useAppSelector(selectDatesInView);
+  const { start, end } = useViewStore(selectDatesInView);
   const isDraggingThisEvent =
     state.isDragging && state.draft?._id === event._id;
   const interactionRef = useSomedayEventRegistrationRef({

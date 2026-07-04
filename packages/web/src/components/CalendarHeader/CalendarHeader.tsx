@@ -5,9 +5,11 @@ import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
 import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
 import { TodayButton } from "@web/views/Week/components/TodayButton/TodayButton";
 
 interface Props {
@@ -38,15 +40,14 @@ export const CalendarHeader: FC<Props> = ({
   prevLabel,
   nextLabel,
 }) => {
-  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
-  const dispatch = useAppDispatch();
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
 
   return (
     <div className="flex h-12 w-full shrink-0 items-center text-text-light">
       {!isSidebarOpen ? (
         <TooltipWrapper
           description="Open sidebar"
-          onClick={() => dispatch(viewSlice.actions.toggleSidebar())}
+          onClick={() => viewActions.toggleSidebar()}
           shortcut="["
         >
           <span className="flex h-6 w-6 items-center justify-center">

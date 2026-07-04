@@ -5,15 +5,12 @@ import { weekEventsQueryOptions } from "@web/ducks/events/queries/event.query.op
 import { usePrefetchAdjacentEvents } from "@web/ducks/events/queries/usePrefetchAdjacentEvents";
 import { useSomedayEventsQuery } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import { useWeekEventsQuery } from "@web/ducks/events/queries/useWeekEventsQuery";
-import { updateDates } from "@web/ducks/events/slices/view.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { viewActions } from "@web/events/stores/view.store";
 import { type Category_View } from "@web/views/Week/week-view.types";
 
 export type WeekNavigationSource = "manual" | "drag-to-edge";
 
 export const useWeek = (today: Dayjs) => {
-  const dispatch = useAppDispatch();
-
   const origStart = useMemo(() => today.startOf("week"), [today]);
   const [start, setStartOfView] = useState(origStart);
   const navigationSourceRef = useRef<WeekNavigationSource>("manual");
@@ -52,13 +49,11 @@ export const useWeek = (today: Dayjs) => {
   );
 
   useEffect(() => {
-    dispatch(
-      updateDates({
-        start: start.format(),
-        end: end.format(),
-      }),
-    );
-  }, [dispatch, end, start]);
+    viewActions.updateDates({
+      start: start.format(),
+      end: end.format(),
+    });
+  }, [end, start]);
 
   const decrementWeek = (source: WeekNavigationSource = "manual") => {
     navigationSourceRef.current = source;
