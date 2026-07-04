@@ -83,7 +83,7 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
           return;
         }
 
-        showErrorToast("Google Calendar repair failed. Please try again.", {
+        showErrorToast("Google Calendar sync failed. Please try again.", {
           toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
         });
       }
@@ -110,7 +110,8 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
   return {
     ...getGoogleConnectionConfig(state, onOpenGoogleAuth, onRepairGoogle),
     isAvailable,
-    isRepairing: state === "repairing",
     state,
+    onRepairGoogle,
+    onOpenGoogleAuth,
   };
 };

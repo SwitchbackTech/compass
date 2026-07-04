@@ -37,7 +37,7 @@
   --compass-color-shadow-default: hsla(0 0 0 / 25%);
   --compass-color-status-success: hsl(105 61 62);
   --compass-color-status-error: hsl(0 63 60);
-  --compass-color-status-warning: hsl(25 100 63);
+  --compass-color-status-warning: hsl(38 62 60);
   --compass-color-status-info: hsl(208 13 71 / 54.9%);
   --compass-color-tag-one: hsl(202 100 67);
   --compass-color-tag-two: hsl(105 61 62);
@@ -152,10 +152,8 @@
   --color-white-100: hsl(0 0 100);
 
   /* Animations */
-  --animate-account-sync-status-in: accountSyncStatusIn 160ms
-    cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-progress-slide: progressSlide 2s ease-out infinite;
-  --animate-sync-dot-pulse: syncDotPulse 2.4s ease-in-out infinite;
+  --animate-sync-text-wave: syncTextWave 2.4s linear infinite;
   --animate-someday-commit-acknowledge: somedayCommitAcknowledge 260ms
     cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-someday-commit-time-exit: somedayCommitTimeExit 260ms
@@ -165,7 +163,6 @@
   --animate-loader-spin: loaderSpin 1.1s linear infinite;
   --animate-login-progress: loginProgress 1.5s ease-in-out infinite;
   --animate-login-message-in: loginMessageIn 0.8s ease-in-out;
-  --animate-spinner-rotate: spinnerRotate 1.1s linear infinite;
 
   @keyframes progressSlide {
     0% {
@@ -176,27 +173,12 @@
     }
   }
 
-  @keyframes accountSyncStatusIn {
+  @keyframes syncTextWave {
     from {
-      opacity: 0;
-      transform: translateY(2px);
+      background-position: 150% 0;
     }
     to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  @keyframes syncDotPulse {
-    0%,
-    100% {
-      opacity: 0.88;
-      transform: scale(0.96);
-    }
-
-    50% {
-      opacity: 1;
-      transform: scale(1);
+      background-position: -50% 0;
     }
   }
 
@@ -226,15 +208,6 @@
     }
     to {
       opacity: 1;
-    }
-  }
-
-  @keyframes spinnerRotate {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
     }
   }
 
@@ -363,6 +336,26 @@
   );
   background-clip: text;
   -webkit-background-clip: text;
+}
+
+@utility c-sync-text-wave {
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--color-text-light) 0% 38%,
+    var(--color-text-lighter) 50%,
+    var(--color-text-light) 62% 100%
+  );
+  background-size: 250% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  animation: var(--animate-sync-text-wave);
+
+  @media (prefers-reduced-motion: reduce) {
+    animation: none;
+    background: none;
+    color: var(--color-text-light);
+  }
 }
 
 @utility c-icon {

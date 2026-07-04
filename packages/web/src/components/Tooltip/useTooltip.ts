@@ -2,6 +2,7 @@ import {
   autoUpdate,
   flip,
   offset,
+  safePolygon,
   shift,
   useDismiss,
   useFloating,
@@ -19,6 +20,7 @@ export function useTooltip({
   placement = "top",
   open: controlledOpen,
   onOpenChange: setControlledOpen,
+  interactive = false,
 }: TooltipOptions = {}) {
   const [uncontrolledOpen, setUncontrolledOpen] = useState(initialOpen);
 
@@ -42,9 +44,16 @@ export function useTooltip({
 
   const context = data.context;
 
+  // Memoized so the polygon tracker isn't rebuilt on every render — only when
+  // `interactive` itself changes.
+  const handleClose = useMemo(
+    () => (interactive ? safePolygon() : null),
+    [interactive],
+  );
   const hover = useHover(context, {
     delay: 120,
     enabled: true,
+    handleClose,
   });
   const focus = useFocus(context, {
     enabled: controlledOpen == null,

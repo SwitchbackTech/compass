@@ -306,19 +306,19 @@ Runtime nuances:
 
 Files:
 
-- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
-- `packages/web/src/auth/google/google.auth.util.ts`
-- `packages/web/src/components/HeaderInfoIcon/HeaderInfoIcon.tsx`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.util.ts`
+- `packages/web/src/components/PlannerSidebar/PlannerAccountSummary/PlannerAccountSummary.tsx`
 - `packages/web/src/common/hooks/useGoogleCmdItems.ts`
 
-UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only loading state:
+UI state comes from a single server-enriched metadata field (`google.connectionState`) plus two client-only states (`checking`, `repairing`). The sidebar account email text itself is the status indicator, via `getGoogleAccountSummaryStatus`:
 
-- `checking` (client-only) → disabled checking status (`SpinnerIcon`)
-- `NOT_CONNECTED` → connect action (`CloudArrowUpIcon`)
-- `RECONNECT_REQUIRED` → reconnect action (`LinkBreakIcon`)
-- `IMPORTING` → disabled syncing status (`SpinnerIcon`)
-- `HEALTHY` → disabled connected status (`LinkIcon`)
-- `ATTENTION` → repair action (`CloudWarningIcon`)
+- `HEALTHY` → email renders normally (`text-text-light`); tooltip reads "Up-to-date"
+- `ATTENTION` → email renders in `text-status-warning`; tooltip explains a sync is needed and offers a **Sync now** button (`onRepairGoogle`)
+- `RECONNECT_REQUIRED` → email renders in `text-status-error`; tooltip offers a **Reconnect** button (`onOpenGoogleAuth`)
+- `NOT_CONNECTED` → plain email text, no tooltip
+
+When a status has an action, the email itself renders as a `<button>` so keyboard users can trigger the action directly (Enter/Space) without needing to hover into the tooltip. An `sr-only role="status"` live region mirrors the tooltip text so screen readers hear state transitions. User-facing copy avoids the word "repair" — the `ATTENTION` state is framed as needing a sync, not a repair.
 
 Important constraint:
 

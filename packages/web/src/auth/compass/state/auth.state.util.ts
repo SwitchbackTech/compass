@@ -130,6 +130,10 @@ export function markAnonymousCalendarChangeForSignUpPrompt(): void {
   updateAuthState({ shouldPromptSignUpAfterAnonymousCalendarChange: true });
 }
 
+/**
+ * True once an anonymous (never-authenticated) user has made a calendar
+ * change, so the sidebar can prompt them to sign up before they lose it.
+ */
 export function shouldShowAnonymousCalendarChangeSignUpPrompt(): boolean {
   return getAuthState().shouldPromptSignUpAfterAnonymousCalendarChange === true;
 }
