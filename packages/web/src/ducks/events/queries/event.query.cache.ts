@@ -9,7 +9,6 @@ import {
   type EventQueryKey,
   type EventQueryKeyMetadata,
   type EventQueryScope,
-  type EventQuerySnapshot,
 } from "./event.query.types";
 
 type EventQueryEntry = {
@@ -73,27 +72,6 @@ export function findEventInCache(
     if (event) return event;
   }
   return null;
-}
-
-export function snapshotEventQueries(
-  queryClient: QueryClient,
-  filter: EventQueryFilter = {},
-): EventQuerySnapshot[] {
-  return getEventQueryEntries(queryClient, filter).map(
-    ({ queryKey, data }) => ({
-      queryKey,
-      data,
-    }),
-  );
-}
-
-export function restoreEventQueries(
-  queryClient: QueryClient,
-  snapshots: EventQuerySnapshot[],
-) {
-  for (const { queryKey, data } of snapshots) {
-    queryClient.setQueryData(queryKey, data);
-  }
 }
 
 /**

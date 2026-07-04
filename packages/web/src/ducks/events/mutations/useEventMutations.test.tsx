@@ -50,26 +50,51 @@ const normalized = (...events: Schema_Event[]) => ({
   entities: Object.fromEntries(events.map((item) => [item._id, item])),
 });
 
-const deferred = <T,>() => {
-  let resolve!: (value: T | PromiseLike<T>) => void;
-  let reject!: (reason?: unknown) => void;
-  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
-    resolve = resolvePromise;
-    reject = rejectPromise;
-  });
-  return { promise, reject, resolve };
+// Each repository call blocks on its own waiter (FIFO). `resolve`/`reject`
+// settle every current and future call, matching the old shared-promise
+// harness; `resolveNext`/`rejectNext` settle only the oldest in-flight call so
+// tests can interleave outcomes of concurrent mutations.
+const pendingControl = () => {
+  type Waiter = { resolve: () => void; reject: (reason?: unknown) => void };
+  const waiters: Waiter[] = [];
+  let settledAll:
+    | { mode: "resolve" }
+    | { mode: "reject"; reason: unknown }
+    | null = null;
+  const wait = () =>
+    new Promise<void>((resolve, reject) => {
+      if (settledAll) {
+        if (settledAll.mode === "resolve") resolve();
+        else reject(settledAll.reason);
+        return;
+      }
+      waiters.push({ resolve, reject });
+    });
+  return {
+    wait,
+    resolve: () => {
+      settledAll = { mode: "resolve" };
+      for (const waiter of waiters.splice(0)) waiter.resolve();
+    },
+    reject: (reason?: unknown) => {
+      settledAll = { mode: "reject", reason };
+      for (const waiter of waiters.splice(0)) waiter.reject(reason);
+    },
+    resolveNext: () => waiters.shift()?.resolve(),
+    rejectNext: (reason?: unknown) => waiters.shift()?.reject(reason),
+  };
 };
 
 const setup = () => {
   const queryClient = new QueryClient({
     defaultOptions: { mutations: { retry: false }, queries: { retry: false } },
   });
-  const pending = deferred<void>();
+  const pending = pendingControl();
   const calls: Array<{ method: string; value: unknown }> = [];
   const repository: EventRepository = {
     create: async (value) => {
       calls.push({ method: "create", value });
-      await pending.promise;
+      await pending.wait();
     },
     get: async () => ({
       data: [],
@@ -80,15 +105,15 @@ const setup = () => {
     }),
     edit: async (_id, value, params) => {
       calls.push({ method: "edit", value: { _id, event: value, params } });
-      await pending.promise;
+      await pending.wait();
     },
     delete: async (_id, applyTo) => {
       calls.push({ method: "delete", value: { _id, applyTo } });
-      await pending.promise;
+      await pending.wait();
     },
     reorder: async (value) => {
       calls.push({ method: "reorder", value });
-      await pending.promise;
+      await pending.wait();
     },
   };
   const markedWrites: string[] = [];
@@ -142,10 +167,9 @@ describe("useEventMutations", () => {
     });
   });
 
-  test("restores the complete snapshot when an edit fails", async () => {
+  test("reports the error and invalidates instead of rolling back when an edit fails", async () => {
     const context = setup();
-    const original = normalized(event());
-    context.queryClient.setQueryData(calendarKey, original);
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
 
     act(() =>
       context.hook.result.current.mutations.edit({
@@ -165,8 +189,116 @@ describe("useEventMutations", () => {
     context.pending.reject(new Error("write failed"));
 
     await waitFor(() => {
-      expect(context.queryClient.getQueryData(calendarKey)).toEqual(original);
       expect(context.errors[0]?.message).toBe("write failed");
+      // No in-memory rollback: the settle-time invalidation refetches server
+      // truth instead of restoring a snapshot.
+      expect(
+        context.queryClient.getQueryState(calendarKey)?.isInvalidated,
+      ).toBe(true);
+    });
+    expect(
+      context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+        calendarKey,
+      )?.entities["event-1"].title,
+    ).toBe("Changed");
+  });
+
+  test("keeps a newer edit's optimistic value when an older edit for the same event fails", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const editEvent = (title: string) =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: event({ title }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      });
+
+    act(() => editEvent("First"));
+    await waitFor(() => {
+      expect(
+        context.calls.filter(({ method }) => method === "edit"),
+      ).toHaveLength(1);
+    });
+    act(() => editEvent("Second"));
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.entities["event-1"].title,
+      ).toBe("Second");
+    });
+
+    act(() => context.pending.rejectNext(new Error("first edit failed")));
+
+    await waitFor(() => {
+      expect(context.errors[0]?.message).toBe("first edit failed");
+    });
+    // The newer edit's optimistic value survives the older edit's failure,
+    // and no refetch fires while the newer mutation is still in flight.
+    expect(
+      context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+        calendarKey,
+      )?.entities["event-1"].title,
+    ).toBe("Second");
+    expect(context.queryClient.getQueryState(calendarKey)?.isInvalidated).toBe(
+      false,
+    );
+
+    act(() => context.pending.resolveNext());
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual([]);
+      expect(
+        context.queryClient.getQueryState(calendarKey)?.isInvalidated,
+      ).toBe(true);
+    });
+  });
+
+  test("a failed edit leaves a concurrent edit to another event untouched", async () => {
+    const context = setup();
+    const other = event({ _id: "event-2", title: "Other" });
+    context.queryClient.setQueryData(calendarKey, normalized(event(), other));
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: event({ title: "Doomed" }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        context.calls.filter(({ method }) => method === "edit"),
+      ).toHaveLength(1);
+    });
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-2",
+        event: event({ _id: "event-2", title: "Survivor" }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.entities["event-2"].title,
+      ).toBe("Survivor");
+    });
+
+    act(() => context.pending.rejectNext(new Error("event-1 edit failed")));
+
+    await waitFor(() => {
+      expect(context.errors[0]?.message).toBe("event-1 edit failed");
+    });
+    expect(
+      context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+        calendarKey,
+      )?.entities["event-2"].title,
+    ).toBe("Survivor");
+
+    act(() => context.pending.resolveNext());
+    await waitFor(() => {
+      expect(context.hook.result.current.pendingIds).toEqual([]);
     });
   });
 

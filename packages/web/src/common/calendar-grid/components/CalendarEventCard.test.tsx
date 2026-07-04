@@ -52,7 +52,6 @@ describe("CalendarEventCard", () => {
           "data-week-interaction-event-type": "timed",
         }}
         isCommitAcknowledged={true}
-        isPending={true}
         motionMode="idle"
         onEventMouseDown={onEventMouseDown}
         onScalerMouseDown={onScalerMouseDown}
@@ -63,7 +62,7 @@ describe("CalendarEventCard", () => {
     const card = screen.getByRole("button", {
       name: "Timed event: Planning block, 9 - 10 AM",
     });
-    expect(card).toHaveAttribute("aria-disabled", "true");
+    expect(card).not.toHaveAttribute("aria-disabled");
     expect(card).toHaveAttribute("data-event-id", "event-1");
     expect(card).toHaveAttribute("data-week-interaction-event-id", "event-1");
     expect(card).toHaveClass("animate-someday-commit-acknowledge");
@@ -87,7 +86,7 @@ describe("CalendarEventCard", () => {
     expect(onScalerMouseDown.mock.calls[1]?.[2]).toBe("endDate");
 
     fireEvent.mouseDown(card);
-    expect(onEventMouseDown).not.toHaveBeenCalled();
+    expect(onEventMouseDown).toHaveBeenCalledTimes(1);
   });
 
   it("keeps the timed selected state on the priority color", () => {
@@ -113,26 +112,6 @@ describe("CalendarEventCard", () => {
       gridColorByPriority[Priorities.WORK],
     );
     expect(card.style.boxShadow).toContain("rgba(255,255,255,0.55)");
-  });
-
-  it("does not open pending timed events from the keyboard", () => {
-    const onEventKeyDown = mock();
-
-    render(
-      <CalendarTimedEventCard
-        displayMode="saved"
-        event={createEvent()}
-        isPending={true}
-        motionMode="idle"
-        onEventKeyDown={onEventKeyDown}
-        position={position}
-      />,
-    );
-
-    fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
-    fireEvent.keyDown(screen.getByRole("button"), { key: " " });
-
-    expect(onEventKeyDown).not.toHaveBeenCalled();
   });
 
   it("keeps timed event keyboard activation from reaching parent shortcuts", () => {
@@ -207,28 +186,6 @@ describe("CalendarEventCard", () => {
 
     expect(onScalerMouseDown).toHaveBeenCalledTimes(2);
     expect(onEventMouseDown).toHaveBeenCalledTimes(1);
-  });
-
-  it("does not open pending all-day events from the keyboard", () => {
-    const onEventKeyDown = mock();
-
-    render(
-      <CalendarAllDayEventCard
-        event={createEvent({
-          isAllDay: true,
-          title: "Conference",
-        })}
-        isPending={true}
-        isPlaceholder={false}
-        onEventKeyDown={onEventKeyDown}
-        position={position}
-      />,
-    );
-
-    fireEvent.keyDown(screen.getByRole("button"), { key: "Enter" });
-    fireEvent.keyDown(screen.getByRole("button"), { key: " " });
-
-    expect(onEventKeyDown).not.toHaveBeenCalled();
   });
 
   it("keeps all-day event keyboard activation from reaching parent shortcuts", () => {

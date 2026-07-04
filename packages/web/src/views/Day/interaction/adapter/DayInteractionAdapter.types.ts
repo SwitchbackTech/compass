@@ -32,7 +32,6 @@ export interface DayInteractionAdapterOptions {
 export interface DayInteractionRuntime {
   getAllDayEventById?: (eventId: string) => Schema_GridEvent | null;
   getTimedEventById(eventId: string): Schema_GridEvent | null;
-  isEventPending: (eventId: string) => boolean;
   isFormOpen?: () => boolean;
   onClickAllDayEvent?: (event: Schema_GridEvent) => void;
   onClickTimedEvent: (event: Schema_GridEvent) => void;

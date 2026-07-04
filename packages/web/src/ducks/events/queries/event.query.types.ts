@@ -1,4 +1,3 @@
-import { type QueryKey } from "@tanstack/react-query";
 import { type Schema_Event } from "@core/types/event.types";
 import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
 import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
@@ -28,8 +27,3 @@ export type EventQueryKey = readonly [
   EventQueryScope,
   EventQueryKeyMetadata,
 ];
-
-export type EventQuerySnapshot = {
-  queryKey: QueryKey;
-  data: EventQueryData;
-};

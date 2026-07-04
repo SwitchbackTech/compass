@@ -7,7 +7,6 @@ import {
   type MouseEvent,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
-import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { type CalendarEventPosition } from "@web/common/calendar-grid/types/calendarGrid.types";
@@ -28,7 +27,6 @@ export interface CalendarAllDayEventCardProps {
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
   isCommitAcknowledged?: boolean;
-  isPending?: boolean;
   isPlaceholder: boolean;
   onEventKeyDown?: (event: Schema_GridEvent) => void;
   onEventMouseDown?: (e: MouseEvent, event: Schema_GridEvent) => void;
@@ -47,7 +45,6 @@ const CalendarAllDayEventCardBase = (
     event,
     interactionAttributes,
     isCommitAcknowledged = false,
-    isPending = false,
     isPlaceholder,
     onEventKeyDown,
     onEventMouseDown,
@@ -62,17 +59,9 @@ const CalendarAllDayEventCardBase = (
   const baseColor = gridColorByPriority[priority];
   const hoverColor = gridHoverColorByPriority[priority];
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
-  const hoverBgColor = !isPlaceholder
-    ? isPending && baseColor
-      ? darken(baseColor)
-      : hoverColor
-    : baseColor;
+  const hoverBgColor = !isPlaceholder ? hoverColor : baseColor;
 
-  const hoverCursorClass = !isPlaceholder
-    ? isPending
-      ? "hover:cursor-wait"
-      : "hover:cursor-pointer"
-    : "";
+  const hoverCursorClass = !isPlaceholder ? "hover:cursor-pointer" : "";
 
   const eventStyle = {
     "--event-bg": isCommitAcknowledged ? hoverColor : baseColor,
@@ -86,7 +75,7 @@ const CalendarAllDayEventCardBase = (
     filter: isInPast ? "brightness(0.7)" : "brightness(1)",
   } as CSSProperties;
 
-  const showResizeCursor = !isPlaceholder && !isPending;
+  const showResizeCursor = !isPlaceholder;
   const scalerStyle = (
     placement: Pick<CSSProperties, "left" | "right">,
   ): CSSProperties => ({
@@ -106,7 +95,6 @@ const CalendarAllDayEventCardBase = (
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
       {...interactionAttributes}
-      aria-disabled={isPending ? "true" : undefined}
       aria-label={accessibleLabel}
       ref={ref}
       role="button"
@@ -126,17 +114,9 @@ const CalendarAllDayEventCardBase = (
 
         e.preventDefault();
         e.stopPropagation();
-        if (isPending) {
-          return;
-        }
-
         onEventKeyDown?.(event);
       }}
       onMouseDown={(e: MouseEvent) => {
-        if (isPending) {
-          return;
-        }
-
         if (!onEventMouseDown) {
           e.stopPropagation();
           return;

@@ -256,7 +256,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     expect(store.getState().events.draft?.event?._id).toBe("event-1");
   });
 
-  it("does not edit pending calendar events with M", () => {
+  it("edits pending calendar events with M", async () => {
     pendingEventIds = ["event-1"];
     const button = addCalendarTarget();
     button.focus();
@@ -264,7 +264,12 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const { store } = renderShortcuts();
     pressKey("M");
 
-    expect(store.getState().events.draft?.status?.activity).toBeNull();
+    await waitFor(() => {
+      expect(store.getState().events.draft?.status?.activity).toBe(
+        "keyboardEdit",
+      );
+    });
+    expect(store.getState().events.draft?.event?._id).toBe("event-1");
   });
 
   it("edits an event loaded after shortcuts are registered", async () => {
@@ -398,22 +403,27 @@ describe("useWeekShortcuts calendar event targeting", () => {
     ).toBe(true);
   });
 
-  it("does not delete pending calendar events with Delete", () => {
+  it("deletes pending calendar events with Delete", () => {
     const confirm = mock(() => true);
     window.confirm = confirm;
     pendingEventIds = ["event-1"];
     const button = addCalendarTarget();
     button.focus();
 
-    const { dispatchedActions } = renderShortcuts();
+    const { queryClient } = renderShortcuts();
     pressKey("Delete");
 
-    expect(confirm).not.toHaveBeenCalled();
-    expect(dispatchedActions).not.toContainEqual(
-      expect.objectContaining({
-        type: DELETE_EVENT_REQUEST,
-      }),
-    );
+    expect(confirm).toHaveBeenCalledWith("Delete Editable event?");
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some(
+          (mutation) =>
+            mutation.options.mutationKey?.[2] === "delete" &&
+            (mutation.state.variables as { _id?: string })._id === "event-1",
+        ),
+    ).toBe(true);
   });
 
   it("does not delete calendar events when Delete is pressed inside an editable field", () => {

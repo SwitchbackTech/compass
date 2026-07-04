@@ -14,7 +14,6 @@ import {
 interface Props {
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
-  isPending?: boolean;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
@@ -32,7 +31,6 @@ const AllDayEventBase = (
   {
     event,
     interactionAttributes,
-    isPending = false,
     isPlaceholder,
     measurements,
     startOfView,
@@ -64,9 +62,8 @@ const AllDayEventBase = (
   });
 
   const shouldAcknowledgeCommit =
-    useSomedayCommitAcknowledgement(event._id) && !isPlaceholder && !isPending;
-  const shouldTrackCalendarHover =
-    !isPending && !isPlaceholder && Boolean(event._id);
+    useSomedayCommitAcknowledgement(event._id) && !isPlaceholder;
+  const shouldTrackCalendarHover = !isPlaceholder && Boolean(event._id);
   const handleEventMouseDown = (
     e: MouseEvent,
     selectedEvent: Schema_GridEvent,
@@ -84,7 +81,6 @@ const AllDayEventBase = (
       event={event}
       interactionAttributes={interactionAttributes}
       isCommitAcknowledged={shouldAcknowledgeCommit}
-      isPending={isPending}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onKeyDown}
       onEventMouseDown={handleEventMouseDown}
@@ -109,7 +105,6 @@ export const AllDayEventMemo = memo(AllDayEvent, (prev, next) => {
   return (
     prev.event === next.event &&
     prev.interactionAttributes === next.interactionAttributes &&
-    prev.isPending === next.isPending &&
     prev.isPlaceholder === next.isPlaceholder &&
     prev.measurements === next.measurements
   );

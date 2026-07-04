@@ -4,6 +4,7 @@ import { useUser } from "@web/auth/compass/user/hooks/useUser";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
 import { getGoogleAccountSummaryStatus } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.util";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
+import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 
 const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save changes";
 
@@ -58,7 +59,17 @@ const TemporaryAccountSummary: FC = () => {
 const AuthenticatedAccountSummary: FC<{ email: string }> = ({ email }) => {
   const { state } = useConnectGoogle();
   const accountLabel = email;
-  const syncStatus = getGoogleAccountSummaryStatus(state);
+  const googleStatus = getGoogleAccountSummaryStatus(state);
+  const hasPendingEvents = usePendingEventIds().length > 0;
+  // While event mutations are in flight, replace the green "healthy" dot with
+  // a spinner. Only when the Google connection is idle: actionable states
+  // (ATTENTION, RECONNECT_REQUIRED) and transitional ones (checking,
+  // repairing, IMPORTING) keep narrating their own status.
+  const showEventSync =
+    hasPendingEvents && (state === "HEALTHY" || state === "NOT_CONNECTED");
+  const syncStatus = showEventSync
+    ? { isHealthy: false, isLoading: true, label: "Syncing changes…" }
+    : googleStatus;
 
   return (
     <div

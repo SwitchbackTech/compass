@@ -494,7 +494,7 @@ describe("Week calendar accessibility", () => {
     ).toBeInTheDocument();
   });
 
-  it("marks pending saved events as unavailable", () => {
+  it("keeps pending saved events fully interactive", () => {
     const event = createSavedEvent({
       _id: "pending-event",
       title: "Pending save",
@@ -511,11 +511,12 @@ describe("Week calendar accessibility", () => {
       </Provider>,
     );
 
-    expect(
-      screen
-        .getByRole("button", { name: /pending save/i })
-        .getAttribute("aria-disabled"),
-    ).toBe("true");
+    const card = screen.getByRole("button", { name: /pending save/i });
+    expect(card).not.toHaveAttribute("aria-disabled");
+    expect(card).toHaveAttribute(
+      "data-week-interaction-event-id",
+      "pending-event",
+    );
   });
 
   it("marks hovered saved timed events as targeting candidates", () => {

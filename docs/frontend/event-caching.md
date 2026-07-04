@@ -67,22 +67,31 @@ Mutations go through the narrow `EventMutations` interface
 ```
 mutate(payload)
    │
-   ├─ onMutate:   cancel in-flight reads → snapshot affected entries
+   ├─ onMutate:   cancel in-flight reads
    │              → apply optimistic edit to matching cache entries   (instant UI)
    │
    ├─ mutationFn: persist via repository (captured source)
    │
-   ├─ onError:    restore every snapshot                              (rollback)
+   ├─ onError:    report the error (no cache rollback)
    │
-   └─ onSettled:  invalidate ["events"] → refetch to get canonical data
+   └─ onSettled:  when this is the LAST in-flight event mutation,
+                  invalidate ["events"] → refetch to get canonical data
 ```
 
 - **Optimistic edits** insert/patch/remove events across exactly the entries they
   belong to, so a created or dragged-in event shows immediately — before the
   server responds.
-- **Pending state** (e.g. to disable actions on a not-yet-saved event) is derived
-  from TanStack Query's mutation state via `usePendingEventIds`, not stored
-  separately.
+- **No per-mutation rollback.** Rapid successive edits are allowed (events stay
+  interactive while pending), so a failed mutation must not restore a snapshot —
+  that would clobber a newer edit's optimistic write. Instead, failures leave the
+  optimistic value in place and the settle-time refetch converges the cache to
+  server truth. Invalidation is gated on
+  `queryClient.isMutating(...) === 1` (the settling mutation still counts) so a
+  refetch never overwrites another mutation's live optimistic update — the
+  TanStack Query recipe for concurrent optimistic updates.
+- **Pending state** is derived from TanStack Query's mutation state via
+  `usePendingEventIds`, not stored separately. It never blocks interaction; its
+  only UI is the "Syncing changes…" spinner in `PlannerAccountSummary`.
 
 ## One membership rule for reads and writes
 

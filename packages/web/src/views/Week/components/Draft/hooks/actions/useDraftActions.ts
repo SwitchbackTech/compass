@@ -28,7 +28,6 @@ import {
   type Payload_EditEvent,
 } from "@web/ducks/events/event.types";
 import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { usePendingEventIds } from "@web/ducks/events/mutations/useEventPending";
 import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import {
   selectDraft,
@@ -82,7 +81,6 @@ export const useDraftActions = (
       weekProps.component.endOfView,
     );
   const reduxDraft = useAppSelector(selectDraft);
-  const pendingEventIds = usePendingEventIds();
 
   const {
     activity,
@@ -256,15 +254,6 @@ export const useDraftActions = (
       if (!isExisting) return "CREATE";
 
       if (isExisting) {
-        // Prevent updates if event is pending (waiting for backend confirmation)
-        const isPending = draft._id
-          ? pendingEventIds.includes(draft._id)
-          : false;
-        if (isPending) {
-          // Event is pending, discard the change and return to original position
-          return "DISCARD";
-        }
-
         if (isFormOpenBeforeDragging) {
           return "OPEN_FORM";
         }
@@ -278,7 +267,7 @@ export const useDraftActions = (
       }
       return "UPDATE";
     },
-    [reduxDraft, isFormOpenBeforeDragging, pendingEventIds],
+    [reduxDraft, isFormOpenBeforeDragging],
   );
 
   const getEditSlicePayload = useCallback(

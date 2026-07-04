@@ -24,7 +24,6 @@ export interface SomedayInteractionAdapterOptions {
 
 export interface SomedayInteractionRuntime {
   getSomedayEventById(eventId: string): Schema_Event | null;
-  isEventPending?: (eventId: string) => boolean;
   isSidebarDropAllowed?: (result: SomedaySidebarCommitResult) => boolean;
   onCancelInteraction?: () => void;
   onClickSomedayEvent(

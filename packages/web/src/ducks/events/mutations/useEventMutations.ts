@@ -22,19 +22,14 @@ import {
   insertEventIntoQueries,
   removeEventFromQueries,
   reorderSomedayEventsInQueries,
-  restoreEventQueries,
-  snapshotEventQueries,
   upsertEventAcrossQueries,
 } from "@web/ducks/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
-import { type EventQuerySnapshot } from "@web/ducks/events/queries/event.query.types";
 import {
   type EventMutationOperation,
   eventMutationKeys,
 } from "./event.mutation.keys";
 import { markAnonymousEventWrite } from "./event.mutation.runtime";
-
-type MutationContext = { snapshots: EventQuerySnapshot[] };
 
 // Convert mutations capture the fully-resolved converted event at the
 // `.mutate()` boundary (see wrappers below) so `onMutate` and the async
@@ -82,19 +77,16 @@ export function useEventMutations(
   const markWrite = dependencies.markWrite ?? markAnonymousEventWrite;
   const reportError = dependencies.reportError ?? handleError;
 
-  const settle = () =>
-    queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
-  const rollback = (
-    error: Error,
-    _variables: unknown,
-    context?: MutationContext,
-  ) => {
-    if (context) restoreEventQueries(queryClient, context.snapshots);
-    reportError(error);
-  };
-  const snapshot = async () => {
-    await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
-    return { snapshots: snapshotEventQueries(queryClient, { source }) };
+  // No per-mutation rollback: failed mutations leave their optimistic write
+  // in place and rely on the settle-time refetch to restore server truth.
+  // Invalidation only runs when the last in-flight event mutation settles
+  // (the settling mutation itself still counts, hence `=== 1`) so a refetch
+  // never overwrites another mutation's live optimistic update. This is the
+  // TanStack Query recipe for concurrent optimistic updates.
+  const settle = () => {
+    if (queryClient.isMutating({ mutationKey: eventMutationKeys.all }) === 1) {
+      return queryClient.invalidateQueries({ queryKey: eventQueryKeys.all });
+    }
   };
   const buildMutation = <Variables>(
     operation: EventMutationOperation,
@@ -104,11 +96,10 @@ export function useEventMutations(
     mutationKey: eventMutationKeys.operation(operation),
     mutationFn,
     onMutate: async (variables: Variables) => {
-      const context = await snapshot();
+      await queryClient.cancelQueries({ queryKey: eventQueryKeys.all });
       optimistic(variables);
-      return context;
     },
-    onError: rollback,
+    onError: (error: Error) => reportError(error),
     onSettled: settle,
   });
   // Non-hook check for an in-flight optimistic create of `id`, so the delete
