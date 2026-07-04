@@ -1,4 +1,5 @@
 import "@testing-library/jest-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
@@ -10,10 +11,16 @@ const mockOnRepairGoogle = mock();
 const mockOnOpenGoogleAuth = mock();
 let mockEmail: string | undefined;
 let mockGoogleState: GoogleUiState = "NOT_CONNECTED";
+let mockIsAnonymousDirty = false;
 const mockUseConnectGoogle = mock(() => ({
   state: mockGoogleState,
   onRepairGoogle: mockOnRepairGoogle,
   onOpenGoogleAuth: mockOnOpenGoogleAuth,
+}));
+
+mock.module("@web/auth/compass/state/auth.state.util", () => ({
+  shouldShowAnonymousCalendarChangeSignUpPrompt: () => mockIsAnonymousDirty,
+  subscribeToAuthState: () => () => {},
 }));
 
 mock.module("@web/auth/compass/user/hooks/useUser", () => ({
@@ -54,27 +61,49 @@ describe("PlannerAccountSummary", () => {
   beforeEach(() => {
     mockEmail = undefined;
     mockGoogleState = "NOT_CONNECTED";
+    mockIsAnonymousDirty = false;
     mockOpenModal.mockClear();
     mockOnRepairGoogle.mockClear();
     mockOnOpenGoogleAuth.mockClear();
     mockUseConnectGoogle.mockClear();
   });
 
-  it("shows a sign up prompt for temporary accounts", async () => {
+  it("shows a default-colored temporary account label with a sign-up tooltip before any changes are made", async () => {
     const user = userEvent.setup();
 
     renderSummary();
 
-    await user.click(
-      screen.getByRole("button", {
-        name: "Temporary account. Sign up to save changes",
-      }),
-    );
+    const trigger = screen.getByRole("button", { name: "Temporary account" });
+    expect(trigger).toHaveClass("text-text-light");
+    expect(trigger).not.toHaveClass("c-sync-text-wave");
+    expect(screen.queryByText("Sign up")).toBeNull();
 
-    expect(screen.getByText("Temporary account")).toBeTruthy();
-    expect(screen.getByText("Sign up")).toBeTruthy();
+    await user.hover(trigger);
+    await screen.findByText("Sign up to save your changes");
+    const signUpButton = await screen.findByRole("button", { name: "Sign up" });
+
+    await user.click(signUpButton);
     expect(mockOpenModal).toHaveBeenCalledWith("signUp");
     expect(mockUseConnectGoogle).not.toHaveBeenCalled();
+  });
+
+  it("shows the wave shimmer on the temporary account label once the anonymous user makes a change", () => {
+    mockIsAnonymousDirty = true;
+
+    renderSummary();
+
+    const trigger = screen.getByRole("button", { name: "Temporary account" });
+    expect(trigger).toHaveClass("c-sync-text-wave");
+    expect(trigger).not.toHaveClass("text-text-light");
+  });
+
+  it("also opens sign up by clicking the temporary account label directly (keyboard path)", async () => {
+    const user = userEvent.setup();
+
+    renderSummary();
+
+    await user.click(screen.getByRole("button", { name: "Temporary account" }));
+    expect(mockOpenModal).toHaveBeenCalledWith("signUp");
   });
 
   it("renders a plain, non-interactive email when Google is not connected", () => {
@@ -95,7 +124,7 @@ describe("PlannerAccountSummary", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
 
-    render(<PlannerAccountSummary />);
+    renderSummary();
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email).toHaveClass("text-text-light");
@@ -116,7 +145,7 @@ describe("PlannerAccountSummary", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = state;
 
-    render(<PlannerAccountSummary />);
+    renderSummary();
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email).toHaveClass("c-sync-text-wave");
@@ -132,7 +161,7 @@ describe("PlannerAccountSummary", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "ATTENTION";
 
-    render(<PlannerAccountSummary />);
+    renderSummary();
 
     const trigger = screen.getByText("ahab@pequod.com");
     expect(trigger).toHaveClass("text-status-warning");
@@ -154,7 +183,7 @@ describe("PlannerAccountSummary", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "ATTENTION";
 
-    render(<PlannerAccountSummary />);
+    renderSummary();
 
     await user.click(screen.getByText("ahab@pequod.com"));
     expect(mockOnRepairGoogle).toHaveBeenCalledTimes(1);
@@ -165,7 +194,7 @@ describe("PlannerAccountSummary", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "RECONNECT_REQUIRED";
 
-    render(<PlannerAccountSummary />);
+    renderSummary();
 
     const trigger = screen.getByText("ahab@pequod.com");
     expect(trigger).toHaveClass("text-status-error");
@@ -178,18 +207,18 @@ describe("PlannerAccountSummary", () => {
     expect(mockOnOpenGoogleAuth).toHaveBeenCalledTimes(1);
   });
 
-  it("shows a syncing-changes spinner instead of the healthy dot while an event mutation is pending", () => {
-    mockEmail = "ahab@pequod.com.com";
+  it("shows a syncing-changes indicator instead of the healthy state while an event mutation is pending", () => {
+    mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
 
     renderSummary({ pendingEventIds: ["event-1"] });
 
     expect(screen.getByText("Syncing changes…")).toBeTruthy();
-    expect(screen.queryByText("Synced with Google")).toBeNull();
+    expect(screen.queryByText("Up-to-date")).toBeNull();
   });
 
-  it("shows the syncing-changes spinner for pending mutations even without Google", () => {
-    mockEmail = "ahab@pequod.com.com";
+  it("shows the syncing-changes indicator for pending mutations even without Google", () => {
+    mockEmail = "ahab@pequod.com";
     mockGoogleState = "NOT_CONNECTED";
 
     renderSummary({ pendingEventIds: ["event-1"] });
@@ -198,17 +227,17 @@ describe("PlannerAccountSummary", () => {
   });
 
   it("keeps actionable Google states visible over pending event mutations", () => {
-    mockEmail = "ahab@pequod.com.com";
+    mockEmail = "ahab@pequod.com";
     mockGoogleState = "RECONNECT_REQUIRED";
 
     renderSummary({ pendingEventIds: ["event-1"] });
 
-    expect(screen.getByText("Reconnect needed")).toBeTruthy();
+    expect(screen.getByRole("status")).toHaveTextContent("needs reconnecting");
     expect(screen.queryByText("Syncing changes…")).toBeNull();
   });
 
   it("keeps Google's own syncing label over pending event mutations", () => {
-    mockEmail = "ahab@pequod.com.com";
+    mockEmail = "ahab@pequod.com";
     mockGoogleState = "IMPORTING";
 
     renderSummary({ pendingEventIds: ["event-1"] });

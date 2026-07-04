@@ -7,6 +7,15 @@ import {
 
 const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
 
+const SYNCING_COMMAND_LABEL: Record<
+  "checking" | "repairing" | "IMPORTING",
+  string
+> = {
+  checking: "Checking Google Calendar…",
+  repairing: "Syncing Google Calendar…",
+  IMPORTING: "Syncing Google Calendar…",
+};
+
 export const getGoogleConnectionConfig = (
   state: GoogleUiState,
   onConnectGoogle: () => void,
@@ -14,17 +23,11 @@ export const getGoogleConnectionConfig = (
 ): GoogleUiConfig => {
   switch (state) {
     case "checking":
-      return {
-        commandAction: {
-          label: "Checking Google Calendar…",
-          icon: COMMAND_ICON,
-          isDisabled: true,
-        },
-      };
     case "repairing":
+    case "IMPORTING":
       return {
         commandAction: {
-          label: "Syncing Google Calendar…",
+          label: SYNCING_COMMAND_LABEL[state],
           icon: COMMAND_ICON,
           isDisabled: true,
         },
@@ -45,14 +48,6 @@ export const getGoogleConnectionConfig = (
           icon: COMMAND_ICON,
           isDisabled: false,
           onSelect: onConnectGoogle,
-        },
-      };
-    case "IMPORTING":
-      return {
-        commandAction: {
-          label: "Syncing Google Calendar…",
-          icon: COMMAND_ICON,
-          isDisabled: true,
         },
       };
     case "ATTENTION":

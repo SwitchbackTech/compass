@@ -44,10 +44,16 @@ export function useTooltip({
 
   const context = data.context;
 
+  // Memoized so the polygon tracker isn't rebuilt on every render — only when
+  // `interactive` itself changes.
+  const handleClose = useMemo(
+    () => (interactive ? safePolygon() : null),
+    [interactive],
+  );
   const hover = useHover(context, {
     delay: 120,
     enabled: true,
-    handleClose: interactive ? safePolygon() : null,
+    handleClose,
   });
   const focus = useFocus(context, {
     enabled: controlledOpen == null,
