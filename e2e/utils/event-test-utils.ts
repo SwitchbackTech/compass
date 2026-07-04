@@ -450,6 +450,11 @@ export const deleteEventWithMouse = async (page: Page) => {
 
 export const deleteEventWithKeyboard = async (page: Page) => {
   await getFormTitleInput(page).waitFor({ timeout: FORM_TIMEOUT });
+  // The title input autofocuses when the form opens. The app treats Delete
+  // as a text-edit key while focus is in an editable field (so typing can
+  // use Backspace/Delete normally), so focus must move off the input first
+  // for Delete to trigger the event-deletion shortcut instead.
+  await blurActiveElement(page);
   page.once("dialog", (dialog) => dialog.accept());
   await page.keyboard.press("Delete");
 };

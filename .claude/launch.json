@@ -1,0 +1,23 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Backend",
+      "runtimeExecutable": "/opt/homebrew/bin/bun",
+      "runtimeArgs": ["dev:backend"],
+      "port": 3000
+    },
+    {
+      "name": "Web",
+      "runtimeExecutable": "/opt/homebrew/bin/bun",
+      "runtimeArgs": ["run", "dev:web"],
+      "port": 9080
+    },
+    {
+      "name": "Debug Web",
+      "runtimeExecutable": "/opt/homebrew/bin/bun",
+      "runtimeArgs": ["run", "debug:web"],
+      "port": 8080
+    }
+  ]
+}
