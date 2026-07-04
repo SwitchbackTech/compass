@@ -35,6 +35,36 @@ afterEach(() => {
   document.body.innerHTML = "";
 });
 
+describe("useDayViewShortcuts create", () => {
+  it("creates an all-day event with A", async () => {
+    const onCreateAllDayEvent = mock();
+
+    renderHook(() => useDayViewShortcuts({ onCreateAllDayEvent }), {
+      wrapper,
+    });
+    pressKey("A");
+
+    await waitFor(() => {
+      expect(onCreateAllDayEvent).toHaveBeenCalled();
+    });
+  });
+
+  it("does not create an all-day event when typing in an input", async () => {
+    const onCreateAllDayEvent = mock();
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+
+    renderHook(() => useDayViewShortcuts({ onCreateAllDayEvent }), {
+      wrapper,
+    });
+    pressKey("A", {}, input);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onCreateAllDayEvent).not.toHaveBeenCalled();
+  });
+});
+
 describe("useDayViewShortcuts migration", () => {
   it("migrates the focused task forward with Control+Meta+ArrowRight", async () => {
     const onMigrateTask = mock();

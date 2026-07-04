@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
+import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
@@ -69,41 +70,11 @@ export const WeekView = () => {
   };
 
   const shortcutSections = useMemo(
-    () => [
-      {
-        title: "Week",
-        shortcuts: [
-          { keys: ["j"], label: "Previous week" },
-          { keys: ["k"], label: "Next week" },
-          {
-            keys: ["t"],
-            label: isCurrentWeek ? "Scroll to now" : "Go to current week",
-          },
-        ],
-      },
-      {
-        title: "Create",
-        shortcuts: [
-          { keys: ["c"], label: "Create timed event" },
-          { keys: ["a"], label: "Create all-day event" },
-          { keys: ["Arrow keys"], label: "Move event" },
-          { keys: ["I"], label: "Focus calendar event" },
-          { keys: ["M"], label: "Edit calendar event" },
-          { keys: ["Shift", "w"], label: "Create Someday week event" },
-          { keys: ["Shift", "m"], label: "Create Someday month event" },
-        ],
-      },
-      {
-        title: "Global",
-        shortcuts: [
-          { keys: ["d"], label: "Day" },
-          { keys: ["w"], label: "Week" },
-          { keys: ["["], label: "Toggle sidebar" },
-          { keys: ["?"], label: "Toggle shortcuts" },
-          { keys: ["Mod", "k"], label: "Command Palette" },
-        ],
-      },
-    ],
+    () =>
+      getShortcutMenuSections({
+        view: "week",
+        isViewingCurrentPeriod: isCurrentWeek,
+      }),
     [isCurrentWeek],
   );
 
@@ -150,6 +121,7 @@ export const WeekView = () => {
                     onSelectDate={goToDateFromSidebar}
                     onToggleSidebar={toggleSidebar}
                     shortcutSections={shortcutSections}
+                    shortcutsViewLabel="Week"
                     viewEnd={weekProps.component.endOfView}
                     viewStart={weekProps.component.startOfView}
                   />

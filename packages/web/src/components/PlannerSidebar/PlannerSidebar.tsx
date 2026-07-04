@@ -17,6 +17,7 @@ export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
   onSelectDate: (date: Dayjs) => void;
   onToggleSidebar?: () => void;
   shortcutSections: ShortcutOverlaySection[];
+  shortcutsViewLabel?: string;
   showSomedayEventSections?: boolean;
   viewEnd: Dayjs;
   viewStart: Dayjs;
@@ -46,6 +47,7 @@ export function createPlannerSidebar({
     onSelectDate,
     onToggleSidebar,
     shortcutSections,
+    shortcutsViewLabel,
     showSomedayEventSections = true,
     viewEnd,
     viewStart,
@@ -88,6 +90,7 @@ export function createPlannerSidebar({
           isOpen={isShortcutsOpen}
           onClose={onCloseShortcuts}
           sections={shortcutSections}
+          viewLabel={shortcutsViewLabel}
         />
       </aside>
     );
