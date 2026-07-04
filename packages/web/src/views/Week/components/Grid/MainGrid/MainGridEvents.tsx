@@ -6,13 +6,13 @@ import {
 } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
+  draftActions,
   selectDraft,
   selectDraftId,
-} from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
@@ -27,14 +27,12 @@ interface Props {
 }
 
 export const MainGridEvents = ({ measurements, weekProps }: Props) => {
-  const dispatch = useAppDispatch();
-
-  const draft = useAppSelector(selectDraft);
+  const draft = useDraftStore(selectDraft);
   const { isPending: isLoadingWeekView, timedEvents } = useWeekEventViewModel({
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
   });
-  const draftId = useAppSelector(selectDraftId);
+  const draftId = useDraftStore(selectDraftId);
   const timedEventItems = useMemo(
     () => createCalendarTimedEventLayout(timedEvents),
     [timedEvents],
@@ -42,13 +40,11 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   const category = Categories_Event.TIMED;
 
   const handleKeyDown = (event: Schema_GridEvent) => {
-    dispatch(
-      draftSlice.actions.start({
-        activity: "keyboardEdit",
-        event,
-        eventType: category,
-      }),
-    );
+    draftActions.start({
+      activity: "keyboardEdit",
+      event,
+      eventType: category,
+    });
   };
 
   return (

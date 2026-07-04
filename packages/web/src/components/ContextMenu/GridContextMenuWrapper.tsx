@@ -14,10 +14,12 @@ import {
   getCalendarEventIdFromElement,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
-import { findEventInCache } from "@web/ducks/events/queries/event.query.cache";
-import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { findEventInCache } from "@web/events/queries/event.query.cache";
+import {
+  draftActions,
+  selectDraft,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { ContextMenu } from "./ContextMenu";
 
 export const ContextMenuWrapper = ({
@@ -27,10 +29,9 @@ export const ContextMenuWrapper = ({
   id: string;
   children: React.ReactNode;
 }) => {
-  const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
 
-  const draftEvent = useAppSelector(selectDraft);
+  const draftEvent = useDraftStore(selectDraft);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -59,7 +60,7 @@ export const ContextMenuWrapper = ({
 
   const handleDiscard = () => {
     closeMenu();
-    dispatch(draftSlice.actions.discard(undefined));
+    draftActions.discard();
   };
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -81,15 +82,13 @@ export const ContextMenuWrapper = ({
         getBoundingClientRect: () => new DOMRect(e.clientX, e.clientY, 0, 0), // Position menu exactly at the click position
       });
 
-      dispatch(
-        draftSlice.actions.start({
-          activity: "eventRightClick",
-          eventType: event.isAllDay
-            ? Categories_Event.ALLDAY
-            : Categories_Event.TIMED,
-          event,
-        }),
-      );
+      draftActions.start({
+        activity: "eventRightClick",
+        eventType: event.isAllDay
+          ? Categories_Event.ALLDAY
+          : Categories_Event.TIMED,
+        event,
+      });
 
       setIsOpen(true);
     }

@@ -6,9 +6,11 @@ import {
 import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { selectIsCmdPaletteOpen } from "@web/ducks/settings/selectors/settings.selectors";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  selectIsCmdPaletteOpen,
+  settingsActions,
+  useSettingsStore,
+} from "@web/settings/settings.store";
 
 interface Props {
   isShortcutsOpen: boolean;
@@ -19,8 +21,7 @@ export const PlannerSidebarActions = ({
   isShortcutsOpen,
   onToggleShortcuts,
 }: Props) => {
-  const dispatch = useAppDispatch();
-  const isCmdPaletteOpen = useAppSelector(selectIsCmdPaletteOpen);
+  const isCmdPaletteOpen = useSettingsStore(selectIsCmdPaletteOpen);
   const { isUpdateAvailable } = useVersionCheck();
 
   const handleUpdateReload = () => {
@@ -29,9 +30,9 @@ export const PlannerSidebarActions = ({
 
   const toggleCmdPalette = () => {
     if (isCmdPaletteOpen) {
-      dispatch(settingsSlice.actions.closeCmdPalette());
+      settingsActions.closeCmdPalette();
     } else {
-      dispatch(settingsSlice.actions.openCmdPalette());
+      settingsActions.openCmdPalette();
     }
   };
 

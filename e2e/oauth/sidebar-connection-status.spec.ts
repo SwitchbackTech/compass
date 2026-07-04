@@ -39,7 +39,7 @@ test.describe("Sidebar Connection Status", () => {
     await setGoogleConnectionState(page, "NOT_CONNECTED");
   });
 
-  test("stores NOT_CONNECTED in Redux (sidebar shows a plain email for the muted state)", async ({
+  test("stores NOT_CONNECTED in the userMetadata store (sidebar shows a plain email for the muted state)", async ({
     page,
   }) => {
     await expectGoogleConnectionStateInStore(page, "NOT_CONNECTED");
@@ -49,15 +49,15 @@ test.describe("Sidebar Connection Status", () => {
     page,
   }) => {
     await page.evaluate(() => {
-      const store = window.__COMPASS_E2E_STORE__;
-      if (!store) return;
-      store.dispatch({ type: "userMetadata/clear" });
-      store.dispatch({ type: "userMetadata/setLoading" });
+      const userMetadata = window.__COMPASS_E2E_STORE__?.userMetadata;
+      if (!userMetadata) return;
+      userMetadata.clear();
+      userMetadata.setLoading();
     });
 
     await page.waitForFunction(
       () =>
-        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.status ===
+        window.__COMPASS_E2E_STORE__?.userMetadata?.getState()?.status ===
         "loading",
       { timeout: 5000 },
     );

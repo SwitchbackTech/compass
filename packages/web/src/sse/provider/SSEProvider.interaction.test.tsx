@@ -1,8 +1,6 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { render, waitFor } from "@testing-library/react";
 import { EventEmitter2 } from "eventemitter2";
 import { act } from "react";
-import { Provider } from "react-redux";
 import {
   GOOGLE_REVOKED,
   IMPORT_GCAL_END,
@@ -16,7 +14,10 @@ import {
   resetGoogleSyncUIStateForTests,
   setRepairingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
-import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
+import {
+  userMetadataActions,
+  useUserMetadataStore,
+} from "@web/auth/state/user-metadata.store";
 import { createUseGcalSSE } from "../hooks/useGcalSSE.factory";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -25,15 +26,14 @@ const mockInvalidateEventQueries = mock();
 const mockShowErrorToast = mock();
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
 const sseEmitter = new EventEmitter2({ maxListeners: 20 });
-let dispatch: (action: unknown) => unknown;
 
 const useGcalSSE = createUseGcalSSE({
   handleGoogleRevoked: mockHandleGoogleRevoked,
   invalidateEventQueries: mockInvalidateEventQueries,
   refreshUserMetadata,
+  setUserMetadata: userMetadataActions.set,
   showErrorToast: mockShowErrorToast,
   sseEmitter,
-  useAppDispatch: () => dispatch,
 });
 
 const HookHost = () => {
@@ -64,13 +64,6 @@ const fireUserMetadata = (metadata: UserMetadata) => {
 };
 
 describe("useGcalSSE", () => {
-  const createStore = () =>
-    configureStore({
-      reducer: {
-        userMetadata: userMetadataSlice.reducer,
-      },
-    });
-
   beforeEach(() => {
     getSseEmitter().removeAllListeners();
     mockHandleGoogleRevoked.mockClear();
@@ -81,14 +74,7 @@ describe("useGcalSSE", () => {
   });
 
   it("does not trigger a client-side import when USER_METADATA reports RESTART", () => {
-    const store = createStore();
-    dispatch = store.dispatch;
-
-    render(
-      <Provider store={store}>
-        <HookHost />
-      </Provider>,
-    );
+    render(<HookHost />);
 
     act(() => {
       fireUserMetadata({
@@ -97,21 +83,14 @@ describe("useGcalSSE", () => {
       });
     });
 
-    expect(store.getState().userMetadata.current).toEqual({
+    expect(useUserMetadataStore.getState().current).toEqual({
       google: { connectionState: "ATTENTION" },
       sync: { importGCal: "RESTART" },
     });
   });
 
   it("stores IMPORTING metadata without starting another import", () => {
-    const store = createStore();
-    dispatch = store.dispatch;
-
-    render(
-      <Provider store={store}>
-        <HookHost />
-      </Provider>,
-    );
+    render(<HookHost />);
 
     act(() => {
       fireUserMetadata({
@@ -120,21 +99,14 @@ describe("useGcalSSE", () => {
       });
     });
 
-    expect(store.getState().userMetadata.current).toEqual({
+    expect(useUserMetadataStore.getState().current).toEqual({
       google: { connectionState: "IMPORTING" },
       sync: { importGCal: "IMPORTING" },
     });
   });
 
   it("sets the syncing override when IMPORT_GCAL_START arrives", async () => {
-    const store = createStore();
-    dispatch = store.dispatch;
-
-    render(
-      <Provider store={store}>
-        <HookHost />
-      </Provider>,
-    );
+    render(<HookHost />);
 
     act(() => {
       fireImportStart();
@@ -146,15 +118,9 @@ describe("useGcalSSE", () => {
   });
 
   it("clears the syncing override and triggers refetch after REPAIR completion", async () => {
-    const store = createStore();
-    dispatch = store.dispatch;
     setRepairingSyncIndicatorOverride();
 
-    render(
-      <Provider store={store}>
-        <HookHost />
-      </Provider>,
-    );
+    render(<HookHost />);
 
     act(() => {
       fireImportEnd({
@@ -172,15 +138,9 @@ describe("useGcalSSE", () => {
   });
 
   it("clears the syncing override and shows the repair toast after REPAIR failure", async () => {
-    const store = createStore();
-    dispatch = store.dispatch;
     setRepairingSyncIndicatorOverride();
 
-    render(
-      <Provider store={store}>
-        <HookHost />
-      </Provider>,
-    );
+    render(<HookHost />);
 
     act(() => {
       fireImportEnd({
@@ -200,15 +160,9 @@ describe("useGcalSSE", () => {
   });
 
   it("clears the syncing override when Google is revoked", async () => {
-    const store = createStore();
-    dispatch = store.dispatch;
     setRepairingSyncIndicatorOverride();
 
-    render(
-      <Provider store={store}>
-        <HookHost />
-      </Provider>,
-    );
+    render(<HookHost />);
 
     act(() => {
       getSseEmitter().emit(GOOGLE_REVOKED, new MessageEvent(GOOGLE_REVOKED));

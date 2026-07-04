@@ -21,13 +21,13 @@ import {
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
-import { useDayEventViewModel } from "@web/ducks/events/queries/useDayEventsQuery";
+import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
+  draftActions,
   selectDraft,
   selectIsEventFormOpen,
-} from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
 import {
@@ -56,7 +56,6 @@ const createEventFormAnchor = (eventId: string): VirtualElement => {
 };
 
 export function DayCalendarGrid() {
-  const dispatch = useAppDispatch();
   const dateInView = useDateInView();
   const visibleDates = useMemo(
     () => [
@@ -86,8 +85,8 @@ export function DayCalendarGrid() {
     startDate: dateInView.startOf("day").utc(true).format(),
     endDate: dateInView.endOf("day").utc(true).format(),
   });
-  const draft = useAppSelector(selectDraft);
-  const isFormOpen = useAppSelector(selectIsEventFormOpen);
+  const draft = useDraftStore(selectDraft);
+  const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const draftCategory = draft?.isAllDay
     ? Categories_Event.ALLDAY
     : Categories_Event.TIMED;
@@ -96,10 +95,10 @@ export function DayCalendarGrid() {
       const dismissed = reason === "escape-key" || reason === "outside-press";
 
       if (!open && dismissed) {
-        dispatch(draftSlice.actions.discard(undefined));
+        draftActions.discard();
       }
     },
-    [dispatch],
+    [],
   );
   const form: EventFormProps = useEventForm(
     draftCategory,
@@ -175,10 +174,10 @@ export function DayCalendarGrid() {
       const eventElement = getCalendarEventElementFromGrid(event._id);
       setFormReference(eventElement);
       setFormPositionReference(createEventFormAnchor(event._id));
-      dispatch(draftSlice.actions.startGridClick({ ...event, _id: event._id }));
-      dispatch(draftSlice.actions.setFormOpen(true));
+      draftActions.startGridClick({ ...event, _id: event._id });
+      draftActions.setFormOpen(true);
     },
-    [dispatch, setFormPositionReference, setFormReference],
+    [setFormPositionReference, setFormReference],
   );
 
   const getDayEventById = useCallback(

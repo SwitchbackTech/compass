@@ -18,9 +18,11 @@ import { SomedayEventItem } from "@web/components/PlannerSidebar/SomedayEventSec
 import { AddSomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
 import { useSomedayRefreshReserve } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/useSomedayRefreshReserve";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { useSomedayEventsQueryStatus } from "@web/ducks/events/queries/useSomedayEventsQuery";
-import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { useSomedayEventsQueryStatus } from "@web/events/queries/useSomedayEventsQuery";
+import {
+  selectDraftCategory,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 
 const getColName = (category: SomedayInteractionCategory) => {
   return category === Categories_Event.SOMEDAY_WEEK
@@ -60,7 +62,7 @@ export const SomedayEventsContainer: FC<Props> = ({
 }) => {
   const colName = getColName(category);
   const { actions, state } = useSidebarContext();
-  const draftCategory = useAppSelector(selectDraftCategory);
+  const draftCategory = useDraftStore(selectDraftCategory);
   const dropTargetRef = useSomedayDropTargetRegistrationRef({
     category,
   });

@@ -1,25 +1,25 @@
 import { renderHook } from "@testing-library/react";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { createUseCloseEventForm } from "./useCloseEventForm.factory";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-
-const dispatch = mock();
-const useCloseEventForm = createUseCloseEventForm({
-  useAppDispatch: () => dispatch,
-});
+import {
+  draftActions,
+  initialDraftState,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
+import { useCloseEventForm } from "./useCloseEventForm";
+import { describe, expect, it } from "bun:test";
 
 describe("useCloseEventForm", () => {
-  beforeEach(() => {
-    dispatch.mockClear();
-  });
-
   it("should discard the draft (which closes the form)", () => {
+    draftActions.startGridClick({
+      _id: "event-1",
+      startDate: "2026-05-20T09:00:00.000Z",
+      endDate: "2026-05-20T10:00:00.000Z",
+    });
+    draftActions.setFormOpen(true);
+
     const { result } = renderHook(() => useCloseEventForm());
 
     result.current();
 
-    expect(dispatch).toHaveBeenCalledWith(
-      draftSlice.actions.discard(undefined),
-    );
+    expect(useDraftStore.getState()).toEqual(initialDraftState);
   });
 });

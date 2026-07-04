@@ -8,7 +8,7 @@ import { session } from "@web/common/classes/Session";
 import { queryClient } from "@web/common/query/query-client";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 
 type CompleteAuthentication = ReturnType<typeof useCompleteAuthentication>;
 

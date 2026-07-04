@@ -1,4 +1,4 @@
-import { type EventRepository } from "./event.repository.interface";
+import { type EventRepository } from "./event.repository.types";
 
 export type EventRepositorySource = "local" | "remote";
 

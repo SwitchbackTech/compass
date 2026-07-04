@@ -94,9 +94,9 @@ export const waitForAppReady = async (page: Page) => {
     { timeout: 15000 },
   );
 
-  // Wait for store to be available
+  // Wait for the user-metadata bridge to be available
   await page.waitForFunction(
-    () => typeof window.__COMPASS_E2E_STORE__?.dispatch === "function",
+    () => typeof window.__COMPASS_E2E_STORE__?.userMetadata?.set === "function",
     { timeout: 10000 },
   );
 
@@ -111,7 +111,7 @@ export const waitForAppReady = async (page: Page) => {
   await page.waitForFunction(
     () => {
       const status =
-        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.status;
+        window.__COMPASS_E2E_STORE__?.userMetadata?.getState()?.status;
       // Wait until status is "idle" or "loaded" (not "loading")
       return status !== "loading";
     },
@@ -120,7 +120,7 @@ export const waitForAppReady = async (page: Page) => {
 };
 
 /**
- * Google connection states that can be set via Redux.
+ * Google connection states that can be set via the userMetadata store bridge.
  */
 export type GoogleConnectionState =
   | "NOT_CONNECTED"
@@ -155,9 +155,9 @@ const GOOGLE_STATUS_VISIBLE_STATES: GoogleConnectionState[] = [
 ];
 
 /**
- * Set the Google connection state via Redux userMetadata slice.
- * Dispatches to the store, waits for Redux to match, then asserts the
- * sidebar's sync-status region when the UI shows it (every state except
+ * Set the Google connection state via the userMetadata store bridge.
+ * Updates the store, waits for it to match, then asserts the sidebar's
+ * sync-status region when the UI shows it (every state except
  * NOT_CONNECTED).
  */
 export const setGoogleConnectionState = async (
@@ -165,18 +165,15 @@ export const setGoogleConnectionState = async (
   state: GoogleConnectionState,
 ) => {
   await page.evaluate((connectionState) => {
-    const store = window.__COMPASS_E2E_STORE__;
-    if (!store) return;
-    store.dispatch({
-      type: "userMetadata/set",
-      payload: { google: { connectionState } },
+    window.__COMPASS_E2E_STORE__?.userMetadata?.set({
+      google: { connectionState },
     });
   }, state);
 
   await page.waitForFunction(
     (expected) => {
       const cs =
-        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.current?.google
+        window.__COMPASS_E2E_STORE__?.userMetadata?.getState()?.current?.google
           ?.connectionState;
       return cs === expected;
     },
@@ -200,7 +197,7 @@ export const expectGoogleConnectionStateInStore = async (
   await page.waitForFunction(
     (expected) => {
       const cs =
-        window.__COMPASS_E2E_STORE__?.getState()?.userMetadata?.current?.google
+        window.__COMPASS_E2E_STORE__?.userMetadata?.getState()?.current?.google
           ?.connectionState;
       return cs === expected;
     },

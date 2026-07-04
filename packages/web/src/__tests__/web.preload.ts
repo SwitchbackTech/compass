@@ -273,6 +273,7 @@ mockNodeModules();
 
 const sessionModule = await import("supertokens-web-js/recipe/session");
 const { cleanup } = await import("@testing-library/react");
+const { resetAllStores } = await import("./utils/state/reset-stores");
 
 function resetDocument() {
   document.body.innerHTML = "";
@@ -310,6 +311,7 @@ afterEach(async () => {
   cleanup();
   resetDocument();
   resetBrowserState();
+  resetAllStores();
   server.resetHandlers();
 });
 afterAll(() => server.close());

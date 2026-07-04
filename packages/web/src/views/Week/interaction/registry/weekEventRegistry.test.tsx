@@ -1,10 +1,7 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
-import { Provider } from "react-redux";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { createCalendarInteractionEventOverlayMount } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
 import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
@@ -13,7 +10,6 @@ import {
   __resetSomedayCommitAcknowledgementState,
   markSomedayCommitAcknowledgement,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
-import { reducers } from "@web/store/reducers";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -126,24 +122,7 @@ const createAllDayEvent = (
     ...overrides,
   }) as Schema_GridEvent;
 
-const createStore = (pendingEventIds: string[] = []) => {
-  const preloadedState = createInitialState();
-
-  preloadedState.events.pendingEvents = {
-    eventIds: pendingEventIds,
-  };
-
-  return configureStore({
-    preloadedState,
-    reducer: reducers,
-  });
-};
-
-const renderWithStore = (
-  children: React.ReactNode,
-  pendingEventIds: string[] = [],
-) =>
-  render(<Provider store={createStore(pendingEventIds)}>{children}</Provider>);
+const renderWithStore = (children: React.ReactNode) => render(children);
 
 const expectEventBgToUseHoverColor = (element: HTMLElement) => {
   expect(element.style.getPropertyValue("--event-bg")).toBe(

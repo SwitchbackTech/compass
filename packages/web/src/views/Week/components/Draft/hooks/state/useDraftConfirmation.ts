@@ -3,8 +3,8 @@ import { useCallback, useState } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { type Entities_Event } from "@web/ducks/events/event.types";
-import { useEventById } from "@web/ducks/events/queries/useEventById";
+import { type Entities_Event } from "@web/events/event.types";
+import { useEventById } from "@web/events/queries/useEventById";
 import { type useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const hasMultipleRecurrenceOccurrences = (

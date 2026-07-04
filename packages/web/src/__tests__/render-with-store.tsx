@@ -1,4 +1,3 @@
-import { configureStore, type PreloadedState } from "@reduxjs/toolkit";
 import { QueryClientProvider } from "@tanstack/react-query";
 import {
   type RenderHookOptions,
@@ -6,72 +5,52 @@ import {
   renderHook,
 } from "@testing-library/react";
 import { type PropsWithChildren, type ReactElement } from "react";
-import { Provider } from "react-redux";
 import { createCompassQueryClient } from "@web/common/query/query-client";
-import { type RootState } from "@web/store";
-import { reducers } from "@web/store/reducers";
 import { seedEventQueries } from "./utils/event-query-test-data";
+import {
+  seedStoresFromState,
+  type TestAppState,
+} from "./utils/state/seed-stores";
 
 type StoreOptions = {
   /** Seed the event query cache  */
   events?: Array<{ _id?: string }>;
 };
 
-export function createTestStore(preloadedState?: PreloadedState<RootState>) {
-  return configureStore({
-    reducer: reducers,
-    preloadedState,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        thunk: false,
-        serializableCheck: false,
-        immutableCheck: false,
-      }),
-  });
-}
-
 export function createStoreWrapper(
-  preloadedState?: PreloadedState<RootState>,
+  state?: TestAppState,
   { events }: StoreOptions = {},
 ) {
-  const store = createTestStore(preloadedState);
+  seedStoresFromState(state);
   const queryClient = createCompassQueryClient();
   if (events?.length) seedEventQueries(queryClient, events);
 
   function StoreWrapper({ children }: PropsWithChildren) {
     return (
-      <QueryClientProvider client={queryClient}>
-        <Provider store={store}>{children}</Provider>
-      </QueryClientProvider>
+      <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
     );
   }
 
-  return { queryClient, store, wrapper: StoreWrapper };
+  return { queryClient, wrapper: StoreWrapper };
 }
 
 export function renderWithStore(
   ui: ReactElement,
-  preloadedState?: PreloadedState<RootState>,
+  state?: TestAppState,
   options?: StoreOptions,
 ) {
-  const { store, wrapper } = createStoreWrapper(preloadedState, options);
+  const { wrapper } = createStoreWrapper(state, options);
 
-  return {
-    store,
-    ...render(ui, { wrapper }),
-  };
+  return render(ui, { wrapper });
 }
 
 export function renderHookWithStore<Result, Props>(
   hook: (initialProps: Props) => Result,
-  preloadedState?: PreloadedState<RootState>,
+  state?: TestAppState,
   options?: Omit<RenderHookOptions<Props>, "wrapper"> & StoreOptions,
 ) {
   const { events, ...renderHookOptions } = options ?? {};
-  const { store, wrapper } = createStoreWrapper(preloadedState, { events });
+  const { wrapper } = createStoreWrapper(state, { events });
 
-  return {
-    store,
-    ...renderHook(hook, { ...renderHookOptions, wrapper }),
-  };
+  return renderHook(hook, { ...renderHookOptions, wrapper });
 }

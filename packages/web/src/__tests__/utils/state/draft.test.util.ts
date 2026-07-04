@@ -1,10 +1,9 @@
 import { act } from "react";
-import { useDispatch } from "react-redux";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { draftActions } from "@web/events/stores/draft.store";
 import { useDraftActions } from "@web/views/Week/components/Draft/hooks/actions/useDraftActions";
 import { useDraftState } from "@web/views/Week/components/Draft/hooks/state/useDraftState";
 import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
@@ -31,7 +30,6 @@ export function setupDraftState(event: Schema_WebEvent) {
 
   const weekHook = renderHook(() => useWeek(useToday().today), { state });
   const weekProps = weekHook.result.current;
-  const dispatch = renderHook(useDispatch, { state }).result.current;
 
   const gridHook = renderHook(() => useGridLayout(), {
     state,
@@ -42,13 +40,11 @@ export function setupDraftState(event: Schema_WebEvent) {
   const { state: originalState, setters } = draftState.result.current;
 
   act(() => {
-    dispatch(
-      draftSlice.actions.start({
-        activity: "sidebarClick",
-        event: event as Schema_Event,
-        eventType: Categories_Event.SOMEDAY_WEEK,
-      }),
-    );
+    draftActions.start({
+      activity: "sidebarClick",
+      event: event as Schema_Event,
+      eventType: Categories_Event.SOMEDAY_WEEK,
+    });
   });
 
   const dateHook = renderHook(
@@ -78,7 +74,6 @@ export function setupDraftState(event: Schema_WebEvent) {
     weekProps,
     dateCalcs,
     deleteEvent,
-    dispatch,
     submit,
     draft,
     rerenderActions: actions.rerender,

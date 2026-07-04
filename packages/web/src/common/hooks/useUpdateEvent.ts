@@ -1,16 +1,16 @@
 import { useQueryClient } from "@tanstack/react-query";
 import fastDeepEqual from "fast-deep-equal/es6";
 import { useCallback } from "react";
-import { type SliceStateContext } from "@web/common/store/helpers";
-import { type Payload_EditEvent } from "@web/ducks/events/event.types";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { findEventInCache } from "@web/ducks/events/queries/event.query.cache";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import {
+  type Payload_EditEvent,
+  type SliceStateContext,
+} from "@web/events/event.types";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { findEventInCache } from "@web/events/queries/event.query.cache";
+import { draftActions } from "@web/events/stores/draft.store";
 import { type Schema_GridEvent } from "../types/web.event.types";
 
 export function useUpdateEvent() {
-  const dispatch = useAppDispatch();
   const queryClient = useQueryClient();
   const { edit } = useEventMutations();
 
@@ -23,7 +23,7 @@ export function useUpdateEvent() {
 
       if (!event._id) return;
 
-      dispatch(draftSlice.actions.setEvent(payload.event));
+      draftActions.setEvent(payload.event);
 
       if (!saveImmediate) return;
 
@@ -36,7 +36,7 @@ export function useUpdateEvent() {
 
       edit({ ...payload, _id: event._id });
     },
-    [dispatch, edit, queryClient],
+    [edit, queryClient],
   );
 
   return update;

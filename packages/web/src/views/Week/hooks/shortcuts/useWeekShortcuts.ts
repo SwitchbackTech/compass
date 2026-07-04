@@ -13,12 +13,14 @@ import {
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
-import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { draftActions } from "@web/events/stores/draft.store";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
 import { confirmAndDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
@@ -51,14 +53,13 @@ export const useWeekShortcuts = ({
   util,
   scrollUtil,
 }: ShortcutProps) => {
-  const dispatch = useAppDispatch();
   const { delete: deleteEvent } = useEventMutations();
   const context = useSidebarContext(true);
   const {
     actions: { repositionDraftByKeyboard },
   } = useDraftContext();
 
-  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
     startOfView,
     endOfView,
@@ -81,17 +82,17 @@ export const useWeekShortcuts = ({
 
       // If sidebar is closed, open it first
       if (!isSidebarOpen) {
-        dispatch(viewSlice.actions.toggleSidebar());
+        viewActions.toggleSidebar();
       }
     },
-    [context, isSidebarOpen, dispatch],
+    [context, isSidebarOpen],
   );
 
   const _discardDraft = useCallback(() => {
     if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
     }
-  }, [dispatch]);
+  }, []);
 
   const goToPreviousWeek = useCallback(() => {
     _discardDraft();
@@ -109,23 +110,15 @@ export const useWeekShortcuts = ({
     incrementWeek();
   }, [incrementWeek, _discardDraft]);
 
-  const openSidebar = useCallback(
-    () => dispatch(viewSlice.actions.toggleSidebar()),
-    [dispatch],
-  );
+  const openSidebar = useCallback(() => viewActions.toggleSidebar(), []);
 
   const createAllDayDraftEvent = useCallback(() => {
-    void createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
-  }, [dispatch, startOfView, endOfView]);
+    void createAlldayDraft(startOfView, endOfView, "createShortcut");
+  }, [startOfView, endOfView]);
 
   const createTimedDraftEvent = useCallback(() => {
-    void createTimedDraft(
-      isCurrentWeek,
-      startOfView,
-      "createShortcut",
-      dispatch,
-    );
-  }, [isCurrentWeek, startOfView, dispatch]);
+    void createTimedDraft(isCurrentWeek, startOfView, "createShortcut");
+  }, [isCurrentWeek, startOfView]);
 
   const createSomedayMonthDraft = useCallback(() => {
     _createSomedayDraft(Categories_Event.SOMEDAY_MONTH);
@@ -166,17 +159,15 @@ export const useWeekShortcuts = ({
 
     const { event, target } = resolvedTarget;
 
-    dispatch(
-      draftSlice.actions.start({
-        activity: "keyboardEdit",
-        event,
-        eventType:
-          target.eventType === "all-day"
-            ? Categories_Event.ALLDAY
-            : Categories_Event.TIMED,
-      }),
-    );
-  }, [dispatch, getTargetedCalendarEvent]);
+    draftActions.start({
+      activity: "keyboardEdit",
+      event,
+      eventType:
+        target.eventType === "all-day"
+          ? Categories_Event.ALLDAY
+          : Categories_Event.TIMED,
+    });
+  }, [getTargetedCalendarEvent]);
 
   const deleteTargetedCalendarEvent = useCallback(
     (keyboardEvent: KeyboardEvent) => {
@@ -197,11 +188,10 @@ export const useWeekShortcuts = ({
 
       confirmAndDeleteEvent({
         deleteEvent,
-        dispatch,
         existingEvent: resolvedTarget.event,
       });
     },
-    [deleteEvent, dispatch, getTargetedCalendarEvent],
+    [deleteEvent, getTargetedCalendarEvent],
   );
 
   const moveShortcutCreatedDraft = useCallback(

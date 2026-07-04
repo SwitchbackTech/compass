@@ -1,8 +1,6 @@
 // biome-ignore-all assist/source/organizeImports: PostHog must load before SuperTokens patches XMLHttpRequest in tests.
 import { PostHogProvider } from "@web/auth/posthog/posthog-react";
 import { type PropsWithChildren } from "react";
-import { Provider } from "react-redux";
-import { type Store } from "redux";
 import { Slide, ToastContainer } from "react-toastify";
 import { GoogleOAuthProvider } from "@react-oauth/google";
 import { HotkeysProvider } from "@tanstack/react-hotkeys";
@@ -19,7 +17,6 @@ import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
-import { store, type RootState } from "@web/store";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
 
 /**
@@ -33,49 +30,45 @@ export function GlobalShortcutsHost() {
 
 interface CompassRequiredProvidersProps extends PropsWithChildren {
   queryClient?: QueryClient;
-  store?: Store<RootState>;
 }
 
 export const CompassRequiredProviders = ({
   children,
   queryClient = defaultQueryClient,
-  store: reduxStore = store,
 }: CompassRequiredProvidersProps) => (
   <QueryClientProvider client={queryClient}>
     <HotkeysProvider>
       <CompassRefsProvider>
         <SessionProvider>
-          <Provider store={reduxStore}>
-            <GoogleOAuthProvider
-              clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
-            >
-              <PointerPositionProvider>
-                <IconProvider>
-                  <AuthModalProvider>
-                    <LogoutConfirmationProvider>
-                      {children}
-                      <AuthModal />
-                      <WelcomeModal />
-                      <ToastContainer
-                        position="bottom-left"
-                        autoClose={5000}
-                        hideProgressBar={false}
-                        newestOnTop={false}
-                        closeOnClick
-                        rtl={false}
-                        pauseOnFocusLoss
-                        draggable
-                        pauseOnHover
-                        theme="dark"
-                        limit={1}
-                        transition={Slide}
-                      />
-                    </LogoutConfirmationProvider>
-                  </AuthModalProvider>
-                </IconProvider>
-              </PointerPositionProvider>
-            </GoogleOAuthProvider>
-          </Provider>
+          <GoogleOAuthProvider
+            clientId={ENV_WEB.GOOGLE_CLIENT_ID || "google-not-configured"}
+          >
+            <PointerPositionProvider>
+              <IconProvider>
+                <AuthModalProvider>
+                  <LogoutConfirmationProvider>
+                    {children}
+                    <AuthModal />
+                    <WelcomeModal />
+                    <ToastContainer
+                      position="bottom-left"
+                      autoClose={5000}
+                      hideProgressBar={false}
+                      newestOnTop={false}
+                      closeOnClick
+                      rtl={false}
+                      pauseOnFocusLoss
+                      draggable
+                      pauseOnHover
+                      theme="dark"
+                      limit={1}
+                      transition={Slide}
+                    />
+                  </LogoutConfirmationProvider>
+                </AuthModalProvider>
+              </IconProvider>
+            </PointerPositionProvider>
+          </GoogleOAuthProvider>
         </SessionProvider>
       </CompassRefsProvider>
     </HotkeysProvider>

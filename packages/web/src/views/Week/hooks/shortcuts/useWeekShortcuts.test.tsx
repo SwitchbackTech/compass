@@ -1,21 +1,15 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
-import { Provider } from "react-redux";
 import dayjs from "@core/util/date/dayjs";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-
-const DELETE_EVENT_REQUEST = "deleteEvent/request";
-
 import {
   seedPendingEventMutations,
   toNormalizedEventQueryData,
 } from "@web/__tests__/utils/event-query-test-data";
-import { reducers } from "@web/store/reducers";
+import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
+import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { useDraftStore } from "@web/events/stores/draft.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
 import {
@@ -43,48 +37,6 @@ let repositionDraftByKeyboard = mock();
 
 const { useWeekShortcuts } =
   require("./useWeekShortcuts") as typeof import("./useWeekShortcuts");
-
-const createState = ({
-  includeEditableEvent = true,
-  includeAllDayEvent = false,
-}: {
-  includeEditableEvent?: boolean;
-  includeAllDayEvent?: boolean;
-} = {}) => {
-  const state = createInitialState();
-  const weekEventIds = [editableEvent._id];
-  const entities = includeEditableEvent
-    ? { [editableEvent._id]: editableEvent }
-    : {};
-
-  if (includeAllDayEvent) {
-    weekEventIds.push(editableAllDayEvent._id);
-    entities[editableAllDayEvent._id] = editableAllDayEvent;
-  }
-
-  state.events.entities!.value = entities;
-  state.events.getWeekEvents!.value = {
-    count: weekEventIds.length,
-    data: weekEventIds,
-    pageSize: weekEventIds.length,
-  };
-  return state;
-};
-
-const createStore = (options?: {
-  includeEditableEvent?: boolean;
-  includeAllDayEvent?: boolean;
-}) =>
-  configureStore({
-    preloadedState: createState(options),
-    reducer: reducers,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        immutableCheck: false,
-        serializableCheck: false,
-        thunk: false,
-      }),
-  });
 
 beforeEach(() => {
   HotkeyManager.resetInstance();
@@ -121,7 +73,6 @@ const renderShortcuts = (options?: {
   includeEditableEvent?: boolean;
   includeAllDayEvent?: boolean;
 }) => {
-  const store = createStore(options);
   const queryClient = new QueryClient();
   seedPendingEventMutations(queryClient, pendingEventIds);
   const events = [
@@ -131,32 +82,22 @@ const renderShortcuts = (options?: {
   queryClient.setQueryDefaults(["events"], {
     initialData: toNormalizedEventQueryData(events),
   });
-  const dispatchedActions: unknown[] = [];
-  const originalDispatch = store.dispatch;
-
-  store.dispatch = ((action) => {
-    dispatchedActions.push(action);
-    return originalDispatch(action);
-  }) as typeof store.dispatch;
-
   function wrapper({ children }: PropsWithChildren) {
     return (
       <QueryClientProvider client={queryClient}>
         <HotkeysProvider>
-          <Provider store={store}>
-            <DraftContext.Provider
-              value={
-                {
-                  actions: { repositionDraftByKeyboard },
-                  confirmation: {},
-                  setters: {},
-                  state: {},
-                } as never
-              }
-            >
-              {children}
-            </DraftContext.Provider>
-          </Provider>
+          <DraftContext.Provider
+            value={
+              {
+                actions: { repositionDraftByKeyboard },
+                confirmation: {},
+                setters: {},
+                state: {},
+              } as never
+            }
+          >
+            {children}
+          </DraftContext.Provider>
         </HotkeysProvider>
       </QueryClientProvider>
     );
@@ -179,7 +120,7 @@ const renderShortcuts = (options?: {
     { wrapper },
   );
 
-  return { dispatchedActions, queryClient, store };
+  return { queryClient };
 };
 
 describe("useWeekShortcuts calendar event targeting", () => {
@@ -198,47 +139,41 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget();
     button.focus();
 
-    const { store } = renderShortcuts();
+    renderShortcuts();
     pressKey("M");
 
     await waitFor(() => {
-      expect(store.getState().events.draft?.status?.activity).toBe(
-        "keyboardEdit",
-      );
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(store.getState().events.draft?.event?._id).toBe("event-1");
-    expect(store.getState().events.draft?.event).toHaveProperty("position");
+    expect(useDraftStore.getState().event?._id).toBe("event-1");
+    expect(useDraftStore.getState().event).toHaveProperty("position");
   });
 
   it("edits the prepared all-day calendar event with M", async () => {
     const button = addCalendarTarget(editableAllDayEvent._id, "all-day");
     button.focus();
 
-    const { store } = renderShortcuts({ includeAllDayEvent: true });
+    renderShortcuts({ includeAllDayEvent: true });
     pressKey("M");
 
     await waitFor(() => {
-      expect(store.getState().events.draft?.status?.activity).toBe(
-        "keyboardEdit",
-      );
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(store.getState().events.draft?.event?._id).toBe("all-day-event-1");
-    expect(store.getState().events.draft?.event).toHaveProperty("position");
+    expect(useDraftStore.getState().event?._id).toBe("all-day-event-1");
+    expect(useDraftStore.getState().event).toHaveProperty("position");
   });
 
   it("edits the hovered calendar event with M when no event is focused", async () => {
     const button = addCalendarTarget();
     setHoveredCalendarEventTarget(button);
 
-    const { store } = renderShortcuts();
+    renderShortcuts();
     pressKey("M");
 
     await waitFor(() => {
-      expect(store.getState().events.draft?.status?.activity).toBe(
-        "keyboardEdit",
-      );
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(store.getState().events.draft?.event?._id).toBe("event-1");
+    expect(useDraftStore.getState().event?._id).toBe("event-1");
   });
 
   it("edits pending calendar events with M", async () => {
@@ -246,22 +181,20 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const button = addCalendarTarget();
     button.focus();
 
-    const { store } = renderShortcuts();
+    renderShortcuts();
     pressKey("M");
 
     await waitFor(() => {
-      expect(store.getState().events.draft?.status?.activity).toBe(
-        "keyboardEdit",
-      );
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(store.getState().events.draft?.event?._id).toBe("event-1");
+    expect(useDraftStore.getState().event?._id).toBe("event-1");
   });
 
   it("edits an event loaded after shortcuts are registered", async () => {
     const button = addCalendarTarget();
     button.focus();
 
-    const { queryClient, store } = renderShortcuts({
+    const { queryClient } = renderShortcuts({
       includeEditableEvent: false,
     });
     await act(async () => {
@@ -284,11 +217,9 @@ describe("useWeekShortcuts calendar event targeting", () => {
     pressKey("M");
 
     await waitFor(() => {
-      expect(store.getState().events.draft?.status?.activity).toBe(
-        "keyboardEdit",
-      );
+      expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(store.getState().events.draft?.event?._id).toBe("event-1");
+    expect(useDraftStore.getState().event?._id).toBe("event-1");
   });
 
   it("moves the active shortcut-created draft with arrow keys", () => {
@@ -419,15 +350,16 @@ describe("useWeekShortcuts calendar event targeting", () => {
     document.body.appendChild(input);
     input.focus();
 
-    const { dispatchedActions } = renderShortcuts();
+    const { queryClient } = renderShortcuts();
     pressKey("Delete", {}, input);
 
     expect(confirm).not.toHaveBeenCalled();
-    expect(dispatchedActions).not.toContainEqual(
-      expect.objectContaining({
-        type: DELETE_EVENT_REQUEST,
-      }),
-    );
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some((mutation) => mutation.options.mutationKey?.[2] === "delete"),
+    ).toBe(false);
   });
 
   it("does not delete a grid event when Delete is pressed inside an open event form", () => {
@@ -442,14 +374,15 @@ describe("useWeekShortcuts calendar event targeting", () => {
     document.body.appendChild(form);
     button.focus();
 
-    const { dispatchedActions } = renderShortcuts();
+    const { queryClient } = renderShortcuts();
     pressKey("Delete", {}, button);
 
     expect(confirm).not.toHaveBeenCalled();
-    expect(dispatchedActions).not.toContainEqual(
-      expect.objectContaining({
-        type: DELETE_EVENT_REQUEST,
-      }),
-    );
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some((mutation) => mutation.options.mutationKey?.[2] === "delete"),
+    ).toBe(false);
   });
 });

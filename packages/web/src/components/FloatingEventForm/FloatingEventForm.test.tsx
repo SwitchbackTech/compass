@@ -1,4 +1,3 @@
-import { Provider } from "react-redux";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import {
   cleanup,
@@ -6,9 +5,8 @@ import {
   screen,
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
-import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { draftActions } from "@web/events/stores/draft.store";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { afterEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
@@ -26,9 +24,8 @@ afterEach(cleanup);
 
 describe("FloatingEventForm", () => {
   it("focuses the title when the form opens", async () => {
-    const store = createStoreWithEvents([]);
-    store.dispatch(draftSlice.actions.startGridClick(draft));
-    store.dispatch(draftSlice.actions.setFormOpen(true));
+    draftActions.startGridClick(draft);
+    draftActions.setFormOpen(true);
 
     const Harness = () => {
       const form = useEventForm(Categories_Event.ALLDAY, true, () => undefined);
@@ -43,11 +40,7 @@ describe("FloatingEventForm", () => {
       );
     };
 
-    render(
-      <Provider store={store}>
-        <Harness />
-      </Provider>,
-    );
+    render(<Harness />);
 
     await waitFor(() =>
       expect(screen.getByPlaceholderText("Title")).toHaveFocus(),

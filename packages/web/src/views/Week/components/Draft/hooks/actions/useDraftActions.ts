@@ -26,15 +26,15 @@ import { EventInViewParser } from "@web/common/utils/parse/view.parser";
 import {
   type Payload_ConvertEvent,
   type Payload_EditEvent,
-} from "@web/ducks/events/event.types";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
+} from "@web/events/event.types";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
+  draftActions,
   selectDraft,
   selectDraftStatus,
-} from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
 import {
@@ -73,21 +73,16 @@ export const useDraftActions = (
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
 ) => {
-  const dispatch = useAppDispatch();
   const eventMutations = useEventMutations();
   const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
     useSomedayEventViewModel(
       weekProps.component.startOfView,
       weekProps.component.endOfView,
     );
-  const reduxDraft = useAppSelector(selectDraft);
+  const draftFromStore = useDraftStore(selectDraft);
 
-  const {
-    activity,
-    dateToResize,
-    eventType: reduxDraftType,
-    isDrafting,
-  } = useAppSelector(selectDraftStatus)!;
+  const { activity, dateToResize, eventType, isDrafting } =
+    useDraftStore(selectDraftStatus)!;
 
   const {
     dateBeingChanged,
@@ -134,18 +129,18 @@ export const useDraftActions = (
   }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
 
   const isSomeday = useCallback((): boolean => {
-    return reduxDraft?.isSomeday ?? false;
-  }, [reduxDraft?.isSomeday]);
+    return draftFromStore?.isSomeday ?? false;
+  }, [draftFromStore?.isSomeday]);
 
   const isInstance = useCallback((): boolean => {
-    return ObjectId.isValid(reduxDraft?.recurrence?.eventId ?? "");
-  }, [reduxDraft?.recurrence?.eventId]);
+    return ObjectId.isValid(draftFromStore?.recurrence?.eventId ?? "");
+  }, [draftFromStore?.recurrence?.eventId]);
 
   const isRecurrence = useCallback((): boolean => {
-    const hasRRule = Array.isArray(reduxDraft?.recurrence?.rule);
+    const hasRRule = Array.isArray(draftFromStore?.recurrence?.rule);
 
     return hasRRule || isInstance();
-  }, [reduxDraft?.recurrence?.rule, isInstance]);
+  }, [draftFromStore?.recurrence?.rule, isInstance]);
 
   const closeForm = useCallback(() => {
     setIsFormOpen(false);
@@ -172,16 +167,16 @@ export const useDraftActions = (
   const discard = useCallback(() => {
     reset();
 
-    if (reduxDraft || reduxDraftType) {
-      dispatch(draftSlice.actions.discard(undefined));
+    if (draftFromStore || eventType) {
+      draftActions.discard();
     }
-  }, [dispatch, reduxDraft, reduxDraftType, reset]);
+  }, [draftFromStore, eventType, reset]);
 
   const deleteEvent = useCallback(
     (
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      const eventToDelete = draft ?? reduxDraft;
+      const eventToDelete = draft ?? draftFromStore;
       const { data: _title } = StringV4Schema.safeParse(eventToDelete?.title);
       const title = _title ?? "this event";
       const usePrefix = applyTo === RecurringEventUpdateScope.ALL_EVENTS;
@@ -194,7 +189,7 @@ export const useDraftActions = (
       }
       discard();
     },
-    [draft, reduxDraft, discard, eventMutations],
+    [draft, draftFromStore, discard, eventMutations],
   );
 
   const convert = useCallback(
@@ -257,8 +252,8 @@ export const useDraftActions = (
         if (isFormOpenBeforeDragging) {
           return "OPEN_FORM";
         }
-        const isSame = reduxDraft
-          ? !DirtyParser.isEventDirty(draft, reduxDraft)
+        const isSame = draftFromStore
+          ? !DirtyParser.isEventDirty(draft, draftFromStore)
           : false;
         if (isSame) {
           // no need to make HTTP request
@@ -267,7 +262,7 @@ export const useDraftActions = (
       }
       return "UPDATE";
     },
-    [reduxDraft, isFormOpenBeforeDragging],
+    [draftFromStore, isFormOpenBeforeDragging],
   );
 
   const getEditSlicePayload = useCallback(
@@ -342,13 +337,13 @@ export const useDraftActions = (
 
   const duplicateEvent = useCallback(() => {
     const draft = MapEvent.removeProviderData({
-      ...(reduxDraft as Schema_Event),
+      ...(draftFromStore as Schema_Event),
     }) as Schema_GridEvent;
     const { _id: _duplicatedEventId, ...duplicateDraft } = draft;
 
     submit(duplicateDraft);
     discard();
-  }, [reduxDraft, submit, discard]);
+  }, [draftFromStore, submit, discard]);
 
   const isInsideVisibleWeek = useCallback(
     (start: Dayjs) => {
@@ -504,7 +499,7 @@ export const useDraftActions = (
 
   const resize = useCallback(
     (e: MouseEvent) => {
-      if (!draft || !reduxDraft) return; // TS Guard
+      if (!draft || !draftFromStore) return; // TS Guard
 
       const _dateBeingChanged = dateBeingChanged as "startDate" | "endDate";
       const oppositeKey =
@@ -588,7 +583,7 @@ export const useDraftActions = (
       const justFlipped = flipIfNeeded(currTime);
       const dateChanged = justFlipped ? oppositeKey : _dateBeingChanged;
 
-      const origTime = dayjs(reduxDraft[dateChanged]).add(-1, "day");
+      const origTime = dayjs(draftFromStore[dateChanged]).add(-1, "day");
 
       let updatedTime: string;
       let hasMoved: boolean;
@@ -623,7 +618,7 @@ export const useDraftActions = (
       dateBeingChanged,
       dateCalcs,
       draft,
-      reduxDraft,
+      draftFromStore,
       isResizing,
       isValidMovement,
       resizeStatus?.hasMoved,
@@ -637,35 +632,35 @@ export const useDraftActions = (
   const create = useCallback(async () => {
     setDraftSessionKey((key) => key + 1);
 
-    if (reduxDraft !== null) {
-      setDraft(reduxDraft as Schema_GridEvent);
+    if (draftFromStore !== null) {
+      setDraft(draftFromStore as Schema_GridEvent);
     } else {
-      const { startDate, endDate } = reduxDraft ?? {
+      const { startDate, endDate } = draftFromStore ?? {
         startDate: undefined,
         endDate: undefined,
       };
 
       const defaultDraft = (await assembleDefaultEvent(
-        reduxDraftType,
+        eventType,
         startDate,
         endDate,
       )) as Schema_GridEvent;
       setDraft(defaultDraft);
     }
     openForm();
-  }, [openForm, reduxDraft, reduxDraftType, setDraft, setDraftSessionKey]);
+  }, [openForm, draftFromStore, eventType, setDraft, setDraftSessionKey]);
 
   const handleChange = useCallback(async () => {
     const isSomeday =
-      reduxDraftType === Categories_Event.SOMEDAY_WEEK ||
-      reduxDraftType === Categories_Event.SOMEDAY_MONTH;
+      eventType === Categories_Event.SOMEDAY_WEEK ||
+      eventType === Categories_Event.SOMEDAY_MONTH;
     if (!isDrafting) return;
     if (activity === "eventRightClick") {
       return; // Prevents form and context menu from opening at same time
     }
     if (!isSomeday && activity === "keyboardEdit") {
       setDraftSessionKey((key) => key + 1);
-      setDraft(reduxDraft as Schema_GridEvent);
+      setDraft(draftFromStore as Schema_GridEvent);
       openForm();
       return;
     }
@@ -678,17 +673,17 @@ export const useDraftActions = (
     }
     if (activity === "resizing") {
       setDraftSessionKey((key) => key + 1);
-      setDraft(reduxDraft as Schema_GridEvent);
+      setDraft(draftFromStore as Schema_GridEvent);
       startResizing();
     }
   }, [
-    reduxDraftType,
+    eventType,
     isDrafting,
     activity,
     create,
     setDraft,
     setDraftSessionKey,
-    reduxDraft,
+    draftFromStore,
     startResizing,
     openForm,
   ]);

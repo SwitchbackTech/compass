@@ -7,8 +7,7 @@ import {
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
-import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { selectDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
@@ -62,11 +61,11 @@ function RecurringEventUpdateScopeDialogContent({
   onUpdateScopeChange,
   setRecurrenceUpdateScopeDialogOpen,
 }: RecurringEventUpdateScopeDialogContentProps) {
-  const reduxDraft = useAppSelector(selectDraft);
-  const currentDraft = draft ?? reduxDraft;
+  const draftFromStore = useDraftStore(selectDraft);
+  const currentDraft = draft ?? draftFromStore;
   const recurrenceChanged =
-    currentDraft && reduxDraft
-      ? DirtyParser.recurrenceChanged(currentDraft, reduxDraft)
+    currentDraft && draftFromStore
+      ? DirtyParser.recurrenceChanged(currentDraft, draftFromStore)
       : false;
   const options = recurrenceChanged
     ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS

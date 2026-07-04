@@ -1,10 +1,7 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { type QueryClient } from "@tanstack/react-query";
 import { waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
-import { reducers } from "@web/store/reducers";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const fetchDayEvents = mock(async () => ({
@@ -19,7 +16,7 @@ const fetchDayEvents = mock(async () => ({
   },
 }));
 
-mock.module("@web/ducks/events/queries/day.event.query", () => ({
+mock.module("@web/events/queries/day.event.query", () => ({
   fetchDayEvents,
 }));
 
@@ -29,12 +26,6 @@ const { createCompassQueryClient } =
   require("@web/common/query/query-client") as typeof import("@web/common/query/query-client");
 const { useDayEvents } =
   require("@web/views/Day/hooks/events/useDayEvents") as typeof import("@web/views/Day/hooks/events/useDayEvents");
-
-const createStore = () =>
-  configureStore({
-    preloadedState: createInitialState(),
-    reducer: reducers,
-  });
 
 describe("useDayEvents", () => {
   beforeEach(() => {
@@ -63,10 +54,9 @@ describe("useDayEvents", () => {
 
   it("fetches day events into the query cache", async () => {
     const queryClient = createCompassQueryClient();
-    const store = createStore();
     const date = dayjs.utc("2025-11-11T00:00:00Z");
 
-    renderHook(() => useDayEvents(date), { queryClient, store });
+    renderHook(() => useDayEvents(date), { queryClient });
 
     await waitFor(() => {
       expect(findDayEntry(queryClient, date)).toEqual(
@@ -86,13 +76,11 @@ describe("useDayEvents", () => {
 
   it("re-fetches with a new key when the date changes", async () => {
     const queryClient = createCompassQueryClient();
-    const store = createStore();
     const initialDate = dayjs.utc("2025-11-11T00:00:00Z");
 
     const { rerender } = renderHook(({ date }) => useDayEvents(date), {
       initialProps: { date: initialDate },
       queryClient,
-      store,
     });
 
     await waitFor(() => {

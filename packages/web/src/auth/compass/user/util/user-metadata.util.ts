@@ -1,7 +1,6 @@
 import { Status } from "@core/errors/status.codes";
+import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { UserApi } from "@web/common/apis/user.api";
-import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { store } from "@web/store";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 
@@ -10,11 +9,11 @@ export const refreshUserMetadata = async (): Promise<void> => {
     return refreshUserMetadataRequest;
   }
 
-  store.dispatch(userMetadataSlice.actions.setLoading(undefined));
+  userMetadataActions.setLoading();
 
   refreshUserMetadataRequest = UserApi.getMetadata()
     .then((metadata) => {
-      store.dispatch(userMetadataSlice.actions.set(metadata));
+      userMetadataActions.set(metadata);
     })
     .catch((error) => {
       const status = (error as { response?: { status?: number } })?.response
@@ -23,12 +22,12 @@ export const refreshUserMetadata = async (): Promise<void> => {
         status === Status.UNAUTHORIZED || status === Status.FORBIDDEN;
 
       if (isUnauthorized) {
-        store.dispatch(userMetadataSlice.actions.clear(undefined));
+        userMetadataActions.clear();
         return;
       }
 
       console.error("Failed to refresh user metadata", error);
-      store.dispatch(userMetadataSlice.actions.finishLoading(undefined));
+      userMetadataActions.finishLoading();
     })
     .finally(() => {
       refreshUserMetadataRequest = null;

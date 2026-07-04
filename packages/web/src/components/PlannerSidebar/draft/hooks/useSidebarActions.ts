@@ -38,17 +38,17 @@ import {
   type SomedayInteractionCommitResult,
   type SomedaySidebarCommitResult,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter.types";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
+  type Activity_DraftEvent,
+  draftActions,
   selectDraft,
   selectDraftActivity,
   selectDraftCategory,
   selectIsDrafting,
-} from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { parseSomedayEventBeforeSubmit } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
 interface SidebarActionViewProps {
@@ -205,25 +205,24 @@ export const useSidebarActions = (
   state: State_Sidebar,
   setters: Setters_Sidebar,
 ) => {
-  const dispatch = useAppDispatch();
   const eventMutations = useEventMutations();
   const interactionPreviewKeyRef = useRef<string | null>(null);
   const interactionSnapshotRef = useRef<State_Sidebar["somedayEvents"] | null>(
     null,
   );
 
-  const isDrafting = useAppSelector(selectIsDrafting);
+  const isDrafting = useDraftStore(selectIsDrafting);
   const { isAtMonthlyLimit, isAtWeeklyLimit } = useSomedayEventViewModel(
     view.viewStart,
     view.viewEnd,
   );
-  const reduxDraft = useAppSelector(selectDraft);
-  const draftType = useAppSelector(selectDraftCategory);
-  const activity = useAppSelector(selectDraftActivity);
+  const draft = useDraftStore(selectDraft);
+  const draftType = useDraftStore(selectDraftCategory);
+  const activity = useDraftStore(selectDraftActivity);
 
   const isInstance = useMemo((): boolean => {
-    return ObjectId.isValid(reduxDraft?.recurrence?.eventId ?? "");
-  }, [reduxDraft?.recurrence?.eventId]);
+    return ObjectId.isValid(draft?.recurrence?.eventId ?? "");
+  }, [draft?.recurrence?.eventId]);
 
   const { onGoToDate, viewEnd, viewStart } = view;
 
@@ -244,7 +243,7 @@ export const useSidebarActions = (
       draftType === Categories_Event.SOMEDAY_MONTH;
 
     if (state.isDraftingExisting || (state.isDraftingNew && isSomeday)) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
     }
   };
 
@@ -257,20 +256,20 @@ export const useSidebarActions = (
   }, [setIsSomedayFormOpen]);
 
   const create = useCallback(() => {
-    setDraft(reduxDraft);
+    setDraft(draft);
     setIsDrafting(true);
     openForm();
-  }, [openForm, reduxDraft, setDraft, setIsDrafting]);
+  }, [openForm, draft, setDraft, setIsDrafting]);
 
   const discard = useCallback(() => {
     if (state.draft) {
       setDraft(null);
     }
 
-    if (reduxDraft) {
-      dispatch(draftSlice.actions.discard(undefined));
+    if (draft) {
+      draftActions.discard();
     }
-  }, [state.draft, reduxDraft, setDraft, dispatch]);
+  }, [state.draft, draft, setDraft]);
 
   const handleChange = useCallback(() => {
     if (activity === "createShortcut") {
@@ -290,13 +289,11 @@ export const useSidebarActions = (
     setDraft(event);
     setIsSomedayFormOpen(true);
 
-    dispatch(
-      draftSlice.actions.start({
-        activity: "sidebarClick",
-        event,
-        eventType: category,
-      }),
-    );
+    draftActions.start({
+      activity: "sidebarClick",
+      event,
+      eventType: category,
+    });
   };
 
   const getInteractionSnapshot = () => {
@@ -386,7 +383,7 @@ export const useSidebarActions = (
   };
 
   const discardSomedayInteraction = () => {
-    dispatch(draftSlice.actions.discard(undefined));
+    draftActions.discard();
     close();
   };
 
@@ -399,7 +396,7 @@ export const useSidebarActions = (
       return;
     }
 
-    dispatch(draftSlice.actions.startDnd(undefined));
+    draftActions.startDnd();
     interactionSnapshotRef.current = state.somedayEvents;
     interactionPreviewKeyRef.current = null;
     setBlockedSomedayDropColumn(null);
@@ -454,7 +451,7 @@ export const useSidebarActions = (
   const deleteSomedayEvent = (
     applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
   ) => {
-    const eventToDelete = state.draft ?? reduxDraft;
+    const eventToDelete = state.draft ?? draft;
     const title = eventToDelete?.title ?? "this event";
     const prefix =
       applyTo === RecurringEventUpdateScope.ALL_EVENTS
@@ -471,7 +468,7 @@ export const useSidebarActions = (
   };
 
   const duplicateSomedayEvent = () => {
-    const eventToDuplicate = state.draft ?? reduxDraft;
+    const eventToDuplicate = state.draft ?? draft;
     if (!eventToDuplicate) return;
 
     const { _id: _duplicatedEventId, ...duplicateEvent } =
@@ -548,7 +545,7 @@ export const useSidebarActions = (
     activity: Activity_DraftEvent = "sidebarClick",
   ) => {
     if (isDrafting) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
       close();
       return;
     }
@@ -564,21 +561,19 @@ export const useSidebarActions = (
     }
 
     if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
       return;
     }
 
     const event = (await assembleDefaultEvent(category)) as Schema_Event;
 
-    dispatch(
-      draftSlice.actions.start({
-        activity,
-        eventType: category,
-        event,
-      }),
-    );
+    draftActions.start({
+      activity,
+      eventType: category,
+      event,
+    });
 
-    // For keyboard shortcuts, let handleChange() open the form from redux draft.
+    // For keyboard shortcuts, let handleChange() open the form from draft.
     // This keeps shortcut-created drafts on one path.
     if (activity === "createShortcut") {
       return;
@@ -617,8 +612,8 @@ export const useSidebarActions = (
 
     if (parsedEvent._id) {
       const eventId = parsedEvent._id;
-      const recurrenceChanged = reduxDraft
-        ? DirtyParser.recurrenceChanged(parsedEvent, reduxDraft)
+      const recurrenceChanged = draft
+        ? DirtyParser.recurrenceChanged(parsedEvent, draft)
         : false;
 
       // For someday events, always use THIS_EVENT scope to allow individual customization

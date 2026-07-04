@@ -130,7 +130,7 @@ Layout contract:
 Control mapping:
 
 - Open shortcuts opens an in-sidebar keyboard shortcuts overlay.
-- Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`.
+- Command palette toggle (`modifier + K`) calls open/close palette actions from the settings Zustand store (`packages/web/src/settings/settings.store.ts`).
 - Refresh appears only when `useVersionCheck()` reports an available update.
 - The account row shows temporary-account or signed-in account context above the Someday sections.
 - Background Google import state is not shown in the Planner Sidebar footer.
@@ -172,21 +172,28 @@ The web app uses multiple state layers:
 
 | Concern | Use | Key files |
 | --- | --- | --- |
-| Event loading, fetching, read errors, and persisted entities | TanStack Query range caches | `packages/web/src/ducks/events/queries/` |
-| Event create/edit/delete/convert/reorder state | TanStack Query mutations | `packages/web/src/ducks/events/mutations/` |
-| Draft Event and calendar interaction state | Redux Toolkit draft slice | `packages/web/src/ducks/events/slices/draft.slice.ts` |
+| Event loading, fetching, read errors, and persisted entities | TanStack Query range caches | `packages/web/src/events/queries/` |
+| Event create/edit/delete/convert/reorder state | TanStack Query mutations | `packages/web/src/events/mutations/` |
+| Draft Event and calendar interaction state | Zustand draft store | `packages/web/src/events/stores/draft.store.ts` |
+| View dates/sidebar, cmd palette, user metadata | Zustand stores | `packages/web/src/events/stores/view.store.ts`, `packages/web/src/settings/settings.store.ts`, `packages/web/src/auth/state/user-metadata.store.ts` |
 | Offline persistence | IndexedDB offline data store | `packages/web/src/common/storage/offline-data/indexeddb-offline-data.store.ts` |
 | Local vs remote persistence choice | Repository factory | `packages/web/src/common/repositories/event/event.repository.util.ts` |
 
-These layers are intentional. Do not mirror persisted Event entities into Redux
-or call IndexedDB directly from components.
+These layers are intentional. Do not mirror persisted Event entities into the
+Zustand stores or call IndexedDB directly from components.
+
+Zustand stores follow one pattern: a state-only store created with
+`create()(devtools(...))` plus module-level action functions (e.g.
+`draftActions.discard()`) that work identically from React and non-React code.
+Selectors are plain functions passed to the store hook
+(`useDraftStore(selectIsDrafting)`); selectors must return primitives or
+stable references (use `useShallow` if one ever builds a new object).
 
 Read these together for event work:
 
-- `packages/web/src/store/index.ts`
-- `packages/web/src/ducks/events/queries` (reads, cache utilities, and view models)
-- `packages/web/src/ducks/events/mutations` (persisted writes and pending state)
-- `packages/web/src/ducks/events/slices/draft.slice.ts` (transient drafts only)
+- `packages/web/src/events/queries` (reads, cache utilities, and view models)
+- `packages/web/src/events/mutations` (persisted writes and pending state)
+- `packages/web/src/events/stores/draft.store.ts` (transient drafts only)
 
 ## Event Flow
 
@@ -224,7 +231,7 @@ or treat them as stable.
 
 Important consequence:
 
-- persisted Event behavior is owned by TanStack Query; Redux owns only draft and interaction state
+- persisted Event behavior is owned by TanStack Query; the draft Zustand store owns only draft and interaction state
 - when debugging, inspect the query key, cache utility, mutation lifecycle, and repository source together
 
 ## Styling Systems

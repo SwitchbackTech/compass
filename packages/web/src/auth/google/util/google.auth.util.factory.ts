@@ -6,9 +6,6 @@ import {
   GOOGLE_REVOKED_TOAST_ID,
   toastDefaultOptions,
 } from "@web/common/constants/toast.constants";
-import { authSlice } from "@web/ducks/auth/slices/auth.slice";
-import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-
 export interface SyncLocalEventsResult {
   syncedCount: number;
   success: boolean;
@@ -21,8 +18,8 @@ export const LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE =
   "Your session expired before Compass could save your local events. Sign in again to continue. Your changes are still saved on this device.";
 
 type GoogleAuthUtilDependencies = {
+  clearUserMetadata: () => void;
   closeStream: () => void;
-  dispatch: (action: unknown) => unknown;
   isToastActive: (toastId: Id) => boolean;
   markGoogleAsRevoked: () => void;
   openStream: () => void;
@@ -37,8 +34,8 @@ const getApiErrorStatus = (error: Error | undefined): number | undefined =>
   (error as ApiError | undefined)?.response?.status;
 
 export function createGoogleAuthUtil({
+  clearUserMetadata,
   closeStream,
-  dispatch,
   isToastActive,
   markGoogleAsRevoked,
   openStream,
@@ -61,8 +58,7 @@ export function createGoogleAuthUtil({
     // hits IndexedDB, then drop the stale remote cache entries.
     refreshEventRepositorySource();
 
-    dispatch(authSlice.actions.resetAuth());
-    dispatch(userMetadataSlice.actions.clear(undefined));
+    clearUserMetadata();
 
     removeEventsByOrigin([Origin.GOOGLE, Origin.GOOGLE_IMPORT]);
     removeEventQueries();

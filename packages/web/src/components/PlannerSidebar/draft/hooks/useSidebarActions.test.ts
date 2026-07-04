@@ -3,16 +3,13 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
-import {
-  createInitialState,
-  type InitialReduxState,
-} from "@web/__tests__/utils/state/store.test.util";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { useDraftStore } from "@web/events/stores/draft.store";
 import { type Setters_Sidebar, type State_Sidebar } from "./useSidebarState";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-let currentState: InitialReduxState = createInitialState();
+let currentState = createInitialState();
 
 const { useSidebarActions } =
   require("./useSidebarActions") as typeof import("./useSidebarActions");
@@ -76,10 +73,9 @@ describe("useSidebarActions", () => {
   });
 
   it("schedules a dropped Someday event immediately", async () => {
-    const { queryClient, store, wrapper } = createStoreWrapper(currentState, {
+    const { queryClient, wrapper } = createStoreWrapper(currentState, {
       events: [somedayEvent],
     });
-    const dispatchSpy = spyOn(store, "dispatch");
     const { result } = renderHook(
       () =>
         useSidebarActions(
@@ -104,10 +100,6 @@ describe("useSidebarActions", () => {
       type: "schedule",
     });
 
-    const draftStartAction = dispatchSpy.mock.calls.find(
-      ([action]) => action.type === draftSlice.actions.start.type,
-    )?.[0];
-
     await waitFor(() => {
       expect(
         queryClient
@@ -121,6 +113,7 @@ describe("useSidebarActions", () => {
           ),
       ).toBe(true);
     });
-    expect(draftStartAction).toBeUndefined();
+    // Scheduling a someday drop must not start a grid draft.
+    expect(useDraftStore.getState().status?.isDrafting).toBe(false);
   });
 });

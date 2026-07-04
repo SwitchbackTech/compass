@@ -2,13 +2,13 @@ import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
+  draftActions,
   selectDraft,
   selectDraftId,
-} from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -27,23 +27,20 @@ export const AllDayEvents = ({
   startOfView,
   endOfView,
 }: Props) => {
-  const draft = useAppSelector(selectDraft);
+  const draft = useDraftStore(selectDraft);
   const { allDayEvents, isPending: isLoadingWeekView } = useWeekEventViewModel({
     startOfView,
     endOfView,
   });
 
-  const draftId = useAppSelector(selectDraftId);
-  const dispatch = useAppDispatch();
+  const draftId = useDraftStore(selectDraftId);
 
   const handleKeyDown = (event: Schema_GridEvent) => {
-    dispatch(
-      draftSlice.actions.start({
-        activity: "keyboardEdit",
-        event,
-        eventType: Categories_Event.ALLDAY,
-      }),
-    );
+    draftActions.start({
+      activity: "keyboardEdit",
+      event,
+      eventType: Categories_Event.ALLDAY,
+    });
   };
 
   return (

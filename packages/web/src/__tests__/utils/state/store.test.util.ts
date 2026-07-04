@@ -1,170 +1,26 @@
-import { configureStore, type PreloadedState } from "@reduxjs/toolkit";
-import { type Schema_Event } from "@core/types/event.types";
-import { type RootState } from "@web/store";
-import { reducers } from "@web/store/reducers";
+import {
+  seedStoresFromState,
+  type TestAppState,
+} from "@web/__tests__/utils/state/seed-stores";
+import { initialDraftState } from "@web/events/stores/draft.store";
 
-// Type for the simplified test state that matches our mock
-type TestState = {
-  events: {
-    getSomedayEvents?: {
-      value: {
-        data: string[];
-        count: number;
-        pageSize: number;
-        offset?: number;
-        page?: number;
-        [key: string]: unknown;
-      } | null;
-      isProcessing: boolean;
-      isSuccess: boolean;
-      error: unknown;
-      reason: string | null;
-    };
-
-    getWeekEvents?: {
-      value: {
-        data: string[];
-        count: number;
-        pageSize: number;
-        offset?: number;
-        page?: number;
-        [key: string]: unknown;
-      } | null;
-      isProcessing: boolean;
-      isSuccess: boolean;
-      error: unknown;
-      reason: string | null;
-    };
-    getDayEvents?: {
-      value: {
-        data: string[];
-        count: number;
-        pageSize: number;
-        offset?: number;
-        page?: number;
-      } | null;
-      isProcessing: boolean;
-      isSuccess: boolean;
-      error: unknown;
-      reason: string | null;
-    };
-    entities?: {
-      value: Record<string, Schema_Event>;
-    };
-    pendingEvents?: { eventIds: string[] };
-    [key: string]: unknown;
-  };
-};
-// Type for the initial state that can be passed to PreloadedState
-export type InitialReduxState = PreloadedState<RootState> & TestState;
-
-// Helper to create initial state with sensible defaults
+/**
+ * Build a baseline test state (draft empty) merged with overrides. Pass the
+ * result to the render helpers' `state` option or seed it directly via
+ * seedStoresFromState().
+ */
 export const createInitialState = (
-  partialState: Record<string, unknown> = {},
-): InitialReduxState => {
-  const now = new Date();
-  const oneWeekLater = new Date(now);
-  oneWeekLater.setDate(now.getDate() + 7);
-
+  partialState: Partial<TestAppState> = {},
+): TestAppState => {
   return {
-    auth: {
-      status: "idle",
-      error: null,
-    },
     events: {
-      entities: { value: {} },
-      getWeekEvents: {
-        value: null,
-        isProcessing: false,
-        error: null,
-        isSuccess: false,
-        reason: null,
-      },
-      getSomedayEvents: {
-        value: null,
-        isProcessing: false,
-        error: null,
-        isSuccess: false,
-        reason: null,
-      },
-      getDayEvents: {
-        value: null,
-        isProcessing: false,
-        error: null,
-        isSuccess: false,
-        reason: null,
-      },
-      draft: {
-        event: null,
-        status: {
-          activity: null,
-          isDrafting: false,
-          eventType: null,
-          dateToResize: null,
-        },
-      },
-      pendingEvents: {
-        eventIds: [],
-      },
-    },
-    view: {
-      dates: {
-        start: now.toISOString(),
-        end: oneWeekLater.toISOString(),
-      },
-      sidebar: {
-        tab: "tasks",
-        isOpen: true,
-      },
-    },
-    settings: {
-      isCmdPaletteOpen: false,
-    },
-    userMetadata: {
-      current: null,
-      status: "idle",
+      draft: initialDraftState,
     },
     ...partialState,
-  } as unknown as InitialReduxState;
+  };
 };
 
-export const createStoreWithEvents = (
-  events: Schema_Event[],
-  options: { isProcessing?: boolean } = {},
-) => {
-  const preloadedState = createInitialState();
-  const entities = events.reduce<Record<string, Schema_Event>>((acc, event) => {
-    if (event._id) {
-      acc[event._id] = event;
-    }
-    return acc;
-  }, {});
-
-  preloadedState.events.entities!.value = entities;
-  preloadedState.events.getDayEvents = {
-    value: {
-      data: events
-        .filter((event) => Boolean(event._id))
-        .map((event) => event._id as string),
-      count: events.length,
-      pageSize: events.length || 1,
-      page: 1,
-      offset: 0,
-    },
-    isProcessing: options.isProcessing ?? false,
-    isSuccess: !options.isProcessing,
-    error: null,
-    reason: null,
-  };
-
-  return configureStore({
-    reducer: reducers,
-    preloadedState: preloadedState as PreloadedState<RootState>,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        thunk: false,
-        serializableCheck: false,
-        immutableCheck: false,
-      }),
-  });
+/** Seed the Zustand stores directly (outside the render helpers). */
+export const seedInitialState = (partialState: Partial<TestAppState> = {}) => {
+  seedStoresFromState(createInitialState(partialState));
 };

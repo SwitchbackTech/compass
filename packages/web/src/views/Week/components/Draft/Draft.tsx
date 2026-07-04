@@ -3,9 +3,11 @@ import { createPortal } from "react-dom";
 import { Categories_Event } from "@core/types/event.types";
 import { positionAllDayDraftEvent } from "@web/common/calendar-grid/layout/allDayDraftEventPosition";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
-import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
-import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import {
+  selectDraftCategory,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { useDraftContext } from "./context/useDraftContext";
@@ -23,7 +25,7 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   useGridMouseUp();
   useGridMouseMove();
 
-  const category = useAppSelector(selectDraftCategory);
+  const category = useDraftStore(selectDraftCategory);
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,

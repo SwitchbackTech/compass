@@ -178,7 +178,7 @@ That hook:
 
 1. marks the user as authenticated and stores the email when available
 2. flips the session context to authenticated
-3. dispatches Redux auth success/import-pending state
+3. marks the session authenticated (SessionProvider external store)
 4. refreshes user metadata
 5. syncs local IndexedDB events to the server
 6. triggers a fresh event fetch

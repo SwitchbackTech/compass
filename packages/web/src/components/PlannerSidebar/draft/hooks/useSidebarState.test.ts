@@ -15,19 +15,24 @@ const draftEvent = {
 } as Schema_Event;
 
 const createSidebarState = () => {
-  const state = createInitialState();
-
-  if (isDNDing) {
-    state.events.draft!.status = {
-      activity: "dnd",
-      dateToResize: null,
-      eventType: null,
-      isDrafting: true,
-      isFormOpen: false,
-    };
+  if (!isDNDing) {
+    return createInitialState();
   }
 
-  return state;
+  return createInitialState({
+    events: {
+      draft: {
+        event: null,
+        status: {
+          activity: "dnd",
+          dateToResize: null,
+          eventType: null,
+          isDrafting: true,
+          isFormOpen: false,
+        },
+      },
+    },
+  });
 };
 
 const renderSidebarState = () =>

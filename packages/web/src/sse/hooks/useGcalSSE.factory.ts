@@ -15,50 +15,42 @@ import {
   setSyncingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
-import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-
-type Dispatch = (action: unknown) => unknown;
 
 export type GcalSSEDependencies = {
   handleGoogleRevoked: () => void;
   invalidateEventQueries: () => void;
   refreshUserMetadata: () => Promise<unknown> | unknown;
+  setUserMetadata: (metadata: UserMetadata) => void;
   showErrorToast: (
     message: string | undefined,
     options: { toastId: Id },
   ) => void;
   sseEmitter: EventEmitter2;
-  useAppDispatch: () => Dispatch;
 };
 
 export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
   return function useGcalSSEWithDependencies() {
-    const dispatch = dependencies.useAppDispatch();
+    const onImportEnd = useCallback((payload?: ImportGCalEndPayload) => {
+      clearGoogleSyncIndicatorOverride();
 
-    const onImportEnd = useCallback(
-      (payload?: ImportGCalEndPayload) => {
-        clearGoogleSyncIndicatorOverride();
-
-        if (payload?.status === "ERRORED") {
-          void dependencies.refreshUserMetadata();
-          if (payload.operation === "REPAIR") {
-            dependencies.showErrorToast(payload.message, {
-              toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
-            });
-          }
-          return;
-        }
-
-        if (payload?.status === "IGNORED") {
-          void dependencies.refreshUserMetadata();
-          return;
-        }
-
+      if (payload?.status === "ERRORED") {
         void dependencies.refreshUserMetadata();
-        dependencies.invalidateEventQueries();
-      },
-      [dispatch],
-    );
+        if (payload.operation === "REPAIR") {
+          dependencies.showErrorToast(payload.message, {
+            toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
+          });
+        }
+        return;
+      }
+
+      if (payload?.status === "IGNORED") {
+        void dependencies.refreshUserMetadata();
+        return;
+      }
+
+      void dependencies.refreshUserMetadata();
+      dependencies.invalidateEventQueries();
+    }, []);
 
     const onImportStart = useCallback(() => {
       if (getGoogleSyncIndicatorOverride() !== null) {
@@ -73,12 +65,9 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
       dependencies.handleGoogleRevoked();
     }, []);
 
-    const onMetadataFetch = useCallback(
-      (metadata: UserMetadata) => {
-        dispatch(userMetadataSlice.actions.set(metadata));
-      },
-      [dispatch],
-    );
+    const onMetadataFetch = useCallback((metadata: UserMetadata) => {
+      dependencies.setUserMetadata(metadata);
+    }, []);
 
     useEffect(() => {
       const importEndHandler = (e: Event) => {

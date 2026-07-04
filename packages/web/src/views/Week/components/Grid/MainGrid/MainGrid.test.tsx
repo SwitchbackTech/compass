@@ -1,7 +1,5 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { act, type ComponentProps } from "react";
-import { Provider as ReduxProvider } from "react-redux";
+import { act, type PropsWithChildren } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
@@ -16,15 +14,13 @@ import {
   seedEventQueries,
   seedPendingEventMutations,
 } from "@web/__tests__/utils/event-query-test-data";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import {
   ID_GRID_COLUMNS_TIMED,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { createCompassQueryClient } from "@web/common/query/query-client";
 import { gridColorByPriority } from "@web/common/styles/theme.util";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { reducers } from "@web/store/reducers";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import {
@@ -47,15 +43,13 @@ import "@testing-library/jest-dom";
 let pendingEventIds: string[] = [];
 let seededWeekEvents: Schema_Event[] = [];
 
-function Provider(props: ComponentProps<typeof ReduxProvider>) {
+function Provider({ children }: PropsWithChildren) {
   const queryClient = createCompassQueryClient();
   seedPendingEventMutations(queryClient, pendingEventIds);
   seedEventQueries(queryClient, seededWeekEvents);
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <ReduxProvider {...props} />
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 }
 
@@ -91,17 +85,16 @@ const measurements = {
   },
 } satisfies Measurements_Grid;
 
-const createStore = (
+// Seed the event query cache (read when the local Provider mounts its
+// QueryClient) and the draft Zustand store.
+const seedGrid = (
   events: Schema_Event[] = [],
   draftEvent: Schema_Event | null = null,
 ) => {
-  const preloadedState = createInitialState();
-  // Seed the real event query cache (not the deleted Redux event slices) when
-  // the local Provider mounts its QueryClient.
   seededWeekEvents = events;
 
   if (draftEvent) {
-    preloadedState.events.draft = {
+    useDraftStore.setState({
       event: draftEvent,
       status: {
         activity: "keyboardEdit",
@@ -112,19 +105,8 @@ const createStore = (
         isDrafting: true,
         isFormOpen: false,
       },
-    };
+    });
   }
-
-  return configureStore({
-    preloadedState,
-    reducer: reducers,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        immutableCheck: false,
-        serializableCheck: false,
-        thunk: false,
-      }),
-  });
 };
 
 const createDateCalcs = () => ({
@@ -174,7 +156,7 @@ const createSavedEvent = (
   }) as Schema_Event;
 
 const renderMainGrid = () => {
-  const store = createStore();
+  seedGrid();
   const dateCalcs = createDateCalcs();
   const mainGridRef = { current: null };
   const actions = {
@@ -183,7 +165,7 @@ const renderMainGrid = () => {
   };
 
   const view = render(
-    <Provider store={store}>
+    <Provider>
       <DraftContext.Provider
         value={
           {
@@ -207,16 +189,16 @@ const renderMainGrid = () => {
     </Provider>,
   );
 
-  return { ...view, store };
+  return view;
 };
 
 const renderGridRegions = () => {
-  const store = createStore();
+  seedGrid();
   const dateCalcs = createDateCalcs();
   const mainGridRef = { current: null };
 
   const view = render(
-    <Provider store={store}>
+    <Provider>
       <DraftContext.Provider
         value={
           {
@@ -250,15 +232,15 @@ const renderGridRegions = () => {
     </Provider>,
   );
 
-  return { ...view, store };
+  return view;
 };
 
 const renderWeekGrid = (events: Schema_Event[] = []) => {
-  const store = createStore(events);
+  seedGrid(events);
   const dateCalcs = createDateCalcs();
 
   return render(
-    <Provider store={store}>
+    <Provider>
       <DraftContext.Provider
         value={
           {
@@ -320,13 +302,9 @@ const clickEmptyGrid = (row: HTMLElement, minute: number) => {
   fireEvent.mouseUp(window, { clientX: 100, clientY: minute });
 };
 
-const expectDraftRange = async (
-  store: ReturnType<typeof createStore>,
-  startDate: string,
-  endDate: string,
-) => {
+const expectDraftRange = async (startDate: string, endDate: string) => {
   await waitFor(() => {
-    const draft = store.getState().events.draft.event;
+    const draft = useDraftStore.getState().event;
 
     expect(draft?.startDate).toBe(startDate);
     expect(draft?.endDate).toBe(endDate);
@@ -344,8 +322,8 @@ const getFirstTimedGridRow = (container: HTMLElement) => {
   return timedRows.firstElementChild;
 };
 
-const expectDraftIsInactive = (store: ReturnType<typeof createStore>) => {
-  const draftStatus = store.getState().events.draft.status;
+const expectDraftIsInactive = () => {
+  const draftStatus = useDraftStore.getState().status;
 
   if (!draftStatus) {
     throw new Error("Draft status was not initialized");
@@ -367,56 +345,51 @@ const getEndResizeHandle = (eventButton: HTMLElement) => {
   return resizeHandle;
 };
 
-const expectSavedEventDoesNotStartDraftMotion = (
-  store: ReturnType<typeof createStore>,
-) => {
+const expectSavedEventDoesNotStartDraftMotion = () => {
   const eventButton = screen.getByRole("button", { name: /saved event/i });
 
   fireEvent.mouseDown(eventButton, { button: 0, buttons: 1 });
-  expectDraftIsInactive(store);
+  expectDraftIsInactive();
 
   fireEvent.mouseDown(getEndResizeHandle(eventButton), {
     button: 0,
     buttons: 1,
   });
-  expectDraftIsInactive(store);
+  expectDraftIsInactive();
 };
 
 describe("MainGrid empty-grid draft creation", () => {
   it("creates the selected range when dragging upward from an empty timed slot", async () => {
-    const { container, store } = renderMainGrid();
+    const { container } = renderMainGrid();
     const row = getFirstTimedGridRow(container);
 
     dragEmptyGrid(row, { fromMinute: 11 * 60, toMinute: 10 * 60 });
 
     await expectDraftRange(
-      store,
       startOfView.add(10, "hour").format(),
       startOfView.add(11, "hour").format(),
     );
   });
 
   it("keeps creating the selected range when dragging downward from an empty timed slot", async () => {
-    const { container, store } = renderMainGrid();
+    const { container } = renderMainGrid();
     const row = getFirstTimedGridRow(container);
 
     dragEmptyGrid(row, { fromMinute: 11 * 60, toMinute: 12 * 60 });
 
     await expectDraftRange(
-      store,
       startOfView.add(11, "hour").format(),
       startOfView.add(12, "hour").format(),
     );
   });
 
   it("keeps quick empty-grid clicks at the default draft duration", async () => {
-    const { container, store } = renderMainGrid();
+    const { container } = renderMainGrid();
     const row = getFirstTimedGridRow(container);
 
     clickEmptyGrid(row, 11 * 60);
 
     await expectDraftRange(
-      store,
       startOfView.add(11, "hour").format(),
       startOfView.add(11, "hour").add(DRAFT_DURATION_MIN, "minute").format(),
     );
@@ -425,7 +398,7 @@ describe("MainGrid empty-grid draft creation", () => {
 
 describe("Week calendar accessibility", () => {
   it("creates a one-day draft from empty all-day space", async () => {
-    const { store } = renderGridRegions();
+    renderGridRegions();
 
     fireEvent.mouseDown(
       screen.getByRole("region", { name: "All-day events" }),
@@ -433,7 +406,7 @@ describe("Week calendar accessibility", () => {
     );
 
     await waitFor(() =>
-      expect(store.getState().events.draft.event).toEqual(
+      expect(useDraftStore.getState().event).toEqual(
         expect.objectContaining({
           endDate: "2024-01-15",
           isAllDay: true,
@@ -455,7 +428,7 @@ describe("Week calendar accessibility", () => {
   });
 
   it("gives saved timed events a title and time accessible name", () => {
-    const store = createStore([
+    seedGrid([
       createSavedEvent({
         _id: "labeled-event",
         endDate: "2024-01-15T10:00:00.000Z",
@@ -465,7 +438,7 @@ describe("Week calendar accessibility", () => {
     ]);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <MainGridEvents
           measurements={measurements}
           weekProps={createWeekProps()}
@@ -485,11 +458,11 @@ describe("Week calendar accessibility", () => {
       _id: "pending-event",
       title: "Pending save",
     });
-    const store = createStore([event]);
+    seedGrid([event]);
     pendingEventIds = ["pending-event"];
 
     render(
-      <Provider store={store}>
+      <Provider>
         <MainGridEvents
           measurements={measurements}
           weekProps={createWeekProps()}
@@ -506,7 +479,7 @@ describe("Week calendar accessibility", () => {
   });
 
   it("marks hovered saved timed events as targeting candidates", () => {
-    const store = createStore([
+    seedGrid([
       createSavedEvent({
         _id: "hovered-timed-event",
         title: "Hover target",
@@ -514,7 +487,7 @@ describe("Week calendar accessibility", () => {
     ]);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <MainGridEvents
           measurements={measurements}
           weekProps={createWeekProps()}
@@ -540,10 +513,10 @@ describe("Week calendar accessibility", () => {
       _id: "priority-event",
       title: "Priority event",
     });
-    const store = createStore([savedEvent], savedEvent);
+    seedGrid([savedEvent], savedEvent);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <MainGridEvents
           measurements={measurements}
           weekProps={createWeekProps()}
@@ -560,12 +533,10 @@ describe("Week calendar accessibility", () => {
     );
 
     act(() => {
-      store.dispatch(
-        draftSlice.actions.setEvent({
-          ...savedEvent,
-          priority: Priorities.WORK,
-        }),
-      );
+      draftActions.setEvent({
+        ...savedEvent,
+        priority: Priorities.WORK,
+      });
     });
 
     await waitFor(() => {
@@ -576,7 +547,7 @@ describe("Week calendar accessibility", () => {
   });
 
   it("gives all-day events an all-day accessible name and target type", () => {
-    const store = createStore([
+    seedGrid([
       createSavedEvent({
         _id: "labeled-all-day",
         endDate: "2024-01-16T00:00:00.000Z",
@@ -587,7 +558,7 @@ describe("Week calendar accessibility", () => {
     ]);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <AllDayEvents
           endOfView={startOfView.endOf("week")}
           measurements={measurements}
@@ -616,10 +587,10 @@ describe("Week calendar accessibility", () => {
       endDate: "2024-01-16T00:00:00.000Z",
       title: "All-day priority event",
     });
-    const store = createStore([savedEvent], savedEvent);
+    seedGrid([savedEvent], savedEvent);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <AllDayEvents
           endOfView={startOfView.endOf("week")}
           measurements={measurements}
@@ -637,12 +608,10 @@ describe("Week calendar accessibility", () => {
     );
 
     act(() => {
-      store.dispatch(
-        draftSlice.actions.setEvent({
-          ...savedEvent,
-          priority: Priorities.RELATIONS,
-        }),
-      );
+      draftActions.setEvent({
+        ...savedEvent,
+        priority: Priorities.RELATIONS,
+      });
     });
 
     await waitFor(() => {
@@ -653,7 +622,7 @@ describe("Week calendar accessibility", () => {
   });
 
   it("keeps full-week all-day events spanning seven columns", () => {
-    const store = createStore([
+    seedGrid([
       createSavedEvent({
         _id: "full-week-all-day",
         endDate: "2024-01-21T00:00:00.000Z",
@@ -664,7 +633,7 @@ describe("Week calendar accessibility", () => {
     ]);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <AllDayEvents
           endOfView={startOfView.endOf("week")}
           measurements={measurements}
@@ -707,7 +676,7 @@ describe("Week calendar accessibility", () => {
 
 describe("saved Week event ownership", () => {
   it("lays overlapping saved timed events out as a left-anchored deck", () => {
-    const store = createStore([
+    seedGrid([
       createSavedEvent({
         _id: "early-overlap",
         endDate: "2024-01-15T19:30:00.000Z",
@@ -729,7 +698,7 @@ describe("saved Week event ownership", () => {
     ]);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <MainGridEvents
           measurements={measurements}
           weekProps={createWeekProps()}
@@ -755,7 +724,7 @@ describe("saved Week event ownership", () => {
   });
 
   it("keeps a focused deck card in its fan-out stack", () => {
-    const store = createStore([
+    seedGrid([
       createSavedEvent({
         _id: "back",
         endDate: "2024-01-15T19:30:00.000Z",
@@ -771,7 +740,7 @@ describe("saved Week event ownership", () => {
     ]);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <MainGridEvents
           measurements={measurements}
           weekProps={createWeekProps()}
@@ -792,10 +761,10 @@ describe("saved Week event ownership", () => {
 
   it("keeps saved timed mouse and resize events out of the draft motion owner", () => {
     const savedEvent = createSavedEvent();
-    const store = createStore([savedEvent]);
+    seedGrid([savedEvent]);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <MainGridEvents
           measurements={measurements}
           weekProps={createWeekProps()}
@@ -803,7 +772,7 @@ describe("saved Week event ownership", () => {
       </Provider>,
     );
 
-    expectSavedEventDoesNotStartDraftMotion(store);
+    expectSavedEventDoesNotStartDraftMotion();
   });
 
   it("keeps saved all-day mouse and resize events out of the draft motion owner", () => {
@@ -813,10 +782,10 @@ describe("saved Week event ownership", () => {
       isAllDay: true,
       startDate: "2024-01-15T00:00:00.000Z",
     });
-    const store = createStore([savedEvent]);
+    seedGrid([savedEvent]);
 
     render(
-      <Provider store={store}>
+      <Provider>
         <AllDayEvents
           endOfView={startOfView.endOf("week")}
           measurements={measurements}
@@ -825,6 +794,6 @@ describe("saved Week event ownership", () => {
       </Provider>,
     );
 
-    expectSavedEventDoesNotStartDraftMotion(store);
+    expectSavedEventDoesNotStartDraftMotion();
   });
 });

@@ -2,9 +2,9 @@ import { type QueryClient } from "@tanstack/react-query";
 import {
   type EventMutationOperation,
   eventMutationKeys,
-} from "@web/ducks/events/mutations/event.mutation.keys";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
-import { type NormalizedEventQueryData } from "@web/ducks/events/queries/event.query.types";
+} from "@web/events/mutations/event.mutation.keys";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
 
 /**
  * Builds the normalized `{ ids, entities }` shape the event query caches store.

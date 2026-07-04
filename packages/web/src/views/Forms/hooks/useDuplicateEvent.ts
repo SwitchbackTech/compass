@@ -1,8 +1,7 @@
 import { ObjectId } from "bson";
 import { useCallback } from "react";
-import { useEventById } from "@web/ducks/events/queries/useEventById";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useEventById } from "@web/events/queries/useEventById";
+import { draftActions } from "@web/events/stores/draft.store";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 
 /**
@@ -11,7 +10,6 @@ import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
  * **important** use within Day View for now
  */
 export function useDuplicateEvent(_id: string) {
-  const dispatch = useAppDispatch();
   const event = useEventById(_id);
   const onClose = useCloseEventForm();
 
@@ -25,9 +23,9 @@ export function useDuplicateEvent(_id: string) {
 
     // The duplicated draft renders into the grid and its card attaches the
     // floating reference, so the form anchors itself once mounted.
-    dispatch(draftSlice.actions.startGridClick(duplicate));
-    dispatch(draftSlice.actions.setFormOpen(true));
-  }, [dispatch, event, onClose]);
+    draftActions.startGridClick(duplicate);
+    draftActions.setFormOpen(true);
+  }, [event, onClose]);
 
   return duplicateEvent;
 }

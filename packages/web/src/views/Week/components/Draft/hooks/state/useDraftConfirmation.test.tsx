@@ -1,17 +1,13 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
 import { type PropsWithChildren } from "react";
-import { Provider } from "react-redux";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { reducers } from "@web/store/reducers";
 import { useDraftConfirmation } from "./useDraftConfirmation";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -55,7 +51,6 @@ const renderDraftConfirmation = ({
   const discard = mock();
   const deleteEvent = mock();
   const submit = mock();
-  const preloadedState = createInitialState();
   const eventEntities = events.reduce<Record<string, Schema_Event>>(
     (entities, event) => {
       if (event._id) {
@@ -66,26 +61,13 @@ const renderDraftConfirmation = ({
     },
     {},
   );
-  preloadedState.events.entities!.value = eventEntities;
-  const store = configureStore({
-    reducer: reducers,
-    preloadedState,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        immutableCheck: false,
-        serializableCheck: false,
-        thunk: false,
-      }),
-  });
   const queryClient = new QueryClient();
   queryClient.setQueryData(["events", "week", { source: "local" }], {
     ids: Object.keys(eventEntities),
     entities: eventEntities,
   });
   const wrapper = ({ children }: PropsWithChildren) => (
-    <QueryClientProvider client={queryClient}>
-      <Provider store={store}>{children}</Provider>
-    </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 
   const context = {

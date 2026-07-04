@@ -7,9 +7,8 @@ import {
 } from "react";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { draftActions } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { type WeekLayoutCacheSources } from "./adapter/geometry/weekLayoutCache";
@@ -32,7 +31,6 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   getLayoutSources,
   weekProps,
 }) => {
-  const dispatch = useAppDispatch();
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
@@ -75,11 +73,11 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   }, [adapter, lastNavigationSource, renderedWeekStartMs]);
 
   const openTimedEvent = (event: Schema_GridEvent) => {
-    dispatch(draftSlice.actions.startGridClick(event));
+    draftActions.startGridClick(event);
   };
 
   const openAllDayEvent = (event: Schema_GridEvent) => {
-    dispatch(draftSlice.actions.startGridClick(event));
+    draftActions.startGridClick(event);
   };
 
   const commitSavedMutation = (

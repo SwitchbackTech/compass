@@ -16,8 +16,7 @@ import {
   addId,
   assembleDefaultEvent,
 } from "@web/common/utils/event/event.util";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { draftActions } from "@web/events/stores/draft.store";
 
 const TIMED_DRAFT_CREATE_MOVE_THRESHOLD_PX = 4;
 
@@ -34,7 +33,6 @@ export const useDayTimedDraftCreation = ({
   draft: Schema_Event | null;
   onOpenEvent: (event: Schema_GridEvent) => void;
 }) => {
-  const dispatch = useAppDispatch();
   const timedDraftCreationGestureRef = useRef<TimedDraftCreationGesture | null>(
     null,
   );
@@ -62,7 +60,7 @@ export const useDayTimedDraftCreation = ({
       }
 
       if (draft) {
-        dispatch(draftSlice.actions.discard(undefined));
+        draftActions.discard();
         return;
       }
 
@@ -126,7 +124,7 @@ export const useDayTimedDraftCreation = ({
               return;
             }
 
-            dispatch(draftSlice.actions.startGridClick(nextEvent));
+            draftActions.startGridClick(nextEvent);
           },
         );
       };
@@ -164,7 +162,7 @@ export const useDayTimedDraftCreation = ({
         cleanup();
 
         if (hasMoved) {
-          dispatch(draftSlice.actions.discard(undefined));
+          draftActions.discard();
         }
       }
 
@@ -205,7 +203,7 @@ export const useDayTimedDraftCreation = ({
       window.addEventListener("blur", handleWindowBlur);
       timedDraftCreationGestureRef.current = { cancel };
     },
-    [dateCalcs, dispatch, draft, onOpenEvent],
+    [dateCalcs, draft, onOpenEvent],
   );
 
   return {

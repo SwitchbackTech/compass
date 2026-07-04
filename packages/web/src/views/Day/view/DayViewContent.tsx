@@ -9,9 +9,11 @@ import {
 } from "@web/common/utils/dom/event-emitter.util";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
-import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
@@ -37,8 +39,7 @@ import {
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
 export const DayViewContent = memo(() => {
-  const dispatch = useAppDispatch();
-  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const {
     width: taskListWidth,
     isResizing,
@@ -72,8 +73,8 @@ export const DayViewContent = memo(() => {
   const plannerViewEnd = dateInView.endOf("week");
 
   const toggleSidebar = useCallback(() => {
-    dispatch(viewSlice.actions.toggleSidebar());
-  }, [dispatch]);
+    viewActions.toggleSidebar();
+  }, []);
   const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
     usePlannerShortcuts({
       isSidebarOpen,

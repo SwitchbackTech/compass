@@ -4,9 +4,11 @@ import { type CalendarLayoutCacheSources } from "@web/common/calendar-grid/inter
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { selectIsEventFormOpen } from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  draftActions,
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import {
   createDayInteractionAdapter,
   type DayAllDayDragCommitResult,
@@ -34,9 +36,8 @@ export const DayInteractionCoordinator: FC<Props> = ({
   onOpenEvent,
   timedEvents = EMPTY_GRID_EVENTS,
 }) => {
-  const dispatch = useAppDispatch();
   const updateEvent = useUpdateEvent();
-  const isFormOpen = useAppSelector(selectIsEventFormOpen);
+  const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const isFormOpenRef = useRef(isFormOpen);
   isFormOpenRef.current = isFormOpen;
   const layoutSourcesRef = useRef(getLayoutSources);
@@ -84,7 +85,7 @@ export const DayInteractionCoordinator: FC<Props> = ({
     }
 
     updateEvent({ event: result.event }, true);
-    dispatch(draftSlice.actions.discard(undefined));
+    draftActions.discard();
   };
 
   runtimeRef.current = {
@@ -99,7 +100,7 @@ export const DayInteractionCoordinator: FC<Props> = ({
     onCommitTimedResize: commitSavedMutation,
     onMotionActivation: (target) => {
       if (target.hadFormOpenBeforeInteraction) {
-        dispatch(draftSlice.actions.setFormOpen(false));
+        draftActions.setFormOpen(false);
       }
     },
   };

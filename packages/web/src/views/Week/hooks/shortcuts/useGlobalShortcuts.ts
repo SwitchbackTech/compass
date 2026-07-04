@@ -6,15 +6,13 @@ import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { useLogoutConfirmation } from "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation";
-import { settingsSlice } from "@web/ducks/settings/slices/settings.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { settingsActions } from "@web/settings/settings.store";
 
 /**
  * Registers app-wide shortcuts via {@link useAppHotkey} / {@link useAppHotkeyUp}.
  * Mount once under {@link HotkeysProvider} (see `GlobalShortcutsHost` in CompassProvider).
  */
 export function useGlobalShortcuts() {
-  const dispatch = useAppDispatch();
   const { authenticated } = useSession();
   const { openModal } = useAuthModal();
   const { openLogoutConfirmation } = useLogoutConfirmation();
@@ -73,7 +71,7 @@ export function useGlobalShortcuts() {
   useAppHotkey(
     "Mod+K",
     () => {
-      dispatch(settingsSlice.actions.toggleCmdPalette());
+      settingsActions.toggleCmdPalette();
     },
     {
       ignoreInputs: false,
@@ -84,7 +82,7 @@ export function useGlobalShortcuts() {
   useAppHotkey(
     "Escape",
     () => {
-      dispatch(settingsSlice.actions.closeCmdPalette());
+      settingsActions.closeCmdPalette();
     },
     {
       ignoreInputs: false,

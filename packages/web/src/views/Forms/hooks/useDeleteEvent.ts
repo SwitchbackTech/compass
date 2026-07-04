@@ -4,22 +4,21 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { useEventById } from "@web/ducks/events/queries/useEventById";
-import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { type AppDispatch } from "@web/store";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useEventById } from "@web/events/queries/useEventById";
+import {
+  draftActions,
+  selectDraft,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 
 export function confirmAndDeleteEvent({
   applyTo = RecurringEventUpdateScope.THIS_EVENT,
-  dispatch,
   draft,
   deleteEvent,
   existingEvent,
 }: {
   applyTo?: RecurringEventUpdateScope;
-  dispatch: AppDispatch;
   draft?: Schema_Event | null;
   deleteEvent?: (payload: {
     _id: string;
@@ -43,7 +42,7 @@ export function confirmAndDeleteEvent({
     deleteEvent?.({ _id: event._id, applyTo });
   }
 
-  dispatch(draftSlice.actions.discard(undefined));
+  draftActions.discard();
 
   return true;
 }
@@ -54,10 +53,9 @@ export function confirmAndDeleteEvent({
  * **important** use within Day View for now
  */
 export function useDeleteEvent(_id: string) {
-  const dispatch = useAppDispatch();
   const existingEvent = useEventById(_id);
   const { delete: deleteEventMutation } = useEventMutations();
-  const draft = useAppSelector(selectDraft);
+  const draft = useDraftStore(selectDraft);
 
   const deleteEvent = useCallback(
     (
@@ -65,12 +63,11 @@ export function useDeleteEvent(_id: string) {
     ) =>
       confirmAndDeleteEvent({
         applyTo,
-        dispatch,
         draft,
         deleteEvent: deleteEventMutation,
         existingEvent,
       }),
-    [deleteEventMutation, dispatch, draft, existingEvent],
+    [deleteEventMutation, draft, existingEvent],
   );
 
   return deleteEvent;

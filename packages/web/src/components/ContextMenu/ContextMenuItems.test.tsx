@@ -1,15 +1,11 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { QueryClient } from "@tanstack/react-query";
 import userEvent from "@testing-library/user-event";
 import { type ReactElement } from "react";
-import { Provider } from "react-redux";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { reducers } from "@web/store/reducers";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -47,42 +43,28 @@ const renderWithTheme = (
 ) => {
   const queryClient = new QueryClient();
   seedPendingEventMutations(queryClient, pendingEventIds);
-  const currentState = createInitialState();
-  currentState.auth.status = "authenticating";
-  const store = configureStore({
-    preloadedState: currentState,
-    reducer: reducers,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        immutableCheck: false,
-        serializableCheck: false,
-        thunk: false,
-      }),
-  });
 
   return render(
-    <Provider store={store}>
-      <DraftContext.Provider
-        value={
-          {
-            actions: {
-              duplicateEvent: mockDuplicateEvent,
-              openForm: mockOpenForm,
-              repositionDraftByKeyboard: mock(() => false),
-              submit: mockSubmit,
-            },
-            confirmation: {
-              onDelete: mockOnDelete,
-            },
-            setters: {
-              setDraft: mockSetDraft,
-            },
-          } as never
-        }
-      >
-        {ui}
-      </DraftContext.Provider>
-    </Provider>,
+    <DraftContext.Provider
+      value={
+        {
+          actions: {
+            duplicateEvent: mockDuplicateEvent,
+            openForm: mockOpenForm,
+            repositionDraftByKeyboard: mock(() => false),
+            submit: mockSubmit,
+          },
+          confirmation: {
+            onDelete: mockOnDelete,
+          },
+          setters: {
+            setDraft: mockSetDraft,
+          },
+        } as never
+      }
+    >
+      {ui}
+    </DraftContext.Provider>,
     { queryClient },
   );
 };

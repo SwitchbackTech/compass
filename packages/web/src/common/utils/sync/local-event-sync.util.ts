@@ -7,7 +7,7 @@ import {
   isLocalDemoEvent,
   stripLocalOnlyEventFields,
 } from "@web/common/storage/types/local-event.types";
-import { EventApi } from "@web/ducks/events/event.api";
+import { EventApi } from "@web/events/event.api";
 
 type LocalEventSyncStorage = Pick<
   OfflineDataStore,

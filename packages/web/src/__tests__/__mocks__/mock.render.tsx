@@ -1,4 +1,3 @@
-import { type PreloadedState } from "@reduxjs/toolkit";
 import { type QueryClient } from "@tanstack/react-query";
 import {
   type RenderHookOptions,
@@ -12,14 +11,16 @@ import {
   type ReactElement,
 } from "react";
 import { RouterProvider, type RouterProviderProps } from "react-router-dom";
-import { type Store } from "redux";
 import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
+import {
+  seedStoresFromState,
+  type TestAppState,
+} from "@web/__tests__/utils/state/seed-stores";
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import { createCompassQueryClient } from "@web/common/query/query-client";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
-import { createCompassStore, type RootState } from "@web/store";
 import { mock } from "bun:test";
 
 mock.module("@react-oauth/google", () => ({
@@ -28,9 +29,8 @@ mock.module("@react-oauth/google", () => ({
 }));
 
 interface CustomRenderOptions extends RenderOptions {
-  state?: PreloadedState<RootState>;
+  state?: TestAppState;
   queryClient?: QueryClient;
-  store?: Store<RootState>;
   router?: RouterProviderProps["router"];
   wrapper?: ComponentType<PropsWithChildren>;
   /** Seed the event query cache directly (replaces the Redux→query bridge). */
@@ -44,21 +44,19 @@ interface CustomRenderHookOptions<Props>
 interface TestProvidersProps {
   queryClient?: QueryClient;
   router?: RouterProviderProps["router"];
-  store?: Store<RootState>;
 }
 
 function TestProvidersWrapper({
   children,
   queryClient,
   router,
-  store,
 }: PropsWithChildren<TestProvidersProps>) {
   useSetupMovementEvents();
 
   if (!router) {
     return (
       <div id={ID_ROOT} data-testid={ID_ROOT}>
-        <CompassRequiredProviders queryClient={queryClient} store={store}>
+        <CompassRequiredProviders queryClient={queryClient}>
           {children}
         </CompassRequiredProviders>
       </div>
@@ -67,7 +65,7 @@ function TestProvidersWrapper({
 
   return (
     <div id={ID_ROOT} data-testid={ID_ROOT}>
-      <CompassRequiredProviders queryClient={queryClient} store={store}>
+      <CompassRequiredProviders queryClient={queryClient}>
         <RouterProvider
           router={router}
           fallbackElement={<AbsoluteOverflowLoader />}
@@ -88,36 +86,25 @@ const customRender = (
     state,
     router,
     queryClient = createCompassQueryClient(),
-    store = createCompassStore({
-      preloadedState: state,
-      queryClient,
-    }),
     wrapper: CustomWrapper,
     events,
     ...renderOptions
   }: CustomRenderOptions = {},
 ) => {
+  seedStoresFromState(state);
   if (events?.length) seedEventQueries(queryClient, events);
   const options: RenderOptions = { ...renderOptions };
   const Wrapper = ({ children }: PropsWithChildren) => {
     if (!CustomWrapper) {
       return (
-        <TestProvidersWrapper
-          queryClient={queryClient}
-          router={router}
-          store={store}
-        >
+        <TestProvidersWrapper queryClient={queryClient} router={router}>
           {children}
         </TestProvidersWrapper>
       );
     }
 
     return (
-      <TestProvidersWrapper
-        queryClient={queryClient}
-        router={router}
-        store={store}
-      >
+      <TestProvidersWrapper queryClient={queryClient} router={router}>
         <CustomWrapper>{children}</CustomWrapper>
       </TestProvidersWrapper>
     );
@@ -137,36 +124,25 @@ const customRenderHook = <ReturnType, Props>(
     state,
     router,
     queryClient = createCompassQueryClient(),
-    store = createCompassStore({
-      preloadedState: state,
-      queryClient,
-    }),
     events,
     ...renderOptions
   }: CustomRenderHookOptions<Props> = {},
 ) => {
+  seedStoresFromState(state);
   if (events?.length) seedEventQueries(queryClient, events);
   const options: RenderHookOptions<Props> = { ...renderOptions };
 
   const Wrapper = (props: PropsWithChildren) => {
     if (!WrapperComponent) {
       return (
-        <TestProvidersWrapper
-          queryClient={queryClient}
-          router={router}
-          store={store}
-        >
+        <TestProvidersWrapper queryClient={queryClient} router={router}>
           {props.children}
         </TestProvidersWrapper>
       );
     }
 
     return (
-      <TestProvidersWrapper
-        queryClient={queryClient}
-        router={router}
-        store={store}
-      >
+      <TestProvidersWrapper queryClient={queryClient} router={router}>
         <WrapperComponent {...options.initialProps} {...props} />
       </TestProvidersWrapper>
     );
