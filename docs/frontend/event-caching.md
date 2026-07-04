@@ -74,8 +74,9 @@ mutate(payload)
    │
    ├─ onError:    report the error (no cache rollback)
    │
-   └─ onSettled:  when this is the LAST in-flight event mutation,
-                  invalidate ["events"] → refetch to get canonical data
+   └─ onSettled:  once NO event mutation remains in flight (checked on a
+                  deferred macrotask), invalidate ["events"] → refetch to
+                  get canonical data
 ```
 
 - **Optimistic edits** insert/patch/remove events across exactly the entries they
@@ -85,10 +86,15 @@ mutate(payload)
   interactive while pending), so a failed mutation must not restore a snapshot —
   that would clobber a newer edit's optimistic write. Instead, failures leave the
   optimistic value in place and the settle-time refetch converges the cache to
-  server truth. Invalidation is gated on
-  `queryClient.isMutating(...) === 1` (the settling mutation still counts) so a
-  refetch never overwrites another mutation's live optimistic update — the
-  TanStack Query recipe for concurrent optimistic updates.
+  server truth. Invalidation is deferred to a macrotask and gated on
+  `queryClient.isMutating(...) === 0` so a refetch never overwrites another
+  mutation's live optimistic update (the TanStack Query recipe for concurrent
+  optimistic updates, deferred so simultaneous settles cannot all skip).
+- **Writes racing their own create wait.** Editing or deleting a just-created
+  event defers its repository call via `waitForPendingEventCreate` until the
+  create settles: the id doesn't exist server-side before then, and a skipped
+  delete would resurrect the event once the create landed. When the create
+  fails, the dependent write is skipped entirely.
 - **Pending state** is derived from TanStack Query's mutation state via
   `usePendingEventIds`, not stored separately. It never blocks interaction; its
   only UI is the "Syncing changes…" spinner in `PlannerAccountSummary`.

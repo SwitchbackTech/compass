@@ -401,7 +401,7 @@ describe("useEventMutations", () => {
     toCalendar.pending.resolve();
   });
 
-  test("does not persist deletion of an event whose create is still pending", async () => {
+  test("defers deletion until the in-flight create persists, then deletes server-side", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());
     const created = event({ _id: "created", title: "Created" });
@@ -420,9 +420,70 @@ describe("useEventMutations", () => {
         )?.ids,
       ).toEqual([]);
     });
-    // The create has not persisted, so no backend delete should be issued.
+    // The create has not persisted yet, so the backend delete must wait —
+    // deleting now would 404, and skipping it would resurrect the event once
+    // the create lands.
     expect(context.calls.some(({ method }) => method === "delete")).toBe(false);
+
     context.pending.resolve();
+
+    await waitFor(() => {
+      expect(context.calls.some(({ method }) => method === "delete")).toBe(
+        true,
+      );
+    });
+  });
+
+  test("skips the deferred deletion when the create fails", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+    const created = event({ _id: "created", title: "Created" });
+
+    act(() => context.hook.result.current.mutations.create(created));
+    await waitFor(() => {
+      expect(context.hook.result.current.hasPending).toBe(true);
+    });
+    act(() => context.hook.result.current.mutations.delete({ _id: "created" }));
+
+    context.pending.reject(new Error("create failed"));
+
+    await waitFor(() => {
+      expect(context.errors[0]?.message).toBe("create failed");
+      expect(context.hook.result.current.hasPending).toBe(false);
+    });
+    // The event never existed server-side, so there is nothing to delete.
+    expect(context.calls.some(({ method }) => method === "delete")).toBe(false);
+  });
+
+  test("defers an edit until the in-flight create persists", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized());
+    const created = event({ _id: "created", title: "Created" });
+
+    act(() => context.hook.result.current.mutations.create(created));
+    await waitFor(() => {
+      expect(context.calls.some(({ method }) => method === "create")).toBe(
+        true,
+      );
+    });
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "created",
+        event: event({ _id: "created", title: "Edited" }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+
+    // The edit's repository write must wait for the create to persist; an
+    // early write would target an id the backend does not know yet.
+    expect(context.calls.some(({ method }) => method === "edit")).toBe(false);
+
+    context.pending.resolve();
+
+    await waitFor(() => {
+      expect(context.calls.some(({ method }) => method === "edit")).toBe(true);
+    });
   });
 
   test("does not persist Someday deletion for an event absent from cache", async () => {
