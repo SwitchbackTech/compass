@@ -4,7 +4,7 @@ import {
   type RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
+import { type Response_GetEventsSuccess } from "@web/events/event.types";
 
 export interface EventRepository {
   create(event: Schema_Event | Schema_Event[]): Promise<void>;

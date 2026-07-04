@@ -2,9 +2,9 @@ import { useQueryClient } from "@tanstack/react-query";
 import fastDeepEqual from "fast-deep-equal/es6";
 import { useCallback } from "react";
 import { type SliceStateContext } from "@web/common/store/helpers";
-import { type Payload_EditEvent } from "@web/ducks/events/event.types";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { findEventInCache } from "@web/ducks/events/queries/event.query.cache";
+import { type Payload_EditEvent } from "@web/events/event.types";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { findEventInCache } from "@web/events/queries/event.query.cache";
 import { draftActions } from "@web/events/stores/draft.store";
 import { type Schema_GridEvent } from "../types/web.event.types";
 

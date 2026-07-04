@@ -31,7 +31,7 @@ const fetchSomedayEvents = mock(
   }),
 );
 
-mock.module("@web/ducks/events/queries/someday.event.query", () => ({
+mock.module("@web/events/queries/someday.event.query", () => ({
   fetchSomedayEvents,
 }));
 
@@ -42,7 +42,7 @@ const { createCompassQueryClient } =
 const { createCompassStore } =
   require("@web/store") as typeof import("@web/store");
 const { useSomedayEventsQuery } =
-  require("@web/ducks/events/queries/useSomedayEventsQuery") as typeof import("@web/ducks/events/queries/useSomedayEventsQuery");
+  require("@web/events/queries/useSomedayEventsQuery") as typeof import("@web/events/queries/useSomedayEventsQuery");
 
 describe("useSomedayEventsQuery", () => {
   beforeEach(() => {

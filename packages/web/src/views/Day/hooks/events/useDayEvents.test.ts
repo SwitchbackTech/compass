@@ -3,7 +3,7 @@ import { type QueryClient } from "@tanstack/react-query";
 import { waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { reducers } from "@web/store/reducers";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -19,7 +19,7 @@ const fetchDayEvents = mock(async () => ({
   },
 }));
 
-mock.module("@web/ducks/events/queries/day.event.query", () => ({
+mock.module("@web/events/queries/day.event.query", () => ({
   fetchDayEvents,
 }));
 

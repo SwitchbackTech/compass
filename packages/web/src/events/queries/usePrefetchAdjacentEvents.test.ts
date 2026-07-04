@@ -14,7 +14,7 @@ const fetchWeekEvents = mock(async () => ({
   },
 }));
 
-mock.module("@web/ducks/events/queries/week.event.query", () => ({
+mock.module("@web/events/queries/week.event.query", () => ({
   fetchWeekEvents,
 }));
 
@@ -25,11 +25,11 @@ const { createCompassQueryClient } =
 const { createCompassStore } =
   require("@web/store") as typeof import("@web/store");
 const { eventQueryKeys } =
-  require("@web/ducks/events/queries/event.query.keys") as typeof import("@web/ducks/events/queries/event.query.keys");
+  require("@web/events/queries/event.query.keys") as typeof import("@web/events/queries/event.query.keys");
 const { weekEventsQueryOptions } =
-  require("@web/ducks/events/queries/event.query.options") as typeof import("@web/ducks/events/queries/event.query.options");
+  require("@web/events/queries/event.query.options") as typeof import("@web/events/queries/event.query.options");
 const { usePrefetchAdjacentEvents } =
-  require("@web/ducks/events/queries/usePrefetchAdjacentEvents") as typeof import("@web/ducks/events/queries/usePrefetchAdjacentEvents");
+  require("@web/events/queries/usePrefetchAdjacentEvents") as typeof import("@web/events/queries/usePrefetchAdjacentEvents");
 
 const currentStart = dayjs.utc("2025-11-10T00:00:00Z");
 const previousStart = currentStart.subtract(7, "day");

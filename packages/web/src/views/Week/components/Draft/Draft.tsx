@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Categories_Event } from "@core/types/event.types";
 import { positionAllDayDraftEvent } from "@web/common/calendar-grid/layout/allDayDraftEventPosition";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
-import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
   selectDraftCategory,
   useDraftStore,

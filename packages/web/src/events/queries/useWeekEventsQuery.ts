@@ -4,7 +4,7 @@ import { type Dayjs } from "@core/util/date/dayjs";
 import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { handleError } from "@web/common/utils/event/event.util";
-import { weekEventsQueryOptions } from "@web/ducks/events/queries/event.query.options";
+import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { deriveCalendarEventViewModel } from "./event.view-model";
 
 type WeekEventsQueryArgs = {

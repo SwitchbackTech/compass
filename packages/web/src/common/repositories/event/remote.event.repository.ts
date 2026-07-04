@@ -8,8 +8,8 @@ import {
   isBackendUnavailableError,
   markBackendUnavailable,
 } from "@web/common/apis/util/backend-unavailable-error.util";
-import { EventApi } from "@web/ducks/events/event.api";
-import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
+import { EventApi } from "@web/events/event.api";
+import { type Response_GetEventsSuccess } from "@web/events/event.types";
 import { type EventRepository } from "./event.repository.interface";
 import { LocalEventRepository } from "./local.event.repository";
 

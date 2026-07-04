@@ -4,8 +4,8 @@ import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { queryClient } from "@web/common/query/query-client";
 import { refreshEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { syncLocalEventsToCloud } from "@web/common/utils/sync/local-event-sync.util";
-import { removeEventsByOriginFromQueries } from "@web/ducks/events/queries/event.query.cache";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
+import { removeEventsByOriginFromQueries } from "@web/events/queries/event.query.cache";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { closeStream, openStream } from "@web/sse/client/sse.client";
 import {
   createGoogleAuthUtil,

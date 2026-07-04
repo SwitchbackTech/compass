@@ -14,7 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@web/components/Tooltip";
-import { useHasPendingEventMutations } from "@web/ducks/events/mutations/useEventPending";
+import { useHasPendingEventMutations } from "@web/events/mutations/useEventPending";
 
 const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save your changes";
 

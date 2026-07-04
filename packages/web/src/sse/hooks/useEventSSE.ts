@@ -4,7 +4,7 @@ import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/sse.constants";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { sseEmitter } from "../client/sse.client";
 
 /**

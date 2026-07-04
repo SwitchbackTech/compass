@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import { selectIsDNDing, useDraftStore } from "@web/events/stores/draft.store";
 import { selectDatesInView, useViewStore } from "@web/events/stores/view.store";
 

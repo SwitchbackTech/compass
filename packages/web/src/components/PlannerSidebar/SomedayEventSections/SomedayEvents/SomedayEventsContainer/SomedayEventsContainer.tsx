@@ -18,7 +18,7 @@ import { SomedayEventItem } from "@web/components/PlannerSidebar/SomedayEventSec
 import { AddSomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
 import { useSomedayRefreshReserve } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/useSomedayRefreshReserve";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { useSomedayEventsQueryStatus } from "@web/ducks/events/queries/useSomedayEventsQuery";
+import { useSomedayEventsQueryStatus } from "@web/events/queries/useSomedayEventsQuery";
 import {
   selectDraftCategory,
   useDraftStore,

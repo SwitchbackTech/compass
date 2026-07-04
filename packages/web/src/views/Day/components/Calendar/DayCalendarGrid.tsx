@@ -21,7 +21,7 @@ import {
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
-import { useDayEventViewModel } from "@web/ducks/events/queries/useDayEventsQuery";
+import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
   draftActions,
   selectDraft,

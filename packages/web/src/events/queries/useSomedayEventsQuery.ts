@@ -3,8 +3,8 @@ import { useMemo } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { computeSomedayEventsRequestFilter } from "@web/common/utils/datetime/web.date.util";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
-import { somedayEventsQueryOptions } from "@web/ducks/events/queries/event.query.options";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { somedayEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { deriveSomedayEventViewModel } from "./event.view-model";
 
 /**

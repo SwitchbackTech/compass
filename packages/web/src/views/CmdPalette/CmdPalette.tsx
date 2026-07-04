@@ -22,7 +22,7 @@ import {
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
-import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
   selectIsCmdPaletteOpen,

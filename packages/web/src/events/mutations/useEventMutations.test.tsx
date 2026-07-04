@@ -9,8 +9,8 @@ import {
 } from "@core/types/event.types";
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
-import { type SomedayEventQueryData } from "@web/ducks/events/queries/event.query.types";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { type SomedayEventQueryData } from "@web/events/queries/event.query.types";
 import { useEventMutations } from "./useEventMutations";
 import { useHasPendingEventMutations } from "./useEventPending";
 

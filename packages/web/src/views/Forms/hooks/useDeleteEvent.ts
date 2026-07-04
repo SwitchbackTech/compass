@@ -4,8 +4,8 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { StringV4Schema } from "@core/types/type.utils";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { useEventById } from "@web/ducks/events/queries/useEventById";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useEventById } from "@web/events/queries/useEventById";
 import {
   draftActions,
   selectDraft,

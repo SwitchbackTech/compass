@@ -7,8 +7,8 @@ import {
 } from "@core/types/event.types";
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { findEventInCache } from "@web/ducks/events/queries/event.query.cache";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { findEventInCache } from "@web/events/queries/event.query.cache";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 

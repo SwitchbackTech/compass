@@ -1,8 +1,8 @@
 import { useMemo } from "react";
 import type dayjs from "@core/util/date/dayjs";
-import { dayEventsQueryOptions } from "@web/ducks/events/queries/event.query.options";
-import { useDayEventsQuery } from "@web/ducks/events/queries/useDayEventsQuery";
-import { usePrefetchAdjacentEvents } from "@web/ducks/events/queries/usePrefetchAdjacentEvents";
+import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
+import { useDayEventsQuery } from "@web/events/queries/useDayEventsQuery";
+import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
 
 const dayRange = (date: dayjs.Dayjs) => ({
   startDate: date.startOf("day").utc(true).format(),

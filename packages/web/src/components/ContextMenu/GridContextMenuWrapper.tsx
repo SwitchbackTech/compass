@@ -14,7 +14,7 @@ import {
   getCalendarEventIdFromElement,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
-import { findEventInCache } from "@web/ducks/events/queries/event.query.cache";
+import { findEventInCache } from "@web/events/queries/event.query.cache";
 import {
   draftActions,
   selectDraft,

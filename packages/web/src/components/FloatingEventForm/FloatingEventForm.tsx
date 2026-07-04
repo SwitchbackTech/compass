@@ -6,7 +6,7 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
-import { useEventById } from "@web/ducks/events/queries/useEventById";
+import { useEventById } from "@web/events/queries/useEventById";
 import {
   draftActions,
   selectDraft,

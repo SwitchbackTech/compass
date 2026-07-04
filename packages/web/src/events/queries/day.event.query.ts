@@ -1,5 +1,5 @@
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
-import { type Payload_GetEvents } from "@web/ducks/events/event.types";
+import { type Payload_GetEvents } from "@web/events/event.types";
 import { EventDateUtils, normalizeEventList } from "./event.query.normalize";
 import { type NormalizedEventQueryData } from "./event.query.types";
 

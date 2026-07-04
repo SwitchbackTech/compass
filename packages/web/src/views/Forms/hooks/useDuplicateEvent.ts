@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { useCallback } from "react";
-import { useEventById } from "@web/ducks/events/queries/useEventById";
+import { useEventById } from "@web/events/queries/useEventById";
 import { draftActions } from "@web/events/stores/draft.store";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 

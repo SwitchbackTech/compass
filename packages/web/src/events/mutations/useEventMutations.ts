@@ -15,7 +15,7 @@ import {
   type Payload_ConvertEvent,
   type Payload_DeleteEvent,
   type Payload_EditEvent,
-} from "@web/ducks/events/event.types";
+} from "@web/events/event.types";
 import {
   eventBelongsToEntry,
   findEventInCache,
@@ -23,8 +23,8 @@ import {
   removeEventFromQueries,
   reorderSomedayEventsInQueries,
   upsertEventAcrossQueries,
-} from "@web/ducks/events/queries/event.query.cache";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
+} from "@web/events/queries/event.query.cache";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import {
   type EventMutationOperation,
   eventMutationKeys,

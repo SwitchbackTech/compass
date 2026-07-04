@@ -4,7 +4,7 @@ import { type Schema_Event } from "@core/types/event.types";
 import { CalendarAllDayRow } from "@web/common/calendar-grid/components/CalendarAllDayRow";
 import { useAllDayDraftCreation } from "@web/common/calendar-grid/hooks/useAllDayDraftCreation";
 import { type Ref_Callback } from "@web/common/types/util.types";
-import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";

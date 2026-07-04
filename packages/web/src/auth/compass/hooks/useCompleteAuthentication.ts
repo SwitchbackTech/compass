@@ -7,7 +7,7 @@ import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.u
 import { syncPendingLocalEvents } from "@web/auth/google/util/google.auth.util";
 import { queryClient } from "@web/common/query/query-client";
 import { refreshEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
-import { eventQueryKeys } from "@web/ducks/events/queries/event.query.keys";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { createUseCompleteAuthentication } from "./useCompleteAuthentication.factory";
 
 export const useCompleteAuthentication = createUseCompleteAuthentication({

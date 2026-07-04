@@ -38,8 +38,8 @@ import {
   type SomedayInteractionCommitResult,
   type SomedaySidebarCommitResult,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter.types";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
   type Activity_DraftEvent,
   draftActions,

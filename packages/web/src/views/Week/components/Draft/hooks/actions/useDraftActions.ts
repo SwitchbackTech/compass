@@ -26,9 +26,9 @@ import { EventInViewParser } from "@web/common/utils/parse/view.parser";
 import {
   type Payload_ConvertEvent,
   type Payload_EditEvent,
-} from "@web/ducks/events/event.types";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
+} from "@web/events/event.types";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
   draftActions,
   selectDraft,

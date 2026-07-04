@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
-import { weekEventsQueryOptions } from "@web/ducks/events/queries/event.query.options";
-import { usePrefetchAdjacentEvents } from "@web/ducks/events/queries/usePrefetchAdjacentEvents";
-import { useSomedayEventsQuery } from "@web/ducks/events/queries/useSomedayEventsQuery";
-import { useWeekEventsQuery } from "@web/ducks/events/queries/useWeekEventsQuery";
+import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
+import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
+import { useSomedayEventsQuery } from "@web/events/queries/useSomedayEventsQuery";
+import { useWeekEventsQuery } from "@web/events/queries/useWeekEventsQuery";
 import { viewActions } from "@web/events/stores/view.store";
 import { type Category_View } from "@web/views/Week/week-view.types";
 

@@ -14,7 +14,7 @@ const fetchWeekEvents = mock(async () => ({
   },
 }));
 
-mock.module("@web/ducks/events/queries/week.event.query", () => ({
+mock.module("@web/events/queries/week.event.query", () => ({
   fetchWeekEvents,
 }));
 
@@ -25,7 +25,7 @@ const { createCompassQueryClient } =
 const { createCompassStore } =
   require("@web/store") as typeof import("@web/store");
 const { useWeekEventsQuery } =
-  require("@web/ducks/events/queries/useWeekEventsQuery") as typeof import("@web/ducks/events/queries/useWeekEventsQuery");
+  require("@web/events/queries/useWeekEventsQuery") as typeof import("@web/events/queries/useWeekEventsQuery");
 
 const range = () => {
   const start = dayjs.utc("2025-11-10T00:00:00Z");

@@ -13,8 +13,8 @@ import {
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
-import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,

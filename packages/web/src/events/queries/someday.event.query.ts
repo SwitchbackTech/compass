@@ -1,6 +1,6 @@
 import { type EventRepository } from "@web/common/repositories/event/event.repository.interface";
 import { setSomedayEventsOrder } from "@web/common/utils/event/someday.event.util";
-import { type Payload_GetEvents } from "@web/ducks/events/event.types";
+import { type Payload_GetEvents } from "@web/events/event.types";
 import { normalizeEventList } from "./event.query.normalize";
 import { type SomedayEventQueryData } from "./event.query.types";
 

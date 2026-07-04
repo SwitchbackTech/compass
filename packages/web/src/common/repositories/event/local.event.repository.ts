@@ -7,7 +7,7 @@ import {
 } from "@core/types/event.types";
 import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { preserveLocalEventMarker } from "@web/common/storage/types/local-event.types";
-import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
+import { type Response_GetEventsSuccess } from "@web/events/event.types";
 import { type EventRepository } from "./event.repository.interface";
 
 /**
