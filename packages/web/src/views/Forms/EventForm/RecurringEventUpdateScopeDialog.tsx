@@ -61,11 +61,11 @@ function RecurringEventUpdateScopeDialogContent({
   onUpdateScopeChange,
   setRecurrenceUpdateScopeDialogOpen,
 }: RecurringEventUpdateScopeDialogContentProps) {
-  const reduxDraft = useDraftStore(selectDraft);
-  const currentDraft = draft ?? reduxDraft;
+  const draftFromStore = useDraftStore(selectDraft);
+  const currentDraft = draft ?? draftFromStore;
   const recurrenceChanged =
-    currentDraft && reduxDraft
-      ? DirtyParser.recurrenceChanged(currentDraft, reduxDraft)
+    currentDraft && draftFromStore
+      ? DirtyParser.recurrenceChanged(currentDraft, draftFromStore)
       : false;
   const options = recurrenceChanged
     ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS

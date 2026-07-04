@@ -216,13 +216,13 @@ export const useSidebarActions = (
     view.viewStart,
     view.viewEnd,
   );
-  const reduxDraft = useDraftStore(selectDraft);
+  const draft = useDraftStore(selectDraft);
   const draftType = useDraftStore(selectDraftCategory);
   const activity = useDraftStore(selectDraftActivity);
 
   const isInstance = useMemo((): boolean => {
-    return ObjectId.isValid(reduxDraft?.recurrence?.eventId ?? "");
-  }, [reduxDraft?.recurrence?.eventId]);
+    return ObjectId.isValid(draft?.recurrence?.eventId ?? "");
+  }, [draft?.recurrence?.eventId]);
 
   const { onGoToDate, viewEnd, viewStart } = view;
 
@@ -256,20 +256,20 @@ export const useSidebarActions = (
   }, [setIsSomedayFormOpen]);
 
   const create = useCallback(() => {
-    setDraft(reduxDraft);
+    setDraft(draft);
     setIsDrafting(true);
     openForm();
-  }, [openForm, reduxDraft, setDraft, setIsDrafting]);
+  }, [openForm, draft, setDraft, setIsDrafting]);
 
   const discard = useCallback(() => {
     if (state.draft) {
       setDraft(null);
     }
 
-    if (reduxDraft) {
+    if (draft) {
       draftActions.discard();
     }
-  }, [state.draft, reduxDraft, setDraft]);
+  }, [state.draft, draft, setDraft]);
 
   const handleChange = useCallback(() => {
     if (activity === "createShortcut") {
@@ -451,7 +451,7 @@ export const useSidebarActions = (
   const deleteSomedayEvent = (
     applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
   ) => {
-    const eventToDelete = state.draft ?? reduxDraft;
+    const eventToDelete = state.draft ?? draft;
     const title = eventToDelete?.title ?? "this event";
     const prefix =
       applyTo === RecurringEventUpdateScope.ALL_EVENTS
@@ -468,7 +468,7 @@ export const useSidebarActions = (
   };
 
   const duplicateSomedayEvent = () => {
-    const eventToDuplicate = state.draft ?? reduxDraft;
+    const eventToDuplicate = state.draft ?? draft;
     if (!eventToDuplicate) return;
 
     const { _id: _duplicatedEventId, ...duplicateEvent } =
@@ -573,7 +573,7 @@ export const useSidebarActions = (
       event,
     });
 
-    // For keyboard shortcuts, let handleChange() open the form from redux draft.
+    // For keyboard shortcuts, let handleChange() open the form from draft.
     // This keeps shortcut-created drafts on one path.
     if (activity === "createShortcut") {
       return;
@@ -612,8 +612,8 @@ export const useSidebarActions = (
 
     if (parsedEvent._id) {
       const eventId = parsedEvent._id;
-      const recurrenceChanged = reduxDraft
-        ? DirtyParser.recurrenceChanged(parsedEvent, reduxDraft)
+      const recurrenceChanged = draft
+        ? DirtyParser.recurrenceChanged(parsedEvent, draft)
         : false;
 
       // For someday events, always use THIS_EVENT scope to allow individual customization
