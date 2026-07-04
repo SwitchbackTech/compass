@@ -21,13 +21,6 @@ compass.yaml
 # DIRS #
 ########
 # root
-.claude/
-.codex/*
-!.codex/config.toml
-!.codex/hooks.json
-!.codex/skills/
-!.codex/skills/**
-.codex/reference/
 .idea/
 .mcp.json
 .vscode/
