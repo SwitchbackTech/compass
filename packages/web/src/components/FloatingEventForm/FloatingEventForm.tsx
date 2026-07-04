@@ -76,7 +76,7 @@ export function FloatingEventForm({
         >
           <EventForm
             event={draft}
-            isDraft={true}
+            isDraft={!existing}
             isExistingEvent={existing}
             onClose={onClose}
             onDelete={onDelete}
