@@ -1,6 +1,5 @@
 import { useEffect } from "react";
-import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { selectIsDNDing, useDraftStore } from "@web/events/stores/draft.store";
 import { type Actions_Sidebar } from "./useSidebarActions";
 import { type State_Sidebar } from "./useSidebarState";
 
@@ -8,7 +7,7 @@ export const useSidebarEffects = (
   state: State_Sidebar,
   actions: Actions_Sidebar,
 ) => {
-  const isDNDing = useAppSelector(selectIsDNDing);
+  const isDNDing = useDraftStore(selectIsDNDing);
   const { closeForm, handleChange } = actions;
 
   useEffect(() => {

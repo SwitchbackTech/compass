@@ -3,9 +3,8 @@ import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
-import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
+import { selectIsDNDing, useDraftStore } from "@web/events/stores/draft.store";
 import { selectDatesInView, useViewStore } from "@web/events/stores/view.store";
-import { useAppSelector } from "@web/store/store.hooks";
 
 type SidebarSomedayEvents = ReturnType<
   typeof useSomedayEventViewModel
@@ -27,7 +26,7 @@ export const useSidebarState = () => {
     setSomedayEventsState(nextEvents);
   }, []);
 
-  const isDNDing = useAppSelector(selectIsDNDing);
+  const isDNDing = useDraftStore(selectIsDNDing);
 
   const [draft, setDraft] = useState<Schema_Event | null>(null);
   const [isDrafting, setIsDrafting] = useState(false);

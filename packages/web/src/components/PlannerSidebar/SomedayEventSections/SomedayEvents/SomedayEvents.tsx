@@ -3,8 +3,10 @@ import { type Schema_Event } from "@core/types/event.types";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEventsContainer } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/SomedayEventsContainer";
-import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import {
+  selectDraftCategory,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 
 interface Props {
   category: SomedayInteractionCategory;
@@ -12,7 +14,7 @@ interface Props {
 }
 export const SomedayEvents: FC<Props> = ({ category, events }) => {
   const { state } = useSidebarContext();
-  const draftCategory = useAppSelector(selectDraftCategory);
+  const draftCategory = useDraftStore(selectDraftCategory);
 
   const isDraftingNew = state.isDraftingNew && draftCategory === category;
 

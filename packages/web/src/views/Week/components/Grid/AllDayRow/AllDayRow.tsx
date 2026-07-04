@@ -5,8 +5,7 @@ import { CalendarAllDayRow } from "@web/common/calendar-grid/components/Calendar
 import { useAllDayDraftCreation } from "@web/common/calendar-grid/hooks/useAllDayDraftCreation";
 import { type Ref_Callback } from "@web/common/types/util.types";
 import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { draftActions } from "@web/events/stores/draft.store";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -36,8 +35,6 @@ export const AllDayRow: FC<Props> = ({
   measurements,
   weekProps,
 }) => {
-  const dispatch = useAppDispatch();
-
   const { endOfView, startOfView } = weekProps.component;
   const { rowCount: rowsCount } = useWeekEventViewModel({
     startOfView,
@@ -51,7 +48,7 @@ export const AllDayRow: FC<Props> = ({
       YEAR_MONTH_DAY_FORMAT,
     );
   const openAllDayDraft = (event: Schema_Event) => {
-    dispatch(draftSlice.actions.startGridClick(event));
+    draftActions.startGridClick(event);
   };
   const onMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,

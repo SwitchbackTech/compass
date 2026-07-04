@@ -15,13 +15,12 @@ import {
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
 import { useWeekEventViewModel } from "@web/ducks/events/queries/useWeekEventsQuery";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { draftActions } from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
-import { useAppDispatch } from "@web/store/store.hooks";
 import { confirmAndDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
@@ -54,7 +53,6 @@ export const useWeekShortcuts = ({
   util,
   scrollUtil,
 }: ShortcutProps) => {
-  const dispatch = useAppDispatch();
   const { delete: deleteEvent } = useEventMutations();
   const context = useSidebarContext(true);
   const {
@@ -92,9 +90,9 @@ export const useWeekShortcuts = ({
 
   const _discardDraft = useCallback(() => {
     if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
     }
-  }, [dispatch]);
+  }, []);
 
   const goToPreviousWeek = useCallback(() => {
     _discardDraft();
@@ -115,17 +113,12 @@ export const useWeekShortcuts = ({
   const openSidebar = useCallback(() => viewActions.toggleSidebar(), []);
 
   const createAllDayDraftEvent = useCallback(() => {
-    void createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
-  }, [dispatch, startOfView, endOfView]);
+    void createAlldayDraft(startOfView, endOfView, "createShortcut");
+  }, [startOfView, endOfView]);
 
   const createTimedDraftEvent = useCallback(() => {
-    void createTimedDraft(
-      isCurrentWeek,
-      startOfView,
-      "createShortcut",
-      dispatch,
-    );
-  }, [isCurrentWeek, startOfView, dispatch]);
+    void createTimedDraft(isCurrentWeek, startOfView, "createShortcut");
+  }, [isCurrentWeek, startOfView]);
 
   const createSomedayMonthDraft = useCallback(() => {
     _createSomedayDraft(Categories_Event.SOMEDAY_MONTH);
@@ -166,17 +159,15 @@ export const useWeekShortcuts = ({
 
     const { event, target } = resolvedTarget;
 
-    dispatch(
-      draftSlice.actions.start({
-        activity: "keyboardEdit",
-        event,
-        eventType:
-          target.eventType === "all-day"
-            ? Categories_Event.ALLDAY
-            : Categories_Event.TIMED,
-      }),
-    );
-  }, [dispatch, getTargetedCalendarEvent]);
+    draftActions.start({
+      activity: "keyboardEdit",
+      event,
+      eventType:
+        target.eventType === "all-day"
+          ? Categories_Event.ALLDAY
+          : Categories_Event.TIMED,
+    });
+  }, [getTargetedCalendarEvent]);
 
   const deleteTargetedCalendarEvent = useCallback(
     (keyboardEvent: KeyboardEvent) => {
@@ -197,11 +188,10 @@ export const useWeekShortcuts = ({
 
       confirmAndDeleteEvent({
         deleteEvent,
-        dispatch,
         existingEvent: resolvedTarget.event,
       });
     },
-    [deleteEvent, dispatch, getTargetedCalendarEvent],
+    [deleteEvent, getTargetedCalendarEvent],
   );
 
   const moveShortcutCreatedDraft = useCallback(

@@ -23,13 +23,12 @@ import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { draftActions } from "@web/events/stores/draft.store";
 import {
   selectIsCmdPaletteOpen,
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
-import { useAppDispatch } from "@web/store/store.hooks";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 
@@ -52,7 +51,6 @@ const CmdPalette = ({
   util,
   scrollUtil,
 }: CmdPaletteProps) => {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
   const { isAtMonthlyLimit, isAtWeeklyLimit } = useSomedayEventViewModel(
     startOfView,
@@ -82,13 +80,12 @@ const CmdPalette = ({
       startOfView,
       endOfView,
       "createShortcut",
-      dispatch,
     );
   };
 
   const _discardDraft = () => {
     if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
     }
   };
 
@@ -123,7 +120,6 @@ const CmdPalette = ({
                 isCurrentWeek,
                 startOfView,
                 "createShortcut",
-                dispatch,
               );
             }),
           },
@@ -132,12 +128,7 @@ const CmdPalette = ({
             children: "Create All-Day Event [a]",
             icon: "PlusIcon",
             onClick: onEventTargetVisibility(() => {
-              void createAlldayDraft(
-                startOfView,
-                endOfView,
-                "createShortcut",
-                dispatch,
-              );
+              void createAlldayDraft(startOfView, endOfView, "createShortcut");
             }),
           },
           {

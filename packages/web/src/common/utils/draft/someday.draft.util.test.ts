@@ -1,8 +1,10 @@
 import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  type Activity_DraftEvent,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
+import { describe, expect, it, mock } from "bun:test";
 
 mock.module("@web/auth/compass/session/session.util", () => ({
   getUserId: mock().mockResolvedValue("mock-user"),
@@ -12,12 +14,7 @@ const { createSomedayDraft } =
   require("@web/common/utils/draft/someday.draft.util") as typeof import("@web/common/utils/draft/someday.draft.util");
 
 describe("createSomedayDraft", () => {
-  const mockDispatch = mock();
   const mockActivity: Activity_DraftEvent = "sidebarClick";
-
-  beforeEach(() => {
-    mockDispatch.mockClear();
-  });
 
   it("should set correct dates for week category", async () => {
     const startOfView = dayjs("2024-03-10"); // A Sunday
@@ -28,23 +25,19 @@ describe("createSomedayDraft", () => {
       startOfView,
       endOfView,
       mockActivity,
-      mockDispatch,
     );
 
-    const expectedStart = "2024-03-10";
-    const expectedEnd = "2024-03-16";
+    const { event, status } = useDraftStore.getState();
 
-    expect(mockDispatch).toHaveBeenCalledWith(
-      draftSlice.actions.start({
-        activity: mockActivity,
-        eventType: Categories_Event.SOMEDAY_WEEK,
-        event: expect.objectContaining({
-          user: "mock-user",
-          startDate: expectedStart,
-          endDate: expectedEnd,
-          isAllDay: false,
-          isSomeday: true,
-        }),
+    expect(status?.activity).toBe(mockActivity);
+    expect(status?.eventType).toBe(Categories_Event.SOMEDAY_WEEK);
+    expect(event).toEqual(
+      expect.objectContaining({
+        user: "mock-user",
+        startDate: "2024-03-10",
+        endDate: "2024-03-16",
+        isAllDay: false,
+        isSomeday: true,
       }),
     );
   });
@@ -58,23 +51,19 @@ describe("createSomedayDraft", () => {
       startOfView,
       endOfView,
       mockActivity,
-      mockDispatch,
     );
 
-    const expectedStart = "2024-02-01";
-    const expectedEnd = "2024-02-29";
+    const { event, status } = useDraftStore.getState();
 
-    expect(mockDispatch).toHaveBeenCalledWith(
-      draftSlice.actions.start({
-        activity: mockActivity,
-        eventType: Categories_Event.SOMEDAY_MONTH,
-        event: expect.objectContaining({
-          user: "mock-user",
-          startDate: expectedStart,
-          endDate: expectedEnd,
-          isAllDay: false,
-          isSomeday: true,
-        }),
+    expect(status?.activity).toBe(mockActivity);
+    expect(status?.eventType).toBe(Categories_Event.SOMEDAY_MONTH);
+    expect(event).toEqual(
+      expect.objectContaining({
+        user: "mock-user",
+        startDate: "2024-02-01",
+        endDate: "2024-02-29",
+        isAllDay: false,
+        isSomeday: true,
       }),
     );
   });

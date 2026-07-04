@@ -9,6 +9,10 @@ import {
   initialUserMetadataState,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
+import {
+  initialDraftState,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import {
   initialSettingsState,
@@ -18,11 +22,10 @@ import {
 type StoreReset = () => void;
 
 const storeResets: StoreReset[] = [
-  // Populated as slices migrate to Zustand:
-  // settings, view, userMetadata, draft
   () => useSettingsStore.setState(initialSettingsState, true),
   () => useViewStore.setState(initialViewState, true),
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
+  () => useDraftStore.setState(initialDraftState, true),
 ];
 
 export function resetAllStores() {

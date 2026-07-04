@@ -1,5 +1,4 @@
 import { type FC, useCallback } from "react";
-import { Provider } from "react-redux";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -10,14 +9,16 @@ import {
   screen,
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
-import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
-import { selectIsEventFormOpen } from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import {
+  draftActions,
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { DayInteractionCoordinator } from "./DayInteractionCoordinator";
 import { dayCalendarEventRegistry } from "./registry/dayCalendarEventRegistry";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
 const timedEvent: Schema_GridEvent = {
@@ -123,54 +124,41 @@ const installFrameScheduler = () => {
   return { flushFrame };
 };
 
-type TestStore = ReturnType<typeof createStoreWithEvents>;
-
-const openFloatingForm = (store: TestStore, event: Schema_GridEvent) => {
+const openFloatingForm = (event: Schema_GridEvent) => {
   act(() => {
-    store.dispatch(draftSlice.actions.startGridClick(event));
-    store.dispatch(draftSlice.actions.setFormOpen(true));
+    draftActions.startGridClick(event);
+    draftActions.setFormOpen(true);
   });
 };
 
-const isFormOpen = (store: TestStore) =>
-  selectIsEventFormOpen(store.getState());
+const isFormOpen = () => selectIsEventFormOpen(useDraftStore.getState());
 
 const renderCoordinator = () => {
   const allDayColumnsElement = elementWithRect(0, 0, 320, 40);
   const mainGridElement = elementWithRect(0, 40, 320, 780);
   const timedColumnsElement = elementWithRect(0, 40, 320, 780);
-  const store = createStoreWithEvents([timedEvent]);
-  const originalDispatch = store.dispatch;
-  const dispatch = mock((action: Parameters<typeof store.dispatch>[0]) =>
-    originalDispatch(action),
-  );
 
-  store.dispatch = dispatch as typeof store.dispatch;
   Object.defineProperty(mainGridElement, "clientHeight", { value: 780 });
   Object.defineProperty(mainGridElement, "scrollHeight", { value: 1560 });
 
   render(
-    <Provider store={store}>
-      <DayInteractionCoordinator
-        dateInView={dayjs("2026-05-20T00:00:00.000")}
-        getLayoutSources={() => ({
-          allDayColumnsElement,
-          mainGridElement,
-          timedColumnsElement,
-        })}
-        onOpenEvent={(event) => {
-          store.dispatch(draftSlice.actions.startGridClick(event));
-          store.dispatch(draftSlice.actions.setFormOpen(true));
-        }}
-        timedEvents={[timedEvent]}
-      >
-        <TestTimedEventTarget />
-      </DayInteractionCoordinator>
-    </Provider>,
+    <DayInteractionCoordinator
+      dateInView={dayjs("2026-05-20T00:00:00.000")}
+      getLayoutSources={() => ({
+        allDayColumnsElement,
+        mainGridElement,
+        timedColumnsElement,
+      })}
+      onOpenEvent={(event) => {
+        draftActions.startGridClick(event);
+        draftActions.setFormOpen(true);
+      }}
+      timedEvents={[timedEvent]}
+    >
+      <TestTimedEventTarget />
+    </DayInteractionCoordinator>,
     { events: [timedEvent] },
   );
-
-  return { dispatch, store };
 };
 
 beforeEach(() => {
@@ -187,11 +175,11 @@ afterEach(() => {
 
 describe("DayInteractionCoordinator", () => {
   it("closes an open Day event form when saved-event motion activates", () => {
-    const { store } = renderCoordinator();
+    renderCoordinator();
 
     const child = screen.getByTestId("timed-child");
 
-    openFloatingForm(store, timedEvent);
+    openFloatingForm(timedEvent);
     fireEvent.pointerDown(child, {
       button: 0,
       clientX: 160,
@@ -205,11 +193,11 @@ describe("DayInteractionCoordinator", () => {
       pointerId: 1,
     });
 
-    expect(isFormOpen(store)).toBe(false);
+    expect(isFormOpen()).toBe(false);
   });
 
   it("saves a moved event without opening a form", async () => {
-    const { store } = renderCoordinator();
+    renderCoordinator();
     const child = screen.getByTestId("timed-child");
 
     fireEvent.pointerDown(child, {
@@ -231,12 +219,12 @@ describe("DayInteractionCoordinator", () => {
       pointerId: 1,
     });
 
-    expect(isFormOpen(store)).toBe(false);
-    expect(store.getState().events.draft.event).toBeNull();
+    expect(isFormOpen()).toBe(false);
+    expect(useDraftStore.getState().event).toBeNull();
   });
 
   it("opens the event form when pointer interaction does not move the event", async () => {
-    const { store } = renderCoordinator();
+    renderCoordinator();
     const child = screen.getByTestId("timed-child");
 
     fireEvent.pointerDown(child, {
@@ -253,8 +241,8 @@ describe("DayInteractionCoordinator", () => {
     });
 
     await waitFor(() => {
-      expect(isFormOpen(store)).toBe(true);
+      expect(isFormOpen()).toBe(true);
     });
-    expect(store.getState().events.draft.event?._id).toBe(timedEvent._id);
+    expect(useDraftStore.getState().event?._id).toBe(timedEvent._id);
   });
 });

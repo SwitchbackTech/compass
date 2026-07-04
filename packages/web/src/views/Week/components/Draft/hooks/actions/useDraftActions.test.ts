@@ -9,7 +9,7 @@ import {
   type InitialReduxState,
 } from "@web/__tests__/utils/state/store.test.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
+import { type Activity_DraftEvent } from "@web/events/stores/draft.store";
 import {
   type Setters_Draft,
   type State_Draft_Local,
@@ -109,7 +109,8 @@ const setDraftActivity = (
   activity: Activity_DraftEvent,
   eventType = Categories_Event.TIMED,
 ) => {
-  currentState.events.draft!.status = {
+  currentState.events!.draft = currentState.events!.draft ?? {};
+  currentState.events!.draft.status = {
     activity,
     dateToResize: null,
     eventType,
@@ -154,7 +155,7 @@ describe("useDraftActions", () => {
   beforeEach(() => {
     const draft = createDraft();
     currentState = createInitialState();
-    currentState.events.draft = {
+    currentState.events!.draft = {
       event: draft,
       status: {
         activity: "eventRightClick",

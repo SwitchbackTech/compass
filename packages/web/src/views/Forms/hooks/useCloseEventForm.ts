@@ -1,4 +1,8 @@
-import { useAppDispatch } from "@web/store/store.hooks";
-import { createUseCloseEventForm } from "./useCloseEventForm.factory";
+import { useCallback } from "react";
+import { draftActions } from "@web/events/stores/draft.store";
 
-export const useCloseEventForm = createUseCloseEventForm({ useAppDispatch });
+export function useCloseEventForm() {
+  return useCallback(() => {
+    draftActions.discard();
+  }, []);
+}

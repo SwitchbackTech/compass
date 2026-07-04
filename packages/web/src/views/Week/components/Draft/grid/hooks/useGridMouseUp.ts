@@ -1,8 +1,10 @@
 import { useCallback } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { getElemById } from "@web/common/utils/grid/grid.util";
-import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import {
+  selectDraftStatus,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { useEventListener } from "@web/views/Week/hooks/mouse/useEventListener";
 import { useDraftContext } from "../../context/useDraftContext";
 
@@ -11,7 +13,7 @@ export const useGridMouseUp = () => {
   const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
   const { discard, openForm, stopDragging, stopResizing, submit } = actions;
 
-  const draftStatus = useAppSelector(selectDraftStatus);
+  const draftStatus = useDraftStore(selectDraftStatus);
   const reduxDraftType = draftStatus?.eventType;
   const isDrafting = draftStatus?.isDrafting;
 

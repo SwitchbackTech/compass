@@ -30,11 +30,11 @@ import {
 import { useEventMutations } from "@web/ducks/events/mutations/useEventMutations";
 import { useSomedayEventViewModel } from "@web/ducks/events/queries/useSomedayEventsQuery";
 import {
+  draftActions,
   selectDraft,
   selectDraftStatus,
-} from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
 import {
@@ -73,21 +73,20 @@ export const useDraftActions = (
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
 ) => {
-  const dispatch = useAppDispatch();
   const eventMutations = useEventMutations();
   const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
     useSomedayEventViewModel(
       weekProps.component.startOfView,
       weekProps.component.endOfView,
     );
-  const reduxDraft = useAppSelector(selectDraft);
+  const reduxDraft = useDraftStore(selectDraft);
 
   const {
     activity,
     dateToResize,
     eventType: reduxDraftType,
     isDrafting,
-  } = useAppSelector(selectDraftStatus)!;
+  } = useDraftStore(selectDraftStatus)!;
 
   const {
     dateBeingChanged,
@@ -173,9 +172,9 @@ export const useDraftActions = (
     reset();
 
     if (reduxDraft || reduxDraftType) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
     }
-  }, [dispatch, reduxDraft, reduxDraftType, reset]);
+  }, [reduxDraft, reduxDraftType, reset]);
 
   const deleteEvent = useCallback(
     (

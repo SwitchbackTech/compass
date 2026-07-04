@@ -1,4 +1,3 @@
-import { type Dispatch } from "redux";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
@@ -9,15 +8,16 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { getElemById } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
+import {
+  type Activity_DraftEvent,
+  draftActions,
+} from "@web/events/stores/draft.store";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 
 export const createTimedDraft = async (
   isCurrentWeek: boolean,
   startOfView: Dayjs,
   activity: Activity_DraftEvent,
-  dispatch: Dispatch,
 ) => {
   const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
 
@@ -27,20 +27,17 @@ export const createTimedDraft = async (
     endDate,
   )) as Schema_GridEvent;
 
-  dispatch(
-    draftSlice.actions.start({
-      activity,
-      eventType: Categories_Event.TIMED,
-      event,
-    }),
-  );
+  draftActions.start({
+    activity,
+    eventType: Categories_Event.TIMED,
+    event,
+  });
 };
 
 export const createAlldayDraft = async (
   startOfView: Dayjs,
   endOfView: Dayjs,
   activity: Activity_DraftEvent,
-  dispatch: Dispatch,
 ) => {
   const today = dayjs();
   const start = today.isBetween(startOfView, endOfView, "day", "[]")
@@ -55,13 +52,11 @@ export const createAlldayDraft = async (
     endDate,
   )) as Schema_GridEvent;
 
-  dispatch(
-    draftSlice.actions.start({
-      activity,
-      eventType: Categories_Event.ALLDAY,
-      event,
-    }),
-  );
+  draftActions.start({
+    activity,
+    eventType: Categories_Event.ALLDAY,
+    event,
+  });
 };
 
 const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {

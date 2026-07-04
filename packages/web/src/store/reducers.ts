@@ -1,10 +1,6 @@
-import { combineReducers } from "redux";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-
-const eventsReducer = combineReducers({
-  draft: draftSlice.reducer,
-});
-
+// All app state has migrated to Zustand stores (see src/*/stores and
+// src/auth/state). This placeholder keeps the Redux store constructible until
+// the store itself is removed.
 export const reducers = {
-  events: eventsReducer,
+  _migratedToZustand: (state: null = null) => state,
 };
