@@ -154,11 +154,13 @@ const useAllDayEventsLayer = (
         endOfView={weekProps.component.endOfView}
         measurements={measurements}
         startOfView={weekProps.component.startOfView}
+        weekDays={weekProps.component.weekDays}
       />
     ),
     [
       measurements,
       weekProps.component.endOfView,
       weekProps.component.startOfView,
+      weekProps.component.weekDays,
     ],
   );

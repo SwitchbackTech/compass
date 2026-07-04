@@ -12,6 +12,9 @@ export const CALENDAR_GRID_EVENT_TITLE_LINE_HEIGHT = "16px";
 export const CALENDAR_MIN_EVENT_HEIGHT_FOR_TIME_LABEL = 36;
 export const CALENDAR_MIN_EVENT_WIDTH_FOR_TIME_LABEL = 90;
 export const CALENDAR_EVENT_WIDTH_MINIMUM = 80;
+// Narrowest a day column can get before the week view drops a day instead;
+// wider than CALENDAR_EVENT_WIDTH_MINIMUM so titles/time labels stay legible.
+export const CALENDAR_DAY_COLUMN_MIN_USABLE_WIDTH = 140;
 export const CALENDAR_DECK_INDENT = 16;
 export const CALENDAR_DECK_RIGHT_RESERVE = 24;
 export const CALENDAR_DECK_MIN_WIDTH = 72;

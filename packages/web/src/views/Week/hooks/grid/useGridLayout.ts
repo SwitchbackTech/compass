@@ -1,12 +1,11 @@
 import { useCalendarGridLayout } from "@web/common/calendar-grid/hooks/useCalendarGridLayout";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
+import { WEEK_DAY_COUNT } from "@web/views/Week/util/week-window.util";
 
-const DAYS_IN_VIEW = 7;
-
-export const useGridLayout = () =>
+export const useGridLayout = (visibleDateCount: number = WEEK_DAY_COUNT) =>
   useCalendarGridLayout({
     isInteractionMotionActive: isWeekInteractionMotionActive,
-    visibleDateCount: DAYS_IN_VIEW,
+    visibleDateCount,
   });
 
 export type Layout_Grid = ReturnType<typeof useGridLayout>;

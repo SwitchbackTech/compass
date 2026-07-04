@@ -11,6 +11,9 @@ interface ViewState {
   sidebar: {
     isOpen: boolean;
   };
+  taskList: {
+    isOpen: boolean;
+  };
 }
 
 export const initialViewState: ViewState = {
@@ -19,6 +22,7 @@ export const initialViewState: ViewState = {
     end: dayjs().endOf("week").format(),
   },
   sidebar: { isOpen: true },
+  taskList: { isOpen: true },
 };
 
 // Selectors passed to this hook must return primitives or stable references;
@@ -31,11 +35,25 @@ export const useViewStore = create<ViewState>()(
 );
 
 export const viewActions = {
+  setSidebarOpen: (isOpen: boolean) =>
+    useViewStore.setState({ sidebar: { isOpen } }, false, {
+      type: "setSidebarOpen",
+    }),
   toggleSidebar: () =>
     useViewStore.setState(
       (state) => ({ sidebar: { isOpen: !state.sidebar.isOpen } }),
       false,
       { type: "toggleSidebar" },
+    ),
+  setTaskListOpen: (isOpen: boolean) =>
+    useViewStore.setState({ taskList: { isOpen } }, false, {
+      type: "setTaskListOpen",
+    }),
+  toggleTaskList: () =>
+    useViewStore.setState(
+      (state) => ({ taskList: { isOpen: !state.taskList.isOpen } }),
+      false,
+      { type: "toggleTaskList" },
     ),
   updateDates: (dates: ViewState["dates"]) =>
     useViewStore.setState({ dates }, false, { type: "updateDates" }),
@@ -43,3 +61,4 @@ export const viewActions = {
 
 export const selectDatesInView = (state: ViewState) => state.dates;
 export const selectIsSidebarOpen = (state: ViewState) => state.sidebar.isOpen;
+export const selectIsTaskListOpen = (state: ViewState) => state.taskList.isOpen;

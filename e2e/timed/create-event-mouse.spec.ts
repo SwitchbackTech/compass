@@ -134,17 +134,25 @@ test("keeps drag-to-create duration when the pointer moves before release", asyn
   await expect(getTimedDraftEvent(page)).toHaveCount(0);
 });
 
-test("starts the timed draft in the day column under the pointer after horizontal scroll", async ({
+test("starts the timed draft in the day column under the pointer at a reduced day count", async ({
   page,
 }) => {
+  // 900px with the sidebar open shows a reduced day window (no horizontal
+  // scroll); the draft must still land in the column under the pointer.
   await page.setViewportSize({ width: 900, height: 1000 });
   await prepareCalendarPage(page);
   await ensureSidebarOpen(page);
-  await page.locator("#weekGridScroller").evaluate((node) => {
-    node.scrollLeft = node.scrollWidth;
-  });
 
-  const targetDayLabel = page.locator("#weekGridScroller [title]").nth(6);
+  const dayLabels = page.locator("#weekGridScroller [title]");
+  const visibleDayCount = await dayLabels.evaluateAll(
+    (nodes) =>
+      nodes.filter((node) => /^\d{8}$/.test(node.getAttribute("title") ?? ""))
+        .length,
+  );
+  expect(visibleDayCount).toBeGreaterThan(1);
+  expect(visibleDayCount).toBeLessThan(7);
+
+  const targetDayLabel = dayLabels.nth(visibleDayCount - 1);
   const mainGrid = page.locator("#mainGrid");
   const targetBox = await targetDayLabel.boundingBox();
   const gridBox = await mainGrid.boundingBox();

@@ -74,12 +74,14 @@ const weekProps = {
   component: {
     endOfView,
     startOfView,
+    weekDays: [...Array(7)].map((_, index) => startOfView.add(index, "day")),
   },
 } as WeekProps;
 const pastWeekProps = {
   component: {
     endOfView: pastWeekStart.add(7, "day"),
     startOfView: pastWeekStart,
+    weekDays: [...Array(7)].map((_, index) => pastWeekStart.add(index, "day")),
   },
 } as WeekProps;
 
@@ -215,7 +217,6 @@ const RegisteredAllDayEventHarness = ({
 
   return (
     <AllDayEventMemo
-      endOfView={endOfView}
       event={event}
       interactionAttributes={
         isEnabled
@@ -230,7 +231,7 @@ const RegisteredAllDayEventHarness = ({
       onMouseDown={mock()}
       onScalerMouseDown={mock()}
       ref={ref}
-      startOfView={startOfView}
+      weekDays={weekProps.component.weekDays}
     />
   );
 };

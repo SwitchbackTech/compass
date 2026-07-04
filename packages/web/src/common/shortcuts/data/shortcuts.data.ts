@@ -74,8 +74,9 @@ const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
         { keys: ["Arrow keys"], label: "Move draft event" },
       ];
 
-const otherShortcuts: Shortcut[] = [
+const getOtherShortcuts = (view: ShortcutMenuView): Shortcut[] => [
   { keys: ["["], label: "Toggle sidebar" },
+  ...(view === "day" ? [{ keys: ["]"], label: "Toggle task list" }] : []),
   { keys: ["?"], label: "Toggle shortcuts" },
   { keys: ["Mod", "k"], label: "Command Palette" },
 ];
@@ -99,6 +100,6 @@ export const getShortcutMenuSections = (
     { id: "create", title: "Create", shortcuts: getCreateShortcuts(view) },
     { id: "focus", title: "Focus", shortcuts: getFocusShortcuts(view) },
     { id: "edit", title: "Edit", shortcuts: getEditShortcuts(view) },
-    { id: "other", title: "Other", shortcuts: otherShortcuts },
+    { id: "other", title: "Other", shortcuts: getOtherShortcuts(view) },
   ];
 };

@@ -24,6 +24,7 @@ import { Shortcuts } from "@web/views/Week/components/Shortcuts";
 import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
+import { useVisibleDayCount } from "@web/views/Week/hooks/grid/useVisibleDayCount";
 import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
@@ -42,9 +43,11 @@ export const WeekView = () => {
 
   const { today } = useToday();
 
-  const weekProps = useWeek(today);
+  const { trackRef, visibleDayCount } = useVisibleDayCount();
 
-  const { gridRefs, measurements } = useGridLayout();
+  const weekProps = useWeek(today, visibleDayCount);
+
+  const { gridRefs, measurements } = useGridLayout(visibleDayCount);
 
   const scrollUtil = useScroll(gridRefs.mainGridRef);
 
@@ -79,7 +82,7 @@ export const WeekView = () => {
   );
 
   const { calendarDate, goToDateFromSidebar } = usePlannerSidebarCalendarDate({
-    setStartOfView: weekProps.state.setStartOfView,
+    goToDate: weekProps.state.goToDate,
     today,
     viewEnd: weekProps.component.endOfView,
     viewStart: weekProps.component.startOfView,
@@ -134,7 +137,10 @@ export const WeekView = () => {
                 <Header scrollUtil={scrollUtil} weekProps={weekProps} />
 
                 <WeekGridScrollArea>
-                  <div className="relative flex h-full w-full min-w-176 flex-col [container-name:week-grid-track] [container-type:inline-size]">
+                  <div
+                    ref={trackRef}
+                    className="relative flex h-full w-full min-w-[190px] flex-col [container-name:week-grid-track] [container-type:inline-size]"
+                  >
                     <DayLabels
                       startOfView={weekProps.component.startOfView}
                       today={today}

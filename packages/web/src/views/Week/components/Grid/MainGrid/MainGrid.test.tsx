@@ -69,6 +69,9 @@ afterEach(() => {
 });
 
 const startOfView = dayjs("2024-01-14T00:00:00.000");
+const weekDaysInView = Array.from({ length: 7 }, (_, index) =>
+  startOfView.add(index, "day"),
+);
 const measurements = {
   allDayRow: null,
   colWidths: [100, 100, 100, 100, 100, 100, 100],
@@ -133,7 +136,7 @@ const createWeekProps = () => ({
       startOfView.add(index, "day"),
     ),
   },
-  state: { setStartOfView: mock() },
+  state: { goToDate: mock() },
   util: {
     decrementWeek: mock(),
     getLastNavigationSource: mock(() => "manual" as const),
@@ -563,6 +566,7 @@ describe("Week calendar accessibility", () => {
           endOfView={startOfView.endOf("week")}
           measurements={measurements}
           startOfView={startOfView}
+          weekDays={weekDaysInView}
         />
       </Provider>,
     );
@@ -595,6 +599,7 @@ describe("Week calendar accessibility", () => {
           endOfView={startOfView.endOf("week")}
           measurements={measurements}
           startOfView={startOfView}
+          weekDays={weekDaysInView}
         />
       </Provider>,
     );
@@ -638,6 +643,7 @@ describe("Week calendar accessibility", () => {
           endOfView={startOfView.endOf("week")}
           measurements={measurements}
           startOfView={startOfView}
+          weekDays={weekDaysInView}
         />
       </Provider>,
     );
@@ -790,6 +796,7 @@ describe("saved Week event ownership", () => {
           endOfView={startOfView.endOf("week")}
           measurements={measurements}
           startOfView={startOfView}
+          weekDays={weekDaysInView}
         />
       </Provider>,
     );

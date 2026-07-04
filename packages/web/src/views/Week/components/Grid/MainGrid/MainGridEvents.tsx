@@ -19,6 +19,7 @@ import {
   getWeekInteractionTargetAttributes,
   useWeekEventRegistrationRef,
 } from "@web/views/Week/interaction/registry/weekEventRegistry";
+import { isTimedEventInVisibleDays } from "@web/views/Week/util/week-window.util";
 import { GridEventMemo } from "../../Event/Grid/GridEvent/GridEvent";
 
 interface Props {
@@ -33,9 +34,17 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     endOfView: weekProps.component.endOfView,
   });
   const draftId = useDraftStore(selectDraftId);
+  const weekDays = weekProps.component.weekDays;
+  // The query covers the full week; only mount events for the visible window
+  // so off-window events never land in the DOM or the interaction registry.
+  const visibleTimedEvents = useMemo(
+    () =>
+      timedEvents.filter((event) => isTimedEventInVisibleDays(event, weekDays)),
+    [timedEvents, weekDays],
+  );
   const timedEventItems = useMemo(
-    () => createCalendarTimedEventLayout(timedEvents),
-    [timedEvents],
+    () => createCalendarTimedEventLayout(visibleTimedEvents),
+    [visibleTimedEvents],
   );
   const category = Categories_Event.TIMED;
 

@@ -312,7 +312,9 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
         pendingSession.target,
       ),
     );
-    attachScrollSync(getNearestScrollableAncestor(pendingSession.sourceElement));
+    attachScrollSync(
+      getNearestScrollableAncestor(pendingSession.sourceElement),
+    );
     activatedAt = resolvedOptions.now();
     latestPointer = pendingSession.startPoint;
     metrics.active = true;

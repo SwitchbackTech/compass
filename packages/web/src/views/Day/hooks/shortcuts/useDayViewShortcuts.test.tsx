@@ -65,6 +65,36 @@ describe("useDayViewShortcuts create", () => {
   });
 });
 
+describe("useDayViewShortcuts panels", () => {
+  it("toggles the task list with ]", async () => {
+    const onToggleTaskList = mock();
+
+    renderHook(() => useDayViewShortcuts({ onToggleTaskList }), {
+      wrapper,
+    });
+    pressKey("]");
+
+    await waitFor(() => {
+      expect(onToggleTaskList).toHaveBeenCalled();
+    });
+  });
+
+  it("does not toggle the task list when typing in an input", async () => {
+    const onToggleTaskList = mock();
+    const input = document.createElement("input");
+    document.body.appendChild(input);
+    input.focus();
+
+    renderHook(() => useDayViewShortcuts({ onToggleTaskList }), {
+      wrapper,
+    });
+    pressKey("]", {}, input);
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onToggleTaskList).not.toHaveBeenCalled();
+  });
+});
+
 describe("useDayViewShortcuts migration", () => {
   it("migrates the focused task forward with Control+Meta+ArrowRight", async () => {
     const onMigrateTask = mock();

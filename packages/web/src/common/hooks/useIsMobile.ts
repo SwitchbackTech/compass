@@ -16,6 +16,10 @@ const getInitialMobileState = (): boolean => {
 /**
  * Hook to detect if the current viewport is mobile-sized
  * Uses window.matchMedia with a 768px breakpoint
+ *
+ * This is a viewport check, not a device check — use it for layout decisions
+ * (e.g. grid columns). To detect an actual mobile device (gating), use
+ * isMobileOS from device.util.
  * @returns boolean indicating if viewport is mobile-sized
  */
 export const useIsMobile = (): boolean => {

@@ -16,16 +16,19 @@ import {
   getWeekInteractionTargetAttributes,
   useWeekEventRegistrationRef,
 } from "@web/views/Week/interaction/registry/weekEventRegistry";
+import { isAllDayEventInVisibleDays } from "@web/views/Week/util/week-window.util";
 
 interface Props {
   measurements: Measurements_Grid;
   startOfView: WeekProps["component"]["startOfView"];
   endOfView: WeekProps["component"]["endOfView"];
+  weekDays: WeekProps["component"]["weekDays"];
 }
 export const AllDayEvents = ({
   measurements,
   startOfView,
   endOfView,
+  weekDays,
 }: Props) => {
   const draft = useDraftStore(selectDraft);
   const { allDayEvents, isPending: isLoadingWeekView } = useWeekEventViewModel({
@@ -34,6 +37,16 @@ export const AllDayEvents = ({
   });
 
   const draftId = useDraftStore(selectDraftId);
+  // The query covers the full week; only mount events overlapping the visible
+  // window so off-window events never land in the DOM or the interaction
+  // registry.
+  const visibleAllDayEvents = useMemo(
+    () =>
+      allDayEvents.filter((event: Schema_GridEvent) =>
+        isAllDayEventInVisibleDays(event, weekDays),
+      ),
+    [allDayEvents, weekDays],
+  );
 
   const handleKeyDown = (event: Schema_GridEvent) => {
     draftActions.start({
@@ -49,7 +62,7 @@ export const AllDayEvents = ({
       id={ID_GRID_EVENTS_ALLDAY}
     >
       {!isLoadingWeekView &&
-        allDayEvents.map((event: Schema_GridEvent) => {
+        visibleAllDayEvents.map((event: Schema_GridEvent) => {
           const isPlaceholder = event._id === draftId;
           const eventForDisplay =
             isPlaceholder && draft && draft._id === event._id
@@ -58,13 +71,12 @@ export const AllDayEvents = ({
 
           return (
             <AllDayEventItem
-              endOfView={endOfView}
               event={eventForDisplay}
               isPlaceholder={isPlaceholder}
               key={event._id}
               measurements={measurements}
               onKeyDown={handleKeyDown}
-              startOfView={startOfView}
+              weekDays={weekDays}
             />
           );
         })}
@@ -73,21 +85,19 @@ export const AllDayEvents = ({
 };
 
 interface AllDayEventItemProps {
-  endOfView: WeekProps["component"]["endOfView"];
   event: Schema_GridEvent;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
   onKeyDown: (event: Schema_GridEvent) => void;
-  startOfView: WeekProps["component"]["startOfView"];
+  weekDays: WeekProps["component"]["weekDays"];
 }
 
 const AllDayEventItem = ({
-  endOfView,
   event,
   isPlaceholder,
   measurements,
   onKeyDown,
-  startOfView,
+  weekDays,
 }: AllDayEventItemProps) => {
   const isRegisteredForWeekInteraction = Boolean(event._id) && !isPlaceholder;
   const registrationRef = useWeekEventRegistrationRef({
@@ -109,14 +119,13 @@ const AllDayEventItem = ({
 
   return (
     <AllDayEventMemo
-      endOfView={endOfView}
       event={event}
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
       measurements={measurements}
       onKeyDown={onKeyDown}
       ref={registrationRef}
-      startOfView={startOfView}
+      weekDays={weekDays}
     />
   );
 };

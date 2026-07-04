@@ -46,7 +46,7 @@ Important behavior:
 
 `packages/web/src/views/Root.tsx`:
 
-- blocks mobile with `MobileGate`
+- blocks mobile-OS devices with `MobileGate` (`isMobileOS` user-agent check; narrow desktop windows get the responsive layout instead)
 - wraps authenticated layout with `UserProvider`
 - wires SSE listeners through `SSEProvider`
 

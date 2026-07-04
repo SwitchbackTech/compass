@@ -11,6 +11,7 @@ import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import {
   selectIsSidebarOpen,
+  selectIsTaskListOpen,
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
@@ -40,6 +41,7 @@ import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
 export const DayViewContent = memo(() => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  const isTaskListOpen = useViewStore(selectIsTaskListOpen);
   const {
     width: taskListWidth,
     isResizing,
@@ -72,6 +74,21 @@ export const DayViewContent = memo(() => {
 
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();
+  }, []);
+  const toggleTaskList = useCallback(() => {
+    viewActions.toggleTaskList();
+  }, []);
+  // Task-focused shortcuts imply the user wants the list visible; reopen it
+  // first and defer focus a frame so the list exists in the DOM.
+  const withTaskListOpen = useCallback((focusTask: () => void) => {
+    return () => {
+      if (selectIsTaskListOpen(useViewStore.getState())) {
+        focusTask();
+        return;
+      }
+      viewActions.setTaskListOpen(true);
+      requestAnimationFrame(focusTask);
+    };
   }, []);
   const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
     usePlannerShortcuts({
@@ -147,17 +164,18 @@ export const DayViewContent = memo(() => {
 
   useDayViewShortcuts({
     onCreateAllDayEvent: handleCreateAllDayEvent,
-    onAddTask: focusOnAddTaskInput,
+    onAddTask: withTaskListOpen(focusOnAddTaskInput),
     onEditTask: handleEditTask,
     onDeleteTask: handleDeleteTask,
     onMigrateTask: migrateTask,
-    onFocusTasks: focusOnFirstTask,
+    onFocusTasks: withTaskListOpen(focusOnFirstTask),
     onFocusCalendar: focusFirstDayCalendarEvent,
     onEditEvent: openEventFormEditEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
     onToggleSidebar: toggleSidebar,
+    onToggleTaskList: toggleTaskList,
     hasFocusedTask,
   });
 
@@ -193,29 +211,33 @@ export const DayViewContent = memo(() => {
             "cursor-col-resize select-none": isResizing,
           })}
         >
-          <TaskList width={taskListWidth} />
+          {isTaskListOpen ? (
+            <>
+              <TaskList width={taskListWidth} />
 
-          {/* biome-ignore lint/a11y/useSemanticElements: An hr cannot host the focusable, draggable window-splitter interaction. */}
-          <div
-            {...dividerProps}
-            role="separator"
-            aria-orientation="vertical"
-            aria-label="Resize task list"
-            aria-valuemin={TASK_LIST_MIN_WIDTH}
-            aria-valuemax={TASK_LIST_MAX_WIDTH}
-            aria-valuenow={taskListWidth}
-            tabIndex={0}
-            className="group relative w-8 shrink-0 cursor-col-resize touch-none focus:outline-none"
-          >
-            <div
-              className={classNames(
-                "absolute inset-y-1 left-0 w-px rounded-full bg-grid-line-primary transition-[width,background-color] duration-200 ease-out motion-reduce:transition-none",
-                "group-hover:w-0.5 group-hover:bg-text-lighter/60",
-                "group-focus-visible:w-0.5 group-focus-visible:bg-text-lighter/60",
-                { "w-0.5 bg-text-lighter/60": isResizing },
-              )}
-            />
-          </div>
+              {/* biome-ignore lint/a11y/useSemanticElements: An hr cannot host the focusable, draggable window-splitter interaction. */}
+              <div
+                {...dividerProps}
+                role="separator"
+                aria-orientation="vertical"
+                aria-label="Resize task list"
+                aria-valuemin={TASK_LIST_MIN_WIDTH}
+                aria-valuemax={TASK_LIST_MAX_WIDTH}
+                aria-valuenow={taskListWidth}
+                tabIndex={0}
+                className="group relative w-8 shrink-0 cursor-col-resize touch-none focus:outline-none"
+              >
+                <div
+                  className={classNames(
+                    "absolute inset-y-1 left-0 w-px rounded-full bg-grid-line-primary transition-[width,background-color] duration-200 ease-out motion-reduce:transition-none",
+                    "group-hover:w-0.5 group-hover:bg-text-lighter/60",
+                    "group-focus-visible:w-0.5 group-focus-visible:bg-text-lighter/60",
+                    { "w-0.5 bg-text-lighter/60": isResizing },
+                  )}
+                />
+              </div>
+            </>
+          ) : null}
 
           <DayCalendarGrid />
         </div>
