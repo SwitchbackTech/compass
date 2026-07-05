@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { darken } from "@core/util/color.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 export interface EndsOnDateProps {
@@ -26,7 +25,7 @@ export const EndsOnDate = ({
 
   return (
     <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
-      <Text size="l">Ends on:</Text>
+      <span className="relative text-l">Ends on:</span>
 
       <div
         className="flex items-start"

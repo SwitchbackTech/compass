@@ -20,7 +20,6 @@ import {
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
-import { Text } from "@web/components/Text/Text";
 
 export interface CalendarAllDayEventCardProps {
   event: Schema_GridEvent;
@@ -125,10 +124,10 @@ const CalendarAllDayEventCardBase = (
       onMouseLeave={onMouseLeave}
     >
       <div className="flex flex-col items-start">
-        <Text size="xs">
+        <span className="relative text-xs">
           {event.title}
           <SpaceCharacter />
-        </Text>
+        </span>
       </div>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
       <div

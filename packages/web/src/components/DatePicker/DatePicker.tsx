@@ -8,7 +8,6 @@ import { type CSSVariables } from "@web/common/styles/css.types";
 import { theme } from "@web/common/styles/theme";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
-import { Text } from "@web/components/Text/Text";
 import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
 import { Focusable } from "../Focusable/Focusable";
@@ -126,9 +125,12 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                 monthContainerClassName,
               )}
             >
-              <Text className={monthTextClassName} color={headerColor}>
+              <span
+                className={classNames("relative", monthTextClassName)}
+                style={{ color: headerColor }}
+              >
                 {selectedMonth}
-              </Text>
+              </span>
             </div>
 
             {!customHeaderCount && (
@@ -161,21 +163,20 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   </MonthNavButton>
                 </div>
                 {withTodayButton && (
-                  <Text
+                  <button
                     className={classNames(
-                      "mr-10 px-1.5 hover:brightness-160 hover:transition-[filter] hover:duration-350 hover:ease-out",
+                      "relative mr-10 cursor-pointer border-0 bg-transparent px-1.5 text-l hover:brightness-160 hover:transition-[filter] hover:duration-350 hover:ease-out",
                       currentMonth === selectedMonth && "opacity-0",
                     )}
-                    cursor="pointer"
                     onClick={() => {
                       headerProps.changeMonth(dayjs().month());
                       headerProps.changeYear(dayjs().year());
                     }}
-                    color="var(--compass-color-text-light)"
-                    size="l"
+                    style={{ color: "var(--compass-color-text-light)" }}
+                    type="button"
                   >
                     Today
-                  </Text>
+                  </button>
                 )}
               </div>
             )}

@@ -1,5 +1,4 @@
 import type React from "react";
-import { Text } from "@web/components/Text/Text";
 import { WEEKDAYS } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";
 import { WeekDay } from "./WeekDay";
 
@@ -16,7 +15,7 @@ export const WeekDays: React.FC<WeekDaysProps> = ({
 }) => {
   return (
     <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
-      <Text size="l">On: </Text>
+      <span className="relative text-l">On: </span>
 
       {WEEKDAYS.map((day) => (
         <WeekDay

@@ -6,7 +6,6 @@ import {
 } from "@phosphor-icons/react";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
-import { Text } from "@web/components/Text/Text";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
 
 const ACTIONS_CLASS_NAME =
@@ -50,9 +49,12 @@ export const SomedayEventRectangle = ({
             size={14}
             weight="bold"
           />
-          <Text className="min-w-0 truncate" lineHeight={16} size="m">
+          <span
+            className="relative min-w-0 truncate text-m"
+            style={{ lineHeight: "16px" }}
+          >
             {event.title}
-          </Text>
+          </span>
         </div>
 
         {canMigrate ? (

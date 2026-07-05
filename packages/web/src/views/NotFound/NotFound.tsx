@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { Text } from "@web/components/Text/Text";
 
 export const NotFoundView = () => {
   const navigate = useNavigate();
@@ -10,11 +9,13 @@ export const NotFoundView = () => {
   return (
     <div className="c-not-found">
       <div>
-        <Text size="4xl">🏴‍☠️ Shiver me timbers! </Text>
+        <span className="relative text-4xl">🏴‍☠️ Shiver me timbers! </span>
       </div>
 
       <div>
-        <Text size="xxl">This isn't part of the app, matey</Text>
+        <span className="relative text-xxl">
+          This isn't part of the app, matey
+        </span>
       </div>
 
       <button
