@@ -30,10 +30,25 @@ export type WeekLayoutCache = CalendarLayoutCache;
 export type { SmartScrollCache };
 export { getNearestDayColumn };
 
+/**
+ * The week renders a dynamic number of day columns (7 down to 1 in narrow
+ * windows). The count is read from the CSS variable the grid components set
+ * on their columns element so drag geometry always matches what is rendered.
+ */
+const readVisibleDateCount = (element: HTMLElement | null) => {
+  const raw = element?.style.getPropertyValue("--calendar-column-count");
+  const count = Number(raw);
+  return Number.isInteger(count) && count > 0 ? count : DAYS_IN_WEEK;
+};
+
 export const buildTimedWeekLayoutCache = (
   sources: WeekLayoutCacheSources = {},
-): WeekLayoutCache | null =>
-  buildTimedCalendarLayoutCache({
+): WeekLayoutCache | null => {
+  const timedColumnsElement =
+    sources.timedColumnsElement ??
+    document.getElementById(ID_GRID_COLUMNS_TIMED);
+
+  return buildTimedCalendarLayoutCache({
     ...sources,
     edgeThresholdPx: WEEK_EDGE_NAVIGATION_THRESHOLD_PX,
     mainGridElementId: ID_GRID_MAIN,
@@ -42,19 +57,26 @@ export const buildTimedWeekLayoutCache = (
       speedPx: SMART_SCROLL_SPEED_PX,
     },
     snapMinutes: GRID_TIME_STEP,
+    timedColumnsElement,
     timedColumnsElementId: ID_GRID_COLUMNS_TIMED,
     timedVisibleHours: WEEK_TIMED_VISIBLE_HOURS,
-    visibleDateCount: DAYS_IN_WEEK,
+    visibleDateCount: readVisibleDateCount(timedColumnsElement),
   });
+};
 
 export const buildAllDayWeekLayoutCache = (
   sources: WeekLayoutCacheSources = {},
-): WeekLayoutCache | null =>
-  buildAllDayCalendarLayoutCache({
+): WeekLayoutCache | null => {
+  const allDayColumnsElement =
+    sources.allDayColumnsElement ?? document.getElementById(ID_ALLDAY_COLUMNS);
+
+  return buildAllDayCalendarLayoutCache({
     ...sources,
+    allDayColumnsElement,
     allDayColumnsElementId: ID_ALLDAY_COLUMNS,
     edgeThresholdPx: WEEK_EDGE_NAVIGATION_THRESHOLD_PX,
     snapMinutes: GRID_TIME_STEP,
     timedVisibleHours: WEEK_TIMED_VISIBLE_HOURS,
-    visibleDateCount: DAYS_IN_WEEK,
+    visibleDateCount: readVisibleDateCount(allDayColumnsElement),
   });
+};
