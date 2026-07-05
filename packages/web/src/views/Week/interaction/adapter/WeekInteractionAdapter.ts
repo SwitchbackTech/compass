@@ -264,10 +264,7 @@ export const createWeekInteractionAdapter = ({
         return result;
       },
       createVisual: ({ pointerStart, sourceElement, target }) => {
-        const layout = buildWeekLayoutCacheForTarget(target, {
-          ...getLayoutSources(),
-          visibleDays: runtime().getVisibleDays(),
-        });
+        const layout = buildWeekLayoutCacheForTarget(target, getLayoutInput());
 
         if (!layout) {
           return null;
@@ -659,15 +656,19 @@ export const createWeekInteractionAdapter = ({
     };
   }
 
+  function getLayoutInput(): WeekLayoutCacheInput {
+    return {
+      ...getLayoutSources(),
+      visibleDays: runtime().getVisibleDays(),
+    };
+  }
+
   function rebuildLayoutIfNeeded(target: WeekInteractionTarget) {
     if (!isLayoutRebuildPending) {
       return;
     }
 
-    const nextLayout = buildWeekLayoutCacheForTarget(target, {
-      ...getLayoutSources(),
-      visibleDays: runtime().getVisibleDays(),
-    });
+    const nextLayout = buildWeekLayoutCacheForTarget(target, getLayoutInput());
 
     if (!nextLayout) {
       return;

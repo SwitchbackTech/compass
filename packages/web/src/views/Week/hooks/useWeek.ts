@@ -39,7 +39,7 @@ export const useWeek = (
 
   const weekDays = useMemo(
     () =>
-      [...(new Array(visibleDayCount) as number[])].map((_, index) =>
+      Array.from({ length: visibleDayCount }, (_, index) =>
         start.add(windowOffset + index, "day"),
       ),
     [start, visibleDayCount, windowOffset],
@@ -82,42 +82,19 @@ export const useWeek = (
     setAnchor(date);
   };
 
-  const decrementWeek = (source: WeekNavigationSource = "manual") => {
+  // Shift the visible window by one page of visibleDayCount days; at the
+  // week's edge, cross into the adjacent week entering from its near side.
+  const pageWindow = (direction: 1 | -1, source: WeekNavigationSource) => {
     navigationSourceRef.current = source;
-    if (windowOffset === 0) {
+    const maxOffset = WEEK_DAY_COUNT - visibleDayCount;
+    const isAtWeekEdge =
+      direction === 1 ? windowOffset >= maxOffset : windowOffset <= 0;
+
+    if (isAtWeekEdge) {
       setAnchor(
         anchorDateForWindowOffset({
-          weekStart: start.subtract(WEEK_DAY_COUNT, "day"),
-          windowOffset: WEEK_DAY_COUNT - visibleDayCount,
-          visibleDayCount,
-        }),
-      );
-      return;
-    }
-
-    setAnchor(
-      anchorDateForWindowOffset({
-        weekStart: start,
-        windowOffset: Math.max(windowOffset - visibleDayCount, 0),
-        visibleDayCount,
-      }),
-    );
-  };
-
-  const goToToday = () => {
-    navigationSourceRef.current = "manual";
-    if (!anchor.isSame(today, "day")) {
-      setAnchor(today);
-    }
-  };
-
-  const incrementWeek = (source: WeekNavigationSource = "manual") => {
-    navigationSourceRef.current = source;
-    if (windowOffset + visibleDayCount >= WEEK_DAY_COUNT) {
-      setAnchor(
-        anchorDateForWindowOffset({
-          weekStart: start.add(WEEK_DAY_COUNT, "day"),
-          windowOffset: 0,
+          weekStart: start.add(direction * WEEK_DAY_COUNT, "day"),
+          windowOffset: direction === 1 ? 0 : maxOffset,
           visibleDayCount,
         }),
       );
@@ -128,12 +105,25 @@ export const useWeek = (
       anchorDateForWindowOffset({
         weekStart: start,
         windowOffset: Math.min(
-          windowOffset + visibleDayCount,
-          WEEK_DAY_COUNT - visibleDayCount,
+          Math.max(windowOffset + direction * visibleDayCount, 0),
+          maxOffset,
         ),
         visibleDayCount,
       }),
     );
+  };
+
+  const incrementWeek = (source: WeekNavigationSource = "manual") =>
+    pageWindow(1, source);
+
+  const decrementWeek = (source: WeekNavigationSource = "manual") =>
+    pageWindow(-1, source);
+
+  const goToToday = () => {
+    navigationSourceRef.current = "manual";
+    if (!anchor.isSame(today, "day")) {
+      setAnchor(today);
+    }
   };
 
   const getLastNavigationSource = () => navigationSourceRef.current;

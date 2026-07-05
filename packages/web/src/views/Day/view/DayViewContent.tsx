@@ -8,6 +8,7 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import { CollapsiblePanel } from "@web/components/CollapsiblePanel/CollapsiblePanel";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import {
@@ -45,7 +46,8 @@ import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
 export const DayViewContent = memo(() => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const isTaskListOpen = useViewStore(selectIsTaskListOpen);
-  const sidebarTransition = useCollapsiblePanel(isSidebarOpen);
+  // The task list and its resize divider animate as one unit, so they share
+  // a single transition instance instead of using CollapsiblePanel.
   const taskListTransition = useCollapsiblePanel(isTaskListOpen);
   const {
     width: taskListWidth,
@@ -192,29 +194,21 @@ export const DayViewContent = memo(() => {
       <DayCmdPalette onGoToToday={handleGoToToday} />
       <Dedication />
 
-      {sidebarTransition.isMounted ? (
-        <div
-          className="h-full min-w-0 shrink-0 overflow-hidden transition-[width] duration-200 ease-out motion-reduce:transition-none"
-          onTransitionEnd={sidebarTransition.onTransitionEnd}
-          style={{
-            width: sidebarTransition.isExpanded ? SIDEBAR_OPEN_WIDTH : 0,
-          }}
-        >
-          <PlannerSidebar
-            calendarDate={dateInView}
-            isShortcutsOpen={isShortcutsOpen}
-            onCloseShortcuts={closeShortcuts}
-            onToggleShortcuts={toggleShortcuts}
-            onSelectDate={navigateToDate}
-            onToggleSidebar={toggleSidebar}
-            shortcutSections={shortcutSections}
-            shortcutsViewLabel="Day"
-            showSomedayEventSections={false}
-            viewEnd={plannerViewEnd}
-            viewStart={plannerViewStart}
-          />
-        </div>
-      ) : null}
+      <CollapsiblePanel isOpen={isSidebarOpen} width={SIDEBAR_OPEN_WIDTH}>
+        <PlannerSidebar
+          calendarDate={dateInView}
+          isShortcutsOpen={isShortcutsOpen}
+          onCloseShortcuts={closeShortcuts}
+          onToggleShortcuts={toggleShortcuts}
+          onSelectDate={navigateToDate}
+          onToggleSidebar={toggleSidebar}
+          shortcutSections={shortcutSections}
+          shortcutsViewLabel="Day"
+          showSomedayEventSections={false}
+          viewEnd={plannerViewEnd}
+          viewStart={plannerViewStart}
+        />
+      </CollapsiblePanel>
 
       <div
         id={ID_MAIN}

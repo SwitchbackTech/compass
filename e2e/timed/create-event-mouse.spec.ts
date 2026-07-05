@@ -6,6 +6,7 @@ import {
   fillTitleAndSaveEventForm,
   fillTitleAndSubmitEventFormWithEnter,
   getMainGridPoint,
+  getVisibleDayDates,
   openTimedEventFormWithMouse,
   prepareCalendarPage,
   type StoredTimedEvent,
@@ -94,16 +95,13 @@ test("starts the timed draft in the day column under the pointer at a reduced da
   await prepareCalendarPage(page);
   await ensureSidebarOpen(page);
 
-  const dayLabels = page.locator("#weekGridScroller [title]");
-  const visibleDayCount = await dayLabels.evaluateAll(
-    (nodes) =>
-      nodes.filter((node) => /^\d{8}$/.test(node.getAttribute("title") ?? ""))
-        .length,
-  );
+  const visibleDayCount = (await getVisibleDayDates(page)).length;
   expect(visibleDayCount).toBeGreaterThan(1);
   expect(visibleDayCount).toBeLessThan(7);
 
-  const targetDayLabel = dayLabels.nth(visibleDayCount - 1);
+  const targetDayLabel = page
+    .locator("#weekGridScroller [title]")
+    .nth(visibleDayCount - 1);
   const mainGrid = page.locator("#mainGrid");
   const targetBox = await targetDayLabel.boundingBox();
   const gridBox = await mainGrid.boundingBox();

@@ -40,6 +40,20 @@ export const getSavedEventsByTitle = (page: Page, title: string) =>
     }
   }, title);
 
+/** Rendered week day-label dates in column order, as local YYYY-MM-DD. */
+export const getVisibleDayDates = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll("#weekGridScroller [title]")]
+      .filter((node): node is HTMLElement => node instanceof HTMLElement)
+      .map((node) => node.title)
+      // Day labels use the compact YYYYMMDD title format; skips e.g. the now line
+      .filter((title) => /^\d{8}$/.test(title))
+      .map(
+        (title) =>
+          `${title.slice(0, 4)}-${title.slice(4, 6)}-${title.slice(6, 8)}`,
+      ),
+  );
+
 export const waitForSavedEventByTitle = async (page: Page, title: string) => {
   let savedEvent: StoredTimedEvent | null = null;
 

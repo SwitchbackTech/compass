@@ -4,6 +4,7 @@ import {
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
   getSavedEventsByTitle,
+  getVisibleDayDates,
   openTimedEventFormWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -32,7 +33,7 @@ test("aligns the mid-drag visual and drops on the hovered day at a reduced day c
   expect(columns.length).toBeGreaterThan(1);
   expect(columns.length).toBeLessThan(7);
 
-  const dayDates = await getDayLabelDates(page);
+  const dayDates = await getVisibleDayDates(page);
   expect(dayDates).toHaveLength(columns.length);
 
   const savedEvent = page
@@ -96,7 +97,7 @@ test("drops on the newly rendered day after a mid-drag edge navigation", async (
   await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
 
-  const daysBefore = await getDayLabelDates(page);
+  const daysBefore = await getVisibleDayDates(page);
   const columns = await getDayColumnBoxes(page);
 
   const savedEvent = page
@@ -117,10 +118,10 @@ test("drops on the newly rendered day after a mid-drag edge navigation", async (
   const lastColumn = columns[columns.length - 1];
   await page.mouse.move(lastColumn.right - 20, dragY, { steps: 10 });
   await expect
-    .poll(async () => (await getDayLabelDates(page))[0], { timeout: 5000 })
+    .poll(async () => (await getVisibleDayDates(page))[0], { timeout: 5000 })
     .not.toBe(daysBefore[0]);
 
-  const daysAfter = await getDayLabelDates(page);
+  const daysAfter = await getVisibleDayDates(page);
   expect(daysAfter[0]).not.toBe(daysBefore[0]);
 
   // Release over the second column of the new window
@@ -145,18 +146,4 @@ const getDayColumnBoxes = async (page: Page) =>
       .map((node) => node.getBoundingClientRect())
       .filter((rect) => rect.width > 0)
       .map((rect) => ({ left: rect.left, right: rect.right })),
-  );
-
-/** Rendered day-label dates in column order, as YYYY-MM-DD. */
-const getDayLabelDates = async (page: Page) =>
-  page.evaluate(() =>
-    [...document.querySelectorAll("#weekGridScroller [title]")]
-      .filter((node): node is HTMLElement => node instanceof HTMLElement)
-      .map((node) => node.title)
-      // Day labels use the compact YYYYMMDD format; skip e.g. the now line
-      .filter((title) => /^\d{8}$/.test(title))
-      .map(
-        (title) =>
-          `${title.slice(0, 4)}-${title.slice(4, 6)}-${title.slice(6, 8)}`,
-      ),
   );

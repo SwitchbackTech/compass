@@ -1,15 +1,9 @@
-import {
-  type FC,
-  type PropsWithChildren,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { type WeekLayoutCacheSources } from "@web/views/Week/interaction/adapter/geometry/weekLayoutCache";
+import { useWeekInteractionLayoutSync } from "@web/views/Week/interaction/useWeekInteractionLayoutSync";
 import { createSomedayInteractionAdapter } from "./adapter/SomedayInteractionAdapter";
 import { type SomedayInteractionRuntime } from "./adapter/SomedayInteractionAdapter.types";
 import { markSomedayCommitAcknowledgement } from "./state/somedayCommitAcknowledgementState";
@@ -35,13 +29,6 @@ export const SomedayInteractionCoordinator: FC<Props> = ({
     onClickSomedayEvent: () => undefined,
     onCommitSomedayInteraction: () => undefined,
   });
-  const visibleDayKeys = useMemo(
-    () =>
-      weekProps.component.weekDays.map((day) =>
-        day.format(YEAR_MONTH_DAY_FORMAT),
-      ),
-    [weekProps.component.weekDays],
-  );
   const adapter = useMemo(
     () =>
       createSomedayInteractionAdapter({
@@ -50,25 +37,9 @@ export const SomedayInteractionCoordinator: FC<Props> = ({
       }),
     [],
   );
-  const lastNavigationSource = weekProps.util.getLastNavigationSource();
-  // Keyed on the first *visible* day: within-week window paging shifts the
-  // rendered columns without changing startOfView, and the drag layout must
-  // rebuild for those navigations too.
-  const renderedFirstDayMs =
-    weekProps.component.weekDays[0]?.valueOf() ?? Number.NaN;
+  const visibleDayKeys = useWeekInteractionLayoutSync(adapter, weekProps);
 
   layoutSourcesRef.current = getLayoutSources;
-
-  useLayoutEffect(() => {
-    if (
-      lastNavigationSource !== "drag-to-edge" ||
-      !Number.isFinite(renderedFirstDayMs)
-    ) {
-      return;
-    }
-
-    adapter.rebuildLayoutAfterNavigation();
-  }, [adapter, lastNavigationSource, renderedFirstDayMs]);
 
   runtimeRef.current = {
     getSomedayEventById: (eventId) => eventsById.get(eventId) ?? null,

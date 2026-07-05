@@ -1,4 +1,5 @@
 import { expect, type Page, test } from "@playwright/test";
+import { getVisibleDayDates } from "../utils/event-test-utils";
 
 // The week view drops days instead of squishing or scrolling them. Expected
 // counts mirror computeVisibleDayCount in
@@ -81,33 +82,24 @@ test.describe("Week view layout", () => {
     await page.locator("#timedColumns").waitFor();
     await waitForDayCount(page, 3);
 
-    const before = await getDayLabelTitles(page);
+    const before = await getVisibleDayDates(page);
     expect(before).toHaveLength(3);
 
     await page.keyboard.press("k");
     await expect
-      .poll(async () => (await getDayLabelTitles(page))[0])
+      .poll(async () => (await getVisibleDayDates(page))[0])
       .not.toBe(before[0]);
 
-    const after = await getDayLabelTitles(page);
+    const after = await getVisibleDayDates(page);
     expect(after).toHaveLength(3);
     expect(after).not.toEqual(before);
 
     await page.keyboard.press("j");
     await expect
-      .poll(async () => await getDayLabelTitles(page))
+      .poll(async () => await getVisibleDayDates(page))
       .toEqual(before);
   });
 });
-
-const getDayLabelTitles = async (page: Page) =>
-  page.evaluate(() =>
-    [...document.querySelectorAll("#weekGridScroller [title]")]
-      .filter((node): node is HTMLElement => node instanceof HTMLElement)
-      .map((node) => node.title)
-      // Day labels use the compact YYYYMMDD format; skip e.g. the now line
-      .filter((title) => /^\d{8}$/.test(title)),
-  );
 
 /**
  * On load, an already-open sidebar/task list briefly animates toward its
@@ -117,7 +109,7 @@ const getDayLabelTitles = async (page: Page) =>
  */
 const waitForDayCount = async (page: Page, expectedDays: number) => {
   await expect
-    .poll(async () => (await getDayLabelTitles(page)).length)
+    .poll(async () => (await getVisibleDayDates(page)).length)
     .toBe(expectedDays);
 };
 

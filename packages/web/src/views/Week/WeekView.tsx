@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
-import { useCollapsiblePanel } from "@web/common/hooks/useCollapsiblePanel";
 import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
+import { CollapsiblePanel } from "@web/components/CollapsiblePanel/CollapsiblePanel";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
@@ -34,7 +34,6 @@ import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
-  const sidebarTransition = useCollapsiblePanel(isSidebarOpen);
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();
   }, []);
@@ -118,30 +117,23 @@ export const WeekView = () => {
             <Shortcuts shortcutsProps={shortcutProps}>
               <ContextMenuWrapper id="sidebar-context-menu">
                 <Draft measurements={measurements} weekProps={weekProps} />
-                {sidebarTransition.isMounted ? (
-                  <div
-                    className="h-full min-w-0 shrink-0 overflow-hidden transition-[width] duration-200 ease-out motion-reduce:transition-none"
-                    onTransitionEnd={sidebarTransition.onTransitionEnd}
-                    style={{
-                      width: sidebarTransition.isExpanded
-                        ? SIDEBAR_OPEN_WIDTH
-                        : 0,
-                    }}
-                  >
-                    <PlannerSidebar
-                      calendarDate={calendarDate}
-                      isShortcutsOpen={isShortcutsOpen}
-                      onCloseShortcuts={closeShortcuts}
-                      onToggleShortcuts={toggleShortcuts}
-                      onSelectDate={goToDateFromSidebar}
-                      onToggleSidebar={toggleSidebar}
-                      shortcutSections={shortcutSections}
-                      shortcutsViewLabel="Week"
-                      viewEnd={weekProps.component.endOfView}
-                      viewStart={weekProps.component.startOfView}
-                    />
-                  </div>
-                ) : null}
+                <CollapsiblePanel
+                  isOpen={isSidebarOpen}
+                  width={SIDEBAR_OPEN_WIDTH}
+                >
+                  <PlannerSidebar
+                    calendarDate={calendarDate}
+                    isShortcutsOpen={isShortcutsOpen}
+                    onCloseShortcuts={closeShortcuts}
+                    onToggleShortcuts={toggleShortcuts}
+                    onSelectDate={goToDateFromSidebar}
+                    onToggleSidebar={toggleSidebar}
+                    shortcutSections={shortcutSections}
+                    shortcutsViewLabel="Week"
+                    viewEnd={weekProps.component.endOfView}
+                    viewStart={weekProps.component.startOfView}
+                  />
+                </CollapsiblePanel>
               </ContextMenuWrapper>
               <div
                 id={ID_MAIN}
