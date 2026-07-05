@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import type React from "react";
 import {
@@ -26,7 +27,10 @@ import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
 } from "@web/common/utils/form/form.util";
-import { Input } from "@web/components/Input/Input";
+import {
+  Focusable,
+  INPUT_RESET_CLASSNAME,
+} from "@web/components/Focusable/Focusable";
 import { Textarea } from "@web/components/Textarea/Textarea";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
@@ -411,6 +415,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     return (
       <form
         {...props}
+        // biome-ignore lint/a11y/noRedundantRoles: <form> only gets its implicit "form" role when it has an accessible name, which this one doesn't; e2e tests rely on getByRole("form").
         role="form"
         className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
         name={ID_EVENT_FORM}
@@ -432,8 +437,12 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       >
         <TitleActionsRow
           title={
-            <Input
-              className="bg-transparent font-semibold text-2xl transition-all duration-300 hover:bg-border-primary"
+            <Focusable
+              Component="input"
+              className={classNames(
+                INPUT_RESET_CLASSNAME,
+                "bg-transparent font-semibold text-2xl transition-all duration-300",
+              )}
               autoFocus
               onChange={onChangeEventTextField("title")}
               onKeyDown={handleTitleKeyDown}
@@ -442,6 +451,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
               ref={titleInputRef}
               underlineColor={priorityColor}
               value={title ?? ""}
+              withUnderline
             />
           }
           actions={

@@ -19,9 +19,7 @@ import {
   gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { AlignItems, Flex, FlexDirections } from "@web/components/Flex/Flex";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
-import { Text } from "@web/components/Text/Text";
 
 export interface CalendarAllDayEventCardProps {
   event: Schema_GridEvent;
@@ -125,15 +123,12 @@ const CalendarAllDayEventCardBase = (
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <Flex
-        alignItems={AlignItems.FLEX_START}
-        direction={FlexDirections.COLUMN}
-      >
-        <Text size="xs">
+      <div className="flex flex-col items-start">
+        <span className="relative text-xs">
           {event.title}
           <SpaceCharacter />
-        </Text>
-      </Flex>
+        </span>
+      </div>
       {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
       <div
         aria-hidden="true"

@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import type React from "react";
 import {
   type KeyboardEvent,
@@ -18,7 +19,10 @@ import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
 } from "@web/common/utils/form/form.util";
-import { Input } from "@web/components/Input/Input";
+import {
+  Focusable,
+  INPUT_RESET_CLASSNAME,
+} from "@web/components/Focusable/Focusable";
 import { Textarea } from "@web/components/Textarea/Textarea";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
@@ -175,6 +179,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   return (
     <form
       {...props}
+      // biome-ignore lint/a11y/noRedundantRoles: <form> only gets its implicit "form" role when it has an accessible name, which this one doesn't; e2e tests rely on getByRole("form").
       role="form"
       className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 text-xl shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
       name={ID_SOMEDAY_EVENT_FORM}
@@ -190,8 +195,12 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     >
       <TitleActionsRow
         title={
-          <Input
-            className="text-(length:--font-size-5xl) w-full bg-transparent font-semibold transition-all duration-300 hover:bg-border-primary"
+          <Focusable
+            Component="input"
+            className={classNames(
+              INPUT_RESET_CLASSNAME,
+              "text-(length:--font-size-5xl) w-full bg-transparent font-semibold transition-all duration-300",
+            )}
             autoFocus
             onChange={onChangeEventTextField("title")}
             onKeyDown={ignoreDelete}
@@ -199,6 +208,7 @@ export const SomedayEventForm: React.FC<FormProps> = ({
             title="title"
             underlineColor={colorByPriority[priority]}
             value={title}
+            withUnderline
           />
         }
         actions={

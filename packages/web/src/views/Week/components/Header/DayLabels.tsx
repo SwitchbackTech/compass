@@ -1,8 +1,8 @@
+import cn from "classnames";
 import { type FC } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { CALENDAR_EVENT_WIDTH_MINIMUM } from "@web/common/calendar-grid/calendarGrid.constants";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
-import { Text } from "@web/components/Text/Text";
 
 interface Props {
   today: Dayjs;
@@ -59,15 +59,17 @@ export const DayLabels: FC<Props> = ({
               style={{ color }}
               title={getWeekDayLabel(day)}
             >
-              <Text
-                className="text-[clamp(var(--font-size-xl),2.7cqw,var(--font-size-xxl))] leading-none"
-                withGradient={isToday}
+              <span
+                className={cn(
+                  "relative text-[clamp(var(--font-size-xl),2.7cqw,var(--font-size-xxl))] leading-none",
+                  isToday && "c-text-gradient",
+                )}
               >
                 {dayNumber}
-              </Text>
-              <Text className="text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none">
+              </span>
+              <span className="relative text-[clamp(var(--font-size-m),2cqw,var(--font-size-l))] leading-none">
                 {day.format("ddd")}
-              </Text>
+              </span>
             </div>
           );
         })}

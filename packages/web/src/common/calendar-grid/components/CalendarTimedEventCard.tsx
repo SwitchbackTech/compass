@@ -33,13 +33,6 @@ import {
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
-import {
-  AlignItems,
-  Flex,
-  FlexDirections,
-  FlexWrap,
-} from "@web/components/Flex/Flex";
-import { Text } from "@web/components/Text/Text";
 
 interface CalendarTimedEventCardProps {
   boxShadow?: CSSProperties["boxShadow"];
@@ -224,29 +217,24 @@ const CalendarTimedEventCardBase = (
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <Flex
-        alignItems={AlignItems.FLEX_START}
-        direction={FlexDirections.COLUMN}
-        flexWrap={FlexWrap.WRAP}
-      >
+      <div className="flex flex-col flex-wrap items-start">
         <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
             {(isDraft || !isInPast || shouldAnimatePastCommitTimeOut) &&
               isTallEnoughForTimeLabel &&
               isWideEnoughForTimeLabel && (
-                <Text
+                <span
                   aria-hidden={shouldAnimatePastCommitTimeOut || undefined}
-                  className={cn({
+                  className={cn("relative", {
                     "animate-someday-commit-time-exit opacity-0":
                       shouldAnimatePastCommitTimeOut,
                   })}
                   {...{ [CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE]: "true" }}
-                  style={timeLabelStyle}
-                  zIndex={ZIndex.LAYER_3}
+                  style={{ ...timeLabelStyle, zIndex: ZIndex.LAYER_3 }}
                 >
                   {timeRange}
-                </Text>
+                </span>
               )}
             {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
             <div
@@ -272,7 +260,7 @@ const CalendarTimedEventCardBase = (
             />
           </>
         )}
-      </Flex>
+      </div>
     </div>
   );
 };

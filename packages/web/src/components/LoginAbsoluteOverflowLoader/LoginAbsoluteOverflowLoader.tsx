@@ -1,15 +1,13 @@
-import { useEffect, useState } from "react";
-import {
-  AlignItems,
-  Flex,
-  type FlexProps,
-  JustifyContent,
-} from "@web/components/Flex/Flex";
+import classNames from "classnames";
+import { type HTMLAttributes, useEffect, useState } from "react";
 
 /**
  * Absolute overflow loader customized to handle login flow
  */
-export const LoginAbsoluteOverflowLoader = (props: FlexProps) => {
+export const LoginAbsoluteOverflowLoader = ({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) => {
   const [showMessage, setShowMessage] = useState(false);
   const [currentMessage, setCurrentMessage] = useState(MESSAGE_TEXT);
 
@@ -29,10 +27,11 @@ export const LoginAbsoluteOverflowLoader = (props: FlexProps) => {
   }, []);
 
   return (
-    <Flex
-      className="c-overflow-loader"
-      justifyContent={JustifyContent.CENTER}
-      alignItems={AlignItems.CENTER}
+    <div
+      className={classNames(
+        "c-overflow-loader flex items-center justify-center",
+        className,
+      )}
       {...props}
     >
       <div className="c-loader-spinner" />
@@ -45,7 +44,7 @@ export const LoginAbsoluteOverflowLoader = (props: FlexProps) => {
           <div className="c-login-progress" />
         </div>
       )}
-    </Flex>
+    </div>
   );
 };
 

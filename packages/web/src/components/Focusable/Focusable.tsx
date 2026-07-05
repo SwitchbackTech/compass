@@ -10,6 +10,9 @@ import {
 import { type UnderlinedInput } from "@web/common/types/component.types";
 import { Divider } from "@web/components/Divider/Divider";
 
+export const INPUT_RESET_CLASSNAME =
+  "h-8.5 border-0 px-2 outline-none placeholder:text-text-dark-placeholder hover:bg-border-primary";
+
 export interface Props
   extends UnderlinedInput,
     Omit<HTMLAttributes<HTMLElement>, "onChange"> {

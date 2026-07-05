@@ -16,7 +16,6 @@ import {
   ID_GRID_ALLDAY_ROW,
 } from "@web/common/constants/web.constants";
 import { type CSSVariables } from "@web/common/styles/css.types";
-import { Flex } from "@web/components/Flex/Flex";
 
 interface CalendarAllDayRowProps {
   allDayColumnsRef: RefCallback<HTMLDivElement>;
@@ -49,8 +48,8 @@ export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
   rowId = ID_GRID_ALLDAY_ROW,
   visibleDates,
 }) => (
-  <Flex
-    className="relative w-full shrink-0"
+  <div
+    className="relative flex w-full shrink-0 items-start"
     aria-label="All-day events"
     id={rowId}
     ref={allDayRowRef}
@@ -82,5 +81,5 @@ export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
       ))}
     </div>
     {eventsLayer}
-  </Flex>
+  </div>
 );

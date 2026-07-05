@@ -3,7 +3,6 @@ import { theme } from "@web/common/styles/theme";
 import { ArrowButton } from "@web/components/Button/ArrowButton";
 import { SidebarIcon } from "@web/components/Icons/Sidebar";
 import { SelectView } from "@web/components/SelectView/SelectView";
-import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   selectIsSidebarOpen,
@@ -57,7 +56,7 @@ export const CalendarHeader: FC<Props> = ({
       ) : null}
 
       <h1 className="pl-8 text-text-lighter" aria-live="polite">
-        <Text size="xl">{label}</Text>
+        <span className="relative text-xl">{label}</span>
       </h1>
 
       <div className="z-2 ml-auto flex items-center gap-3 pr-5">
