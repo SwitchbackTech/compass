@@ -179,6 +179,8 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   return (
     <form
       {...props}
+      // biome-ignore lint/a11y/noRedundantRoles: <form> only gets its implicit "form" role when it has an accessible name, which this one doesn't; e2e tests rely on getByRole("form").
+      role="form"
       className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 text-xl shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
       name={ID_SOMEDAY_EVENT_FORM}
       onClick={stopPropagation}
