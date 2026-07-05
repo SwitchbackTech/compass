@@ -97,6 +97,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
         }
       >
         {getHourLabels(true).map((dayTime) => (
+          // biome-ignore lint/a11y/noStaticElementInteractions: Hour rows are pointer-only drag targets for creating timed events.
           <div
             className="relative flex h-[calc(100%/var(--calendar-visible-hours))] w-full items-start border-grid-line-primary border-b"
             key={dayTime}
