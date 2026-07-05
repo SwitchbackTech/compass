@@ -2,7 +2,6 @@ import type React from "react";
 import { Priorities, type Priority } from "@core/constants/core.constants";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { colorByPriority } from "@web/common/styles/theme.util";
-import { Flex } from "@web/components/Flex/Flex";
 import { type SetEventFormField } from "../types";
 
 interface Props {
@@ -25,7 +24,7 @@ export const PrioritySection: React.FC<Props> = ({
   ];
 
   return (
-    <Flex className="my-[15px] gap-2.5">
+    <div className="my-[15px] flex items-start gap-2.5">
       {priorities.map((item) => (
         <div
           className="group relative flex flex-col items-center"
@@ -45,6 +44,6 @@ export const PrioritySection: React.FC<Props> = ({
           <span className="c-context-tooltip">{item.label}</span>
         </div>
       ))}
-    </Flex>
+    </div>
   );
 };

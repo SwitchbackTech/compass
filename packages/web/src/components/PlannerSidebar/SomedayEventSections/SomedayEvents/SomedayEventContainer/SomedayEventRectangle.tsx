@@ -5,12 +5,6 @@ import {
   DotsSixVertical,
 } from "@phosphor-icons/react";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import {
-  AlignItems,
-  Flex,
-  FlexDirections,
-  JustifyContent,
-} from "@web/components/Flex/Flex";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
 import { Text } from "@web/components/Text/Text";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -44,12 +38,7 @@ export const SomedayEventRectangle = ({
       ref={formProps.refs.setReference}
       {...formProps.getReferenceProps()}
     >
-      <Flex
-        alignItems={AlignItems.CENTER}
-        className="h-full"
-        direction={FlexDirections.ROW}
-        justifyContent={JustifyContent.SPACE_BETWEEN}
-      >
+      <div className="flex h-full items-center justify-between">
         <div
           className="flex min-w-0 flex-1 items-center gap-1.5"
           data-someday-event-title-row="true"
@@ -119,7 +108,7 @@ export const SomedayEventRectangle = ({
             </button>
           </div>
         )}
-      </Flex>
+      </div>
     </div>
   );
 };

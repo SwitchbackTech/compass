@@ -8,7 +8,6 @@ import { type CSSVariables } from "@web/common/styles/css.types";
 import { theme } from "@web/common/styles/theme";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
-import { AlignItems, Flex, JustifyContent } from "@web/components/Flex/Flex";
 import { InputBase } from "@web/components/Input/Input";
 import { Text } from "@web/components/Text/Text";
 import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
@@ -116,23 +115,31 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
         const currentMonth = dayjs().format("MMM YYYY");
 
         return (
-          <Flex
-            alignItems={AlignItems.CENTER}
-            className={classNames("px-2 pt-0 pb-1.25", headerClassName)}
-            justifyContent={JustifyContent.LEFT}
+          <div
+            className={classNames(
+              "flex items-center px-2 pt-0 pb-1.25",
+              headerClassName,
+            )}
           >
-            <Flex className={classNames("w-24.25", monthContainerClassName)}>
+            <div
+              className={classNames(
+                "flex w-24.25 items-start",
+                monthContainerClassName,
+              )}
+            >
               <Text className={monthTextClassName} color={headerColor}>
                 {selectedMonth}
               </Text>
-            </Flex>
+            </div>
 
             {!customHeaderCount && (
-              <Flex
-                alignItems={AlignItems.CENTER}
-                className={headerActionsClassName}
+              <div
+                className={classNames(
+                  "flex items-center",
+                  headerActionsClassName,
+                )}
               >
-                <Flex className="gap-1">
+                <div className="flex items-start gap-1">
                   <MonthNavButton
                     ariaLabel="Previous month"
                     color={headerColor}
@@ -153,7 +160,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   >
                     <ChevronRightIcon />
                   </MonthNavButton>
-                </Flex>
+                </div>
                 {withTodayButton && (
                   <Text
                     className={classNames(
@@ -171,14 +178,14 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                     Today
                   </Text>
                 )}
-              </Flex>
+              </div>
             )}
             {!customHeaderCount && headerEndContent ? (
               <div className="ml-auto flex items-center">
                 {headerEndContent}
               </div>
             ) : null}
-          </Flex>
+          </div>
         );
       }}
     />

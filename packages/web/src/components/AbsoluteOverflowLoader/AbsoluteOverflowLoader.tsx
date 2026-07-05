@@ -1,17 +1,17 @@
-import {
-  AlignItems,
-  Flex,
-  type FlexProps,
-  JustifyContent,
-} from "@web/components/Flex/Flex";
+import classNames from "classnames";
+import { type HTMLAttributes } from "react";
 
-export const AbsoluteOverflowLoader = (props: FlexProps) => (
-  <Flex
-    className="c-overflow-loader"
-    justifyContent={JustifyContent.CENTER}
-    alignItems={AlignItems.CENTER}
+export const AbsoluteOverflowLoader = ({
+  className,
+  ...props
+}: HTMLAttributes<HTMLDivElement>) => (
+  <div
+    className={classNames(
+      "c-overflow-loader flex items-center justify-center",
+      className,
+    )}
     {...props}
   >
     <div className="c-loader-spinner" />
-  </Flex>
+  </div>
 );

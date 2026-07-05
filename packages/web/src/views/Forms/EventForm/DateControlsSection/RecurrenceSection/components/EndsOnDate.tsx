@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import { darken } from "@core/util/color.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
-import { Flex } from "@web/components/Flex/Flex";
 import { Text } from "@web/components/Text/Text";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
@@ -29,7 +28,8 @@ export const EndsOnDate = ({
     <div className="mb-1 flex w-full basis-full items-center gap-2 p-0">
       <Text size="l">Ends on:</Text>
 
-      <Flex
+      <div
+        className="flex items-start"
         style={{
           cursor: "pointer",
           borderColor: "var(--compass-color-border-primary-dark)",
@@ -58,7 +58,7 @@ export const EndsOnDate = ({
             />
           </div>
         </TooltipWrapper>
-      </Flex>
+      </div>
     </div>
   );
 };
