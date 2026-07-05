@@ -31,12 +31,6 @@ interface KeyboardShortcutsConfig {
   // General
   onEscape?: () => void;
 
-  // Sidebar
-  onToggleSidebar?: () => void;
-
-  // Task list
-  onToggleTaskList?: () => void;
-
   // Calendar navigation
   onFocusCalendar?: () => void;
 
@@ -65,8 +59,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onGoToToday,
     onFocusCalendar,
     onEditEvent,
-    onToggleSidebar,
-    onToggleTaskList,
     hasFocusedTask,
   } = config;
 
@@ -110,16 +102,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
 
   useAppHotkeyUp("T", () => {
     onGoToToday?.();
-  });
-
-  // Sidebar shortcut
-  useAppHotkeyUp("[", () => {
-    onToggleSidebar?.();
-  });
-
-  // Task list shortcut
-  useAppHotkeyUp("]", () => {
-    onToggleTaskList?.();
   });
 
   // Tasks shortcuts

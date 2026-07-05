@@ -184,8 +184,6 @@ export const DayViewContent = memo(() => {
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
-    onToggleSidebar: toggleSidebar,
-    onToggleTaskList: toggleTaskList,
     hasFocusedTask,
   });
 

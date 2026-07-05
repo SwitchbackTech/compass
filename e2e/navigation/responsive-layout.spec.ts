@@ -41,9 +41,7 @@ test.describe("Responsive sidebar", () => {
 test.describe("Responsive day view task list", () => {
   const taskList = '[aria-label="daily-tasks"]';
 
-  test("hides the task list below 720px and reopens with ]", async ({
-    page,
-  }) => {
+  test("hides the task list below 720px", async ({ page }) => {
     await page.setViewportSize({ width: 1000, height: 900 });
     await page.goto("/day");
     await expect(page.locator(taskList)).toBeVisible();
@@ -55,10 +53,6 @@ test.describe("Responsive day view task list", () => {
 
     // The daily agenda stays visible
     await expect(page.locator("#mainSection")).toBeVisible();
-
-    // Manual reopen wins while narrow
-    await page.keyboard.press("]");
-    await expect(page.locator(taskList)).toBeVisible();
   });
 
   test("starts without the task list when loading in a narrow window", async ({

@@ -110,21 +110,5 @@ describe("shortcuts.data", () => {
         label: "Toggle sidebar",
       });
     });
-
-    it("lists the task list toggle only in the day view", () => {
-      const findOther = (view: "day" | "week") =>
-        getShortcutMenuSections({ view, isViewingCurrentPeriod: true }).find(
-          (section) => section.id === "other",
-        );
-
-      expect(findOther("day")?.shortcuts).toContainEqual({
-        keys: ["]"],
-        label: "Toggle task list",
-      });
-      expect(findOther("week")?.shortcuts).not.toContainEqual({
-        keys: ["]"],
-        label: "Toggle task list",
-      });
-    });
   });
 });
