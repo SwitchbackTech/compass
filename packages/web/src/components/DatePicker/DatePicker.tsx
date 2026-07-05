@@ -10,7 +10,7 @@ import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.u
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
 import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
-import { Focusable } from "../Focusable/Focusable";
+import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
 
 export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   animationOnToggle?: boolean;
@@ -81,7 +81,10 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       customInput={
         <Focusable
           Component="input"
-          className="h-8.5 w-28 border-0 px-2 outline-none transition-colors duration-300 placeholder:text-text-dark-placeholder hover:bg-border-primary"
+          className={classNames(
+            INPUT_RESET_CLASSNAME,
+            "w-28 transition-colors duration-300",
+          )}
           style={{ backgroundColor: inputColor }}
           underlineColor={darken(resolvedBgColor, -15)}
           withUnderline

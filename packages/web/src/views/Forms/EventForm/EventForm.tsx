@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import fastDeepEqual from "fast-deep-equal/react";
 import type React from "react";
 import {
@@ -26,7 +27,10 @@ import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
 } from "@web/common/utils/form/form.util";
-import { Focusable } from "@web/components/Focusable/Focusable";
+import {
+  Focusable,
+  INPUT_RESET_CLASSNAME,
+} from "@web/components/Focusable/Focusable";
 import { Textarea } from "@web/components/Textarea/Textarea";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
@@ -433,7 +437,10 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           title={
             <Focusable
               Component="input"
-              className="h-8.5 border-0 bg-transparent px-2 font-semibold text-2xl outline-none transition-all duration-300 placeholder:text-text-dark-placeholder hover:bg-border-primary"
+              className={classNames(
+                INPUT_RESET_CLASSNAME,
+                "bg-transparent font-semibold text-2xl transition-all duration-300",
+              )}
               autoFocus
               onChange={onChangeEventTextField("title")}
               onKeyDown={handleTitleKeyDown}

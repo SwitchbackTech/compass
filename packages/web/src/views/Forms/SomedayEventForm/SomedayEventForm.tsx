@@ -1,3 +1,4 @@
+import classNames from "classnames";
 import type React from "react";
 import {
   type KeyboardEvent,
@@ -18,7 +19,10 @@ import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
 } from "@web/common/utils/form/form.util";
-import { Focusable } from "@web/components/Focusable/Focusable";
+import {
+  Focusable,
+  INPUT_RESET_CLASSNAME,
+} from "@web/components/Focusable/Focusable";
 import { Textarea } from "@web/components/Textarea/Textarea";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
@@ -191,7 +195,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         title={
           <Focusable
             Component="input"
-            className="text-(length:--font-size-5xl) h-8.5 w-full border-0 bg-transparent px-2 font-semibold outline-none transition-all duration-300 placeholder:text-text-dark-placeholder hover:bg-border-primary"
+            className={classNames(
+              INPUT_RESET_CLASSNAME,
+              "text-(length:--font-size-5xl) w-full bg-transparent font-semibold transition-all duration-300",
+            )}
             autoFocus
             onChange={onChangeEventTextField("title")}
             onKeyDown={ignoreDelete}
