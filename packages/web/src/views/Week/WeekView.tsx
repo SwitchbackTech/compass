@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
+import { useCollapsiblePanel } from "@web/common/hooks/useCollapsiblePanel";
 import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
@@ -29,9 +30,11 @@ import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerS
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
+import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  const sidebarTransition = useCollapsiblePanel(isSidebarOpen);
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();
   }, []);
@@ -115,24 +118,34 @@ export const WeekView = () => {
             <Shortcuts shortcutsProps={shortcutProps}>
               <ContextMenuWrapper id="sidebar-context-menu">
                 <Draft measurements={measurements} weekProps={weekProps} />
-                {isSidebarOpen ? (
-                  <PlannerSidebar
-                    calendarDate={calendarDate}
-                    isShortcutsOpen={isShortcutsOpen}
-                    onCloseShortcuts={closeShortcuts}
-                    onToggleShortcuts={toggleShortcuts}
-                    onSelectDate={goToDateFromSidebar}
-                    onToggleSidebar={toggleSidebar}
-                    shortcutSections={shortcutSections}
-                    shortcutsViewLabel="Week"
-                    viewEnd={weekProps.component.endOfView}
-                    viewStart={weekProps.component.startOfView}
-                  />
+                {sidebarTransition.isMounted ? (
+                  <div
+                    className="h-full min-w-0 shrink-0 overflow-hidden transition-[width] duration-200 ease-out motion-reduce:transition-none"
+                    onTransitionEnd={sidebarTransition.onTransitionEnd}
+                    style={{
+                      width: sidebarTransition.isExpanded
+                        ? SIDEBAR_OPEN_WIDTH
+                        : 0,
+                    }}
+                  >
+                    <PlannerSidebar
+                      calendarDate={calendarDate}
+                      isShortcutsOpen={isShortcutsOpen}
+                      onCloseShortcuts={closeShortcuts}
+                      onToggleShortcuts={toggleShortcuts}
+                      onSelectDate={goToDateFromSidebar}
+                      onToggleSidebar={toggleSidebar}
+                      shortcutSections={shortcutSections}
+                      shortcutsViewLabel="Week"
+                      viewEnd={weekProps.component.endOfView}
+                      viewStart={weekProps.component.startOfView}
+                    />
+                  </div>
                 ) : null}
               </ContextMenuWrapper>
               <div
                 id={ID_MAIN}
-                className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pr-0 pb-0 pl-8"
+                className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
               >
                 <Header scrollUtil={scrollUtil} weekProps={weekProps} />
 

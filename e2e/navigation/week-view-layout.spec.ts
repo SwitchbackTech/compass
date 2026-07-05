@@ -21,6 +21,10 @@ test.describe("Week view layout", () => {
       await page.goto("/week");
       await page.locator("#allDayColumns").waitFor();
       await page.locator("#timedColumns").waitFor();
+      // On load, the sidebar briefly animates toward its settled open/closed
+      // state (see useCollapsiblePanel); wait for the day count driven by
+      // that width to settle before measuring columns.
+      await waitForDayCount(page, expectedDays);
 
       const layout = await getWeekColumnLayout(page, expectedDays);
       const mainGridScrollbarWidth = await page
@@ -52,6 +56,7 @@ test.describe("Week view layout", () => {
     await page.setViewportSize({ width: 320, height: 800 });
     await page.goto("/week");
     await page.locator("#timedColumns").waitFor();
+    await waitForDayCount(page, 1);
 
     const layout = await getWeekColumnLayout(page, 1);
     expect(layout.dayLabels).toHaveLength(1);
@@ -74,6 +79,7 @@ test.describe("Week view layout", () => {
     await page.setViewportSize({ width: 600, height: 800 });
     await page.goto("/week");
     await page.locator("#timedColumns").waitFor();
+    await waitForDayCount(page, 3);
 
     const before = await getDayLabelTitles(page);
     expect(before).toHaveLength(3);
@@ -102,6 +108,18 @@ const getDayLabelTitles = async (page: Page) =>
       // Day labels use the compact YYYYMMDD format; skip e.g. the now line
       .filter((title) => /^\d{8}$/.test(title)),
   );
+
+/**
+ * On load, an already-open sidebar/task list briefly animates toward its
+ * settled state (see useCollapsiblePanel), so the grid track's width — and
+ * therefore the visible day count — can take a moment to reach its final
+ * value. Poll for it instead of asserting immediately after mount.
+ */
+const waitForDayCount = async (page: Page, expectedDays: number) => {
+  await expect
+    .poll(async () => (await getDayLabelTitles(page)).length)
+    .toBe(expectedDays);
+};
 
 const getWeekColumnLayout = async (page: Page, daysInView: number) =>
   page.evaluate((visibleDays) => {

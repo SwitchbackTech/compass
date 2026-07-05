@@ -2,6 +2,7 @@ import classNames from "classnames";
 import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
+import { useCollapsiblePanel } from "@web/common/hooks/useCollapsiblePanel";
 import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
 import {
   CompassDOMEvents,
@@ -30,6 +31,7 @@ import {
   openEventFormEditEvent,
 } from "@web/views/Day/interaction/dayCalendarFocus.util";
 import {
+  TASK_LIST_DIVIDER_WIDTH,
   TASK_LIST_MAX_WIDTH,
   TASK_LIST_MIN_WIDTH,
 } from "@web/views/Day/storage/task-list-width.constants";
@@ -38,15 +40,21 @@ import {
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
+import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
 
 export const DayViewContent = memo(() => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const isTaskListOpen = useViewStore(selectIsTaskListOpen);
+  const sidebarTransition = useCollapsiblePanel(isSidebarOpen);
+  const taskListTransition = useCollapsiblePanel(isTaskListOpen);
   const {
     width: taskListWidth,
     isResizing,
     dividerProps,
   } = useResizableTaskList();
+  // Only animate open/close: a live divider drag must track the pointer
+  // 1:1, not lag behind an in-flight width transition.
+  const animatesWidth = !isResizing;
 
   const {
     tasks,
@@ -184,25 +192,33 @@ export const DayViewContent = memo(() => {
       <DayCmdPalette onGoToToday={handleGoToToday} />
       <Dedication />
 
-      {isSidebarOpen ? (
-        <PlannerSidebar
-          calendarDate={dateInView}
-          isShortcutsOpen={isShortcutsOpen}
-          onCloseShortcuts={closeShortcuts}
-          onToggleShortcuts={toggleShortcuts}
-          onSelectDate={navigateToDate}
-          onToggleSidebar={toggleSidebar}
-          shortcutSections={shortcutSections}
-          shortcutsViewLabel="Day"
-          showSomedayEventSections={false}
-          viewEnd={plannerViewEnd}
-          viewStart={plannerViewStart}
-        />
+      {sidebarTransition.isMounted ? (
+        <div
+          className="h-full min-w-0 shrink-0 overflow-hidden transition-[width] duration-200 ease-out motion-reduce:transition-none"
+          onTransitionEnd={sidebarTransition.onTransitionEnd}
+          style={{
+            width: sidebarTransition.isExpanded ? SIDEBAR_OPEN_WIDTH : 0,
+          }}
+        >
+          <PlannerSidebar
+            calendarDate={dateInView}
+            isShortcutsOpen={isShortcutsOpen}
+            onCloseShortcuts={closeShortcuts}
+            onToggleShortcuts={toggleShortcuts}
+            onSelectDate={navigateToDate}
+            onToggleSidebar={toggleSidebar}
+            shortcutSections={shortcutSections}
+            shortcutsViewLabel="Day"
+            showSomedayEventSections={false}
+            viewEnd={plannerViewEnd}
+            viewStart={plannerViewStart}
+          />
+        </div>
       ) : null}
 
       <div
         id={ID_MAIN}
-        className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pl-8"
+        className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
       >
         <Header />
 
@@ -211,9 +227,23 @@ export const DayViewContent = memo(() => {
             "cursor-col-resize select-none": isResizing,
           })}
         >
-          {isTaskListOpen ? (
+          {taskListTransition.isMounted ? (
             <>
-              <TaskList width={taskListWidth} />
+              <div
+                className={classNames(
+                  "h-full min-w-0 shrink-0 overflow-hidden",
+                  {
+                    "transition-[width] duration-200 ease-out motion-reduce:transition-none":
+                      animatesWidth,
+                  },
+                )}
+                onTransitionEnd={taskListTransition.onTransitionEnd}
+                style={{
+                  width: taskListTransition.isExpanded ? taskListWidth : 0,
+                }}
+              >
+                <TaskList width={taskListWidth} />
+              </div>
 
               {/* biome-ignore lint/a11y/useSemanticElements: An hr cannot host the focusable, draggable window-splitter interaction. */}
               <div
@@ -225,7 +255,18 @@ export const DayViewContent = memo(() => {
                 aria-valuemax={TASK_LIST_MAX_WIDTH}
                 aria-valuenow={taskListWidth}
                 tabIndex={0}
-                className="group relative w-8 shrink-0 cursor-col-resize touch-none focus:outline-none"
+                className={classNames(
+                  "group relative min-w-0 shrink-0 cursor-col-resize touch-none overflow-hidden focus:outline-none",
+                  {
+                    "transition-[width] duration-200 ease-out motion-reduce:transition-none":
+                      animatesWidth,
+                  },
+                )}
+                style={{
+                  width: taskListTransition.isExpanded
+                    ? TASK_LIST_DIVIDER_WIDTH
+                    : 0,
+                }}
               >
                 <div
                   className={classNames(
