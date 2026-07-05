@@ -26,7 +26,7 @@ import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
 } from "@web/common/utils/form/form.util";
-import { Input } from "@web/components/Input/Input";
+import { Focusable } from "@web/components/Focusable/Focusable";
 import { Textarea } from "@web/components/Textarea/Textarea";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
@@ -411,7 +411,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     return (
       <form
         {...props}
-        role="form"
         className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
         name={ID_EVENT_FORM}
         onMouseUp={() => {
@@ -432,8 +431,9 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       >
         <TitleActionsRow
           title={
-            <Input
-              className="bg-transparent font-semibold text-2xl transition-all duration-300 hover:bg-border-primary"
+            <Focusable
+              Component="input"
+              className="h-8.5 border-0 bg-transparent px-2 font-semibold text-2xl outline-none transition-all duration-300 placeholder:text-text-dark-placeholder hover:bg-border-primary"
               autoFocus
               onChange={onChangeEventTextField("title")}
               onKeyDown={handleTitleKeyDown}
@@ -442,6 +442,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
               ref={titleInputRef}
               underlineColor={priorityColor}
               value={title ?? ""}
+              withUnderline
             />
           }
           actions={

@@ -8,7 +8,6 @@ import { type CSSVariables } from "@web/common/styles/css.types";
 import { theme } from "@web/common/styles/theme";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
-import { InputBase } from "@web/components/Input/Input";
 import { Text } from "@web/components/Text/Text";
 import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
@@ -82,10 +81,10 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       )}
       customInput={
         <Focusable
-          Component={InputBase}
-          className="w-28"
+          Component="input"
+          className="h-8.5 w-28 border-0 px-2 outline-none transition-colors duration-300 placeholder:text-text-dark-placeholder hover:bg-border-primary"
+          style={{ backgroundColor: inputColor }}
           underlineColor={darken(resolvedBgColor, -15)}
-          bgColor={inputColor}
           withUnderline
         />
       }
