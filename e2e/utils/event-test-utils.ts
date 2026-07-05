@@ -4,6 +4,73 @@ type SomedaySection = "week" | "month";
 
 const LOCAL_DB_NAME = "compass-local";
 
+export interface StoredTimedEvent {
+  endDate?: string;
+  startDate?: string;
+  title?: string;
+}
+
+export const getSavedEventsByTitle = (page: Page, title: string) =>
+  page.evaluate(async (eventTitle) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("compass-local");
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+
+    try {
+      return await new Promise<
+        { endDate?: string; startDate?: string; title?: string }[]
+      >((resolve, reject) => {
+        const transaction = db.transaction("events", "readonly");
+        const request = transaction.objectStore("events").getAll();
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          resolve(
+            request.result.filter(
+              (event: { title?: string }) => event.title === eventTitle,
+            ),
+          );
+        };
+      });
+    } finally {
+      db.close();
+    }
+  }, title);
+
+/** Rendered week day-label dates in column order, as local YYYY-MM-DD. */
+export const getVisibleDayDates = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll("#weekGridScroller [title]")]
+      .filter((node): node is HTMLElement => node instanceof HTMLElement)
+      .map((node) => node.title)
+      // Day labels use the compact YYYYMMDD title format; skips e.g. the now line
+      .filter((title) => /^\d{8}$/.test(title))
+      .map(
+        (title) =>
+          `${title.slice(0, 4)}-${title.slice(4, 6)}-${title.slice(6, 8)}`,
+      ),
+  );
+
+export const waitForSavedEventByTitle = async (page: Page, title: string) => {
+  let savedEvent: StoredTimedEvent | null = null;
+
+  await expect
+    .poll(async () => {
+      const savedEvents = await getSavedEventsByTitle(page, title);
+      if (savedEvents.length === 1) {
+        savedEvent = savedEvents[0]!;
+      }
+
+      return savedEvents.length;
+    })
+    .toBe(1);
+
+  return savedEvent! as StoredTimedEvent;
+};
+
 // Shared timeout for form operations - use a single reasonable timeout instead of short retries
 const FORM_TIMEOUT = 10000;
 

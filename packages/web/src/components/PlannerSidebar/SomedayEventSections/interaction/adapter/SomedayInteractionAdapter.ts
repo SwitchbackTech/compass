@@ -1,6 +1,7 @@
 import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { type CalendarInteractionAdapter } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
 import {
   type CalendarInteractionCancellationTargets,
@@ -23,12 +24,8 @@ import {
   getNearestDayColumn,
   type WeekDayColumnCache,
   type WeekLayoutCache,
-  type WeekLayoutCacheSources,
 } from "@web/views/Week/interaction/adapter/geometry/weekLayoutCache";
-import {
-  createWeekEdgeNavigationController,
-  type WeekEdgeNavigationSide,
-} from "@web/views/Week/interaction/adapter/weekEdgeNavigation";
+import { createWeekEdgeNavigationController } from "@web/views/Week/interaction/adapter/weekEdgeNavigation";
 import {
   resetWeekInteractionEdgeNavigationState,
   setWeekInteractionEdgeNavigationState,
@@ -98,6 +95,7 @@ const SOMEDAY_TIME_LABEL_SELECTOR =
 
 const inertRuntime: SomedayInteractionRuntime = {
   getSomedayEventById: () => null,
+  getVisibleDays: () => [],
   onClickSomedayEvent: () => undefined,
   onCommitSomedayInteraction: () => undefined,
 };
@@ -112,7 +110,6 @@ const activeEdgeNavigationIndicatorState = {
 export const createSomedayInteractionAdapter = ({
   engineOptions,
   getLayoutSources = () => ({}),
-  getViewStart,
   runtime = () => inertRuntime,
 }: SomedayInteractionAdapterOptions): SomedayInteractionAdapter => {
   const edgeNavigation = createWeekEdgeNavigationController();
@@ -256,12 +253,10 @@ export const createSomedayInteractionAdapter = ({
         return {
           drop: null,
           eventId: target.event._id!,
-          initialViewStart: getViewStart(),
           pointerStart,
           sourceIndex: target.registered.index,
           sourceRect,
           transform: { x: 0, y: 0 },
-          weekOffsetDays: 0,
         };
       },
       getOverlayMount: ({ sourceElement, target }) => ({
@@ -314,8 +309,7 @@ export const createSomedayInteractionAdapter = ({
         return {
           overlay: {
             height: overlayRect?.height,
-            mutate: (node) =>
-              mutateOverlay(node, nextDrop, target.event, nextVisual),
+            mutate: (node) => mutateOverlay(node, nextDrop, target.event),
             transform: nextVisual.transform,
             width: overlayRect?.width,
           },
@@ -417,6 +411,7 @@ export const createSomedayInteractionAdapter = ({
     }
 
     return {
+      date: column.date,
       dayIndex: column.index,
       type: "allDay",
     };
@@ -450,6 +445,7 @@ export const createSomedayInteractionAdapter = ({
     );
 
     return {
+      date: column.date,
       dayIndex: column.index,
       endMinutes: startMinutes + ONE_HOUR_MINUTES,
       startMinutes,
@@ -502,9 +498,8 @@ export const createSomedayInteractionAdapter = ({
     }
 
     if (drop.type === "allDay") {
-      const start = visual.initialViewStart
-        .add(visual.weekOffsetDays + drop.dayIndex, "day")
-        .startOf("day");
+      // The drop column carries its own date, so no view-start arithmetic
+      const start = dayjs(drop.date).startOf("day");
 
       return {
         dates: {
@@ -517,8 +512,7 @@ export const createSomedayInteractionAdapter = ({
       };
     }
 
-    const start = visual.initialViewStart
-      .add(visual.weekOffsetDays + drop.dayIndex, "day")
+    const start = dayjs(drop.date)
       .startOf("day")
       .add(drop.startMinutes, "minutes");
 
@@ -607,17 +601,14 @@ export const createSomedayInteractionAdapter = ({
     setWeekInteractionEdgeNavigationState(update.state);
 
     if (update.requestedSide) {
+      // No day bookkeeping: the pending layout rebuild carries the new column
+      // dates, and the next drop resolution reads them directly.
       isLayoutRebuildPending = true;
       runtime().onRequestWeekNavigation?.(update.requestedSide);
 
       return {
         isDwellActive: false,
-        visual: {
-          ...visual,
-          weekOffsetDays:
-            visual.weekOffsetDays +
-            getWeekOffsetDaysDelta(update.requestedSide),
-        },
+        visual,
       };
     }
 
@@ -639,11 +630,13 @@ export const createSomedayInteractionAdapter = ({
     return null;
   }
 
-  function rebuildLayouts(
-    sources: WeekLayoutCacheSources = getLayoutSources(),
-  ) {
-    allDayLayout = buildAllDayWeekLayoutCache(sources);
-    timedLayout = buildTimedWeekLayoutCache(sources);
+  function rebuildLayouts() {
+    const input = {
+      ...getLayoutSources(),
+      visibleDays: runtime().getVisibleDays(),
+    };
+    allDayLayout = buildAllDayWeekLayoutCache(input);
+    timedLayout = buildTimedWeekLayoutCache(input);
   }
 
   function clearInteractionState() {
@@ -736,7 +729,6 @@ const mutateOverlay = (
   node: HTMLElement,
   drop: SomedayInteractionDrop | null,
   event: Schema_Event,
-  visual: SomedayInteractionVisual,
 ) => {
   node.style.overflow = "hidden";
 
@@ -795,7 +787,7 @@ const mutateOverlay = (
   }
 
   const titleRow = applyTimedOverlayLayout(node);
-  const { end, start } = getTimedDropDateRange(drop, visual);
+  const { end, start } = getTimedDropDateRange(drop);
 
   const timeLabel = getOrCreateOverlayTimeLabel(node, titleRow);
 
@@ -808,12 +800,8 @@ const isReducedMotionPreferred = () =>
   typeof window.matchMedia === "function" &&
   window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-const getTimedDropDateRange = (
-  drop: SomedayTimedDrop,
-  visual: SomedayInteractionVisual,
-) => {
-  const start = visual.initialViewStart
-    .add(visual.weekOffsetDays + drop.dayIndex, "day")
+const getTimedDropDateRange = (drop: SomedayTimedDrop) => {
+  const start = dayjs(drop.date)
     .startOf("day")
     .add(drop.startMinutes, "minutes");
 
@@ -993,9 +981,6 @@ const getSidebarPreviewKey = ({
   source,
 }: SomedaySidebarCommitResult) =>
   `${eventId}:${source.droppableId}:${source.index}->${destination.droppableId}:${destination.index}`;
-
-const getWeekOffsetDaysDelta = (side: WeekEdgeNavigationSide) =>
-  side === "next" ? 7 : -7;
 
 const isInteractiveChild = (target: EventTarget | null) =>
   target instanceof Element &&

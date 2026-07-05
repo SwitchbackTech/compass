@@ -1,6 +1,7 @@
 import { useCallback, useMemo } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
+import { CollapsiblePanel } from "@web/components/CollapsiblePanel/CollapsiblePanel";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
@@ -24,10 +25,12 @@ import { Shortcuts } from "@web/views/Week/components/Shortcuts";
 import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
+import { useVisibleDayCount } from "@web/views/Week/hooks/grid/useVisibleDayCount";
 import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
+import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
@@ -42,9 +45,11 @@ export const WeekView = () => {
 
   const { today } = useToday();
 
-  const weekProps = useWeek(today);
+  const { trackRef, visibleDayCount } = useVisibleDayCount();
 
-  const { gridRefs, measurements } = useGridLayout();
+  const weekProps = useWeek(today, visibleDayCount);
+
+  const { gridRefs, measurements } = useGridLayout(visibleDayCount);
 
   const scrollUtil = useScroll(gridRefs.mainGridRef);
 
@@ -79,7 +84,7 @@ export const WeekView = () => {
   );
 
   const { calendarDate, goToDateFromSidebar } = usePlannerSidebarCalendarDate({
-    setStartOfView: weekProps.state.setStartOfView,
+    goToDate: weekProps.state.goToDate,
     today,
     viewEnd: weekProps.component.endOfView,
     viewStart: weekProps.component.startOfView,
@@ -112,7 +117,10 @@ export const WeekView = () => {
             <Shortcuts shortcutsProps={shortcutProps}>
               <ContextMenuWrapper id="sidebar-context-menu">
                 <Draft measurements={measurements} weekProps={weekProps} />
-                {isSidebarOpen ? (
+                <CollapsiblePanel
+                  isOpen={isSidebarOpen}
+                  width={SIDEBAR_OPEN_WIDTH}
+                >
                   <PlannerSidebar
                     calendarDate={calendarDate}
                     isShortcutsOpen={isShortcutsOpen}
@@ -125,16 +133,19 @@ export const WeekView = () => {
                     viewEnd={weekProps.component.endOfView}
                     viewStart={weekProps.component.startOfView}
                   />
-                ) : null}
+                </CollapsiblePanel>
               </ContextMenuWrapper>
               <div
                 id={ID_MAIN}
-                className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pr-0 pb-0 pl-8"
+                className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
               >
                 <Header scrollUtil={scrollUtil} weekProps={weekProps} />
 
                 <WeekGridScrollArea>
-                  <div className="relative flex h-full w-full min-w-176 flex-col [container-name:week-grid-track] [container-type:inline-size]">
+                  <div
+                    ref={trackRef}
+                    className="relative flex h-full w-full min-w-[190px] flex-col [container-name:week-grid-track] [container-type:inline-size]"
+                  >
                     <DayLabels
                       startOfView={weekProps.component.startOfView}
                       today={today}

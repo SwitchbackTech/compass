@@ -1,5 +1,4 @@
 import { type Schema_Event } from "@core/types/event.types";
-import { type Dayjs } from "@core/util/date/dayjs";
 import {
   type CalendarInteractionCancellationTargets,
   type CalendarInteractionEngineSchedulerOptions,
@@ -18,12 +17,17 @@ export interface SomedayInteractionPointerOwnership {
 export interface SomedayInteractionAdapterOptions {
   engineOptions?: CalendarInteractionEngineSchedulerOptions;
   getLayoutSources?: () => WeekLayoutCacheSources;
-  getViewStart: () => Dayjs;
   runtime?: () => SomedayInteractionRuntime;
 }
 
 export interface SomedayInteractionRuntime {
   getSomedayEventById(eventId: string): Schema_Event | null;
+  /**
+   * Local YYYY-MM-DD dates of the rendered day columns, in window order.
+   * Sourced from the same React render that painted the columns so drop
+   * dates always agree with what is on screen.
+   */
+  getVisibleDays(): string[];
   isSidebarDropAllowed?: (result: SomedaySidebarCommitResult) => boolean;
   onCancelInteraction?: () => void;
   onClickSomedayEvent(
@@ -51,6 +55,9 @@ export interface SomedaySidebarDrop {
 }
 
 export interface SomedayTimedDrop {
+  /** Local YYYY-MM-DD date of the drop column. */
+  date: string;
+  /** Window-relative column index; used for overlay geometry only. */
   dayIndex: number;
   endMinutes: number;
   startMinutes: number;
@@ -58,6 +65,9 @@ export interface SomedayTimedDrop {
 }
 
 export interface SomedayAllDayDrop {
+  /** Local YYYY-MM-DD date of the drop column. */
+  date: string;
+  /** Window-relative column index; used for overlay geometry only. */
   dayIndex: number;
   type: "allDay";
 }
@@ -70,7 +80,6 @@ export type SomedayInteractionDrop =
 export interface SomedayInteractionVisual {
   drop: SomedayInteractionDrop | null;
   eventId: string;
-  initialViewStart: Dayjs;
   pointerStart: {
     x: number;
     y: number;
@@ -86,7 +95,6 @@ export interface SomedayInteractionVisual {
     x: number;
     y: number;
   };
-  weekOffsetDays: number;
 }
 
 export interface SomedayScheduleCommitResult {

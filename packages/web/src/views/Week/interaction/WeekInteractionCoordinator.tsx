@@ -1,10 +1,4 @@
-import {
-  type FC,
-  type PropsWithChildren,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
@@ -20,6 +14,7 @@ import {
   type WeekTimedDragCommitResult,
   type WeekTimedResizeCommitResult,
 } from "./adapter/WeekInteractionAdapter";
+import { useWeekInteractionLayoutSync } from "./useWeekInteractionLayoutSync";
 
 interface Props extends PropsWithChildren {
   getLayoutSources?: () => WeekLayoutCacheSources;
@@ -45,6 +40,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   }, [allDayEvents]);
   const runtimeRef = useRef<WeekInteractionRuntime>({
     getTimedEventById: () => null,
+    getVisibleDays: () => [],
     onClickTimedEvent: () => undefined,
     onCommitTimedDrag: () => undefined,
   });
@@ -56,21 +52,9 @@ export const WeekInteractionCoordinator: FC<Props> = ({
       }),
     [],
   );
-  const lastNavigationSource = weekProps.util.getLastNavigationSource();
-  const renderedWeekStartMs = weekProps.component.startOfView.valueOf();
+  const visibleDayKeys = useWeekInteractionLayoutSync(adapter, weekProps);
 
   layoutSourcesRef.current = getLayoutSources;
-
-  useLayoutEffect(() => {
-    if (
-      lastNavigationSource !== "drag-to-edge" ||
-      !Number.isFinite(renderedWeekStartMs)
-    ) {
-      return;
-    }
-
-    adapter.rebuildLayoutAfterNavigation();
-  }, [adapter, lastNavigationSource, renderedWeekStartMs]);
 
   const openTimedEvent = (event: Schema_GridEvent) => {
     draftActions.startGridClick(event);
@@ -108,6 +92,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   runtimeRef.current = {
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
+    getVisibleDays: () => visibleDayKeys,
     isFormOpen: () => state.isFormOpen,
     onClickAllDayEvent: openAllDayEvent,
     onClickTimedEvent: openTimedEvent,

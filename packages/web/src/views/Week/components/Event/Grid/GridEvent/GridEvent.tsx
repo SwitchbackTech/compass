@@ -173,6 +173,8 @@ export const GridEventMemo = memo(GridEvent, (prev, next) => {
     prev.event === next.event &&
     prev.interactionAttributes === next.interactionAttributes &&
     prev.measurements === next.measurements &&
-    prev.motionMode === next.motionMode
+    prev.motionMode === next.motionMode &&
+    // The visible window can move without the event or measurements changing
+    prev.weekProps.component.weekDays === next.weekProps.component.weekDays
   );
 });

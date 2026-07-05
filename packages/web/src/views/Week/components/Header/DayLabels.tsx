@@ -1,5 +1,6 @@
 import { type FC } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { CALENDAR_EVENT_WIDTH_MINIMUM } from "@web/common/calendar-grid/calendarGrid.constants";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
 import { Text } from "@web/components/Text/Text";
 
@@ -41,7 +42,12 @@ export const DayLabels: FC<Props> = ({
 
   return (
     <div className="relative mt-2.5 min-h-8 w-full">
-      <div className="absolute top-0 left-12.5 grid h-full w-[calc(100%-50px)] grid-cols-[repeat(7,minmax(80px,1fr))] items-end">
+      <div
+        className="absolute top-0 left-12.5 grid h-full w-[calc(100%-50px)] items-end"
+        style={{
+          gridTemplateColumns: `repeat(${weekDays.length}, minmax(${CALENDAR_EVENT_WIDTH_MINIMUM}px, 1fr))`,
+        }}
+      >
         {weekDays.map((day) => {
           const dayNumber = getDayNumber(day);
           const { isToday, color } = getColor(day);

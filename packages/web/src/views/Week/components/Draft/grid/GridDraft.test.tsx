@@ -86,6 +86,9 @@ const createWeekProps = (): WeekProps =>
     component: {
       endOfView: dayjs("2026-05-30T23:59:59.999"),
       startOfView: dayjs("2026-05-24T00:00:00.000"),
+      weekDays: [...Array(7)].map((_, index) =>
+        dayjs("2026-05-24T00:00:00.000").add(index, "day"),
+      ),
     },
   }) as WeekProps;
 
@@ -266,5 +269,4 @@ describe("GridDraft keyboard focus", () => {
     );
     expect(document.activeElement).not.toBe(draftBlock);
   });
-
 });

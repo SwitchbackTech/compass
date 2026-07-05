@@ -183,6 +183,15 @@ const createHarness = ({
     runtime: () => ({
       getAllDayEventById: (eventId) => (eventId === event._id ? event : null),
       getTimedEventById: () => null,
+      getVisibleDays: () => [
+        "2026-05-10",
+        "2026-05-11",
+        "2026-05-12",
+        "2026-05-13",
+        "2026-05-14",
+        "2026-05-15",
+        "2026-05-16",
+      ],
       onClickAllDayEvent,
       onClickTimedEvent: () => undefined,
       onCommitAllDayDrag,

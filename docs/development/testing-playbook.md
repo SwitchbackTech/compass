@@ -183,19 +183,19 @@ await act(async () => {
 });
 ```
 
-### Testing Responsive Sidebar State (`useSidebarState`)
+### Testing Responsive Layout State (`useResponsiveLayout`)
 
 Files:
 
-- `packages/web/src/common/hooks/useSidebarState.ts`
+- `packages/web/src/common/hooks/useResponsiveLayout.ts`
 - `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
 - `packages/web/src/views/Day/view/DayViewContent.tsx`
 
 Reliable setup pattern:
 
-- set `window.innerWidth` explicitly in each test scenario (`>= 1280` for open, `< 1280` for closed)
-- mock `window.matchMedia` with `addEventListener`/`removeEventListener` support
+- mock `window.matchMedia` with `addEventListener`/`removeEventListener` support (mount state comes from the mocked `matches`, breakpoint crossings from `change` events)
 - expose a small test helper to trigger media-query changes and wrap the trigger in `act`
+- assert against the view store (`selectIsSidebarOpen(useViewStore.getState())`) — the hook writes to the store rather than returning state
 
 Assertions to prefer:
 

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(bun test:*)",
+      "Bash(TZ=Etc/UTC bun packages/scripts/src/testing/run.ts:*)",
+      "Bash(bun run test:web:*)",
+      "Bash(bun -e \"const { jest } = require\\(''bun:test''\\); console.log\\(Object.keys\\(jest\\).join\\('', ''\\)\\)\")",
+      "Bash(git push)"
+    ]
+  }
+}

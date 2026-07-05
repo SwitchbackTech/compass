@@ -30,6 +30,12 @@ export interface WeekInteractionAdapterOptions {
 export interface WeekInteractionRuntime {
   getAllDayEventById?: (eventId: string) => Schema_GridEvent | null;
   getTimedEventById(eventId: string): Schema_GridEvent | null;
+  /**
+   * Local YYYY-MM-DD dates of the rendered day columns, in window order.
+   * Sourced from the same React render that painted the columns so drag
+   * geometry and drop dates always agree with what is on screen.
+   */
+  getVisibleDays(): string[];
   isFormOpen?: () => boolean;
   onClickAllDayEvent?: (event: Schema_GridEvent) => void;
   onClickTimedEvent: (event: Schema_GridEvent) => void;

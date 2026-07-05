@@ -1,17 +1,16 @@
-import {
-  type CalendarLayoutCache,
-  getNearestDayColumn,
-} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
+import { type CalendarLayoutCache } from "@web/common/calendar-grid/interaction/calendarLayoutCache";
 import {
   type TimedDragVisual,
   type VisualPoint,
   type VisualRect,
 } from "../model/TimedDragVisual";
+import { resolveDragColumn } from "./resolveDragColumn";
 import { clamp, snapToStep } from "./snap";
 
 const MINUTES_PER_DAY = 24 * 60;
 
 interface CreateTimedDragVisualInput {
+  dayDate: string;
   dayIndex: number;
   endMinutes: number;
   eventId: string;
@@ -27,6 +26,7 @@ interface UpdateTimedDragVisualInput {
 }
 
 export const createTimedDragVisual = ({
+  dayDate,
   dayIndex,
   endMinutes,
   eventId,
@@ -34,10 +34,12 @@ export const createTimedDragVisual = ({
   sourceRect,
   startMinutes,
 }: CreateTimedDragVisualInput): TimedDragVisual => ({
+  dayDate,
   dayIndex,
   durationMinutes: endMinutes - startMinutes,
   endMinutes,
   eventId,
+  initialDayDate: dayDate,
   initialDayIndex: dayIndex,
   initialEndMinutes: endMinutes,
   initialStartMinutes: startMinutes,
@@ -46,7 +48,6 @@ export const createTimedDragVisual = ({
   startMinutes,
   transform: { x: 0, y: 0 },
   type: "timedDrag",
-  weekOffsetDays: 0,
 });
 
 export const updateTimedDragVisual = (
@@ -66,27 +67,21 @@ export const updateTimedDragVisual = (
     scrollDeltaPx,
     visual,
   });
-  const initialColumn = layout.dayColumns.find(
-    (column) => column.index === visual.initialDayIndex,
-  );
-  const sourceCenterX =
-    (initialColumn?.left ?? visual.sourceRect.left) +
-    (initialColumn?.width ?? visual.sourceRect.width) / 2;
-  const nextColumn = getNearestDayColumn(
-    layout.dayColumns,
-    sourceCenterX + deltaX,
-  );
-  const nextDayIndex = nextColumn?.index ?? visual.initialDayIndex;
-  const initialColumnLeft = initialColumn?.left ?? visual.sourceRect.left;
-  const nextColumnLeft = nextColumn?.left ?? initialColumnLeft;
+  const { nextColumn, transformX } = resolveDragColumn({
+    deltaX,
+    initialDayIndex: visual.initialDayIndex,
+    layout,
+    sourceRect: visual.sourceRect,
+  });
 
   return {
     ...visual,
-    dayIndex: nextDayIndex,
+    dayDate: nextColumn?.date ?? visual.dayDate,
+    dayIndex: nextColumn?.index ?? visual.initialDayIndex,
     endMinutes: verticalPlacement.startMinutes + visual.durationMinutes,
     startMinutes: verticalPlacement.startMinutes,
     transform: {
-      x: nextColumnLeft - initialColumnLeft,
+      x: transformX,
       y: verticalPlacement.transformY,
     },
   };

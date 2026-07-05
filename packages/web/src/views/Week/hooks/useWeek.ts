@@ -6,27 +6,49 @@ import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjace
 import { useSomedayEventsQuery } from "@web/events/queries/useSomedayEventsQuery";
 import { useWeekEventsQuery } from "@web/events/queries/useWeekEventsQuery";
 import { viewActions } from "@web/events/stores/view.store";
+import {
+  anchorDateForWindowOffset,
+  computeVisibleWindowOffset,
+  WEEK_DAY_COUNT,
+} from "@web/views/Week/util/week-window.util";
 import { type Category_View } from "@web/views/Week/week-view.types";
 
 export type WeekNavigationSource = "manual" | "drag-to-edge";
 
-export const useWeek = (today: Dayjs) => {
-  const origStart = useMemo(() => today.startOf("week"), [today]);
-  const [start, setStartOfView] = useState(origStart);
+export const useWeek = (
+  today: Dayjs,
+  visibleDayCount: number = WEEK_DAY_COUNT,
+) => {
+  // The anchor is the day the visible window centers on. The week range and
+  // the window offset both derive from it, so a day-count change re-windows
+  // around the anchor without extra state.
+  const [anchor, setAnchor] = useState(today);
   const navigationSourceRef = useRef<WeekNavigationSource>("manual");
+
+  const start = useMemo(() => anchor.startOf("week"), [anchor]);
   const end = useMemo(() => start.endOf("week"), [start]);
 
   const week = useMemo(() => start.week(), [start]);
 
   const isCurrentWeek = today.week() === start.week();
 
-  const weekDays = [...(new Array(7) as number[])].map((_, index) => {
-    return start.add(index, "day");
+  const windowOffset = computeVisibleWindowOffset({
+    anchorIndex: anchor.startOf("day").diff(start.startOf("day"), "day"),
+    visibleDayCount,
   });
+
+  const weekDays = useMemo(
+    () =>
+      Array.from({ length: visibleDayCount }, (_, index) =>
+        start.add(windowOffset + index, "day"),
+      ),
+    [start, visibleDayCount, windowOffset],
+  );
 
   // Week + someday reads are driven by TanStack Query: changing start/end
   // re-keys the queries (fetch on new ranges, instant render from cache on
-  // revisits). Redux stays the render source of truth via the hooks' sync.
+  // revisits). Queries stay week-granular even when fewer days render, so
+  // window paging within a week never refetches.
   useWeekEventsQuery({ startOfView: start, endOfView: end });
   useSomedayEventsQuery(start);
 
@@ -55,21 +77,53 @@ export const useWeek = (today: Dayjs) => {
     });
   }, [end, start]);
 
-  const decrementWeek = (source: WeekNavigationSource = "manual") => {
-    navigationSourceRef.current = source;
-    setStartOfView(start.subtract(7, "day"));
+  const goToDate = (date: Dayjs) => {
+    navigationSourceRef.current = "manual";
+    setAnchor(date);
   };
+
+  // Shift the visible window by one page of visibleDayCount days; at the
+  // week's edge, cross into the adjacent week entering from its near side.
+  const pageWindow = (direction: 1 | -1, source: WeekNavigationSource) => {
+    navigationSourceRef.current = source;
+    const maxOffset = WEEK_DAY_COUNT - visibleDayCount;
+    const isAtWeekEdge =
+      direction === 1 ? windowOffset >= maxOffset : windowOffset <= 0;
+
+    if (isAtWeekEdge) {
+      setAnchor(
+        anchorDateForWindowOffset({
+          weekStart: start.add(direction * WEEK_DAY_COUNT, "day"),
+          windowOffset: direction === 1 ? 0 : maxOffset,
+          visibleDayCount,
+        }),
+      );
+      return;
+    }
+
+    setAnchor(
+      anchorDateForWindowOffset({
+        weekStart: start,
+        windowOffset: Math.min(
+          Math.max(windowOffset + direction * visibleDayCount, 0),
+          maxOffset,
+        ),
+        visibleDayCount,
+      }),
+    );
+  };
+
+  const incrementWeek = (source: WeekNavigationSource = "manual") =>
+    pageWindow(1, source);
+
+  const decrementWeek = (source: WeekNavigationSource = "manual") =>
+    pageWindow(-1, source);
 
   const goToToday = () => {
     navigationSourceRef.current = "manual";
-    if (today.week() !== start.week()) {
-      setStartOfView(today.startOf("week"));
+    if (!anchor.isSame(today, "day")) {
+      setAnchor(today);
     }
-  };
-
-  const incrementWeek = (source: WeekNavigationSource = "manual") => {
-    navigationSourceRef.current = source;
-    setStartOfView(start.add(7, "day"));
   };
 
   const getLastNavigationSource = () => navigationSourceRef.current;
@@ -83,7 +137,7 @@ export const useWeek = (today: Dayjs) => {
       week,
       weekDays,
     },
-    state: { setStartOfView },
+    state: { goToDate },
     util: { decrementWeek, goToToday, incrementWeek, getLastNavigationSource },
   };
   return weekProps;

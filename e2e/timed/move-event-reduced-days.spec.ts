@@ -1,0 +1,149 @@
+import { expect, type Page, test } from "@playwright/test";
+import {
+  createEventTitle,
+  expectTimedEventVisible,
+  fillTitleAndSaveEventForm,
+  getSavedEventsByTitle,
+  getVisibleDayDates,
+  openTimedEventFormWithMouse,
+  prepareCalendarPage,
+} from "../utils/event-test-utils";
+
+test.skip(
+  ({ isMobile }) => isMobile,
+  "Mouse flows are desktop-only in week view.",
+);
+
+// Regression: the drag layout cache used to assume 7 day columns and seed the
+// event's day index week-absolutely, so at a reduced day count the mid-drag
+// visual snapped between two days and drops could land on the wrong day.
+test("aligns the mid-drag visual and drops on the hovered day at a reduced day count", async ({
+  page,
+}) => {
+  // 1000px: sidebar auto-collapsed, track ~968px -> 6 visible days
+  await page.setViewportSize({ width: 1000, height: 1000 });
+  await prepareCalendarPage(page);
+
+  const title = createEventTitle("Move Narrow");
+  await openTimedEventFormWithMouse(page);
+  await fillTitleAndSaveEventForm(page, title);
+  await expectTimedEventVisible(page, title);
+
+  const columns = await getDayColumnBoxes(page);
+  expect(columns.length).toBeGreaterThan(1);
+  expect(columns.length).toBeLessThan(7);
+
+  const dayDates = await getVisibleDayDates(page);
+  expect(dayDates).toHaveLength(columns.length);
+
+  const savedEvent = page
+    .locator('#timedEvents [role="button"][data-event-id]')
+    .filter({ hasText: title });
+  const eventBox = await savedEvent.boundingBox();
+  if (!eventBox) {
+    throw new Error("Expected the saved event to be visible.");
+  }
+
+  const eventCenterX = eventBox.x + eventBox.width / 2;
+  const sourceColumnIndex = columns.findIndex(
+    (column) => eventCenterX >= column.left && eventCenterX < column.right,
+  );
+  // Drag toward whichever neighbor exists
+  const targetColumnIndex =
+    sourceColumnIndex + 1 < columns.length
+      ? sourceColumnIndex + 1
+      : sourceColumnIndex - 1;
+  const targetColumn = columns[targetColumnIndex];
+  const targetX = (targetColumn.left + targetColumn.right) / 2;
+
+  await page.mouse.move(eventCenterX, eventBox.y + eventBox.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(targetX, eventBox.y + eventBox.height / 2 + 60, {
+    steps: 10,
+  });
+  // Let the interaction engine paint the moved visual
+  await page.waitForTimeout(150);
+
+  // While the mouse is still down, the interaction overlay (the moving
+  // visual) must sit centered inside the target column, not between two
+  // columns
+  const overlay = page.locator("[data-calendar-interaction-overlay]");
+  await expect(overlay).toBeVisible();
+  const overlayBox = await overlay.boundingBox();
+  if (!overlayBox) {
+    throw new Error("Expected the drag overlay to be visible.");
+  }
+
+  const overlayCenterX = overlayBox.x + overlayBox.width / 2;
+  const targetCenterX = (targetColumn.left + targetColumn.right) / 2;
+  expect(Math.abs(overlayCenterX - targetCenterX)).toBeLessThanOrEqual(5);
+
+  await page.mouse.up();
+
+  // The persisted event lands on the hovered column's rendered date
+  await expect
+    .poll(async () => (await getSavedEventsByTitle(page, title))[0]?.startDate)
+    .toContain(dayDates[targetColumnIndex]);
+});
+
+test("drops on the newly rendered day after a mid-drag edge navigation", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1000, height: 1000 });
+  await prepareCalendarPage(page);
+
+  const title = createEventTitle("Move Across");
+  await openTimedEventFormWithMouse(page);
+  await fillTitleAndSaveEventForm(page, title);
+  await expectTimedEventVisible(page, title);
+
+  const daysBefore = await getVisibleDayDates(page);
+  const columns = await getDayColumnBoxes(page);
+
+  const savedEvent = page
+    .locator('#timedEvents [role="button"][data-event-id]')
+    .filter({ hasText: title });
+  const eventBox = await savedEvent.boundingBox();
+  if (!eventBox) {
+    throw new Error("Expected the saved event to be visible.");
+  }
+
+  const dragY = eventBox.y + eventBox.height / 2;
+
+  await page.mouse.move(eventBox.x + eventBox.width / 2, dragY);
+  await page.mouse.down();
+
+  // Park the pointer inside the right edge-navigation threshold (50px) and
+  // dwell until the view pages to the next window
+  const lastColumn = columns[columns.length - 1];
+  await page.mouse.move(lastColumn.right - 20, dragY, { steps: 10 });
+  await expect
+    .poll(async () => (await getVisibleDayDates(page))[0], { timeout: 5000 })
+    .not.toBe(daysBefore[0]);
+
+  const daysAfter = await getVisibleDayDates(page);
+  expect(daysAfter[0]).not.toBe(daysBefore[0]);
+
+  // Release over the second column of the new window
+  const newColumns = await getDayColumnBoxes(page);
+  const dropColumnIndex = 1;
+  const dropColumn = newColumns[dropColumnIndex];
+  await page.mouse.move((dropColumn.left + dropColumn.right) / 2, dragY, {
+    steps: 5,
+  });
+  await page.waitForTimeout(100);
+  await page.mouse.up();
+
+  // The persisted event lands on that column's newly rendered date
+  await expect
+    .poll(async () => (await getSavedEventsByTitle(page, title))[0]?.startDate)
+    .toContain(daysAfter[dropColumnIndex]);
+});
+
+const getDayColumnBoxes = async (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll("#timedColumns > [role='columnheader']")]
+      .map((node) => node.getBoundingClientRect())
+      .filter((rect) => rect.width > 0)
+      .map((rect) => ({ left: rect.left, right: rect.right })),
+  );
