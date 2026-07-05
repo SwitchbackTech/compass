@@ -6,6 +6,7 @@ import { type AllDayDragVisual } from "../model/AllDayDragVisual";
 import { type VisualPoint, type VisualRect } from "../model/TimedDragVisual";
 
 interface CreateAllDayDragVisualInput {
+  dayDate: string;
   dayIndex: number;
   eventId: string;
   pointerStart: VisualPoint;
@@ -18,19 +19,21 @@ interface UpdateAllDayDragVisualInput {
 }
 
 export const createAllDayDragVisual = ({
+  dayDate,
   dayIndex,
   eventId,
   pointerStart,
   sourceRect,
 }: CreateAllDayDragVisualInput): AllDayDragVisual => ({
+  dayDate,
   dayIndex,
   eventId,
+  initialDayDate: dayDate,
   initialDayIndex: dayIndex,
   pointerStart,
   sourceRect,
   transform: { x: 0, y: 0 },
   type: "allDayDrag",
-  weekOffsetDays: 0,
 });
 
 export const updateAllDayDragVisual = (
@@ -54,6 +57,7 @@ export const updateAllDayDragVisual = (
 
   return {
     ...visual,
+    dayDate: nextColumn?.date ?? visual.dayDate,
     dayIndex: nextDayIndex,
     transform: {
       x: nextColumnLeft - initialColumnLeft,

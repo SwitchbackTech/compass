@@ -85,7 +85,6 @@ export type {
   DayTimedResizeCommitResult,
 } from "./DayInteractionAdapter.types";
 
-const DAY_VISIBLE_DATE_COUNT = 1;
 const DAY_SMART_SCROLL_EDGE_THRESHOLD_PX = 50;
 const SMART_SCROLL_BOTTOM_INSET_PX = 100;
 const SMART_SCROLL_SPEED_PX = 10;
@@ -254,9 +253,11 @@ export const createDayInteractionAdapter = ({
         return result;
       },
       createVisual: ({ pointerStart, sourceElement, target }) => {
+        const visibleDateKey = getVisibleDate().format(YEAR_MONTH_DAY_FORMAT);
         const nextLayout = buildDayLayoutCacheForTarget(
           target,
           getLayoutSources(),
+          [visibleDateKey],
         );
 
         if (!nextLayout) {
@@ -271,6 +272,7 @@ export const createDayInteractionAdapter = ({
 
         if (target.type === "allDayDrag") {
           return createAllDayDragVisual({
+            dayDate: visibleDateKey,
             dayIndex: 0,
             eventId: target.event._id!,
             pointerStart,
@@ -301,6 +303,7 @@ export const createDayInteractionAdapter = ({
         }
 
         return createTimedDragVisual({
+          dayDate: visibleDateKey,
           dayIndex: 0,
           endMinutes: getLocalMinutes(target.event.endDate),
           eventId: target.event._id!,
@@ -605,7 +608,10 @@ export const createDayInteractionAdapter = ({
   };
 };
 
-const buildDayTimedLayoutCache = (sources: CalendarLayoutCacheSources = {}) =>
+const buildDayTimedLayoutCache = (
+  sources: CalendarLayoutCacheSources,
+  visibleDates: string[],
+) =>
   buildTimedCalendarLayoutCache({
     ...sources,
     edgeThresholdPx: DAY_SMART_SCROLL_EDGE_THRESHOLD_PX,
@@ -617,26 +623,30 @@ const buildDayTimedLayoutCache = (sources: CalendarLayoutCacheSources = {}) =>
     snapMinutes: CALENDAR_GRID_TIME_STEP,
     timedColumnsElementId: ID_GRID_COLUMNS_TIMED,
     timedVisibleHours: CALENDAR_TIMED_VISIBLE_HOURS,
-    visibleDateCount: DAY_VISIBLE_DATE_COUNT,
+    visibleDates,
   });
 
-const buildDayAllDayLayoutCache = (sources: CalendarLayoutCacheSources = {}) =>
+const buildDayAllDayLayoutCache = (
+  sources: CalendarLayoutCacheSources,
+  visibleDates: string[],
+) =>
   buildAllDayCalendarLayoutCache({
     ...sources,
     allDayColumnsElementId: ID_ALLDAY_COLUMNS,
     edgeThresholdPx: 0,
     snapMinutes: CALENDAR_GRID_TIME_STEP,
     timedVisibleHours: CALENDAR_TIMED_VISIBLE_HOURS,
-    visibleDateCount: DAY_VISIBLE_DATE_COUNT,
+    visibleDates,
   });
 
 const buildDayLayoutCacheForTarget = (
   target: DayInteractionTarget,
   sources: CalendarLayoutCacheSources,
+  visibleDates: string[],
 ) =>
   isAllDayTarget(target)
-    ? buildDayAllDayLayoutCache(sources)
-    : buildDayTimedLayoutCache(sources);
+    ? buildDayAllDayLayoutCache(sources, visibleDates)
+    : buildDayTimedLayoutCache(sources, visibleDates);
 
 const commitTimedDragInteraction = (
   target: DayTimedDragTarget,
@@ -680,10 +690,7 @@ const commitAllDayDragInteraction = (
   visibleDate: Dayjs,
 ): DayAllDayDragCommitResult => {
   const hasMoved =
-    "dayIndex" in visual
-      ? visual.dayIndex !== visual.initialDayIndex ||
-        visual.weekOffsetDays !== 0
-      : false;
+    "dayDate" in visual ? visual.dayDate !== visual.initialDayDate : false;
 
   return {
     event: hasMoved
@@ -761,8 +768,7 @@ const allDayVisualToDayGridEvent = (
 });
 
 const hasTimedDragVisualMoved = (visual: TimedDragVisual) =>
-  visual.dayIndex !== visual.initialDayIndex ||
-  visual.weekOffsetDays !== 0 ||
+  visual.dayDate !== visual.initialDayDate ||
   visual.startMinutes !== visual.initialStartMinutes ||
   visual.endMinutes !== visual.initialEndMinutes;
 

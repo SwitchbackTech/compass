@@ -28,7 +28,7 @@ import {
   buildAllDayWeekLayoutCache,
   buildTimedWeekLayoutCache,
   type WeekLayoutCache,
-  type WeekLayoutCacheSources,
+  type WeekLayoutCacheInput,
 } from "./geometry/weekLayoutCache";
 import {
   commitAllDayDragInteraction,
@@ -78,6 +78,7 @@ export type {
 
 const inertRuntime: WeekInteractionRuntime = {
   getTimedEventById: () => null,
+  getVisibleDays: () => [],
   onClickTimedEvent: () => undefined,
   onCommitTimedDrag: () => undefined,
 };
@@ -263,10 +264,10 @@ export const createWeekInteractionAdapter = ({
         return result;
       },
       createVisual: ({ pointerStart, sourceElement, target }) => {
-        const layout = buildWeekLayoutCacheForTarget(
-          target,
-          getLayoutSources(),
-        );
+        const layout = buildWeekLayoutCacheForTarget(target, {
+          ...getLayoutSources(),
+          visibleDays: runtime().getVisibleDays(),
+        });
 
         if (!layout) {
           return null;
@@ -310,6 +311,7 @@ export const createWeekInteractionAdapter = ({
         }
 
         return createTimedDragInteractionVisual({
+          layout,
           pointerStart,
           sourceRect,
           target,
@@ -640,15 +642,14 @@ export const createWeekInteractionAdapter = ({
     setWeekInteractionEdgeNavigationState(update.state);
 
     if (update.requestedSide) {
+      // No day bookkeeping: the pending layout rebuild carries the new column
+      // dates, and the visual re-resolves its dayDate against them.
       isLayoutRebuildPending = true;
       runtime().onRequestWeekNavigation?.(update.requestedSide);
 
       return {
         isDwellActive: false,
-        visual: {
-          ...visual,
-          weekOffsetDays: visual.weekOffsetDays + update.weekOffsetDaysDelta,
-        } as TVisual,
+        visual,
       };
     }
 
@@ -663,10 +664,10 @@ export const createWeekInteractionAdapter = ({
       return;
     }
 
-    const nextLayout = buildWeekLayoutCacheForTarget(
-      target,
-      getLayoutSources(),
-    );
+    const nextLayout = buildWeekLayoutCacheForTarget(target, {
+      ...getLayoutSources(),
+      visibleDays: runtime().getVisibleDays(),
+    });
 
     if (!nextLayout) {
       return;
@@ -729,11 +730,11 @@ const getOwnershipReason = (target: WeekInteractionTarget) => {
 
 const buildWeekLayoutCacheForTarget = (
   target: WeekInteractionTarget,
-  sources: WeekLayoutCacheSources,
+  input: WeekLayoutCacheInput,
 ) =>
   isAllDayTarget(target)
-    ? buildAllDayWeekLayoutCache(sources)
-    : buildTimedWeekLayoutCache(sources);
+    ? buildAllDayWeekLayoutCache(input)
+    : buildTimedWeekLayoutCache(input);
 
 const isEligibleWeekPointerDown = isEligibleCalendarInteractionPointerDown;
 

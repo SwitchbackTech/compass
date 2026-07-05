@@ -105,7 +105,21 @@ const expectSourceRestored = (source: HTMLElement) => {
   expect(source).not.toHaveAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
 };
 
+// The default harness renders the full week of Sun 2026-05-17 as 7 columns of
+// 100px starting at x=100 (the event on Tue 2026-05-19 sits in column 2).
+const FULL_WEEK_DAYS = [
+  "2026-05-17",
+  "2026-05-18",
+  "2026-05-19",
+  "2026-05-20",
+  "2026-05-21",
+  "2026-05-22",
+  "2026-05-23",
+];
+
 const createHarness = ({
+  columnsWidth = 700,
+  event: eventOverrides,
   mainGridScrollTop = 0,
   sourceRect = {
     height: 100,
@@ -113,18 +127,23 @@ const createHarness = ({
     top: 1000,
     width: 90,
   },
+  visibleDays = FULL_WEEK_DAYS,
 }: {
+  columnsWidth?: number;
+  event?: Partial<Schema_GridEvent>;
   mainGridScrollTop?: number;
   sourceRect?: Pick<DOMRect, "height" | "left" | "top" | "width">;
+  visibleDays?: string[];
 } = {}) => {
   document.body.innerHTML = "";
   weekEventRegistry.clear();
 
   let now = 100;
   let nextFrameId = 1;
+  let currentVisibleDays = visibleDays;
   const frameCallbacks = new Map<unknown, FrameRequestCallback>();
   const timerCallbacks = new Map<unknown, () => void>();
-  const event = createTimedEvent();
+  const event = createTimedEvent(eventOverrides);
   const source = document.createElement("div");
   const child = document.createElement("span");
   const mainGrid = document.createElement("div");
@@ -154,7 +173,7 @@ const createHarness = ({
     height: 2400,
     left: 100,
     top: 100,
-    width: 700,
+    width: columnsWidth,
   });
   setRect(source, sourceRect);
 
@@ -187,12 +206,17 @@ const createHarness = ({
     },
     runtime: () => ({
       getTimedEventById: (eventId) => (eventId === event._id ? event : null),
+      getVisibleDays: () => currentVisibleDays,
       onClickTimedEvent,
       onCommitTimedDrag,
       onMotionActivation,
       onRequestWeekNavigation,
     }),
   });
+
+  const setVisibleDays = (nextVisibleDays: string[]) => {
+    currentVisibleDays = nextVisibleDays;
+  };
 
   const flushFrame = (timestamp = 16) => {
     const [[frameId, callback]] = frameCallbacks;
@@ -229,6 +253,7 @@ const createHarness = ({
     onCommitTimedDrag,
     onMotionActivation,
     onRequestWeekNavigation,
+    setVisibleDays,
     source,
     timerCallbacks,
     unregister,
@@ -553,6 +578,168 @@ describe("WeekInteractionAdapter timed drag", () => {
         event: expect.objectContaining({
           endDate: expect.stringContaining("13:00"),
           startDate: expect.stringContaining("12:00"),
+        }),
+      }),
+    );
+  });
+
+  it("commits the hovered column's date in a windowed view with an offset", () => {
+    // 6-day window Mon..Sat (offset 1): Friday renders in column 4, so the
+    // old `.getDay()` seeding (5) resolved the wrong column and clamped the
+    // drag at the window edge.
+    const { adapter, child, flushFrame, onCommitTimedDrag } = createHarness({
+      columnsWidth: 600,
+      event: {
+        endDate: "2026-05-22T10:00:00.000",
+        startDate: "2026-05-22T09:00:00.000",
+      },
+      sourceRect: { height: 100, left: 500, top: 1000, width: 90 },
+      visibleDays: [
+        "2026-05-18",
+        "2026-05-19",
+        "2026-05-20",
+        "2026-05-21",
+        "2026-05-22",
+        "2026-05-23",
+      ],
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 520, y: 1020 }),
+    );
+    // One column (100px) to the right: Friday -> Saturday
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 620, y: 1020 }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 620, y: 1020 }),
+    );
+
+    expect(onCommitTimedDrag).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          startDate: expect.stringContaining("2026-05-23"),
+        }),
+        hasMoved: true,
+      }),
+    );
+  });
+
+  it("commits the rebuilt column's date after a within-week window page", () => {
+    // 6-day window Sun..Fri (offset 0); paging next shifts the window by ONE
+    // day (Mon..Sat), not seven. The drop must use the rebuilt column dates.
+    const {
+      adapter,
+      child,
+      flushFrame,
+      onCommitTimedDrag,
+      onRequestWeekNavigation,
+      setVisibleDays,
+    } = createHarness({
+      columnsWidth: 600,
+      sourceRect: { height: 100, left: 300, top: 1000, width: 90 },
+      visibleDays: [
+        "2026-05-17",
+        "2026-05-18",
+        "2026-05-19",
+        "2026-05-20",
+        "2026-05-21",
+        "2026-05-22",
+      ],
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 320, y: 1020 }),
+    );
+    // Dwell inside the right edge threshold until navigation is requested
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 690, y: 1020 }),
+    );
+    flushFrame(16);
+    flushFrame(600);
+
+    expect(onRequestWeekNavigation).toHaveBeenCalledWith("next");
+
+    // React re-renders the window paged by one day and rebuilds the layout
+    setVisibleDays([
+      "2026-05-18",
+      "2026-05-19",
+      "2026-05-20",
+      "2026-05-21",
+      "2026-05-22",
+      "2026-05-23",
+    ]);
+    adapter.rebuildLayoutAfterNavigation();
+
+    // Release over column 1, which now renders 2026-05-19
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 220, y: 1020 }),
+    );
+
+    expect(onCommitTimedDrag).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          startDate: expect.stringContaining("2026-05-19"),
+        }),
+      }),
+    );
+  });
+
+  it("commits the rebuilt column's date after a week-boundary navigation", () => {
+    // 6-day window Mon..Sat (offset 1); paging next crosses into the next
+    // week at offset 0 — a six-day shift, where the old ±7 bookkeeping was
+    // off by one.
+    const {
+      adapter,
+      child,
+      flushFrame,
+      onCommitTimedDrag,
+      onRequestWeekNavigation,
+      setVisibleDays,
+    } = createHarness({
+      columnsWidth: 600,
+      sourceRect: { height: 100, left: 200, top: 1000, width: 90 },
+      visibleDays: [
+        "2026-05-18",
+        "2026-05-19",
+        "2026-05-20",
+        "2026-05-21",
+        "2026-05-22",
+        "2026-05-23",
+      ],
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: child, x: 220, y: 1020 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", { target: child, x: 690, y: 1020 }),
+    );
+    flushFrame(16);
+    flushFrame(600);
+
+    expect(onRequestWeekNavigation).toHaveBeenCalledWith("next");
+
+    setVisibleDays([
+      "2026-05-24",
+      "2026-05-25",
+      "2026-05-26",
+      "2026-05-27",
+      "2026-05-28",
+      "2026-05-29",
+    ]);
+    adapter.rebuildLayoutAfterNavigation();
+
+    // Release over column 2, which now renders 2026-05-26
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: child, x: 320, y: 1020 }),
+    );
+
+    expect(onCommitTimedDrag).toHaveBeenCalledWith(
+      expect.objectContaining({
+        event: expect.objectContaining({
+          startDate: expect.stringContaining("2026-05-26"),
         }),
       }),
     );

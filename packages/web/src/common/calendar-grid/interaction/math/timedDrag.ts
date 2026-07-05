@@ -12,6 +12,7 @@ import { clamp, snapToStep } from "./snap";
 const MINUTES_PER_DAY = 24 * 60;
 
 interface CreateTimedDragVisualInput {
+  dayDate: string;
   dayIndex: number;
   endMinutes: number;
   eventId: string;
@@ -27,6 +28,7 @@ interface UpdateTimedDragVisualInput {
 }
 
 export const createTimedDragVisual = ({
+  dayDate,
   dayIndex,
   endMinutes,
   eventId,
@@ -34,10 +36,12 @@ export const createTimedDragVisual = ({
   sourceRect,
   startMinutes,
 }: CreateTimedDragVisualInput): TimedDragVisual => ({
+  dayDate,
   dayIndex,
   durationMinutes: endMinutes - startMinutes,
   endMinutes,
   eventId,
+  initialDayDate: dayDate,
   initialDayIndex: dayIndex,
   initialEndMinutes: endMinutes,
   initialStartMinutes: startMinutes,
@@ -46,7 +50,6 @@ export const createTimedDragVisual = ({
   startMinutes,
   transform: { x: 0, y: 0 },
   type: "timedDrag",
-  weekOffsetDays: 0,
 });
 
 export const updateTimedDragVisual = (
@@ -82,6 +85,7 @@ export const updateTimedDragVisual = (
 
   return {
     ...visual,
+    dayDate: nextColumn?.date ?? visual.dayDate,
     dayIndex: nextDayIndex,
     endMinutes: verticalPlacement.startMinutes + visual.durationMinutes,
     startMinutes: verticalPlacement.startMinutes,

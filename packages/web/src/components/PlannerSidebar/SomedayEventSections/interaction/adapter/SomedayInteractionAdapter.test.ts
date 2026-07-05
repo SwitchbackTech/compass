@@ -104,9 +104,11 @@ const setReducedMotionPreference = (matches: boolean) => {
 const createHarness = ({
   mainGridScrollTop = 0,
   viewStart = dayjs("2026-05-17"),
+  visibleDays,
 }: {
   mainGridScrollTop?: number;
   viewStart?: ReturnType<typeof dayjs>;
+  visibleDays?: string[];
 } = {}) => {
   document.body.innerHTML = "";
   somedayDropTargetRegistry.clear();
@@ -114,6 +116,11 @@ const createHarness = ({
 
   let now = 100;
   let nextFrameId = 1;
+  let currentVisibleDays =
+    visibleDays ??
+    [...Array(7)].map((_, index) =>
+      viewStart.add(index, "day").format("YYYY-MM-DD"),
+    );
   const frameCallbacks = new Map<unknown, FrameRequestCallback>();
   const timerCallbacks = new Map<unknown, () => void>();
   const event = createSomedayEvent();
@@ -218,9 +225,9 @@ const createHarness = ({
       mainGridElement: mainGrid,
       timedColumnsElement: timedColumns,
     }),
-    getViewStart: () => viewStart,
     runtime: () => ({
       getSomedayEventById: (eventId) => (eventId === event._id ? event : null),
+      getVisibleDays: () => currentVisibleDays,
       onCancelInteraction,
       onClickSomedayEvent,
       onCommitSomedayInteraction,
@@ -229,6 +236,10 @@ const createHarness = ({
       onRequestWeekNavigation,
     }),
   });
+
+  const setVisibleDays = (nextVisibleDays: string[]) => {
+    currentVisibleDays = nextVisibleDays;
+  };
 
   const flushFrame = (timestamp = 16) => {
     const [[frameId, callback]] = frameCallbacks;
@@ -252,6 +263,7 @@ const createHarness = ({
     onMotionActivation,
     onPreviewSomedaySidebarDrop,
     onRequestWeekNavigation,
+    setVisibleDays,
     source,
     sourceButton,
     sourceChild,
@@ -341,6 +353,45 @@ describe("SomedayInteractionAdapter", () => {
       dates: {
         endDate: expect.stringContaining("2026-05-18T03:00"),
         startDate: expect.stringContaining("2026-05-18T02:00"),
+      },
+      eventId: "someday-event",
+      isAllDay: false,
+      type: "schedule",
+    });
+  });
+
+  it("schedules a timed drop on the column's date in a windowed view with an offset", () => {
+    // 3-day window Wed..Fri (offset 3): the drop column's date is 2026-05-20,
+    // not viewStart + column index (the old math ignored the window offset).
+    const {
+      adapter,
+      flushFrame,
+      onCommitSomedayInteraction,
+      sourceChild,
+      timedColumns,
+    } = createHarness({
+      visibleDays: ["2026-05-20", "2026-05-21", "2026-05-22"],
+    });
+
+    adapter.handlePointerDown(
+      makePointerEvent("pointerdown", { target: sourceChild, x: 20, y: 12 }),
+    );
+    adapter.handlePointerMove(
+      makePointerEvent("pointermove", {
+        target: timedColumns,
+        x: 250,
+        y: 220,
+      }),
+    );
+    flushFrame();
+    adapter.handlePointerUp(
+      makePointerEvent("pointerup", { target: timedColumns, x: 250, y: 220 }),
+    );
+
+    expect(onCommitSomedayInteraction).toHaveBeenCalledWith({
+      dates: {
+        endDate: expect.stringContaining("2026-05-20T03:00"),
+        startDate: expect.stringContaining("2026-05-20T02:00"),
       },
       eventId: "someday-event",
       isAllDay: false,

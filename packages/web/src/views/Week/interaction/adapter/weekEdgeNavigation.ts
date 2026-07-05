@@ -19,7 +19,6 @@ export interface WeekEdgeNavigationUpdate {
   isDwellActive: boolean;
   requestedSide: WeekEdgeNavigationSide | null;
   state: WeekInteractionEdgeNavigationState;
-  weekOffsetDaysDelta: number;
 }
 
 export interface WeekEdgeNavigationController {
@@ -66,7 +65,6 @@ export const createWeekEdgeNavigationController =
           isDwellActive: false,
           requestedSide: null,
           state: idleDraggingState,
-          weekOffsetDaysDelta: 0,
         };
       }
 
@@ -79,7 +77,6 @@ export const createWeekEdgeNavigationController =
           isDwellActive: true,
           requestedSide: null,
           state: toIndicatorState(nextSide, true, 0),
-          weekOffsetDaysDelta: 0,
         };
       }
 
@@ -96,7 +93,6 @@ export const createWeekEdgeNavigationController =
           isDwellActive: false,
           requestedSide: nextSide,
           state: toIndicatorState(nextSide, false, 0),
-          weekOffsetDaysDelta: nextSide === "next" ? 7 : -7,
         };
       }
 
@@ -104,7 +100,6 @@ export const createWeekEdgeNavigationController =
         isDwellActive: !requested,
         requestedSide: null,
         state: toIndicatorState(nextSide, !requested, progress),
-        weekOffsetDaysDelta: 0,
       };
     };
 

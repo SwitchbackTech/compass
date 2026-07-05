@@ -3,6 +3,7 @@ import {
   createEventTitle,
   expectTimedEventVisible,
   fillTitleAndSaveEventForm,
+  getSavedEventsByTitle,
   openTimedEventFormWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
@@ -12,10 +13,10 @@ test.skip(
   "Mouse flows are desktop-only in week view.",
 );
 
-// Regression: the drag layout cache used to assume 7 day columns, so at a
-// reduced day count the mid-drag visual snapped between two days (the drop
-// itself was computed separately and landed correctly).
-test("keeps the mid-drag visual aligned to a day column at a reduced day count", async ({
+// Regression: the drag layout cache used to assume 7 day columns and seed the
+// event's day index week-absolutely, so at a reduced day count the mid-drag
+// visual snapped between two days and drops could land on the wrong day.
+test("aligns the mid-drag visual and drops on the hovered day at a reduced day count", async ({
   page,
 }) => {
   // 1000px: sidebar auto-collapsed, track ~968px -> 6 visible days
@@ -30,6 +31,9 @@ test("keeps the mid-drag visual aligned to a day column at a reduced day count",
   const columns = await getDayColumnBoxes(page);
   expect(columns.length).toBeGreaterThan(1);
   expect(columns.length).toBeLessThan(7);
+
+  const dayDates = await getDayLabelDates(page);
+  expect(dayDates).toHaveLength(columns.length);
 
   const savedEvent = page
     .locator('#timedEvents [role="button"][data-event-id]')
@@ -74,6 +78,65 @@ test("keeps the mid-drag visual aligned to a day column at a reduced day count",
   expect(Math.abs(overlayCenterX - targetCenterX)).toBeLessThanOrEqual(5);
 
   await page.mouse.up();
+
+  // The persisted event lands on the hovered column's rendered date
+  await expect
+    .poll(async () => (await getSavedEventsByTitle(page, title))[0]?.startDate)
+    .toContain(dayDates[targetColumnIndex]);
+});
+
+test("drops on the newly rendered day after a mid-drag edge navigation", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1000, height: 1000 });
+  await prepareCalendarPage(page);
+
+  const title = createEventTitle("Move Across");
+  await openTimedEventFormWithMouse(page);
+  await fillTitleAndSaveEventForm(page, title);
+  await expectTimedEventVisible(page, title);
+
+  const daysBefore = await getDayLabelDates(page);
+  const columns = await getDayColumnBoxes(page);
+
+  const savedEvent = page
+    .locator('#timedEvents [role="button"][data-event-id]')
+    .filter({ hasText: title });
+  const eventBox = await savedEvent.boundingBox();
+  if (!eventBox) {
+    throw new Error("Expected the saved event to be visible.");
+  }
+
+  const dragY = eventBox.y + eventBox.height / 2;
+
+  await page.mouse.move(eventBox.x + eventBox.width / 2, dragY);
+  await page.mouse.down();
+
+  // Park the pointer inside the right edge-navigation threshold (50px) and
+  // dwell until the view pages to the next window
+  const lastColumn = columns[columns.length - 1];
+  await page.mouse.move(lastColumn.right - 20, dragY, { steps: 10 });
+  await expect
+    .poll(async () => (await getDayLabelDates(page))[0], { timeout: 5000 })
+    .not.toBe(daysBefore[0]);
+
+  const daysAfter = await getDayLabelDates(page);
+  expect(daysAfter[0]).not.toBe(daysBefore[0]);
+
+  // Release over the second column of the new window
+  const newColumns = await getDayColumnBoxes(page);
+  const dropColumnIndex = 1;
+  const dropColumn = newColumns[dropColumnIndex];
+  await page.mouse.move((dropColumn.left + dropColumn.right) / 2, dragY, {
+    steps: 5,
+  });
+  await page.waitForTimeout(100);
+  await page.mouse.up();
+
+  // The persisted event lands on that column's newly rendered date
+  await expect
+    .poll(async () => (await getSavedEventsByTitle(page, title))[0]?.startDate)
+    .toContain(daysAfter[dropColumnIndex]);
 });
 
 const getDayColumnBoxes = async (page: Page) =>
@@ -82,4 +145,18 @@ const getDayColumnBoxes = async (page: Page) =>
       .map((node) => node.getBoundingClientRect())
       .filter((rect) => rect.width > 0)
       .map((rect) => ({ left: rect.left, right: rect.right })),
+  );
+
+/** Rendered day-label dates in column order, as YYYY-MM-DD. */
+const getDayLabelDates = async (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll("#weekGridScroller [title]")]
+      .filter((node): node is HTMLElement => node instanceof HTMLElement)
+      .map((node) => node.title)
+      // Day labels use the compact YYYYMMDD format; skip e.g. the now line
+      .filter((title) => /^\d{8}$/.test(title))
+      .map(
+        (title) =>
+          `${title.slice(0, 4)}-${title.slice(4, 6)}-${title.slice(6, 8)}`,
+      ),
   );

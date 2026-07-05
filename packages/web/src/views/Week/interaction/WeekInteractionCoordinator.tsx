@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
 } from "react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
@@ -45,9 +46,17 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   }, [allDayEvents]);
   const runtimeRef = useRef<WeekInteractionRuntime>({
     getTimedEventById: () => null,
+    getVisibleDays: () => [],
     onClickTimedEvent: () => undefined,
     onCommitTimedDrag: () => undefined,
   });
+  const visibleDayKeys = useMemo(
+    () =>
+      weekProps.component.weekDays.map((day) =>
+        day.format(YEAR_MONTH_DAY_FORMAT),
+      ),
+    [weekProps.component.weekDays],
+  );
   const adapter = useMemo(
     () =>
       createWeekInteractionAdapter({
@@ -57,20 +66,24 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     [],
   );
   const lastNavigationSource = weekProps.util.getLastNavigationSource();
-  const renderedWeekStartMs = weekProps.component.startOfView.valueOf();
+  // Keyed on the first *visible* day: within-week window paging shifts the
+  // rendered columns without changing startOfView, and the drag layout must
+  // rebuild for those navigations too.
+  const renderedFirstDayMs =
+    weekProps.component.weekDays[0]?.valueOf() ?? Number.NaN;
 
   layoutSourcesRef.current = getLayoutSources;
 
   useLayoutEffect(() => {
     if (
       lastNavigationSource !== "drag-to-edge" ||
-      !Number.isFinite(renderedWeekStartMs)
+      !Number.isFinite(renderedFirstDayMs)
     ) {
       return;
     }
 
     adapter.rebuildLayoutAfterNavigation();
-  }, [adapter, lastNavigationSource, renderedWeekStartMs]);
+  }, [adapter, lastNavigationSource, renderedFirstDayMs]);
 
   const openTimedEvent = (event: Schema_GridEvent) => {
     draftActions.startGridClick(event);
@@ -108,6 +121,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   runtimeRef.current = {
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
+    getVisibleDays: () => visibleDayKeys,
     isFormOpen: () => state.isFormOpen,
     onClickAllDayEvent: openAllDayEvent,
     onClickTimedEvent: openTimedEvent,

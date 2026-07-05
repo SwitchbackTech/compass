@@ -4,8 +4,7 @@ import { type TimedResizeVisual } from "@web/common/calendar-grid/interaction/mo
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export const hasTimedDragVisualMoved = (visual: TimedDragVisual) =>
-  visual.dayIndex !== visual.initialDayIndex ||
-  visual.weekOffsetDays !== 0 ||
+  visual.dayDate !== visual.initialDayDate ||
   visual.startMinutes !== visual.initialStartMinutes ||
   visual.endMinutes !== visual.initialEndMinutes;
 
@@ -13,9 +12,9 @@ export const timedDragVisualToGridEvent = (
   event: Schema_GridEvent,
   visual: TimedDragVisual,
 ): Schema_GridEvent => {
-  const dayDelta =
-    visual.dayIndex - visual.initialDayIndex + visual.weekOffsetDays;
-  const movedDay = dayjs(event.startDate).add(dayDelta, "day").startOf("day");
+  // The column under the drag knows its own date, so the target day is
+  // assigned absolutely; time-of-day rides on the visual's minutes.
+  const movedDay = dayjs(visual.dayDate).startOf("day");
 
   return {
     ...event,

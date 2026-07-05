@@ -5,6 +5,7 @@ import {
   useMemo,
   useRef,
 } from "react";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -25,43 +26,53 @@ export const SomedayInteractionCoordinator: FC<Props> = ({
 }) => {
   const { actions, state } = useSidebarContext();
   const layoutSourcesRef = useRef(getLayoutSources);
-  const viewStartRef = useRef(weekProps.component.startOfView);
   const eventsById = useMemo(() => {
     return new Map(Object.entries(state.somedayEvents.events));
   }, [state.somedayEvents.events]);
   const runtimeRef = useRef<SomedayInteractionRuntime>({
     getSomedayEventById: () => null,
+    getVisibleDays: () => [],
     onClickSomedayEvent: () => undefined,
     onCommitSomedayInteraction: () => undefined,
   });
+  const visibleDayKeys = useMemo(
+    () =>
+      weekProps.component.weekDays.map((day) =>
+        day.format(YEAR_MONTH_DAY_FORMAT),
+      ),
+    [weekProps.component.weekDays],
+  );
   const adapter = useMemo(
     () =>
       createSomedayInteractionAdapter({
         getLayoutSources: () => layoutSourcesRef.current?.() ?? {},
-        getViewStart: () => viewStartRef.current,
         runtime: () => runtimeRef.current,
       }),
     [],
   );
   const lastNavigationSource = weekProps.util.getLastNavigationSource();
-  const renderedWeekStartMs = weekProps.component.startOfView.valueOf();
+  // Keyed on the first *visible* day: within-week window paging shifts the
+  // rendered columns without changing startOfView, and the drag layout must
+  // rebuild for those navigations too.
+  const renderedFirstDayMs =
+    weekProps.component.weekDays[0]?.valueOf() ?? Number.NaN;
 
   layoutSourcesRef.current = getLayoutSources;
-  viewStartRef.current = weekProps.component.startOfView;
 
   useLayoutEffect(() => {
     if (
       lastNavigationSource !== "drag-to-edge" ||
-      !Number.isFinite(renderedWeekStartMs)
+      !Number.isFinite(renderedFirstDayMs)
     ) {
       return;
     }
 
     adapter.rebuildLayoutAfterNavigation();
-  }, [adapter, lastNavigationSource, renderedWeekStartMs]);
+  }, [adapter, lastNavigationSource, renderedFirstDayMs]);
 
   runtimeRef.current = {
     getSomedayEventById: (eventId) => eventsById.get(eventId) ?? null,
+    getVisibleDays: () => visibleDayKeys,
     isSidebarDropAllowed: actions.isSomedaySidebarDropAllowed,
     onCancelInteraction: actions.cancelSomedayInteraction,
     onClickSomedayEvent: actions.onDraft,

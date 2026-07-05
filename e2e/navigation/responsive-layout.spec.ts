@@ -30,9 +30,7 @@ test.describe("Responsive sidebar", () => {
     await expect(page.locator("#sidebar")).toBeVisible();
   });
 
-  test("starts collapsed when loading in a narrow window", async ({
-    page,
-  }) => {
+  test("starts collapsed when loading in a narrow window", async ({ page }) => {
     await page.setViewportSize({ width: 1100, height: 900 });
     await page.goto("/week");
     await page.locator("#timedColumns").waitFor();

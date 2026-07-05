@@ -1,3 +1,5 @@
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import dayjs from "@core/util/date/dayjs";
 import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
 import {
   createTimedDragVisual,
@@ -13,29 +15,49 @@ import {
   hasTimedDragVisualMoved,
   timedDragVisualToGridEvent,
 } from "../commit/timedDragVisualToGridEvent";
-import { type WeekLayoutCache } from "../geometry/weekLayoutCache";
+import {
+  getNearestDayColumn,
+  type WeekLayoutCache,
+} from "../geometry/weekLayoutCache";
 import {
   type WeekTimedDragCommitResult,
   type WeekTimedDragTarget,
 } from "../WeekInteractionAdapter.types";
 
 export const createTimedDragInteractionVisual = ({
+  layout,
   pointerStart,
   sourceRect,
   target,
 }: {
+  layout: WeekLayoutCache;
   pointerStart: CalendarInteractionPoint;
   sourceRect: VisualRect;
   target: WeekTimedDragTarget;
-}) =>
-  createTimedDragVisual({
-    dayIndex: getLocalDayIndex(target.event.startDate),
+}) => {
+  // Timed events render in the column of their start date, so the date lookup
+  // is exact; the geometric nearest-column fallback is belt-and-braces.
+  const startDateKey = dayjs(target.event.startDate).format(
+    YEAR_MONTH_DAY_FORMAT,
+  );
+  const sourceColumn =
+    layout.dayColumns.find((column) => column.date === startDateKey) ??
+    getNearestDayColumn(layout.dayColumns, sourceRect.left + 1);
+
+  if (!sourceColumn) {
+    return null;
+  }
+
+  return createTimedDragVisual({
+    dayDate: sourceColumn.date,
+    dayIndex: sourceColumn.index,
     endMinutes: getLocalMinutes(target.event.endDate),
     eventId: target.event._id!,
     pointerStart,
     sourceRect,
     startMinutes: getLocalMinutes(target.event.startDate),
   });
+};
 
 export const updateTimedDragInteractionVisual = ({
   layout,
@@ -75,22 +97,4 @@ export const commitTimedDragInteraction = (
     hasMoved: hasTimedDragVisualMoved(visual),
     type: "timedDragEnd",
   };
-};
-
-const getLocalDayIndex = (dateString: string | undefined) => {
-  if (!dateString) {
-    return new Date(0).getDay();
-  }
-
-  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(dateString);
-
-  if (dateOnly) {
-    return new Date(
-      Number(dateOnly[1]!),
-      Number(dateOnly[2]!) - 1,
-      Number(dateOnly[3]!),
-    ).getDay();
-  }
-
-  return new Date(dateString).getDay();
 };

@@ -31,9 +31,15 @@ export const createAllDayDragInteractionVisual = ({
   target: WeekAllDayDragTarget;
 }) => {
   const visibleRange = getVisibleAllDayRange(layout, sourceRect);
+  const sourceColumn = layout.dayColumns[visibleRange.startDayIndex];
+
+  if (!sourceColumn) {
+    return null;
+  }
 
   return createAllDayDragVisual({
-    dayIndex: visibleRange.startDayIndex,
+    dayDate: sourceColumn.date,
+    dayIndex: sourceColumn.index,
     eventId: target.event._id!,
     pointerStart,
     sourceRect,

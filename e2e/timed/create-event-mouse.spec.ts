@@ -8,41 +8,9 @@ import {
   getMainGridPoint,
   openTimedEventFormWithMouse,
   prepareCalendarPage,
+  type StoredTimedEvent,
+  waitForSavedEventByTitle,
 } from "../utils/event-test-utils";
-
-interface StoredTimedEvent {
-  endDate?: string;
-  startDate?: string;
-  title?: string;
-}
-
-const getSavedEventsByTitle = (page: Page, title: string) =>
-  page.evaluate(async (eventTitle) => {
-    const db = await new Promise<IDBDatabase>((resolve, reject) => {
-      const request = indexedDB.open("compass-local");
-
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => resolve(request.result);
-    });
-
-    try {
-      return await new Promise<StoredTimedEvent[]>((resolve, reject) => {
-        const transaction = db.transaction("events", "readonly");
-        const request = transaction.objectStore("events").getAll();
-
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-          resolve(
-            request.result.filter(
-              (event: StoredTimedEvent) => event.title === eventTitle,
-            ),
-          );
-        };
-      });
-    } finally {
-      db.close();
-    }
-  }, title);
 
 const getTimedDraftEvent = (page: Page) =>
   page.locator('#timedEvents > [role="button"]:not([data-event-id])');
@@ -56,23 +24,6 @@ const getDurationMinutes = (event: StoredTimedEvent) => {
     (new Date(event.endDate).getTime() - new Date(event.startDate).getTime()) /
     60_000
   );
-};
-
-const waitForSavedEventByTitle = async (page: Page, title: string) => {
-  let savedEvent: StoredTimedEvent | null = null;
-
-  await expect
-    .poll(async () => {
-      const savedEvents = await getSavedEventsByTitle(page, title);
-      if (savedEvents.length === 1) {
-        savedEvent = savedEvents[0]!;
-      }
-
-      return savedEvents.length;
-    })
-    .toBe(1);
-
-  return savedEvent!;
 };
 
 test.skip(
