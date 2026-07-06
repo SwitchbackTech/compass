@@ -41,18 +41,32 @@ real one.
    `ToolSearch("select:mcp__claude-in-chrome__tabs_context_mcp,mcp__claude-in-chrome__navigate,mcp__claude-in-chrome__computer,mcp__claude-in-chrome__read_page,mcp__claude-in-chrome__tabs_create_mcp,mcp__claude-in-chrome__read_console_messages,mcp__claude-in-chrome__read_network_requests")`.
 3. `tabs_context_mcp` (with `createIfEmpty: true`) then `tabs_create_mcp` to
    open a fresh tab for this session, `navigate` to the local dev server.
-4. Exercise the golden path for whatever the change touches, plus at least
-   one edge case (empty state, error state, or the specific bug scenario if
-   this is a fix), using `computer` to click/type and `read_page` /
+4. Before clicking anything, look at what the diff actually branches on —
+   new conditionals, boundary values (empty/null/min/max), state
+   transitions (loading→loaded, anon→authed, online→offline,
+   draft→persisted), and for bug fixes, the exact repro scenario. That's
+   your edge-case list, not generic boilerplate like "test on mobile"
+   unless the diff actually touches responsive behavior.
+5. Exercise the golden path for whatever the change touches, plus 2-4 edge
+   cases from that list, using `computer` to click/type and `read_page` /
    `get_page_text` to confirm what rendered.
-5. Check `read_console_messages` and `read_network_requests` for errors the
+6. As you go, write down each step in reviewer-facing language: the URL or
+   view you were on, what you clicked/typed, and what rendered or happened
+   as a result. No internal function/variable/file names — describe it the
+   way a user would see it. This log becomes the PR's Manual Testing Steps
+   section in step 2, so capture it while it's fresh instead of
+   reconstructing it from memory afterward.
+7. Check `read_console_messages` and `read_network_requests` for errors the
    UI wouldn't otherwise surface.
-6. If something's broken, fix it and re-check before moving on. Don't open
+8. If something's broken, fix it and re-check before moving on. Don't open
    a PR on unvalidated code — that just moves the discovery of the bug to
    CI or to review, which is slower for everyone.
-7. Skip this step only if the change genuinely isn't observable in a
-   browser (e.g., a backend-only script, a type-only change) — say so
-   explicitly rather than silently skipping.
+9. Skip the browser walkthrough only if the change genuinely isn't
+   observable in a browser (e.g., a backend-only script, a type-only
+   change) — say so explicitly rather than silently skipping. In that
+   case, still produce the equivalent record from step 6, but as CLI/API
+   commands a reviewer can run themselves (e.g., a script invocation and
+   its expected output) rather than clicks. Never skip the record itself.
 
 ## 2. Commit, push, and open the PR
 
@@ -80,10 +94,26 @@ Steps:
 2. Push the branch: `git push -u origin <branch>`.
 3. Open a **non-draft** PR (just omit `--draft` — that's the default):
    `gh pr create --title "<same lower-case conventional string>" --body "..."`.
-   Body should follow the `## Summary` / `## Test plan` shape used elsewhere
-   in this repo (see recent PRs via `gh pr view <n> --json body` if you want
-   a concrete reference) — what changed, why, and what was actually
-   verified (including the Chrome check from step 1).
+   Body must have three sections, in this order: `## Summary`,
+   `## Manual Testing Steps`, `## Test plan`.
+   - `## Summary` — what changed and why.
+   - `## Manual Testing Steps` — unchecked boxes (`- [ ]`). These are steps
+     a *human reviewer* still needs to perform themselves, which is why
+     they're unchecked even though Claude just did them in step 1. Pull
+     this straight from step 1's recorded log:
+     - Golden path first, then the 2-4 diff-derived edge cases.
+     - User-observable terms only: URLs, what to click/type, what should
+       render or happen. No function/variable/file names — a reviewer
+       with zero context on the code should be able to follow it without
+       reading the diff.
+     - If step 1 fell back to CLI/API steps (not browser-observable), use
+       those instead — same principle, different medium. This section is
+       never omitted, even for backend-only or type-only changes.
+   - `## Test plan` — checked boxes (`- [x]`) for automation actually run:
+     unit/e2e commands, pass/fail counts, flake reruns (see recent PRs via
+     `gh pr view <n> --json body` for a concrete reference). This is the
+     automated counterpart to Manual Testing Steps, not a restatement of
+     it — don't blur the two together.
 
 ## 3. Watch CI, fix what breaks
 
@@ -125,9 +155,12 @@ gh pr merge <pr-number> --squash --delete-branch
 
 If you're not confident — the fix in step 3 felt like a guess, or CI is
 green but something about the Chrome validation still nagged at you — say
-so and let the user decide whether to merge. A merge to `main` in this repo
-immediately kicks off a real deploy pipeline (see step 5), so this is not a
-reversible-for-free action.
+so and let the user decide whether to merge. This gate is about your own
+confidence in the change, not about whether a human has re-run the PR's
+`## Manual Testing Steps` checkboxes — those are for reviewers to use after
+merge review, not a pre-merge blocker for `ship` itself. A merge to `main`
+in this repo immediately kicks off a real deploy pipeline (see step 5), so
+this is not a reversible-for-free action.
 
 ## 5. Watch what happens after merge
 
