@@ -26,6 +26,8 @@ export function useLoadProfile(
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoadingUser, setIsLoadingUser] = useState(hasAuthenticatedBefore);
   const profileRequest = useRef<Promise<void> | null>(null);
+  const isAuthenticatedRef = useRef(hasAuthenticatedBefore);
+  isAuthenticatedRef.current = hasAuthenticatedBefore;
   const userId = profile?.userId ?? null;
   const profileEmail = profile?.email ?? null;
   const email =
@@ -41,6 +43,8 @@ export function useLoadProfile(
 
     profileRequest.current = UserApi.getProfile()
       .then((userProfile) => {
+        // Signed out while this request was in flight — drop the stale response.
+        if (!isAuthenticatedRef.current) return;
         setProfile(userProfile);
         markUserAsAuthenticated(userProfile.email);
       })
@@ -70,12 +74,13 @@ export function useLoadProfile(
   }, []);
 
   useLayoutEffect(() => {
-    if (profile) return;
-
     if (!hasAuthenticatedBefore) {
+      setProfile(null);
       setIsLoadingUser(false);
       return;
     }
+
+    if (profile) return;
 
     void loadProfile();
   }, [hasAuthenticatedBefore, loadProfile, profile]);
