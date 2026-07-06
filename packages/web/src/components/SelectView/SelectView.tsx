@@ -116,7 +116,9 @@ export const SelectView = ({
         aria-controls={isOpen ? dropdownId : undefined}
         aria-label={`Select view, currently ${currentView}`}
       >
-        <span>{buttonLabel}</span>
+        {/* min-width fits the widest label ("Week") so the nav arrows to the
+            left of this button don't shift when the view changes */}
+        <span className="min-w-10 text-left">{buttonLabel}</span>
         <svg
           className="h-4 w-4"
           fill="none"
