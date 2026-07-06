@@ -6,6 +6,7 @@ export const GOOGLE_REVOKED_TOAST_ID: Id = "google-revoked-api";
 export const GOOGLE_REPAIR_FAILED_TOAST_ID: Id = "google-repair-failed";
 export const TASK_DELETED_TOAST_ID: Id = "task-deleted";
 export const TASK_MIGRATION_TOAST_ID: Id = "task-migration";
+export const SUBSCRIBE_TO_UPDATES_TOAST_ID: Id = "subscribe-to-updates";
 
 export const toastDefaultOptions: ToastOptions = {
   autoClose: 5000,

@@ -6,6 +6,9 @@ import {
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { UserApi } from "@web/common/apis/user.api";
+import { SUBSCRIBE_TO_UPDATES_TOAST_ID } from "@web/common/constants/toast.constants";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
 
 /**
  * Returns a command palette item to opt in to email updates.
@@ -28,9 +31,19 @@ export const useSubscribeCmdItems = (): JsonStructureItem[] => {
       children: "Subscribe to Updates",
       icon: "BellIcon",
       onClick: () => {
-        void UserApi.updateMetadata({ subscribeToUpdates: true }).then(
-          userMetadataActions.set,
-        );
+        UserApi.updateMetadata({ subscribeToUpdates: true })
+          .then((metadata) => {
+            userMetadataActions.set(metadata);
+            showStatusToast(
+              SUBSCRIBE_TO_UPDATES_TOAST_ID,
+              "Subscribed to updates",
+            );
+          })
+          .catch(() => {
+            showErrorToast("Couldn't subscribe to updates. Please try again.", {
+              toastId: SUBSCRIBE_TO_UPDATES_TOAST_ID,
+            });
+          });
       },
     },
   ];
