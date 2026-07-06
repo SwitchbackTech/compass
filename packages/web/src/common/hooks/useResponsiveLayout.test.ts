@@ -3,6 +3,7 @@ import {
   SIDEBAR_AUTO_COLLAPSE_BREAKPOINT,
   TASK_LIST_AUTO_COLLAPSE_BREAKPOINT,
 } from "@web/common/constants/responsive.constants";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import {
   selectIsSidebarOpen,
   selectIsTaskListOpen,
@@ -152,6 +153,42 @@ describe("useResponsiveLayout sidebar", () => {
     });
     act(() => {
       sidebarQuery._triggerChange(false);
+    });
+
+    expect(getIsSidebarOpen()).toBe(false);
+  });
+
+  it("should respect a saved closed preference on mount when screen is wide", () => {
+    localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "false");
+    setupMatchMedia({ sidebarMatches: true, taskListMatches: true });
+
+    renderHook(() => useResponsiveLayout());
+
+    expect(getIsSidebarOpen()).toBe(false);
+  });
+
+  it("should ignore a saved open preference on mount when screen is narrow", () => {
+    localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "true");
+    setupMatchMedia({ sidebarMatches: false, taskListMatches: true });
+
+    renderHook(() => useResponsiveLayout());
+
+    expect(getIsSidebarOpen()).toBe(false);
+  });
+
+  it("should restore a saved closed preference when crossing back to wide", () => {
+    localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "false");
+    const { sidebarQuery } = setupMatchMedia({
+      sidebarMatches: false,
+      taskListMatches: true,
+    });
+
+    renderHook(() => useResponsiveLayout());
+
+    expect(getIsSidebarOpen()).toBe(false);
+
+    act(() => {
+      sidebarQuery._triggerChange(true);
     });
 
     expect(getIsSidebarOpen()).toBe(false);
