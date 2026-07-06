@@ -73,7 +73,7 @@ export const Dedication = () => {
             </button>
           </div>
           <p className="text-l">
-            This app is dedicated to Derek John Benton (1993-2014).
+            Compass Calendar is dedicated to Derek John Benton (1993-2014).
           </p>
           <div className="flex flex-row items-center justify-center">
             <blockquote className="mr-5">

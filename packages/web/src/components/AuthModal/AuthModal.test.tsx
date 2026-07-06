@@ -62,6 +62,11 @@ mock.module("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
   useCompleteAuthentication: () => mockCompleteAuthentication,
 }));
 
+const mockUpdateMetadata = mock();
+mock.module("@web/common/apis/user.api", () => ({
+  UserApi: { updateMetadata: mockUpdateMetadata },
+}));
+
 const mockEmailPassword = {
   getResetPasswordTokenFromURL: mock(),
   sendPasswordResetEmail: mock(),
@@ -254,6 +259,8 @@ describe("AuthModal", () => {
     mockEmailPassword.sendPasswordResetEmail.mockClear();
     mockEmailPassword.getResetPasswordTokenFromURL.mockClear();
     mockEmailPassword.submitNewPassword.mockClear();
+    mockUpdateMetadata.mockClear();
+    mockUpdateMetadata.mockResolvedValue({ subscribeToUpdates: true });
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: mock(),
@@ -631,6 +638,40 @@ describe("AuthModal", () => {
           { id: "email", value: "test@example.com" },
           { id: "password", value: "password123" },
         ],
+      });
+      expect(mockUpdateMetadata).not.toHaveBeenCalled();
+    });
+
+    it("subscribes to updates after sign-up when the checkbox is checked", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("button", { name: /^sign up$/i }),
+        ).toBeInTheDocument();
+      });
+
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+
+      await waitFor(() => {
+        expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+      });
+
+      await user.type(screen.getByLabelText(/name/i), "Alex");
+      await user.type(screen.getByLabelText(/email/i), "test@example.com");
+      await user.type(screen.getByLabelText(/password/i), "password123");
+      await user.click(
+        screen.getByRole("checkbox", { name: /subscribe to updates/i }),
+      );
+      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
+
+      await waitFor(() => {
+        expect(mockUpdateMetadata).toHaveBeenCalledWith({
+          subscribeToUpdates: true,
+        });
       });
     });
 

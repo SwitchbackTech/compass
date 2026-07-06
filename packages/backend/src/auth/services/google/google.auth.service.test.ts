@@ -11,7 +11,6 @@ import type * as GoogleAuthUtilModule from "@backend/auth/services/google/util/g
 import { determineGoogleAuthMode } from "@backend/auth/services/google/util/google.auth.util";
 import { AuthError } from "@backend/common/errors/auth/auth.errors";
 import mongoService from "@backend/common/services/mongo.service";
-import EmailService from "@backend/email/email.service";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -599,9 +598,6 @@ describe("googleAuthService", () => {
         picture: faker.image.url(),
       } as TokenPayload;
       const refreshToken = faker.string.uuid();
-      const tagNewUserSpy = jest
-        .spyOn(EmailService, "tagNewUserIfEnabled")
-        .mockResolvedValue();
       const restartSpy = jest
         .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
@@ -613,10 +609,8 @@ describe("googleAuthService", () => {
       );
 
       expect(result.cUserId).toBe(recipeUserId);
-      expect(tagNewUserSpy).toHaveBeenCalled();
       expect(restartSpy).toHaveBeenCalledWith(recipeUserId);
 
-      tagNewUserSpy.mockRestore();
       restartSpy.mockRestore();
     });
 
@@ -638,9 +632,6 @@ describe("googleAuthService", () => {
       const restartSpy = jest
         .spyOn(googleCalendarSyncService, "startGoogleCalendarSyncIfNeeded")
         .mockResolvedValue();
-      const tagNewUserSpy = jest
-        .spyOn(EmailService, "tagNewUserIfEnabled")
-        .mockResolvedValue();
 
       const result = await googleAuthService.googleSignup(
         providerUser,
@@ -660,7 +651,6 @@ describe("googleAuthService", () => {
       expect(restartSpy).toHaveBeenCalledWith(existingUser._id.toString());
 
       restartSpy.mockRestore();
-      tagNewUserSpy.mockRestore();
     });
   });
 });

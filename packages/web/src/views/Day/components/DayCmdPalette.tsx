@@ -9,6 +9,7 @@ import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
 import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
+import { useSubscribeCmdItems } from "@web/common/hooks/useSubscribeCmdItems";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -39,6 +40,7 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
   const authCmdItems = useAuthCmdItems();
   const googleCmdItems = useGoogleCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
+  const subscribeCmdItems = useSubscribeCmdItems();
 
   const filteredItems = filterItems(
     [
@@ -86,7 +88,12 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
       {
         heading: "Settings",
         id: "settings",
-        items: [...googleCmdItems, ...authCmdItems, ...logoutCmdItems],
+        items: [
+          ...googleCmdItems,
+          ...subscribeCmdItems,
+          ...authCmdItems,
+          ...logoutCmdItems,
+        ],
       },
       ...moreCommandPaletteItems,
     ],
