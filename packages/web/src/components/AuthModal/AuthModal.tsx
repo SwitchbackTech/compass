@@ -8,7 +8,6 @@ import {
 } from "@web/common/utils/toast/error-toast.util";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
-import { AuthButton } from "./components/AuthButton";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 import { LogInForm } from "./forms/LogInForm";
 import { ResetPasswordForm } from "./forms/ResetPasswordForm";
@@ -129,7 +128,22 @@ export const AuthModal: FC = () => {
           : "Hey, welcome back";
 
   return (
-    <OverlayPanel title={title} onDismiss={closeModal} variant="modal">
+    <OverlayPanel
+      title={title}
+      titleAction={
+        showAuthSwitch ? (
+          <button
+            type="button"
+            onClick={handleSwitchAuth}
+            className="shrink-0 rounded-3xl border border-[#1f1f1f] bg-white px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#f0f0f0]"
+          >
+            {isLoginView ? "Sign up" : "Log in"}
+          </button>
+        ) : null
+      }
+      onDismiss={closeModal}
+      variant="modal"
+    >
       <div className="flex w-full flex-col gap-6">
         {/* Form based on current view */}
         {currentView === "signUp" && (
@@ -171,23 +185,6 @@ export const AuthModal: FC = () => {
             {submitError}
           </p>
         ) : null}
-        {/* Auth switch (Sign In / Sign Up) - only for signIn and signUp views */}
-        {showAuthSwitch && (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-border-primary" />
-              <span className="text-sm text-text-light">or</span>
-              <div className="h-px flex-1 bg-border-primary" />
-            </div>
-            <AuthButton
-              type="button"
-              variant="outline"
-              onClick={handleSwitchAuth}
-            >
-              {isLoginView ? "Sign up" : "Log in"}
-            </AuthButton>
-          </>
-        )}
         {/* Google Sign In - at bottom */}
         {showGoogleAuth ? (
           <>
