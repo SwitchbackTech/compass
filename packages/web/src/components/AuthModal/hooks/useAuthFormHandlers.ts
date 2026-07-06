@@ -6,8 +6,9 @@ import {
   type ForgotPasswordFormData,
   type LogInFormData,
   type ResetPasswordFormData,
-  type SignUpFormData,
 } from "@web/auth/compass/schemas/auth.schemas";
+import { UserApi } from "@web/common/apis/user.api";
+import { type SignUpSubmitData } from "../forms/SignUpForm";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
 
@@ -46,7 +47,7 @@ interface UseAuthFormHandlersOptions {
 export interface UseAuthFormHandlersResult {
   isSubmitting: boolean;
   submitError: string | null;
-  handleSignUp: (data: SignUpFormData) => Promise<void>;
+  handleSignUp: (data: SignUpSubmitData) => Promise<void>;
   handleLogin: (data: LogInFormData) => Promise<void>;
   handleForgotPassword: (data: ForgotPasswordFormData) => Promise<void>;
   handleResetPassword: (data: ResetPasswordFormData) => Promise<void>;
@@ -76,7 +77,7 @@ export function useAuthFormHandlers({
   }, [currentView]);
 
   const handleSignUp = useCallback(
-    async (data: SignUpFormData) => {
+    async (data: SignUpSubmitData) => {
       setIsSubmitting(true);
       setSubmitError(null);
 
@@ -94,6 +95,11 @@ export function useAuthFormHandlers({
             await completeAuthentication({
               email: response.user.emails[0] ?? data.email,
             });
+            if (data.subscribeToUpdates) {
+              void UserApi.updateMetadata({ subscribeToUpdates: true }).catch(
+                () => {},
+              );
+            }
             closeModal();
             return;
           case "FIELD_ERROR":

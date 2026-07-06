@@ -38,6 +38,7 @@ export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
   google?: {
     connectionState?: GoogleConnectionState;
   };
+  subscribeToUpdates?: boolean;
 }
 
 export interface UserProfile

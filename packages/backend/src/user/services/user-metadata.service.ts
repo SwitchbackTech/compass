@@ -6,6 +6,7 @@ import {
   type GoogleConnectionState,
   type UserMetadata,
 } from "@core/types/user.types";
+import EmailService from "@backend/email/email.service";
 import { isGoogleCalendarSyncHealthy } from "@backend/sync/services/google-sync/google-sync.health";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
@@ -81,6 +82,12 @@ class UserMetadataService {
     data: Partial<UserMetadata>;
   }): Promise<UserMetadata> => {
     const value = await this.getStoredUserMetadata(userId);
+
+    if (data.subscribeToUpdates === true && !value.subscribeToUpdates) {
+      const user = await findCompassUserBy("_id", userId);
+      if (user) await EmailService.tagSubscribedUser(user);
+    }
+
     const update = mergeWith(value, data) as UserMetadata;
 
     const result = (await SupertokensUserMetadata.updateUserMetadata(

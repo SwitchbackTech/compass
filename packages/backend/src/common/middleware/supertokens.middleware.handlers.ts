@@ -15,7 +15,6 @@ import {
   getFormFieldValue,
   maybeReplaceEmailPasswordSession,
 } from "@backend/common/middleware/supertokens.middleware.util";
-import EmailService from "@backend/email/email.service";
 import userService from "@backend/user/services/user.service";
 import {
   type CreateGoogleSignInResponse,
@@ -176,7 +175,7 @@ export async function handleEmailPasswordSignUp(
     const userId = response.session.getUserId();
 
     if (email) {
-      const { user, isNewUser } = await userService.upsertUserFromAuth({
+      const { user } = await userService.upsertUserFromAuth({
         userId,
         email,
         name,
@@ -187,7 +186,6 @@ export async function handleEmailPasswordSignUp(
         user.userId,
         replaceSessionWithCompassUser,
       );
-      await EmailService.tagNewUserIfEnabled(user, isNewUser);
       return remappedResponse;
     }
   }
