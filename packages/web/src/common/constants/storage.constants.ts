@@ -4,15 +4,17 @@ export const StorageKeySchema = z.enum([
   "compass.auth",
   "compass.onboarding.has-seen-welcome",
   "compass.day.task-list-width",
+  "compass.view.sidebar-open",
 ]);
 
 export type StorageKey = z.infer<typeof StorageKeySchema>;
 
 export const STORAGE_KEYS: Record<
-  "AUTH" | "HAS_SEEN_WELCOME" | "DAY_TASK_LIST_WIDTH",
+  "AUTH" | "HAS_SEEN_WELCOME" | "DAY_TASK_LIST_WIDTH" | "SIDEBAR_OPEN",
   StorageKey
 > = {
   AUTH: "compass.auth",
   HAS_SEEN_WELCOME: "compass.onboarding.has-seen-welcome",
   DAY_TASK_LIST_WIDTH: "compass.day.task-list-width",
+  SIDEBAR_OPEN: "compass.view.sidebar-open",
 } as const;

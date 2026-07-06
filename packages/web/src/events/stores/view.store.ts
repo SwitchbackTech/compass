@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import dayjs from "@core/util/date/dayjs";
 import { IS_DEV } from "@web/common/constants/env.constants";
+import { writeSidebarOpen } from "@web/common/storage/sidebar-open.storage";
 
 interface ViewState {
   dates: {
@@ -41,7 +42,11 @@ export const viewActions = {
     }),
   toggleSidebar: () =>
     useViewStore.setState(
-      (state) => ({ sidebar: { isOpen: !state.sidebar.isOpen } }),
+      (state) => {
+        const isOpen = !state.sidebar.isOpen;
+        writeSidebarOpen(isOpen);
+        return { sidebar: { isOpen } };
+      },
       false,
       { type: "toggleSidebar" },
     ),
