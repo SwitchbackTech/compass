@@ -60,7 +60,6 @@ export const CalendarHeader: FC<Props> = ({
       </h1>
 
       <div className="z-2 ml-auto flex items-center gap-3 pr-5">
-        <SelectView />
         <TodayButton navigateToToday={onToday} isToday={isToday} />
         <TooltipWrapper shortcut="J">
           <ArrowButton direction="left" label={prevLabel} onClick={onPrev} />
@@ -68,6 +67,7 @@ export const CalendarHeader: FC<Props> = ({
         <TooltipWrapper shortcut="K">
           <ArrowButton direction="right" label={nextLabel} onClick={onNext} />
         </TooltipWrapper>
+        <SelectView />
       </div>
     </div>
   );
