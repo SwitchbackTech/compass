@@ -55,13 +55,6 @@ function validateDateStringParam(
   }
 }
 
-function shapeDayLoaderData(dateString: string): DayLoaderData {
-  return {
-    dateString,
-    dateInView: dayjs(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
-  };
-}
-
 export function validateDayDateParam({
   params,
 }: {
@@ -78,18 +71,19 @@ export function validateWeekDateParam({
   validateDateStringParam(params.dateString, ROOT_ROUTES.WEEK);
 }
 
-export function loadSpecificDayData({
+// Shared by dayDateRoute and weekDateRoute: once beforeLoad has validated
+// the param, shaping it into DayLoaderData doesn't depend on which route
+// matched.
+export function loadDateParam({
   params,
 }: {
   params: { dateString: string };
 }): DayLoaderData {
-  return shapeDayLoaderData(params.dateString);
-}
-
-export function loadSpecificWeekData({
-  params,
-}: {
-  params: { dateString: string };
-}): DayLoaderData {
-  return shapeDayLoaderData(params.dateString);
+  return {
+    dateString: params.dateString,
+    dateInView: dayjs(
+      params.dateString,
+      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+    ),
+  };
 }

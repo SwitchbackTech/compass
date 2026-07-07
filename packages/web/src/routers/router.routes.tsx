@@ -7,8 +7,7 @@ import { IS_DEV } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   loadAuthenticated,
-  loadSpecificDayData,
-  loadSpecificWeekData,
+  loadDateParam,
   redirectToToday,
   validateDayDateParam,
   validateWeekDateParam,
@@ -48,7 +47,7 @@ export const dayDateRoute = createRoute({
   getParentRoute: () => dayRoute,
   path: "$dateString",
   beforeLoad: validateDayDateParam,
-  loader: loadSpecificDayData,
+  loader: loadDateParam,
   component: lazyRouteComponent(
     () => import("@web/views/Day/view/DayViewContent"),
     "DayViewContent",
@@ -70,7 +69,7 @@ export const weekDateRoute = createRoute({
   getParentRoute: () => weekRoute,
   path: "$dateString",
   beforeLoad: validateWeekDateParam,
-  loader: loadSpecificWeekData,
+  loader: loadDateParam,
   component: lazyRouteComponent(
     () => import("@web/views/Week/WeekView"),
     "WeekView",

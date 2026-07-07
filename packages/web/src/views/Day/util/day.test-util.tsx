@@ -10,7 +10,7 @@ import { type PropsWithChildren } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { render, waitFor } from "@web/__tests__/__mocks__/mock.render";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { loadSpecificDayData, loadTodayData } from "@web/routers/loaders";
+import { loadDateParam, loadTodayData } from "@web/routers/loaders";
 import { DateNavigationProvider } from "@web/views/Day/context/DateNavigationContext";
 import { TaskProvider } from "@web/views/Day/context/TaskContext";
 
@@ -42,7 +42,7 @@ const createDayRouter = (
   const dayDateRoute = createRoute({
     getParentRoute: () => rootRoute,
     path: ROOT_ROUTES.DAY_DATE,
-    loader: loadSpecificDayData,
+    loader: loadDateParam,
     component: () => <TaskProviderWrapper>{component}</TaskProviderWrapper>,
   });
 

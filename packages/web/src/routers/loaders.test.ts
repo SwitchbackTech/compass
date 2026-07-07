@@ -7,7 +7,7 @@ import {
 } from "@tanstack/react-router";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
-  loadSpecificWeekData,
+  loadDateParam,
   loadTodayData,
   redirectToToday,
   validateWeekDateParam,
@@ -112,9 +112,9 @@ describe("router redirects", () => {
   });
 });
 
-describe("loadSpecificWeekData", () => {
+describe("loadDateParam", () => {
   it("shapes the loader data for an already-valid dateString param", () => {
-    const result = loadSpecificWeekData({
+    const result = loadDateParam({
       params: { dateString: "2026-05-20" },
     });
 
