@@ -1,3 +1,4 @@
+import { type Payload_Order } from "@core/types/event.types";
 import { type LocalStoredEvent } from "@web/common/storage/types/local-event.types";
 import { type Task } from "@web/common/types/task.types";
 
@@ -111,6 +112,12 @@ export interface OfflineDataStore {
    * Delete an event by ID.
    */
   deleteEvent(eventId: string): Promise<void>;
+
+  /**
+   * Patch the `order` field on the given events, leaving every other field
+   * untouched. Ids not present in storage are ignored.
+   */
+  updateEventOrders(order: Payload_Order[]): Promise<void>;
 
   /**
    * Clear all events from storage.

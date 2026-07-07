@@ -9,6 +9,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const putEvent = mock();
 const getAllEvents = mock();
+const updateEventOrders = mock();
 
 mock.module(
   "@web/common/storage/offline-data/offline-data.store.registry",
@@ -17,6 +18,7 @@ mock.module(
     getOfflineDataStore: () => ({
       putEvent,
       getAllEvents,
+      updateEventOrders,
     }),
     initializeOfflineDataStore: mock().mockResolvedValue(undefined),
     isOfflineDataStoreReady: mock().mockReturnValue(true),
@@ -40,6 +42,7 @@ describe("LocalEventRepository", () => {
   beforeEach(() => {
     putEvent.mockClear();
     getAllEvents.mockClear();
+    updateEventOrders.mockClear();
   });
 
   it("preserves the demo marker when editing a seeded demo event", async () => {
@@ -53,5 +56,18 @@ describe("LocalEventRepository", () => {
     );
 
     expect(isLocalDemoEvent(putEvent.mock.calls[0][0])).toBe(true);
+  });
+
+  it("delegates reorder to the store without reading or rewriting whole events", async () => {
+    const order = [
+      { _id: "event-1", order: 0 },
+      { _id: "event-2", order: 1 },
+    ];
+
+    await new LocalEventRepository().reorder(order);
+
+    expect(updateEventOrders).toHaveBeenCalledWith(order);
+    expect(getAllEvents).not.toHaveBeenCalled();
+    expect(putEvent).not.toHaveBeenCalled();
   });
 });

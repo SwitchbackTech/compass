@@ -4,6 +4,7 @@ export const LOCAL_DEMO_EVENT_FIELD = "__compassDemoEvent";
 
 export type LocalStoredEvent = Event_Core & {
   [LOCAL_DEMO_EVENT_FIELD]?: true;
+  order?: number;
 };
 
 export function markLocalDemoEvent<T extends Event_Core>(
