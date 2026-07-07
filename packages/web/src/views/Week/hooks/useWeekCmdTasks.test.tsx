@@ -1,6 +1,5 @@
 import { act } from "@testing-library/react";
 import { type SyntheticEvent } from "react";
-import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { renderHookWithStore } from "@web/__tests__/render-with-store";
 import {
@@ -77,8 +76,8 @@ const getItem = (items: ReturnType<typeof useWeekCmdTasks>, id: string) => {
 
 describe("useWeekCmdTasks", () => {
   it.each([
-    ["create-someday-week-event", Categories_Event.SOMEDAY_WEEK],
-    ["create-someday-month-event", Categories_Event.SOMEDAY_MONTH],
+    "create-someday-week-event",
+    "create-someday-month-event",
   ])("opens the sidebar when creating a %s while it's closed", async (id) => {
     viewActions.setSidebarOpen(false);
     const { result } = renderWeekCmdTasks();
