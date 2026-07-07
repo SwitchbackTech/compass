@@ -99,6 +99,14 @@ globalThis.Event = window.Event;
 globalThis.CustomEvent = window.CustomEvent;
 globalThis.MouseEvent = window.MouseEvent;
 globalThis.KeyboardEvent = window.KeyboardEvent;
+// Bun's native globalThis.dispatchEvent/addEventListener operate on Bun's own
+// Event realm. Dexie constructs `new CustomEvent(...)` against the jsdom
+// Event class above, so dispatching through Bun's native EventTarget throws
+// "must be an instance of Event" (cross-realm brand check). Rebind these to
+// jsdom's window so the whole event pipeline stays in one realm.
+globalThis.dispatchEvent = window.dispatchEvent.bind(window);
+globalThis.addEventListener = window.addEventListener.bind(window);
+globalThis.removeEventListener = window.removeEventListener.bind(window);
 globalThis.self = window;
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -262,6 +270,23 @@ window.HTMLCanvasElement.prototype.getContext = function (
 };
 
 await import("fake-indexeddb/auto");
+// fake-indexeddb/auto attaches indexedDB (and friends) to `typeof window
+// !== "undefined" ? window : ...`, which resolves to the jsdom window set
+// above. Dexie reads `globalThis.indexedDB`/`globalThis.IDBKeyRange`
+// directly, so mirror them onto globalThis or `new Dexie(...).open()`
+// throws MissingAPIError.
+globalThis.indexedDB = window.indexedDB;
+globalThis.IDBKeyRange = window.IDBKeyRange;
+globalThis.IDBCursor = window.IDBCursor;
+globalThis.IDBCursorWithValue = window.IDBCursorWithValue;
+globalThis.IDBDatabase = window.IDBDatabase;
+globalThis.IDBFactory = window.IDBFactory;
+globalThis.IDBIndex = window.IDBIndex;
+globalThis.IDBObjectStore = window.IDBObjectStore;
+globalThis.IDBOpenDBRequest = window.IDBOpenDBRequest;
+globalThis.IDBRequest = window.IDBRequest;
+globalThis.IDBTransaction = window.IDBTransaction;
+globalThis.IDBVersionChangeEvent = window.IDBVersionChangeEvent;
 
 if (typeof globalThis.structuredClone === "undefined") {
   globalThis.structuredClone = (obj: unknown) => {
