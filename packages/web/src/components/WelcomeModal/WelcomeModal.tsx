@@ -6,6 +6,7 @@ import {
 import {
   type KeyboardEvent,
   type MouseEvent,
+  useCallback,
   useContext,
   useEffect,
   useId,
@@ -16,11 +17,13 @@ import { SessionContext } from "@web/auth/compass/session/session.context";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { FAQ_ITEMS } from "./faq";
+import { PixelPirate } from "./PixelPirate";
+import { useWelcomeBackNav } from "./useWelcomeBackNav";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
-  const { openModal } = useAuthModal();
+  const { openModal, closeModal, isOpen: isAuthModalOpen } = useAuthModal();
   const disclosureIdPrefix = useId();
   const [isOpen, setIsOpen] = useState(
     () => !authenticated && !hasSeenWelcome(),
@@ -30,9 +33,22 @@ export function WelcomeModal() {
   );
   const backdropRef = useRef<HTMLDivElement>(null);
 
+  const handleBackToWelcome = useCallback(() => {
+    if (!authenticated) {
+      setIsOpen(true);
+    }
+  }, [authenticated]);
+  const { pushAuthEntry } = useWelcomeBackNav({
+    isAuthModalOpen,
+    closeAuthModal: closeModal,
+    onBackToWelcome: handleBackToWelcome,
+  });
+
   useEffect(() => {
-    backdropRef.current?.focus();
-  }, []);
+    if (isOpen) {
+      backdropRef.current?.focus();
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -42,7 +58,9 @@ export function WelcomeModal() {
   };
 
   const handleLogIn = () => {
-    dismiss();
+    markWelcomeSeen();
+    setIsOpen(false);
+    pushAuthEntry();
     openModal("login");
   };
 
@@ -87,32 +105,49 @@ export function WelcomeModal() {
         role="dialog"
         aria-modal
         aria-label="Welcome to Compass Calendar"
-        className="flex w-140 max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
+        className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
       >
-        {/* Header */}
-        <div className="flex flex-col gap-2">
-          <h2 className="font-bold text-2xl text-text-lighter">Ahoy!</h2>
-          <p className="text-text-lighter">
-            You found a simple, fast calendar.
-          </p>
-        </div>
-
-        {/* Action buttons */}
-        <div className="flex gap-3">
-          <button
-            type="button"
-            onClick={dismiss}
-            className="c-button c-button-primary flex-1"
-          >
-            Start Now
-          </button>
+        {/* Top row: log-in pill, top-right */}
+        <div className="flex justify-end">
           <button
             type="button"
             onClick={handleLogIn}
-            className="c-button c-button-secondary flex-1"
+            className="shrink-0 rounded-3xl border border-[#1f1f1f] bg-white px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#f0f0f0]"
           >
-            Log In
+            Log in
           </button>
+        </div>
+
+        {/* Header */}
+        <div className="flex flex-col gap-2">
+          <h2 className="font-bold text-2xl text-text-lighter leading-snug">
+            Compass Calendar is a simple app that helps you manage your time.
+          </h2>
+          <p className="text-text-light">
+            Minimal, yet fast and intuitive. We cut out all the noise so you can
+            reclaim control of your time.
+          </p>
+        </div>
+
+        {/* CTA: centered pill button + mascot */}
+        <div className="flex flex-col items-center gap-3">
+          <button
+            type="button"
+            onClick={dismiss}
+            className="c-button c-button-primary rounded-full px-10"
+          >
+            Start Now
+          </button>
+          <div className="flex items-center gap-1">
+            <PixelPirate className="h-14 w-14 shrink-0" />
+            <div className="relative rounded-lg border border-border-primary bg-panel-badge-bg px-3 py-1.5 text-text-lighter text-xs">
+              <span
+                aria-hidden
+                className="-left-1 -translate-y-1/2 absolute top-1/2 h-2 w-2 rotate-45 border-border-primary border-b border-l bg-panel-badge-bg"
+              />
+              No signup required
+            </div>
+          </div>
         </div>
 
         {/* FAQ */}

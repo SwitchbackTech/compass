@@ -143,6 +143,7 @@ export const AuthModal: FC = () => {
       }
       onDismiss={closeModal}
       variant="modal"
+      widthClassName="w-120"
     >
       <div className="flex w-full flex-col gap-6">
         {/* Form based on current view */}
