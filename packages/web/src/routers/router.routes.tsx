@@ -7,11 +7,9 @@ import { IS_DEV } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   loadAuthenticated,
-  loadDayData,
-  loadRootData,
   loadSpecificDayData,
   loadSpecificWeekData,
-  loadWeekData,
+  redirectToToday,
 } from "@web/routers/loaders";
 import { NotFoundView } from "@web/views/NotFound";
 
@@ -31,7 +29,7 @@ export const lifeRoute = createRoute({
 export const authenticatedLayoutRoute = createRoute({
   getParentRoute: () => rootRoute,
   id: "authenticated",
-  loader: loadAuthenticated,
+  beforeLoad: loadAuthenticated,
   component: lazyRouteComponent(() => import("@web/views/Root"), "RootView"),
 });
 
@@ -57,7 +55,7 @@ export const dayDateRoute = createRoute({
 export const dayIndexRoute = createRoute({
   getParentRoute: () => dayRoute,
   path: "/",
-  beforeLoad: loadDayData,
+  beforeLoad: () => redirectToToday(ROOT_ROUTES.DAY_DATE),
 });
 
 export const weekRoute = createRoute({
@@ -78,13 +76,13 @@ export const weekDateRoute = createRoute({
 export const weekIndexRoute = createRoute({
   getParentRoute: () => weekRoute,
   path: "/",
-  beforeLoad: loadWeekData,
+  beforeLoad: () => redirectToToday(ROOT_ROUTES.WEEK_DATE),
 });
 
 export const rootIndexRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: "/",
-  beforeLoad: loadRootData,
+  beforeLoad: () => redirectToToday(ROOT_ROUTES.DAY_DATE),
 });
 
 export const cleanupRoute = createRoute({

@@ -21,7 +21,7 @@ describe("routeTree", () => {
   });
 
   it("gates the authenticated layout behind loadAuthenticated", () => {
-    expect(authenticatedLayoutRoute.options.loader).toBeDefined();
+    expect(authenticatedLayoutRoute.options.beforeLoad).toBeDefined();
     expect(authenticatedLayoutRoute.parentRoute).toBe(rootRoute);
   });
 });

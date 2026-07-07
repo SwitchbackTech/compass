@@ -98,7 +98,8 @@ mock.module("@web/components/AuthModal/components/GoogleButton", () => ({
   ),
 }));
 
-const { loadDayData, loadTodayData } = await import("@web/routers/loaders");
+const { redirectToToday, loadTodayData } = await import("@web/routers/loaders");
+const { ROOT_ROUTES } = await import("@web/common/constants/routes");
 
 const authModalHookUrl = new URL(
   `./.auth-modal-hook-${process.pid}-${Date.now()}.mjs`,
@@ -230,7 +231,7 @@ const renderWithDayRedirectRoute = (initialRoute: string) => {
   const dayIndexRoute = createRoute({
     getParentRoute: () => dayRoute,
     path: "/",
-    beforeLoad: loadDayData,
+    beforeLoad: () => redirectToToday(ROOT_ROUTES.DAY_DATE),
   });
   const dayDateRoute = createRoute({
     getParentRoute: () => dayRoute,

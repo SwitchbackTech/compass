@@ -1,11 +1,15 @@
-import { isRedirect } from "@tanstack/react-router";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  isRedirect,
+} from "@tanstack/react-router";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
-  loadDayData,
-  loadRootData,
   loadSpecificWeekData,
   loadTodayData,
-  loadWeekData,
+  redirectToToday,
 } from "@web/routers/loaders";
 import { describe, expect, it } from "bun:test";
 
@@ -19,75 +23,91 @@ function getRedirect(fn: () => unknown) {
   throw new Error("expected a redirect to be thrown");
 }
 
-describe("loadRootData", () => {
-  it("redirects root route to day route with today's date", () => {
+// A route tree scoped to just the redirect-relevant shape (no lazy view
+// components) - loading the real production routeTree here would preload
+// every view's dynamic import as a side effect and pollute other test files
+// running later in the same process.
+function createTestRouter(initialEntries: string[]) {
+  const rootRoute = createRootRoute();
+  const dayRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: ROOT_ROUTES.DAY,
+  });
+  const dayIndexRoute = createRoute({
+    getParentRoute: () => dayRoute,
+    path: "/",
+    beforeLoad: () => redirectToToday(ROOT_ROUTES.DAY_DATE),
+  });
+  const dayDateRoute = createRoute({
+    getParentRoute: () => dayRoute,
+    path: "$dateString",
+  });
+  const weekRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: ROOT_ROUTES.WEEK,
+  });
+  const weekIndexRoute = createRoute({
+    getParentRoute: () => weekRoute,
+    path: "/",
+    beforeLoad: () => redirectToToday(ROOT_ROUTES.WEEK_DATE),
+  });
+  const weekDateRoute = createRoute({
+    getParentRoute: () => weekRoute,
+    path: "$dateString",
+  });
+  const rootIndexRoute = createRoute({
+    getParentRoute: () => rootRoute,
+    path: "/",
+    beforeLoad: () => redirectToToday(ROOT_ROUTES.DAY_DATE),
+  });
+
+  return createRouter({
+    routeTree: rootRoute.addChildren([
+      dayRoute.addChildren([dayIndexRoute, dayDateRoute]),
+      weekRoute.addChildren([weekIndexRoute, weekDateRoute]),
+      rootIndexRoute,
+    ]),
+    history: createMemoryHistory({ initialEntries }),
+    defaultPendingMs: 0,
+  });
+}
+
+describe("router redirects", () => {
+  it("redirects / to today's dated day route", async () => {
     const { dateString } = loadTodayData();
-    const redirect = getRedirect(loadRootData);
+    const router = createTestRouter(["/"]);
 
-    expect(redirect.options.to).toBe(ROOT_ROUTES.DAY_DATE);
-    expect(
-      redirect.options.params as unknown as Record<string, string>,
-    ).toEqual({
-      dateString,
-    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe(`/day/${dateString}`);
   });
 
-  it("preserves auth query params when redirecting to today's date", () => {
-    const redirect = getRedirect(loadRootData);
-    const search = redirect.options.search as (
-      prev: Record<string, unknown>,
-    ) => Record<string, unknown>;
-
-    expect(search({ auth: "login" })).toEqual({ auth: "login" });
-  });
-});
-
-describe("loadDayData", () => {
-  it("redirects the bare day route to today's dated day route", () => {
+  it("redirects /day to today's dated day route", async () => {
     const { dateString } = loadTodayData();
-    const redirect = getRedirect(loadDayData);
+    const router = createTestRouter(["/day"]);
 
-    expect(redirect.options.to).toBe(ROOT_ROUTES.DAY_DATE);
-    expect(
-      redirect.options.params as unknown as Record<string, string>,
-    ).toEqual({
-      dateString,
-    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe(`/day/${dateString}`);
   });
 
-  it("preserves auth query params when redirecting to the dated route", () => {
-    const redirect = getRedirect(loadDayData);
-    const search = redirect.options.search as (
-      prev: Record<string, unknown>,
-    ) => Record<string, unknown>;
-
-    expect(search({ auth: "reset", token: "abc" })).toEqual({
-      auth: "reset",
-      token: "abc",
-    });
-  });
-});
-
-describe("loadWeekData", () => {
-  it("redirects the bare week route to today's dated week route", () => {
+  it("redirects /week to today's dated week route", async () => {
     const { dateString } = loadTodayData();
-    const redirect = getRedirect(loadWeekData);
+    const router = createTestRouter(["/week"]);
 
-    expect(redirect.options.to).toBe(ROOT_ROUTES.WEEK_DATE);
-    expect(
-      redirect.options.params as unknown as Record<string, string>,
-    ).toEqual({
-      dateString,
-    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe(`/week/${dateString}`);
   });
 
-  it("preserves auth query params when redirecting to the dated week route", () => {
-    const redirect = getRedirect(loadWeekData);
-    const search = redirect.options.search as (
-      prev: Record<string, unknown>,
-    ) => Record<string, unknown>;
+  it("preserves ?auth=login across the today redirect", async () => {
+    const { dateString } = loadTodayData();
+    const router = createTestRouter(["/day?auth=login"]);
 
-    expect(search({ auth: "login" })).toEqual({ auth: "login" });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe(`/day/${dateString}`);
+    expect(router.state.location.search).toEqual({ auth: "login" });
   });
 });
 

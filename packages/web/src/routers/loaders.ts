@@ -30,7 +30,7 @@ export function loadTodayData(): DayLoaderData {
   return { dateInView, dateString: dateInView.format(dateFormat) };
 }
 
-function redirectToToday(
+export function redirectToToday(
   to: typeof ROOT_ROUTES.DAY_DATE | typeof ROOT_ROUTES.WEEK_DATE,
 ): never {
   const { dateString } = loadTodayData();
@@ -40,18 +40,6 @@ function redirectToToday(
     params: { dateString },
     search: (prev: Record<string, unknown>) => prev,
   });
-}
-
-export function loadDayData(): never {
-  redirectToToday(ROOT_ROUTES.DAY_DATE);
-}
-
-export function loadRootData(): never {
-  redirectToToday(ROOT_ROUTES.DAY_DATE);
-}
-
-export function loadWeekData(): never {
-  redirectToToday(ROOT_ROUTES.WEEK_DATE);
 }
 
 function loadSpecificDateData(
