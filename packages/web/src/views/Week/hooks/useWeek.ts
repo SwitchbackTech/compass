@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { type Dayjs } from "@core/util/date/dayjs";
+import { useEffect, useMemo, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
@@ -15,14 +17,28 @@ import { type Category_View } from "@web/views/Week/week-view.types";
 
 export type WeekNavigationSource = "manual" | "drag-to-edge";
 
+const DATE_FORMAT = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
+
 export const useWeek = (
   today: Dayjs,
   visibleDayCount: number = WEEK_DAY_COUNT,
 ) => {
   // The anchor is the day the visible window centers on. The week range and
   // the window offset both derive from it, so a day-count change re-windows
-  // around the anchor without extra state.
-  const [anchor, setAnchor] = useState(today);
+  // around the anchor without extra state. The anchor itself lives in the
+  // URL (rather than useState) so a refresh restores the same week; it is
+  // memoized on the date *string* because `today` is a fresh Dayjs every
+  // render, and memoizing on the Dayjs instance would re-derive start/end
+  // (and re-fire the updateDates effect below) on every render.
+  const navigate = useNavigate();
+  const { dateString } = useParams();
+  const anchorDateString = dateString ?? today.format(DATE_FORMAT);
+  const anchor = useMemo(
+    () => dayjs(anchorDateString, DATE_FORMAT),
+    [anchorDateString],
+  );
+  const setAnchor = (date: Dayjs) =>
+    navigate(`${ROOT_ROUTES.WEEK}/${date.format(DATE_FORMAT)}`);
   const navigationSourceRef = useRef<WeekNavigationSource>("manual");
 
   const start = useMemo(() => anchor.startOf("week"), [anchor]);

@@ -55,7 +55,7 @@ export function useGlobalShortcuts() {
   });
 
   useAppHotkeyUp(weekHotkey, () => {
-    if (location.pathname !== VIEW_SHORTCUTS.week.route) {
+    if (!location.pathname.startsWith(VIEW_SHORTCUTS.week.route)) {
       navigate(VIEW_SHORTCUTS.week.route);
     }
   });

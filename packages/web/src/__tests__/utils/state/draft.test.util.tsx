@@ -1,4 +1,5 @@
 import { act } from "react";
+import { MemoryRouter } from "react-router-dom";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
@@ -28,7 +29,10 @@ export function setupDraftState(event: Schema_WebEvent) {
     },
   };
 
-  const weekHook = renderHook(() => useWeek(useToday().today), { state });
+  const weekHook = renderHook(() => useWeek(useToday().today), {
+    state,
+    wrapper: MemoryRouter,
+  });
   const weekProps = weekHook.result.current;
 
   const gridHook = renderHook(() => useGridLayout(), {

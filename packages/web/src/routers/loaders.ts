@@ -30,33 +30,52 @@ export function loadTodayData(): DayLoaderData {
   return { dateInView, dateString: dateInView.format(dateFormat) };
 }
 
-function buildTodayRedirectUrl(request: Request): string {
+function buildTodayRedirectUrl(request: Request, baseRoute: string): string {
   const { dateString } = loadTodayData();
   const url = new URL(request.url);
 
-  return `${ROOT_ROUTES.DAY}/${dateString}${url.search}`;
+  return `${baseRoute}/${dateString}${url.search}`;
 }
 
 export function loadDayData({
   request,
 }: LoaderFunctionArgs<unknown>): Response {
-  return redirect(buildTodayRedirectUrl(request));
+  return redirect(buildTodayRedirectUrl(request, ROOT_ROUTES.DAY));
 }
 
 export function loadRootData(args: LoaderFunctionArgs<unknown>): Response {
   return loadDayData(args);
 }
 
-export async function loadSpecificDayData({
-  params,
-}: LoaderFunctionArgs<unknown>): Promise<DayLoaderData | Response> {
+export function loadWeekData({
+  request,
+}: LoaderFunctionArgs<unknown>): Response {
+  return redirect(buildTodayRedirectUrl(request, ROOT_ROUTES.WEEK));
+}
+
+function loadSpecificDateData(
+  params: LoaderFunctionArgs<unknown>["params"],
+  baseRoute: string,
+): DayLoaderData | Response {
   const parsedDate = zYearMonthDayString.safeParse(params.dateString);
   const { success, data: dateString } = parsedDate;
 
-  if (!success) return redirect(ROOT_ROUTES.DAY);
+  if (!success) return redirect(baseRoute);
 
-  return Promise.resolve({
+  return {
     dateString,
     dateInView: dayjs(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
-  });
+  };
+}
+
+export function loadSpecificDayData({
+  params,
+}: LoaderFunctionArgs<unknown>): DayLoaderData | Response {
+  return loadSpecificDateData(params, ROOT_ROUTES.DAY);
+}
+
+export function loadSpecificWeekData({
+  params,
+}: LoaderFunctionArgs<unknown>): DayLoaderData | Response {
+  return loadSpecificDateData(params, ROOT_ROUTES.WEEK);
 }

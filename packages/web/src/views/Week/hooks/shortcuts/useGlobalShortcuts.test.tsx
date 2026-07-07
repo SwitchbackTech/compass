@@ -194,4 +194,19 @@ describe("useGlobalShortcuts", () => {
       unmount();
     });
   });
+
+  it("does not navigate when pressing W while already on a dated week route", () => {
+    mockPathname.value = "/week/2026-05-20";
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    act(() => {
+      pressKey("w");
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+    act(() => {
+      unmount();
+    });
+  });
 });
