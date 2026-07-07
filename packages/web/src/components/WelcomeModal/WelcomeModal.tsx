@@ -29,6 +29,7 @@ export function WelcomeModal() {
   const [expandedFaqs, setExpandedFaqs] = useState<Set<string>>(
     () => new Set(),
   );
+  const [closing, setClosing] = useState(false);
   const backdropRef = useRef<HTMLDivElement>(null);
 
   // The auth modal's openness lives in the URL (?auth=), so the welcome
@@ -44,9 +45,15 @@ export function WelcomeModal() {
 
   if (!visible) return null;
 
+  // Fade the backdrop and gently scale the panel before unmounting, so the
+  // first reveal of the planner underneath feels smooth rather than abrupt.
   const dismiss = () => {
+    if (closing) return;
     markWelcomeSeen();
-    setIsOpen(false);
+    setClosing(true);
+    const reduceMotion =
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+    window.setTimeout(() => setIsOpen(false), reduceMotion ? 0 : 400);
   };
 
   const handleLogIn = () => {
@@ -83,7 +90,8 @@ export function WelcomeModal() {
   return (
     // biome-ignore lint/a11y/noStaticElementInteractions: The backdrop catches outside clicks and Escape to dismiss the welcome modal.
     <div
-      className="fixed inset-0 flex items-center justify-center overflow-y-auto bg-bg-primary/85 py-8 backdrop-blur-sm"
+      className="fixed inset-0 flex items-center justify-center overflow-y-auto bg-bg-primary/85 py-8 backdrop-blur-sm transition-opacity duration-400 ease-out data-closing:opacity-0 motion-reduce:transition-none"
+      data-closing={closing || undefined}
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
       ref={backdropRef}
@@ -95,7 +103,8 @@ export function WelcomeModal() {
         role="dialog"
         aria-modal
         aria-label="Welcome to Compass Calendar"
-        className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
+        data-closing={closing || undefined}
+        className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)] transition-transform duration-400 ease-out data-closing:scale-105 motion-reduce:transition-none"
       >
         {/* Top row: pirate top-left, log-in pill top-right */}
         <div className="flex items-center justify-between">
@@ -116,7 +125,7 @@ export function WelcomeModal() {
           <button
             type="button"
             onClick={handleLogIn}
-            className="shrink-0 rounded-3xl bg-[#a3a7ad] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#b6bac0]"
+            className="shrink-0 rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
           >
             Log in
           </button>

@@ -131,7 +131,7 @@ export const AuthModal: FC = () => {
           <button
             type="button"
             onClick={handleSwitchAuth}
-            className="shrink-0 rounded-3xl border border-[#1f1f1f] bg-white px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#f0f0f0]"
+            className="shrink-0 rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
           >
             {isLoginView ? "Sign up" : "Log in"}
           </button>

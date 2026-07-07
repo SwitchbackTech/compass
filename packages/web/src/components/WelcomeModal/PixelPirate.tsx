@@ -3,8 +3,8 @@ const skin = "#F4D7B5";
 const dark = "#0d1017";
 const beard = "#8B5E3C";
 const white = "#E6EDF3";
-// Also used for the welcome modal's Log in pill background
-const shirt = "#a3a7ad";
+// Also used for the welcome and auth modals' pill button backgrounds
+const shirt = "#c2c6cc";
 
 export function PixelPirate({ className }: { className?: string }) {
   return (
