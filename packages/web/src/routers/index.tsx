@@ -9,7 +9,10 @@ import { routeTree } from "@web/routers/router.routes";
 export const router = createRouter({
   routeTree,
   defaultPendingComponent: AbsoluteOverflowLoader,
-  defaultPendingMs: 0,
+  // Fast loaders (the common case) never show the overlay at all; slower
+  // ones show it for at least defaultPendingMinMs so it doesn't flash.
+  defaultPendingMs: 300,
+  defaultPendingMinMs: 200,
   defaultPreload: "intent",
 });
 
