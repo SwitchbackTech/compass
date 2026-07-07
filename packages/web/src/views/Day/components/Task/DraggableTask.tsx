@@ -59,7 +59,11 @@ export function DraggableTask({
           {...attributes}
           {...listeners}
           ref={setActivatorNodeRef}
-          aria-label={`Reorder ${task.title}`}
+          aria-label={
+            isDragging
+              ? `Reordering ${task.title}. Use arrow keys to move, space to drop.`
+              : `Reorder ${task.title}`
+          }
           onFocus={() => setSelectedTaskIndex(index)}
           className={classNames(
             // Floats in the DropZone's pl-8 gutter so it reserves no row space
@@ -72,7 +76,10 @@ export function DraggableTask({
             "focus-visible:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/50",
             "focus:outline-none",
             {
-              "cursor-grabbing opacity-100": isDragging,
+              // A distinct accent (vs. the white focus ring) so keyboard users
+              // can see the grab actually registered, not just that it's focused.
+              "cursor-grabbing bg-blue-200/20 opacity-100 ring-2 ring-blue-200":
+                isDragging,
             },
           )}
         >
