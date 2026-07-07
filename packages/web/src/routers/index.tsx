@@ -10,6 +10,7 @@ export const router = createRouter({
   routeTree,
   defaultPendingComponent: AbsoluteOverflowLoader,
   defaultPendingMs: 0,
+  defaultPreload: "intent",
 });
 
 declare module "@tanstack/react-router" {
