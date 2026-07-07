@@ -227,7 +227,7 @@ test.describe("Google auth callback", () => {
 
     delayedSignIn.resolve();
 
-    await expect(page).toHaveURL(/\/week$/);
+    await expect(page).toHaveURL(/\/week\/\d{4}-\d{2}-\d{2}$/);
     expect(apiMocks.loginOrSignup).toHaveLength(1);
     expect(apiMocks.connectGoogle).toHaveLength(0);
     expect(apiMocks.loginOrSignup[0]?.headers.rid).toBe("thirdparty");
@@ -256,7 +256,7 @@ test.describe("Google auth callback", () => {
 
     await page.goto(getCallbackUrl(state));
 
-    await expect(page).toHaveURL(/\/week$/);
+    await expect(page).toHaveURL(/\/week\/\d{4}-\d{2}-\d{2}$/);
     expect(apiMocks.loginOrSignup).toHaveLength(0);
     expect(apiMocks.connectGoogle).toHaveLength(1);
     expectGoogleAuthRequestBody(apiMocks.connectGoogle[0], state);
@@ -277,7 +277,7 @@ test.describe("Google auth callback", () => {
 
     await page.goto(getCallbackUrl(state));
 
-    await expect(page).toHaveURL(/\/week$/);
+    await expect(page).toHaveURL(/\/week\/\d{4}-\d{2}-\d{2}$/);
     expect(apiMocks.connectGoogle).toHaveLength(0);
     expect(apiMocks.loginOrSignup).toHaveLength(1);
     expect(apiMocks.loginOrSignup[0]?.headers.rid).toBe("thirdparty");
@@ -299,7 +299,7 @@ test.describe("Google auth callback", () => {
 
     await page.goto(getCallbackUrl(state, REQUIRED_SCOPES[0] ?? ""));
 
-    await expect(page).toHaveURL(/\/week$/);
+    await expect(page).toHaveURL(/\/week\/\d{4}-\d{2}-\d{2}$/);
     await expect(
       page.getByText(
         "Missing Google Calendar permissions. Please grant all requested permissions.",
