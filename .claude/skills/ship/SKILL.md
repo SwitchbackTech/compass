@@ -1,6 +1,6 @@
 ---
 name: ship
-description: Ship the current branch end-to-end - validate the change in a local Chrome preview, simplify the diff for quality before committing, open a non-draft PR with a lower-case conventional-commit title, watch CI and push fixes for any failures, squash-merge once green, then watch the post-merge GitHub Actions on main (release tag, docker publish, staging deploy, health check). Use this whenever the user says "ship this", "ship it", "ship the branch", or asks to take the current work from local changes all the way to a merged, deployed PR instead of doing each step manually.
+description: Ship the current branch end-to-end - validate the change in a local Chrome preview, commit it, run the simplify skill for a distinct follow-up commit, open a non-draft PR with a lower-case conventional-commit title, watch CI and push fixes for any failures, squash-merge once green, then watch the post-merge GitHub Actions on main (release tag, docker publish, staging deploy, health check). Use this whenever the user says "ship this", "ship it", "ship the branch", or asks to take the current work from local changes all the way to a merged, deployed PR instead of doing each step manually.
 ---
 
 # Ship
@@ -15,7 +15,7 @@ steps with one supervised run, not to rubber-stamp a merge.
 - Confirm the current branch is not `main`. If it is, stop and tell
   the user — there's nothing to ship from main itself.
 - `git status` / `git diff` to see what's actually changed. If there are
-  uncommitted changes, they need a commit before anything else (see step 3
+  uncommitted changes, they need a commit before anything else (see step 2
   for message format).
 - If the diff touches `packages/core`, remember per this repo's CLAUDE.md
   that core/schema changes usually need coverage across core, web, backend,
@@ -54,7 +54,7 @@ real one.
    view you were on, what you clicked/typed, and what rendered or happened
    as a result. No internal function/variable/file names — describe it the
    way a user would see it. This log becomes the PR's Manual Testing Steps
-   section in step 3, so capture it while it's fresh instead of
+   section in step 4, so capture it while it's fresh instead of
    reconstructing it from memory afterward.
 7. Check `read_console_messages` and `read_network_requests` for errors the
    UI wouldn't otherwise surface.
@@ -68,24 +68,11 @@ real one.
    commands a reviewer can run themselves (e.g., a script invocation and
    its expected output) rather than clicks. Never skip the record itself.
 
-## 2. Simplify before committing
+## 2. Commit the implementation
 
-Run the `simplify` skill (`.claude/skills/simplify/SKILL.md`) scoped to the
-current diff so the code that ships is the clean version, not the
-first-draft one. It's quality-only — reuse, duplication, legibility — and
-won't second-guess the correctness you just validated in step 1.
-
-1. Invoke `simplify` with its default scope (the current diff against the
-   base branch). Don't widen the scope to the whole package.
-2. If it changes anything, run the focused test/type-check commands its own
-   Verify section calls for on the packages touched, plus `bun run lint`.
-3. If a simplify change touches behavior a user could see (not a pure
-   internal refactor), redo the relevant slice of step 1's Chrome
-   walkthrough rather than assuming the refactor is behavior-preserving.
-4. There's no separate "simplify commit" — fold the result into the same
-   diff you commit in step 3.
-
-## 3. Commit, push, and open the PR
+Commit before running simplify, not after — simplify now creates its own
+follow-up commit (see `.claude/skills/simplify/SKILL.md`), and a follow-up
+commit needs something to follow.
 
 **Commit message and PR title are the same string**, lower-case
 Conventional Commits, matching this repo's actual history (check `git log
@@ -104,16 +91,54 @@ Examples from this repo: `refactor(web): convert redux to zustand`,
 `fix(web): all-day clicks`, `feat: migrate day-events read to tanstack
 query`.
 
-Steps:
+`git add` the relevant files (never `-A`/`.` blindly — check what you're
+staging), commit with the message above.
 
-1. `git add` the relevant files (never `-A`/`.` blindly — check what you're
-   staging), commit with the message above.
-2. Push the branch: `git push -u origin <branch>`.
-3. Open a **non-draft** PR (just omit `--draft` — that's the default):
+## 3. Simplify
+
+Run the `simplify` skill (`.claude/skills/simplify/SKILL.md`) scoped to the
+current diff so the code that ships is the clean version, not the
+first-draft one. It's quality-only — reuse, duplication, legibility — and
+won't second-guess the correctness you just validated in step 1.
+
+1. Invoke `simplify` with its default scope (the current diff against the
+   base branch). Don't widen the scope to the whole package.
+2. `simplify` runs its own focused verify commands and, if it changed
+   anything, creates its own commit — you don't need to re-run tests or
+   commit again on top of it. Because step 2 already committed the
+   implementation, that lands as a distinct follow-up commit; don't fold it
+   back into the implementation commit or ask simplify to skip committing.
+3. If a simplify change touches behavior a user could see (not a pure
+   internal refactor), redo the relevant slice of step 1's Chrome
+   walkthrough rather than assuming the refactor is behavior-preserving.
+4. If simplify found nothing to change, there's no second commit — that's
+   expected, not an error.
+5. Note the result for the PR body's `## Simplicity` section (step 4): did
+   `useEffect`/`useRef`/`useState` usage in the diff go down, stay flat, or
+   go up, and if any remain, pull their one-line justifications straight
+   from simplify's own commit body (per its Commit section) rather than
+   re-deriving them.
+
+## 4. Push and open the PR
+
+The PR title is the same string as the implementation commit from step 2 —
+simplify's follow-up commit (if any) keeps its own message and doesn't
+change the PR title.
+
+1. Push the branch: `git push -u origin <branch>`.
+2. Open a **non-draft** PR (just omit `--draft` — that's the default):
    `gh pr create --title "<same lower-case conventional string>" --body "..."`.
-   Body must have three sections, in this order: `## Summary`,
-   `## Manual Testing Steps`, `## Test plan`.
+   Body must have four sections, in this order: `## Summary`,
+   `## Simplicity`, `## Manual Testing Steps`, `## Test plan`.
    - `## Summary` — what changed and why.
+   - `## Simplicity` — one short paragraph on whether this change net-reduced
+     or net-increased complexity, and how. Always name any `useEffect`,
+     `useRef`, or `useState` that's new or was kept in the diff, with the
+     one-line justification from step 3.5 — that's the part reviewers can't
+     get from the diff alone (a hook's presence is visible; whether it was
+     considered and rejected as unnecessary is not). If simplify found
+     nothing to change and no hooks are in play, say so plainly — "no
+     simplification opportunities found" is a valid, non-padded answer.
    - `## Manual Testing Steps` — unchecked boxes (`- [ ]`). These are steps
      a *human reviewer* still needs to perform themselves, which is why
      they're unchecked even though Claude just did them in step 1. Pull
@@ -132,7 +157,7 @@ Steps:
      automated counterpart to Manual Testing Steps, not a restatement of
      it — don't blur the two together.
 
-## 4. Watch CI, fix what breaks
+## 5. Watch CI, fix what breaks
 
 This repo's PR checks are: `type-check` and a `unit` matrix
 (core/web/backend/scripts) from the `Test` workflow, plus `e2e` (Playwright)
@@ -141,7 +166,7 @@ these names as the only source of truth, though — always read the live
 check list, since workflows can change.
 
 1. `gh pr checks <pr-number> --watch` blocks until every check finishes.
-2. If everything passes, move to step 5.
+2. If everything passes, move to step 6.
 3. If something fails, pull the failure detail rather than guessing:
    `gh run view <run-id> --log-failed`. Reproduce locally with the matching
    focused command from this repo's defaults (`bun run test:web`,
@@ -151,14 +176,14 @@ check list, since workflows can change.
 4. Fix the root cause, not the symptom. Commit the fix with its own
    lower-case conventional message (it'll be squashed into the final PR
    commit, so it doesn't need to match the PR title) and push.
-5. Go back to step 4.1 and watch again. Repeat until green.
+5. Go back to step 5.1 and watch again. Repeat until green.
 6. If a failure isn't something you can fix confidently (flaky
    infrastructure, an ambiguous product decision, a failure outside the
    diff's blast radius), stop and surface it to the user instead of forcing
    a fix. Guessing at a fix for something you don't understand just trades
    one CI failure for a worse one later.
 
-## 5. Merge
+## 6. Merge
 
 Only merge once CI is fully green and you're actually confident in the
 change — "confident" means you understand every fix you made along the way,
@@ -170,16 +195,16 @@ so the default squash subject already matches what you need:
 gh pr merge <pr-number> --squash --delete-branch
 ```
 
-If you're not confident — the fix in step 4 felt like a guess, or CI is
+If you're not confident — the fix in step 5 felt like a guess, or CI is
 green but something about the Chrome validation still nagged at you — say
 so and let the user decide whether to merge. This gate is about your own
 confidence in the change, not about whether a human has re-run the PR's
 `## Manual Testing Steps` checkboxes — those are for reviewers to use after
 merge review, not a pre-merge blocker for `ship` itself. A merge to `main`
-in this repo immediately kicks off a real deploy pipeline (see step 6), so
+in this repo immediately kicks off a real deploy pipeline (see step 7), so
 this is not a reversible-for-free action.
 
-## 6. Watch what happens after merge
+## 7. Watch what happens after merge
 
 Merging to `main` triggers `release-on-main.yml`: it tags a new patch
 release, publishes Docker images, deploys to staging, then runs a staging
