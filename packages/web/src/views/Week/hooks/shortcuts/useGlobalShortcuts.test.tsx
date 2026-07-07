@@ -33,14 +33,15 @@ mock.module(
   }),
 );
 
-// react-router-dom's useNavigate/useLocation are mocked directly (rather than
-// relying on a real MemoryRouter) because Bun's `mock.module` is process-wide:
-// another test file mocking "react-router-dom" can otherwise silently replace
-// `useNavigate` for every file that runs afterward in the same test run.
-const actualReactRouterDom = await import("react-router-dom");
+// @tanstack/react-router's useNavigate/useLocation are mocked directly (rather
+// than relying on a real RouterProvider) because Bun's `mock.module` is
+// process-wide: another test file mocking "@tanstack/react-router" can
+// otherwise silently replace `useNavigate` for every file that runs
+// afterward in the same test run.
+const actualTanstackRouter = await import("@tanstack/react-router");
 
-mock.module("react-router-dom", () => ({
-  ...actualReactRouterDom,
+mock.module("@tanstack/react-router", () => ({
+  ...actualTanstackRouter,
   useNavigate: () => mockNavigate,
   useLocation: () => ({ pathname: mockPathname.value }),
 }));
@@ -187,7 +188,7 @@ describe("useGlobalShortcuts", () => {
     });
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/day");
+      expect(mockNavigate).toHaveBeenCalledWith({ to: "/day" });
     });
 
     act(() => {

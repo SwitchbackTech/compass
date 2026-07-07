@@ -8,15 +8,15 @@ const DATE_FORMAT = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 const mockNavigate = mock();
 const mockParams: { dateString?: string } = {};
 
-// react-router-dom's useNavigate/useParams are mocked directly (rather than
-// relying on a real MemoryRouter) because Bun's `mock.module` is process-wide:
-// another test file mocking "react-router-dom" can otherwise silently replace
-// these hooks for every file that runs afterward in the same test run. See
-// useGlobalShortcuts.test.tsx for the same pattern.
-const actualReactRouterDom = await import("react-router-dom");
+// @tanstack/react-router's useNavigate/useParams are mocked directly (rather
+// than relying on a real RouterProvider) because Bun's `mock.module` is
+// process-wide: another test file mocking "@tanstack/react-router" can
+// otherwise silently replace these hooks for every file that runs afterward
+// in the same test run. See useGlobalShortcuts.test.tsx for the same pattern.
+const actualTanstackRouter = await import("@tanstack/react-router");
 
-mock.module("react-router-dom", () => ({
-  ...actualReactRouterDom,
+mock.module("@tanstack/react-router", () => ({
+  ...actualTanstackRouter,
   useNavigate: () => mockNavigate,
   useParams: () => mockParams,
 }));
@@ -61,7 +61,10 @@ describe("useWeek", () => {
       result.current.util.incrementWeek();
     });
 
-    expect(mockNavigate).toHaveBeenCalledWith("/week/2026-05-27");
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/week/$dateString",
+      params: { dateString: "2026-05-27" },
+    });
   });
 
   it("navigates to the decremented week on decrementWeek", () => {
@@ -73,7 +76,10 @@ describe("useWeek", () => {
       result.current.util.decrementWeek();
     });
 
-    expect(mockNavigate).toHaveBeenCalledWith("/week/2026-05-13");
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/week/$dateString",
+      params: { dateString: "2026-05-13" },
+    });
   });
 
   it("navigates to the given date on goToDate", () => {
@@ -85,7 +91,10 @@ describe("useWeek", () => {
       result.current.state.goToDate(dayjs("2026-08-01", DATE_FORMAT));
     });
 
-    expect(mockNavigate).toHaveBeenCalledWith("/week/2026-08-01");
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/week/$dateString",
+      params: { dateString: "2026-08-01" },
+    });
   });
 
   it("navigates to today on goToToday", () => {
@@ -97,7 +106,10 @@ describe("useWeek", () => {
       result.current.util.goToToday();
     });
 
-    expect(mockNavigate).toHaveBeenCalledWith("/week/2026-05-20");
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/week/$dateString",
+      params: { dateString: "2026-05-20" },
+    });
   });
 
   it("does not navigate on goToToday when already viewing today's week", () => {
@@ -125,6 +137,9 @@ describe("useWeek", () => {
       result.current.util.incrementWeek();
     });
 
-    expect(mockNavigate).toHaveBeenCalledWith("/week/2026-05-22");
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/week/$dateString",
+      params: { dateString: "2026-05-22" },
+    });
   });
 });

@@ -1,7 +1,7 @@
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef } from "react";
-import { useNavigate, useParams } from "react-router-dom";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
@@ -31,14 +31,20 @@ export const useWeek = (
   // render, and memoizing on the Dayjs instance would re-derive start/end
   // (and re-fire the updateDates effect below) on every render.
   const navigate = useNavigate();
-  const { dateString } = useParams();
-  const anchorDateString = dateString ?? today.format(DATE_FORMAT);
+  const params = useParams({
+    from: ROUTE_IDS.WEEK_DATE,
+    shouldThrow: false,
+  });
+  const anchorDateString = params?.dateString ?? today.format(DATE_FORMAT);
   const anchor = useMemo(
     () => dayjs(anchorDateString, DATE_FORMAT),
     [anchorDateString],
   );
   const setAnchor = (date: Dayjs) =>
-    navigate(`${ROOT_ROUTES.WEEK}/${date.format(DATE_FORMAT)}`);
+    navigate({
+      to: ROOT_ROUTES.WEEK_DATE,
+      params: { dateString: date.format(DATE_FORMAT) },
+    });
   const navigationSourceRef = useRef<WeekNavigationSource>("manual");
 
   const start = useMemo(() => anchor.startOf("week"), [anchor]);

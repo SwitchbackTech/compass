@@ -1,7 +1,7 @@
 import { useState } from "react";
 import _CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import dayjs from "@core/util/date/dayjs";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
@@ -53,7 +53,7 @@ export const DayCmdPalette = ({ onGoToToday }: DayCmdPaletteProps) => {
             onGoToToday?.();
           },
           onNavigateToView: (viewName) => {
-            navigate(VIEW_SHORTCUTS[viewName].route);
+            navigate({ to: VIEW_SHORTCUTS[viewName].route });
           },
           today,
         }),

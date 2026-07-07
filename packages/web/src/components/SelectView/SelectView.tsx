@@ -6,9 +6,9 @@ import {
   useListNavigation,
   useRole,
 } from "@floating-ui/react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import classNames from "classnames";
 import { useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
@@ -80,8 +80,10 @@ export const SelectView = ({
     [click, dismiss, role, listNavigation],
   );
 
-  const handleOptionClick = (route: string) => {
-    navigate(route);
+  const handleOptionClick = (
+    route: typeof ROOT_ROUTES.DAY | typeof ROOT_ROUTES.WEEK,
+  ) => {
+    navigate({ to: route });
     setIsOpen(false);
   };
 
