@@ -10,6 +10,7 @@ import { act, type ReactElement } from "react";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -115,24 +116,13 @@ const renderWithProviders = async (
   component: ReactElement,
   initialRoute: string = "/day",
 ) => {
-  const rootRoute = createRootRoute({
-    component: () => (
-      <AuthModalProvider>
-        {component}
-        <AuthModal />
-      </AuthModalProvider>
-    ),
-    validateSearch: validateAuthSearch,
-  });
-  const catchAllRoute = createRoute({
-    getParentRoute: () => rootRoute,
-    path: "$",
-  });
-  const router = createRouter({
-    routeTree: rootRoute.addChildren([catchAllRoute]),
-    history: createMemoryHistory({ initialEntries: [initialRoute] }),
-    defaultPendingMs: 0,
-  });
+  const router = createTestRouter(
+    <AuthModalProvider>
+      {component}
+      <AuthModal />
+    </AuthModalProvider>,
+    { initialEntries: [initialRoute] },
+  );
   const result = render(<RouterProvider router={router} />);
 
   // TanStack's RouterProvider resolves the initial match asynchronously

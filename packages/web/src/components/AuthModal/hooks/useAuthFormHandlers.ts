@@ -1,7 +1,6 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
-import { z } from "zod";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import {
   type ForgotPasswordFormData,
@@ -12,10 +11,6 @@ import { UserApi } from "@web/common/apis/user.api";
 import { type SignUpSubmitData } from "../forms/SignUpForm";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
-
-const AUTH_TOKEN_QUERY_SCHEMA = z.object({
-  token: z.string().min(1).optional(),
-});
 
 interface UseAuthFormHandlersOptions {
   currentView: AuthView;
@@ -45,17 +40,10 @@ export function useAuthFormHandlers({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   // biome-ignore lint/correctness/useExhaustiveDependencies: capture the token once, before handleResetPassword removes it from the URL on success.
-  const initialAuthToken = useMemo(() => {
-    const propToken = z
-      .string()
-      .min(1)
-      .safeParse(authToken ?? "");
-    if (propToken.success) return propToken.data;
-    const searchToken = AUTH_TOKEN_QUERY_SCHEMA.safeParse({
-      token: search.token,
-    });
-    return searchToken.success ? searchToken.data.token : undefined;
-  }, [authToken]);
+  const initialAuthToken = useMemo(
+    () => authToken || search.token || undefined,
+    [authToken],
+  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: submit errors should clear when the auth modal changes view.
   useEffect(() => {
