@@ -21,7 +21,7 @@ import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
 
 export function WelcomeModal() {
   const { authenticated } = useContext(SessionContext);
-  const { openModal, closeModal, isOpen: isAuthModalOpen } = useAuthModal();
+  const { openModal, isOpen: isAuthModalOpen } = useAuthModal();
   const disclosureIdPrefix = useId();
   const [isOpen, setIsOpen] = useState(
     () => !authenticated && !hasSeenWelcome(),
@@ -30,30 +30,19 @@ export function WelcomeModal() {
     () => new Set(),
   );
   const backdropRef = useRef<HTMLDivElement>(null);
-  const cameFromWelcomeRef = useRef(false);
 
-  // Back button returns from the auth modal to the welcome screen. Clicking
-  // "Log in" pushes a history entry, so the back press pops it here.
-  useEffect(() => {
-    const handlePopState = () => {
-      if (!cameFromWelcomeRef.current || !isAuthModalOpen) return;
-      cameFromWelcomeRef.current = false;
-      closeModal();
-      if (!authenticated) {
-        setIsOpen(true);
-      }
-    };
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, [isAuthModalOpen, authenticated, closeModal]);
+  // The auth modal's openness lives in the URL (?auth=), so the welcome
+  // screen simply hides while it is open and reappears when the browser
+  // back button (or Escape) removes the param again.
+  const visible = isOpen && !isAuthModalOpen && !authenticated;
 
   useEffect(() => {
-    if (isOpen) {
+    if (visible) {
       backdropRef.current?.focus();
     }
-  }, [isOpen]);
+  }, [visible]);
 
-  if (!isOpen) return null;
+  if (!visible) return null;
 
   const dismiss = () => {
     markWelcomeSeen();
@@ -62,9 +51,6 @@ export function WelcomeModal() {
 
   const handleLogIn = () => {
     markWelcomeSeen();
-    setIsOpen(false);
-    cameFromWelcomeRef.current = true;
-    window.history.pushState({ compassAuthFromWelcome: true }, "");
     openModal("login");
   };
 
@@ -147,7 +133,7 @@ export function WelcomeModal() {
             <div className="relative rounded-lg border border-border-primary bg-panel-badge-bg px-3 py-1.5 text-text-lighter text-xs">
               <span
                 aria-hidden
-                className="-left-1 -translate-y-1/2 absolute top-1/2 h-2 w-2 rotate-45 border-border-primary border-b border-l bg-panel-badge-bg"
+                className="absolute top-1/2 -left-1 h-2 w-2 -translate-y-1/2 rotate-45 border-border-primary border-b border-l bg-panel-badge-bg"
               />
               No signup required
             </div>

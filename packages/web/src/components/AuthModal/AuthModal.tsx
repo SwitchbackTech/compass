@@ -14,7 +14,6 @@ import { ResetPasswordForm } from "./forms/ResetPasswordForm";
 import { SignUpForm } from "./forms/SignUpForm";
 import { useAuthFormHandlers } from "./hooks/useAuthFormHandlers";
 import { useAuthModal } from "./hooks/useAuthModal";
-import { useAuthUrlParam } from "./hooks/useAuthUrlParam";
 
 function getInitialAuthToken(): string | undefined {
   if (typeof window === "undefined") {
@@ -42,8 +41,7 @@ function getInitialAuthToken(): string | undefined {
  * - Accessible modal with proper ARIA attributes
  */
 export const AuthModal: FC = () => {
-  const { isOpen, currentView, openModal, closeModal, setView } =
-    useAuthModal();
+  const { isOpen, currentView, closeModal, setView } = useAuthModal();
   const handleGoogleAuthStart = useCallback(() => {
     dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
   }, []);
@@ -73,8 +71,6 @@ export const AuthModal: FC = () => {
     setView,
   });
 
-  // Handle URL-based auth modal triggers (e.g., ?auth=signup)
-  useAuthUrlParam(openModal);
   const [signUpName, setSignUpName] = useState("");
   const prevViewRef = useRef(currentView);
 

@@ -113,56 +113,39 @@ describe("WelcomeModal", () => {
     expect(mockOpenModal).not.toHaveBeenCalled();
   });
 
-  it("opens the auth modal and pushes a history entry from the Log in pill", async () => {
-    const user = userEvent.setup();
-    const pushStateSpy = mock();
-    const originalPushState = window.history.pushState.bind(window.history);
-    window.history.pushState = (...args) => {
-      pushStateSpy(...args);
-      originalPushState(...args);
-    };
-
-    try {
-      render(<WelcomeModal />);
-
-      await user.click(screen.getByRole("button", { name: "Log in" }));
-
-      await waitFor(() => {
-        expect(
-          screen.queryByRole("dialog", {
-            name: "Welcome to Compass Calendar",
-          }),
-        ).toBeNull();
-      });
-      expect(mockOpenModal).toHaveBeenCalledWith("login");
-      expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
-      expect(pushStateSpy).toHaveBeenCalledWith(
-        { compassAuthFromWelcome: true },
-        "",
-      );
-    } finally {
-      window.history.pushState = originalPushState;
-    }
-  });
-
-  it("returns to the welcome screen when the browser back button is pressed on the login form", async () => {
+  it("opens the auth modal from the Log in pill", async () => {
     const user = userEvent.setup();
 
     const { rerender } = render(<WelcomeModal />);
 
     await user.click(screen.getByRole("button", { name: "Log in" }));
-    expect(mockOpenModal).toHaveBeenCalledWith("login");
 
-    // Simulate the auth modal now being open
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
+    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+
+    // The welcome screen hides while the auth modal is open
     authModalState.isOpen = true;
     rerender(<WelcomeModal />);
+    expect(
+      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeNull();
+  });
 
-    // Simulate the browser back button
-    act(() => {
-      window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
-    });
+  it("reappears when the auth modal closes (e.g. via the browser back button)", async () => {
+    const user = userEvent.setup();
 
-    expect(mockCloseModal).toHaveBeenCalledTimes(1);
+    const { rerender } = render(<WelcomeModal />);
+
+    await user.click(screen.getByRole("button", { name: "Log in" }));
+    authModalState.isOpen = true;
+    rerender(<WelcomeModal />);
+    expect(
+      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeNull();
+
+    // Back press pops the ?auth= entry, which closes the auth modal
+    authModalState.isOpen = false;
+    rerender(<WelcomeModal />);
     expect(
       screen.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
     ).toBeTruthy();

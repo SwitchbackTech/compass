@@ -250,6 +250,8 @@ const renderWithDayRedirectRoute = (initialRoute: string) => {
 
 describe("AuthModal", () => {
   beforeEach(() => {
+    // The ?auth= URL param drives modal state, so reset it between tests
+    setTestWindowUrl("/day");
     mockUseSession.mockClear();
     mockGoogleLogin.mockClear();
     mockUseIsGoogleAvailable.mockClear();
@@ -356,6 +358,51 @@ describe("AuthModal", () => {
           screen.queryByRole("heading", { name: /hey, welcome back/i }),
         ).not.toBeInTheDocument();
       });
+    });
+
+    it("opens with a pushed ?auth= entry and closes on browser back", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+      await flushEffects();
+
+      await waitFor(() => {
+        expect(
+          screen.getByRole("heading", { name: /hey, welcome back/i }),
+        ).toBeInTheDocument();
+      });
+      expect(window.location.search).toBe("?auth=login");
+
+      // Simulate the browser back button popping the pushed entry
+      await act(async () => {
+        setTestWindowUrl("/day");
+        window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
+      });
+
+      await waitFor(() => {
+        expect(
+          screen.queryByRole("heading", { name: /hey, welcome back/i }),
+        ).not.toBeInTheDocument();
+      });
+    });
+
+    it("removes the ?auth= param when the modal is dismissed", async () => {
+      const user = userEvent.setup();
+      renderWithProviders(<ModalTrigger />);
+
+      await user.click(screen.getByRole("button", { name: /open modal/i }));
+      await flushEffects();
+      expect(window.location.search).toBe("?auth=login");
+
+      const backdrop = screen.getByRole("presentation");
+      await act(async () => {
+        backdrop.focus();
+      });
+      await user.keyboard("{Escape}");
+      await flushEffects();
+
+      expect(window.location.search).toBe("");
     });
   });
 
@@ -1069,9 +1116,11 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
 
+    // The ?auth param stays in the URL while the modal is open (URL is the
+    // modal's source of truth), so the redirect preserves both params
     expect(replaceStateSpy.mock.calls.at(-1)?.[1]).toBe("");
     expect(replaceStateSpy.mock.calls.at(-1)?.[2]).toBe(
-      `/day/${dateString}?token=reset-token`,
+      `/day/${dateString}?auth=reset&token=reset-token`,
     );
   });
 
