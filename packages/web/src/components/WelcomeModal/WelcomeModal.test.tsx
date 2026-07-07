@@ -5,6 +5,9 @@ import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
+const mockCloseModal = mock();
+const mockSetView = mock();
+const authModalState = { isOpen: false };
 const SessionContext = createContext<CompassSession>({
   authenticated: false,
   setAuthenticated: mock(),
@@ -16,7 +19,11 @@ mock.module("@web/auth/compass/session/session.context", () => ({
 
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
   useAuthModal: () => ({
+    isOpen: authModalState.isOpen,
+    currentView: "login",
     openModal: mockOpenModal,
+    closeModal: mockCloseModal,
+    setView: mockSetView,
   }),
 }));
 
@@ -29,45 +36,64 @@ describe("WelcomeModal", () => {
   beforeEach(() => {
     localStorage.clear();
     mockOpenModal.mockClear();
+    mockCloseModal.mockClear();
+    authModalState.isOpen = false;
+    window.history.replaceState(null, "", window.location.href);
   });
 
-  it("closes when the backdrop is clicked", async () => {
-    const user = userEvent.setup();
-
+  it("shows the new copy and the pixel pirate mascot", () => {
     render(<WelcomeModal />);
 
     expect(
-      screen.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
+      screen.getByRole("heading", {
+        name: "Compass Calendar helps you manage your time, simply.",
+      }),
     ).toBeTruthy();
-
-    await user.click(screen.getByRole("presentation"));
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
-      ).toBeNull();
-    });
-    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+    expect(
+      screen.getByText(
+        /A small, but mighty calendar\/todo app\. Built for busy minimalists/,
+      ),
+    ).toBeTruthy();
+    expect(screen.getByRole("img", { name: /pixel pirate/i })).toBeTruthy();
+    expect(screen.getByText("No signup required")).toBeTruthy();
   });
 
-  it("closes when Escape is pressed", async () => {
+  it("opens the auth modal from the Log in pill", async () => {
     const user = userEvent.setup();
 
-    render(<WelcomeModal />);
+    const { rerender } = render(<WelcomeModal />);
 
-    const backdrop = screen.getByRole("presentation");
-    await act(async () => {
-      backdrop.focus();
-    });
+    await user.click(screen.getByRole("button", { name: "Log in" }));
 
-    await user.keyboard("{Escape}");
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
-      ).toBeNull();
-    });
+    expect(mockOpenModal).toHaveBeenCalledWith("login");
     expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
+
+    // The welcome screen hides while the auth modal is open
+    authModalState.isOpen = true;
+    rerender(<WelcomeModal />);
+    expect(
+      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeNull();
+  });
+
+  it("reappears when the auth modal closes (e.g. via the browser back button)", async () => {
+    const user = userEvent.setup();
+
+    const { rerender } = render(<WelcomeModal />);
+
+    await user.click(screen.getByRole("button", { name: "Log in" }));
+    authModalState.isOpen = true;
+    rerender(<WelcomeModal />);
+    expect(
+      screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeNull();
+
+    // Back press pops the ?auth= entry, which closes the auth modal
+    authModalState.isOpen = false;
+    rerender(<WelcomeModal />);
+    expect(
+      screen.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
+    ).toBeTruthy();
   });
 
   it("expands and collapses FAQ answers", async () => {

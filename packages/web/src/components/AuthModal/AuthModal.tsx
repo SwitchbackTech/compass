@@ -14,7 +14,6 @@ import { ResetPasswordForm } from "./forms/ResetPasswordForm";
 import { SignUpForm } from "./forms/SignUpForm";
 import { useAuthFormHandlers } from "./hooks/useAuthFormHandlers";
 import { useAuthModal } from "./hooks/useAuthModal";
-import { useAuthUrlParam } from "./hooks/useAuthUrlParam";
 
 function getInitialAuthToken(): string | undefined {
   if (typeof window === "undefined") {
@@ -42,8 +41,7 @@ function getInitialAuthToken(): string | undefined {
  * - Accessible modal with proper ARIA attributes
  */
 export const AuthModal: FC = () => {
-  const { isOpen, currentView, openModal, closeModal, setView } =
-    useAuthModal();
+  const { isOpen, currentView, closeModal, setView } = useAuthModal();
   const handleGoogleAuthStart = useCallback(() => {
     dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
   }, []);
@@ -73,8 +71,6 @@ export const AuthModal: FC = () => {
     setView,
   });
 
-  // Handle URL-based auth modal triggers (e.g., ?auth=signup)
-  useAuthUrlParam(openModal);
   const [signUpName, setSignUpName] = useState("");
   const prevViewRef = useRef(currentView);
 
@@ -135,7 +131,7 @@ export const AuthModal: FC = () => {
           <button
             type="button"
             onClick={handleSwitchAuth}
-            className="shrink-0 rounded-3xl border border-[#1f1f1f] bg-white px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#f0f0f0]"
+            className="shrink-0 rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
           >
             {isLoginView ? "Sign up" : "Log in"}
           </button>
@@ -143,6 +139,7 @@ export const AuthModal: FC = () => {
       }
       onDismiss={closeModal}
       variant="modal"
+      widthClassName="w-120"
     >
       <div className="flex w-full flex-col gap-6">
         {/* Form based on current view */}

@@ -28,6 +28,8 @@ interface Props {
   role?: "dialog" | "status" | "alert";
   /** Panel style variant */
   variant?: "modal" | "status";
+  /** Tailwind width class for the modal variant (default: "w-[400px]") */
+  widthClassName?: string;
 }
 
 export const OverlayPanel = ({
@@ -39,6 +41,7 @@ export const OverlayPanel = ({
   onDismiss,
   role = "dialog",
   variant = "modal",
+  widthClassName = "w-[400px]",
 }: Props) => {
   const panelRef = useRef<HTMLDivElement>(null);
   const titleId = useId();
@@ -58,12 +61,15 @@ export const OverlayPanel = ({
     "fixed inset-0 flex items-center justify-center bg-bg-primary/85 backdrop-blur-sm",
   );
 
-  const panelClasses = clsx("flex flex-col items-center", {
-    "w-[400px] max-w-[90vw] gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]":
-      variant === "modal",
-    "max-w-sm gap-3 rounded-lg border border-border-primary bg-bg-secondary/90 px-6 py-5 shadow-lg":
-      variant === "status",
-  });
+  const panelClasses = clsx(
+    "flex flex-col items-center",
+    variant === "modal" && [
+      widthClassName,
+      "max-w-[90vw] gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",
+    ],
+    variant === "status" &&
+      "max-w-sm gap-3 rounded-lg border border-border-primary bg-bg-secondary/90 px-6 py-5 shadow-lg",
+  );
 
   const titleClasses = clsx(
     "m-0 line-clamp-2 w-full min-w-0 font-semibold text-lg text-text-lighter",

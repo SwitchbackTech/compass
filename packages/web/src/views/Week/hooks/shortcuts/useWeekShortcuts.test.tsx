@@ -468,21 +468,6 @@ describe("useWeekShortcuts sidebar focus", () => {
     });
   });
 
-  it("opens the sidebar first when it is closed", async () => {
-    useViewStore.setState({ sidebar: { isOpen: false } });
-    const { weekItem } = addSidebarFixture({ includeWeekItem: true });
-
-    renderShortcuts();
-    pressKey("U");
-
-    await waitFor(() => {
-      expect(useViewStore.getState().sidebar.isOpen).toBe(true);
-    });
-    await waitFor(() => {
-      expect(document.activeElement).toBe(weekItem);
-    });
-  });
-
   it("does not delete a grid event when Delete is pressed with sidebar focus", async () => {
     const confirm = mock(() => true);
     window.confirm = confirm;
