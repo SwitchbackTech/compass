@@ -1,6 +1,6 @@
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
-import { renderHook, waitFor } from "@testing-library/react";
-import { act, type PropsWithChildren } from "react";
+import { act, renderHook, waitFor } from "@testing-library/react";
+import { type PropsWithChildren } from "react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
