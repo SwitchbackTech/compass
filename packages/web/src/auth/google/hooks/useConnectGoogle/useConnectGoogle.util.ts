@@ -1,3 +1,4 @@
+import { CloudArrowUpIcon } from "@phosphor-icons/react";
 import {
   type CommandActionIcon,
   type GoogleAccountSummaryStatus,
@@ -5,7 +6,7 @@ import {
   type GoogleUiState,
 } from "./useConnectGoogle.types";
 
-const COMMAND_ICON: CommandActionIcon = "CloudArrowUpIcon";
+const COMMAND_ICON: CommandActionIcon = CloudArrowUpIcon;
 
 const SYNCING_COMMAND_LABEL: Record<
   "checking" | "repairing" | "IMPORTING",

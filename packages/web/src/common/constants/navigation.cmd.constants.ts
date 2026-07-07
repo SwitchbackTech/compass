@@ -1,9 +1,15 @@
-import { type IconName, type JsonStructureItem } from "react-cmdk";
+import {
+  ArrowUDownLeftIcon,
+  CalendarDotsIcon,
+  CalendarIcon,
+  type Icon,
+} from "@phosphor-icons/react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import {
   VIEW_SHORTCUTS,
   type ViewName,
 } from "@web/common/constants/shortcuts.constants";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
 interface GetNavigationCommandItemsArgs {
   currentView: ViewName;
@@ -12,9 +18,9 @@ interface GetNavigationCommandItemsArgs {
   today: Dayjs;
 }
 
-const viewIcons: Record<ViewName, IconName> = {
-  day: "CalendarDaysIcon",
-  week: "CalendarIcon",
+const viewIcons: Record<ViewName, Icon> = {
+  day: CalendarDotsIcon,
+  week: CalendarIcon,
 };
 
 const navigationViewOrder: ViewName[] = ["day", "week"];
@@ -24,19 +30,19 @@ export const getNavigationCommandItems = ({
   onGoToToday,
   onNavigateToView,
   today,
-}: GetNavigationCommandItemsArgs): JsonStructureItem[] => [
+}: GetNavigationCommandItemsArgs): CommandItem[] => [
   ...navigationViewOrder
     .filter((viewName) => viewName !== currentView)
     .map((viewName) => ({
       id: `go-to-${viewName}`,
-      children: `Go to ${VIEW_SHORTCUTS[viewName].label} [${VIEW_SHORTCUTS[viewName].key}]`,
+      label: `Go to ${VIEW_SHORTCUTS[viewName].label} [${VIEW_SHORTCUTS[viewName].key}]`,
       icon: viewIcons[viewName],
       onClick: () => onNavigateToView(viewName),
     })),
   {
     id: "today",
-    children: `Go to Today (${today.format("dddd, MMMM D")}) [t]`,
-    icon: "ArrowUturnDownIcon",
+    label: `Go to Today (${today.format("dddd, MMMM D")}) [t]`,
+    icon: ArrowUDownLeftIcon,
     onClick: onGoToToday,
   },
 ];
