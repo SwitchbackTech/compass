@@ -143,7 +143,9 @@ const ensureWeekView = async (page: Page) => {
   await viewButton.waitFor({ state: "visible", timeout: 5000 });
   await viewButton.click();
   await page.getByRole("option", { name: "Week" }).click();
-  await page.waitForURL((url) => url.pathname === "/week", { timeout: 10000 });
+  await page.waitForURL((url) => url.pathname.startsWith("/week"), {
+    timeout: 10000,
+  });
 
   // Verify we actually switched to Week view
   await weekViewButton.waitFor({ state: "visible", timeout: 5000 });

@@ -81,7 +81,7 @@ test.describe("View dropdown", () => {
     await page.keyboard.press("Escape");
 
     await expect(page.getByTestId("view-select-dropdown")).toHaveCount(0);
-    await expect(page).toHaveURL(/\/week$/);
+    await expect(page).toHaveURL(/\/week\/\d{4}-\d{2}-\d{2}$/);
     await expect(viewButton(page, "week")).toBeVisible();
   });
 
@@ -94,7 +94,7 @@ test.describe("View dropdown", () => {
     await viewOption(page, "week").click();
 
     await expect(page.getByTestId("view-select-dropdown")).toHaveCount(0);
-    await expect(page).toHaveURL(/\/week$/);
+    await expect(page).toHaveURL(/\/week\/\d{4}-\d{2}-\d{2}$/);
     await expect(viewButton(page, "week")).toBeVisible();
   });
 

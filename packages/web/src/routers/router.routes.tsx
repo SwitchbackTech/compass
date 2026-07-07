@@ -6,6 +6,8 @@ import {
   loadDayData,
   loadRootData,
   loadSpecificDayData,
+  loadSpecificWeekData,
+  loadWeekData,
 } from "@web/routers/loaders";
 
 const devOnlyRoutes: RouteObject[] = IS_DEV
@@ -65,12 +67,21 @@ export const routeObjects: RouteObject[] = [
       },
       {
         path: ROOT_ROUTES.WEEK,
-        lazy: async () =>
-          import(
-            /* webpackChunkName: "week" */ "@web/views/Week/WeekView"
-          ).then((module) => ({
-            Component: module.WeekView,
-          })),
+        children: [
+          {
+            path: ROOT_ROUTES.WEEK_DATE,
+            id: ROOT_ROUTES.WEEK_DATE,
+            loader: loadSpecificWeekData,
+            lazy: async () =>
+              import(
+                /* webpackChunkName: "week" */ "@web/views/Week/WeekView"
+              ).then((module) => ({ Component: module.WeekView })),
+          },
+          {
+            index: true,
+            loader: loadWeekData,
+          },
+        ],
       },
       {
         path: ROOT_ROUTES.ROOT,

@@ -5,6 +5,7 @@ export const ROOT_ROUTES = {
   LIFE: "/life",
   ROOT: "/",
   WEEK: "/week",
+  WEEK_DATE: "/week/:dateString",
   DAY: "/day",
   DAY_DATE: "/day/:dateString",
 };
