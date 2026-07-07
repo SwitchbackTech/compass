@@ -2,8 +2,6 @@
 
 A simple app that helps you manage your time.
 
-<img width="1512" height="860" alt="week-view-2026-06" src="https://github.com/user-attachments/assets/6dcfd741-883d-401c-b8e2-97300b1dd925" />
-
 ## Why Try Compass?
 
 It'll help you get things done:
@@ -15,7 +13,7 @@ It'll help you get things done:
 It'll be around for the long-term:
 
 - **Bootstrapped**: VC-backed teams think in terms of months and funding rounds. We think in terms of decades and profit. We don't need to make $1B in 5 years or impress investors. As long as we keep users like you happy, we'll be fine.
-- **Vision**: We have [an ambitious vision](https://alpaca-ty.notion.site/about-us) and a practical [roadmap](https://github.com/orgs/SwitchbackTech/projects/4) that'll keep us busy for a long time.
+- **Vision**: We have [an ambitious vision](https://alpaca-ty.notion.site/about-us) and a practical roadmap that'll keep us busy for a long time.
 
 ## Features
 
@@ -44,10 +42,10 @@ Things we don't support (yet):
 
 ## Tech Stack
 
-- **Frontend**: React, Zustand, TanStack Query, Tailwind CSS, TypeScript
-- **Backend**: Node.js, Express, TypeScript, MongoDB
+- **Frontend**: React, Zustand, TanStack, Tailwind
+- **Backend**: Node, Express, MongoDB
 - **Integrations**: Google Calendar API, Google OAuth2
-- **Testing**: React Testing Library, Playwright
+- **Testing**: Bun, React Testing Library, Playwright
 
 ## Getting Started
 
@@ -81,5 +79,4 @@ See [the self-hosting guide](./docs/self-hosting/README.md) for instructions.
 - **Changelog**: [compasscalendar.com](https://changelog.compasscalendar.com)
 - **Handbook**: [notion.site](https://alpaca-ty.notion.site/Compass-Handbook-26b237bde8f4805c9a56de6db3a7993d?utm_source=github&utm_medium=referral&utm_campaign=readme)
 - **Twitter**: [@CompassCalendar](https://x.com/CompassCalendar)
-- **Youtube**: [Playlist](https://youtube.com/playlist?list=PLPQAVocXPdjmYaPM9MXzplcwgoXZ_yPiJ&si=jssXj_g9kln8Iz_w)
 - **LinkedIn**: [Compass Calendar](https://www.linkedin.com/company/compass-calendar)
