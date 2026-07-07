@@ -85,12 +85,12 @@ describe("WelcomeModal", () => {
 
     expect(
       screen.getByRole("heading", {
-        name: "Compass Calendar is a simple app that helps you manage your time.",
+        name: "Compass Calendar helps you manage your time, simply.",
       }),
     ).toBeTruthy();
     expect(
       screen.getByText(
-        /Minimal, yet fast and intuitive\. We cut out all the noise/,
+        /A small, but mighty calendar\/todo app\. Built for busy minimalists/,
       ),
     ).toBeTruthy();
     expect(screen.getByRole("img", { name: /pixel pirate/i })).toBeTruthy();

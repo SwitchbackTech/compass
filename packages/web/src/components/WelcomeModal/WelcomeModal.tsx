@@ -97,12 +97,26 @@ export function WelcomeModal() {
         aria-label="Welcome to Compass Calendar"
         className="flex w-120 max-w-[90vw] flex-col gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]"
       >
-        {/* Top row: log-in pill, top-right */}
-        <div className="flex justify-end">
+        {/* Top row: pirate top-left, log-in pill top-right */}
+        <div className="flex items-center justify-between">
+          <div className="group relative flex items-center">
+            <PixelPirate className="h-14 w-14 shrink-0" />
+            {/* Speech bubble, revealed on hover; tail points at the pirate */}
+            <div className="pointer-events-none absolute left-full ml-1 flex -translate-x-1 items-center opacity-0 transition-all duration-200 ease-out group-hover:translate-x-0 group-hover:opacity-100">
+              <span
+                aria-hidden
+                className="h-0 w-0 border-y-4 border-y-transparent border-r-4 border-r-panel-badge-bg"
+              />
+              <span className="whitespace-nowrap rounded-lg bg-panel-badge-bg px-3 py-1 font-[VT323,monospace] text-base text-text-lighter">
+                No signup required
+              </span>
+            </div>
+          </div>
+          {/* bg matches the pirate's shirt gray (PixelPirate.tsx) */}
           <button
             type="button"
             onClick={handleLogIn}
-            className="shrink-0 rounded-3xl border border-[#1f1f1f] bg-white px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#f0f0f0]"
+            className="shrink-0 rounded-3xl bg-[#a3a7ad] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#b6bac0]"
           >
             Log in
           </button>
@@ -111,16 +125,16 @@ export function WelcomeModal() {
         {/* Header */}
         <div className="flex flex-col gap-2">
           <h2 className="font-bold text-2xl text-text-lighter leading-snug">
-            Compass Calendar is a simple app that helps you manage your time.
+            Compass Calendar helps you manage your time, simply.
           </h2>
           <p className="text-text-light">
-            Minimal, yet fast and intuitive. We cut out all the noise so you can
-            reclaim control of your time.
+            A small, but mighty calendar/todo app. Built for busy minimalists
+            who get things done.
           </p>
         </div>
 
-        {/* CTA: centered pill button + mascot */}
-        <div className="flex flex-col items-center gap-3">
+        {/* CTA */}
+        <div className="flex justify-center">
           <button
             type="button"
             onClick={dismiss}
@@ -128,16 +142,6 @@ export function WelcomeModal() {
           >
             Start Now
           </button>
-          <div className="flex items-center gap-1">
-            <PixelPirate className="h-14 w-14 shrink-0" />
-            <div className="relative rounded-lg border border-border-primary bg-panel-badge-bg px-3 py-1.5 text-text-lighter text-xs">
-              <span
-                aria-hidden
-                className="absolute top-1/2 -left-1 h-2 w-2 -translate-y-1/2 rotate-45 border-border-primary border-b border-l bg-panel-badge-bg"
-              />
-              No signup required
-            </div>
-          </div>
         </div>
 
         {/* FAQ */}

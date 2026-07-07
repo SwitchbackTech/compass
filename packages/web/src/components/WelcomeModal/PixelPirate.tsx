@@ -3,6 +3,8 @@ const skin = "#F4D7B5";
 const dark = "#0d1017";
 const beard = "#8B5E3C";
 const white = "#E6EDF3";
+// Also used for the welcome modal's Log in pill background
+const shirt = "#a3a7ad";
 
 export function PixelPirate({ className }: { className?: string }) {
   return (
@@ -31,8 +33,8 @@ export function PixelPirate({ className }: { className?: string }) {
       <rect x={5} y={10} width={6} height={1} fill={beard} />
 
       {/* Shirt with belt */}
-      <rect x={4} y={11} width={8} height={1} fill={white} />
-      <rect x={5} y={12} width={6} height={1} fill={white} />
+      <rect x={4} y={11} width={8} height={1} fill={shirt} />
+      <rect x={5} y={12} width={6} height={1} fill={shirt} />
       <rect x={5} y={13} width={6} height={1} fill={dark} />
 
       {/* Legs */}
