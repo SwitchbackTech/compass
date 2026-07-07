@@ -194,6 +194,7 @@ export const DayViewContent = memo(() => {
         currentView="day"
         today={dayjs()}
         onGoToToday={handleGoToToday}
+        onShowShortcuts={toggleShortcuts}
         commonTasks={getDayCmdTasks()}
         placeholder="Try: 'week', 'today', 'bug', or 'code'"
       />

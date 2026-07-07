@@ -13,6 +13,11 @@ import {
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
 
 interface UseWeekCmdTasksArgs {
   isCurrentWeek: boolean;
@@ -35,6 +40,7 @@ export const useWeekCmdTasks = ({
     startOfView,
     endOfView,
   );
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
 
   const handleCreateSomedayDraft = async (
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
@@ -54,37 +60,45 @@ export const useWeekCmdTasks = ({
       endOfView,
       "createShortcut",
     );
+
+    if (!isSidebarOpen) {
+      viewActions.toggleSidebar();
+    }
   };
 
   return [
     {
       id: "create-event",
-      label: "Create Event [c]",
+      label: "Create Event",
       icon: PlusIcon,
+      shortcut: "c",
       onClick: onEventTargetVisibility(() => {
         void createTimedDraft(isCurrentWeek, startOfView, "createShortcut");
       }),
     },
     {
       id: "create-allday-event",
-      label: "Create All-Day Event [a]",
+      label: "Create All-Day Event",
       icon: PlusIcon,
+      shortcut: "a",
       onClick: onEventTargetVisibility(() => {
         void createAlldayDraft(startOfView, endOfView, "createShortcut");
       }),
     },
     {
       id: "create-someday-week-event",
-      label: "Create Week Event [Shift+W]",
+      label: "Create Week Event",
       icon: PlusIcon,
+      shortcut: ["Shift", "W"],
       onClick: onEventTargetVisibility(() => {
         void handleCreateSomedayDraft(Categories_Event.SOMEDAY_WEEK);
       }),
     },
     {
       id: "create-someday-month-event",
-      label: "Create Month Event [Shift+M]",
+      label: "Create Month Event",
       icon: PlusIcon,
+      shortcut: ["Shift", "M"],
       onClick: onEventTargetVisibility(() => {
         void handleCreateSomedayDraft(Categories_Event.SOMEDAY_MONTH);
       }),

@@ -34,9 +34,9 @@ const markPageAuthenticated = async (page: Page) => {
 
 const waitForLogoutCommand = async (page: Page) => {
   await page.getByRole("button", { name: "Open command palette" }).click();
-  await expect(page.getByText("Log Out [z]")).toBeVisible();
+  await expect(page.getByText("Log Out")).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.getByText("Log Out [z]")).toHaveCount(0);
+  await expect(page.getByText("Log Out")).toHaveCount(0);
 };
 
 const pressLogoutShortcut = async (page: Page) => {

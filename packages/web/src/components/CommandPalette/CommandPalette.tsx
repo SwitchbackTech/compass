@@ -21,6 +21,7 @@ import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
 import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
 import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
 import { useSubscribeCmdItems } from "@web/common/hooks/useSubscribeCmdItems";
+import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import {
   selectIsCmdPaletteOpen,
   settingsActions,
@@ -32,6 +33,7 @@ interface CommandPaletteProps {
   currentView: ViewName;
   today: Dayjs;
   onGoToToday: () => void;
+  onShowShortcuts: () => void;
   commonTasks: CommandItem[];
   placeholder: string;
 }
@@ -62,6 +64,7 @@ export const CommandPalette = ({
   currentView,
   today,
   onGoToToday,
+  onShowShortcuts,
   commonTasks,
   placeholder,
 }: CommandPaletteProps) => {
@@ -101,6 +104,7 @@ export const CommandPalette = ({
         onGoToToday,
         onNavigateToView: (viewName) =>
           navigate({ to: VIEW_SHORTCUTS[viewName].route }),
+        onShowShortcuts,
         today,
       }),
     },
@@ -215,7 +219,15 @@ export const CommandPalette = ({
                     const content = (
                       <>
                         <item.icon size={18} />
-                        <span>{item.label}</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {item.label}
+                        </span>
+                        {item.shortcut && (
+                          <ShortcutKeys
+                            className="ml-auto shrink-0"
+                            keys={item.shortcut}
+                          />
+                        )}
                       </>
                     );
 

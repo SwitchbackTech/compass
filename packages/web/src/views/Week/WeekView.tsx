@@ -116,6 +116,7 @@ export const WeekView = () => {
         currentView="week"
         today={today}
         onGoToToday={goToTodayViaCmd}
+        onShowShortcuts={toggleShortcuts}
         commonTasks={weekCmdTasks}
         placeholder="Try: 'create', 'bug', or 'code'"
       />

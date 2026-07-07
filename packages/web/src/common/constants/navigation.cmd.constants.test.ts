@@ -11,27 +11,31 @@ describe("getNavigationCommandItems", () => {
       currentView,
       onGoToToday: () => {},
       onNavigateToView: () => {},
+      onShowShortcuts: () => {},
       today,
     }).map((item) => item.label);
   }
 
-  it("returns the other views and today for the week palette", () => {
+  it("returns the other views, today, and shortcuts for the week palette", () => {
     expect(getItemLabels("week")).toEqual([
-      "Go to Day [d]",
-      "Go to Today (Thursday, May 28) [t]",
+      "Go to Day",
+      "Go to Today (Thursday, May 28)",
+      "Show Shortcuts",
     ]);
   });
 
-  it("returns the other views and today for the day palette", () => {
+  it("returns the other views, today, and shortcuts for the day palette", () => {
     expect(getItemLabels("day")).toEqual([
-      "Go to Week [w]",
-      "Go to Today (Thursday, May 28) [t]",
+      "Go to Week",
+      "Go to Today (Thursday, May 28)",
+      "Show Shortcuts",
     ]);
   });
 
   it("runs the matching navigation callbacks", () => {
     const navigatedViews: ViewName[] = [];
     let didGoToToday = false;
+    let didShowShortcuts = false;
     const items = getNavigationCommandItems({
       currentView: "day",
       onGoToToday: () => {
@@ -40,13 +44,18 @@ describe("getNavigationCommandItems", () => {
       onNavigateToView: (viewName) => {
         navigatedViews.push(viewName);
       },
+      onShowShortcuts: () => {
+        didShowShortcuts = true;
+      },
       today,
     });
 
     items.find((item) => item.id === "go-to-week")?.onClick?.({} as never);
     items.find((item) => item.id === "today")?.onClick?.({} as never);
+    items.find((item) => item.id === "show-shortcuts")?.onClick?.({} as never);
 
     expect(navigatedViews).toEqual(["week"]);
     expect(didGoToToday).toBe(true);
+    expect(didShowShortcuts).toBe(true);
   });
 });
