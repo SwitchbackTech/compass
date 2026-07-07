@@ -1,6 +1,6 @@
 ---
 name: simplify
-description: Review changed code in this repo for reuse, duplication, and unnecessary complexity, then apply legibility-focused fixes using Compass conventions (Bun/Biome, packages/core|web|backend|scripts, Zustand stores). Quality only — it does not hunt for correctness bugs; use /code-review for that. Use when asked to simplify, clean up, make DRY, reduce complexity, or improve maintainability, or proactively while implementing features, fixing bugs, or refactoring.
+description: Review changed code in this repo for reuse, duplication, and unnecessary complexity — including overuse of useEffect/useRef/useState in React — then apply legibility-focused fixes using Compass conventions (Bun/Biome, packages/core|web|backend|scripts, Zustand stores). Quality only — it does not hunt for correctness bugs; use /code-review for that. Use when asked to simplify, clean up, make DRY, reduce complexity, or improve maintainability, or proactively while implementing features, fixing bugs, or refactoring.
 ---
 
 # Simplify
@@ -66,6 +66,34 @@ stable API.
 
 **Inline** when it's used once, the abstraction would need several optional
 params, or the name would be vague (`handleThing`, `doStuff`).
+
+### Minimize useEffect / useRef / useState
+
+LLM-written React tends to reach for these three hooks by default, even when
+the codebase already has a simpler answer. Treat every `useEffect`,
+`useRef`, and `useState` in the diff as guilty until proven necessary, in
+this order:
+
+1. **Derive during render.** If a value can be computed from
+   props/state/existing store data, compute it inline. Don't sync it into a
+   `useState` via a `useEffect` — that's an extra render, an extra failure
+   mode, and a stale-closure trap waiting to happen.
+2. **Existing state layers.** Zustand stores (`xActions`/`selectX`
+   convention) own shared/cross-component state; TanStack Query owns
+   server/async state. Don't shadow either with local `useState` +
+   `useEffect` that re-derives what the store or query already has.
+3. **Web APIs directly.** Event listeners, `IntersectionObserver`,
+   `ResizeObserver`, `matchMedia`, etc. can often replace a
+   `useEffect`/`useState` pair when the component is really just reacting to
+   a DOM/browser event, not React lifecycle.
+4. **Refactor the boundary.** Sometimes the fix isn't a hook at all — lift
+   state to the parent, colocate it differently, or split the component.
+
+If, after checking the above, the hook is still the right tool (syncing with
+a non-React system, an actual imperative DOM handle, true local UI-only
+state that nothing else needs), keep it — but say why in the commit message
+(see Commit below). Don't leave that justification implicit; "kept
+`useEffect` for X because Y" is the bar.
 
 ## Repo-Specific Conventions
 
@@ -153,9 +181,35 @@ suite:
   on its own
 - `bun run lint` (Biome) before handoff for any non-docs change
 
+## Commit
+
+Simplification must land as its own commit, separate from the commit(s) it
+simplifies, so the diff history shows implementation → simplification as
+distinct, reviewable steps.
+
+- After verify passes, stage only the files touched during simplification
+  and create a new commit — never `--amend` the implementation commit and
+  never mix simplification into a commit that isn't already staged for it.
+- Use a conventional commit message matching this repo's style (see
+  `git log`), e.g. `refactor(web): simplify <what changed>`. Scope to the
+  package touched (`core`/`web`/`backend`/`scripts`), same as existing
+  commits.
+- If the diff still contains a `useEffect`, `useRef`, or `useState` after
+  applying the checks above (whether newly added or left in place), the
+  commit body must justify each one in one line: `useEffect: <why>`. If none
+  remain, no note is needed — don't pad the message.
+- If simplification found nothing to change, skip the commit step entirely
+  and say so — don't create an empty commit.
+- Never push. Committing locally is the end of this skill's job.
+
 ## Output Format
 
 1. One-sentence summary of the change
 2. Minimal diff or before/after
 3. Principle(s) applied
 4. Any tradeoffs, and which verify command was run
+5. React hook complexity: did `useEffect`/`useRef`/`useState` usage go down,
+   stay flat, or go up, and — if any remain — the one-line justification for
+   each from the commit body
+6. The commit hash and message of the new simplification commit (or a note
+   that no commit was needed)
