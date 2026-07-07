@@ -1,10 +1,12 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Event_Core } from "@core/types/event.types";
 import { deleteCompassLocalDb } from "@web/__tests__/utils/storage/indexeddb.test.util";
 import { IndexedDbOfflineDataStore } from "@web/common/storage/offline-data/indexeddb-offline-data.store";
+import { type LocalStoredEvent } from "@web/common/storage/types/local-event.types";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-const makeEvent = (overrides: Partial<Event_Core> = {}): Event_Core => ({
+const makeEvent = (
+  overrides: Partial<LocalStoredEvent> = {},
+): LocalStoredEvent => ({
   _id: "event-1",
   title: "Someday task",
   startDate: "2026-05-05T09:00:00.000Z",
