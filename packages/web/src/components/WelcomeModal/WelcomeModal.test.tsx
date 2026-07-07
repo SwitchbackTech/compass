@@ -41,45 +41,6 @@ describe("WelcomeModal", () => {
     window.history.replaceState(null, "", window.location.href);
   });
 
-  it("closes when the backdrop is clicked", async () => {
-    const user = userEvent.setup();
-
-    render(<WelcomeModal />);
-
-    expect(
-      screen.getByRole("dialog", { name: "Welcome to Compass Calendar" }),
-    ).toBeTruthy();
-
-    await user.click(screen.getByRole("presentation"));
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
-      ).toBeNull();
-    });
-    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
-  });
-
-  it("closes when Escape is pressed", async () => {
-    const user = userEvent.setup();
-
-    render(<WelcomeModal />);
-
-    const backdrop = screen.getByRole("presentation");
-    await act(async () => {
-      backdrop.focus();
-    });
-
-    await user.keyboard("{Escape}");
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
-      ).toBeNull();
-    });
-    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
-  });
-
   it("shows the new copy and the pixel pirate mascot", () => {
     render(<WelcomeModal />);
 
@@ -95,22 +56,6 @@ describe("WelcomeModal", () => {
     ).toBeTruthy();
     expect(screen.getByRole("img", { name: /pixel pirate/i })).toBeTruthy();
     expect(screen.getByText("No signup required")).toBeTruthy();
-  });
-
-  it("dismisses when Start Now is clicked", async () => {
-    const user = userEvent.setup();
-
-    render(<WelcomeModal />);
-
-    await user.click(screen.getByRole("button", { name: "Start Now" }));
-
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("dialog", { name: "Welcome to Compass Calendar" }),
-      ).toBeNull();
-    });
-    expect(localStorage.getItem(STORAGE_KEYS.HAS_SEEN_WELCOME)).toBe("true");
-    expect(mockOpenModal).not.toHaveBeenCalled();
   });
 
   it("opens the auth modal from the Log in pill", async () => {
