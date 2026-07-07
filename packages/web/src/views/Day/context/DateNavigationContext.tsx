@@ -52,10 +52,8 @@ export function DateNavigationProvider({ children }: PropsWithChildren) {
   }, [dateInView, navigateToDate]);
 
   const navigateToToday = useCallback(() => {
-    const { dateString } = loadTodayData();
-
-    navigate({ to: ROOT_ROUTES.DAY_DATE, params: { dateString } });
-  }, [navigate]);
+    navigateToDate(loadTodayData().dateInView);
+  }, [navigateToDate]);
 
   const value: DateNavigationContextProps = {
     dateInView,
