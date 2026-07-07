@@ -1,7 +1,7 @@
 import { act } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const DATE_FORMAT = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
@@ -13,13 +13,35 @@ const mockParams: { dateString?: string } = {};
 // process-wide: another test file mocking "@tanstack/react-router" can
 // otherwise silently replace these hooks for every file that runs afterward
 // in the same test run. See useGlobalShortcuts.test.tsx for the same pattern.
-const actualTanstackRouter = await import("@tanstack/react-router");
+//
+// Snapshotted into a plain object (not just the namespace reference) because
+// mock.module mutates the live module object in place - without the copy,
+// `actualTanstackRouter.useNavigate` below would end up pointing at the mock
+// itself once registered. And rather than trying to "restore" the module
+// afterward (races with other files' top-level dynamic imports), the factory
+// checks a flag on every call, flipped off in afterAll below.
+const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
+let isRouterMocked = true;
 
 mock.module("@tanstack/react-router", () => ({
   ...actualTanstackRouter,
-  useNavigate: () => mockNavigate,
-  useParams: () => mockParams,
+  useNavigate: (...args: unknown[]) =>
+    isRouterMocked
+      ? mockNavigate
+      : (actualTanstackRouter.useNavigate as (...a: unknown[]) => unknown)(
+          ...args,
+        ),
+  useParams: (...args: unknown[]) =>
+    isRouterMocked
+      ? mockParams
+      : (actualTanstackRouter.useParams as (...a: unknown[]) => unknown)(
+          ...args,
+        ),
 }));
+
+afterAll(() => {
+  isRouterMocked = false;
+});
 
 const { useWeek } = await import("./useWeek");
 

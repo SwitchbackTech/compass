@@ -5,24 +5,14 @@ import {
   createRouter,
   Outlet,
   RouterProvider,
-  useLocation,
 } from "@tanstack/react-router";
-import { act, type ReactElement, type ReactNode, useLayoutEffect } from "react";
-import { readFile, writeFile } from "node:fs/promises";
+import { act, type ReactElement } from "react";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock useSession
 const mockUseSession = mock(() => ({
@@ -101,65 +91,12 @@ mock.module("@web/components/AuthModal/components/GoogleButton", () => ({
 const { redirectToToday, loadTodayData } = await import("@web/routers/loaders");
 const { ROOT_ROUTES } = await import("@web/common/constants/routes");
 
-const authModalHookUrl = new URL(
-  `./.auth-modal-hook-${process.pid}-${Date.now()}.mjs`,
-  import.meta.url,
-);
-const authModalProviderUrl = new URL(
-  `./.auth-modal-provider-${process.pid}-${Date.now()}.mjs`,
-  import.meta.url,
-);
-const authModalUrl = new URL(
-  `./.auth-modal-${process.pid}-${Date.now()}.mjs`,
-  import.meta.url,
-);
-
-const transpiler = new Bun.Transpiler({
-  autoImportJSX: true,
-  tsconfig: {
-    compilerOptions: {
-      jsx: "react-jsxdev",
-      jsxImportSource: "react",
-    },
-  },
-});
-
-const authModalHookSource = await readFile(
-  new URL("./hooks/useAuthModal.ts", import.meta.url),
-  "utf8",
-);
-const authModalHookJavaScript = transpiler.transformSync(
-  authModalHookSource,
-  "ts",
-);
-await writeFile(authModalHookUrl, authModalHookJavaScript);
-
-const authModalProviderSource = await readFile(
-  new URL("./AuthModalProvider.tsx", import.meta.url),
-  "utf8",
-);
-const authModalProviderJavaScript = transpiler.transformSync(
-  authModalProviderSource.replaceAll(
-    "./hooks/useAuthModal",
-    authModalHookUrl.href,
-  ),
-  "tsx",
-);
-await writeFile(authModalProviderUrl, authModalProviderJavaScript);
-
-const authModalSource = await readFile(
-  new URL("./AuthModal.tsx", import.meta.url),
-  "utf8",
-);
-const authModalJavaScript = transpiler.transformSync(
-  authModalSource.replaceAll("./hooks/useAuthModal", authModalHookUrl.href),
-  "tsx",
-);
-await writeFile(authModalUrl, authModalJavaScript);
-
-const { AuthModal } = await import(authModalUrl.href);
-const { AuthModalProvider } = await import(authModalProviderUrl.href);
-const { useAuthModal } = await import(authModalHookUrl.href);
+// Imported dynamically (after the mock.module calls above) so the mocked
+// session/Google/emailpassword modules are in place before AuthModal's
+// dependency chain (via useAuthFormHandlers) first resolves them.
+const { AuthModal } = await import("./AuthModal");
+const { AuthModalProvider } = await import("./AuthModalProvider");
+const { useAuthModal } = await import("./hooks/useAuthModal");
 
 // Helper component to trigger modal open
 const ModalTrigger = () => {
@@ -171,6 +108,10 @@ const ModalTrigger = () => {
   );
 };
 
+/**
+ * Renders `component` and `AuthModal` as the root route's content on a
+ * memory-history router, mirroring how RootShell mounts them in production.
+ */
 const renderWithProviders = async (
   component: ReactElement,
   initialRoute: string = "/day",
@@ -191,38 +132,22 @@ const renderWithProviders = async (
     expect(router.state.status).toBe("idle");
   });
 
-  return result;
+  return { router, ...result };
 };
 
 async function flushEffects() {
   await Promise.resolve();
 }
 
-const RouteLocationMirror = ({ children }: { children: ReactNode }) => {
-  const location = useLocation();
-
-  useLayoutEffect(() => {
-    mockWindowLocation(
-      `${location.pathname}${location.searchStr}${location.hash ? `#${location.hash}` : ""}`,
-    );
-  }, [location]);
-
-  return <>{children}</>;
-};
-
 const DayRedirectShell = () => (
-  <RouteLocationMirror>
-    <AuthModalProvider>
-      <AuthModal />
-      <Outlet />
-    </AuthModalProvider>
-  </RouteLocationMirror>
+  <AuthModalProvider>
+    <AuthModal />
+    <Outlet />
+  </AuthModalProvider>
 );
 
 const renderWithDayRedirectRoute = (initialRoute: string) => {
-  mockWindowLocation(initialRoute);
-
-  const dayRootRoute = createRootRoute();
+  const dayRootRoute = createRootRoute({ validateSearch: validateAuthSearch });
   const dayRoute = createRoute({
     getParentRoute: () => dayRootRoute,
     path: "/day",
@@ -255,8 +180,6 @@ const renderWithDayRedirectRoute = (initialRoute: string) => {
 
 describe("AuthModal", () => {
   beforeEach(() => {
-    // The ?auth= URL param drives modal state, so reset it between tests
-    setTestWindowUrl("/day");
     mockUseSession.mockClear();
     mockGoogleLogin.mockClear();
     mockUseIsGoogleAvailable.mockClear();
@@ -367,7 +290,7 @@ describe("AuthModal", () => {
 
     it("opens with a pushed ?auth= entry and closes on browser back", async () => {
       const user = userEvent.setup();
-      await renderWithProviders(<ModalTrigger />);
+      const { router } = await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
       await flushEffects();
@@ -377,12 +300,11 @@ describe("AuthModal", () => {
           screen.getByRole("heading", { name: /hey, welcome back/i }),
         ).toBeInTheDocument();
       });
-      expect(window.location.search).toBe("?auth=login");
+      expect(router.state.location.searchStr).toBe("?auth=login");
 
       // Simulate the browser back button popping the pushed entry
       await act(async () => {
-        setTestWindowUrl("/day");
-        window.dispatchEvent(new PopStateEvent("popstate", { state: null }));
+        router.history.back();
       });
 
       await waitFor(() => {
@@ -394,11 +316,11 @@ describe("AuthModal", () => {
 
     it("removes the ?auth= param when the modal is dismissed", async () => {
       const user = userEvent.setup();
-      await renderWithProviders(<ModalTrigger />);
+      const { router } = await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
       await flushEffects();
-      expect(window.location.search).toBe("?auth=login");
+      expect(router.state.location.searchStr).toBe("?auth=login");
 
       const backdrop = screen.getByRole("presentation");
       await act(async () => {
@@ -407,7 +329,7 @@ describe("AuthModal", () => {
       await user.keyboard("{Escape}");
       await flushEffects();
 
-      expect(window.location.search).toBe("");
+      expect(router.state.location.searchStr).toBe("");
     });
   });
 
@@ -998,16 +920,6 @@ describe("AuthModal", () => {
   });
 });
 
-// Helper to mock window.location for URL param tests
-const mockWindowLocation = (url: string) => {
-  setTestWindowUrl(url);
-};
-
-const originalReplaceState = Object.getPrototypeOf(
-  window.history,
-).replaceState.bind(window.history) as typeof window.history.replaceState;
-const replaceStateSpy = spyOn(window.history, "replaceState");
-
 describe("URL Parameter Support", () => {
   beforeEach(() => {
     mockUseSession.mockClear();
@@ -1022,22 +934,12 @@ describe("URL Parameter Support", () => {
       authenticated: false,
       setAuthenticated: mock(),
     });
-    replaceStateSpy.mockClear();
-    replaceStateSpy.mockImplementation((data, title, url) => {
-      originalReplaceState(data, title, url as string | URL | null);
-    });
     mockEmailPassword.submitNewPassword.mockResolvedValue({
       status: "OK",
     });
   });
 
-  afterEach(() => {
-    // Reset window.location to default
-    mockWindowLocation("/day");
-  });
-
   it("opens sign in modal when ?auth=login is present", async () => {
-    mockWindowLocation("/?auth=login");
     await renderWithProviders(<div />, "/?auth=login");
 
     await waitFor(() => {
@@ -1048,7 +950,6 @@ describe("URL Parameter Support", () => {
   });
 
   it("opens sign up modal when ?auth=signup is present", async () => {
-    mockWindowLocation("/?auth=signup");
     await renderWithProviders(<div />, "/?auth=signup");
 
     await waitFor(() => {
@@ -1059,7 +960,6 @@ describe("URL Parameter Support", () => {
   });
 
   it("opens forgot password modal when ?auth=forgot is present", async () => {
-    mockWindowLocation("/?auth=forgot");
     await renderWithProviders(<div />, "/?auth=forgot");
 
     await waitFor(() => {
@@ -1070,7 +970,6 @@ describe("URL Parameter Support", () => {
   });
 
   it("handles case-insensitive param values", async () => {
-    mockWindowLocation("/?auth=LOGIN");
     await renderWithProviders(<div />, "/?auth=LOGIN");
 
     await waitFor(() => {
@@ -1081,7 +980,6 @@ describe("URL Parameter Support", () => {
   });
 
   it("does not open modal for invalid param value", async () => {
-    mockWindowLocation("/?auth=invalid");
     await renderWithProviders(<div />, "/?auth=invalid");
 
     // Give it time to potentially open (it shouldn't)
@@ -1099,7 +997,6 @@ describe("URL Parameter Support", () => {
   });
 
   it("works on different routes", async () => {
-    mockWindowLocation("/week?auth=signup");
     await renderWithProviders(<div />, "/week?auth=signup");
 
     await waitFor(() => {
@@ -1109,10 +1006,42 @@ describe("URL Parameter Support", () => {
     });
   });
 
+  it("preserves an unrelated search param across a modal open/close round-trip", async () => {
+    const user = userEvent.setup();
+    const { router } = await renderWithProviders(
+      <ModalTrigger />,
+      "/?ref=newsletter",
+    );
+
+    await user.click(screen.getByRole("button", { name: /open modal/i }));
+    await flushEffects();
+    await waitFor(() => {
+      expect(router.state.location.search as Record<string, unknown>).toEqual({
+        ref: "newsletter",
+        auth: "login",
+      });
+    });
+
+    const backdrop = screen.getByRole("presentation");
+    await act(async () => {
+      backdrop.focus();
+    });
+    await user.keyboard("{Escape}");
+    await flushEffects();
+
+    await waitFor(() => {
+      expect(router.state.location.search as Record<string, unknown>).toEqual({
+        ref: "newsletter",
+      });
+    });
+  });
+
   it("opens reset password after the /day redirect preserves auth params", async () => {
     const { dateString } = loadTodayData();
 
-    renderWithDayRedirectRoute("/day?auth=reset&token=reset-token");
+    const { router } = renderWithDayRedirectRoute(
+      "/day?auth=reset&token=reset-token",
+    );
 
     await waitFor(() => {
       expect(screen.getByText("Day route loaded")).toBeInTheDocument();
@@ -1123,16 +1052,19 @@ describe("URL Parameter Support", () => {
 
     // The ?auth param stays in the URL while the modal is open (URL is the
     // modal's source of truth), so the redirect preserves both params
-    expect(replaceStateSpy.mock.calls.at(-1)?.[1]).toBe("");
-    expect(replaceStateSpy.mock.calls.at(-1)?.[2]).toBe(
-      `/day/${dateString}?auth=reset&token=reset-token`,
-    );
+    expect(router.state.location.pathname).toBe(`/day/${dateString}`);
+    expect(router.state.location.search).toEqual({
+      auth: "reset",
+      token: "reset-token",
+    });
   });
 
   it("submits reset password with the initial token after the URL changes", async () => {
     const user = userEvent.setup();
-    mockWindowLocation("/day?auth=reset&token=reset-token");
-    await renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
+    const { router } = await renderWithProviders(
+      <div />,
+      "/day?auth=reset&token=reset-token",
+    );
 
     await waitFor(() => {
       expect(
@@ -1140,7 +1072,15 @@ describe("URL Parameter Support", () => {
       ).toBeInTheDocument();
     });
 
-    mockWindowLocation("/day");
+    // Simulate something else clearing the token param out from under the
+    // modal (auth stays "reset" so the modal itself stays open) before the
+    // user finishes the form.
+    await act(async () => {
+      await router.navigate({
+        to: ".",
+        search: (prev) => ({ auth: prev.auth }),
+      });
+    });
 
     await user.type(
       screen.getByLabelText(/^new password$/i),
@@ -1154,12 +1094,9 @@ describe("URL Parameter Support", () => {
       });
     });
 
-    expect(
-      replaceStateSpy.mock.calls.find(
-        ([state, title, url]) =>
-          state === window.history.state && title === "" && url === "/day",
-      ),
-    ).toBeDefined();
+    await waitFor(() => {
+      expect(router.state.location.search.token).toBeUndefined();
+    });
     expect(screen.getByRole("status")).toHaveTextContent(
       "Password reset successful. Log in with your new password.",
     );
@@ -1174,7 +1111,6 @@ describe("URL Parameter Support", () => {
 
   it("switches to signUp (not back to loginAfterReset) when Sign up is clicked after reset", async () => {
     const user = userEvent.setup();
-    mockWindowLocation("/day?auth=reset&token=reset-token");
     mockEmailPassword.submitNewPassword.mockResolvedValue({
       status: "OK",
     });

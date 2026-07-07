@@ -1,6 +1,6 @@
+import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
-import { z } from "zod";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import {
   type ForgotPasswordFormData,
@@ -11,31 +11,6 @@ import { UserApi } from "@web/common/apis/user.api";
 import { type SignUpSubmitData } from "../forms/SignUpForm";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
-
-const AUTH_TOKEN_QUERY_SCHEMA = z.object({
-  token: z.string().min(1).optional(),
-});
-
-function getAuthTokenQueryParams(): z.infer<typeof AUTH_TOKEN_QUERY_SCHEMA> {
-  if (typeof window === "undefined") return {};
-  const searchParams = new URLSearchParams(window.location.search);
-  const parsed = AUTH_TOKEN_QUERY_SCHEMA.safeParse({
-    token: searchParams.get("token") ?? undefined,
-  });
-  return parsed.success ? parsed.data : {};
-}
-
-function updateCurrentUrlSearchParams(
-  updateSearchParams: (searchParams: URLSearchParams) => void,
-): void {
-  if (typeof window === "undefined") return;
-
-  const url = new URL(window.location.href);
-  updateSearchParams(url.searchParams);
-  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
-
-  window.history.replaceState(window.history.state, "", nextUrl);
-}
 
 interface UseAuthFormHandlersOptions {
   currentView: AuthView;
@@ -60,16 +35,15 @@ export function useAuthFormHandlers({
   setView,
 }: UseAuthFormHandlersOptions): UseAuthFormHandlersResult {
   const completeAuthentication = useCompleteAuthentication();
+  const navigate = useNavigate();
+  const search = useSearch({ from: "__root__" });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  const initialAuthToken = useMemo(() => {
-    const propToken = z
-      .string()
-      .min(1)
-      .safeParse(authToken ?? "");
-    if (propToken.success) return propToken.data;
-    return getAuthTokenQueryParams().token;
-  }, [authToken]);
+  // biome-ignore lint/correctness/useExhaustiveDependencies: capture the token once, before handleResetPassword removes it from the URL on success.
+  const initialAuthToken = useMemo(
+    () => authToken || search.token || undefined,
+    [authToken],
+  );
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: submit errors should clear when the auth modal changes view.
   useEffect(() => {
@@ -194,13 +168,17 @@ export function useAuthFormHandlers({
       setSubmitError(null);
 
       try {
-        // `supertokens-web-js` reads the reset token from the URL query param.
-        // We keep the first token we saw (from props or URL) so the flow still works even if the URL changes.
+        // `supertokens-web-js` reads the reset token from the URL query param
+        // at call time, so the navigate must resolve before submitNewPassword
+        // runs. We keep the first token we saw (from props or URL) so the
+        // flow still works even if the URL changes.
         const token = initialAuthToken;
 
         if (token) {
-          updateCurrentUrlSearchParams((searchParams) => {
-            searchParams.set("token", token);
+          await navigate({
+            to: ".",
+            replace: true,
+            search: (prev) => ({ ...prev, token }),
           });
         }
         const response = await EmailPassword.submitNewPassword({
@@ -209,8 +187,13 @@ export function useAuthFormHandlers({
 
         switch (response.status) {
           case "OK":
-            updateCurrentUrlSearchParams((searchParams) => {
-              searchParams.delete("token");
+            await navigate({
+              to: ".",
+              replace: true,
+              search: (prev) => {
+                const { token: _token, ...rest } = prev;
+                return rest;
+              },
             });
             setView("loginAfterReset");
             return;
@@ -233,7 +216,7 @@ export function useAuthFormHandlers({
         setIsSubmitting(false);
       }
     },
-    [initialAuthToken, setView],
+    [initialAuthToken, navigate, setView],
   );
 
   return {

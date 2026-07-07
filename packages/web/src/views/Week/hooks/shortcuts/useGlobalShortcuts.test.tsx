@@ -7,7 +7,7 @@ import {
   selectIsSidebarOpen,
   useViewStore,
 } from "@web/events/stores/view.store";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const logout = mock();
 const mockOpenModal = mock();
@@ -18,12 +18,32 @@ const mockUseSession = mock();
 const mockNavigate = mock();
 const mockPathname = { value: "/week" };
 
+// mock.module is process-wide, not scoped to this file, and isn't reliably
+// "restorable" afterward (another file's top-level dynamic import can race
+// with this file's afterAll). So useAuthModal/useNavigate/useLocation below
+// are wrapped to check a flag on every call instead of freezing the mock in
+// at registration time - once the flag flips off (afterAll), callers
+// anywhere in the process fall through to the real implementation. The
+// modules are snapshotted into plain objects (not just held as namespace
+// references) because mock.module mutates the live module object in place.
+const actualAuthModal = {
+  ...(await import("@web/components/AuthModal/hooks/useAuthModal")),
+};
+const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
+let isAuthModalMocked = true;
+let isRouterMocked = true;
+
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
 
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
-  useAuthModal: mockUseAuthModal,
+  ...actualAuthModal,
+  useAuthModal: (...args: unknown[]) =>
+    isAuthModalMocked
+      ? mockUseAuthModal(...args)
+      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
+        actualAuthModal.useAuthModal(...(args as [])),
 }));
 
 mock.module(
@@ -33,20 +53,26 @@ mock.module(
   }),
 );
 
-// @tanstack/react-router's useNavigate/useLocation are mocked directly (rather
-// than relying on a real RouterProvider) because Bun's `mock.module` is
-// process-wide: another test file mocking "@tanstack/react-router" can
-// otherwise silently replace `useNavigate` for every file that runs
-// afterward in the same test run.
-const actualTanstackRouter = await import("@tanstack/react-router");
-
 mock.module("@tanstack/react-router", () => ({
   ...actualTanstackRouter,
-  useNavigate: () => mockNavigate,
-  useLocation: () => ({ pathname: mockPathname.value }),
+  useNavigate: (...args: unknown[]) =>
+    isRouterMocked
+      ? mockNavigate
+      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
+        actualTanstackRouter.useNavigate(...(args as [])),
+  useLocation: (...args: unknown[]) =>
+    isRouterMocked
+      ? { pathname: mockPathname.value }
+      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
+        actualTanstackRouter.useLocation(...(args as [])),
 }));
 
 const { useGlobalShortcuts } = await import("./useGlobalShortcuts");
+
+afterAll(() => {
+  isAuthModalMocked = false;
+  isRouterMocked = false;
+});
 
 function wrapper({ children }: PropsWithChildren) {
   return <HotkeysProvider>{children}</HotkeysProvider>;

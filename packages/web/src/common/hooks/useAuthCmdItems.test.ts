@@ -1,27 +1,40 @@
 import { renderHook } from "@testing-library/react";
 import { act, type MouseEvent } from "react";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
 const mockUseAuthModal = mock();
-const mockUseAuthModalState = mock();
 const mockUseAuthFeatureFlag = mock();
 const mockUseSession = mock();
 
 mock.module("@web/auth/compass/session/useSession", () => ({
   useSession: mockUseSession,
 }));
+
+// mock.module is process-wide, not scoped to this file, and isn't reliably
+// "restorable" afterward (another file's top-level dynamic import can race
+// with this file's afterAll). So the factory spreads the real module's other
+// exports (AuthModalContext, useAuthModalState, validateAuthSearch - none of
+// which this file's own tests touch, but AuthModalProvider/router code
+// elsewhere needs the real ones) and only conditionally overrides
+// useAuthModal, checked on every call instead of frozen in at registration.
+const actualAuthModal = {
+  ...(await import("@web/components/AuthModal/hooks/useAuthModal")),
+};
+let isAuthModalMocked = true;
+
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
-  AuthModalContext: require("react").createContext({
-    closeModal: mock(),
-    currentView: "login",
-    isOpen: false,
-    openModal: mock(),
-    setView: mock(),
-  }),
-  useAuthModal: mockUseAuthModal,
-  useAuthModalState: mockUseAuthModalState,
+  ...actualAuthModal,
+  useAuthModal: (...args: unknown[]) =>
+    isAuthModalMocked
+      ? mockUseAuthModal(...args)
+      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
+        actualAuthModal.useAuthModal(),
 }));
+
+afterAll(() => {
+  isAuthModalMocked = false;
+});
 
 const { useAuthCmdItems } =
   require("./useAuthCmdItems") as typeof import("./useAuthCmdItems");

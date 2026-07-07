@@ -110,6 +110,16 @@ describe("router redirects", () => {
     expect(router.state.location.pathname).toBe(`/day/${dateString}`);
     expect(router.state.location.search).toEqual({ auth: "login" });
   });
+
+  it("preserves an unrelated search param across the today redirect", async () => {
+    const { dateString } = loadTodayData();
+    const router = createTestRouter(["/day?ref=newsletter"]);
+
+    await router.load();
+
+    expect(router.state.location.pathname).toBe(`/day/${dateString}`);
+    expect(router.state.location.search).toEqual({ ref: "newsletter" });
+  });
 });
 
 describe("loadDateParam", () => {

@@ -5,6 +5,7 @@ import {
 } from "@tanstack/react-router";
 import { IS_DEV } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
 import {
   loadAuthenticated,
   loadDateParam,
@@ -15,7 +16,17 @@ import {
 import { NotFoundView } from "@web/views/NotFound";
 
 export const rootRoute = createRootRoute({
+  // Lazy: RootShell pulls in AuthModal's whole auth stack (supertokens,
+  // Google auth, UserApi). Eagerly importing it here would make every
+  // module that touches this file - including tests that only inspect
+  // route shape, like routers/index.test.tsx - transitively evaluate that
+  // real dependency graph before it can be mocked.
+  component: lazyRouteComponent(
+    () => import("@web/components/RootShell/RootShell"),
+    "RootShell",
+  ),
   notFoundComponent: NotFoundView,
+  validateSearch: validateAuthSearch,
 });
 
 export const lifeRoute = createRoute({

@@ -1,9 +1,5 @@
-import {
-  createContext,
-  useContext,
-  useMemo,
-  useSyncExternalStore,
-} from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { createContext, useCallback, useContext, useMemo } from "react";
 
 export type AuthView =
   | "login"
@@ -19,7 +15,7 @@ export type AuthView =
  * modal; view switches and closing replace the entry, so one back press
  * always exits.
  */
-const VIEW_TO_PARAM: Record<AuthView, string> = {
+export const VIEW_TO_PARAM: Record<AuthView, string> = {
   login: "login",
   loginAfterReset: "login-after-reset",
   signUp: "signup",
@@ -30,6 +26,20 @@ const VIEW_TO_PARAM: Record<AuthView, string> = {
 const PARAM_TO_VIEW = Object.fromEntries(
   Object.entries(VIEW_TO_PARAM).map(([view, param]) => [param, view]),
 ) as Record<string, AuthView>;
+
+export interface AuthSearch {
+  auth?: string;
+  token?: string;
+}
+
+export function validateAuthSearch(
+  search: Record<string, unknown>,
+): AuthSearch {
+  return {
+    auth: typeof search.auth === "string" ? search.auth : undefined,
+    token: typeof search.token === "string" ? search.token : undefined,
+  };
+}
 
 interface AuthModalContextValue {
   isOpen: boolean;
@@ -59,39 +69,8 @@ export function useAuthModal(): AuthModalContextValue {
   return useContext(AuthModalContext);
 }
 
-const urlListeners = new Set<() => void>();
-
-function subscribeToUrl(listener: () => void): () => void {
-  urlListeners.add(listener);
-  window.addEventListener("popstate", listener);
-  return () => {
-    urlListeners.delete(listener);
-    window.removeEventListener("popstate", listener);
-  };
-}
-
-function getViewFromUrl(): AuthView | null {
-  const param = new URLSearchParams(window.location.search).get("auth");
+function getViewFromParam(param: string | undefined): AuthView | null {
   return param ? (PARAM_TO_VIEW[param.toLowerCase()] ?? null) : null;
-}
-
-function setAuthUrlParam(view: AuthView | null): void {
-  const url = new URL(window.location.href);
-  if (view === null) {
-    url.searchParams.delete("auth");
-  } else {
-    url.searchParams.set("auth", VIEW_TO_PARAM[view]);
-  }
-  const nextUrl = `${url.pathname}${url.search}${url.hash}`;
-
-  // Only opening from a closed state pushes an entry; view switches and
-  // closing replace it, so the modal occupies at most one history entry.
-  const method =
-    view !== null && getViewFromUrl() === null ? "pushState" : "replaceState";
-  window.history[method](window.history.state, "", nextUrl);
-  for (const listener of urlListeners) {
-    listener();
-  }
 }
 
 /**
@@ -100,16 +79,35 @@ function setAuthUrlParam(view: AuthView | null): void {
  * Used by AuthModalProvider to create the context value
  */
 export function useAuthModalState(): AuthModalContextValue {
-  const view = useSyncExternalStore(subscribeToUrl, getViewFromUrl);
+  const { auth } = useSearch({ from: "__root__" });
+  const navigate = useNavigate();
+  const view = getViewFromParam(auth);
+
+  const setAuthView = useCallback(
+    (nextView: AuthView | null) => {
+      // Only opening from a closed state pushes an entry; view switches and
+      // closing replace it, so the modal occupies at most one history entry.
+      const replace = !(nextView !== null && view === null);
+      navigate({
+        to: ".",
+        replace,
+        search: (prev) => ({
+          ...prev,
+          auth: nextView ? VIEW_TO_PARAM[nextView] : undefined,
+        }),
+      });
+    },
+    [navigate, view],
+  );
 
   return useMemo(
     () => ({
       isOpen: view !== null,
       currentView: view ?? "login",
-      openModal: (nextView: AuthView = "login") => setAuthUrlParam(nextView),
-      closeModal: () => setAuthUrlParam(null),
-      setView: (nextView: AuthView) => setAuthUrlParam(nextView),
+      openModal: (nextView: AuthView = "login") => setAuthView(nextView),
+      closeModal: () => setAuthView(null),
+      setView: (nextView: AuthView) => setAuthView(nextView),
     }),
-    [view],
+    [view, setAuthView],
   );
 }
