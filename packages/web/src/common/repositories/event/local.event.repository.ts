@@ -88,29 +88,6 @@ export class LocalEventRepository implements EventRepository {
   }
 
   async reorder(order: Payload_Order[]): Promise<void> {
-    const allEvents = await this.store.getAllEvents();
-    const orderMap = new Map(order.map((o) => [o._id, o.order]));
-
-    // Track errors for individual event saves
-    const errors: Array<{ eventId: string; error: unknown }> = [];
-
-    for (const event of allEvents) {
-      const eventId = event._id;
-      if (eventId && orderMap.has(eventId)) {
-        // Cast to Schema_Event which includes order property
-        const eventWithOrder = event as unknown as Schema_Event;
-        eventWithOrder.order = orderMap.get(eventId);
-        try {
-          await this.store.putEvent(event);
-        } catch (error) {
-          errors.push({ eventId, error });
-        }
-      }
-    }
-
-    // If any saves failed, throw aggregate error
-    if (errors.length > 0) {
-      throw new Error(`Failed to reorder ${errors.length} events`);
-    }
+    await this.store.updateEventOrders(order);
   }
 }
