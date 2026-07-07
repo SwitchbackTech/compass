@@ -1,5 +1,5 @@
+import { useLocation, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { completeGoogleAuthorization } from "@web/auth/google/authorization/complete-google-authorization";
@@ -14,7 +14,7 @@ type CompleteAuthentication = ReturnType<typeof useCompleteAuthentication>;
 
 type CompleteGoogleAuthCallbackOptions = {
   completeAuthentication: CompleteAuthentication;
-  navigate: ReturnType<typeof useNavigate>;
+  navigate: (path: string, opts: { replace: true }) => void;
   search: string;
 };
 
@@ -43,7 +43,7 @@ export async function completeGoogleAuthCallback({
 export function GoogleAuthCallbackView() {
   const didRun = useRef(false);
   const location = useLocation();
-  const navigate = useNavigate();
+  const router = useRouter();
   const completeAuthentication = useCompleteAuthentication();
 
   useEffect(() => {
@@ -55,10 +55,10 @@ export function GoogleAuthCallbackView() {
 
     void completeGoogleAuthCallback({
       completeAuthentication,
-      navigate,
-      search: location.search,
+      navigate: (path) => router.history.replace(path),
+      search: location.searchStr,
     });
-  }, [completeAuthentication, location.search, navigate]);
+  }, [completeAuthentication, location.searchStr, router]);
 
   return (
     <OverlayPanel

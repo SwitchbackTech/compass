@@ -11,10 +11,12 @@ import { type CommandItem } from "./command-palette.types";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
-const actualReactRouterDom = await import("react-router-dom");
+// Bun's mock.module is process-wide, so mock the router's useNavigate directly
+// rather than relying on a real RouterProvider.
+const actualTanstackRouter = await import("@tanstack/react-router");
 
-mock.module("react-router-dom", () => ({
-  ...actualReactRouterDom,
+mock.module("@tanstack/react-router", () => ({
+  ...actualTanstackRouter,
   useNavigate: () => mockNavigate,
 }));
 

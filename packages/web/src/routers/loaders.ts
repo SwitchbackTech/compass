@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, redirect } from "react-router-dom";
+import { redirect } from "@tanstack/react-router";
 import { zYearMonthDayString } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -30,52 +30,60 @@ export function loadTodayData(): DayLoaderData {
   return { dateInView, dateString: dateInView.format(dateFormat) };
 }
 
-function buildTodayRedirectUrl(request: Request, baseRoute: string): string {
+export function redirectToToday(
+  to: typeof ROOT_ROUTES.DAY_DATE | typeof ROOT_ROUTES.WEEK_DATE,
+): never {
   const { dateString } = loadTodayData();
-  const url = new URL(request.url);
 
-  return `${baseRoute}/${dateString}${url.search}`;
+  throw redirect({
+    to,
+    params: { dateString },
+    search: (prev: Record<string, unknown>) => prev,
+  });
 }
 
-export function loadDayData({
-  request,
-}: LoaderFunctionArgs<unknown>): Response {
-  return redirect(buildTodayRedirectUrl(request, ROOT_ROUTES.DAY));
+// Deliberately not params.parse: a throwing parser makes the route not
+// match (-> NotFound), but the existing UX redirects an invalid dateString
+// to the base route instead. Runs in beforeLoad so an invalid param never
+// reaches the loader.
+function validateDateStringParam(
+  dateString: string | undefined,
+  baseRoute: typeof ROOT_ROUTES.DAY | typeof ROOT_ROUTES.WEEK,
+): void {
+  if (!zYearMonthDayString.safeParse(dateString).success) {
+    throw redirect({ to: baseRoute });
+  }
 }
 
-export function loadRootData(args: LoaderFunctionArgs<unknown>): Response {
-  return loadDayData(args);
+export function validateDayDateParam({
+  params,
+}: {
+  params: { dateString: string };
+}): void {
+  validateDateStringParam(params.dateString, ROOT_ROUTES.DAY);
 }
 
-export function loadWeekData({
-  request,
-}: LoaderFunctionArgs<unknown>): Response {
-  return redirect(buildTodayRedirectUrl(request, ROOT_ROUTES.WEEK));
+export function validateWeekDateParam({
+  params,
+}: {
+  params: { dateString: string };
+}): void {
+  validateDateStringParam(params.dateString, ROOT_ROUTES.WEEK);
 }
 
-function loadSpecificDateData(
-  params: LoaderFunctionArgs<unknown>["params"],
-  baseRoute: string,
-): DayLoaderData | Response {
-  const parsedDate = zYearMonthDayString.safeParse(params.dateString);
-  const { success, data: dateString } = parsedDate;
-
-  if (!success) return redirect(baseRoute);
-
+// Shared by dayDateRoute and weekDateRoute: once beforeLoad has validated
+// the param, shaping it into DayLoaderData doesn't depend on which route
+// matched.
+export function loadDateParam({
+  params,
+}: {
+  params: { dateString: string };
+}): DayLoaderData {
   return {
-    dateString,
-    dateInView: dayjs(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+    dateString: params.dateString,
+    dateInView: dayjs(
+      params.dateString,
+      dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT,
+    ),
   };
-}
-
-export function loadSpecificDayData({
-  params,
-}: LoaderFunctionArgs<unknown>): DayLoaderData | Response {
-  return loadSpecificDateData(params, ROOT_ROUTES.DAY);
-}
-
-export function loadSpecificWeekData({
-  params,
-}: LoaderFunctionArgs<unknown>): DayLoaderData | Response {
-  return loadSpecificDateData(params, ROOT_ROUTES.WEEK);
 }

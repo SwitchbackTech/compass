@@ -1,4 +1,4 @@
-import { Outlet } from "react-router-dom";
+import { Outlet } from "@tanstack/react-router";
 import { useResponsiveLayout } from "@web/common/hooks/useResponsiveLayout";
 
 /**

@@ -1,25 +1,27 @@
 import {
-  createBrowserRouter,
+  type AnyRouter,
+  createRouter,
   RouterProvider,
-  type RouterProviderProps,
-} from "react-router-dom";
+} from "@tanstack/react-router";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
-import { routeObjects } from "@web/routers/router.routes";
+import { routeTree } from "@web/routers/router.routes";
 
-export const router = createBrowserRouter(routeObjects, {
-  future: {
-    v7_relativeSplatPath: true,
-  },
+export const router = createRouter({
+  routeTree,
+  defaultPendingComponent: AbsoluteOverflowLoader,
+  // Fast loaders (the common case) never show the overlay at all; slower
+  // ones show it for at least defaultPendingMinMs so it doesn't flash.
+  defaultPendingMs: 300,
+  defaultPendingMinMs: 200,
+  defaultPreload: "intent",
 });
 
-export const CompassRouterProvider = (
-  props?: Partial<Pick<RouterProviderProps, "router">>,
-) => {
-  return (
-    <RouterProvider
-      router={props?.router ?? router}
-      future={{ v7_startTransition: true }}
-      fallbackElement={<AbsoluteOverflowLoader />}
-    />
-  );
+declare module "@tanstack/react-router" {
+  interface Register {
+    router: typeof router;
+  }
+}
+
+export const CompassRouterProvider = (props?: { router?: AnyRouter }) => {
+  return <RouterProvider router={props?.router ?? router} />;
 };

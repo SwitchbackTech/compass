@@ -1,11 +1,7 @@
-import { useNavigate } from "react-router-dom";
+import { Link } from "@tanstack/react-router";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 export const NotFoundView = () => {
-  const navigate = useNavigate();
-
-  const goHome = () => navigate(ROOT_ROUTES.ROOT);
-
   return (
     <div className="c-not-found">
       <div>
@@ -18,13 +14,12 @@ export const NotFoundView = () => {
         </span>
       </div>
 
-      <button
-        className="mt-5 mb-5 cursor-pointer rounded border-2 border-border-primary bg-fg-primary-dark px-4 py-2 font-semibold text-[16px] text-text-lighter transition-all duration-200 ease-in-out hover:brightness-120"
-        onClick={goHome}
-        type="button"
+      <Link
+        to={ROOT_ROUTES.ROOT}
+        className="mt-5 mb-5 inline-block cursor-pointer rounded border-2 border-border-primary bg-fg-primary-dark px-4 py-2 font-semibold text-[16px] text-text-lighter transition-all duration-200 ease-in-out hover:brightness-120"
       >
         Go back to your booty
-      </button>
+      </Link>
     </div>
   );
 };
