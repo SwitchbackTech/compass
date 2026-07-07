@@ -9,6 +9,7 @@ import {
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
 import { CollapsiblePanel } from "@web/components/CollapsiblePanel/CollapsiblePanel";
+import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import {
@@ -18,9 +19,9 @@ import {
   viewActions,
 } from "@web/events/stores/view.store";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
-import { DayCmdPalette } from "@web/views/Day/components/DayCmdPalette";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
+import { getDayCmdTasks } from "@web/views/Day/getDayCmdTasks";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
 import { useResizableTaskList } from "@web/views/Day/hooks/layout/useResizableTaskList";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
@@ -189,7 +190,13 @@ export const DayViewContent = memo(() => {
 
   return (
     <div id="day" className="flex h-screen w-screen overflow-hidden">
-      <DayCmdPalette onGoToToday={handleGoToToday} />
+      <CommandPalette
+        currentView="day"
+        today={dayjs()}
+        onGoToToday={handleGoToToday}
+        commonTasks={getDayCmdTasks()}
+        placeholder="Try: 'week', 'today', 'bug', or 'code'"
+      />
       <Dedication />
 
       <CollapsiblePanel isOpen={isSidebarOpen} width={SIDEBAR_OPEN_WIDTH}>

@@ -1,8 +1,9 @@
-import { type JsonStructureItem } from "react-cmdk";
+import { SignOutIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import { useLogoutConfirmation } from "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation";
 
-export const useLogoutCmdItems = (): JsonStructureItem[] => {
+export const useLogoutCmdItems = (): CommandItem[] => {
   const { authenticated } = useSession();
   const { openLogoutConfirmation } = useLogoutConfirmation();
 
@@ -13,8 +14,8 @@ export const useLogoutCmdItems = (): JsonStructureItem[] => {
   return [
     {
       id: "log-out",
-      children: "Log Out [z]",
-      icon: "ArrowRightOnRectangleIcon",
+      label: "Log Out [z]",
+      icon: SignOutIcon,
       onClick: openLogoutConfirmation,
     },
   ];

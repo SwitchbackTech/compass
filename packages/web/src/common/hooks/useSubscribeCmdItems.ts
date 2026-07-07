@@ -1,4 +1,4 @@
-import { type JsonStructureItem } from "react-cmdk";
+import { BellIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
 import {
   selectUserMetadata,
@@ -9,13 +9,14 @@ import { UserApi } from "@web/common/apis/user.api";
 import { SUBSCRIBE_TO_UPDATES_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
 /**
  * Returns a command palette item to opt in to email updates.
  * One-way: hidden once subscribed. Unsubscribing happens via the
  * email's own footer link, not from within Compass.
  */
-export const useSubscribeCmdItems = (): JsonStructureItem[] => {
+export const useSubscribeCmdItems = (): CommandItem[] => {
   const { authenticated } = useSession();
   const subscribed = useUserMetadataStore(
     (state) => selectUserMetadata(state)?.subscribeToUpdates ?? false,
@@ -28,8 +29,8 @@ export const useSubscribeCmdItems = (): JsonStructureItem[] => {
   return [
     {
       id: "subscribe-to-updates",
-      children: "Subscribe to Updates",
-      icon: "BellIcon",
+      label: "Subscribe to Updates",
+      icon: BellIcon,
       onClick: () => {
         UserApi.updateMetadata({ subscribeToUpdates: true })
           .then((metadata) => {

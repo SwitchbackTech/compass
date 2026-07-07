@@ -12,7 +12,7 @@ describe("getNavigationCommandItems", () => {
       onGoToToday: () => {},
       onNavigateToView: () => {},
       today,
-    }).map((item) => item.children);
+    }).map((item) => item.label);
   }
 
   it("returns the other views and today for the week palette", () => {

@@ -1,18 +1,20 @@
 import { useCallback, useMemo } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
+import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CollapsiblePanel } from "@web/components/CollapsiblePanel/CollapsiblePanel";
+import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { SomedayInteractionCoordinator } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/SomedayInteractionCoordinator";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
+import { draftActions } from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
-import { CmdPalette } from "@web/views/CmdPalette";
 import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
@@ -29,6 +31,7 @@ import { useVisibleDayCount } from "@web/views/Week/hooks/grid/useVisibleDayCoun
 import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
+import { useWeekCmdTasks } from "@web/views/Week/hooks/useWeekCmdTasks";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
 
@@ -69,10 +72,18 @@ export const WeekView = () => {
     util,
     scrollUtil,
   };
-  const cmdPaletteProps = {
-    ...shortcutProps,
-    today,
-  };
+
+  const weekCmdTasks = useWeekCmdTasks({
+    isCurrentWeek,
+    startOfView: weekProps.component.startOfView,
+    endOfView: weekProps.component.endOfView,
+  });
+
+  const goToTodayViaCmd = useCallback(() => {
+    scrollUtil.scrollToNow();
+    if (isEventFormOpen()) draftActions.discard();
+    util.goToToday();
+  }, [scrollUtil, util]);
 
   const shortcutSections = useMemo(
     () =>
@@ -101,7 +112,13 @@ export const WeekView = () => {
 
   return (
     <div id="cal" className="flex h-screen w-screen overflow-hidden">
-      <CmdPalette {...cmdPaletteProps} />
+      <CommandPalette
+        currentView="week"
+        today={today}
+        onGoToToday={goToTodayViaCmd}
+        commonTasks={weekCmdTasks}
+        placeholder="Try: 'create', 'bug', or 'code'"
+      />
       <Dedication />
 
       <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>

@@ -1,12 +1,13 @@
-import { type JsonStructureItem } from "react-cmdk";
+import { SignInIcon, UserPlusIcon } from "@phosphor-icons/react";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
 /**
  * Returns command palette items for authentication actions.
  * Items are only returned when the user is not authenticated.
  */
-export const useAuthCmdItems = (): JsonStructureItem[] => {
+export const useAuthCmdItems = (): CommandItem[] => {
   const { authenticated } = useSession();
   const { openModal } = useAuthModal();
 
@@ -17,14 +18,14 @@ export const useAuthCmdItems = (): JsonStructureItem[] => {
   return [
     {
       id: "sign-up",
-      children: "Sign Up",
-      icon: "UserPlusIcon",
+      label: "Sign Up",
+      icon: UserPlusIcon,
       onClick: () => openModal("signUp"),
     },
     {
       id: "log-in",
-      children: "Log In",
-      icon: "ArrowLeftOnRectangleIcon",
+      label: "Log In",
+      icon: SignInIcon,
       onClick: () => openModal("login"),
     },
   ];
