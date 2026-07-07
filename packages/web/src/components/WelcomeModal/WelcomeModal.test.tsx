@@ -1,8 +1,8 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { act, createContext } from "react";
+import { createContext } from "react";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
 const mockCloseModal = mock();
@@ -17,15 +17,35 @@ mock.module("@web/auth/compass/session/session.context", () => ({
   SessionContext,
 }));
 
+// mock.module is process-wide, not scoped to this file, and isn't reliably
+// "restorable" afterward (another file's top-level dynamic import can race
+// with this file's afterAll). So the factory spreads the real module's other
+// exports (AuthModalContext, useAuthModalState, validateAuthSearch - needed
+// by AuthModalProvider/router code elsewhere) and checks a flag on every
+// useAuthModal() call instead of freezing the mock in at registration time.
+const actualAuthModal = {
+  ...(await import("@web/components/AuthModal/hooks/useAuthModal")),
+};
+let isAuthModalMocked = true;
+
 mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
-  useAuthModal: () => ({
-    isOpen: authModalState.isOpen,
-    currentView: "login",
-    openModal: mockOpenModal,
-    closeModal: mockCloseModal,
-    setView: mockSetView,
-  }),
+  ...actualAuthModal,
+  useAuthModal: (...args: unknown[]) =>
+    isAuthModalMocked
+      ? {
+          isOpen: authModalState.isOpen,
+          currentView: "login",
+          openModal: mockOpenModal,
+          closeModal: mockCloseModal,
+          setView: mockSetView,
+        }
+      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
+        actualAuthModal.useAuthModal(...(args as [])),
 }));
+
+afterAll(() => {
+  isAuthModalMocked = false;
+});
 
 const { WelcomeModal } =
   require("./WelcomeModal") as typeof import("./WelcomeModal");

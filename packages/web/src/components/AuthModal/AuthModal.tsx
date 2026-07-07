@@ -1,4 +1,5 @@
 import { DotIcon } from "@phosphor-icons/react";
+import { useSearch } from "@tanstack/react-router";
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
@@ -13,21 +14,16 @@ import { LogInForm } from "./forms/LogInForm";
 import { ResetPasswordForm } from "./forms/ResetPasswordForm";
 import { SignUpForm } from "./forms/SignUpForm";
 import { useAuthFormHandlers } from "./hooks/useAuthFormHandlers";
-import { useAuthModal } from "./hooks/useAuthModal";
+import { type AuthSearch, useAuthModal } from "./hooks/useAuthModal";
 
-function getInitialAuthToken(): string | undefined {
-  if (typeof window === "undefined") {
-    return undefined;
-  }
-
-  const searchParams = new URLSearchParams(window.location.search);
-  const authParam = searchParams.get("auth")?.toLowerCase();
+function getInitialAuthToken(search: AuthSearch): string | undefined {
+  const authParam = search.auth?.toLowerCase();
 
   if (authParam !== "reset" && authParam !== "verify") {
     return undefined;
   }
 
-  return searchParams.get("token") ?? undefined;
+  return search.token;
 }
 
 /**
@@ -56,7 +52,8 @@ export const AuthModal: FC = () => {
   const isGoogleAvailable = useIsGoogleAvailable();
   const isLoginView =
     currentView === "login" || currentView === "loginAfterReset";
-  const [authToken] = useState(getInitialAuthToken);
+  const search = useSearch({ from: "__root__" });
+  const [authToken] = useState(() => getInitialAuthToken(search));
   const {
     isSubmitting,
     submitError,

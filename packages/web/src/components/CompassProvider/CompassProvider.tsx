@@ -12,9 +12,6 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { PointerPositionProvider } from "@web/common/pointer/pointer-position";
 import { queryClient as defaultQueryClient } from "@web/common/query/query-client";
-import { AuthModal } from "@web/components/AuthModal/AuthModal";
-import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
-import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
@@ -45,27 +42,23 @@ export const CompassRequiredProviders = ({
           >
             <PointerPositionProvider>
               <IconProvider>
-                <AuthModalProvider>
-                  <LogoutConfirmationProvider>
-                    {children}
-                    <AuthModal />
-                    <WelcomeModal />
-                    <ToastContainer
-                      position="bottom-left"
-                      autoClose={5000}
-                      hideProgressBar={false}
-                      newestOnTop={false}
-                      closeOnClick
-                      rtl={false}
-                      pauseOnFocusLoss
-                      draggable
-                      pauseOnHover
-                      theme="dark"
-                      limit={1}
-                      transition={Slide}
-                    />
-                  </LogoutConfirmationProvider>
-                </AuthModalProvider>
+                <LogoutConfirmationProvider>
+                  {children}
+                  <ToastContainer
+                    position="bottom-left"
+                    autoClose={5000}
+                    hideProgressBar={false}
+                    newestOnTop={false}
+                    closeOnClick
+                    rtl={false}
+                    pauseOnFocusLoss
+                    draggable
+                    pauseOnHover
+                    theme="dark"
+                    limit={1}
+                    transition={Slide}
+                  />
+                </LogoutConfirmationProvider>
               </IconProvider>
             </PointerPositionProvider>
           </GoogleOAuthProvider>

@@ -8,17 +8,30 @@ import {
   useSettingsStore,
 } from "@web/settings/settings.store";
 import { type CommandItem } from "./command-palette.types";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
 // Bun's mock.module is process-wide, so mock the router's useNavigate directly
-// rather than relying on a real RouterProvider.
-const actualTanstackRouter = await import("@tanstack/react-router");
+// rather than relying on a real RouterProvider. Snapshotted into a plain
+// object because mock.module mutates the live module object in place, and
+// the factory checks a flag on every call (flipped off in afterAll) so files
+// running later in the same process get the real hook back - restoring the
+// module in afterAll instead would race with other files' top-level imports.
+const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
+let isNavigateMocked = true;
 
 mock.module("@tanstack/react-router", () => ({
   ...actualTanstackRouter,
-  useNavigate: () => mockNavigate,
+  useNavigate: (...args: unknown[]) =>
+    isNavigateMocked
+      ? mockNavigate
+      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
+        actualTanstackRouter.useNavigate(...(args as [])),
 }));
+
+afterAll(() => {
+  isNavigateMocked = false;
+});
 
 // The other Settings-section hooks (auth/logout/subscribe) hang off session
 // state that other suites mock globally (bun's mock.module leaks across files),

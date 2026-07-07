@@ -5,15 +5,33 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockNavigate = mock();
-const actualTanstackRouter = await import("@tanstack/react-router");
+// Snapshotted into a plain object (not just holding the namespace
+// reference) because mock.module mutates the live module object in place -
+// without the copy, `actualTanstackRouter.useNavigate` below would end up
+// pointing at the mock itself once registered.
+const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
 
+// mock.module replaces the module for the whole test process, not just this
+// file and isn't reliably "restorable" afterward (other files' top-level
+// dynamic imports can race with this file's afterAll). So the factory checks
+// a flag on every call instead of freezing the mock in at registration time -
+// once the flag flips off, callers anywhere in the process get the real hook.
+let isNavigateMocked = true;
 mock.module("@tanstack/react-router", () => ({
   ...actualTanstackRouter,
-  useNavigate: () => mockNavigate,
+  useNavigate: (...args: unknown[]) =>
+    isNavigateMocked
+      ? mockNavigate
+      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
+        actualTanstackRouter.useNavigate(...(args as [])),
 }));
+
+afterAll(() => {
+  isNavigateMocked = false;
+});
 
 mock.module("@web/components/Shortcuts/ShortcutHint", () => ({
   ShortcutHint: ({ children }: { children: ReactNode }) => (
