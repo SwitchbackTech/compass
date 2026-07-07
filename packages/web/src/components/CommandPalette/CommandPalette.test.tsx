@@ -39,6 +39,7 @@ mock.module("@web/common/hooks/useGoogleCmdItems", () => ({
 const { CommandPalette, filterSections } = await import("./CommandPalette");
 
 const onGoToToday = mock();
+const onShowShortcuts = mock();
 const taskAlphaClick = mock();
 const taskDisabledClick = mock();
 
@@ -65,6 +66,7 @@ const renderPalette = () =>
       currentView="week"
       today={dayjs("2026-07-07")}
       onGoToToday={onGoToToday}
+      onShowShortcuts={onShowShortcuts}
       commonTasks={buildTasks()}
       placeholder="Try: 'create', 'bug', or 'code'"
     />,
@@ -76,9 +78,11 @@ const getInput = () =>
 
 // The active row is the one the component paints with the active token; this
 // is driven by our own activeIndex, which is exactly what we want to assert.
+// Scoped to the label span (not the row's full textContent) so it isn't
+// polluted by the row's keycap chip text (e.g. "Go to DayD").
 const activeRowText = (container: HTMLElement) =>
-  container.ownerDocument.querySelector(".bg-panel-badge-bg")?.textContent ??
-  null;
+  container.ownerDocument.querySelector(".bg-panel-badge-bg > span")
+    ?.textContent ?? null;
 
 const isOpen = () => selectIsCmdPaletteOpen(useSettingsStore.getState());
 
@@ -86,6 +90,7 @@ describe("CommandPalette", () => {
   beforeEach(() => {
     mockNavigate.mockClear();
     onGoToToday.mockClear();
+    onShowShortcuts.mockClear();
     taskAlphaClick.mockClear();
     taskDisabledClick.mockClear();
   });
@@ -99,7 +104,7 @@ describe("CommandPalette", () => {
     expect(screen.getByText("More")).toBeInTheDocument();
 
     // Week view hides its own nav item and surfaces the Day + Today entries.
-    expect(screen.getByText("Go to Day [d]")).toBeInTheDocument();
+    expect(screen.getByText("Go to Day")).toBeInTheDocument();
     expect(screen.getByText(/Go to Today/)).toBeInTheDocument();
     expect(screen.getByText("Task Alpha")).toBeInTheDocument();
     // Settings surfaces the (stubbed) Google item.
@@ -108,7 +113,7 @@ describe("CommandPalette", () => {
 
     expect(getInput()).toHaveFocus();
     // First option is active by default.
-    expect(activeRowText(container)).toBe("Go to Day [d]");
+    expect(activeRowText(container)).toBe("Go to Day");
   });
 
   it("filters case-insensitively, dropping empty sections, and shows a no-results row", () => {
@@ -135,15 +140,16 @@ describe("CommandPalette", () => {
     expect(screen.getByText("Task Disabled").closest("button")).toBeDisabled();
 
     // First option active by default; ArrowUp wraps to the last (Version) row.
-    expect(activeRowText(container)).toBe("Go to Day [d]");
+    expect(activeRowText(container)).toBe("Go to Day");
     fireEvent.keyDown(input, { key: "ArrowUp" });
     expect(activeRowText(container)).toMatch(/Version/);
     // ArrowDown from the last option wraps back to the first.
     fireEvent.keyDown(input, { key: "ArrowDown" });
-    expect(activeRowText(container)).toBe("Go to Day [d]");
+    expect(activeRowText(container)).toBe("Go to Day");
 
     // Walk down to Task Alpha, then the next ArrowDown skips the disabled row.
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Go to Today
+    fireEvent.keyDown(input, { key: "ArrowDown" }); // Show Shortcuts
     fireEvent.keyDown(input, { key: "ArrowDown" }); // Task Alpha
     expect(activeRowText(container)).toBe("Task Alpha");
     fireEvent.keyDown(input, { key: "ArrowDown" }); // skips Task Disabled
@@ -170,7 +176,7 @@ describe("CommandPalette", () => {
     expect(activeRowText(container)).toMatch(/Go to Today/);
 
     fireEvent.change(input, { target: { value: "go" } });
-    expect(activeRowText(container)).toBe("Go to Day [d]");
+    expect(activeRowText(container)).toBe("Go to Day");
   });
 
   it("closes on Escape", () => {
@@ -196,6 +202,17 @@ describe("CommandPalette", () => {
     );
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("renders a keycap chip for the shortcut and runs onShowShortcuts on click", () => {
+    renderPalette();
+
+    const row = screen.getByText("Show Shortcuts").closest("button");
+    expect(row?.querySelector(".c-keycap")?.textContent).toBe("?");
+
+    fireEvent.click(row as HTMLButtonElement);
+    expect(onShowShortcuts).toHaveBeenCalledTimes(1);
+    expect(isOpen()).toBe(false);
   });
 });
 

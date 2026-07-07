@@ -23,8 +23,9 @@ export const getDayCmdTasks = (): CommandItem[] => [
   },
   {
     id: "create-allday-event",
-    label: "Create all-day event [a]",
+    label: "Create all-day event",
     icon: PlusIcon,
+    shortcut: "a",
     onClick: () =>
       queueMicrotask(() =>
         compassEventEmitter.emit(CompassDOMEvents.CREATE_ALLDAY_DRAFT),
@@ -32,8 +33,9 @@ export const getDayCmdTasks = (): CommandItem[] => [
   },
   {
     id: "edit-event",
-    label: "Edit event [m]",
+    label: "Edit event",
     icon: NotePencilIcon,
+    shortcut: "m",
     onClick: () => queueMicrotask(openEventFormEditEvent),
   },
 ];
