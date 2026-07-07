@@ -2,7 +2,10 @@ import { create } from "zustand";
 import { devtools } from "zustand/middleware";
 import dayjs from "@core/util/date/dayjs";
 import { IS_DEV } from "@web/common/constants/env.constants";
-import { writeSidebarOpen } from "@web/common/storage/sidebar-open.storage";
+import {
+  readSidebarOpen,
+  writeSidebarOpen,
+} from "@web/common/storage/sidebar-open.storage";
 
 interface ViewState {
   dates: {
@@ -22,7 +25,9 @@ export const initialViewState: ViewState = {
     start: dayjs().startOf("week").format(),
     end: dayjs().endOf("week").format(),
   },
-  sidebar: { isOpen: true },
+  // Seed from the persisted preference so a collapsed sidebar never mounts
+  // (and animates closed) on the first render after a refresh.
+  sidebar: { isOpen: readSidebarOpen() },
   taskList: { isOpen: true },
 };
 

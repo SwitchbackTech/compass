@@ -36,6 +36,33 @@ test.describe("Responsive sidebar", () => {
     await page.locator("#timedColumns").waitFor();
     await expect(page.locator("#sidebar")).toHaveCount(0);
   });
+
+  test("toggles with [ from the day view", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/day");
+    await expect(page.locator("#sidebar")).toBeVisible();
+
+    await page.keyboard.press("[");
+    await expect(page.locator("#sidebar")).toHaveCount(0);
+
+    await page.keyboard.press("[");
+    await expect(page.locator("#sidebar")).toBeVisible();
+  });
+
+  test("never mounts on refresh when collapsed", async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await page.goto("/week");
+    await expect(page.locator("#sidebar")).toBeVisible();
+
+    await page.keyboard.press("[");
+    await expect(page.locator("#sidebar")).toHaveCount(0);
+
+    // The store seeds from the persisted preference, so the sidebar must be
+    // absent as soon as the grid renders — not collapse after a first paint.
+    await page.reload();
+    await page.locator("#timedColumns").waitFor();
+    await expect(page.locator("#sidebar")).toHaveCount(0);
+  });
 });
 
 test.describe("Responsive day view task list", () => {

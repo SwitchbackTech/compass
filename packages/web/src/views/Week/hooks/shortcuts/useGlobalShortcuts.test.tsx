@@ -1,7 +1,12 @@
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+} from "@web/events/stores/view.store";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const logout = mock();
@@ -140,6 +145,34 @@ describe("useGlobalShortcuts", () => {
     });
 
     expect(mockNavigate).not.toHaveBeenCalled();
+
+    act(() => {
+      unmount();
+    });
+  });
+
+  it("toggles and persists the sidebar when pressing [", async () => {
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+
+    act(() => {
+      pressKey("[");
+    });
+
+    await waitFor(() => {
+      expect(selectIsSidebarOpen(useViewStore.getState())).toBe(false);
+    });
+    expect(localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN)).toBe("false");
+
+    act(() => {
+      pressKey("[");
+    });
+
+    await waitFor(() => {
+      expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+    });
+    expect(localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN)).toBe("true");
 
     act(() => {
       unmount();

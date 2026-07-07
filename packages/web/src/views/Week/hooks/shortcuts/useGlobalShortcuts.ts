@@ -6,6 +6,7 @@ import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { useLogoutConfirmation } from "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation";
+import { viewActions } from "@web/events/stores/view.store";
 import { settingsActions } from "@web/settings/settings.store";
 
 /**
@@ -58,6 +59,8 @@ export function useGlobalShortcuts() {
       navigate(VIEW_SHORTCUTS.week.route);
     }
   });
+
+  useAppHotkeyUp("[", () => viewActions.toggleSidebar());
 
   useAppHotkeyUp("Z", () => {
     if (authenticated) {

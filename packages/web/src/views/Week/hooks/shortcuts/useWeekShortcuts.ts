@@ -112,8 +112,6 @@ export const useWeekShortcuts = ({
     incrementWeek();
   }, [incrementWeek, _discardDraft]);
 
-  const openSidebar = useCallback(() => viewActions.toggleSidebar(), []);
-
   const createAllDayDraftEvent = useCallback(() => {
     void createAlldayDraft(startOfView, endOfView, "createShortcut");
   }, [startOfView, endOfView]);
@@ -226,7 +224,6 @@ export const useWeekShortcuts = ({
     [repositionDraftByKeyboard],
   );
 
-  useAppHotkeyUp("[", openSidebar);
   useAppHotkeyUp("J", goToPreviousWeek);
   useAppHotkeyUp("K", goToNextWeek);
   useAppHotkeyUp("T", toToday);
