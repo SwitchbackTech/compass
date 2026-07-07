@@ -10,6 +10,7 @@ import {
   loadSpecificWeekData,
   loadTodayData,
   redirectToToday,
+  validateWeekDateParam,
 } from "@web/routers/loaders";
 import { describe, expect, it } from "bun:test";
 
@@ -112,17 +113,19 @@ describe("router redirects", () => {
 });
 
 describe("loadSpecificWeekData", () => {
-  it("returns the parsed date for a valid dateString param", () => {
+  it("shapes the loader data for an already-valid dateString param", () => {
     const result = loadSpecificWeekData({
       params: { dateString: "2026-05-20" },
     });
 
     expect(result).toMatchObject({ dateString: "2026-05-20" });
   });
+});
 
+describe("validateWeekDateParam", () => {
   it("redirects to the bare week route for an invalid dateString param", () => {
     const redirect = getRedirect(() =>
-      loadSpecificWeekData({ params: { dateString: "not-a-date" } }),
+      validateWeekDateParam({ params: { dateString: "not-a-date" } }),
     );
 
     expect(redirect.options.to).toBe(ROOT_ROUTES.WEEK);

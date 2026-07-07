@@ -42,21 +42,40 @@ export function redirectToToday(
   });
 }
 
-function loadSpecificDateData(
+// Deliberately not params.parse: a throwing parser makes the route not
+// match (-> NotFound), but the existing UX redirects an invalid dateString
+// to the base route instead. Runs in beforeLoad so an invalid param never
+// reaches the loader.
+function validateDateStringParam(
   dateString: string | undefined,
   baseRoute: typeof ROOT_ROUTES.DAY | typeof ROOT_ROUTES.WEEK,
-): DayLoaderData {
-  const parsedDate = zYearMonthDayString.safeParse(dateString);
-  const { success, data } = parsedDate;
-
-  if (!success) {
+): void {
+  if (!zYearMonthDayString.safeParse(dateString).success) {
     throw redirect({ to: baseRoute });
   }
+}
 
+function shapeDayLoaderData(dateString: string): DayLoaderData {
   return {
-    dateString: data,
-    dateInView: dayjs(data, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+    dateString,
+    dateInView: dayjs(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
   };
+}
+
+export function validateDayDateParam({
+  params,
+}: {
+  params: { dateString: string };
+}): void {
+  validateDateStringParam(params.dateString, ROOT_ROUTES.DAY);
+}
+
+export function validateWeekDateParam({
+  params,
+}: {
+  params: { dateString: string };
+}): void {
+  validateDateStringParam(params.dateString, ROOT_ROUTES.WEEK);
 }
 
 export function loadSpecificDayData({
@@ -64,7 +83,7 @@ export function loadSpecificDayData({
 }: {
   params: { dateString: string };
 }): DayLoaderData {
-  return loadSpecificDateData(params.dateString, ROOT_ROUTES.DAY);
+  return shapeDayLoaderData(params.dateString);
 }
 
 export function loadSpecificWeekData({
@@ -72,5 +91,5 @@ export function loadSpecificWeekData({
 }: {
   params: { dateString: string };
 }): DayLoaderData {
-  return loadSpecificDateData(params.dateString, ROOT_ROUTES.WEEK);
+  return shapeDayLoaderData(params.dateString);
 }

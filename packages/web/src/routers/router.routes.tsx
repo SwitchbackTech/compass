@@ -10,6 +10,8 @@ import {
   loadSpecificDayData,
   loadSpecificWeekData,
   redirectToToday,
+  validateDayDateParam,
+  validateWeekDateParam,
 } from "@web/routers/loaders";
 import { NotFoundView } from "@web/views/NotFound";
 
@@ -45,6 +47,7 @@ export const dayRoute = createRoute({
 export const dayDateRoute = createRoute({
   getParentRoute: () => dayRoute,
   path: "$dateString",
+  beforeLoad: validateDayDateParam,
   loader: loadSpecificDayData,
   component: lazyRouteComponent(
     () => import("@web/views/Day/view/DayViewContent"),
@@ -66,6 +69,7 @@ export const weekRoute = createRoute({
 export const weekDateRoute = createRoute({
   getParentRoute: () => weekRoute,
   path: "$dateString",
+  beforeLoad: validateWeekDateParam,
   loader: loadSpecificWeekData,
   component: lazyRouteComponent(
     () => import("@web/views/Week/WeekView"),
