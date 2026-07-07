@@ -1,5 +1,10 @@
-import { act } from "react";
-import { MemoryRouter } from "react-router-dom";
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+  RouterProvider,
+} from "@tanstack/react-router";
+import { act, type PropsWithChildren, useMemo } from "react";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
@@ -11,6 +16,23 @@ import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
+
+// useWeek needs a router context for useNavigate/useParams. There's no route
+// under test here, so the wrapper just renders `children` as the root route's
+// component instead of building out a real route tree.
+function TestRouterWrapper({ children }: PropsWithChildren) {
+  const router = useMemo(
+    () =>
+      createRouter({
+        routeTree: createRootRoute({ component: () => children }),
+        history: createMemoryHistory(),
+        defaultPendingMs: 0,
+      }),
+    [children],
+  );
+
+  return <RouterProvider router={router} />;
+}
 
 export function setupDraftState(event: Schema_WebEvent) {
   const draft = assembleGridEvent(event);
@@ -31,7 +53,7 @@ export function setupDraftState(event: Schema_WebEvent) {
 
   const weekHook = renderHook(() => useWeek(useToday().today), {
     state,
-    wrapper: MemoryRouter,
+    wrapper: TestRouterWrapper,
   });
   const weekProps = weekHook.result.current;
 

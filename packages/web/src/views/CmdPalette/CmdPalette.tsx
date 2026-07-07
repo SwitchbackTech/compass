@@ -1,7 +1,7 @@
 import { useState } from "react";
 import _CommandPalette, { filterItems, getItemIndex } from "react-cmdk";
 import "react-cmdk/dist/cmdk.css";
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import {
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -104,7 +104,7 @@ const CmdPalette = ({
             util.goToToday();
           },
           onNavigateToView: (viewName) => {
-            navigate(VIEW_SHORTCUTS[viewName].route);
+            navigate({ to: VIEW_SHORTCUTS[viewName].route });
           },
           today,
         }),

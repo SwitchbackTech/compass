@@ -1,5 +1,5 @@
+import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { clearAllBrowserStorage } from "@web/common/utils/cleanup/browser.cleanup.util";
 import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
@@ -17,7 +17,7 @@ export const CleanupView = () => {
       clearTimeout(redirectTimeoutRef.current);
       redirectTimeoutRef.current = null;
     }
-    navigate(ROOT_ROUTES.ROOT);
+    navigate({ to: ROOT_ROUTES.ROOT });
   };
 
   useEffect(() => {
@@ -28,7 +28,7 @@ export const CleanupView = () => {
 
         // Set up automatic redirect after delay
         redirectTimeoutRef.current = setTimeout(() => {
-          navigate(ROOT_ROUTES.ROOT);
+          navigate({ to: ROOT_ROUTES.ROOT });
         }, REDIRECT_DELAY_MS);
       } catch (err) {
         setIsClearing(false);

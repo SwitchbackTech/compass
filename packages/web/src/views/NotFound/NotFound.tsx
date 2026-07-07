@@ -1,10 +1,10 @@
-import { useNavigate } from "react-router-dom";
+import { useNavigate } from "@tanstack/react-router";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 
 export const NotFoundView = () => {
   const navigate = useNavigate();
 
-  const goHome = () => navigate(ROOT_ROUTES.ROOT);
+  const goHome = () => navigate({ to: ROOT_ROUTES.ROOT });
 
   return (
     <div className="c-not-found">

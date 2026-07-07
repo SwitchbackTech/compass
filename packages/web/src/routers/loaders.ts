@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, redirect } from "react-router-dom";
+import { redirect } from "@tanstack/react-router";
 import { zYearMonthDayString } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
@@ -30,52 +30,59 @@ export function loadTodayData(): DayLoaderData {
   return { dateInView, dateString: dateInView.format(dateFormat) };
 }
 
-function buildTodayRedirectUrl(request: Request, baseRoute: string): string {
+function redirectToToday(
+  to: typeof ROOT_ROUTES.DAY_DATE | typeof ROOT_ROUTES.WEEK_DATE,
+): never {
   const { dateString } = loadTodayData();
-  const url = new URL(request.url);
 
-  return `${baseRoute}/${dateString}${url.search}`;
+  throw redirect({
+    to,
+    params: { dateString },
+    search: (prev: Record<string, unknown>) => prev,
+  });
 }
 
-export function loadDayData({
-  request,
-}: LoaderFunctionArgs<unknown>): Response {
-  return redirect(buildTodayRedirectUrl(request, ROOT_ROUTES.DAY));
+export function loadDayData(): never {
+  redirectToToday(ROOT_ROUTES.DAY_DATE);
 }
 
-export function loadRootData(args: LoaderFunctionArgs<unknown>): Response {
-  return loadDayData(args);
+export function loadRootData(): never {
+  redirectToToday(ROOT_ROUTES.DAY_DATE);
 }
 
-export function loadWeekData({
-  request,
-}: LoaderFunctionArgs<unknown>): Response {
-  return redirect(buildTodayRedirectUrl(request, ROOT_ROUTES.WEEK));
+export function loadWeekData(): never {
+  redirectToToday(ROOT_ROUTES.WEEK_DATE);
 }
 
 function loadSpecificDateData(
-  params: LoaderFunctionArgs<unknown>["params"],
-  baseRoute: string,
-): DayLoaderData | Response {
-  const parsedDate = zYearMonthDayString.safeParse(params.dateString);
-  const { success, data: dateString } = parsedDate;
+  dateString: string | undefined,
+  baseRoute: typeof ROOT_ROUTES.DAY | typeof ROOT_ROUTES.WEEK,
+): DayLoaderData {
+  const parsedDate = zYearMonthDayString.safeParse(dateString);
+  const { success, data } = parsedDate;
 
-  if (!success) return redirect(baseRoute);
+  if (!success) {
+    throw redirect({ to: baseRoute });
+  }
 
   return {
-    dateString,
-    dateInView: dayjs(dateString, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
+    dateString: data,
+    dateInView: dayjs(data, dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT),
   };
 }
 
 export function loadSpecificDayData({
   params,
-}: LoaderFunctionArgs<unknown>): DayLoaderData | Response {
-  return loadSpecificDateData(params, ROOT_ROUTES.DAY);
+}: {
+  params: { dateString: string };
+}): DayLoaderData {
+  return loadSpecificDateData(params.dateString, ROOT_ROUTES.DAY);
 }
 
 export function loadSpecificWeekData({
   params,
-}: LoaderFunctionArgs<unknown>): DayLoaderData | Response {
-  return loadSpecificDateData(params, ROOT_ROUTES.WEEK);
+}: {
+  params: { dateString: string };
+}): DayLoaderData {
+  return loadSpecificDateData(params.dateString, ROOT_ROUTES.WEEK);
 }

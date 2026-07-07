@@ -1,4 +1,5 @@
 import { type QueryClient } from "@tanstack/react-query";
+import { type AnyRouter, RouterProvider } from "@tanstack/react-router";
 import {
   type RenderHookOptions,
   type RenderOptions,
@@ -10,7 +11,6 @@ import {
   type PropsWithChildren,
   type ReactElement,
 } from "react";
-import { RouterProvider, type RouterProviderProps } from "react-router-dom";
 import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
 import {
   seedStoresFromState,
@@ -19,7 +19,6 @@ import {
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import { createCompassQueryClient } from "@web/common/query/query-client";
-import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
 import { mock } from "bun:test";
 
@@ -31,7 +30,7 @@ mock.module("@react-oauth/google", () => ({
 interface CustomRenderOptions extends RenderOptions {
   state?: TestAppState;
   queryClient?: QueryClient;
-  router?: RouterProviderProps["router"];
+  router?: AnyRouter;
   wrapper?: ComponentType<PropsWithChildren>;
   /** Seed the event query cache directly (replaces the Redux→query bridge). */
   events?: Array<{ _id?: string }>;
@@ -43,7 +42,7 @@ interface CustomRenderHookOptions<Props>
 
 interface TestProvidersProps {
   queryClient?: QueryClient;
-  router?: RouterProviderProps["router"];
+  router?: AnyRouter;
 }
 
 function TestProvidersWrapper({
@@ -66,15 +65,7 @@ function TestProvidersWrapper({
   return (
     <div id={ID_ROOT} data-testid={ID_ROOT}>
       <CompassRequiredProviders queryClient={queryClient}>
-        <RouterProvider
-          router={router}
-          fallbackElement={<AbsoluteOverflowLoader />}
-          future={{
-            // Test-only: sync RouterProvider state updates (no startTransition).
-            // Matches initial render + client navigations with RTL act() without globals.
-            v7_startTransition: false,
-          }}
-        />
+        <RouterProvider router={router} />
       </CompassRequiredProviders>
     </div>
   );

@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs } from "react-router-dom";
+import { isRedirect } from "@tanstack/react-router";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   loadDayData,
@@ -7,113 +7,104 @@ import {
   loadTodayData,
   loadWeekData,
 } from "@web/routers/loaders";
+import { describe, expect, it } from "bun:test";
 
-function createLoaderArgs(url: string): LoaderFunctionArgs<unknown> {
-  return {
-    request: new Request(url),
-    params: {},
-    context: undefined,
-  };
+function getRedirect(fn: () => unknown) {
+  try {
+    fn();
+  } catch (err) {
+    if (!isRedirect(err)) throw err;
+    return err;
+  }
+  throw new Error("expected a redirect to be thrown");
 }
 
 describe("loadRootData", () => {
-  it("redirects root route to day route with today's date", async () => {
+  it("redirects root route to day route with today's date", () => {
     const { dateString } = loadTodayData();
-    const response = await loadRootData(createLoaderArgs("http://localhost/"));
+    const redirect = getRedirect(loadRootData);
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(
-      `${ROOT_ROUTES.DAY}/${dateString}`,
-    );
+    expect(redirect.options.to).toBe(ROOT_ROUTES.DAY_DATE);
+    expect(
+      redirect.options.params as unknown as Record<string, string>,
+    ).toEqual({
+      dateString,
+    });
   });
 
-  it("preserves auth query params when redirecting to today's date", async () => {
-    const { dateString } = loadTodayData();
-    const response = await loadRootData(
-      createLoaderArgs("http://localhost/?auth=login"),
-    );
+  it("preserves auth query params when redirecting to today's date", () => {
+    const redirect = getRedirect(loadRootData);
+    const search = redirect.options.search as (
+      prev: Record<string, unknown>,
+    ) => Record<string, unknown>;
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(
-      `${ROOT_ROUTES.DAY}/${dateString}?auth=login`,
-    );
+    expect(search({ auth: "login" })).toEqual({ auth: "login" });
   });
 });
 
 describe("loadDayData", () => {
-  it("preserves auth query params when redirecting to the dated route", async () => {
+  it("redirects the bare day route to today's dated day route", () => {
     const { dateString } = loadTodayData();
-    const response = await loadDayData(
-      createLoaderArgs("http://localhost/day?auth=reset&token=abc"),
-    );
+    const redirect = getRedirect(loadDayData);
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(
-      `${ROOT_ROUTES.DAY}/${dateString}?auth=reset&token=abc`,
-    );
+    expect(redirect.options.to).toBe(ROOT_ROUTES.DAY_DATE);
+    expect(
+      redirect.options.params as unknown as Record<string, string>,
+    ).toEqual({
+      dateString,
+    });
   });
 
-  it("preserves verify auth query params when redirecting to the dated route", async () => {
-    const { dateString } = loadTodayData();
-    const response = await loadDayData(
-      createLoaderArgs("http://localhost/day?auth=verify&token=abc"),
-    );
+  it("preserves auth query params when redirecting to the dated route", () => {
+    const redirect = getRedirect(loadDayData);
+    const search = redirect.options.search as (
+      prev: Record<string, unknown>,
+    ) => Record<string, unknown>;
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(
-      `${ROOT_ROUTES.DAY}/${dateString}?auth=verify&token=abc`,
-    );
+    expect(search({ auth: "reset", token: "abc" })).toEqual({
+      auth: "reset",
+      token: "abc",
+    });
   });
 });
 
 describe("loadWeekData", () => {
-  it("redirects the bare week route to today's dated week route", async () => {
+  it("redirects the bare week route to today's dated week route", () => {
     const { dateString } = loadTodayData();
-    const response = await loadWeekData(
-      createLoaderArgs("http://localhost/week"),
-    );
+    const redirect = getRedirect(loadWeekData);
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(
-      `${ROOT_ROUTES.WEEK}/${dateString}`,
-    );
+    expect(redirect.options.to).toBe(ROOT_ROUTES.WEEK_DATE);
+    expect(
+      redirect.options.params as unknown as Record<string, string>,
+    ).toEqual({
+      dateString,
+    });
   });
 
-  it("preserves auth query params when redirecting to the dated week route", async () => {
-    const { dateString } = loadTodayData();
-    const response = await loadWeekData(
-      createLoaderArgs("http://localhost/week?auth=login"),
-    );
+  it("preserves auth query params when redirecting to the dated week route", () => {
+    const redirect = getRedirect(loadWeekData);
+    const search = redirect.options.search as (
+      prev: Record<string, unknown>,
+    ) => Record<string, unknown>;
 
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(
-      `${ROOT_ROUTES.WEEK}/${dateString}?auth=login`,
-    );
+    expect(search({ auth: "login" })).toEqual({ auth: "login" });
   });
 });
 
 describe("loadSpecificWeekData", () => {
-  it("returns the parsed date for a valid dateString param", async () => {
-    const result = await loadSpecificWeekData({
-      request: new Request("http://localhost/week/2026-05-20"),
+  it("returns the parsed date for a valid dateString param", () => {
+    const result = loadSpecificWeekData({
       params: { dateString: "2026-05-20" },
-      context: undefined,
     });
 
-    expect(result).not.toBeInstanceOf(Response);
     expect(result).toMatchObject({ dateString: "2026-05-20" });
   });
 
-  it("redirects to the bare week route for an invalid dateString param", async () => {
-    const result = await loadSpecificWeekData({
-      request: new Request("http://localhost/week/not-a-date"),
-      params: { dateString: "not-a-date" },
-      context: undefined,
-    });
+  it("redirects to the bare week route for an invalid dateString param", () => {
+    const redirect = getRedirect(() =>
+      loadSpecificWeekData({ params: { dateString: "not-a-date" } }),
+    );
 
-    expect(result).toBeInstanceOf(Response);
-    const response = result as Response;
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(ROOT_ROUTES.WEEK);
+    expect(redirect.options.to).toBe(ROOT_ROUTES.WEEK);
   });
 });

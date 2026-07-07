@@ -1,16 +1,19 @@
-import { act, type ReactElement, type ReactNode, useLayoutEffect } from "react";
 import {
-  createMemoryRouter,
-  MemoryRouter,
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
   Outlet,
   RouterProvider,
   useLocation,
-} from "react-router-dom";
+} from "@tanstack/react-router";
+import { act, type ReactElement, type ReactNode, useLayoutEffect } from "react";
 import { readFile, writeFile } from "node:fs/promises";
 import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { setTestWindowUrl } from "@web/__tests__/set-test-window-url";
+import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import {
   afterEach,
   beforeEach,
@@ -167,24 +170,27 @@ const ModalTrigger = () => {
   );
 };
 
-const renderWithProviders = (
+const renderWithProviders = async (
   component: ReactElement,
   initialRoute: string = "/day",
 ) => {
-  return render(
-    <MemoryRouter
-      initialEntries={[initialRoute]}
-      future={{
-        v7_startTransition: true,
-        v7_relativeSplatPath: true,
-      }}
-    >
-      <AuthModalProvider>
-        {component}
-        <AuthModal />
-      </AuthModalProvider>
-    </MemoryRouter>,
+  const router = createTestRouter(
+    <AuthModalProvider>
+      {component}
+      <AuthModal />
+    </AuthModalProvider>,
+    { initialEntries: [initialRoute] },
   );
+  const result = render(<RouterProvider router={router} />);
+
+  // TanStack's RouterProvider resolves the initial match asynchronously
+  // (even with no loaders), unlike react-router-dom's synchronous
+  // MemoryRouter, so tests must wait for it to settle before querying.
+  await waitFor(() => {
+    expect(router.state.status).toBe("idle");
+  });
+
+  return result;
 };
 
 async function flushEffects() {
@@ -196,7 +202,7 @@ const RouteLocationMirror = ({ children }: { children: ReactNode }) => {
 
   useLayoutEffect(() => {
     mockWindowLocation(
-      `${location.pathname}${location.search}${location.hash}`,
+      `${location.pathname}${location.searchStr}${location.hash ? `#${location.hash}` : ""}`,
     );
   }, [location]);
 
@@ -215,36 +221,34 @@ const DayRedirectShell = () => (
 const renderWithDayRedirectRoute = (initialRoute: string) => {
   mockWindowLocation(initialRoute);
 
-  const router = createMemoryRouter(
-    [
-      {
-        path: "/day",
-        Component: DayRedirectShell,
-        children: [
-          {
-            index: true,
-            loader: loadDayData,
-          },
-          {
-            path: ":dateString",
-            element: <div>Day route loaded</div>,
-          },
-        ],
-      },
-    ],
-    {
-      initialEntries: [initialRoute],
-      future: {
-        v7_relativeSplatPath: true,
-      },
-    },
-  );
+  const dayRootRoute = createRootRoute();
+  const dayRoute = createRoute({
+    getParentRoute: () => dayRootRoute,
+    path: "/day",
+    component: DayRedirectShell,
+  });
+  const dayIndexRoute = createRoute({
+    getParentRoute: () => dayRoute,
+    path: "/",
+    beforeLoad: loadDayData,
+  });
+  const dayDateRoute = createRoute({
+    getParentRoute: () => dayRoute,
+    path: "$dateString",
+    component: () => <div>Day route loaded</div>,
+  });
+
+  const router = createRouter({
+    routeTree: dayRootRoute.addChildren([
+      dayRoute.addChildren([dayIndexRoute, dayDateRoute]),
+    ]),
+    history: createMemoryHistory({ initialEntries: [initialRoute] }),
+    defaultPendingMs: 0,
+  });
 
   return {
     router,
-    ...render(
-      <RouterProvider router={router} future={{ v7_startTransition: true }} />,
-    ),
+    ...render(<RouterProvider router={router} />),
   };
 };
 
@@ -288,7 +292,7 @@ describe("AuthModal", () => {
   describe("Modal Open/Close", () => {
     it("opens modal when triggered", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       expect(
         screen.queryByRole("heading", { name: /hey, welcome back/i }),
@@ -306,7 +310,7 @@ describe("AuthModal", () => {
 
     it("closes modal when backdrop is clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
       await flushEffects();
@@ -333,7 +337,7 @@ describe("AuthModal", () => {
 
     it("closes modal when Escape key is pressed", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
       await flushEffects();
@@ -362,7 +366,7 @@ describe("AuthModal", () => {
 
     it("opens with a pushed ?auth= entry and closes on browser back", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
       await flushEffects();
@@ -389,7 +393,7 @@ describe("AuthModal", () => {
 
     it("removes the ?auth= param when the modal is dismissed", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
       await flushEffects();
@@ -409,7 +413,7 @@ describe("AuthModal", () => {
   describe("Auth view switching", () => {
     it("shows sign up when on sign in form", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -421,7 +425,7 @@ describe("AuthModal", () => {
 
     it("switches to Sign Up form when switch is clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -445,7 +449,7 @@ describe("AuthModal", () => {
 
     it("shows Name field only on Sign Up form", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -467,7 +471,7 @@ describe("AuthModal", () => {
   describe("Login Form", () => {
     it("renders email and password fields", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -479,7 +483,7 @@ describe("AuthModal", () => {
 
     it("renders submit button", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -493,7 +497,7 @@ describe("AuthModal", () => {
 
     it("shows email error on blur with invalid email", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -514,7 +518,7 @@ describe("AuthModal", () => {
 
     it("navigates to forgot password when link is clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -537,7 +541,7 @@ describe("AuthModal", () => {
 
     it("does not await Google import after email/password login", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -565,7 +569,7 @@ describe("AuthModal", () => {
   describe("Sign Up Form", () => {
     it("renders name, email, and password fields", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -586,7 +590,7 @@ describe("AuthModal", () => {
 
     it("shows password error for short password", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -615,7 +619,7 @@ describe("AuthModal", () => {
 
     it("updates greeting when user types name", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -646,7 +650,7 @@ describe("AuthModal", () => {
 
     it("does not await Google import after email/password signup", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -691,7 +695,7 @@ describe("AuthModal", () => {
 
     it("subscribes to updates after sign-up when the checkbox is checked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -724,7 +728,7 @@ describe("AuthModal", () => {
 
     it("skips existing-session linking during email/password sign in", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -752,7 +756,7 @@ describe("AuthModal", () => {
   describe("Forgot Password Form", () => {
     it("renders email field and instructions", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -776,7 +780,7 @@ describe("AuthModal", () => {
 
     it("shows success message after submission", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -811,7 +815,7 @@ describe("AuthModal", () => {
       });
 
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -846,7 +850,7 @@ describe("AuthModal", () => {
 
     it("navigates back to sign in when link is clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -884,7 +888,7 @@ describe("AuthModal", () => {
   describe("Google Sign In", () => {
     it("renders Google sign in button", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -899,7 +903,7 @@ describe("AuthModal", () => {
 
     it("calls googleLogin when Google button is clicked", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -919,7 +923,7 @@ describe("AuthModal", () => {
     it("hides Google sign in when backend Google support is unavailable", async () => {
       const user = userEvent.setup();
       mockUseIsGoogleAvailable.mockReturnValue(false);
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -932,7 +936,7 @@ describe("AuthModal", () => {
 
     it("keeps consistent button label when switching views", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -956,7 +960,7 @@ describe("AuthModal", () => {
   describe("Privacy and Terms Links", () => {
     it("renders privacy and terms links", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -972,7 +976,7 @@ describe("AuthModal", () => {
 
     it("links open in new tab", async () => {
       const user = userEvent.setup();
-      renderWithProviders(<ModalTrigger />);
+      await renderWithProviders(<ModalTrigger />);
 
       await user.click(screen.getByRole("button", { name: /open modal/i }));
 
@@ -1033,7 +1037,7 @@ describe("URL Parameter Support", () => {
 
   it("opens sign in modal when ?auth=login is present", async () => {
     mockWindowLocation("/?auth=login");
-    renderWithProviders(<div />, "/?auth=login");
+    await renderWithProviders(<div />, "/?auth=login");
 
     await waitFor(() => {
       expect(
@@ -1044,7 +1048,7 @@ describe("URL Parameter Support", () => {
 
   it("opens sign up modal when ?auth=signup is present", async () => {
     mockWindowLocation("/?auth=signup");
-    renderWithProviders(<div />, "/?auth=signup");
+    await renderWithProviders(<div />, "/?auth=signup");
 
     await waitFor(() => {
       expect(
@@ -1055,7 +1059,7 @@ describe("URL Parameter Support", () => {
 
   it("opens forgot password modal when ?auth=forgot is present", async () => {
     mockWindowLocation("/?auth=forgot");
-    renderWithProviders(<div />, "/?auth=forgot");
+    await renderWithProviders(<div />, "/?auth=forgot");
 
     await waitFor(() => {
       expect(
@@ -1066,7 +1070,7 @@ describe("URL Parameter Support", () => {
 
   it("handles case-insensitive param values", async () => {
     mockWindowLocation("/?auth=LOGIN");
-    renderWithProviders(<div />, "/?auth=LOGIN");
+    await renderWithProviders(<div />, "/?auth=LOGIN");
 
     await waitFor(() => {
       expect(
@@ -1077,7 +1081,7 @@ describe("URL Parameter Support", () => {
 
   it("does not open modal for invalid param value", async () => {
     mockWindowLocation("/?auth=invalid");
-    renderWithProviders(<div />, "/?auth=invalid");
+    await renderWithProviders(<div />, "/?auth=invalid");
 
     // Give it time to potentially open (it shouldn't)
     await new Promise((resolve) => setTimeout(resolve, 50));
@@ -1095,7 +1099,7 @@ describe("URL Parameter Support", () => {
 
   it("works on different routes", async () => {
     mockWindowLocation("/week?auth=signup");
-    renderWithProviders(<div />, "/week?auth=signup");
+    await renderWithProviders(<div />, "/week?auth=signup");
 
     await waitFor(() => {
       expect(
@@ -1127,7 +1131,7 @@ describe("URL Parameter Support", () => {
   it("submits reset password with the initial token after the URL changes", async () => {
     const user = userEvent.setup();
     mockWindowLocation("/day?auth=reset&token=reset-token");
-    renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
+    await renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
 
     await waitFor(() => {
       expect(
@@ -1173,7 +1177,7 @@ describe("URL Parameter Support", () => {
     mockEmailPassword.submitNewPassword.mockResolvedValue({
       status: "OK",
     });
-    renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
+    await renderWithProviders(<div />, "/day?auth=reset&token=reset-token");
 
     await waitFor(() => {
       expect(
