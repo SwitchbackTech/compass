@@ -1,5 +1,5 @@
 import { act } from "@testing-library/react";
-import { type SyntheticEvent } from "react";
+import { type MouseEvent } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { renderHookWithStore } from "@web/__tests__/render-with-store";
 import {
@@ -29,12 +29,12 @@ const mockObserve = mock();
 const mockDisconnect = mock();
 
 const fireClick = async (
-  onClick: ((event: SyntheticEvent<HTMLElement>) => void) | undefined,
+  onClick: ((event: MouseEvent<HTMLElement>) => void) | undefined,
 ) => {
   await act(async () => {
     onClick?.({
       currentTarget: document.createElement("button"),
-    } as unknown as SyntheticEvent<HTMLElement>);
+    } as unknown as MouseEvent<HTMLElement>);
     observerCallback?.([{ isIntersecting: false }]);
     await new Promise((resolve) => setTimeout(resolve, 0));
   });
