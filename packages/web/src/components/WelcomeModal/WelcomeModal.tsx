@@ -6,7 +6,6 @@ import {
 import {
   type KeyboardEvent,
   type MouseEvent,
-  useCallback,
   useContext,
   useEffect,
   useId,
@@ -18,7 +17,6 @@ import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
 import { FAQ_ITEMS } from "./faq";
 import { PixelPirate } from "./PixelPirate";
-import { useWelcomeBackNav } from "./useWelcomeBackNav";
 import { hasSeenWelcome, markWelcomeSeen } from "./welcome.modal.util";
 
 export function WelcomeModal() {
@@ -32,17 +30,22 @@ export function WelcomeModal() {
     () => new Set(),
   );
   const backdropRef = useRef<HTMLDivElement>(null);
+  const cameFromWelcomeRef = useRef(false);
 
-  const handleBackToWelcome = useCallback(() => {
-    if (!authenticated) {
-      setIsOpen(true);
-    }
-  }, [authenticated]);
-  const { pushAuthEntry } = useWelcomeBackNav({
-    isAuthModalOpen,
-    closeAuthModal: closeModal,
-    onBackToWelcome: handleBackToWelcome,
-  });
+  // Back button returns from the auth modal to the welcome screen. Clicking
+  // "Log in" pushes a history entry, so the back press pops it here.
+  useEffect(() => {
+    const handlePopState = () => {
+      if (!cameFromWelcomeRef.current || !isAuthModalOpen) return;
+      cameFromWelcomeRef.current = false;
+      closeModal();
+      if (!authenticated) {
+        setIsOpen(true);
+      }
+    };
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [isAuthModalOpen, authenticated, closeModal]);
 
   useEffect(() => {
     if (isOpen) {
@@ -60,7 +63,8 @@ export function WelcomeModal() {
   const handleLogIn = () => {
     markWelcomeSeen();
     setIsOpen(false);
-    pushAuthEntry();
+    cameFromWelcomeRef.current = true;
+    window.history.pushState({ compassAuthFromWelcome: true }, "");
     openModal("login");
   };
 

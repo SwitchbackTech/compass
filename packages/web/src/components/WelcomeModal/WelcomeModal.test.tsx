@@ -139,7 +139,6 @@ describe("WelcomeModal", () => {
       expect(pushStateSpy).toHaveBeenCalledWith(
         { compassAuthFromWelcome: true },
         "",
-        window.location.href,
       );
     } finally {
       window.history.pushState = originalPushState;
