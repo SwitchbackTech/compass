@@ -1,14 +1,13 @@
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
 import { useSomedayEventsQuery } from "@web/events/queries/useSomedayEventsQuery";
 import { useWeekEventsQuery } from "@web/events/queries/useWeekEventsQuery";
 import { viewActions } from "@web/events/stores/view.store";
-import { weekDateRoute } from "@web/routers/router.routes";
 import {
   anchorDateForWindowOffset,
   computeVisibleWindowOffset,
@@ -33,7 +32,7 @@ export const useWeek = (
   // (and re-fire the updateDates effect below) on every render.
   const navigate = useNavigate();
   const params = useParams({
-    from: weekDateRoute.id,
+    from: ROUTE_IDS.WEEK_DATE,
     shouldThrow: false,
   });
   const anchorDateString = params?.dateString ?? today.format(DATE_FORMAT);

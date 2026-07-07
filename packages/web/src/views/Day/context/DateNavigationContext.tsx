@@ -1,9 +1,8 @@
 import { useMatch, useNavigate } from "@tanstack/react-router";
 import { createContext, type PropsWithChildren, useCallback } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { type DayLoaderData, loadTodayData } from "@web/routers/loaders";
-import { dayDateRoute } from "@web/routers/router.routes";
 
 interface DateNavigationContextProps extends DayLoaderData {
   navigateToDate: (date: Dayjs) => void;
@@ -25,7 +24,7 @@ const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 export function DateNavigationProvider({ children }: PropsWithChildren) {
   const navigate = useNavigate();
   const routeData = useMatch({
-    from: dayDateRoute.id,
+    from: ROUTE_IDS.DAY_DATE,
     shouldThrow: false,
   })?.loaderData as DayLoaderData | undefined;
 
