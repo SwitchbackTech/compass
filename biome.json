@@ -145,6 +145,8 @@
       "!.agents/skills",
       "!.codex/skills",
       "!.cursor/skills",
+      "!.worktrees",
+      "!.claude/worktrees",
       "!logs",
       "!node_modules",
       "!*.min.js",
