@@ -25,11 +25,16 @@ mock.module(
   }),
 );
 
-// Mock react-toastify
+// Mock react-toastify. mock.module leaks process-wide, and other suites call
+// `toast(...)` directly (e.g. the Deleted toast fired by event delete
+// mutations), so the mock must stay callable — same shape as the sibling
+// react-toastify mocks.
 mock.module("react-toastify", () => ({
-  toast: {
+  ToastContainer: () => null,
+  toast: Object.assign(mock(), {
     error: mockToastError,
-  },
+    update: mock(),
+  }),
 }));
 
 const { initializeDatabaseWithErrorHandling, showDbInitErrorToast } =

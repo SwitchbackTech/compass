@@ -11,6 +11,10 @@ import { type EventRepository } from "@web/common/repositories/event/event.repos
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { type SomedayEventQueryData } from "@web/events/queries/event.query.types";
+import {
+  runHistoryRestore,
+  useUndoHistoryStore,
+} from "@web/events/stores/undo.store";
 import { useEventMutations } from "./useEventMutations";
 import { useHasPendingEventMutations } from "./useEventPending";
 
@@ -818,5 +822,214 @@ describe("useEventMutations", () => {
       expect(context.calls).toEqual([{ method: "reorder", value: order }]);
     });
     context.pending.resolve();
+  });
+});
+
+describe("undo history recording", () => {
+  const seedSomeday = (
+    context: ReturnType<typeof setup>,
+    ...events: Schema_Event[]
+  ) =>
+    context.queryClient.setQueryData(somedayKey, {
+      ...normalized(...events),
+      pagination: {
+        data: events,
+        page: 1,
+        pageSize: 10,
+        count: events.length,
+        offset: 0,
+      },
+    });
+
+  test("records an edit with before/after snapshots", () => {
+    const context = setup();
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(event({ gEventId: "g-1" })),
+    );
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: event({ title: "Moved" }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+
+    const { past } = useUndoHistoryStore.getState();
+    expect(past).toHaveLength(1);
+    expect(past[0]).toMatchObject({
+      kind: "edit",
+      _id: "event-1",
+      before: { title: "Original", gEventId: "g-1" },
+      // Provider ids the payload dropped survive into the redo snapshot.
+      after: { title: "Moved", gEventId: "g-1" },
+    });
+    context.pending.resolve();
+  });
+
+  test("skips series-scope edits and edits missing from cache", () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: event({ title: "Series" }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.ALL_EVENTS,
+      }),
+    );
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "ghost",
+        event: event({ _id: "ghost" }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+
+    expect(useUndoHistoryStore.getState().past).toHaveLength(0);
+    context.pending.resolve();
+  });
+
+  test("records delete snapshots but skips recurring deletes", () => {
+    const context = setup();
+    const recurring = event({
+      _id: "recurring",
+      recurrence: { rule: ["RRULE:FREQ=DAILY"] },
+    });
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(event(), recurring),
+    );
+
+    act(() =>
+      context.hook.result.current.mutations.delete({ _id: "recurring" }),
+    );
+    expect(useUndoHistoryStore.getState().past).toHaveLength(0);
+
+    act(() => context.hook.result.current.mutations.delete({ _id: "event-1" }));
+    expect(useUndoHistoryStore.getState().past).toEqual([
+      { kind: "delete", event: event() },
+    ]);
+    context.pending.resolve();
+  });
+
+  test("records someday deletes with the pre-removal snapshot", () => {
+    const context = setup();
+    const someday = event({ _id: "someday", isSomeday: true });
+    seedSomeday(context, someday);
+
+    act(() =>
+      context.hook.result.current.mutations.deleteSomeday({ _id: "someday" }),
+    );
+
+    expect(useUndoHistoryStore.getState().past).toEqual([
+      { kind: "delete-someday", event: someday },
+    ]);
+    context.pending.resolve();
+  });
+
+  test("records converts with before/after and skips recurring events", () => {
+    const context = setup();
+    const recurring = event({
+      _id: "recurring",
+      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
+    });
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(event(), recurring),
+    );
+    seedSomeday(context);
+
+    act(() =>
+      context.hook.result.current.mutations.convertToSomeday({
+        event: { _id: "recurring" },
+      }),
+    );
+    expect(useUndoHistoryStore.getState().past).toHaveLength(0);
+
+    act(() =>
+      context.hook.result.current.mutations.convertToSomeday({
+        event: { _id: "event-1" },
+      }),
+    );
+    expect(useUndoHistoryStore.getState().past).toEqual([
+      {
+        kind: "convert-to-someday",
+        _id: "event-1",
+        before: event(),
+        after: { ...event(), isSomeday: true },
+      },
+    ]);
+    context.pending.resolve();
+  });
+
+  test("does not record replays run inside runHistoryRestore", () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+
+    runHistoryRestore(() => {
+      act(() =>
+        context.hook.result.current.mutations.edit({
+          _id: "event-1",
+          event: event({ title: "Replayed" }) as Schema_WebEvent,
+          applyTo: RecurringEventUpdateScope.THIS_EVENT,
+        }),
+      );
+      act(() =>
+        context.hook.result.current.mutations.delete({ _id: "event-1" }),
+      );
+    });
+
+    expect(useUndoHistoryStore.getState().past).toHaveLength(0);
+    context.pending.resolve();
+  });
+
+  test("defers an undo-restore create until the in-flight delete persists", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+
+    act(() => context.hook.result.current.mutations.delete({ _id: "event-1" }));
+    await waitFor(() => {
+      expect(context.calls.some(({ method }) => method === "delete")).toBe(
+        true,
+      );
+    });
+
+    act(() => context.hook.result.current.mutations.create(event()));
+
+    // The POST must not race the still-in-flight DELETE, or the restore
+    // could land server-side before the delete and be wiped by it.
+    expect(context.calls.some(({ method }) => method === "create")).toBe(false);
+
+    act(() => context.pending.resolveNext());
+    await waitFor(() => {
+      expect(context.calls.some(({ method }) => method === "create")).toBe(
+        true,
+      );
+    });
+    context.pending.resolve();
+  });
+
+  test("skips the restore create when the delete fails", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+
+    act(() => context.hook.result.current.mutations.delete({ _id: "event-1" }));
+    await waitFor(() => {
+      expect(context.calls.some(({ method }) => method === "delete")).toBe(
+        true,
+      );
+    });
+
+    act(() => context.hook.result.current.mutations.create(event()));
+    act(() => context.pending.rejectNext(new Error("delete failed")));
+
+    await waitFor(() => {
+      expect(context.errors[0]?.message).toBe("delete failed");
+      expect(context.hook.result.current.hasPending).toBe(false);
+    });
+    // The event still exists server-side, so there is nothing to recreate.
+    expect(context.calls.some(({ method }) => method === "create")).toBe(false);
   });
 });

@@ -11,6 +11,7 @@ import { type EventRepository } from "@web/common/repositories/event/event.repos
 import { getEventRepositoryBySource } from "@web/common/repositories/event/event.repository.util";
 import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { showDeletedToast } from "@web/common/utils/toast/deleted-toast.util";
 import {
   type Payload_ConvertEvent,
   type Payload_DeleteEvent,
@@ -26,12 +27,17 @@ import {
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import {
+  isRestoringHistory,
+  undoHistoryActions,
+} from "@web/events/stores/undo.store";
+import {
   type EventMutationOperation,
   eventMutationKeys,
 } from "./event.mutation.keys";
 import {
   markAnonymousEventWrite,
   waitForPendingEventCreate,
+  waitForPendingEventDelete,
 } from "./event.mutation.runtime";
 
 // Convert mutations capture the fully-resolved converted event at the
@@ -47,6 +53,16 @@ type ConvertVariables = {
 // absent from the cache (nothing to delete server-side); the optimistic
 // removal still runs but no repository write is issued.
 type DeleteSomedayVariables = Payload_DeleteEvent & { skipRepository: boolean };
+
+// Series-wide ops can't be restored from a client snapshot (the server
+// rewrites the series), and undoing a deleted recurring instance via `create`
+// would spawn a duplicate standalone event instead of clearing the exdate —
+// so neither is recorded to undo history.
+const isRecurring = (event: Schema_Event) =>
+  Boolean(event.recurrence?.eventId || event.recurrence?.rule?.length);
+
+const isThisEventScope = (applyTo?: RecurringEventUpdateScope) =>
+  !applyTo || applyTo === RecurringEventUpdateScope.THIS_EVENT;
 
 export type EventMutations = {
   create: (event: Schema_Event) => void;
@@ -111,10 +127,10 @@ export function useEventMutations(
   const convertedEvent = useCallback(
     (event: Payload_ConvertEvent["event"], isSomeday: boolean) => {
       const existing = findEventInCache(queryClient, event._id, source);
-      if (!existing) return null;
+      if (!existing) return { existing: null, converted: null };
       const converted = { ...existing, ...event, isSomeday } as Schema_Event;
       if (!isSomeday) delete converted.recurrence;
-      return converted;
+      return { existing, converted };
     },
     [queryClient, source],
   );
@@ -123,7 +139,18 @@ export function useEventMutations(
     buildMutation<Schema_Event>(
       "create",
       async (event) => {
-        await repository.create(event);
+        // Undo-of-delete restores via create with the original _id; if that
+        // delete is still in flight, wait so the POST can't land before the
+        // DELETE server-side. A failed delete means the event still exists,
+        // so the restore write is skipped. Normal creates use fresh ids and
+        // resolve immediately.
+        const deleteOutcome = await waitForPendingEventDelete(
+          queryClient,
+          event._id as string,
+        );
+        if (deleteOutcome !== "error") {
+          await repository.create(event);
+        }
         await markWrite();
         return event;
       },
@@ -260,43 +287,108 @@ export function useEventMutations(
     ),
   );
 
-  return useMemo(
-    () => ({
+  // Undo recording happens here at the `.mutate()` boundary: it's the one
+  // place every caller funnels through and the cache still holds the
+  // pre-mutation event. Replays from useUndoRedo set the restoring flag so
+  // they don't record themselves.
+  return useMemo(() => {
+    // Shared by delete/deleteSomeday: record the pre-removal snapshot when
+    // undoable and show the "Deleted" toast (keycap hint only if recorded).
+    // Returns the snapshot so deleteSomeday can derive skipRepository.
+    const recordDelete = (
+      payload: Payload_DeleteEvent,
+      kind: "delete" | "delete-someday",
+    ) => {
+      const existing = findEventInCache(queryClient, payload._id, source);
+      if (isRestoringHistory()) return existing;
+
+      const undoable =
+        !!existing &&
+        !isRecurring(existing) &&
+        isThisEventScope(payload.applyTo);
+      if (undoable) undoHistoryActions.record({ kind, event: existing });
+      showDeletedToast(undoable);
+      return existing;
+    };
+
+    // Shared by both converts: resolve the merged event and record the
+    // before/after pair unless replaying or recurring.
+    const recordConvert = (
+      event: Payload_ConvertEvent["event"],
+      isSomeday: boolean,
+    ) => {
+      const { existing, converted } = convertedEvent(event, isSomeday);
+      if (
+        !isRestoringHistory() &&
+        existing &&
+        converted &&
+        !isRecurring(existing)
+      ) {
+        undoHistoryActions.record({
+          kind: isSomeday ? "convert-to-someday" : "convert-to-calendar",
+          _id: event._id,
+          before: existing,
+          after: converted,
+        });
+      }
+      return converted;
+    };
+
+    return {
       create: (event: Schema_Event) =>
         createMutation.mutate({
           ...event,
           _id: event._id ?? createObjectIdString(),
         }),
-      edit: editMutation.mutate,
-      delete: deleteMutation.mutate,
+      edit: (payload: Payload_EditEvent) => {
+        if (!isRestoringHistory() && isThisEventScope(payload.applyTo)) {
+          const before = findEventInCache(queryClient, payload._id, source);
+          if (before) {
+            undoHistoryActions.record({
+              kind: "edit",
+              _id: payload._id,
+              before,
+              // Merge over `before` so fields the payload dropped (e.g.
+              // provider ids) survive a redo replay.
+              after: { ...before, ...payload.event, _id: payload._id },
+            });
+          }
+        }
+        editMutation.mutate(payload);
+      },
+      delete: (payload: Payload_DeleteEvent) => {
+        recordDelete(payload, "delete");
+        deleteMutation.mutate(payload);
+      },
       convertToSomeday: (payload: Payload_ConvertEvent) =>
         convertToSomedayMutation.mutate({
           event: payload.event,
-          converted: convertedEvent(payload.event, true),
+          converted: recordConvert(payload.event, true),
         }),
       convertToCalendar: (payload: Payload_ConvertEvent) =>
         convertToCalendarMutation.mutate({
           event: payload.event,
-          converted: convertedEvent(payload.event, false),
+          converted: recordConvert(payload.event, false),
         }),
-      deleteSomeday: (payload: Payload_DeleteEvent) =>
+      deleteSomeday: (payload: Payload_DeleteEvent) => {
+        const existing = recordDelete(payload, "delete-someday");
         deleteSomedayMutation.mutate({
           ...payload,
-          skipRepository: !findEventInCache(queryClient, payload._id, source),
-        }),
+          skipRepository: !existing,
+        });
+      },
       reorderSomeday: reorderSomedayMutation.mutate,
-    }),
-    [
-      convertedEvent,
-      queryClient,
-      source,
-      createMutation.mutate,
-      deleteMutation.mutate,
-      deleteSomedayMutation.mutate,
-      editMutation.mutate,
-      convertToCalendarMutation.mutate,
-      convertToSomedayMutation.mutate,
-      reorderSomedayMutation.mutate,
-    ],
-  );
+    };
+  }, [
+    convertedEvent,
+    queryClient,
+    source,
+    createMutation.mutate,
+    deleteMutation.mutate,
+    deleteSomedayMutation.mutate,
+    editMutation.mutate,
+    convertToCalendarMutation.mutate,
+    convertToSomedayMutation.mutate,
+    reorderSomedayMutation.mutate,
+  ]);
 }

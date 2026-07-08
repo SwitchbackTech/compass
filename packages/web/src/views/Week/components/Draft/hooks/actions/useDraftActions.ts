@@ -12,7 +12,6 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { StringV4Schema } from "@core/types/type.utils";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
@@ -176,15 +175,10 @@ export const useDraftActions = (
     (
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
+      // No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z
       const eventToDelete = draft ?? draftFromStore;
-      const { data: _title } = StringV4Schema.safeParse(eventToDelete?.title);
-      const title = _title ?? "this event";
-      const usePrefix = applyTo === RecurringEventUpdateScope.ALL_EVENTS;
-      const prefix = usePrefix ? "all instances of - " : "";
 
-      const confirmed = window.confirm(`Delete ${prefix}${title}?`);
-
-      if (confirmed && eventToDelete?._id) {
+      if (eventToDelete?._id) {
         eventMutations.delete({ _id: eventToDelete._id, applyTo });
       }
       discard();
