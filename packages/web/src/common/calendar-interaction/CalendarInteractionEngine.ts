@@ -457,15 +457,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
 
       pendingCommitTeardown.frame = null;
 
-      const rect = element.getBoundingClientRect();
-      const hasReflowed =
-        !element.isConnected ||
-        rect.top !== initialRect.top ||
-        rect.left !== initialRect.left ||
-        rect.width !== initialRect.width ||
-        rect.height !== initialRect.height;
-
-      if (hasReflowed) {
+      if (hasSourceReflowed(element, initialRect)) {
         finishPendingCommitTeardown();
         return;
       }
@@ -495,6 +487,18 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     resolvedOptions.clearTimer(pendingCommitTeardown.timer);
     pendingCommitTeardown = null;
     teardownActiveSession("commit");
+  }
+
+  function hasSourceReflowed(element: Element, initialRect: DOMRect) {
+    const rect = element.getBoundingClientRect();
+
+    return (
+      !element.isConnected ||
+      rect.top !== initialRect.top ||
+      rect.left !== initialRect.left ||
+      rect.width !== initialRect.width ||
+      rect.height !== initialRect.height
+    );
   }
 
   function teardownActiveSession(phase: "cancelled" | "commit") {
