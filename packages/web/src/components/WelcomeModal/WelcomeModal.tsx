@@ -147,7 +147,7 @@ export function WelcomeModal() {
           <button
             type="button"
             onClick={dismiss}
-            className="c-button c-button-primary rounded-full px-10"
+            className="c-button c-button-primary c-button-elevated rounded-full px-10"
           >
             Start Now
           </button>
