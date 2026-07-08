@@ -1,3 +1,4 @@
+import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
@@ -8,8 +9,10 @@ import {
 import {
   type Schema_SomedayEvent,
   type Schema_SomedayEventsColumn,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
+import { type Payload_ConvertEvent } from "@web/events/event.types";
 
 const uniqBy = <T, K>(array: T[], iteratee: (item: T) => K): T[] => {
   const map = new Map<K, T>();
@@ -20,6 +23,44 @@ const uniqBy = <T, K>(array: T[], iteratee: (item: T) => K): T[] => {
     }
   }
   return Array.from(map.values());
+};
+
+/**
+ * Maps a calendar event (or draft) to the convertToSomeday mutation payload.
+ * Recurring rules are rewritten to weekly since someday events resurface per
+ * week/month list, not on their original cadence.
+ */
+export const buildConvertToSomedayEvent = (
+  event: Schema_WebEvent,
+  dates: { startDate: string; endDate: string },
+  order: number,
+): Payload_ConvertEvent["event"] => {
+  const converted: Payload_ConvertEvent["event"] = {
+    ...event,
+    _id: event._id!,
+    user: event.user ?? "",
+    isAllDay: false,
+    isSomeday: true,
+    startDate: dates.startDate,
+    endDate: dates.endDate,
+    priority: event.priority ?? Priorities.UNASSIGNED,
+    order,
+  };
+
+  if (Array.isArray(converted.recurrence?.rule)) {
+    converted.recurrence = {
+      ...converted.recurrence,
+      rule: converted.recurrence.rule.map((rule) => {
+        const isRRule = rule.startsWith("RRULE:");
+
+        if (!isRRule) return rule;
+
+        return rule.replace(/FREQ=\w+;/, "FREQ=WEEKLY;");
+      }),
+    };
+  }
+
+  return converted;
 };
 
 export const getSomedayEventCategory = (

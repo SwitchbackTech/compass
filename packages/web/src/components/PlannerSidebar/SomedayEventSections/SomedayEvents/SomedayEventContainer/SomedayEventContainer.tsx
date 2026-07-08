@@ -114,21 +114,22 @@ export const SomedayEventContainer = ({
     refocusEventElement(event._id);
   };
 
-  useAppHotkey("Shift+ArrowUp", (keyboardEvent) => {
-    if (!isFocusedRef.current) return;
-    keyboardEvent.preventDefault();
-    migrateEvent("up");
-  });
-  useAppHotkey("Shift+ArrowDown", (keyboardEvent) => {
-    if (!isFocusedRef.current) return;
-    keyboardEvent.preventDefault();
-    migrateEvent("down");
-  });
-  useAppHotkey("Shift+ArrowRight", (keyboardEvent) => {
-    if (!isFocusedRef.current) return;
-    keyboardEvent.preventDefault();
-    scheduleEvent();
-  });
+  const whenFocused =
+    (action: () => void) => (keyboardEvent: KeyboardEvent) => {
+      if (!isFocusedRef.current) return;
+      keyboardEvent.preventDefault();
+      action();
+    };
+
+  useAppHotkey(
+    "Shift+ArrowUp",
+    whenFocused(() => migrateEvent("up")),
+  );
+  useAppHotkey(
+    "Shift+ArrowDown",
+    whenFocused(() => migrateEvent("down")),
+  );
+  useAppHotkey("Shift+ArrowRight", whenFocused(scheduleEvent));
 
   const isDraftingThisEvent =
     state.isDrafting && state.draft?._id === event._id;

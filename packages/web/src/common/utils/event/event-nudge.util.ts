@@ -26,7 +26,7 @@ export const getArrowKeyMovement = (
   }
 };
 
-const isTimedEventInsideOneDay = (start: Dayjs, end: Dayjs) => {
+export const isTimedEventInsideOneDay = (start: Dayjs, end: Dayjs) => {
   const midnightAfterStart = start.add(1, "day").startOf("day");
 
   return end.isSame(start, "day") || end.isSame(midnightAfterStart);
