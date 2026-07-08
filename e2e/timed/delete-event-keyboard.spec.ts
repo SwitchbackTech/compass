@@ -12,7 +12,12 @@ import {
 
 test.skip(({ isMobile }) => isMobile, "Keyboard shortcuts are desktop-only.");
 
-test("should delete a timed event using keyboard interaction", async ({
+// Intermittently times out waiting for the title input to hide after save,
+// unrelated to any specific PR's diff. See
+// https://github.com/SwitchbackTech/compass-calendar/issues/1966 before
+// deleting this spec — it was deleted once before for this same symptom and
+// had to be restored.
+test.fixme("should delete a timed event using keyboard interaction", async ({
   page,
 }) => {
   await prepareCalendarPage(page);

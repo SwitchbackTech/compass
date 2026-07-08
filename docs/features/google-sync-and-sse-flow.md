@@ -114,8 +114,8 @@ High-level path:
 3. The mutation's `mutationFn` writes through the selected repository.
 4. Remote event writes hit backend event routes.
 5. `EventController` packages the change as a `CompassEvent`.
-6. `CompassToGoogleEventPropagation.processEvents()` loads the DB event, plans work, applies persistence, and runs Google side effects.
-7. After commit, the backend calls `sseServer` to publish notifications based on whether the change affected normal or someday events (`EVENT_CHANGED` vs `SOMEDAY_EVENT_CHANGED`).
+6. `CompassToGoogleEventPropagation.processEvents()` loads the DB event, plans work, and applies persistence inside a retrying Mongo transaction, then runs Google side effects after commit (see [Event Propagation Transactions](../backend/event-propagation-transactions.md)).
+7. After the Google effects, the backend calls `sseServer` to publish notifications based on whether the change affected normal or someday events (`EVENT_CHANGED` vs `SOMEDAY_EVENT_CHANGED`).
 
 Primary files:
 
