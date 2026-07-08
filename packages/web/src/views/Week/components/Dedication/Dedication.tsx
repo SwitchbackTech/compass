@@ -1,7 +1,7 @@
-import { XIcon } from "@phosphor-icons/react";
 import { useRef, useState } from "react";
 import derekImg from "@web/assets/png/derek.png";
 import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
+import { AsciiPortrait } from "./AsciiPortrait";
 
 export const Dedication = () => {
   const dialogRef = useRef<HTMLDialogElement>(null);
@@ -58,27 +58,17 @@ export const Dedication = () => {
           aria-label="Close dialog"
         />
         <div
-          className={`relative w-[59%] rounded bg-fg-primary p-6 shadow-lg transition-transform duration-300 ease-out ${
+          className={`relative flex max-h-[90vh] w-[min(92vw,44rem)] flex-col gap-6 overflow-y-auto rounded-xl border border-border-primary bg-bg-secondary p-6 text-text-light shadow-[0_16px_48px_var(--color-shadow-default)] transition-transform duration-300 ease-out sm:p-8 ${
             isVisible ? "scale-100" : "scale-95"
           }`}
         >
-          <div className="flex flex-row justify-between">
-            <h2>For Derek</h2>
-            <button
-              type="button"
-              onClick={close}
-              className="cursor-pointer transition-[filter] duration-200 hover:brightness-150"
-            >
-              <XIcon size={24} />
-            </button>
-          </div>
           <p className="text-l">
             Compass Calendar is dedicated to Derek John Benton (1993-2014).
           </p>
-          <div className="flex flex-row items-center justify-center">
-            <blockquote className="mr-5">
+          <div className="flex flex-col items-center gap-6 sm:flex-row sm:gap-8">
+            <blockquote>
               <p
-                className="text-2xl"
+                className="text-2xl text-text-lighter"
                 style={{ fontFamily: '"Caveat", cursive' }}
               >
                 "I have such amazing friends and family and I wish I could slow
@@ -86,14 +76,11 @@ export const Dedication = () => {
                 relationships in as much as possible. Time is the biggest enemy
                 we all face."
               </p>
-              <div className="ml-12 pt-8 text-s text-text-darkPlaceholder">
-                -Derek&apos;s Facebook post from 12.24.2013
-              </div>
             </blockquote>
-            <img
+            <AsciiPortrait
               src={derekImg}
               alt="Headshot of Derek"
-              className="max-w-full rounded-full shadow-[0_0_10px_var(--color-panel-shadow)]"
+              className="h-44 w-44 shrink-0 overflow-hidden rounded-full shadow-[0_0_10px_var(--color-panel-shadow)] sm:h-60 sm:w-60"
             />
           </div>
         </div>
