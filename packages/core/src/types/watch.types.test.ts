@@ -74,7 +74,6 @@ describe("Watch Types", () => {
     });
 
     it("accepts missing createdAt and sets default", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { createdAt, ...watchData } = validWatch;
       const parsed = WatchSchema.parse(watchData);
 
@@ -82,14 +81,12 @@ describe("Watch Types", () => {
     });
 
     it("rejects missing gCalendarId", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { gCalendarId, ...watchData } = validWatch;
 
       expect(() => WatchSchema.parse(watchData)).toThrow();
     });
 
     it("rejects missing resourceId", () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { resourceId, ...watchData } = validWatch;
 
       expect(() => WatchSchema.parse(watchData)).toThrow();

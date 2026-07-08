@@ -72,7 +72,6 @@ export const useDragEventSmartScroll = (
         scrollRef.current = null;
       }
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     state.isDragging,
     mousePosition.x,

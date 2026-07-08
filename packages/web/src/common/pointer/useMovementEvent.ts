@@ -79,13 +79,7 @@ export function useMovementEvent({
 
       handler(movement);
     });
-  }, [
-    elementsFilter,
-    handler,
-    typeFilter,
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    ...(deps ?? []),
-  ]);
+  }, [elementsFilter, handler, typeFilter, ...(deps ?? [])]);
 
   return { togglePointerMovementTracking };
 }
