@@ -276,15 +276,14 @@ export const resetLocalEventDb = async (page: Page) => {
 // targets against a mid-transition column count.
 const waitForMainGridWidthToSettle = async (page: Page) => {
   const mainGrid = page.locator("#mainGrid");
-  let previousWidth = await mainGrid.evaluate(
-    (el) => el.getBoundingClientRect().width,
-  );
+  const getWidth = () =>
+    mainGrid.evaluate((el) => el.getBoundingClientRect().width);
+
+  let previousWidth = await getWidth();
 
   for (let attempt = 0; attempt < 20; attempt++) {
     await page.waitForTimeout(50);
-    const width = await mainGrid.evaluate(
-      (el) => el.getBoundingClientRect().width,
-    );
+    const width = await getWidth();
     if (width === previousWidth) {
       return;
     }
