@@ -64,14 +64,38 @@ const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
         { keys: ["e"], label: "Edit task" },
         { keys: ["Enter"], label: "Complete task" },
         { keys: ["Delete"], label: "Delete task" },
-        { keys: ["Ctrl", "Mod", "ArrowRight"], label: "Migrate task forward" },
-        { keys: ["Ctrl", "Mod", "ArrowLeft"], label: "Migrate task backward" },
+        { keys: ["Shift", "ArrowRight"], label: "Migrate task forward" },
+        { keys: ["Shift", "ArrowLeft"], label: "Migrate task backward" },
         { keys: ["m"], label: "Edit event" },
+        {
+          keys: ["Shift", "ArrowUp"],
+          label: "Move event 15 min earlier",
+        },
+        {
+          keys: ["Shift", "ArrowDown"],
+          label: "Move event 15 min later",
+        },
       ]
     : [
         { keys: ["m"], label: "Edit calendar event" },
         { keys: ["Delete"], label: "Delete calendar event" },
         { keys: ["Arrow keys"], label: "Move draft event" },
+        {
+          keys: ["Shift", "ArrowLeft"],
+          label: "Move event to previous day (or sidebar)",
+        },
+        { keys: ["Shift", "ArrowRight"], label: "Move event to next day" },
+        { keys: ["Shift", "ArrowUp"], label: "Move event 15 min earlier" },
+        { keys: ["Shift", "ArrowDown"], label: "Move event 15 min later" },
+        { keys: ["Shift", "ArrowRight"], label: "Schedule someday event" },
+        {
+          keys: ["Shift", "ArrowUp"],
+          label: "Move someday event to week list",
+        },
+        {
+          keys: ["Shift", "ArrowDown"],
+          label: "Move someday event to month list",
+        },
       ];
 
 const getOtherShortcuts = (): Shortcut[] => [

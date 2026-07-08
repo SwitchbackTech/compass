@@ -8,8 +8,11 @@ import {
 import {
   type Schema_SomedayEvent,
   type Schema_SomedayEventsColumn,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { validateSomedayEvents } from "@web/common/validators/someday.event.validator";
+import { type Payload_ConvertEvent } from "@web/events/event.types";
+import { parseSomedayEventBeforeSubmit } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
 const uniqBy = <T, K>(array: T[], iteratee: (item: T) => K): T[] => {
   const map = new Map<K, T>();
@@ -20,6 +23,50 @@ const uniqBy = <T, K>(array: T[], iteratee: (item: T) => K): T[] => {
     }
   }
   return Array.from(map.values());
+};
+
+const downgradeRecurrenceToWeekly = (
+  recurrence: Schema_WebEvent["recurrence"],
+): Schema_WebEvent["recurrence"] => {
+  if (!Array.isArray(recurrence?.rule)) return recurrence;
+
+  return {
+    ...recurrence,
+    rule: recurrence.rule.map((rule) =>
+      rule.startsWith("RRULE:")
+        ? rule.replace(/FREQ=\w+;/, "FREQ=WEEKLY;")
+        : rule,
+    ),
+  };
+};
+
+/**
+ * Maps a calendar event (or draft) to the convertToSomeday mutation payload,
+ * validated against SomedayEventSchema via the same parser the someday form
+ * uses. Recurring rules are rewritten to weekly since someday events
+ * resurface per week/month list, not on their original cadence.
+ */
+export const buildConvertToSomedayEvent = (
+  event: Schema_WebEvent,
+  dates: { startDate: string; endDate: string },
+  order: number,
+): Payload_ConvertEvent["event"] => {
+  if (!event._id) {
+    throw new Error("Cannot convert an event without an _id to someday");
+  }
+
+  const draft: Schema_Event = {
+    ...event,
+    isAllDay: false,
+    startDate: dates.startDate,
+    endDate: dates.endDate,
+    order,
+    recurrence: downgradeRecurrenceToWeekly(event.recurrence),
+  };
+
+  const validated = parseSomedayEventBeforeSubmit(draft, event.user ?? "");
+
+  return validated as Payload_ConvertEvent["event"];
 };
 
 export const getSomedayEventCategory = (

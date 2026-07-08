@@ -98,6 +98,50 @@ describe("shortcuts.data", () => {
       });
     });
 
+    it("lists Shift+Arrow reschedule shortcuts in the week Edit section", () => {
+      const edit = getShortcutMenuSections({
+        view: "week",
+        isViewingCurrentPeriod: true,
+      }).find((section) => section.id === "edit");
+
+      expect(edit?.shortcuts).toContainEqual({
+        keys: ["Shift", "ArrowLeft"],
+        label: "Move event to previous day (or sidebar)",
+      });
+      expect(edit?.shortcuts).toContainEqual({
+        keys: ["Shift", "ArrowRight"],
+        label: "Move event to next day",
+      });
+      expect(edit?.shortcuts).toContainEqual({
+        keys: ["Shift", "ArrowUp"],
+        label: "Move event 15 min earlier",
+      });
+      expect(edit?.shortcuts).toContainEqual({
+        keys: ["Shift", "ArrowRight"],
+        label: "Schedule someday event",
+      });
+    });
+
+    it("lists Shift+Arrow task migration in the day Edit section", () => {
+      const edit = getShortcutMenuSections({
+        view: "day",
+        isViewingCurrentPeriod: true,
+      }).find((section) => section.id === "edit");
+
+      expect(edit?.shortcuts).toContainEqual({
+        keys: ["Shift", "ArrowRight"],
+        label: "Migrate task forward",
+      });
+      expect(edit?.shortcuts).toContainEqual({
+        keys: ["Shift", "ArrowLeft"],
+        label: "Migrate task backward",
+      });
+      expect(edit?.shortcuts).toContainEqual({
+        keys: ["Shift", "ArrowDown"],
+        label: "Move event 15 min later",
+      });
+    });
+
     it("labels the Other section with a sidebar toggle", () => {
       const other = getShortcutMenuSections({
         view: "day",

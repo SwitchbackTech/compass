@@ -20,12 +20,14 @@ import {
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import {
+  getArrowKeyMovement,
+  isTimedEventInsideOneDay,
+} from "@web/common/utils/event/event-nudge.util";
+import { buildConvertToSomedayEvent } from "@web/common/utils/event/someday.event.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import { EventInViewParser } from "@web/common/utils/parse/view.parser";
-import {
-  type Payload_ConvertEvent,
-  type Payload_EditEvent,
-} from "@web/events/event.types";
+import { type Payload_EditEvent } from "@web/events/event.types";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
@@ -45,21 +47,6 @@ import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 import { getDragDurationMinutes } from "./drag-duration.util";
-
-const getDraftKeyboardMovement = (key: string, isAllDay: boolean) => {
-  switch (key) {
-    case "ArrowLeft":
-      return { days: -1, minutes: 0 };
-    case "ArrowRight":
-      return { days: 1, minutes: 0 };
-    case "ArrowUp":
-      return isAllDay ? null : { days: 0, minutes: -GRID_TIME_STEP };
-    case "ArrowDown":
-      return isAllDay ? null : { days: 0, minutes: GRID_TIME_STEP };
-    default:
-      return null;
-  }
-};
 
 const canRepositionDraftByKeyboard = (activity: string | null | undefined) =>
   activity === "createShortcut" ||
@@ -193,44 +180,17 @@ export const useDraftActions = (
         return;
       }
 
-      const event: Payload_ConvertEvent["event"] = {
-        ...draft,
-        _id: draft!._id!,
-        user: draft?.user ?? "",
-        isAllDay: false,
-        isSomeday: true,
-        startDate: start,
-        endDate: end,
-        origin: draft?.origin,
-        priority: draft?.priority ?? Priorities.UNASSIGNED,
-        order: somedayWeekCount,
-      };
-
-      if (isRecurrence()) {
-        event.recurrence = {
-          ...event.recurrence,
-          rule: event.recurrence?.rule?.map((rule) => {
-            const isRRule = rule.startsWith("RRULE:");
-
-            if (!isRRule) return rule;
-
-            return rule.replace(/FREQ=\w+;/, "FREQ=WEEKLY;");
-          }) as string[],
-        };
-      }
+      const event = buildConvertToSomedayEvent(
+        draft!,
+        { startDate: start, endDate: end },
+        somedayWeekCount,
+      );
 
       eventMutations.convertToSomeday({ event });
 
       discard();
     },
-    [
-      discard,
-      draft,
-      eventMutations,
-      isAtWeeklyLimit,
-      somedayWeekCount,
-      isRecurrence,
-    ],
+    [discard, draft, eventMutations, isAtWeeklyLimit, somedayWeekCount],
   );
 
   const openForm = useCallback(() => {
@@ -351,17 +311,11 @@ export const useDraftActions = (
     [weekProps.component.endOfView, weekProps.component.startOfView],
   );
 
-  const isTimedDraftInsideOneDay = useCallback((start: Dayjs, end: Dayjs) => {
-    const midnightAfterStart = start.add(1, "day").startOf("day");
-
-    return end.isSame(start, "day") || end.isSame(midnightAfterStart);
-  }, []);
-
   const repositionDraftByKeyboard = useCallback(
     (key: string) => {
       if (!canRepositionDraftByKeyboard(activity) || !draft) return false;
 
-      const movement = getDraftKeyboardMovement(key, Boolean(draft.isAllDay));
+      const movement = getArrowKeyMovement(key, Boolean(draft.isAllDay));
       if (!movement) return false;
 
       const start = dayjs(draft.startDate);
@@ -375,7 +329,7 @@ export const useDraftActions = (
 
       if (!isInsideVisibleWeek(nextStart)) return false;
 
-      if (!draft.isAllDay && !isTimedDraftInsideOneDay(nextStart, nextEnd)) {
+      if (!draft.isAllDay && !isTimedEventInsideOneDay(nextStart, nextEnd)) {
         return false;
       }
 
@@ -387,7 +341,7 @@ export const useDraftActions = (
 
       return true;
     },
-    [activity, draft, isInsideVisibleWeek, isTimedDraftInsideOneDay, setDraft],
+    [activity, draft, isInsideVisibleWeek, setDraft],
   );
 
   const drag = useCallback(

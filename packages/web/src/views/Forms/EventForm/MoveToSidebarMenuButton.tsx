@@ -14,12 +14,7 @@ export const MoveToSidebarMenuButton: React.FC<Props> = ({
   bgColor,
 }) => {
   return (
-    <MenuItem
-      bgColor={bgColor}
-      onClick={onClick}
-      aria-label={label}
-      tooltip={["Control", "Meta", "ArrowLeft"]}
-    >
+    <MenuItem bgColor={bgColor} onClick={onClick} aria-label={label}>
       <ArrowLeftIcon size={14} />
       <span>{label}</span>
     </MenuItem>

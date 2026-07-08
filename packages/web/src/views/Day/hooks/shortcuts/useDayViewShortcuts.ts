@@ -81,10 +81,11 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   }, [hasFocusedTask, onCompleteTask]);
 
   const handleMigrationNavigation = useCallback(
-    (direction: "forward" | "backward") => () => {
+    (direction: "forward" | "backward") => (keyboardEvent: KeyboardEvent) => {
       if (isFocusedWithinTask()) {
         const taskId = getFocusedTaskId();
         if (taskId && onMigrateTask) {
+          keyboardEvent.preventDefault();
           onMigrateTask(taskId, direction);
         }
       }
@@ -140,23 +141,9 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
 
   // No `blurOnTrigger` here: it blurs before the handler runs, which would
   // clear the focused task and stop the migration from ever firing.
-  useAppHotkey(
-    "Control+Meta+ArrowRight",
-    handleMigrationNavigation("forward"),
-    {
-      ignoreInputs: false,
-      preventDefault: true,
-    },
-  );
+  useAppHotkey("Shift+ArrowRight", handleMigrationNavigation("forward"));
 
-  useAppHotkey(
-    "Control+Meta+ArrowLeft",
-    handleMigrationNavigation("backward"),
-    {
-      ignoreInputs: false,
-      preventDefault: true,
-    },
-  );
+  useAppHotkey("Shift+ArrowLeft", handleMigrationNavigation("backward"));
 
   // Calendar shortcuts
   useAppHotkeyUp("I", () => {
