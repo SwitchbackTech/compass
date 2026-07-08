@@ -105,11 +105,15 @@ function listWorktreePaths(): string[] {
     .map((line) => line.slice("worktree ".length));
 }
 
-function readSiblingPorts(root: string): DevPorts[] {
+function siblingConfigPaths(root: string): string[] {
   return listWorktreePaths()
     .filter((worktree) => path.resolve(worktree) !== path.resolve(root))
     .map((worktree) => path.join(worktree, "compass.yaml"))
-    .filter(existsSync)
+    .filter(existsSync);
+}
+
+function readSiblingPorts(root: string): DevPorts[] {
+  return siblingConfigPaths(root)
     .map((file) => readPorts(readFileSync(file, "utf8")))
     .filter((ports): ports is DevPorts => ports !== null);
 }
@@ -117,11 +121,8 @@ function readSiblingPorts(root: string): DevPorts[] {
 function ensureConfigExists(root: string, configPath: string): void {
   if (existsSync(configPath)) return;
 
-  const sources = listWorktreePaths()
-    .filter((worktree) => path.resolve(worktree) !== path.resolve(root))
-    .map((worktree) => path.join(worktree, "compass.yaml"))
-    .filter(existsSync);
-  const source = sources[0] ?? path.join(root, "compass.example.yaml");
+  const source =
+    siblingConfigPaths(root)[0] ?? path.join(root, "compass.example.yaml");
 
   copyFileSync(source, configPath);
   console.log(`[dev-ports] created compass.yaml from ${source}`);
@@ -176,6 +177,32 @@ function applyLaunchConfigSync(root: string, ports: DevPorts): void {
   );
 }
 
+function isPortsClaimed(ports: DevPorts, claimed: DevPorts[]): boolean {
+  return claimed.some(
+    (c) => c.web === ports.web || c.backend === ports.backend,
+  );
+}
+
+// Smallest offset whose web/backend pair is unclaimed by any sibling
+// worktree's compass.yaml and actually free on the OS, or null if none of
+// the first 50 offsets work out.
+async function findNextPorts(claimed: DevPorts[]): Promise<DevPorts | null> {
+  for (let offset = 1; offset <= 50; offset++) {
+    const candidate: DevPorts = {
+      web: WEB_PORT_BASE + offset,
+      backend: BACKEND_PORT_BASE + offset,
+    };
+    if (isPortsClaimed(candidate, claimed)) continue;
+    if (
+      (await isPortFree(candidate.web)) &&
+      (await isPortFree(candidate.backend))
+    ) {
+      return candidate;
+    }
+  }
+  return null;
+}
+
 async function main(): Promise<void> {
   const root = process.cwd();
   const configPath = path.join(root, "compass.yaml");
@@ -191,40 +218,30 @@ async function main(): Promise<void> {
   if (!current) return;
 
   const claimed = readSiblingPorts(root);
-  const isClaimed = (ports: DevPorts) =>
-    claimed.some((c) => c.web === ports.web || c.backend === ports.backend);
-
-  if (!isClaimed(current)) {
+  if (!isPortsClaimed(current, claimed)) {
     applyLaunchConfigSync(root, current); // catches drift from manual edits
     return;
   }
 
-  for (let offset = 1; offset <= 50; offset++) {
-    const next: DevPorts = {
-      web: WEB_PORT_BASE + offset,
-      backend: BACKEND_PORT_BASE + offset,
-    };
-    if (isClaimed(next)) continue;
-    if (!(await isPortFree(next.web)) || !(await isPortFree(next.backend)))
-      continue;
+  const next = await findNextPorts(claimed);
+  if (!next) {
+    throw new Error("[dev-ports] no free port pair found within 50 offsets");
+  }
 
-    const rewritten = reassignPorts(yamlText, next);
-    if (rewritten === null) {
-      console.log(
-        "[dev-ports] compass.yaml uses custom URLs — manage ports manually",
-      );
-      return;
-    }
-    writeFileSync(configPath, rewritten);
-    applyLaunchConfigSync(root, next);
+  const rewritten = reassignPorts(yamlText, next);
+  if (rewritten === null) {
     console.log(
-      `[dev-ports] ports ${current.web}/${current.backend} are claimed by ` +
-        `another worktree — reassigned to web ${next.web}, backend ${next.backend}`,
+      "[dev-ports] compass.yaml uses custom URLs — manage ports manually",
     );
     return;
   }
 
-  throw new Error("[dev-ports] no free port pair found within 50 offsets");
+  writeFileSync(configPath, rewritten);
+  applyLaunchConfigSync(root, next);
+  console.log(
+    `[dev-ports] ports ${current.web}/${current.backend} are claimed by ` +
+      `another worktree — reassigned to web ${next.web}, backend ${next.backend}`,
+  );
 }
 
 if (require.main === module) {
