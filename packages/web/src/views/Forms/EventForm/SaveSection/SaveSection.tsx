@@ -21,14 +21,23 @@ export const SaveSection: React.FC<Props> = ({
   priority,
 }) => {
   const onSave = useCallback(() => _onSubmit(), [_onSubmit]);
+  const handleActivate =
+    (action: () => void) => (e: React.KeyboardEvent<HTMLElement>) => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      e.stopPropagation();
+      action();
+    };
 
   return (
     <Flex className="justify-end pt-[18px]">
       {onCancel && (
-        <TooltipWrapper onClick={onCancel} description={cancelText}>
+        <TooltipWrapper description={cancelText}>
           <Btn
+            onClick={onCancel}
+            onKeyDown={handleActivate(onCancel)}
             role="button"
-            tabIndex={0}
+             tabIndex={0}
             title={cancelText}
             style={{ marginRight: 18 }}
           >
@@ -37,13 +46,15 @@ export const SaveSection: React.FC<Props> = ({
         </TooltipWrapper>
       )}
 
-      <TooltipWrapper onClick={onSave} shortcut={["Mod", "Enter"]}>
+      <TooltipWrapper shortcut={["Mod", "Enter"]}>
         <SaveButton
           minWidth={110}
           priority={priority!}
+          onClick={onSave}
+          onKeyDown={handleActivate(onSave)}
           role="button"
           tabIndex={0}
-          aria-keyshortcuts="Meta+Enter"
+          aria-keyshortcuts="Meta+Enter Control+Enter"
         >
           {saveText}
         </SaveButton>
