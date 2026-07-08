@@ -256,6 +256,52 @@ describe("useEventMutations", () => {
     });
   });
 
+  test("serializes rapid edits to the same event so writes never overlap", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const editEvent = (title: string) =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: event({ title }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      });
+
+    act(() => editEvent("First"));
+    await waitFor(() => {
+      expect(
+        context.calls.filter(({ method }) => method === "edit"),
+      ).toHaveLength(1);
+    });
+    act(() => editEvent("Second"));
+
+    // The optimistic update lands immediately, but the second repository
+    // write must wait for the first to settle: overlapping PUTs on one
+    // document surface as backend write-conflict 500s.
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.entities["event-1"].title,
+      ).toBe("Second");
+    });
+    expect(
+      context.calls.filter(({ method }) => method === "edit"),
+    ).toHaveLength(1);
+
+    act(() => context.pending.resolveNext());
+
+    await waitFor(() => {
+      expect(
+        context.calls.filter(({ method }) => method === "edit"),
+      ).toHaveLength(2);
+    });
+    const lastEdit = context.calls.filter(({ method }) => method === "edit")[1];
+    expect((lastEdit.value as { event: Schema_Event }).event.title).toBe(
+      "Second",
+    );
+    context.pending.resolve();
+  });
+
   test("a failed edit leaves a concurrent edit to another event untouched", async () => {
     const context = setup();
     const other = event({ _id: "event-2", title: "Other" });
@@ -883,6 +929,41 @@ describe("undo history recording", () => {
       context.hook.result.current.mutations.edit({
         _id: "ghost",
         event: event({ _id: "ghost" }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+
+    expect(useUndoHistoryStore.getState().past).toHaveLength(0);
+    context.pending.resolve();
+  });
+
+  test("skips recurring edits even at this-event scope", () => {
+    const context = setup();
+    const instance = event({
+      _id: "instance",
+      recurrence: { eventId: "base-1" },
+    });
+    context.queryClient.setQueryData(
+      calendarKey,
+      normalized(instance, event()),
+    );
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "instance",
+        event: event({ _id: "instance", title: "Moved" }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+    // An edit that adds recurrence to a standalone event is not undoable
+    // either: the server materializes a series the snapshot knows nothing
+    // about.
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: event({
+          recurrence: { rule: ["RRULE:FREQ=DAILY"] },
+        }) as Schema_WebEvent,
         applyTo: RecurringEventUpdateScope.THIS_EVENT,
       }),
     );

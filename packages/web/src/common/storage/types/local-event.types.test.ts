@@ -4,7 +4,6 @@ import {
   LOCAL_DEMO_EVENT_FIELD,
   markLocalDemoEvent,
   preserveLocalEventMarker,
-  stripLocalOnlyEventFields,
 } from "./local-event.types";
 import { describe, expect, it } from "bun:test";
 
@@ -40,13 +39,5 @@ describe("local-event.types", () => {
     const edited = { ...baseEvent, title: "Real event" };
 
     expect(preserveLocalEventMarker(baseEvent, edited)).toEqual(edited);
-  });
-
-  it("strips local-only fields before backend sync", () => {
-    const marked = markLocalDemoEvent(baseEvent);
-
-    expect(stripLocalOnlyEventFields(marked)).not.toHaveProperty(
-      LOCAL_DEMO_EVENT_FIELD,
-    );
   });
 });

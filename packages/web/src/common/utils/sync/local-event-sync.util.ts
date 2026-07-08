@@ -3,10 +3,7 @@ import {
   ensureOfflineDataStoreReady,
   getOfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
-import {
-  isLocalDemoEvent,
-  stripLocalOnlyEventFields,
-} from "@web/common/storage/types/local-event.types";
+import { isLocalDemoEvent } from "@web/common/storage/types/local-event.types";
 import { EventApi } from "@web/events/event.api";
 
 type LocalEventSyncStorage = Pick<
@@ -34,9 +31,9 @@ export function createSyncLocalEventsToCloud({
       return 0;
     }
 
-    const eventsToSync = events
-      .filter((event) => !isLocalDemoEvent(event))
-      .map(stripLocalOnlyEventFields);
+    // No local-field stripping here: EventApi validates outbound events
+    // against the backend schema, which drops local-only fields.
+    const eventsToSync = events.filter((event) => !isLocalDemoEvent(event));
 
     if (eventsToSync.length > 0) {
       await createEvents(eventsToSync);

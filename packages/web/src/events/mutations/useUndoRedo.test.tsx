@@ -140,6 +140,58 @@ describe("useUndoRedo", () => {
     expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
   });
 
+  test("merges replays over the current cache entry so server-owned fields survive", async () => {
+    const context = setup();
+    // The snapshot era: the optimistic cache entry has no gEventId yet.
+    const optimistic = event();
+    delete optimistic.gEventId;
+    context.queryClient.setQueryData(calendarKey, normalized(optimistic));
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: {
+          ...optimistic,
+          startDate: "2026-07-03T16:00:00.000Z",
+          endDate: "2026-07-03T17:00:00.000Z",
+        } as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      }),
+    );
+    await waitFor(() => {
+      expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
+    });
+
+    // A settle-refetch then enriches the cache with the server-assigned id.
+    act(() =>
+      context.queryClient.setQueryData(
+        calendarKey,
+        normalized(
+          event({
+            startDate: "2026-07-03T16:00:00.000Z",
+            endDate: "2026-07-03T17:00:00.000Z",
+          }),
+        ),
+      ),
+    );
+
+    act(() => context.hook.result.current.undoRedo.undo());
+
+    await waitFor(() => {
+      expect(
+        context.calls.filter(({ method }) => method === "edit"),
+      ).toHaveLength(2);
+    });
+    // The replay restores the snapshot's fields but keeps gEventId from the
+    // current cache entry: the backend PUT is a full replace, so a bare
+    // snapshot would strip the id and break Google propagation.
+    const replay = context.calls.filter(({ method }) => method === "edit")[1];
+    expect((replay.value as { event: Schema_Event }).event).toMatchObject({
+      startDate: "2026-07-02T16:00:00.000Z",
+      gEventId: "g-event-1",
+    });
+  });
+
   test("undoes a delete by recreating the snapshot with its original ids", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized(event()));
