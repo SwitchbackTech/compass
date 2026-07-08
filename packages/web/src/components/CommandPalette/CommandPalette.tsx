@@ -40,8 +40,7 @@ interface CommandPaletteProps {
 
 /**
  * Case-insensitive substring filter on each item's label. Sections with no
- * surviving items are dropped so their heading disappears too. Behaviour
- * matches react-cmdk's `filterItems` on the old `children` field.
+ * surviving items are dropped so their heading disappears too.
  */
 export function filterSections(
   sections: CommandSection[],
@@ -158,7 +157,7 @@ export const CommandPalette = ({
       >
         {/* No FloatingFocusManager: virtual list navigation keeps real focus in
             the search input, so a focus trap would only fight it. We focus the
-            input on open via the effect above. */}
+            input on open via the focusInputOnMount callback ref above. */}
         <div
           ref={refs.setFloating}
           className="mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border-primary bg-bg-secondary shadow-[0_16px_48px_var(--color-shadow-default)]"

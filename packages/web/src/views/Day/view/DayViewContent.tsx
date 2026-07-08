@@ -86,9 +86,6 @@ export const DayViewContent = memo(() => {
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();
   }, []);
-  const toggleTaskList = useCallback(() => {
-    viewActions.toggleTaskList();
-  }, []);
   // Task-focused shortcuts imply the user wants the list visible; reopen it
   // first and defer focus a frame so the list exists in the DOM.
   const withTaskListOpen = useCallback((focusTask: () => void) => {
@@ -196,7 +193,7 @@ export const DayViewContent = memo(() => {
         onGoToToday={handleGoToToday}
         onShowShortcuts={toggleShortcuts}
         commonTasks={getDayCmdTasks()}
-        placeholder="Try: 'week', 'today', 'bug', or 'code'"
+        placeholder="Try: 'week', 'today', 'bug', or 'feedback'"
       />
       <Dedication />
 
