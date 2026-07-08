@@ -12,7 +12,7 @@ dates can never disagree with what is on screen, even mid-gesture.
 ## Why this exists
 
 The week view renders a *window* of 1–7 day columns (not always the full
-week — see [Responsive Layout](../architecture/repo-architecture.md)).
+week — see [Responsive Layout](./responsive-layout.md)).
 Column **index** is window-relative (`0..N-1`), but earlier code seeded a
 drag's starting day from `event.startDate.getDay()` — a week-absolute value
 (`0=Sun..6=Sat`). The two only agreed when 7 columns rendered starting
@@ -82,6 +82,28 @@ sequenceDiagram
     Cache-->>Adapter: fresh columns + dates
     Adapter->>Adapter: commit using visual.dayDate
 ```
+
+## updateVisual Must Be Idempotent
+
+`CalendarInteractionEngine.handlePointerUp`
+(`packages/web/src/common/calendar-interaction/CalendarInteractionEngine.ts`)
+recomputes the visual by calling `adapter.updateVisual` with the release
+pointer, then commits *that* result — it does not commit whatever the last
+`requestAnimationFrame` produced. In effect, `updateVisual` runs once during
+the final RAF frame and once more at pointerup, fed the first call's own
+`visual` output as its input for the second call. So for a fixed release
+pointer, feeding a math function's own output back into itself must produce
+the same result again — the function must be idempotent under repeated
+application with an unchanged pointer.
+
+Any flip/branch logic inside an `updateVisual` math function must branch on
+an **immutable** field captured at grab time (e.g. `initialEdge` in
+`packages/web/src/common/calendar-grid/interaction/math/timedResize.ts` and
+`allDayResize.ts`) — never on a field the function itself overwrites (e.g. a
+mutated `activeEdge`). Branching on a mutated field diverges on the second
+pass: the first call flips the edge and updates the field, so the second call
+sees the *new* value and can flip again or compute a different result,
+producing a wrong committed range specifically on edge-flip drags.
 
 ## Pitfall
 
