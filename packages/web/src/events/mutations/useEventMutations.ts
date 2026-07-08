@@ -36,6 +36,9 @@ import {
 } from "./event.mutation.keys";
 import {
   markAnonymousEventWrite,
+  type PrecedingEventWrites,
+  precedingCreateOk,
+  precedingDeleteOk,
   waitForPrecedingEventWrites,
 } from "./event.mutation.runtime";
 
@@ -125,6 +128,23 @@ export function useEventMutations(
     onError: (error: Error) => reportError(error),
     onSettled: settle,
   });
+  // Shared by every mutationFn below: wait for earlier writes to the same
+  // event to finish, run the repository write only if `canWrite` says the
+  // preceding outcome allows it, then mark the write regardless.
+  const writeAfterPreceding = async (
+    eventId: string,
+    variables: unknown,
+    canWrite: (preceding: PrecedingEventWrites) => boolean,
+    write: () => Promise<unknown>,
+  ) => {
+    const preceding = await waitForPrecedingEventWrites(
+      queryClient,
+      eventId,
+      variables,
+    );
+    if (canWrite(preceding)) await write();
+    await markWrite();
+  };
   const convertedEvent = useCallback(
     (event: Payload_ConvertEvent["event"], isSomeday: boolean) => {
       const existing = findEventInCache(queryClient, event._id, source);
@@ -141,18 +161,14 @@ export function useEventMutations(
       "create",
       async (event) => {
         // Undo-of-delete restores via create with the original _id; waiting
-        // here keeps the POST from landing before the DELETE server-side. A
-        // failed delete means the event still exists, so the restore write is
-        // skipped. Normal creates use fresh ids and resolve immediately.
-        const preceding = await waitForPrecedingEventWrites(
-          queryClient,
+        // here keeps the POST from landing before the DELETE server-side.
+        // Normal creates use fresh ids and resolve immediately.
+        await writeAfterPreceding(
           event._id as string,
           event,
+          precedingDeleteOk,
+          () => repository.create(event),
         );
-        if (preceding.delete !== "error") {
-          await repository.create(event);
-        }
-        await markWrite();
         return event;
       },
       (event) =>
@@ -167,15 +183,9 @@ export function useEventMutations(
       "edit",
       async (variables) => {
         const { _id, event, applyTo } = variables;
-        const preceding = await waitForPrecedingEventWrites(
-          queryClient,
-          _id,
-          variables,
+        await writeAfterPreceding(_id, variables, precedingCreateOk, () =>
+          repository.edit(_id, event, { applyTo }),
         );
-        if (preceding.create !== "error") {
-          await repository.edit(_id, event, { applyTo });
-        }
-        await markWrite();
       },
       ({ _id, event, shouldRemove }) => {
         if (shouldRemove) {
@@ -200,15 +210,9 @@ export function useEventMutations(
       "delete",
       async (variables) => {
         const { _id, applyTo } = variables;
-        const preceding = await waitForPrecedingEventWrites(
-          queryClient,
-          _id,
-          variables,
+        await writeAfterPreceding(_id, variables, precedingCreateOk, () =>
+          repository.delete(_id, applyTo),
         );
-        if (preceding.create !== "error") {
-          await repository.delete(_id, applyTo);
-        }
-        await markWrite();
       },
       ({ _id }) => removeEventFromQueries(queryClient, _id, { source }),
     ),
@@ -225,15 +229,9 @@ export function useEventMutations(
         const applyTo = converted.recurrence?.eventId
           ? RecurringEventUpdateScope.ALL_EVENTS
           : RecurringEventUpdateScope.THIS_EVENT;
-        const preceding = await waitForPrecedingEventWrites(
-          queryClient,
-          event._id,
-          variables,
+        await writeAfterPreceding(event._id, variables, precedingCreateOk, () =>
+          repository.edit(event._id, converted, { applyTo }),
         );
-        if (preceding.create !== "error") {
-          await repository.edit(event._id, converted, { applyTo });
-        }
-        await markWrite();
       },
       ({ event, converted }) => {
         if (!converted) return;
@@ -256,15 +254,9 @@ export function useEventMutations(
         // Persist the captured event even when it overlaps no cached calendar
         // range (off-screen target): the optimistic insert simply matches
         // nothing, and settle-time invalidation establishes canonical membership.
-        const preceding = await waitForPrecedingEventWrites(
-          queryClient,
-          event._id,
-          variables,
+        await writeAfterPreceding(event._id, variables, precedingCreateOk, () =>
+          repository.edit(event._id, converted, {}),
         );
-        if (preceding.create !== "error") {
-          await repository.edit(event._id, converted, {});
-        }
-        await markWrite();
       },
       ({ event, converted }) => {
         if (!converted) return;
@@ -281,15 +273,12 @@ export function useEventMutations(
       "delete-someday",
       async (variables) => {
         const { _id, applyTo, skipRepository } = variables;
-        const preceding = await waitForPrecedingEventWrites(
-          queryClient,
+        await writeAfterPreceding(
           _id,
           variables,
+          (preceding) => !skipRepository && precedingCreateOk(preceding),
+          () => repository.delete(_id, applyTo),
         );
-        if (!skipRepository && preceding.create !== "error") {
-          await repository.delete(_id, applyTo);
-        }
-        await markWrite();
       },
       ({ _id }) =>
         removeEventFromQueries(queryClient, _id, { source, scope: "someday" }),

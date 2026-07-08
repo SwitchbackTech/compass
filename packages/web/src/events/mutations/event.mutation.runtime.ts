@@ -20,6 +20,15 @@ export type PrecedingEventWrites = {
   delete: "success" | "error" | null;
 };
 
+// An edit/delete/convert after a failed create has nothing to write against
+// (the id never existed server-side); an undo-restore create after a failed
+// delete has nothing to restore (the event still exists).
+export const precedingCreateOk = (preceding: PrecedingEventWrites) =>
+  preceding.create !== "error";
+
+export const precedingDeleteOk = (preceding: PrecedingEventWrites) =>
+  preceding.delete !== "error";
+
 // Reorder-someday variables are an array and carry no single id, which keeps
 // them out of per-event serialization (they batch-write order fields, not
 // event documents one at a time).
@@ -62,13 +71,12 @@ const whenSettled = (queryClient: QueryClient, mutation: AnyMutation) =>
  * also what makes mutual waits, and thus deadlock, impossible).
  *
  * `ownVariables` must be the exact variables object the caller's mutationFn
- * received; it identifies the caller in the mutation cache.
+ * received; it identifies the caller's own (already-registered) mutation in
+ * the cache, so its `mutationId` can anchor the "earlier only" filter.
  *
- * Returns the final status of the latest preceding create and delete so
- * callers can keep their outcome-dependent skips: an edit/delete after a
- * failed create skips its write (the id never existed server-side), and an
- * undo-restore create after a failed delete skips too (the event still
- * exists, so recreating it would duplicate).
+ * Returns the final status of the latest preceding create and delete —
+ * see `precedingCreateOk`/`precedingDeleteOk` for the outcome-dependent
+ * skips callers apply to them.
  */
 export async function waitForPrecedingEventWrites(
   queryClient: QueryClient,
@@ -82,11 +90,15 @@ export async function waitForPrecedingEventWrites(
   const self = mutations.find(
     (mutation) => mutation.state.variables === ownVariables,
   );
+  if (!self) {
+    // react-query registers a mutation (status "pending", variables set)
+    // before its mutationFn runs, so the caller is always present here.
+    throw new Error("waitForPrecedingEventWrites: caller not found in cache");
+  }
   const preceding = mutations.filter(
     (mutation) =>
       mutation.state.status === "pending" &&
-      mutation !== self &&
-      (!self || mutation.mutationId < self.mutationId) &&
+      mutation.mutationId < self.mutationId &&
       operationOf(mutation) !== undefined &&
       variablesEventId(mutation) === eventId,
   );
