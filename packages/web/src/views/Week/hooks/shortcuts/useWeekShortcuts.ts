@@ -1,11 +1,21 @@
 import { useCallback, useEffect, useRef } from "react";
+import { SOMEDAY_WEEK_LIMIT_MSG } from "@core/constants/core.constants";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
-import { type Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
+import { refocusEventElement } from "@web/common/utils/event/event.util";
+import {
+  getArrowKeyMovement,
+  nudgeEventDates,
+} from "@web/common/utils/event/event-nudge.util";
+import { buildConvertToSomedayEvent } from "@web/common/utils/event/someday.event.util";
 import {
   isDeleteTextEditingTarget,
   isEditableKeyboardTarget,
@@ -13,20 +23,22 @@ import {
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
+import { focusFirstSomedaySidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { draftActions } from "@web/events/stores/draft.store";
 import {
-  selectAllDayEvents,
-  selectGridEvents,
-} from "@web/ducks/events/selectors/event.selectors";
-import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
-import { selectIsSidebarOpen } from "@web/ducks/events/selectors/view.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { viewSlice } from "@web/ducks/events/slices/view.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
-import { confirmAndDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
+  selectIsSidebarOpen,
+  useViewStore,
+  viewActions,
+} from "@web/events/stores/view.store";
+import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {
+  type CalendarEventTarget,
   focusCalendarEventTarget,
   getFirstVisibleCalendarEventTarget,
   getFocusedCalendarEventTarget,
@@ -37,6 +49,7 @@ export interface ShortcutProps {
   isCurrentWeek: boolean;
   startOfView: Dayjs;
   endOfView: Dayjs;
+  weekDays: Dayjs[];
   util: WeekProps["util"];
   scrollUtil: Util_Scroll;
 }
@@ -51,30 +64,33 @@ export const useWeekShortcuts = ({
   isCurrentWeek,
   startOfView,
   endOfView,
+  weekDays,
   util,
   scrollUtil,
 }: ShortcutProps) => {
-  const dispatch = useAppDispatch();
+  const { delete: deleteEvent, convertToSomeday } = useEventMutations();
   const context = useSidebarContext(true);
   const {
     actions: { repositionDraftByKeyboard },
+    confirmation,
   } = useDraftContext();
+  const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
+    useSomedayEventViewModel(startOfView, endOfView);
 
-  const isSidebarOpen = useAppSelector(selectIsSidebarOpen);
-  const allDayEvents = useAppSelector(selectAllDayEvents);
-  const pendingEventIds = useAppSelector(selectPendingEventIds);
-  const timedEvents = useAppSelector(selectGridEvents);
+  const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  const { allDayEvents, timedEvents } = useWeekEventViewModel({
+    startOfView,
+    endOfView,
+  });
   const allDayEventsRef = useRef(allDayEvents);
-  const pendingEventIdsRef = useRef(pendingEventIds);
   const timedEventsRef = useRef(timedEvents);
   const { decrementWeek, incrementWeek, goToToday } = util;
   const { scrollToNow } = scrollUtil;
 
   useEffect(() => {
     allDayEventsRef.current = allDayEvents;
-    pendingEventIdsRef.current = pendingEventIds;
     timedEventsRef.current = timedEvents;
-  }, [allDayEvents, pendingEventIds, timedEvents]);
+  }, [allDayEvents, timedEvents]);
 
   const _createSomedayDraft = useCallback(
     (
@@ -84,17 +100,17 @@ export const useWeekShortcuts = ({
 
       // If sidebar is closed, open it first
       if (!isSidebarOpen) {
-        dispatch(viewSlice.actions.toggleSidebar());
+        viewActions.toggleSidebar();
       }
     },
-    [context, isSidebarOpen, dispatch],
+    [context, isSidebarOpen],
   );
 
   const _discardDraft = useCallback(() => {
     if (isEventFormOpen()) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
     }
-  }, [dispatch]);
+  }, []);
 
   const goToPreviousWeek = useCallback(() => {
     _discardDraft();
@@ -112,23 +128,13 @@ export const useWeekShortcuts = ({
     incrementWeek();
   }, [incrementWeek, _discardDraft]);
 
-  const openSidebar = useCallback(
-    () => dispatch(viewSlice.actions.toggleSidebar()),
-    [dispatch],
-  );
-
   const createAllDayDraftEvent = useCallback(() => {
-    void createAlldayDraft(startOfView, endOfView, "createShortcut", dispatch);
-  }, [dispatch, startOfView, endOfView]);
+    void createAlldayDraft(startOfView, endOfView, "createShortcut");
+  }, [startOfView, endOfView]);
 
   const createTimedDraftEvent = useCallback(() => {
-    void createTimedDraft(
-      isCurrentWeek,
-      startOfView,
-      "createShortcut",
-      dispatch,
-    );
-  }, [isCurrentWeek, startOfView, dispatch]);
+    void createTimedDraft(isCurrentWeek, startOfView, "createShortcut");
+  }, [isCurrentWeek, startOfView]);
 
   const createSomedayMonthDraft = useCallback(() => {
     _createSomedayDraft(Categories_Event.SOMEDAY_MONTH);
@@ -138,12 +144,37 @@ export const useWeekShortcuts = ({
     _createSomedayDraft(Categories_Event.SOMEDAY_WEEK);
   }, [_createSomedayDraft]);
 
+  const focusSidebar = useCallback(() => {
+    if (!isSidebarOpen) {
+      viewActions.toggleSidebar();
+      // The sidebar renders conditionally; focus after the open commits
+      requestAnimationFrame(() => focusFirstSomedaySidebarItem());
+      return;
+    }
+
+    focusFirstSomedaySidebarItem();
+  }, [isSidebarOpen]);
+
   const focusFirstCalendarEvent = useCallback(() => {
     const target = getFirstVisibleCalendarEventTarget();
     if (!target) return;
 
     focusCalendarEventTarget(target);
   }, []);
+
+  const findCalendarEventForTarget = useCallback(
+    (target: CalendarEventTarget) => {
+      const events =
+        target.eventType === "all-day"
+          ? allDayEventsRef.current
+          : timedEventsRef.current;
+
+      return (
+        events.find((candidate) => candidate._id === target.eventId) ?? null
+      );
+    },
+    [],
+  );
 
   const getTargetedCalendarEvent = useCallback(() => {
     const target =
@@ -152,17 +183,12 @@ export const useWeekShortcuts = ({
       getFirstVisibleCalendarEventTarget();
 
     if (!target) return null;
-    if (pendingEventIdsRef.current.includes(target.eventId)) return null;
 
-    const events =
-      target.eventType === "all-day"
-        ? allDayEventsRef.current
-        : timedEventsRef.current;
-    const event = events.find((candidate) => candidate._id === target.eventId);
+    const event = findCalendarEventForTarget(target);
     if (!event) return null;
 
     return { event, target };
-  }, []);
+  }, [findCalendarEventForTarget]);
 
   const editTargetedCalendarEvent = useCallback(() => {
     const resolvedTarget = getTargetedCalendarEvent();
@@ -170,17 +196,15 @@ export const useWeekShortcuts = ({
 
     const { event, target } = resolvedTarget;
 
-    dispatch(
-      draftSlice.actions.start({
-        activity: "keyboardEdit",
-        event,
-        eventType:
-          target.eventType === "all-day"
-            ? Categories_Event.ALLDAY
-            : Categories_Event.TIMED,
-      }),
-    );
-  }, [dispatch, getTargetedCalendarEvent]);
+    draftActions.start({
+      activity: "keyboardEdit",
+      event,
+      eventType:
+        target.eventType === "all-day"
+          ? Categories_Event.ALLDAY
+          : Categories_Event.TIMED,
+    });
+  }, [getTargetedCalendarEvent]);
 
   const deleteTargetedCalendarEvent = useCallback(
     (keyboardEvent: KeyboardEvent) => {
@@ -188,6 +212,12 @@ export const useWeekShortcuts = ({
         isDeleteTextEditingTarget(keyboardEvent) ||
         isEventFormKeyboardTarget(keyboardEvent)
       ) {
+        return;
+      }
+
+      // Focus inside the sidebar (e.g. via the "u" shortcut) means the user
+      // is acting on someday events, not grid events
+      if (document.activeElement?.closest(`#${ID_SIDEBAR}`)) {
         return;
       }
 
@@ -199,12 +229,90 @@ export const useWeekShortcuts = ({
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
 
-      confirmAndDeleteEvent({
-        dispatch,
-        existingEvent: resolvedTarget.event,
-      });
+      deleteEventAndDiscardDraft(deleteEvent, resolvedTarget.event);
     },
-    [dispatch, getTargetedCalendarEvent],
+    [deleteEvent, getTargetedCalendarEvent],
+  );
+
+  const convertFocusedEventToSomeday = useCallback(
+    (event: Schema_GridEvent) => {
+      if (isAtWeeklyLimit) {
+        alert(SOMEDAY_WEEK_LIMIT_MSG);
+        return;
+      }
+
+      const somedayEvent = buildConvertToSomedayEvent(
+        event,
+        {
+          startDate: startOfView.format(YEAR_MONTH_DAY_FORMAT),
+          endDate: endOfView.format(YEAR_MONTH_DAY_FORMAT),
+        },
+        somedayWeekCount,
+      );
+
+      convertToSomeday({ event: somedayEvent });
+
+      if (!isSidebarOpen) {
+        viewActions.toggleSidebar();
+      }
+      refocusEventElement(somedayEvent._id);
+    },
+    [
+      convertToSomeday,
+      endOfView,
+      isAtWeeklyLimit,
+      isSidebarOpen,
+      somedayWeekCount,
+      startOfView,
+    ],
+  );
+
+  const moveFocusedCalendarEvent = useCallback(
+    (keyboardEvent: KeyboardEvent) => {
+      if (isEventFormOpen()) return;
+
+      // Focused only (no hover/first-visible fallback): moving an event the
+      // user isn't focused on would be surprising
+      const target = getFocusedCalendarEventTarget();
+      if (!target) return;
+
+      const event = findCalendarEventForTarget(target);
+      if (!event?._id) return;
+
+      const movement = getArrowKeyMovement(
+        keyboardEvent.key,
+        Boolean(event.isAllDay),
+      );
+      if (!movement) return;
+
+      const start = dayjs(event.startDate);
+
+      if (movement.days === -1 && !start.isAfter(weekDays[0], "day")) {
+        keyboardEvent.preventDefault();
+        convertFocusedEventToSomeday(event);
+        return;
+      }
+
+      if (
+        movement.days === 1 &&
+        !start.isBefore(weekDays[weekDays.length - 1], "day")
+      ) {
+        return;
+      }
+
+      const dates = nudgeEventDates(event, movement);
+      if (!dates) return;
+
+      keyboardEvent.preventDefault();
+      void confirmation.onSubmit({ ...event, ...dates });
+      refocusEventElement(event._id);
+    },
+    [
+      confirmation,
+      convertFocusedEventToSomeday,
+      findCalendarEventForTarget,
+      weekDays,
+    ],
   );
 
   const moveShortcutCreatedDraft = useCallback(
@@ -220,12 +328,12 @@ export const useWeekShortcuts = ({
     [repositionDraftByKeyboard],
   );
 
-  useAppHotkeyUp("[", openSidebar);
   useAppHotkeyUp("J", goToPreviousWeek);
   useAppHotkeyUp("K", goToNextWeek);
   useAppHotkeyUp("T", toToday);
   useAppHotkeyUp("A", createAllDayDraftEvent);
   useAppHotkeyUp("C", createTimedDraftEvent);
+  useAppHotkeyUp("U", focusSidebar);
   useAppHotkeyUp("I", focusFirstCalendarEvent);
   useAppHotkeyUp("M", editTargetedCalendarEvent);
   useAppHotkey("Delete", deleteTargetedCalendarEvent, {
@@ -251,6 +359,10 @@ export const useWeekShortcuts = ({
     moveShortcutCreatedDraft,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
+  useAppHotkey("Shift+ArrowUp", moveFocusedCalendarEvent);
+  useAppHotkey("Shift+ArrowDown", moveFocusedCalendarEvent);
+  useAppHotkey("Shift+ArrowLeft", moveFocusedCalendarEvent);
+  useAppHotkey("Shift+ArrowRight", moveFocusedCalendarEvent);
   useAppHotkeyUp("Shift+M", createSomedayMonthDraft);
   useAppHotkeyUp("Shift+W", createSomedayWeekDraft);
 };

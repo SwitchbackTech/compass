@@ -15,10 +15,13 @@ export interface CalendarLayoutCacheOptions {
   };
   timedColumnsElementId?: string;
   timedVisibleHours: number;
-  visibleDateCount: number;
+  /** Local YYYY-MM-DD dates of the rendered day columns, in window order. */
+  visibleDates: string[];
 }
 
 export interface CalendarDayColumnCache {
+  /** Local YYYY-MM-DD date this column renders. */
+  date: string;
   index: number;
   left: number;
   width: number;
@@ -52,7 +55,7 @@ export interface CalendarLayoutCache {
 
 interface BuildCalendarDayColumnsInput {
   left: number;
-  visibleDateCount: number;
+  visibleDates: string[];
   width: number;
 }
 
@@ -65,12 +68,12 @@ export const buildTimedCalendarLayoutCache = ({
   timedColumnsElement,
   timedColumnsElementId,
   timedVisibleHours,
-  visibleDateCount,
+  visibleDates,
 }: CalendarLayoutCacheOptions &
   CalendarLayoutCacheSources): CalendarLayoutCache | null => {
   const mainGrid = mainGridElement ?? getElementById(mainGridElementId);
 
-  if (!mainGrid) {
+  if (!mainGrid || visibleDates.length === 0) {
     return null;
   }
 
@@ -81,7 +84,7 @@ export const buildTimedCalendarLayoutCache = ({
     rect;
 
   return {
-    dayColumns: buildCalendarDayColumns(columnsRect, visibleDateCount),
+    dayColumns: buildCalendarDayColumns(columnsRect, visibleDates),
     edgeNavigation: {
       bottom: rect.bottom,
       edgeThresholdPx,
@@ -113,19 +116,19 @@ export const buildAllDayCalendarLayoutCache = ({
   allDayColumnsElementId,
   edgeThresholdPx,
   snapMinutes,
-  visibleDateCount,
+  visibleDates,
 }: CalendarLayoutCacheOptions &
   CalendarLayoutCacheSources): CalendarLayoutCache | null => {
   const rect = getElementRect(
     allDayColumnsElement ?? getElementById(allDayColumnsElementId),
   );
 
-  if (!rect) {
+  if (!rect || visibleDates.length === 0) {
     return null;
   }
 
   return {
-    dayColumns: buildCalendarDayColumns(rect, visibleDateCount),
+    dayColumns: buildCalendarDayColumns(rect, visibleDates),
     edgeNavigation: {
       bottom: rect.bottom,
       edgeThresholdPx,
@@ -143,20 +146,23 @@ export function buildCalendarDayColumns(
 ): CalendarDayColumnCache[];
 export function buildCalendarDayColumns(
   input: Pick<DOMRect, "left" | "width">,
-  visibleDateCount: number,
+  visibleDates: string[],
 ): CalendarDayColumnCache[];
 export function buildCalendarDayColumns(
   input: BuildCalendarDayColumnsInput | Pick<DOMRect, "left" | "width">,
-  visibleDateCount?: number,
+  visibleDates?: string[],
 ): CalendarDayColumnCache[] {
-  const safeVisibleDateCount = Math.max(
-    1,
-    visibleDateCount ??
-      (input as BuildCalendarDayColumnsInput).visibleDateCount,
-  );
-  const columnWidth = input.width / safeVisibleDateCount;
+  const dates =
+    visibleDates ?? (input as BuildCalendarDayColumnsInput).visibleDates;
 
-  return Array.from({ length: safeVisibleDateCount }, (_, index) => ({
+  if (dates.length === 0) {
+    return [];
+  }
+
+  const columnWidth = input.width / dates.length;
+
+  return dates.map((date, index) => ({
+    date,
     index,
     left: input.left + columnWidth * index,
     width: columnWidth,

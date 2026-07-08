@@ -12,12 +12,6 @@ import {
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
-  selectAllDayDayEvents,
-  selectTimedDayEvents,
-} from "@web/ducks/events/selectors/event.selectors";
-import { selectPendingEventIds } from "@web/ducks/events/selectors/pending.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
-import {
   DayAllDayCalendarEvent,
   DayTimedCalendarEvent,
 } from "./DayCalendarEventCards";
@@ -30,6 +24,7 @@ import {
 
 interface DayEventsProps {
   draft: Schema_Event | null;
+  events: Schema_GridEvent[];
   measurements: CalendarGridMeasurements;
   onOpenEvent: (event: Schema_GridEvent) => void;
   visibleDates: CalendarGridVisibleDate[];
@@ -37,12 +32,11 @@ interface DayEventsProps {
 
 export const DayCalendarAllDayEventsLayer = ({
   draft,
+  events: allDayEvents,
   measurements,
   onOpenEvent,
   visibleDates,
 }: DayEventsProps) => {
-  const allDayEvents = useAppSelector(selectAllDayDayEvents);
-  const pendingEventIds = useAppSelector(selectPendingEventIds);
   const savedEventIds = useMemo(
     () => getCalendarEventIdSet(allDayEvents),
     [allDayEvents],
@@ -72,7 +66,6 @@ export const DayCalendarAllDayEventsLayer = ({
         <DayAllDayCalendarEvent
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
-          isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
           key={event._id}
           measurements={measurements}
@@ -86,12 +79,11 @@ export const DayCalendarAllDayEventsLayer = ({
 
 export const DayCalendarTimedEventsLayer = ({
   draft,
+  events: timedEvents,
   measurements,
   onOpenEvent,
   visibleDates,
 }: DayEventsProps) => {
-  const timedEvents = useAppSelector(selectTimedDayEvents);
-  const pendingEventIds = useAppSelector(selectPendingEventIds);
   const savedEventIds = useMemo(
     () => getCalendarEventIdSet(timedEvents),
     [timedEvents],
@@ -118,7 +110,6 @@ export const DayCalendarTimedEventsLayer = ({
           deckLayout={deckLayout}
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
-          isPending={Boolean(event._id && pendingEventIds.includes(event._id))}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
           key={event._id}
           measurements={measurements}

@@ -12,7 +12,6 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { StringV4Schema } from "@core/types/type.utils";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
@@ -21,29 +20,22 @@ import {
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import {
+  getArrowKeyMovement,
+  isTimedEventInsideOneDay,
+} from "@web/common/utils/event/event-nudge.util";
+import { buildConvertToSomedayEvent } from "@web/common/utils/event/someday.event.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import { EventInViewParser } from "@web/common/utils/parse/view.parser";
+import { type Payload_EditEvent } from "@web/events/event.types";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
-  type Payload_ConvertEvent,
-  type Payload_EditEvent,
-} from "@web/ducks/events/event.types";
-import {
+  draftActions,
   selectDraft,
   selectDraftStatus,
-} from "@web/ducks/events/selectors/draft.selectors";
-import {
-  selectIsAtWeeklyLimit,
-  selectSomedayWeekCount,
-} from "@web/ducks/events/selectors/someday.selectors";
-import { selectPaginatedEventsBySectionType } from "@web/ducks/events/selectors/util.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import {
-  createEventSlice,
-  deleteEventSlice,
-  editEventSlice,
-} from "@web/ducks/events/slices/event.slice";
-import { getWeekEventsSlice } from "@web/ducks/events/slices/week.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
 import {
@@ -56,21 +48,6 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 import { getDragDurationMinutes } from "./drag-duration.util";
 
-const getDraftKeyboardMovement = (key: string, isAllDay: boolean) => {
-  switch (key) {
-    case "ArrowLeft":
-      return { days: -1, minutes: 0 };
-    case "ArrowRight":
-      return { days: 1, minutes: 0 };
-    case "ArrowUp":
-      return isAllDay ? null : { days: 0, minutes: -GRID_TIME_STEP };
-    case "ArrowDown":
-      return isAllDay ? null : { days: 0, minutes: GRID_TIME_STEP };
-    default:
-      return null;
-  }
-};
-
 const canRepositionDraftByKeyboard = (activity: string | null | undefined) =>
   activity === "createShortcut" ||
   activity === "gridClick" ||
@@ -82,23 +59,16 @@ export const useDraftActions = (
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
 ) => {
-  const dispatch = useAppDispatch();
-  const isAtWeeklyLimit = useAppSelector(selectIsAtWeeklyLimit);
-  const somedayWeekCount = useAppSelector(selectSomedayWeekCount);
-  const reduxDraft = useAppSelector(selectDraft);
-  const pendingEventIds = useAppSelector(
-    (state) => state.events.pendingEvents.eventIds,
-  );
-  const currentWeekEvents = useAppSelector((state) =>
-    selectPaginatedEventsBySectionType(state, "week"),
-  );
+  const eventMutations = useEventMutations();
+  const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
+    useSomedayEventViewModel(
+      weekProps.component.startOfView,
+      weekProps.component.endOfView,
+    );
+  const draftFromStore = useDraftStore(selectDraft);
 
-  const {
-    activity,
-    dateToResize,
-    eventType: reduxDraftType,
-    isDrafting,
-  } = useAppSelector(selectDraftStatus)!;
+  const { activity, dateToResize, eventType, isDrafting } =
+    useDraftStore(selectDraftStatus)!;
 
   const {
     dateBeingChanged,
@@ -145,18 +115,18 @@ export const useDraftActions = (
   }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
 
   const isSomeday = useCallback((): boolean => {
-    return reduxDraft?.isSomeday ?? false;
-  }, [reduxDraft?.isSomeday]);
+    return draftFromStore?.isSomeday ?? false;
+  }, [draftFromStore?.isSomeday]);
 
   const isInstance = useCallback((): boolean => {
-    return ObjectId.isValid(reduxDraft?.recurrence?.eventId ?? "");
-  }, [reduxDraft?.recurrence?.eventId]);
+    return ObjectId.isValid(draftFromStore?.recurrence?.eventId ?? "");
+  }, [draftFromStore?.recurrence?.eventId]);
 
   const isRecurrence = useCallback((): boolean => {
-    const hasRRule = Array.isArray(reduxDraft?.recurrence?.rule);
+    const hasRRule = Array.isArray(draftFromStore?.recurrence?.rule);
 
     return hasRRule || isInstance();
-  }, [reduxDraft?.recurrence?.rule, isInstance]);
+  }, [draftFromStore?.recurrence?.rule, isInstance]);
 
   const closeForm = useCallback(() => {
     setIsFormOpen(false);
@@ -183,34 +153,24 @@ export const useDraftActions = (
   const discard = useCallback(() => {
     reset();
 
-    if (reduxDraft || reduxDraftType) {
-      dispatch(draftSlice.actions.discard(undefined));
+    if (draftFromStore || eventType) {
+      draftActions.discard();
     }
-  }, [dispatch, reduxDraft, reduxDraftType, reset]);
+  }, [draftFromStore, eventType, reset]);
 
   const deleteEvent = useCallback(
     (
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
-      const eventToDelete = draft ?? reduxDraft;
-      const { data: _title } = StringV4Schema.safeParse(eventToDelete?.title);
-      const title = _title ?? "this event";
-      const usePrefix = applyTo === RecurringEventUpdateScope.ALL_EVENTS;
-      const prefix = usePrefix ? "all instances of - " : "";
+      // No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z
+      const eventToDelete = draft ?? draftFromStore;
 
-      const confirmed = window.confirm(`Delete ${prefix}${title}?`);
-
-      if (confirmed && eventToDelete?._id) {
-        dispatch(
-          deleteEventSlice.actions.request({
-            _id: eventToDelete._id,
-            applyTo,
-          }),
-        );
+      if (eventToDelete?._id) {
+        eventMutations.delete({ _id: eventToDelete._id, applyTo });
       }
       discard();
     },
-    [dispatch, draft, reduxDraft, discard],
+    [draft, draftFromStore, discard, eventMutations],
   );
 
   const convert = useCallback(
@@ -220,37 +180,17 @@ export const useDraftActions = (
         return;
       }
 
-      const event: Payload_ConvertEvent["event"] = {
-        ...draft,
-        _id: draft!._id!,
-        user: draft?.user ?? "",
-        isAllDay: false,
-        isSomeday: true,
-        startDate: start,
-        endDate: end,
-        origin: draft?.origin,
-        priority: draft?.priority ?? Priorities.UNASSIGNED,
-        order: somedayWeekCount,
-      };
+      const event = buildConvertToSomedayEvent(
+        draft!,
+        { startDate: start, endDate: end },
+        somedayWeekCount,
+      );
 
-      if (isRecurrence()) {
-        event.recurrence = {
-          ...event.recurrence,
-          rule: event.recurrence?.rule?.map((rule) => {
-            const isRRule = rule.startsWith("RRULE:");
-
-            if (!isRRule) return rule;
-
-            return rule.replace(/FREQ=\w+;/, "FREQ=WEEKLY;");
-          }) as string[],
-        };
-      }
-
-      dispatch(getWeekEventsSlice.actions.convert({ event }));
+      eventMutations.convertToSomeday({ event });
 
       discard();
     },
-    [discard, dispatch, draft, isAtWeeklyLimit, somedayWeekCount, isRecurrence],
+    [discard, draft, eventMutations, isAtWeeklyLimit, somedayWeekCount],
   );
 
   const openForm = useCallback(() => {
@@ -263,20 +203,11 @@ export const useDraftActions = (
       if (!isExisting) return "CREATE";
 
       if (isExisting) {
-        // Prevent updates if event is pending (waiting for backend confirmation)
-        const isPending = draft._id
-          ? pendingEventIds.includes(draft._id)
-          : false;
-        if (isPending) {
-          // Event is pending, discard the change and return to original position
-          return "DISCARD";
-        }
-
         if (isFormOpenBeforeDragging) {
           return "OPEN_FORM";
         }
-        const isSame = reduxDraft
-          ? !DirtyParser.isEventDirty(draft, reduxDraft)
+        const isSame = draftFromStore
+          ? !DirtyParser.isEventDirty(draft, draftFromStore)
           : false;
         if (isSame) {
           // no need to make HTTP request
@@ -285,7 +216,7 @@ export const useDraftActions = (
       }
       return "UPDATE";
     },
-    [reduxDraft, isFormOpenBeforeDragging, pendingEventIds],
+    [draftFromStore, isFormOpenBeforeDragging],
   );
 
   const getEditSlicePayload = useCallback(
@@ -306,29 +237,6 @@ export const useDraftActions = (
     [weekProps.component.endOfView, weekProps.component.startOfView],
   );
 
-  const shouldAddToView = useCallback(
-    (event: Schema_WebEvent) => {
-      const viewParser = new EventInViewParser(
-        event,
-        weekProps.component.startOfView,
-        weekProps.component.endOfView,
-      );
-      const lastNavSource = weekProps.util.getLastNavigationSource();
-      const idsInView = currentWeekEvents?.data ?? [];
-      const shouldAddToView = viewParser.shouldAddToViewAfterDragToEdge(
-        lastNavSource,
-        idsInView,
-      );
-      return shouldAddToView;
-    },
-    [
-      weekProps.component.startOfView,
-      weekProps.component.endOfView,
-      weekProps.util,
-      currentWeekEvents?.data,
-    ],
-  );
-
   const submit = useCallback(
     async (
       draft: Schema_GridEvent,
@@ -344,12 +252,10 @@ export const useDraftActions = (
           return;
         case "CREATE": {
           const event = new OnSubmitParser(draft).parse();
-          dispatch(
-            createEventSlice.actions.request({
-              ...event,
-              recurrence: event.recurrence as Recurrence["recurrence"],
-            }),
-          );
+          eventMutations.create({
+            ...event,
+            recurrence: event.recurrence as Recurrence["recurrence"],
+          });
           return;
         }
         case "UPDATE": {
@@ -360,11 +266,7 @@ export const useDraftActions = (
 
           const event = new OnSubmitParser(draft).parse();
           const payload = getEditSlicePayload(event, applyTo);
-          dispatch(editEventSlice.actions.request(payload));
-
-          if (shouldAddToView(event)) {
-            dispatch(getWeekEventsSlice.actions.insert(event._id!));
-          }
+          eventMutations.edit(payload);
 
           if (isFormOpenBeforeDragging) {
             openForm();
@@ -380,23 +282,22 @@ export const useDraftActions = (
     [
       determineSubmitAction,
       discard,
-      dispatch,
+      eventMutations,
       getEditSlicePayload,
       isFormOpenBeforeDragging,
       openForm,
-      shouldAddToView,
     ],
   );
 
   const duplicateEvent = useCallback(() => {
     const draft = MapEvent.removeProviderData({
-      ...(reduxDraft as Schema_Event),
+      ...(draftFromStore as Schema_Event),
     }) as Schema_GridEvent;
     const { _id: _duplicatedEventId, ...duplicateDraft } = draft;
 
     submit(duplicateDraft);
     discard();
-  }, [reduxDraft, submit, discard]);
+  }, [draftFromStore, submit, discard]);
 
   const isInsideVisibleWeek = useCallback(
     (start: Dayjs) => {
@@ -410,17 +311,11 @@ export const useDraftActions = (
     [weekProps.component.endOfView, weekProps.component.startOfView],
   );
 
-  const isTimedDraftInsideOneDay = useCallback((start: Dayjs, end: Dayjs) => {
-    const midnightAfterStart = start.add(1, "day").startOf("day");
-
-    return end.isSame(start, "day") || end.isSame(midnightAfterStart);
-  }, []);
-
   const repositionDraftByKeyboard = useCallback(
     (key: string) => {
       if (!canRepositionDraftByKeyboard(activity) || !draft) return false;
 
-      const movement = getDraftKeyboardMovement(key, Boolean(draft.isAllDay));
+      const movement = getArrowKeyMovement(key, Boolean(draft.isAllDay));
       if (!movement) return false;
 
       const start = dayjs(draft.startDate);
@@ -434,7 +329,7 @@ export const useDraftActions = (
 
       if (!isInsideVisibleWeek(nextStart)) return false;
 
-      if (!draft.isAllDay && !isTimedDraftInsideOneDay(nextStart, nextEnd)) {
+      if (!draft.isAllDay && !isTimedEventInsideOneDay(nextStart, nextEnd)) {
         return false;
       }
 
@@ -446,7 +341,7 @@ export const useDraftActions = (
 
       return true;
     },
-    [activity, draft, isInsideVisibleWeek, isTimedDraftInsideOneDay, setDraft],
+    [activity, draft, isInsideVisibleWeek, setDraft],
   );
 
   const drag = useCallback(
@@ -552,7 +447,7 @@ export const useDraftActions = (
 
   const resize = useCallback(
     (e: MouseEvent) => {
-      if (!draft || !reduxDraft) return; // TS Guard
+      if (!draft || !draftFromStore) return; // TS Guard
 
       const _dateBeingChanged = dateBeingChanged as "startDate" | "endDate";
       const oppositeKey =
@@ -636,7 +531,7 @@ export const useDraftActions = (
       const justFlipped = flipIfNeeded(currTime);
       const dateChanged = justFlipped ? oppositeKey : _dateBeingChanged;
 
-      const origTime = dayjs(reduxDraft[dateChanged]).add(-1, "day");
+      const origTime = dayjs(draftFromStore[dateChanged]).add(-1, "day");
 
       let updatedTime: string;
       let hasMoved: boolean;
@@ -671,7 +566,7 @@ export const useDraftActions = (
       dateBeingChanged,
       dateCalcs,
       draft,
-      reduxDraft,
+      draftFromStore,
       isResizing,
       isValidMovement,
       resizeStatus?.hasMoved,
@@ -685,35 +580,35 @@ export const useDraftActions = (
   const create = useCallback(async () => {
     setDraftSessionKey((key) => key + 1);
 
-    if (reduxDraft !== null) {
-      setDraft(reduxDraft as Schema_GridEvent);
+    if (draftFromStore !== null) {
+      setDraft(draftFromStore as Schema_GridEvent);
     } else {
-      const { startDate, endDate } = reduxDraft ?? {
+      const { startDate, endDate } = draftFromStore ?? {
         startDate: undefined,
         endDate: undefined,
       };
 
       const defaultDraft = (await assembleDefaultEvent(
-        reduxDraftType,
+        eventType,
         startDate,
         endDate,
       )) as Schema_GridEvent;
       setDraft(defaultDraft);
     }
     openForm();
-  }, [openForm, reduxDraft, reduxDraftType, setDraft, setDraftSessionKey]);
+  }, [openForm, draftFromStore, eventType, setDraft, setDraftSessionKey]);
 
   const handleChange = useCallback(async () => {
     const isSomeday =
-      reduxDraftType === Categories_Event.SOMEDAY_WEEK ||
-      reduxDraftType === Categories_Event.SOMEDAY_MONTH;
+      eventType === Categories_Event.SOMEDAY_WEEK ||
+      eventType === Categories_Event.SOMEDAY_MONTH;
     if (!isDrafting) return;
     if (activity === "eventRightClick") {
       return; // Prevents form and context menu from opening at same time
     }
     if (!isSomeday && activity === "keyboardEdit") {
       setDraftSessionKey((key) => key + 1);
-      setDraft(reduxDraft as Schema_GridEvent);
+      setDraft(draftFromStore as Schema_GridEvent);
       openForm();
       return;
     }
@@ -726,17 +621,17 @@ export const useDraftActions = (
     }
     if (activity === "resizing") {
       setDraftSessionKey((key) => key + 1);
-      setDraft(reduxDraft as Schema_GridEvent);
+      setDraft(draftFromStore as Schema_GridEvent);
       startResizing();
     }
   }, [
-    reduxDraftType,
+    eventType,
     isDrafting,
     activity,
     create,
     setDraft,
     setDraftSessionKey,
-    reduxDraft,
+    draftFromStore,
     startResizing,
     openForm,
   ]);

@@ -1,4 +1,6 @@
-import { type EventRepository } from "./event.repository.interface";
+import { type EventRepository } from "./event.repository.types";
+
+export type EventRepositorySource = "local" | "remote";
 
 type EventRepositoryDependencies = {
   createLocalEventRepository: () => EventRepository;
@@ -8,6 +10,53 @@ type EventRepositoryDependencies = {
   isGoogleRevoked: () => boolean;
 };
 
+export function createGetEventRepositorySource({
+  hasUserEverAuthenticated,
+  isBackendUnavailable,
+  isGoogleRevoked,
+}: Omit<
+  EventRepositoryDependencies,
+  "createLocalEventRepository" | "createRemoteEventRepository"
+>) {
+  return function getEventRepositorySource(
+    sessionExists: boolean,
+  ): EventRepositorySource {
+    if (isGoogleRevoked()) {
+      return "local";
+    }
+
+    if (isBackendUnavailable()) {
+      return "local";
+    }
+
+    if (hasUserEverAuthenticated()) {
+      return "remote";
+    }
+
+    if (sessionExists) {
+      return "remote";
+    }
+
+    return "local";
+  };
+}
+
+export function createGetEventRepositoryBySource({
+  createLocalEventRepository,
+  createRemoteEventRepository,
+}: Pick<
+  EventRepositoryDependencies,
+  "createLocalEventRepository" | "createRemoteEventRepository"
+>) {
+  return function getEventRepositoryBySource(
+    source: EventRepositorySource,
+  ): EventRepository {
+    return source === "remote"
+      ? createRemoteEventRepository()
+      : createLocalEventRepository();
+  };
+}
+
 export function createGetEventRepository({
   createLocalEventRepository,
   createRemoteEventRepository,
@@ -15,23 +64,17 @@ export function createGetEventRepository({
   isBackendUnavailable,
   isGoogleRevoked,
 }: EventRepositoryDependencies) {
+  const getEventRepositorySource = createGetEventRepositorySource({
+    hasUserEverAuthenticated,
+    isBackendUnavailable,
+    isGoogleRevoked,
+  });
+  const getEventRepositoryBySource = createGetEventRepositoryBySource({
+    createLocalEventRepository,
+    createRemoteEventRepository,
+  });
+
   return function getEventRepository(sessionExists: boolean): EventRepository {
-    if (isGoogleRevoked()) {
-      return createLocalEventRepository();
-    }
-
-    if (isBackendUnavailable()) {
-      return createLocalEventRepository();
-    }
-
-    if (hasUserEverAuthenticated()) {
-      return createRemoteEventRepository();
-    }
-
-    if (sessionExists) {
-      return createRemoteEventRepository();
-    }
-
-    return createLocalEventRepository();
+    return getEventRepositoryBySource(getEventRepositorySource(sessionExists));
   };
 }

@@ -3,9 +3,8 @@ import { useCallback, useState } from "react";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { type Entities_Event } from "@web/ducks/events/event.types";
-import { selectEventEntities } from "@web/ducks/events/selectors/event.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { type Entities_Event } from "@web/events/event.types";
+import { useEventById } from "@web/events/queries/useEventById";
 import { type useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 const hasMultipleRecurrenceOccurrences = (
@@ -55,7 +54,10 @@ export const useDraftConfirmation = ({
   const { isInstance, isRecurrence } = actions;
   const { draft } = state;
   const isSomeday = actions.isSomeday();
-  const eventEntities = useAppSelector(selectEventEntities);
+  const baseEventId = draft?.recurrence?.eventId;
+  const baseEvent = useEventById(baseEventId);
+  const eventEntities =
+    baseEventId && baseEvent ? { [baseEventId]: baseEvent } : {};
 
   const [
     isRecurrenceUpdateScopeDialogOpen,

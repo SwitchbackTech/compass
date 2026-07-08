@@ -59,7 +59,7 @@ export type CompleteGoogleAuthorizationResult =
 
 const fail = (
   message = GOOGLE_AUTHORIZATION_ERROR_MESSAGE,
-  returnPath = ROOT_ROUTES.DAY,
+  returnPath: string = ROOT_ROUTES.DAY,
 ): CompleteGoogleAuthorizationResult => ({
   message,
   returnPath,

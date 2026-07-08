@@ -1,7 +1,11 @@
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { useContext } from "react";
-import { authSlice } from "@web/ducks/auth/slices/auth.slice";
-import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
+import {
+  initialUserMetadataState,
+  userMetadataActions,
+  useUserMetadataStore,
+} from "@web/auth/state/user-metadata.store";
+import { DEFAULT_AUTH_STATE } from "@web/common/constants/auth.constants";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Create mocks at module level
@@ -9,12 +13,11 @@ const refreshUserMetadata = mock().mockResolvedValue(undefined);
 const openStream = mock();
 const closeStream = mock();
 const getStream = mock();
-const dispatch = mock();
 const markUserAsAuthenticated = mock();
 const getLastKnownEmail = mock().mockReturnValue("test@example.com");
 const clearAnonymousCalendarChangeSignUpPrompt = mock();
 const clearAuthenticationState = mock();
-const getAuthState = mock();
+const getAuthState = mock(() => DEFAULT_AUTH_STATE);
 const hasUserEverAuthenticated = mock();
 const markAnonymousCalendarChangeForSignUpPrompt = mock();
 const shouldShowAnonymousCalendarChangeSignUpPrompt = mock(() => false);
@@ -58,12 +61,6 @@ mock.module("@web/sse/provider/SSEProvider", () => ({
   openStream,
   closeStream,
   getStream,
-}));
-
-mock.module("@web/store", () => ({
-  store: {
-    dispatch,
-  },
 }));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
@@ -120,12 +117,11 @@ describe("SessionProvider sessionInit", () => {
     openStream.mockClear();
     closeStream.mockClear();
     getStream.mockClear();
-    dispatch.mockClear();
     markUserAsAuthenticated.mockClear();
     getLastKnownEmail.mockClear().mockReturnValue("test@example.com");
     clearAnonymousCalendarChangeSignUpPrompt.mockClear();
     clearAuthenticationState.mockClear();
-    getAuthState.mockClear();
+    getAuthState.mockClear().mockReturnValue(DEFAULT_AUTH_STATE);
     hasUserEverAuthenticated.mockClear();
     markAnonymousCalendarChangeForSignUpPrompt.mockClear();
     shouldShowAnonymousCalendarChangeSignUpPrompt.mockClear();
@@ -165,13 +161,11 @@ describe("SessionProvider sessionInit", () => {
     expect(closeStream).toHaveBeenCalledTimes(1);
     expect(openStream).toHaveBeenCalledTimes(1);
 
-    // Simulate SIGN_OUT event
+    // Simulate SIGN_OUT event; user metadata should be cleared
+    userMetadataActions.set({ google: { connectionState: "HEALTHY" } });
     session.emit("SIGN_OUT", { action: "SIGN_OUT" });
 
-    expect(dispatch).toHaveBeenCalledWith(authSlice.actions.resetAuth());
-    expect(dispatch).toHaveBeenCalledWith(
-      userMetadataSlice.actions.clear(undefined),
-    );
+    expect(useUserMetadataStore.getState()).toEqual(initialUserMetadataState);
     expect(closeStream).toHaveBeenCalledTimes(2);
   });
 

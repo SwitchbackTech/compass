@@ -1,8 +1,10 @@
 import { useCallback } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import { getElemById } from "@web/common/utils/grid/grid.util";
-import { selectDraftStatus } from "@web/ducks/events/selectors/draft.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import {
+  selectDraftStatus,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { useEventListener } from "@web/views/Week/hooks/mouse/useEventListener";
 import { useDraftContext } from "../../context/useDraftContext";
 
@@ -11,8 +13,8 @@ export const useGridMouseUp = () => {
   const { draft, dragStatus, isDragging, isResizing, resizeStatus } = state;
   const { discard, openForm, stopDragging, stopResizing, submit } = actions;
 
-  const draftStatus = useAppSelector(selectDraftStatus);
-  const reduxDraftType = draftStatus?.eventType;
+  const draftStatus = useDraftStore(selectDraftStatus);
+  const draftType = draftStatus?.eventType;
   const isDrafting = draftStatus?.isDrafting;
 
   const getNextAction = useCallback(
@@ -69,12 +71,12 @@ export const useGridMouseUp = () => {
   const handleMainGridMouseUp = useCallback(() => {
     if (!draft || !isDrafting) return;
 
-    if (isDrafting && reduxDraftType === Categories_Event.ALLDAY) {
+    if (isDrafting && draftType === Categories_Event.ALLDAY) {
       discard();
       return;
     }
 
-    if (isDrafting && reduxDraftType === Categories_Event.SOMEDAY_WEEK) {
+    if (isDrafting && draftType === Categories_Event.SOMEDAY_WEEK) {
       discard();
       return;
     }
@@ -96,7 +98,7 @@ export const useGridMouseUp = () => {
   }, [
     draft,
     isDrafting,
-    reduxDraftType,
+    draftType,
     getNextAction,
     discard,
     stopMotion,
@@ -112,7 +114,7 @@ export const useGridMouseUp = () => {
       // Only for SOMEDAY_WEEK in main grid, we need to stop propagation
       if (
         isDrafting &&
-        reduxDraftType === Categories_Event.SOMEDAY_WEEK &&
+        draftType === Categories_Event.SOMEDAY_WEEK &&
         !draft?.isAllDay
       ) {
         e.stopPropagation();
@@ -127,7 +129,7 @@ export const useGridMouseUp = () => {
     [
       draft,
       isDrafting,
-      reduxDraftType,
+      draftType,
       handleAllDayRowMouseUp,
       handleMainGridMouseUp,
     ],

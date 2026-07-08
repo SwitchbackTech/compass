@@ -1,9 +1,10 @@
-import { type Dispatch } from "redux";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { type Activity_DraftEvent } from "@web/ducks/events/slices/draft.slice.types";
+import {
+  type Activity_DraftEvent,
+  draftActions,
+} from "@web/events/stores/draft.store";
 import { assembleDefaultEvent } from "../event/event.util";
 
 /** @deprecated
@@ -15,7 +16,6 @@ export const createSomedayDraft = async (
   startOfView: Dayjs,
   endOfView: Dayjs,
   activity: Activity_DraftEvent,
-  dispatch: Dispatch,
 ) => {
   let startDate: string;
   let endDate: string;
@@ -33,11 +33,9 @@ export const createSomedayDraft = async (
 
   const event = await assembleDefaultEvent(category, startDate, endDate);
 
-  dispatch(
-    draftSlice.actions.start({
-      activity,
-      eventType: category,
-      event,
-    }),
-  );
+  draftActions.start({
+    activity,
+    eventType: category,
+    event,
+  });
 };

@@ -85,7 +85,6 @@ export const GridDraft: FC<Props> = ({
     <>
       {draft.isAllDay ? (
         <AllDayEventMemo
-          endOfView={weekProps.component.endOfView}
           event={allDayDraftEvent}
           isPlaceholder={false}
           key={`draft-${draft?._id}`}
@@ -106,7 +105,7 @@ export const GridDraft: FC<Props> = ({
             setIsResizing(true);
           }}
           ref={refs.setReference}
-          startOfView={weekProps.component.startOfView}
+          weekDays={weekProps.component.weekDays}
           {...getReferenceProps()}
         />
       ) : (

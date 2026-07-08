@@ -15,7 +15,7 @@ import {
   parseApiError,
   parseGoogleConnectError,
 } from "./api.util";
-import { describe, expect, it, spyOn } from "bun:test";
+import { describe, expect, it, mock, spyOn } from "bun:test";
 
 const createApiError = (
   response: { data?: unknown; status?: number } | null,
@@ -159,6 +159,48 @@ describe("parseGoogleConnectError", () => {
 });
 
 describe("handleErrorResponse", () => {
+  it.each([
+    Status.UNAUTHORIZED,
+    Status.GONE,
+  ])("delegates Google revocation for status %s and rethrows the API error", async (status) => {
+    const onGoogleRevoked = mock();
+    const error = createApiError({
+      data: { code: "GOOGLE_REVOKED" },
+      status,
+    });
+
+    await expect(handleErrorResponse(error, { onGoogleRevoked })).rejects.toBe(
+      error,
+    );
+
+    expect(onGoogleRevoked).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not delegate unrelated API errors", async () => {
+    const onGoogleRevoked = mock();
+    const error = createApiError(
+      { data: { code: "SOMETHING_ELSE" }, status: Status.GONE },
+      { url: "/signinup" },
+    );
+
+    await expect(handleErrorResponse(error, { onGoogleRevoked })).rejects.toBe(
+      error,
+    );
+
+    expect(onGoogleRevoked).not.toHaveBeenCalled();
+  });
+
+  it("fails clearly when the Google revocation handler is not configured", async () => {
+    const error = createApiError({
+      data: { code: "GOOGLE_REVOKED" },
+      status: Status.UNAUTHORIZED,
+    });
+
+    await expect(
+      handleErrorResponse(error, { onGoogleRevoked: undefined }),
+    ).rejects.toThrow("Google revocation handler is not configured");
+  });
+
   it("keeps skipSessionRecovery local to unauthorized responses", async () => {
     window.history.pushState({}, "", "/day");
     const signOutSpy = spyOn(session, "signOut").mockResolvedValue(undefined);
@@ -167,7 +209,9 @@ describe("handleErrorResponse", () => {
       { skipSessionRecovery: true, url: "/event" },
     );
 
-    await expect(handleErrorResponse(error)).rejects.toBe(error);
+    await expect(
+      handleErrorResponse(error, { onGoogleRevoked: undefined }),
+    ).rejects.toBe(error);
 
     expect(signOutSpy).toHaveBeenCalledTimes(1);
     signOutSpy.mockRestore();

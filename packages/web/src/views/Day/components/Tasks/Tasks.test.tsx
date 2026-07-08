@@ -138,6 +138,21 @@ describe("Tasks drag and drop", () => {
     expect(reorderTasks).toHaveBeenCalledWith(0, 1);
   });
 
+  it("marks the handle as actively dragging once lifted", async () => {
+    renderTaskList();
+
+    const before = screen.getByRole("button", { name: "Reorder Task 1" });
+
+    expect(before).toHaveAttribute("aria-label", "Reorder Task 1");
+
+    const handle = await liftTask("Task 1");
+
+    expect(handle).toHaveAttribute(
+      "aria-label",
+      "Reordering Task 1. Use arrow keys to move, space to drop.",
+    );
+  });
+
   it("announces the drag lifecycle for screen readers", async () => {
     renderTaskList();
 

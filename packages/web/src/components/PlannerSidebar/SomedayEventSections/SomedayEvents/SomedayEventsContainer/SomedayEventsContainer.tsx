@@ -18,9 +18,11 @@ import { SomedayEventItem } from "@web/components/PlannerSidebar/SomedayEventSec
 import { AddSomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/AddSomedayEvent";
 import { useSomedayRefreshReserve } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/useSomedayRefreshReserve";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
-import { selectDraftCategory } from "@web/ducks/events/selectors/draft.selectors";
-import { selectIsGetSomedayEventsProcessing } from "@web/ducks/events/selectors/someday.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { useSomedayEventsQueryStatus } from "@web/events/queries/useSomedayEventsQuery";
+import {
+  selectDraftCategory,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 
 const getColName = (category: SomedayInteractionCategory) => {
   return category === Categories_Event.SOMEDAY_WEEK
@@ -60,16 +62,14 @@ export const SomedayEventsContainer: FC<Props> = ({
 }) => {
   const colName = getColName(category);
   const { actions, state } = useSidebarContext();
-  const draftCategory = useAppSelector(selectDraftCategory);
+  const draftCategory = useDraftStore(selectDraftCategory);
   const dropTargetRef = useSomedayDropTargetRegistrationRef({
     category,
   });
 
-  const isProcessing = Boolean(
-    useAppSelector(selectIsGetSomedayEventsProcessing),
-  );
+  const { isFetching } = useSomedayEventsQueryStatus();
   const { reservedMinHeight, shouldAnimateRowEntrance } =
-    useSomedayRefreshReserve(events.length, isProcessing);
+    useSomedayRefreshReserve(events.length, isFetching);
 
   const isDraftingThisCategory =
     state.isDraftingNew && category === draftCategory;

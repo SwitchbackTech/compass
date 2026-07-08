@@ -1,3 +1,4 @@
+import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
 import { GoogleWatchDriver } from "@backend/__tests__/drivers/google-watch.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UserMetadataServiceDriver } from "@backend/__tests__/drivers/user-metadata.service.driver";
@@ -40,6 +41,57 @@ describe("UserMetadataService", () => {
       const persisted = await driver.fetchUserMetadata(userId);
 
       expect(persisted.sync?.importGCal).toBe("RESTART");
+    });
+
+    it("tags the user in Kit on first opt-in to updates", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const { addTagToSubscriber } = EmailDriver.mockEmailServiceResponse();
+
+      const metadata = await driver.updateUserMetadata({
+        userId,
+        data: { subscribeToUpdates: true },
+      });
+
+      expect(metadata.subscribeToUpdates).toBe(true);
+      expect(addTagToSubscriber).toHaveBeenCalledTimes(1);
+
+      addTagToSubscriber.mockRestore();
+    });
+
+    it("does not re-tag the user in Kit on a repeat opt-in", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const { addTagToSubscriber } = EmailDriver.mockEmailServiceResponse();
+
+      await driver.updateUserMetadata({
+        userId,
+        data: { subscribeToUpdates: true },
+      });
+      await driver.updateUserMetadata({
+        userId,
+        data: { subscribeToUpdates: true },
+      });
+
+      expect(addTagToSubscriber).toHaveBeenCalledTimes(1);
+
+      addTagToSubscriber.mockRestore();
+    });
+
+    it("does not tag the user in Kit when not opting in", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const { addTagToSubscriber } = EmailDriver.mockEmailServiceResponse();
+
+      const metadata = await driver.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "RESTART" } },
+      });
+
+      expect(metadata.subscribeToUpdates).toBeUndefined();
+      expect(addTagToSubscriber).not.toHaveBeenCalled();
+
+      addTagToSubscriber.mockRestore();
     });
   });
 

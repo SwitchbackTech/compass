@@ -38,6 +38,7 @@ export const AuthButton: FC<AuthButtonProps> = ({
           // Primary variant
           "h-10 w-full bg-accent-primary px-4 text-white focus:ring-accent-primary":
             variant === "primary",
+          "c-button-elevated": variant === "primary" && !isDisabled,
           "hover:brightness-110": variant === "primary" && !isDisabled,
           "opacity-50": variant === "primary" && isDisabled,
 

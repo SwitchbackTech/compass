@@ -1,8 +1,3 @@
-import {
-  type Categories_Event,
-  type Direction_Migrate,
-  type Schema_Event,
-} from "@core/types/event.types";
 import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import {
   isComboboxInteraction,
@@ -14,16 +9,9 @@ export const SOMEDAY_HOTKEY_OPTIONS = {
 };
 
 export interface SomedayFormShortcutsProps {
-  event: Schema_Event;
-  category: Categories_Event;
   onSubmit: () => void;
   onDelete: () => void;
   onDuplicate: () => void;
-  onMigrate?: (
-    event: Schema_Event,
-    category: Categories_Event,
-    direction: Direction_Migrate,
-  ) => void;
 }
 
 const isMenuInteraction = (keyboardEvent: KeyboardEvent) => {
@@ -40,21 +28,6 @@ const isMenuInteraction = (keyboardEvent: KeyboardEvent) => {
   return Boolean(target.closest?.("[role='menu']"));
 };
 
-export const handleMigration =
-  (
-    direction: Direction_Migrate,
-    {
-      event,
-      category,
-      onMigrate,
-    }: Pick<SomedayFormShortcutsProps, "event" | "category" | "onMigrate">,
-  ) =>
-  (keyboardEvent: KeyboardEvent) => {
-    keyboardEvent.preventDefault();
-    keyboardEvent.stopPropagation();
-    onMigrate?.(event, category, direction);
-  };
-
 export const stopPropagationWrapper =
   (callback: () => void) => (event: KeyboardEvent) => {
     if (isDeleteTextEditingTarget(event)) {
@@ -69,12 +42,9 @@ export const stopPropagationWrapper =
 // TanStack Hotkeys automatically syncs callbacks on every render,
 // so callbacks always have access to latest values (no stale closures)
 export const useSomedayFormShortcuts = ({
-  event,
-  category,
   onSubmit,
   onDelete,
   onDuplicate,
-  onMigrate,
 }: SomedayFormShortcutsProps) => {
   useAppHotkey("Delete", stopPropagationWrapper(onDelete), {
     ...SOMEDAY_HOTKEY_OPTIONS,
@@ -112,30 +82,6 @@ export const useSomedayFormShortcuts = ({
   useAppHotkey(
     "Mod+D",
     stopPropagationWrapper(onDuplicate),
-    SOMEDAY_HOTKEY_OPTIONS,
-  );
-
-  useAppHotkey(
-    "Control+Meta+ArrowUp",
-    handleMigration("up", { event, category, onMigrate }),
-    SOMEDAY_HOTKEY_OPTIONS,
-  );
-
-  useAppHotkey(
-    "Control+Meta+ArrowDown",
-    handleMigration("down", { event, category, onMigrate }),
-    SOMEDAY_HOTKEY_OPTIONS,
-  );
-
-  useAppHotkey(
-    "Control+Meta+ArrowRight",
-    handleMigration("forward", { event, category, onMigrate }),
-    SOMEDAY_HOTKEY_OPTIONS,
-  );
-
-  useAppHotkey(
-    "Control+Meta+ArrowLeft",
-    handleMigration("back", { event, category, onMigrate }),
     SOMEDAY_HOTKEY_OPTIONS,
   );
 };

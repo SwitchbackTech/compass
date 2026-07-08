@@ -18,7 +18,7 @@ const mockReorder = mock();
 const mockPutEvent = mock();
 const mockGetEvents = mock();
 
-mock.module("@web/ducks/events/event.api", () => ({
+mock.module("@web/events/event.api", () => ({
   EventApi: {
     create: mockCreate,
     get: mockGet,

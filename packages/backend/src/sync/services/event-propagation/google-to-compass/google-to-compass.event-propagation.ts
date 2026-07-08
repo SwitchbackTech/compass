@@ -13,31 +13,31 @@ export class GoogleToCompassEventPropagation {
   constructor(private userId: string) {}
 
   async processEvents(events: gSchema$Event[]): Promise<Event_Transition[]> {
-    const summary: Event_Transition[] = [];
-
     logger.debug(`Processing ${events.length} event(s)...`);
 
     const session = await mongoService.startSession({
       causalConsistency: true,
     });
 
-    session.startTransaction();
-
     try {
-      for (const event of events) {
-        const changes = await this.handleGCalChange(event, session);
+      // withTransaction retries on TransientTransactionError: a webhook
+      // import can lose a write conflict against a concurrent user save (or
+      // a second webhook fired by rapid saves), and without the retry that
+      // transient conflict surfaced as a 500.
+      return await session.withTransaction(async (session) => {
+        const summary: Event_Transition[] = [];
 
-        summary.push(...changes);
-      }
+        for (const event of events) {
+          const changes = await this.handleGCalChange(event, session);
 
-      await session.commitTransaction();
-    } catch (error) {
-      await session.abortTransaction();
+          summary.push(...changes);
+        }
 
-      throw error;
+        return summary;
+      });
+    } finally {
+      await session.endSession();
     }
-
-    return summary;
   }
 
   private async handleGCalChange(

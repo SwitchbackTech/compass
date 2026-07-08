@@ -16,7 +16,6 @@ import {
 interface ContextMenuProps {
   actions?: ContextMenuItemsActions;
   event?: Schema_GridEvent;
-  isPending?: boolean;
   onOutsideClick: () => void;
   close: () => void;
   style: React.CSSProperties;
@@ -24,18 +23,7 @@ interface ContextMenuProps {
 }
 
 export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
-  (
-    {
-      actions,
-      event,
-      isPending = false,
-      onOutsideClick,
-      close,
-      style,
-      context,
-    },
-    ref,
-  ) => {
+  ({ actions, event, onOutsideClick, close, style, context }, ref) => {
     const dismiss = useDismiss(context, {
       outsidePress: (event) => {
         event.preventDefault(); // Prevents clicking another UI element when dismissing
@@ -60,12 +48,7 @@ export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
         {...getFloatingProps()}
       >
         {actions ? (
-          <ContextMenuItemsView
-            actions={actions}
-            close={close}
-            event={event}
-            isPending={isPending}
-          />
+          <ContextMenuItemsView actions={actions} close={close} event={event} />
         ) : (
           <ContextMenuItems event={event} close={close} />
         )}

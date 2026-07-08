@@ -20,7 +20,6 @@ import {
   type Schema_WebEvent,
   type WithId,
 } from "@web/common/types/web.event.types";
-import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 
 export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
@@ -164,6 +163,28 @@ export const getCalendarEventElementFromGrid = (
   return timedEvent ?? allDaySection?.querySelector(selector) ?? null;
 };
 
+/**
+ * Refocuses an event's element after React replaces it, e.g. when migrating a
+ * someday event moves it to another list. Retries across animation frames
+ * until the new element appears, then focuses it.
+ */
+export const refocusEventElement = (eventId: string) => {
+  const selector = `[${DATA_EVENT_ELEMENT_ID}="${eventId}"]`;
+  const staleElement = document.querySelector(selector);
+  let attemptsLeft = 30;
+
+  const tryFocus = () => {
+    const element = document.querySelector<HTMLElement>(selector);
+    if (element && element !== staleElement) {
+      element.focus();
+    } else if (attemptsLeft-- > 0) {
+      requestAnimationFrame(tryFocus);
+    }
+  };
+
+  tryFocus();
+};
+
 export const getMonthListLabel = (start: Dayjs) => {
   return start.format("MMMM");
 };
@@ -191,7 +212,7 @@ export const handleError = (error: Error) => {
 
   if (code === Status.INTERNAL_SERVER) {
     alert("Something went wrong behind the scenes. Please try again later.");
-    reloadLocation();
+    return;
   }
 
   alert(error);

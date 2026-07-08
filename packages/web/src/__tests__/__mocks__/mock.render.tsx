@@ -1,4 +1,5 @@
-import { configureStore, type PreloadedState } from "@reduxjs/toolkit";
+import { type QueryClient } from "@tanstack/react-query";
+import { type AnyRouter, RouterProvider } from "@tanstack/react-router";
 import {
   type RenderHookOptions,
   type RenderOptions,
@@ -10,15 +11,15 @@ import {
   type PropsWithChildren,
   type ReactElement,
 } from "react";
-import { RouterProvider, type RouterProviderProps } from "react-router-dom";
+import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
+import {
+  seedStoresFromState,
+  type TestAppState,
+} from "@web/__tests__/utils/state/seed-stores";
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
-import { sagaMiddleware } from "@web/common/store/middlewares";
-import { AbsoluteOverflowLoader } from "@web/components/AbsoluteOverflowLoader";
+import { createCompassQueryClient } from "@web/common/query/query-client";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
-import { type store as compassStore, type RootState } from "@web/store";
-import { reducers } from "@web/store/reducers";
-import { sagas } from "@web/store/sagas";
 import { mock } from "bun:test";
 
 mock.module("@react-oauth/google", () => ({
@@ -27,10 +28,12 @@ mock.module("@react-oauth/google", () => ({
 }));
 
 interface CustomRenderOptions extends RenderOptions {
-  state?: PreloadedState<RootState>;
-  store?: typeof compassStore;
-  router?: RouterProviderProps["router"];
+  state?: TestAppState;
+  queryClient?: QueryClient;
+  router?: AnyRouter;
   wrapper?: ComponentType<PropsWithChildren>;
+  /** Seed the event query cache directly (replaces the Redux→query bridge). */
+  events?: Array<{ _id?: string }>;
 }
 
 interface CustomRenderHookOptions<Props>
@@ -38,21 +41,21 @@ interface CustomRenderHookOptions<Props>
     Omit<RenderHookOptions<Props>, "wrapper"> {}
 
 interface TestProvidersProps {
-  router?: RouterProviderProps["router"];
-  store?: typeof compassStore;
+  queryClient?: QueryClient;
+  router?: AnyRouter;
 }
 
 function TestProvidersWrapper({
   children,
+  queryClient,
   router,
-  store,
 }: PropsWithChildren<TestProvidersProps>) {
   useSetupMovementEvents();
 
   if (!router) {
     return (
       <div id={ID_ROOT} data-testid={ID_ROOT}>
-        <CompassRequiredProviders store={store}>
+        <CompassRequiredProviders queryClient={queryClient}>
           {children}
         </CompassRequiredProviders>
       </div>
@@ -61,16 +64,8 @@ function TestProvidersWrapper({
 
   return (
     <div id={ID_ROOT} data-testid={ID_ROOT}>
-      <CompassRequiredProviders store={store}>
-        <RouterProvider
-          router={router}
-          fallbackElement={<AbsoluteOverflowLoader />}
-          future={{
-            // Test-only: sync RouterProvider state updates (no startTransition).
-            // Matches initial render + client navigations with RTL act() without globals.
-            v7_startTransition: false,
-          }}
-        />
+      <CompassRequiredProviders queryClient={queryClient}>
+        <RouterProvider router={router} />
       </CompassRequiredProviders>
     </div>
   );
@@ -81,30 +76,26 @@ const customRender = (
   {
     state,
     router,
-    store = configureStore({
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(sagaMiddleware),
-      reducer: reducers,
-      preloadedState: state,
-    }),
+    queryClient = createCompassQueryClient(),
     wrapper: CustomWrapper,
+    events,
     ...renderOptions
   }: CustomRenderOptions = {},
 ) => {
-  sagaMiddleware.run(sagas);
-
+  seedStoresFromState(state);
+  if (events?.length) seedEventQueries(queryClient, events);
   const options: RenderOptions = { ...renderOptions };
   const Wrapper = ({ children }: PropsWithChildren) => {
     if (!CustomWrapper) {
       return (
-        <TestProvidersWrapper router={router} store={store}>
+        <TestProvidersWrapper queryClient={queryClient} router={router}>
           {children}
         </TestProvidersWrapper>
       );
     }
 
     return (
-      <TestProvidersWrapper router={router} store={store}>
+      <TestProvidersWrapper queryClient={queryClient} router={router}>
         <CustomWrapper>{children}</CustomWrapper>
       </TestProvidersWrapper>
     );
@@ -123,30 +114,26 @@ const customRenderHook = <ReturnType, Props>(
     wrapper: WrapperComponent,
     state,
     router,
-    store = configureStore({
-      middleware: (getDefaultMiddleware) =>
-        getDefaultMiddleware().concat(sagaMiddleware),
-      reducer: reducers,
-      preloadedState: state,
-    }),
+    queryClient = createCompassQueryClient(),
+    events,
     ...renderOptions
   }: CustomRenderHookOptions<Props> = {},
 ) => {
-  sagaMiddleware.run(sagas);
-
+  seedStoresFromState(state);
+  if (events?.length) seedEventQueries(queryClient, events);
   const options: RenderHookOptions<Props> = { ...renderOptions };
 
   const Wrapper = (props: PropsWithChildren) => {
     if (!WrapperComponent) {
       return (
-        <TestProvidersWrapper router={router} store={store}>
+        <TestProvidersWrapper queryClient={queryClient} router={router}>
           {props.children}
         </TestProvidersWrapper>
       );
     }
 
     return (
-      <TestProvidersWrapper router={router} store={store}>
+      <TestProvidersWrapper queryClient={queryClient} router={router}>
         <WrapperComponent {...options.initialProps} {...props} />
       </TestProvidersWrapper>
     );

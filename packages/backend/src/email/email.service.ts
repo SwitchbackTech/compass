@@ -71,10 +71,7 @@ class EmailService {
     }
   }
 
-  static async tagNewUserIfEnabled(
-    user: Schema_User,
-    isNewUser: boolean,
-  ): Promise<void> {
+  static async tagSubscribedUser(user: Schema_User): Promise<void> {
     const isMissingValue =
       !CONFIG.EMAILER_SECRET || !CONFIG.EMAILER_USER_TAG_ID;
     if (isMissingValue) {
@@ -84,7 +81,6 @@ class EmailService {
       return;
     }
 
-    if (!isNewUser) return;
     const subscriber = mapCompassUserToEmailSubscriber(user);
     await EmailService.addTagToSubscriber(
       subscriber,

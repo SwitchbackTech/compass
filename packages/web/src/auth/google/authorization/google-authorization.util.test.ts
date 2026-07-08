@@ -21,6 +21,15 @@ describe("google-authorization.util", () => {
     ).toBe("/day/2026-05-05?x=1#agenda");
   });
 
+  it("strips transient auth-modal params but keeps other params", () => {
+    expect(
+      getSafeGoogleAuthReturnPath(
+        "http://localhost:9080/week/2026-07-08?auth=login&token=abc&x=1",
+        "http://localhost:9080",
+      ),
+    ).toBe("/week/2026-07-08?x=1");
+  });
+
   it("falls back to /day for external return paths", () => {
     expect(
       getSafeGoogleAuthReturnPath(

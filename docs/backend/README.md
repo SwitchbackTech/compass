@@ -103,4 +103,5 @@ Primary files:
 
 - [Backend Request Flow](./backend-request-flow.md)
 - [Backend Error Handling](./backend-error-handling.md)
+- [Event Propagation Transactions](./event-propagation-transactions.md)
 - [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md)

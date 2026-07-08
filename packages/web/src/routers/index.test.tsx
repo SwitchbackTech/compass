@@ -1,22 +1,27 @@
+import { createMemoryHistory, createRouter } from "@tanstack/react-router";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { routeObjects } from "@web/routers/router.routes";
+import {
+  authenticatedLayoutRoute,
+  lifeRoute,
+  rootRoute,
+  routeTree,
+} from "@web/routers/router.routes";
 import { describe, expect, it } from "bun:test";
 
-describe("routeObjects", () => {
-  it("registers /life as a public route before authenticated app routes", () => {
-    const lifeRoute = routeObjects.find((r) => r.path === ROOT_ROUTES.LIFE);
-    const lifeRouteIndex = routeObjects.findIndex(
-      (r) => r.path === ROOT_ROUTES.LIFE,
-    );
-    const authenticatedRoute = routeObjects.find((r) => r.loader !== undefined);
-    const authenticatedRouteIndex = routeObjects.findIndex(
-      (r) => r.loader !== undefined,
-    );
+// Constructing a router (without rendering it) resolves each route's
+// path/parentRoute getters, which otherwise stay unpopulated until the tree
+// is processed.
+createRouter({ routeTree, history: createMemoryHistory() });
 
-    expect(lifeRoute).toBeDefined();
-    expect(lifeRoute?.loader).toBeUndefined();
-    expect(authenticatedRoute).toBeDefined();
-    expect(authenticatedRoute?.loader).toBeDefined();
-    expect(lifeRouteIndex).toBeLessThan(authenticatedRouteIndex);
+describe("routeTree", () => {
+  it("registers /life as a public route (no loader) directly under the root", () => {
+    expect(lifeRoute.fullPath).toBe(ROOT_ROUTES.LIFE);
+    expect(lifeRoute.options.loader).toBeUndefined();
+    expect(lifeRoute.parentRoute).toBe(rootRoute);
+  });
+
+  it("gates the authenticated layout behind loadAuthenticated", () => {
+    expect(authenticatedLayoutRoute.options.beforeLoad).toBeDefined();
+    expect(authenticatedLayoutRoute.parentRoute).toBe(rootRoute);
   });
 });

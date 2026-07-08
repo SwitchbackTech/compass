@@ -6,13 +6,13 @@ import {
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
+import { useEventById } from "@web/events/queries/useEventById";
 import {
+  draftActions,
   selectDraft,
   selectIsEventFormOpen,
-} from "@web/ducks/events/selectors/draft.selectors";
-import { selectEventById } from "@web/ducks/events/selectors/event.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
@@ -25,9 +25,8 @@ export function FloatingEventForm({
 }: {
   form: ReturnType<typeof useEventForm>;
 }) {
-  const dispatch = useAppDispatch();
-  const draft = useAppSelector(selectDraft);
-  const isFormOpen = useAppSelector(selectIsEventFormOpen);
+  const draft = useDraftStore(selectDraft);
+  const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const _id = draft?._id;
   const onSave = useSaveEventForm();
   const onDelete = useDeleteEvent(draft?._id as string);
@@ -39,9 +38,7 @@ export function FloatingEventForm({
     Z_INDEX_FLOATING_FORM,
   );
   const open = isFormOpen && !!draft;
-  const existing = useAppSelector((state) =>
-    _id ? Boolean(selectEventById(state, _id)) : false,
-  );
+  const existing = Boolean(useEventById(_id));
 
   const setEvent = useCallback(
     (
@@ -51,9 +48,9 @@ export function FloatingEventForm({
         | null,
     ) => {
       const update = typeof cb === "function" ? cb(draft) : cb;
-      dispatch(draftSlice.actions.setEvent(update));
+      draftActions.setEvent(update);
     },
-    [dispatch, draft],
+    [draft],
   );
 
   if (!open) return null;
@@ -79,7 +76,7 @@ export function FloatingEventForm({
         >
           <EventForm
             event={draft}
-            isDraft={true}
+            isDraft={!existing}
             isExistingEvent={existing}
             onClose={onClose}
             onDelete={onDelete}

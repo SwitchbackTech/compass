@@ -1,7 +1,7 @@
+import { useMatch, useNavigate } from "@tanstack/react-router";
 import { createContext, type PropsWithChildren, useCallback } from "react";
-import { useNavigate, useRouteLoaderData } from "react-router-dom";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { type DayLoaderData, loadTodayData } from "@web/routers/loaders";
 
 interface DateNavigationContextProps extends DayLoaderData {
@@ -23,15 +23,19 @@ const dateFormat = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
 export function DateNavigationProvider({ children }: PropsWithChildren) {
   const navigate = useNavigate();
-  const routeData = useRouteLoaderData(ROOT_ROUTES.DAY_DATE) as
-    | DayLoaderData
-    | undefined;
+  const routeData = useMatch({
+    from: ROUTE_IDS.DAY_DATE,
+    shouldThrow: false,
+  })?.loaderData as DayLoaderData | undefined;
 
   const { dateInView, dateString } = routeData ?? loadTodayData();
 
   const navigateToDate = useCallback(
     (date: dayjs.Dayjs) => {
-      navigate(`${ROOT_ROUTES.DAY}/${date.format(dateFormat)}`);
+      navigate({
+        to: ROOT_ROUTES.DAY_DATE,
+        params: { dateString: date.format(dateFormat) },
+      });
     },
     [navigate],
   );
@@ -48,10 +52,8 @@ export function DateNavigationProvider({ children }: PropsWithChildren) {
   }, [dateInView, navigateToDate]);
 
   const navigateToToday = useCallback(() => {
-    const { dateString } = loadTodayData();
-
-    navigate(`${ROOT_ROUTES.DAY}/${dateString}`);
-  }, [navigate]);
+    navigateToDate(loadTodayData().dateInView);
+  }, [navigateToDate]);
 
   const value: DateNavigationContextProps = {
     dateInView,

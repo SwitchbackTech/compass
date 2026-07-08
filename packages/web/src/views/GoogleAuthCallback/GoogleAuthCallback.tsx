@@ -1,28 +1,25 @@
+import { useLocation, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { completeGoogleAuthorization } from "@web/auth/google/authorization/complete-google-authorization";
 import { AuthApi } from "@web/common/apis/auth.api";
 import { session } from "@web/common/classes/Session";
+import { queryClient } from "@web/common/query/query-client";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
-import { type AppDispatch } from "@web/store";
-import { useAppDispatch } from "@web/store/store.hooks";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 
 type CompleteAuthentication = ReturnType<typeof useCompleteAuthentication>;
 
 type CompleteGoogleAuthCallbackOptions = {
   completeAuthentication: CompleteAuthentication;
-  dispatch: AppDispatch;
-  navigate: ReturnType<typeof useNavigate>;
+  navigate: (path: string, opts: { replace: true }) => void;
   search: string;
 };
 
 export async function completeGoogleAuthCallback({
   completeAuthentication,
-  dispatch,
   navigate,
   search,
 }: CompleteGoogleAuthCallbackOptions): Promise<void> {
@@ -31,7 +28,8 @@ export async function completeGoogleAuthCallback({
     completeAuthentication,
     doesSessionExist: () => session.doesSessionExist(),
     refreshUserMetadata,
-    requestEventFetch: () => dispatch(triggerFetch()),
+    requestEventFetch: () =>
+      queryClient.invalidateQueries({ queryKey: eventQueryKeys.all }),
     search,
   });
 
@@ -45,8 +43,7 @@ export async function completeGoogleAuthCallback({
 export function GoogleAuthCallbackView() {
   const didRun = useRef(false);
   const location = useLocation();
-  const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const router = useRouter();
   const completeAuthentication = useCompleteAuthentication();
 
   useEffect(() => {
@@ -58,11 +55,10 @@ export function GoogleAuthCallbackView() {
 
     void completeGoogleAuthCallback({
       completeAuthentication,
-      dispatch,
-      navigate,
-      search: location.search,
+      navigate: (path) => router.history.replace(path),
+      search: location.searchStr,
     });
-  }, [completeAuthentication, dispatch, location.search, navigate]);
+  }, [completeAuthentication, location.searchStr, router]);
 
   return (
     <OverlayPanel

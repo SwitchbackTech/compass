@@ -20,7 +20,6 @@ import {
   ensureExternalUserIdMapping,
   getFormFieldValue,
 } from "@backend/common/middleware/supertokens.middleware.util";
-import EmailService from "@backend/email/email.service";
 import userService from "@backend/user/services/user.service";
 
 jest.mock("cors", () => ({
@@ -527,9 +526,6 @@ describe("supertokens.middleware", () => {
     });
 
     it("replaces the EmailPassword sign-up session with the canonical Compass user", async () => {
-      jest
-        .spyOn(EmailService, "tagNewUserIfEnabled")
-        .mockResolvedValue(undefined);
       (userService.upsertUserFromAuth as jest.Mock).mockResolvedValue({
         user: { userId: "compass-user-id" },
         isNewUser: false,

@@ -11,12 +11,11 @@ Primary entrypoint:
 Boot order:
 
 1. initialize local storage through `initializeDatabaseWithErrorHandling()`
-2. start redux-saga with `sagaMiddleware.run(sagas)`
-3. initialize session tracking with `sessionInit()`
-4. render `<App />`
-5. show a toast if local database initialization failed
+2. initialize session tracking with `sessionInit()`
+3. render `<App />`
+4. show a toast if local database initialization failed
 
-This order matters because storage should be ready before sagas and repositories perform local operations.
+This order matters because storage should be ready before listeners and repositories perform local operations.
 
 ## App Provider Tree
 
@@ -47,7 +46,7 @@ Important behavior:
 
 `packages/web/src/views/Root.tsx`:
 
-- blocks mobile with `MobileGate`
+- blocks mobile-OS devices with `MobileGate` (`isMobileOS` user-agent check; narrow desktop windows get the responsive layout instead)
 - wraps authenticated layout with `UserProvider`
 - wires SSE listeners through `SSEProvider`
 
@@ -131,7 +130,7 @@ Layout contract:
 Control mapping:
 
 - Open shortcuts opens an in-sidebar keyboard shortcuts overlay.
-- Command palette toggle (`modifier + K`) dispatches open/close palette actions from `settingsSlice`.
+- Command palette toggle (`modifier + K`) calls open/close palette actions from the settings Zustand store (`packages/web/src/settings/settings.store.ts`).
 - Refresh appears only when `useVersionCheck()` reports an available update.
 - The account row shows temporary-account or signed-in account context above the Someday sections.
 - Background Google import state is not shown in the Planner Sidebar footer.
@@ -173,33 +172,58 @@ The web app uses multiple state layers:
 
 | Concern | Use | Key files |
 | --- | --- | --- |
-| Loading states, modal visibility, async status | Redux Toolkit slices | `packages/web/src/ducks/events/slices/` |
-| Async sequences and persistence orchestration | redux-saga | `packages/web/src/ducks/events/sagas/event.sagas.ts` |
-| Event entity CRUD, active event, and draft state | Elf store | `packages/web/src/store/events.ts` |
+| Event loading, fetching, read errors, and persisted entities | TanStack Query range caches | `packages/web/src/events/queries/` |
+| Event create/edit/delete/convert/reorder state | TanStack Query mutations | `packages/web/src/events/mutations/` |
+| Draft Event and calendar interaction state | Zustand draft store | `packages/web/src/events/stores/draft.store.ts` |
+| View dates/sidebar, cmd palette, user metadata | Zustand stores | `packages/web/src/events/stores/view.store.ts`, `packages/web/src/settings/settings.store.ts`, `packages/web/src/auth/state/user-metadata.store.ts` |
 | Offline persistence | IndexedDB offline data store | `packages/web/src/common/storage/offline-data/indexeddb-offline-data.store.ts` |
 | Local vs remote persistence choice | Repository factory | `packages/web/src/common/repositories/event/event.repository.util.ts` |
 
-These layers are intentional. Do not collapse event entities into Redux slices
-or call IndexedDB directly from components.
+These layers are intentional. Do not mirror persisted Event entities into the
+Zustand stores or call IndexedDB directly from components.
+
+Zustand stores follow one pattern: a state-only store created with
+`create()(devtools(...))` plus module-level action functions (e.g.
+`draftActions.discard()`) that work identically from React and non-React code.
+Selectors are plain functions passed to the store hook
+(`useDraftStore(selectIsDrafting)`); selectors must return primitives or
+stable references (use `useShallow` if one ever builds a new object).
 
 Read these together for event work:
 
-- `packages/web/src/store/index.ts`
-- `packages/web/src/store/sagas.ts`
-- `packages/web/src/ducks/events/sagas`
-- `packages/web/src/store/events.ts`
+- `packages/web/src/events/queries` (reads, cache utilities, and view models)
+- `packages/web/src/events/mutations` (persisted writes and pending state)
+- `packages/web/src/events/stores/draft.store.ts` (transient drafts only)
 
 ## Event Flow
 
-Typical event flow:
+For a high-level tour of the caching model (cache-key anatomy, reads, optimistic
+writes, and what refreshes the cache), see [Event Caching](./event-caching.md).
+The summary below is the runtime sequence.
 
-1. a route view, hook, or component dispatches a Redux action
-2. redux-saga handles the async side effect
-3. the selected repository writes locally or remotely
-4. the saga updates the Elf event store
-5. Redux slices update async status
-6. React re-renders from observables/selectors
-7. SSE events can trigger refetch or metadata refresh later
+Typical event **read** flow:
+
+1. a view hook mounts a `useXEventsQuery` hook (day/week/someday)
+2. TanStack Query fetches via the pure query function against the repository
+   for the reactive source (`event.repository.source.store.ts`)
+3. the normalized result remains in the source- and range-aware query entry;
+   pure view models derive render data directly from it
+4. changing the view range re-keys the query (fetch on new ranges, instant
+   render from cache on revisits within `staleTime`)
+
+Typical event **mutation** flow:
+
+1. a hook or interaction calls the narrow `EventMutations` interface
+2. the mutation captures the active repository source and cancels Event reads
+3. immutable cache utilities apply the optimistic update to matching ranges
+4. failures only report the error (no rollback — a snapshot restore could
+   clobber a newer concurrent edit); the last settling mutation invalidates
+   `eventQueryKeys.all` so the refetch converges to canonical data
+5. pending Event IDs derive from TanStack Query mutation state; they never
+   block interaction — the sidebar account summary shows a syncing spinner
+6. SSE events invalidate the relevant query scope (day/week/someday) to
+   refetch later; auth transitions refresh the source store and drop stale
+   cache entries
 
 Creation uses optimistic events: the UI may show a temporary `_id` before the
 repository returns the durable event. Do not store optimistic ids in other state
@@ -207,8 +231,8 @@ or treat them as stable.
 
 Important consequence:
 
-- event behavior is not owned by a single state system
-- when debugging, inspect the action, saga, repository, and store layer together
+- persisted Event behavior is owned by TanStack Query; the draft Zustand store owns only draft and interaction state
+- when debugging, inspect the query key, cache utility, mutation lifecycle, and repository source together
 
 ## Styling Systems
 
@@ -218,6 +242,14 @@ The web app currently uses two styling systems in parallel:
 - Tailwind v4 utilities and semantic theme tokens from `packages/web/src/index.css` for newer or migrated surfaces
 
 Use the existing `c-*` component utility convention and semantic colors from `packages/web/src/index.css`. Runtime theme values belong in `--compass-*` CSS variables so alternate themes can override values without rebuilding component styles.
+
+## Week Grid Drag Interaction
+
+Dragging a saved event on the week/day calendar grid resolves the target day
+from a layout cache built at drag start, not from the event's own date
+arithmetic. See [Week Drag Interaction](./week-drag-interaction.md) for the
+coordinate model and why it matters once the week view can render fewer than
+7 days.
 
 ## Day Task Drag Handle Positioning
 
@@ -289,19 +321,19 @@ Runtime nuances:
 
 Files:
 
-- `packages/web/src/auth/hooks/google/useConnectGoogle/useConnectGoogle.ts`
-- `packages/web/src/auth/google/google.auth.util.ts`
-- `packages/web/src/components/HeaderInfoIcon/HeaderInfoIcon.tsx`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
+- `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.util.ts`
+- `packages/web/src/components/PlannerSidebar/PlannerAccountSummary/PlannerAccountSummary.tsx`
 - `packages/web/src/common/hooks/useGoogleCmdItems.ts`
 
-UI state comes from a single server-enriched metadata field (`google.connectionState`) plus one client-only loading state:
+UI state comes from a single server-enriched metadata field (`google.connectionState`) plus two client-only states (`checking`, `repairing`). The sidebar account email text itself is the status indicator, via `getGoogleAccountSummaryStatus`:
 
-- `checking` (client-only) → disabled checking status (`SpinnerIcon`)
-- `NOT_CONNECTED` → connect action (`CloudArrowUpIcon`)
-- `RECONNECT_REQUIRED` → reconnect action (`LinkBreakIcon`)
-- `IMPORTING` → disabled syncing status (`SpinnerIcon`)
-- `HEALTHY` → disabled connected status (`LinkIcon`)
-- `ATTENTION` → repair action (`CloudWarningIcon`)
+- `HEALTHY` → email renders normally (`text-text-light`); tooltip reads "Up-to-date"
+- `ATTENTION` → email renders in `text-status-warning`; tooltip explains a sync is needed and offers a **Sync now** button (`onRepairGoogle`)
+- `RECONNECT_REQUIRED` → email renders in `text-status-error`; tooltip offers a **Reconnect** button (`onOpenGoogleAuth`)
+- `NOT_CONNECTED` → plain email text, no tooltip
+
+When a status has an action, the email itself renders as a `<button>` so keyboard users can trigger the action directly (Enter/Space) without needing to hover into the tooltip. An `sr-only role="status"` live region mirrors the tooltip text so screen readers hear state transitions. User-facing copy avoids the word "repair" — the `ATTENTION` state is framed as needing a sync, not a repair.
 
 Important constraint:
 
@@ -319,6 +351,6 @@ Connect-later guardrail:
 ## What To Read Before Editing
 
 - Auth/session issue: read session provider, user provider, router loaders.
-- Event refresh issue: read SSE hooks, sync slice, event sagas.
+- Event refresh issue: read the SSE hooks (which invalidate query scopes), the `useXEventsQuery` read hooks, `event.query.options.ts`, and `useEventMutations.ts` (which invalidates after settlement).
 - Offline issue: read storage adapter and migration runner.
 - Rendering issue in day/week: start at the route view, then its hooks.

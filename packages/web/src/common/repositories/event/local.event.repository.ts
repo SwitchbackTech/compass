@@ -7,8 +7,8 @@ import {
 } from "@core/types/event.types";
 import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { preserveLocalEventMarker } from "@web/common/storage/types/local-event.types";
-import { type Response_GetEventsSuccess } from "@web/ducks/events/event.types";
-import { type EventRepository } from "./event.repository.interface";
+import { type Response_GetEventsSuccess } from "@web/events/event.types";
+import { type EventRepository } from "./event.repository.types";
 
 /**
  * Local event repository implementation using the offline data store.
@@ -64,7 +64,6 @@ export class LocalEventRepository implements EventRepository {
   async edit(
     _id: string,
     event: Schema_Event,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _params: { applyTo?: RecurringEventUpdateScope },
   ): Promise<void> {
     const existingEvent = (await this.store.getAllEvents()).find(
@@ -80,7 +79,6 @@ export class LocalEventRepository implements EventRepository {
 
   async delete(
     _id: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _applyTo?: RecurringEventUpdateScope,
   ): Promise<void> {
     // For local repository, applyTo is not relevant
@@ -88,29 +86,6 @@ export class LocalEventRepository implements EventRepository {
   }
 
   async reorder(order: Payload_Order[]): Promise<void> {
-    const allEvents = await this.store.getAllEvents();
-    const orderMap = new Map(order.map((o) => [o._id, o.order]));
-
-    // Track errors for individual event saves
-    const errors: Array<{ eventId: string; error: unknown }> = [];
-
-    for (const event of allEvents) {
-      const eventId = event._id;
-      if (eventId && orderMap.has(eventId)) {
-        // Cast to Schema_Event which includes order property
-        const eventWithOrder = event as unknown as Schema_Event;
-        eventWithOrder.order = orderMap.get(eventId);
-        try {
-          await this.store.putEvent(event);
-        } catch (error) {
-          errors.push({ eventId, error });
-        }
-      }
-    }
-
-    // If any saves failed, throw aggregate error
-    if (errors.length > 0) {
-      throw new Error(`Failed to reorder ${errors.length} events`);
-    }
+    await this.store.updateEventOrders(order);
   }
 }

@@ -6,9 +6,11 @@ import {
 } from "@web/common/calendar-interaction/calendarInteractionPointer";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
-import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  draftActions,
+  selectIsDrafting,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { DRAFT_DURATION_MIN } from "@web/views/Week/layout.constants";
 import { type WeekProps } from "../useWeek";
@@ -27,9 +29,8 @@ export const useTimedGridDraftCreation = ({
   dateCalcs: DateCalcs;
   weekProps: WeekProps;
 }) => {
-  const dispatch = useAppDispatch();
   const { actions } = useDraftContext();
-  const isDrafting = useAppSelector(selectIsDrafting);
+  const isDrafting = useDraftStore(selectIsDrafting);
   const gestureRef = useRef<TimedDraftCreationGesture | null>(null);
 
   useEffect(() => {
@@ -40,7 +41,7 @@ export const useTimedGridDraftCreation = ({
 
   const startTimedDraftCreation = (event: ReactMouseEvent<HTMLElement>) => {
     if (isDrafting) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
       return;
     }
 
@@ -124,7 +125,7 @@ export const useTimedGridDraftCreation = ({
 
           actions.stopResizing();
           actions.stopDragging();
-          dispatch(draftSlice.actions.startGridClick(nextEvent));
+          draftActions.startGridClick(nextEvent);
         },
       );
     };
@@ -137,13 +138,11 @@ export const useTimedGridDraftCreation = ({
             return;
           }
 
-          dispatch(
-            draftSlice.actions.startResizing({
-              category,
-              dateToChange: "endDate",
-              event: nextEvent,
-            }),
-          );
+          draftActions.startResizing({
+            category,
+            dateToChange: "endDate",
+            event: nextEvent,
+          });
         },
       );
     };
@@ -171,7 +170,7 @@ export const useTimedGridDraftCreation = ({
       if (isResizePreviewStarted) {
         actions.stopResizing();
         actions.stopDragging();
-        dispatch(draftSlice.actions.discard(undefined));
+        draftActions.discard();
       }
     }
 

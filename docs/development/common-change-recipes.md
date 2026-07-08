@@ -123,6 +123,35 @@ For web local-data migrations:
 2. Confirm startup behavior still works in the intended dev mode.
 3. Document any new required variables.
 
+## Type A Hook That Accepts A `queryOptions`-Builder Function
+
+Some web hooks take a TanStack Query `queryOptions(...)`-returning function as
+a parameter (for example `usePrefetchAdjacentEvents`, which takes either
+`weekEventsQueryOptions` or `dayEventsQueryOptions` in
+`packages/web/src/events/queries/usePrefetchAdjacentEvents.ts`) so the same
+hook works for either view. Two approaches that look reasonable both fail to
+type-check:
+
+1. A named function-type alias with a fixed return shape (e.g.
+   `(args) => FetchQueryOptions<never, Error, never>`) — `never`/`unknown`
+   erase the concrete `queryKey` tuple type each call site actually returns,
+   producing `'queryKey' requires 3 elements but source may have fewer`
+   errors.
+2. A union of the concrete function types
+   (`typeof weekEventsQueryOptions | typeof dayEventsQueryOptions`) — calling
+   a union of functions collapses the return type in a way that fails to
+   unify with the consumer's own generic inference for one of the two shapes.
+
+What works: make the *consuming hook itself* generic with the same type
+parameters `prefetchQuery`/`useQuery` use
+(`TQueryFnData, TError, TData, TQueryKey extends readonly unknown[]`), and
+type the parameter as
+`(args: EventsQueryArgs) => FetchQueryOptions<TQueryFnData, TError, TData, TQueryKey>`.
+Each call site then independently instantiates the generic via inference —
+no union collapsing, no erased tuple type. TanStack's generic surface is
+designed for per-call-site inference; piggyback on that instead of fighting
+it with a shared named type.
+
 ## Add A New CLI Command
 
 1. Register the command in `packages/scripts/src/cli.ts`.

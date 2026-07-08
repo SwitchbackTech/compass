@@ -2,16 +2,32 @@
  * Repository selection entry point.
  * This factory decides whether event reads/writes go to local IndexedDB or the remote API.
  * Google connection state, remembered auth state, and current session state decide the target.
- * Never call this directly from components; always go through sagas.
+ * Reads flow through TanStack Query (see event.query.options.ts + the useXEventsQuery
+ * hooks, which resolve the source via event.repository.source.store); mutations flow
+ * through the event operations/listeners. The reactive source store must be refreshed at
+ * every auth transition so query keys re-key correctly.
  * Start debugging "why isn't this event saving?" here.
  * Related: docs/frontend/frontend-runtime-flow.md
  */
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
 import { isBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
-import { createGetEventRepository } from "./event.repository.factory";
+import {
+  createGetEventRepository,
+  createGetEventRepositoryBySource,
+  createGetEventRepositorySource,
+} from "./event.repository.factory";
 import { LocalEventRepository } from "./local.event.repository";
 import { RemoteEventRepository } from "./remote.event.repository";
+
+/**
+ * Determines the repository source (local or remote) based on session and authentication state.
+ */
+export const getEventRepositorySource = createGetEventRepositorySource({
+  hasUserEverAuthenticated,
+  isBackendUnavailable,
+  isGoogleRevoked,
+});
 
 /**
  * Factory function to get the appropriate event repository based on session and authentication state.
@@ -33,6 +49,16 @@ import { RemoteEventRepository } from "./remote.event.repository";
  *
  * @param sessionExists - Whether a session currently exists (from session.doesSessionExist())
  */
+/**
+ * Returns the repository for an explicit source, bypassing session/auth checks.
+ * Used by query functions that already carry `source` in their query key, so the
+ * fetch target cannot drift from the key.
+ */
+export const getEventRepositoryBySource = createGetEventRepositoryBySource({
+  createLocalEventRepository: () => new LocalEventRepository(),
+  createRemoteEventRepository: () => new RemoteEventRepository(),
+});
+
 export const getEventRepository = createGetEventRepository({
   createLocalEventRepository: () => new LocalEventRepository(),
   createRemoteEventRepository: () => new RemoteEventRepository(),

@@ -1,3 +1,7 @@
+import userEvent from "@testing-library/user-event";
+import { act } from "react";
+import { type Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import {
   cleanup,
   fireEvent,
@@ -5,13 +9,7 @@ import {
   screen,
   waitFor,
   within,
-} from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { act } from "react";
-import { Provider } from "react-redux";
-import { type Schema_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
-import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
+} from "@web/__tests__/__mocks__/mock.render";
 import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/common/calendar-grid/calendarGrid.constants";
 import { type CalendarGridMeasurements } from "@web/common/calendar-grid/types/calendarGrid.types";
 import {
@@ -22,13 +20,16 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
-import { selectIsEventFormOpen } from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import {
+  draftActions,
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { type EventFormProps } from "@web/views/Forms/hooks/useEventForm";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
-let store: ReturnType<typeof createStoreWithEvents>;
+let seededEvents: Schema_Event[] = [];
 const originalScroll = HTMLElement.prototype.scroll;
 
 const measurements = {
@@ -108,11 +109,10 @@ const renderDayCalendarGrid = () => ({
   user: userEvent.setup(),
   ...render(
     <>
-      <Provider store={store}>
-        <DayCalendarGrid />
-      </Provider>
+      <DayCalendarGrid />
       <button type="button">Outside calendar</button>
     </>,
+    { events: seededEvents },
   ),
 });
 
@@ -149,14 +149,14 @@ const createAllDayEvent = (
   }) as Schema_Event;
 
 const setDayEvents = (events: Schema_Event[]) => {
-  store = createStoreWithEvents(events);
+  seededEvents = events;
 };
 
-const getDraft = () => store.getState().events.draft.event;
-const getIsFormOpen = () => selectIsEventFormOpen(store.getState());
+const getDraft = () => useDraftStore.getState().event;
+const getIsFormOpen = () => selectIsEventFormOpen(useDraftStore.getState());
 
 const resetDraft = () => {
-  store.dispatch(draftSlice.actions.discard(undefined));
+  draftActions.discard();
 };
 
 const getTimedGrid = () =>
@@ -178,7 +178,7 @@ const getAllDayRegion = () =>
   screen.getByRole("region", { name: "All-day events" });
 
 const setDraftEvent = (event: Schema_Event) => {
-  store.dispatch(draftSlice.actions.startGridClick(event));
+  draftActions.startGridClick(event);
 };
 
 const expectFormAnchoredTo = (card: HTMLElement, cardRect: DOMRect) => {
@@ -197,7 +197,7 @@ const expectFormAnchoredTo = (card: HTMLElement, cardRect: DOMRect) => {
 };
 
 beforeEach(() => {
-  store = createStoreWithEvents([]);
+  seededEvents = [];
   latestEventForm = null;
 });
 

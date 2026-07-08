@@ -4,6 +4,73 @@ type SomedaySection = "week" | "month";
 
 const LOCAL_DB_NAME = "compass-local";
 
+export interface StoredTimedEvent {
+  endDate?: string;
+  startDate?: string;
+  title?: string;
+}
+
+export const getSavedEventsByTitle = (page: Page, title: string) =>
+  page.evaluate(async (eventTitle) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const request = indexedDB.open("compass-local");
+
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+
+    try {
+      return await new Promise<
+        { endDate?: string; startDate?: string; title?: string }[]
+      >((resolve, reject) => {
+        const transaction = db.transaction("events", "readonly");
+        const request = transaction.objectStore("events").getAll();
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => {
+          resolve(
+            request.result.filter(
+              (event: { title?: string }) => event.title === eventTitle,
+            ),
+          );
+        };
+      });
+    } finally {
+      db.close();
+    }
+  }, title);
+
+/** Rendered week day-label dates in column order, as local YYYY-MM-DD. */
+export const getVisibleDayDates = (page: Page) =>
+  page.evaluate(() =>
+    [...document.querySelectorAll("#weekGridScroller [title]")]
+      .filter((node): node is HTMLElement => node instanceof HTMLElement)
+      .map((node) => node.title)
+      // Day labels use the compact YYYYMMDD title format; skips e.g. the now line
+      .filter((title) => /^\d{8}$/.test(title))
+      .map(
+        (title) =>
+          `${title.slice(0, 4)}-${title.slice(4, 6)}-${title.slice(6, 8)}`,
+      ),
+  );
+
+export const waitForSavedEventByTitle = async (page: Page, title: string) => {
+  let savedEvent: StoredTimedEvent | null = null;
+
+  await expect
+    .poll(async () => {
+      const savedEvents = await getSavedEventsByTitle(page, title);
+      if (savedEvents.length === 1) {
+        savedEvent = savedEvents[0]!;
+      }
+
+      return savedEvents.length;
+    })
+    .toBe(1);
+
+  return savedEvent! as StoredTimedEvent;
+};
+
 // Shared timeout for form operations - use a single reasonable timeout instead of short retries
 const FORM_TIMEOUT = 10000;
 
@@ -76,7 +143,9 @@ const ensureWeekView = async (page: Page) => {
   await viewButton.waitFor({ state: "visible", timeout: 5000 });
   await viewButton.click();
   await page.getByRole("option", { name: "Week" }).click();
-  await page.waitForURL((url) => url.pathname === "/week", { timeout: 10000 });
+  await page.waitForURL((url) => url.pathname.startsWith("/week"), {
+    timeout: 10000,
+  });
 
   // Verify we actually switched to Week view
   await weekViewButton.waitFor({ state: "visible", timeout: 5000 });
@@ -200,6 +269,28 @@ export const resetLocalEventDb = async (page: Page) => {
   }, LOCAL_DB_NAME);
 };
 
+// The content pane transitions width over 200ms when the sidebar toggles
+// (see WeekView.tsx's `transition-[width]` wrapper), so #mainGrid's column
+// layout keeps changing for a beat after the sidebar becomes visible. Poll
+// until its measured width stops moving so callers don't compute click/drag
+// targets against a mid-transition column count.
+const waitForMainGridWidthToSettle = async (page: Page) => {
+  const mainGrid = page.locator("#mainGrid");
+  const getWidth = () =>
+    mainGrid.evaluate((el) => el.getBoundingClientRect().width);
+
+  let previousWidth = await getWidth();
+
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await page.waitForTimeout(50);
+    const width = await getWidth();
+    if (width === previousWidth) {
+      return;
+    }
+    previousWidth = width;
+  }
+};
+
 export const ensureSidebarOpen = async (page: Page) => {
   const sidebar = page.locator("#sidebar");
   if (!(await sidebar.isVisible())) {
@@ -207,6 +298,7 @@ export const ensureSidebarOpen = async (page: Page) => {
     await page.locator("#mainGrid").focus();
     await pressShortcut(page, "[");
     await expect(sidebar).toBeVisible();
+    await waitForMainGridWidthToSettle(page);
   }
 };
 
@@ -450,6 +542,11 @@ export const deleteEventWithMouse = async (page: Page) => {
 
 export const deleteEventWithKeyboard = async (page: Page) => {
   await getFormTitleInput(page).waitFor({ timeout: FORM_TIMEOUT });
+  // The title input autofocuses when the form opens. The app treats Delete
+  // as a text-edit key while focus is in an editable field (so typing can
+  // use Backspace/Delete normally), so focus must move off the input first
+  // for Delete to trigger the event-deletion shortcut instead.
+  await blurActiveElement(page);
   page.once("dialog", (dialog) => dialog.accept());
   await page.keyboard.press("Delete");
 };

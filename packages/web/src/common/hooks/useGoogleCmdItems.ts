@@ -1,7 +1,7 @@
-import { type JsonStructureItem } from "react-cmdk";
 import { useConnectGoogle } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 
-export const useGoogleCmdItems = (): JsonStructureItem[] => {
+export const useGoogleCmdItems = (): CommandItem[] => {
   const { commandAction, isAvailable } = useConnectGoogle();
 
   if (!isAvailable) {
@@ -11,7 +11,7 @@ export const useGoogleCmdItems = (): JsonStructureItem[] => {
   return [
     {
       id: "connect-google-calendar",
-      children: commandAction.label,
+      label: commandAction.label,
       icon: commandAction.icon,
       disabled: commandAction.isDisabled,
       onClick: commandAction.onSelect,

@@ -8,7 +8,6 @@ import {
   mapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
-import { AlignItems, Flex } from "@web/components/Flex/Flex";
 import { TimePicker } from "./TimePicker";
 
 interface Props {
@@ -124,7 +123,7 @@ export const TimePickers: FC<Props> = ({
   };
 
   return (
-    <Flex alignItems={AlignItems.CENTER}>
+    <div className="flex items-center">
       <TimePicker
         bgColor={bgColor}
         inputId="startTimePicker"
@@ -146,6 +145,6 @@ export const TimePickers: FC<Props> = ({
         setIsMenuOpen={setIsEndMenuOpen}
         value={endTime}
       />
-    </Flex>
+    </div>
   );
 };

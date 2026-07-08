@@ -4,6 +4,7 @@ export const LOCAL_DEMO_EVENT_FIELD = "__compassDemoEvent";
 
 export type LocalStoredEvent = Event_Core & {
   [LOCAL_DEMO_EVENT_FIELD]?: true;
+  order?: number;
 };
 
 export function markLocalDemoEvent<T extends Event_Core>(
@@ -28,13 +29,4 @@ export function preserveLocalEventMarker<T extends Event_Core>(
   }
 
   return markLocalDemoEvent(nextEvent);
-}
-
-export function stripLocalOnlyEventFields<T extends Event_Core>(
-  event: T,
-): Event_Core {
-  const { [LOCAL_DEMO_EVENT_FIELD]: _demo, ...eventForSync } =
-    event as LocalStoredEvent;
-
-  return eventForSync;
 }

@@ -4,9 +4,8 @@ import { type Schema_Event } from "@core/types/event.types";
 import { CalendarAllDayRow } from "@web/common/calendar-grid/components/CalendarAllDayRow";
 import { useAllDayDraftCreation } from "@web/common/calendar-grid/hooks/useAllDayDraftCreation";
 import { type Ref_Callback } from "@web/common/types/util.types";
-import { selectRowCount } from "@web/ducks/events/selectors/event.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { draftActions } from "@web/events/stores/draft.store";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -36,10 +35,11 @@ export const AllDayRow: FC<Props> = ({
   measurements,
   weekProps,
 }) => {
-  const dispatch = useAppDispatch();
-
-  const { startOfView } = weekProps.component;
-  const rowsCount = useAppSelector(selectRowCount);
+  const { endOfView, startOfView } = weekProps.component;
+  const { rowCount: rowsCount } = useWeekEventViewModel({
+    startOfView,
+    endOfView,
+  });
   const getAllDayDraftStartDate = (clientX: number, clientY: number) =>
     dateCalcs.getDateStrByXY(
       clientX,
@@ -48,7 +48,7 @@ export const AllDayRow: FC<Props> = ({
       YEAR_MONTH_DAY_FORMAT,
     );
   const openAllDayDraft = (event: Schema_Event) => {
-    dispatch(draftSlice.actions.startGridClick(event));
+    draftActions.startGridClick(event);
   };
   const onMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,
@@ -154,11 +154,13 @@ const useAllDayEventsLayer = (
         endOfView={weekProps.component.endOfView}
         measurements={measurements}
         startOfView={weekProps.component.startOfView}
+        weekDays={weekProps.component.weekDays}
       />
     ),
     [
       measurements,
       weekProps.component.endOfView,
       weekProps.component.startOfView,
+      weekProps.component.weekDays,
     ],
   );

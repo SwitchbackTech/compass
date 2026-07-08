@@ -5,14 +5,20 @@ import { type AllDayResizeVisual } from "@web/common/calendar-grid/interaction/m
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 
 export const hasAllDayDragVisualMoved = (visual: AllDayDragVisual) =>
-  visual.dayIndex !== visual.initialDayIndex || visual.weekOffsetDays !== 0;
+  visual.dayDate !== visual.initialDayDate;
 
 export const allDayDragVisualToGridEvent = (
   event: Schema_GridEvent,
   visual: AllDayDragVisual,
 ): Schema_GridEvent => {
-  const dayDelta =
-    visual.dayIndex - visual.initialDayIndex + visual.weekOffsetDays;
+  // Delta (not absolute) semantics: multi-day spans are clamped to the
+  // rendered window, so the initial column date is the clamped visible start,
+  // not necessarily the event's own start date. The date diff also absorbs
+  // mid-drag week navigation of any shift size.
+  const dayDelta = dayjs(visual.dayDate).diff(
+    dayjs(visual.initialDayDate),
+    "day",
+  );
 
   return {
     ...event,

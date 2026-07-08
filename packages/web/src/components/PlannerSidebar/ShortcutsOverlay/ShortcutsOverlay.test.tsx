@@ -20,7 +20,12 @@ const sections = [
 describe("ShortcutsOverlay", () => {
   it("renders shortcut sections over the planner sidebar", () => {
     render(
-      <ShortcutsOverlay isOpen={true} onClose={mock()} sections={sections} />,
+      <ShortcutsOverlay
+        isOpen={true}
+        onClose={mock()}
+        sections={sections}
+        viewLabel="Day"
+      />,
     );
 
     const overlay = screen.getByRole("dialog", { name: "Keyboard shortcuts" });

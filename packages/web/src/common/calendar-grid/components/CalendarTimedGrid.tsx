@@ -27,7 +27,6 @@ import {
   getHourLabels,
 } from "@web/common/utils/datetime/web.date.util";
 import { getCurrentPercentOfDay } from "@web/common/utils/grid/grid.util";
-import { Flex } from "@web/components/Flex/Flex";
 
 interface CalendarTimedGridProps {
   columnsId?: string;
@@ -98,8 +97,9 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
         }
       >
         {getHourLabels(true).map((dayTime) => (
-          <Flex
-            className="relative h-[calc(100%/var(--calendar-visible-hours))] w-full border-grid-line-primary border-b"
+          // biome-ignore lint/a11y/noStaticElementInteractions: Hour rows are pointer-only drag targets for creating timed events.
+          <div
+            className="relative flex h-[calc(100%/var(--calendar-visible-hours))] w-full items-start border-grid-line-primary border-b"
             key={dayTime}
             {...{ [DATA_CALENDAR_TIMED_GRID_ROW]: "true" }}
             onMouseDown={onMouseDown}

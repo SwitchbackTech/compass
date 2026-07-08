@@ -1,13 +1,19 @@
-import { configureStore } from "@reduxjs/toolkit";
+import { QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import type React from "react";
-import { Provider } from "react-redux";
 import { Categories_Event } from "@core/types/event.types";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { reducers } from "@web/store/reducers";
+import { createCompassQueryClient } from "@web/common/query/query-client";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockCreateSomedayDraft = mock();
+
+function Provider({ children }: { children: React.ReactNode }) {
+  return (
+    <QueryClientProvider client={createCompassQueryClient()}>
+      {children}
+    </QueryClientProvider>
+  );
+}
 
 mock.module("@web/components/DND/DropZone", () => ({
   DropZone: ({ children }: { children: React.ReactNode }) => (
@@ -53,19 +59,8 @@ const { SomedayEventsContainer } =
 const renderSomedayEventsContainer = (
   props: React.ComponentProps<typeof SomedayEventsContainer>,
 ) => {
-  const store = configureStore({
-    preloadedState: createInitialState(),
-    reducer: reducers,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        immutableCheck: false,
-        serializableCheck: false,
-        thunk: false,
-      }),
-  });
-
   return render(
-    <Provider store={store}>
+    <Provider>
       <SomedayEventsContainer {...props} />
     </Provider>,
   );

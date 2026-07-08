@@ -1,4 +1,5 @@
 import Dexie, { type Table } from "dexie";
+import { type Payload_Order } from "@core/types/event.types";
 import { isDateRangeOverlapping } from "@core/util/date/date.util";
 import { type LocalStoredEvent } from "@web/common/storage/types/local-event.types";
 import {
@@ -128,7 +129,6 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
       .toArray();
 
     // Remove dateKey and normalize (ensures defaults like user are applied)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return storedTasks.map(({ dateKey: _, ...task }) => normalizeTask(task));
   }
 
@@ -233,6 +233,14 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
 
   async deleteEvent(eventId: string): Promise<void> {
     await this.db.events.delete(eventId);
+  }
+
+  async updateEventOrders(order: Payload_Order[]): Promise<void> {
+    await this.db.transaction("rw", this.db.events, async () => {
+      for (const { _id, order: nextOrder } of order) {
+        await this.db.events.update(_id, { order: nextOrder });
+      }
+    });
   }
 
   async clearAllEvents(): Promise<void> {

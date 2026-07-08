@@ -1,14 +1,21 @@
 import { useCallback, useEffect, useState } from "react";
 import { type Schema_Event } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { selectIsDNDing } from "@web/ducks/events/selectors/draft.selectors";
-import { selectCategorizedEvents } from "@web/ducks/events/selectors/someday.selectors";
-import { useAppSelector } from "@web/store/store.hooks";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
+import { selectIsDNDing, useDraftStore } from "@web/events/stores/draft.store";
+import { selectDatesInView, useViewStore } from "@web/events/stores/view.store";
 
-type SidebarSomedayEvents = ReturnType<typeof selectCategorizedEvents>;
+type SidebarSomedayEvents = ReturnType<
+  typeof useSomedayEventViewModel
+>["categorized"];
 
 export const useSidebarState = () => {
-  const categorizedEvents = useAppSelector(selectCategorizedEvents);
+  const dates = useViewStore(selectDatesInView);
+  const { categorized: categorizedEvents } = useSomedayEventViewModel(
+    dayjs(dates.start),
+    dayjs(dates.end),
+  );
   const [somedayEvents, setSomedayEventsState] = useState(categorizedEvents);
 
   useEffect(() => {
@@ -19,7 +26,7 @@ export const useSidebarState = () => {
     setSomedayEventsState(nextEvents);
   }, []);
 
-  const isDNDing = useAppSelector(selectIsDNDing);
+  const isDNDing = useDraftStore(selectIsDNDing);
 
   const [draft, setDraft] = useState<Schema_Event | null>(null);
   const [isDrafting, setIsDrafting] = useState(false);

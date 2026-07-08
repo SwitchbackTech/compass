@@ -21,16 +21,22 @@ import {
 const mockSyncLocalEventsToCloud = mock();
 const mockToastError = mock();
 const mockIsToastActive = mock(() => false);
-const mockDispatch = mock();
+const mockClearUserMetadata = mock();
 const mockCloseStream = mock();
 const mockOpenStream = mock();
+const mockRefreshEventRepositorySource = mock();
+const mockRemoveEventsByOrigin = mock();
+const mockRemoveEventQueries = mock();
 
 const googleAuthUtil = createGoogleAuthUtil({
+  clearUserMetadata: mockClearUserMetadata,
   closeStream: mockCloseStream,
-  dispatch: mockDispatch,
   isToastActive: mockIsToastActive,
   markGoogleAsRevoked,
   openStream: mockOpenStream,
+  refreshEventRepositorySource: mockRefreshEventRepositorySource,
+  removeEventsByOrigin: mockRemoveEventsByOrigin,
+  removeEventQueries: mockRemoveEventQueries,
   syncLocalEventsToCloud: mockSyncLocalEventsToCloud,
   toastError: mockToastError,
 });
@@ -44,9 +50,12 @@ describe("google-auth.util", () => {
     mockToastError.mockClear();
     mockIsToastActive.mockClear();
     mockIsToastActive.mockReturnValue(false);
-    mockDispatch.mockClear();
+    mockClearUserMetadata.mockClear();
     mockCloseStream.mockClear();
     mockOpenStream.mockClear();
+    mockRefreshEventRepositorySource.mockClear();
+    mockRemoveEventsByOrigin.mockClear();
+    mockRemoveEventQueries.mockClear();
 
     clearGoogleRevokedState();
   });
@@ -148,10 +157,18 @@ describe("google-auth.util", () => {
       );
     });
 
-    it("dispatches the Google revocation state changes", () => {
+    it("clears user metadata and Google-origin events on revocation", () => {
       handleGoogleRevoked();
 
-      expect(mockDispatch).toHaveBeenCalledTimes(4);
+      expect(mockClearUserMetadata).toHaveBeenCalledTimes(1);
+      expect(mockRemoveEventsByOrigin).toHaveBeenCalledTimes(1);
+    });
+
+    it("re-keys queries to local and removes stale remote cache entries", () => {
+      handleGoogleRevoked();
+
+      expect(mockRefreshEventRepositorySource).toHaveBeenCalledTimes(1);
+      expect(mockRemoveEventQueries).toHaveBeenCalledTimes(1);
     });
 
     it("reconnects SSE stream so the client gets a fresh session after revocation", () => {

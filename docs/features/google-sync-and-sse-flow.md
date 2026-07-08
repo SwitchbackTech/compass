@@ -18,7 +18,7 @@ flowchart LR
     Prov[SSEProvider]
     Ev[useEventSSE]
     Gc[useGcalSSE]
-    Slice[Redux sync slice]
+    Store[userMetadata store]
   end
   subgraph Backend["packages/backend"]
     Stream[events.controller stream]
@@ -34,8 +34,8 @@ flowchart LR
   Prov --> ES
   Ev --> ES
   Gc --> ES
-  Ev --> Slice
-  Gc --> Slice
+  Ev --> Store
+  Gc --> Store
 ```
 
 ## Connection And First Events
@@ -109,17 +109,17 @@ Operational constraints:
 
 High-level path:
 
-1. UI dispatches an event action.
-2. A saga performs optimistic updates.
-3. The selected repository writes locally or remotely.
+1. UI calls a mutation from `useEventMutations`.
+2. The mutation's `onMutate` applies an optimistic update to the TanStack Query cache.
+3. The mutation's `mutationFn` writes through the selected repository.
 4. Remote event writes hit backend event routes.
 5. `EventController` packages the change as a `CompassEvent`.
-6. `CompassToGoogleEventPropagation.processEvents()` loads the DB event, plans work, applies persistence, and runs Google side effects.
-7. After commit, the backend calls `sseServer` to publish notifications based on whether the change affected normal or someday events (`EVENT_CHANGED` vs `SOMEDAY_EVENT_CHANGED`).
+6. `CompassToGoogleEventPropagation.processEvents()` loads the DB event, plans work, and applies persistence inside a retrying Mongo transaction, then runs Google side effects after commit (see [Event Propagation Transactions](../backend/event-propagation-transactions.md)).
+7. After the Google effects, the backend calls `sseServer` to publish notifications based on whether the change affected normal or someday events (`EVENT_CHANGED` vs `SOMEDAY_EVENT_CHANGED`).
 
 Primary files:
 
-- `packages/web/src/ducks/events/sagas/event.sagas.ts`
+- `packages/web/src/events/mutations/useEventMutations.ts`
 - `packages/web/src/common/repositories/event`
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
@@ -184,11 +184,11 @@ Files:
 The client:
 
 - opens `EventSource` when a session exists (`SessionProvider` + `SSEProvider`)
-- refetches events when `EVENT_CHANGED` / `SOMEDAY_EVENT_CHANGED` arrive (via `Sync_AsyncStateContextReason` aligned with those names)
+- refetches events when `EVENT_CHANGED` / `SOMEDAY_EVENT_CHANGED` arrive (by invalidating the matching event query scopes)
 - tracks Google import status from `IMPORT_GCAL_*` and `USER_METADATA`
 - handles `GOOGLE_REVOKED` consistently with REST error payloads
 
-Redux reasons for refetch (`Sync_AsyncStateContextReason`) reuse the same string values as SSE event names where they correspond (`EVENT_CHANGED`, `SOMEDAY_EVENT_CHANGED`, `GOOGLE_REVOKED`), plus app-local reasons such as `IMPORT_COMPLETE`.
+Refetches are driven by TanStack Query invalidation keyed to the SSE event names (`EVENT_CHANGED`, `SOMEDAY_EVENT_CHANGED`, `GOOGLE_REVOKED`); `USER_METADATA` payloads land in the userMetadata Zustand store.
 
 ## Revoked Token And Reconnect Lifecycle
 

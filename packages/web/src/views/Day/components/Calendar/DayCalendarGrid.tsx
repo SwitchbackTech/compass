@@ -15,23 +15,22 @@ import {
 } from "@web/common/utils/dom/event-emitter.util";
 import {
   addId,
+  assembleDefaultEvent,
   assembleGridEvent,
   getCalendarEventElementFromGrid,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
+import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
+  draftActions,
   selectDraft,
   selectIsEventFormOpen,
-} from "@web/ducks/events/selectors/draft.selectors";
-import {
-  selectDayEvents,
-  selectDayRowCount,
-} from "@web/ducks/events/selectors/event.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
+import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
 import {
   type EventFormProps,
@@ -59,7 +58,6 @@ const createEventFormAnchor = (eventId: string): VirtualElement => {
 };
 
 export function DayCalendarGrid() {
-  const dispatch = useAppDispatch();
   const dateInView = useDateInView();
   const visibleDates = useMemo(
     () => [
@@ -80,10 +78,18 @@ export function DayCalendarGrid() {
     visibleDates,
   );
   const today = useMemo(() => dayjs(), []);
-  const dayEvents = useAppSelector(selectDayEvents);
-  const allDayRowsCount = useAppSelector(selectDayRowCount);
-  const draft = useAppSelector(selectDraft);
-  const isFormOpen = useAppSelector(selectIsEventFormOpen);
+  const {
+    allDayEvents,
+    events: dayEvents,
+    rowCount: allDayRowsCount,
+    timedEvents,
+  } = useDayEventViewModel({
+    startDate: dateInView.startOf("day").utc(true).format(),
+    endDate: dateInView.endOf("day").utc(true).format(),
+  });
+  useDayEventNudgeShortcuts({ timedEvents });
+  const draft = useDraftStore(selectDraft);
+  const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const draftCategory = draft?.isAllDay
     ? Categories_Event.ALLDAY
     : Categories_Event.TIMED;
@@ -92,10 +98,10 @@ export function DayCalendarGrid() {
       const dismissed = reason === "escape-key" || reason === "outside-press";
 
       if (!open && dismissed) {
-        dispatch(draftSlice.actions.discard(undefined));
+        draftActions.discard();
       }
     },
-    [dispatch],
+    [],
   );
   const form: EventFormProps = useEventForm(
     draftCategory,
@@ -171,10 +177,10 @@ export function DayCalendarGrid() {
       const eventElement = getCalendarEventElementFromGrid(event._id);
       setFormReference(eventElement);
       setFormPositionReference(createEventFormAnchor(event._id));
-      dispatch(draftSlice.actions.startGridClick({ ...event, _id: event._id }));
-      dispatch(draftSlice.actions.setFormOpen(true));
+      draftActions.startGridClick({ ...event, _id: event._id });
+      draftActions.setFormOpen(true);
     },
-    [dispatch, setFormPositionReference, setFormReference],
+    [setFormPositionReference, setFormReference],
   );
 
   const getDayEventById = useCallback(
@@ -197,13 +203,52 @@ export function DayCalendarGrid() {
 
   const getAllDayDraftStartDate = (clientX: number) =>
     dateCalcs.getDateStrByXY(clientX, 0, YEAR_MONTH_DAY_FORMAT);
-  const openAllDayDraft = (event: Schema_Event) => {
-    if (!hasEventDates(event)) {
+  const openAllDayDraft = useCallback(
+    (event: Schema_Event) => {
+      if (!hasEventDates(event)) {
+        return;
+      }
+
+      openEventFormForEvent(addId(assembleGridEvent(event)));
+    },
+    [openEventFormForEvent],
+  );
+
+  const createAllDayDraftFromShortcut = useCallback(() => {
+    if (draft) {
       return;
     }
 
-    openEventFormForEvent(addId(assembleGridEvent(event)));
-  };
+    const startDate = dateInView.format(YEAR_MONTH_DAY_FORMAT);
+    const endDate = dateInView.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
+
+    void assembleDefaultEvent(Categories_Event.ALLDAY, startDate, endDate).then(
+      openAllDayDraft,
+    );
+  }, [dateInView, draft, openAllDayDraft]);
+  const createAllDayDraftRef = useRef(createAllDayDraftFromShortcut);
+
+  useEffect(() => {
+    createAllDayDraftRef.current = createAllDayDraftFromShortcut;
+  }, [createAllDayDraftFromShortcut]);
+
+  useEffect(() => {
+    const handleCreateAllDayDraft = () => {
+      createAllDayDraftRef.current();
+    };
+
+    compassEventEmitter.on(
+      CompassDOMEvents.CREATE_ALLDAY_DRAFT,
+      handleCreateAllDayDraft,
+    );
+
+    return () => {
+      compassEventEmitter.off(
+        CompassDOMEvents.CREATE_ALLDAY_DRAFT,
+        handleCreateAllDayDraft,
+      );
+    };
+  }, []);
   const onAllDayMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,
     onCreateDraft: openAllDayDraft,
@@ -217,24 +262,26 @@ export function DayCalendarGrid() {
   const allDayEventsLayer = useMemo(
     () => (
       <DayCalendarAllDayEventsLayer
+        events={allDayEvents}
         draft={draft}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
         visibleDates={visibleDates}
       />
     ),
-    [draft, measurements, openEventFormForEvent, visibleDates],
+    [allDayEvents, draft, measurements, openEventFormForEvent, visibleDates],
   );
   const timedEventsLayer = useMemo(
     () => (
       <DayCalendarTimedEventsLayer
+        events={timedEvents}
         draft={draft}
         measurements={measurements}
         onOpenEvent={openEventFormForEvent}
         visibleDates={visibleDates}
       />
     ),
-    [draft, measurements, openEventFormForEvent, visibleDates],
+    [draft, measurements, openEventFormForEvent, timedEvents, visibleDates],
   );
 
   return (
@@ -244,9 +291,11 @@ export function DayCalendarGrid() {
       onContextMenu={handleContextMenu}
     >
       <DayInteractionCoordinator
+        allDayEvents={allDayEvents}
         dateInView={dateInView}
         getLayoutSources={getDayInteractionLayoutSources}
         onOpenEvent={openEventFormForEvent}
+        timedEvents={timedEvents}
       >
         <CalendarGrid
           allDayEventsLayer={allDayEventsLayer}

@@ -5,6 +5,7 @@ import {
   shift,
   useFloating,
 } from "@floating-ui/react";
+import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useState } from "react";
 import { Categories_Event } from "@core/types/event.types";
@@ -13,14 +14,12 @@ import {
   getCalendarEventIdFromElement,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
-import { selectDraft } from "@web/ducks/events/selectors/draft.selectors";
+import { findEventInCache } from "@web/events/queries/event.query.cache";
 import {
-  selectAllDayEvents,
-  selectGridEvents,
-} from "@web/ducks/events/selectors/event.selectors";
-import { selectSomedayEvents } from "@web/ducks/events/selectors/someday.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+  draftActions,
+  selectDraft,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import { ContextMenu } from "./ContextMenu";
 
 export const ContextMenuWrapper = ({
@@ -30,15 +29,9 @@ export const ContextMenuWrapper = ({
   id: string;
   children: React.ReactNode;
 }) => {
-  const dispatch = useAppDispatch();
-  const timedEvents = useAppSelector(selectGridEvents);
-  const allDayEvents = useAppSelector(selectAllDayEvents);
-  const somedayEvents = useAppSelector(selectSomedayEvents);
-  const pendingEventIds = useAppSelector(
-    (state) => state.events.pendingEvents.eventIds,
-  );
+  const queryClient = useQueryClient();
 
-  const draftEvent = useAppSelector(selectDraft);
+  const draftEvent = useDraftStore(selectDraft);
 
   const [isOpen, setIsOpen] = useState(false);
 
@@ -56,10 +49,7 @@ export const ContextMenuWrapper = ({
   });
 
   const getSelectedEvent = (eventId: string) => {
-    const selectedEvent =
-      timedEvents.find((ev) => ev._id === eventId) ||
-      allDayEvents.find((ev) => ev._id === eventId) ||
-      Object.values(somedayEvents).find((ev) => ev._id === eventId);
+    const selectedEvent = findEventInCache(queryClient, eventId);
 
     if (!selectedEvent) {
       throw new Error("Selected event not found");
@@ -70,7 +60,7 @@ export const ContextMenuWrapper = ({
 
   const handleDiscard = () => {
     closeMenu();
-    dispatch(draftSlice.actions.discard(undefined));
+    draftActions.discard();
   };
 
   const handleContextMenu = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -86,23 +76,19 @@ export const ContextMenuWrapper = ({
       e.preventDefault();
 
       const event = getSelectedEvent(eventId);
-      const isPending = pendingEventIds.includes(eventId);
-      if (isPending) return;
 
       // Create a virtual element where the user clicked
       refs.setReference({
         getBoundingClientRect: () => new DOMRect(e.clientX, e.clientY, 0, 0), // Position menu exactly at the click position
       });
 
-      dispatch(
-        draftSlice.actions.start({
-          activity: "eventRightClick",
-          eventType: event.isAllDay
-            ? Categories_Event.ALLDAY
-            : Categories_Event.TIMED,
-          event,
-        }),
-      );
+      draftActions.start({
+        activity: "eventRightClick",
+        eventType: event.isAllDay
+          ? Categories_Event.ALLDAY
+          : Categories_Event.TIMED,
+        event,
+      });
 
       setIsOpen(true);
     }

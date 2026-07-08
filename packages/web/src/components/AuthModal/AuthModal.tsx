@@ -1,4 +1,5 @@
 import { DotIcon } from "@phosphor-icons/react";
+import { useSearch } from "@tanstack/react-router";
 import { type FC, useCallback, useEffect, useRef, useState } from "react";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import { useIsGoogleAvailable } from "@web/auth/google/hooks/useIsGoogleAvailable/useIsGoogleAvailable";
@@ -8,28 +9,21 @@ import {
 } from "@web/common/utils/toast/error-toast.util";
 import { GoogleButton } from "@web/components/AuthModal/components/GoogleButton";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
-import { AuthButton } from "./components/AuthButton";
 import { ForgotPasswordForm } from "./forms/ForgotPasswordForm";
 import { LogInForm } from "./forms/LogInForm";
 import { ResetPasswordForm } from "./forms/ResetPasswordForm";
 import { SignUpForm } from "./forms/SignUpForm";
 import { useAuthFormHandlers } from "./hooks/useAuthFormHandlers";
-import { useAuthModal } from "./hooks/useAuthModal";
-import { useAuthUrlParam } from "./hooks/useAuthUrlParam";
+import { type AuthSearch, useAuthModal } from "./hooks/useAuthModal";
 
-function getInitialAuthToken(): string | undefined {
-  if (typeof window === "undefined") {
-    return undefined;
-  }
-
-  const searchParams = new URLSearchParams(window.location.search);
-  const authParam = searchParams.get("auth")?.toLowerCase();
+function getInitialAuthToken(search: AuthSearch): string | undefined {
+  const authParam = search.auth?.toLowerCase();
 
   if (authParam !== "reset" && authParam !== "verify") {
     return undefined;
   }
 
-  return searchParams.get("token") ?? undefined;
+  return search.token;
 }
 
 /**
@@ -43,8 +37,7 @@ function getInitialAuthToken(): string | undefined {
  * - Accessible modal with proper ARIA attributes
  */
 export const AuthModal: FC = () => {
-  const { isOpen, currentView, openModal, closeModal, setView } =
-    useAuthModal();
+  const { isOpen, currentView, closeModal, setView } = useAuthModal();
   const handleGoogleAuthStart = useCallback(() => {
     dismissErrorToast(SESSION_EXPIRED_TOAST_ID);
   }, []);
@@ -59,7 +52,8 @@ export const AuthModal: FC = () => {
   const isGoogleAvailable = useIsGoogleAvailable();
   const isLoginView =
     currentView === "login" || currentView === "loginAfterReset";
-  const [authToken] = useState(getInitialAuthToken);
+  const search = useSearch({ from: "__root__" });
+  const [authToken] = useState(() => getInitialAuthToken(search));
   const {
     isSubmitting,
     submitError,
@@ -74,8 +68,6 @@ export const AuthModal: FC = () => {
     setView,
   });
 
-  // Handle URL-based auth modal triggers (e.g., ?auth=signup)
-  useAuthUrlParam(openModal);
   const [signUpName, setSignUpName] = useState("");
   const prevViewRef = useRef(currentView);
 
@@ -129,7 +121,23 @@ export const AuthModal: FC = () => {
           : "Hey, welcome back";
 
   return (
-    <OverlayPanel title={title} onDismiss={closeModal} variant="modal">
+    <OverlayPanel
+      title={title}
+      titleAction={
+        showAuthSwitch ? (
+          <button
+            type="button"
+            onClick={handleSwitchAuth}
+            className="shrink-0 rounded-3xl bg-[#c2c6cc] px-4 py-1.5 text-[#1f1f1f] text-xs transition-all hover:bg-[#d1d5da]"
+          >
+            {isLoginView ? "Sign up" : "Log in"}
+          </button>
+        ) : null
+      }
+      onDismiss={closeModal}
+      variant="modal"
+      widthClassName="w-120"
+    >
       <div className="flex w-full flex-col gap-6">
         {/* Form based on current view */}
         {currentView === "signUp" && (
@@ -171,23 +179,6 @@ export const AuthModal: FC = () => {
             {submitError}
           </p>
         ) : null}
-        {/* Auth switch (Sign In / Sign Up) - only for signIn and signUp views */}
-        {showAuthSwitch && (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="h-px flex-1 bg-border-primary" />
-              <span className="text-sm text-text-light">or</span>
-              <div className="h-px flex-1 bg-border-primary" />
-            </div>
-            <AuthButton
-              type="button"
-              variant="outline"
-              onClick={handleSwitchAuth}
-            >
-              {isLoginView ? "Sign up" : "Log in"}
-            </AuthButton>
-          </>
-        )}
         {/* Google Sign In - at bottom */}
         {showGoogleAuth ? (
           <>

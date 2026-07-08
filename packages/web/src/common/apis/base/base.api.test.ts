@@ -5,16 +5,18 @@ import {
   resetBackendAvailabilityForTests,
 } from "../util/backend-unavailable-error.util";
 import { BaseApi } from "./base.api";
-import { afterEach, beforeEach, describe, expect, it } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 describe("BaseApi backend availability", () => {
   beforeEach(() => {
     BaseApi.defaults.adapter = undefined;
+    BaseApi.defaults.onGoogleRevoked = undefined;
     resetBackendAvailabilityForTests();
   });
 
   afterEach(() => {
     BaseApi.defaults.adapter = undefined;
+    BaseApi.defaults.onGoogleRevoked = undefined;
     resetBackendAvailabilityForTests();
   });
 
@@ -57,5 +59,28 @@ describe("BaseApi backend availability", () => {
     await BaseApi.get("/config");
 
     expect(isBackendUnavailable()).toBe(false);
+  });
+
+  it("forwards the configured Google revocation handler", async () => {
+    const onGoogleRevoked = mock();
+    BaseApi.defaults.onGoogleRevoked = onGoogleRevoked;
+    BaseApi.defaults.adapter = async (config) => {
+      throw Object.assign(new Error("Request failed"), {
+        config,
+        response: {
+          config,
+          data: { code: "GOOGLE_REVOKED" },
+          headers: new Headers(),
+          status: 401,
+          statusText: "Unauthorized",
+        },
+      });
+    };
+
+    await expect(BaseApi.get("/event")).rejects.toMatchObject({
+      message: "Request failed",
+    });
+
+    expect(onGoogleRevoked).toHaveBeenCalledTimes(1);
   });
 });

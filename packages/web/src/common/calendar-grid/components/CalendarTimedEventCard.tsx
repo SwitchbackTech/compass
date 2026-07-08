@@ -33,13 +33,6 @@ import {
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
-import {
-  AlignItems,
-  Flex,
-  FlexDirections,
-  FlexWrap,
-} from "@web/components/Flex/Flex";
-import { Text } from "@web/components/Text/Text";
 
 interface CalendarTimedEventCardProps {
   boxShadow?: CSSProperties["boxShadow"];
@@ -47,7 +40,6 @@ interface CalendarTimedEventCardProps {
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
   isCommitAcknowledged?: boolean;
-  isPending?: boolean;
   isSelected?: boolean;
   motionMode: "dragging" | "idle" | "resizing";
   onBlur?: () => void;
@@ -71,7 +63,6 @@ const CalendarTimedEventCardBase = (
     event,
     interactionAttributes,
     isCommitAcknowledged = false,
-    isPending = false,
     isSelected = false,
     motionMode,
     onBlur,
@@ -121,15 +112,7 @@ const CalendarTimedEventCardBase = (
     : boxShadow;
 
   const hoverBgColor =
-    !isDraft && !isPlaceholder && !isResizing
-      ? isPending && bgColor
-        ? darken(bgColor)
-        : hoverColor
-      : bgColor;
-
-  const hoverCursorClass = isPending
-    ? "hover:cursor-wait"
-    : "hover:cursor-pointer";
+    !isDraft && !isPlaceholder && !isResizing ? hoverColor : bgColor;
 
   const eventStyle = {
     "--event-bg": bgColor,
@@ -167,8 +150,7 @@ const CalendarTimedEventCardBase = (
     whiteSpace: "nowrap",
   };
 
-  const showResizeCursor =
-    !isPlaceholder && !isResizing && !isDragging && !isPending;
+  const showResizeCursor = !isPlaceholder && !isResizing && !isDragging;
 
   const scalerStyle = (
     placement: Pick<CSSProperties, "top" | "bottom">,
@@ -196,7 +178,6 @@ const CalendarTimedEventCardBase = (
     <div
       {...{ [DATA_EVENT_ELEMENT_ID]: event._id }}
       {...interactionAttributes}
-      aria-disabled={isPending ? "true" : undefined}
       aria-label={accessibleLabel}
       ref={ref}
       role="button"
@@ -207,7 +188,7 @@ const CalendarTimedEventCardBase = (
         {
           "animate-someday-commit-acknowledge": isCommitAcknowledged,
         },
-        hoverCursorClass,
+        "hover:cursor-pointer",
       )}
       style={eventStyle}
       onBlur={onBlur}
@@ -219,17 +200,13 @@ const CalendarTimedEventCardBase = (
 
         e.preventDefault();
         e.stopPropagation();
-        if (isPending || !onEventKeyDown) {
+        if (!onEventKeyDown) {
           return;
         }
 
         onEventKeyDown(event);
       }}
       onMouseDown={(e: MouseEvent) => {
-        if (isPending) {
-          return;
-        }
-
         if (!onEventMouseDown) {
           e.stopPropagation();
           return;
@@ -240,29 +217,24 @@ const CalendarTimedEventCardBase = (
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <Flex
-        alignItems={AlignItems.FLEX_START}
-        direction={FlexDirections.COLUMN}
-        flexWrap={FlexWrap.WRAP}
-      >
+      <div className="flex flex-col flex-wrap items-start">
         <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
             {(isDraft || !isInPast || shouldAnimatePastCommitTimeOut) &&
               isTallEnoughForTimeLabel &&
               isWideEnoughForTimeLabel && (
-                <Text
+                <span
                   aria-hidden={shouldAnimatePastCommitTimeOut || undefined}
-                  className={cn({
+                  className={cn("relative", {
                     "animate-someday-commit-time-exit opacity-0":
                       shouldAnimatePastCommitTimeOut,
                   })}
                   {...{ [CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE]: "true" }}
-                  style={timeLabelStyle}
-                  zIndex={ZIndex.LAYER_3}
+                  style={{ ...timeLabelStyle, zIndex: ZIndex.LAYER_3 }}
                 >
                   {timeRange}
-                </Text>
+                </span>
               )}
             {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
             <div
@@ -288,7 +260,7 @@ const CalendarTimedEventCardBase = (
             />
           </>
         )}
-      </Flex>
+      </div>
     </div>
   );
 };

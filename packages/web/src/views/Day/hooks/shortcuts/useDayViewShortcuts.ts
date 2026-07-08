@@ -7,6 +7,9 @@ import {
 } from "@web/views/Day/util/day.shortcut.util";
 
 interface KeyboardShortcutsConfig {
+  // Event management
+  onCreateAllDayEvent?: () => void;
+
   // Task management
   onAddTask?: () => void;
   onEditTask?: () => void;
@@ -28,9 +31,6 @@ interface KeyboardShortcutsConfig {
   // General
   onEscape?: () => void;
 
-  // Sidebar
-  onToggleSidebar?: () => void;
-
   // Calendar navigation
   onFocusCalendar?: () => void;
 
@@ -46,6 +46,7 @@ interface KeyboardShortcutsConfig {
  */
 export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   const {
+    onCreateAllDayEvent,
     onAddTask,
     onEditTask,
     onCompleteTask,
@@ -58,7 +59,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onGoToToday,
     onFocusCalendar,
     onEditEvent,
-    onToggleSidebar,
     hasFocusedTask,
   } = config;
 
@@ -81,10 +81,11 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
   }, [hasFocusedTask, onCompleteTask]);
 
   const handleMigrationNavigation = useCallback(
-    (direction: "forward" | "backward") => () => {
+    (direction: "forward" | "backward") => (keyboardEvent: KeyboardEvent) => {
       if (isFocusedWithinTask()) {
         const taskId = getFocusedTaskId();
         if (taskId && onMigrateTask) {
+          keyboardEvent.preventDefault();
           onMigrateTask(taskId, direction);
         }
       }
@@ -104,11 +105,6 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     onGoToToday?.();
   });
 
-  // Sidebar shortcut
-  useAppHotkeyUp("[", () => {
-    onToggleSidebar?.();
-  });
-
   // Tasks shortcuts
   useAppHotkeyUp("U", () => {
     onFocusTasks?.();
@@ -116,6 +112,10 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
 
   useAppHotkeyUp("C", () => {
     onAddTask?.();
+  });
+
+  useAppHotkeyUp("A", () => {
+    onCreateAllDayEvent?.();
   });
 
   useAppHotkeyUp("E", () => {
@@ -139,23 +139,11 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     },
   );
 
-  useAppHotkey(
-    "Control+Meta+ArrowRight",
-    handleMigrationNavigation("forward"),
-    {
-      ignoreInputs: false,
-      blurOnTrigger: true,
-    },
-  );
+  // No `blurOnTrigger` here: it blurs before the handler runs, which would
+  // clear the focused task and stop the migration from ever firing.
+  useAppHotkey("Shift+ArrowRight", handleMigrationNavigation("forward"));
 
-  useAppHotkey(
-    "Control+Meta+ArrowLeft",
-    handleMigrationNavigation("backward"),
-    {
-      ignoreInputs: false,
-      blurOnTrigger: true,
-    },
-  );
+  useAppHotkey("Shift+ArrowLeft", handleMigrationNavigation("backward"));
 
   // Calendar shortcuts
   useAppHotkeyUp("I", () => {

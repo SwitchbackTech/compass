@@ -4,9 +4,11 @@ import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
-import { selectIsDrafting } from "@web/ducks/events/selectors/draft.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import {
+  draftActions,
+  selectIsDrafting,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 
 interface UseAllDayDraftCreationOptions {
   getStartDate: (clientX: number, clientY: number) => string;
@@ -17,8 +19,7 @@ export const useAllDayDraftCreation = ({
   getStartDate,
   onCreateDraft,
 }: UseAllDayDraftCreationOptions) => {
-  const dispatch = useAppDispatch();
-  const isDrafting = useAppSelector(selectIsDrafting);
+  const isDrafting = useDraftStore(selectIsDrafting);
 
   return (event: ReactMouseEvent<HTMLElement>) => {
     if (isRightClick(event)) {
@@ -29,7 +30,7 @@ export const useAllDayDraftCreation = ({
     event.stopPropagation();
 
     if (isDrafting) {
-      dispatch(draftSlice.actions.discard(undefined));
+      draftActions.discard();
       return;
     }
 

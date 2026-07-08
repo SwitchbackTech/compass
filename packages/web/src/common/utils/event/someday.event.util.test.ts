@@ -11,13 +11,16 @@ import dayjs from "@core/util/date/dayjs";
 import {
   createMockBaseEvent,
   createMockInstances,
+  createMockStandaloneEvent,
 } from "@core/util/test/ccal.event.factory";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import {
   type Schema_SomedayEvent,
   type Schema_SomedayEventsColumn,
+  type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import {
+  buildConvertToSomedayEvent,
   categorizeSomedayEvents,
   setSomedayEventsOrder,
 } from "@web/common/utils/event/someday.event.util";
@@ -518,5 +521,57 @@ describe("computeRelativeEventDateRange", () => {
       expect(result.columns[COLUMN_MONTH].eventIds).toHaveLength(0);
       expect(result.columns[COLUMN_WEEK].eventIds).toContain(weekOccurrenceId);
     });
+  });
+});
+
+describe("buildConvertToSomedayEvent", () => {
+  const dates = { startDate: "2026-05-18", endDate: "2026-05-24" };
+
+  it("converts a timed event into a validated someday event", () => {
+    const event = createMockStandaloneEvent({
+      priority: Priorities.WORK,
+    }) as Schema_WebEvent;
+
+    const result = buildConvertToSomedayEvent(event, dates, 3);
+
+    expect(result).toMatchObject({
+      _id: event._id,
+      isAllDay: false,
+      isSomeday: true,
+      startDate: dates.startDate,
+      endDate: dates.endDate,
+      priority: Priorities.WORK,
+      order: 3,
+    });
+  });
+
+  it("defaults priority to UNASSIGNED when the event has none", () => {
+    const event = createMockStandaloneEvent({
+      priority: undefined,
+    }) as Schema_WebEvent;
+
+    const result = buildConvertToSomedayEvent(event, dates, 0);
+
+    expect(result.priority).toBe(Priorities.UNASSIGNED);
+  });
+
+  it("rewrites a recurring event's FREQ to WEEKLY", () => {
+    const event = createMockBaseEvent({
+      recurrence: { rule: [RRULE.MONTH] },
+    }) as Schema_WebEvent;
+
+    const result = buildConvertToSomedayEvent(event, dates, 0);
+
+    expect(result.recurrence?.rule?.[0]).toMatch(/^RRULE:FREQ=WEEKLY;/);
+    expect(result.recurrence?.rule?.[0]).toContain("COUNT=3");
+    expect(result.recurrence?.rule?.[0]).toContain("WKST=SU");
+  });
+
+  it("throws when converting an event without an _id", () => {
+    const event = createMockStandaloneEvent({
+      _id: undefined,
+    }) as Schema_WebEvent;
+
+    expect(() => buildConvertToSomedayEvent(event, dates, 0)).toThrow();
   });
 });

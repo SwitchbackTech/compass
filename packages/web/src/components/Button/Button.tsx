@@ -45,7 +45,7 @@ export const PriorityButton = forwardRef<
     <Btn
       {...props}
       className={classNames(
-        "min-w-[158px] px-2 text-text-dark transition-[background-color,color] duration-500 hover:bg-bg-primary hover:text-(--priority-button-hover-color)",
+        "min-w-[158px] px-2 text-text-dark transition-[background-color,color,box-shadow,transform] duration-500 hover:bg-bg-primary hover:text-(--priority-button-hover-color)",
         className,
       )}
       ref={ref}
@@ -74,6 +74,7 @@ export const SaveButton = forwardRef<
   const buttonStyle: CSSVariables = {
     ...style,
     "--priority-button-hover-color": hoverColor,
+    "--elevated-shadow-color": darken(colorByPriority[priority], 25),
     background,
     minWidth,
   };
@@ -83,7 +84,7 @@ export const SaveButton = forwardRef<
       {...props}
       aria-disabled={disabled || undefined}
       className={classNames(
-        "text-text-dark focus:border-2 focus:border-border-primary-dark",
+        "c-button-elevated text-text-dark focus:border-2 focus:border-border-primary-dark",
         disabled && "pointer-events-none opacity-50",
         className,
       )}

@@ -8,12 +8,9 @@ import { type CSSVariables } from "@web/common/styles/css.types";
 import { theme } from "@web/common/styles/theme";
 import { resolveDefaultExport } from "@web/common/utils/resolve-default-export.util";
 import { MonthNavButton } from "@web/components/DatePicker/MonthNavButton";
-import { AlignItems, Flex, JustifyContent } from "@web/components/Flex/Flex";
-import { InputBase } from "@web/components/Input/Input";
-import { Text } from "@web/components/Text/Text";
 import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
 import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
-import { Focusable } from "../Focusable/Focusable";
+import { Focusable, INPUT_RESET_CLASSNAME } from "../Focusable/Focusable";
 
 export interface Props extends Omit<ReactDatePickerProps, "autoFocus"> {
   animationOnToggle?: boolean;
@@ -83,10 +80,13 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       )}
       customInput={
         <Focusable
-          Component={InputBase}
-          className="w-28"
+          Component="input"
+          className={classNames(
+            INPUT_RESET_CLASSNAME,
+            "w-28 transition-colors duration-300",
+          )}
+          style={{ backgroundColor: inputColor }}
           underlineColor={darken(resolvedBgColor, -15)}
-          bgColor={inputColor}
           withUnderline
         />
       }
@@ -116,23 +116,34 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
         const currentMonth = dayjs().format("MMM YYYY");
 
         return (
-          <Flex
-            alignItems={AlignItems.CENTER}
-            className={classNames("px-2 pt-0 pb-1.25", headerClassName)}
-            justifyContent={JustifyContent.LEFT}
+          <div
+            className={classNames(
+              "flex items-center px-2 pt-0 pb-1.25",
+              headerClassName,
+            )}
           >
-            <Flex className={classNames("w-24.25", monthContainerClassName)}>
-              <Text className={monthTextClassName} color={headerColor}>
+            <div
+              className={classNames(
+                "flex w-24.25 items-start",
+                monthContainerClassName,
+              )}
+            >
+              <span
+                className={classNames("relative", monthTextClassName)}
+                style={{ color: headerColor }}
+              >
                 {selectedMonth}
-              </Text>
-            </Flex>
+              </span>
+            </div>
 
             {!customHeaderCount && (
-              <Flex
-                alignItems={AlignItems.CENTER}
-                className={headerActionsClassName}
+              <div
+                className={classNames(
+                  "flex items-center",
+                  headerActionsClassName,
+                )}
               >
-                <Flex className="gap-1">
+                <div className="flex items-start gap-1">
                   <MonthNavButton
                     ariaLabel="Previous month"
                     color={headerColor}
@@ -153,32 +164,31 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
                   >
                     <ChevronRightIcon />
                   </MonthNavButton>
-                </Flex>
+                </div>
                 {withTodayButton && (
-                  <Text
+                  <button
                     className={classNames(
-                      "mr-10 px-1.5 hover:brightness-160 hover:transition-[filter] hover:duration-350 hover:ease-out",
+                      "relative mr-10 cursor-pointer border-0 bg-transparent px-1.5 text-l hover:brightness-160 hover:transition-[filter] hover:duration-350 hover:ease-out",
                       currentMonth === selectedMonth && "opacity-0",
                     )}
-                    cursor="pointer"
                     onClick={() => {
                       headerProps.changeMonth(dayjs().month());
                       headerProps.changeYear(dayjs().year());
                     }}
-                    color="var(--compass-color-text-light)"
-                    size="l"
+                    style={{ color: "var(--compass-color-text-light)" }}
+                    type="button"
                   >
                     Today
-                  </Text>
+                  </button>
                 )}
-              </Flex>
+              </div>
             )}
             {!customHeaderCount && headerEndContent ? (
               <div className="ml-auto flex items-center">
                 {headerEndContent}
               </div>
             ) : null}
-          </Flex>
+          </div>
         );
       }}
     />

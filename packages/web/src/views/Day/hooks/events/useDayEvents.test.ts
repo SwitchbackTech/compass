@@ -1,83 +1,99 @@
-import { configureStore } from "@reduxjs/toolkit";
-import { renderHook } from "@testing-library/react";
-import { createElement, type PropsWithChildren } from "react";
-import { Provider } from "react-redux";
+import { type QueryClient } from "@tanstack/react-query";
+import { waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
-import { Day_AsyncStateContextReason } from "@web/ducks/events/context/day.context";
-import { getDayEventsSlice } from "@web/ducks/events/slices/day.slice";
-import { reducers } from "@web/store/reducers";
-import { beforeEach, describe, expect, it } from "bun:test";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
+const fetchDayEvents = mock(async () => ({
+  ids: ["event-1"],
+  entities: {
+    "event-1": {
+      _id: "event-1",
+      title: "Focus",
+      startDate: "2025-11-11T09:00:00",
+      endDate: "2025-11-11T10:00:00",
+    },
+  },
+}));
+
+mock.module("@web/events/queries/day.event.query", () => ({
+  fetchDayEvents,
+}));
+
+const { renderHook } =
+  require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
+const { createCompassQueryClient } =
+  require("@web/common/query/query-client") as typeof import("@web/common/query/query-client");
 const { useDayEvents } =
   require("@web/views/Day/hooks/events/useDayEvents") as typeof import("@web/views/Day/hooks/events/useDayEvents");
 
-const createStore = () =>
-  configureStore({
-    preloadedState: createInitialState(),
-    reducer: reducers,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        immutableCheck: false,
-        serializableCheck: false,
-        thunk: false,
-      }).concat(() => (next) => (action) => {
-        actions.push(action);
-        return next(action);
-      }),
-  });
-
-let actions: unknown[] = [];
-let store: ReturnType<typeof createStore>;
-
-function wrapper({ children }: PropsWithChildren) {
-  return createElement(Provider, { children, store });
-}
-
 describe("useDayEvents", () => {
   beforeEach(() => {
-    actions = [];
-    store = createStore();
+    fetchDayEvents.mockClear();
   });
 
-  it("dispatches day events request for the provided date", () => {
-    const initialDate = dayjs.utc("2025-11-11T00:00:00Z");
-    const expectedStart = initialDate.startOf("day").format();
-    const expectedEnd = initialDate.endOf("day").format();
+  // Source-agnostic: the active repository source can be "local" or "remote"
+  // depending on process-wide auth state, so match cache entries by their
+  // date-range metadata (like the read hooks' own keys do) rather than
+  // asserting a specific source.
+  const findDayEntry = (queryClient: QueryClient, date: dayjs.Dayjs) => {
+    const startDate = date.startOf("day").utc(true).format();
+    const endDate = date.endOf("day").utc(true).format();
+    const match = queryClient
+      .getQueriesData({ queryKey: eventQueryKeys.scope("day") })
+      .find(([key]) => {
+        const metadata = key[2] as
+          | { startDate?: string; endDate?: string }
+          | undefined;
+        return (
+          metadata?.startDate === startDate && metadata?.endDate === endDate
+        );
+      });
+    return match?.[1];
+  };
 
-    renderHook(() => useDayEvents(initialDate), { wrapper });
+  it("fetches day events into the query cache", async () => {
+    const queryClient = createCompassQueryClient();
+    const date = dayjs.utc("2025-11-11T00:00:00Z");
 
-    expect(actions).toHaveLength(1);
-    expect(actions[0]).toEqual(
-      getDayEventsSlice.actions.request({
-        startDate: expectedStart,
-        endDate: expectedEnd,
-        __context: { reason: Day_AsyncStateContextReason.DAY_VIEW_CHANGE },
-      }),
-    );
+    renderHook(() => useDayEvents(date), { queryClient });
+
+    await waitFor(() => {
+      expect(findDayEntry(queryClient, date)).toEqual(
+        expect.objectContaining({ ids: ["event-1"] }),
+      );
+    });
+    // Also prefetches the adjacent days (see usePrefetchAdjacentEvents).
+    await waitFor(() => {
+      expect(findDayEntry(queryClient, date.subtract(1, "day"))).toEqual(
+        expect.objectContaining({ ids: ["event-1"] }),
+      );
+      expect(findDayEntry(queryClient, date.add(1, "day"))).toEqual(
+        expect.objectContaining({ ids: ["event-1"] }),
+      );
+    });
   });
 
-  it("re-dispatches when the date range changes", () => {
+  it("re-fetches with a new key when the date changes", async () => {
+    const queryClient = createCompassQueryClient();
     const initialDate = dayjs.utc("2025-11-11T00:00:00Z");
+
     const { rerender } = renderHook(({ date }) => useDayEvents(date), {
       initialProps: { date: initialDate },
-      wrapper,
+      queryClient,
     });
 
-    expect(actions).toHaveLength(1);
+    await waitFor(() => {
+      expect(findDayEntry(queryClient, initialDate)).toBeDefined();
+    });
 
     const nextDate = initialDate.add(1, "day");
     rerender({ date: nextDate });
-    const expectedStart = nextDate.startOf("day").format();
-    const expectedEnd = nextDate.endOf("day").format();
-    expect(actions).toHaveLength(2);
 
-    expect(actions[1]).toEqual(
-      getDayEventsSlice.actions.request({
-        startDate: expectedStart,
-        endDate: expectedEnd,
-        __context: { reason: Day_AsyncStateContextReason.DAY_VIEW_CHANGE },
-      }),
-    );
+    await waitFor(() => {
+      expect(findDayEntry(queryClient, nextDate)).toEqual(
+        expect.objectContaining({ ids: ["event-1"] }),
+      );
+    });
   });
 });

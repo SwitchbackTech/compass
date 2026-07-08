@@ -1,7 +1,6 @@
 import { type FC, type SetStateAction } from "react";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type SelectOption } from "@web/common/types/component.types";
-import { AlignItems, Flex } from "@web/components/Flex/Flex";
 import { DatePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/DatePickers";
 import { TimePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/TimePickers";
 import { type SetEventFormField } from "@web/views/Forms/EventForm/types";
@@ -52,7 +51,7 @@ export const DateTimeSection: FC<Props> = ({
   endTime,
 }) => {
   return (
-    <Flex className="gap-2" alignItems={AlignItems.CENTER} role="tablist">
+    <div className="flex items-center gap-2" role="tablist">
       {category === Categories_Event.ALLDAY && (
         <DatePickers
           bgColor={bgColor}
@@ -84,6 +83,6 @@ export const DateTimeSection: FC<Props> = ({
           selectedStartDate={selectedStartDate}
         />
       )}
-    </Flex>
+    </div>
   );
 };

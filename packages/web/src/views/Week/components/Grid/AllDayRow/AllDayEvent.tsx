@@ -14,11 +14,9 @@ import {
 interface Props {
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
-  isPending?: boolean;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
-  startOfView: WeekProps["component"]["startOfView"];
-  endOfView: WeekProps["component"]["endOfView"];
+  weekDays: WeekProps["component"]["weekDays"];
   onMouseDown?: (e: MouseEvent, event: Schema_GridEvent) => void;
   onKeyDown?: (event: Schema_GridEvent) => void;
   onScalerMouseDown?: (
@@ -32,31 +30,21 @@ const AllDayEventBase = (
   {
     event,
     interactionAttributes,
-    isPending = false,
     isPlaceholder,
     measurements,
-    startOfView,
-    endOfView,
+    weekDays,
     onMouseDown,
     onKeyDown,
     onScalerMouseDown,
   }: Props,
   ref: ForwardedRef<HTMLDivElement>,
 ) => {
-  const visibleDates = Array.from(
-    {
-      length:
-        endOfView.startOf("day").diff(startOfView.startOf("day"), "day") + 1,
-    },
-    (_, index) => {
-      const date = startOfView.startOf("day").add(index, "day");
-
-      return {
-        date,
-        key: date.format(YEAR_MONTH_DAY_FORMAT),
-      };
-    },
-  );
+  // Positions map to the rendered day columns, which may be a window of the
+  // week rather than all 7 days.
+  const visibleDates = weekDays.map((date) => ({
+    date,
+    key: date.format(YEAR_MONTH_DAY_FORMAT),
+  }));
   const position = getCalendarAllDayEventPosition(event, {
     isDraft: false,
     measurements,
@@ -64,9 +52,8 @@ const AllDayEventBase = (
   });
 
   const shouldAcknowledgeCommit =
-    useSomedayCommitAcknowledgement(event._id) && !isPlaceholder && !isPending;
-  const shouldTrackCalendarHover =
-    !isPending && !isPlaceholder && Boolean(event._id);
+    useSomedayCommitAcknowledgement(event._id) && !isPlaceholder;
+  const shouldTrackCalendarHover = !isPlaceholder && Boolean(event._id);
   const handleEventMouseDown = (
     e: MouseEvent,
     selectedEvent: Schema_GridEvent,
@@ -84,7 +71,6 @@ const AllDayEventBase = (
       event={event}
       interactionAttributes={interactionAttributes}
       isCommitAcknowledged={shouldAcknowledgeCommit}
-      isPending={isPending}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onKeyDown}
       onEventMouseDown={handleEventMouseDown}
@@ -109,8 +95,9 @@ export const AllDayEventMemo = memo(AllDayEvent, (prev, next) => {
   return (
     prev.event === next.event &&
     prev.interactionAttributes === next.interactionAttributes &&
-    prev.isPending === next.isPending &&
     prev.isPlaceholder === next.isPlaceholder &&
-    prev.measurements === next.measurements
+    prev.measurements === next.measurements &&
+    // The visible window can move without the event or measurements changing
+    prev.weekDays === next.weekDays
   );
 });

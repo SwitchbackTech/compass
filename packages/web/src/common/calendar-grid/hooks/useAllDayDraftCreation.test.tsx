@@ -6,10 +6,8 @@ import {
   waitFor,
 } from "@testing-library/react";
 import { useEffect } from "react";
-import { Provider } from "react-redux";
 import { type Schema_Event } from "@core/types/event.types";
-import { createStoreWithEvents } from "@web/__tests__/utils/state/store.test.util";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { useAllDayDraftCreation } from "./useAllDayDraftCreation";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
@@ -36,10 +34,8 @@ const renderHarness = ({
   onCreateDraft?: (event: Schema_Event) => void;
   onParentMouseDown?: () => void;
 } = {}) => {
-  const store = createStoreWithEvents([]);
-
   if (draft) {
-    store.dispatch(draftSlice.actions.startGridClick(draft));
+    draftActions.startGridClick(draft);
   }
 
   const Harness = () => {
@@ -60,13 +56,9 @@ const renderHarness = ({
     );
   };
 
-  render(
-    <Provider store={store}>
-      <Harness />
-    </Provider>,
-  );
+  render(<Harness />);
 
-  return { onCreateDraft, onParentMouseDown, store };
+  return { onCreateDraft, onParentMouseDown };
 };
 
 afterEach(cleanup);
@@ -105,7 +97,7 @@ describe("useAllDayDraftCreation", () => {
   });
 
   it("dismisses an existing draft without creating a replacement", async () => {
-    const { onCreateDraft, onParentMouseDown, store } = renderHarness({
+    const { onCreateDraft, onParentMouseDown } = renderHarness({
       draft: existingDraft,
     });
 
@@ -114,7 +106,7 @@ describe("useAllDayDraftCreation", () => {
       { button: 0 },
     );
 
-    await waitFor(() => expect(store.getState().events.draft.event).toBeNull());
+    await waitFor(() => expect(useDraftStore.getState().event).toBeNull());
     expect(onCreateDraft).not.toHaveBeenCalled();
     expect(onParentMouseDown).not.toHaveBeenCalled();
   });

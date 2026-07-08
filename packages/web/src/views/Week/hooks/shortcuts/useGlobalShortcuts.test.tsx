@@ -1,130 +1,57 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
-import { Provider } from "react-redux";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
-import { reducers } from "@web/store/reducers";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  selectIsSidebarOpen,
+  useViewStore,
+} from "@web/events/stores/view.store";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
-const logout = mock();
-const mockOpenModal = mock();
-const mockOpenLogoutConfirmation = mock();
-const mockUseAuthModal = mock();
-const mockUseLogoutConfirmation = mock();
-const mockUseSession = mock();
 const mockNavigate = mock();
 const mockPathname = { value: "/week" };
 
-const createStore = () =>
-  configureStore({
-    preloadedState: createInitialState(),
-    reducer: reducers,
-    middleware: (getDefaultMiddleware) =>
-      getDefaultMiddleware({
-        immutableCheck: false,
-        serializableCheck: false,
-        thunk: false,
-      }),
-  });
+// mock.module is process-wide, not scoped to this file, and isn't reliably
+// "restorable" afterward (another file's top-level dynamic import can race
+// with this file's afterAll). So useNavigate/useLocation below are wrapped
+// to check a flag on every call instead of freezing the mock in at
+// registration time - once the flag flips off (afterAll), callers anywhere
+// in the process fall through to the real implementation. The module is
+// snapshotted into a plain object (not just held as a namespace reference)
+// because mock.module mutates the live module object in place.
+const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
+let isRouterMocked = true;
 
-mock.module("@web/auth/compass/session/useSession", () => ({
-  useSession: mockUseSession,
-}));
-
-mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
-  useAuthModal: mockUseAuthModal,
-}));
-
-mock.module(
-  "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation",
-  () => ({
-    useLogoutConfirmation: mockUseLogoutConfirmation,
-  }),
-);
-
-// react-router-dom's useNavigate/useLocation are mocked directly (rather than
-// relying on a real MemoryRouter) because Bun's `mock.module` is process-wide:
-// another test file mocking "react-router-dom" can otherwise silently replace
-// `useNavigate` for every file that runs afterward in the same test run.
-const actualReactRouterDom = await import("react-router-dom");
-
-mock.module("react-router-dom", () => ({
-  ...actualReactRouterDom,
-  useNavigate: () => mockNavigate,
-  useLocation: () => ({ pathname: mockPathname.value }),
+mock.module("@tanstack/react-router", () => ({
+  ...actualTanstackRouter,
+  useNavigate: (...args: unknown[]) =>
+    isRouterMocked
+      ? mockNavigate
+      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
+        actualTanstackRouter.useNavigate(...(args as [])),
+  useLocation: (...args: unknown[]) =>
+    isRouterMocked
+      ? { pathname: mockPathname.value }
+      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
+        actualTanstackRouter.useLocation(...(args as [])),
 }));
 
 const { useGlobalShortcuts } = await import("./useGlobalShortcuts");
 
-function wrapper({ children }: PropsWithChildren) {
-  const store = createStore();
+afterAll(() => {
+  isRouterMocked = false;
+});
 
-  return (
-    <HotkeysProvider>
-      <Provider store={store}>{children}</Provider>
-    </HotkeysProvider>
-  );
+function wrapper({ children }: PropsWithChildren) {
+  return <HotkeysProvider>{children}</HotkeysProvider>;
 }
 
 describe("useGlobalShortcuts", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
-    logout.mockReset();
-    mockOpenModal.mockClear();
-    mockOpenLogoutConfirmation.mockClear();
-    mockUseAuthModal.mockReset();
-    mockUseLogoutConfirmation.mockReset();
-    mockUseSession.mockReset();
     mockNavigate.mockClear();
-    mockUseAuthModal.mockReturnValue({ openModal: mockOpenModal });
-    mockUseLogoutConfirmation.mockReturnValue({
-      openLogoutConfirmation: mockOpenLogoutConfirmation,
-    });
-    mockUseSession.mockReturnValue({
-      authenticated: true,
-      setAuthenticated: mock(),
-    });
     mockPathname.value = "/week";
-  });
-
-  it("opens logout confirmation when authenticated users press Z", async () => {
-    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
-
-    act(() => {
-      pressKey("z");
-    });
-
-    await waitFor(() => {
-      expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);
-    });
-    expect(mockOpenModal).not.toHaveBeenCalled();
-
-    act(() => {
-      unmount();
-    });
-  });
-
-  it("opens login when logged-out users press Z", async () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: mock(),
-    });
-    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
-
-    act(() => {
-      pressKey("z");
-    });
-
-    await waitFor(() => {
-      expect(mockOpenModal).toHaveBeenCalledWith("login");
-    });
-    expect(mockOpenLogoutConfirmation).not.toHaveBeenCalled();
-
-    act(() => {
-      unmount();
-    });
   });
 
   it("does not navigate to Day view when a held-Cmd D keyup is replayed after a Mod+D press", async () => {
@@ -168,6 +95,34 @@ describe("useGlobalShortcuts", () => {
     });
   });
 
+  it("toggles and persists the sidebar when pressing [", async () => {
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+
+    act(() => {
+      pressKey("[");
+    });
+
+    await waitFor(() => {
+      expect(selectIsSidebarOpen(useViewStore.getState())).toBe(false);
+    });
+    expect(localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN)).toBe("false");
+
+    act(() => {
+      pressKey("[");
+    });
+
+    await waitFor(() => {
+      expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+    });
+    expect(localStorage.getItem(STORAGE_KEYS.SIDEBAR_OPEN)).toBe("true");
+
+    act(() => {
+      unmount();
+    });
+  });
+
   it("still navigates to Day view for a plain D press", async () => {
     const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
 
@@ -176,8 +131,23 @@ describe("useGlobalShortcuts", () => {
     });
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/day");
+      expect(mockNavigate).toHaveBeenCalledWith({ to: "/day" });
     });
+
+    act(() => {
+      unmount();
+    });
+  });
+
+  it("does not navigate when pressing W while already on a dated week route", () => {
+    mockPathname.value = "/week/2026-05-20";
+    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
+
+    act(() => {
+      pressKey("w");
+    });
+
+    expect(mockNavigate).not.toHaveBeenCalled();
 
     act(() => {
       unmount();

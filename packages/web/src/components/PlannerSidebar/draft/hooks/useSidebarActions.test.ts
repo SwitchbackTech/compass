@@ -1,19 +1,15 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
-import {
-  createInitialState,
-  type InitialReduxState,
-} from "@web/__tests__/utils/state/store.test.util";
+import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { getSomedayEventsSlice } from "@web/ducks/events/slices/someday.slice";
+import { useDraftStore } from "@web/events/stores/draft.store";
 import { type Setters_Sidebar, type State_Sidebar } from "./useSidebarState";
-import { beforeEach, describe, expect, it, mock, spyOn } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-let currentState: InitialReduxState = createInitialState();
+let currentState = createInitialState();
 
 const { useSidebarActions } =
   require("./useSidebarActions") as typeof import("./useSidebarActions");
@@ -74,27 +70,12 @@ const createSetters = (): Setters_Sidebar =>
 describe("useSidebarActions", () => {
   beforeEach(() => {
     currentState = createInitialState();
-    currentState.events.entities!.value = {
-      [somedayEvent._id!]: somedayEvent,
-    };
-    currentState.events.getSomedayEvents = {
-      error: null,
-      isProcessing: false,
-      isSuccess: true,
-      reason: null,
-      value: {
-        count: 1,
-        data: [somedayEvent._id!],
-        offset: 0,
-        page: 1,
-        pageSize: 1,
-      },
-    };
   });
 
-  it("schedules a dropped Someday event immediately", () => {
-    const { store, wrapper } = createStoreWrapper(currentState);
-    const dispatchSpy = spyOn(store, "dispatch");
+  it("schedules a dropped Someday event immediately", async () => {
+    const { queryClient, wrapper } = createStoreWrapper(currentState, {
+      events: [somedayEvent],
+    });
     const { result } = renderHook(
       () =>
         useSidebarActions(
@@ -119,24 +100,20 @@ describe("useSidebarActions", () => {
       type: "schedule",
     });
 
-    const convertAction = dispatchSpy.mock.calls.find(
-      ([action]) => action.type === getSomedayEventsSlice.actionNames.convert,
-    )?.[0];
-    const draftStartAction = dispatchSpy.mock.calls.find(
-      ([action]) => action.type === draftSlice.actions.start.type,
-    )?.[0];
-
-    if (!convertAction) {
-      throw new Error("Expected someday convert action to be dispatched");
-    }
-
-    expect(convertAction.payload.event).toEqual({
-      _id: somedayEvent._id,
-      endDate: "2024-01-16T12:00:00.000Z",
-      isAllDay: false,
-      isSomeday: false,
-      startDate: "2024-01-16T11:00:00.000Z",
+    await waitFor(() => {
+      expect(
+        queryClient
+          .getMutationCache()
+          .getAll()
+          .some(
+            (mutation) =>
+              mutation.options.mutationKey?.[2] === "convert-to-calendar" &&
+              (mutation.state.variables as { event?: { _id?: string } }).event
+                ?._id === somedayEvent._id,
+          ),
+      ).toBe(true);
     });
-    expect(draftStartAction).toBeUndefined();
+    // Scheduling a someday drop must not start a grid draft.
+    expect(useDraftStore.getState().status?.isDrafting).toBe(false);
   });
 });

@@ -9,14 +9,13 @@ import {
   getLastKnownEmail,
   markUserAsAuthenticated,
 } from "@web/auth/compass/state/auth.state.util";
+import { userMetadataActions } from "@web/auth/state/user-metadata.store";
 import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
+import { refreshEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { createExternalStore } from "@web/common/utils/external-store.util";
-import { authSlice } from "@web/ducks/auth/slices/auth.slice";
-import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
 import * as sse from "@web/sse/provider/SSEProvider";
-import { store } from "@web/store";
 import { clearGoogleSyncIndicatorOverride } from "../../google/state/google.sync.state";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";
 import { SessionContext } from "./session.context";
@@ -55,6 +54,7 @@ const handleAuthenticatedSession = () => {
 
 const handleSessionExists = () => {
   handleAuthenticatedSession();
+  refreshEventRepositorySource(true);
   if (!sse.getStream()) {
     sse.openStream();
   }
@@ -62,14 +62,15 @@ const handleSessionExists = () => {
 
 const handleSessionMissing = () => {
   authStore.set(false);
-  store.dispatch(authSlice.actions.resetAuth());
-  store.dispatch(userMetadataSlice.actions.clear(undefined));
+  refreshEventRepositorySource(false);
+  userMetadataActions.clear();
   clearGoogleSyncIndicatorOverride();
 };
 
 async function checkIfSessionExists(): Promise<boolean> {
-  // Skip real session check in e2e tests — tests control auth state via Redux dispatch.
-  // Running SuperTokens session checks races against those dispatches and resets state.
+  // Skip real session check in e2e tests — tests control auth state via the
+  // e2e store bridge. Running SuperTokens session checks races against those
+  // updates and resets state.
   if (typeof window !== "undefined" && window.__COMPASS_E2E_TEST__) {
     return false;
   }

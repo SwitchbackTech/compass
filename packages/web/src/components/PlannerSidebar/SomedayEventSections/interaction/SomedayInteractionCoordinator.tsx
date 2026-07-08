@@ -1,14 +1,9 @@
-import {
-  type FC,
-  type PropsWithChildren,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { type WeekLayoutCacheSources } from "@web/views/Week/interaction/adapter/geometry/weekLayoutCache";
+import { useWeekInteractionLayoutSync } from "@web/views/Week/interaction/useWeekInteractionLayoutSync";
 import { createSomedayInteractionAdapter } from "./adapter/SomedayInteractionAdapter";
 import { type SomedayInteractionRuntime } from "./adapter/SomedayInteractionAdapter.types";
 import { markSomedayCommitAcknowledgement } from "./state/somedayCommitAcknowledgementState";
@@ -25,12 +20,12 @@ export const SomedayInteractionCoordinator: FC<Props> = ({
 }) => {
   const { actions, state } = useSidebarContext();
   const layoutSourcesRef = useRef(getLayoutSources);
-  const viewStartRef = useRef(weekProps.component.startOfView);
   const eventsById = useMemo(() => {
     return new Map(Object.entries(state.somedayEvents.events));
   }, [state.somedayEvents.events]);
   const runtimeRef = useRef<SomedayInteractionRuntime>({
     getSomedayEventById: () => null,
+    getVisibleDays: () => [],
     onClickSomedayEvent: () => undefined,
     onCommitSomedayInteraction: () => undefined,
   });
@@ -38,30 +33,17 @@ export const SomedayInteractionCoordinator: FC<Props> = ({
     () =>
       createSomedayInteractionAdapter({
         getLayoutSources: () => layoutSourcesRef.current?.() ?? {},
-        getViewStart: () => viewStartRef.current,
         runtime: () => runtimeRef.current,
       }),
     [],
   );
-  const lastNavigationSource = weekProps.util.getLastNavigationSource();
-  const renderedWeekStartMs = weekProps.component.startOfView.valueOf();
+  const visibleDayKeys = useWeekInteractionLayoutSync(adapter, weekProps);
 
   layoutSourcesRef.current = getLayoutSources;
-  viewStartRef.current = weekProps.component.startOfView;
-
-  useLayoutEffect(() => {
-    if (
-      lastNavigationSource !== "drag-to-edge" ||
-      !Number.isFinite(renderedWeekStartMs)
-    ) {
-      return;
-    }
-
-    adapter.rebuildLayoutAfterNavigation();
-  }, [adapter, lastNavigationSource, renderedWeekStartMs]);
 
   runtimeRef.current = {
     getSomedayEventById: (eventId) => eventsById.get(eventId) ?? null,
+    getVisibleDays: () => visibleDayKeys,
     isSidebarDropAllowed: actions.isSomedaySidebarDropAllowed,
     onCancelInteraction: actions.cancelSomedayInteraction,
     onClickSomedayEvent: actions.onDraft,

@@ -1,18 +1,8 @@
-import {
-  type FC,
-  type PropsWithChildren,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-} from "react";
+import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  selectAllDayEvents,
-  selectGridEvents,
-} from "@web/ducks/events/selectors/event.selectors";
-import { draftSlice } from "@web/ducks/events/slices/draft.slice";
-import { useAppDispatch, useAppSelector } from "@web/store/store.hooks";
+import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { draftActions } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { type WeekLayoutCacheSources } from "./adapter/geometry/weekLayoutCache";
@@ -24,6 +14,7 @@ import {
   type WeekTimedDragCommitResult,
   type WeekTimedResizeCommitResult,
 } from "./adapter/WeekInteractionAdapter";
+import { useWeekInteractionLayoutSync } from "./useWeekInteractionLayoutSync";
 
 interface Props extends PropsWithChildren {
   getLayoutSources?: () => WeekLayoutCacheSources;
@@ -35,12 +26,10 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   getLayoutSources,
   weekProps,
 }) => {
-  const dispatch = useAppDispatch();
-  const allDayEvents = useAppSelector(selectAllDayEvents);
-  const timedEvents = useAppSelector(selectGridEvents);
-  const pendingEventIds = useAppSelector(
-    (state) => state.events.pendingEvents.eventIds,
-  );
+  const { allDayEvents, timedEvents } = useWeekEventViewModel({
+    startOfView: weekProps.component.startOfView,
+    endOfView: weekProps.component.endOfView,
+  });
   const { actions, confirmation, setters, state } = useDraftContext();
   const layoutSourcesRef = useRef(getLayoutSources);
   const timedEventsById = useMemo(() => {
@@ -49,13 +38,9 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   const allDayEventsById = useMemo(() => {
     return mapEventsById(allDayEvents);
   }, [allDayEvents]);
-  const pendingEventIdSet = useMemo(
-    () => new Set(pendingEventIds),
-    [pendingEventIds],
-  );
   const runtimeRef = useRef<WeekInteractionRuntime>({
     getTimedEventById: () => null,
-    isEventPending: () => false,
+    getVisibleDays: () => [],
     onClickTimedEvent: () => undefined,
     onCommitTimedDrag: () => undefined,
   });
@@ -67,28 +52,16 @@ export const WeekInteractionCoordinator: FC<Props> = ({
       }),
     [],
   );
-  const lastNavigationSource = weekProps.util.getLastNavigationSource();
-  const renderedWeekStartMs = weekProps.component.startOfView.valueOf();
+  const visibleDayKeys = useWeekInteractionLayoutSync(adapter, weekProps);
 
   layoutSourcesRef.current = getLayoutSources;
 
-  useLayoutEffect(() => {
-    if (
-      lastNavigationSource !== "drag-to-edge" ||
-      !Number.isFinite(renderedWeekStartMs)
-    ) {
-      return;
-    }
-
-    adapter.rebuildLayoutAfterNavigation();
-  }, [adapter, lastNavigationSource, renderedWeekStartMs]);
-
   const openTimedEvent = (event: Schema_GridEvent) => {
-    dispatch(draftSlice.actions.startGridClick(event));
+    draftActions.startGridClick(event);
   };
 
   const openAllDayEvent = (event: Schema_GridEvent) => {
-    dispatch(draftSlice.actions.startGridClick(event));
+    draftActions.startGridClick(event);
   };
 
   const commitSavedMutation = (
@@ -119,7 +92,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   runtimeRef.current = {
     getAllDayEventById: (eventId) => allDayEventsById.get(eventId) ?? null,
     getTimedEventById: (eventId) => timedEventsById.get(eventId) ?? null,
-    isEventPending: (eventId) => pendingEventIdSet.has(eventId),
+    getVisibleDays: () => visibleDayKeys,
     isFormOpen: () => state.isFormOpen,
     onClickAllDayEvent: openAllDayEvent,
     onClickTimedEvent: openTimedEvent,

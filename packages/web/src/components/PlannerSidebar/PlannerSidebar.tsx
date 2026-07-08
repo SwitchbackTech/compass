@@ -17,6 +17,7 @@ export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
   onSelectDate: (date: Dayjs) => void;
   onToggleSidebar?: () => void;
   shortcutSections: ShortcutOverlaySection[];
+  shortcutsViewLabel?: string;
   showSomedayEventSections?: boolean;
   viewEnd: Dayjs;
   viewStart: Dayjs;
@@ -46,6 +47,7 @@ export function createPlannerSidebar({
     onSelectDate,
     onToggleSidebar,
     shortcutSections,
+    shortcutsViewLabel,
     showSomedayEventSections = true,
     viewEnd,
     viewStart,
@@ -55,7 +57,7 @@ export function createPlannerSidebar({
       <aside
         {...props}
         aria-label="Planner sidebar"
-        className="relative flex h-full w-[285px] min-w-[285px] flex-col overflow-hidden border-border-primary border-r bg-panel-bg pt-5 text-panel-text"
+        className="relative flex h-full w-71.25 min-w-71.25 flex-col overflow-hidden border-border-primary border-r bg-panel-bg pt-5 text-panel-text"
         id={ID_SIDEBAR}
       >
         <div className="flex min-h-0 flex-1 flex-col gap-6 overflow-y-auto px-4 pb-5 [scrollbar-gutter:stable]">
@@ -88,6 +90,7 @@ export function createPlannerSidebar({
           isOpen={isShortcutsOpen}
           onClose={onCloseShortcuts}
           sections={shortcutSections}
+          viewLabel={shortcutsViewLabel}
         />
       </aside>
     );

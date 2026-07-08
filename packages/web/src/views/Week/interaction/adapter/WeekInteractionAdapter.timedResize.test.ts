@@ -78,10 +78,8 @@ const makePointerEvent = (
 };
 
 const createHarness = ({
-  isPending = false,
   mainGridScrollTop = 0,
 }: {
-  isPending?: boolean;
   mainGridScrollTop?: number;
 } = {}) => {
   document.body.innerHTML = "";
@@ -162,7 +160,15 @@ const createHarness = ({
     },
     runtime: () => ({
       getTimedEventById: (eventId) => (eventId === event._id ? event : null),
-      isEventPending: () => isPending,
+      getVisibleDays: () => [
+        "2026-05-17",
+        "2026-05-18",
+        "2026-05-19",
+        "2026-05-20",
+        "2026-05-21",
+        "2026-05-22",
+        "2026-05-23",
+      ],
       onClickTimedEvent,
       onCommitTimedDrag,
       onCommitTimedResize,
@@ -246,23 +252,6 @@ describe("WeekInteractionAdapter timed resize", () => {
     expect(onClickTimedEvent).toHaveBeenCalledWith(event);
     expect(onCommitTimedDrag).not.toHaveBeenCalled();
     expect(onCommitTimedResize).not.toHaveBeenCalled();
-  });
-
-  it("keeps pending timed resize handles on the existing Week path", () => {
-    const { adapter, endHandle } = createHarness({ isPending: true });
-
-    expect(
-      adapter.handlePointerDown(
-        makePointerEvent("pointerdown", {
-          target: endHandle,
-          x: 320,
-          y: 1100,
-        }),
-      ),
-    ).toEqual({
-      reason: "no-week-interaction-target",
-      shouldOwn: false,
-    });
   });
 
   it("resizes the bottom edge with immediate height writes and commits once", () => {

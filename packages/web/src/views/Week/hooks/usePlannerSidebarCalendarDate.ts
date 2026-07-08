@@ -9,7 +9,7 @@ interface PlannerSidebarCalendarDateArgs {
 }
 
 interface UsePlannerSidebarCalendarDateArgs {
-  setStartOfView: (date: Dayjs) => void;
+  goToDate: (date: Dayjs) => void;
   today: Dayjs;
   viewEnd: Dayjs;
   viewStart: Dayjs;
@@ -35,7 +35,7 @@ function resolvePlannerSidebarCalendarDate({
 }
 
 export function usePlannerSidebarCalendarDate({
-  setStartOfView,
+  goToDate,
   today,
   viewEnd,
   viewStart,
@@ -71,9 +71,11 @@ export function usePlannerSidebarCalendarDate({
   const goToDateFromSidebar = useCallback(
     (date: Dayjs) => {
       setCalendarDate(date);
-      setStartOfView(date.startOf("week"));
+      // Anchor the view on the picked date so it stays visible even when the
+      // window shows fewer than 7 days.
+      goToDate(date);
     },
-    [setStartOfView],
+    [goToDate],
   );
 
   return { calendarDate, goToDateFromSidebar };

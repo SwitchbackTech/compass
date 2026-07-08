@@ -6,9 +6,9 @@ import {
   useListNavigation,
   useRole,
 } from "@floating-ui/react";
+import { useLocation, useNavigate } from "@tanstack/react-router";
 import classNames from "classnames";
 import { useRef, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
@@ -80,8 +80,10 @@ export const SelectView = ({
     [click, dismiss, role, listNavigation],
   );
 
-  const handleOptionClick = (route: string) => {
-    navigate(route);
+  const handleOptionClick = (
+    route: typeof ROOT_ROUTES.DAY | typeof ROOT_ROUTES.WEEK,
+  ) => {
+    navigate({ to: route });
     setIsOpen(false);
   };
 
@@ -116,7 +118,9 @@ export const SelectView = ({
         aria-controls={isOpen ? dropdownId : undefined}
         aria-label={`Select view, currently ${currentView}`}
       >
-        <span>{buttonLabel}</span>
+        {/* min-width fits the widest label ("Week") so the nav arrows to the
+            left of this button don't shift when the view changes */}
+        <span className="min-w-10 text-left">{buttonLabel}</span>
         <svg
           className="h-4 w-4"
           fill="none"

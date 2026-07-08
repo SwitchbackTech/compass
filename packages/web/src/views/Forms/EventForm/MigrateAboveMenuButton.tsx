@@ -14,12 +14,7 @@ export const MigrateAboveMenuButton: React.FC<Props> = ({
   bgColor,
 }) => {
   return (
-    <MenuItem
-      onClick={onClick}
-      aria-label={tooltipText}
-      bgColor={bgColor}
-      tooltip={["Control", "Meta", "ArrowUp"]}
-    >
+    <MenuItem onClick={onClick} aria-label={tooltipText} bgColor={bgColor}>
       <ArrowUpIcon size={14} />
       <span>{tooltipText}</span>
     </MenuItem>

@@ -2,7 +2,6 @@ import type React from "react";
 import { useCallback } from "react";
 import { type Priority } from "@core/constants/core.constants";
 import { Btn, SaveButton } from "@web/components/Button/Button";
-import { Flex } from "@web/components/Flex/Flex";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
 interface Props {
@@ -30,7 +29,7 @@ export const SaveSection: React.FC<Props> = ({
     };
 
   return (
-    <Flex className="justify-end pt-[18px]">
+    <div className="flex items-start justify-end pt-[18px]">
       {onCancel && (
         <TooltipWrapper description={cancelText}>
           <Btn
@@ -59,6 +58,6 @@ export const SaveSection: React.FC<Props> = ({
           {saveText}
         </SaveButton>
       </TooltipWrapper>
-    </Flex>
+    </div>
   );
 };

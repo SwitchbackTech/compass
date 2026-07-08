@@ -6,12 +6,6 @@ import {
   GOOGLE_REVOKED_TOAST_ID,
   toastDefaultOptions,
 } from "@web/common/constants/toast.constants";
-import { authSlice } from "@web/ducks/auth/slices/auth.slice";
-import { userMetadataSlice } from "@web/ducks/auth/slices/user-metadata.slice";
-import { Sync_AsyncStateContextReason } from "@web/ducks/events/context/sync.context";
-import { eventsEntitiesSlice } from "@web/ducks/events/slices/event.slice";
-import { triggerFetch } from "@web/ducks/events/slices/sync.slice";
-
 export interface SyncLocalEventsResult {
   syncedCount: number;
   success: boolean;
@@ -24,11 +18,14 @@ export const LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE =
   "Your session expired before Compass could save your local events. Sign in again to continue. Your changes are still saved on this device.";
 
 type GoogleAuthUtilDependencies = {
+  clearUserMetadata: () => void;
   closeStream: () => void;
-  dispatch: (action: unknown) => unknown;
   isToastActive: (toastId: Id) => boolean;
   markGoogleAsRevoked: () => void;
   openStream: () => void;
+  refreshEventRepositorySource: (sessionExists?: boolean) => void;
+  removeEventsByOrigin: (origins: Origin[]) => void;
+  removeEventQueries: () => void;
   syncLocalEventsToCloud: () => Promise<number>;
   toastError: typeof toast.error;
 };
@@ -37,11 +34,14 @@ const getApiErrorStatus = (error: Error | undefined): number | undefined =>
   (error as ApiError | undefined)?.response?.status;
 
 export function createGoogleAuthUtil({
+  clearUserMetadata,
   closeStream,
-  dispatch,
   isToastActive,
   markGoogleAsRevoked,
   openStream,
+  refreshEventRepositorySource,
+  removeEventsByOrigin,
+  removeEventQueries,
   syncLocalEventsToCloud,
   toastError,
 }: GoogleAuthUtilDependencies) {
@@ -54,18 +54,14 @@ export function createGoogleAuthUtil({
     }
 
     markGoogleAsRevoked();
+    // Source now resolves to "local"; re-key active queries so their next fetch
+    // hits IndexedDB, then drop the stale remote cache entries.
+    refreshEventRepositorySource();
 
-    dispatch(authSlice.actions.resetAuth());
-    dispatch(userMetadataSlice.actions.clear(undefined));
+    clearUserMetadata();
 
-    dispatch(
-      eventsEntitiesSlice.actions.removeEventsByOrigin({
-        origins: [Origin.GOOGLE, Origin.GOOGLE_IMPORT],
-      }),
-    );
-    dispatch(
-      triggerFetch({ reason: Sync_AsyncStateContextReason.GOOGLE_REVOKED }),
-    );
+    removeEventsByOrigin([Origin.GOOGLE, Origin.GOOGLE_IMPORT]);
+    removeEventQueries();
 
     closeStream();
     openStream();

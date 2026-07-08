@@ -1,10 +1,7 @@
-import { configureStore } from "@reduxjs/toolkit";
 import { render, screen } from "@testing-library/react";
 import { act } from "react";
-import { Provider } from "react-redux";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { createCalendarInteractionEventOverlayMount } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
 import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
@@ -13,7 +10,6 @@ import {
   __resetSomedayCommitAcknowledgementState,
   markSomedayCommitAcknowledgement,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
-import { reducers } from "@web/store/reducers";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -78,12 +74,14 @@ const weekProps = {
   component: {
     endOfView,
     startOfView,
+    weekDays: [...Array(7)].map((_, index) => startOfView.add(index, "day")),
   },
 } as WeekProps;
 const pastWeekProps = {
   component: {
     endOfView: pastWeekStart.add(7, "day"),
     startOfView: pastWeekStart,
+    weekDays: [...Array(7)].map((_, index) => pastWeekStart.add(index, "day")),
   },
 } as WeekProps;
 
@@ -126,24 +124,7 @@ const createAllDayEvent = (
     ...overrides,
   }) as Schema_GridEvent;
 
-const createStore = (pendingEventIds: string[] = []) => {
-  const preloadedState = createInitialState();
-
-  preloadedState.events.pendingEvents = {
-    eventIds: pendingEventIds,
-  };
-
-  return configureStore({
-    preloadedState,
-    reducer: reducers,
-  });
-};
-
-const renderWithStore = (
-  children: React.ReactNode,
-  pendingEventIds: string[] = [],
-) =>
-  render(<Provider store={createStore(pendingEventIds)}>{children}</Provider>);
+const renderWithStore = (children: React.ReactNode) => render(children);
 
 const expectEventBgToUseHoverColor = (element: HTMLElement) => {
   expect(element.style.getPropertyValue("--event-bg")).toBe(
@@ -187,14 +168,12 @@ const RegisteredTimedEventHarness = ({
   calendarWeekProps = weekProps,
   displayMode = "saved",
   event,
-  isPending = false,
 }: {
   calendarWeekProps?: WeekProps;
   displayMode?: "draft" | "placeholder" | "saved";
   event: Schema_GridEvent;
-  isPending?: boolean;
 }) => {
-  const isEnabled = Boolean(event._id) && displayMode === "saved" && !isPending;
+  const isEnabled = Boolean(event._id) && displayMode === "saved";
   const ref = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "timed",
@@ -213,7 +192,6 @@ const RegisteredTimedEventHarness = ({
             })
           : undefined
       }
-      isPending={isPending}
       measurements={measurements}
       onEventMouseDown={mock()}
       onScalerMouseDown={mock()}
@@ -225,14 +203,12 @@ const RegisteredTimedEventHarness = ({
 
 const RegisteredAllDayEventHarness = ({
   event,
-  isPending = false,
   isPlaceholder = false,
 }: {
   event: Schema_GridEvent;
-  isPending?: boolean;
   isPlaceholder?: boolean;
 }) => {
-  const isEnabled = Boolean(event._id) && !isPlaceholder && !isPending;
+  const isEnabled = Boolean(event._id) && !isPlaceholder;
   const ref = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "all-day",
@@ -241,7 +217,6 @@ const RegisteredAllDayEventHarness = ({
 
   return (
     <AllDayEventMemo
-      endOfView={endOfView}
       event={event}
       interactionAttributes={
         isEnabled
@@ -251,13 +226,12 @@ const RegisteredAllDayEventHarness = ({
             })
           : undefined
       }
-      isPending={isPending}
       isPlaceholder={isPlaceholder}
       measurements={measurements}
       onMouseDown={mock()}
       onScalerMouseDown={mock()}
       ref={ref}
-      startOfView={startOfView}
+      weekDays={weekProps.component.weekDays}
     />
   );
 };
@@ -396,20 +370,14 @@ describe("weekEventRegistry", () => {
     });
   });
 
-  it("does not register draft or pending timed events as saved targets", () => {
+  it("does not register draft timed events as saved targets", () => {
     const draftEvent = createTimedEvent({ _id: "draft-event" });
-    const pendingEvent = createTimedEvent({ _id: "pending-event" });
 
     renderWithStore(
-      <>
-        <RegisteredTimedEventHarness displayMode="draft" event={draftEvent} />
-        <RegisteredTimedEventHarness event={pendingEvent} isPending />
-      </>,
-      ["pending-event"],
+      <RegisteredTimedEventHarness displayMode="draft" event={draftEvent} />,
     );
 
     expect(weekEventRegistry.resolve("draft-event", "timed")).toBeNull();
-    expect(weekEventRegistry.resolve("pending-event", "timed")).toBeNull();
   });
 
   it("acknowledges a dropped timed event without moving the text", () => {

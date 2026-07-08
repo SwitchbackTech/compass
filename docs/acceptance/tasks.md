@@ -179,13 +179,13 @@ Tasks can be dragged within the list to change their order. Incomplete and compl
 
 ### UX
 
-Pressing Ctrl+Meta+ArrowRight (Mac) or the equivalent moves the focused task to the following calendar date.
+Pressing Shift+ArrowRight moves the focused task to the following calendar date.
 
 ### Steps
 
 1. Navigate to `/day` on a date that is not the last day of the month.
 2. Focus a task checkbox.
-3. Press Ctrl+Meta+ArrowRight.
+3. Press Shift+ArrowRight.
 
 ### Expected Results
 
@@ -199,13 +199,13 @@ Pressing Ctrl+Meta+ArrowRight (Mac) or the equivalent moves the focused task to 
 
 ### UX
 
-Pressing Ctrl+Meta+ArrowLeft moves the focused task to the previous calendar date.
+Pressing Shift+ArrowLeft moves the focused task to the previous calendar date.
 
 ### Steps
 
 1. Navigate to `/day` on a date that is not the first day of the month.
 2. Focus a task checkbox.
-3. Press Ctrl+Meta+ArrowLeft.
+3. Press Shift+ArrowLeft.
 
 ### Expected Results
 
@@ -225,4 +225,4 @@ If time is limited, run these checks before shipping task-related changes:
 4. Delete/Backspace on a focused task checkbox removes the task and shows an undo toast.
 5. Cmd+Z / Ctrl+Z restores the deleted task with its original properties.
 6. Drag-and-drop reordering persists after a page reload.
-7. Ctrl+Meta+ArrowRight moves a task to the next day; Ctrl+Meta+ArrowLeft to the previous day.
+7. Shift+ArrowRight moves a task to the next day; Shift+ArrowLeft to the previous day.

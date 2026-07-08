@@ -1,10 +1,5 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-  useState,
-} from "react";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { createContext, useCallback, useContext, useMemo } from "react";
 
 export type AuthView =
   | "login"
@@ -12,6 +7,39 @@ export type AuthView =
   | "signUp"
   | "forgotPassword"
   | "resetPassword";
+
+/**
+ * The `?auth=` URL param is the single source of truth for the auth modal:
+ * param present = modal open on that view, param absent = modal closed.
+ * Opening pushes a history entry, so the browser back button closes the
+ * modal; view switches and closing replace the entry, so one back press
+ * always exits.
+ */
+export const VIEW_TO_PARAM: Record<AuthView, string> = {
+  login: "login",
+  loginAfterReset: "login-after-reset",
+  signUp: "signup",
+  forgotPassword: "forgot",
+  resetPassword: "reset",
+};
+
+const PARAM_TO_VIEW = Object.fromEntries(
+  Object.entries(VIEW_TO_PARAM).map(([view, param]) => [param, view]),
+) as Record<string, AuthView>;
+
+export interface AuthSearch {
+  auth?: string;
+  token?: string;
+}
+
+export function validateAuthSearch(
+  search: Record<string, unknown>,
+): AuthSearch {
+  return {
+    auth: typeof search.auth === "string" ? search.auth : undefined,
+    token: typeof search.token === "string" ? search.token : undefined,
+  };
+}
 
 interface AuthModalContextValue {
   isOpen: boolean;
@@ -41,40 +69,45 @@ export function useAuthModal(): AuthModalContextValue {
   return useContext(AuthModalContext);
 }
 
+function getViewFromParam(param: string | undefined): AuthView | null {
+  return param ? (PARAM_TO_VIEW[param.toLowerCase()] ?? null) : null;
+}
+
 /**
  * Hook to create auth modal state
  *
  * Used by AuthModalProvider to create the context value
  */
-export function useAuthModalState() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [currentView, setCurrentView] = useState<AuthView>("login");
+export function useAuthModalState(): AuthModalContextValue {
+  const { auth } = useSearch({ from: "__root__" });
+  const navigate = useNavigate();
+  const view = getViewFromParam(auth);
 
-  const openModal = useCallback((view: AuthView = "login") => {
-    setCurrentView(view);
-    setIsOpen(true);
-  }, []);
-
-  const closeModal = useCallback(() => {
-    setIsOpen(false);
-    // Reset to signIn view after closing
-    setCurrentView("login");
-  }, []);
-
-  const setView = useCallback((view: AuthView) => {
-    setCurrentView(view);
-  }, []);
-
-  const value = useMemo(
-    () => ({
-      isOpen,
-      currentView,
-      openModal,
-      closeModal,
-      setView,
-    }),
-    [isOpen, currentView, openModal, closeModal, setView],
+  const setAuthView = useCallback(
+    (nextView: AuthView | null) => {
+      // Only opening from a closed state pushes an entry; view switches and
+      // closing replace it, so the modal occupies at most one history entry.
+      const replace = !(nextView !== null && view === null);
+      navigate({
+        to: ".",
+        replace,
+        search: (prev) => ({
+          ...prev,
+          auth: nextView ? VIEW_TO_PARAM[nextView] : undefined,
+        }),
+      });
+    },
+    [navigate, view],
   );
 
-  return value;
+  return useMemo(
+    () => ({
+      isOpen: view !== null,
+      currentView: view ?? "login",
+      openModal: (nextView: AuthView = "login") => setAuthView(nextView),
+      closeModal: () => setAuthView(null),
+      setView: (nextView: AuthView) => setAuthView(nextView),
+    }),
+    [view, setAuthView],
+  );
 }
