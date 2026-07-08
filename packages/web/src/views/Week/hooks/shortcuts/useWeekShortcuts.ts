@@ -203,10 +203,7 @@ export const useWeekShortcuts = ({
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
 
-      deleteEventAndDiscardDraft({
-        deleteEvent,
-        existingEvent: resolvedTarget.event,
-      });
+      deleteEventAndDiscardDraft(deleteEvent, resolvedTarget.event);
     },
     [deleteEvent, getTargetedCalendarEvent],
   );

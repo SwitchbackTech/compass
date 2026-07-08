@@ -9,20 +9,18 @@ import { draftActions } from "@web/events/stores/draft.store";
 
 // No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z (the mutation
 // layer records a snapshot and shows a "Deleted" toast with the undo hint).
-export function deleteEventAndDiscardDraft({
-  applyTo = RecurringEventUpdateScope.THIS_EVENT,
-  deleteEvent,
-  existingEvent,
-}: {
-  applyTo?: RecurringEventUpdateScope;
+export function deleteEventAndDiscardDraft(
   deleteEvent?: (payload: {
     _id: string;
     applyTo: RecurringEventUpdateScope;
-  }) => void;
-  existingEvent?: Schema_Event | null;
-}) {
+  }) => void,
+  existingEvent?: Schema_Event | null,
+) {
   if (existingEvent?._id) {
-    deleteEvent?.({ _id: existingEvent._id, applyTo });
+    deleteEvent?.({
+      _id: existingEvent._id,
+      applyTo: RecurringEventUpdateScope.THIS_EVENT,
+    });
   }
 
   draftActions.discard();
@@ -38,14 +36,7 @@ export function useDeleteEvent(_id: string) {
   const { delete: deleteEventMutation } = useEventMutations();
 
   const deleteEvent = useCallback(
-    (
-      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
-    ) =>
-      deleteEventAndDiscardDraft({
-        applyTo,
-        deleteEvent: deleteEventMutation,
-        existingEvent,
-      }),
+    () => deleteEventAndDiscardDraft(deleteEventMutation, existingEvent),
     [deleteEventMutation, existingEvent],
   );
 
