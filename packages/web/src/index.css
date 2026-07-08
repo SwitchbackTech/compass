@@ -9,6 +9,7 @@
  */
 :root {
   --compass-color-accent-primary: hsl(202 100 67);
+  --compass-color-accent-primary-shadow: hsl(202 100 42);
   --compass-color-bg-primary: hsl(222 28 7);
   --compass-color-bg-secondary: hsl(218 24 9);
   --compass-color-border-primary: hsl(219 18 34 / 20%);
@@ -57,6 +58,7 @@
 
 @theme inline {
   --color-accent-primary: var(--compass-color-accent-primary);
+  --color-accent-primary-shadow: var(--compass-color-accent-primary-shadow);
   --color-bg-primary: var(--compass-color-bg-primary);
   --color-bg-secondary: var(--compass-color-bg-secondary);
   --color-border-primary: var(--compass-color-border-primary);
@@ -304,6 +306,26 @@
       0 6px 12px -10px var(--color-shadow-default),
       0 2px 6px -6px var(--color-shadow-default);
     transform: translateY(0);
+  }
+}
+
+@utility c-button-elevated {
+  box-shadow:
+    0 3px 0 0 var(--elevated-shadow-color, var(--color-accent-primary-shadow)),
+    0 6px 14px -6px var(--color-shadow-default);
+
+  &:hover {
+    box-shadow:
+      0 4px 0 0 var(--elevated-shadow-color, var(--color-accent-primary-shadow)),
+      0 10px 18px -6px var(--color-shadow-default);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    box-shadow:
+      0 1px 0 0 var(--elevated-shadow-color, var(--color-accent-primary-shadow)),
+      0 2px 6px -4px var(--color-shadow-default);
+    transform: translateY(2px);
   }
 }
 

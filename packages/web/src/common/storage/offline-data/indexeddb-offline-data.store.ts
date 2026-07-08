@@ -129,7 +129,6 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
       .toArray();
 
     // Remove dateKey and normalize (ensures defaults like user are applied)
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     return storedTasks.map(({ dateKey: _, ...task }) => normalizeTask(task));
   }
 

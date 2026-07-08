@@ -64,7 +64,6 @@ export class LocalEventRepository implements EventRepository {
   async edit(
     _id: string,
     event: Schema_Event,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _params: { applyTo?: RecurringEventUpdateScope },
   ): Promise<void> {
     const existingEvent = (await this.store.getAllEvents()).find(
@@ -80,7 +79,6 @@ export class LocalEventRepository implements EventRepository {
 
   async delete(
     _id: string,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _applyTo?: RecurringEventUpdateScope,
   ): Promise<void> {
     // For local repository, applyTo is not relevant
