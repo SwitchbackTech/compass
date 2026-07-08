@@ -36,8 +36,10 @@ import {
 } from "./event.mutation.keys";
 import {
   markAnonymousEventWrite,
-  waitForPendingEventCreate,
-  waitForPendingEventDelete,
+  type PrecedingEventWrites,
+  precedingCreateOk,
+  precedingDeleteOk,
+  waitForPrecedingEventWrites,
 } from "./event.mutation.runtime";
 
 // Convert mutations capture the fully-resolved converted event at the
@@ -54,10 +56,12 @@ type ConvertVariables = {
 // removal still runs but no repository write is issued.
 type DeleteSomedayVariables = Payload_DeleteEvent & { skipRepository: boolean };
 
-// Series-wide ops can't be restored from a client snapshot (the server
-// rewrites the series), and undoing a deleted recurring instance via `create`
-// would spawn a duplicate standalone event instead of clearing the exdate —
-// so neither is recorded to undo history.
+// Recurring events are excluded from undo history entirely: series-wide ops
+// can't be restored from a client snapshot (the server rewrites the series),
+// undoing a deleted instance via `create` would spawn a duplicate standalone
+// event instead of clearing the exdate, and even a THIS_EVENT instance edit
+// confirms the instance server-side, so its pre-edit snapshot is stale by
+// the time an undo would replay it.
 const isRecurring = (event: Schema_Event) =>
   Boolean(event.recurrence?.eventId || event.recurrence?.rule?.length);
 
@@ -124,6 +128,23 @@ export function useEventMutations(
     onError: (error: Error) => reportError(error),
     onSettled: settle,
   });
+  // Shared by every mutationFn below: wait for earlier writes to the same
+  // event to finish, run the repository write only if `canWrite` says the
+  // preceding outcome allows it, then mark the write regardless.
+  const writeAfterPreceding = async (
+    eventId: string,
+    variables: unknown,
+    canWrite: (preceding: PrecedingEventWrites) => boolean,
+    write: () => Promise<unknown>,
+  ) => {
+    const preceding = await waitForPrecedingEventWrites(
+      queryClient,
+      eventId,
+      variables,
+    );
+    if (canWrite(preceding)) await write();
+    await markWrite();
+  };
   const convertedEvent = useCallback(
     (event: Payload_ConvertEvent["event"], isSomeday: boolean) => {
       const existing = findEventInCache(queryClient, event._id, source);
@@ -139,19 +160,15 @@ export function useEventMutations(
     buildMutation<Schema_Event>(
       "create",
       async (event) => {
-        // Undo-of-delete restores via create with the original _id; if that
-        // delete is still in flight, wait so the POST can't land before the
-        // DELETE server-side. A failed delete means the event still exists,
-        // so the restore write is skipped. Normal creates use fresh ids and
-        // resolve immediately.
-        const deleteOutcome = await waitForPendingEventDelete(
-          queryClient,
+        // Undo-of-delete restores via create with the original _id; waiting
+        // here keeps the POST from landing before the DELETE server-side.
+        // Normal creates use fresh ids and resolve immediately.
+        await writeAfterPreceding(
           event._id as string,
+          event,
+          precedingDeleteOk,
+          () => repository.create(event),
         );
-        if (deleteOutcome !== "error") {
-          await repository.create(event);
-        }
-        await markWrite();
         return event;
       },
       (event) =>
@@ -164,12 +181,11 @@ export function useEventMutations(
   const editMutation = useMutation(
     buildMutation<Payload_EditEvent>(
       "edit",
-      async ({ _id, event, applyTo }) => {
-        const createOutcome = await waitForPendingEventCreate(queryClient, _id);
-        if (createOutcome !== "error") {
-          await repository.edit(_id, event, { applyTo });
-        }
-        await markWrite();
+      async (variables) => {
+        const { _id, event, applyTo } = variables;
+        await writeAfterPreceding(_id, variables, precedingCreateOk, () =>
+          repository.edit(_id, event, { applyTo }),
+        );
       },
       ({ _id, event, shouldRemove }) => {
         if (shouldRemove) {
@@ -192,12 +208,11 @@ export function useEventMutations(
   const deleteMutation = useMutation(
     buildMutation<Payload_DeleteEvent>(
       "delete",
-      async ({ _id, applyTo }) => {
-        const createOutcome = await waitForPendingEventCreate(queryClient, _id);
-        if (createOutcome !== "error") {
-          await repository.delete(_id, applyTo);
-        }
-        await markWrite();
+      async (variables) => {
+        const { _id, applyTo } = variables;
+        await writeAfterPreceding(_id, variables, precedingCreateOk, () =>
+          repository.delete(_id, applyTo),
+        );
       },
       ({ _id }) => removeEventFromQueries(queryClient, _id, { source }),
     ),
@@ -206,21 +221,17 @@ export function useEventMutations(
   const convertToSomedayMutation = useMutation(
     buildMutation<ConvertVariables>(
       "convert-to-someday",
-      async ({ event, converted }) => {
+      async (variables) => {
+        const { event, converted } = variables;
         if (!converted) {
           throw new Error(`Event ${event._id} not found for conversion`);
         }
         const applyTo = converted.recurrence?.eventId
           ? RecurringEventUpdateScope.ALL_EVENTS
           : RecurringEventUpdateScope.THIS_EVENT;
-        const createOutcome = await waitForPendingEventCreate(
-          queryClient,
-          event._id,
+        await writeAfterPreceding(event._id, variables, precedingCreateOk, () =>
+          repository.edit(event._id, converted, { applyTo }),
         );
-        if (createOutcome !== "error") {
-          await repository.edit(event._id, converted, { applyTo });
-        }
-        await markWrite();
       },
       ({ event, converted }) => {
         if (!converted) return;
@@ -235,21 +246,17 @@ export function useEventMutations(
   const convertToCalendarMutation = useMutation(
     buildMutation<ConvertVariables>(
       "convert-to-calendar",
-      async ({ event, converted }) => {
+      async (variables) => {
+        const { event, converted } = variables;
         if (!converted) {
           throw new Error(`Event ${event._id} not found for conversion`);
         }
         // Persist the captured event even when it overlaps no cached calendar
         // range (off-screen target): the optimistic insert simply matches
         // nothing, and settle-time invalidation establishes canonical membership.
-        const createOutcome = await waitForPendingEventCreate(
-          queryClient,
-          event._id,
+        await writeAfterPreceding(event._id, variables, precedingCreateOk, () =>
+          repository.edit(event._id, converted, {}),
         );
-        if (createOutcome !== "error") {
-          await repository.edit(event._id, converted, {});
-        }
-        await markWrite();
       },
       ({ event, converted }) => {
         if (!converted) return;
@@ -264,12 +271,14 @@ export function useEventMutations(
   const deleteSomedayMutation = useMutation(
     buildMutation<DeleteSomedayVariables>(
       "delete-someday",
-      async ({ _id, applyTo, skipRepository }) => {
-        const createOutcome = await waitForPendingEventCreate(queryClient, _id);
-        if (!skipRepository && createOutcome !== "error") {
-          await repository.delete(_id, applyTo);
-        }
-        await markWrite();
+      async (variables) => {
+        const { _id, applyTo, skipRepository } = variables;
+        await writeAfterPreceding(
+          _id,
+          variables,
+          (preceding) => !skipRepository && precedingCreateOk(preceding),
+          () => repository.delete(_id, applyTo),
+        );
       },
       ({ _id }) =>
         removeEventFromQueries(queryClient, _id, { source, scope: "someday" }),
@@ -343,7 +352,14 @@ export function useEventMutations(
       edit: (payload: Payload_EditEvent) => {
         if (!isRestoringHistory() && isThisEventScope(payload.applyTo)) {
           const before = findEventInCache(queryClient, payload._id, source);
-          if (before) {
+          // Recurring events are excluded even at THIS_EVENT scope (see the
+          // isRecurring note); check the payload too so an edit that *adds*
+          // recurrence isn't recorded either.
+          if (
+            before &&
+            !isRecurring(before) &&
+            !isRecurring(payload.event as Schema_Event)
+          ) {
             undoHistoryActions.record({
               kind: "edit",
               _id: payload._id,

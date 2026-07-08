@@ -126,7 +126,7 @@ describe("CompassToGoogleEventPropagation.notifyClients", () => {
   });
 });
 
-describe("CompassToGoogleEventPropagation.handleCompassChange", () => {
+describe("CompassToGoogleEventPropagation applyChange + executeGoogleEffect", () => {
   beforeEach(() => {
     jest.restoreAllMocks();
   });
@@ -174,8 +174,8 @@ describe("CompassToGoogleEventPropagation.handleCompassChange", () => {
       .mockResolvedValueOnce(applyResult);
 
     await expect(
-      CompassToGoogleEventPropagation["handleCompassChange"](event),
-    ).resolves.toEqual([applyResult.summary]);
+      CompassToGoogleEventPropagation["applyChange"](event),
+    ).resolves.toEqual({ plan, applyResult });
 
     expect(findOneSpy).toHaveBeenCalledWith(
       expect.objectContaining({ user: payload.user }),
@@ -225,16 +225,21 @@ describe("CompassToGoogleEventPropagation.handleCompassChange", () => {
         }) as CompassApplyResult,
     );
 
+    const change = await CompassToGoogleEventPropagation["applyChange"](event);
+
+    expect(change?.applyResult.summary).toEqual({
+      title: payload.title!,
+      transition: [Categories_Recurrence.STANDALONE, "STANDALONE_CANCELLED"],
+      category: Categories_Recurrence.STANDALONE,
+      operation: "STANDALONE_DELETED",
+    });
+
     await expect(
-      CompassToGoogleEventPropagation["handleCompassChange"](event),
-    ).resolves.toEqual([
-      {
-        title: payload.title!,
-        transition: [Categories_Recurrence.STANDALONE, "STANDALONE_CANCELLED"],
-        category: Categories_Recurrence.STANDALONE,
-        operation: "STANDALONE_DELETED",
-      },
-    ]);
+      CompassToGoogleEventPropagation["executeGoogleEffect"](
+        change!.plan,
+        change!.applyResult,
+      ),
+    ).resolves.toBe(true);
 
     expect(deleteSpy).toHaveBeenCalledWith(
       payload.user!,
@@ -282,15 +287,85 @@ describe("CompassToGoogleEventPropagation.handleCompassChange", () => {
       .spyOn(eventService, "_updateGcal")
       .mockRejectedValueOnce(missingRefreshTokenError);
 
+    const change = await CompassToGoogleEventPropagation["applyChange"](event);
+
+    expect(change?.applyResult.summary).toEqual({
+      title: payload.title!,
+      transition: [null, "STANDALONE_CONFIRMED"],
+      category: Categories_Recurrence.STANDALONE,
+      operation: "STANDALONE_CREATED",
+    });
+
+    // The missing-refresh-token failure is swallowed, so the summary (and
+    // the already-committed Compass write) is kept.
     await expect(
-      CompassToGoogleEventPropagation["handleCompassChange"](event),
-    ).resolves.toEqual([
-      {
+      CompassToGoogleEventPropagation["executeGoogleEffect"](
+        change!.plan,
+        change!.applyResult,
+      ),
+    ).resolves.toBe(true);
+  });
+
+  it("runs Google effects once even when the transaction retries", async () => {
+    const payload = createMockStandaloneEvent();
+    const event = {
+      payload,
+      status: CompassEventStatus.CONFIRMED,
+      applyTo: RecurringEventUpdateScope.THIS_EVENT,
+    } as CompassEvent;
+    const plan = {
+      summary: {
         title: payload.title!,
         transition: [null, "STANDALONE_CONFIRMED"],
         category: Categories_Recurrence.STANDALONE,
-        operation: "STANDALONE_CREATED",
       },
-    ]);
+      operation: "STANDALONE_CREATED",
+      transitionKey: "NIL->>STANDALONE_CONFIRMED",
+      provider: CalendarProvider.GOOGLE,
+      compassMutation: "CREATE",
+      googleEffect: { type: "update" },
+      event: payload as never,
+      rrule: null,
+      steps: [],
+    } as compassParser.CompassOperationPlan;
+    const applyResult: CompassApplyResult = {
+      applied: true,
+      persistedEvent: payload,
+      summary: { ...plan.summary, operation: plan.operation },
+    };
+
+    jest.spyOn(mongoService, "event", "get").mockReturnValue({
+      findOne: jest.fn().mockResolvedValue(null),
+    } as never);
+    jest
+      .spyOn(compassParser, "analyzeCompassTransition")
+      .mockReturnValue(plan as never);
+    const applySpy = jest
+      .spyOn(compassExecutor, "applyCompassPlan")
+      .mockResolvedValue(applyResult);
+    const updateGcalSpy = jest
+      .spyOn(eventService, "_updateGcal")
+      .mockResolvedValue({} as never);
+
+    // A session whose withTransaction runs the callback twice, the way the
+    // driver replays it after a TransientTransactionError (WriteConflict).
+    const session = {
+      withTransaction: async (callback: (s: unknown) => Promise<unknown>) => {
+        await callback(session);
+        return callback(session);
+      },
+      endSession: jest.fn(),
+    };
+    jest
+      .spyOn(mongoService, "startSession")
+      .mockResolvedValue(session as never);
+
+    await expect(
+      CompassToGoogleEventPropagation.processEvents([event]),
+    ).resolves.toEqual([applyResult.summary]);
+
+    expect(applySpy).toHaveBeenCalledTimes(2);
+    expect(updateGcalSpy).toHaveBeenCalledTimes(1);
+    expect(session.endSession).toHaveBeenCalled();
   });
 });

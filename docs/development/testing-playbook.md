@@ -29,7 +29,7 @@ Unit workflow (`test-unit.yml`):
 - runs a matrix across `core`, `web`, `backend`, and `scripts`
 - uses `fail-fast: false`, so one failing lane does not cancel the others
 - runs `bun run test:<project>` in each lane after dependency install
-- passes timezone through `TZ: ${{ vars.TZ }}`
+- runs every lane with `TZ: Etc/UTC` set
 
 Local parity commands:
 
@@ -123,6 +123,9 @@ Isolation rules:
 - If a test replaces globals (`fetch`, `document.getElementById`, storage, timers, console methods), restore the original value in teardown.
 - Prefer `renderWithStore`, `createStoreWrapper`, or a focused provider harness over mocking `@web/store` or `store.hooks`.
 - `bun test --cwd packages/web` is the acceptance check for web test isolation. A focused test can pass while still leaking into the direct suite.
+- `mock.module` is process-global, not per-file: the preload's `afterAll(() => mock.restore())` (`packages/web/src/__tests__/web.preload.ts`) runs once at the very end of the whole run, so a `mock.module(...)` in one test file replaces that module for every file that imports it afterward — an order-dependent failure. Only mock a module if it has a single importer with no dedicated test of its own; if it has a dedicated test elsewhere, mocking it here will break that test instead.
+- To focus an element on mount in this jsdom setup, use React's `autoFocus` prop or a stable callback ref (`ref={useCallback(n => n?.focus(), [])}`) — both fire in the commit phase. A `useEffect(() => ref.current?.focus())` does **not** make the element `document.activeElement` in tests. `autoFocus` trips biome's `lint/a11y/noAutofocus` (error) and a JSX-attribute `biome-ignore` comment breaks the formatter, so prefer the callback ref.
+- `FloatingFocusManager` fights virtual-focus combobox palettes: for a component that keeps real focus in one input while using `useListNavigation({ virtual: true })` + `aria-activedescendant` (a command-palette style pattern), `FloatingFocusManager` asynchronously grabs focus to the panel container and steals it back from the input. Drop it — `useDismiss` still handles Escape/outside-press without it. It belongs on anchored forms with a real reference element instead (e.g. `FloatingEventForm`).
 
 ### Web Jest Harness Defaults (MSW + Globals)
 
@@ -205,6 +208,44 @@ Assertions to prefer:
   - user interaction (header toggle button)
   - keyboard interaction (`[` shortcut via view shortcut hooks)
 
+### Seeding Event Data And Client State
+
+Persisted events live in TanStack Query; transient client state lives in
+per-domain Zustand stores (see
+[Frontend Runtime Flow](../frontend/frontend-runtime-flow.md#state-systems)).
+Seed both explicitly rather than reaching into module internals:
+
+- The render harnesses (`mock.render.tsx`'s `render`/`renderHook`, and
+  `render-with-store.tsx`'s `createStoreWrapper`/`renderWithStore`/
+  `renderHookWithStore`) take an `events` option that calls
+  `seedEventQueries(queryClient, events)`
+  (`@web/__tests__/utils/event-query-test-data.ts`).
+- They take a `state` option (shape mirrors the old Redux `RootState`:
+  `{ events: { draft }, view, settings, userMetadata }`), routed through
+  `seedStoresFromState()` (`@web/__tests__/utils/state/seed-stores.ts`) into
+  the real Zustand stores.
+- Zustand stores are module singletons; isolation comes from
+  `resetAllStores()`, registered in a global `afterEach` in `web.preload.ts`.
+  A new store must be added to both the reset registry
+  (`@web/__tests__/utils/state/reset-stores.ts`) and the seeder, or it leaks
+  state across tests silently.
+
+Two gotchas that produce confusing failures far from their actual cause:
+
+- **Someday view-model seeding:** any component/hook rendering
+  `useSomedayEventViewModel` Zod-parses every entity in the someday query via
+  `validateSomedayEvents`. A test that seeds minimal grid fixtures with a
+  broad `setQueryDefaults(["events"], ...)` will have the someday query
+  inherit them, and the derive throws mid-render. Also seed
+  `setQueryDefaults(["events", "someday"], { initialData: toNormalizedEventQueryData([]) })`
+  (see `useWeekShortcuts.test.tsx` for a working example).
+- **Pending-mutation seeding:** a pending event is derived from an in-flight
+  mutation whose `mutationKey` is a full 3-segment
+  `eventMutationKeys.operation("edit" | "create" | ...)`. A bare
+  `["events", "mutation"]` key is not recognized. Convert payloads nest the
+  id under `variables.event._id`; a reorder mutation marks no events pending
+  by design.
+
 ### Route-Aware Component Tests
 
 For components that depend on routing context (`Outlet`, nested routes, route transitions), prefer the shared memory-router helper:
@@ -244,6 +285,8 @@ Preferred style:
 - mock only external services, not internal business logic
 
 **Do not import `mongoService` (or other persistence implementations) directly in tests.** Use test drivers instead (e.g. `UserDriver`, `GoogleWatchDriver` in `packages/backend/src/__tests__/drivers/`). Drivers encapsulate persistence so that switching away from Mongo (or another store) in the future does not require changing test code.
+
+CI runs every lane with `TZ: Etc/UTC` (see CI Unit Test Workflow above). If a backend test only fails locally, match that explicitly rather than relying on your machine's default timezone: `TZ=UTC ./node_modules/.bin/jest --selectProjects backend`.
 
 Useful anchors:
 
@@ -288,6 +331,34 @@ or on a rerun of just the failed job. `playwright.config.ts` now runs a
 single worker in CI (`workers: process.env.CI ? 1 : 2`) specifically to
 remove this contention; if it recurs, treat it as environmental before
 assuming a spec regressed, and do not "fix" it by deleting the test.
+
+A test that fails **deterministically** isn't automatically a real product
+bug either — it can be the harness racing a CSS transition. One
+`create-event-mouse` spec failed 100% of the time in reduced-day-count mode
+(narrow viewport + sidebar open): `ensureSidebarOpen`
+(`e2e/utils/event-test-utils.ts`) waited for the sidebar to become *visible*
+but not for its `transition-[width]` to finish, so the test measured column
+positions mid-animation and then dragged after the grid had reflowed to a
+different column count. Fixed by `waitForMainGridWidthToSettle` (polls
+`#mainGrid`'s measured width until two consecutive reads match), called from
+the just-opened branch of `ensureSidebarOpen` — this benefits any spec that
+opens the sidebar and then immediately depends on grid geometry. Verify
+empirically (a throwaway debug spec dumping live `getBoundingClientRect()`s)
+before concluding either way: "flaky = environment" and "deterministic = app
+regression" are both assumptions, not defaults.
+
+### CI-Only Flakiness From Branch Divergence
+
+A web unit test that times out only on GitHub Actions and never locally
+(even when replaying CI's exact file execution order or running
+`--rerun-each=25`) is not always pure environmental flake. If the failing
+test lives in shortcut or view-store code, first check whether the PR branch
+is behind `main` on those exact files — merging/rebasing main in has
+resolved this class of failure before, because divergent shortcut/store code
+interacting with CI's file ordering was the real contributor, not the
+environment. Only treat it as a genuine flake
+(`gh run rerun <run-id> --failed`) once the branch is confirmed current and
+the diff doesn't touch the failing area.
 
 ## Testing Realtime And Sync Changes
 

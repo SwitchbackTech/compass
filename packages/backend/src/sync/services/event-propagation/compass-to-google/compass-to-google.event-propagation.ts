@@ -8,7 +8,10 @@ import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
-import { applyCompassPlan } from "@backend/event/classes/compass.event.executor";
+import {
+  applyCompassPlan,
+  type CompassApplyResult,
+} from "@backend/event/classes/compass.event.executor";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
 import {
   analyzeCompassTransition,
@@ -29,47 +32,68 @@ import {
 
 const logger = Logger("app:compass-to-google.event-propagation");
 
+type AppliedCompassChange = {
+  plan: CompassOperationPlan;
+  applyResult: CompassApplyResult;
+};
+
 export class CompassToGoogleEventPropagation {
   static async processEvents(
     events: CompassEvent[],
-    _session?: ClientSession,
   ): Promise<Event_Transition[]> {
-    const summary: Event_Transition[] = [];
-
     logger.debug(`Processing ${events.length} event(s)...`);
 
-    const session = _session ?? (await mongoService.startSession());
-
-    if (!_session) session.startTransaction();
+    const session = await mongoService.startSession();
 
     try {
-      const compassEvents = await Promise.all(
-        events.map(async (event) =>
-          CompassEventFactory.generateEvents(event, session),
-        ),
-      ).then((events) => events.flat());
+      // The transaction covers only the Mongo writes. withTransaction retries
+      // the callback on TransientTransactionError (a WriteConflict with a
+      // concurrent write — e.g. a Google webhook import triggered by the
+      // previous save of the same event), so the Google calls must stay
+      // outside it: they would repeat on retry, and awaiting network I/O
+      // inside an open transaction is what made conflicts likely to begin
+      // with.
+      const applied = await session.withTransaction(async (session) => {
+        const compassEvents = (
+          await Promise.all(
+            events.map((event) =>
+              CompassEventFactory.generateEvents(event, session),
+            ),
+          )
+        ).flat();
 
-      for (const event of compassEvents) {
-        const changes =
-          await CompassToGoogleEventPropagation.handleCompassChange(
+        const results: AppliedCompassChange[] = [];
+
+        for (const event of compassEvents) {
+          const change = await CompassToGoogleEventPropagation.applyChange(
             event,
             session,
           );
 
-        summary.push(...changes);
+          if (change) results.push(change);
+        }
+
+        return results;
+      });
+
+      const summary: Event_Transition[] = [];
+
+      for (const { plan, applyResult } of applied) {
+        const didExecuteGoogleEffect =
+          await CompassToGoogleEventPropagation.executeGoogleEffect(
+            plan,
+            applyResult,
+          );
+
+        if (didExecuteGoogleEffect) summary.push(applyResult.summary);
       }
 
-      if (!_session) await session.commitTransaction();
-    } catch (error) {
-      if (!_session) await session.abortTransaction();
-
-      throw error;
-    }
-
-    if (!_session)
       CompassToGoogleEventPropagation.notifyClients(events, summary);
 
-    return summary;
+      return summary;
+    } finally {
+      await session.endSession();
+    }
   }
 
   private static getNotificationType(
@@ -121,10 +145,10 @@ export class CompassToGoogleEventPropagation {
     });
   }
 
-  private static async handleCompassChange(
+  private static async applyChange(
     event: CompassEvent,
     session?: ClientSession,
-  ): Promise<Event_Transition[]> {
+  ): Promise<AppliedCompassChange | null> {
     const eventId = event.payload._id;
     const dbEvent = await mongoService.event.findOne(
       { _id: new ObjectId(eventId), user: event.payload.user },
@@ -137,23 +161,12 @@ export class CompassToGoogleEventPropagation {
 
     const applyResult = await applyCompassPlan(plan, session);
 
-    if (!applyResult.applied) return [];
-
-    const didExecuteGoogleEffect =
-      await CompassToGoogleEventPropagation.executeGoogleEffect(
-        plan,
-        applyResult,
-      );
-
-    return didExecuteGoogleEffect ? [applyResult.summary] : [];
+    return applyResult.applied ? { plan, applyResult } : null;
   }
 
   private static async executeGoogleEffect(
     plan: CompassOperationPlan,
-    {
-      googleDeleteEventId,
-      persistedEvent,
-    }: Awaited<ReturnType<typeof applyCompassPlan>>,
+    { googleDeleteEventId, persistedEvent }: CompassApplyResult,
   ): Promise<boolean> {
     try {
       return await CompassToGoogleEventPropagation.handleGoogleEffectByType(
