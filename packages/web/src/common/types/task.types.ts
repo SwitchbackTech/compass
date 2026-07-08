@@ -7,7 +7,6 @@ const TaskSchema = z.object({
   status: z.enum(["todo", "completed"]),
   order: z.number().default(0),
   createdAt: z.string().datetime(),
-  description: z.string().max(255).optional(),
   user: z.string().default(UNAUTHENTICATED_USER),
 });
 
