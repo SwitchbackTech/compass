@@ -1,11 +1,17 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
+import {
+  RecurringEventUpdateScope,
+  type Schema_Event,
+} from "@core/types/event.types";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
+import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import {
   type EventMutationDependencies,
   useEventMutations,
 } from "@web/events/mutations/useEventMutations";
+import { findEventInCache } from "@web/events/queries/event.query.cache";
 import {
   runHistoryRestore,
   selectCanRedo,
@@ -54,8 +60,28 @@ const refocusAfterReplay = (eventId: string) => {
  */
 export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
   const mutations = useEventMutations(dependencies);
+  const queryClient = useQueryClient();
+  const activeSource = useEventRepositorySource();
+  const source = dependencies.source ?? activeSource;
   const canUndo = useUndoHistoryStore(selectCanUndo);
   const canRedo = useUndoHistoryStore(selectCanRedo);
+
+  // Snapshots merge over the current cache entry rather than replaying bare:
+  // a snapshot captured before the create's settle-refetch lacks server-owned
+  // fields (gEventId, updatedAt), and the backend PUT is a full document
+  // replace — replaying the bare snapshot would strip those ids server-side
+  // and break Google propagation ("cannot update gcal event without id").
+  const replaySnapshot = useCallback(
+    (_id: string, snapshot: Schema_Event) => {
+      const current = findEventInCache(queryClient, _id, source);
+      mutations.edit({
+        _id,
+        event: { ...current, ...snapshot } as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      });
+    },
+    [mutations, queryClient, source],
+  );
 
   const undo = useCallback(() => {
     const entry = undoHistoryActions.popUndo();
@@ -65,15 +91,11 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
       if (isDeleteEntry(entry)) {
         mutations.create(entry.event);
       } else {
-        mutations.edit({
-          _id: entry._id,
-          event: entry.before as Schema_WebEvent,
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        });
+        replaySnapshot(entry._id, entry.before);
       }
     });
     refocusAfterReplay(entryEventId(entry));
-  }, [mutations]);
+  }, [mutations, replaySnapshot]);
 
   const redo = useCallback(() => {
     const entry = undoHistoryActions.popRedo();
@@ -88,17 +110,13 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
         if (entry.kind === "delete") mutations.delete(payload);
         else mutations.deleteSomeday(payload);
       } else {
-        mutations.edit({
-          _id: entry._id,
-          event: entry.after as Schema_WebEvent,
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        });
+        replaySnapshot(entry._id, entry.after);
       }
     });
     if (!isDeleteEntry(entry)) {
       refocusAfterReplay(entry._id);
     }
-  }, [mutations]);
+  }, [mutations, replaySnapshot]);
 
   return { undo, redo, canUndo, canRedo };
 }
