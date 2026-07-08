@@ -128,55 +128,6 @@ function ensureConfigExists(root: string, configPath: string): void {
   console.log(`[dev-ports] created compass.yaml from ${source}`);
 }
 
-// .claude/launch.json (checked into git, used by preview tooling) hardcodes
-// the same default ports as compass.yaml. Keep its Backend/Web entries in
-// sync so preview tooling watches the port this worktree actually uses —
-// "Debug Web" (8080, a static http-server, not compass-config-driven) is
-// left alone. Replaces just the "port" digits per named entry via regex
-// (rather than JSON.parse + stringify) so a reformat of the whole file isn't
-// forced on every unrelated line just to change two numbers.
-export function syncLaunchConfig(
-  launchJson: string,
-  ports: DevPorts,
-): string | null {
-  const portByName: Record<string, number> = {
-    Backend: ports.backend,
-    Web: ports.web,
-  };
-
-  let result = launchJson;
-  let changed = false;
-
-  for (const [name, port] of Object.entries(portByName)) {
-    const pattern = new RegExp(
-      `("name":\\s*"${name}"[\\s\\S]*?"port":\\s*)(\\d+)`,
-    );
-    result = result.replace(
-      pattern,
-      (match, prefix: string, oldPort: string) => {
-        if (Number(oldPort) === port) return match;
-        changed = true;
-        return `${prefix}${port}`;
-      },
-    );
-  }
-
-  return changed ? result : null;
-}
-
-function applyLaunchConfigSync(root: string, ports: DevPorts): void {
-  const launchPath = path.join(root, ".claude", "launch.json");
-  if (!existsSync(launchPath)) return;
-
-  const rewritten = syncLaunchConfig(readFileSync(launchPath, "utf8"), ports);
-  if (rewritten === null) return;
-
-  writeFileSync(launchPath, rewritten);
-  console.log(
-    `[dev-ports] synced .claude/launch.json to web ${ports.web}, backend ${ports.backend}`,
-  );
-}
-
 function isPortsClaimed(ports: DevPorts, claimed: DevPorts[]): boolean {
   return claimed.some(
     (c) => c.web === ports.web || c.backend === ports.backend,
@@ -219,7 +170,6 @@ async function main(): Promise<void> {
 
   const claimed = readSiblingPorts(root);
   if (!isPortsClaimed(current, claimed)) {
-    applyLaunchConfigSync(root, current); // catches drift from manual edits
     return;
   }
 
@@ -237,7 +187,6 @@ async function main(): Promise<void> {
   }
 
   writeFileSync(configPath, rewritten);
-  applyLaunchConfigSync(root, next);
   console.log(
     `[dev-ports] ports ${current.web}/${current.backend} are claimed by ` +
       `another worktree — reassigned to web ${next.web}, backend ${next.backend}`,

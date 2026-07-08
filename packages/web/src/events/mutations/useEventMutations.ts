@@ -11,7 +11,6 @@ import { type EventRepository } from "@web/common/repositories/event/event.repos
 import { getEventRepositoryBySource } from "@web/common/repositories/event/event.repository.util";
 import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import { showDeletedToast } from "@web/common/utils/toast/deleted-toast.util";
 import {
   type Payload_ConvertEvent,
   type Payload_DeleteEvent,
@@ -27,10 +26,6 @@ import {
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import {
-  isRestoringHistory,
-  undoHistoryActions,
-} from "@web/events/stores/undo.store";
-import {
   type EventMutationOperation,
   eventMutationKeys,
 } from "./event.mutation.keys";
@@ -41,6 +36,11 @@ import {
   precedingDeleteOk,
   waitForPrecedingEventWrites,
 } from "./event.mutation.runtime";
+import {
+  recordEventConvertHistory,
+  recordEventDeleteHistory,
+  recordEventEditHistory,
+} from "./event.mutation-history";
 
 // Convert mutations capture the fully-resolved converted event at the
 // `.mutate()` boundary (see wrappers below) so `onMutate` and the async
@@ -55,18 +55,6 @@ type ConvertVariables = {
 // absent from the cache (nothing to delete server-side); the optimistic
 // removal still runs but no repository write is issued.
 type DeleteSomedayVariables = Payload_DeleteEvent & { skipRepository: boolean };
-
-// Recurring events are excluded from undo history entirely: series-wide ops
-// can't be restored from a client snapshot (the server rewrites the series),
-// undoing a deleted instance via `create` would spawn a duplicate standalone
-// event instead of clearing the exdate, and even a THIS_EVENT instance edit
-// confirms the instance server-side, so its pre-edit snapshot is stale by
-// the time an undo would replay it.
-const isRecurring = (event: Schema_Event) =>
-  Boolean(event.recurrence?.eventId || event.recurrence?.rule?.length);
-
-const isThisEventScope = (applyTo?: RecurringEventUpdateScope) =>
-  !applyTo || applyTo === RecurringEventUpdateScope.THIS_EVENT;
 
 export type EventMutations = {
   create: (event: Schema_Event) => void;
@@ -301,45 +289,17 @@ export function useEventMutations(
   // pre-mutation event. Replays from useUndoRedo set the restoring flag so
   // they don't record themselves.
   return useMemo(() => {
-    // Shared by delete/deleteSomeday: record the pre-removal snapshot when
-    // undoable and show the "Deleted" toast (keycap hint only if recorded).
-    // Returns the snapshot so deleteSomeday can derive skipRepository.
     const recordDelete = (
       payload: Payload_DeleteEvent,
       kind: "delete" | "delete-someday",
-    ) => {
-      const existing = findEventInCache(queryClient, payload._id, source);
-      if (isRestoringHistory()) return existing;
+    ) => recordEventDeleteHistory({ payload, kind, queryClient, source });
 
-      const undoable =
-        !!existing &&
-        !isRecurring(existing) &&
-        isThisEventScope(payload.applyTo);
-      if (undoable) undoHistoryActions.record({ kind, event: existing });
-      showDeletedToast(undoable);
-      return existing;
-    };
-
-    // Shared by both converts: resolve the merged event and record the
-    // before/after pair unless replaying or recurring.
     const recordConvert = (
       event: Payload_ConvertEvent["event"],
       isSomeday: boolean,
     ) => {
       const { existing, converted } = convertedEvent(event, isSomeday);
-      if (
-        !isRestoringHistory() &&
-        existing &&
-        converted &&
-        !isRecurring(existing)
-      ) {
-        undoHistoryActions.record({
-          kind: isSomeday ? "convert-to-someday" : "convert-to-calendar",
-          _id: event._id,
-          before: existing,
-          after: converted,
-        });
-      }
+      recordEventConvertHistory({ event, existing, converted, isSomeday });
       return converted;
     };
 
@@ -350,26 +310,7 @@ export function useEventMutations(
           _id: event._id ?? createObjectIdString(),
         }),
       edit: (payload: Payload_EditEvent) => {
-        if (!isRestoringHistory() && isThisEventScope(payload.applyTo)) {
-          const before = findEventInCache(queryClient, payload._id, source);
-          // Recurring events are excluded even at THIS_EVENT scope (see the
-          // isRecurring note); check the payload too so an edit that *adds*
-          // recurrence isn't recorded either.
-          if (
-            before &&
-            !isRecurring(before) &&
-            !isRecurring(payload.event as Schema_Event)
-          ) {
-            undoHistoryActions.record({
-              kind: "edit",
-              _id: payload._id,
-              before,
-              // Merge over `before` so fields the payload dropped (e.g.
-              // provider ids) survive a redo replay.
-              after: { ...before, ...payload.event, _id: payload._id },
-            });
-          }
-        }
+        recordEventEditHistory({ payload, queryClient, source });
         editMutation.mutate(payload);
       },
       delete: (payload: Payload_DeleteEvent) => {

@@ -1,8 +1,4 @@
-import {
-  readPorts,
-  reassignPorts,
-  syncLaunchConfig,
-} from "@scripts/commands/dev-ports";
+import { readPorts, reassignPorts } from "@scripts/commands/dev-ports";
 
 const SAMPLE_YAML = `# Compass Config
 # hand-written setup notes live here
@@ -88,61 +84,5 @@ describe("reassignPorts", () => {
       "url: https://compass.example.com",
     );
     expect(reassignPorts(customized, next)).toBeNull();
-  });
-});
-
-describe("syncLaunchConfig", () => {
-  const SAMPLE_LAUNCH = `{
-  "version": "0.0.1",
-  "configurations": [
-    {
-      "name": "Backend",
-      "runtimeExecutable": "/opt/homebrew/bin/bun",
-      "runtimeArgs": ["dev:backend"],
-      "port": 3000
-    },
-    {
-      "name": "Web",
-      "runtimeExecutable": "/opt/homebrew/bin/bun",
-      "runtimeArgs": ["run", "dev:web"],
-      "port": 9080
-    },
-    {
-      "name": "Debug Web",
-      "runtimeExecutable": "/opt/homebrew/bin/bun",
-      "runtimeArgs": ["run", "debug:web"],
-      "port": 8080
-    }
-  ]
-}
-`;
-
-  it("replaces only the port digits, leaving every other line untouched", () => {
-    const result = syncLaunchConfig(SAMPLE_LAUNCH, {
-      web: 9081,
-      backend: 3001,
-    });
-
-    expect(result).toContain(
-      '"runtimeArgs": ["dev:backend"],\n      "port": 3001',
-    );
-    expect(result).toContain(
-      '"runtimeArgs": ["run", "dev:web"],\n      "port": 9081',
-    );
-    expect(result).toContain('"port": 8080'); // Debug Web untouched
-    expect(JSON.parse(result as string)).toEqual(
-      JSON.parse(
-        SAMPLE_LAUNCH.replace('"port": 3000', '"port": 3001').replace(
-          '"port": 9080',
-          '"port": 9081',
-        ),
-      ),
-    );
-  });
-
-  it("returns null when ports already match (no-op)", () => {
-    expect(
-      syncLaunchConfig(SAMPLE_LAUNCH, { web: 9080, backend: 3000 }),
-    ).toBeNull();
   });
 });

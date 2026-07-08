@@ -11,10 +11,8 @@ import {
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
 import { refocusEventElement } from "@web/common/utils/event/event.util";
-import {
-  getArrowKeyMovement,
-  nudgeEventDates,
-} from "@web/common/utils/event/event-nudge.util";
+import { getArrowKeyMovement } from "@web/common/utils/event/event-nudge.util";
+import { nudgeEventFromKeyboard } from "@web/common/utils/event/event-nudge-shortcut.util";
 import { buildConvertToSomedayEvent } from "@web/common/utils/event/someday.event.util";
 import {
   isDeleteTextEditingTarget,
@@ -300,12 +298,13 @@ export const useWeekShortcuts = ({
         return;
       }
 
-      const dates = nudgeEventDates(event, movement);
-      if (!dates) return;
-
-      keyboardEvent.preventDefault();
-      void confirmation.onSubmit({ ...event, ...dates });
-      refocusEventElement(event._id);
+      nudgeEventFromKeyboard({
+        event,
+        keyboardEvent,
+        onNudge: (event) => {
+          void confirmation.onSubmit(event);
+        },
+      });
     },
     [
       confirmation,
