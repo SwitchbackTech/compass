@@ -133,7 +133,8 @@ checkout; if its ports are already claimed by another worktree's
 `compass.yaml`, it rewrites `web.port`, `web.url`, `backend.port`,
 `backend.apiUrl`, and the localhost `originsAllowed` entries to the next free
 pair (9081/3001, 9082/3002, ...). Comments and secrets in the file are
-preserved, and reruns are no-ops.
+preserved, and reruns are no-ops. `.claude/launch.json`'s `Backend`/`Web`
+preview-tooling ports are kept in sync the same way.
 
 Notes:
 
