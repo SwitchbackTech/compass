@@ -72,7 +72,7 @@ function generateDemoData() {
     // Someday Week
     createEvent({
       title: "Learn a new shortcut",
-      description: "Press `w` to create a new someday week event",
+      description: "Click the keyboard icon in the bottom-left of this sidebar",
       startDate: week.startDate,
       endDate: week.endDate,
       isSomeday: true,
@@ -80,7 +80,7 @@ function generateDemoData() {
     // Someday Month
     createEvent({
       title: "Review quarterly goals",
-      description: "Press `m` to create a new someday month event",
+      description: "Or just go with the flow, goals are overrated.",
       startDate: month.startDate,
       endDate: month.endDate,
       isSomeday: true,
@@ -146,11 +146,11 @@ function generateDemoData() {
       order: 0,
     }),
     createTask({
-      title: "Migrate this forward",
+      title: "Move this forward",
       order: 1,
     }),
     createTask({
-      title: "Migrate this backward",
+      title: "Move this backward",
       order: 2,
     }),
     createTask({
@@ -158,8 +158,7 @@ function generateDemoData() {
       order: 3,
     }),
     createTask({
-      title: "Star the repo =]",
-      description: "https://github.com/SwitchbackTech/compass",
+      title: "Move this to the top",
       order: 4,
     }),
   ];
