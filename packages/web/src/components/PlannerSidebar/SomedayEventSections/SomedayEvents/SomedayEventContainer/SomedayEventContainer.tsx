@@ -7,13 +7,16 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
+import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import { refocusEventElement } from "@web/common/utils/event/event.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/SomedayEvent";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
 import { useDraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
@@ -48,6 +51,7 @@ export const SomedayEventContainer = ({
   weekViewRange,
 }: Props) => {
   const { state, actions, setters } = useSidebarContext();
+  const { convertToCalendar } = useEventMutations();
 
   const formProps = useDraftForm(
     category,
@@ -84,13 +88,46 @@ export const SomedayEventContainer = ({
     }
   };
 
-  useAppHotkey("Control+Meta+ArrowUp", () => {
+  const scheduleEvent = () => {
+    if (!event._id) return;
+
+    const isCurrentWeek = dayjs().isBetween(
+      weekViewRange.startDate,
+      weekViewRange.endDate,
+      "day",
+      "[]",
+    );
+    const { startDate, endDate } = getDraftTimes(
+      isCurrentWeek,
+      dayjs(weekViewRange.startDate),
+    );
+
+    convertToCalendar({
+      event: {
+        _id: event._id,
+        startDate,
+        endDate,
+        isAllDay: false,
+        isSomeday: false,
+      },
+    });
+    refocusEventElement(event._id);
+  };
+
+  useAppHotkey("Shift+ArrowUp", (keyboardEvent) => {
     if (!isFocusedRef.current) return;
+    keyboardEvent.preventDefault();
     migrateEvent("up");
   });
-  useAppHotkey("Control+Meta+ArrowDown", () => {
+  useAppHotkey("Shift+ArrowDown", (keyboardEvent) => {
     if (!isFocusedRef.current) return;
+    keyboardEvent.preventDefault();
     migrateEvent("down");
+  });
+  useAppHotkey("Shift+ArrowRight", (keyboardEvent) => {
+    if (!isFocusedRef.current) return;
+    keyboardEvent.preventDefault();
+    scheduleEvent();
   });
 
   const isDraftingThisEvent =

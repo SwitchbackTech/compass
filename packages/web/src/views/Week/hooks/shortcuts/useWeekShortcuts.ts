@@ -1,12 +1,23 @@
 import { useCallback, useEffect, useRef } from "react";
+import {
+  Priorities,
+  SOMEDAY_WEEK_LIMIT_MSG,
+} from "@core/constants/core.constants";
+import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
-import { type Dayjs } from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
+import { refocusEventElement } from "@web/common/utils/event/event.util";
+import {
+  getArrowKeyMovement,
+  nudgeEventDates,
+} from "@web/common/utils/event/event-nudge.util";
 import {
   isDeleteTextEditingTarget,
   isEditableKeyboardTarget,
@@ -15,7 +26,9 @@ import {
 } from "@web/common/utils/form/form.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { focusFirstSomedaySidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
+import { type Payload_ConvertEvent } from "@web/events/event.types";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
@@ -38,6 +51,7 @@ export interface ShortcutProps {
   isCurrentWeek: boolean;
   startOfView: Dayjs;
   endOfView: Dayjs;
+  weekDays: Dayjs[];
   util: WeekProps["util"];
   scrollUtil: Util_Scroll;
 }
@@ -52,14 +66,18 @@ export const useWeekShortcuts = ({
   isCurrentWeek,
   startOfView,
   endOfView,
+  weekDays,
   util,
   scrollUtil,
 }: ShortcutProps) => {
-  const { delete: deleteEvent } = useEventMutations();
+  const { delete: deleteEvent, convertToSomeday } = useEventMutations();
   const context = useSidebarContext(true);
   const {
     actions: { repositionDraftByKeyboard },
+    confirmation,
   } = useDraftContext();
+  const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
+    useSomedayEventViewModel(startOfView, endOfView);
 
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const { allDayEvents, timedEvents } = useWeekEventViewModel({
@@ -211,6 +229,104 @@ export const useWeekShortcuts = ({
     [deleteEvent, getTargetedCalendarEvent],
   );
 
+  const convertFocusedEventToSomeday = useCallback(
+    (event: Schema_GridEvent) => {
+      if (isAtWeeklyLimit) {
+        alert(SOMEDAY_WEEK_LIMIT_MSG);
+        return;
+      }
+
+      const somedayEvent: Payload_ConvertEvent["event"] = {
+        ...event,
+        _id: event._id!,
+        user: event.user ?? "",
+        isAllDay: false,
+        isSomeday: true,
+        startDate: startOfView.format(YEAR_MONTH_DAY_FORMAT),
+        endDate: endOfView.format(YEAR_MONTH_DAY_FORMAT),
+        priority: event.priority ?? Priorities.UNASSIGNED,
+        order: somedayWeekCount,
+      };
+
+      if (Array.isArray(somedayEvent.recurrence?.rule)) {
+        somedayEvent.recurrence = {
+          ...somedayEvent.recurrence,
+          rule: somedayEvent.recurrence.rule.map((rule) => {
+            const isRRule = rule.startsWith("RRULE:");
+
+            if (!isRRule) return rule;
+
+            return rule.replace(/FREQ=\w+;/, "FREQ=WEEKLY;");
+          }),
+        };
+      }
+
+      convertToSomeday({ event: somedayEvent });
+
+      if (!isSidebarOpen) {
+        viewActions.toggleSidebar();
+      }
+      refocusEventElement(somedayEvent._id);
+    },
+    [
+      convertToSomeday,
+      endOfView,
+      isAtWeeklyLimit,
+      isSidebarOpen,
+      somedayWeekCount,
+      startOfView,
+    ],
+  );
+
+  const moveFocusedCalendarEvent = useCallback(
+    (keyboardEvent: KeyboardEvent) => {
+      if (isEventFormOpen()) return;
+
+      // Focused only (no hover/first-visible fallback): moving an event the
+      // user isn't focused on would be surprising
+      const target = getFocusedCalendarEventTarget();
+      if (!target) return;
+
+      const events =
+        target.eventType === "all-day"
+          ? allDayEventsRef.current
+          : timedEventsRef.current;
+      const event = events.find(
+        (candidate) => candidate._id === target.eventId,
+      );
+      if (!event?._id) return;
+
+      const movement = getArrowKeyMovement(
+        keyboardEvent.key,
+        Boolean(event.isAllDay),
+      );
+      if (!movement) return;
+
+      const start = dayjs(event.startDate);
+
+      if (movement.days === -1 && !start.isAfter(weekDays[0], "day")) {
+        keyboardEvent.preventDefault();
+        convertFocusedEventToSomeday(event);
+        return;
+      }
+
+      if (
+        movement.days === 1 &&
+        !start.isBefore(weekDays[weekDays.length - 1], "day")
+      ) {
+        return;
+      }
+
+      const dates = nudgeEventDates(event, movement);
+      if (!dates) return;
+
+      keyboardEvent.preventDefault();
+      void confirmation.onSubmit({ ...event, ...dates });
+      refocusEventElement(event._id);
+    },
+    [confirmation, convertFocusedEventToSomeday, weekDays],
+  );
+
   const moveShortcutCreatedDraft = useCallback(
     (event: KeyboardEvent) => {
       if (isEditableKeyboardTarget(event)) return;
@@ -255,6 +371,10 @@ export const useWeekShortcuts = ({
     moveShortcutCreatedDraft,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
+  useAppHotkey("Shift+ArrowUp", moveFocusedCalendarEvent);
+  useAppHotkey("Shift+ArrowDown", moveFocusedCalendarEvent);
+  useAppHotkey("Shift+ArrowLeft", moveFocusedCalendarEvent);
+  useAppHotkey("Shift+ArrowRight", moveFocusedCalendarEvent);
   useAppHotkeyUp("Shift+M", createSomedayMonthDraft);
   useAppHotkeyUp("Shift+W", createSomedayWeekDraft);
 };

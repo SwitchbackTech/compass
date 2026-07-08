@@ -59,7 +59,7 @@ export const createAlldayDraft = async (
   });
 };
 
-const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
+export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
   const currentMinute = dayjs().minute();
   const nextMinuteInterval = roundToNext(currentMinute, GRID_TIME_STEP);
 

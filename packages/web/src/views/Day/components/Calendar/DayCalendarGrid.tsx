@@ -30,6 +30,7 @@ import {
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
+import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
 import {
   type EventFormProps,
@@ -86,6 +87,7 @@ export function DayCalendarGrid() {
     startDate: dateInView.startOf("day").utc(true).format(),
     endDate: dateInView.endOf("day").utc(true).format(),
   });
+  useDayEventNudgeShortcuts({ timedEvents });
   const draft = useDraftStore(selectDraft);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
   const draftCategory = draft?.isAllDay

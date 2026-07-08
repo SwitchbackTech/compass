@@ -21,6 +21,7 @@ import {
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { getArrowKeyMovement } from "@web/common/utils/event/event-nudge.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import { EventInViewParser } from "@web/common/utils/parse/view.parser";
 import {
@@ -46,21 +47,6 @@ import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 import { getDragDurationMinutes } from "./drag-duration.util";
-
-const getDraftKeyboardMovement = (key: string, isAllDay: boolean) => {
-  switch (key) {
-    case "ArrowLeft":
-      return { days: -1, minutes: 0 };
-    case "ArrowRight":
-      return { days: 1, minutes: 0 };
-    case "ArrowUp":
-      return isAllDay ? null : { days: 0, minutes: -GRID_TIME_STEP };
-    case "ArrowDown":
-      return isAllDay ? null : { days: 0, minutes: GRID_TIME_STEP };
-    default:
-      return null;
-  }
-};
 
 const canRepositionDraftByKeyboard = (activity: string | null | undefined) =>
   activity === "createShortcut" ||
@@ -367,7 +353,7 @@ export const useDraftActions = (
     (key: string) => {
       if (!canRepositionDraftByKeyboard(activity) || !draft) return false;
 
-      const movement = getDraftKeyboardMovement(key, Boolean(draft.isAllDay));
+      const movement = getArrowKeyMovement(key, Boolean(draft.isAllDay));
       if (!movement) return false;
 
       const start = dayjs(draft.startDate);

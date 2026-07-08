@@ -164,12 +164,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   useSomedayFormShortcuts({
-    event,
-    category,
     onSubmit: _onSubmit,
     onDelete,
     onDuplicate: onDuplicateEvent,
-    onMigrate,
   });
 
   const stopPropagation = (e: MouseEvent) => {

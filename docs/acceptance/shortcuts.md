@@ -55,8 +55,9 @@ Helpful notes:
 | `E`                         | Day view  | Edit focused task                 |
 | `Delete` / `Backspace`      | Day view  | Delete focused task               |
 | `Enter`                     | Day view  | Mark focused task complete        |
-| `Ctrl+Meta+ArrowRight`      | Day view  | Move focused task to next day     |
-| `Ctrl+Meta+ArrowLeft`       | Day view  | Move focused task to previous day |
+| `Shift+ArrowRight`          | Day view  | Move focused task to next day     |
+| `Shift+ArrowLeft`           | Day view  | Move focused task to previous day |
+| `Shift+ArrowUp` / `Shift+ArrowDown` | Day view | Move focused timed event 15 min earlier/later |
 | `Cmd+Z` / `Ctrl+Z`          | Day view  | Undo last action                  |
 | `J`                         | Week view | Previous week                     |
 | `K`                         | Week view | Next week                         |
@@ -65,6 +66,11 @@ Helpful notes:
 | `A`                         | Week view | Create all-day event              |
 | `Shift+W`                   | Week view | Create Someday Week event         |
 | `Shift+M`                   | Week view | Create Someday Month event        |
+| `Shift+ArrowLeft`           | Week view | Move focused event to previous day; on the first visible day, move it to the This Week sidebar list |
+| `Shift+ArrowRight`          | Week view | Move focused event to next day    |
+| `Shift+ArrowUp` / `Shift+ArrowDown` | Week view | Move focused timed event 15 min earlier/later |
+| `Shift+ArrowRight`          | Week view | Schedule focused someday event at the next 15-min slot |
+| `Shift+ArrowUp` / `Shift+ArrowDown` | Week view | Move focused someday event between the week/month lists |
 
 ---
 

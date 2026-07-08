@@ -22,8 +22,8 @@ const focusTaskCheckbox = () => {
 
 const pressMigrate = (key: "ArrowRight" | "ArrowLeft") =>
   pressKey(key, {
-    keyDownInit: { ctrlKey: true, metaKey: true },
-    keyUpInit: { ctrlKey: true, metaKey: true },
+    keyDownInit: { shiftKey: true },
+    keyUpInit: { shiftKey: true },
   });
 
 beforeEach(() => {
@@ -66,7 +66,7 @@ describe("useDayViewShortcuts create", () => {
 });
 
 describe("useDayViewShortcuts migration", () => {
-  it("migrates the focused task forward with Control+Meta+ArrowRight", async () => {
+  it("migrates the focused task forward with Shift+ArrowRight", async () => {
     const onMigrateTask = mock();
     focusTaskCheckbox();
 
@@ -78,7 +78,7 @@ describe("useDayViewShortcuts migration", () => {
     });
   });
 
-  it("migrates the focused task backward with Control+Meta+ArrowLeft", async () => {
+  it("migrates the focused task backward with Shift+ArrowLeft", async () => {
     const onMigrateTask = mock();
     focusTaskCheckbox();
 
@@ -95,6 +95,27 @@ describe("useDayViewShortcuts migration", () => {
 
     renderHook(() => useDayViewShortcuts({ onMigrateTask }), { wrapper });
     pressMigrate("ArrowRight");
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(onMigrateTask).not.toHaveBeenCalled();
+  });
+
+  it("keeps native Shift+Arrow selection inside a task input", async () => {
+    const onMigrateTask = mock();
+    const input = document.createElement("input");
+    input.id = `task-input-${TASK_ID}`;
+    document.body.appendChild(input);
+    input.focus();
+
+    renderHook(() => useDayViewShortcuts({ onMigrateTask }), { wrapper });
+    pressKey(
+      "ArrowRight",
+      {
+        keyDownInit: { shiftKey: true },
+        keyUpInit: { shiftKey: true },
+      },
+      input,
+    );
 
     await new Promise((resolve) => setTimeout(resolve, 0));
     expect(onMigrateTask).not.toHaveBeenCalled();

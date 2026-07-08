@@ -69,6 +69,7 @@ export const WeekView = () => {
     isCurrentWeek,
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
+    weekDays: weekProps.component.weekDays,
     util,
     scrollUtil,
   };
