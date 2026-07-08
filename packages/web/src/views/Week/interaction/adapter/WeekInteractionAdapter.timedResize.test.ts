@@ -199,10 +199,22 @@ const createHarness = ({
     callback();
   };
 
+  const fireCommitTeardownDeadline = () => {
+    const [[timerId, callback]] = timerCallbacks;
+
+    if (!callback) {
+      throw new Error("Expected a commit teardown deadline to be scheduled");
+    }
+
+    timerCallbacks.delete(timerId);
+    callback();
+  };
+
   return {
     adapter,
     endHandle,
     event,
+    fireCommitTeardownDeadline,
     fireHoldTimer,
     flushFrame,
     mainGrid,
@@ -258,6 +270,7 @@ describe("WeekInteractionAdapter timed resize", () => {
     const {
       adapter,
       endHandle,
+      fireCommitTeardownDeadline,
       flushFrame,
       onCommitTimedResize,
       onMotionActivation,
@@ -299,6 +312,7 @@ describe("WeekInteractionAdapter timed resize", () => {
         type: "timedResizeEnd",
       }),
     );
+    fireCommitTeardownDeadline();
     expect(source.style.visibility).toBe("visible");
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),

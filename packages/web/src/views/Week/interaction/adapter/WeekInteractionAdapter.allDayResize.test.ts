@@ -185,10 +185,22 @@ const createHarness = ({
     callback(timestamp);
   };
 
+  const fireCommitTeardownDeadline = () => {
+    const [[timerId, callback]] = timerCallbacks;
+
+    if (!callback) {
+      throw new Error("Expected a commit teardown deadline to be scheduled");
+    }
+
+    timerCallbacks.delete(timerId);
+    callback();
+  };
+
   return {
     adapter,
     endHandle,
     event,
+    fireCommitTeardownDeadline,
     flushFrame,
     onClickAllDayEvent,
     onCommitAllDayResize,
@@ -261,6 +273,7 @@ describe("WeekInteractionAdapter all-day resize", () => {
     const {
       adapter,
       endHandle,
+      fireCommitTeardownDeadline,
       flushFrame,
       onCommitAllDayResize,
       onMotionActivation,
@@ -302,6 +315,7 @@ describe("WeekInteractionAdapter all-day resize", () => {
         type: "allDayResizeEnd",
       }),
     );
+    fireCommitTeardownDeadline();
     expect(source.style.visibility).toBe("visible");
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
