@@ -269,6 +269,29 @@ export const resetLocalEventDb = async (page: Page) => {
   }, LOCAL_DB_NAME);
 };
 
+// The content pane transitions width over 200ms when the sidebar toggles
+// (see WeekView.tsx's `transition-[width]` wrapper), so #mainGrid's column
+// layout keeps changing for a beat after the sidebar becomes visible. Poll
+// until its measured width stops moving so callers don't compute click/drag
+// targets against a mid-transition column count.
+const waitForMainGridWidthToSettle = async (page: Page) => {
+  const mainGrid = page.locator("#mainGrid");
+  let previousWidth = await mainGrid.evaluate(
+    (el) => el.getBoundingClientRect().width,
+  );
+
+  for (let attempt = 0; attempt < 20; attempt++) {
+    await page.waitForTimeout(50);
+    const width = await mainGrid.evaluate(
+      (el) => el.getBoundingClientRect().width,
+    );
+    if (width === previousWidth) {
+      return;
+    }
+    previousWidth = width;
+  }
+};
+
 export const ensureSidebarOpen = async (page: Page) => {
   const sidebar = page.locator("#sidebar");
   if (!(await sidebar.isVisible())) {
@@ -276,6 +299,7 @@ export const ensureSidebarOpen = async (page: Page) => {
     await page.locator("#mainGrid").focus();
     await pressShortcut(page, "[");
     await expect(sidebar).toBeVisible();
+    await waitForMainGridWidthToSettle(page);
   }
 };
 
