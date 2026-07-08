@@ -8,7 +8,11 @@ export default defineConfig({
   testDir: "./e2e",
   timeout: 30_000,
   retries: process.env.CI ? 2 : 0,
-  workers: 2,
+  // Two workers share one dev server and the CI container's 2 vCPUs; running
+  // both browsers concurrently there causes React renders/saves to blow
+  // through assertion timeouts under load (different spec each time). Serial
+  // in CI trades ~1.5min of wall time for eliminating that contention.
+  workers: process.env.CI ? 1 : 2,
   expect: {
     timeout: 10_000,
   },

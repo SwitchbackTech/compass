@@ -276,6 +276,19 @@ Use them for:
 - integration between auth, UI, and persistence
 - regressions that unit tests cannot model cleanly
 
+### CI-Only Flakiness From Worker Contention
+
+`test-e2e.yml` runs in a container-limited GitHub Actions runner. Two
+Playwright workers there compete with each other and with the shared dev
+server for CPU, so whichever spec happens to be mid-render/mid-save when
+both workers spike can blow through its assertion timeout — a different
+spec each time, unrelated to the diff under test. Signature: a form-save or
+element-visibility timeout in a spec the PR did not touch, passing on retry
+or on a rerun of just the failed job. `playwright.config.ts` now runs a
+single worker in CI (`workers: process.env.CI ? 1 : 2`) specifically to
+remove this contention; if it recurs, treat it as environmental before
+assuming a spec regressed, and do not "fix" it by deleting the test.
+
 ## Testing Realtime And Sync Changes
 
 For SSE or sync work:
