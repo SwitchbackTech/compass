@@ -7,6 +7,7 @@ import {
   useListNavigation,
   useRole,
 } from "@floating-ui/react";
+import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
@@ -22,6 +23,7 @@ import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
 import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
 import { useSubscribeCmdItems } from "@web/common/hooks/useSubscribeCmdItems";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
 import {
   selectIsCmdPaletteOpen,
   settingsActions,
@@ -73,6 +75,7 @@ export const CommandPalette = ({
   const subscribeCmdItems = useSubscribeCmdItems();
   const authCmdItems = useAuthCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
+  const { undo, canUndo } = useUndoRedo();
 
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(0);
@@ -107,7 +110,23 @@ export const CommandPalette = ({
         today,
       }),
     },
-    { id: "general", heading: "Common Tasks", items: commonTasks },
+    {
+      id: "general",
+      heading: "Common Tasks",
+      items: [
+        ...commonTasks,
+        {
+          id: "undo-last-change",
+          label: "Undo last change",
+          icon: ArrowCounterClockwiseIcon,
+          shortcut: ["Mod", "Z"],
+          disabled: !canUndo,
+          // Defer so the palette unmounts before undo's refocusEventElement
+          // starts hunting for the restored event element.
+          onClick: () => queueMicrotask(undo),
+        },
+      ],
+    },
     {
       id: "settings",
       heading: "Settings",

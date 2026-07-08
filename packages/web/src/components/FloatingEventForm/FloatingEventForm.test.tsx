@@ -25,8 +25,6 @@ const draft: Schema_Event = {
   user: "user",
 };
 
-const originalConfirm = window.confirm;
-
 beforeEach(() => {
   HotkeyManager.resetInstance();
   draftActions.discard();
@@ -34,7 +32,6 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
-  window.confirm = originalConfirm;
 });
 
 describe("FloatingEventForm", () => {
@@ -83,9 +80,6 @@ describe("FloatingEventForm", () => {
       toNormalizedEventQueryData([existingEvent]),
     );
 
-    const confirm = mock(() => true);
-    window.confirm = confirm;
-
     draftActions.start({
       activity: "keyboardEdit",
       event: existingEvent,
@@ -121,10 +115,23 @@ describe("FloatingEventForm", () => {
       key: "Delete",
     });
 
-    // window.confirm only fires on the real-delete branch (`handleEventFormDelete`
-    // calling `onDelete`), never on the draft-close branch (`onClose` only) —
-    // so this pins FloatingEventForm computing isDraft from whether the event
-    // already exists, not hardcoding it to true for every opened event.
-    await waitFor(() => expect(confirm).toHaveBeenCalledTimes(1));
+    // A delete mutation only fires on the real-delete branch
+    // (`handleEventFormDelete` calling `onDelete`), never on the draft-close
+    // branch (`onClose` only) — so this pins FloatingEventForm computing
+    // isDraft from whether the event already exists, not hardcoding it to
+    // true for every opened event.
+    await waitFor(() =>
+      expect(
+        queryClient
+          .getMutationCache()
+          .getAll()
+          .some(
+            (mutation) =>
+              mutation.options.mutationKey?.[2] === "delete" &&
+              (mutation.state.variables as { _id?: string })._id ===
+                "existing-event-id",
+          ),
+      ).toBe(true),
+    );
   });
 });

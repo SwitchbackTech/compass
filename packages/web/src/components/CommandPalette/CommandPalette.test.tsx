@@ -1,8 +1,12 @@
 import "@testing-library/jest-dom";
 import { PlusIcon } from "@phosphor-icons/react";
-import { fireEvent, screen } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { renderWithStore } from "@web/__tests__/render-with-store";
+import {
+  undoHistoryActions,
+  useUndoHistoryStore,
+} from "@web/events/stores/undo.store";
 import {
   selectIsCmdPaletteOpen,
   useSettingsStore,
@@ -215,6 +219,38 @@ describe("CommandPalette", () => {
     );
     expect(link).toHaveAttribute("target", "_blank");
     expect(link).toHaveAttribute("rel", "noopener noreferrer");
+  });
+
+  it("renders a disabled Undo row with keycaps when there is no history", () => {
+    renderPalette();
+
+    const row = screen.getByText("Undo last change").closest("button");
+    expect(row).toBeDisabled();
+    // Two keycap chips: the platform modifier and Z (see the aria-hidden
+    // note in the Show Shortcuts test below).
+    expect(row?.querySelectorAll("[aria-hidden='true']")).toHaveLength(2);
+  });
+
+  it("undoes the last change and closes when the Undo row is clicked", async () => {
+    undoHistoryActions.record({
+      kind: "edit",
+      _id: "event-1",
+      before: { _id: "event-1", title: "Before" },
+      after: { _id: "event-1", title: "After" },
+    });
+    renderPalette();
+
+    const row = screen.getByText("Undo last change").closest("button");
+    expect(row).not.toBeDisabled();
+
+    fireEvent.click(row as HTMLButtonElement);
+
+    // The click defers undo to a microtask so the palette can unmount first.
+    await waitFor(() => {
+      expect(useUndoHistoryStore.getState().past).toHaveLength(0);
+      expect(useUndoHistoryStore.getState().future).toHaveLength(1);
+    });
+    expect(isOpen()).toBe(false);
   });
 
   it("renders a keycap chip for the shortcut and runs onShowShortcuts on click", () => {

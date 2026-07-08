@@ -264,15 +264,12 @@ describe("useWeekShortcuts calendar event targeting", () => {
   });
 
   it("deletes the focused timed calendar event with Delete", () => {
-    const confirm = mock(() => true);
-    window.confirm = confirm;
     const button = addCalendarTarget();
     button.focus();
 
     const { queryClient } = renderShortcuts();
     pressKey("Delete");
 
-    expect(confirm).toHaveBeenCalledWith("Delete Editable event?");
     expect(
       queryClient
         .getMutationCache()
@@ -285,15 +282,12 @@ describe("useWeekShortcuts calendar event targeting", () => {
   });
 
   it("deletes the focused all-day calendar event with Delete", () => {
-    const confirm = mock(() => true);
-    window.confirm = confirm;
     const button = addCalendarTarget(editableAllDayEvent._id, "all-day");
     button.focus();
 
     const { queryClient } = renderShortcuts({ includeAllDayEvent: true });
     pressKey("Delete");
 
-    expect(confirm).toHaveBeenCalledWith("Delete Editable all-day event?");
     expect(
       queryClient
         .getMutationCache()
@@ -307,15 +301,12 @@ describe("useWeekShortcuts calendar event targeting", () => {
   });
 
   it("deletes the hovered calendar event with Delete when no event is focused", () => {
-    const confirm = mock(() => true);
-    window.confirm = confirm;
     const button = addCalendarTarget();
     setHoveredCalendarEventTarget(button);
 
     const { queryClient } = renderShortcuts();
     pressKey("Delete");
 
-    expect(confirm).toHaveBeenCalledWith("Delete Editable event?");
     expect(
       queryClient
         .getMutationCache()
@@ -328,8 +319,6 @@ describe("useWeekShortcuts calendar event targeting", () => {
   });
 
   it("deletes pending calendar events with Delete", () => {
-    const confirm = mock(() => true);
-    window.confirm = confirm;
     pendingEventIds = ["event-1"];
     const button = addCalendarTarget();
     button.focus();
@@ -337,7 +326,6 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const { queryClient } = renderShortcuts();
     pressKey("Delete");
 
-    expect(confirm).toHaveBeenCalledWith("Delete Editable event?");
     expect(
       queryClient
         .getMutationCache()
@@ -351,8 +339,6 @@ describe("useWeekShortcuts calendar event targeting", () => {
   });
 
   it("does not delete calendar events when Delete is pressed inside an editable field", () => {
-    const confirm = mock(() => true);
-    window.confirm = confirm;
     addCalendarTarget();
     const input = document.createElement("input");
     document.body.appendChild(input);
@@ -361,7 +347,6 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const { queryClient } = renderShortcuts();
     pressKey("Delete", {}, input);
 
-    expect(confirm).not.toHaveBeenCalled();
     expect(
       queryClient
         .getMutationCache()
@@ -371,8 +356,6 @@ describe("useWeekShortcuts calendar event targeting", () => {
   });
 
   it("does not delete a grid event when Delete is pressed inside an open event form", () => {
-    const confirm = mock(() => true);
-    window.confirm = confirm;
     addCalendarTarget();
 
     const form = document.createElement("form");
@@ -385,7 +368,6 @@ describe("useWeekShortcuts calendar event targeting", () => {
     const { queryClient } = renderShortcuts();
     pressKey("Delete", {}, button);
 
-    expect(confirm).not.toHaveBeenCalled();
     expect(
       queryClient
         .getMutationCache()
@@ -469,8 +451,6 @@ describe("useWeekShortcuts sidebar focus", () => {
   });
 
   it("does not delete a grid event when Delete is pressed with sidebar focus", async () => {
-    const confirm = mock(() => true);
-    window.confirm = confirm;
     addCalendarTarget();
     const { weekItem } = addSidebarFixture({ includeWeekItem: true });
     weekItem?.focus();
@@ -478,7 +458,6 @@ describe("useWeekShortcuts sidebar focus", () => {
     const { queryClient } = renderShortcuts();
     pressKey("Delete", {}, weekItem ?? document);
 
-    expect(confirm).not.toHaveBeenCalled();
     expect(
       queryClient
         .getMutationCache()
