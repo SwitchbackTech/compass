@@ -1,56 +1,38 @@
 #########
 # FILES #
 #########
-build.zip
-.DS_Store
-.eslintcache
-globalConfig.json
-sendgrid.env
-credentials.txt
-
-# wildcards
 *.env*
 *.log
+*.mjs
 *.mongodb
 *.tsbuildinfo
-*.mjs
+.DS_Store
+.eslintcache
+build.zip
 compass.yaml
+!compass.example.yaml
+.mcp.json
 .playwright-compass.yaml
 
 ########
 # DIRS #
 ########
-# root
 .idea/
-.mcp.json
 .vscode/
-
+blob-report/
 build/
 buildcache/
 logs/
-node_modules/
-playwright-report/
-test-results/
-blob-report/
-# Local agent-generated plans and specs
 docs/superpowers/
 docs/pr-explainers/
-
-#core
-packages/core/build/
-
-# web
-packages/web/node_modules/
-packages/web/build/
-
-# backend
+node_modules/
 packages/backend/logs
 packages/backend/build
 packages/backend/node_modules
 packages/backend/playgroud
-packages/backend/.env
-packages/backend/.prod.env
-
-
+packages/core/build/
+packages/web/node_modules/
+packages/web/build/
+playwright-report/
+test-results/
 tmp/
-!compass.example.yaml

@@ -13,6 +13,10 @@ import {
   initialDraftState,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import {
+  initialUndoHistoryState,
+  useUndoHistoryStore,
+} from "@web/events/stores/undo.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import {
   initialSettingsState,
@@ -26,6 +30,7 @@ const storeResets: StoreReset[] = [
   () => useViewStore.setState(initialViewState, true),
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
   () => useDraftStore.setState(initialDraftState, true),
+  () => useUndoHistoryStore.setState(initialUndoHistoryState, true),
 ];
 
 export function resetAllStores() {

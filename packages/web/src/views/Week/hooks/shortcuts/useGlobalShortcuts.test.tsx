@@ -9,49 +9,19 @@ import {
 } from "@web/events/stores/view.store";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
-const logout = mock();
-const mockOpenModal = mock();
-const mockOpenLogoutConfirmation = mock();
-const mockUseAuthModal = mock();
-const mockUseLogoutConfirmation = mock();
-const mockUseSession = mock();
 const mockNavigate = mock();
 const mockPathname = { value: "/week" };
 
 // mock.module is process-wide, not scoped to this file, and isn't reliably
 // "restorable" afterward (another file's top-level dynamic import can race
-// with this file's afterAll). So useAuthModal/useNavigate/useLocation below
-// are wrapped to check a flag on every call instead of freezing the mock in
-// at registration time - once the flag flips off (afterAll), callers
-// anywhere in the process fall through to the real implementation. The
-// modules are snapshotted into plain objects (not just held as namespace
-// references) because mock.module mutates the live module object in place.
-const actualAuthModal = {
-  ...(await import("@web/components/AuthModal/hooks/useAuthModal")),
-};
+// with this file's afterAll). So useNavigate/useLocation below are wrapped
+// to check a flag on every call instead of freezing the mock in at
+// registration time - once the flag flips off (afterAll), callers anywhere
+// in the process fall through to the real implementation. The module is
+// snapshotted into a plain object (not just held as a namespace reference)
+// because mock.module mutates the live module object in place.
 const actualTanstackRouter = { ...(await import("@tanstack/react-router")) };
-let isAuthModalMocked = true;
 let isRouterMocked = true;
-
-mock.module("@web/auth/compass/session/useSession", () => ({
-  useSession: mockUseSession,
-}));
-
-mock.module("@web/components/AuthModal/hooks/useAuthModal", () => ({
-  ...actualAuthModal,
-  useAuthModal: (...args: unknown[]) =>
-    isAuthModalMocked
-      ? mockUseAuthModal(...args)
-      : // biome-ignore lint/correctness/useHookAtTopLevel: this is a mock.module factory, not a component - the flag is stable for the lifetime of any given render (it only flips once, in afterAll, after this file's components have unmounted).
-        actualAuthModal.useAuthModal(...(args as [])),
-}));
-
-mock.module(
-  "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation",
-  () => ({
-    useLogoutConfirmation: mockUseLogoutConfirmation,
-  }),
-);
 
 mock.module("@tanstack/react-router", () => ({
   ...actualTanstackRouter,
@@ -70,7 +40,6 @@ mock.module("@tanstack/react-router", () => ({
 const { useGlobalShortcuts } = await import("./useGlobalShortcuts");
 
 afterAll(() => {
-  isAuthModalMocked = false;
   isRouterMocked = false;
 });
 
@@ -81,60 +50,8 @@ function wrapper({ children }: PropsWithChildren) {
 describe("useGlobalShortcuts", () => {
   beforeEach(() => {
     HotkeyManager.resetInstance();
-    logout.mockReset();
-    mockOpenModal.mockClear();
-    mockOpenLogoutConfirmation.mockClear();
-    mockUseAuthModal.mockReset();
-    mockUseLogoutConfirmation.mockReset();
-    mockUseSession.mockReset();
     mockNavigate.mockClear();
-    mockUseAuthModal.mockReturnValue({ openModal: mockOpenModal });
-    mockUseLogoutConfirmation.mockReturnValue({
-      openLogoutConfirmation: mockOpenLogoutConfirmation,
-    });
-    mockUseSession.mockReturnValue({
-      authenticated: true,
-      setAuthenticated: mock(),
-    });
     mockPathname.value = "/week";
-  });
-
-  it("opens logout confirmation when authenticated users press Z", async () => {
-    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
-
-    act(() => {
-      pressKey("z");
-    });
-
-    await waitFor(() => {
-      expect(mockOpenLogoutConfirmation).toHaveBeenCalledTimes(1);
-    });
-    expect(mockOpenModal).not.toHaveBeenCalled();
-
-    act(() => {
-      unmount();
-    });
-  });
-
-  it("opens login when logged-out users press Z", async () => {
-    mockUseSession.mockReturnValue({
-      authenticated: false,
-      setAuthenticated: mock(),
-    });
-    const { unmount } = renderHook(() => useGlobalShortcuts(), { wrapper });
-
-    act(() => {
-      pressKey("z");
-    });
-
-    await waitFor(() => {
-      expect(mockOpenModal).toHaveBeenCalledWith("login");
-    });
-    expect(mockOpenLogoutConfirmation).not.toHaveBeenCalled();
-
-    act(() => {
-      unmount();
-    });
   });
 
   it("does not navigate to Day view when a held-Cmd D keyup is replayed after a Mod+D press", async () => {

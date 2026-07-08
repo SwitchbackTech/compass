@@ -26,18 +26,46 @@ export function waitForPendingEventCreate(
   queryClient: QueryClient,
   eventId: string,
 ): Promise<"success" | "error" | null> {
+  return waitForPendingEventMutation(queryClient, eventId, ["create"]);
+}
+
+/**
+ * Resolves once no delete mutation for `eventId` is in flight, returning the
+ * delete's final status ("success" | "error"), or null when none was pending.
+ *
+ * Only undo-of-delete ever hits this (normal creates use fresh ids): the
+ * restore `create` must not race its own delete, or the POST could land
+ * before the DELETE server-side and the event would vanish despite the undo.
+ */
+export function waitForPendingEventDelete(
+  queryClient: QueryClient,
+  eventId: string,
+): Promise<"success" | "error" | null> {
+  return waitForPendingEventMutation(queryClient, eventId, [
+    "delete",
+    "delete-someday",
+  ]);
+}
+
+function waitForPendingEventMutation(
+  queryClient: QueryClient,
+  eventId: string,
+  operations: string[],
+): Promise<"success" | "error" | null> {
   const cache = queryClient.getMutationCache();
-  const pendingCreate = cache.getAll().find((mutation) => {
+  const pending = cache.getAll().find((mutation) => {
     if (mutation.state.status !== "pending") return false;
     const key = mutation.options.mutationKey;
-    if (!Array.isArray(key) || key[2] !== "create") return false;
+    if (!Array.isArray(key) || !operations.includes(key[2] as string)) {
+      return false;
+    }
     return (mutation.state.variables as { _id?: string })?._id === eventId;
   });
-  if (!pendingCreate) return Promise.resolve(null);
+  if (!pending) return Promise.resolve(null);
 
   return new Promise((resolve) => {
     const unsubscribe = cache.subscribe(() => {
-      const status = pendingCreate.state.status;
+      const status = pending.state.status;
       if (status === "pending") return;
       unsubscribe();
       resolve(status === "success" ? "success" : "error");

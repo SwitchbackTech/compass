@@ -20,6 +20,12 @@ export function getSafeGoogleAuthReturnPath(
       return "/day";
     }
 
+    // Drop the transient auth-modal params so the OAuth round-trip doesn't
+    // navigate back into an open login modal on top of the authenticated
+    // calendar. See the auth modal, which reopens on any `?auth=` param.
+    url.searchParams.delete("auth");
+    url.searchParams.delete("token");
+
     return `${url.pathname}${url.search}${url.hash}`;
   } catch {
     return "/day";

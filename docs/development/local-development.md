@@ -124,6 +124,27 @@ Bun build/dev behavior:
 - Mongo persistence
 - SSE stream behavior
 
+## Multiple Worktrees
+
+`bun run dev:web` and `bun run dev:backend` run a small preflight
+(`bun run dev:ports`) that gives each git worktree its own dev ports. If this
+worktree has no `compass.yaml` yet, the preflight copies it from the main
+checkout; if its ports are already claimed by another worktree's
+`compass.yaml`, it rewrites `web.port`, `web.url`, `backend.port`,
+`backend.apiUrl`, and the localhost `originsAllowed` entries to the next free
+pair (9081/3001, 9082/3002, ...). Comments and secrets in the file are
+preserved, and reruns are no-ops. `.claude/launch.json`'s `Backend`/`Web`
+preview-tooling ports are kept in sync the same way.
+
+Notes:
+
+- The main checkout keeps the defaults (9080/3000).
+- If `web.url` or `backend.apiUrl` is customized (e.g. a tunnel or real
+  domain), the preflight leaves the file alone — manage ports manually.
+- Real Google sign-in only works on ports whose redirect URIs are registered
+  in Google Cloud Console; pin a worktree back to the default ports if you
+  need it.
+
 ## Backend Health Probe
 
 When debugging backend startup or connectivity issues, use the health endpoint first:

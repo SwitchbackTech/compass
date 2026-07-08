@@ -3,48 +3,27 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { StringV4Schema } from "@core/types/type.utils";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useEventById } from "@web/events/queries/useEventById";
-import {
-  draftActions,
-  selectDraft,
-  useDraftStore,
-} from "@web/events/stores/draft.store";
+import { draftActions } from "@web/events/stores/draft.store";
 
-export function confirmAndDeleteEvent({
-  applyTo = RecurringEventUpdateScope.THIS_EVENT,
-  draft,
-  deleteEvent,
-  existingEvent,
-}: {
-  applyTo?: RecurringEventUpdateScope;
-  draft?: Schema_Event | null;
+// No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z (the mutation
+// layer records a snapshot and shows a "Deleted" toast with the undo hint).
+export function deleteEventAndDiscardDraft(
   deleteEvent?: (payload: {
     _id: string;
     applyTo: RecurringEventUpdateScope;
-  }) => void;
-  existingEvent?: Schema_Event | null;
-}) {
-  const event = existingEvent ?? draft;
-  const { data: _title } = StringV4Schema.safeParse(event?.title);
-  const title = _title ?? "this event";
-  const usePrefix = applyTo === RecurringEventUpdateScope.ALL_EVENTS;
-  const prefix = usePrefix ? "all instances of - " : "";
-
-  const confirmed = window.confirm(`Delete ${prefix}${title}?`);
-
-  if (!confirmed) {
-    return false;
-  }
-
-  if (event?._id && existingEvent) {
-    deleteEvent?.({ _id: event._id, applyTo });
+  }) => void,
+  existingEvent?: Schema_Event | null,
+) {
+  if (existingEvent?._id) {
+    deleteEvent?.({
+      _id: existingEvent._id,
+      applyTo: RecurringEventUpdateScope.THIS_EVENT,
+    });
   }
 
   draftActions.discard();
-
-  return true;
 }
 
 /**
@@ -55,19 +34,10 @@ export function confirmAndDeleteEvent({
 export function useDeleteEvent(_id: string) {
   const existingEvent = useEventById(_id);
   const { delete: deleteEventMutation } = useEventMutations();
-  const draft = useDraftStore(selectDraft);
 
   const deleteEvent = useCallback(
-    (
-      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
-    ) =>
-      confirmAndDeleteEvent({
-        applyTo,
-        draft,
-        deleteEvent: deleteEventMutation,
-        existingEvent,
-      }),
-    [deleteEventMutation, draft, existingEvent],
+    () => deleteEventAndDiscardDraft(deleteEventMutation, existingEvent),
+    [deleteEventMutation, existingEvent],
   );
 
   return deleteEvent;

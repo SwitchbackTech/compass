@@ -33,7 +33,7 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
-import { confirmAndDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
+import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -229,10 +229,7 @@ export const useWeekShortcuts = ({
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
 
-      confirmAndDeleteEvent({
-        deleteEvent,
-        existingEvent: resolvedTarget.event,
-      });
+      deleteEventAndDiscardDraft(deleteEvent, resolvedTarget.event);
     },
     [deleteEvent, getTargetedCalendarEvent],
   );

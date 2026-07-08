@@ -451,16 +451,10 @@ export const useSidebarActions = (
   const deleteSomedayEvent = (
     applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
   ) => {
+    // No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z
     const eventToDelete = state.draft ?? draft;
-    const title = eventToDelete?.title ?? "this event";
-    const prefix =
-      applyTo === RecurringEventUpdateScope.ALL_EVENTS
-        ? "all instances of - "
-        : "";
 
-    const confirmed = window.confirm(`Delete ${prefix}${title}?`);
-
-    if (confirmed && eventToDelete?._id) {
+    if (eventToDelete?._id) {
       eventMutations.deleteSomeday({ _id: eventToDelete._id, applyTo });
     }
 

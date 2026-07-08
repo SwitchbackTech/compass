@@ -1,3 +1,4 @@
+import { type ReactNode } from "react";
 import { type Id, toast } from "react-toastify";
 import { toastDefaultOptions } from "@web/common/constants/toast.constants";
 
@@ -9,7 +10,7 @@ import { toastDefaultOptions } from "@web/common/constants/toast.constants";
  * Branching on `toast.isActive` instead would race: it stays false for
  * toasts created earlier in the same tick.
  */
-export function showStatusToast(toastId: Id, message: string): void {
+export function showStatusToast(toastId: Id, message: ReactNode): void {
   toast(message, {
     ...toastDefaultOptions,
     toastId,

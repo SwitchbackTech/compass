@@ -109,16 +109,10 @@ const createEvent = (overrides: Partial<Schema_Event> = {}): Schema_Event => ({
 });
 
 describe("EventForm", () => {
-  const originalConfirm = window.confirm;
-
   beforeEach(() => {
     HotkeyManager.resetInstance();
     capturedDateControlsSectionProps = null;
     document.body.removeAttribute("data-app-locked");
-  });
-
-  afterEach(() => {
-    window.confirm = originalConfirm;
   });
 
   it("renders the title before the actions on the same row", () => {
@@ -179,8 +173,6 @@ describe("EventForm", () => {
     const user = userEvent.setup();
     const onClose = mock();
     const onDelete = mock();
-    const confirm = mock(() => true);
-    window.confirm = confirm;
 
     render(
       <EventForm
@@ -197,7 +189,6 @@ describe("EventForm", () => {
 
     await user.click(screen.getByRole("button", { name: "Delete event" }));
 
-    expect(confirm).not.toHaveBeenCalled();
     expect(onDelete).not.toHaveBeenCalled();
     expect(onClose).toHaveBeenCalledTimes(1);
   });
@@ -259,8 +250,6 @@ describe("EventForm", () => {
   it("still deletes an existing event when Delete is pressed on a non-text form target", async () => {
     const onClose = mock();
     const onDelete = mock();
-    const confirm = mock(() => true);
-    window.confirm = confirm;
 
     render(
       <EventForm

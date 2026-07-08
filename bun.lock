@@ -81,6 +81,7 @@
         "inquirer": "^8.0.0",
         "open": "^10.1.0",
         "umzug": "^3.8.2",
+        "yaml": "^2.9.0",
       },
       "devDependencies": {
         "@types/inquirer": "^9.0.1",

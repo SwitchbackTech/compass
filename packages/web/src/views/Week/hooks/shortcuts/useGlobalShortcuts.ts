@@ -1,11 +1,8 @@
 import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
-import { useSession } from "@web/auth/compass/session/useSession";
 import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
-import { useAuthModal } from "@web/components/AuthModal/hooks/useAuthModal";
-import { useLogoutConfirmation } from "@web/components/LogoutConfirmation/hooks/useLogoutConfirmation";
 import { viewActions } from "@web/events/stores/view.store";
 import { settingsActions } from "@web/settings/settings.store";
 
@@ -14,9 +11,6 @@ import { settingsActions } from "@web/settings/settings.store";
  * Mount once under {@link HotkeysProvider} (see `GlobalShortcutsHost` in CompassProvider).
  */
 export function useGlobalShortcuts() {
-  const { authenticated } = useSession();
-  const { openModal } = useAuthModal();
-  const { openLogoutConfirmation } = useLogoutConfirmation();
   const navigate = useNavigate();
   const location = useLocation();
   const dayHotkey = VIEW_SHORTCUTS.day.key.toUpperCase() as RegisterableHotkey;
@@ -61,15 +55,6 @@ export function useGlobalShortcuts() {
   });
 
   useAppHotkeyUp("[", () => viewActions.toggleSidebar());
-
-  useAppHotkeyUp("Z", () => {
-    if (authenticated) {
-      openLogoutConfirmation();
-      return;
-    }
-
-    openModal("login");
-  });
 
   useAppHotkey(
     "Mod+K",

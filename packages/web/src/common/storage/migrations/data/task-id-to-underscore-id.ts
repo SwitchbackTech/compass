@@ -13,12 +13,12 @@ function fixTaskId(task: RawStoredTask): Task | null {
   const hasUnderscoreId = typeof record._id === "string";
 
   if (hasUnderscoreId) {
-    const { dateKey: _, ...t } = task; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const { dateKey: _, ...t } = task;
     return t as Task;
   }
 
   if (hasLegacyId) {
-    const { id, dateKey: _d, ...rest } = task as RawStoredTask & { id: string }; // eslint-disable-line @typescript-eslint/no-unused-vars
+    const { id, dateKey: _d, ...rest } = task as RawStoredTask & { id: string };
     return { ...rest, _id: id } as Task;
   }
 

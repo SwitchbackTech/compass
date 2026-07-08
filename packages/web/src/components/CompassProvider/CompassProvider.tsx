@@ -15,6 +15,7 @@ import { queryClient as defaultQueryClient } from "@web/common/query/query-clien
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
+import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRedoShortcuts";
 
 /**
  * Mount once under {@link HotkeysProvider} and inside React Router so
@@ -22,6 +23,7 @@ import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalSho
  */
 export function GlobalShortcutsHost() {
   useGlobalShortcuts();
+  useUndoRedoShortcuts();
   return null;
 }
 
