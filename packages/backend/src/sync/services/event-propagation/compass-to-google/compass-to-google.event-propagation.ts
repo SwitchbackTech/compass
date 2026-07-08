@@ -8,7 +8,10 @@ import { type CompassEvent } from "@core/types/event.types";
 import { GenericError } from "@backend/common/errors/generic/generic.errors";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import mongoService from "@backend/common/services/mongo.service";
-import { applyCompassPlan } from "@backend/event/classes/compass.event.executor";
+import {
+  applyCompassPlan,
+  type CompassApplyResult,
+} from "@backend/event/classes/compass.event.executor";
 import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
 import {
   analyzeCompassTransition,
@@ -31,7 +34,7 @@ const logger = Logger("app:compass-to-google.event-propagation");
 
 type AppliedCompassChange = {
   plan: CompassOperationPlan;
-  applyResult: Awaited<ReturnType<typeof applyCompassPlan>>;
+  applyResult: CompassApplyResult;
 };
 
 export class CompassToGoogleEventPropagation {
@@ -51,11 +54,13 @@ export class CompassToGoogleEventPropagation {
       // inside an open transaction is what made conflicts likely to begin
       // with.
       const applied = await session.withTransaction(async (session) => {
-        const compassEvents = await Promise.all(
-          events.map(async (event) =>
-            CompassEventFactory.generateEvents(event, session),
-          ),
-        ).then((events) => events.flat());
+        const compassEvents = (
+          await Promise.all(
+            events.map((event) =>
+              CompassEventFactory.generateEvents(event, session),
+            ),
+          )
+        ).flat();
 
         const results: AppliedCompassChange[] = [];
 
@@ -161,10 +166,7 @@ export class CompassToGoogleEventPropagation {
 
   private static async executeGoogleEffect(
     plan: CompassOperationPlan,
-    {
-      googleDeleteEventId,
-      persistedEvent,
-    }: Awaited<ReturnType<typeof applyCompassPlan>>,
+    { googleDeleteEventId, persistedEvent }: CompassApplyResult,
   ): Promise<boolean> {
     try {
       return await CompassToGoogleEventPropagation.handleGoogleEffectByType(
