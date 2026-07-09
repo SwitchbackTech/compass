@@ -1,11 +1,7 @@
 import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { refocusEventElement } from "@web/common/utils/event/event.util";
-import {
-  getArrowKeyMovement,
-  nudgeEventDates,
-} from "@web/common/utils/event/event-nudge.util";
+import { nudgeEventFromKeyboard } from "@web/common/utils/event/event-nudge-shortcut.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { draftActions } from "@web/events/stores/draft.store";
 import { getFocusedDayCalendarEventTarget } from "@web/views/Day/interaction/targeting/dayCalendarEventTargeting";
@@ -34,16 +30,12 @@ export function useDayEventNudgeShortcuts({
     );
     if (!event?._id) return;
 
-    const movement = getArrowKeyMovement(keyboardEvent.key, false);
-    if (!movement) return;
-
-    const dates = nudgeEventDates(event, movement);
-    if (!dates) return;
-
-    keyboardEvent.preventDefault();
-    updateEvent({ event: { ...event, ...dates } }, true);
-    draftActions.discard();
-    refocusEventElement(event._id);
+    nudgeEventFromKeyboard({
+      event,
+      keyboardEvent,
+      onNudge: (event) => updateEvent({ event }, true),
+      afterNudge: () => draftActions.discard(),
+    });
   };
 
   useAppHotkey("Shift+ArrowUp", nudgeFocusedEvent);

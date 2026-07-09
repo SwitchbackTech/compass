@@ -133,8 +133,12 @@ checkout; if its ports are already claimed by another worktree's
 `compass.yaml`, it rewrites `web.port`, `web.url`, `backend.port`,
 `backend.apiUrl`, and the localhost `originsAllowed` entries to the next free
 pair (9081/3001, 9082/3002, ...). Comments and secrets in the file are
-preserved, and reruns are no-ops. `.claude/launch.json`'s `Backend`/`Web`
-preview-tooling ports are kept in sync the same way.
+preserved, and reruns are no-ops.
+
+The preflight only mutates gitignored local config. It does not rewrite tracked
+tooling files such as `.claude/launch.json`; see
+[issue #1969](https://github.com/SwitchbackTech/compass-calendar/issues/1969)
+for the cleanup that removed that behavior.
 
 Notes:
 

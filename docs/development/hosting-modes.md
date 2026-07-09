@@ -88,6 +88,6 @@ A few things that trip up new contributors:
 - [Password Auth Flow](../features/password-auth-flow.md)
 - [Offline Storage And Migrations](../features/offline-storage-and-migrations.md)
 - [Local Development](./local-development.md)
-- [Deploy](./deploy.md)
+- [Self-Hosting](../self-hosting/README.md)
 - [Google Sync And SSE Flow](../features/google-sync-and-sse-flow.md)
 - [Backend Route Map](../backend/README.md)

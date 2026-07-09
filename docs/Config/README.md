@@ -66,7 +66,7 @@ Both `google.clientId` and `google.clientSecret` must be real values for Google 
 | `google.webhookUrl` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `backend.apiUrl`. |
 | `google.notificationToken` | Required for HTTPS Google webhooks | Token used to verify Google Calendar webhook requests. |
 
-See [Google Calendar](./google-calendar.md) for full setup instructions.
+See [Google Calendar](../self-hosting/google-calendar.md) for full setup instructions.
 
 ## Optional Integrations
 
