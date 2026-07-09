@@ -29,7 +29,7 @@ const selectedUpdateScopeOptionClassName = "bg-panel-badge-bg";
 const radioDotClassName =
   "relative flex size-[18px] flex-none rounded-full border-2 border-border-secondary transition-colors after:absolute after:inset-0 after:m-auto after:size-2 after:scale-0 after:rounded-full after:bg-accent-primary after:transition-transform peer-checked:border-accent-primary peer-checked:after:scale-100 peer-focus-visible:ring-2 peer-focus-visible:ring-accent-primary peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-panel-bg";
 
-export function RecurringEventUpdateScopeDialog() {
+export function RecurrenceScopeDialog() {
   const {
     confirmation,
     state: { draft },
