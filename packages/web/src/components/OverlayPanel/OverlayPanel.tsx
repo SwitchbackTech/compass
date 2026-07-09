@@ -26,6 +26,8 @@ interface Props {
   onDismiss?: () => void;
   /** ARIA role for the panel (default: "dialog") */
   role?: "dialog" | "status" | "alert";
+  /** Cross-axis alignment of the title/message/children (default: "center") */
+  align?: "center" | "start";
   /** Panel style variant */
   variant?: "modal" | "status";
   /** Tailwind width class for the modal variant (default: "w-[400px]") */
@@ -40,6 +42,7 @@ export const OverlayPanel = ({
   children,
   onDismiss,
   role = "dialog",
+  align = "center",
   variant = "modal",
   widthClassName = "w-[400px]",
 }: Props) => {
@@ -62,7 +65,8 @@ export const OverlayPanel = ({
   );
 
   const panelClasses = clsx(
-    "flex flex-col items-center",
+    "flex flex-col",
+    align === "start" ? "items-start" : "items-center",
     variant === "modal" && [
       widthClassName,
       "max-w-[90vw] gap-6 rounded-xl bg-panel-bg p-8 shadow-[0_20px_25px_-5px_rgba(0,0,0,0.1),0_10px_10px_-5px_rgba(0,0,0,0.04)]",
@@ -157,10 +161,22 @@ export const OverlayPanel = ({
 
 interface OverlayPanelActionsProps {
   children: ReactNode;
+  /** Horizontal alignment of the action buttons (default: "end") */
+  align?: "start" | "end";
 }
 
-export const OverlayPanelActions = ({ children }: OverlayPanelActionsProps) => (
-  <div className="flex w-full justify-end gap-3">{children}</div>
+export const OverlayPanelActions = ({
+  children,
+  align = "end",
+}: OverlayPanelActionsProps) => (
+  <div
+    className={clsx(
+      "flex w-full gap-3",
+      align === "start" ? "justify-start" : "justify-end",
+    )}
+  >
+    {children}
+  </div>
 );
 
 interface OverlayPanelActionButtonProps
