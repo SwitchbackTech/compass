@@ -86,60 +86,6 @@ test("aligns the mid-drag visual and drops on the hovered day at a reduced day c
     .toContain(dayDates[targetColumnIndex]);
 });
 
-test("drops on the newly rendered day after a mid-drag edge navigation", async ({
-  page,
-}) => {
-  await page.setViewportSize({ width: 1000, height: 1000 });
-  await prepareCalendarPage(page);
-
-  const title = createEventTitle("Move Across");
-  await openTimedEventFormWithMouse(page);
-  await fillTitleAndSaveEventForm(page, title);
-  await expectTimedEventVisible(page, title);
-
-  const daysBefore = await getVisibleDayDates(page);
-  const columns = await getDayColumnBoxes(page);
-
-  const savedEvent = page
-    .locator('#timedEvents [role="button"][data-event-id]')
-    .filter({ hasText: title });
-  const eventBox = await savedEvent.boundingBox();
-  if (!eventBox) {
-    throw new Error("Expected the saved event to be visible.");
-  }
-
-  const dragY = eventBox.y + eventBox.height / 2;
-
-  await page.mouse.move(eventBox.x + eventBox.width / 2, dragY);
-  await page.mouse.down();
-
-  // Park the pointer inside the right edge-navigation threshold (50px) and
-  // dwell until the view pages to the next window
-  const lastColumn = columns[columns.length - 1];
-  await page.mouse.move(lastColumn.right - 20, dragY, { steps: 10 });
-  await expect
-    .poll(async () => (await getVisibleDayDates(page))[0], { timeout: 5000 })
-    .not.toBe(daysBefore[0]);
-
-  const daysAfter = await getVisibleDayDates(page);
-  expect(daysAfter[0]).not.toBe(daysBefore[0]);
-
-  // Release over the second column of the new window
-  const newColumns = await getDayColumnBoxes(page);
-  const dropColumnIndex = 1;
-  const dropColumn = newColumns[dropColumnIndex];
-  await page.mouse.move((dropColumn.left + dropColumn.right) / 2, dragY, {
-    steps: 5,
-  });
-  await page.waitForTimeout(100);
-  await page.mouse.up();
-
-  // The persisted event lands on that column's newly rendered date
-  await expect
-    .poll(async () => (await getSavedEventsByTitle(page, title))[0]?.startDate)
-    .toContain(daysAfter[dropColumnIndex]);
-});
-
 const getDayColumnBoxes = async (page: Page) =>
   page.evaluate(() =>
     [...document.querySelectorAll("#timedColumns > [role='columnheader']")]

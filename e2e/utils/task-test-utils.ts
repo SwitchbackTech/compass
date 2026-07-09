@@ -119,8 +119,3 @@ export const expectTaskSavedToIndexedDB = async (page: Page, title: string) => {
     { timeout: 5000 },
   );
 };
-
-export const clearAllLocalData = async (page: Page) => {
-  await resetLocalEventDb(page);
-  await reloadTaskPage(page);
-};

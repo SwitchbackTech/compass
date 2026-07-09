@@ -10,22 +10,22 @@ import {
   reloadTaskPage,
 } from "../utils/task-test-utils";
 
-test.describe("Task Delete", () => {
+test.describe("Task smoke", () => {
   test.skip(
     ({ isMobile }) => isMobile,
     "Tasks are not available in the current mobile experience.",
   );
 
-  test("should delete a task and keep it deleted after reload", async ({
-    page,
-  }) => {
+  test("creates, persists, and deletes a task", async ({ page }) => {
     await prepareTaskPage(page);
 
-    const taskTitle = `Delete Task ${Date.now()}`;
+    const taskTitle = `Task Smoke ${Date.now()}`;
     await createTask(page, taskTitle);
-
     await expectTaskVisible(page, taskTitle);
     await expectTaskSavedToIndexedDB(page, taskTitle);
+
+    await reloadTaskPage(page);
+    await expectTaskVisible(page, taskTitle);
 
     await deleteTaskWithKeyboard(page, taskTitle);
     await expectTaskMissing(page, taskTitle);

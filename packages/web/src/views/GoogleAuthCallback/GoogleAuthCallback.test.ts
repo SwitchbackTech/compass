@@ -1,5 +1,8 @@
 import { GOOGLE_AUTH_SCOPES_REQUIRED } from "@web/auth/google/authorization/google-authorization.constants";
-import { writeGoogleAuthorizationIntent } from "@web/auth/google/authorization/google-authorization.storage";
+import {
+  readGoogleAuthorizationIntent,
+  writeGoogleAuthorizationIntent,
+} from "@web/auth/google/authorization/google-authorization.storage";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockLoginOrSignup = mock();
@@ -27,6 +30,26 @@ mock.module("@web/common/utils/toast/error-toast.util", () => ({
 const { completeGoogleAuthCallback } =
   require("./GoogleAuthCallback") as typeof import("./GoogleAuthCallback");
 
+const callbackSearch = (
+  state: string,
+  scope = GOOGLE_AUTH_SCOPES_REQUIRED.join(" "),
+) =>
+  `?state=${encodeURIComponent(
+    state,
+  )}&code=auth-code&scope=${encodeURIComponent(scope)}`;
+
+const writeIntent = (
+  state: string,
+  intent: "signIn" | "connectCalendar",
+  returnPath = "/week",
+) => {
+  writeGoogleAuthorizationIntent(state, {
+    intent,
+    returnPath,
+    createdAt: Date.now(),
+  });
+};
+
 describe("completeGoogleAuthCallback", () => {
   const completeAuthentication = mock();
   const navigate = mock();
@@ -38,21 +61,51 @@ describe("completeGoogleAuthCallback", () => {
     mockShowErrorToast.mockClear();
     completeAuthentication.mockClear();
     navigate.mockClear();
+    mockLoginOrSignup.mockResolvedValue({
+      user: { emails: ["user@example.com"] },
+    });
+    mockConnectGoogle.mockResolvedValue({});
   });
 
-  it("rejects a Google callback that is missing required calendar scopes", async () => {
-    writeGoogleAuthorizationIntent("state-1", {
-      intent: "signIn",
-      returnPath: "/week",
-      createdAt: Date.now(),
-    });
+  it("finishes a saved Google sign-in intent and returns to the saved path", async () => {
+    writeIntent("sign-in-state", "signIn", "/week");
 
     await completeGoogleAuthCallback({
       completeAuthentication,
       navigate,
-      search: `?state=state-1&code=auth-code&scope=${encodeURIComponent(
+      search: callbackSearch("sign-in-state"),
+    });
+
+    expect(mockLoginOrSignup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        redirectURIInfo: expect.objectContaining({
+          redirectURIQueryParams: expect.objectContaining({
+            code: "auth-code",
+            state: "sign-in-state",
+          }),
+        }),
+        thirdPartyId: "google",
+      }),
+    );
+    expect(mockConnectGoogle).not.toHaveBeenCalled();
+    expect(completeAuthentication).toHaveBeenCalledWith({
+      email: "user@example.com",
+    });
+    expect(mockShowErrorToast).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
+    expect(readGoogleAuthorizationIntent("sign-in-state")).toBeNull();
+  });
+
+  it("rejects a Google callback that is missing required calendar scopes", async () => {
+    writeIntent("missing-scopes-state", "signIn", "/week");
+
+    await completeGoogleAuthCallback({
+      completeAuthentication,
+      navigate,
+      search: callbackSearch(
+        "missing-scopes-state",
         GOOGLE_AUTH_SCOPES_REQUIRED[0],
-      )}`,
+      ),
     });
 
     expect(mockLoginOrSignup).not.toHaveBeenCalled();
@@ -62,5 +115,21 @@ describe("completeGoogleAuthCallback", () => {
       "Missing Google Calendar permissions. Please grant all requested permissions.",
     );
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
+  });
+
+  it("rejects a Google callback without a saved intent", async () => {
+    await completeGoogleAuthCallback({
+      completeAuthentication,
+      navigate,
+      search: callbackSearch("unknown-state"),
+    });
+
+    expect(mockLoginOrSignup).not.toHaveBeenCalled();
+    expect(mockConnectGoogle).not.toHaveBeenCalled();
+    expect(completeAuthentication).not.toHaveBeenCalled();
+    expect(mockShowErrorToast).toHaveBeenCalledWith(
+      "Google authorization could not be completed. Please try again.",
+    );
+    expect(navigate).toHaveBeenCalledWith("/day", { replace: true });
   });
 });

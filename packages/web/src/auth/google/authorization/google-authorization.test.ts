@@ -169,4 +169,23 @@ describe("completeGoogleAuthorization", () => {
     expect(deps.completeAuthentication).not.toHaveBeenCalled();
     expect(readGoogleAuthorizationIntent("state-3")).toBeNull();
   });
+
+  it("rejects callbacks without a saved intent", async () => {
+    const deps = makeDeps();
+
+    await expect(
+      completeGoogleAuthorization({
+        ...deps,
+        search: callbackSearch("unknown-state"),
+      }),
+    ).resolves.toEqual({
+      status: "failed",
+      message: "Google authorization could not be completed. Please try again.",
+      returnPath: "/day",
+    });
+
+    expect(deps.authApi.loginOrSignup).not.toHaveBeenCalled();
+    expect(deps.authApi.connectGoogle).not.toHaveBeenCalled();
+    expect(deps.completeAuthentication).not.toHaveBeenCalled();
+  });
 });
