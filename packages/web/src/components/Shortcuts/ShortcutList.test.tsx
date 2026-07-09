@@ -9,7 +9,7 @@ describe("ShortcutList", () => {
   // those collide, firing React's "two children with the same key" warning and
   // risking omitted rows. Both rows must render, warning-free.
   it("renders duplicate key combos with distinct labels and no key collision", () => {
-    const consoleError = mock(() => {});
+    const consoleError = mock((..._args: unknown[]) => {});
     const originalError = console.error;
     console.error = consoleError;
 
