@@ -302,6 +302,59 @@ describe("useEventMutations", () => {
     context.pending.resolve();
   });
 
+  test("coalesces a burst of edits to one event into a single write of the final state", async () => {
+    const context = setup();
+    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const editEvent = (title: string) =>
+      context.hook.result.current.mutations.edit({
+        _id: "event-1",
+        event: event({ title }) as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      });
+
+    // A held-key nudge (or drag) fires many edits before any write lands. Each
+    // earlier edit sees a newer edit already queued and skips its network write,
+    // so only the final position is actually persisted — no per-keystroke PUT,
+    // no trailing "replay" as the serialized queue drains after the user stops.
+    act(() => {
+      editEvent("First");
+      editEvent("Second");
+      editEvent("Third");
+    });
+
+    // Optimistic UI still reflects every step, ending on the final title.
+    await waitFor(() => {
+      expect(
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )?.entities["event-1"].title,
+      ).toBe("Third");
+    });
+
+    // Exactly one repository write, carrying the final state.
+    await waitFor(() => {
+      expect(
+        context.calls.filter(({ method }) => method === "edit"),
+      ).toHaveLength(1);
+    });
+    const edits = context.calls.filter(({ method }) => method === "edit");
+    expect((edits[0].value as { event: Schema_Event }).event.title).toBe(
+      "Third",
+    );
+
+    context.pending.resolve();
+
+    // Every edit still marks a write (anon-change tracking) even though two
+    // skipped the network.
+    await waitFor(() => {
+      expect(context.markedWrites).toHaveLength(3);
+      expect(context.hook.result.current.hasPending).toBe(false);
+    });
+    expect(
+      context.calls.filter(({ method }) => method === "edit"),
+    ).toHaveLength(1);
+  });
+
   test("a failed edit leaves a concurrent edit to another event untouched", async () => {
     const context = setup();
     const other = event({ _id: "event-2", title: "Other" });

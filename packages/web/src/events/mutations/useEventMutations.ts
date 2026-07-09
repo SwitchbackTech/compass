@@ -30,6 +30,7 @@ import {
   eventMutationKeys,
 } from "./event.mutation.keys";
 import {
+  isSupersededByLaterEditWrite,
   markAnonymousEventWrite,
   type PrecedingEventWrites,
   precedingCreateOk,
@@ -124,12 +125,23 @@ export function useEventMutations(
     variables: unknown,
     canWrite: (preceding: PrecedingEventWrites) => boolean,
     write: () => Promise<unknown>,
+    { coalesce = false }: { coalesce?: boolean } = {},
   ) => {
     const preceding = await waitForPrecedingEventWrites(
       queryClient,
       eventId,
       variables,
     );
+    // A newer edit for this event is already queued and will persist the final
+    // state, so this write is redundant — skip the network call but still mark
+    // the write (anon-change tracking) so a burst collapses to one request.
+    if (
+      coalesce &&
+      isSupersededByLaterEditWrite(queryClient, eventId, variables)
+    ) {
+      await markWrite();
+      return;
+    }
     if (canWrite(preceding)) await write();
     await markWrite();
   };
@@ -171,8 +183,12 @@ export function useEventMutations(
       "edit",
       async (variables) => {
         const { _id, event, applyTo } = variables;
-        await writeAfterPreceding(_id, variables, precedingCreateOk, () =>
-          repository.edit(_id, event, { applyTo }),
+        await writeAfterPreceding(
+          _id,
+          variables,
+          precedingCreateOk,
+          () => repository.edit(_id, event, { applyTo }),
+          { coalesce: true },
         );
       },
       ({ _id, event, shouldRemove }) => {

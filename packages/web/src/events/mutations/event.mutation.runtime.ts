@@ -122,3 +122,32 @@ export async function waitForPrecedingEventWrites(
     delete: lastStatus(["delete", "delete-someday"]),
   };
 }
+
+/**
+ * True when a later edit to the same event is already queued. Writes serialize
+ * by `mutationId`, so by the time an edit reaches its turn a rapid burst (held
+ * arrow-key nudge, drag) may have enqueued newer edits for the same event. The
+ * older edits' PUTs are then redundant — the newest edit persists the final
+ * position — so callers skip them, collapsing the burst to a single network
+ * write instead of one per keystroke (which otherwise drains one-at-a-time
+ * after the user stops). Optimistic cache writes already ran per keystroke, so
+ * the on-screen event is unaffected.
+ */
+export function isSupersededByLaterEditWrite(
+  queryClient: QueryClient,
+  eventId: string,
+  ownVariables: unknown,
+): boolean {
+  const mutations = queryClient.getMutationCache().getAll() as AnyMutation[];
+  const self = mutations.find(
+    (mutation) => mutation.state.variables === ownVariables,
+  );
+  if (!self) return false;
+  return mutations.some(
+    (mutation) =>
+      mutation.state.status === "pending" &&
+      mutation.mutationId > self.mutationId &&
+      operationOf(mutation) === "edit" &&
+      variablesEventId(mutation) === eventId,
+  );
+}
