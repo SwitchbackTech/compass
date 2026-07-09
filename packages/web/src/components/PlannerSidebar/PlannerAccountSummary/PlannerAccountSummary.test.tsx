@@ -158,7 +158,7 @@ describe("PlannerAccountSummary", () => {
     "IMPORTING",
     "repairing",
     "checking",
-  ] as const)("shows the wave shimmer class and 'Syncing...' copy for %s", async (state) => {
+  ] as const)("shows the wave shimmer class and 'Syncing…' copy for %s", async (state) => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = state;
@@ -170,7 +170,7 @@ describe("PlannerAccountSummary", () => {
 
     await user.hover(email);
     await waitFor(() => {
-      expect(screen.getByRole("tooltip")).toHaveTextContent("Syncing...");
+      expect(screen.getByRole("tooltip")).toHaveTextContent("Syncing…");
     });
   });
 
@@ -260,7 +260,7 @@ describe("PlannerAccountSummary", () => {
 
     renderSummary({ pendingEventIds: ["event-1"] });
 
-    expect(screen.getByText("Syncing...")).toBeTruthy();
+    expect(screen.getByText("Syncing…")).toBeTruthy();
     expect(screen.queryByText("Syncing changes…")).toBeNull();
   });
 });

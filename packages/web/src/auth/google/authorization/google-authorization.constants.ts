@@ -12,6 +12,6 @@ export const GOOGLE_AUTH_SCOPES_REQUIRED = [
 ];
 
 export const GOOGLE_AUTHORIZATION_ERROR_MESSAGE =
-  "Google authorization could not be completed. Please try again.";
+  "We couldn't connect your Google account. Please try again.";
 export const MISSING_GOOGLE_SCOPES_ERROR_MESSAGE =
-  "Missing Google Calendar permissions. Please grant all requested permissions.";
+  "Compass needs all the requested permissions to sync your calendar. Please allow them and try again.";

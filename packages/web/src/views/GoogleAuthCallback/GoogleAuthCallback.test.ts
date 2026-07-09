@@ -112,7 +112,7 @@ describe("completeGoogleAuthCallback", () => {
     expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
     expect(mockShowErrorToast).toHaveBeenCalledWith(
-      "Missing Google Calendar permissions. Please grant all requested permissions.",
+      "Compass needs all the requested permissions to sync your calendar. Please allow them and try again.",
     );
     expect(navigate).toHaveBeenCalledWith("/week", { replace: true });
   });
@@ -128,7 +128,7 @@ describe("completeGoogleAuthCallback", () => {
     expect(mockConnectGoogle).not.toHaveBeenCalled();
     expect(completeAuthentication).not.toHaveBeenCalled();
     expect(mockShowErrorToast).toHaveBeenCalledWith(
-      "Google authorization could not be completed. Please try again.",
+      "We couldn't connect your Google account. Please try again.",
     );
     expect(navigate).toHaveBeenCalledWith("/day", { replace: true });
   });

@@ -160,7 +160,7 @@ describe("completeGoogleAuthorization", () => {
     ).resolves.toEqual({
       status: "failed",
       message:
-        "Missing Google Calendar permissions. Please grant all requested permissions.",
+        "Compass needs all the requested permissions to sync your calendar. Please allow them and try again.",
       returnPath: "/week",
     });
 
@@ -180,7 +180,7 @@ describe("completeGoogleAuthorization", () => {
       }),
     ).resolves.toEqual({
       status: "failed",
-      message: "Google authorization could not be completed. Please try again.",
+      message: "We couldn't connect your Google account. Please try again.",
       returnPath: "/day",
     });
 

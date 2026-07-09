@@ -13,9 +13,9 @@ export interface SyncLocalEventsResult {
 }
 
 export const LOCAL_EVENTS_SYNC_ERROR_MESSAGE =
-  "We could not sync your local events. Your changes are still saved on this device.";
+  "We couldn't save your events to the cloud. Your changes are still safe on this device.";
 export const LOCAL_EVENTS_SYNC_SESSION_EXPIRED_MESSAGE =
-  "Your session expired before Compass could save your local events. Sign in again to continue. Your changes are still saved on this device.";
+  "You were signed out before Compass could save your events to the cloud. Sign in again to finish — your changes are still safe on this device.";
 
 type GoogleAuthUtilDependencies = {
   clearUserMetadata: () => void;
