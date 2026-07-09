@@ -46,17 +46,7 @@ Validation defaults:
 
 ## Lookups
 
-- Domain context: `CONTEXT.md`
 - Docs index: `docs/README.md`
-- Edit-location map: `docs/development/feature-file-map.md`
-- Common change paths: `docs/development/common-change-recipes.md`
-- Testing details: `docs/development/testing-playbook.md`
-- Local env/runtime modes: `docs/development/local-development.md`
-- Troubleshooting: `docs/development/troubleshoot.md`
-- Feature acceptance runbooks: `docs/acceptance/`
-- Feature docs: `docs/features/`
-- `docs/self-hosting/README.md`
-- `self-host/README.md`
 
 ## Agent skills
 
