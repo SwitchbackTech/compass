@@ -49,7 +49,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
   today,
   visibleDates,
 }) => {
-  const isTodayVisible = visibleDates.some(({ date }) =>
+  const todayColumnIndex = visibleDates.findIndex(({ date }) =>
     date.isSame(today, "day"),
   );
 
@@ -76,7 +76,12 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
           } as CSSVariables
         }
       >
-        {isTodayVisible ? <CalendarNowLine /> : null}
+        {todayColumnIndex >= 0 ? (
+          <CalendarNowLine
+            columnCount={visibleDates.length}
+            columnIndex={todayColumnIndex}
+          />
+        ) : null}
         {visibleDates.map(({ date, key }) => (
           <div
             className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l data-[past=true]:bg-bg-secondary"
@@ -151,7 +156,13 @@ const CalendarTimeColumn = () => {
   );
 };
 
-const CalendarNowLine = () => {
+const CalendarNowLine = ({
+  columnCount,
+  columnIndex,
+}: {
+  columnCount: number;
+  columnIndex: number;
+}) => {
   const [percentOfDay, setPercentOfDay] = useState(() =>
     getCurrentPercentOfDay(),
   );
@@ -166,12 +177,14 @@ const CalendarNowLine = () => {
 
   return (
     <div
-      className="absolute h-px w-full"
+      className="absolute h-px"
       role="separator"
       title="now line"
       style={{
         background: blueGradient,
         top: `${percentOfDay}%`,
+        left: `calc(${columnIndex} * 100% / ${columnCount})`,
+        width: `calc(100% / ${columnCount})`,
         zIndex: ZIndex.LAYER_2,
       }}
     />
