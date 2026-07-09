@@ -59,6 +59,7 @@ export function DraggableTask({
           {...attributes}
           {...listeners}
           ref={setActivatorNodeRef}
+          data-task-id={task._id}
           aria-label={
             isDragging
               ? `Reordering ${task.title}. Use arrow keys to move, space to drop.`

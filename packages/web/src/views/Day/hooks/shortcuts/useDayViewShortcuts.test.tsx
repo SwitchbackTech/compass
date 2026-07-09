@@ -20,6 +20,15 @@ const focusTaskCheckbox = () => {
   return checkbox;
 };
 
+const focusReorderHandle = () => {
+  const handle = document.createElement("button");
+  handle.setAttribute("aria-label", "Reorder My task");
+  handle.dataset.taskId = TASK_ID;
+  document.body.appendChild(handle);
+  handle.focus();
+  return handle;
+};
+
 const pressMigrate = (key: "ArrowRight" | "ArrowLeft") =>
   pressKey(key, {
     keyDownInit: { shiftKey: true },
@@ -87,6 +96,18 @@ describe("useDayViewShortcuts migration", () => {
 
     await waitFor(() => {
       expect(onMigrateTask).toHaveBeenCalledWith(TASK_ID, "backward");
+    });
+  });
+
+  it("migrates when the drag/reorder handle is focused", async () => {
+    const onMigrateTask = mock();
+    focusReorderHandle();
+
+    renderHook(() => useDayViewShortcuts({ onMigrateTask }), { wrapper });
+    pressMigrate("ArrowRight");
+
+    await waitFor(() => {
+      expect(onMigrateTask).toHaveBeenCalledWith(TASK_ID, "forward");
     });
   });
 
