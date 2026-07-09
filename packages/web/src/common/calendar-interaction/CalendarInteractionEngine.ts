@@ -1,6 +1,6 @@
 import {
   type CalendarInteractionAdapter,
-  type FloatingInteractionOverlayMount,
+  type FloatingDraftEventMount,
 } from "./CalendarInteractionAdapter";
 import {
   type CalendarInteractionMetrics,
@@ -14,7 +14,7 @@ import {
   type PendingCalendarInteractionSession,
 } from "./CalendarInteractionSession";
 import { hasExceededCalendarInteractionMoveThreshold } from "./calendarInteractionPointer";
-import { FloatingInteractionOverlay } from "./dom/overlay/FloatingInteractionOverlay";
+import { FloatingDraftEvent } from "./dom/draft-event/FloatingDraftEvent";
 import {
   type PreparedSourceElement,
   prepareSourceElementForInteraction,
@@ -39,7 +39,7 @@ interface CalendarInteractionEngineOptions<TTarget, TVisual, TResult>
   adapter: CalendarInteractionAdapter<TTarget, TVisual, TResult>;
   commitTeardownDeadlineMs?: number;
   createMetrics?: () => CalendarInteractionMetrics;
-  createOverlay?: () => FloatingInteractionOverlay;
+  createDraftEvent?: () => FloatingDraftEvent;
   holdDelayMs?: number;
   moveThresholdPx?: number;
 }
@@ -69,7 +69,7 @@ const defaultOptions = {
   },
   commitTeardownDeadlineMs: 250,
   createMetrics: createCalendarInteractionMetrics,
-  createOverlay: () => new FloatingInteractionOverlay(),
+  createDraftEvent: () => new FloatingDraftEvent(),
   holdDelayMs: 750,
   moveThresholdPx: 25,
   now: () => performance.now(),
@@ -88,7 +88,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
   let activatedAt: number | null = null;
   let latestPointer: CalendarInteractionPoint | null = null;
   let metrics = resolvedOptions.createMetrics();
-  let overlay: FloatingInteractionOverlay | null = null;
+  let draftEvent: FloatingDraftEvent | null = null;
   let pendingCommitTeardown: { frame: unknown; timer: unknown } | null = null;
   let preparedSource: PreparedSourceElement | null = null;
   let previousFrameTimestamp: number | null = null;
@@ -116,7 +116,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
       return false;
     }
 
-    // A new press must never coexist with a held commit overlay or a
+    // A new press must never coexist with a held commit draft event or a
     // still-prepared source element from the previous interaction.
     finishPendingCommitTeardown();
 
@@ -309,15 +309,15 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
       return;
     }
 
-    const overlayMount = resolvedOptions.adapter.getOverlayMount({
+    const draftEventMount = resolvedOptions.adapter.getDraftEventMount({
       sourceElement: pendingSession.sourceElement,
       target: pendingSession.target,
       visual,
     });
-    mountOverlay(overlayMount);
+    mountDraftEvent(draftEventMount);
     preparedSource = prepareSourceElementForInteraction(
       pendingSession.sourceElement,
-      resolvedOptions.adapter.getSourceElementOverlayMode?.(
+      resolvedOptions.adapter.getSourceElementDraftEventMode?.(
         pendingSession.target,
       ),
     );
@@ -364,12 +364,12 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     scrollSync = null;
   }
 
-  function mountOverlay(mount: FloatingInteractionOverlayMount) {
-    const overlayMountStart = resolvedOptions.now();
-    const nextOverlay = resolvedOptions.createOverlay();
-    nextOverlay.mount(mount);
-    metrics.overlayMountMs = resolvedOptions.now() - overlayMountStart;
-    overlay = nextOverlay;
+  function mountDraftEvent(mount: FloatingDraftEventMount) {
+    const draftEventMountStart = resolvedOptions.now();
+    const nextDraftEvent = resolvedOptions.createDraftEvent();
+    nextDraftEvent.mount(mount);
+    metrics.draftEventMountMs = resolvedOptions.now() - draftEventMountStart;
+    draftEvent = nextDraftEvent;
   }
 
   function clearPendingTimer(
@@ -390,7 +390,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
   }
 
   function runFrame(timestamp: number) {
-    if (session.phase !== "motion" || !latestPointer || !overlay) {
+    if (session.phase !== "motion" || !latestPointer || !draftEvent) {
       return;
     }
 
@@ -406,8 +406,8 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
       visual: next.visual,
     } satisfies MotionCalendarInteractionSession<TTarget, TVisual>;
 
-    if (next.overlay) {
-      overlay.update(next.overlay);
+    if (next.draftEvent) {
+      draftEvent.update(next.draftEvent);
       metrics.styleWritesDuringMotion += 1;
     }
 
@@ -437,7 +437,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
   // Committing hands rendering back to React, which paints the moved event a
   // few scheduler tasks after pointerup. Tearing down immediately would show
   // the restored source element at its pre-interaction geometry until that
-  // render lands — a visible flash on release. So the overlay clone stays
+  // render lands — a visible flash on release. So the draft event clone stays
   // mounted (and the source stays hidden/dimmed) until the source element
   // reflows to its committed geometry, leaves the DOM, or the deadline passes
   // (commits that change nothing never reflow).
@@ -507,8 +507,8 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
       rafId = null;
     }
 
-    overlay?.unmount();
-    overlay = null;
+    draftEvent?.unmount();
+    draftEvent = null;
     detachScrollSync();
 
     if (preparedSource) {
@@ -550,7 +550,7 @@ const getPointerPoint = (event: PointerEvent): CalendarInteractionPoint => ({
   y: event.clientY,
 });
 
-// The overlay tracks the dragged element visually, so it needs to re-sync
+// The draft event tracks the dragged element visually, so it needs to re-sync
 // whenever its nearest scrollable ancestor scrolls — regardless of what kind
 // of element is being dragged.
 const getNearestScrollableAncestor = (

@@ -1,6 +1,6 @@
 import { type CalendarInteractionPoint } from "./CalendarInteractionSession";
 
-export interface FloatingInteractionOverlayMount {
+export interface FloatingDraftEventMount {
   clone: HTMLElement;
   cursor?: string;
   rect: {
@@ -11,29 +11,29 @@ export interface FloatingInteractionOverlayMount {
   };
 }
 
-export type FloatingInteractionOverlayUpdate = {
+export type FloatingDraftEventUpdate = {
   height?: number;
   mutate?: (node: HTMLElement) => void;
   transform: CalendarInteractionPoint;
   width?: number;
 } | null;
 
-export type SourceElementOverlayMode = "hide-source" | "dim-source";
+export type SourceElementDraftEventMode = "hide-source" | "dim-source";
 
 export interface CalendarInteractionAdapter<TTarget, TVisual, TResult> {
   getTarget(event: PointerEvent): TTarget | null;
   getSourceElement(target: TTarget): HTMLElement;
-  getSourceElementOverlayMode?(target: TTarget): SourceElementOverlayMode;
+  getSourceElementDraftEventMode?(target: TTarget): SourceElementDraftEventMode;
   createVisual(input: {
     pointerStart: CalendarInteractionPoint;
     sourceElement: HTMLElement;
     target: TTarget;
   }): TVisual | null;
-  getOverlayMount(input: {
+  getDraftEventMount(input: {
     sourceElement: HTMLElement;
     target: TTarget;
     visual: TVisual;
-  }): FloatingInteractionOverlayMount;
+  }): FloatingDraftEventMount;
   // Must be idempotent for a given pointer: the engine re-invokes this at
   // pointerup with the same pointer to recompute the visual before commit.
   updateVisual(input: {
@@ -42,7 +42,7 @@ export interface CalendarInteractionAdapter<TTarget, TVisual, TResult> {
     timestamp: number;
     visual: TVisual;
   }): {
-    overlay: FloatingInteractionOverlayUpdate;
+    draftEvent: FloatingDraftEventUpdate;
     shouldContinue?: boolean;
     visual: TVisual;
   };

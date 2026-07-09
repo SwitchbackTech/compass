@@ -167,7 +167,7 @@ The scale is a fixed rem ramp (product UI, not fluid display type). Steps: `xs 0
 
 ## 4. Elevation
 
-Depth is conveyed two ways, in order of priority. **First, tonal layering:** surfaces stack by stepping lightness within the near-black blue band (`bg-primary #0d1017` → `bg-secondary #11151c` → translucent panel fills like `panel-bg hsl(219 8 46 / 20%)`). A higher surface is a slightly lighter blue, not a boxed-and-shadowed card. **Second, shadow reserved for state and floating layers:** drop shadows are not a resting decoration; they appear when an element leaves the plane, hover, focus, an active drag/resize Interaction Overlay, or a menu/overlay panel that floats above the grid. The default shadow is a soft `hsla(0 0 0 / 25%)`.
+Depth is conveyed two ways, in order of priority. **First, tonal layering:** surfaces stack by stepping lightness within the near-black blue band (`bg-primary #0d1017` → `bg-secondary #11151c` → translucent panel fills like `panel-bg hsl(219 8 46 / 20%)`). A higher surface is a slightly lighter blue, not a boxed-and-shadowed card. **Second, shadow reserved for state and floating layers:** drop shadows are not a resting decoration; they appear when an element leaves the plane, hover, focus, an active drag/resize Draft Event, or a menu/overlay panel that floats above the grid. The default shadow is a soft `hsla(0 0 0 / 25%)`.
 
 ### Shadow Vocabulary
 
@@ -210,7 +210,7 @@ Controls are quiet, borderless, and hover-revealing: they sit flush on their sur
 ### Calendar Grid (signature surface)
 
 - **Grid lines:** `grid-line-primary` hairlines (`hsl(219 18 34 / 20%)`) structure the Timed Grid without visual weight.
-- **Events:** Priority-colored blocks are the brightest content on the canvas. A selected event uses `event-selected` (`#abb9c4`). During drag/resize, an Interaction Overlay carries a state shadow while the source element either dims (`dim-source`) or hides (`hide-source`).
+- **Events:** Priority-colored blocks are the brightest content on the canvas. A selected event uses `event-selected` (`#abb9c4`). During drag/resize, a Draft Event carries a state shadow while the source element either dims (`dim-source`) or hides (`hide-source`).
 
 ### Command Palette
 

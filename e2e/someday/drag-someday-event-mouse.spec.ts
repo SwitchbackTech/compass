@@ -42,11 +42,11 @@ const dragSomedayEventToTimedGrid = async (page: Page, titlePrefix: string) => {
 };
 
 const expectTimedPreviewTextStack = async (page: Page, title: string) => {
-  const overlay = page.locator("[data-calendar-interaction-overlay]");
-  const titleLabel = overlay.getByText(title);
-  const timeLabel = overlay.locator("[data-someday-interaction-time-label]");
+  const draftEvent = page.locator("[data-calendar-draft-event]");
+  const titleLabel = draftEvent.getByText(title);
+  const timeLabel = draftEvent.locator("[data-someday-interaction-time-label]");
 
-  await expect(overlay).toBeVisible();
+  await expect(draftEvent).toBeVisible();
   await expect(timeLabel).toHaveText(
     /\d{1,2}(?::\d{2})?\s*(AM|PM)?\s+-\s+\d{1,2}(?::\d{2})?\s*(AM|PM)/i,
   );

@@ -6,7 +6,7 @@ export interface CalendarInteractionMetrics {
   firstFrameLatencyMs: number | null;
   frameGaps: number[];
   layoutReadsDuringMotion: number;
-  overlayMountMs: number | null;
+  draftEventMountMs: number | null;
   phase: CalendarInteractionPhase;
   pointerMoveCount: number;
   rafCount: number;
@@ -22,7 +22,7 @@ export const createCalendarInteractionMetrics =
     firstFrameLatencyMs: null,
     frameGaps: [],
     layoutReadsDuringMotion: 0,
-    overlayMountMs: null,
+    draftEventMountMs: null,
     phase: "idle",
     pointerMoveCount: 0,
     rafCount: 0,

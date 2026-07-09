@@ -1,7 +1,7 @@
 import { ZIndex } from "@web/common/constants/web.constants";
 import { type CalendarInteractionPoint } from "../../CalendarInteractionSession";
 
-export class FloatingInteractionOverlay {
+export class FloatingDraftEvent {
   #node: HTMLElement | null = null;
 
   mount({

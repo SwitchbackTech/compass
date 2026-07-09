@@ -292,13 +292,13 @@ describe("WeekInteractionAdapter all-day resize", () => {
 
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay?.style.transition).toBe("none");
-    expect(overlay?.style.transform).toBe("translate3d(0px, 0px, 0)");
-    expect(overlay?.style.width).toBe("290px");
+    expect(draftEvent?.style.transition).toBe("none");
+    expect(draftEvent?.style.transform).toBe("translate3d(0px, 0px, 0)");
+    expect(draftEvent?.style.width).toBe("290px");
 
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: endHandle, x: 655, y: 30 }),
@@ -318,7 +318,7 @@ describe("WeekInteractionAdapter all-day resize", () => {
     fireCommitTeardownDeadline();
     expect(source.style.visibility).toBe("visible");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
   });
 
@@ -334,12 +334,12 @@ describe("WeekInteractionAdapter all-day resize", () => {
     );
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay?.style.transform).toBe("translate3d(100px, 0px, 0)");
-    expect(overlay?.style.width).toBe("190px");
+    expect(draftEvent?.style.transform).toBe("translate3d(100px, 0px, 0)");
+    expect(draftEvent?.style.width).toBe("190px");
 
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: startHandle, x: 655, y: 30 }),
@@ -393,7 +393,7 @@ describe("WeekInteractionAdapter all-day resize", () => {
     );
   });
 
-  it("restores the source element and overlay when all-day resize is cancelled", () => {
+  it("restores the source element and draft event when all-day resize is cancelled", () => {
     const { adapter, endHandle, flushFrame, onCommitAllDayResize, source } =
       createHarness();
 
@@ -407,7 +407,7 @@ describe("WeekInteractionAdapter all-day resize", () => {
 
     expect(source.style.visibility).toBe("hidden");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeTruthy();
 
     adapter.handlePointerCancel(
@@ -416,7 +416,7 @@ describe("WeekInteractionAdapter all-day resize", () => {
 
     expect(source.style.visibility).toBe("visible");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
     expect(onCommitAllDayResize).not.toHaveBeenCalled();
   });

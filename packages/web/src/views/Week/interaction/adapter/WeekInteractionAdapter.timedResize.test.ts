@@ -289,13 +289,13 @@ describe("WeekInteractionAdapter timed resize", () => {
 
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay?.style.transition).toBe("none");
-    expect(overlay?.style.transform).toBe("translate3d(0px, 0px, 0)");
-    expect(overlay?.style.height).toBe("150px");
+    expect(draftEvent?.style.transition).toBe("none");
+    expect(draftEvent?.style.transform).toBe("translate3d(0px, 0px, 0)");
+    expect(draftEvent?.style.height).toBe("150px");
 
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: endHandle, x: 320, y: 1150 }),
@@ -315,7 +315,7 @@ describe("WeekInteractionAdapter timed resize", () => {
     fireCommitTeardownDeadline();
     expect(source.style.visibility).toBe("visible");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
   });
 
@@ -358,13 +358,13 @@ describe("WeekInteractionAdapter timed resize", () => {
     );
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay?.style.transition).toBe("none");
-    expect(overlay?.style.transform).toBe("translate3d(0px, -50px, 0)");
-    expect(overlay?.style.height).toBe("150px");
+    expect(draftEvent?.style.transition).toBe("none");
+    expect(draftEvent?.style.transform).toBe("translate3d(0px, -50px, 0)");
+    expect(draftEvent?.style.height).toBe("150px");
 
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: startHandle, x: 320, y: 950 }),
@@ -394,12 +394,12 @@ describe("WeekInteractionAdapter timed resize", () => {
     );
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay?.style.transform).toBe("translate3d(0px, -25px, 0)");
-    expect(overlay?.style.height).toBe("25px");
+    expect(draftEvent?.style.transform).toBe("translate3d(0px, -25px, 0)");
+    expect(draftEvent?.style.height).toBe("25px");
 
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: endHandle, x: 320, y: 980 }),
@@ -483,7 +483,7 @@ describe("WeekInteractionAdapter timed resize", () => {
     );
   });
 
-  it("re-syncs the overlay position when the grid scrolls without further pointer movement", () => {
+  it("re-syncs the draft event position when the grid scrolls without further pointer movement", () => {
     const { adapter, endHandle, flushFrame, mainGrid } = createHarness();
 
     adapter.handlePointerDown(
@@ -494,19 +494,19 @@ describe("WeekInteractionAdapter timed resize", () => {
     );
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay?.style.transform).toBe("translate3d(0px, 0px, 0)");
-    expect(overlay?.style.height).toBe("150px");
+    expect(draftEvent?.style.transform).toBe("translate3d(0px, 0px, 0)");
+    expect(draftEvent?.style.height).toBe("150px");
 
     mainGrid.scrollTop = 100;
     mainGrid.dispatchEvent(new Event("scroll"));
     flushFrame();
 
-    expect(overlay?.style.transform).toBe("translate3d(0px, -100px, 0)");
-    expect(overlay?.style.height).toBe("250px");
+    expect(draftEvent?.style.transform).toBe("translate3d(0px, -100px, 0)");
+    expect(draftEvent?.style.height).toBe("250px");
   });
 
   it("uses the latest timed grid scroll position when it changes before timed resize commit", () => {

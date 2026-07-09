@@ -1,4 +1,4 @@
-export const createInteractionClone = (source: HTMLElement) => {
+export const createDraftEventClone = (source: HTMLElement) => {
   const clone = source.cloneNode(true) as HTMLElement;
 
   for (const element of [clone, ...clone.querySelectorAll<HTMLElement>("*")]) {
@@ -10,7 +10,7 @@ export const createInteractionClone = (source: HTMLElement) => {
   }
 
   clone.setAttribute("aria-hidden", "true");
-  clone.setAttribute("data-calendar-interaction-overlay", "true");
+  clone.setAttribute("data-calendar-draft-event", "true");
   clone.style.margin = "0";
   clone.style.pointerEvents = "none";
 

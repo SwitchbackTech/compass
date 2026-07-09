@@ -358,13 +358,13 @@ describe("WeekInteractionAdapter all-day drag", () => {
 
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay).toBeTruthy();
-    expect(overlay?.style.transition).toBe("none");
-    expect(overlay?.style.transform).toBe("translate3d(100px, 0px, 0)");
+    expect(draftEvent).toBeTruthy();
+    expect(draftEvent?.style.transition).toBe("none");
+    expect(draftEvent?.style.transform).toBe("translate3d(100px, 0px, 0)");
 
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: child, x: 430, y: 30 }),
@@ -384,7 +384,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
     fireCommitTeardownDeadline();
     expectSourceRestored(source);
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
   });
 
@@ -425,7 +425,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
     expect(onRequestWeekNavigation).not.toHaveBeenCalled();
   });
 
-  it("restores the source element and overlay when all-day drag is cancelled", () => {
+  it("restores the source element and draft event when all-day drag is cancelled", () => {
     const { adapter, child, flushFrame, onCommitAllDayDrag, source } =
       createHarness();
 
@@ -439,7 +439,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
 
     expectSourceDimmed(source);
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeTruthy();
 
     adapter.handlePointerCancel(
@@ -448,7 +448,7 @@ describe("WeekInteractionAdapter all-day drag", () => {
 
     expectSourceRestored(source);
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
     expect(onCommitAllDayDrag).not.toHaveBeenCalled();
   });
