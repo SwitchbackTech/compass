@@ -241,10 +241,22 @@ const createHarness = ({
     callback();
   };
 
+  const fireCommitTeardownDeadline = () => {
+    const [[timerId, callback]] = timerCallbacks;
+
+    if (!callback) {
+      throw new Error("Expected a commit teardown deadline to be scheduled");
+    }
+
+    timerCallbacks.delete(timerId);
+    callback();
+  };
+
   return {
     adapter,
     child,
     event,
+    fireCommitTeardownDeadline,
     fireHoldTimer,
     flushFrame,
     frameCallbacks,
@@ -373,6 +385,7 @@ describe("WeekInteractionAdapter timed drag", () => {
       adapter,
       child,
       event,
+      fireCommitTeardownDeadline,
       flushFrame,
       onCommitTimedDrag,
       onMotionActivation,
@@ -417,6 +430,7 @@ describe("WeekInteractionAdapter timed drag", () => {
         hasMoved: true,
       }),
     );
+    fireCommitTeardownDeadline();
     expectSourceRestored(source);
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),

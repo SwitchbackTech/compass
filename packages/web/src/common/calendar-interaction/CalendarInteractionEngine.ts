@@ -37,6 +37,7 @@ export interface CalendarInteractionCancellationTargets {
 interface CalendarInteractionEngineOptions<TTarget, TVisual, TResult>
   extends CalendarInteractionEngineSchedulerOptions {
   adapter: CalendarInteractionAdapter<TTarget, TVisual, TResult>;
+  commitTeardownDeadlineMs?: number;
   createMetrics?: () => CalendarInteractionMetrics;
   createOverlay?: () => FloatingInteractionOverlay;
   holdDelayMs?: number;
@@ -66,6 +67,7 @@ const defaultOptions = {
   clearTimer: (timer: unknown) => {
     clearTimeout(timer as ReturnType<typeof setTimeout>);
   },
+  commitTeardownDeadlineMs: 250,
   createMetrics: createCalendarInteractionMetrics,
   createOverlay: () => new FloatingInteractionOverlay(),
   holdDelayMs: 750,
@@ -87,6 +89,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
   let latestPointer: CalendarInteractionPoint | null = null;
   let metrics = resolvedOptions.createMetrics();
   let overlay: FloatingInteractionOverlay | null = null;
+  let pendingCommitTeardown: { frame: unknown; timer: unknown } | null = null;
   let preparedSource: PreparedSourceElement | null = null;
   let previousFrameTimestamp: number | null = null;
   let rafId: unknown = null;
@@ -112,6 +115,10 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     if (session.phase !== "idle") {
       return false;
     }
+
+    // A new press must never coexist with a held commit overlay or a
+    // still-prepared source element from the previous interaction.
+    finishPendingCommitTeardown();
 
     const target = resolvedOptions.adapter.getTarget(event);
 
@@ -203,7 +210,7 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
       target: motionSession.target,
       visual: finalUpdate.visual,
     });
-    teardownActiveSession("commit");
+    deferCommitTeardown();
     session = { phase: "idle" };
 
     return { result, type: "commit" };
@@ -261,6 +268,8 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
   }
 
   function cancel() {
+    finishPendingCommitTeardown();
+
     if (session.phase === "idle") {
       return;
     }
@@ -423,6 +432,73 @@ export const createCalendarInteractionEngine = <TTarget, TVisual, TResult>(
     if (next.shouldContinue) {
       scheduleFrame();
     }
+  }
+
+  // Committing hands rendering back to React, which paints the moved event a
+  // few scheduler tasks after pointerup. Tearing down immediately would show
+  // the restored source element at its pre-interaction geometry until that
+  // render lands — a visible flash on release. So the overlay clone stays
+  // mounted (and the source stays hidden/dimmed) until the source element
+  // reflows to its committed geometry, leaves the DOM, or the deadline passes
+  // (commits that change nothing never reflow).
+  function deferCommitTeardown() {
+    const element = preparedSource?.element;
+
+    if (!element) {
+      teardownActiveSession("commit");
+      return;
+    }
+
+    const initialRect = element.getBoundingClientRect();
+    const checkFrame = () => {
+      if (!pendingCommitTeardown) {
+        return;
+      }
+
+      pendingCommitTeardown.frame = null;
+
+      if (hasSourceReflowed(element, initialRect)) {
+        finishPendingCommitTeardown();
+        return;
+      }
+
+      pendingCommitTeardown.frame = resolvedOptions.requestFrame(checkFrame);
+    };
+
+    pendingCommitTeardown = {
+      frame: null,
+      timer: resolvedOptions.setTimer(
+        finishPendingCommitTeardown,
+        resolvedOptions.commitTeardownDeadlineMs,
+      ),
+    };
+    pendingCommitTeardown.frame = resolvedOptions.requestFrame(checkFrame);
+  }
+
+  function finishPendingCommitTeardown() {
+    if (!pendingCommitTeardown) {
+      return;
+    }
+
+    if (pendingCommitTeardown.frame !== null) {
+      resolvedOptions.cancelFrame(pendingCommitTeardown.frame);
+    }
+
+    resolvedOptions.clearTimer(pendingCommitTeardown.timer);
+    pendingCommitTeardown = null;
+    teardownActiveSession("commit");
+  }
+
+  function hasSourceReflowed(element: Element, initialRect: DOMRect) {
+    const rect = element.getBoundingClientRect();
+
+    return (
+      !element.isConnected ||
+      rect.top !== initialRect.top ||
+      rect.left !== initialRect.left ||
+      rect.width !== initialRect.width ||
+      rect.height !== initialRect.height
+    );
   }
 
   function teardownActiveSession(phase: "cancelled" | "commit") {

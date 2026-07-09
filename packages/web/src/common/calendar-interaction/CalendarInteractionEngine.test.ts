@@ -182,12 +182,26 @@ const createHarness = ({
     timerCallbacks.delete(timerId);
     callback();
   };
+  // After a commit the engine holds the overlay until the source element
+  // reflows or this deadline fires; jsdom rects never change, so tests use
+  // the deadline to reach the restored state.
+  const fireCommitTeardownDeadline = () => {
+    const [[timerId, callback]] = timerCallbacks;
+
+    if (!callback) {
+      throw new Error("Expected a commit teardown deadline to be scheduled");
+    }
+
+    timerCallbacks.delete(timerId);
+    callback();
+  };
 
   return {
     adapter,
     cancel,
     commit,
     engine,
+    fireCommitTeardownDeadline,
     fireHoldTimer,
     flushFrame,
     frameCallbacks,
@@ -276,9 +290,10 @@ describe("CalendarInteractionEngine", () => {
   });
 
   it("can keep the source visible as a dimmed placeholder during motion", () => {
-    const { engine, flushFrame, source } = createHarness({
-      sourceOverlayMode: "dim-source",
-    });
+    const { engine, fireCommitTeardownDeadline, flushFrame, source } =
+      createHarness({
+        sourceOverlayMode: "dim-source",
+      });
 
     engine.handlePointerDown(makePointerEvent("pointerdown", { x: 10, y: 10 }));
     engine.handlePointerMove(makePointerEvent("pointermove", { x: 36, y: 10 }));
@@ -290,6 +305,7 @@ describe("CalendarInteractionEngine", () => {
 
     flushFrame();
     engine.handlePointerUp(makePointerEvent("pointerup"));
+    fireCommitTeardownDeadline();
 
     expect(source.style.visibility).toBe("visible");
     expect(source.style.opacity).toBe("");
@@ -298,7 +314,8 @@ describe("CalendarInteractionEngine", () => {
   });
 
   it("restores only the styles changed by the source overlay mode", () => {
-    const { engine, flushFrame, source } = createHarness();
+    const { engine, fireCommitTeardownDeadline, flushFrame, source } =
+      createHarness();
 
     engine.handlePointerDown(makePointerEvent("pointerdown", { x: 10, y: 10 }));
     engine.handlePointerMove(makePointerEvent("pointermove", { x: 36, y: 10 }));
@@ -308,6 +325,7 @@ describe("CalendarInteractionEngine", () => {
 
     flushFrame();
     engine.handlePointerUp(makePointerEvent("pointerup"));
+    fireCommitTeardownDeadline();
 
     expect(source.style.visibility).toBe("visible");
     expect(source.style.opacity).toBe("0.25");
@@ -315,7 +333,8 @@ describe("CalendarInteractionEngine", () => {
   });
 
   it("commits the current visual and restores the source on pointer up", () => {
-    const { commit, engine, flushFrame, source } = createHarness();
+    const { commit, engine, fireCommitTeardownDeadline, flushFrame, source } =
+      createHarness();
 
     engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
     engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
@@ -336,6 +355,9 @@ describe("CalendarInteractionEngine", () => {
         }),
       }),
     );
+
+    fireCommitTeardownDeadline();
+
     expect(source.style.visibility).toBe("visible");
     expect(
       document.body.querySelector("[data-calendar-interaction-overlay]"),
@@ -344,6 +366,102 @@ describe("CalendarInteractionEngine", () => {
       active: false,
       phase: "commit",
     });
+  });
+
+  it("holds the overlay and source state after commit until the source reflows", () => {
+    const { engine, flushFrame, frameCallbacks, source, timerCallbacks } =
+      createHarness();
+    const rect = { height: 0, left: 0, top: 0, width: 0 };
+
+    source.getBoundingClientRect = () => ({ ...rect }) as DOMRect;
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
+    flushFrame(16);
+    engine.handlePointerUp(makePointerEvent("pointerup", { x: 35, y: 45 }));
+
+    // Still held: React hasn't applied the committed geometry yet.
+    expect(source.style.visibility).toBe("hidden");
+    expect(
+      document.body.querySelector("[data-calendar-interaction-overlay]"),
+    ).toBeTruthy();
+
+    flushFrame(32);
+
+    expect(source.style.visibility).toBe("hidden");
+
+    rect.top = 50;
+    flushFrame(48);
+
+    expect(source.style.visibility).toBe("visible");
+    expect(
+      document.body.querySelector("[data-calendar-interaction-overlay]"),
+    ).toBeNull();
+    expect(frameCallbacks.size).toBe(0);
+    expect(timerCallbacks.size).toBe(0);
+  });
+
+  it("restores at the deadline when the committed geometry never changes", () => {
+    const {
+      engine,
+      fireCommitTeardownDeadline,
+      flushFrame,
+      frameCallbacks,
+      source,
+    } = createHarness();
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
+    flushFrame(16);
+    engine.handlePointerUp(makePointerEvent("pointerup", { x: 35, y: 45 }));
+
+    expect(source.style.visibility).toBe("hidden");
+
+    fireCommitTeardownDeadline();
+
+    expect(source.style.visibility).toBe("visible");
+    expect(
+      document.body.querySelector("[data-calendar-interaction-overlay]"),
+    ).toBeNull();
+    expect(frameCallbacks.size).toBe(0);
+  });
+
+  it("tears down a held commit when the source element leaves the DOM", () => {
+    const { engine, flushFrame, source } = createHarness();
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
+    flushFrame(16);
+    engine.handlePointerUp(makePointerEvent("pointerup", { x: 35, y: 45 }));
+
+    source.remove();
+    flushFrame(32);
+
+    expect(source.style.visibility).toBe("visible");
+    expect(
+      document.body.querySelector("[data-calendar-interaction-overlay]"),
+    ).toBeNull();
+  });
+
+  it("flushes a held commit teardown when a new interaction starts", () => {
+    const { engine, flushFrame, source } = createHarness();
+
+    engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
+    engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
+    flushFrame(16);
+    engine.handlePointerUp(makePointerEvent("pointerup", { x: 35, y: 45 }));
+
+    expect(source.style.visibility).toBe("hidden");
+
+    expect(
+      engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 })),
+    ).toBe(true);
+
+    expect(source.style.visibility).toBe("visible");
+    expect(
+      document.body.querySelector("[data-calendar-interaction-overlay]"),
+    ).toBeNull();
+    expect(engine.getSession()).toMatchObject({ phase: "pending" });
   });
 
   it("recomputes the visual from the release pointer before commit", () => {
@@ -446,7 +564,7 @@ describe("CalendarInteractionEngine", () => {
   });
 
   it("ignores scroll events on the scrollable ancestor outside of an active motion session", () => {
-    const { engine, frameCallbacks, scrollContainer } = createHarness({
+    const { frameCallbacks, scrollContainer } = createHarness({
       scrollableAncestor: { clientHeight: 500, scrollHeight: 1000 },
     });
 
@@ -456,15 +574,21 @@ describe("CalendarInteractionEngine", () => {
   });
 
   it("stops listening to the scrollable ancestor after commit", () => {
-    const { engine, flushFrame, frameCallbacks, scrollContainer } =
-      createHarness({
-        scrollableAncestor: { clientHeight: 500, scrollHeight: 1000 },
-      });
+    const {
+      engine,
+      fireCommitTeardownDeadline,
+      flushFrame,
+      frameCallbacks,
+      scrollContainer,
+    } = createHarness({
+      scrollableAncestor: { clientHeight: 500, scrollHeight: 1000 },
+    });
 
     engine.handlePointerDown(makePointerEvent("pointerdown", { x: 5, y: 5 }));
     engine.handlePointerMove(makePointerEvent("pointermove", { x: 35, y: 45 }));
     flushFrame(16);
     engine.handlePointerUp(makePointerEvent("pointerup", { x: 35, y: 45 }));
+    fireCommitTeardownDeadline();
 
     scrollContainer?.dispatchEvent(new Event("scroll"));
 
