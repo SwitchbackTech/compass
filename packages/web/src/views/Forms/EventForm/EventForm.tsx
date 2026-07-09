@@ -15,7 +15,6 @@ import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
-import { type CSSVariables } from "@web/common/styles/css.types";
 import {
   colorByPriority,
   hoverColorByPriority,
@@ -43,6 +42,7 @@ import {
   type FormProps,
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
+import { EventFormShell } from "@web/views/Forms/EventFormShell";
 
 const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,
@@ -399,11 +399,9 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     );
 
     return (
-      <form
+      <EventFormShell
         {...props}
-        // biome-ignore lint/a11y/noRedundantRoles: <form> only gets its implicit "form" role when it has an accessible name, which this one doesn't; e2e tests rely on getByRole("form").
-        role="form"
-        className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
+        priority={priority}
         name={ID_EVENT_FORM}
         onMouseUp={() => {
           if (isStartDatePickerOpen) {
@@ -417,9 +415,6 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         onMouseDown={(e) => {
           e.stopPropagation();
         }}
-        style={
-          { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
-        }
       >
         <TitleActionsRow
           title={
@@ -477,7 +472,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         />
 
         <SaveSection priority={priority} onSubmit={onSubmitForm} />
-      </form>
+      </EventFormShell>
     );
   },
   fastDeepEqual,

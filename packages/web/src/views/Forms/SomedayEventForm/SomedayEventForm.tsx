@@ -10,11 +10,7 @@ import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
 import { darken } from "@core/util/color.utils";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
-import { type CSSVariables } from "@web/common/styles/css.types";
-import {
-  colorByPriority,
-  hoverColorByPriority,
-} from "@web/common/styles/theme.util";
+import { colorByPriority } from "@web/common/styles/theme.util";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
@@ -31,6 +27,7 @@ import {
   type FormProps,
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
+import { EventFormShell } from "@web/views/Forms/EventFormShell";
 import { SomedayEventActionMenu } from "@web/views/Forms/SomedayEventForm/SomedayEventActionMenu";
 import { SomedayRecurrenceSection } from "@web/views/Forms/SomedayEventForm/SomedayRecurrenceSection/SomedayRecurrenceSection";
 import { useSomedayFormShortcuts } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";
@@ -174,11 +171,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   };
 
   return (
-    <form
+    <EventFormShell
       {...props}
-      // biome-ignore lint/a11y/noRedundantRoles: <form> only gets its implicit "form" role when it has an accessible name, which this one doesn't; e2e tests rely on getByRole("form").
-      role="form"
-      className="z-1 rounded-sm bg-(--event-form-bg) px-5 py-4.5 text-xl shadow-[0_5px_5px_var(--color-shadow-default)] transition-all duration-300"
+      priority={priority}
+      className="text-xl"
       name={ID_SOMEDAY_EVENT_FORM}
       onClick={stopPropagation}
       onKeyDown={onKeyDown}
@@ -186,9 +182,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       onMouseUp={(e) => {
         e.stopPropagation();
       }}
-      style={
-        { "--event-form-bg": hoverColorByPriority[priority] } as CSSVariables
-      }
     >
       <TitleActionsRow
         title={
@@ -248,6 +241,6 @@ export const SomedayEventForm: React.FC<FormProps> = ({
       />
 
       <SaveSection priority={priority} onSubmit={_onSubmit} />
-    </form>
+    </EventFormShell>
   );
 };
