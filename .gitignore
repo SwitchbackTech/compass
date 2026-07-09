@@ -22,6 +22,7 @@ compass.yaml
 blob-report/
 build/
 buildcache/
+daily-plans/
 logs/
 docs/superpowers/
 docs/pr-explainers/
