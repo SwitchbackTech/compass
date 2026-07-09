@@ -62,7 +62,7 @@ export function GoogleAuthCallbackView() {
 
   return (
     <OverlayPanel
-      title="Completing Google authorization..."
+      title="Just finishing up …"
       message="Returning you to Compass."
       role="status"
       variant="status"

@@ -58,7 +58,7 @@ export function handleDatabaseError(
   // Handle Dexie-specific errors
   if (error instanceof Dexie.QuotaExceededError) {
     throw new DatabaseOperationError(
-      "Storage quota exceeded. Please free up space in your browser.",
+      "Your browser is out of storage space. Please free some up and try again.",
       operation,
       error,
     );
@@ -66,7 +66,7 @@ export function handleDatabaseError(
 
   if (error instanceof Dexie.VersionError) {
     throw new DatabaseOperationError(
-      "Database version mismatch. Please reload the page.",
+      "Compass needs a quick refresh. Please reload the page.",
       operation,
       error,
     );
@@ -74,7 +74,7 @@ export function handleDatabaseError(
 
   if (error instanceof Dexie.DatabaseClosedError) {
     throw new DatabaseOperationError(
-      "Database was closed unexpectedly. The operation will be retried.",
+      "Compass briefly lost its local storage. We'll try that again.",
       operation,
       error,
     );

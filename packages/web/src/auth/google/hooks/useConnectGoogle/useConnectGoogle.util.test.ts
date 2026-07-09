@@ -26,7 +26,7 @@ describe("getGoogleAccountSummaryStatus", () => {
   ] as const)("returns syncing copy for %s", (state) => {
     expect(getGoogleAccountSummaryStatus(state, callbacks)).toEqual({
       variant: "syncing",
-      tooltip: "Syncing...",
+      tooltip: "Syncing…",
     });
   });
 

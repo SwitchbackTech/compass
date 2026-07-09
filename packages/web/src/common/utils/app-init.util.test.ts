@@ -120,7 +120,7 @@ describe("app-init.util", () => {
 
       // Now toast should be called
       expect(mockToastError).toHaveBeenCalledWith(
-        "Offline storage unavailable: Storage quota exceeded. Your data will not be saved locally.",
+        "Compass can't use offline storage right now: Storage quota exceeded. Your changes won't be saved on this device.",
         {
           autoClose: false,
           position: "bottom-right",
@@ -170,7 +170,7 @@ describe("app-init.util", () => {
         runToastTimeout();
 
         expect(mockToastError).toHaveBeenCalledWith(
-          "Offline storage unavailable: Failed to initialize IndexedDB after 3 attempts. Your data will not be saved locally.",
+          "Compass can't use offline storage right now: Failed to initialize IndexedDB after 3 attempts. Your changes won't be saved on this device.",
           expect.objectContaining({
             autoClose: false,
             position: "bottom-right",

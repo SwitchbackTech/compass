@@ -7,7 +7,7 @@ describe("getAuthSubmitErrorMessage", () => {
     error.name = "ApiError";
 
     expect(getAuthSubmitErrorMessage(error, "Unable to log in")).toBe(
-      "Unable to reach the Compass server. Check that your backend is running and try again.",
+      "We can't reach Compass right now. Please check your connection and try again.",
     );
   });
 
@@ -18,7 +18,7 @@ describe("getAuthSubmitErrorMessage", () => {
         "Unable to log in",
       ),
     ).toBe(
-      "Unable to reach the Compass server. Check that your backend is running and try again.",
+      "We can't reach Compass right now. Please check your connection and try again.",
     );
   });
 });

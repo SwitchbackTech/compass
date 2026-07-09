@@ -12,9 +12,9 @@ const SYNCING_COMMAND_LABEL: Record<
   "checking" | "repairing" | "IMPORTING",
   string
 > = {
-  checking: "Checking Google Calendar…",
-  repairing: "Syncing Google Calendar…",
-  IMPORTING: "Syncing Google Calendar…",
+  checking: "Checking your Google Calendar…",
+  repairing: "Syncing your Google Calendar…",
+  IMPORTING: "Syncing your Google Calendar…",
 };
 
 export const getGoogleConnectionConfig = (
@@ -89,12 +89,12 @@ export const getGoogleAccountSummaryStatus = (
     case "checking":
       return {
         variant: "syncing",
-        tooltip: "Syncing...",
+        tooltip: "Syncing…",
       };
     case "ATTENTION":
       return {
         variant: "warning",
-        tooltip: "Google Calendar needs a sync",
+        tooltip: "Your Google Calendar is out of date",
         action: { label: "Sync now", onClick: onRepairGoogle },
       };
     case "RECONNECT_REQUIRED":

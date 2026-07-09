@@ -6,7 +6,7 @@ export function getAuthSubmitErrorMessage(
 ): string {
   if (error instanceof Error) {
     if (isBackendUnavailableError(error)) {
-      return "Unable to reach the Compass server. Check that your backend is running and try again.";
+      return "We can't reach Compass right now. Please check your connection and try again.";
     }
 
     return error.message;

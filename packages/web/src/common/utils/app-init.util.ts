@@ -40,7 +40,7 @@ export function showDbInitErrorToast(dbInitError: DatabaseInitError): void {
   // Use setTimeout to ensure toast container is mounted
   setTimeout(() => {
     toast.error(
-      `Offline storage unavailable: ${dbInitError.message}. Your data will not be saved locally.`,
+      `Compass can't use offline storage right now: ${dbInitError.message}. Your changes won't be saved on this device.`,
       {
         autoClose: false,
         position: "bottom-right",

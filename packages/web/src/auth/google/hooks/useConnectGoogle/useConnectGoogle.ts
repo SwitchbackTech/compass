@@ -75,9 +75,12 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
           return;
         }
 
-        showErrorToast("Google Calendar sync failed. Please try again.", {
-          toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
-        });
+        showErrorToast(
+          "We couldn't sync your Google Calendar. Please try again.",
+          {
+            toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
+          },
+        );
       }
     };
 
