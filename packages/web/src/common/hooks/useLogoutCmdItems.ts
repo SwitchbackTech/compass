@@ -16,7 +16,6 @@ export const useLogoutCmdItems = (): CommandItem[] => {
       id: "log-out",
       label: "Log Out",
       icon: SignOutIcon,
-      shortcut: "z",
       onClick: openLogoutConfirmation,
     },
   ];

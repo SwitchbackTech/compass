@@ -22,14 +22,15 @@ export function LogoutConfirmationDialog({
       title="Log out?"
       message="You'll lose access to your calendar data."
       onDismiss={onCancel}
+      align="start"
       variant="modal"
     >
-      <OverlayPanelActions>
-        <OverlayPanelActionButton onClick={onCancel}>
-          Cancel
-        </OverlayPanelActionButton>
+      <OverlayPanelActions align="start">
         <OverlayPanelActionButton variant="primary" onClick={onConfirm}>
           Log out
+        </OverlayPanelActionButton>
+        <OverlayPanelActionButton onClick={onCancel}>
+          Cancel
         </OverlayPanelActionButton>
       </OverlayPanelActions>
     </OverlayPanel>
