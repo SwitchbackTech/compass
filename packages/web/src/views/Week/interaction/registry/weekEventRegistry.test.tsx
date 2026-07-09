@@ -2,8 +2,8 @@ import { render, screen } from "@testing-library/react";
 import { act } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { createCalendarInteractionEventOverlayMount } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
-import { FloatingInteractionOverlay } from "@web/common/calendar-interaction/dom/overlay/FloatingInteractionOverlay";
+import { createCalendarInteractionDraftEventMount } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
+import { FloatingDraftEvent } from "@web/common/calendar-interaction/dom/draft-event/FloatingDraftEvent";
 import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -467,8 +467,8 @@ describe("weekEventRegistry", () => {
   });
 });
 
-describe("createCalendarInteractionEventOverlayMount", () => {
-  it("clones a Week event for overlay use without duplicate interactive attributes", () => {
+describe("createCalendarInteractionDraftEventMount", () => {
+  it("clones a Week event for draft event use without duplicate interactive attributes", () => {
     const source = document.createElement("div");
     const child = document.createElement("button");
 
@@ -489,13 +489,13 @@ describe("createCalendarInteractionEventOverlayMount", () => {
     child.style.transition = "opacity 150ms ease";
     source.append(child);
 
-    const mount = createCalendarInteractionEventOverlayMount({
+    const mount = createCalendarInteractionDraftEventMount({
       source,
     });
     const clonedChild = mount.clone.querySelector("button");
-    const overlay = new FloatingInteractionOverlay();
+    const draftEvent = new FloatingDraftEvent();
 
-    overlay.mount(mount);
+    draftEvent.mount(mount);
 
     expect(mount.rect).toEqual({
       height: 44,
@@ -512,9 +512,9 @@ describe("createCalendarInteractionEventOverlayMount", () => {
     expect(clonedChild?.id).toBe("");
     expect(clonedChild?.getAttribute("aria-controls")).toBeNull();
     expect(clonedChild?.style.transition).toBe("none");
-    expect(overlay.getNode()?.style.width).toBe("140px");
-    expect(overlay.getNode()?.style.height).toBe("44px");
+    expect(draftEvent.getNode()?.style.width).toBe("140px");
+    expect(draftEvent.getNode()?.style.height).toBe("44px");
 
-    overlay.unmount();
+    draftEvent.unmount();
   });
 });

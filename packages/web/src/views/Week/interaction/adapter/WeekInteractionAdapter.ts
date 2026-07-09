@@ -1,7 +1,7 @@
 import {
-  createCalendarInteractionEventOverlayMount,
+  createCalendarInteractionDraftEventMount,
   getCalendarResizeHandleEdge,
-  updateCalendarOverlayTimeLabel,
+  updateCalendarDraftEventTimeLabel,
 } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { getSmartScrollFrame } from "@web/common/calendar-grid/interaction/math/smartScroll";
 import {
@@ -314,12 +314,12 @@ export const createWeekInteractionAdapter = ({
           target,
         });
       },
-      getOverlayMount: ({ sourceElement }) =>
-        createCalendarInteractionEventOverlayMount({
+      getDraftEventMount: ({ sourceElement }) =>
+        createCalendarInteractionDraftEventMount({
           source: sourceElement,
         }),
       getSourceElement: (target) => target.registered.element,
-      getSourceElementOverlayMode: (target) =>
+      getSourceElementDraftEventMode: (target) =>
         isDragTarget(target) ? "dim-source" : "hide-source",
       getTarget: (event) => getInteractionTarget(event),
       updateVisual: ({ pointer, target, timestamp, visual }) => {
@@ -328,7 +328,7 @@ export const createWeekInteractionAdapter = ({
         if (!layout || scrollTop === null) {
           if (visual.type !== "allDayDrag" && visual.type !== "allDayResize") {
             return {
-              overlay: null,
+              draftEvent: null,
               visual,
             };
           }
@@ -336,7 +336,7 @@ export const createWeekInteractionAdapter = ({
 
         if (!layout) {
           return {
-            overlay: null,
+            draftEvent: null,
             visual,
           };
         }
@@ -354,7 +354,7 @@ export const createWeekInteractionAdapter = ({
           });
 
           return {
-            overlay: {
+            draftEvent: {
               transform: nextVisual.transform,
             },
             shouldContinue: nextEdgeNavigation.isDwellActive,
@@ -370,7 +370,7 @@ export const createWeekInteractionAdapter = ({
           });
 
           return {
-            overlay: {
+            draftEvent: {
               height: nextVisual.sourceRect.height,
               transform: nextVisual.transform,
               width: nextVisual.width,
@@ -394,10 +394,10 @@ export const createWeekInteractionAdapter = ({
           });
 
           return {
-            overlay: {
+            draftEvent: {
               height: next.visual.height,
               mutate: (node) =>
-                updateCalendarOverlayTimeLabel(node, next.event),
+                updateCalendarDraftEventTimeLabel(node, next.event),
               transform: next.visual.transform,
             },
             shouldContinue: smartScroll.isScrolling,
@@ -424,8 +424,9 @@ export const createWeekInteractionAdapter = ({
         });
 
         return {
-          overlay: {
-            mutate: (node) => updateCalendarOverlayTimeLabel(node, next.event),
+          draftEvent: {
+            mutate: (node) =>
+              updateCalendarDraftEventTimeLabel(node, next.event),
             transform: next.visual.transform,
           },
           shouldContinue:

@@ -1,15 +1,15 @@
-import { type SourceElementOverlayMode } from "../../CalendarInteractionAdapter";
+import { type SourceElementDraftEventMode } from "../../CalendarInteractionAdapter";
 
 interface HiddenSourceElement {
+  draftEventMode: "hide-source";
   element: HTMLElement;
-  overlayMode: "hide-source";
   visibility: string;
 }
 
 interface DimmedSourceElement {
+  draftEventMode: "dim-source";
   element: HTMLElement;
   opacity: string;
-  overlayMode: "dim-source";
   pointerEvents: string;
 }
 
@@ -19,15 +19,15 @@ const SOURCE_ELEMENT_INTERACTION_ATTRIBUTE = "data-calendar-interaction-source";
 
 export const prepareSourceElementForInteraction = (
   element: HTMLElement,
-  overlayMode: SourceElementOverlayMode = "hide-source",
+  draftEventMode: SourceElementDraftEventMode = "hide-source",
 ): PreparedSourceElement => {
   element.setAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE, "true");
 
-  if (overlayMode === "dim-source") {
+  if (draftEventMode === "dim-source") {
     const source = {
+      draftEventMode,
       element,
       opacity: element.style.opacity,
-      overlayMode,
       pointerEvents: element.style.pointerEvents,
     };
 
@@ -38,8 +38,8 @@ export const prepareSourceElementForInteraction = (
   }
 
   const source = {
+    draftEventMode,
     element,
-    overlayMode,
     visibility: element.style.visibility,
   };
 
@@ -51,7 +51,7 @@ export const prepareSourceElementForInteraction = (
 export const restoreSourceElement = (source: PreparedSourceElement) => {
   source.element.removeAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
 
-  if (source.overlayMode === "dim-source") {
+  if (source.draftEventMode === "dim-source") {
     source.element.style.opacity = source.opacity;
     source.element.style.pointerEvents = source.pointerEvents;
 

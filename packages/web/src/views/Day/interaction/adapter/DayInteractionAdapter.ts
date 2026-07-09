@@ -6,9 +6,9 @@ import {
 } from "@web/common/calendar-grid/calendarGrid.constants";
 import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
 import {
-  createCalendarInteractionEventOverlayMount,
+  createCalendarInteractionDraftEventMount,
   getCalendarResizeHandleEdge,
-  updateCalendarOverlayTimeLabel,
+  updateCalendarDraftEventTimeLabel,
 } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import {
   buildAllDayCalendarLayoutCache,
@@ -312,18 +312,18 @@ export const createDayInteractionAdapter = ({
           startMinutes: getLocalMinutes(target.event.startDate),
         });
       },
-      getOverlayMount: ({ sourceElement }) =>
-        createCalendarInteractionEventOverlayMount({
+      getDraftEventMount: ({ sourceElement }) =>
+        createCalendarInteractionDraftEventMount({
           source: sourceElement,
         }),
       getSourceElement: (target) => target.registered.element,
-      getSourceElementOverlayMode: (target) =>
+      getSourceElementDraftEventMode: (target) =>
         isDragTarget(target) ? "dim-source" : "hide-source",
       getTarget: (event) => getInteractionTarget(event),
       updateVisual: ({ pointer, target, visual }) => {
         if (!layout) {
           return {
-            overlay: null,
+            draftEvent: null,
             visual,
           };
         }
@@ -335,7 +335,7 @@ export const createDayInteractionAdapter = ({
           });
 
           return {
-            overlay: {
+            draftEvent: {
               transform: nextVisual.transform,
             },
             visual: nextVisual,
@@ -349,7 +349,7 @@ export const createDayInteractionAdapter = ({
           });
 
           return {
-            overlay: {
+            draftEvent: {
               height: nextVisual.sourceRect.height,
               transform: nextVisual.transform,
               width: nextVisual.width,
@@ -376,9 +376,10 @@ export const createDayInteractionAdapter = ({
           );
 
           return {
-            overlay: {
+            draftEvent: {
               height: nextVisual.height,
-              mutate: (node) => updateCalendarOverlayTimeLabel(node, nextEvent),
+              mutate: (node) =>
+                updateCalendarDraftEventTimeLabel(node, nextEvent),
               transform: nextVisual.transform,
             },
             shouldContinue: smartScroll.isScrolling,
@@ -403,8 +404,9 @@ export const createDayInteractionAdapter = ({
         );
 
         return {
-          overlay: {
-            mutate: (node) => updateCalendarOverlayTimeLabel(node, nextEvent),
+          draftEvent: {
+            mutate: (node) =>
+              updateCalendarDraftEventTimeLabel(node, nextEvent),
             transform: nextVisual.transform,
           },
           shouldContinue: smartScroll.isScrolling,

@@ -1,12 +1,12 @@
 import { ZIndex } from "@web/common/constants/web.constants";
 import {
   type CalendarInteractionAdapter,
-  type FloatingInteractionOverlayMount,
-  type SourceElementOverlayMode,
+  type FloatingDraftEventMount,
+  type SourceElementDraftEventMode,
 } from "./CalendarInteractionAdapter";
 import { createCalendarInteractionEngine } from "./CalendarInteractionEngine";
-import { createInteractionClone } from "./dom/clone/createInteractionClone";
-import { FloatingInteractionOverlay } from "./dom/overlay/FloatingInteractionOverlay";
+import { createDraftEventClone } from "./dom/clone/createDraftEventClone";
+import { FloatingDraftEvent } from "./dom/draft-event/FloatingDraftEvent";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
 interface TestTarget {
@@ -47,10 +47,10 @@ const SOURCE_ELEMENT_INTERACTION_ATTRIBUTE = "data-calendar-interaction-source";
 
 const createHarness = ({
   scrollableAncestor,
-  sourceOverlayMode,
+  sourceDraftEventMode,
 }: {
   scrollableAncestor?: { clientHeight: number; scrollHeight: number };
-  sourceOverlayMode?: SourceElementOverlayMode;
+  sourceDraftEventMode?: SourceElementDraftEventMode;
 } = {}) => {
   document.body.innerHTML = "";
 
@@ -104,28 +104,26 @@ const createHarness = ({
         y: 0,
       },
     })),
-    getOverlayMount: mock(
-      ({ sourceElement }): FloatingInteractionOverlayMount => {
-        const clone = createInteractionClone(sourceElement);
+    getDraftEventMount: mock(({ sourceElement }): FloatingDraftEventMount => {
+      const clone = createDraftEventClone(sourceElement);
 
-        return {
-          clone,
-          rect: {
-            height: 40,
-            left: 10,
-            top: 20,
-            width: 120,
-          },
-        };
-      },
-    ),
+      return {
+        clone,
+        rect: {
+          height: 40,
+          left: 10,
+          top: 20,
+          width: 120,
+        },
+      };
+    }),
     getSourceElement: mock((resolvedTarget) => resolvedTarget.source),
-    ...(sourceOverlayMode
-      ? { getSourceElementOverlayMode: mock(() => sourceOverlayMode) }
+    ...(sourceDraftEventMode
+      ? { getSourceElementDraftEventMode: mock(() => sourceDraftEventMode) }
       : {}),
     getTarget: mock(() => target),
     updateVisual: mock(({ pointer, visual }) => ({
-      overlay: {
+      draftEvent: {
         transform: {
           x: pointer.x - visual.start.x,
           y: pointer.y - visual.start.y,
@@ -182,7 +180,7 @@ const createHarness = ({
     timerCallbacks.delete(timerId);
     callback();
   };
-  // After a commit the engine holds the overlay until the source element
+  // After a commit the engine holds the draft event until the source element
   // reflows or this deadline fires; jsdom rects never change, so tests use
   // the deadline to reach the restored state.
   const fireCommitTeardownDeadline = () => {
@@ -251,7 +249,7 @@ describe("CalendarInteractionEngine", () => {
     });
     expect(source.style.visibility).toBe("hidden");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeTruthy();
 
     flushFrame();
@@ -292,7 +290,7 @@ describe("CalendarInteractionEngine", () => {
   it("can keep the source visible as a dimmed placeholder during motion", () => {
     const { engine, fireCommitTeardownDeadline, flushFrame, source } =
       createHarness({
-        sourceOverlayMode: "dim-source",
+        sourceDraftEventMode: "dim-source",
       });
 
     engine.handlePointerDown(makePointerEvent("pointerdown", { x: 10, y: 10 }));
@@ -313,7 +311,7 @@ describe("CalendarInteractionEngine", () => {
     expect(source).not.toHaveAttribute(SOURCE_ELEMENT_INTERACTION_ATTRIBUTE);
   });
 
-  it("restores only the styles changed by the source overlay mode", () => {
+  it("restores only the styles changed by the source draft event mode", () => {
     const { engine, fireCommitTeardownDeadline, flushFrame, source } =
       createHarness();
 
@@ -360,7 +358,7 @@ describe("CalendarInteractionEngine", () => {
 
     expect(source.style.visibility).toBe("visible");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
     expect(engine.getMetrics()).toMatchObject({
       active: false,
@@ -368,7 +366,7 @@ describe("CalendarInteractionEngine", () => {
     });
   });
 
-  it("holds the overlay and source state after commit until the source reflows", () => {
+  it("holds the draft event and source state after commit until the source reflows", () => {
     const { engine, flushFrame, frameCallbacks, source, timerCallbacks } =
       createHarness();
     const rect = { height: 0, left: 0, top: 0, width: 0 };
@@ -383,7 +381,7 @@ describe("CalendarInteractionEngine", () => {
     // Still held: React hasn't applied the committed geometry yet.
     expect(source.style.visibility).toBe("hidden");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeTruthy();
 
     flushFrame(32);
@@ -395,7 +393,7 @@ describe("CalendarInteractionEngine", () => {
 
     expect(source.style.visibility).toBe("visible");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
     expect(frameCallbacks.size).toBe(0);
     expect(timerCallbacks.size).toBe(0);
@@ -421,7 +419,7 @@ describe("CalendarInteractionEngine", () => {
 
     expect(source.style.visibility).toBe("visible");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
     expect(frameCallbacks.size).toBe(0);
   });
@@ -439,7 +437,7 @@ describe("CalendarInteractionEngine", () => {
 
     expect(source.style.visibility).toBe("visible");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
   });
 
@@ -459,7 +457,7 @@ describe("CalendarInteractionEngine", () => {
 
     expect(source.style.visibility).toBe("visible");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
     expect(engine.getSession()).toMatchObject({ phase: "pending" });
   });
@@ -499,7 +497,7 @@ describe("CalendarInteractionEngine", () => {
     expect(cancel).toHaveBeenCalledTimes(1);
     expect(source.style.visibility).toBe("visible");
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
     expect(engine.getSession()).toEqual({ phase: "idle" });
     expect(engine.getMetrics()).toMatchObject({
@@ -611,12 +609,12 @@ describe("CalendarInteractionEngine", () => {
   });
 });
 
-describe("FloatingInteractionOverlay", () => {
+describe("FloatingDraftEvent", () => {
   it("mounts a body-level clone and applies immediate transform updates", () => {
     const clone = document.createElement("div");
-    const overlay = new FloatingInteractionOverlay();
+    const draftEvent = new FloatingDraftEvent();
 
-    overlay.mount({
+    draftEvent.mount({
       clone,
       rect: {
         height: 20,
@@ -625,7 +623,7 @@ describe("FloatingInteractionOverlay", () => {
         width: 60,
       },
     });
-    overlay.update({
+    draftEvent.update({
       height: 24,
       transform: {
         x: 7,
@@ -634,7 +632,7 @@ describe("FloatingInteractionOverlay", () => {
       width: 70,
     });
 
-    expect(overlay.getNode()).toBe(clone);
+    expect(draftEvent.getNode()).toBe(clone);
     expect(clone.parentElement).toBe(document.body);
     expect(clone.style.position).toBe("fixed");
     expect(clone.style.transition).toBe("none");
@@ -643,13 +641,13 @@ describe("FloatingInteractionOverlay", () => {
     expect(clone.style.width).toBe("70px");
     expect(clone.style.zIndex).toBe(`${ZIndex.MAX}`);
 
-    overlay.unmount();
+    draftEvent.unmount();
 
     expect(clone.parentElement).toBeNull();
   });
 });
 
-describe("createInteractionClone", () => {
+describe("createDraftEventClone", () => {
   it("removes interaction-hostile attributes from the clone tree", () => {
     const source = document.createElement("div");
     const child = document.createElement("button");
@@ -662,14 +660,14 @@ describe("createInteractionClone", () => {
     child.setAttribute("aria-describedby", "description");
     source.append(child);
 
-    const clone = createInteractionClone(source);
+    const clone = createDraftEventClone(source);
     const clonedChild = clone.querySelector("button");
 
     expect(clone.id).toBe("");
     expect(clone.getAttribute("tabindex")).toBeNull();
     expect(clone.getAttribute("aria-controls")).toBeNull();
     expect(clone).toHaveAttribute("aria-hidden", "true");
-    expect(clone).toHaveAttribute("data-calendar-interaction-overlay", "true");
+    expect(clone).toHaveAttribute("data-calendar-draft-event", "true");
     expect(clone.style.margin).toBe("0px");
     expect(clone.style.pointerEvents).toBe("none");
     expect(clonedChild?.id).toBe("");

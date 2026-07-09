@@ -496,18 +496,20 @@ describe("SomedayInteractionAdapter", () => {
     );
     flushFrame();
 
-    const overlay = document.body.querySelector<HTMLElement>(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector<HTMLElement>(
+      "[data-calendar-draft-event]",
     );
     const expectedTextColor = normalizeCssColor(theme.color.text.dark);
     const expectedHoverColor = normalizeCssColor(
       gridHoverColorByPriority[Priorities.UNASSIGNED],
     );
 
-    expect(overlay).toBeTruthy();
-    expect(overlay?.style.color).toBe(expectedTextColor);
-    expect(overlay?.style.backgroundColor).toBe(expectedHoverColor);
-    expect(overlay?.querySelector("[data-someday-drag-affordance]")).toBeNull();
+    expect(draftEvent).toBeTruthy();
+    expect(draftEvent?.style.color).toBe(expectedTextColor);
+    expect(draftEvent?.style.backgroundColor).toBe(expectedHoverColor);
+    expect(
+      draftEvent?.querySelector("[data-someday-drag-affordance]"),
+    ).toBeNull();
   });
 
   it("shows the tentative timed-grid range inside the visible Someday preview", () => {
@@ -527,13 +529,13 @@ describe("SomedayInteractionAdapter", () => {
     );
     flushFrame();
 
-    const overlay = document.body.querySelector<HTMLElement>(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector<HTMLElement>(
+      "[data-calendar-draft-event]",
     );
-    const timeLabel = overlay?.querySelector<HTMLElement>(
+    const timeLabel = draftEvent?.querySelector<HTMLElement>(
       "[data-someday-interaction-time-label]",
     );
-    const titleRow = overlay?.querySelector<HTMLElement>(
+    const titleRow = draftEvent?.querySelector<HTMLElement>(
       "[data-someday-event-title-row]",
     );
     const textStack = titleRow?.parentElement;
@@ -569,19 +571,19 @@ describe("SomedayInteractionAdapter", () => {
     );
     flushFrame();
 
-    const overlay = document.body.querySelector<HTMLElement>(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector<HTMLElement>(
+      "[data-calendar-draft-event]",
     );
-    const titleRow = overlay?.querySelector<HTMLElement>(
+    const titleRow = draftEvent?.querySelector<HTMLElement>(
       "[data-someday-event-title-row]",
     );
 
     expect(
-      overlay?.querySelector("[data-someday-interaction-time-label]")
+      draftEvent?.querySelector("[data-someday-interaction-time-label]")
         ?.textContent,
     ).toMatch(/2\s+-\s+3 AM/);
     expect(
-      overlay?.querySelector("[data-someday-interaction-time-label]")
+      draftEvent?.querySelector("[data-someday-interaction-time-label]")
         ?.parentElement,
     ).toBe(titleRow?.parentElement);
     expect(titleRow?.style.alignSelf).toBe("stretch");
@@ -591,7 +593,7 @@ describe("SomedayInteractionAdapter", () => {
     expect(titleRow?.parentElement?.style.flexDirection).toBe("column");
   });
 
-  it("disables Someday overlay motion when reduced motion is preferred", () => {
+  it("disables Someday draft event motion when reduced motion is preferred", () => {
     const restoreMatchMedia = setReducedMotionPreference(true);
     const { adapter, flushFrame, sourceChild, timedColumns } = createHarness();
 
@@ -608,13 +610,13 @@ describe("SomedayInteractionAdapter", () => {
       );
       flushFrame();
 
-      const overlay = document.body.querySelector<HTMLElement>(
-        "[data-calendar-interaction-overlay]",
+      const draftEvent = document.body.querySelector<HTMLElement>(
+        "[data-calendar-draft-event]",
       );
 
-      expect(overlay).toBeTruthy();
-      expect(overlay?.style.transition).toBe("none");
-      expect(overlay?.style.scale).toBe("1");
+      expect(draftEvent).toBeTruthy();
+      expect(draftEvent?.style.transition).toBe("none");
+      expect(draftEvent?.style.scale).toBe("1");
     } finally {
       restoreMatchMedia();
     }
@@ -690,8 +692,8 @@ describe("SomedayInteractionAdapter", () => {
     );
     flushFrame();
 
-    const overlay = document.body.querySelector<HTMLElement>(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector<HTMLElement>(
+      "[data-calendar-draft-event]",
     );
     const expectedHoverColor = normalizeCssColor(
       gridHoverColorByPriority[Priorities.UNASSIGNED],
@@ -699,8 +701,8 @@ describe("SomedayInteractionAdapter", () => {
 
     // Anchored (grid-hover) styling proves the preview snapped to a valid
     // slot rather than floating under the cursor in the header.
-    expect(overlay?.style.backgroundColor).toBe(expectedHoverColor);
-    expect(overlay?.style.scale).toBe("1");
+    expect(draftEvent?.style.backgroundColor).toBe(expectedHoverColor);
+    expect(draftEvent?.style.scale).toBe("1");
   });
 
   it("clamps drags in the gap between the all-day row and the timed grid", () => {

@@ -95,25 +95,22 @@ An unscheduled event stored in the sidebar instead of the calendar grid.
 _Avoid_: Someday task
 
 **Draft Event**:
-A temporary event shape used while the user edits, drags, resizes, or
-repositions before saving.
-
-**Interaction Overlay**:
-The temporary moving visual shown while a user drags or resizes an Event.
+A temporary event shape or visual used while the user edits, drags, resizes,
+or repositions before saving.
 
 **Source Event Element**:
 The original rendered Event element that an interaction starts from. During an
-**Interaction Overlay**, the source can either stay visible as a dimmed
-placeholder or be hidden while the overlay moves.
+active **Draft Event** drag or resize, the source can either stay visible as a
+dimmed placeholder or be hidden while the draft event moves.
 
-**Source Element Overlay Mode**:
-The interaction choice for the **Source Event Element** while an
-**Interaction Overlay** is active. `dim-source` means keep the original Event
+**Source Element Draft Event Mode**:
+The interaction choice for the **Source Event Element** during a
+**Draft Event** drag or resize. `dim-source` means keep the original Event
 visible, faded, and non-interactive so the user can still see where it came
-from. `hide-source` means hide the original Event while the overlay is moving.
-Use `dim-source` for drag interactions where the original slot should remain
-visible; use `hide-source` only when showing both the source and overlay would
-make the resize or motion state confusing.
+from. `hide-source` means hide the original Event while the draft event is
+moving. Use `dim-source` for drag interactions where the original slot should
+remain visible; use `hide-source` only when showing both the source and draft
+event would make the resize or motion state confusing.
 
 **Base Event**:
 A recurring event that owns the series recurrence rule.

@@ -371,7 +371,7 @@ describe("DayInteractionAdapter", () => {
     expect(dayjs(result.event.startDate).isSame(visibleDate, "day")).toBe(true);
   });
 
-  it("creates an overlay time label when dragging a short timed event without one", () => {
+  it("creates a draft event time label when dragging a short timed event without one", () => {
     const { child, source } = registerEvent(timedEvent, "timed");
     const { adapter, flushFrame } = createAdapter();
 
@@ -387,10 +387,10 @@ describe("DayInteractionAdapter", () => {
     );
     flushFrame();
 
-    const overlay = document.querySelector(
-      "[data-calendar-interaction-overlay='true']",
+    const draftEvent = document.querySelector(
+      "[data-calendar-draft-event='true']",
     );
-    const timeLabel = overlay?.querySelector(
+    const timeLabel = draftEvent?.querySelector(
       "[data-calendar-event-time-label='true']",
     );
 
