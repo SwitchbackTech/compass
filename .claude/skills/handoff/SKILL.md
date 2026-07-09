@@ -52,6 +52,11 @@ Per `HANDOFF.md` → Daily implementation and `agent-operating-rules.md`:
   push-notify, not a workaround.
 - **Blocked or need a PO-only decision:** send a mobile push notification, log it under
   the summary's PO follow-ups, and move to other workable spec items — never idle.
+- **Own your follow-up decisions.** Incidental findings (a stray warning, dead code, a
+  tangential cleanup) are yours to decide — do them if worthwhile and in scope, or drop
+  them. **Never spawn a background task chip (`spawn_task`)** or otherwise hand the PO a
+  context-free choice; you have the context, they don't. See
+  `agent-operating-rules.md` → "I own follow-up decisions."
 - QA: CI is the always-on gate. Do real-browser QA (`preview_*`, `/qa-staging`) while the
   screen is present/unlocked; sequence it for then if the PO has walked away.
 
