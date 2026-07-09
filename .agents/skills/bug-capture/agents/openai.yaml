@@ -1,4 +1,0 @@
-interface:
-  display_name: "Bug Capture"
-  short_description: "Capture bugs as rich GitHub issues"
-  default_prompt: "Use $bug-capture to investigate this bug report and create a GitHub issue."

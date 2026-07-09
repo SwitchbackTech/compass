@@ -1,88 +1,3 @@
----
-name: Compass Calendar
-description: A daily planner for minimalists. Organize your day and lock in.
-colors:
-  accent-primary: "#57c1ff"
-  bg-primary: "#0d1017"
-  bg-secondary: "#11151c"
-  fg-primary: "#bfbdb5"
-  fg-primary-dark: "#abb6bf8c"
-  border-primary: "#46505c33"
-  border-secondary: "#bfbdb5"
-  event-selected: "#abb9c4"
-  menu-bg: "#fafafa"
-  panel-text: "#fafafa"
-  text-lighter: "#ffffff"
-  text-dark: "#0d1017"
-  text-dark-placeholder: "#6b7178e6"
-  status-success: "#81d963"
-  status-error: "#d95959"
-  status-warning: "#ff9142"
-  status-info: "#57c1ff"
-  tag-work: "#aed3e0"
-  tag-relations: "#86d0bb"
-  tag-self: "#9fb0bf"
-  tag-unassigned: "#8293a1"
-  gradient-accent-end: "#aed3e0"
-typography:
-  display:
-    fontFamily: "Rubik, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "2rem"
-    fontWeight: 700
-    lineHeight: 1.1
-    letterSpacing: "normal"
-  title:
-    fontFamily: "Rubik, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1.3rem"
-    fontWeight: 500
-    lineHeight: 1.2
-    letterSpacing: "normal"
-  body:
-    fontFamily: "Rubik, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "1rem"
-    fontWeight: 400
-    lineHeight: 1.4
-    letterSpacing: "normal"
-  label:
-    fontFamily: "Rubik, ui-sans-serif, system-ui, sans-serif"
-    fontSize: "0.8125rem"
-    fontWeight: 500
-    lineHeight: 1.3
-    letterSpacing: "normal"
-  script:
-    fontFamily: "Caveat, cursive"
-    fontSize: "1.6rem"
-    fontWeight: 400
-    lineHeight: 1.2
-    letterSpacing: "normal"
-rounded:
-  sm: "2px"
-  default: "4px"
-  md: "6px"
-spacing:
-  xs: "4px"
-  s: "8px"
-  m: "16px"
-  l: "24px"
-  xl: "32px"
-components:
-  button-priority:
-    backgroundColor: "{colors.tag-unassigned}"
-    textColor: "{colors.text-dark}"
-    rounded: "{rounded.sm}"
-    padding: "0 8px"
-  button-priority-hover:
-    backgroundColor: "{colors.bg-primary}"
-    textColor: "{colors.accent-primary}"
-  input-default:
-    backgroundColor: "{colors.menu-bg}"
-    textColor: "{colors.text-dark}"
-    height: "34px"
-    padding: "0 8px"
-  input-hover:
-    backgroundColor: "{colors.border-primary}"
----
-
 # Design System: Compass Calendar
 
 ## 1. Overview
@@ -242,3 +157,25 @@ Controls are quiet, borderless, and hover-revealing: they sit flush on their sur
 - **Don't** put a shadow on a resting element; shadows are state (hover/focus/drag) or floating layers only.
 - **Don't** use display or handwriting fonts for UI labels, buttons, or data.
 - **Don't** add resting borders to inputs or buttons; the focus border is the one intentional exception.
+
+## Brand Personality
+
+Calm, focused, fast. The interface is quiet and stays out of the way; speed and
+focus are the qualities the user should feel. There is a personal, human thread
+too (the handwritten Custom Note, the "lock-in" framing) but it lives at the
+edges, never at the expense of calm. Voice is plain and direct, never
+salesy or buzzword-driven.
+
+## Anti-references
+
+- **Cluttered like Google/Outlook Calendar.** No dense toolbars, nested menus,
+  feature sprawl, or busy chrome. The whole point is what Compass leaves out.
+- **Generic shadcn look.** Avoid the default-component-library aesthetic:
+  neutral-gray cards, stock radii and shadows, the interchangeable look shared by
+  countless shadcn starters. Compass has its own dark, blue-accented identity.
+- **Generic SaaS dashboard.** No card grids, hero-metric templates, or gradient
+  accents standing in for design.
+- **Playful / consumer-cute.** No bubbly mascots, candy colors, or heavy
+  illustration.
+- **Enterprise / corporate.** No heavy, dense, navy-and-gray business-software
+  weight.

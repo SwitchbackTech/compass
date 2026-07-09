@@ -43,36 +43,13 @@ Validation defaults:
 - Keep regression tests that protect real behavior. Remove temporary tests,
   scripts, debug hooks, or code added only to confirm a one-time hypothesis once
   that verification is complete.
+- Use `bun run verify` when you want the repo helper to choose checks from the
+  git diff, but confirm its output before treating the task as done.
+- Use `bun run lint` before push or handoff when the work is not docs-only.
 
 ## Lookups
 
-- Domain context: `CONTEXT.md`
 - Docs index: `docs/README.md`
-- Edit-location map: `docs/development/feature-file-map.md`
-- Common change paths: `docs/development/common-change-recipes.md`
-- Testing details: `docs/development/testing-playbook.md`
-- Local env/runtime modes: `docs/development/local-development.md`
-- Troubleshooting: `docs/development/troubleshoot.md`
-- Feature acceptance runbooks: `docs/acceptance/`
-- Feature docs: `docs/features/`
-- `docs/self-hosting/README.md`
-- `self-host/README.md`
-
-## Agent skills
-
-### Issue tracker
-
-Issues and PRDs are tracked in GitHub Issues for `SwitchbackTech/compass`. See
-`.agents/config/issue-tracker.md`.
-
-### Triage labels
-
-Use the default triage label vocabulary. See
-`.agents/config/triage-labels.md`.
-
-### Domain docs
-
-Use a single-context domain-doc layout. See `.agents/config/domain.md`.
 
 ## Compass-Specific Rules
 
@@ -96,7 +73,6 @@ Use a single-context domain-doc layout. See `.agents/config/domain.md`.
 - Do not add or use barrel files such as `index.ts` / `index.tsx`. Import from
   the concrete source file instead, and remove nearby barrel files when it is
   safe to do so.
-- Use `is` prefixes for boolean names.
 
 ## Git
 

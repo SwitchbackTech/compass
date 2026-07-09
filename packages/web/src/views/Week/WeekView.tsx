@@ -15,7 +15,7 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
-import { RecurringEventUpdateScopeDialog } from "@web/views/Forms/EventForm/RecurringEventUpdateScopeDialog";
+import { RecurrenceScopeDialog } from "@web/views/Forms/EventForm/RecurrenceScopeDialog";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
 import { Draft } from "@web/views/Week/components/Draft/Draft";
@@ -163,7 +163,7 @@ export const WeekView = () => {
                 <WeekGridScrollArea>
                   <div
                     ref={trackRef}
-                    className="relative flex h-full w-full min-w-[190px] flex-col [container-name:week-grid-track] [container-type:inline-size]"
+                    className="@container relative flex h-full w-full min-w-47.5 flex-col [container-name:week-grid-track]"
                   >
                     <DayLabels
                       startOfView={weekProps.component.startOfView}
@@ -192,7 +192,7 @@ export const WeekView = () => {
             </Shortcuts>
           </SomedayInteractionCoordinator>
 
-          <RecurringEventUpdateScopeDialog />
+          <RecurrenceScopeDialog />
         </SidebarDraftProvider>
       </DraftProvider>
     </div>
