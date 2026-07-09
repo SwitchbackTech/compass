@@ -43,26 +43,13 @@ Validation defaults:
 - Keep regression tests that protect real behavior. Remove temporary tests,
   scripts, debug hooks, or code added only to confirm a one-time hypothesis once
   that verification is complete.
+- Use `bun run verify` when you want the repo helper to choose checks from the
+  git diff, but confirm its output before treating the task as done.
+- Use `bun run lint` before push or handoff when the work is not docs-only.
 
 ## Lookups
 
 - Docs index: `docs/README.md`
-
-## Agent skills
-
-### Issue tracker
-
-Issues and PRDs are tracked in GitHub Issues for `SwitchbackTech/compass`. See
-`.agents/config/issue-tracker.md`.
-
-### Triage labels
-
-Use the default triage label vocabulary. See
-`.agents/config/triage-labels.md`.
-
-### Domain docs
-
-Use a single-context domain-doc layout. See `.agents/config/domain.md`.
 
 ## Compass-Specific Rules
 
@@ -86,7 +73,6 @@ Use a single-context domain-doc layout. See `.agents/config/domain.md`.
 - Do not add or use barrel files such as `index.ts` / `index.tsx`. Import from
   the concrete source file instead, and remove nearby barrel files when it is
   safe to do so.
-- Use `is` prefixes for boolean names.
 
 ## Git
 
