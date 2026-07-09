@@ -14,6 +14,7 @@ Internal documentation for engineers and agents working in the Compass repo.
 - Event shape or recurrence behavior: [Event And Task Domain Model](./architecture/event-and-task-domain-model.md), [Recurrence Handling](./features/recurring-events-handling.md)
 - Event caching, reads, or optimistic writes: [Event Caching](./frontend/event-caching.md)
 - Dragging/resizing events on the week grid: [Week Drag Interaction](./frontend/week-drag-interaction.md)
+- Tooltips, popovers, menus, or any floating/anchored UI: [UI Positioning Conventions](./frontend/ui-positioning.md)
 - Local-first or storage behavior: [Offline Storage And Migrations](./features/offline-storage-and-migrations.md)
 - Backend routes and API behavior: [Backend Route Map](./backend/README.md), [Backend Request Flow](./backend/backend-request-flow.md), [Backend Error Handling](./backend/backend-error-handling.md)
 - Event writes, sync transactions, or a new calendar integration: [Event Propagation Transactions](./backend/event-propagation-transactions.md)
