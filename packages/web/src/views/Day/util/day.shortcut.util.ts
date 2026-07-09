@@ -1,6 +1,13 @@
 import { StringV4Schema } from "@core/types/type.utils";
 import { ID_ADD_TASK_BUTTON } from "@web/common/constants/web.constants";
 
+// The drag/reorder handle is a "Reorder …" button that carries its own
+// data-task-id, because it sits outside the task's data-task-id container
+// (so closest("[data-task-id]") can't reach it — read the id off the handle).
+const isReorderHandle = (el: HTMLElement) =>
+  el.tagName === "BUTTON" &&
+  (el.getAttribute("aria-label")?.startsWith("Reorder") ?? false);
+
 export const isFocusedOnTaskCheckbox = () => {
   // Check if we're focused on a task checkbox
   const activeElement = document.activeElement as HTMLElement | null;
@@ -40,12 +47,8 @@ export const isFocusedWithinTask = () => {
     return true;
   }
 
-  // Check if focused on the drag/reorder handle. It carries its own
-  // data-task-id because it sits outside the task's data-task-id container.
-  if (
-    activeElement.tagName === "BUTTON" &&
-    activeElement.getAttribute("aria-label")?.startsWith("Reorder")
-  ) {
+  // Check if focused on the drag/reorder handle.
+  if (isReorderHandle(activeElement)) {
     return true;
   }
 
@@ -89,12 +92,8 @@ export const getFocusedTaskId = () => {
     return taskContainer?.dataset?.taskId || null;
   }
 
-  // Reorder/drag handle carries its own data-task-id (it lives outside the
-  // task's data-task-id container, so closest() can't find it).
-  if (
-    activeElement.tagName === "BUTTON" &&
-    activeElement.getAttribute("aria-label")?.startsWith("Reorder")
-  ) {
+  // The reorder handle carries its own data-task-id (see isReorderHandle).
+  if (isReorderHandle(activeElement)) {
     return activeElement.dataset?.taskId ?? null;
   }
 
