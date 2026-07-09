@@ -64,19 +64,19 @@ test("aligns the mid-drag visual and drops on the hovered day at a reduced day c
   // Let the interaction engine paint the moved visual
   await page.waitForTimeout(150);
 
-  // While the mouse is still down, the interaction overlay (the moving
+  // While the mouse is still down, the draft event (the moving
   // visual) must sit centered inside the target column, not between two
   // columns
-  const overlay = page.locator("[data-calendar-interaction-overlay]");
-  await expect(overlay).toBeVisible();
-  const overlayBox = await overlay.boundingBox();
-  if (!overlayBox) {
-    throw new Error("Expected the drag overlay to be visible.");
+  const draftEvent = page.locator("[data-calendar-draft-event]");
+  await expect(draftEvent).toBeVisible();
+  const draftEventBox = await draftEvent.boundingBox();
+  if (!draftEventBox) {
+    throw new Error("Expected the drag draft event to be visible.");
   }
 
-  const overlayCenterX = overlayBox.x + overlayBox.width / 2;
+  const draftEventCenterX = draftEventBox.x + draftEventBox.width / 2;
   const targetCenterX = (targetColumn.left + targetColumn.right) / 2;
-  expect(Math.abs(overlayCenterX - targetCenterX)).toBeLessThanOrEqual(5);
+  expect(Math.abs(draftEventCenterX - targetCenterX)).toBeLessThanOrEqual(5);
 
   await page.mouse.up();
 

@@ -406,13 +406,13 @@ describe("WeekInteractionAdapter timed drag", () => {
 
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay).toBeTruthy();
-    expect(overlay?.style.transition).toBe("none");
-    expect(overlay?.style.transform).toBe("translate3d(0px, 100px, 0)");
+    expect(draftEvent).toBeTruthy();
+    expect(draftEvent?.style.transition).toBe("none");
+    expect(draftEvent?.style.transform).toBe("translate3d(0px, 100px, 0)");
 
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: child, x: 320, y: 1120 }),
@@ -433,7 +433,7 @@ describe("WeekInteractionAdapter timed drag", () => {
     fireCommitTeardownDeadline();
     expectSourceRestored(source);
     expect(
-      document.body.querySelector("[data-calendar-interaction-overlay]"),
+      document.body.querySelector("[data-calendar-draft-event]"),
     ).toBeNull();
   });
 
@@ -449,17 +449,17 @@ describe("WeekInteractionAdapter timed drag", () => {
 
     flushFrame();
 
-    const overlay = document.body.querySelector<HTMLElement>(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector<HTMLElement>(
+      "[data-calendar-draft-event]",
     );
-    const timeLabel = overlay?.querySelector<HTMLElement>(
+    const timeLabel = draftEvent?.querySelector<HTMLElement>(
       "[data-calendar-event-time-label='true']",
     );
 
     expect(timeLabel).toBeTruthy();
     expect(timeLabel?.textContent).toMatch(/10\s+-\s+11 AM/);
     expect(timeLabel?.previousElementSibling).toBe(
-      overlay?.querySelector("span"),
+      draftEvent?.querySelector("span"),
     );
   });
 
@@ -545,11 +545,11 @@ describe("WeekInteractionAdapter timed drag", () => {
 
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay?.style.transform).toBe("translate3d(0px, -600px, 0)");
+    expect(draftEvent?.style.transform).toBe("translate3d(0px, -600px, 0)");
 
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: child, x: 320, y: 20 }),
@@ -577,11 +577,11 @@ describe("WeekInteractionAdapter timed drag", () => {
 
     flushFrame();
 
-    const overlay = document.body.querySelector(
-      "[data-calendar-interaction-overlay]",
+    const draftEvent = document.body.querySelector(
+      "[data-calendar-draft-event]",
     ) as HTMLElement | null;
 
-    expect(overlay?.style.transform).toBe("translate3d(0px, 300px, 0)");
+    expect(draftEvent?.style.transform).toBe("translate3d(0px, 300px, 0)");
 
     adapter.handlePointerUp(
       makePointerEvent("pointerup", { target: child, x: 320, y: 2200 }),

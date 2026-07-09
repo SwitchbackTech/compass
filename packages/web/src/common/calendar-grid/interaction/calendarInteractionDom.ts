@@ -1,5 +1,5 @@
-import { type FloatingInteractionOverlayMount } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
-import { createInteractionClone } from "@web/common/calendar-interaction/dom/clone/createInteractionClone";
+import { type FloatingDraftEventMount } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
+import { createDraftEventClone } from "@web/common/calendar-interaction/dom/clone/createDraftEventClone";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 
@@ -23,7 +23,7 @@ export const getCalendarResizeHandleEdge = (
   return isCalendarResizeEdge(edge) ? edge : null;
 };
 
-export const updateCalendarOverlayTimeLabel = (
+export const updateCalendarDraftEventTimeLabel = (
   node: HTMLElement,
   event: Schema_GridEvent,
 ) => {
@@ -31,7 +31,7 @@ export const updateCalendarOverlayTimeLabel = (
     return;
   }
 
-  const timeLabel = getOrCreateCalendarOverlayTimeLabel(node);
+  const timeLabel = getOrCreateCalendarDraftEventTimeLabel(node);
 
   timeLabel.removeAttribute("aria-hidden");
   timeLabel.classList.remove("animate-someday-commit-time-exit", "opacity-0");
@@ -39,13 +39,13 @@ export const updateCalendarOverlayTimeLabel = (
   timeLabel.textContent = getTimesLabel(event.startDate, event.endDate);
 };
 
-export const createCalendarInteractionEventOverlayMount = ({
+export const createCalendarInteractionDraftEventMount = ({
   source,
 }: {
   source: HTMLElement;
-}): FloatingInteractionOverlayMount => {
+}): FloatingDraftEventMount => {
   const rect = source.getBoundingClientRect();
-  const clone = createInteractionClone(source);
+  const clone = createDraftEventClone(source);
 
   for (const element of [clone, ...clone.querySelectorAll<HTMLElement>("*")]) {
     element.removeAttribute("data-day-interaction-event-id");
@@ -67,7 +67,7 @@ export const createCalendarInteractionEventOverlayMount = ({
   };
 };
 
-const getOrCreateCalendarOverlayTimeLabel = (node: HTMLElement) => {
+const getOrCreateCalendarDraftEventTimeLabel = (node: HTMLElement) => {
   const existing = node.querySelector<HTMLElement>(
     CALENDAR_EVENT_TIME_LABEL_SELECTOR,
   );
@@ -83,7 +83,7 @@ const getOrCreateCalendarOverlayTimeLabel = (node: HTMLElement) => {
   label.style.position = "relative";
   label.style.zIndex = "3";
 
-  const parent = getOverlayTimeLabelParent(node);
+  const parent = getDraftEventTimeLabelParent(node);
   const resizeHandle = getFirstDirectResizeHandle(parent);
 
   parent.insertBefore(label, resizeHandle);
@@ -91,7 +91,7 @@ const getOrCreateCalendarOverlayTimeLabel = (node: HTMLElement) => {
   return label;
 };
 
-const getOverlayTimeLabelParent = (node: HTMLElement) => {
+const getDraftEventTimeLabelParent = (node: HTMLElement) => {
   const firstChild = node.firstElementChild;
 
   if (firstChild instanceof HTMLElement && firstChild.tagName !== "SPAN") {

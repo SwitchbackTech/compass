@@ -10,7 +10,7 @@ import {
 } from "@web/common/calendar-interaction/CalendarInteractionEngine";
 import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
 import { isEligibleCalendarInteractionPointerDown } from "@web/common/calendar-interaction/calendarInteractionPointer";
-import { createInteractionClone } from "@web/common/calendar-interaction/dom/clone/createInteractionClone";
+import { createDraftEventClone } from "@web/common/calendar-interaction/dom/clone/createDraftEventClone";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import {
@@ -66,28 +66,28 @@ const ONE_HOUR_MINUTES = 60;
 // Matches the "settle" curve used by GridEvent for visual coherence with the
 // landed event. The reshape duration (240ms) is short enough to track the
 // cursor without feeling instant; the transform duration (110ms) is only
-// applied while the overlay is anchored to a grid slot, so cursor-follow in
+// applied while the draft event is anchored to a grid slot, so cursor-follow in
 // the sidebar stays 1:1 with the pointer.
-const SOMEDAY_OVERLAY_EASING = "cubic-bezier(0.16, 1, 0.3, 1)";
-const SOMEDAY_OVERLAY_RESHAPE_MS = 240;
-const SOMEDAY_OVERLAY_ANCHOR_MS = 110;
-const SOMEDAY_OVERLAY_LIFT_MS = 160;
-// Subtle lift while the overlay is floating (in the sidebar / between
+const SOMEDAY_DRAFT_EVENT_EASING = "cubic-bezier(0.16, 1, 0.3, 1)";
+const SOMEDAY_DRAFT_EVENT_RESHAPE_MS = 240;
+const SOMEDAY_DRAFT_EVENT_ANCHOR_MS = 110;
+const SOMEDAY_DRAFT_EVENT_LIFT_MS = 160;
+// Subtle lift while the draft event is floating (in the sidebar / between
 // targets). Settles back to 1 once anchored to a slot so the preview matches
 // the resting size of the real event.
-const SOMEDAY_OVERLAY_LIFT_SCALE = "1.04";
-const SOMEDAY_OVERLAY_SETTLED_SCALE = "1";
-const SOMEDAY_OVERLAY_TRANSITION_BASE =
-  `height ${SOMEDAY_OVERLAY_RESHAPE_MS}ms ${SOMEDAY_OVERLAY_EASING}, ` +
-  `width ${SOMEDAY_OVERLAY_RESHAPE_MS}ms ${SOMEDAY_OVERLAY_EASING}, ` +
-  `color ${SOMEDAY_OVERLAY_RESHAPE_MS}ms ${SOMEDAY_OVERLAY_EASING}, ` +
-  `scale ${SOMEDAY_OVERLAY_LIFT_MS}ms ${SOMEDAY_OVERLAY_EASING}, ` +
-  `box-shadow ${SOMEDAY_OVERLAY_LIFT_MS}ms ${SOMEDAY_OVERLAY_EASING}`;
-const SOMEDAY_OVERLAY_TRANSITION_ANCHORED =
-  `${SOMEDAY_OVERLAY_TRANSITION_BASE}, ` +
-  `transform ${SOMEDAY_OVERLAY_ANCHOR_MS}ms ${SOMEDAY_OVERLAY_EASING}`;
-const SOMEDAY_OVERLAY_SHADOW_LIFTED = `0 12px 28px color-mix(in srgb, ${theme.color.shadow.default} 22%, transparent)`;
-const SOMEDAY_OVERLAY_SHADOW_SETTLED = `0 6px 14px color-mix(in srgb, ${theme.color.shadow.default} 14%, transparent)`;
+const SOMEDAY_DRAFT_EVENT_LIFT_SCALE = "1.04";
+const SOMEDAY_DRAFT_EVENT_SETTLED_SCALE = "1";
+const SOMEDAY_DRAFT_EVENT_TRANSITION_BASE =
+  `height ${SOMEDAY_DRAFT_EVENT_RESHAPE_MS}ms ${SOMEDAY_DRAFT_EVENT_EASING}, ` +
+  `width ${SOMEDAY_DRAFT_EVENT_RESHAPE_MS}ms ${SOMEDAY_DRAFT_EVENT_EASING}, ` +
+  `color ${SOMEDAY_DRAFT_EVENT_RESHAPE_MS}ms ${SOMEDAY_DRAFT_EVENT_EASING}, ` +
+  `scale ${SOMEDAY_DRAFT_EVENT_LIFT_MS}ms ${SOMEDAY_DRAFT_EVENT_EASING}, ` +
+  `box-shadow ${SOMEDAY_DRAFT_EVENT_LIFT_MS}ms ${SOMEDAY_DRAFT_EVENT_EASING}`;
+const SOMEDAY_DRAFT_EVENT_TRANSITION_ANCHORED =
+  `${SOMEDAY_DRAFT_EVENT_TRANSITION_BASE}, ` +
+  `transform ${SOMEDAY_DRAFT_EVENT_ANCHOR_MS}ms ${SOMEDAY_DRAFT_EVENT_EASING}`;
+const SOMEDAY_DRAFT_EVENT_SHADOW_LIFTED = `0 12px 28px color-mix(in srgb, ${theme.color.shadow.default} 22%, transparent)`;
+const SOMEDAY_DRAFT_EVENT_SHADOW_SETTLED = `0 6px 14px color-mix(in srgb, ${theme.color.shadow.default} 14%, transparent)`;
 const SOMEDAY_EVENT_TITLE_ROW_SELECTOR =
   '[data-someday-event-title-row="true"]';
 const SOMEDAY_TIME_LABEL_SELECTOR =
@@ -259,8 +259,8 @@ export const createSomedayInteractionAdapter = ({
           transform: { x: 0, y: 0 },
         };
       },
-      getOverlayMount: ({ sourceElement, target }) => ({
-        clone: createSomedayOverlayClone(sourceElement, target.event),
+      getDraftEventMount: ({ sourceElement, target }) => ({
+        clone: createSomedayDraftEventClone(sourceElement, target.event),
         cursor: "move",
         rect: readElementRect(sourceElement),
       }),
@@ -279,7 +279,7 @@ export const createSomedayInteractionAdapter = ({
         );
         // Edge navigation reads the raw pointer (it only engages inside grid
         // layouts). Drop resolution and the floating preview use the clamped
-        // pointer so the overlay can't wander into dead zones like the week
+        // pointer so the draft event can't wander into dead zones like the week
         // header — it slides along the nearest valid drop zone instead.
         const clampedPointer = clampPointToZones(pointer, getClampZones());
         const nextDrop = resolveDrop(
@@ -287,16 +287,18 @@ export const createSomedayInteractionAdapter = ({
           edgeNavigationUpdate.visual,
         );
         previewSidebarDrop(target, edgeNavigationUpdate.visual, nextDrop);
-        const overlayRect = getCalendarOverlayRect(nextDrop);
+        const draftEventRect = getCalendarDraftEventRect(nextDrop);
         const nextVisual = {
           ...edgeNavigationUpdate.visual,
           drop: nextDrop,
-          transform: overlayRect
+          transform: draftEventRect
             ? {
                 x:
-                  overlayRect.left -
+                  draftEventRect.left -
                   edgeNavigationUpdate.visual.sourceRect.left,
-                y: overlayRect.top - edgeNavigationUpdate.visual.sourceRect.top,
+                y:
+                  draftEventRect.top -
+                  edgeNavigationUpdate.visual.sourceRect.top,
               }
             : {
                 x:
@@ -307,11 +309,11 @@ export const createSomedayInteractionAdapter = ({
         };
 
         return {
-          overlay: {
-            height: overlayRect?.height,
-            mutate: (node) => mutateOverlay(node, nextDrop, target.event),
+          draftEvent: {
+            height: draftEventRect?.height,
+            mutate: (node) => mutateDraftEvent(node, nextDrop, target.event),
             transform: nextVisual.transform,
-            width: overlayRect?.width,
+            width: draftEventRect?.width,
           },
           shouldContinue: edgeNavigationUpdate.isDwellActive,
           visual: nextVisual,
@@ -649,7 +651,7 @@ export const createSomedayInteractionAdapter = ({
     isLayoutRebuildPending = false;
   }
 
-  function getCalendarOverlayRect(drop: SomedayInteractionDrop | null) {
+  function getCalendarDraftEventRect(drop: SomedayInteractionDrop | null) {
     if (!drop || drop.type === "sidebar") {
       return null;
     }
@@ -700,17 +702,17 @@ export const createSomedayInteractionAdapter = ({
   };
 };
 
-const createSomedayOverlayClone = (
+const createSomedayDraftEventClone = (
   source: HTMLElement,
   event: Schema_Event,
 ) => {
-  const clone = createInteractionClone(source);
+  const clone = createDraftEventClone(source);
 
   clone.style.zIndex = "25";
 
   // SomedayEvent renders with a translucent priority tint (15% color-mix),
   // which looks faded once it leaves the sidebar background. Repaint the
-  // floating overlay with the solid grid color so the preview reads as the
+  // floating draft event with the solid grid color so the preview reads as the
   // GridEvent / AllDayEvent it's about to become.
   const priority = event.priority ?? Priorities.UNASSIGNED;
   clone.style.background = gridColorByPriority[priority];
@@ -725,7 +727,7 @@ const createSomedayOverlayClone = (
   return clone;
 };
 
-const mutateOverlay = (
+const mutateDraftEvent = (
   node: HTMLElement,
   drop: SomedayInteractionDrop | null,
   event: Schema_Event,
@@ -733,7 +735,7 @@ const mutateOverlay = (
   node.style.overflow = "hidden";
 
   const isReducedMotion = isReducedMotionPreferred();
-  // Only smooth `transform` while the overlay is anchored to a grid slot.
+  // Only smooth `transform` while the draft event is anchored to a grid slot.
   // In the sidebar (or with no drop target) transform must remain instant so
   // the clone tracks the pointer 1:1.
   const isGridAnchored = drop?.type === "allDay" || drop?.type === "timed";
@@ -749,20 +751,20 @@ const mutateOverlay = (
   const nextTransition = isReducedMotion
     ? "none"
     : isGridAnchored
-      ? SOMEDAY_OVERLAY_TRANSITION_ANCHORED
-      : SOMEDAY_OVERLAY_TRANSITION_BASE;
+      ? SOMEDAY_DRAFT_EVENT_TRANSITION_ANCHORED
+      : SOMEDAY_DRAFT_EVENT_TRANSITION_BASE;
 
   if (node.style.transition !== nextTransition) {
     node.style.transition = nextTransition;
   }
 
-  // Lift the overlay while it's floating so pickup reads as a physical "I've
+  // Lift the draft event while it's floating so pickup reads as a physical "I've
   // grabbed this." Settle to 1 once anchored to a slot so the preview matches
   // the real event's resting size; shadow tightens in tandem.
   const nextScale =
     isReducedMotion || isGridAnchored
-      ? SOMEDAY_OVERLAY_SETTLED_SCALE
-      : SOMEDAY_OVERLAY_LIFT_SCALE;
+      ? SOMEDAY_DRAFT_EVENT_SETTLED_SCALE
+      : SOMEDAY_DRAFT_EVENT_LIFT_SCALE;
 
   if (node.style.scale !== nextScale) {
     node.style.scale = nextScale;
@@ -770,8 +772,8 @@ const mutateOverlay = (
 
   const nextShadow =
     isReducedMotion || isGridAnchored
-      ? SOMEDAY_OVERLAY_SHADOW_SETTLED
-      : SOMEDAY_OVERLAY_SHADOW_LIFTED;
+      ? SOMEDAY_DRAFT_EVENT_SHADOW_SETTLED
+      : SOMEDAY_DRAFT_EVENT_SHADOW_LIFTED;
 
   if (node.style.boxShadow !== nextShadow) {
     node.style.boxShadow = nextShadow;
@@ -782,14 +784,14 @@ const mutateOverlay = (
     : theme.color.text.lighter;
 
   if (drop?.type !== "timed") {
-    resetTimedOverlayLayout(node);
+    resetTimedDraftEventLayout(node);
     return;
   }
 
-  const titleRow = applyTimedOverlayLayout(node);
+  const titleRow = applyTimedDraftEventLayout(node);
   const { end, start } = getTimedDropDateRange(drop);
 
-  const timeLabel = getOrCreateOverlayTimeLabel(node, titleRow);
+  const timeLabel = getOrCreateDraftEventTimeLabel(node, titleRow);
 
   timeLabel.textContent = getTimesLabel(start.format(), end.format());
   timeLabel.style.display = "block";
@@ -811,9 +813,9 @@ const getTimedDropDateRange = (drop: SomedayTimedDrop) => {
   };
 };
 
-const applyTimedOverlayLayout = (node: HTMLElement) => {
-  const titleRow = getOverlayTitleRow(node);
-  const textStack = getOverlayTextStack(titleRow);
+const applyTimedDraftEventLayout = (node: HTMLElement) => {
+  const titleRow = getDraftEventTitleRow(node);
+  const textStack = getDraftEventTextStack(titleRow);
 
   textStack.style.alignItems = "flex-start";
   textStack.style.display = "flex";
@@ -830,8 +832,8 @@ const applyTimedOverlayLayout = (node: HTMLElement) => {
   return textStack;
 };
 
-const resetTimedOverlayLayout = (node: HTMLElement) => {
-  removeOverlayTimeLabel(node);
+const resetTimedDraftEventLayout = (node: HTMLElement) => {
+  removeDraftEventTimeLabel(node);
 
   const titleRow = node.querySelector<HTMLElement>(
     SOMEDAY_EVENT_TITLE_ROW_SELECTOR,
@@ -841,7 +843,7 @@ const resetTimedOverlayLayout = (node: HTMLElement) => {
     return;
   }
 
-  const textStack = getOverlayTextStack(titleRow);
+  const textStack = getDraftEventTextStack(titleRow);
 
   textStack.style.alignItems = "";
   textStack.style.display = "";
@@ -856,17 +858,17 @@ const resetTimedOverlayLayout = (node: HTMLElement) => {
   titleRow.style.justifyContent = "";
 };
 
-const removeOverlayTimeLabel = (node: HTMLElement) => {
+const removeDraftEventTimeLabel = (node: HTMLElement) => {
   node.querySelector<HTMLElement>(SOMEDAY_TIME_LABEL_SELECTOR)?.remove();
 };
 
-const getOverlayTitleRow = (node: HTMLElement) =>
+const getDraftEventTitleRow = (node: HTMLElement) =>
   node.querySelector<HTMLElement>(SOMEDAY_EVENT_TITLE_ROW_SELECTOR) ?? node;
 
-const getOverlayTextStack = (titleRow: HTMLElement) =>
+const getDraftEventTextStack = (titleRow: HTMLElement) =>
   titleRow.parentElement ?? titleRow;
 
-const getOrCreateOverlayTimeLabel = (
+const getOrCreateDraftEventTimeLabel = (
   node: HTMLElement,
   parent: HTMLElement,
 ) => {

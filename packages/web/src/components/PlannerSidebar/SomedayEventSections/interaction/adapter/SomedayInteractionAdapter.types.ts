@@ -57,7 +57,7 @@ export interface SomedaySidebarDrop {
 export interface SomedayTimedDrop {
   /** Local YYYY-MM-DD date of the drop column. */
   date: string;
-  /** Window-relative column index; used for overlay geometry only. */
+  /** Window-relative column index; used for draft event geometry only. */
   dayIndex: number;
   endMinutes: number;
   startMinutes: number;
@@ -67,7 +67,7 @@ export interface SomedayTimedDrop {
 export interface SomedayAllDayDrop {
   /** Local YYYY-MM-DD date of the drop column. */
   date: string;
-  /** Window-relative column index; used for overlay geometry only. */
+  /** Window-relative column index; used for draft event geometry only. */
   dayIndex: number;
   type: "allDay";
 }

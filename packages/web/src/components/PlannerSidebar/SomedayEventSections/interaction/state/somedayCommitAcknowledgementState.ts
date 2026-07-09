@@ -3,7 +3,7 @@ import { useSyncExternalStore } from "react";
 /**
  * Tracks event ids that were just committed from a Someday-to-calendar drop.
  *
- * The floating overlay and the freshly mounted GridEvent / AllDayEvent are
+ * The floating draft event and the freshly mounted GridEvent / AllDayEvent are
  * two separate DOM nodes that hand off in a single frame; without an
  * entrance animation the drop reads as a swap. This module lets the
  * calendar event components opt into a one-shot acknowledgment animation
