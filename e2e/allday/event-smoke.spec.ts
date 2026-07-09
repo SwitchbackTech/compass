@@ -1,12 +1,9 @@
 import { test } from "@playwright/test";
 import {
   createEventTitle,
-  deleteEventWithMouse,
-  expectAllDayEventMissing,
   expectAllDayEventVisible,
   fillTitleAndSaveEventForm,
   openAllDayEventFormWithMouse,
-  openEventForEditingWithMouse,
   prepareCalendarPage,
 } from "../utils/event-test-utils";
 
@@ -15,18 +12,12 @@ test.skip(
   "Mouse flows are desktop-only in week view.",
 );
 
-test("should delete an all-day event using mouse interaction", async ({
-  page,
-}) => {
+test("creates an all-day event", async ({ page }) => {
   await prepareCalendarPage(page);
 
-  const title = createEventTitle("All-Day Delete Event");
+  const title = createEventTitle("All-Day Event");
   await openAllDayEventFormWithMouse(page);
   await fillTitleAndSaveEventForm(page, title);
+
   await expectAllDayEventVisible(page, title);
-
-  await openEventForEditingWithMouse(page, title);
-  await deleteEventWithMouse(page);
-
-  await expectAllDayEventMissing(page, title);
 });

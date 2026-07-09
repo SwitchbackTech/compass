@@ -8,6 +8,7 @@ import {
   openEventForEditingWithMouse,
   openTimedEventFormWithMouse,
   prepareCalendarPage,
+  updateEventTitle,
 } from "../utils/event-test-utils";
 
 test.skip(
@@ -15,9 +16,7 @@ test.skip(
   "Mouse flows are desktop-only in week view.",
 );
 
-test("should delete a timed event using mouse interaction", async ({
-  page,
-}) => {
+test("creates, edits, and deletes a timed event", async ({ page }) => {
   await prepareCalendarPage(page);
 
   const title = createEventTitle("Timed Event");
@@ -26,7 +25,13 @@ test("should delete a timed event using mouse interaction", async ({
   await expectTimedEventVisible(page, title);
 
   await openEventForEditingWithMouse(page, title);
-  await deleteEventWithMouse(page);
 
+  const updatedTitle = updateEventTitle("Timed Event");
+  await fillTitleAndSaveEventForm(page, updatedTitle);
+  await expectTimedEventVisible(page, updatedTitle);
   await expectTimedEventMissing(page, title);
+
+  await openEventForEditingWithMouse(page, updatedTitle);
+  await deleteEventWithMouse(page);
+  await expectTimedEventMissing(page, updatedTitle);
 });
