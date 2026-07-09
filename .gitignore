@@ -17,23 +17,19 @@ compass.yaml
 ########
 # DIRS #
 ########
-.idea/
 .vscode/
 blob-report/
 build/
 buildcache/
 logs/
-docs/superpowers/
-docs/pr-explainers/
+/handoff/
 node_modules/
 packages/backend/logs
 packages/backend/build
 packages/backend/node_modules
-packages/backend/playgroud
 packages/core/build/
 packages/web/node_modules/
 packages/web/build/
 playwright-report/
 test-results/
 tmp/
-workflow/
