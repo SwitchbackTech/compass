@@ -40,6 +40,15 @@ export const isFocusedWithinTask = () => {
     return true;
   }
 
+  // Check if focused on the drag/reorder handle. It carries its own
+  // data-task-id because it sits outside the task's data-task-id container.
+  if (
+    activeElement.tagName === "BUTTON" &&
+    activeElement.getAttribute("aria-label")?.startsWith("Reorder")
+  ) {
+    return true;
+  }
+
   return false;
 };
 
@@ -78,6 +87,15 @@ export const getFocusedTaskId = () => {
       "[data-task-id]",
     ) as HTMLElement;
     return taskContainer?.dataset?.taskId || null;
+  }
+
+  // Reorder/drag handle carries its own data-task-id (it lives outside the
+  // task's data-task-id container, so closest() can't find it).
+  if (
+    activeElement.tagName === "BUTTON" &&
+    activeElement.getAttribute("aria-label")?.startsWith("Reorder")
+  ) {
+    return activeElement.dataset?.taskId ?? null;
   }
 
   return null;
