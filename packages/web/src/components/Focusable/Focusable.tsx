@@ -64,7 +64,17 @@ export const Focusable = forwardRef<HTMLElement, Props>(
           autoFocus={autoFocus}
           ref={ref}
         />
-        {!!withUnderline && isFocused && <Divider color={underlineColor} />}
+        {/*
+          Keep the underline mounted whenever `withUnderline` and toggle its
+          visible width via focus, instead of mounting/unmounting it on blur.
+          The Divider always reserves 2px of height while mounted, so
+          unmounting it on blur shifted layout — which, in the date picker,
+          moved the hovered day out from under the cursor between mousedown and
+          mouseup and swallowed the first click. A stable layout fixes that.
+        */}
+        {!!withUnderline && (
+          <Divider color={underlineColor} toggled={isFocused} />
+        )}
       </>
     );
   },
