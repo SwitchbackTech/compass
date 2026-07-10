@@ -197,6 +197,62 @@ describe("CalendarEventCard", () => {
     expect(relationsIcon?.outerHTML).not.toBe(workMarkup);
   });
 
+  it("shows the repeat indicator on a 15-minute recurring event despite its small rendered height", () => {
+    // A true 15-minute event lays out shorter than a taller one resized down to
+    // 15 minutes; the icon used to be gated on rendered pixel height, so the two
+    // disagreed. Gating on duration makes any 15-minute recurring event qualify.
+    const { container } = render(
+      <CalendarTimedEventCard
+        displayMode="saved"
+        event={createEvent({
+          endDate: "2024-01-15T09:15:00.000Z",
+          recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=WEEKLY"] },
+          startDate: "2024-01-15T09:00:00.000Z",
+        })}
+        motionMode="idle"
+        // A short height that fell below the old pixel-height threshold.
+        position={{ ...position, height: 18 }}
+      />,
+    );
+
+    expect(container.querySelector('svg[class*="right-1"]')).not.toBeNull();
+  });
+
+  it("shows the repeat indicator on a recurring draft preview", () => {
+    // The draft preview should reflect the future reality: once a draft has a
+    // recurrence rule, its card renders the repeat icon immediately (drafts are
+    // not placeholders, so they are not excluded from the indicator).
+    const { container } = render(
+      <CalendarTimedEventCard
+        displayMode="draft"
+        event={createEvent({
+          _id: undefined,
+          recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
+        })}
+        motionMode="idle"
+        position={position}
+      />,
+    );
+
+    expect(container.querySelector('svg[class*="right-1"]')).not.toBeNull();
+  });
+
+  it("hides the repeat indicator on a too-narrow event", () => {
+    const { container } = render(
+      <CalendarTimedEventCard
+        displayMode="saved"
+        event={createEvent({
+          recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=WEEKLY"] },
+        })}
+        motionMode="idle"
+        // Below the width gate: too cramped to place the icon without crowding.
+        position={{ ...position, width: 30 }}
+      />,
+    );
+
+    expect(container.querySelector('svg[class*="right-1"]')).toBeNull();
+  });
+
   it("renders all-day event details, interaction attributes, acknowledgement animation, and resize handles", () => {
     const onEventMouseDown = mock();
     const onScalerMouseDown = mock();

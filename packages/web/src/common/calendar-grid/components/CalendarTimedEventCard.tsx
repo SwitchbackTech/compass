@@ -36,7 +36,13 @@ import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 
-const REPEAT_ICON_MIN_HEIGHT = 30;
+// Gate the repeat indicator on the event's duration, not its rendered pixel
+// height: a true 15-minute event and one resized down to 15 minutes are laid
+// out through different height paths that straddle a pixel threshold, so the
+// same 15-minute event would show the icon in one case and hide it in the
+// other. Duration is the same regardless of render path. 15 min is the minimum
+// event length, so every recurring timed event qualifies.
+const REPEAT_ICON_MIN_DURATION_MINUTES = 15;
 const REPEAT_ICON_MIN_WIDTH = 40;
 
 interface CalendarTimedEventCardProps {
@@ -87,10 +93,14 @@ const CalendarTimedEventCardBase = (
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
   const isRecurring = isRecurringEvent(event);
+  const durationMinutes = dayjs(event.endDate).diff(
+    dayjs(event.startDate),
+    "minute",
+  );
   const showRepeatIcon =
     isRecurring &&
     !isPlaceholder &&
-    position.height >= REPEAT_ICON_MIN_HEIGHT &&
+    durationMinutes >= REPEAT_ICON_MIN_DURATION_MINUTES &&
     position.width >= REPEAT_ICON_MIN_WIDTH;
 
   const lineClamp = useMemo(
