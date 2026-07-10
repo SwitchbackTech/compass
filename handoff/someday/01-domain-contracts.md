@@ -10,6 +10,13 @@ the same time.
 Depends on: `00-project-ledger.md` for historical requirements only. The
 Project 6 issues are closed and are not execution dependencies.
 
+Concrete companion references:
+
+- [`01a-proposed-contract-schemas.md`](./01a-proposed-contract-schemas.md) —
+  complete proposed Zod schemas and web-only TypeScript types by file.
+- [`01b-contract-examples-and-flows.md`](./01b-contract-examples-and-flows.md)
+  — valid JSON examples, mapping ownership, and boundary interaction diagrams.
+
 ## Why this is the design gate
 
 `Schema_Event` makes almost every field optional, so invalid combinations are
@@ -31,16 +38,16 @@ The replacement uses three rules:
 Use these suffixes consistently. Remove `Schema_`, `Core`, `Compass`, `Web`,
 `Payload_`, and underscore-based variants as each old type is replaced.
 
-| Name form | Meaning | Example |
-| --- | --- | --- |
-| `*Schema` | Runtime Zod validator | `EventSchema` |
-| no suffix | Type inferred from that validator | `Event` |
-| `*Record` | Persisted MongoDB or IndexedDB representation | `EventRecord` |
-| `*Input` | Validated command/query accepted at an API boundary | `CreateEventInput` |
-| `*Response` | Validated HTTP/SSE response envelope | `EventListResponse` |
-| `*Draft` | Deliberately incomplete web editing state | `EventDraft` |
-| `*View` / `*Layout` | Derived, non-persisted presentation state | `GridEventLayout` |
-| `Google*` | Type that exists only at the Google adapter boundary | `GoogleEventReference` |
+| Name form           | Meaning                                              | Example                |
+| ------------------- | ---------------------------------------------------- | ---------------------- |
+| `*Schema`           | Runtime Zod validator                                | `EventSchema`          |
+| no suffix           | Type inferred from that validator                    | `Event`                |
+| `*Record`           | Persisted MongoDB or IndexedDB representation        | `EventRecord`          |
+| `*Input`            | Validated command/query accepted at an API boundary  | `CreateEventInput`     |
+| `*Response`         | Validated HTTP/SSE response envelope                 | `EventListResponse`    |
+| `*Draft`            | Deliberately incomplete web editing state            | `EventDraft`           |
+| `*View` / `*Layout` | Derived, non-persisted presentation state            | `GridEventLayout`      |
+| `Google*`           | Type that exists only at the Google adapter boundary | `GoogleEventReference` |
 
 Every exported Zod schema has its type inferred from the schema. Do not write a
 parallel interface that can drift from validation. Keep contracts in concrete
@@ -50,15 +57,15 @@ files; do not add barrel files.
 
 Create these once in `packages/core/src/types/` and reuse them everywhere:
 
-| Contract | Required invariant |
-| --- | --- |
-| `EventIdSchema` / `EventId` | Branded 24-character Compass event id string at HTTP/web boundaries. |
-| `CalendarIdSchema` / `CalendarId` | Branded 24-character Compass calendar id string; never a Google id. |
-| `DateOnlySchema` / `DateOnly` | Strict `YYYY-MM-DD`; parsing must reject rollover dates. |
-| `DateTimeSchema` / `DateTime` | RFC 3339 timestamp with an explicit offset. |
-| `TimeZoneSchema` / `TimeZone` | Valid IANA time-zone identifier. |
-| `SortOrderSchema` / `SortOrder` | Finite, non-negative integer. |
-| `RRuleSchema` / `RRule` | Non-empty array of non-empty RFC 5545 recurrence lines. |
+| Contract                          | Required invariant                                                   |
+| --------------------------------- | -------------------------------------------------------------------- |
+| `EventIdSchema` / `EventId`       | Branded 24-character Compass event id string at HTTP/web boundaries. |
+| `CalendarIdSchema` / `CalendarId` | Branded 24-character Compass calendar id string; never a Google id.  |
+| `DateOnlySchema` / `DateOnly`     | Strict `YYYY-MM-DD`; parsing must reject rollover dates.             |
+| `DateTimeSchema` / `DateTime`     | RFC 3339 timestamp with an explicit offset.                          |
+| `TimeZoneSchema` / `TimeZone`     | Valid IANA time-zone identifier.                                     |
+| `SortOrderSchema` / `SortOrder`   | Finite, non-negative integer.                                        |
+| `RRuleSchema` / `RRule`           | Non-empty array of non-empty RFC 5545 recurrence lines.              |
 
 Use branded TypeScript types only to prevent accidental id/date mixing; JSON
 remains strings and numbers.
@@ -116,8 +123,7 @@ Events resource:
 
 ```ts
 type EventContent =
-  | { kind: "details"; title: string; description: string }
-  | { kind: "busy" };
+  { kind: "details"; title: string; description: string } | { kind: "busy" };
 ```
 
 Empty title and description are valid, but both keys are required for
@@ -310,18 +316,18 @@ justifies an index.
 Put shared web/backend Zod contracts in core. Controllers parse them at ingress
 and parse their own responses in contract tests.
 
-| Contract | Shape and rule |
-| --- | --- |
-| `CreateEventInput` | Required `calendarId`, details content, schedule, recurrence (`single` or `series`), and priority. No id, user, timestamps, origin, occurrence, or provider identity. |
-| `ReplaceEventInput` | Complete editable snapshot: details content, schedule, recurrence, and priority plus `scope`. Use `PUT`; no giant `Partial<Event>`. `calendarId` is absent because existing ownership is immutable. |
-| `DeleteEventInput` | `{ scope }`; the event id remains the route parameter. |
-| `ReorderEventsInput` | `{ period: "week" | "month", items: [{ eventId, sortOrder }] }`; reject duplicates, mixed owners, and non-someday events. |
-| `EventListQuery` | Required mode discriminator: range query with start/end/calendar visibility filters, or someday query with period/anchor/cursor/limit. |
-| `EventListResponse` | `{ events: Event[], nextCursor: string | null }`; no request fields mixed into the response. |
-| `AvailabilityQuery` | Required calendar ids and bounded start/end instants; only availability-capable owned calendars are accepted. |
-| `AvailabilityResponse` | `{ busyPeriods: BusyPeriod[] }`; periods are not assigned synthetic event ids. |
-| `EventResponse` | `{ event: Event }` for create/replace/get. |
-| `EventMutationError` | Stable codes for not found, read only, recurrence conflict, invalid schedule, and provider failure; reuse the repository's standard error envelope. |
+| Contract               | Shape and rule                                                                                                                                                                                                                                                                   |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CreateEventInput`     | Required `calendarId`, details content, schedule, recurrence (`single` or `series`), and priority. No id, user, timestamps, origin, occurrence, or provider identity.                                                                                                            |
+| `ReplaceEventInput`    | Complete editable snapshot: details content, schedule, priority, required recurrence edit (`preserve`, `single`, or `series`), and `scope`. Use `PUT`; no giant `Partial<Event>`. `calendarId` and occurrence `seriesId` are absent because backend-owned identity is immutable. |
+| `DeleteEventInput`     | `{ scope }`; the event id remains the route parameter.                                                                                                                                                                                                                           |
+| `ReorderEventsInput`   | `{ period: "week"                                                                                                                                                                                                                                                                | "month", items: [{ eventId, sortOrder }] }`; reject duplicates, mixed owners, and non-someday events. |
+| `EventListQuery`       | Required mode discriminator: range query with start/end/calendar visibility filters, or someday query with period/anchor/cursor/limit.                                                                                                                                           |
+| `EventListResponse`    | `{ events: Event[], nextCursor: string                                                                                                                                                                                                                                           | null }`; no request fields mixed into the response.                                                   |
+| `AvailabilityQuery`    | Required calendar ids and bounded start/end instants; only availability-capable owned calendars are accepted.                                                                                                                                                                    |
+| `AvailabilityResponse` | `{ busyPeriods: BusyPeriod[] }`; periods are not assigned synthetic event ids.                                                                                                                                                                                                   |
+| `EventResponse`        | `{ event: Event }` for create/replace/get.                                                                                                                                                                                                                                       |
+| `EventMutationError`   | Stable codes for not found, read only, recurrence conflict, invalid schedule, and provider failure; reuse the repository's standard error envelope.                                                                                                                              |
 
 Use narrow commands for reorder and delete because they have different
 invariants. A complete replace command is preferable for ordinary edits: the
@@ -400,6 +406,7 @@ adapters will later map into the same domain without changing web contracts.
 Recommended concrete files; adjust only if current ownership has changed:
 
 ```text
+packages/core/src/types/domain-primitives.ts
 packages/core/src/types/calendar.contracts.ts
 packages/core/src/types/event.contracts.ts
 packages/core/src/types/event-command.contracts.ts
@@ -460,16 +467,16 @@ file used only by backend/scripts.
 ## Exit criteria
 
 - [ ] No final persisted or API event property is optional merely for caller
-  convenience.
+      convenience.
 - [ ] Boolean schedule flags and ambiguous recurrence shapes are gone.
 - [ ] Title and description are required strings for detail events; busy-only
-  events are a separate explicit content case.
+      events are a separate explicit content case.
 - [ ] Storage, HTTP, form, local persistence, cache, optimistic, SSE, and layout
-  contracts have distinct names and tested mappers.
+      contracts have distinct names and tested mappers.
 - [ ] Calendar capability and privacy behavior is derived once and shared.
 - [ ] The contract catalog covers current core/backend/web event consumers and
-  does not introduce an unused provider framework.
+      does not introduce an unused provider framework.
 - [ ] `bun test:core`, affected backend/web contract tests, and
-  `bun type-check` pass before plan `02` begins.
+      `bun type-check` pass before plan `02` begins.
 
 Suggested commit: `refactor(core): define strict event contracts`

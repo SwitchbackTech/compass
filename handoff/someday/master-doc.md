@@ -14,30 +14,31 @@ requirements, and the checkboxes in these files are the only progress tracker.
 
 A v1 user can connect Google, import every non-hidden and non-deleted calendar,
 see events or availability from chosen calendars, create/edit/delete events on
-any writable Google calendar, receive ongoing Google changes, and recover automatically
-from missing or expired notification watches. Existing password-only, offline,
-someday, priority, all-day, and recurring-event behavior continues to work.
+any writable Google calendar, receive ongoing Google changes, and recover
+automatically from missing or expired notification watches. Existing password-
+only, offline, someday, priority, all-day, and recurring-event behavior
+continues to work.
 
 V1 is complete only when all of the following are true:
 
 - [ ] Every event belongs to a Compass calendar and the active event
-  collection uses the final validated schema.
+      collection uses the final validated schema.
 - [ ] Existing event data migrates without silent drops and has a tested
-  rollback path.
+      rollback path.
 - [ ] Initial Google import handles all eligible calendars with bounded
-  concurrency, resumable pagination, and per-calendar sync tokens.
+      concurrency, resumable pagination, and per-calendar sync tokens.
 - [ ] Event CRUD resolves the owning calendar, enforces access roles, and never
-  silently falls back to the Google primary calendar.
+      silently falls back to the Google primary calendar.
 - [ ] Calendar-list changes add, update, and remove calendars and their watches
-  without a full user reset in the normal case.
+      without a full user reset in the normal case.
 - [ ] Watch health is inspected and repaired through one idempotent path.
 - [ ] Every Google Calendar API request carries a stable `quotaUser` and uses
-  centralized bounded retries for retryable failures.
+      centralized bounded retries for retryable failures.
 - [ ] The sidebar lists calendars with persistent visibility controls, forms
-  select writable target calendars, and calendar identity is not conveyed by
-  color alone.
+      select writable target calendars, and calendar identity is not conveyed by
+      color alone.
 - [ ] The release migration, rollback, observability, performance, and manual
-  acceptance runbooks have been exercised on production-shaped data.
+      acceptance runbooks have been exercised on production-shaped data.
 
 ## Ordered execution
 
@@ -46,29 +47,34 @@ earlier one is in review, but it must not be merged when its dependency is
 unfinished.
 
 - [x] 00. [Project ledger](./00-project-ledger.md) — reconcile and retire issue
-  cards.
+      cards.
 - [ ] 01. [Domain contracts](./01-domain-contracts.md) — freeze calendar/event/API
-   semantics before migration work.
+      semantics before migration work. Use the companion
+      [full schemas](./01a-proposed-contract-schemas.md) and
+      [examples/flows](./01b-contract-examples-and-flows.md) as the concrete
+      implementation reference.
 - [ ] 02. [Safe event data migration](./02-safe-event-data-migration.md) — build and
-   verify the non-destructive v2 backfill.
+      verify the non-destructive v2 backfill.
 - [ ] 03. [Event runtime cutover](./03-event-runtime-cutover.md) — move the codebase
-   from the legacy user-owned event shape to calendar-owned storage.
+      from the legacy user-owned event shape to calendar-owned storage.
 - [ ] 04. [Initial multi-calendar import](./04-initial-multi-calendar-import.md) —
-   import all eligible Google calendars and events.
+      import all eligible Google calendars and events.
 - [ ] 05. [Calendar-aware CRUD](./05-calendar-aware-crud.md) — route writes to the
-   correct provider calendar and enforce permissions.
+      correct provider calendar and enforce permissions.
 - [ ] 06. [Calendar-list sync and watch routing](./06-calendar-list-sync-and-watch-routing.md)
-   — keep the calendar set current.
+      — keep the calendar set current.
 - [ ] 07. [Watch repair, quota, and retries](./07-watch-repair-quota-and-retries.md) —
-   self-heal notifications and control Google API pressure.
+      self-heal notifications and control Google API pressure.
 - [ ] 08. [Web calendar experience](./08-web-calendar-experience.md) — ship visibility,
-   identity, selection, and read-only UX.
+      identity, selection, and read-only UX.
 - [ ] 09. [V1 release hardening](./09-v1-release-hardening.md) — prove migration,
-    reliability, performance, accessibility, and rollback.
+      reliability, performance, accessibility, and rollback.
 
 ## Progress rules for agents
 
-1. Read this file, the target plan, `AGENTS.md`, and every dependency plan.
+1. Read this file, the target plan, `AGENTS.md`, and every dependency plan. If
+   `01-domain-contracts.md` is a target or dependency, also read its `01a` full
+   schema and `01b` examples/flows companions.
 2. Confirm the target plan's current-state statements against the current
    branch; paths and APIs may have changed since 2026-07-10.
 3. Keep the target plan's scope in one branch/PR where practical. If a step is
@@ -89,7 +95,8 @@ unfinished.
 
 > Work the next unchecked file in `handoff/someday/master-doc.md`. Read the
 > master assumptions, `00-project-ledger.md`, the target file, its dependencies,
-> and `AGENTS.md`. Implement only that packet, run its focused verification,
+> and `AGENTS.md`. If `01` is involved, read both `01a` and `01b`. Implement
+> only that packet, run its focused verification,
 > update its completed checkboxes and the master execution checkbox, and commit
 > with the suggested conventional scope. If current code contradicts the plan,
 > record a dated decision in `master-doc.md` before changing direction.
@@ -129,31 +136,31 @@ unfinished.
 These assumptions resolve missing or contradictory issue details. Change one
 only by appending a dated decision and updating every affected plan.
 
-| ID | Assumption / decision | Reason |
-| --- | --- | --- |
-| A1 | V1 supports Google and local Compass calendars. Outlook and iCalendar adapters, sharing administration, reminders, and mobile apps are future work. | Matches current product scope and keeps a narrow extension point without implementing unused providers. |
-| A2 | Import every CalendarList entry except `deleted: true` or `hidden: true`, regardless of access role. | Explicit #553 scope. Read-only roles still need display support. |
-| A3 | Google `selected` seeds Compass `isVisible` only on first insert. Later Google refreshes and archive/reactivate cycles preserve Compass visibility. | Prevents Google UI choices from overwriting Compass user choices and avoids using one name for two preferences. |
-| A4 | Every user owns one Compass-local calendar. Someday events belong to it. A Google-connected scheduled draft defaults to the primary writable Google calendar; otherwise it defaults to the Compass-local calendar. | Supports password-only/offline users and removes the migration's missing-calendar failure. |
-| A5 | An event has one owning calendar and at most one provider reference. Use a discriminated provider object, not an array of provider metadata. | One event cannot be written to several provider calendars in v1; an array adds states the product cannot uphold. |
-| A6 | Calendar assignment is immutable for an existing event in v1. Users choose a calendar when creating or duplicating; moving an existing/recurring event between calendars is deferred. | Cross-calendar moves have distinct Google and recurrence semantics and are not required for CRUD within each calendar. |
-| A7 | `owner` and `writer` calendars are writable. `reader` calendars sync events but private events use explicit busy content. `freeBusyReader` calendars use bounded free/busy range queries and never manufacture event records. | Mirrors Google access roles, preserves privacy, and keeps identity-dependent event behavior honest. |
-| A8 | Events watches and incremental sync continue for all imported active calendars that expose Events, even if hidden in Compass. `freeBusyReader` calendars retain CalendarList tracking but fetch availability on demand. The backend suppresses event-change SSE for invisible calendars. | Visibility is a presentation preference, while Google's free/busy resource has no persistent event identity or watch stream. |
-| A9 | Calendar identity appears as an accent/marker and text label while priority remains the event-card fill. | Preserves an established priority workflow and avoids color-only identification. |
-| A10 | A short, documented write pause is acceptable for the one-time event collection cutover. Dual-write and CDC are not justified for v1. | Simplest reliable migration with an untouched rollback collection. |
-| A11 | Open baseline-migration issues #783, #1038, and #1039 are retired as not planned, matching their already-retired siblings. Incremental Umzug migrations remain the supported model. | Blank baseline children no longer describe the implemented migration architecture. |
-| A12 | #735 is retired as superseded by #1135, and #734 is retired because stored watch routing already supplies the authoritative calendar id. | Avoids duplicate or weaker implementations. |
-| A13 | Existing 2025 migrations may already be recorded as executed in user databases and are immutable. | Editing them would not repair upgraded installations. |
-| A14 | The 24-character Compass user ObjectId is an acceptable stable opaque `quotaUser`. It must be reused, never randomly regenerated per request. | It is within Google's limit, contains no email/token, and makes quota accounting consistent. |
-| A15 | Calendar lifecycle is server-owned in v1. Clients may list calendars and change Compass visibility but may not create/delete provider calendars. | Google owns its CalendarList; Compass creates its one local calendar internally. Removing generic calendar CRUD reduces authority and API surface. |
-| A16 | A removed/hidden Google calendar is archived with `isActive: false`, not deleted. Reactivation reuses its Compass id and visibility preference. | Prevents preference loss, dangling identity changes, and needless duplicate calendar rows. |
-| A17 | Event scheduling is a `timed` / `allDay` / `someday` discriminated union. Recurrence is a `single` / `series` / `occurrence` discriminated union. | Makes required fields depend on the actual event state and removes invalid boolean/optional-property combinations. |
-| A18 | Detail events require `title` and `description` strings; both may be empty. Redacted events use an explicit `busy` content variant. | Keeps normal UI/backend code strict without fabricating private Google data. |
-| A19 | Timed instants use BSON Dates in Mongo and RFC 3339 strings with offsets over HTTP, with a required IANA time zone. All-day/someday dates remain date-only strings and all-day ends are exclusive. | Preserves instants and DST recurrence semantics without shifting date-only values through time zones. |
-| A20 | `sortOrder` is required only for someday schedules. Legacy `allDayOrder` has no production reader and is explicitly retired after migration audit. A separate ordering relation is deferred until independent per-view/per-user ordering is needed. | Preserves the only user-controlled persisted ordering without carrying an unused field or adding an offline/concurrency subsystem. |
-| A21 | The cutover is a breaking release performed during downtime. API, web, backend, migration, and local-storage versions move together; there is no legacy payload compatibility or calendar fallback. | The team explicitly accepts downtime and migrations, allowing one strict contract instead of prolonged dual behavior. |
-| A22 | Contract names use `Record` for persistence, `Input` for commands, `Response` for transport envelopes, `Draft` for incomplete web state, and `View`/`Layout` for derived presentation. Canonical read models are `Calendar` and `Event`. | Replaces inconsistent `Schema_*`, `Core*`, `Web*`, and `Payload_*` names with boundary-based language. |
-| A23 | Google is the only external adapter in v1. Provider identities are discriminated unions that gain Outlook/iCalendar members only when those adapters are implemented. | Leaves a stable extension point without building a speculative provider framework. |
+| ID  | Assumption / decision                                                                                                                                                                                                                                                                    | Reason                                                                                                                                             |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | V1 supports Google and local Compass calendars. Outlook and iCalendar adapters, sharing administration, reminders, and mobile apps are future work.                                                                                                                                      | Matches current product scope and keeps a narrow extension point without implementing unused providers.                                            |
+| A2  | Import every CalendarList entry except `deleted: true` or `hidden: true`, regardless of access role.                                                                                                                                                                                     | Explicit #553 scope. Read-only roles still need display support.                                                                                   |
+| A3  | Google `selected` seeds Compass `isVisible` only on first insert. Later Google refreshes and archive/reactivate cycles preserve Compass visibility.                                                                                                                                      | Prevents Google UI choices from overwriting Compass user choices and avoids using one name for two preferences.                                    |
+| A4  | Every user owns one Compass-local calendar. Someday events belong to it. A Google-connected scheduled draft defaults to the primary writable Google calendar; otherwise it defaults to the Compass-local calendar.                                                                       | Supports password-only/offline users and removes the migration's missing-calendar failure.                                                         |
+| A5  | An event has one owning calendar and at most one provider reference. Use a discriminated provider object, not an array of provider metadata.                                                                                                                                             | One event cannot be written to several provider calendars in v1; an array adds states the product cannot uphold.                                   |
+| A6  | Calendar assignment is immutable for an existing event in v1. Users choose a calendar when creating or duplicating; moving an existing/recurring event between calendars is deferred.                                                                                                    | Cross-calendar moves have distinct Google and recurrence semantics and are not required for CRUD within each calendar.                             |
+| A7  | `owner` and `writer` calendars are writable. `reader` calendars sync events but private events use explicit busy content. `freeBusyReader` calendars use bounded free/busy range queries and never manufacture event records.                                                            | Mirrors Google access roles, preserves privacy, and keeps identity-dependent event behavior honest.                                                |
+| A8  | Events watches and incremental sync continue for all imported active calendars that expose Events, even if hidden in Compass. `freeBusyReader` calendars retain CalendarList tracking but fetch availability on demand. The backend suppresses event-change SSE for invisible calendars. | Visibility is a presentation preference, while Google's free/busy resource has no persistent event identity or watch stream.                       |
+| A9  | Calendar identity appears as an accent/marker and text label while priority remains the event-card fill.                                                                                                                                                                                 | Preserves an established priority workflow and avoids color-only identification.                                                                   |
+| A10 | A short, documented write pause is acceptable for the one-time event collection cutover. Dual-write and CDC are not justified for v1.                                                                                                                                                    | Simplest reliable migration with an untouched rollback collection.                                                                                 |
+| A11 | Open baseline-migration issues #783, #1038, and #1039 are retired as not planned, matching their already-retired siblings. Incremental Umzug migrations remain the supported model.                                                                                                      | Blank baseline children no longer describe the implemented migration architecture.                                                                 |
+| A12 | #735 is retired as superseded by #1135, and #734 is retired because stored watch routing already supplies the authoritative calendar id.                                                                                                                                                 | Avoids duplicate or weaker implementations.                                                                                                        |
+| A13 | Existing 2025 migrations may already be recorded as executed in user databases and are immutable.                                                                                                                                                                                        | Editing them would not repair upgraded installations.                                                                                              |
+| A14 | The 24-character Compass user ObjectId is an acceptable stable opaque `quotaUser`. It must be reused, never randomly regenerated per request.                                                                                                                                            | It is within Google's limit, contains no email/token, and makes quota accounting consistent.                                                       |
+| A15 | Calendar lifecycle is server-owned in v1. Clients may list calendars and change Compass visibility but may not create/delete provider calendars.                                                                                                                                         | Google owns its CalendarList; Compass creates its one local calendar internally. Removing generic calendar CRUD reduces authority and API surface. |
+| A16 | A removed/hidden Google calendar is archived with `isActive: false`, not deleted. Reactivation reuses its Compass id and visibility preference.                                                                                                                                          | Prevents preference loss, dangling identity changes, and needless duplicate calendar rows.                                                         |
+| A17 | Event scheduling is a `timed` / `allDay` / `someday` discriminated union. Recurrence is a `single` / `series` / `occurrence` discriminated union.                                                                                                                                        | Makes required fields depend on the actual event state and removes invalid boolean/optional-property combinations.                                 |
+| A18 | Detail events require `title` and `description` strings; both may be empty. Redacted events use an explicit `busy` content variant.                                                                                                                                                      | Keeps normal UI/backend code strict without fabricating private Google data.                                                                       |
+| A19 | Timed instants use BSON Dates in Mongo and RFC 3339 strings with offsets over HTTP, with a required IANA time zone. All-day/someday dates remain date-only strings and all-day ends are exclusive.                                                                                       | Preserves instants and DST recurrence semantics without shifting date-only values through time zones.                                              |
+| A20 | `sortOrder` is required only for someday schedules. Legacy `allDayOrder` has no production reader and is explicitly retired after migration audit. A separate ordering relation is deferred until independent per-view/per-user ordering is needed.                                      | Preserves the only user-controlled persisted ordering without carrying an unused field or adding an offline/concurrency subsystem.                 |
+| A21 | The cutover is a breaking release performed during downtime. API, web, backend, migration, and local-storage versions move together; there is no legacy payload compatibility or calendar fallback.                                                                                      | The team explicitly accepts downtime and migrations, allowing one strict contract instead of prolonged dual behavior.                              |
+| A22 | Contract names use `Record` for persistence, `Input` for commands, `Response` for transport envelopes, `Draft` for incomplete web state, and `View`/`Layout` for derived presentation. Canonical read models are `Calendar` and `Event`.                                                 | Replaces inconsistent `Schema_*`, `Core*`, `Web*`, and `Payload_*` names with boundary-based language.                                             |
+| A23 | Google is the only external adapter in v1. Provider identities are discriminated unions that gain Outlook/iCalendar members only when those adapters are implemented.                                                                                                                    | Leaves a stable extension point without building a speculative provider framework.                                                                 |
 
 ## Complexity guardrails
 
