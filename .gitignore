@@ -13,6 +13,7 @@ compass.yaml
 !compass.example.yaml
 .mcp.json
 .playwright-compass.yaml
+**/.claude/settings.local.json
 
 ########
 # DIRS #
