@@ -34,7 +34,7 @@ import {
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
-import { RepeatIcon } from "@web/components/Icons/Repeat";
+import { GridEventRepeatIcon } from "./GridEventRepeatIcon";
 
 // Gate the repeat indicator on the event's duration, not its rendered pixel
 // height: a true 15-minute event and one resized down to 15 minutes are laid
@@ -118,9 +118,6 @@ const CalendarTimedEventCardBase = (
   const baseColor = gridColorByPriority[priority];
   const draftColor = darken(baseColor, 18);
   const hoverColor = gridHoverColorByPriority[priority];
-  // Tie the repeat indicator to the event's priority: a darker shade of the
-  // card color complements it on every priority instead of a loud, fixed white.
-  const repeatIconColor = darken(baseColor, 30);
   const selectedBoxShadow = "0 0 0 1px rgba(255,255,255,0.55)";
 
   const bgColor = (() => {
@@ -286,15 +283,7 @@ const CalendarTimedEventCardBase = (
           </>
         )}
       </div>
-      {showRepeatIcon && (
-        <RepeatIcon
-          aria-hidden="true"
-          className="pointer-events-none absolute right-1 bottom-0.5"
-          color={repeatIconColor}
-          size={10}
-          weight="bold"
-        />
-      )}
+      {showRepeatIcon && <GridEventRepeatIcon baseColor={baseColor} />}
     </div>
   );
 };

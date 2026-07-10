@@ -15,14 +15,13 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { darken } from "@web/common/styles/color.utils";
 import {
   gridColorByPriority,
   gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
+import { GridEventRepeatIcon } from "./GridEventRepeatIcon";
 
 const REPEAT_ICON_MIN_WIDTH = 60;
 
@@ -65,9 +64,6 @@ const CalendarAllDayEventCardBase = (
   const isRecurring = isRecurringEvent(event);
   const showRepeatIcon =
     isRecurring && !isPlaceholder && position.width >= REPEAT_ICON_MIN_WIDTH;
-  // Match the timed card: tie the indicator to the event's priority (a darker
-  // shade of the card color) instead of a loud, fixed white.
-  const repeatIconColor = darken(baseColor, 30);
   const hoverBgColor = !isPlaceholder ? hoverColor : baseColor;
 
   const eventStyle = {
@@ -145,15 +141,7 @@ const CalendarAllDayEventCardBase = (
           <SpaceCharacter />
         </span>
       </div>
-      {showRepeatIcon && (
-        <RepeatIcon
-          aria-hidden="true"
-          className="pointer-events-none absolute right-1 bottom-0.5"
-          color={repeatIconColor}
-          size={10}
-          weight="bold"
-        />
-      )}
+      {showRepeatIcon && <GridEventRepeatIcon baseColor={baseColor} />}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
       <div
         aria-hidden="true"
