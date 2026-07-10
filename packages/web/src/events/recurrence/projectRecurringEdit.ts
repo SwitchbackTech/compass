@@ -90,12 +90,15 @@ export function projectRecurringEdit({
     };
   }
 
-  const upserts = affected.map((event) => {
-    const patched = seriesPatch(event, edited);
-    return applyTo === RecurringEventUpdateScope.ALL_EVENTS
-      ? patched
-      : shiftEvent(patched, original, edited);
-  });
+  // Shift every affected instance by the drag's delta so the change renders
+  // optimistically. Both scopes shift by the same delta; they differ only in
+  // which instances are affected (all vs. only those at/after the cutoff),
+  // computed above. Each instance shifts relative to its own time, and the
+  // dragged instance — still at its old time in the cache here — lands on the
+  // edited time because (old + (edited - original)) === edited.
+  const upserts = affected.map((event) =>
+    shiftEvent(seriesPatch(event, edited), original, edited),
+  );
 
   return { removeIds: new Set(), upserts };
 }

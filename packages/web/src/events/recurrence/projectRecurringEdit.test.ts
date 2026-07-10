@@ -3,6 +3,7 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { projectRecurringEdit } from "./projectRecurringEdit";
 import { describe, expect, test } from "bun:test";
 
@@ -32,9 +33,58 @@ describe("projectRecurringEdit", () => {
       { _id: "one", title: "Updated" },
       { _id: "two", title: "Updated" },
     ]);
-    expect(result.upserts.map(({ startDate }) => startDate)).toEqual(
-      events.map(({ startDate }) => startDate),
-    );
+    // A title-only edit has no time delta, so every occurrence keeps its time.
+    expect(
+      result.upserts.map(({ startDate }) => dayjs(startDate).toISOString()),
+    ).toEqual(events.map(({ startDate }) => dayjs(startDate).toISOString()));
+  });
+
+  test("shifts every occurrence when an all-events edit moves the time", () => {
+    const events = [
+      occurrence("one", 1),
+      occurrence("two", 2),
+      occurrence("three", 3),
+    ];
+    // Drag the second instance two hours later (and lengthen it by 30 min).
+    const original = events[1];
+    const edited = {
+      ...original,
+      startDate: "2026-07-02T18:00:00.000Z",
+      endDate: "2026-07-02T19:30:00.000Z",
+    };
+
+    const result = projectRecurringEdit({
+      applyTo: RecurringEventUpdateScope.ALL_EVENTS,
+      edited,
+      original,
+      seriesEvents: events,
+    });
+
+    // Every instance — including ones before the dragged one — moves by the
+    // same delta, so the whole series re-renders at the new time immediately.
+    expect(
+      result.upserts.map(({ _id, startDate, endDate }) => ({
+        _id,
+        startDate,
+        endDate,
+      })),
+    ).toEqual([
+      {
+        _id: "one",
+        startDate: "2026-07-01T18:00:00+00:00",
+        endDate: "2026-07-01T19:30:00+00:00",
+      },
+      {
+        _id: "two",
+        startDate: "2026-07-02T18:00:00+00:00",
+        endDate: "2026-07-02T19:30:00+00:00",
+      },
+      {
+        _id: "three",
+        startDate: "2026-07-03T18:00:00+00:00",
+        endDate: "2026-07-03T19:30:00+00:00",
+      },
+    ]);
   });
 
   test("patches and shifts only the cutoff and future occurrences", () => {
