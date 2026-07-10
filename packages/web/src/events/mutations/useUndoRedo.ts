@@ -7,6 +7,7 @@ import {
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
+import { showRestoredToast } from "@web/common/utils/toast/deleted-toast.util";
 import {
   type EventMutationDependencies,
   useEventMutations,
@@ -94,6 +95,9 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
         replaySnapshot(entry._id, entry.before);
       }
     });
+    // A delete surfaced a "Deleted" toast; if it's still up, flip it to
+    // "Restored" so it can't keep claiming the event is gone.
+    if (isDeleteEntry(entry)) showRestoredToast();
     refocusAfterReplay(entryEventId(entry));
   }, [mutations, replaySnapshot]);
 
