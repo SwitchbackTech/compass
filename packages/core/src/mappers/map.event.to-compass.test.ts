@@ -112,6 +112,39 @@ describe("toCompass", () => {
     });
   });
 
+  describe("title", () => {
+    const baseGEvent: gSchema$Event = {
+      kind: "calendar#event",
+      id: "empty-title-event",
+      status: "confirmed",
+      start: { dateTime: "2025-04-03T07:00:00-05:00", timeZone: "UTC" },
+      end: { dateTime: "2025-04-03T08:00:00-05:00", timeZone: "UTC" },
+    };
+
+    it("maps a titleless Google event to an empty string, not 'untitled'", () => {
+      // Google omits `summary` entirely for events with no title.
+      const cEvent = MapEvent.toCompass("user1", [baseGEvent], Origin.GOOGLE)[0];
+      if (!cEvent) {
+        throw new Error("Failed to map event");
+      }
+
+      expect(cEvent.title).toBe("");
+    });
+
+    it("preserves a Google event's title when present", () => {
+      const cEvent = MapEvent.toCompass(
+        "user1",
+        [{ ...baseGEvent, summary: "Real title" }],
+        Origin.GOOGLE,
+      )[0];
+      if (!cEvent) {
+        throw new Error("Failed to map event");
+      }
+
+      expect(cEvent.title).toBe("Real title");
+    });
+  });
+
   describe("recurrence", () => {
     it("does not include gRecurringEventId for regular events", () => {
       const regularGEvent = timed[0] as gSchema$Event;
