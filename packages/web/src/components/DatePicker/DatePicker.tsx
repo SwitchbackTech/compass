@@ -94,17 +94,11 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       formatWeekDay={(day) => day[0]}
       open={isOpen}
       {...props}
-      onCalendarOpen={() => {
-        datePickerProps.onCalendarOpen?.();
-      }}
-      onCalendarClose={() => {
-        datePickerProps.onCalendarClose?.();
-      }}
+      // Close the picker when the user clicks away (react-datepicker has no
+      // onCalendarClose for outside-clicks). onCalendarOpen/onCalendarClose/
+      // onSelect flow straight through {...props}.
       onClickOutside={() => {
         datePickerProps.onCalendarClose?.();
-      }}
-      onSelect={(date, event: React.SyntheticEvent<Event> | undefined) => {
-        datePickerProps.onSelect?.(date, event);
       }}
       portalId={portalId}
       showPopperArrow={false}
