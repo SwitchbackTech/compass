@@ -445,7 +445,7 @@
 }
 
 @utility c-context-menu-item {
-  @apply flex w-full cursor-pointer appearance-none items-center gap-2 whitespace-nowrap border-0 border-menu-border border-b bg-transparent px-3 py-2.5 text-left text-[14px] text-menu-text select-none last:border-b-0 hover:bg-menu-hover disabled:cursor-wait disabled:opacity-50;
+  @apply flex w-full cursor-pointer appearance-none items-center gap-2 whitespace-nowrap border-0 bg-transparent px-3 py-2.5 text-left text-[14px] text-menu-text select-none hover:bg-(--menu-item-hover) disabled:cursor-wait disabled:opacity-50;
 }
 
 @utility c-not-found {
