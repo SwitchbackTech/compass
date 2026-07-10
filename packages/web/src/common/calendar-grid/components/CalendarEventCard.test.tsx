@@ -137,6 +137,28 @@ describe("CalendarEventCard", () => {
     expect(onParentKeyDown).not.toHaveBeenCalled();
   });
 
+  it("announces recurring timed events", () => {
+    render(
+      <CalendarTimedEventCard
+        displayMode="saved"
+        event={createEvent({
+          recurrence: {
+            eventId: "series-1",
+            rule: ["RRULE:FREQ=WEEKLY"],
+          },
+        })}
+        motionMode="idle"
+        position={position}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Recurring Timed event: Planning block, 9 - 10 AM",
+      }),
+    ).toBeInTheDocument();
+  });
+
   it("renders all-day event details, interaction attributes, acknowledgement animation, and resize handles", () => {
     const onEventMouseDown = mock();
     const onScalerMouseDown = mock();
@@ -211,5 +233,27 @@ describe("CalendarEventCard", () => {
 
     expect(onEventKeyDown).toHaveBeenCalledTimes(1);
     expect(onParentKeyDown).not.toHaveBeenCalled();
+  });
+
+  it("announces recurring all-day events", () => {
+    render(
+      <CalendarAllDayEventCard
+        event={createEvent({
+          isAllDay: true,
+          recurrence: {
+            eventId: "series-1",
+            rule: ["RRULE:FREQ=WEEKLY"],
+          },
+        })}
+        isPlaceholder={false}
+        position={position}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", {
+        name: "Recurring All-day event: Planning block",
+      }),
+    ).toBeInTheDocument();
   });
 });

@@ -33,6 +33,10 @@ import {
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
+import { RepeatIcon } from "@web/components/Icons/Repeat";
+
+const REPEAT_ICON_MIN_HEIGHT = 30;
+const REPEAT_ICON_MIN_WIDTH = 40;
 
 interface CalendarTimedEventCardProps {
   boxShadow?: CSSProperties["boxShadow"];
@@ -81,6 +85,14 @@ const CalendarTimedEventCardBase = (
   const isPlaceholder = displayMode === "placeholder";
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
+  const isRecurring = Boolean(
+    event.recurrence?.eventId || event.recurrence?.rule?.length,
+  );
+  const showRepeatIcon =
+    isRecurring &&
+    !isPlaceholder &&
+    position.height >= REPEAT_ICON_MIN_HEIGHT &&
+    position.width >= REPEAT_ICON_MIN_WIDTH;
 
   const lineClamp = useMemo(
     () => getLineClamp(position.height),
@@ -169,9 +181,10 @@ const CalendarTimedEventCardBase = (
     !event.isAllDay && event.startDate && event.endDate
       ? getTimesLabel(event.startDate, event.endDate)
       : null;
+  const eventKind = isRecurring ? "Recurring" : undefined;
   const accessibleLabel = event.isAllDay
-    ? `All-day event: ${eventTitle}`
-    : `Timed event: ${eventTitle}, ${timeRange ?? "time not set"}`;
+    ? `${eventKind ? `${eventKind} ` : ""}All-day event: ${eventTitle}`
+    : `${eventKind ? `${eventKind} ` : ""}Timed event: ${eventTitle}, ${timeRange ?? "time not set"}`;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
@@ -261,6 +274,14 @@ const CalendarTimedEventCardBase = (
           </>
         )}
       </div>
+      {showRepeatIcon && (
+        <RepeatIcon
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-0.5 left-1 text-fg-primary"
+          size={10}
+          weight="bold"
+        />
+      )}
     </div>
   );
 };

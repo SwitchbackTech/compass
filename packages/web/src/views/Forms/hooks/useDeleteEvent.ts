@@ -36,7 +36,13 @@ export function useDeleteEvent(_id: string) {
   const { delete: deleteEventMutation } = useEventMutations();
 
   const deleteEvent = useCallback(
-    () => deleteEventAndDiscardDraft(deleteEventMutation, existingEvent),
+    (
+      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
+    ) => {
+      if (!existingEvent?._id) return;
+      deleteEventMutation({ _id: existingEvent._id, applyTo });
+      draftActions.discard();
+    },
     [deleteEventMutation, existingEvent],
   );
 

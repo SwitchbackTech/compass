@@ -2,6 +2,7 @@ import { type QueryClient, type QueryKey } from "@tanstack/react-query";
 import { type Origin } from "@core/constants/core.constants";
 import { type Payload_Order, type Schema_Event } from "@core/types/event.types";
 import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
+import { type RecurringEditProjection } from "@web/events/recurrence/projectRecurringEdit";
 import { eventQueryKeys } from "./event.query.keys";
 import { eventMatchesRange } from "./event.query.normalize";
 import {
@@ -11,7 +12,7 @@ import {
   type EventQueryScope,
 } from "./event.query.types";
 
-type EventQueryEntry = {
+export type EventQueryEntry = {
   queryKey: EventQueryKey;
   data: EventQueryData;
   scope: EventQueryScope;
@@ -72,6 +73,21 @@ export function findEventInCache(
     if (event) return event;
   }
   return null;
+}
+
+export function findSeriesEventsInCache(
+  queryClient: QueryClient,
+  seriesId: string,
+  source?: EventRepositorySource,
+): Schema_Event[] {
+  const events = new Map<string, Schema_Event>();
+  for (const { data } of getEventQueryEntries(queryClient, { source })) {
+    for (const id of data.ids) {
+      const event = data.entities[id];
+      if (event?.recurrence?.eventId === seriesId) events.set(id, event);
+    }
+  }
+  return [...events.values()];
 }
 
 /**
@@ -157,6 +173,36 @@ export function upsertEventAcrossQueries(
         ids: current.ids.filter((entryId) => entryId !== id),
         entities,
       };
+    });
+  }
+}
+
+export function applyEventProjectionAcrossQueries(
+  queryClient: QueryClient,
+  projection: RecurringEditProjection,
+  source: EventRepositorySource,
+) {
+  for (const entry of getEventQueryEntries(queryClient, { source })) {
+    queryClient.setQueryData<EventQueryData>(entry.queryKey, (current) => {
+      if (!current) return current;
+      const entities = { ...current.entities };
+      let ids = current.ids.filter((id) => !projection.removeIds.has(id));
+      for (const id of projection.removeIds) delete entities[id];
+
+      for (const event of projection.upserts) {
+        const id = event._id;
+        if (!id) continue;
+        const belongs = eventBelongsToEntry(event, entry, source);
+        if (!belongs) {
+          ids = ids.filter((entryId) => entryId !== id);
+          delete entities[id];
+          continue;
+        }
+        if (!ids.includes(id)) ids.push(id);
+        entities[id] = entities[id] ? { ...entities[id], ...event } : event;
+      }
+
+      return { ...current, ids, entities };
     });
   }
 }

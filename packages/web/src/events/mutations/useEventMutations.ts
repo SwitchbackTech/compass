@@ -17,14 +17,17 @@ import {
   type Payload_EditEvent,
 } from "@web/events/event.types";
 import {
+  applyEventProjectionAcrossQueries,
   eventBelongsToEntry,
   findEventInCache,
+  findSeriesEventsInCache,
   insertEventIntoQueries,
   removeEventFromQueries,
   reorderSomedayEventsInQueries,
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
+import { projectRecurringEdit } from "@web/events/recurrence/projectRecurringEdit";
 import {
   type EventMutationOperation,
   eventMutationKeys,
@@ -183,17 +186,45 @@ export function useEventMutations(
       "edit",
       async (variables) => {
         const { _id, event, applyTo } = variables;
+        const seriesScope =
+          applyTo === RecurringEventUpdateScope.ALL_EVENTS ||
+          applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS;
+        const writeKey =
+          seriesScope && event.recurrence?.eventId
+            ? event.recurrence.eventId
+            : _id;
         await writeAfterPreceding(
-          _id,
+          writeKey,
           variables,
           precedingCreateOk,
           () => repository.edit(_id, event, { applyTo }),
           { coalesce: true },
         );
       },
-      ({ _id, event, shouldRemove }) => {
+      ({ _id, event, shouldRemove, applyTo }) => {
         if (shouldRemove) {
           removeEventFromQueries(queryClient, _id, { source });
+          return;
+        }
+        const edited = { ...event, _id };
+        const original = findEventInCache(queryClient, _id, source);
+        const seriesId = original?.recurrence?.eventId;
+        const scope = applyTo ?? RecurringEventUpdateScope.THIS_EVENT;
+        if (original && seriesId) {
+          applyEventProjectionAcrossQueries(
+            queryClient,
+            projectRecurringEdit({
+              applyTo: scope,
+              edited,
+              original,
+              seriesEvents: findSeriesEventsInCache(
+                queryClient,
+                seriesId,
+                source,
+              ),
+            }),
+            source,
+          );
           return;
         }
         // Upsert (not patch) so an event edited/dragged into a currently-cached
@@ -201,8 +232,8 @@ export function useEventMutations(
         // one dragged out of a range is removed from it.
         upsertEventAcrossQueries(
           queryClient,
-          { ...event, _id },
-          (entry) => eventBelongsToEntry({ ...event, _id }, entry, source),
+          edited,
+          (entry) => eventBelongsToEntry(edited, entry, source),
           { source },
         );
       },
