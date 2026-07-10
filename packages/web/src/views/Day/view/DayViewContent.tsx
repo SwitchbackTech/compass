@@ -8,9 +8,9 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
-import { CollapsiblePanel } from "@web/components/CollapsiblePanel/CollapsiblePanel";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
+import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import {
   selectIsSidebarOpen,
@@ -42,7 +42,6 @@ import {
   focusOnFirstTask,
 } from "@web/views/Day/util/day.shortcut.util";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
-import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
 
 export const DayViewContent = memo(() => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
@@ -197,7 +196,7 @@ export const DayViewContent = memo(() => {
       />
       <Dedication />
 
-      <CollapsiblePanel isOpen={isSidebarOpen} width={SIDEBAR_OPEN_WIDTH}>
+      <ResizableSidebarPanel isOpen={isSidebarOpen}>
         <PlannerSidebar
           calendarDate={dateInView}
           isShortcutsOpen={isShortcutsOpen}
@@ -211,7 +210,7 @@ export const DayViewContent = memo(() => {
           viewEnd={plannerViewEnd}
           viewStart={plannerViewStart}
         />
-      </CollapsiblePanel>
+      </ResizableSidebarPanel>
 
       <div
         id={ID_MAIN}
