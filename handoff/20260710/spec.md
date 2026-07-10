@@ -22,7 +22,7 @@ Allow the sidebar to be adjusted via click and drag and also by tabbing focus an
 
 Close the issue when you're done.
 
-## [ ] fix(web): allow user to click once to select date in all-day form
+## [x] fix(web): allow user to click once to select date in all-day form
 
 problem: currently the user has to click twice before a date is selected
 
@@ -35,7 +35,7 @@ solution: allow the user to select a date with just one click
 
 cleanup: after you've fixed the bug and protected regressions with test(s), use this as an opportunity to cleanup the datepicker code. I'm confident there are other bugs or ineffeciencies in the code lurking.
 
-## [ ] style(web): adjust a repeat icon
+## [x] style(web): adjust a repeat icon
 
 context: PR #1993 added a repeat icon to the bottom left of repeat events.
 
@@ -51,7 +51,7 @@ context: PR #1993 added a repeat icon to the bottom left of repeat events.
 
 ----
 
-## [ ] style(web): adjust sidebar datepicker styles
+## [x] style(web): adjust sidebar datepicker styles
 
 problem 1: the arrows on the date picker change position across months, resulting in the user deadclicking when navigating.
 
@@ -62,7 +62,7 @@ problem 2: when the user expands the sidebar, the month picker's expands proport
 - solution: reduce the datepicker's max width. once it exceeds it, just keep it centered and let there be empty space around it.
 - see datepicker-solution-padding.png
 
-## [ ] style(forms): standardize event form width
+## [x] style(forms): standardize event form width
 
 context: PR 1985 consolidated some form styling, but the someday and grid event forms still have different widths.
 
@@ -73,7 +73,7 @@ solution: use the current event form's width as the standard. use that width for
 use this as another opportunity to simplify and clean up our form code. goal is to decouple the form handling basics from the styling and the content. long term, we should be able to pass an arbitrary component to the form component and know that a lof othe for <form>
  semantics and padding will "just work." I'm tentatively planning to move the form to the sidebar rather than leaving it as a floating item, so this preliminary cleanup will help that future effort.
 
-## [ ] fix(web): repeat icon on 15-min events
+## [x] fix(web): repeat icon on 15-min events
 
 problem 1: some repeat events that are 15-min in length do not have a visible repeat icon
 
@@ -145,3 +145,29 @@ goal: whenever a user makes a change to a recurring event as a draft, the full e
 solution: we need a better mechanism to quickly preview and discard and adjust drafts for recurring events
 
 - we cannot rely on waiting for the API to respond before rendering the event
+
+----
+
+## [x] fix(web): context menu color is always white
+
+problem: the context menu color is always white
+
+- this is inconsistent with how we adjust the form's color based on the priority
+- adjust the context menu color based on the priority
+
+## [x] feat(backed): change log level for health checks
+
+problem: when tailing the logs in staging/prod, the healthchecks are very noisey
+solution: preserve the healthcheck functionality and the ability to see the requests in the logs...but also provide a way to tail logs without seeing them
+
+- admins like me should be able to tail the logs without sifting through the healthchecks constantly
+- its ok to run a different command for this purpose
+- we could change the log level for healthcheckcs to debug
+- healthchecks should be debug level and not show up by default
+
+## [x] fix(web): toast responds to undo
+
+problem: when the user undoes a change via meta+z, the old tooltip still shows
+solution: if the user restores before a tooltip disappears, change the text
+
+- for example, if a user deleted an event, the 'Deleted' text appears. But if the user then restores the event, the restore works...but the tooltips still says deleted
