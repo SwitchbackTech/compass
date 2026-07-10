@@ -31,4 +31,16 @@ describe("MapCalendar.gcalToCompass", () => {
       }),
     );
   });
+
+  it("uses stable colors when google omits them", () => {
+    const googleCalendar = createMockCalendarListEntry({
+      backgroundColor: undefined,
+      foregroundColor: undefined,
+    });
+
+    const result = MapCalendar.gcalToCompass(new ObjectId(), googleCalendar);
+
+    expect(result.backgroundColor).toBe("#9e9e9e");
+    expect(result.color).toBe("#000000");
+  });
 });

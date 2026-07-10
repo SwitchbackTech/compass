@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import ReactSelect from "react-select";
-import { brighten, darken } from "@core/util/color.utils";
+import { brighten, darken } from "@web/common/styles/color.utils";
 import { theme } from "@web/common/styles/theme";
 import {
   FREQUENCY_MAP,
