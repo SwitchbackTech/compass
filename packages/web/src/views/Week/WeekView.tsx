@@ -2,11 +2,11 @@ import { useCallback, useMemo } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
-import { CollapsiblePanel } from "@web/components/CollapsiblePanel/CollapsiblePanel";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
 import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
+import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
 import { SomedayInteractionCoordinator } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/SomedayInteractionCoordinator";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { draftActions } from "@web/events/stores/draft.store";
@@ -34,7 +34,6 @@ import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { useWeekCmdTasks } from "@web/views/Week/hooks/useWeekCmdTasks";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
-import { SIDEBAR_OPEN_WIDTH } from "@web/views/Week/layout.constants";
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
@@ -137,10 +136,7 @@ export const WeekView = () => {
             <Shortcuts shortcutsProps={shortcutProps}>
               <ContextMenuWrapper id="sidebar-context-menu">
                 <Draft measurements={measurements} weekProps={weekProps} />
-                <CollapsiblePanel
-                  isOpen={isSidebarOpen}
-                  width={SIDEBAR_OPEN_WIDTH}
-                >
+                <ResizableSidebarPanel isOpen={isSidebarOpen}>
                   <PlannerSidebar
                     calendarDate={calendarDate}
                     isShortcutsOpen={isShortcutsOpen}
@@ -153,7 +149,7 @@ export const WeekView = () => {
                     viewEnd={weekProps.component.endOfView}
                     viewStart={weekProps.component.startOfView}
                   />
-                </CollapsiblePanel>
+                </ResizableSidebarPanel>
               </ContextMenuWrapper>
               <div
                 id={ID_MAIN}
