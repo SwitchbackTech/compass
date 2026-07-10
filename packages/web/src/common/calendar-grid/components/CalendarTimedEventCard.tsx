@@ -108,6 +108,9 @@ const CalendarTimedEventCardBase = (
   const baseColor = gridColorByPriority[priority];
   const draftColor = darken(baseColor, 18);
   const hoverColor = gridHoverColorByPriority[priority];
+  // Tie the repeat indicator to the event's priority: a darker shade of the
+  // card color complements it on every priority instead of a loud, fixed white.
+  const repeatIconColor = darken(baseColor, 30);
   const selectedBoxShadow = "0 0 0 1px rgba(255,255,255,0.55)";
 
   const bgColor = (() => {
@@ -276,7 +279,8 @@ const CalendarTimedEventCardBase = (
       {showRepeatIcon && (
         <RepeatIcon
           aria-hidden="true"
-          className="pointer-events-none absolute bottom-0.5 left-1 text-fg-primary"
+          className="pointer-events-none absolute right-1 bottom-0.5"
+          color={repeatIconColor}
           size={10}
           weight="bold"
         />

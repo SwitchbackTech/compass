@@ -159,6 +159,44 @@ describe("CalendarEventCard", () => {
     ).toBeInTheDocument();
   });
 
+  it("places the repeat indicator bottom-right and colors it by priority", () => {
+    const renderRecurring = (priority: Priorities) =>
+      render(
+        <CalendarTimedEventCard
+          displayMode="saved"
+          event={createEvent({
+            priority,
+            recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=WEEKLY"] },
+          })}
+          motionMode="idle"
+          position={position}
+        />,
+      );
+
+    const { container: workContainer, unmount } = renderRecurring(
+      Priorities.WORK,
+    );
+    const workIcon = workContainer.querySelector('svg[class*="right-1"]');
+
+    // Positioned bottom-right (not the old bottom-left), and no longer the
+    // hardcoded white fg color.
+    expect(workIcon).not.toBeNull();
+    const workClass = workIcon?.getAttribute("class") ?? "";
+    expect(workClass).not.toContain("left-1");
+    expect(workClass).not.toContain("fg-primary");
+    const workMarkup = workIcon?.outerHTML;
+    unmount();
+
+    // A different priority yields a different (priority-derived) icon color.
+    const { container: relationsContainer } = renderRecurring(
+      Priorities.RELATIONS,
+    );
+    const relationsIcon = relationsContainer.querySelector(
+      'svg[class*="right-1"]',
+    );
+    expect(relationsIcon?.outerHTML).not.toBe(workMarkup);
+  });
+
   it("renders all-day event details, interaction attributes, acknowledgement animation, and resize handles", () => {
     const onEventMouseDown = mock();
     const onScalerMouseDown = mock();
