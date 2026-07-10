@@ -66,6 +66,22 @@ export const useDraftConfirmation = ({
 
   const [finalDraft, setFinalDraft] = useState<Schema_GridEvent | null>(null);
 
+  const [standaloneDraft, setStandaloneDraft] =
+    useState<Schema_GridEvent | null>(null);
+
+  const onConfirmConvertToStandalone = useCallback(() => {
+    if (standaloneDraft) {
+      submit(standaloneDraft, RecurringEventUpdateScope.ALL_EVENTS);
+      discard();
+    }
+
+    setStandaloneDraft(null);
+  }, [standaloneDraft, submit, discard]);
+
+  const onCancelConvertToStandalone = useCallback(() => {
+    setStandaloneDraft(null);
+  }, []);
+
   const onUpdateScopeChange = useCallback(
     (applyTo: RecurringEventUpdateScope) => {
       if (finalDraft) {
@@ -112,12 +128,10 @@ export const useDraftConfirmation = ({
 
         return setRecurrenceUpdateScopeDialogOpen(true);
       } else if (toStandAlone) {
-        // show delete confirmation
-        const confirmed = window.confirm(
-          `Convert ${_draft.title || "this event"} to standalone event?`,
-        );
-
-        if (!confirmed) return;
+        // Ask the user to confirm detaching this instance from its series.
+        // The confirm dialog resolves asynchronously via
+        // onConfirmConvertToStandalone, so stash the draft and stop here.
+        return setStandaloneDraft(_draft);
       }
 
       submit(_draft, applyTo);
@@ -148,8 +162,11 @@ export const useDraftConfirmation = ({
     setRecurrenceUpdateScopeDialogOpen,
     draft,
     finalDraft,
+    standaloneDraft,
     onSubmit,
     onDelete,
     onUpdateScopeChange,
+    onConfirmConvertToStandalone,
+    onCancelConvertToStandalone,
   };
 };

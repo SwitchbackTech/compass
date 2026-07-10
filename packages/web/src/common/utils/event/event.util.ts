@@ -21,6 +21,7 @@ import {
   type WithId,
 } from "@web/common/types/web.event.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 
 export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
   isOverlapping: false,
@@ -211,11 +212,13 @@ export const handleError = (error: Error) => {
   console.error(error);
 
   if (code === Status.INTERNAL_SERVER) {
-    alert("Something went wrong behind the scenes. Please try again later.");
+    showErrorToast(
+      "Something went wrong behind the scenes. Please try again later.",
+    );
     return;
   }
 
-  alert(error);
+  showErrorToast(error.message);
 };
 
 export const isEventInRange = (

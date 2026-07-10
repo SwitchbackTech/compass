@@ -7,25 +7,14 @@ import {
   isEventInRange,
   refocusEventElement,
 } from "@web/common/utils/event/event.util";
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-  spyOn,
-} from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
 const { handleError } = await import("@web/common/utils/event/event.util");
 
 describe("handleError", () => {
-  const alertMock = mock();
   let consoleErrorSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
-    global.alert = alertMock as typeof global.alert;
-    alertMock.mockClear();
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
   });
 
@@ -33,28 +22,34 @@ describe("handleError", () => {
     consoleErrorSpy.mockRestore();
   });
 
-  it("does not log or alert backend-unavailable errors", () => {
+  // handleError now surfaces a toast (showErrorToast) instead of a native
+  // alert(). We assert on console.error rather than the toast: showErrorToast
+  // is import-bound to react-toastify, which several sibling suites replace
+  // process-wide via `mock.module`, so spying on the toast singleton is
+  // order-fragile. console.error is a call-time global — a stable seam that
+  // cleanly distinguishes "handled/notified" from "silently ignored", since
+  // handleError logs immediately before it notifies.
+
+  it("does not log backend-unavailable errors", () => {
     const error = new Error("Request failed");
     error.name = "ApiError";
 
     handleError(error);
 
     expect(consoleErrorSpy).not.toHaveBeenCalled();
-    expect(alertMock).not.toHaveBeenCalled();
   });
 
-  it("alerts exactly once and does not reload on a server error", () => {
+  it("logs once and does not reload on a server error", () => {
     const error = new Error("Request failed with status 500");
     error.name = "ApiError";
 
     handleError(error);
 
     // No reload: the mutation layer reconciles the cache after failures, and
-    // a reload would wipe every live optimistic update.
-    expect(alertMock).toHaveBeenCalledTimes(1);
-    expect(alertMock).toHaveBeenCalledWith(
-      "Something went wrong behind the scenes. Please try again later.",
-    );
+    // a reload would wipe every live optimistic update. console.error firing
+    // proves handleError reached the notify path (rather than early-returning).
+    expect(consoleErrorSpy).toHaveBeenCalledTimes(1);
+    expect(consoleErrorSpy).toHaveBeenCalledWith(error);
   });
 });
 

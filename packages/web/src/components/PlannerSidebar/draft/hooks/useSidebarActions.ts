@@ -29,6 +29,7 @@ import {
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { showMigrationToast } from "@web/components/PlannerSidebar/draft/hooks/MigrationToast";
 import {
   type Setters_Sidebar,
@@ -545,12 +546,12 @@ export const useSidebarActions = (
     }
 
     if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      showErrorToast(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
 
     if (category === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
-      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      showErrorToast(SOMEDAY_MONTH_LIMIT_MSG);
       return;
     }
 
@@ -662,12 +663,12 @@ export const useSidebarActions = (
       baseEvents.columns[destination.droppableId as keyof SomedayEventsColumns];
 
     if (destColumn.id === COLUMN_WEEK && isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      showErrorToast(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
 
     if (destColumn.id === COLUMN_MONTH && isAtMonthlyLimit) {
-      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      showErrorToast(SOMEDAY_MONTH_LIMIT_MSG);
       return;
     }
 

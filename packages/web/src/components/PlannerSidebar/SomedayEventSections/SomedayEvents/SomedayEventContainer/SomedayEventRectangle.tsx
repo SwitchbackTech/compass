@@ -5,6 +5,7 @@ import {
   DotsSixVertical,
 } from "@phosphor-icons/react";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
 
@@ -97,7 +98,7 @@ export const SomedayEventRectangle = ({
               className={ACTION_BUTTON_CLASS_NAME}
               onClick={(e) => {
                 e.stopPropagation();
-                alert("Can't migrate recurring events");
+                showErrorToast("Can't migrate recurring events");
               }}
               title="Can't migrate recurring events"
               type="button"

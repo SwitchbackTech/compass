@@ -12,7 +12,10 @@ import {
   assignLocation,
   reloadLocation,
 } from "../../utils/browser/browser-navigation.util";
-import { showSessionExpiredToast } from "../../utils/toast/error-toast.util";
+import {
+  showErrorToast,
+  showSessionExpiredToast,
+} from "../../utils/toast/error-toast.util";
 import {
   type ApiError,
   type ApiRequestConfig,
@@ -78,7 +81,7 @@ export const signOut = async (status: SignoutStatus) => {
   if (status === Status.UNAUTHORIZED) {
     showSessionExpiredToast();
   } else {
-    alert("Login required, cuz security 😇");
+    showErrorToast("Login required, cuz security 😇");
   }
 
   await session.signOut();

@@ -11,6 +11,7 @@ import {
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
 import { createSomedayDraft } from "@web/common/utils/draft/someday.draft.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
@@ -46,11 +47,11 @@ export const useWeekCmdTasks = ({
     category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
   ) => {
     if (category === Categories_Event.SOMEDAY_WEEK && isAtWeeklyLimit) {
-      alert(SOMEDAY_WEEK_LIMIT_MSG);
+      showErrorToast(SOMEDAY_WEEK_LIMIT_MSG);
       return;
     }
     if (category === Categories_Event.SOMEDAY_MONTH && isAtMonthlyLimit) {
-      alert(SOMEDAY_MONTH_LIMIT_MSG);
+      showErrorToast(SOMEDAY_MONTH_LIMIT_MSG);
       return;
     }
 
