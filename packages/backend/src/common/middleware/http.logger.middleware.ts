@@ -3,6 +3,11 @@ import { styleText } from "node:util";
 
 type HttpLogColor = "cyanBright" | "yellow" | "red" | "magentaBright";
 
+// The load balancer / Docker health check hits this every ~10s, which floods
+// the logs when tailing staging/prod. We log it at debug level so it stays out
+// of the default (info) tail; set LOG_LEVEL=debug to see health checks again.
+const HEALTH_CHECK_PATH = "/api/health";
+
 const getStatusColor = (status: string): HttpLogColor => {
   switch (status[0]) {
     case "1":
@@ -31,6 +36,9 @@ export const httpLoggingMiddleware: RequestHandler = (req, res, next) => {
     const statusColor = getStatusColor(status);
     const method = req.method || "unknown";
     const url = req.originalUrl || req.url || "unknown";
+
+    const isHealthCheck = url.split("?")[0] === HEALTH_CHECK_PATH;
+    if (isHealthCheck && process.env["LOG_LEVEL"] !== "debug") return;
 
     console.log(
       [

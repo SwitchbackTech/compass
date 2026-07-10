@@ -26,6 +26,10 @@ services:
     image: switchbacktech/compass-backend:${COMPASS_VERSION:-latest}
     environment:
       COMPASS_CONFIG_FILE: /app/compass.yaml
+      # Default to info so health-check requests stay out of the tail. Reveal
+      # them with `LOG_LEVEL=debug docker compose up -d backend`. A logLevel in
+      # compass.yaml takes precedence over this default.
+      LOG_LEVEL: ${LOG_LEVEL:-info}
     ports:
       - *backend-port
     read_only: true
