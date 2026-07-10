@@ -116,10 +116,12 @@ const renderGridDraft = ({
   activeAllDayDraftEvent = null,
   deckLayout = null,
   draft = createDraft(),
+  recurringPreviews = [],
 }: {
   activeAllDayDraftEvent?: Schema_GridEvent | null;
   deckLayout?: { groupSize: number; order: number } | null;
   draft?: Schema_GridEvent;
+  recurringPreviews?: Schema_GridEvent[];
 } = {}) => {
   const repositionDraftByKeyboard = mock(() => true);
   const onSubmit = mock();
@@ -160,6 +162,7 @@ const renderGridDraft = ({
           hourHeight: 48,
           mainGrid: null,
         }}
+        recurringPreviews={recurringPreviews}
         weekProps={createWeekProps()}
       />
     </DraftContext.Provider>,
@@ -248,6 +251,28 @@ describe("GridDraft keyboard focus", () => {
 
     expect(draftBlock.style.width).toBe(`${CALENDAR_DECK_MIN_WIDTH}px`);
     expect(Number(draftBlock.style.zIndex)).toBe(deckLayout.order + 1);
+  });
+
+  it("renders a read-only card for each recurring preview occurrence", () => {
+    renderGridDraft({
+      recurringPreviews: [
+        createDraft({
+          _id: undefined,
+          endDate: "2026-05-27T15:00:00.000Z",
+          startDate: "2026-05-27T14:00:00.000Z",
+        }),
+        createDraft({
+          _id: undefined,
+          endDate: "2026-05-28T15:00:00.000Z",
+          startDate: "2026-05-28T14:00:00.000Z",
+        }),
+      ],
+    });
+
+    // The interactive draft plus one card per preview occurrence.
+    expect(
+      screen.getAllByRole("button", { name: /Timed event: Planning/ }),
+    ).toHaveLength(3);
   });
 
   it("submits the draft from title Enter without focusing the draft block", async () => {

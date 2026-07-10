@@ -13,6 +13,7 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { useDraftContext } from "./context/useDraftContext";
 import { getActiveTimedDraftDeckLayout } from "./grid/activeTimedDraftDeckLayout";
 import { GridDraft } from "./grid/GridDraft";
+import { getRecurringDraftPreviews } from "./grid/getRecurringDraftPreviews";
 import { useGridMouseMove } from "./grid/hooks/useGridMouseMove";
 import { useGridMouseUp } from "./grid/hooks/useGridMouseUp";
 
@@ -44,6 +45,15 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
     () => getActiveTimedDraftDeckLayout(draft, timedEvents),
     [draft, timedEvents],
   );
+  const recurringPreviews = useMemo(
+    () =>
+      getRecurringDraftPreviews(
+        draft,
+        weekProps.component.startOfView,
+        weekProps.component.endOfView,
+      ),
+    [draft, weekProps.component.startOfView, weekProps.component.endOfView],
+  );
 
   if (draft?.isAllDay === undefined) {
     return null;
@@ -62,6 +72,7 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
         activeAllDayDraftEvent={activeAllDayDraftEvent}
         deckLayout={deckLayout}
         measurements={measurements}
+        recurringPreviews={recurringPreviews}
         weekProps={weekProps}
       />
     ),

@@ -19,6 +19,7 @@ interface Props {
   activeAllDayDraftEvent?: Schema_GridEvent | null;
   deckLayout?: CalendarTimedDeckLayout | null;
   measurements: Measurements_Grid;
+  recurringPreviews?: readonly Schema_GridEvent[];
   weekProps: WeekProps;
 }
 
@@ -28,6 +29,7 @@ export const GridDraft: FC<Props> = ({
   activeAllDayDraftEvent = null,
   deckLayout = null,
   measurements,
+  recurringPreviews = [],
   weekProps,
 }) => {
   const titleInputRef = useRef<HTMLInputElement>(null);
@@ -83,6 +85,19 @@ export const GridDraft: FC<Props> = ({
 
   return (
     <>
+      {/* Read-only previews of the other recurrence occurrences in view. They
+          take no handlers, so CalendarTimedEventCard swallows clicks — only the
+          canonical draft below is interactive. */}
+      {recurringPreviews.map((preview) => (
+        <GridEvent
+          displayMode="draft"
+          event={preview}
+          key={`draft-preview-${preview.startDate}`}
+          measurements={measurements}
+          weekProps={weekProps}
+        />
+      ))}
+
       {draft.isAllDay ? (
         <AllDayEventMemo
           event={allDayDraftEvent}
