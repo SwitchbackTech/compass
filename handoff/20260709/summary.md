@@ -75,6 +75,7 @@ real port (9085, from `dev:ports`) — kept LOCAL/uncommitted (the launch.json�
 sync remains PO follow-up #2, its own task).
 
 ## Item 1 — fix(web): align logout dialog + drop stale keycap — PR #1981 (CI running)
+
 - OverlayPanel gets opt-in `align` props (default center/end → every other consumer byte-identical).
   Logout dialog opts into left-align; buttons reordered Log out → Cancel; removed `shortcut:"z"`.
 - Verified: 20 web tests pass, type-check pass, biome clean, local preview no console errors,
@@ -83,9 +84,10 @@ sync remains PO follow-up #2, its own task).
   "Cancel"). Kept intentionally (a11y: don't desync SR order from visual). Flagged in PR for PO.
 - Authed logout-dialog visual deferred to staging (anon/temp session doesn't expose Log Out).
 
-## Item 1 — MERGED (#1981). Release pipeline green: staging deploy + health check passed.
+## Item 1 — MERGED (#1981). Release pipeline green: staging deploy + health check passed
 
 ## Item 2 — fix(web): humanize user-facing copy — MERGED (#1982)
+
 - Rewrote developer-jargon copy across loaders/toasts/errors (auth spinner → "Just finishing up …";
   de-jargoned quota/version/backend/session-expiry) while keeping every actionable instruction.
 - 9 source + 6 test files (delegated the mechanical apply to a Sonnet subagent with an exact
@@ -94,19 +96,22 @@ sync remains PO follow-up #2, its own task).
   render + assert the exact text).
 
 ## Item 4 — style(week): now line only on current day's column — PR #1983 (CI running)
+
 - CalendarNowLine positioned via left/width from today's column index + count; existing off-week
   guard kept (now `todayColumnIndex >= 0`). Day view unchanged (single column).
 - Browser-verified on port 9085: Week current-week → line only under Thu (left 57.14%, width 14.28%);
   Day → full single column; next week → now-line element absent. type-check clean.
 
 ## Observation for item 3 (nudge)
+
 - During QA, console shows pre-existing React warning "Encountered two children with the same key"
   firing on Shift+Arrow nudges → rapid nudges transiently duplicate an event `_id` in a keyed list.
   Strong lead for the item-3 lag/replay root cause; investigate there.
 
-## Item 4 — MERGED (#1983). Release pipeline green (staging deploy + health check passed).
+## Item 4 — MERGED (#1983). Release pipeline green (staging deploy + health check passed)
 
 ## Item 3 — fix(web): coalesce rapid event edits into a single write — MERGED (#1984)
+
 - Root cause: each keystroke fired an optimistic write + a network PUT; PUTs serialize per-event
   (write-conflict avoidance) with no coalescing → burst drains one-at-a-time after the user stops
   (the lag + "replay").
@@ -123,6 +128,7 @@ sync remains PO follow-up #2, its own task).
   (optimistic churn) — console-only, out of scope for this focused change.
 
 ## Item 5 — style(forms): extract a shared EventFormShell — PR #1985 (CI running)
+
 - Both forms hand-rolled the same outer <form> styling; extracted to content-agnostic EventFormShell
   (packages/web/src/views/Forms/EventFormShell.tsx). Someday keeps its larger text via a text-xl
   className the shell merges → visually identical. Floating wrappers left per-form (out of scope).
@@ -131,6 +137,7 @@ sync remains PO follow-up #2, its own task).
 - Net reduction in duplication; removed 3 now-dead imports.
 
 ## Decisions (this run)
+
 - Item 1: mount-focus now lands on "Log out" (DOM==visual order); kept for a11y (don't desync SR
   from visual). Flagged in PR for PO.
 - Item 3: chose queue-coalescing over call-site debounce (simpler, PO's #1 priority). Documented.
@@ -139,12 +146,14 @@ sync remains PO follow-up #2, its own task).
   preview; LOCAL/uncommitted. The launch.json↔dev:ports sync is still the real fix (PO follow-up #2).
 
 ## PO follow-ups (this run)
+
 1. Item 1: OK that logout dialog initial focus is "Log out" (vs "Cancel")? (a11y trade-off, flagged in PR)
 2. Item 3: pre-existing duplicate-key React warning during nudges — chip spawned (task_77953d99).
 3. Item 5: unify the two forms' text size, or keep someday larger? (kept larger)
 4. Still open from earlier: launch.json↔dev:ports port sync (#1963 gap) blocks parallel-worktree local QA.
 
 ## Wind-down (all 5 items complete)
+
 - ALL FIVE spec items shipped, CI-green, squash-merged to main, and deployed to staging:
   #1981 (logout dialog) · #1982 (copy) · #1983 (now line) · #1984 (nudge coalescing) · #1985 (form shell).
   Items 1–4 release pipelines confirmed green (staging deploy + health check). Item 5 release deploying.
@@ -155,9 +164,74 @@ sync remains PO follow-up #2, its own task).
   and couples two intentionally-different cache queries). No cleanup PR (an empty one would be noise).
 
 ## Next step (for tomorrow / if resumed)
+
 - Nothing outstanding on today's spec — all 5 done. Confirm item-5's staging deploy went green (release
   run was mid-deploy at wind-down).
 - Address the 4 PO follow-ups above (esp. #2 duplicate-key chip task_77953d99 and #4 launch.json↔dev:ports).
 
 ## Token spend
+
 - TODO: record `/usage` figure (not accessible from this non-interactive session).
+
+---
+
+# Item 6 (new handoff) — feat: allow events to have empty title (#1871)
+
+PO approved the plan (leave existing "untitled" events; empty = fully blank block, keep a11y label).
+
+## What shipped
+
+- **Root cause:** `gEventDefaults.summary = "untitled"` in `packages/core/src/mappers/map.event.ts`
+  — Google omits `summary` for titleless events, so the default landed in `title`.
+- **Change 1** `map.event.ts:169`: default `summary` `"untitled"` → `""`.
+- **Change 2** `event_new.types.ts:49`: `title` `StringV4Schema` (nonempty, shared) → its own `z.string()`
+  so the v4 schema / its Mongo validator won't reject `""` if that collection goes live.
+- **Tests:** added two `toCompass > title` cases (absent summary → `""`; real summary preserved).
+- **No frontend changes:** cards already render blank for empty titles ("Untitled event" is aria-label
+  only — matches PO's choice); forms + web schemas already accept empty. Outbound is a PUT, so an
+  omitted summary clears the title in Google (desired round-trip) — left as-is.
+
+## Validation
+
+- `bun run test:core` → **147 pass, 0 fail** (incl. new title cases).
+- `bun run type-check` → **clean**.
+- Backend/web jest could NOT run locally: pre-existing stale worktree
+  `<mainRepo>/.worktrees/refactor-unify-floating-event-forms/` duplicates `packages/web/__mocks__/*`,
+  crashing jest's haste-map (0 tests run, all suites). Unrelated to this change; CI runs clean.
+  → Relying on CI for backend/web suites (the always-on gate).
+
+## Decisions (this item)
+
+- No inbound "untitled"/"(No title)" normalization (PO: leave existing events).
+- Gave `title` its own `z.string()` rather than relaxing the shared `StringV4Schema` (keeps gEventId,
+  rrule, etc. strict).
+
+## Backlog rec (not a PO decision — FYI)
+
+- Stale nested worktree `.worktrees/refactor-unify-floating-event-forms/` in the MAIN checkout blocks
+  local backend/web jest (haste-map duplicate-mock collision). Either `git worktree remove` it once its
+  branch is merged/abandoned, or add `.worktrees` to jest `modulePathIgnorePatterns`. Not touched here
+  (removing another branch's worktree is destructive).
+
+## Item 6 — SHIPPED (#1990, MERGED → v1.0.95)
+
+- PR #1990 `feat(core): allow events to have empty title` squash-merged to main.
+- CI fully green incl. `unit (backend)` + `unit (web)` (the suites that couldn't run locally due
+  to the stale-worktree haste-map collision — confirmed clean on CI's fresh checkout).
+- Release pipeline green: docker publish → staging deploy → health checks (staging-cloud +
+  staging-selfhosted) all passed. Release tag **v1.0.95**.
+- Correctness review (medium): no issues. Simplify: nothing to change (already minimal).
+
+## Next step (for tomorrow / staging review)
+
+- Today's spec (single item #1871) is COMPLETE. Nothing outstanding to implement.
+- **Sequenced browser QA** (needs authed Google-synced account — not reproducible locally):
+  create a titleless event → saves as a blank block, shows empty title on reopen, appears in
+  Google as "(No title)", and stays blank after editing its time in Google. Run during the
+  staging review or a `/qa-staging` sweep.
+
+## PO follow-ups (this item)
+
+- (FYI backlog, not a decision) Stale nested worktree `.worktrees/refactor-unify-floating-event-forms/`
+  in the MAIN checkout breaks local backend/web jest (haste-map duplicate-mock). `git worktree remove`
+  it once its branch is done, or add `.worktrees` to jest `modulePathIgnorePatterns`.

@@ -1,6 +1,10 @@
-# How we work
+# Handoff Handbook
 
-## Priorities
+Operating doc for the Compass Calendar team to collaborate work throughout the day.
+
+## About Us
+
+### Priorities
 
 Things that matter most to us. If you need to make a decision, do not compromise on these things.
 
@@ -10,17 +14,17 @@ Things that matter most to us. If you need to make a decision, do not compromise
 
 **Accessibility**. Every component in our UI is accessible, so that users that rely on assistive devices can do everything a mouse and keyboard user acn.
 
-## Team
+### Team
 
-One product owner (PO) and one Coding Agent (Claude or Codex).
+One product owner (PO, me) and one Coding Agent (Claude or Codex, you).
 
-### Responsibilities
+#### Responsibilities
 
-PO: Owns the product. Reviews product analytics. Listens to users, tries the product, signs off on backlog of daily work. Finalizes long-term roadmap.
+Product Owner: Owns the product. Reviews product analytics. Listens to users, tries the product, signs off on backlog of daily work. Finalizes long-term roadmap.
 
 Coding Agent: Owns the code. Finds and fixes bugs. Ensures CI is fast, deterministic (no flakiness). Maintains technical docs. Maintains code quality and cleanliness. Keeps the UX and design visually pleasant, consistent, and accessible.
 
-## Workflow principles
+### Workflow principles
 
 **Local planning.**
 Instead of tracking work in GitHub (issues, projects, PR descriptions), we persist planning work in local markdown files in the handoff/ directory. We do not use GitHub for issues or project management.
@@ -31,11 +35,11 @@ Instead of tracking work in GitHub (issues, projects, PR descriptions), we persi
 
 ### Morning handoff
 
-- I drop the day's spec at `handoff/<date>/spec.md`.
+- PO drops the day's spec at `handoff/<date>/spec.md`.
 - You review it and ask clarifying questions. **This is the one interactive gate** — the only point in the day where you're expected to ask me things before acting.
-- I might make revision requests.
+- PO might make revision requests.
 - You store your plans in the day's `handoff/<date>/` folder.
-- I approve the plans.
+- PO approves the plans.
 
 ### Daily implementation
 
@@ -49,29 +53,16 @@ Instead of tracking work in GitHub (issues, projects, PR descriptions), we persi
   - Before and after: A markdown table that summarizes the day's work.
   - Decisions: Key decisions you made that we didn't talk about during planning.
   - PO follow-ups: Things you need me to do.
-  - Token spend: The day's `/usage` figure (one line, for the budget review).
 
 ### Evening review
 
-- I test changes in staging environment.
-- I review the work and ask questions to ensure I understand how the code is evolving.
+- PO tests changes in staging environment.
+- PO review the work and ask questions to ensure I understand how the code is evolving.
 
 ### Evening cleanup
 
 - You review all the changes from the day.
-- You run the `simplify` skill over the day's diffs and clean up the code (in one PR or multiple, up to you) to ensure simplicity and maintainability.
-
-## Running a walk-away session
-
-Start the session so it survives a locked screen and a closed terminal window:
-
-```sh
-caffeinate -dimsu 
-```
-
-- `caffeinate -dimsu` keeps the machine awake (the screen may still lock).
-- Monitor and steer from the **Claude mobile app** via remote control; enable push notifications in `/config` so you're pinged when I need input or finish, instead of polling.
-- While the screen is locked, GUI tools (local browser preview, computer-use) pause — code, tests, CI, and git keep running. Sequence browser QA for when you're back and unlocked.
+- You run the `cleanup` skill over the day's diffs and clean up the code (in one PR or multiple, up to you) to ensure simplicity and maintainability.
 
 ## Production workflow
 

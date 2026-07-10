@@ -54,6 +54,7 @@ SuperTokens handles user-sessions for us.
 | `supertokens.postgres.database` | Self-host | Postgres database name for SuperTokens. |
 
 ## Google
+
 These values are only necessary if you want to enable Google Oauth and/or 2-way sync between Compass and Google Calendar
 
 Both `google.clientId` and `google.clientSecret` must be real values for Google features to activate. Setting only one causes backend startup to fail.
