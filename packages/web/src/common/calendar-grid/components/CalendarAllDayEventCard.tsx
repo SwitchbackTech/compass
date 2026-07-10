@@ -20,8 +20,8 @@ import {
   gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
+import { GridEventRepeatIcon } from "./GridEventRepeatIcon";
 
 const REPEAT_ICON_MIN_WIDTH = 60;
 
@@ -130,20 +130,18 @@ const CalendarAllDayEventCardBase = (
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div className="flex min-w-0 items-center gap-0.5">
-        {showRepeatIcon && (
-          <RepeatIcon
-            aria-hidden="true"
-            className="pointer-events-none shrink-0 text-fg-primary"
-            size={10}
-            weight="bold"
-          />
-        )}
+      <div
+        className={cn("flex min-w-0 items-center", {
+          // Reserve room so a long title truncates before the bottom-right icon.
+          "pr-3.5": showRepeatIcon,
+        })}
+      >
         <span className="relative min-w-0 truncate text-xs">
           {event.title}
           <SpaceCharacter />
         </span>
       </div>
+      {showRepeatIcon && <GridEventRepeatIcon baseColor={baseColor} />}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
       <div
         aria-hidden="true"

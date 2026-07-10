@@ -329,6 +329,44 @@ describe("CalendarEventCard", () => {
     expect(onParentKeyDown).not.toHaveBeenCalled();
   });
 
+  it("places the all-day repeat indicator bottom-right and colors it by priority", () => {
+    const renderRecurring = (priority: Priorities) =>
+      render(
+        <CalendarAllDayEventCard
+          event={createEvent({
+            isAllDay: true,
+            priority,
+            recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=WEEKLY"] },
+          })}
+          isPlaceholder={false}
+          position={position}
+        />,
+      );
+
+    const { container: workContainer, unmount } = renderRecurring(
+      Priorities.WORK,
+    );
+    const workIcon = workContainer.querySelector('svg[class*="right-1"]');
+
+    // Matches the timed card: bottom-right, and no longer the fixed white fg
+    // color on the left.
+    expect(workIcon).not.toBeNull();
+    const workClass = workIcon?.getAttribute("class") ?? "";
+    expect(workClass).toContain("bottom-0.5");
+    expect(workClass).not.toContain("fg-primary");
+    const workMarkup = workIcon?.outerHTML;
+    unmount();
+
+    // A different priority yields a different (priority-derived) icon color.
+    const { container: relationsContainer } = renderRecurring(
+      Priorities.RELATIONS,
+    );
+    const relationsIcon = relationsContainer.querySelector(
+      'svg[class*="right-1"]',
+    );
+    expect(relationsIcon?.outerHTML).not.toBe(workMarkup);
+  });
+
   it("announces recurring all-day events", () => {
     render(
       <CalendarAllDayEventCard
