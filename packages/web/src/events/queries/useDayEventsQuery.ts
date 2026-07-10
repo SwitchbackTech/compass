@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
-import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { handleError } from "@web/common/utils/event/event.util";
 import { dayEventsQueryOptions } from "@web/events/queries/event.query.options";
+import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { deriveCalendarEventViewModel } from "./event.view-model";
 
 type DayEventsQueryArgs = {

@@ -1,6 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { type Task } from "@web/common/types/task.types";
+import { type TaskRepository } from "@web/tasks/repositories/task.repository";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
 import { describe, expect, it, mock } from "bun:test";
 

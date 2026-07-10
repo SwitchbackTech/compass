@@ -1,11 +1,11 @@
 import { useLocation, useRouter } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
+import { AuthApi } from "@web/api/auth.api";
+import { queryClient } from "@web/api/query-client";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
+import { session } from "@web/auth/compass/session/Session";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { completeGoogleAuthorization } from "@web/auth/google/authorization/complete-google-authorization";
-import { AuthApi } from "@web/common/apis/auth.api";
-import { session } from "@web/common/classes/Session";
-import { queryClient } from "@web/common/query/query-client";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";

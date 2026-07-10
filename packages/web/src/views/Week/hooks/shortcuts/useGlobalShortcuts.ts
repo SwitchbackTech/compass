@@ -1,13 +1,16 @@
 import { type RegisterableHotkey } from "@tanstack/react-hotkeys";
 import { useLocation, useNavigate } from "@tanstack/react-router";
 import { useRef } from "react";
-import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import { viewActions } from "@web/events/stores/view.store";
 import { settingsActions } from "@web/settings/settings.store";
+import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
+import {
+  useAppShortcut,
+  useAppShortcutUp,
+} from "@web/shortcuts/useAppShortcut";
 
 /**
- * Registers app-wide shortcuts via {@link useAppHotkey} / {@link useAppHotkeyUp}.
+ * Registers app-wide shortcuts via {@link useAppShortcut} / {@link useAppShortcutUp}.
  * Mount once under {@link HotkeysProvider} (see `GlobalShortcutsHost` in CompassProvider).
  */
 export function useGlobalShortcuts() {
@@ -24,7 +27,7 @@ export function useGlobalShortcuts() {
   // short window after Mod+D fires to filter out that replayed keyup.
   const suppressDayShortcutUntilRef = useRef(0);
 
-  useAppHotkey(
+  useAppShortcut(
     "Mod+D",
     () => {
       suppressDayShortcutUntilRef.current = Date.now() + 1000;
@@ -37,7 +40,7 @@ export function useGlobalShortcuts() {
     },
   );
 
-  useAppHotkeyUp(dayHotkey, () => {
+  useAppShortcutUp(dayHotkey, () => {
     if (Date.now() < suppressDayShortcutUntilRef.current) {
       suppressDayShortcutUntilRef.current = 0;
       return;
@@ -48,15 +51,15 @@ export function useGlobalShortcuts() {
     }
   });
 
-  useAppHotkeyUp(weekHotkey, () => {
+  useAppShortcutUp(weekHotkey, () => {
     if (!location.pathname.startsWith(VIEW_SHORTCUTS.week.route)) {
       navigate({ to: VIEW_SHORTCUTS.week.route });
     }
   });
 
-  useAppHotkeyUp("[", () => viewActions.toggleSidebar());
+  useAppShortcutUp("[", () => viewActions.toggleSidebar());
 
-  useAppHotkey(
+  useAppShortcut(
     "Mod+K",
     () => {
       settingsActions.toggleCmdPalette();
@@ -67,7 +70,7 @@ export function useGlobalShortcuts() {
     },
   );
 
-  useAppHotkey(
+  useAppShortcut(
     "Escape",
     () => {
       settingsActions.closeCmdPalette();

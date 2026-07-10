@@ -1,13 +1,13 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
+import { UserApi } from "@web/api/user.api";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import {
   type ForgotPasswordFormData,
   type LogInFormData,
   type ResetPasswordFormData,
 } from "@web/auth/compass/schemas/auth.schemas";
-import { UserApi } from "@web/common/apis/user.api";
 import { type SignUpSubmitData } from "../forms/SignUpForm";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";

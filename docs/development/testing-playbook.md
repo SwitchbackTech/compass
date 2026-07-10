@@ -190,7 +190,7 @@ await act(async () => {
 
 Files:
 
-- `packages/web/src/common/hooks/useResponsiveLayout.ts`
+- `packages/web/src/components/AuthenticatedLayout/useResponsiveLayout.ts`
 - `packages/web/src/views/Day/components/ShortcutsSidebar/ShortcutsSidebar.tsx`
 - `packages/web/src/views/Day/view/DayViewContent.tsx`
 

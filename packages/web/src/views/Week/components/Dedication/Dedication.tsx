@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import derekImg from "@web/assets/png/derek.png";
-import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { AsciiPortrait } from "./AsciiPortrait";
 
 export const Dedication = () => {
@@ -22,7 +22,7 @@ export const Dedication = () => {
     }
   };
 
-  useAppHotkey("Control+Shift+0", () => {
+  useAppShortcut("Control+Shift+0", () => {
     if (dialogRef.current?.open) {
       close();
     } else {
@@ -30,7 +30,7 @@ export const Dedication = () => {
     }
   });
 
-  useAppHotkey("Escape", () => {
+  useAppShortcut("Escape", () => {
     if (dialogRef.current?.open) {
       close();
     }

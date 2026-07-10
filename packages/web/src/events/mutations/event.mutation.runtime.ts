@@ -1,11 +1,11 @@
 import { type Mutation, type QueryClient } from "@tanstack/react-query";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
+import { session } from "@web/auth/compass/session/Session";
 import {
   hasUserEverAuthenticated,
   markAnonymousCalendarChangeForSignUpPrompt,
 } from "@web/auth/compass/state/auth.state.util";
 import { isGoogleRevoked } from "@web/auth/google/state/google.auth.state";
-import { session } from "@web/common/classes/Session";
 import { eventMutationKeys } from "./event.mutation.keys";
 
 export async function markAnonymousEventWrite() {

@@ -1,8 +1,8 @@
 import {
   type CalendarLayoutCache,
   getNearestDayColumn,
-} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
-import { type VisualRect } from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
+} from "@web/layout/calendar-grid/interaction/calendarLayoutCache";
+import { type VisualRect } from "@web/layout/calendar-grid/interaction/model/TimedDragVisual";
 
 export const getVisibleAllDayRange = (
   layout: CalendarLayoutCache,

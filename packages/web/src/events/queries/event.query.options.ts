@@ -1,6 +1,6 @@
 import { keepPreviousData, queryOptions } from "@tanstack/react-query";
-import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
-import { getEventRepositoryBySource } from "@web/common/repositories/event/event.repository.util";
+import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
+import { getEventRepositoryBySource } from "@web/events/repositories/event.repository.util";
 import { fetchDayEvents } from "./day.event.query";
 import { eventQueryKeys } from "./event.query.keys";
 import { fetchSomedayEvents } from "./someday.event.query";

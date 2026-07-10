@@ -38,7 +38,7 @@ mock.module("@web/events/queries/someday.event.query", () => ({
 const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
 const { createCompassQueryClient } =
-  require("@web/common/query/query-client") as typeof import("@web/common/query/query-client");
+  require("@web/api/query-client") as typeof import("@web/api/query-client");
 const { useSomedayEventsQuery } =
   require("@web/events/queries/useSomedayEventsQuery") as typeof import("@web/events/queries/useSomedayEventsQuery");
 

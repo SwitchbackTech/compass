@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { handleError } from "@web/common/utils/event/event.util";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
+import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { deriveCalendarEventViewModel } from "./event.view-model";
 
 type WeekEventsQueryArgs = {

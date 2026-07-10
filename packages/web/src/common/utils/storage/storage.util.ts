@@ -1,7 +1,7 @@
 import dayjs from "@core/util/date/dayjs";
-import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { ensureOfflineDataStoreReady } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { type Task } from "@web/common/types/task.types";
+import { getTaskRepository } from "@web/tasks/repositories/task.repository.util";
 import { type CompassTasksSavedEventDetail } from "./storage.types";
 
 export const TODAY_TASKS_STORAGE_KEY_PREFIX = "compass.today.tasks";

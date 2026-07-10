@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { render, screen } from "@testing-library/react";
 import type React from "react";
 import { Categories_Event } from "@core/types/event.types";
-import { createCompassQueryClient } from "@web/common/query/query-client";
+import { createCompassQueryClient } from "@web/api/query-client";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockCreateSomedayDraft = mock();

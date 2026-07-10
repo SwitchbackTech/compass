@@ -2,7 +2,7 @@ import { type Schema_Event } from "@core/types/event.types";
 import {
   type CalendarInteractionCancellationTargets,
   type CalendarInteractionEngineSchedulerOptions,
-} from "@web/common/calendar-interaction/CalendarInteractionEngine";
+} from "@web/interaction/CalendarInteractionEngine";
 import { type WeekLayoutCacheSources } from "@web/views/Week/interaction/adapter/geometry/weekLayoutCache";
 import {
   type SomedayInteractionCategory,

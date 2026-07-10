@@ -1,7 +1,7 @@
 import type React from "react";
 import { createContext } from "react";
-import { getTaskRepository } from "@web/common/repositories/task/task.repository.util";
 import { type Task } from "@web/common/types/task.types";
+import { getTaskRepository } from "@web/tasks/repositories/task.repository.util";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useTaskActions } from "@web/views/Day/hooks/tasks/useTaskActions";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";

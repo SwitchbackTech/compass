@@ -1,21 +1,21 @@
 import { useCallback, useMemo, useRef, useState } from "react";
-import { CalendarAllDayEventCard } from "@web/common/calendar-grid/components/CalendarAllDayEventCard";
-import { CalendarTimedEventCard } from "@web/common/calendar-grid/components/CalendarTimedEventCard";
-import {
-  getCalendarAllDayEventPosition,
-  getCalendarTimedEventPosition,
-} from "@web/common/calendar-grid/layout/calendarEventPosition";
-import {
-  applyCalendarTimedEventDisplayPosition,
-  type CalendarTimedDeckLayout,
-} from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
-import {
-  type CalendarGridMeasurements,
-  type CalendarGridVisibleDate,
-} from "@web/common/calendar-grid/types/calendarGrid.types";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
+import { CalendarTimedEventCard } from "@web/layout/calendar-grid/components/CalendarTimedEventCard";
+import {
+  getCalendarAllDayEventPosition,
+  getCalendarTimedEventPosition,
+} from "@web/layout/calendar-grid/layout/calendarEventPosition";
+import {
+  applyCalendarTimedEventDisplayPosition,
+  type CalendarTimedDeckLayout,
+} from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
+import {
+  type CalendarGridMeasurements,
+  type CalendarGridVisibleDate,
+} from "@web/layout/calendar-grid/types/calendarGrid.types";
 import {
   type DayInteractionEventType,
   dayCalendarEventRegistry,

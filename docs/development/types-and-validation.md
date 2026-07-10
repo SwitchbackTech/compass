@@ -25,7 +25,7 @@ For API errors that the web app needs to understand structurally, use the same p
 Current reference files:
 
 - `packages/core/src/types/auth.types.ts`
-- `packages/web/src/common/apis/compass.api.util.ts`
+- `packages/web/src/api/util/api.util.ts`
 - `packages/backend/src/common/errors/handlers/error.handler.ts`
 
 Example:

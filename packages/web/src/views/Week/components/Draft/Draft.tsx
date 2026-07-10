@@ -1,13 +1,13 @@
 import { type FC, useMemo } from "react";
 import { createPortal } from "react-dom";
 import { Categories_Event } from "@core/types/event.types";
-import { positionAllDayDraftEvent } from "@web/common/calendar-grid/layout/allDayDraftEventPosition";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
   selectDraftCategory,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { positionAllDayDraftEvent } from "@web/layout/calendar-grid/layout/allDayDraftEventPosition";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { useDraftContext } from "./context/useDraftContext";

@@ -1,9 +1,5 @@
 import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import {
-  type CalendarTimedDeckLayout,
-  createCalendarTimedEventLayout,
-} from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
@@ -13,6 +9,10 @@ import {
   selectDraftId,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import {
+  type CalendarTimedDeckLayout,
+  createCalendarTimedEventLayout,
+} from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {

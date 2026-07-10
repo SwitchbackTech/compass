@@ -12,11 +12,11 @@ import {
   useState,
 } from "react";
 import { type Priorities } from "@core/constants/core.constants";
-import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import { ContextMenu } from "@web/components/ContextMenu/ContextMenu";
 import { type ContextMenuItemsActions } from "@web/components/ContextMenu/ContextMenuItems";
+import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { useDeleteEvent } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDuplicateEvent } from "@web/views/Forms/hooks/useDuplicateEvent";
 

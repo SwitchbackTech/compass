@@ -38,12 +38,16 @@ afterAll(() => {
 });
 
 // The other Settings-section hooks (auth/logout/subscribe) hang off session
-// state that other suites mock globally (bun's mock.module leaks across files),
-// so their items are order-dependent and we don't assert on them here — each
-// has its own dedicated test. We stub only useGoogleCmdItems (no other importer,
-// no dedicated test) to give the Settings section one deterministic item and to
-// skip its real async /config fetch.
-mock.module("@web/common/hooks/useGoogleCmdItems", () => ({
+// state that other suites mock globally (bun's mock.module leaks across
+// files), so their items are order-dependent and we don't assert on them
+// here — each has its own dedicated test. We stub only useGoogleCmdItems (no
+// other importer, no dedicated test) to give the Settings section one
+// deterministic item and to skip its real async /config fetch. We
+// deliberately do NOT stub useSubscribeCmdItems: even a restorable stub would
+// still evaluate (and permanently cache) the real module the first time,
+// binding its `UserApi` import ahead of useSubscribeCmdItems.test.ts's own
+// mock and breaking that file's assertions instead.
+mock.module("@web/components/CommandPalette/hooks/useGoogleCmdItems", () => ({
   useGoogleCmdItems: () => [
     {
       id: "connect-google-calendar",

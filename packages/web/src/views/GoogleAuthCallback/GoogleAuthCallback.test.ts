@@ -9,7 +9,7 @@ const mockLoginOrSignup = mock();
 const mockConnectGoogle = mock();
 const mockShowErrorToast = mock();
 
-mock.module("@web/common/apis/auth.api", () => ({
+mock.module("@web/api/auth.api", () => ({
   AuthApi: {
     loginOrSignup: mockLoginOrSignup,
     connectGoogle: mockConnectGoogle,

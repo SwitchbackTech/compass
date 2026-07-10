@@ -8,7 +8,7 @@ import {
   type CalendarEventRegistry,
   type CalendarInteractionRegisteredTarget,
   createCalendarEventRegistry,
-} from "@web/common/calendar-grid/interaction/createCalendarEventRegistry";
+} from "@web/layout/calendar-grid/interaction/createCalendarEventRegistry";
 
 export const WEEK_INTERACTION_EVENT_ID_ATTRIBUTE =
   "data-week-interaction-event-id";

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
+import { useAppShortcutUp } from "@web/shortcuts/useAppShortcut";
 
 const TOGGLE_SHORTCUTS_HOTKEY = { key: "?", shift: true } as const;
 const TOGGLE_SHORTCUTS_SLASH_HOTKEY = { key: "/", shift: true } as const;
@@ -29,8 +29,8 @@ export function usePlannerShortcuts({
     setIsShortcutsOpen((isOpen) => !isOpen);
   }, [isSidebarOpen, onToggleSidebar]);
 
-  useAppHotkeyUp(TOGGLE_SHORTCUTS_HOTKEY, toggleShortcuts);
-  useAppHotkeyUp(TOGGLE_SHORTCUTS_SLASH_HOTKEY, toggleShortcuts);
+  useAppShortcutUp(TOGGLE_SHORTCUTS_HOTKEY, toggleShortcuts);
+  useAppShortcutUp(TOGGLE_SHORTCUTS_SLASH_HOTKEY, toggleShortcuts);
 
   useEffect(() => {
     if (!isSidebarOpen) {

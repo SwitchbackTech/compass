@@ -9,7 +9,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Root authenticated shell: `packages/web/src/views/Root.tsx`
 - Router config: `packages/web/src/routers/index.tsx`
 - Router loaders: `packages/web/src/routers/loaders.ts`
-- Client version polling: `packages/web/src/common/hooks/useVersionCheck.ts`
+- Client version polling: `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck.ts`
 - Update CTA wiring: `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
 
 ## Authentication And Session
@@ -30,7 +30,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Web Event reads, cache utilities, and view models: `packages/web/src/events/queries`
 - Web Event persisted mutations and pending state: `packages/web/src/events/mutations`
 - Web Event draft/interaction Zustand state: `packages/web/src/events/stores/draft.store.ts`
-- Event API/repositories: `packages/web/src/events/event.api.ts`, `packages/web/src/common/repositories/event`
+- Event API/repositories: `packages/web/src/events/event.api.ts`, `packages/web/src/events/repositories`
 - Backend event routes: `packages/backend/src/event/event.routes.config.ts`
 - Backend event controller/service: `packages/backend/src/event/controllers/event.controller.ts`, `packages/backend/src/event/services/event.service.ts`
 
@@ -49,7 +49,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Day keyboard shortcuts (includes `[` toggle): `packages/web/src/views/Day/hooks/shortcuts/useDayViewShortcuts.ts`
 - Day view hooks: `packages/web/src/views/Day/hooks`
 - Week view: `packages/web/src/views/Week`
-- Responsive layout controller (auto-collapse on breakpoint crossings): `packages/web/src/common/hooks/useResponsiveLayout.ts`
+- Responsive layout controller (auto-collapse on breakpoint crossings): `packages/web/src/components/AuthenticatedLayout/useResponsiveLayout.ts`
 - Dedication dialog implementation (native `dialog` + hotkeys): `packages/web/src/views/Week/components/Dedication/Dedication.tsx`
 - Dedication dialog mount points:
   - week view: `packages/web/src/views/Week/WeekView.tsx`

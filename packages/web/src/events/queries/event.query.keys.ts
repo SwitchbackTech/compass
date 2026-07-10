@@ -1,5 +1,5 @@
 import { type Params_Events } from "@core/types/event.types";
-import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
+import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 
 export const eventQueryKeys = {
   all: ["events"] as const,

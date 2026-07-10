@@ -5,12 +5,12 @@ import {
   TASK_DELETED_TOAST_ID,
   TASK_MIGRATION_TOAST_ID,
 } from "@web/common/constants/toast.constants";
-import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { type Task } from "@web/common/types/task.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { getDateKey } from "@web/common/utils/storage/storage.util";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
 import { showStatusToast } from "@web/common/utils/toast/status-toast.util";
+import { type TaskRepository } from "@web/tasks/repositories/task.repository";
 
 interface UseTaskActionsProps {
   setTasks: React.Dispatch<React.SetStateAction<Task[]>>;

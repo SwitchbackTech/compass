@@ -1,7 +1,7 @@
 import {
   createCalendarEventTargeting,
   type CalendarEventTarget as SharedCalendarEventTarget,
-} from "@web/common/calendar-grid/interaction/createCalendarEventTargeting";
+} from "@web/layout/calendar-grid/interaction/createCalendarEventTargeting";
 import {
   WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
   WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE,

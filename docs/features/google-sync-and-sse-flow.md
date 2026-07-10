@@ -120,7 +120,7 @@ High-level path:
 Primary files:
 
 - `packages/web/src/events/mutations/useEventMutations.ts`
-- `packages/web/src/common/repositories/event`
+- `packages/web/src/events/repositories`
 - `packages/backend/src/event/controllers/event.controller.ts`
 - `packages/backend/src/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation.ts`
 

@@ -1,6 +1,6 @@
 import dayjs from "@core/util/date/dayjs";
 import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
-import { type ViewName } from "@web/common/constants/shortcuts.constants";
+import { type ViewName } from "@web/shortcuts/shortcuts.constants";
 import { describe, expect, it } from "bun:test";
 
 describe("getNavigationCommandItems", () => {

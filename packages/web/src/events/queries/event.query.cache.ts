@@ -1,8 +1,8 @@
 import { type QueryClient, type QueryKey } from "@tanstack/react-query";
 import { type Origin } from "@core/constants/core.constants";
 import { type Payload_Order, type Schema_Event } from "@core/types/event.types";
-import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
 import { type RecurringEditProjection } from "@web/events/recurrence/projectRecurringEdit";
+import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { eventQueryKeys } from "./event.query.keys";
 import { eventMatchesRange } from "./event.query.normalize";
 import {

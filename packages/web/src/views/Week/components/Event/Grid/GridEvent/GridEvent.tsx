@@ -6,17 +6,17 @@ import {
   useState,
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { CalendarTimedEventCard } from "@web/common/calendar-grid/components/CalendarTimedEventCard";
-import { getCalendarTimedEventPosition } from "@web/common/calendar-grid/layout/calendarEventPosition";
-import {
-  applyCalendarTimedEventDisplayPosition,
-  type CalendarTimedDeckLayout,
-} from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
+import { CalendarTimedEventCard } from "@web/layout/calendar-grid/components/CalendarTimedEventCard";
+import { getCalendarTimedEventPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
+import {
+  applyCalendarTimedEventDisplayPosition,
+  type CalendarTimedDeckLayout,
+} from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";

@@ -3,8 +3,8 @@ import {
   CommandIcon,
   KeyboardIcon,
 } from "@phosphor-icons/react";
-import { useVersionCheck } from "@web/common/hooks/useVersionCheck";
 import { reloadLocation } from "@web/common/utils/browser/browser-navigation.util";
+import { useVersionCheck } from "@web/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import {
   selectIsCmdPaletteOpen,

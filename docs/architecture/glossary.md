@@ -153,6 +153,17 @@ longer usable and Google-origin data should be pruned or reconnected.
 calendar refreshes, import status, metadata updates, and Google revocation.
 Browsers connect with `GET /api/events/stream`.
 
+## Keyboard
+
+**Shortcut**: A keyboard combination that triggers an app action, from the
+low-level key-registration primitive (`useAppShortcut`, under
+`packages/web/src/shortcuts`) through the user-facing catalog, overlay UI, and
+per-view `use*Shortcuts` hooks. Use "shortcut" everywhere, including for the
+key-binding primitive itself.
+_Avoid_: hotkey — the term survives only inside the third-party
+`@tanstack/react-hotkeys` package name and its own exports
+(`HotkeysProvider`, `HotkeyManager`), which Compass code does not rename.
+
 ## Relationships
 
 - An **Anonymous user** stores **Events** and **Tasks** in browser IndexedDB.

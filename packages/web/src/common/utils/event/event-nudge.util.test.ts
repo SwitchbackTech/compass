@@ -1,8 +1,8 @@
-import { CALENDAR_GRID_TIME_STEP } from "@web/common/calendar-grid/calendarGrid.constants";
 import {
   getArrowKeyMovement,
   nudgeEventDates,
 } from "@web/common/utils/event/event-nudge.util";
+import { CALENDAR_GRID_TIME_STEP } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { describe, expect, it } from "bun:test";
 
 describe("getArrowKeyMovement", () => {

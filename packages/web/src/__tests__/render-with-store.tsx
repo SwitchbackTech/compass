@@ -5,7 +5,7 @@ import {
   renderHook,
 } from "@testing-library/react";
 import { type PropsWithChildren, type ReactElement } from "react";
-import { createCompassQueryClient } from "@web/common/query/query-client";
+import { createCompassQueryClient } from "@web/api/query-client";
 import { seedEventQueries } from "./utils/event-query-test-data";
 import {
   seedStoresFromState,

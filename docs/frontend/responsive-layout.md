@@ -7,9 +7,9 @@ shrinking day window.
 
 Files:
 
-- `packages/web/src/common/hooks/useResponsiveLayout.ts` (mounted once in the
+- `packages/web/src/components/AuthenticatedLayout/useResponsiveLayout.ts` (mounted once in the
   authenticated layout)
-- `packages/web/src/common/constants/responsive.constants.ts`
+- `packages/web/src/components/AuthenticatedLayout/responsive.constants.ts`
 
 Breakpoints:
 

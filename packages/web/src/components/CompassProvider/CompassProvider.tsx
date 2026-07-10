@@ -11,7 +11,7 @@ import { isPosthogEnabled } from "@web/auth/posthog/posthog.util";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { CompassRefsProvider } from "@web/common/refs/compass-refs";
 import { PointerPositionProvider } from "@web/common/pointer/pointer-position";
-import { queryClient as defaultQueryClient } from "@web/common/query/query-client";
+import { queryClient as defaultQueryClient } from "@web/api/query-client";
 import { IconProvider } from "@web/components/IconProvider/IconProvider";
 import { LogoutConfirmationProvider } from "@web/components/LogoutConfirmation/LogoutConfirmationProvider";
 import { useGlobalShortcuts } from "@web/views/Week/hooks/shortcuts/useGlobalShortcuts";
@@ -19,7 +19,7 @@ import { useUndoRedoShortcuts } from "@web/views/Week/hooks/shortcuts/useUndoRed
 
 /**
  * Mount once under {@link HotkeysProvider} and inside React Router so
- * {@link useGlobalShortcuts} can register app hotkeys (via useAppHotkey).
+ * {@link useGlobalShortcuts} can register app hotkeys (via useAppShortcut).
  */
 export function GlobalShortcutsHost() {
   useGlobalShortcuts();

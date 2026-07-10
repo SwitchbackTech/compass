@@ -10,8 +10,8 @@ import { useLocation, useNavigate } from "@tanstack/react-router";
 import classNames from "classnames";
 import { useRef, useState } from "react";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { VIEW_SHORTCUTS } from "@web/common/constants/shortcuts.constants";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
 
 interface SelectViewProps {
   displayLabel?: string;

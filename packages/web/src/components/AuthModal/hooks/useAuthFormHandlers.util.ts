@@ -1,4 +1,4 @@
-import { isBackendUnavailableError } from "@web/common/apis/util/backend-unavailable-error.util";
+import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 
 export function getAuthSubmitErrorMessage(
   error: unknown,
