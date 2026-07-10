@@ -5,10 +5,20 @@ const getEventRepositorySource = mock((sessionExists: boolean) =>
   sessionExists ? "remote" : "local",
 );
 
+// Only getEventRepositorySource is under test here (the only export
+// event.repository.source.store.ts actually consumes) — spread the real
+// module's other exports (getEventRepository, getEventRepositoryBySource)
+// rather than stubbing them with bare `mock()`s. mock.module is process-wide
+// and not reliably restorable, so a bare stub here would permanently return
+// undefined for unrelated consumers elsewhere (e.g. useEventMutations.ts's
+// getEventRepositoryBySource) for the rest of the test run.
+const actualEventRepositoryUtil = await import(
+  "@web/events/repositories/event.repository.util"
+);
+
 mock.module("@web/events/repositories/event.repository.util", () => ({
+  ...actualEventRepositoryUtil,
   getEventRepositorySource,
-  getEventRepository: mock(),
-  getEventRepositoryBySource: mock(),
 }));
 
 const { refreshEventRepositorySource, useEventRepositorySource } =
