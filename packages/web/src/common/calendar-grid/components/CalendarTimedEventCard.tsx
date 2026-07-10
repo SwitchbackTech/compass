@@ -10,6 +10,7 @@ import {
 import { Priorities } from "@core/constants/core.constants";
 import { brighten, darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
+import { isRecurringEvent } from "@core/util/event/event.util";
 import {
   CALENDAR_GRID_EVENT_TIME_LABEL_FONT_SIZE,
   CALENDAR_GRID_EVENT_TIME_LABEL_OPACITY,
@@ -85,9 +86,7 @@ const CalendarTimedEventCardBase = (
   const isPlaceholder = displayMode === "placeholder";
   const isResizing = motionMode === "resizing";
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
-  const isRecurring = Boolean(
-    event.recurrence?.eventId || event.recurrence?.rule?.length,
-  );
+  const isRecurring = isRecurringEvent(event);
   const showRepeatIcon =
     isRecurring &&
     !isPlaceholder &&
@@ -181,10 +180,10 @@ const CalendarTimedEventCardBase = (
     !event.isAllDay && event.startDate && event.endDate
       ? getTimesLabel(event.startDate, event.endDate)
       : null;
-  const eventKind = isRecurring ? "Recurring" : undefined;
+  const recurringPrefix = isRecurring ? "Recurring " : "";
   const accessibleLabel = event.isAllDay
-    ? `${eventKind ? `${eventKind} ` : ""}All-day event: ${eventTitle}`
-    : `${eventKind ? `${eventKind} ` : ""}Timed event: ${eventTitle}, ${timeRange ?? "time not set"}`;
+    ? `${recurringPrefix}All-day event: ${eventTitle}`
+    : `${recurringPrefix}Timed event: ${eventTitle}, ${timeRange ?? "time not set"}`;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.

@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
+import { isRecurringEvent } from "@core/util/event/event.util";
 import { CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { type CalendarEventPosition } from "@web/common/calendar-grid/types/calendarGrid.types";
 import {
@@ -60,9 +61,7 @@ const CalendarAllDayEventCardBase = (
   const baseColor = gridColorByPriority[priority];
   const hoverColor = gridHoverColorByPriority[priority];
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
-  const isRecurring = Boolean(
-    event.recurrence?.eventId || event.recurrence?.rule?.length,
-  );
+  const isRecurring = isRecurringEvent(event);
   const showRepeatIcon =
     isRecurring && !isPlaceholder && position.width >= REPEAT_ICON_MIN_WIDTH;
   const hoverBgColor = !isPlaceholder ? hoverColor : baseColor;

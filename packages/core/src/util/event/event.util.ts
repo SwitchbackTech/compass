@@ -72,6 +72,15 @@ export const isRegularEvent = (
 ): boolean => !isInstance(event) && !isBase(event);
 
 /**
+ * True when an event is part of a recurring series — either an instance
+ * (has a series `eventId`) or a base with recurrence rules.
+ */
+export const isRecurringEvent = (
+  event: Pick<Schema_Event | Event_API, "recurrence">,
+): boolean =>
+  Boolean(event.recurrence?.eventId || event.recurrence?.rule?.length);
+
+/**
  * Filters the base events
  * @param e - The events array
  * @returns The base events
