@@ -5,6 +5,7 @@ import dayjs from "@core/util/date/dayjs";
 import { darken } from "@web/common/styles/color.utils";
 import { dateIsValid } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentDate } from "@web/common/utils/datetime/web.datetime.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { type SetEventFormField } from "@web/views/Forms/EventForm/types";
 
@@ -74,8 +75,9 @@ export const DatePickers: FC<Props> = ({
         const isInvalid = val !== undefined && !dateIsValid(val);
 
         if (isInvalid) {
-          alert(`Sorry, IDK what to do with a ${picker} date of '${val}'
-          Make sure it's in '${MONTH_DAY_YEAR}' and try again`);
+          showErrorToast(
+            `Sorry, IDK what to do with a ${picker} date of '${val}'. Make sure it's in '${MONTH_DAY_YEAR}' and try again`,
+          );
           return;
         }
 

@@ -27,6 +27,7 @@ import {
 import { buildConvertToSomedayEvent } from "@web/common/utils/event/someday.event.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import { EventInViewParser } from "@web/common/utils/parse/view.parser";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { type Payload_EditEvent } from "@web/events/event.types";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
@@ -176,7 +177,7 @@ export const useDraftActions = (
   const convert = useCallback(
     (start: string, end: string) => {
       if (isAtWeeklyLimit) {
-        alert(SOMEDAY_WEEK_LIMIT_MSG);
+        showErrorToast(SOMEDAY_WEEK_LIMIT_MSG);
         return;
       }
 

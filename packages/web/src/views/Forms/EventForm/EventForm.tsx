@@ -26,6 +26,7 @@ import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
 } from "@web/common/utils/form/form.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   Focusable,
   INPUT_RESET_CLASSNAME,
@@ -300,7 +301,9 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       const { startDate, endDate } = mapToBackend(selectedDateTimes);
 
       if (dayjs(startDate).isAfter(dayjs(endDate))) {
-        alert("uff-dah, looks like you got the start & end times mixed up");
+        showErrorToast(
+          "uff-dah, looks like you got the start & end times mixed up",
+        );
         return;
       }
 

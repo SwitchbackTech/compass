@@ -15,6 +15,7 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
+import { ConvertToStandaloneDialog } from "@web/views/Forms/EventForm/ConvertToStandaloneDialog";
 import { RecurrenceScopeDialog } from "@web/views/Forms/EventForm/RecurrenceScopeDialog";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
@@ -193,6 +194,7 @@ export const WeekView = () => {
           </SomedayInteractionCoordinator>
 
           <RecurrenceScopeDialog />
+          <ConvertToStandaloneDialog />
         </SidebarDraftProvider>
       </DraftProvider>
     </div>

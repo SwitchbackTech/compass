@@ -20,6 +20,7 @@ import {
   isEventFormKeyboardTarget,
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { focusFirstSomedaySidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
@@ -235,7 +236,7 @@ export const useWeekShortcuts = ({
   const convertFocusedEventToSomeday = useCallback(
     (event: Schema_GridEvent) => {
       if (isAtWeeklyLimit) {
-        alert(SOMEDAY_WEEK_LIMIT_MSG);
+        showErrorToast(SOMEDAY_WEEK_LIMIT_MSG);
         return;
       }
 
