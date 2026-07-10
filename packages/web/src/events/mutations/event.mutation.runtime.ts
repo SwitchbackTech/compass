@@ -1,4 +1,5 @@
 import { type Mutation, type QueryClient } from "@tanstack/react-query";
+import { RecurringEventUpdateScope } from "@core/types/event.types";
 import {
   hasUserEverAuthenticated,
   markAnonymousCalendarChangeForSignUpPrompt,
@@ -34,8 +35,18 @@ export const precedingDeleteOk = (preceding: PrecedingEventWrites) =>
 // event documents one at a time).
 const variablesEventId = (mutation: AnyMutation): string | undefined => {
   const variables = mutation.state.variables as
-    | { _id?: string; event?: { _id?: string } }
+    | {
+        _id?: string;
+        applyTo?: RecurringEventUpdateScope;
+        event?: { _id?: string; recurrence?: { eventId?: string } };
+      }
     | undefined;
+  const seriesScope =
+    variables?.applyTo === RecurringEventUpdateScope.ALL_EVENTS ||
+    variables?.applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS;
+  if (seriesScope && variables.event?.recurrence?.eventId) {
+    return variables.event.recurrence.eventId;
+  }
   return variables?._id ?? variables?.event?._id;
 };
 

@@ -8,6 +8,7 @@ import {
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
+import { isRecurringEvent } from "@core/util/event/event.util";
 import { CALENDAR_EVENT_RESIZE_HANDLE_ATTRIBUTE } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
 import { type CalendarEventPosition } from "@web/common/calendar-grid/types/calendarGrid.types";
 import {
@@ -19,7 +20,10 @@ import {
   gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
+
+const REPEAT_ICON_MIN_WIDTH = 60;
 
 export interface CalendarAllDayEventCardProps {
   event: Schema_GridEvent;
@@ -57,6 +61,9 @@ const CalendarAllDayEventCardBase = (
   const baseColor = gridColorByPriority[priority];
   const hoverColor = gridHoverColorByPriority[priority];
   const isInPast = dayjs().isAfter(dayjs(event.endDate));
+  const isRecurring = isRecurringEvent(event);
+  const showRepeatIcon =
+    isRecurring && !isPlaceholder && position.width >= REPEAT_ICON_MIN_WIDTH;
   const hoverBgColor = !isPlaceholder ? hoverColor : baseColor;
 
   const eventStyle = {
@@ -84,7 +91,7 @@ const CalendarAllDayEventCardBase = (
     cursor: showResizeCursor ? "col-resize" : undefined,
     ...placement,
   });
-  const accessibleLabel = `All-day event: ${event.title || "Untitled event"}`;
+  const accessibleLabel = `${isRecurring ? "Recurring " : ""}All-day event: ${event.title || "Untitled event"}`;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
@@ -123,8 +130,16 @@ const CalendarAllDayEventCardBase = (
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div className="flex flex-col items-start">
-        <span className="relative text-xs">
+      <div className="flex min-w-0 items-center gap-0.5">
+        {showRepeatIcon && (
+          <RepeatIcon
+            aria-hidden="true"
+            className="pointer-events-none shrink-0 text-fg-primary"
+            size={10}
+            weight="bold"
+          />
+        )}
+        <span className="relative min-w-0 truncate text-xs">
           {event.title}
           <SpaceCharacter />
         </span>

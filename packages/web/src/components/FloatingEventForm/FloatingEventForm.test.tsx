@@ -13,7 +13,7 @@ import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEve
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { draftActions } from "@web/events/stores/draft.store";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
 const draft: Schema_Event = {
@@ -133,5 +133,56 @@ describe("FloatingEventForm", () => {
           ),
       ).toBe(true),
     );
+  });
+
+  it("asks for a recurrence scope before deleting a recurring day event", async () => {
+    const recurringEvent: Schema_Event = {
+      _id: "recurring-event-id",
+      endDate: "2026-05-20T15:00:00.000Z",
+      isAllDay: false,
+      isSomeday: false,
+      recurrence: {
+        eventId: "series-id",
+        rule: ["RRULE:FREQ=WEEKLY"],
+      },
+      startDate: "2026-05-20T14:00:00.000Z",
+      title: "Recurring Event",
+      user: "user",
+    };
+    const queryClient = createCompassQueryClient();
+    queryClient.setQueryData(
+      eventQueryKeys.day({
+        source: "local",
+        startDate: "2026-05-20T00:00:00.000Z",
+        endDate: "2026-05-21T00:00:00.000Z",
+      }),
+      toNormalizedEventQueryData([recurringEvent]),
+    );
+    draftActions.start({
+      activity: "keyboardEdit",
+      event: recurringEvent,
+      eventType: Categories_Event.TIMED,
+    });
+    draftActions.setFormOpen(true);
+
+    const Harness = () => {
+      const form = useEventForm(Categories_Event.TIMED, true, () => undefined);
+      return <FloatingEventForm form={form} />;
+    };
+    render(<Harness />, { queryClient });
+
+    const titleField = await screen.findByPlaceholderText("Title");
+    titleField.blur();
+    fireEvent.keyDown(screen.getByRole("form"), { key: "Delete" });
+
+    expect(
+      await screen.findByRole("radiogroup", { name: "Delete events" }),
+    ).toBeInTheDocument();
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some((mutation) => mutation.options.mutationKey?.[2] === "delete"),
+    ).toBe(false);
   });
 });

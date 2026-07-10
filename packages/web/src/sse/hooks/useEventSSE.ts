@@ -4,6 +4,7 @@ import {
   EVENT_CHANGED,
   SOMEDAY_EVENT_CHANGED,
 } from "@core/constants/sse.constants";
+import { invalidateEventQueriesUnlessMutating } from "@web/events/queries/event.query.invalidation";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { sseEmitter } from "../client/sse.client";
 
@@ -17,18 +18,21 @@ export const useEventSSE = () => {
 
   useEffect(() => {
     const eventChangedHandler = () => {
-      void queryClient.invalidateQueries({
-        queryKey: eventQueryKeys.scope("day"),
-      });
-      void queryClient.invalidateQueries({
-        queryKey: eventQueryKeys.scope("week"),
-      });
+      invalidateEventQueriesUnlessMutating(
+        queryClient,
+        eventQueryKeys.scope("day"),
+      );
+      invalidateEventQueriesUnlessMutating(
+        queryClient,
+        eventQueryKeys.scope("week"),
+      );
     };
 
     const somedayChangedHandler = () => {
-      void queryClient.invalidateQueries({
-        queryKey: eventQueryKeys.scope("someday"),
-      });
+      invalidateEventQueriesUnlessMutating(
+        queryClient,
+        eventQueryKeys.scope("someday"),
+      );
     };
 
     sseEmitter.on(EVENT_CHANGED, eventChangedHandler);

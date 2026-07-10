@@ -38,6 +38,12 @@ const somedayKey = eventQueryKeys.list({
   },
 });
 
+const dayKey = eventQueryKeys.day({
+  source: "local",
+  startDate: "2026-07-02T00:00:00.000Z",
+  endDate: "2026-07-03T00:00:00.000Z",
+});
+
 const event = (overrides: Partial<Schema_Event> = {}): Schema_Event => ({
   _id: "event-1",
   title: "Original",
@@ -140,6 +146,136 @@ const setup = () => {
 };
 
 describe("useEventMutations", () => {
+  test("optimistically patches recurring instances across day and week caches", async () => {
+    const context = setup();
+    const first = event({
+      _id: "instance-1",
+      recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
+    });
+    const second = event({
+      _id: "instance-2",
+      startDate: "2026-07-03T16:00:00.000Z",
+      endDate: "2026-07-03T17:00:00.000Z",
+      recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(first, second));
+    context.queryClient.setQueryData(dayKey, normalized(first));
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: first._id!,
+        event: { ...first, title: "Updated series" } as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.ALL_EVENTS,
+      }),
+    );
+
+    await waitFor(() => {
+      const week =
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )!;
+      const day =
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          dayKey,
+        )!;
+      expect(week.entities["instance-1"].title).toBe("Updated series");
+      expect(week.entities["instance-2"].title).toBe("Updated series");
+      expect(day.entities["instance-1"].title).toBe("Updated series");
+    });
+
+    context.pending.resolve();
+  });
+
+  test("optimistically moves only this-and-following instances", async () => {
+    const context = setup();
+    const instances = [1, 2, 3].map((day) =>
+      event({
+        _id: `instance-${day}`,
+        startDate: `2026-07-0${day}T16:00:00.000Z`,
+        endDate: `2026-07-0${day}T17:00:00.000Z`,
+        recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
+      }),
+    );
+    context.queryClient.setQueryData(calendarKey, normalized(...instances));
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: "instance-2",
+        event: {
+          ...instances[1],
+          startDate: "2026-07-02T18:00:00.000Z",
+          endDate: "2026-07-02T19:00:00.000Z",
+        } as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
+      }),
+    );
+
+    await waitFor(() => {
+      const cached =
+        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+          calendarKey,
+        )!;
+      expect(cached.entities["instance-1"].startDate).toBe(
+        "2026-07-01T16:00:00.000Z",
+      );
+      expect(cached.entities["instance-2"].startDate).toBe(
+        "2026-07-02T18:00:00+00:00",
+      );
+      expect(cached.entities["instance-3"].startDate).toBe(
+        "2026-07-03T18:00:00+00:00",
+      );
+    });
+
+    context.pending.resolve();
+  });
+
+  test("serializes series edits submitted through different instances", async () => {
+    const context = setup();
+    const first = event({
+      _id: "instance-1",
+      recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
+    });
+    const second = event({
+      _id: "instance-2",
+      startDate: "2026-07-03T16:00:00.000Z",
+      endDate: "2026-07-03T17:00:00.000Z",
+      recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(first, second));
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: first._id!,
+        event: { ...first, title: "First edit" } as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.ALL_EVENTS,
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        context.calls.filter(({ method }) => method === "edit"),
+      ).toHaveLength(1),
+    );
+
+    act(() =>
+      context.hook.result.current.mutations.edit({
+        _id: second._id!,
+        event: { ...second, title: "Second edit" } as Schema_WebEvent,
+        applyTo: RecurringEventUpdateScope.ALL_EVENTS,
+      }),
+    );
+    expect(
+      context.calls.filter(({ method }) => method === "edit"),
+    ).toHaveLength(1);
+
+    act(() => context.pending.resolveNext());
+    await waitFor(() =>
+      expect(
+        context.calls.filter(({ method }) => method === "edit"),
+      ).toHaveLength(2),
+    );
+    context.pending.resolve();
+  });
+
   test("creates optimistically, exposes pending state, and invalidates on success", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());

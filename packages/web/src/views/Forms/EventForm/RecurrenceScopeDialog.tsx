@@ -53,20 +53,25 @@ export function RecurrenceScopeDialog() {
 interface RecurringEventUpdateScopeDialogContentProps {
   draft: Schema_GridEvent | null;
   onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
+  recurrenceChanged?: boolean;
   setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;
+  title?: string;
 }
 
-function RecurringEventUpdateScopeDialogContent({
+export function RecurringEventUpdateScopeDialogContent({
   draft,
   onUpdateScopeChange,
+  recurrenceChanged: recurrenceChangedOverride,
   setRecurrenceUpdateScopeDialogOpen,
+  title = "Apply changes to",
 }: RecurringEventUpdateScopeDialogContentProps) {
   const draftFromStore = useDraftStore(selectDraft);
   const currentDraft = draft ?? draftFromStore;
   const recurrenceChanged =
-    currentDraft && draftFromStore
+    recurrenceChangedOverride ??
+    (currentDraft && draftFromStore
       ? DirtyParser.recurrenceChanged(currentDraft, draftFromStore)
-      : false;
+      : false);
   const options = recurrenceChanged
     ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS
     : UPDATE_SCOPE_OPTIONS;
@@ -88,14 +93,10 @@ function RecurringEventUpdateScopeDialogContent({
   }, [activeScope, onUpdateScopeChange]);
 
   return (
-    <OverlayPanel
-      title="Apply changes to"
-      onDismiss={closeDialog}
-      variant="modal"
-    >
+    <OverlayPanel title={title} onDismiss={closeDialog} variant="modal">
       <div
         role="radiogroup"
-        aria-label="Apply changes to"
+        aria-label={title}
         className="flex w-full flex-col gap-1"
       >
         {options.map((option) => {

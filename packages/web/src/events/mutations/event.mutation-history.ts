@@ -3,6 +3,7 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
+import { isRecurringEvent } from "@core/util/event/event.util";
 import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
 import { showDeletedToast } from "@web/common/utils/toast/deleted-toast.util";
 import {
@@ -22,9 +23,6 @@ import {
 // event instead of clearing the exdate, and even a THIS_EVENT instance edit
 // confirms the instance server-side, so its pre-edit snapshot is stale by
 // the time an undo would replay it.
-const isRecurring = (event: Schema_Event) =>
-  Boolean(event.recurrence?.eventId || event.recurrence?.rule?.length);
-
 const isThisEventScope = (applyTo?: RecurringEventUpdateScope) =>
   !applyTo || applyTo === RecurringEventUpdateScope.THIS_EVENT;
 
@@ -42,8 +40,8 @@ export function recordEventEditHistory({
   const before = findEventInCache(queryClient, payload._id, source);
   if (
     !before ||
-    isRecurring(before) ||
-    isRecurring(payload.event as Schema_Event)
+    isRecurringEvent(before) ||
+    isRecurringEvent(payload.event as Schema_Event)
   ) {
     return;
   }
@@ -73,7 +71,9 @@ export function recordEventDeleteHistory({
   if (isRestoringHistory()) return existing;
 
   const undoable =
-    !!existing && !isRecurring(existing) && isThisEventScope(payload.applyTo);
+    !!existing &&
+    !isRecurringEvent(existing) &&
+    isThisEventScope(payload.applyTo);
   if (undoable) undoHistoryActions.record({ kind, event: existing });
   showDeletedToast(undoable);
   return existing;
@@ -94,7 +94,7 @@ export function recordEventConvertHistory({
     isRestoringHistory() ||
     !existing ||
     !converted ||
-    isRecurring(existing)
+    isRecurringEvent(existing)
   ) {
     return;
   }
