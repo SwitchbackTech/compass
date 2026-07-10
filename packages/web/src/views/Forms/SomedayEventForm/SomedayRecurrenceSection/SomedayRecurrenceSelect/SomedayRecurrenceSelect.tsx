@@ -6,7 +6,7 @@ import ReactSelect, {
   type SingleValueProps,
 } from "react-select";
 import { Frequency } from "rrule";
-import { brighten, darken } from "@core/util/color.utils";
+import { brighten, darken } from "@web/common/styles/color.utils";
 import { theme } from "@web/common/styles/theme";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { type FrequencyValues } from "../../../EventForm/DateControlsSection/RecurrenceSection/constants/recurrence.constants";

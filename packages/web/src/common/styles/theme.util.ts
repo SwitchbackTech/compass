@@ -1,5 +1,5 @@
 import { Priorities } from "@core/constants/core.constants";
-import { brighten, darken } from "@core/util/color.utils";
+import { brighten, darken } from "./color.utils";
 import { c } from "./colors";
 
 const UNASSIGNED = c.blueGray400;

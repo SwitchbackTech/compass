@@ -8,8 +8,8 @@ import {
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
-import { darken } from "@core/util/color.utils";
 import { ID_SOMEDAY_EVENT_FORM } from "@web/common/constants/web.constants";
+import { darken } from "@web/common/styles/color.utils";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import {
   isComboboxInteraction,

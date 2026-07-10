@@ -1,6 +1,6 @@
 import type React from "react";
 import ReactSelect, { type Props as RSProps } from "react-select";
-import { darken } from "@core/util/color.utils";
+import { darken } from "@web/common/styles/color.utils";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type Option_Time } from "@web/common/types/util.types";

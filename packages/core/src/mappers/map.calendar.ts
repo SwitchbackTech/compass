@@ -5,7 +5,6 @@ import {
 } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";
-import { generateCalendarColorScheme } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 
 export class MapCalendar {
@@ -13,9 +12,6 @@ export class MapCalendar {
     user: ObjectId | string,
     googleCalendar: gSchema$CalendarListEntry,
   ) {
-    // generate fallback colors
-    const { backgroundColor, color } = generateCalendarColorScheme();
-
     const metadata = GoogleCalendarMetadataSchema.parse({
       ...googleCalendar,
       provider: CalendarProvider.GOOGLE,
@@ -24,8 +20,8 @@ export class MapCalendar {
     return CompassCalendarSchema.parse({
       _id: new ObjectId(),
       user,
-      backgroundColor: googleCalendar.backgroundColor ?? backgroundColor,
-      color: googleCalendar.foregroundColor ?? color,
+      backgroundColor: googleCalendar.backgroundColor ?? "#9e9e9e",
+      color: googleCalendar.foregroundColor ?? "#000000",
       selected: googleCalendar.selected ?? true,
       primary: googleCalendar.primary ?? false,
       timezone: googleCalendar.timeZone ?? dayjs.tz.guess(),
