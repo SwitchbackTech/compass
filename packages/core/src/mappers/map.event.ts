@@ -166,7 +166,9 @@ export namespace MapEvent {
 }
 
 const gEventDefaults = {
-  summary: "untitled",
+  // Untitled Google events omit `summary` entirely; default to an empty
+  // string (not "untitled") so a titleless event stays titleless (#1871).
+  summary: "",
   description: "",
   start: {
     dateTime: "1990-01-01T00:00:00-10:00",
