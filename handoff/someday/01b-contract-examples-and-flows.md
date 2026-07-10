@@ -537,8 +537,7 @@ or are retired with their consumers updated in the same release.
     "createdAt": "2026-07-10T18:00:00Z",
     "updatedAt": null
   },
-  "isDemo": false,
-  "syncState": "local"
+  "isDemo": false
 }
 ```
 
