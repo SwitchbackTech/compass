@@ -280,6 +280,17 @@ cd ~/compass
 ./compass logs backend
 ```
 
+Health-check requests (`GET /api/health`) fire every few seconds and are hidden
+from the tail by default so they don't drown out real traffic. To see them,
+raise the log level to `debug` — either set `runtime.logLevel: debug` in
+`compass.yaml`, or start the backend with `LOG_LEVEL=debug`:
+
+```bash
+cd ~/compass
+LOG_LEVEL=debug docker compose up -d backend
+./compass logs backend
+```
+
 For a final server-side check, run:
 
 ```bash

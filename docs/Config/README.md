@@ -14,7 +14,7 @@ Examples:
 | `runtime.version` | Self-host | Docker image tag used by the self-host compose stack. Defaults to `latest`. Pin this for reproducible installs. |
 | `runtime.nodeEnv` | Yes | Runtime mode. Use `production` for self-hosted and staging; `development` for local dev. |
 | `runtime.timezone` | Yes | Backend timezone. Only `Etc/UTC` and `UTC` are accepted. |
-| `runtime.logLevel` | No | Winston log level. Defaults to `info`. |
+| `runtime.logLevel` | No | Winston log level. Defaults to `info`. Set to `debug` to include health-check requests (`GET /api/health`) in the logs, which are otherwise hidden. |
 
 ## Web
 

@@ -139,9 +139,17 @@ const isTestWithoutConfig =
 let parsedConfig: Config;
 
 try {
-  parsedConfig = isTestWithoutConfig
-    ? parseConfigFromEnv(process.env)
-    : parseRawConfig(loadCompassConfig());
+  if (isTestWithoutConfig) {
+    parsedConfig = parseConfigFromEnv(process.env);
+  } else {
+    const rawConfig = loadCompassConfig();
+    // Honor runtime.logLevel from the config file. Winston and the request
+    // logger read LOG_LEVEL from the environment, so surface it there.
+    if (rawConfig.runtime.logLevel) {
+      process.env["LOG_LEVEL"] = rawConfig.runtime.logLevel;
+    }
+    parsedConfig = parseRawConfig(rawConfig);
+  }
 } catch (error) {
   logger.error(
     "Exiting because a critical config value is missing or invalid:",
