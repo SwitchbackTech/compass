@@ -1,11 +1,7 @@
-import {
-  ArrowCounterClockwise,
-  CaretLeft,
-  CaretRight,
-  DotsSixVertical,
-} from "@phosphor-icons/react";
+import { CaretLeft, CaretRight, DotsSixVertical } from "@phosphor-icons/react";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+import { isRecurringEvent } from "@core/util/event/event.util";
+import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
 
@@ -29,8 +25,7 @@ export const SomedayEventRectangle = ({
   onMigrate,
 }: Props) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
-  const canMigrate =
-    !event.recurrence?.rule || event.recurrence?.rule.length === 0;
+  const canMigrate = !isRecurringEvent(event);
 
   return (
     <div
@@ -89,27 +84,16 @@ export const SomedayEventRectangle = ({
             </button>
           </div>
         ) : (
-          <div
-            className={ACTIONS_CLASS_NAME}
-            data-someday-drag-affordance="true"
-          >
-            <button
-              aria-label="Recurring events cannot be migrated"
-              className={ACTION_BUTTON_CLASS_NAME}
-              onClick={(e) => {
-                e.stopPropagation();
-                showErrorToast("Can't migrate recurring events");
-              }}
-              title="Can't migrate recurring events"
-              type="button"
-            >
-              <ArrowCounterClockwise
-                aria-hidden="true"
-                size={14}
-                weight="bold"
-              />
-            </button>
-          </div>
+          // Recurring someday events can't be migrated; instead of a disabled
+          // migrate control with a hover warning, show a passive, muted repeat
+          // indicator so the user can see the event repeats.
+          <RepeatIcon
+            aria-label="Recurring event"
+            className="mr-1 shrink-0 text-text-light"
+            role="img"
+            size={14}
+            weight="bold"
+          />
         )}
       </div>
     </div>

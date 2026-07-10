@@ -15,6 +15,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { darken } from "@web/common/styles/color.utils";
 import {
   gridColorByPriority,
   gridHoverColorByPriority,
@@ -64,6 +65,9 @@ const CalendarAllDayEventCardBase = (
   const isRecurring = isRecurringEvent(event);
   const showRepeatIcon =
     isRecurring && !isPlaceholder && position.width >= REPEAT_ICON_MIN_WIDTH;
+  // Match the timed card: tie the indicator to the event's priority (a darker
+  // shade of the card color) instead of a loud, fixed white.
+  const repeatIconColor = darken(baseColor, 30);
   const hoverBgColor = !isPlaceholder ? hoverColor : baseColor;
 
   const eventStyle = {
@@ -130,20 +134,26 @@ const CalendarAllDayEventCardBase = (
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
-      <div className="flex min-w-0 items-center gap-0.5">
-        {showRepeatIcon && (
-          <RepeatIcon
-            aria-hidden="true"
-            className="pointer-events-none shrink-0 text-fg-primary"
-            size={10}
-            weight="bold"
-          />
-        )}
+      <div
+        className={cn("flex min-w-0 items-center", {
+          // Reserve room so a long title truncates before the bottom-right icon.
+          "pr-3.5": showRepeatIcon,
+        })}
+      >
         <span className="relative min-w-0 truncate text-xs">
           {event.title}
           <SpaceCharacter />
         </span>
       </div>
+      {showRepeatIcon && (
+        <RepeatIcon
+          aria-hidden="true"
+          className="pointer-events-none absolute right-1 bottom-0.5"
+          color={repeatIconColor}
+          size={10}
+          weight="bold"
+        />
+      )}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
       <div
         aria-hidden="true"
