@@ -69,6 +69,10 @@ disagree with the stored watch.
   notifications.
 - New calendar import failure does not advance CalendarList token.
 - Removed calendar cleanup cannot delete another calendar's same-id event.
+- A Google-side move of an event between two imported calendars (Google emits
+  a cancellation in the source and an upsert in the target with the same
+  provider event id) converges to exactly one Compass event on the target
+  calendar.
 - 410 recovery and revoked credential paths preserve Compass-local data.
 - Notification route contains no calendar id and still routes every calendar.
 
@@ -77,8 +81,8 @@ disagree with the stored watch.
 - [ ] CalendarList notifications no longer log “NOT IMPLEMENTED.”
 - [ ] Normal calendar changes reconcile without a full user reset.
 - [ ] Event watches and sync records exactly match imported event-capable
-  calendars; free/busy-only calendars have neither.
+      calendars; free/busy-only calendars have neither.
 - [ ] Every archived #1070 requirement is implemented and the #734 no-work
-  disposition remains valid.
+      disposition remains valid.
 
 Suggested commit: `feat(sync): reconcile google calendar list changes`

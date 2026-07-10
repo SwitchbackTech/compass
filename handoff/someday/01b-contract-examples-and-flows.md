@@ -310,7 +310,6 @@ Illustrative extended JSON:
   },
   "recurrence": { "kind": "single" },
   "priority": "work",
-  "origin": "local",
   "externalReference": {
     "provider": "google",
     "eventId": "google-event-123",
@@ -348,6 +347,30 @@ returns in the HTTP `Event`.
 `calendarId` is deliberately absent. The backend loads the existing event,
 resolves its owning calendar, verifies `canWrite`, and replaces the editable
 snapshot. There is no ambiguous “omitted means unchanged or clear” behavior.
+
+## Transition flow
+
+Dragging a someday event onto the grid submits the explicit transition (A24)
+instead of a replace:
+
+```json
+{
+  "kind": "schedule",
+  "targetCalendarId": "64b000000000000000000101",
+  "schedule": {
+    "kind": "timed",
+    "start": "2026-07-14T09:00:00-06:00",
+    "end": "2026-07-14T10:00:00-06:00",
+    "timeZone": "America/Denver"
+  }
+}
+```
+
+The backend verifies the target calendar is writable, moves the event, and
+creates the provider copy. Dragging a scheduled event into the sidebar submits
+`{ "kind": "unschedule", "schedule": { "kind": "someday", ... } }`, which moves
+the event to the Compass-local calendar and deletes any provider copy. No other
+command changes an event's calendar.
 
 ## Reorder flow
 
@@ -474,6 +497,21 @@ query.
 }
 ```
 
+### Import finished with counts
+
+```json
+{
+  "type": "importCompleted",
+  "operation": "full",
+  "eventsCount": 412,
+  "calendarsCount": 5
+}
+```
+
+Every backend publish site emits a `ServerMessage` member (A27); the legacy
+`IMPORT_GCAL_*`, `GOOGLE_REVOKED`, and `USER_METADATA` names map into the union
+or are retired with their consumers updated in the same release.
+
 ## IndexedDB example
 
 ```json
@@ -588,11 +626,12 @@ Event
 
 EventRecord
 ├── adds Mongo identities and dates
-├── adds origin and at most one external provider reference
+├── adds at most one external provider reference (null = never synced)
 └── maps to Event at the HTTP boundary
 
 EventDraft
 ├── is the only incomplete event-like structure
 ├── converts to one strict command before network/cache use
 └── cannot move an existing event to another calendar
+    (the schedule transition command is the single exception)
 ```

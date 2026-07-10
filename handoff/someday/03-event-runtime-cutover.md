@@ -46,7 +46,14 @@ provider id or reintroduce `event.user` for convenient queries.
    provider data, never the Compass-local calendar/events.
 7. Replace the HTTP event shape with the strict `Event`, command, response, and
    SSE contracts from `01`. Map at the boundary without leaking Mongo Dates or
-   provider internals; do not preserve the legacy payload.
+   provider internals; do not preserve the legacy payload. This includes the
+   someday↔scheduled transition endpoint (A24) — drag conversions are live UX
+   and must survive the cutover — with A4 defaults (primary writable Google
+   calendar, else local) until `05` opens arbitrary writable targets. Honor
+   optional client-supplied create ids (A25) so optimistic creation and
+   undo-of-delete keep their `_id` behavior. Cover every SSE publish site with
+   the `ServerMessage` union (A27), including import results and user
+   metadata.
 8. Update web drafts, optimistic mutation/cache data, IndexedDB records, and
    local-event migration in the same downtime release so password-only/offline
    behavior survives the breaking change.
@@ -56,8 +63,10 @@ provider id or reintroduce `event.user` for convenient queries.
    proves no runtime imports remain. Do not add a barrel file as a compatibility
    shortcut.
 10. During the controlled release cutover, pause writes, rerun the idempotent
-    backfill/verification, point the active collection at the verified data (or
-    rename collections per the runbook), then resume. Retain the old collection.
+    backfill/verification, then rename collections per the `02` runbook (A31:
+    `event` → legacy archive name, `event_new` → `event`, validators and
+    indexes traveling with the rename), then resume. Retain the old
+    collection.
 
 ## Required regression matrix
 
@@ -77,19 +86,25 @@ provider id or reintroduce `event.user` for convenient queries.
 
 - Query calendar ids that are both active and visible once per request and use
   indexed `$in` filters.
+- Range reads are two indexed branches (timed BSON Dates, all-day/someday
+  date-only strings) with the all-day window derived from the query instants'
+  own offsets, per `01`. Record an `explain` for each branch, plus the someday
+  query, before and after.
 - Fetch recurrence bases in one query, as the legacy service does, not N+1.
-- Keep Google calls outside retryable Mongo transactions.
-- Ensure optimistic `_id` behavior remains unchanged.
-- Record a before/after query `explain` for date-range and someday queries.
+- Keep Google calls outside retryable Mongo transactions — this preserves the
+  existing rule documented in `compass-to-google.event-propagation.ts`.
+- Ensure optimistic `_id` behavior remains unchanged (A25).
 
 ## Exit criteria
 
 - [ ] `rg` finds no runtime query by `event.user` or top-level Google event id.
 - [ ] All event behavior uses the calendar-owned repository.
+- [ ] Someday↔scheduled drag conversions work through the transition command,
+      and undo of delete restores the original event id.
 - [ ] API and IndexedDB migrations pass old-data fixtures.
 - [ ] Focused core/backend/web/scripts suites, type-check, and lint pass.
 - [ ] Every runtime requirement archived from #1138 and #1135 has matching
-  code and test evidence in this packet.
+      code and test evidence in this packet.
 
 Suggested commit boundaries:
 

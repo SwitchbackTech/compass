@@ -81,8 +81,13 @@ export const RRuleSchema = z.array(z.string().trim().min(1)).min(1).readonly();
 export type RRule = z.infer<typeof RRuleSchema>;
 ```
 
-`zYearMonthDayString`, `TimezoneSchema`, and `RGBHexSchema` already exist. Keep
-one validator for each invariant rather than introducing near-duplicates.
+`zYearMonthDayString`, `TimezoneSchema`, and `RGBHexSchema` already exist (all
+on `zod/v4`, so they compose directly). Keep one validator for each invariant
+rather than introducing near-duplicates. The id split is deliberate:
+`EventIdSchema`/`CalendarIdSchema` are branded strings for HTTP/web
+boundaries, while records use the existing `zObjectId` sentinel, which parses
+to a BSON `ObjectId` and is the only form `zod-to-mongo-schema.ts` maps to
+`bsonType: "objectId"`.
 
 ## `packages/core/src/types/calendar.contracts.ts`
 
@@ -135,14 +140,22 @@ export const CalendarListResponseSchema = z.strictObject({
 });
 export type CalendarListResponse = z.infer<typeof CalendarListResponseSchema>;
 
-export const SetCalendarVisibilityInputSchema = z.strictObject({
-  calendarId: CalendarIdSchema,
-  isVisible: z.boolean(),
-});
+export const SetCalendarVisibilityInputSchema = z
+  .array(
+    z.strictObject({
+      calendarId: CalendarIdSchema,
+      isVisible: z.boolean(),
+    }),
+  )
+  .nonempty();
 export type SetCalendarVisibilityInput = z.infer<
   typeof SetCalendarVisibilityInputSchema
 >;
 ```
+
+The bulk array matches the existing `PUT /api/calendars/select` body and lets
+plan `08` coalesce rapid toggles into one request; a single toggle is a
+one-element array.
 
 The capability mapper is the only place that interprets access roles:
 
@@ -236,12 +249,19 @@ const AllDayScheduleSchema = z
     path: ["end"],
   });
 
-const SomedayScheduleSchema = z.strictObject({
+export const SomedayScheduleSchema = z.strictObject({
   kind: z.literal("someday"),
   period: z.enum(["week", "month"]),
   anchorDate: DateOnlySchema,
   sortOrder: SortOrderSchema,
 });
+export type SomedaySchedule = z.infer<typeof SomedayScheduleSchema>;
+
+export const ScheduledScheduleSchema = z.discriminatedUnion("kind", [
+  TimedScheduleSchema,
+  AllDayScheduleSchema,
+]);
+export type ScheduledSchedule = z.infer<typeof ScheduledScheduleSchema>;
 
 export const EventScheduleSchema = z.discriminatedUnion("kind", [
   TimedScheduleSchema,
@@ -320,6 +340,8 @@ import {
   EditableRecurrenceSchema,
   EventScheduleSchema,
   EventSchema,
+  ScheduledScheduleSchema,
+  SomedayScheduleSchema,
 } from "@core/types/event.contracts";
 
 const EditableContentSchema = z.strictObject({
@@ -343,6 +365,10 @@ export const RecurrenceEditSchema = z.discriminatedUnion("kind", [
 export type RecurrenceEdit = z.infer<typeof RecurrenceEditSchema>;
 
 export const CreateEventInputSchema = z.strictObject({
+  // Optional client-generated id (A25): preserves optimistic creation and
+  // undo-of-delete, which restores an event under its original id. The server
+  // enforces uniqueness and rejects an id that already exists.
+  id: EventIdSchema.optional(),
   calendarId: CalendarIdSchema,
   content: EditableContentSchema,
   schedule: EventScheduleSchema,
@@ -359,6 +385,23 @@ export const ReplaceEventInputSchema = z.strictObject({
   scope: RecurrenceScopeSchema,
 });
 export type ReplaceEventInput = z.infer<typeof ReplaceEventInputSchema>;
+
+// The only command that changes an event's calendar (A24). "schedule" moves a
+// someday event onto a writable calendar; "unschedule" moves a scheduled event
+// to the Compass-local calendar and deletes any provider copy. Occurrences are
+// rejected; a series transitions whole.
+export const TransitionEventInputSchema = z.discriminatedUnion("kind", [
+  z.strictObject({
+    kind: z.literal("schedule"),
+    targetCalendarId: CalendarIdSchema,
+    schedule: ScheduledScheduleSchema,
+  }),
+  z.strictObject({
+    kind: z.literal("unschedule"),
+    schedule: SomedayScheduleSchema,
+  }),
+]);
+export type TransitionEventInput = z.infer<typeof TransitionEventInputSchema>;
 
 export const DeleteEventInputSchema = z.strictObject({
   scope: RecurrenceScopeSchema,
@@ -394,12 +437,12 @@ const RangeEventListQuerySchema = z
     path: ["end"],
   });
 
+// No cursor or limit: the product caps someday lists at 9 per period (A35),
+// so the whole period is one bounded read.
 const SomedayEventListQuerySchema = z.strictObject({
   kind: z.literal("someday"),
   period: z.enum(["week", "month"]),
   anchorDate: DateOnlySchema,
-  cursor: z.string().min(1).nullable(),
-  limit: z.number().int().min(1).max(100),
 });
 
 export const EventListQuerySchema = z.discriminatedUnion("kind", [
@@ -413,7 +456,6 @@ export type EventResponse = z.infer<typeof EventResponseSchema>;
 
 export const EventListResponseSchema = z.strictObject({
   events: z.array(EventSchema),
-  nextCursor: z.string().min(1).nullable(),
 });
 export type EventListResponse = z.infer<typeof EventListResponseSchema>;
 
@@ -495,10 +537,34 @@ export const SyncStatusMessageSchema = z.strictObject({
 });
 export type SyncStatusMessage = z.infer<typeof SyncStatusMessageSchema>;
 
+export const ImportResultMessageSchema = z.strictObject({
+  type: z.literal("importCompleted"),
+  operation: z.enum(["full", "incremental", "repair"]),
+  eventsCount: z.number().int().nonnegative(),
+  calendarsCount: z.number().int().nonnegative(),
+});
+export type ImportResultMessage = z.infer<typeof ImportResultMessageSchema>;
+
+// Wraps the user-metadata payload the backend already replays on SSE connect;
+// the account summary consumes it. The legacy UserMetadata is a plain TS
+// interface with no Zod schema, so implementation should model only the fields
+// the web actually reads and validate those.
+export const UserMetadataMessageSchema = z.strictObject({
+  type: z.literal("userMetadataChanged"),
+  metadata: z.record(z.string(), z.unknown()),
+});
+export type UserMetadataMessage = z.infer<typeof UserMetadataMessageSchema>;
+
+// Completeness rule (A27): every backend publish site emits a member of this
+// union. The six current SSE names (EVENT_CHANGED, SOMEDAY_EVENT_CHANGED,
+// IMPORT_GCAL_START, IMPORT_GCAL_END, GOOGLE_REVOKED, USER_METADATA) each map
+// to a member or are explicitly retired; a contract test enforces the mapping.
 export const ServerMessageSchema = z.discriminatedUnion("type", [
   EventChangeMessageSchema,
   CalendarChangeMessageSchema,
   SyncStatusMessageSchema,
+  ImportResultMessageSchema,
+  UserMetadataMessageSchema,
 ]);
 export type ServerMessage = z.infer<typeof ServerMessageSchema>;
 ```
@@ -506,12 +572,15 @@ export type ServerMessage = z.infer<typeof ServerMessageSchema>;
 ## `packages/backend/src/calendar/calendar.record.ts`
 
 ```ts
-import { ObjectId } from "mongodb";
 import { z } from "zod/v4";
 import { CalendarAccessSchema } from "@core/types/calendar.contracts";
 import { HexColorSchema, TimeZoneSchema } from "@core/types/domain-primitives";
+import { zObjectId } from "@core/types/type.utils";
 
-const ObjectIdSchema = z.instanceof(ObjectId);
+// Reuse the zObjectId sentinel, never z.instanceof(ObjectId):
+// zod-to-mongo-schema.ts maps zObjectId to bsonType "objectId" by reference,
+// while a raw instanceof degrades to an unvalidated {} in the $jsonSchema.
+const ObjectIdSchema = zObjectId;
 
 export const LocalCalendarSourceRecordSchema = z.strictObject({
   provider: z.literal("local"),
@@ -564,7 +633,6 @@ user remain partial unique index invariants; a row schema cannot enforce them.
 ## `packages/backend/src/event/event.record.ts`
 
 ```ts
-import { ObjectId } from "mongodb";
 import { z } from "zod/v4";
 import {
   DateOnlySchema,
@@ -574,8 +642,13 @@ import {
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
 import { EventContentSchema } from "@core/types/event.contracts";
+import { zObjectId } from "@core/types/type.utils";
 
-const ObjectIdSchema = z.instanceof(ObjectId);
+// See calendar.record.ts: zObjectId, not z.instanceof(ObjectId), so the
+// derived $jsonSchema keeps bsonType "objectId". Refinements (end > start) do
+// not survive into $jsonSchema either; the Mongo validator enforces structure
+// only, and cross-field ordering stays an application-level parse.
+const ObjectIdSchema = zObjectId;
 
 const TimedScheduleRecordSchema = z
   .strictObject({
@@ -634,9 +707,6 @@ export type ExternalEventReference = z.infer<
   typeof ExternalEventReferenceSchema
 >;
 
-export const EventOriginSchema = z.enum(["local", "google"]);
-export type EventOrigin = z.infer<typeof EventOriginSchema>;
-
 export const EventRecordSchema = z.strictObject({
   _id: ObjectIdSchema,
   calendarId: ObjectIdSchema,
@@ -644,13 +714,18 @@ export const EventRecordSchema = z.strictObject({
   schedule: EventScheduleRecordSchema,
   recurrence: EventRecurrenceRecordSchema,
   priority: PrioritySchema,
-  origin: EventOriginSchema,
   externalReference: ExternalEventReferenceSchema.nullable(),
   createdAt: z.date(),
   updatedAt: z.date().nullable(),
 });
 export type EventRecord = z.infer<typeof EventRecordSchema>;
 ```
+
+There is no `origin` field (A34): provider cleanup filters by
+`calendar.source.provider`, and outbound backfill selects events on Google
+calendars with `externalReference: null`. The legacy
+`compass`/`google`/`googleimport`/`unsure` values carry no information those
+two lookups cannot answer.
 
 Calendar ownership and same-calendar recurrence references require repository
 queries; they cannot be proven by row validation alone.
@@ -680,6 +755,9 @@ export type GoogleEventMapResult =
       reason: "missingId" | "missingDates" | "invalidRecurrence";
     };
 
+// events.patch body (A28). Never events.update: update replaces the whole
+// resource, clearing attendees, location, reminders, and every other field
+// Compass does not model.
 export type GoogleEventWriteInput = Pick<
   calendar_v3.Schema$Event,
   "summary" | "description" | "start" | "end" | "recurrence"
@@ -842,30 +920,37 @@ export const LocalEventRecordSchema = z.strictObject({
   id: EventSchema.shape.id,
   event: EventSchema,
   isDemo: z.boolean(),
-  syncState: z.enum(["local", "pending", "synced", "failed"]),
 });
 export type LocalEventRecord = z.infer<typeof LocalEventRecordSchema>;
 ```
 
 Add a refinement asserting `id === event.id` if IndexedDB needs the duplicated
-top-level key. The local migration owns conversion from legacy marker fields.
+top-level key. The local migration owns conversion from legacy marker fields
+(`__compassDemoEvent` becomes `isDemo`). There is no `syncState` field (A35):
+local sync is push-all-then-clear on connect, so a per-record state machine
+models a queue that does not exist. Note that the current Dexie store indexes
+`startDate`/`endDate`/`isSomeday` at the top level; nesting the event under
+`event` means the Dexie schema version bump must re-declare indexes on the
+nested paths (or persist the fields it indexes alongside `event`).
 
 ## Cross-record invariants
 
 Zod validates one value. Repositories and indexes must enforce invariants that
 span values:
 
-| Invariant                                                      | Owner                                           |
-| -------------------------------------------------------------- | ----------------------------------------------- |
-| Calendar belongs to authenticated user                         | Calendar repository lookup                      |
-| Exactly one local calendar per user                            | Partial unique Mongo index                      |
-| At most one primary Google calendar per user                   | Partial unique Mongo index                      |
-| Event calendar exists and belongs to user                      | Event repository + calendar lookup              |
-| Recurrence occurrence and series share a calendar              | Event repository transaction/check              |
-| Provider event id unique within a calendar                     | Partial unique Mongo index                      |
-| Reorder ids are unique and all belong to one someday list      | Reorder service + bulk write                    |
-| Free/busy calendars never persist events or own Events watches | Sync/watch planners                             |
-| Existing event calendar is immutable                           | Replace service ignores/rejects ownership input |
+| Invariant                                                      | Owner                                            |
+| -------------------------------------------------------------- | ------------------------------------------------ |
+| Calendar belongs to authenticated user                         | Calendar repository lookup                       |
+| Exactly one local calendar per user                            | Partial unique Mongo index                       |
+| At most one primary Google calendar per user                   | Partial unique Mongo index                       |
+| Event calendar exists and belongs to user                      | Event repository + calendar lookup               |
+| Recurrence occurrence and series share a calendar              | Event repository transaction/check               |
+| Provider event id unique within a calendar                     | Partial unique Mongo index                       |
+| Reorder ids are unique and all belong to one someday list      | Reorder service + bulk write                     |
+| Free/busy calendars never persist events or own Events watches | Sync/watch planners                              |
+| Existing event calendar is immutable                           | Replace service ignores/rejects ownership input  |
+| Transition targets are writable and never occurrences (A24)    | Transition service capability + recurrence check |
+| Client-supplied create id is unique and unowned (A25)          | Insert uniqueness + duplicate-key error mapping  |
 
 ## Deliberate omissions
 
@@ -876,4 +961,7 @@ span values:
 - No optional schedule or recurrence properties in a complete event.
 - No persisted synthetic event for a free/busy period.
 - No all-day sort order.
-- No cross-calendar move command in v1.
+- No `origin` field on event records (A34).
+- No someday cursor pagination and no `LocalEventRecord.syncState` (A35).
+- No general cross-calendar move command in v1; the schedule transition (A24)
+  is the single sanctioned ownership change.

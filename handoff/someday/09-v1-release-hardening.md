@@ -9,14 +9,18 @@ Depends on: all prior plans.
 
 ## Primary code anchors
 
+The docs directories are lowercase on disk (`docs/acceptance`,
+`docs/features`, `docs/self-hosting`, `docs/architecture`); use these exact
+paths so links survive case-sensitive filesystems.
+
 - `e2e/`
 - `packages/scripts/src/migrations/`
-- `docs/Acceptance/events.md`
-- `docs/Acceptance/google-sync.md`
-- `docs/Features/google-sync-and-sse-flow.md`
-- `docs/Self-Hosting/google-calendar.md`
-- `docs/Self-Hosting/backup-and-restore.md`
-- `docs/Self-Hosting/monitoring.md`
+- `docs/acceptance/events.md`
+- `docs/acceptance/google-sync.md`
+- `docs/features/google-sync-and-sse-flow.md`
+- `docs/self-hosting/google-calendar.md`
+- `docs/self-hosting/backup-and-restore.md`
+- `docs/self-hosting/monitoring.md`
 
 ## Automated release gate
 
@@ -31,7 +35,10 @@ Depends on: all prior plans.
    recorded, partial backfill, and rerun.
 4. Add fault tests for rate limit, network timeout, partial page, invalid sync
    token, watch creation failure, duplicate notification, process restart, and
-   revoked access.
+   revoked access — including `invalid_grant` during scheduled maintenance,
+   which must prune-and-notify, never delete Compass data (A29), and a
+   contract test that every backend SSE publish site emits a `ServerMessage`
+   union member (A27).
 5. Run query explains and an import benchmark at 1, 5, and 25 calendars with a
    production-shaped event/recurrence distribution. Investigate any p95 query
    or render regression over 20% from the recorded baseline.
@@ -71,7 +78,10 @@ and one `freeBusyReader`) plus the Compass-local calendar:
 4. Verify data, indexes, sync records, and application smoke tests.
 5. Rehearse the write pause and collection cutover.
 6. Rehearse rollback to the untouched legacy collection and old application
-   version; verify events are readable.
+   version; verify events are readable. State the accepted loss window in the
+   release notes: writes made after the cutover are abandoned by a rollback,
+   and the new collection is dumped first so they remain recoverable by hand
+   (per the `02` runbook).
 7. Repeat the forward cutover to prove idempotence.
 8. Document exact commands in `docs/Self-Hosting/backup-and-restore.md` and the
    release notes. Never include real credentials or user event content.
@@ -112,6 +122,6 @@ and one `freeBusyReader`) plus the Compass-local calendar:
 - [ ] Operator/developer/user-facing docs describe the shipped behavior.
 - [ ] Every Project 6 card has a recorded final disposition.
 - [ ] This Markdown set contains the durable requirement and implementation
-  history for every Project 6 card.
+      history for every Project 6 card.
 
 Suggested commit: `docs(release): finalize sub-calendar v1 runbook`

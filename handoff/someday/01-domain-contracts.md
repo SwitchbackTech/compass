@@ -53,6 +53,15 @@ Every exported Zod schema has its type inferred from the schema. Do not write a
 parallel interface that can drift from validation. Keep contracts in concrete
 files; do not add barrel files.
 
+All new contracts import `z` from `"zod/v4"` only. The repo still has 24 files
+importing the v3 `"zod"` API off the same 3.25.x install; never compose a v3
+schema into a v4 object (the types are incompatible), and migrate legacy
+consumers to v4 as each old type is replaced. Refined objects inside
+`z.discriminatedUnion` are valid only on the v4 API, so this rule is
+load-bearing, not stylistic. `z.string().datetime({ offset: true })` and
+`z.iso.datetime({ offset: true })` are equivalent on v4; prefer the `z.iso`
+form in new code since the string method is a deprecated alias.
+
 ## Shared primitive contracts
 
 Create these once in `packages/core/src/types/` and reuse them everywhere:
@@ -97,7 +106,11 @@ remains strings and numbers.
 5. `CalendarListResponseSchema` / `CalendarListResponse`
    - `{ calendars: Calendar[] }`; never return raw CalendarList entries.
 6. `SetCalendarVisibilityInputSchema` / `SetCalendarVisibilityInput`
-   - Exact object `{ calendarId, isVisible }` with unknown keys rejected.
+   - Non-empty array of exact `{ calendarId, isVisible }` objects with unknown
+     keys rejected. The existing `PUT /api/calendars/select` endpoint already
+     accepts a bulk array, and plan `08` coalesces rapid toggles into one
+     request, so the bulk shape is the contract; a single toggle is a
+     one-element array.
 
 ### Backend persistence contracts
 
@@ -158,7 +171,9 @@ type BusyPeriod = {
 Add strict `AvailabilityQuery` (`calendarIds`, `start`, `end`) and
 `AvailabilityResponse` (`busyPeriods`) contracts. The backend resolves owned
 `freeBusyReader` calendars, batches Google's `freeBusy.query` within Google's
-calendar limit, and returns ranges for the visible window. It may use a short,
+50-calendar-per-query limit (`calendarExpansionMax`), handles the per-calendar
+`errors[]` array in each response (a `notFound`/error calendar yields no
+periods, never a request failure), and returns ranges for the visible window. It may use a short,
 bounded cache keyed by user/calendar set/range; it does not persist fake events,
 create event sync tokens, or start Events watches for these calendars. Calendar
 list watching still tracks whether the calendar exists and its access role.
@@ -213,6 +228,18 @@ Date storage follows the semantic value:
   time-zone drift.
 - HTTP and IndexedDB use the shared strings shown above. Pure mappers own every
   BSON/JSON conversion.
+- Because timed values are BSON Dates and all-day values are strings, a range
+  read is two indexed branches, not one: timed overlap compares Dates against
+  the query instants, and all-day/someday overlap compares `YYYY-MM-DD` strings
+  against a date window derived from the query instants using the offsets
+  embedded in the query's own `start`/`end` (the client sends its local
+  offsets). Document and test this derivation for negative and large positive
+  offsets; record an `explain` for each branch.
+
+The required `timeZone` has no legacy source: current events store only an
+offset string, and today's Google write mapper guesses the SERVER zone via
+`dayjs.tz.guess()`. Plan `02` owns the derivation ladder for existing rows
+(A26), and new clients send the browser IANA zone.
 
 ### Ordering recommendation
 
@@ -256,12 +283,16 @@ and `"all"`; display labels stay in web translation code. Create accepts only
    - `{ provider: "google", eventId, recurringEventId: string | null }`.
 2. `ExternalEventReferenceSchema` / `ExternalEventReference`
    - Google is the only active union member. The event field is
-     `ExternalEventReference | null`; local-only events use `null`.
+     `ExternalEventReference | null`; local-only and never-synced events use
+     `null`.
    - Add Outlook/iCalendar members later without changing event ownership.
-3. `EventOriginSchema` / `EventOrigin`
-   - `"local" | "google"` now; extend only with implemented import adapters.
-   - Origin and external reference are separate: a locally created event synced
-     to Google keeps local origin and gains a Google reference.
+
+There is no `origin` field (A34). The legacy
+`compass`/`google`/`googleimport`/`unsure` origin duplicated information the
+owning calendar and the external reference already carry: provider cleanup
+filters by `calendar.source.provider`, and outbound backfill selects events on
+Google calendars whose `externalReference` is `null`. Restore an origin field
+only if plan `03` finds a consumer these two cannot serve.
 
 Do not use a metadata array. A v1 event cannot reliably represent several
 provider copies, and an array creates duplicate/conflicting identity states.
@@ -296,9 +327,13 @@ through its calendar.
 
 `EventRecordSchema` / `EventRecord` mirrors `Event` semantically but uses Mongo
 ObjectIds/BSON Dates for `_id`, `calendarId`, timed instants, series references,
-and timestamps. It adds required `origin` and nullable `externalReference` for
-backend sync. It uses `schedule`, `content`, `recurrence`, and provider
-discriminants rather than flattening them back into optional columns.
+and timestamps. It adds a nullable `externalReference` for backend sync. It
+uses `schedule`, `content`, `recurrence`, and provider discriminants rather
+than flattening them back into optional columns. ObjectId fields reuse the
+existing `zObjectId` sentinel from `type.utils.ts`, not `z.instanceof(ObjectId)`:
+`zod-to-mongo-schema.ts` special-cases `zObjectId` by reference when deriving
+the `$jsonSchema` validator, while a raw `instanceof` degrades to an
+unvalidated `{}`.
 
 Required indexes:
 
@@ -316,21 +351,22 @@ justifies an index.
 Put shared web/backend Zod contracts in core. Controllers parse them at ingress
 and parse their own responses in contract tests.
 
-| Contract               | Shape and rule                                                                                                                                                                                                                                                                   |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `CreateEventInput`     | Required `calendarId`, details content, schedule, recurrence (`single` or `series`), and priority. No id, user, timestamps, origin, occurrence, or provider identity.                                                                                                            |
-| `ReplaceEventInput`    | Complete editable snapshot: details content, schedule, priority, required recurrence edit (`preserve`, `single`, or `series`), and `scope`. Use `PUT`; no giant `Partial<Event>`. `calendarId` and occurrence `seriesId` are absent because backend-owned identity is immutable. |
-| `DeleteEventInput`     | `{ scope }`; the event id remains the route parameter.                                                                                                                                                                                                                           |
-| `ReorderEventsInput`   | `{ period: "week"                                                                                                                                                                                                                                                                | "month", items: [{ eventId, sortOrder }] }`; reject duplicates, mixed owners, and non-someday events. |
-| `EventListQuery`       | Required mode discriminator: range query with start/end/calendar visibility filters, or someday query with period/anchor/cursor/limit.                                                                                                                                           |
-| `EventListResponse`    | `{ events: Event[], nextCursor: string                                                                                                                                                                                                                                           | null }`; no request fields mixed into the response.                                                   |
-| `AvailabilityQuery`    | Required calendar ids and bounded start/end instants; only availability-capable owned calendars are accepted.                                                                                                                                                                    |
-| `AvailabilityResponse` | `{ busyPeriods: BusyPeriod[] }`; periods are not assigned synthetic event ids.                                                                                                                                                                                                   |
-| `EventResponse`        | `{ event: Event }` for create/replace/get.                                                                                                                                                                                                                                       |
-| `EventMutationError`   | Stable codes for not found, read only, recurrence conflict, invalid schedule, and provider failure; reuse the repository's standard error envelope.                                                                                                                              |
+| Contract               | Shape and rule                                                                                                                                                                                                                                                                                                                                          |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `CreateEventInput`     | Required `calendarId`, details content, schedule, recurrence (`single` or `series`), and priority, plus an optional client-generated `id` (validated ObjectId; the server enforces uniqueness) preserving optimistic creation and undo-of-delete (A25). No user, timestamps, occurrence, or provider identity.                                          |
+| `ReplaceEventInput`    | Complete editable snapshot: details content, schedule, priority, required recurrence edit (`preserve`, `single`, or `series`), and `scope`. Use `PUT`; no giant `Partial<Event>`. `calendarId` and occurrence `seriesId` are absent because backend-owned identity is immutable.                                                                        |
+| `TransitionEventInput` | The explicit someday↔scheduled transition (A24): `{ kind: "schedule", targetCalendarId, schedule }` moves a someday event onto a writable calendar; `{ kind: "unschedule", schedule }` moves a scheduled event to the Compass-local calendar and deletes any provider copy. The only command that changes an event's calendar; drag conversions use it. |
+| `DeleteEventInput`     | `{ scope }`; the event id remains the route parameter.                                                                                                                                                                                                                                                                                                  |
+| `ReorderEventsInput`   | `{ period: "week" \| "month", items: [{ eventId, sortOrder }] }`; reject duplicates, mixed owners, and non-someday events.                                                                                                                                                                                                                              |
+| `EventListQuery`       | Required mode discriminator: a range query with start/end instants and a priority filter (the server always scopes to the user's active calendars and applies visibility filtering for grid reads), or a someday query with period/anchor. No cursor: someday lists are product-capped at 9 per period (A35).                                           |
+| `EventListResponse`    | `{ events: Event[] }`; no request fields mixed into the response.                                                                                                                                                                                                                                                                                       |
+| `AvailabilityQuery`    | Required calendar ids and bounded start/end instants; only availability-capable owned calendars are accepted.                                                                                                                                                                                                                                           |
+| `AvailabilityResponse` | `{ busyPeriods: BusyPeriod[] }`; periods are not assigned synthetic event ids.                                                                                                                                                                                                                                                                          |
+| `EventResponse`        | `{ event: Event }` for create/replace/transition/get.                                                                                                                                                                                                                                                                                                   |
+| `EventMutationError`   | Stable codes for not found, read only, recurrence conflict, invalid schedule, and provider failure, plus `retryable`. This supersedes `toClientErrorPayload`'s `{ result, message }` shape for event and calendar routes; map `BaseError` into it at the handler so the app converges on one envelope instead of today's four ad-hoc variants.          |
 
-Use narrow commands for reorder and delete because they have different
-invariants. A complete replace command is preferable for ordinary edits: the
+Use narrow commands for transition, reorder, and delete because they have
+different invariants. A complete replace command is preferable for ordinary edits: the
 web already owns the full editable event, server validation is deterministic,
 and omitted fields cannot accidentally mean both “unchanged” and “clear.” If a
 future client genuinely needs patch semantics, add a JSON Merge Patch contract
@@ -347,10 +383,27 @@ Replace payload-less/`unknown` event data with shared strict envelopes:
 2. `CalendarChangeMessageSchema` / `CalendarChangeMessage`
    - `{ type: "calendarsChanged", calendarIds }`.
 3. `SyncStatusMessageSchema` / `SyncStatusMessage`
-   - preserve the current sync lifecycle, but validate it in the same shared
-     event-message union.
-4. `ServerMessageSchema` / `ServerMessage`
+   - `syncing` / `healthy` / `attention` with a stable attention code; replaces
+     the payload-less `IMPORT_GCAL_START` and ad-hoc revoked signals.
+4. `ImportResultMessageSchema` / `ImportResultMessage`
+   - `{ type: "importCompleted", operation, eventsCount, calendarsCount }`;
+     carries the counts the web shows today from `IMPORT_GCAL_END` and that
+     plan `04` step 10 requires.
+5. `UserMetadataMessageSchema` / `UserMetadataMessage`
+   - `{ type: "userMetadataChanged", metadata }` wrapping the existing user
+     metadata payload replayed on SSE connect; the account summary depends on
+     it.
+6. `ServerMessageSchema` / `ServerMessage`
    - discriminated union parsed once by the web SSE client.
+   - Completeness rule (A27): every message the backend publishes is a union
+     member. Each of the current six SSE names (`EVENT_CHANGED`,
+     `SOMEDAY_EVENT_CHANGED`, `IMPORT_GCAL_START`, `IMPORT_GCAL_END`,
+     `GOOGLE_REVOKED`, `USER_METADATA`) must map to a member or be explicitly
+     retired; a contract test enumerates backend publish sites against the
+     union.
+   - The Compass-local calendar hosts both someday and scheduled events, so
+     `eventsChanged` for it replaces today's separate `SOMEDAY_EVENT_CHANGED`;
+     the web invalidates both someday and grid scopes for that calendar id.
 
 ## Web-only types
 
@@ -364,8 +417,8 @@ backend:
      if id/calendar immutability otherwise requires checks.
 2. `EventFormValues`
    - UI-native values such as `Date`, time select options, recurrence controls,
-     and selected calendar. One parser produces `CreateEventInput` or
-     `ReplaceEventInput`.
+     and selected calendar. One parser produces `CreateEventInput`,
+     `ReplaceEventInput`, or `TransitionEventInput`.
 3. `EventEntityMap`
    - `Record<EventId, Event>` plus ordered ids; do not redefine the event.
 4. `OptimisticEvent`
@@ -394,7 +447,10 @@ optionality inside the adapter and map them immediately:
 
 - `GoogleCalendarListEntryInput` -> `CalendarRecord`;
 - `GoogleEventInput` -> `EventRecord` or a cancellation tombstone;
-- `EventRecord` -> `GoogleEventWriteInput` for writable calendars;
+- `EventRecord` -> `GoogleEventWriteInput` for writable calendars.
+  `GoogleEventWriteInput` is a `events.patch` body limited to Compass-owned
+  fields (A28); full `events.update` would clear attendees, location,
+  reminders, and every other field Compass does not model;
 - mapping result union: `mapped`, `cancelled`, `ignored`, or `invalid`, with a
   reason and structured logging that excludes user content.
 
@@ -461,6 +517,12 @@ file used only by backend/scripts.
   migration, and grid layout without optional event fields.
 - Strict request rejection for unknown/omitted fields and strict response/SSE
   parsing in web tests.
+- Both schedule↔calendar transitions (A24), including a recurring someday
+  series and the no-writable-calendar failure case.
+- `events.patch` mapping preserves unmodeled Google fields (attendees,
+  location, reminders) on a fixture with all three present.
+- Range-read branch derivation: all-day date windows from query instants at
+  negative and large positive offsets, including DST boundaries.
 - Property-based round trips for `EventRecord -> Event -> EventRecord` where
   values are representable, plus migration fixtures for every legacy category.
 
@@ -474,6 +536,9 @@ file used only by backend/scripts.
 - [ ] Storage, HTTP, form, local persistence, cache, optimistic, SSE, and layout
       contracts have distinct names and tested mappers.
 - [ ] Calendar capability and privacy behavior is derived once and shared.
+- [ ] The someday↔scheduled transition command exists and drag conversions
+      parse into it.
+- [ ] The `ServerMessage` union accounts for every backend SSE publish site.
 - [ ] The contract catalog covers current core/backend/web event consumers and
       does not introduce an unused provider framework.
 - [ ] `bun test:core`, affected backend/web contract tests, and

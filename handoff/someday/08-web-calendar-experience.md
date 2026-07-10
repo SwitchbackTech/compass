@@ -39,8 +39,10 @@ available before final integration.
 2. Add `PlannerCalendarList` as its own component. Render calendar name,
    visible state, color marker, primary/read-only context, loading, empty, and
    recoverable error states. Do not render inactive provider calendars.
-3. Persist toggles through `/api/calendars/select`. Coalesce rapid toggles and
-   avoid refetching all event ranges repeatedly; invalidate once after the
+3. Persist toggles through `/api/calendars/select`, which already accepts the
+   bulk `[{ id, selected }]` array the coalescing needs (the strict contract
+   renames the fields to `{ calendarId, isVisible }`). Coalesce rapid toggles
+   and avoid refetching all event ranges repeatedly; invalidate once after the
    final mutation settles.
 4. Filter event queries on the server by visible calendars. Immediately hide
    cached events on an optimistic toggle-off and restore them on rollback.
@@ -56,12 +58,23 @@ available before final integration.
    drag/resize/keyboard mutations before optimistic state changes.
    Render `freeBusyReader` availability periods through the `CalendarItem` busy
    branch with no event form or context menu.
-9. Handle `CALENDARS_CHANGED` and calendar-scoped `EVENT_CHANGED`. Refresh the
+9. Handle `calendarsChanged` and calendar-scoped `eventsChanged`. Refresh the
    calendar list and invalidate the affected event ranges. Parse the strict SSE
    union from `01`; malformed messages are logged and ignored, not treated as
-   legacy payload-less messages.
+   legacy payload-less messages. Two behaviors need explicit handling:
+   - the Compass-local calendar hosts someday and scheduled events, so an
+     `eventsChanged` for it invalidates both the someday and grid scopes
+     (replacing today's separate `SOMEDAY_EVENT_CHANGED`);
+   - the browser's `EventSource` auto-reconnects silently and messages sent
+     while disconnected are gone, so invalidate event and calendar queries
+     once on each stream (re)open — today nothing refetches after a gap.
 10. Update IndexedDB/local repository behavior with the Compass-local calendar
-   identity. Test offline creation followed by Google connection/migration.
+    identity. A never-authenticated user has no server calendar id, so local
+    records use a client-generated ObjectId as the local-calendar sentinel;
+    the sign-in/connect push (`syncLocalEventsToCloud`) must first fetch
+    `/api/calendars`, map the sentinel to the server's local calendar id, and
+    only then post the events. Test offline creation followed by Google
+    connection/migration.
 
 ## Accessibility tests
 
@@ -91,7 +104,7 @@ available before final integration.
 
 - [ ] Calendar list and toggles are persistent, accessible, and responsive.
 - [ ] Calendar identity appears on every event surface without replacing
-  priority semantics.
+      priority semantics.
 - [ ] Draft CRUD targets any writable calendar; read-only calendars are safe.
 - [ ] Hidden calendars avoid unnecessary SSE refetch work.
 

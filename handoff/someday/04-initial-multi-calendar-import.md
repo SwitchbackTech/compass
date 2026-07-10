@@ -28,6 +28,17 @@ Depends on: `03-event-runtime-cutover.md`.
 
 ## Implementation steps
 
+0. Prerequisite pulled forward from `07` (A30), because a 25-calendar fan-out
+   without it hits rate limits and 10-minute channels cannot survive
+   multi-calendar renewal churn:
+   - introduce the small Google request context (authenticated client, stable
+     Compass user id as `quotaUser`, retry policy) and require it in every
+     GCalService method;
+   - centralize retry classification and truncated exponential backoff with
+     jitter for quota/rate-limit and transient 5xx/network failures;
+   - request seven-day channel expirations, persist Google's returned
+     expiration, and keep short expirations a dev/test override.
+     `07` then owns only inspection, repair, the lease, and coverage tests.
 1. Replace the single-page helper with a CalendarList page generator that
    preserves the original request parameters, follows `nextPageToken`, and
    returns `nextSyncToken` only from the final page.
@@ -60,7 +71,7 @@ Depends on: `03-event-runtime-cutover.md`.
    watches for `freeBusyReader` calendars. Watch failure marks sync attention
    but does not erase successfully imported events.
 10. Publish accurate `eventsCount`/`calendarsCount` and per-calendar structured
-   logs without titles, Google ids, tokens, or user emails.
+    logs without titles, Google ids, tokens, or user emails.
 11. Update sync/import docs to distinguish eligible, active, visible, writable,
     and watched calendars.
 
@@ -78,6 +89,8 @@ Depends on: `03-event-runtime-cutover.md`.
 - Empty, large, recurring-heavy, and partially failing calendars.
 - Retry after a page failure; sync token never advances prematurely.
 - Concurrency never exceeds its configured bound.
+- A rate-limited (403/429) page retries with backoff through the shared policy
+  and the import still converges.
 - Watch start occurs after token persistence and includes every event-capable
   imported calendar plus exactly one CalendarList watch.
 - Revoked token and Google 410 paths preserve Compass-local data.
@@ -88,6 +101,6 @@ Depends on: `03-event-runtime-cutover.md`.
 - [ ] Each imported event references the correct Compass calendar.
 - [ ] Pagination, retry, concurrency, and partial failure are deterministic.
 - [ ] Every archived #553 acceptance criterion and its performance guidance is
-  covered by implementation and test evidence.
+      covered by implementation and test evidence.
 
 Suggested commit: `feat(backend): import all google calendars`

@@ -39,7 +39,11 @@ Depends on: `04-initial-multi-calendar-import.md`.
    client-supplied provider metadata and user ids.
 3. Change every GCalService event method—get, list, instances, insert, update,
    delete—to require an explicit Google calendar id. Remove `GCAL_PRIMARY`
-   defaults from event write paths.
+   defaults from event write paths (today `createEvent`, `updateEvent`, and
+   `deleteEvent` take no calendar id at all and hardcode `"primary"`).
+   Provider updates use `events.patch` limited to Compass-owned fields (A28);
+   `events.update` replaces the whole resource and wipes attendees, location,
+   and reminders on events Compass did not author.
 4. Pass the resolved provider calendar through Compass-to-Google planning and
    effects. Provider success updates the event's provider reference in the same
    owning calendar.
@@ -49,9 +53,11 @@ Depends on: `04-initial-multi-calendar-import.md`.
    stable 403 error contract the web can recognize.
 7. Keep all members of a recurring series on one calendar. Apply-to-series
    operations validate the base calendar; an inconsistent series fails loudly.
-8. Keep someday events on the Compass-local calendar. Scheduling a someday
-   draft selects a writable target; moving a scheduled event to someday deletes
-   the provider copy and changes ownership through an explicit transition.
+8. Keep someday events on the Compass-local calendar. Both directions go
+   through the `TransitionEventInput` command from `01` (A24), introduced in
+   `03` with A4 defaults: this packet extends the `schedule` direction to any
+   writable target calendar, and `unschedule` continues to delete the provider
+   copy and return ownership to the local calendar.
 9. Suppress `EVENT_CHANGED` for invisible calendars at the backend boundary and
    publish the required calendar-scoped message contract from `01`. Old
    payload-less clients are intentionally unsupported after the cutover.
@@ -65,6 +71,8 @@ Depends on: `04-initial-multi-calendar-import.md`.
 - Same Google event id in two calendars.
 - Recurring base/instances and every edit scope on a secondary calendar.
 - Scheduled ↔ someday transitions and password-only Compass-local CRUD.
+- An `events.patch` update of a Google event with attendees, location, and
+  reminders preserves all three.
 - Google error after Compass persistence retains current transaction/retry
   semantics and exposes recoverable sync state.
 
