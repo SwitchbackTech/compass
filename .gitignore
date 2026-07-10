@@ -22,7 +22,6 @@ blob-report/
 build/
 buildcache/
 logs/
-/handoff/
 node_modules/
 packages/backend/logs
 packages/backend/build
