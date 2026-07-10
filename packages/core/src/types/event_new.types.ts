@@ -46,7 +46,9 @@ const RecurrenceSchema = z.union([
 export const EventSchema = z.object({
   _id: zObjectId,
   calendar: zObjectId,
-  title: StringV4Schema,
+  // Own schema (not the shared, non-empty StringV4Schema) so titleless
+  // events are allowed — an empty title is valid in Compass (#1871).
+  title: z.string(),
   description: z.string().default(""),
   isSomeday: z.boolean().default(false),
   startDate: z.date(),

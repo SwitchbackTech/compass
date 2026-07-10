@@ -1,6 +1,5 @@
 import { faker } from "@faker-js/faker";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";
-import { generateCalendarColorScheme } from "@core/util/color.utils";
 
 /**
  * Generates a mock Google Calendar calendar list entry.
@@ -11,8 +10,6 @@ import { generateCalendarColorScheme } from "@core/util/color.utils";
 export const createMockCalendarListEntry = (
   overrides: Partial<gSchema$CalendarListEntry> = {},
 ): gSchema$CalendarListEntry => {
-  const { backgroundColor, color } = generateCalendarColorScheme();
-
   return {
     kind: "calendar#calendarListEntry",
     id: "test-calendar",
@@ -22,8 +19,8 @@ export const createMockCalendarListEntry = (
     description: faker.lorem.paragraph({ min: 1, max: 3 }),
     timeZone: faker.location.timeZone(),
     colorId: faker.number.int({ min: 1, max: 24 }).toString(),
-    backgroundColor,
-    foregroundColor: color,
+    backgroundColor: "#9e9e9e",
+    foregroundColor: "#000000",
     selected: true,
     accessRole: faker.helpers.arrayElement(["reader", "writer", "owner"]),
     defaultReminders: [],

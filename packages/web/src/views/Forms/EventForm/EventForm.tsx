@@ -11,10 +11,10 @@ import {
   useState,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
-import { darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
+import { darken } from "@web/common/styles/color.utils";
 import {
   colorByPriority,
   hoverColorByPriority,

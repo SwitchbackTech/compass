@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import { forwardRef, type HTMLAttributes, type PropsWithChildren } from "react";
 import { Priorities, type Priority } from "@core/constants/core.constants";
-import { brighten, darken } from "@core/util/color.utils";
+import { brighten, darken } from "@web/common/styles/color.utils";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { colorByPriority } from "@web/common/styles/theme.util";
 

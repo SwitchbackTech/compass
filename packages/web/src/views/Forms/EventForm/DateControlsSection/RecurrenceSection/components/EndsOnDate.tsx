@@ -1,7 +1,7 @@
 import type React from "react";
 import { useMemo, useState } from "react";
-import { darken } from "@core/util/color.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
+import { darken } from "@web/common/styles/color.utils";
 import { DatePicker } from "@web/components/DatePicker/DatePicker";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 

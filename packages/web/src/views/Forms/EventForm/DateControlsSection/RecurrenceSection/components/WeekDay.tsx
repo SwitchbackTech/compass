@@ -1,5 +1,5 @@
 import type React from "react";
-import { darken } from "@core/util/color.utils";
+import { darken } from "@web/common/styles/color.utils";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { theme } from "@web/common/styles/theme";
 

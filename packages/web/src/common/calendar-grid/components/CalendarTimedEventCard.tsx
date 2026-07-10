@@ -8,7 +8,6 @@ import {
   useMemo,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
-import { brighten, darken } from "@core/util/color.utils";
 import dayjs from "@core/util/date/dayjs";
 import { isRecurringEvent } from "@core/util/event/event.util";
 import {
@@ -27,6 +26,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
+import { brighten, darken } from "@web/common/styles/color.utils";
 import {
   gridColorByPriority,
   gridHoverColorByPriority,

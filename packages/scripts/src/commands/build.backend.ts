@@ -3,7 +3,7 @@
  *
  * Bundles the Express app into a single Bun-native file.
  * All JS/TS dependencies (including @compass/core) are inlined.
- * Only native C/Rust modules are kept external and installed separately.
+ * All dependencies are inlined.
  *
  * Usage:
  *   bun run build:backend
@@ -33,7 +33,6 @@ await $`rm -rf ${BACKEND_BUILD}`.quiet();
 log.success("Removed old backend build");
 
 // 2. Bundle — full bundle so @compass/core and all JS/TS deps are inlined.
-//    Native modules (C/Rust binaries) must stay external and be installed below.
 log.info("Bundling backend ...");
 const result = await Bun.build({
   entrypoints: [path.join(COMPASS_ROOT_DEV, "packages/backend/src/app.ts")],
@@ -41,9 +40,6 @@ const result = await Bun.build({
   target: "bun",
   sourcemap: "inline",
   minify: false,
-  external: [
-    "saslprep", // MongoDB optional C binding
-  ],
 });
 
 if (!result.success) {
@@ -65,27 +61,14 @@ if (await Bun.file(configPath).exists()) {
   log.warning(`Compass config file not found: ${configPath}`);
 }
 
-// 4. Write a minimal package.json for the external native modules only.
-//    Everything else is inlined in app.js — no full workspace needed.
-const backendPkg = JSON.parse(
-  await Bun.file(
-    path.join(COMPASS_ROOT_DEV, "packages/backend/package.json"),
-  ).text(),
-) as { dependencies?: Record<string, string> };
-
-const externalVersions: Record<string, string> = {};
-for (const name of ["saslprep"]) {
-  const version = backendPkg.dependencies?.[name];
-  if (version) externalVersions[name] = version;
-}
-
+// 4. Write a minimal package.json. Everything is inlined in app.js.
 await Bun.write(
   path.join(BACKEND_BUILD, "package.json"),
-  JSON.stringify({ dependencies: externalVersions }, null, 2),
+  JSON.stringify({ dependencies: {} }, null, 2),
 );
 
-// 5. Install only the external native modules
-log.info("Installing native module dependencies ...");
+// 5. Install an empty production dependency tree so Bun writes its runtime files.
+log.info("Installing production dependency metadata ...");
 const install = Bun.spawnSync({
   cmd: ["bun", "install", "--production", "--ignore-scripts", "--no-progress"],
   cwd: BACKEND_BUILD,
