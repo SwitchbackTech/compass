@@ -13,7 +13,7 @@ interface Props {
 }
 
 const plannerMonthPickerClassName =
-  "[&_.calendar]:!w-full [&_.calendar]:!bg-transparent [&_.calendar]:!shadow-none [&_.react-datepicker]:!border-0 [&_.react-datepicker]:!bg-transparent [&_.react-datepicker]:!shadow-none [&_.react-datepicker\\_\\_day-names]:!mb-0 [&_.react-datepicker\\_\\_header.react-datepicker\\_\\_header]:!px-0 [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!bg-transparent [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!px-0";
+  "[&_.calendar]:!block [&_.calendar]:!w-full [&_.calendar]:!max-w-80 [&_.calendar]:!mx-auto [&_.calendar]:!bg-transparent [&_.calendar]:!shadow-none [&_.react-datepicker]:!border-0 [&_.react-datepicker]:!bg-transparent [&_.react-datepicker]:!shadow-none [&_.react-datepicker\\_\\_day-names]:!mb-0 [&_.react-datepicker\\_\\_header.react-datepicker\\_\\_header]:!px-0 [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!bg-transparent [&_.react-datepicker\\_\\_month-container.react-datepicker\\_\\_month-container]:!px-0";
 
 const headerActionsClassName = "!ml-2.5";
 
@@ -76,7 +76,7 @@ export const PlannerMonthPicker: FC<Props> = ({
         headerClassName="!relative !justify-start !px-0 !pb-3"
         inline
         isOpen={true}
-        monthContainerClassName="!w-auto"
+        monthContainerClassName="!w-32"
         monthTextClassName="text-[14px] font-medium"
         monthsShown={monthsShown}
         onChange={(date) => {
