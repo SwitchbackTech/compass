@@ -14,6 +14,7 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
+import { type ReorderEventsInput } from "@core/types/event-command.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { getUserId } from "@web/auth/compass/session/session.util";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
@@ -934,11 +935,19 @@ export const useSidebarActions = (
 
     setSomedayEvents(newState);
 
-    const newOrder = newEventIds.map((_id, index) => ({
-      _id,
-      order: index,
-    }));
-    eventMutations.reorderSomeday(newOrder);
+    const period = newColumn.id === COLUMN_WEEK ? "week" : "month";
+    const items = newEventIds.reduce<ReorderEventsInput["items"]>(
+      (acc, eventId, sortOrder) => {
+        const id = EventIdSchema.safeParse(eventId);
+        if (id.success) acc.push({ eventId: id.data, sortOrder });
+        return acc;
+      },
+      [],
+    );
+
+    if (items.length > 0) {
+      mutations.reorderSomeday({ period, items });
+    }
   };
 
   const reorderSomedayEvent = (result: SomedayReorderResult) => {
