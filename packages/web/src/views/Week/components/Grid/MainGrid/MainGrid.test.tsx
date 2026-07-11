@@ -346,8 +346,12 @@ const expectDraftRange = async (startDate: string, endDate: string) => {
   await waitFor(() => {
     const draft = useDraftStore.getState().event;
 
-    expect(draft?.startDate).toBe(startDate);
-    expect(draft?.endDate).toBe(endDate);
+    expect(new Date(draft?.startDate ?? "").toISOString()).toBe(
+      new Date(startDate).toISOString(),
+    );
+    expect(new Date(draft?.endDate ?? "").toISOString()).toBe(
+      new Date(endDate).toISOString(),
+    );
   });
 };
 
