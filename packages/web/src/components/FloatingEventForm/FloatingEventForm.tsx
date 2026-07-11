@@ -10,8 +10,8 @@ import {
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { legacyScopeToRecurrenceScope } from "@web/events/queries/event.legacy-bridge";
 import { useEventById } from "@web/events/queries/useEventById";
+import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import {
   draftActions,
   selectDraft,
@@ -76,7 +76,7 @@ export function FloatingEventForm({
     if (pendingAction?.type === "save") {
       onSave(pendingAction.event, applyTo);
     } else if (pendingAction?.type === "delete") {
-      onDelete(legacyScopeToRecurrenceScope(applyTo));
+      onDelete(toRecurrenceScope(applyTo));
     }
     setPendingAction(null);
   };

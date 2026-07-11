@@ -20,23 +20,6 @@ import {
 } from "@core/types/event-command.contracts";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 
-// TODO(packet-03-phase-3c): maps the legacy recurring-edit scope enum (still
-// used by the EventForm's scope-choice dialog) onto the new RecurrenceScope
-// wire values, until that dialog is converted to emit RecurrenceScope
-// directly.
-export function legacyScopeToRecurrenceScope(
-  applyTo?: RecurringEventUpdateScope,
-): RecurrenceScope {
-  switch (applyTo) {
-    case RecurringEventUpdateScope.ALL_EVENTS:
-      return "all";
-    case RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS:
-      return "thisAndFollowing";
-    default:
-      return "this";
-  }
-}
-
 // TODO(packet-03-phase-3c): the grid renderer (assembleGridEvent,
 // Schema_GridEvent, the sidebar Someday components) still consumes the
 // legacy Schema_Event shape. This bridges the new normalized `Event` contract
@@ -49,6 +32,16 @@ export function legacyScopeToRecurrenceScope(
 // `externalReference` — so this always reports Origin.COMPASS and omits
 // gEventId/gRecurringEventId. Consumers that branch on those fields need the
 // calendar lookup 3c will wire in.
+export function legacyRecurrenceFromEvent(
+  event: Event,
+): Schema_Event["recurrence"] {
+  return event.recurrence.kind === "series"
+    ? { rule: [...event.recurrence.rules], eventId: event.id }
+    : event.recurrence.kind === "occurrence"
+      ? { eventId: event.recurrence.seriesId }
+      : undefined;
+}
+
 export function eventToSchemaEvent(event: Event): Schema_Event {
   const { schedule } = event;
 
@@ -69,12 +62,7 @@ export function eventToSchemaEvent(event: Event): Schema_Event {
     order: schedule.kind === "someday" ? schedule.sortOrder : undefined,
     startDate,
     endDate,
-    recurrence:
-      event.recurrence.kind === "series"
-        ? { rule: [...event.recurrence.rules], eventId: event.id }
-        : event.recurrence.kind === "occurrence"
-          ? { eventId: event.recurrence.seriesId }
-          : undefined,
+    recurrence: legacyRecurrenceFromEvent(event),
     updatedAt: event.updatedAt ?? undefined,
   };
 }
@@ -204,7 +192,13 @@ export function createLegacyEventMutationsAdapter(
   ) => {
     const id = EventIdSchema.safeParse(payload._id);
     if (!id.success) return;
-    const scope = legacyScopeToRecurrenceScope(payload.applyTo);
+    const scope: RecurrenceScope =
+      payload.applyTo === RecurringEventUpdateScope.ALL_EVENTS
+        ? "all"
+        : payload.applyTo ===
+            RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS
+          ? "thisAndFollowing"
+          : "this";
 
     if (action === "edit" && payload.event) {
       const input = schemaEventToReplaceInput(payload.event, scope);

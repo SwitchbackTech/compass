@@ -48,6 +48,11 @@ export const AllDayEvents = ({
     [allDayEvents, weekDays],
   );
 
+  // NOT converted to GridEventDraft/editGridEventDraft: useDraftActions.ts
+  // reads `draft.position.dragOffset` off this store's `event` field when a
+  // keyboardEdit draft is subsequently repositioned by arrow keys, and
+  // gridEventDraftToSchemaEvent has no grid-layout `position` to give it.
+  // See packet-03-phase-3c scoping note.
   const handleKeyDown = (event: Schema_GridEvent) => {
     draftActions.start({
       activity: "keyboardEdit",

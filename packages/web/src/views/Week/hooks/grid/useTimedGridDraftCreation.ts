@@ -1,7 +1,10 @@
 import { type MouseEvent as ReactMouseEvent, useEffect, useRef } from "react";
-import { Categories_Event } from "@core/types/event.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  createGridEventDraft,
+  replaceGridDraftSchedule,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
 import {
   draftActions,
   selectIsDrafting,
@@ -60,31 +63,30 @@ export const useTimedGridDraftCreation = ({
 
     gestureRef.current?.cancel();
 
-    const category = Categories_Event.TIMED;
     const pointerStart = getPointerPoint(event);
     const start = dateCalcs.getDateByXY(
       pointerStart.x,
       pointerStart.y,
       weekProps.component.startOfView,
     );
-    const draftEvent = assembleDefaultEvent(
-      category,
-      start.format(),
-      start.add(DRAFT_DURATION_MIN, "minutes").format(),
+    const draftEvent = createGridEventDraft(
+      timedGridSchedule(
+        start.toDate(),
+        start.add(DRAFT_DURATION_MIN, "minutes").toDate(),
+      ),
     );
     let hasMoved = false;
     let isCancelled = false;
     let isFinished = false;
     let isResizePreviewStarted = false;
 
-    const resolveEventForPointer = async ({
+    const resolveEventForPointer = ({
       x,
       y,
     }: {
       x: number;
       y: number;
-    }): Promise<Schema_GridEvent> => {
-      const event = await draftEvent;
+    }): GridEventDraft => {
       const minimumEndDate = start.add(DRAFT_DURATION_MIN, "minutes");
       const pointerDate = dateCalcs.getDateByXY(
         x,
@@ -102,11 +104,10 @@ export const useTimedGridDraftCreation = ({
           ? start
           : minimumEndDate;
 
-      return {
-        ...event,
-        endDate: resolvedEndDate.format(),
-        startDate: resolvedStartDate.format(),
-      } as Schema_GridEvent;
+      return replaceGridDraftSchedule(
+        draftEvent,
+        timedGridSchedule(resolvedStartDate.toDate(), resolvedEndDate.toDate()),
+      );
     };
 
     const cleanup = () => {
@@ -117,34 +118,24 @@ export const useTimedGridDraftCreation = ({
     };
 
     const openTimedDraft = (mouseEvent: MouseEvent) => {
-      void resolveEventForPointer(getPointerPoint(mouseEvent)).then(
-        (nextEvent) => {
-          if (isCancelled) {
-            return;
-          }
+      const nextDraft = resolveEventForPointer(getPointerPoint(mouseEvent));
+      if (isCancelled) return;
 
-          actions.stopResizing();
-          actions.stopDragging();
-          draftActions.startGridClick(nextEvent);
-        },
-      );
+      actions.stopResizing();
+      actions.stopDragging();
+      draftActions.startGridDraft({ activity: "gridClick", draft: nextDraft });
     };
 
     const startResizePreview = (mouseEvent: MouseEvent) => {
       isResizePreviewStarted = true;
-      void resolveEventForPointer(getPointerPoint(mouseEvent)).then(
-        (nextEvent) => {
-          if (isCancelled || isFinished) {
-            return;
-          }
+      const nextDraft = resolveEventForPointer(getPointerPoint(mouseEvent));
+      if (isCancelled || isFinished) return;
 
-          draftActions.startResizing({
-            category,
-            dateToChange: "endDate",
-            event: nextEvent,
-          });
-        },
-      );
+      draftActions.startGridDraft({
+        activity: "resizing",
+        dateToResize: "endDate",
+        draft: nextDraft,
+      });
     };
 
     function finish(mouseEvent: MouseEvent) {

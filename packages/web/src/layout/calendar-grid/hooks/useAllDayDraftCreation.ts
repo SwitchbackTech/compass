@@ -1,9 +1,13 @@
 import { type MouseEvent as ReactMouseEvent } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  createGridEventDraft,
+  gridEventDraftToSchemaEvent,
+} from "@web/events/grid-event-draft.adapter";
 import {
   draftActions,
   selectIsDrafting,
@@ -12,12 +16,14 @@ import {
 
 interface UseAllDayDraftCreationOptions {
   getStartDate: (clientX: number, clientY: number) => string;
-  onCreateDraft: (event: Schema_Event) => void;
+  onCreateDraft?: (event: Schema_Event) => void;
+  onCreateGridDraft?: (draft: GridEventDraft) => void;
 }
 
 export const useAllDayDraftCreation = ({
   getStartDate,
   onCreateDraft,
+  onCreateGridDraft,
 }: UseAllDayDraftCreationOptions) => {
   const isDrafting = useDraftStore(selectIsDrafting);
 
@@ -39,8 +45,17 @@ export const useAllDayDraftCreation = ({
       .add(1, "day")
       .format(YEAR_MONTH_DAY_FORMAT);
 
-    void assembleDefaultEvent(Categories_Event.ALLDAY, startDate, endDate).then(
-      onCreateDraft,
-    );
+    const draft = createGridEventDraft({
+      kind: "allDay",
+      start: new Date(startDate),
+      end: new Date(endDate),
+    });
+
+    if (onCreateGridDraft) {
+      onCreateGridDraft(draft);
+      return;
+    }
+
+    onCreateDraft?.(gridEventDraftToSchemaEvent(draft));
   };
 };

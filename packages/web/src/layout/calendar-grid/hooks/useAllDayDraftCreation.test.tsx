@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { useEffect } from "react";
 import { type Schema_Event } from "@core/types/event.types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { useAllDayDraftCreation } from "./useAllDayDraftCreation";
 import { afterEach, describe, expect, it, mock } from "bun:test";
@@ -27,11 +28,11 @@ const existingDraft: Schema_Event = {
 
 const renderHarness = ({
   draft = null,
-  onCreateDraft = mock(),
+  onCreateGridDraft = mock(),
   onParentMouseDown = mock(),
 }: {
   draft?: Schema_Event | null;
-  onCreateDraft?: (event: Schema_Event) => void;
+  onCreateGridDraft?: (draft: GridEventDraft) => void;
   onParentMouseDown?: () => void;
 } = {}) => {
   if (draft) {
@@ -41,7 +42,7 @@ const renderHarness = ({
   const Harness = () => {
     const onMouseDown = useAllDayDraftCreation({
       getStartDate: () => "2026-05-20",
-      onCreateDraft,
+      onCreateGridDraft,
     });
 
     useEffect(() => {
@@ -58,14 +59,14 @@ const renderHarness = ({
 
   render(<Harness />);
 
-  return { onCreateDraft, onParentMouseDown };
+  return { onCreateGridDraft, onParentMouseDown };
 };
 
 afterEach(cleanup);
 
 describe("useAllDayDraftCreation", () => {
   it("creates a one-day all-day draft and stops the opening press", async () => {
-    const { onCreateDraft, onParentMouseDown } = renderHarness();
+    const { onCreateGridDraft, onParentMouseDown } = renderHarness();
 
     const wasNotCancelled = fireEvent.mouseDown(
       screen.getByRole("button", { name: "Empty all-day space" }),
@@ -74,30 +75,34 @@ describe("useAllDayDraftCreation", () => {
 
     expect(wasNotCancelled).toBe(false);
     expect(onParentMouseDown).not.toHaveBeenCalled();
-    await waitFor(() => expect(onCreateDraft).toHaveBeenCalledTimes(1));
-    expect(onCreateDraft).toHaveBeenCalledWith(
+    await waitFor(() => expect(onCreateGridDraft).toHaveBeenCalledTimes(1));
+    expect(onCreateGridDraft).toHaveBeenCalledWith(
       expect.objectContaining({
-        endDate: "2026-05-21",
-        isAllDay: true,
-        startDate: "2026-05-20",
+        values: expect.objectContaining({
+          schedule: {
+            end: new Date("2026-05-21"),
+            kind: "allDay",
+            start: new Date("2026-05-20"),
+          },
+        }),
       }),
     );
   });
 
   it("ignores right-click presses", () => {
-    const { onCreateDraft, onParentMouseDown } = renderHarness();
+    const { onCreateGridDraft, onParentMouseDown } = renderHarness();
 
     fireEvent.mouseDown(
       screen.getByRole("button", { name: "Empty all-day space" }),
       { button: 2 },
     );
 
-    expect(onCreateDraft).not.toHaveBeenCalled();
+    expect(onCreateGridDraft).not.toHaveBeenCalled();
     expect(onParentMouseDown).toHaveBeenCalledTimes(1);
   });
 
   it("dismisses an existing draft without creating a replacement", async () => {
-    const { onCreateDraft, onParentMouseDown } = renderHarness({
+    const { onCreateGridDraft, onParentMouseDown } = renderHarness({
       draft: existingDraft,
     });
 
@@ -107,7 +112,7 @@ describe("useAllDayDraftCreation", () => {
     );
 
     await waitFor(() => expect(useDraftStore.getState().event).toBeNull());
-    expect(onCreateDraft).not.toHaveBeenCalled();
+    expect(onCreateGridDraft).not.toHaveBeenCalled();
     expect(onParentMouseDown).not.toHaveBeenCalled();
   });
 });

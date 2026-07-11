@@ -33,6 +33,10 @@ export const createSomedayDraft = async (
 
   const event = await assembleDefaultEvent(category, startDate, endDate);
 
+  // NOT converted to GridEventDraft/createGridEventDraft: GridScheduleDraft
+  // only models "timed" | "allDay" schedules, and editGridEventDraft
+  // explicitly rejects "someday" schedules. See packet-03-phase-3c scoping
+  // note.
   draftActions.start({
     activity,
     eventType: category,

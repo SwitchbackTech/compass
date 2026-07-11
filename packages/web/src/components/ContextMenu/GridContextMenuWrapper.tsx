@@ -8,13 +8,12 @@ import {
 import { useQueryClient } from "@tanstack/react-query";
 import type React from "react";
 import { useState } from "react";
-import { Categories_Event } from "@core/types/event.types";
 import {
   assembleGridEvent,
   getCalendarEventIdFromElement,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
-import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
+import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
 import {
   draftActions,
@@ -76,22 +75,15 @@ export const ContextMenuWrapper = ({
     if (hasClickedOnEvent) {
       e.preventDefault();
 
-      // TODO(packet-03-phase-3c): draft.store.ts still holds the legacy
-      // Schema_Event shape; bridge until it's converted to `Event`.
-      const event = eventToSchemaEvent(getSelectedEvent(eventId));
+      const draft = editGridEventDraft(getSelectedEvent(eventId));
+      if (!draft) return;
 
       // Create a virtual element where the user clicked
       refs.setReference({
         getBoundingClientRect: () => new DOMRect(e.clientX, e.clientY, 0, 0), // Position menu exactly at the click position
       });
 
-      draftActions.start({
-        activity: "eventRightClick",
-        eventType: event.isAllDay
-          ? Categories_Event.ALLDAY
-          : Categories_Event.TIMED,
-        event,
-      });
+      draftActions.startGridDraft({ activity: "eventRightClick", draft });
 
       setIsOpen(true);
     }

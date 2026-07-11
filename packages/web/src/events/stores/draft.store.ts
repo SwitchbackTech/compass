@@ -3,20 +3,13 @@ import { devtools } from "zustand/middleware";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { IS_DEV } from "@web/common/constants/env.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 
-// TODO(packet-03-phase-3c): deliberately left on the legacy Schema_Event
-// shape for this phase. This store backs the Week grid's drag/resize/swap
-// interactions (~10 consumers: useDraftActions, useSidebarActions,
-// GridContextMenuWrapper, DayCalendarGrid, EventForm, etc.), all of which
-// build/consume Schema_Event/Schema_GridEvent objects with no test coverage
-// in this packet's scope. Converting the store type without converting those
-// call sites in the same pass risks silently breaking drag/resize/swap
-// behavior with no way to verify it here; the boundary is bridged instead
-// via event.legacy-bridge.ts (eventToSchemaEvent / schemaEventToCreateInput /
-// schemaEventToReplaceInput / createLegacyEventMutationsAdapter). 3c should
-// convert this store's `event: Event` and rewire its consumers together,
-// verified against the real grid interactions (see docs/frontend or a
-// browser-driven check), not just a type-level pass.
+// TODO(packet-03-phase-3c): migrate remaining consumers from the legacy
+// `event` projection to `gridDraft`, then remove the projection. This store
+// remains the single draft store while Day, forms, sidebar, and legacy Week
+// interactions transition.
 
 export type Activity_DraftEvent =
   | "createShortcut"
@@ -43,6 +36,12 @@ export interface Status_DraftEvent {
 
 export interface State_DraftEvent {
   status: Status_DraftEvent | null;
+  /** Canonical draft for migrated grid creation paths. */
+  gridDraft: GridEventDraft | null;
+  /**
+   * Temporary projection for Day, forms, sidebar, and legacy Week draft
+   * interactions. Do not add another store while those consumers migrate.
+   */
   event: Schema_Event | null;
 }
 
@@ -73,6 +72,7 @@ const initialDraftStatus: Status_DraftEvent = {
 
 export const initialDraftState: State_DraftEvent = {
   status: initialDraftStatus,
+  gridDraft: null,
   event: null,
 };
 
@@ -95,6 +95,7 @@ export const draftActions = {
   start: ({ activity, event, eventType }: Payload_DraftEvent) =>
     useDraftStore.setState(
       (state) => ({
+        gridDraft: null,
         event,
         status: {
           ...(state.status ?? initialDraftStatus),
@@ -111,6 +112,7 @@ export const draftActions = {
   startResizing: ({ category, event, dateToChange }: Payload_Draft_Resize) =>
     useDraftStore.setState(
       (state) => ({
+        gridDraft: null,
         event,
         status: {
           ...state.status,
@@ -142,6 +144,7 @@ export const draftActions = {
   startGridClick: (event: Schema_Event) =>
     useDraftStore.setState(
       {
+        gridDraft: null,
         event,
         status: {
           ...initialDraftStatus,
@@ -158,10 +161,11 @@ export const draftActions = {
     useDraftStore.setState(
       (state) => {
         if (!event) {
-          return { event, status: initialDraftStatus };
+          return { gridDraft: null, event, status: initialDraftStatus };
         }
 
         return {
+          gridDraft: null,
           event,
           status: {
             ...(state.status ?? initialDraftStatus),
@@ -178,6 +182,7 @@ export const draftActions = {
   swap: ({ category, event }: Payload_Draft_Swap) =>
     useDraftStore.setState(
       {
+        gridDraft: null,
         event,
         status: {
           ...initialDraftStatus,
@@ -187,6 +192,38 @@ export const draftActions = {
       },
       false,
       { type: "swap" },
+    ),
+
+  startGridDraft: ({
+    activity,
+    dateToResize = null,
+    draft,
+  }: {
+    activity: Extract<
+      Activity_DraftEvent,
+      "createShortcut" | "eventRightClick" | "gridClick" | "resizing"
+    >;
+    dateToResize?: "startDate" | "endDate" | null;
+    draft: GridEventDraft;
+  }) =>
+    useDraftStore.setState(
+      (state) => ({
+        gridDraft: draft,
+        event: gridEventDraftToSchemaEvent(draft),
+        status: {
+          ...(state.status ?? initialDraftStatus),
+          activity,
+          dateToResize,
+          eventType:
+            draft.values.schedule.kind === "allDay"
+              ? Categories_Event.ALLDAY
+              : Categories_Event.TIMED,
+          isDrafting: true,
+          isFormOpen: false,
+        },
+      }),
+      false,
+      { type: "startGridDraft" },
     ),
 
   setFormOpen: (isFormOpen: boolean) =>
@@ -203,6 +240,8 @@ export const draftActions = {
 };
 
 export const selectDraft = (state: State_DraftEvent) => state.event;
+
+export const selectGridDraft = (state: State_DraftEvent) => state.gridDraft;
 
 export const selectDraftActivity = (state: State_DraftEvent) =>
   state.status?.activity;

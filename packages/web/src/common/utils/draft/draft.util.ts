@@ -4,40 +4,32 @@ import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import { getElemById } from "@web/common/utils/grid/grid.util";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import {
-  type Activity_DraftEvent,
-  draftActions,
-} from "@web/events/stores/draft.store";
+  createGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
+import { draftActions } from "@web/events/stores/draft.store";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 
-export const createTimedDraft = async (
+export const createTimedDraft = (
   isCurrentWeek: boolean,
   startOfView: Dayjs,
-  activity: Activity_DraftEvent,
+  activity: "createShortcut",
 ) => {
   const { startDate, endDate } = getDraftTimes(isCurrentWeek, startOfView);
+  const draft = createGridEventDraft(
+    timedGridSchedule(new Date(startDate), new Date(endDate)),
+  );
 
-  const event = (await assembleDefaultEvent(
-    Categories_Event.TIMED,
-    startDate,
-    endDate,
-  )) as Schema_GridEvent;
-
-  draftActions.start({
-    activity,
-    eventType: Categories_Event.TIMED,
-    event,
-  });
+  draftActions.startGridDraft({ activity, draft });
 };
 
-export const createAlldayDraft = async (
+export const createAlldayDraft = (
   startOfView: Dayjs,
   endOfView: Dayjs,
-  activity: Activity_DraftEvent,
+  activity: "createShortcut",
 ) => {
   const today = dayjs();
   const start = today.isBetween(startOfView, endOfView, "day", "[]")
@@ -45,18 +37,13 @@ export const createAlldayDraft = async (
     : startOfView.startOf("day");
   const startDate = start.format();
   const endDate = start.add(1, "day").format();
-
-  const event = (await assembleDefaultEvent(
-    Categories_Event.ALLDAY,
-    startDate,
-    endDate,
-  )) as Schema_GridEvent;
-
-  draftActions.start({
-    activity,
-    eventType: Categories_Event.ALLDAY,
-    event,
+  const draft = createGridEventDraft({
+    kind: "allDay",
+    start: new Date(startDate),
+    end: new Date(endDate),
   });
+
+  draftActions.startGridDraft({ activity, draft });
 };
 
 export const getDraftTimes = (isCurrentWeek: boolean, startOfWeek: Dayjs) => {
