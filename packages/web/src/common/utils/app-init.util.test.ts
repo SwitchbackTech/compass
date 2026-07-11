@@ -1,3 +1,4 @@
+import { setOfflineDataStoreTestOverrides } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import {
   afterEach,
@@ -9,26 +10,20 @@ import {
   spyOn,
 } from "bun:test";
 
-// Mock the offline data store
+// Mock the offline data store. `setOfflineDataStoreTestOverrides` is a
+// runtime override read at call time by the real registry module, not a
+// `mock.module` swap — it works regardless of which files already imported
+// the registry (see offline-data.store.registry.ts for why that distinction
+// matters). The shared web.preload.ts afterEach clears overrides after every
+// test, so this file re-applies its own override in `beforeEach`.
 const mockInitializeStorage = mock();
 const mockToastError = mock();
 
-// The shared web.preload.ts afterEach restores the real
-// offline-data-store registry after every test (mock.module is process-wide
-// and otherwise leaks into unrelated files), so this file re-applies its own
-// mock before each of its tests, not just once at load time.
 const registerOfflineDataStoreMock = () =>
-  mock.module(
-    "@web/common/storage/offline-data/offline-data.store.registry",
-    () => ({
-      ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
-      getOfflineDataStore: mock(),
-      initializeOfflineDataStore: mockInitializeStorage,
-      isOfflineDataStoreReady: mock().mockReturnValue(true),
-      resetOfflineDataStore: mock(),
-      resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
-    }),
-  );
+  setOfflineDataStoreTestOverrides({
+    initializeOfflineDataStore: mockInitializeStorage,
+    isOfflineDataStoreReady: () => true,
+  });
 
 registerOfflineDataStoreMock();
 

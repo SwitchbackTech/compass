@@ -1,4 +1,5 @@
 import { renderHook, waitFor } from "@testing-library/react";
+import { setOfflineDataStoreTestOverrides } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { type Task } from "@web/common/types/task.types";
 import { type TaskRepository } from "@web/tasks/repositories/task.repository";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
@@ -6,22 +7,16 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const ensureOfflineDataStoreReadyMock = mock(() => Promise.resolve());
 
-// The shared web.preload.ts afterEach restores the real
-// offline-data-store registry after every test (mock.module is process-wide
-// and otherwise leaks into unrelated files), so this file re-applies its own
-// mock before each of its tests, not just once at load time.
+// setOfflineDataStoreTestOverrides is a runtime override read at call time
+// by the real registry module, not a `mock.module` swap — it works
+// regardless of which files already imported the registry (see
+// offline-data.store.registry.ts). The shared web.preload.ts afterEach
+// clears overrides after every test, so this file re-applies its own in
+// `beforeEach`.
 const registerOfflineDataStoreMock = () =>
-  mock.module(
-    "@web/common/storage/offline-data/offline-data.store.registry",
-    () => ({
-      ensureOfflineDataStoreReady: ensureOfflineDataStoreReadyMock,
-      getOfflineDataStore: mock(),
-      initializeOfflineDataStore: mock().mockResolvedValue(undefined),
-      isOfflineDataStoreReady: mock().mockReturnValue(true),
-      resetOfflineDataStore: mock(),
-      resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
-    }),
-  );
+  setOfflineDataStoreTestOverrides({
+    ensureOfflineDataStoreReady: ensureOfflineDataStoreReadyMock,
+  });
 
 registerOfflineDataStoreMock();
 
