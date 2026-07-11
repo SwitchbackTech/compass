@@ -32,6 +32,16 @@ import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 // `externalReference` — so this always reports Origin.COMPASS and omits
 // gEventId/gRecurringEventId. Consumers that branch on those fields need the
 // calendar lookup 3c will wire in.
+export function legacyRecurrenceFromEvent(
+  event: Event,
+): Schema_Event["recurrence"] {
+  return event.recurrence.kind === "series"
+    ? { rule: [...event.recurrence.rules], eventId: event.id }
+    : event.recurrence.kind === "occurrence"
+      ? { eventId: event.recurrence.seriesId }
+      : undefined;
+}
+
 export function eventToSchemaEvent(event: Event): Schema_Event {
   const { schedule } = event;
 
@@ -52,12 +62,7 @@ export function eventToSchemaEvent(event: Event): Schema_Event {
     order: schedule.kind === "someday" ? schedule.sortOrder : undefined,
     startDate,
     endDate,
-    recurrence:
-      event.recurrence.kind === "series"
-        ? { rule: [...event.recurrence.rules], eventId: event.id }
-        : event.recurrence.kind === "occurrence"
-          ? { eventId: event.recurrence.seriesId }
-          : undefined,
+    recurrence: legacyRecurrenceFromEvent(event),
     updatedAt: event.updatedAt ?? undefined,
   };
 }

@@ -12,6 +12,30 @@ import {
   type GridEventDraft,
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
+import { legacyRecurrenceFromEvent } from "@web/events/queries/event.legacy-bridge";
+
+function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
+  const { schedule } = event;
+
+  if (schedule.kind === "timed") {
+    return {
+      kind: "timed",
+      start: new Date(schedule.start),
+      end: new Date(schedule.end),
+      timeZone: schedule.timeZone,
+    };
+  }
+
+  if (schedule.kind === "allDay") {
+    return {
+      kind: "allDay",
+      start: new Date(schedule.start),
+      end: new Date(schedule.end),
+    };
+  }
+
+  return null;
+}
 
 export function createGridEventDraft(
   schedule: GridScheduleDraft,
@@ -34,7 +58,8 @@ export function editGridEventDraft(
   event: Event,
   scope: RecurrenceScope = "this",
 ): GridEventDraft | null {
-  if (event.schedule.kind === "someday") return null;
+  const schedule = gridScheduleFromEvent(event);
+  if (!schedule) return null;
 
   return {
     kind: "edit",
@@ -43,19 +68,7 @@ export function editGridEventDraft(
       title: event.content.kind === "details" ? event.content.title : "",
       description:
         event.content.kind === "details" ? event.content.description : "",
-      schedule:
-        event.schedule.kind === "timed"
-          ? {
-              kind: "timed",
-              start: new Date(event.schedule.start),
-              end: new Date(event.schedule.end),
-              timeZone: event.schedule.timeZone,
-            }
-          : {
-              kind: "allDay",
-              start: new Date(event.schedule.start),
-              end: new Date(event.schedule.end),
-            },
+      schedule,
       priority: event.priority,
       calendarId: event.calendarId,
       recurrence: { kind: "preserve" },
@@ -68,21 +81,8 @@ export function editGridEventDraft(
 // event's fields but is never linked back to it (kind "create", source
 // null), so editing/deleting the duplicate never touches the original.
 export function duplicateGridEventDraft(event: Event): GridEventDraft | null {
-  if (event.schedule.kind === "someday") return null;
-
-  const schedule: GridScheduleDraft =
-    event.schedule.kind === "timed"
-      ? {
-          kind: "timed",
-          start: new Date(event.schedule.start),
-          end: new Date(event.schedule.end),
-          timeZone: event.schedule.timeZone,
-        }
-      : {
-          kind: "allDay",
-          start: new Date(event.schedule.start),
-          end: new Date(event.schedule.end),
-        };
+  const schedule = gridScheduleFromEvent(event);
+  if (!schedule) return null;
 
   return {
     kind: "create",
@@ -99,21 +99,18 @@ export function duplicateGridEventDraft(event: Event): GridEventDraft | null {
   };
 }
 
+// The two branches look identical, but each is required to keep GridEventDraft's
+// discriminated union narrowed: spreading `draft` without branching on `kind`
+// loses the correlation between `kind` and `values`'s create/edit shape.
 export function replaceGridDraftSchedule(
   draft: GridEventDraft,
   schedule: GridScheduleDraft,
 ): GridEventDraft {
   if (draft.kind === "create") {
-    return {
-      ...draft,
-      values: { ...draft.values, schedule },
-    };
+    return { ...draft, values: { ...draft.values, schedule } };
   }
 
-  return {
-    ...draft,
-    values: { ...draft.values, schedule },
-  };
+  return { ...draft, values: { ...draft.values, schedule } };
 }
 
 export function parseGridEventDraft(
@@ -163,25 +160,15 @@ export function gridEventDraftToSchemaEvent(
     isSomeday: false,
     priority: draft.values.priority ?? Priorities.UNASSIGNED,
     recurrence:
-      draft.kind === "edit" ? recurrenceFromSource(draft.source) : undefined,
+      draft.kind === "edit"
+        ? legacyRecurrenceFromEvent(draft.source)
+        : undefined,
     startDate:
       schedule.kind === "allDay"
         ? toDateOnlyString(schedule.start)
         : schedule.start.toISOString(),
     title: draft.values.title,
   };
-}
-
-// Mirrors eventToSchemaEvent's recurrence mapping (event.legacy-bridge.ts) so
-// consumers still reading the draft store's Schema_Event projection (e.g. the
-// Week form's recurrence-scope UI) don't lose recurrence identity for edits
-// of existing events routed through the GridEventDraft path.
-function recurrenceFromSource(event: Event): Schema_Event["recurrence"] {
-  return event.recurrence.kind === "series"
-    ? { rule: [...event.recurrence.rules], eventId: event.id }
-    : event.recurrence.kind === "occurrence"
-      ? { eventId: event.recurrence.seriesId }
-      : undefined;
 }
 
 const toDateOnlyString = (date: Date) => date.toISOString().slice(0, 10);
