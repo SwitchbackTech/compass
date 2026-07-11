@@ -38,23 +38,18 @@ const isValidScheduledEvent = (event: Event): boolean => {
   return isValid;
 };
 
-const timedEventsFrom = (events: Event[]) =>
+const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") =>
   events
     .filter(isValidScheduledEvent)
-    .filter((event) => event.schedule.kind === "timed")
+    .filter((event) => event.schedule.kind === kind)
     .map(eventToSchemaEvent)
     .filter((event): event is EventWithDates => hasEventDates(event))
     .map(assembleGridEvent);
 
+const timedEventsFrom = (events: Event[]) => gridEventsFrom(events, "timed");
+
 const allDayEventsFrom = (events: Event[]) =>
-  assignEventsToRow(
-    events
-      .filter(isValidScheduledEvent)
-      .filter((event) => event.schedule.kind === "allDay")
-      .map(eventToSchemaEvent)
-      .filter((event): event is EventWithDates => hasEventDates(event))
-      .map(assembleGridEvent),
-  ).allDayEvents;
+  assignEventsToRow(gridEventsFrom(events, "allDay")).allDayEvents;
 
 const rowCountFrom = (events: Schema_GridEvent[]) => {
   const rows = events
