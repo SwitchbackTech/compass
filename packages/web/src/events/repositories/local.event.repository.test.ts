@@ -1,5 +1,9 @@
 import { Priorities } from "@core/constants/core.constants";
-import { type EventId } from "@core/types/domain-primitives";
+import {
+  DateTimeSchema,
+  type EventId,
+  TimeZoneSchema,
+} from "@core/types/domain-primitives";
 import { createMockLocalEventRecord } from "@web/__tests__/utils/factories/event.factory";
 import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { LocalEventRepository } from "@web/events/repositories/local.event.repository";
@@ -60,12 +64,10 @@ describe("LocalEventRepository", () => {
         content: { kind: "details", title: "x", description: "" },
         schedule: {
           kind: "timed",
-          start: "2026-05-05T09:00:00.000-05:00",
-          end: "2026-05-05T10:00:00.000-05:00",
-          timeZone: "America/Chicago",
-        } as unknown as Parameters<
-          LocalEventRepository["replace"]
-        >[1]["schedule"],
+          start: DateTimeSchema.parse("2026-05-05T09:00:00.000-05:00"),
+          end: DateTimeSchema.parse("2026-05-05T10:00:00.000-05:00"),
+          timeZone: TimeZoneSchema.parse("America/Chicago"),
+        },
         recurrence: { kind: "single" },
         priority: Priorities.UNASSIGNED,
         scope: "this",
