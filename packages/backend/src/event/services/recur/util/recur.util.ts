@@ -1,275 +1,107 @@
 import { ObjectId } from "mongodb";
-import { RRule } from "rrule";
-import { RRULE } from "@core/constants/core.constants";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { rrulestr } from "rrule";
+import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
+import { type DateOnly } from "@core/types/domain-primitives";
 import {
-  type Schema_Event,
-  type Schema_Event_Core,
-  type Schema_Event_Recur_Base,
-  type Schema_Event_Recur_Instance,
-} from "@core/types/event.types";
-import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
+  type EventRecord,
+  type EventScheduleRecord,
+} from "@backend/event/event.record";
 
-export const assembleInstances = (
-  event: Schema_Event_Core,
-  baseId?: string,
-) => {
-  if (!event.recurrence?.rule?.[0]) {
-    throw error(
-      GenericError.DeveloperError,
-      "Failed to assemble recurring events",
-    );
-  }
-
-  const rule = event.recurrence.rule[0];
-  const events = _generateInstances(rule, event, baseId);
-
-  return events;
-};
-
-export const stripBaseProps = (
-  base: Schema_Event_Recur_Base,
-): Omit<
-  Schema_Event_Recur_Base,
-  | "_id"
-  | "gEventId"
-  | "startDate"
-  | "endDate"
-  | "order"
-  | "recurrence"
-  | "user"
-  | "updatedAt"
-> => {
-  const {
-    _id, // eslint-disable-line @typescript-eslint/no-unused-vars
-    gEventId, // eslint-disable-line @typescript-eslint/no-unused-vars
-    startDate, // eslint-disable-line @typescript-eslint/no-unused-vars
-    endDate, // eslint-disable-line @typescript-eslint/no-unused-vars
-    order, // eslint-disable-line @typescript-eslint/no-unused-vars
-    recurrence, // eslint-disable-line @typescript-eslint/no-unused-vars
-    user, // eslint-disable-line @typescript-eslint/no-unused-vars
-    updatedAt, // eslint-disable-line @typescript-eslint/no-unused-vars
-    ...rest
-  } = base;
-  return rest;
-};
-
-export const stripReadonlyEventProps = (
-  base: Schema_Event,
-): Omit<
-  Schema_Event_Recur_Base,
-  | "_id"
-  | "gEventId"
-  | "gRecurringEventId"
-  | "startDate"
-  | "endDate"
-  | "order"
-  | "recurrence"
-  | "user"
-  | "updatedAt"
-> => {
-  const strippedBase = stripBaseProps(base as Schema_Event_Recur_Base);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { gRecurringEventId, ...rest } =
-    strippedBase as Schema_Event_Recur_Instance;
-  return rest;
-};
-
-const _generateInstances = (
-  rule: string,
-  orig: Schema_Event_Core,
-  baseId?: string,
-) => {
-  if (!orig.startDate || !orig.endDate) {
-    throw error(GenericError.DeveloperError, "Failed to generate events");
-  }
-
-  const _id = baseId ? baseId : new ObjectId().toString();
-
-  const fullRule = _getRule(rule, orig.startDate, orig.endDate);
-  const _dates = fullRule.all();
-  const dates = _dates;
-
-  const instances = dates.map((date) => {
-    const { startDate, endDate } = _getDates(rule, date);
-
-    const event = {
-      ...orig,
-      _id: undefined,
-      startDate,
-      endDate,
-      recurrence: {
-        rule: [rule],
-        eventId: _id,
-      },
+const shiftSchedule = (
+  schedule: EventScheduleRecord,
+  offsetMs: number,
+): EventScheduleRecord => {
+  if (schedule.kind === "timed") {
+    return {
+      kind: "timed",
+      start: new Date(schedule.start.getTime() + offsetMs),
+      end: new Date(schedule.end.getTime() + offsetMs),
+      timeZone: schedule.timeZone,
     };
+  }
 
-    delete event.order;
-    return event;
-  });
+  if (schedule.kind === "allDay") {
+    const offsetDays = Math.round(offsetMs / (24 * 60 * 60 * 1000));
+    return {
+      kind: "allDay",
+      start: shiftDateOnly(schedule.start, offsetDays),
+      end: shiftDateOnly(schedule.end, offsetDays),
+    };
+  }
 
-  const base = {
-    ...orig,
-    _id: new ObjectId(_id),
-    recurrence: { rule: [rule], eventId: _id },
-  };
-  const includeBase = baseId === undefined;
-  const events = includeBase ? [base, ...instances] : [...instances];
+  // someday events do not materialize recurring instances (recurrence lives
+  // only on the base for the sidebar's context display).
+  return schedule;
+};
 
-  return events;
+const shiftDateOnly = (dateOnly: DateOnly, offsetDays: number): DateOnly => {
+  const date = new Date(`${dateOnly}T00:00:00.000Z`);
+  date.setUTCDate(date.getUTCDate() + offsetDays);
+  return date.toISOString().slice(0, 10) as DateOnly;
+};
+
+const getAnchorDate = (schedule: EventScheduleRecord): Date => {
+  if (schedule.kind === "timed") return schedule.start;
+  if (schedule.kind === "allDay") {
+    return new Date(`${schedule.start}T00:00:00.000Z`);
+  }
+  return new Date(`${schedule.anchorDate}T00:00:00.000Z`);
 };
 
 /**
- * Generates instances for a recurring event based on its recurrence rule
- * @param baseEvent The base event with recurrence rule
- * @param maxInstances Maximum number of instances to generate (default: 100)
- * @returns Array of events including the base event and its instances
+ * Materializes the occurrence instances for a series base (B6: instances
+ * stay MATERIALIZED, not virtual). The base itself is not included in the
+ * result. Capped at GCAL_MAX_RECURRENCES as a safety bound against unbounded
+ * RRULEs (matches the Google-side cap the app already respects).
  */
-export const generateRecurringInstances = (
-  baseEvent: Schema_Event,
-  maxInstances: number = 100,
-): Schema_Event[] => {
-  if (!baseEvent.recurrence?.rule || baseEvent.recurrence.rule.length === 0) {
-    throw error(
-      GenericError.DeveloperError,
-      "Failed to generate recurring events: no recurrence rule provided",
-    );
-  }
+export const materializeSeriesInstances = (
+  base: EventRecord,
+  maxInstances: number = GCAL_MAX_RECURRENCES,
+): EventRecord[] => {
+  if (base.recurrence.kind !== "series") return [];
 
-  if (!baseEvent.startDate || !baseEvent.endDate) {
-    throw error(
-      GenericError.DeveloperError,
-      "Failed to generate recurring events: missing start or end date",
-    );
-  }
+  // Someday events have no per-occurrence instant (schedule is a
+  // period/anchorDate/sortOrder bucket, not a date). shiftSchedule cannot
+  // shift them, so materializing "following" dates here would create
+  // duplicate documents with the identical schedule as the base. Recurrence
+  // for someday events is surfaced only on the base (sidebar context
+  // display); it never fans out into separate instance rows.
+  if (base.schedule.kind === "someday") return [];
 
-  const baseId = baseEvent._id || new ObjectId().toString();
-  const ruleString = baseEvent.recurrence.rule[0];
-  if (!ruleString) {
-    throw error(
-      GenericError.DeveloperError,
-      "Failed to generate recurring events: invalid recurrence rule",
-    );
-  }
+  const anchor = getAnchorDate(base.schedule);
+  const rule = rrulestr(base.recurrence.rules.join("\n"), {
+    dtstart: anchor,
+  });
+  const dates = rule.all((_date, len) => len < maxInstances);
 
-  // Parse the base event dates with dayjs
-  const baseStart = dayjs.utc(baseEvent.startDate);
-  const baseEnd = dayjs.utc(baseEvent.endDate);
-  const duration = baseEnd.diff(baseStart);
+  // The base itself represents the first occurrence; only materialize the
+  // rest as separate instance documents.
+  const followingDates = dates.filter(
+    (date) => date.getTime() !== anchor.getTime(),
+  );
 
-  // Create the RRule with the base event's start date
-  const dtstart = baseStart.format("YYYYMMDDTHHmmss");
-  const fullRuleString = `DTSTART=${dtstart}Z\n${ruleString};COUNT=${maxInstances}`;
-  const rule = RRule.fromString(fullRuleString);
-
-  // Get all dates from the rule
-  const dates = rule.all();
-
-  // Generate instances
-  const instances = dates
-    .slice(0, maxInstances)
-    .map((date, index) => {
-      // Skip the first date as it's the base event
-      if (index === 0) return null;
-
-      // Convert the RRule date to dayjs and maintain the same time as the base event
-      const instanceStart = dayjs
-        .utc(date)
-        .hour(baseStart.hour())
-        .minute(baseStart.minute())
-        .second(0);
-
-      const instanceEnd = instanceStart.add(duration);
-
-      const instance: Schema_Event_Recur_Instance = {
-        ...baseEvent,
-        _id: undefined, // Let MongoDB generate the ID
-        startDate: instanceStart.toISOString(),
-        endDate: instanceEnd.toISOString(),
-        recurrence: {
-          eventId: baseId,
-        },
-      };
-
-      return instance;
-    })
-    .filter(
-      (instance): instance is Schema_Event_Recur_Instance => instance !== null,
-    );
-
-  // Create the base event
-  const base: Schema_Event_Recur_Base = {
-    ...baseEvent,
-    _id: baseId,
-    recurrence: {
-      rule: [ruleString],
-    },
-  };
-
-  return [base, ...instances];
+  return followingDates.map((date) => ({
+    _id: new ObjectId(),
+    calendarId: base.calendarId,
+    content: base.content,
+    schedule: shiftSchedule(base.schedule, date.getTime() - anchor.getTime()),
+    recurrence: { kind: "occurrence", seriesId: base._id },
+    priority: base.priority,
+    externalReference: null,
+    createdAt: base.createdAt,
+    updatedAt: base.updatedAt,
+  }));
 };
 
-const _getDates = (rule: string, nextInstance: Date) => {
-  let start: Dayjs = dayjs.utc(nextInstance);
-  let end: Dayjs;
+export const withUntil = (rules: readonly string[], until: Date): string[] => {
+  const untilString = `${until
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "")}`;
 
-  if (rule === RRULE.WEEK) {
-    start = dayjs.utc(nextInstance);
-    end = start.add(6, "day");
-  } else if (rule === RRULE.MONTH) {
-    start = start.startOf("month");
-    end = start.endOf("month");
-  } else {
-    throw error(
-      GenericError.DeveloperError,
-      "Failed to get dates (rule not supported yet)",
-    );
-  }
-
-  return {
-    startDate: start.format(YEAR_MONTH_DAY_FORMAT),
-    endDate: end.format(YEAR_MONTH_DAY_FORMAT),
-  };
+  return rules.map((rule) =>
+    /UNTIL=/.test(rule)
+      ? rule.replace(/UNTIL=[^;]+/, `UNTIL=${untilString}`)
+      : `${rule};UNTIL=${untilString}`,
+  );
 };
-
-const _getRule = (rule: string, startDate: string, endDate: string) => {
-  const nextStart = _getNextStart(rule, startDate, endDate)
-    .utc()
-    .format("YYYYMMDDThhmmss");
-
-  const _rule = `DTSTART=${nextStart}Z\n${rule}`;
-  const fullRule = RRule.fromString(_rule);
-  return fullRule;
-};
-
-const _getNextStart = (rule: string, startDate: string, endDate: string) => {
-  switch (rule) {
-    case RRULE.WEEK:
-      return dayjs(startDate).startOfNextWeek();
-    case RRULE.MONTH:
-      return dayjs(endDate).startOfNextMonth();
-    default:
-      throw error(GenericError.DeveloperError, "Failed to get next start");
-  }
-};
-
-export const mongoDateAggregation = (date: Date, field: string) => ({
-  [field]: {
-    $dateToString: {
-      date: {
-        $dateFromParts: {
-          year: { $year: { $toDate: `$${field}` } },
-          month: { $month: { $toDate: `$${field}` } },
-          day: { $dayOfMonth: { $toDate: `$${field}` } },
-          hour: { $hour: { $literal: date } },
-          minute: { $minute: { $literal: date } },
-          second: { $second: { $literal: date } },
-          millisecond: { $millisecond: { $literal: date } },
-        },
-      },
-      format: "%Y-%m-%dT%H:%M:%S%z",
-    },
-  },
-});

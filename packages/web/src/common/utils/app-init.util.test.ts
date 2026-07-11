@@ -9,21 +9,9 @@ import {
   spyOn,
 } from "bun:test";
 
-// Mock the offline data store
+// The initializer is injected as an argument; only the toast needs a mock.
 const mockInitializeStorage = mock();
 const mockToastError = mock();
-
-mock.module(
-  "@web/common/storage/offline-data/offline-data.store.registry",
-  () => ({
-    ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
-    getOfflineDataStore: mock(),
-    initializeOfflineDataStore: mockInitializeStorage,
-    isOfflineDataStoreReady: mock().mockReturnValue(true),
-    resetOfflineDataStore: mock(),
-    resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
-  }),
-);
 
 // Mock react-toastify. mock.module leaks process-wide, and other suites call
 // `toast(...)` directly (e.g. the Deleted toast fired by event delete
@@ -71,7 +59,9 @@ describe("app-init.util", () => {
     it("should return null error when storage initializes successfully", async () => {
       mockInitializeStorage.mockResolvedValue(undefined);
 
-      const result = await initializeDatabaseWithErrorHandling();
+      const result = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(result.dbInitError).toBeNull();
       expect(mockInitializeStorage).toHaveBeenCalledTimes(1);
@@ -81,7 +71,9 @@ describe("app-init.util", () => {
       const dbError = new DatabaseInitError("Storage quota exceeded");
       mockInitializeStorage.mockRejectedValue(dbError);
 
-      const result = await initializeDatabaseWithErrorHandling();
+      const result = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(result.dbInitError).toBeInstanceOf(DatabaseInitError);
       expect(result.dbInitError?.message).toBe("Storage quota exceeded");
@@ -91,7 +83,9 @@ describe("app-init.util", () => {
       const genericError = new Error("Some other error");
       mockInitializeStorage.mockRejectedValue(genericError);
 
-      const result = await initializeDatabaseWithErrorHandling();
+      const result = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(result.dbInitError).toBeNull();
     });
@@ -101,7 +95,9 @@ describe("app-init.util", () => {
       mockInitializeStorage.mockRejectedValue(dbError);
 
       // Should not throw - just return the error
-      await expect(initializeDatabaseWithErrorHandling()).resolves.toEqual({
+      await expect(
+        initializeDatabaseWithErrorHandling(mockInitializeStorage),
+      ).resolves.toEqual({
         dbInitError: dbError,
       });
     });
@@ -161,7 +157,9 @@ describe("app-init.util", () => {
       mockInitializeStorage.mockRejectedValue(dbError);
 
       // Simulate what index.tsx does
-      const { dbInitError } = await initializeDatabaseWithErrorHandling();
+      const { dbInitError } = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(dbInitError).not.toBeNull();
 
@@ -182,7 +180,9 @@ describe("app-init.util", () => {
     it("should handle full initialization flow without error", async () => {
       mockInitializeStorage.mockResolvedValue(undefined);
 
-      const { dbInitError } = await initializeDatabaseWithErrorHandling();
+      const { dbInitError } = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(dbInitError).toBeNull();
 

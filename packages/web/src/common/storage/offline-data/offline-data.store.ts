@@ -1,6 +1,13 @@
-import { type Payload_Order } from "@core/types/event.types";
-import { type LocalStoredEvent } from "@web/common/storage/types/local-event.types";
+import { type EventId } from "@core/types/domain-primitives";
+import { type EventListQuery } from "@core/types/event-command.contracts";
+import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { type Task } from "@web/common/types/task.types";
+
+/** Bulk sortOrder patch item, matching ReorderEventsInput["items"]. */
+export interface LocalEventOrderPatch {
+  eventId: EventId;
+  sortOrder: number;
+}
 
 /**
  * Record of a completed migration.
@@ -85,39 +92,36 @@ export interface OfflineDataStore {
   // ─── Event Operations ──────────────────────────────────────────────────────
 
   /**
-   * Get events overlapping a date range.
+   * Get events matching a range or someday query (B_E).
    */
-  getEvents(
-    startDate: string,
-    endDate: string,
-    isSomeday?: boolean,
-  ): Promise<LocalStoredEvent[]>;
+  getEvents(query: EventListQuery): Promise<LocalEventRecord[]>;
 
   /**
    * Get all events without filtering.
    */
-  getAllEvents(): Promise<LocalStoredEvent[]>;
+  getAllEvents(): Promise<LocalEventRecord[]>;
 
   /**
-   * Save or update a single event.
+   * Save or update a single event record.
    */
-  putEvent(event: LocalStoredEvent): Promise<void>;
+  putEvent(record: LocalEventRecord): Promise<void>;
 
   /**
-   * Save or update multiple events.
+   * Save or update multiple event records.
    */
-  putEvents(events: LocalStoredEvent[]): Promise<void>;
+  putEvents(records: LocalEventRecord[]): Promise<void>;
 
   /**
    * Delete an event by ID.
    */
-  deleteEvent(eventId: string): Promise<void>;
+  deleteEvent(eventId: EventId): Promise<void>;
 
   /**
-   * Patch the `order` field on the given events, leaving every other field
-   * untouched. Ids not present in storage are ignored.
+   * Patch the `schedule.sortOrder` field on the given someday events,
+   * leaving every other field untouched. Ids not present in storage are
+   * ignored.
    */
-  updateEventOrders(order: Payload_Order[]): Promise<void>;
+  updateEventOrders(items: LocalEventOrderPatch[]): Promise<void>;
 
   /**
    * Clear all events from storage.

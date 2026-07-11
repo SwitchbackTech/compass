@@ -5,6 +5,7 @@ import {
   renderHook,
 } from "@testing-library/react";
 import { type PropsWithChildren, type ReactElement } from "react";
+import { type Event } from "@core/types/event.contracts";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { seedEventQueries } from "./utils/event-query-test-data";
 import {
@@ -14,7 +15,7 @@ import {
 
 type StoreOptions = {
   /** Seed the event query cache  */
-  events?: Array<{ _id?: string }>;
+  events?: Event[];
 };
 
 export function createStoreWrapper(

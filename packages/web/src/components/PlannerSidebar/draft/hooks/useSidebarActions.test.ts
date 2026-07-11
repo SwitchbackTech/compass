@@ -1,10 +1,14 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
+import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { type Setters_Sidebar, type State_Sidebar } from "./useSidebarState";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
@@ -14,8 +18,14 @@ let currentState = createInitialState();
 const { useSidebarActions } =
   require("./useSidebarActions") as typeof import("./useSidebarActions");
 
+const SOMEDAY_EVENT_ID = "664e21f9a6b3f0b1c2d3e4f5";
+
+// draft.store.ts/useSidebarState still hold the legacy Schema_Event shape
+// (see draft.store.ts's own TODO); `somedayEvent` drives those, while
+// `somedayEventContract` (below) seeds the strict-contract `Event` query
+// cache and the local repository the transition mutation reads through.
 const somedayEvent: Schema_Event = {
-  _id: "664e21f9a6b3f0b1c2d3e4f5",
+  _id: SOMEDAY_EVENT_ID,
   endDate: "2024-01-21",
   isAllDay: false,
   isSomeday: true,
@@ -26,6 +36,17 @@ const somedayEvent: Schema_Event = {
   title: "Someday event",
   user: "user-1",
 };
+
+const somedayEventContract = createMockEvent({
+  id: EventIdSchema.parse(SOMEDAY_EVENT_ID),
+  content: { kind: "details", title: "Someday event", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "someday",
+    period: "week",
+    anchorDate: "2024-01-15",
+    sortOrder: 0,
+  }),
+});
 
 const createState = (): State_Sidebar =>
   ({
@@ -73,8 +94,19 @@ describe("useSidebarActions", () => {
   });
 
   it("schedules a dropped Someday event immediately", async () => {
+    // The transition mutation writes through the local (IndexedDB)
+    // repository, which reads the pre-mutation record independently of the
+    // query cache seeded below — mirroring production, where the cache is
+    // always populated from the repository.
+    await getOfflineDataStore().putEvent({
+      version: 2,
+      id: somedayEventContract.id,
+      event: somedayEventContract,
+      isDemo: false,
+    });
+
     const { queryClient, wrapper } = createStoreWrapper(currentState, {
-      events: [somedayEvent],
+      events: [somedayEventContract],
     });
     const { result } = renderHook(
       () =>
@@ -89,6 +121,13 @@ describe("useSidebarActions", () => {
         ),
       { wrapper },
     );
+
+    // The default target calendar resolves from the (async, though
+    // synchronous-in-practice for anon mode) calendars query; wait for it so
+    // commitSomedayInteraction doesn't race an undefined calendar list.
+    await waitFor(() => {
+      expect(queryClient.getQueryData(["calendars"])).toBeDefined();
+    });
 
     result.current.commitSomedayInteraction({
       dates: {
@@ -107,9 +146,18 @@ describe("useSidebarActions", () => {
           .getAll()
           .some(
             (mutation) =>
-              mutation.options.mutationKey?.[2] === "convert-to-calendar" &&
-              (mutation.state.variables as { event?: { _id?: string } }).event
-                ?._id === somedayEvent._id,
+              mutation.options.mutationKey?.[2] === "transition" &&
+              (
+                mutation.state.variables as {
+                  id?: string;
+                  input?: { kind?: string };
+                }
+              ).id === SOMEDAY_EVENT_ID &&
+              (
+                mutation.state.variables as {
+                  input?: { kind?: string };
+                }
+              ).input?.kind === "schedule",
           ),
       ).toBe(true);
     });

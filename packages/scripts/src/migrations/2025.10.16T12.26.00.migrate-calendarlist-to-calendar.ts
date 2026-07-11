@@ -68,10 +68,13 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         return;
       }
 
-      const { insertedCount } = await mongoService.calendar.bulkWrite(
-        bulkInsertOperations,
-        { ordered: false, session },
-      );
+      // Deviation (packet-03): mongoService.calendar is now typed to the
+      // post-migration CalendarRecord shape; this frozen historical migration
+      // still writes the pre-A32 Schema_Calendar shape, so it goes through the
+      // raw collection rather than being rewritten.
+      const { insertedCount } = await mongoService.db
+        .collection<Schema_Calendar>(mongoService.calendar.collectionName)
+        .bulkWrite(bulkInsertOperations, { ordered: false, session });
 
       await session.commitTransaction();
 

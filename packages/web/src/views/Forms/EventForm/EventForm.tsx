@@ -298,7 +298,11 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         isAllDay: eventToSubmit.isAllDay || false,
       };
 
-      const { startDate, endDate } = mapToBackend(selectedDateTimes);
+      // TODO(packet-03-phase-3c): mapToBackend now returns an EventSchedule;
+      // this component still operates on legacy Schema_Event startDate/endDate.
+      const schedule = mapToBackend(selectedDateTimes);
+      const startDate = schedule.start;
+      const endDate = schedule.end;
 
       if (dayjs(startDate).isAfter(dayjs(endDate))) {
         showErrorToast(

@@ -17,6 +17,7 @@ import {
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
+import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
   draftActions,
@@ -183,15 +184,20 @@ export function DayCalendarGrid() {
     [setFormPositionReference, setFormReference],
   );
 
+  // TODO(packet-03-phase-3c): dayEvents is now `Event[]` (new contract);
+  // bridged to the legacy Schema_Event shape assembleGridEvent still expects
+  // until the grid renderer is converted.
   const getDayEventById = useCallback(
     (eventId: string): Schema_GridEvent | null => {
-      const event = dayEvents.find((dayEvent) => dayEvent._id === eventId);
+      const event = dayEvents.find((dayEvent) => dayEvent.id === eventId);
+      if (!event) return null;
 
-      if (!event || !hasEventDates(event)) {
+      const schemaEvent = eventToSchemaEvent(event);
+      if (!hasEventDates(schemaEvent)) {
         return null;
       }
 
-      return assembleGridEvent(event);
+      return assembleGridEvent(schemaEvent);
     },
     [dayEvents],
   );

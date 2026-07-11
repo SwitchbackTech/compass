@@ -5,6 +5,17 @@
 Move all core, backend, scripts, and web runtime paths from the legacy
 user-owned event document to the final strict calendar-owned event contracts.
 
+Status (2026-07-11): substantially implemented on
+`refactor/event-runtime-cutover`. Backend, storage, HTTP/SSE contracts,
+IndexedDB, and the web data/state layers are fully cut over with all suites
+and the full local e2e run green. Remaining before this packet's boxes can be
+checked: dissolve `packages/web/src/events/queries/event.legacy-bridge.ts` by
+converting the component/view layer (draft store, grid drag/resize, forms,
+sidebar, shortcuts) off `Schema_Event`, then delete the legacy web event
+types. `event_new.types.ts` stays as long as the frozen 2025 migrations
+import it. Scope-`this` provider sync for series occurrences is deferred to
+`05` (recorded there).
+
 Depends on: `01-domain-contracts.md`, `02-safe-event-data-migration.md`.
 
 ## Design constraint

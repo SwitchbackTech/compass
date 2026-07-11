@@ -1,6 +1,8 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { act, type PropsWithChildren } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
@@ -14,12 +16,14 @@ import {
   seedEventQueries,
   seedPendingEventMutations,
 } from "@web/__tests__/utils/event-query-test-data";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import {
   ID_GRID_COLUMNS_TIMED,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { gridColorByPriority } from "@web/common/styles/theme.util";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -43,10 +47,39 @@ import "@testing-library/jest-dom";
 let pendingEventIds: string[] = [];
 let seededWeekEvents: Schema_Event[] = [];
 
+// DateTimeSchema requires an explicit offset; several fixtures below already
+// carry one ("Z"), but normalize defensively.
+const withOffset = (dateTime: string) =>
+  /[Zz]|[+-]\d\d:\d\d$/.test(dateTime) ? dateTime : `${dateTime}Z`;
+
+// The query cache (unlike draft.store.ts, still legacy Schema_Event-shaped
+// per its own TODO) requires strict-contract `Event`s.
+const toStrictEvent = (event: Schema_Event): Event =>
+  createMockEvent({
+    id: EventIdSchema.parse(event._id!),
+    content: {
+      kind: "details",
+      title: event.title ?? "",
+      description: event.description ?? "",
+    },
+    schedule: event.isAllDay
+      ? EventScheduleSchema.parse({
+          kind: "allDay",
+          start: event.startDate!.slice(0, 10),
+          end: event.endDate!.slice(0, 10),
+        })
+      : EventScheduleSchema.parse({
+          kind: "timed",
+          start: withOffset(event.startDate!),
+          end: withOffset(event.endDate!),
+          timeZone: "UTC",
+        }),
+  });
+
 function Provider({ children }: PropsWithChildren) {
   const queryClient = createCompassQueryClient();
   seedPendingEventMutations(queryClient, pendingEventIds);
-  seedEventQueries(queryClient, seededWeekEvents);
+  seedEventQueries(queryClient, seededWeekEvents.map(toStrictEvent));
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -145,17 +178,21 @@ const createWeekProps = () => ({
   },
 });
 
+// `_id` in `overrides` is a readable test label, not the real id — the query
+// cache (toStrictEvent above) requires a real ObjectId, so every fixture
+// gets a generated one; tests that need to assert on "which event" read
+// `event._id` back off the returned fixture, never a literal.
 const createSavedEvent = (
   overrides: Partial<Schema_Event> = {},
 ): Schema_Event =>
   ({
-    _id: "saved-event",
     endDate: "2024-01-15T10:00:00.000Z",
     isAllDay: false,
     recurrence: undefined,
     startDate: "2024-01-15T09:00:00.000Z",
     title: "Saved event",
     ...overrides,
+    _id: createObjectIdString(),
   }) as Schema_Event;
 
 const renderMainGrid = () => {
@@ -458,11 +495,10 @@ describe("Week calendar accessibility", () => {
 
   it("keeps pending saved events fully interactive", () => {
     const event = createSavedEvent({
-      _id: "pending-event",
       title: "Pending save",
     });
     seedGrid([event]);
-    pendingEventIds = ["pending-event"];
+    pendingEventIds = [event._id!];
 
     render(
       <Provider>
@@ -477,17 +513,15 @@ describe("Week calendar accessibility", () => {
     expect(card).not.toHaveAttribute("aria-disabled");
     expect(card).toHaveAttribute(
       WEEK_INTERACTION_EVENT_ID_ATTRIBUTE,
-      "pending-event",
+      event._id,
     );
   });
 
   it("marks hovered saved timed events as targeting candidates", () => {
-    seedGrid([
-      createSavedEvent({
-        _id: "hovered-timed-event",
-        title: "Hover target",
-      }),
-    ]);
+    const event = createSavedEvent({
+      title: "Hover target",
+    });
+    seedGrid([event]);
 
     render(
       <Provider>
@@ -503,7 +537,7 @@ describe("Week calendar accessibility", () => {
     fireEvent.mouseEnter(eventButton);
     expect(getHoveredCalendarEventTarget()).toMatchObject({
       element: eventButton,
-      eventId: "hovered-timed-event",
+      eventId: event._id,
       eventType: "timed",
     });
 
@@ -550,15 +584,13 @@ describe("Week calendar accessibility", () => {
   });
 
   it("gives all-day events an all-day accessible name and target type", () => {
-    seedGrid([
-      createSavedEvent({
-        _id: "labeled-all-day",
-        endDate: "2024-01-16T00:00:00.000Z",
-        isAllDay: true,
-        startDate: "2024-01-15T00:00:00.000Z",
-        title: "All-day planning",
-      }),
-    ]);
+    const event = createSavedEvent({
+      endDate: "2024-01-16T00:00:00.000Z",
+      isAllDay: true,
+      startDate: "2024-01-15T00:00:00.000Z",
+      title: "All-day planning",
+    });
+    seedGrid([event]);
 
     render(
       <Provider>
@@ -576,7 +608,7 @@ describe("Week calendar accessibility", () => {
     });
 
     expect(eventButton.getAttribute(WEEK_INTERACTION_EVENT_ID_ATTRIBUTE)).toBe(
-      "labeled-all-day",
+      event._id ?? null,
     );
     expect(
       eventButton.getAttribute(WEEK_INTERACTION_EVENT_TYPE_ATTRIBUTE),

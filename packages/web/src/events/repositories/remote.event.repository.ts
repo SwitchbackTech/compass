@@ -1,20 +1,26 @@
+import { type EventId } from "@core/types/domain-primitives";
+import { type Event } from "@core/types/event.contracts";
 import {
-  type Params_Events,
-  type Payload_Order,
-  type RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+  type CreateEventInput,
+  type EventListQuery,
+  type RecurrenceScope,
+  type ReorderEventsInput,
+  type ReplaceEventInput,
+  type TransitionEventInput,
+} from "@core/types/event-command.contracts";
 import {
   isBackendUnavailableError,
   markBackendUnavailable,
 } from "@web/api/util/backend-unavailable-error.util";
 import { EventApi } from "@web/events/event.api";
-import { type Response_GetEventsSuccess } from "@web/events/event.types";
 import { type EventRepository } from "./event.repository.types";
 import { LocalEventRepository } from "./local.event.repository";
 
 export class RemoteEventRepository implements EventRepository {
-  private readonly localRepository = new LocalEventRepository();
+  constructor(
+    private readonly api: typeof EventApi = EventApi,
+    private readonly localRepository: EventRepository = new LocalEventRepository(),
+  ) {}
 
   private async withLocalFallback<RemoteResult, LocalResult = RemoteResult>(
     remoteOperation: () => Promise<RemoteResult>,
@@ -32,62 +38,52 @@ export class RemoteEventRepository implements EventRepository {
     }
   }
 
-  async create(event: Schema_Event | Schema_Event[]): Promise<void> {
-    await this.withLocalFallback(
-      () => EventApi.create(event),
-      () => this.localRepository.create(event),
-    );
-  }
-
-  async get(params: Params_Events): Promise<Response_GetEventsSuccess> {
+  async list(query: EventListQuery): Promise<Event[]> {
     return this.withLocalFallback(
-      async () => {
-        const response = await EventApi.get(params);
-
-        return Array.isArray(response.data)
-          ? {
-              data: response.data,
-              count: response.data.length,
-              page: 1,
-              pageSize: response.data.length,
-              offset: 0,
-              startDate: params.startDate,
-              endDate: params.endDate,
-            }
-          : {
-              ...params,
-              ...response.data,
-            };
-      },
-      () => this.localRepository.get(params),
+      () => this.api.list(query),
+      () => this.localRepository.list(query),
     );
   }
 
-  async edit(
-    _id: string,
-    event: Schema_Event,
-    params: { applyTo?: RecurringEventUpdateScope },
-  ): Promise<void> {
-    await this.withLocalFallback(
-      () => EventApi.edit(_id, event, params),
-      () => this.localRepository.edit(_id, event, params),
+  async getById(id: EventId): Promise<Event> {
+    return this.withLocalFallback(
+      () => this.api.getById(id),
+      () => this.localRepository.getById(id),
     );
   }
 
-  async delete(
-    _id: string,
-    applyTo?: RecurringEventUpdateScope,
-  ): Promise<void> {
-    await this.withLocalFallback(
-      () => EventApi.delete(_id, applyTo),
-      () => this.localRepository.delete(_id, applyTo),
+  async create(input: CreateEventInput): Promise<Event> {
+    return this.withLocalFallback(
+      () => this.api.create(input),
+      () => this.localRepository.create(input),
     );
   }
 
-  async reorder(order: Payload_Order[]): Promise<void> {
+  async replace(id: EventId, input: ReplaceEventInput): Promise<Event> {
+    return this.withLocalFallback(
+      () => this.api.replace(id, input),
+      () => this.localRepository.replace(id, input),
+    );
+  }
+
+  async delete(id: EventId, scope: RecurrenceScope): Promise<void> {
     await this.withLocalFallback(
-      () => EventApi.reorder(order),
-      () => this.localRepository.reorder(order),
+      () => this.api.delete(id, scope),
+      () => this.localRepository.delete(id, scope),
+    );
+  }
+
+  async reorder(input: ReorderEventsInput): Promise<void> {
+    await this.withLocalFallback(
+      () => this.api.reorder(input),
+      () => this.localRepository.reorder(input),
+    );
+  }
+
+  async transition(id: EventId, input: TransitionEventInput): Promise<Event> {
+    return this.withLocalFallback(
+      () => this.api.transition(id, input),
+      () => this.localRepository.transition(id, input),
     );
   }
 }

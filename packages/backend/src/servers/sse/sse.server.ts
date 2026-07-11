@@ -1,13 +1,8 @@
 import { type Response } from "express";
-import {
-  EVENT_CHANGED,
-  GOOGLE_REVOKED,
-  IMPORT_GCAL_END,
-  IMPORT_GCAL_START,
-  SOMEDAY_EVENT_CHANGED,
-} from "@core/constants/sse.constants";
+import { SSE_MESSAGE_EVENT } from "@core/constants/sse.constants";
 import { Logger } from "@core/logger/winston.logger";
-import { type ImportGCalEndPayload } from "@core/types/sse.types";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
+import { type ServerMessage } from "@core/types/server-message.contracts";
 
 const logger = Logger("app:sse.server");
 const HEARTBEAT_INTERVAL_MS = 25_000;
@@ -59,10 +54,10 @@ class SSEServer {
     };
   }
 
-  publish(userId: string, event: string, data: unknown = {}): void {
+  publish(userId: string, message: ServerMessage): void {
     const conns = this.connections.get(userId);
     if (!conns?.size) return;
-    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+    const payload = `event: ${SSE_MESSAGE_EVENT}\ndata: ${JSON.stringify(message)}\n\n`;
     for (const res of conns) {
       try {
         res.write(payload);
@@ -72,8 +67,8 @@ class SSEServer {
     }
   }
 
-  publishTo(res: Response, event: string, data: unknown = {}): void {
-    const payload = `event: ${event}\ndata: ${JSON.stringify(data)}\n\n`;
+  publishTo(res: Response, message: ServerMessage): void {
+    const payload = `event: ${SSE_MESSAGE_EVENT}\ndata: ${JSON.stringify(message)}\n\n`;
     try {
       res.write(payload);
     } catch {
@@ -81,24 +76,41 @@ class SSEServer {
     }
   }
 
-  handleImportGCalStart(userId: string): void {
-    this.publish(userId, IMPORT_GCAL_START);
+  publishEventsChanged(
+    userId: string,
+    payload: {
+      calendarId: CalendarId;
+      eventIds: EventId[];
+      reason: "created" | "updated" | "deleted" | "reconciled";
+    },
+  ): void {
+    this.publish(userId, { type: "eventsChanged", ...payload });
   }
 
-  handleImportGCalEnd(userId: string, payload?: ImportGCalEndPayload): void {
-    this.publish(userId, IMPORT_GCAL_END, payload ?? {});
+  publishCalendarsChanged(userId: string, calendarIds: CalendarId[]): void {
+    this.publish(userId, { type: "calendarsChanged", calendarIds });
   }
 
-  handleBackgroundCalendarChange(userId: string): void {
-    this.publish(userId, EVENT_CHANGED);
+  publishSyncStatus(
+    userId: string,
+    sync: Extract<ServerMessage, { type: "syncStatusChanged" }>["sync"],
+  ): void {
+    this.publish(userId, { type: "syncStatusChanged", sync });
   }
 
-  handleBackgroundSomedayChange(userId: string): void {
-    this.publish(userId, SOMEDAY_EVENT_CHANGED);
+  publishImportCompleted(
+    userId: string,
+    payload: {
+      operation: "full" | "incremental" | "repair";
+      eventsCount: number;
+      calendarsCount: number;
+    },
+  ): void {
+    this.publish(userId, { type: "importCompleted", ...payload });
   }
 
-  handleGoogleRevoked(userId: string): void {
-    this.publish(userId, GOOGLE_REVOKED);
+  publishUserMetadata(userId: string, metadata: Record<string, unknown>): void {
+    this.publish(userId, { type: "userMetadataChanged", metadata });
   }
 }
 

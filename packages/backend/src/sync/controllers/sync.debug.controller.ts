@@ -1,6 +1,8 @@
 import { type Request, type Response } from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { type BaseError } from "@core/errors/errors.base";
+import { type CalendarId } from "@core/types/domain-primitives";
+import calendarService from "@backend/calendar/services/calendar.service";
 import {
   type Res_Promise,
   type SReqBody,
@@ -13,17 +15,28 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
 
 class SyncDebugController {
-  dispatchEventToClient = (_req: Request, res: Response) => {
+  dispatchEventToClient = async (_req: Request, res: Response) => {
     try {
       const userId = process.env["SSE_DEBUG_USER"];
       if (!userId) {
         throw new Error("No demo user");
       }
-      const startDate = new Date();
-      const endDate = new Date(startDate);
-      endDate.setDate(startDate.getDate() + 1);
 
-      sseServer.handleBackgroundCalendarChange(userId);
+      const calendars = await calendarService.list(userId);
+
+      sseServer.publishCalendarsChanged(
+        userId,
+        calendars.map((c) => c._id.toHexString() as CalendarId),
+      );
+
+      for (const calendar of calendars) {
+        sseServer.publishEventsChanged(userId, {
+          calendarId: calendar._id.toHexString() as CalendarId,
+          eventIds: [],
+          reason: "reconciled",
+        });
+      }
+
       res.sendStatus(200);
     } catch (e) {
       console.error("Error during dispatch:", e);

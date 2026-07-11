@@ -1,255 +1,84 @@
+import { type ObjectId } from "mongodb";
 import {
-  type ClientSession,
-  type Filter,
-  ObjectId,
-  type WithId,
-} from "mongodb";
-import { MapEvent } from "@core/mappers/map.event";
-import {
-  type CompassAllEvents,
-  type CompassEvent,
-  CompassEventSchema,
-  CompassEventStatus,
-  type CompassThisAndFollowingEvent,
-  type CompassThisEvent,
-  type Event_Core,
-  EventUpdateSchema,
-  RecurringEventUpdateScope,
-  type Schema_Event,
-  type Schema_Event_Recur_Base,
-  type Schema_Event_Recur_Instance,
-} from "@core/types/event.types";
-import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import {
-  isAllDay,
-  isBase,
-  parseCompassEventDate,
-} from "@core/util/event/event.util";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
-import mongoService from "@backend/common/services/mongo.service";
+  type DeletePlan,
+  type ReplacePlan,
+  type TransitionPlan,
+} from "@backend/event/classes/compass.event.parser";
+import { type EventRecord } from "@backend/event/event.record";
+import { materializeSeriesInstances } from "@backend/event/services/recur/util/recur.util";
 
-export class CompassEventFactory {
-  private static async findCompassEvent(
-    eventId: string,
-    user: string,
-    session?: ClientSession,
-    throwIfNotFound = true,
-  ): Promise<WithId<Omit<Schema_Event, "_id">> | null> {
-    const _id = new ObjectId(eventId);
-    const filter: Filter<Omit<Schema_Event, "_id">> = { _id, user };
+export type MaterializedMutation = {
+  upsert: EventRecord[];
+  deleteIds: ObjectId[];
+  /** The record to surface in the mutation response / to propagation. */
+  primary: EventRecord;
+};
 
-    const event = await mongoService.event.findOne(filter, { session });
+const materializeIfSeries = (base: EventRecord): EventRecord[] =>
+  base.recurrence.kind === "series" ? materializeSeriesInstances(base) : [];
 
-    if (throwIfNotFound && !event) {
-      throw new Error(`Compass event not found for id: ${eventId}`);
-    }
-
-    return event;
+/**
+ * Expands a replace/delete/transition plan into concrete records to persist.
+ * Pure: any RRULE expansion for a (re)created series happens here.
+ */
+export function generateReplace(plan: ReplacePlan): MaterializedMutation {
+  switch (plan.kind) {
+    case "replaceThis":
+      return { upsert: [plan.updated], deleteIds: [], primary: plan.updated };
+    case "replaceSeries":
+      return {
+        upsert: [plan.updatedBase, ...materializeIfSeries(plan.updatedBase)],
+        deleteIds: plan.deleteInstanceIds,
+        primary: plan.updatedBase,
+      };
+    case "replaceSplit":
+      return {
+        upsert: [
+          plan.truncatedBase,
+          plan.newBase,
+          ...materializeIfSeries(plan.newBase),
+        ],
+        deleteIds: plan.deleteInstanceIds,
+        primary: plan.newBase,
+      };
   }
+}
 
-  private static async findCompassBaseAndInstanceEvent(
-    eventId: string,
-    userId: string,
-    session?: ClientSession,
-  ): Promise<{
-    baseEvent: WithId<Omit<Schema_Event_Recur_Base, "_id">>;
-    instanceEvent: WithId<Omit<Schema_Event_Recur_Instance, "_id">>;
-  }> {
-    // get instance event or throw
-    const instanceEvent = await CompassEventFactory.findCompassEvent(
-      eventId,
-      userId,
-      session,
-    );
-
-    const baseEventId = instanceEvent?.recurrence?.eventId?.toString();
-
-    if (!baseEventId) throw new Error("event is not a recurring instance");
-
-    // get base event in series or throw
-    const baseEvent = await CompassEventFactory.findCompassEvent(
-      baseEventId,
-      userId,
-      session,
-    );
-
-    return {
-      baseEvent: baseEvent as WithId<Omit<Schema_Event_Recur_Base, "_id">>,
-      instanceEvent: instanceEvent as WithId<
-        Omit<Schema_Event_Recur_Instance, "_id">
-      >,
-    };
+export function generateDelete(plan: DeletePlan): {
+  deleteIds: ObjectId[];
+  upsert: EventRecord[];
+  deleteSeriesId: ObjectId | null;
+  primary: EventRecord | null;
+} {
+  switch (plan.kind) {
+    case "deleteThis":
+      return {
+        deleteIds: [plan.target._id],
+        upsert: [],
+        deleteSeriesId: null,
+        primary: plan.target,
+      };
+    case "deleteSeries":
+      return {
+        deleteIds: [],
+        upsert: [],
+        deleteSeriesId: plan.seriesId,
+        primary: null,
+      };
+    case "deleteSplit":
+      return {
+        deleteIds: plan.deleteInstanceIds,
+        upsert: [plan.truncatedBase],
+        deleteSeriesId: null,
+        primary: null,
+      };
   }
+}
 
-  private static async genThisAndFollowingEvents(
-    event: CompassThisAndFollowingEvent,
-    session?: ClientSession,
-  ): Promise<CompassEvent[]> {
-    const { baseEvent, instanceEvent } =
-      await CompassEventFactory.findCompassBaseAndInstanceEvent(
-        event.payload._id,
-        event.payload.user,
-        session,
-      );
-
-    const baseStartDate = parseCompassEventDate(baseEvent.startDate!);
-    const startDate = parseCompassEventDate(instanceEvent.startDate!);
-    const updateAllSeries = startDate.isSameOrBefore(baseStartDate);
-    const allDay = isAllDay(instanceEvent);
-
-    if (updateAllSeries) {
-      return CompassEventFactory.genAllEvents(
-        {
-          ...event,
-          applyTo: RecurringEventUpdateScope.ALL_EVENTS,
-        } as CompassAllEvents,
-        session,
-      );
-    }
-
-    const rruleOldSeries = new CompassEventRRule(baseEvent);
-    const oldSeriesLastEventStartDate = rruleOldSeries.all().pop()!;
-    const applyTo = RecurringEventUpdateScope.THIS_EVENT;
-    const endDate = parseCompassEventDate(instanceEvent.endDate!);
-    const duration = endDate.diff(startDate);
-
-    const oldUntil = startDate.subtract(
-      allDay ? 1 : duration,
-      allDay ? "day" : "millisecond",
-    );
-
-    const rruleTruncatedSeries = new CompassEventRRule(baseEvent, {
-      until: oldUntil.toDate(),
-    });
-
-    const truncateOldSeries = {
-      ...event,
-      applyTo,
-      payload: {
-        ...rruleTruncatedSeries.base(),
-        _id: baseEvent._id.toString(),
-      },
-    } as CompassThisEvent;
-
-    if (event.status === CompassEventStatus.CANCELLED) {
-      return [{ ...truncateOldSeries, status: CompassEventStatus.CONFIRMED }];
-    }
-
-    const payload = EventUpdateSchema.parse(event.payload);
-
-    delete payload.recurrence?.eventId;
-
-    const _rruleNewSeries = new CompassEventRRule({
-      ...MapEvent.removeIdentifyingData(instanceEvent),
-      ...(payload as Schema_Event_Recur_Base),
-      _id: new ObjectId(),
-    });
-
-    const rruleNewSeries = new CompassEventRRule(
-      {
-        ...MapEvent.removeIdentifyingData(instanceEvent),
-        ...(payload as Schema_Event_Recur_Base),
-        _id: new ObjectId(),
-      },
-      { until: _rruleNewSeries.options.until ?? oldSeriesLastEventStartDate },
-    );
-
-    const newBase = rruleNewSeries.base();
-
-    // new series
-    const newBaseEvent = {
-      ...event,
-      applyTo,
-      payload: {
-        ...newBase,
-        _id: newBase._id.toString(),
-      },
-    } as CompassThisEvent;
-
-    return [truncateOldSeries, newBaseEvent];
-  }
-
-  private static async genAllEvents(
-    event: CompassEvent,
-    session?: ClientSession,
-  ): Promise<CompassAllEvents[]> {
-    const { baseEvent } =
-      await CompassEventFactory.findCompassBaseAndInstanceEvent(
-        event.payload._id,
-        event.payload.user,
-        session,
-      );
-
-    const eventId = baseEvent._id.toString();
-    const payload = EventUpdateSchema.parse(event.payload);
-    const nullRecurrence = payload.recurrence?.rule === null;
-
-    delete payload.recurrence?.eventId;
-
-    if (nullRecurrence) {
-      delete (payload as Event_Core).recurrence;
-      delete (baseEvent as unknown as Event_Core).recurrence;
-    } else {
-      delete payload.startDate;
-      delete payload.endDate;
-    }
-
-    const compassEvent = {
-      ...event,
-      payload: {
-        ...baseEvent,
-        ...payload,
-        _id: eventId,
-      } as CompassAllEvents["payload"],
-    } as CompassAllEvents;
-
-    return [compassEvent];
-  }
-
-  private static async genThisEvent(
-    event: CompassEvent,
-    session?: ClientSession,
-  ): Promise<CompassEvent[]> {
-    const payload = event.payload as Schema_Event;
-    const hasRRule = Array.isArray(payload.recurrence?.rule);
-    const hasRecurringBase = !!payload.recurrence?.eventId;
-    const nullRecurrence = payload.recurrence?.rule === null;
-
-    const dbEvent = await CompassEventFactory.findCompassEvent(
-      event.payload._id,
-      event.payload.user,
-      session,
-      false,
-    );
-
-    if (dbEvent && isBase(dbEvent)) {
-      throw error(
-        GenericError.BadRequest,
-        `You cannot edit a base event with this option(${RecurringEventUpdateScope.THIS_EVENT})`,
-      );
-    }
-
-    if (nullRecurrence) delete payload.recurrence?.rule;
-    if (hasRRule && hasRecurringBase) delete payload.recurrence?.rule;
-    if (nullRecurrence && !hasRecurringBase) delete payload.recurrence;
-
-    return Promise.resolve([event]);
-  }
-
-  static async generateEvents(
-    _event: CompassEvent,
-    session?: ClientSession,
-  ): Promise<CompassEvent[]> {
-    const event = CompassEventSchema.parse(_event);
-
-    switch (event.applyTo) {
-      case RecurringEventUpdateScope.ALL_EVENTS:
-        return CompassEventFactory.genAllEvents(event, session);
-      case RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS:
-        return CompassEventFactory.genThisAndFollowingEvents(event, session);
-      default:
-        return CompassEventFactory.genThisEvent(event);
-    }
-  }
+export function generateTransition(plan: TransitionPlan): MaterializedMutation {
+  return {
+    upsert: [plan.updated],
+    deleteIds: plan.deletedInstanceIds,
+    primary: plan.updated,
+  };
 }

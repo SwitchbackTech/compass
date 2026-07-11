@@ -16,6 +16,28 @@ Neither migration touches the legacy `event` collection, and nothing starts
 reading `event_new` until the separate runtime-cutover release. Running these
 early is safe; the app keeps serving from legacy data.
 
+## Rollout strategy (sub-calendar v1)
+
+The v1 rollout is staging-first (decision A36 in
+`handoff/someday/master-doc.md`):
+
+1. **Staging cuts over now.** Run the full procedure below (migrate → verify →
+   pause → rename → deploy) against staging when the runtime-cutover release
+   merges. Merges to `main` auto-deploy staging, so every subsequent v1 packet
+   lands there continuously.
+2. **Production stays on the pre-cutover release** the whole time. The
+   `Deploy Production` workflow is manual (`workflow_dispatch`) — do not run
+   it while v1 work is in flight. Production keeps writing legacy `event`
+   data; that is fine, because the backfill is rerunnable and the final
+   production migration run happens inside the production cutover window.
+3. **Production cuts over once, at the end**: after every packet is merged
+   and the plan `09` verification gates pass on staging, execute this runbook
+   against production a single time, then run the `Deploy Production` action.
+   That is the entire production rollout.
+
+Dev databases follow staging: run the migrations + rename locally (or wipe the
+dev database) as soon as you work on a post-cutover branch.
+
 ## Preflight
 
 1. **Back up first.** Follow [Back up & restore](./backup-and-restore.md) in

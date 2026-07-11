@@ -1,10 +1,8 @@
 export type EventMutationOperation =
   | "create"
-  | "edit"
+  | "replace"
   | "delete"
-  | "convert-to-someday"
-  | "convert-to-calendar"
-  | "delete-someday"
+  | "transition"
   | "reorder-someday";
 
 export const eventMutationKeys = {

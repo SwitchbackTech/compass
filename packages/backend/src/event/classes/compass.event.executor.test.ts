@@ -1,188 +1,151 @@
-/** @jest-environment node */
-
 import { ObjectId } from "mongodb";
 import {
-  CalendarProvider,
-  Categories_Recurrence,
-  type Schema_Event,
-  type Schema_Event_Recur_Base,
-  type WithCompassId,
-} from "@core/types/event.types";
-import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
+  cleanupCollections,
+  cleanupTestDb,
+  setupTestDb,
+} from "@backend/__tests__/helpers/mock.db.setup";
+import mongoService from "@backend/common/services/mongo.service";
 import {
-  createMockBaseEvent,
-  createMockStandaloneEvent,
-} from "@core/util/test/ccal.event.factory";
-import {
-  applyCompassPlan,
-  type CompassApplyResult,
+  executeDelete,
+  executeMutation,
 } from "@backend/event/classes/compass.event.executor";
-import { type CompassOperationPlan } from "@backend/event/classes/compass.event.parser";
-import * as eventService from "@backend/event/services/event.service";
+import { type EventRecord } from "@backend/event/event.record";
+import { eventRepository } from "@backend/event/event.repository";
 
-jest.mock("@backend/event/services/event.service", () => ({
-  _createCompassEvent: jest.fn(),
-  _deleteInstancesAfterUntil: jest.fn(),
-  _deleteSeries: jest.fn(),
-  _deleteSingleCompassEvent: jest.fn(),
-  _updateCompassEvent: jest.fn(),
-  _updateCompassSeries: jest.fn(),
-}));
+const calendarId = new ObjectId();
 
-function normalizeEvent(event: Schema_Event) {
-  return {
-    ...event,
-    _id: new ObjectId(event._id),
-  };
-}
+const buildEvent = (overrides: Partial<EventRecord> = {}): EventRecord => ({
+  _id: new ObjectId(),
+  calendarId,
+  content: { kind: "details", title: "Standup", description: "" },
+  schedule: {
+    kind: "timed",
+    start: new Date("2026-07-14T15:00:00.000Z"),
+    end: new Date("2026-07-14T16:00:00.000Z"),
+    timeZone: "America/Denver",
+  },
+  recurrence: { kind: "single" },
+  priority: "unassigned",
+  externalReference: null,
+  createdAt: new Date(),
+  updatedAt: null,
+  ...overrides,
+});
 
-function buildSummary() {
-  return {
-    title: "test event",
-    transition: [null, "STANDALONE_CONFIRMED"] as [
-      null,
-      "STANDALONE_CONFIRMED",
-    ],
-    category: Categories_Recurrence.STANDALONE,
-  };
-}
+describe("executeMutation", () => {
+  beforeEach(setupTestDb);
+  beforeEach(cleanupCollections);
+  afterAll(cleanupTestDb);
 
-function buildTransition(
-  operation: CompassOperationPlan["operation"],
-): CompassApplyResult["summary"] {
-  return {
-    ...buildSummary(),
-    operation,
-  };
-}
-
-describe("applyCompassPlan", () => {
-  beforeEach(() => {
-    jest.resetAllMocks();
-  });
-
-  it("creates Compass data and returns the persisted event", async () => {
-    const payload = createMockStandaloneEvent();
-    const event = normalizeEvent(payload);
-    const persistedEvent = {
-      ...payload,
-      updatedAt: new Date(),
-    } as WithCompassId<Omit<Schema_Event, "_id">>;
-
-    jest
-      .spyOn(eventService, "_createCompassEvent")
-      .mockResolvedValueOnce(persistedEvent);
-
-    const plan: CompassOperationPlan = {
-      summary: buildSummary(),
-      operation: "STANDALONE_CREATED",
-      transitionKey: "NIL->>STANDALONE_CONFIRMED",
-      provider: CalendarProvider.GOOGLE,
-      compassMutation: "CREATE",
-      googleEffect: { type: "create" },
-      event,
-      rrule: null,
-      steps: [{ type: "create", event, rrule: null }],
-    };
-
-    const result = await applyCompassPlan(plan);
-
-    expect(eventService._createCompassEvent).toHaveBeenCalledWith(
-      { ...event, user: event.user! },
-      CalendarProvider.GOOGLE,
-      null,
-      undefined,
-    );
-    expect(result).toEqual({
-      applied: true,
-      summary: buildTransition("STANDALONE_CREATED"),
-      persistedEvent,
-      googleDeleteEventId: undefined,
+  it("upserts every record in the plan and returns the primary", async () => {
+    const primary = buildEvent();
+    const instance = buildEvent({
+      recurrence: { kind: "occurrence", seriesId: primary._id },
     });
+
+    const result = await executeMutation({
+      upsert: [primary, instance],
+      deleteIds: [],
+      primary,
+    });
+
+    expect(result).toBe(primary);
+    const stored = await mongoService.event
+      .find({ _id: { $in: [primary._id, instance._id] } })
+      .toArray();
+    expect(stored).toHaveLength(2);
   });
 
-  it("truncates a series before updating it", async () => {
-    const payload = createMockBaseEvent({
-      recurrence: { rule: ["RRULE:FREQ=WEEKLY;UNTIL=20260124T170000Z"] },
-    }) as Schema_Event_Recur_Base;
-    const event = normalizeEvent(payload) as ReturnType<typeof normalizeEvent> &
-      Schema_Event_Recur_Base;
-    const rrule = new CompassEventRRule(event as never);
-    const persistedEvent = {
-      ...payload,
-      updatedAt: new Date(),
-    } as WithCompassId<Omit<Schema_Event, "_id">>;
+  it("deletes deleteIds before upserting the plan's records", async () => {
+    const stale = buildEvent();
+    await eventRepository.insertOne(stale);
+    const replacement = buildEvent();
 
-    jest
-      .spyOn(eventService, "_updateCompassSeries")
-      .mockResolvedValueOnce(persistedEvent);
+    await executeMutation({
+      upsert: [replacement],
+      deleteIds: [stale._id],
+      primary: replacement,
+    });
 
-    const until = rrule.options.until!;
-    const plan: CompassOperationPlan = {
-      summary: buildSummary(),
-      operation: "RECURRENCE_BASE_UPDATED",
-      transitionKey: "RECURRENCE_BASE->>RECURRENCE_BASE_CONFIRMED",
-      provider: CalendarProvider.GOOGLE,
-      compassMutation: "TRUNCATE_SERIES",
-      googleEffect: { type: "update" },
-      event,
-      rrule,
-      steps: [
-        {
-          type: "delete_instances_after_until",
-          userId: event.user!,
-          baseId: event._id.toString(),
-          until,
-        },
-        {
-          type: "update_series",
-          event,
-        },
-      ],
-    };
-
-    const result = await applyCompassPlan(plan);
-
-    expect(eventService._deleteInstancesAfterUntil).toHaveBeenCalledWith(
-      event.user!,
-      event._id.toString(),
-      until,
-      undefined,
-    );
-    expect(eventService._updateCompassSeries).toHaveBeenCalledWith(
-      { ...event, user: event.user! },
-      undefined,
-    );
-    expect(result.persistedEvent).toBe(persistedEvent);
+    expect(await mongoService.event.findOne({ _id: stale._id })).toBeNull();
+    expect(
+      await mongoService.event.findOne({ _id: replacement._id }),
+    ).toBeTruthy();
   });
 
-  it("uses the deleted event gEventId when it is available", async () => {
-    const payload = createMockStandaloneEvent();
-    const event = normalizeEvent(payload);
-    const deletedEvent = {
-      ...payload,
-      gEventId: "deleted-from-db",
-      updatedAt: new Date(),
-    } as WithCompassId<Omit<Schema_Event, "_id">>;
+  it("rolls back every write when the passed session's transaction aborts", async () => {
+    const record = buildEvent();
+    const session = await mongoService.startSession();
 
-    jest
-      .spyOn(eventService, "_deleteSingleCompassEvent")
-      .mockResolvedValueOnce(deletedEvent);
+    try {
+      await session.withTransaction(async (session) => {
+        await executeMutation(
+          { upsert: [record], deleteIds: [], primary: record },
+          session,
+        );
+        throw new Error("force rollback");
+      });
+    } catch {
+      // expected: withTransaction rethrows after aborting
+    } finally {
+      await session.endSession();
+    }
 
-    const plan: CompassOperationPlan = {
-      summary: buildSummary(),
-      operation: "STANDALONE_DELETED",
-      transitionKey: "STANDALONE->>STANDALONE_CANCELLED",
-      provider: CalendarProvider.GOOGLE,
-      compassMutation: "DELETE",
-      googleEffect: { type: "delete", deleteEventId: "fallback-from-plan" },
-      event,
-      rrule: null,
-      steps: [{ type: "delete_single", event }],
+    expect(await mongoService.event.findOne({ _id: record._id })).toBeNull();
+  });
+});
+
+describe("executeDelete", () => {
+  beforeEach(setupTestDb);
+  beforeEach(cleanupCollections);
+  afterAll(cleanupTestDb);
+
+  it("removes the whole series when deleteSeriesId is set, ignoring upsert/deleteIds", async () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const occurrence = buildEvent({
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+    await eventRepository.insertMany([base, occurrence]);
+
+    await executeDelete({
+      deleteSeriesId: base._id,
+      deleteIds: [],
+      upsert: [],
+    });
+
+    expect(await mongoService.event.findOne({ _id: base._id })).toBeNull();
+    expect(
+      await mongoService.event.findOne({ _id: occurrence._id }),
+    ).toBeNull();
+  });
+
+  it("deletes following instances and upserts the truncated base for a split", async () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+    });
+    const following = buildEvent({
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+    await eventRepository.insertMany([base, following]);
+
+    const truncatedBase: EventRecord = {
+      ...base,
+      recurrence: {
+        kind: "series",
+        rules: ["RRULE:FREQ=WEEKLY;UNTIL=20260714T150000Z"],
+      },
     };
 
-    const result = await applyCompassPlan(plan);
+    await executeDelete({
+      deleteSeriesId: null,
+      deleteIds: [following._id],
+      upsert: [truncatedBase],
+    });
 
-    expect(result.googleDeleteEventId).toBe("deleted-from-db");
+    expect(await mongoService.event.findOne({ _id: following._id })).toBeNull();
+    const stored = await mongoService.event.findOne({ _id: base._id });
+    expect(stored?.recurrence).toEqual(truncatedBase.recurrence);
   });
 });

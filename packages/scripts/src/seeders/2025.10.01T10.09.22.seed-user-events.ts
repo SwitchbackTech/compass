@@ -2,43 +2,54 @@ import { confirm, input } from "@inquirer/prompts";
 import { type MigrationContext } from "@scripts/common/cli.types";
 import { ObjectId } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
-import { NodeEnv } from "@core/constants/core.constants";
+import { NodeEnv, Priorities } from "@core/constants/core.constants";
 import {
-  CompassEventStatus,
-  type CompassThisEvent,
-  RecurringEventUpdateScope,
-} from "@core/types/event.types";
+  type CalendarId,
+  type DateTime,
+  type EventId,
+  type TimeZone,
+} from "@core/types/domain-primitives";
+import { type CreateEventInput } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
+import calendarService from "@backend/calendar/services/calendar.service";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { UserError } from "@backend/common/errors/user/user.errors";
-import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
+import eventService from "@backend/event/services/event.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
+
+const SEEDED_EVENT_ID = "68dd107efa3e55e40e095199";
 
 export default class Seeder implements RunnableMigration<MigrationContext> {
   readonly name: string = "2025.10.01T10.09.22.seed-user-events";
   readonly path: string = "2025.10.01T10.09.22.seed-user-events.ts";
 
-  #generateEvents(userId: string): Array<CompassThisEvent["payload"]> {
-    const standalone = createMockStandaloneEvent({
-      user: userId,
-      isAllDay: false,
-      isSomeday: false,
-      startDate: dayjs().hour(10).minute(0).second(0).toISOString(),
-    });
+  async #buildEvent(userId: string): Promise<CreateEventInput> {
+    const calendar = await calendarService.getLocalCalendar(userId);
 
-    return [
-      {
-        ...standalone,
-        _id: "68dd107efa3e55e40e095199",
-        user: standalone.user!,
-        startDate: standalone.startDate!,
-        endDate: standalone.endDate!,
-        origin: standalone.origin!,
-        priority: standalone.priority!,
+    if (!calendar) {
+      throw error(
+        UserError.InvalidValue,
+        `No local calendar found for user: ${userId}`,
+      );
+    }
+
+    const start = dayjs().hour(10).minute(0).second(0).millisecond(0);
+    const end = start.add(1, "hour");
+
+    return {
+      id: SEEDED_EVENT_ID as EventId,
+      calendarId: calendar._id.toHexString() as CalendarId,
+      content: { kind: "details", title: "Seeded event", description: "" },
+      schedule: {
+        kind: "timed",
+        start: start.toISOString() as DateTime,
+        end: end.toISOString() as DateTime,
+        timeZone: (calendar.timeZone ?? "UTC") as TimeZone,
       },
-    ];
+      recurrence: { kind: "single" },
+      priority: Priorities.UNASSIGNED,
+    };
   }
 
   async #prompt(
@@ -77,8 +88,7 @@ export default class Seeder implements RunnableMigration<MigrationContext> {
             "⚠️  WARNING ⚠️",
             "",
             `This command will modify user's data as follows:`,
-            `• ${action} multiple events in your Compass Calendar database`,
-            `• ${action} multiple events in your primary Google Calendar`,
+            `• ${action} an event in your Compass Calendar database`,
             "",
             "🔔 RECOMMENDATION:",
             "It's strongly recommended to use this command with a test account",
@@ -134,15 +144,11 @@ export default class Seeder implements RunnableMigration<MigrationContext> {
     if (!proceed) return Promise.resolve();
 
     const userId = (await this.#findUserOrThrow(user!))._id.toString();
-    const events = this.#generateEvents(userId);
+    const input = await this.#buildEvent(userId);
 
-    await CompassToGoogleEventPropagation.processEvents(
-      events.map((payload) => ({
-        payload,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        status: CompassEventStatus.CONFIRMED,
-      })),
-    );
+    await eventService.create(userId, input);
+
+    params.context.logger.debug(`Seeded 1 event for user: ${userId}`);
   }
 
   async down(params: MigrationParams<MigrationContext>): Promise<void> {
@@ -151,14 +157,11 @@ export default class Seeder implements RunnableMigration<MigrationContext> {
     if (!proceed) return Promise.resolve();
 
     const userId = (await this.#findUserOrThrow(user!))._id.toString();
-    const events = this.#generateEvents(userId);
 
-    await CompassToGoogleEventPropagation.processEvents(
-      events.map((payload) => ({
-        payload,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        status: CompassEventStatus.CANCELLED,
-      })),
-    );
+    await eventService
+      .delete(userId, SEEDED_EVENT_ID, { scope: "all" })
+      .catch(() => undefined);
+
+    params.context.logger.debug(`Removed seeded event for user: ${userId}`);
   }
 }

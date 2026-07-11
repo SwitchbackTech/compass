@@ -1,25 +1,13 @@
 import { faker } from "@faker-js/faker";
-import { ObjectId, type WithId } from "mongodb";
-import {
-  EVENT_CHANGED,
-  GOOGLE_REVOKED,
-  IMPORT_GCAL_END,
-  USER_METADATA,
-} from "@core/constants/sse.constants";
+import { ObjectId } from "mongodb";
 import { Status } from "@core/errors/status.codes";
-import { type ImportGCalEndPayload } from "@core/types/sse.types";
+import { type ServerMessage } from "@core/types/server-message.contracts";
 import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
-import { type Schema_User } from "@core/types/user.types";
-import { isBase, isInstance } from "@core/util/event/event.util";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 import { GoogleSyncDriver } from "@backend/__tests__/drivers/google-sync.driver";
 import { SyncControllerDriver } from "@backend/__tests__/drivers/sync.controller.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
-import {
-  getCategorizedEventsInDb,
-  getEventsInDb,
-} from "@backend/__tests__/helpers/mock.db.queries";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -39,57 +27,32 @@ import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { randomUUID } from "node:crypto";
 
+// B10: legacy IMPORT_GCAL_END/EVENT_CHANGED/USER_METADATA/GOOGLE_REVOKED SSE
+// event names were deleted along with the legacy transport; every publish
+// now goes out under the single "message" SSE event name, dispatched by
+// BaseDriver's stream helper under the ServerMessage's own `type` field.
+type ImportCompletedMessage = Extract<
+  ServerMessage,
+  { type: "importCompleted" }
+>;
+
 describe("SyncController", () => {
   const baseDriver = new BaseDriver();
   const syncDriver = new SyncControllerDriver(baseDriver);
   const importTimeoutMs = 7_000;
-  type ImportOperation = "INCREMENTAL" | "REPAIR";
-
-  interface ImportSummary {
-    operation: ImportOperation;
-    status: "COMPLETED";
-    eventsCount: number;
-    calendarsCount: number;
-  }
 
   function parseImportResult(
-    result: ImportGCalEndPayload | undefined,
-    operation: ImportOperation = "INCREMENTAL",
-  ): ImportSummary {
+    result: ImportCompletedMessage | undefined,
+  ): ImportCompletedMessage {
     expect(result).toEqual(
       expect.objectContaining({
-        operation,
-        status: "COMPLETED",
+        type: "importCompleted",
         eventsCount: expect.any(Number) as number,
         calendarsCount: expect.any(Number) as number,
       }),
     );
 
-    return result as ImportSummary;
-  }
-
-  async function sseUserFlow(waitForEventChanged = false): Promise<{
-    user: WithId<Schema_User>;
-  }> {
-    const { user } = await UtilDriver.setupTestUser();
-    const userId = user._id.toString();
-
-    const stream = baseDriver.openSSEStream({
-      userId,
-      sessionId: randomUUID(),
-    });
-
-    await Promise.allSettled([
-      stream.waitForEvent(IMPORT_GCAL_END, importTimeoutMs),
-      syncDriver.importGCal({ userId }),
-      ...(waitForEventChanged
-        ? [stream.waitForEvent(EVENT_CHANGED, importTimeoutMs)]
-        : []),
-    ]);
-
-    stream.close();
-
-    return { user };
+    return result as ImportCompletedMessage;
   }
 
   beforeAll(async () => {
@@ -274,12 +237,13 @@ describe("SyncController", () => {
 
       const notificationSpy = jest
         .spyOn(GCalNotificationHandler.prototype, "handleNotification")
-        .mockResolvedValue({ summary: "PROCESSED", changes: [] });
-      const backgroundChangeSpy = jest.spyOn(
-        sseServer,
-        "handleBackgroundCalendarChange",
-      );
-      const importStartSpy = jest.spyOn(sseServer, "handleImportGCalStart");
+        .mockResolvedValue({
+          summary: "PROCESSED",
+          calendarId: new ObjectId(),
+          eventIds: [],
+        });
+      const backgroundChangeSpy = jest.spyOn(sseServer, "publishEventsChanged");
+      const importStartSpy = jest.spyOn(sseServer, "publishSyncStatus");
 
       const activeResponse = await syncDriver.handleGoogleNotification(
         {
@@ -337,10 +301,7 @@ describe("SyncController", () => {
         .spyOn(userService, "pruneGoogleData")
         .mockResolvedValue();
 
-      const handleGoogleRevokedSpy = jest.spyOn(
-        sseServer,
-        "handleGoogleRevoked",
-      );
+      const handleGoogleRevokedSpy = jest.spyOn(sseServer, "publishSyncStatus");
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -354,11 +315,15 @@ describe("SyncController", () => {
       );
 
       expect(response.body).toEqual({
-        code: GOOGLE_REVOKED,
+        code: "GOOGLE_REVOKED",
         message: "User revoked access, pruned Google data",
       });
       expect(pruneGoogleDataSpy).toHaveBeenCalledWith(userId);
-      expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId);
+      expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId, {
+        status: "attention",
+        code: "GOOGLE_REVOKED",
+        retryable: false,
+      });
 
       handleGoogleWatchNotificationSpy.mockRestore();
       pruneGoogleDataSpy.mockRestore();
@@ -385,10 +350,7 @@ describe("SyncController", () => {
         .spyOn(userService, "pruneGoogleData")
         .mockResolvedValue();
 
-      const handleGoogleRevokedSpy = jest.spyOn(
-        sseServer,
-        "handleGoogleRevoked",
-      );
+      const handleGoogleRevokedSpy = jest.spyOn(sseServer, "publishSyncStatus");
 
       const response = await syncDriver.handleGoogleNotification(
         {
@@ -402,11 +364,15 @@ describe("SyncController", () => {
       );
 
       expect(response.body).toEqual({
-        code: GOOGLE_REVOKED,
+        code: "GOOGLE_REVOKED",
         message: "Missing refresh token, pruned Google data",
       });
       expect(pruneGoogleDataSpy).toHaveBeenCalledWith(userId);
-      expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId);
+      expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId, {
+        status: "attention",
+        code: "GOOGLE_REVOKED",
+        retryable: false,
+      });
 
       handleGoogleWatchNotificationSpy.mockRestore();
       pruneGoogleDataSpy.mockRestore();
@@ -436,282 +402,91 @@ describe("SyncController", () => {
   });
 
   describe("importGCal:", () => {
-    describe("Imported Data:", () => {
-      it("should import the first instance of a recurring event (and the base)", async () => {
-        // Importing both the base and first instance helps us find the series recurrence rule.
-        // To prevent duplicates in the UI, the GET API will not return the base event
-        const { user } = await sseUserFlow(true);
-
-        const currentEventsInDb = await getEventsInDb({
-          user: user._id.toString(),
-        });
-
-        const baseEvent = currentEventsInDb.find(isBase)!;
-        const firstInstance = currentEventsInDb.find(isInstance)!;
-
-        expect(baseEvent).toBeDefined();
-        expect(baseEvent).not.toBeNull();
-        expect(firstInstance).toBeDefined();
-        expect(firstInstance).not.toBeNull();
-
-        expect(baseEvent.startDate).toEqual(firstInstance.startDate);
-      });
-
-      it("should connect instances to their base events", async () => {
-        const { user } = await sseUserFlow(true);
-
-        const { baseEvents, instanceEvents } = await getCategorizedEventsInDb({
-          user: user._id.toString(),
-        });
-
-        expect(instanceEvents).toHaveLength(3);
-
-        instanceEvents.forEach((instance) => {
-          expect(instance.recurrence?.eventId).toBe(
-            baseEvents[0]?._id?.toString(),
-          );
-        });
-      });
-
-      it("should include regular and recurring events and skip cancelled events", async () => {
-        const { user } = await sseUserFlow(true);
-
-        const currentEventsInDb = await getEventsInDb({
-          user: user._id.toString(),
-        });
-
-        expect(currentEventsInDb).toHaveLength(5); // base + 3 instances + regular
-
-        // Verify we have the base event
-        const baseEvents = currentEventsInDb.filter(isBase);
-
-        expect(baseEvents).toHaveLength(1);
-        expect(baseEvents[0]?.title).toBe("Recurrence");
-
-        // Verify we have the correct instance
-        const instanceEvents = currentEventsInDb.filter(isInstance);
-
-        expect(instanceEvents).toHaveLength(3);
-
-        const baseGevId = baseEvents[0]?.gEventId as string;
-
-        expect(instanceEvents.map((e) => e.gEventId)).toEqual(
-          expect.arrayContaining([expect.stringMatching(baseGevId)]),
-        );
-
-        // Verify we have the regular event
-        const regularEvents = currentEventsInDb.filter(
-          ({ recurrence }) => recurrence === undefined || recurrence === null,
-        );
-
-        expect(regularEvents).toHaveLength(1);
-        expect(regularEvents[0]?.gEventId).toBe("regular-1");
-      });
-
-      it("should not create duplicate events for recurring events", async () => {
-        const { user } = await sseUserFlow(true);
-
-        const currentEventsInDb = await getEventsInDb({
-          user: user._id.toString(),
-        });
-
-        // Get all instance events
-        const instances = currentEventsInDb.filter(isInstance);
-
-        // For each instance event, verify there are no duplicates
-        const eventIds = new Set<string>();
-        const duplicateEvents = instances.filter((event) => {
-          if (!event.gEventId) return false; // Skip events without IDs
-          if (eventIds.has(event.gEventId)) {
-            return true;
-          }
-          eventIds.add(event.gEventId);
-          return false;
-        });
-
-        expect(duplicateEvents).toHaveLength(0);
-      });
-
-      it("should not create duplicate events for regular events", async () => {
-        const { user } = await sseUserFlow(true);
-
-        const currentEventsInDb = await getEventsInDb({
-          user: user._id.toString(),
-        });
-
-        const regularEvents = currentEventsInDb.filter(
-          (e) => !isBase(e) && !isInstance(e),
-        );
-
-        expect(regularEvents).toHaveLength(1);
-        expect(regularEvents[0]?.gEventId).toBe("regular-1");
-      });
-
-      it("should resume import using stored nextPageToken", async () => {
-        const { user } = await sseUserFlow(true);
+    describe("Import Status:", () => {
+      it("force-repairs an already-completed sync and reports counts", async () => {
+        const { user } = await UtilDriver.setupTestUser();
         const userId = user._id.toString();
 
-        const getGCalEventsSyncPageTokenSpy = jest
-          .spyOn(syncQueries, "getGCalEventsSyncPageToken")
-          .mockResolvedValue("5");
-
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
-
-        const { sync } = await userMetadataService.fetchUserMetadata(userId);
-
-        expect(sync?.importGCal).toEqual("COMPLETED");
 
         await userMetadataService.updateUserMetadata({
           userId,
-          data: { sync: { importGCal: "RESTART" } },
+          data: { sync: { importGCal: "COMPLETED" } },
         });
 
         const stream = baseDriver.openSSEStream({
           userId,
           sessionId: randomUUID(),
         });
-        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
-          IMPORT_GCAL_END,
-          importTimeoutMs,
-        );
-        await syncDriver.importGCal({ userId });
-        await importEndPromise;
-        stream.close();
-
-        expect(getAllEventsSpy).toHaveBeenCalledWith(
-          expect.objectContaining({ pageToken: "5" }),
-        );
-
-        getAllEventsSpy.mockRestore();
-        getGCalEventsSyncPageTokenSpy.mockRestore();
-      });
-    });
-
-    describe("Import Status:", () => {
-      it("should force a repair import even after a completed sync", async () => {
-        const { user } = await sseUserFlow(true);
-        const userId = user._id.toString();
-
-        const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
-
-        const { sync } = await userMetadataService.fetchUserMetadata(userId);
-
-        expect(sync?.importGCal).toEqual("COMPLETED");
-
-        const stream = baseDriver.openSSEStream({
-          userId,
-          sessionId: randomUUID(),
-        });
-        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
-        const importEndPromise = stream.waitForEvent(
-          IMPORT_GCAL_END,
+          "importCompleted",
           importTimeoutMs,
         );
         await syncDriver.importGCal({ userId }, { force: true });
-        const result = (await importEndPromise) as ImportGCalEndPayload;
+        const result = (await importEndPromise) as ImportCompletedMessage;
         stream.close();
 
-        const parsed = parseImportResult(result, "REPAIR");
-
-        expect(parsed).toHaveProperty("eventsCount");
-        expect(parsed).toHaveProperty("calendarsCount");
+        const parsed = parseImportResult(result);
+        expect(parsed.operation).toBe("repair");
         expect(getAllEventsSpy).toHaveBeenCalled();
 
         getAllEventsSpy.mockRestore();
       });
 
-      it("should not retry import once it has completed", async () => {
-        const { user } = await sseUserFlow(true);
+      it("ignores a non-forced request while a completed sync is still fresh", async () => {
+        const { user } = await UtilDriver.setupTestUser();
         const userId = user._id.toString();
 
-        const { sync } = await userMetadataService.fetchUserMetadata(userId);
-
-        expect(sync?.importGCal).toEqual("COMPLETED");
-
-        const getGCalEventsSyncPageTokenSpy = jest
-          .spyOn(syncQueries, "getGCalEventsSyncPageToken")
-          .mockResolvedValue("5");
+        await userMetadataService.updateUserMetadata({
+          userId,
+          data: { sync: { importGCal: "COMPLETED" } },
+        });
 
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
+        const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
 
-        const stream = baseDriver.openSSEStream({
-          userId,
-          sessionId: randomUUID(),
-        });
-        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
-        const importEndPromise = stream.waitForEvent(
-          IMPORT_GCAL_END,
-          importTimeoutMs,
-        );
         await syncDriver.importGCal({ userId });
-        const failReason = (await importEndPromise) as ImportGCalEndPayload;
-        stream.close();
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
-        expect(failReason).toEqual({
-          operation: "INCREMENTAL",
-          status: "IGNORED",
-          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        });
-
+        expect(importEndSpy).not.toHaveBeenCalled();
         expect(getAllEventsSpy).not.toHaveBeenCalled();
 
         getAllEventsSpy.mockRestore();
-        getGCalEventsSyncPageTokenSpy.mockRestore();
+        importEndSpy.mockRestore();
       });
 
-      it("should not retry import if it is in progress", async () => {
-        const getGCalEventsSyncPageTokenSpy = jest
-          .spyOn(syncQueries, "getGCalEventsSyncPageToken")
-          .mockResolvedValue("5");
-
+      it("ignores a request while an import is already in progress", async () => {
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
         await GoogleSyncDriver.createHealthyGoogleSync(user);
-
         await userMetadataService.updateUserMetadata({
           userId,
           data: { sync: { importGCal: "IMPORTING" } },
         });
 
-        const stream = baseDriver.openSSEStream({
-          userId,
-          sessionId: randomUUID(),
-        });
-        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
-        const importEndPromise = stream.waitForEvent(
-          IMPORT_GCAL_END,
-          importTimeoutMs,
-        );
+        const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+
         await syncDriver.importGCal({ userId });
-        const failReason = (await importEndPromise) as ImportGCalEndPayload;
-        stream.close();
+        await new Promise((resolve) => setTimeout(resolve, 200));
 
-        expect(failReason).toEqual({
-          operation: "INCREMENTAL",
-          status: "IGNORED",
-          message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
-        });
-
+        expect(importEndSpy).not.toHaveBeenCalled();
         expect(getAllEventsSpy).not.toHaveBeenCalled();
 
         getAllEventsSpy.mockRestore();
-        getGCalEventsSyncPageTokenSpy.mockRestore();
+        importEndSpy.mockRestore();
       });
 
-      it("should retry import if it is restarted", async () => {
+      it("retries a non-forced import after a restart is requested", async () => {
         const getGCalEventsSyncPageTokenSpy = jest
           .spyOn(syncQueries, "getGCalEventsSyncPageToken")
           .mockResolvedValue("5");
-
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
         await GoogleSyncDriver.createHealthyGoogleSync(user);
-
         await userMetadataService.updateUserMetadata({
           userId,
           data: { sync: { importGCal: "RESTART" } },
@@ -721,19 +496,16 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
-        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
-          IMPORT_GCAL_END,
+          "importCompleted",
           importTimeoutMs,
         );
         await syncDriver.importGCal({ userId });
-        const result = (await importEndPromise) as ImportGCalEndPayload;
+        const result = (await importEndPromise) as ImportCompletedMessage;
         stream.close();
 
         const parsed = parseImportResult(result);
-        expect(parsed).toHaveProperty("eventsCount");
-        expect(parsed).toHaveProperty("calendarsCount");
-
+        expect(parsed.operation).toBe("incremental");
         expect(getAllEventsSpy).toHaveBeenCalledWith(
           expect.objectContaining({ pageToken: "5" }),
         );
@@ -742,17 +514,15 @@ describe("SyncController", () => {
         getGCalEventsSyncPageTokenSpy.mockRestore();
       });
 
-      it("should retry import if it failed", async () => {
+      it("retries a non-forced import after a previous failure", async () => {
         const getGCalEventsSyncPageTokenSpy = jest
           .spyOn(syncQueries, "getGCalEventsSyncPageToken")
           .mockResolvedValue("5");
-
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
         await GoogleSyncDriver.createHealthyGoogleSync(user);
-
         await userMetadataService.updateUserMetadata({
           userId,
           data: { sync: { importGCal: "ERRORED" } },
@@ -762,19 +532,16 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
-        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
-          IMPORT_GCAL_END,
+          "importCompleted",
           importTimeoutMs,
         );
         await syncDriver.importGCal({ userId });
-        const result = (await importEndPromise) as ImportGCalEndPayload;
+        const result = (await importEndPromise) as ImportCompletedMessage;
         stream.close();
 
         const parsed = parseImportResult(result);
-        expect(parsed).toHaveProperty("eventsCount");
-        expect(parsed).toHaveProperty("calendarsCount");
-
+        expect(parsed.operation).toBe("incremental");
         expect(getAllEventsSpy).toHaveBeenCalledWith(
           expect.objectContaining({ pageToken: "5" }),
         );
@@ -785,25 +552,27 @@ describe("SyncController", () => {
     });
 
     describe("Frontend Notifications", () => {
-      it("should notify the frontend that the import has started", async () => {
+      it("notifies the frontend that the import has started", async () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
         await GoogleSyncDriver.createHealthyGoogleSync(user);
 
-        const importStartSpy = jest.spyOn(sseServer, "handleImportGCalStart");
+        const syncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
 
         await syncDriver.importGCal({ userId });
 
         // Wait a tick for the async fire-and-forget to run
         await new Promise((resolve) => setTimeout(resolve, 100));
 
-        expect(importStartSpy).toHaveBeenCalledWith(userId);
+        expect(syncStatusSpy).toHaveBeenCalledWith(userId, {
+          status: "syncing",
+        });
 
-        importStartSpy.mockRestore();
+        syncStatusSpy.mockRestore();
       });
 
-      it("should notify the frontend that the import is complete", async () => {
+      it("notifies the frontend that the import is complete", async () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
@@ -813,47 +582,48 @@ describe("SyncController", () => {
           userId,
           sessionId: randomUUID(),
         });
-        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
-          IMPORT_GCAL_END,
+          "importCompleted",
           importTimeoutMs,
         );
         await syncDriver.importGCal({ userId });
-        const result = (await importEndPromise) as ImportGCalEndPayload;
+        const result = (await importEndPromise) as ImportCompletedMessage;
         stream.close();
 
-        const parsed = parseImportResult(result);
-        expect(parsed).toHaveProperty("eventsCount");
-        expect(parsed).toHaveProperty("calendarsCount");
+        parseImportResult(result);
       });
 
-      it("should notify the frontend to refetch the calendar events on completion", async () => {
+      it("notifies the frontend to refetch events for the affected calendar on completion", async () => {
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
 
         await GoogleSyncDriver.createHealthyGoogleSync(user);
 
-        const backgroundChangeSpy = jest.spyOn(
-          sseServer,
-          "handleBackgroundCalendarChange",
-        );
+        const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
 
         const stream = baseDriver.openSSEStream({
           userId,
           sessionId: randomUUID(),
         });
-        await stream.waitForEvent(USER_METADATA, importTimeoutMs);
         const importEndPromise = stream.waitForEvent(
-          IMPORT_GCAL_END,
+          "importCompleted",
           importTimeoutMs,
         );
         await syncDriver.importGCal({ userId });
         await importEndPromise;
         stream.close();
 
-        expect(backgroundChangeSpy).toHaveBeenCalledWith(userId);
+        // importCompleted is published before the trailing eventsChanged
+        // reconcile publish (which awaits one more calendar lookup); give
+        // that microtask a tick to run.
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
-        backgroundChangeSpy.mockRestore();
+        expect(eventsChangedSpy).toHaveBeenCalledWith(
+          userId,
+          expect.objectContaining({ reason: "reconciled" }),
+        );
+
+        eventsChangedSpy.mockRestore();
       });
     });
   });

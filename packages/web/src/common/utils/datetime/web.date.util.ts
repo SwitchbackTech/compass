@@ -5,6 +5,10 @@ import {
   YMDHAM_FORMAT,
   YMDHM_FORMAT,
 } from "@core/constants/date.constants";
+import {
+  type ScheduledSchedule,
+  ScheduledScheduleSchema,
+} from "@core/types/event.contracts";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
@@ -177,27 +181,38 @@ export const getCalendarHeadingLabel = (
   }
 };
 
-export const mapToBackend = (s: Schema_SelectedDates) => {
+// Browser IANA zone (e.g. "America/Chicago"), used to stamp timed schedules
+// built from local form input (B_G).
+export const getBrowserTimeZone = (): string =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+export const mapToBackend = (s: Schema_SelectedDates): ScheduledSchedule => {
   if (s.isAllDay) {
     const startDate = dayjs(s.startDate).format(YEAR_MONTH_DAY_FORMAT);
-    const endDate = dayjs(s.endDate).format(YEAR_MONTH_DAY_FORMAT);
+    let endDate = dayjs(s.endDate).format(YEAR_MONTH_DAY_FORMAT);
 
+    // A same-day selection is normalized to an exclusive end by adding one
+    // day; a multi-day selection's end already represents an exclusive day.
     if (startDate === endDate) {
-      return {
-        startDate,
-        endDate: dayjs(endDate).add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
-      };
+      endDate = dayjs(endDate).add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
     }
 
-    return {
-      startDate,
-      endDate,
-    };
+    return ScheduledScheduleSchema.parse({
+      kind: "allDay",
+      start: startDate,
+      end: endDate,
+    });
   }
 
-  const { startDate, endDate } = _addTimesToDates(s);
+  const timeZone = getBrowserTimeZone();
+  const { startDate, endDate } = _addTimesToDates(s, timeZone);
 
-  return { startDate, endDate };
+  return ScheduledScheduleSchema.parse({
+    kind: "timed",
+    start: startDate,
+    end: endDate,
+    timeZone,
+  });
 };
 
 // uses inferred timezone and shortened string to
@@ -209,17 +224,23 @@ export const toUTCOffset = (date: string | Dayjs | Date) => {
   } else return date.format(); // then already a DayJs object
 };
 
-const _addTimesToDates = (dt: Schema_SelectedDates) => {
+const _addTimesToDates = (dt: Schema_SelectedDates, timeZone: string) => {
   const start = getDayjsByTimeValue(dt.startTime.value);
-  const startDate = dayjs(dt.startDate)
+  const startDate = dayjs
+    .tz(dt.startDate, timeZone)
     .hour(start.hour())
     .minute(start.minute())
+    .second(0)
+    .millisecond(0)
     .format();
 
   const end = getDayjsByTimeValue(dt.endTime.value);
-  const endDate = dayjs(dt.startDate)
+  const endDate = dayjs
+    .tz(dt.startDate, timeZone)
     .hour(end.hour())
     .minute(end.minute())
+    .second(0)
+    .millisecond(0)
     .format();
 
   return { startDate, endDate };
@@ -355,19 +376,5 @@ export const computeRelativeEventDateRange = (
     ...event,
     startDate: start.format(),
     endDate: end.format(),
-  };
-};
-
-export const computeSomedayEventsRequestFilter = (
-  start: Dayjs,
-  end?: Dayjs,
-) => {
-  const startDate = start.subtract(1, "month").endOf("month");
-  const validEnd = end?.isAfter(start) ?? false;
-  const endDate = validEnd ? end! : start.endOf("month").add(1, "week");
-
-  return {
-    startDate: toUTCOffset(startDate),
-    endDate: toUTCOffset(endDate),
   };
 };

@@ -1,7 +1,6 @@
 import { type Request } from "express";
 import { GaxiosError } from "gaxios";
 import { type SessionRequest } from "supertokens-node/framework/express";
-import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
@@ -117,14 +116,18 @@ const handleGoogleError = async (
 ) => {
   if (isInvalidGoogleToken(e)) {
     await userService.pruneGoogleData(userId);
-    sseServer.handleGoogleRevoked(userId);
+    sseServer.publishSyncStatus(userId, {
+      status: "attention",
+      code: "GOOGLE_REVOKED",
+      retryable: false,
+    });
 
     logger.warn(
       `Invalid Google token for user: ${userId}. Google data pruned and client notified.`,
     );
 
     res.status(Status.UNAUTHORIZED).send({
-      code: GOOGLE_REVOKED,
+      code: "GOOGLE_REVOKED",
       message: "Google access revoked. Your Google data has been removed.",
     });
     return;

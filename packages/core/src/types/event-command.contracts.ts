@@ -158,6 +158,7 @@ export const EventMutationErrorCodeSchema = z.enum([
   "CALENDAR_NOT_FOUND",
   "CALENDAR_READ_ONLY",
   "RECURRENCE_CONFLICT",
+  "DUPLICATE_EVENT_ID",
   "INVALID_SCHEDULE",
   "PROVIDER_FAILURE",
 ]);

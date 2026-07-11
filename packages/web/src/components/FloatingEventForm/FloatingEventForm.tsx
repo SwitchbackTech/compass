@@ -10,6 +10,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { legacyScopeToRecurrenceScope } from "@web/events/queries/event.legacy-bridge";
 import { useEventById } from "@web/events/queries/useEventById";
 import {
   draftActions,
@@ -48,7 +49,12 @@ export function FloatingEventForm({
   const open = isFormOpen && !!draft;
   const existingEvent = useEventById(_id);
   const existing = Boolean(existingEvent);
-  const needsRecurrenceScope = Boolean(existingEvent?.recurrence?.eventId);
+  // TODO(packet-03-phase-3c): existingEvent is now the new `Event` contract
+  // (recurrence.kind "single" | "series" | "occurrence"); this form still
+  // targets the legacy Schema_Event draft shape.
+  const needsRecurrenceScope = Boolean(
+    existingEvent && existingEvent.recurrence.kind !== "single",
+  );
 
   const setEvent = useCallback(
     (
@@ -70,7 +76,7 @@ export function FloatingEventForm({
     if (pendingAction?.type === "save") {
       onSave(pendingAction.event, applyTo);
     } else if (pendingAction?.type === "delete") {
-      onDelete(applyTo);
+      onDelete(legacyScopeToRecurrenceScope(applyTo));
     }
     setPendingAction(null);
   };

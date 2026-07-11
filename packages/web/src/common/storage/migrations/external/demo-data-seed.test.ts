@@ -2,22 +2,11 @@
  * Tests for the demo data seed migration.
  */
 import { Priorities } from "@core/constants/core.constants";
-import {
-  CompassCoreEventSchema,
-  type Event_Core,
-} from "@core/types/event.types";
+import { EventSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createMockOfflineDataStore } from "@web/__tests__/utils/storage/mock-offline-data-store.util";
-import {
-  isLocalDemoEvent,
-  LOCAL_DEMO_EVENT_FIELD,
-} from "@web/common/storage/types/local-event.types";
-import {
-  GridEventSchema,
-  type Schema_GridEvent,
-  type Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { demoDataSeedMigration } from "./demo-data-seed";
 import { afterEach, beforeEach, describe, expect, it, spyOn } from "bun:test";
 
@@ -25,23 +14,17 @@ describe("demoDataSeedMigration", () => {
   let consoleLogSpy: ReturnType<typeof spyOn>;
   let consoleWarnSpy: ReturnType<typeof spyOn>;
   let consoleErrorSpy: ReturnType<typeof spyOn>;
-  let consoleInfoSpy: ReturnType<typeof spyOn>;
-  let consoleDebugSpy: ReturnType<typeof spyOn>;
 
   beforeEach(() => {
     consoleLogSpy = spyOn(console, "log").mockImplementation(() => {});
     consoleWarnSpy = spyOn(console, "warn").mockImplementation(() => {});
     consoleErrorSpy = spyOn(console, "error").mockImplementation(() => {});
-    consoleInfoSpy = spyOn(console, "info").mockImplementation(() => {});
-    consoleDebugSpy = spyOn(console, "debug").mockImplementation(() => {});
   });
 
   afterEach(() => {
     consoleLogSpy.mockRestore();
     consoleWarnSpy.mockRestore();
     consoleErrorSpy.mockRestore();
-    consoleInfoSpy.mockRestore();
-    consoleDebugSpy.mockRestore();
   });
 
   it("seeds demo data when storage is empty", async () => {
@@ -52,30 +35,16 @@ describe("demoDataSeedMigration", () => {
     expect(store.putEvents).toHaveBeenCalled();
     expect(store.putTasks).toHaveBeenCalled();
 
-    // Verify events were created (7 total: 5 today + 2 someday)
-    const eventsCall = store.putEvents.mock.calls[0][0] as Schema_WebEvent[];
+    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
     expect(eventsCall).toHaveLength(7);
-    expect(
-      eventsCall.every((event) => isLocalDemoEvent(event as Event_Core)),
-    ).toBe(true);
-    expect(eventsCall[0]).toHaveProperty(LOCAL_DEMO_EVENT_FIELD, true);
+    expect(eventsCall.every((record) => record.isDemo)).toBe(true);
 
-    // Verify tasks were created for 3 days
     expect(store.putTasks).toHaveBeenCalledTimes(3);
   });
 
   it("skips seeding when events already exist", async () => {
     const store = createMockOfflineDataStore();
-    store.getAllEvents.mockResolvedValue([
-      {
-        _id: "existing-event",
-        startDate: "2025-01-15T09:00:00Z",
-        endDate: "2025-01-15T10:00:00Z",
-        origin: "compass",
-        priority: "unassigned",
-        user: "user-1",
-      } as Event_Core,
-    ]);
+    store.getAllEvents.mockResolvedValue([{ id: "existing" }]);
 
     await demoDataSeedMigration.migrate(store);
 
@@ -100,12 +69,13 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(store);
 
-    const eventsCall = store.putEvents.mock.calls[0][0] as Schema_WebEvent[];
+    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
     const today = dayjs().toYearMonthDayString();
 
-    // Check that at least one timed event starts today
     const todayEvents = eventsCall.filter(
-      (e) => !e.isSomeday && e.startDate.startsWith(today),
+      ({ event }) =>
+        event.schedule.kind === "timed" &&
+        event.schedule.start.startsWith(today),
     );
     expect(todayEvents.length).toBeGreaterThan(0);
   });
@@ -152,8 +122,8 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(store);
 
-    const eventsCall = store.putEvents.mock.calls[0][0] as Schema_WebEvent[];
-    const priorities = new Set(eventsCall.map((e) => e.priority));
+    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
+    const priorities = new Set(eventsCall.map(({ event }) => event.priority));
 
     expect(priorities.has(Priorities.WORK)).toBe(true);
     expect(priorities.has(Priorities.SELF)).toBe(true);
@@ -166,8 +136,10 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(store);
 
-    const eventsCall = store.putEvents.mock.calls[0][0] as Schema_WebEvent[];
-    const somedayEvents = eventsCall.filter((e) => e.isSomeday);
+    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
+    const somedayEvents = eventsCall.filter(
+      ({ event }) => event.schedule.kind === "someday",
+    );
 
     expect(somedayEvents).toHaveLength(2);
   });
@@ -177,72 +149,45 @@ describe("demoDataSeedMigration", () => {
 
     await demoDataSeedMigration.migrate(store);
 
-    const eventsCall = store.putEvents.mock.calls[0][0] as Schema_WebEvent[];
-    const allDayEvents = eventsCall.filter((e) => e.isAllDay);
+    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
+    const allDayEvents = eventsCall.filter(
+      ({ event }) => event.schedule.kind === "allDay",
+    );
 
     expect(allDayEvents).toHaveLength(1);
-    expect(allDayEvents[0].title).toBe("Deep work day");
+    expect(allDayEvents[0].event.content).toMatchObject({
+      title: "Deep work day",
+    });
   });
 
-  it("creates timed events with offset format and 15-minute-aligned times (no seconds/milliseconds)", async () => {
+  it("creates timed events with offset format and no seconds/milliseconds drift", async () => {
     const store = createMockOfflineDataStore();
 
     await demoDataSeedMigration.migrate(store);
 
-    const eventsCall = store.putEvents.mock.calls[0][0] as Schema_WebEvent[];
-    const timedEvents = eventsCall.filter((e) => !e.isSomeday && !e.isAllDay);
+    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
+    const timedEvents = eventsCall.filter(
+      ({ event }) => event.schedule.kind === "timed",
+    );
 
-    // RFC3339 offset format: "2026-02-19T16:30:00-08:00" (no milliseconds, offset instead of Z)
     const offsetFormat = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00[+-]\d{2}:\d{2}$/;
 
-    for (const event of timedEvents) {
-      expect(event.startDate).toMatch(offsetFormat);
-      expect(event.endDate).toMatch(offsetFormat);
-      expect(event.startDate).not.toContain(".");
-      expect(event.endDate).not.toContain(".");
+    for (const { event } of timedEvents) {
+      if (event.schedule.kind !== "timed") continue;
+      expect(event.schedule.start).toMatch(offsetFormat);
+      expect(event.schedule.end).toMatch(offsetFormat);
     }
   });
 
-  it("adds default grid position data to seeded timed events", async () => {
+  it("seeds events with a valid Event shape", async () => {
     const store = createMockOfflineDataStore();
 
     await demoDataSeedMigration.migrate(store);
 
-    const eventsCall = store.putEvents.mock.calls[0][0] as Schema_WebEvent[];
-    const timedEvents = eventsCall.filter(
-      (e) => !e.isSomeday && !e.isAllDay,
-    ) as Schema_GridEvent[];
+    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
 
-    expect(timedEvents.length).toBeGreaterThan(0);
-
-    for (const event of timedEvents) {
-      expect(event.position).toBeDefined();
-      expect(event.position).toMatchObject({
-        isOverlapping: false,
-        totalEventsInGroup: 1,
-        widthMultiplier: 1,
-        horizontalOrder: 1,
-        initialX: null,
-        initialY: null,
-        dragOffset: { x: 0, y: 0 },
-      });
-    }
-  });
-
-  it("seeds events with valid schemas for their event type", async () => {
-    const store = createMockOfflineDataStore();
-
-    await demoDataSeedMigration.migrate(store);
-
-    const eventsCall = store.putEvents.mock.calls[0][0] as Schema_WebEvent[];
-
-    for (const event of eventsCall) {
-      if (!event.isSomeday && !event.isAllDay) {
-        expect(() => GridEventSchema.parse(event)).not.toThrow();
-        continue;
-      }
-
-      expect(() => CompassCoreEventSchema.parse(event)).not.toThrow();
+    for (const { event } of eventsCall) {
+      expect(() => EventSchema.parse(event)).not.toThrow();
     }
   });
 });

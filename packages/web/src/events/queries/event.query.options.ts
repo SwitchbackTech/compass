@@ -24,13 +24,19 @@ export type EventsQueryArgs = {
   endDate: string;
 };
 
+export type SomedayEventsQueryArgs = {
+  source: EventRepositorySource;
+  period: "week" | "month";
+  anchorDate: string;
+};
+
 export function dayEventsQueryOptions({
   source,
   startDate,
   endDate,
 }: EventsQueryArgs) {
   return queryOptions({
-    queryKey: eventQueryKeys.day({ source, startDate, endDate }),
+    queryKey: eventQueryKeys.day({ source, start: startDate, end: endDate }),
     queryFn: () =>
       fetchDayEvents(
         { startDate, endDate },
@@ -46,11 +52,7 @@ export function weekEventsQueryOptions({
   endDate,
 }: EventsQueryArgs) {
   return queryOptions({
-    queryKey: eventQueryKeys.list({
-      source,
-      scope: "week",
-      params: { startDate, endDate, someday: false },
-    }),
+    queryKey: eventQueryKeys.week({ source, start: startDate, end: endDate }),
     queryFn: () =>
       fetchWeekEvents(
         { startDate, endDate },
@@ -62,22 +64,18 @@ export function weekEventsQueryOptions({
 
 export function somedayEventsQueryOptions({
   source,
-  startDate,
-  endDate,
-}: EventsQueryArgs) {
+  period,
+  anchorDate,
+}: SomedayEventsQueryArgs) {
   return queryOptions({
-    queryKey: eventQueryKeys.list({
-      source,
-      scope: "someday",
-      params: { startDate, endDate, someday: true },
-    }),
+    queryKey: eventQueryKeys.someday({ source, period, anchorDate }),
     queryFn: () =>
       fetchSomedayEvents(
-        { startDate, endDate },
+        { period, anchorDate },
         getEventRepositoryBySource(source),
       ),
     ...EVENT_QUERY_CACHE_OPTIONS,
-    // Keep the previous month's Someday list visible while a new month range
+    // Keep the previous bucket's Someday list visible while a new anchorDate
     // fetches, instead of a momentary empty list. Safe here because the
     // sidebar renders straight from the derived list with no isPending gate.
     //

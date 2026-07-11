@@ -1,876 +1,218 @@
-import { faker } from "@faker-js/faker";
-import { type WithId } from "mongodb";
-import { Priorities } from "@core/constants/core.constants";
-import {
-  CalendarProvider,
-  Categories_Recurrence,
-  CompassEventStatus,
-  type CompassThisAndFollowingEvent,
-  type CompassThisEvent,
-  RecurringEventUpdateScope,
-  type Schema_Event,
-  type Schema_Event_Recur_Base,
-} from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
-import { parseCompassEventDate } from "@core/util/event/event.util";
-import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import eventService from "@backend/event/services/event.service";
 import {
-  testCompassEventInGcal,
-  testCompassEventNotInGcal,
-  testCompassSeries,
-} from "@backend/event/classes/compass.event.parser.test.util";
-import eventService, { _getGcal } from "@backend/event/services/event.service";
-import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
+  seedGoogleCalendar,
+  setupGoogleUser,
+} from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 
-describe.each([
-  { calendarProvider: CalendarProvider.GOOGLE },
-])(`CompassToGoogleEventPropagation $calendarProvider calendar: ${RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS}`, ({
-  calendarProvider,
-}) => {
-  beforeAll(setupTestDb);
-
+/**
+ * Scope "thisAndFollowing" -- ported from the deleted
+ * compass-to-google.this-and-following-event.test.ts (4 tests). B6: the
+ * series still splits (truncate the old base's UNTIL + create a new base for
+ * the target occurrence onward). Two Google effects follow from that split:
+ * a patch on the OLD base (new UNTIL) and a create for the NEW base (its own
+ * fresh RRULE, no externalReference yet). The instances re-materialized
+ * under the new base are never individually pushed to Google (same guard as
+ * the "all"/base suites).
+ */
+describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
+  beforeEach(setupTestDb);
   beforeEach(cleanupCollections);
-
   afterAll(cleanupTestDb);
 
-  describe("Update - Instance Event: ", () => {
-    describe("Calendar: ", () => {
-      describe("Basic Edits: ", () => {
-        it("should update the title field of an event and those of the following instances in its base recurrence", async () => {
-          const { user: _user } = await UtilDriver.setupTestUser();
-          const user = _user._id.toString();
-          const isSomeday = false;
-          const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-          const payload = createMockBaseEvent(
-            { isSomeday, user, recurrence },
-            true,
-          );
-
-          const changes = await CompassToGoogleEventPropagation.processEvents([
-            {
-              payload: payload as CompassThisEvent["payload"],
-              applyTo: RecurringEventUpdateScope.THIS_EVENT,
-              status: CompassEventStatus.CONFIRMED,
-            },
-          ]);
-
-          expect(changes).toEqual(
-            expect.arrayContaining([
-              {
-                title: payload.title,
-                transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-                category: Categories_Recurrence.RECURRENCE_BASE,
-                operation: "RECURRENCE_BASE_CREATED",
-              },
-            ]),
-          );
-
-          const { baseEvent, instances } = await testCompassSeries(payload, 10);
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventInGcal(baseEvent);
-              break;
-          }
-
-          const instanceIndex = faker.number.int({
-            min: 0,
-            max: instances.length - 1,
-          });
-
-          const splitInstance = instances[instanceIndex]!;
-          const splitInstanceId = splitInstance._id.toString();
-          const isFirstInstance = instanceIndex === 0;
-
-          expect(splitInstance).toBeDefined();
-
-          const updatedPayload = {
-            ...splitInstance,
-            recurrence: {
-              rule: baseEvent.recurrence?.rule,
-              eventId: baseEvent._id.toString(),
-            },
-            _id: splitInstanceId,
-            title: faker.lorem.sentence(3),
-          };
-
-          const updateChanges =
-            await CompassToGoogleEventPropagation.processEvents([
-              {
-                payload:
-                  updatedPayload as CompassThisAndFollowingEvent["payload"],
-                applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-                status: CompassEventStatus.CONFIRMED,
-              },
-            ]);
-
-          if (!isFirstInstance) {
-            expect(updateChanges).toEqual(
-              expect.arrayContaining([
-                {
-                  title: baseEvent.title,
-                  transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_UPDATED",
-                },
-                {
-                  title: updatedPayload.title,
-                  transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_CREATED",
-                },
-              ]),
-            );
-
-            await Promise.all(
-              instances
-                .slice(instanceIndex)
-                .map(async ({ _id }) =>
-                  expect(
-                    eventService.readById(user, _id.toString()),
-                  ).rejects.toThrow(
-                    `Tried with user: ${user} and _id: ${_id.toString()}`,
-                  ),
-                ),
-            );
-
-            delete (baseEvent as unknown as Schema_Event).recurrence;
-
-            const { baseEvent: oldBaseEvent, instances: oldInstances } =
-              await testCompassSeries(
-                { ...baseEvent, _id: baseEvent._id.toString() },
-                instanceIndex,
-              );
-
-            const rrule = oldBaseEvent.recurrence?.rule?.find((rule) =>
-              rule.startsWith("RRULE"),
-            );
-
-            expect(rrule).toBeDefined();
-
-            const until = rrule?.match(/UNTIL=(\d{8}T\d{6}Z?)/)?.[1];
-
-            expect(until).toBeDefined();
-
-            const untilDay = dayjs(until, dayjs.DateFormat.RFC5545);
-
-            oldInstances.forEach(({ startDate }) =>
-              expect(
-                parseCompassEventDate(startDate!).isSameOrBefore(untilDay),
-              ).toBe(true),
-            );
-
-            const newSeriesBase = (await mongoService.event.findOne({
-              user,
-              startDate: splitInstance.startDate,
-              endDate: splitInstance.endDate,
-              title: updatedPayload.title,
-            })) as WithId<Omit<Schema_Event_Recur_Base, "_id">>;
-
-            expect(newSeriesBase).toBeDefined();
-
-            const { baseEvent: newBaseEvent, instances: newInstances } =
-              await testCompassSeries(
-                { ...newSeriesBase, _id: newSeriesBase._id.toString() },
-                instances.length - instanceIndex,
-              );
-
-            const newRrule = newBaseEvent.recurrence?.rule?.find((rule) =>
-              rule.startsWith("RRULE"),
-            );
-
-            expect(newRrule).toBeDefined();
-
-            const newUntil = newRrule?.match(/UNTIL=(\d{8}T\d{6}Z?)/)?.[1];
-
-            expect(newUntil).toBeDefined();
-
-            const newUntilDay = dayjs(newUntil, dayjs.DateFormat.RFC5545);
-
-            newInstances.forEach(({ startDate, title }) => {
-              expect(
-                parseCompassEventDate(startDate!).isSameOrBefore(newUntilDay),
-              ).toBe(true);
-
-              expect(title).toBe(updatedPayload.title);
-            });
-
-            expect(newUntilDay.isAfter(untilDay)).toBe(true);
-
-            switch (calendarProvider) {
-              case CalendarProvider.GOOGLE: {
-                // enable if we mock recurrence changes in gcal
-                // instances.slice(instanceIndex).forEach(async (instance) => {
-                //   await testCompassEventNotInGcal(instance);
-                // });
-
-                newInstances.forEach(async (instance) => {
-                  const gEvent = await testCompassEventInGcal(instance);
-
-                  expect(gEvent.summary).toBe(updatedPayload.title);
-                });
-                break;
-              }
-            }
-          } else {
-            expect(updateChanges).toEqual(
-              expect.arrayContaining([
-                {
-                  title: updatedPayload.title,
-                  transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_UPDATED",
-                },
-              ]),
-            );
-
-            const { baseEvent: updatedBaseEvent, instances: updatedInstances } =
-              await testCompassSeries(
-                {
-                  ...baseEvent,
-                  title: updatedPayload.title,
-                  _id: baseEvent._id.toString(),
-                },
-                instances.length,
-              );
-
-            updatedInstances.forEach(({ title }) => {
-              expect(title).toBe(updatedPayload.title);
-            });
-
-            switch (calendarProvider) {
-              case CalendarProvider.GOOGLE:
-                await testCompassEventInGcal(updatedBaseEvent);
-
-                updatedInstances.forEach(async (instance) => {
-                  const gEvent = await testCompassEventInGcal(instance);
-
-                  expect(gEvent.summary).toBe(updatedPayload.title);
-                });
-                break;
-            }
-          }
-        });
-
-        it("should update the description field of an event and those of the following instances in its base recurrence", async () => {
-          const { user: _user } = await UtilDriver.setupTestUser();
-          const user = _user._id.toString();
-          const isSomeday = false;
-          const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-          const payload = createMockBaseEvent(
-            { isSomeday, user, recurrence },
-            true,
-          );
-
-          const changes = await CompassToGoogleEventPropagation.processEvents([
-            {
-              payload: payload as CompassThisEvent["payload"],
-              applyTo: RecurringEventUpdateScope.THIS_EVENT,
-              status: CompassEventStatus.CONFIRMED,
-            },
-          ]);
-
-          expect(changes).toEqual(
-            expect.arrayContaining([
-              {
-                title: payload.title,
-                transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-                category: Categories_Recurrence.RECURRENCE_BASE,
-                operation: "RECURRENCE_BASE_CREATED",
-              },
-            ]),
-          );
-
-          const { baseEvent, instances } = await testCompassSeries(payload, 10);
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventInGcal(baseEvent);
-              break;
-          }
-
-          const instanceIndex = faker.number.int({
-            min: 0,
-            max: instances.length - 1,
-          });
-
-          const splitInstance = instances[instanceIndex]!;
-          const splitInstanceId = splitInstance._id.toString();
-          const isFirstInstance = instanceIndex === 0;
-
-          expect(splitInstance).toBeDefined();
-
-          const updatedPayload = {
-            ...splitInstance,
-            recurrence: {
-              rule: baseEvent.recurrence?.rule,
-              eventId: baseEvent._id.toString(),
-            },
-            _id: splitInstanceId,
-            description: faker.lorem.sentence(3),
-          };
-
-          const updateChanges =
-            await CompassToGoogleEventPropagation.processEvents([
-              {
-                payload:
-                  updatedPayload as CompassThisAndFollowingEvent["payload"],
-                applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-                status: CompassEventStatus.CONFIRMED,
-              },
-            ]);
-
-          if (!isFirstInstance) {
-            expect(updateChanges).toEqual(
-              expect.arrayContaining([
-                {
-                  title: baseEvent.title,
-                  transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_UPDATED",
-                },
-                {
-                  title: updatedPayload.title,
-                  transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_CREATED",
-                },
-              ]),
-            );
-
-            await Promise.all(
-              instances
-                .slice(instanceIndex)
-                .map(async ({ _id }) =>
-                  expect(
-                    eventService.readById(user, _id.toString()),
-                  ).rejects.toThrow(
-                    `Tried with user: ${user} and _id: ${_id.toString()}`,
-                  ),
-                ),
-            );
-
-            delete (baseEvent as unknown as Schema_Event).recurrence;
-
-            const { baseEvent: oldBaseEvent, instances: oldInstances } =
-              await testCompassSeries(
-                { ...baseEvent, _id: baseEvent._id.toString() },
-                instanceIndex,
-              );
-
-            const rrule = oldBaseEvent.recurrence?.rule?.find((rule) =>
-              rule.startsWith("RRULE"),
-            );
-
-            expect(rrule).toBeDefined();
-
-            const until = rrule?.match(/UNTIL=(\d{8}T\d{6}Z?)/)?.[1];
-
-            expect(until).toBeDefined();
-
-            const untilDay = dayjs(until, dayjs.DateFormat.RFC5545);
-
-            oldInstances.forEach(({ startDate }) =>
-              expect(
-                parseCompassEventDate(startDate!).isSameOrBefore(untilDay),
-              ).toBe(true),
-            );
-
-            const newSeriesBase = (await mongoService.event.findOne({
-              user,
-              startDate: splitInstance.startDate,
-              endDate: splitInstance.endDate,
-              description: updatedPayload.description,
-            })) as WithId<Omit<Schema_Event_Recur_Base, "_id">>;
-
-            expect(newSeriesBase).toBeDefined();
-
-            const { baseEvent: newBaseEvent, instances: newInstances } =
-              await testCompassSeries(
-                { ...newSeriesBase, _id: newSeriesBase._id.toString() },
-                instances.length - instanceIndex,
-              );
-
-            const newRrule = newBaseEvent.recurrence?.rule?.find((rule) =>
-              rule.startsWith("RRULE"),
-            );
-
-            expect(newRrule).toBeDefined();
-
-            const newUntil = newRrule?.match(/UNTIL=(\d{8}T\d{6}Z?)/)?.[1];
-
-            expect(newUntil).toBeDefined();
-
-            const newUntilDay = dayjs(newUntil, dayjs.DateFormat.RFC5545);
-
-            newInstances.forEach(({ startDate, description }) => {
-              expect(
-                parseCompassEventDate(startDate!).isSameOrBefore(newUntilDay),
-              ).toBe(true);
-
-              expect(description).toBe(updatedPayload.description);
-            });
-
-            expect(newUntilDay.isAfter(untilDay)).toBe(true);
-
-            switch (calendarProvider) {
-              case CalendarProvider.GOOGLE: {
-                // enable if we mock recurrence changes in gcal
-                // instances.slice(instanceIndex).forEach(async (instance) => {
-                //   await testCompassEventNotInGcal(instance);
-                // });
-
-                newInstances.forEach(async (instance) => {
-                  const gEvent = await testCompassEventInGcal(instance);
-
-                  expect(gEvent.description).toBe(updatedPayload.description);
-                });
-                break;
-              }
-            }
-          } else {
-            expect(updateChanges).toEqual(
-              expect.arrayContaining([
-                {
-                  title: updatedPayload.title,
-                  transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_UPDATED",
-                },
-              ]),
-            );
-
-            const { baseEvent: updatedBaseEvent, instances: updatedInstances } =
-              await testCompassSeries(
-                {
-                  ...baseEvent,
-                  description: updatedPayload.description,
-                  _id: baseEvent._id.toString(),
-                },
-                instances.length,
-              );
-
-            updatedInstances.forEach(({ description }) => {
-              expect(description).toBe(updatedPayload.description);
-            });
-
-            switch (calendarProvider) {
-              case CalendarProvider.GOOGLE:
-                await testCompassEventInGcal(updatedBaseEvent);
-
-                updatedInstances.forEach(async (instance) => {
-                  const gEvent = await testCompassEventInGcal(instance);
-
-                  expect(gEvent.description).toBe(updatedPayload.description);
-                });
-                break;
-            }
-          }
-        });
-
-        it("should update the priority field of an event and those of the following instances in its base recurrence", async () => {
-          const { user: _user } = await UtilDriver.setupTestUser();
-          const user = _user._id.toString();
-          const isSomeday = false;
-          const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-          const payload = createMockBaseEvent({
-            isSomeday,
-            user,
-            recurrence,
-            priority: Priorities.SELF,
-          });
-
-          const changes = await CompassToGoogleEventPropagation.processEvents([
-            {
-              payload: payload as CompassThisEvent["payload"],
-              applyTo: RecurringEventUpdateScope.THIS_EVENT,
-              status: CompassEventStatus.CONFIRMED,
-            },
-          ]);
-
-          expect(changes).toEqual(
-            expect.arrayContaining([
-              {
-                title: payload.title,
-                transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-                category: Categories_Recurrence.RECURRENCE_BASE,
-                operation: "RECURRENCE_BASE_CREATED",
-              },
-            ]),
-          );
-
-          const { baseEvent, instances } = await testCompassSeries(payload, 10);
-
-          switch (calendarProvider) {
-            case CalendarProvider.GOOGLE:
-              await testCompassEventInGcal(baseEvent);
-              break;
-          }
-
-          const instanceIndex = faker.number.int({
-            min: 0,
-            max: instances.length - 1,
-          });
-
-          const splitInstance = instances[instanceIndex]!;
-          const splitInstanceId = splitInstance._id.toString();
-          const isFirstInstance = instanceIndex === 0;
-
-          expect(splitInstance).toBeDefined();
-
-          const updatedPayload = {
-            ...splitInstance,
-            recurrence: {
-              rule: baseEvent.recurrence?.rule,
-              eventId: baseEvent._id.toString(),
-            },
-            _id: splitInstanceId,
-            priority: Priorities.RELATIONS,
-          };
-
-          const updateChanges =
-            await CompassToGoogleEventPropagation.processEvents([
-              {
-                payload:
-                  updatedPayload as CompassThisAndFollowingEvent["payload"],
-                applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-                status: CompassEventStatus.CONFIRMED,
-              },
-            ]);
-
-          if (!isFirstInstance) {
-            expect(updateChanges).toEqual(
-              expect.arrayContaining([
-                {
-                  title: baseEvent.title,
-                  transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_UPDATED",
-                },
-                {
-                  title: updatedPayload.title,
-                  transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_CREATED",
-                },
-              ]),
-            );
-
-            await Promise.all(
-              instances
-                .slice(instanceIndex)
-                .map(async ({ _id }) =>
-                  expect(
-                    eventService.readById(user, _id.toString()),
-                  ).rejects.toThrow(
-                    `Tried with user: ${user} and _id: ${_id.toString()}`,
-                  ),
-                ),
-            );
-
-            delete (baseEvent as unknown as Schema_Event).recurrence;
-
-            const { baseEvent: oldBaseEvent, instances: oldInstances } =
-              await testCompassSeries(
-                { ...baseEvent, _id: baseEvent._id.toString() },
-                instanceIndex,
-              );
-
-            const rrule = oldBaseEvent.recurrence?.rule?.find((rule) =>
-              rule.startsWith("RRULE"),
-            );
-
-            expect(rrule).toBeDefined();
-
-            const until = rrule?.match(/UNTIL=(\d{8}T\d{6}Z?)/)?.[1];
-
-            expect(until).toBeDefined();
-
-            const untilDay = dayjs(until, dayjs.DateFormat.RFC5545);
-
-            oldInstances.forEach(({ startDate }) =>
-              expect(
-                parseCompassEventDate(startDate!).isSameOrBefore(untilDay),
-              ).toBe(true),
-            );
-
-            const newSeriesBase = (await mongoService.event.findOne({
-              user,
-              startDate: splitInstance.startDate,
-              endDate: splitInstance.endDate,
-              priority: updatedPayload.priority,
-            })) as WithId<Omit<Schema_Event_Recur_Base, "_id">>;
-
-            expect(newSeriesBase).toBeDefined();
-
-            const { baseEvent: newBaseEvent, instances: newInstances } =
-              await testCompassSeries(
-                { ...newSeriesBase, _id: newSeriesBase._id.toString() },
-                instances.length - instanceIndex,
-              );
-
-            const newRrule = newBaseEvent.recurrence?.rule?.find((rule) =>
-              rule.startsWith("RRULE"),
-            );
-
-            expect(newRrule).toBeDefined();
-
-            const newUntil = newRrule?.match(/UNTIL=(\d{8}T\d{6}Z?)/)?.[1];
-
-            expect(newUntil).toBeDefined();
-
-            const newUntilDay = dayjs(newUntil, dayjs.DateFormat.RFC5545);
-
-            newInstances.forEach(({ startDate, priority }) => {
-              expect(
-                parseCompassEventDate(startDate!).isSameOrBefore(newUntilDay),
-              ).toBe(true);
-
-              expect(priority).toBe(updatedPayload.priority);
-            });
-
-            expect(newUntilDay.isAfter(untilDay)).toBe(true);
-
-            switch (calendarProvider) {
-              case CalendarProvider.GOOGLE: {
-                // enable if we mock recurrence changes in gcal
-                // instances.slice(instanceIndex).forEach(async (instance) => {
-                //   await testCompassEventNotInGcal(instance);
-                // });
-
-                newInstances.forEach(async (instance) => {
-                  const gEvent = await testCompassEventInGcal(instance);
-
-                  expect(gEvent.extendedProperties?.private?.["priority"]).toBe(
-                    updatedPayload.priority,
-                  );
-                });
-                break;
-              }
-            }
-          } else {
-            expect(updateChanges).toEqual(
-              expect.arrayContaining([
-                {
-                  title: updatedPayload.title,
-                  transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
-                  category: Categories_Recurrence.RECURRENCE_BASE,
-                  operation: "RECURRENCE_BASE_UPDATED",
-                },
-              ]),
-            );
-
-            const { baseEvent: updatedBaseEvent, instances: updatedInstances } =
-              await testCompassSeries(
-                {
-                  ...baseEvent,
-                  priority: updatedPayload.priority,
-                  _id: baseEvent._id.toString(),
-                },
-                instances.length,
-              );
-
-            updatedInstances.forEach(({ priority }) => {
-              expect(priority).toBe(updatedPayload.priority);
-            });
-
-            switch (calendarProvider) {
-              case CalendarProvider.GOOGLE:
-                await testCompassEventInGcal(updatedBaseEvent);
-
-                updatedInstances.forEach(async (instance) => {
-                  const gEvent = await testCompassEventInGcal(instance);
-
-                  expect(gEvent.extendedProperties?.private?.["priority"]).toBe(
-                    updatedPayload.priority,
-                  );
-                });
-                break;
-            }
-          }
-        });
-      });
-    });
+  const seriesInput = (calendarId: string) => ({
+    calendarId: calendarId as never,
+    content: {
+      kind: "details" as const,
+      title: "Weekly sync",
+      description: "",
+    },
+    schedule: {
+      kind: "timed" as const,
+      start: "2026-07-14T15:00:00-06:00",
+      end: "2026-07-14T16:00:00-06:00",
+      timeZone: "America/Denver" as never,
+    },
+    recurrence: {
+      kind: "series" as const,
+      rules: ["RRULE:FREQ=WEEKLY;COUNT=5"] as never,
+    },
+    priority: "unassigned" as const,
   });
 
-  describe("Delete - Instance Event: ", () => {
-    it("should delete this event and the following instances in its base recurrence", async () => {
-      // create series
-      const { user: _user } = await UtilDriver.setupTestUser();
-      const user = _user._id.toString();
-      const isSomeday = false;
-      const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-      const payload = createMockBaseEvent(
-        { isSomeday, user, recurrence },
-        true,
-      );
+  const seedSyncedSeries = async (userId: string, calendarId: string) => {
+    const created = await eventService.create(userId, seriesInput(calendarId));
+    const base = await eventService.readById(userId, created._id.toHexString());
+    const instances = await mongoService.event
+      .find({ "recurrence.seriesId": base._id })
+      .sort({ "schedule.start": 1 })
+      .toArray();
+    return { base, instances };
+  };
 
-      const changes = await CompassToGoogleEventPropagation.processEvents([
-        {
-          payload: payload as CompassThisEvent["payload"],
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-          status: CompassEventStatus.CONFIRMED,
+  it("patches the old base's UNTIL and creates a new base for a split replace", async () => {
+    const { user } = await setupGoogleUser();
+    const calendar = await seedGoogleCalendar(user._id);
+    const { base, instances } = await seedSyncedSeries(
+      user._id.toString(),
+      calendar._id.toHexString(),
+    );
+    const splitPoint = instances[1]!; // third occurrence overall
+
+    const patchSpy = jest.spyOn(gcalService, "patchEvent");
+    const createSpy = jest.spyOn(gcalService, "createEvent");
+    patchSpy.mockClear();
+    createSpy.mockClear();
+
+    const newBase = await eventService.replace(
+      user._id.toString(),
+      splitPoint._id.toHexString(),
+      {
+        content: {
+          kind: "details",
+          title: "Weekly sync (new time)",
+          description: "",
         },
-      ]);
-
-      expect(changes).toEqual(
-        expect.arrayContaining([
-          {
-            title: payload.title,
-            transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-            category: Categories_Recurrence.RECURRENCE_BASE,
-            operation: "RECURRENCE_BASE_CREATED",
-          },
-        ]),
-      );
-
-      const { baseEvent, instances } = await testCompassSeries(payload, 10);
-
-      switch (calendarProvider) {
-        case CalendarProvider.GOOGLE:
-          await testCompassEventInGcal(baseEvent);
-          break;
-      }
-
-      const instanceIndex = instances.length - 1; // test deleting from first instance
-
-      const splitInstance = instances[instanceIndex]!;
-      const splitInstanceId = splitInstance._id.toString();
-      const isFirstInstance = instanceIndex === 0;
-
-      expect(splitInstance).toBeDefined();
-
-      const updatedPayload = {
-        ...splitInstance,
-        recurrence: {
-          rule: baseEvent.recurrence?.rule,
-          eventId: baseEvent._id.toString(),
+        schedule: {
+          kind: "timed",
+          start: "2026-08-04T16:00:00-06:00",
+          end: "2026-08-04T17:00:00-06:00",
+          timeZone: "America/Denver" as never,
         },
-        _id: splitInstanceId,
-      };
+        recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+        priority: "unassigned",
+        scope: "thisAndFollowing",
+      },
+    );
 
-      const updateChanges = await CompassToGoogleEventPropagation.processEvents(
-        [
-          {
-            payload: updatedPayload as CompassThisAndFollowingEvent["payload"],
-            applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-            status: CompassEventStatus.CANCELLED,
-          },
-        ],
-      );
+    // Old base: patched with a truncated (UNTIL) RRULE, same Google event id.
+    expect(patchSpy).toHaveBeenCalledTimes(1);
+    const [, oldCalendarIdArg, oldEventIdArg, oldBody] =
+      patchSpy.mock.calls[0]!;
+    expect(oldCalendarIdArg).toBe(calendar.source.calendarId);
+    expect(oldEventIdArg).toBe(base.externalReference?.eventId);
+    expect(oldBody.recurrence?.[0]).toEqual(expect.stringContaining("UNTIL="));
 
-      if (!isFirstInstance) {
-        expect(updateChanges).toEqual(
-          expect.arrayContaining([
-            {
-              title: baseEvent.title,
-              transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CONFIRMED"],
-              category: Categories_Recurrence.RECURRENCE_BASE,
-              operation: "RECURRENCE_BASE_UPDATED",
-            },
-          ]),
-        );
-
-        await Promise.all(
-          instances
-            .slice(instanceIndex)
-            .map(async ({ _id }) =>
-              expect(
-                eventService.readById(user, _id.toString()),
-              ).rejects.toThrow(
-                `Tried with user: ${user} and _id: ${_id.toString()}`,
-              ),
-            ),
-        );
-
-        delete (baseEvent as unknown as Schema_Event).recurrence;
-
-        const { baseEvent: oldBaseEvent, instances: oldInstances } =
-          await testCompassSeries(
-            { ...baseEvent, _id: baseEvent._id.toString() },
-            instanceIndex,
-          );
-
-        const rrule = oldBaseEvent.recurrence?.rule?.find((rule) =>
-          rule.startsWith("RRULE"),
-        );
-
-        expect(rrule).toBeDefined();
-
-        const until = rrule?.match(/UNTIL=(\d{8}T\d{6}Z?)/)?.[1];
-
-        expect(until).toBeDefined();
-
-        const untilDay = dayjs(until, dayjs.DateFormat.RFC5545);
-
-        oldInstances.forEach(({ startDate }) =>
-          expect(
-            parseCompassEventDate(startDate!).isSameOrBefore(untilDay),
-          ).toBe(true),
-        );
-
-        switch (calendarProvider) {
-          case CalendarProvider.GOOGLE: {
-            // enable if we mock recurrence changes in gcal
-            oldInstances.slice(instanceIndex).forEach(async (instance) => {
-              await testCompassEventNotInGcal(instance);
-            });
-            break;
-          }
-        }
-      } else {
-        expect(updateChanges).toEqual(
-          expect.arrayContaining([
-            {
-              title: updatedPayload.title,
-              transition: ["RECURRENCE_BASE", "RECURRENCE_BASE_CANCELLED"],
-              category: Categories_Recurrence.RECURRENCE_BASE,
-              operation: "RECURRENCE_BASE_DELETED",
-            },
-          ]),
-        );
-
-        await expect(
-          eventService.readById(user, baseEvent._id.toString()),
-        ).rejects.toThrow();
-
-        await expect(
-          eventService.readById(user, baseEvent._id.toString()),
-        ).rejects.toThrow();
-
-        await Promise.all(
-          instances.map(async ({ _id }) =>
-            expect(eventService.readById(user, _id.toString())).rejects.toThrow(
-              `Tried with user: ${user} and _id: ${_id.toString()}`,
-            ),
-          ),
-        );
-
-        switch (calendarProvider) {
-          case CalendarProvider.GOOGLE:
-            await expect(
-              _getGcal(user, baseEvent._id.toString()),
-            ).rejects.toThrow(
-              `Event with id ${baseEvent._id.toString()} not found`,
-            );
-
-            instances.forEach(async (instance) => {
-              await expect(
-                _getGcal(user, instance._id.toString()),
-              ).rejects.toThrow(
-                `Event with id ${instance._id.toString()} not found`,
-              );
-            });
-            break;
-        }
-      }
+    // New base: a fresh Google event, not linked to the old one.
+    expect(createSpy).toHaveBeenCalledTimes(1);
+    const [, newCalendarIdArg, newBody] = createSpy.mock.calls[0]!;
+    expect(newCalendarIdArg).toBe(calendar.source.calendarId);
+    expect(newBody).toMatchObject({
+      summary: "Weekly sync (new time)",
+      recurrence: ["RRULE:FREQ=WEEKLY;COUNT=3"],
     });
+
+    const persistedNewBase = await eventService.readById(
+      user._id.toString(),
+      newBase._id.toHexString(),
+    );
+    expect(persistedNewBase.externalReference).toMatchObject({
+      provider: "google",
+    });
+    expect(persistedNewBase.externalReference?.eventId).not.toBe(
+      base.externalReference?.eventId,
+    );
+  });
+
+  it("patches only the old base's UNTIL for a split delete (no new base to create)", async () => {
+    const { user } = await setupGoogleUser();
+    const calendar = await seedGoogleCalendar(user._id);
+    const { base, instances } = await seedSyncedSeries(
+      user._id.toString(),
+      calendar._id.toHexString(),
+    );
+    const splitPoint = instances[1]!;
+
+    const patchSpy = jest.spyOn(gcalService, "patchEvent");
+    const createSpy = jest.spyOn(gcalService, "createEvent");
+    const deleteSpy = jest.spyOn(gcalService, "deleteEvent");
+    patchSpy.mockClear();
+    createSpy.mockClear();
+    deleteSpy.mockClear();
+
+    await eventService.delete(
+      user._id.toString(),
+      splitPoint._id.toHexString(),
+      {
+        scope: "thisAndFollowing",
+      },
+    );
+
+    expect(patchSpy).toHaveBeenCalledTimes(1);
+    const [, calendarIdArg, eventIdArg, body] = patchSpy.mock.calls[0]!;
+    expect(calendarIdArg).toBe(calendar.source.calendarId);
+    expect(eventIdArg).toBe(base.externalReference?.eventId);
+    expect(body.recurrence?.[0]).toEqual(expect.stringContaining("UNTIL="));
+
+    expect(createSpy).not.toHaveBeenCalled();
+    // Following instances have no externalReference of their own (see
+    // base.test.ts); Google drops them itself once the base's UNTIL moves
+    // earlier, so Compass never issues a per-instance delete.
+    expect(deleteSpy).not.toHaveBeenCalled();
+  });
+
+  it("creates (never patches) both halves of a split when the original series was never synced", async () => {
+    const { user } = await setupGoogleUser();
+    const calendar = await seedGoogleCalendar(user._id);
+    const createFailSpy = jest
+      .spyOn(gcalService, "createEvent")
+      .mockImplementationOnce(async () => {
+        throw new Error("simulated provider outage during create");
+      });
+    await expect(
+      eventService.create(
+        user._id.toString(),
+        seriesInput(calendar._id.toHexString()),
+      ),
+    ).rejects.toMatchObject({ mutationCode: "PROVIDER_FAILURE" });
+    createFailSpy.mockRestore();
+
+    const [base] = await mongoService.event
+      .find({ "recurrence.kind": "series" })
+      .toArray();
+    const [splitPoint] = await mongoService.event
+      .find({ "recurrence.seriesId": base!._id })
+      .sort({ "schedule.start": 1 })
+      .toArray();
+
+    const patchSpy = jest.spyOn(gcalService, "patchEvent");
+    const createSpy = jest.spyOn(gcalService, "createEvent");
+    patchSpy.mockClear();
+    createSpy.mockClear();
+
+    await eventService.replace(
+      user._id.toString(),
+      splitPoint!._id.toHexString(),
+      {
+        content: {
+          kind: "details",
+          title: "Untouched by Google",
+          description: "",
+        },
+        schedule: {
+          kind: "timed",
+          start: "2026-08-04T16:00:00-06:00",
+          end: "2026-08-04T17:00:00-06:00",
+          timeZone: "America/Denver" as never,
+        },
+        recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=2"] },
+        priority: "unassigned",
+        scope: "thisAndFollowing",
+      },
+    );
+
+    // The old (truncated) base has no externalReference (its own create
+    // failed above), so propagateUpsert has no known Google id to patch --
+    // it lazily creates a Google copy for it, same as the fresh new base.
+    // Neither half of the split had a prior Google identity, so nothing
+    // is ever patched.
+    expect(patchSpy).not.toHaveBeenCalled();
+    expect(createSpy).toHaveBeenCalledTimes(2);
   });
 });

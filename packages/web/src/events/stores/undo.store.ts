@@ -1,22 +1,21 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
 import { IS_DEV } from "@web/common/constants/env.constants";
 
 /**
- * One undoable event change. Edits and converts keep full before/after
- * snapshots so undo/redo are symmetric `edit` replays; deletes keep the
- * full event (provider ids included) so undo can recreate it with the
- * same Compass `_id` and Google event id.
+ * One undoable event change. Edits and transitions keep full before/after
+ * snapshots so undo/redo are symmetric `replace` replays; deletes keep the
+ * full event so undo can recreate it with the same Compass id (A25).
  */
 export type UndoHistoryEntry =
   | {
-      kind: "edit" | "convert-to-someday" | "convert-to-calendar";
-      _id: string;
-      before: Schema_Event;
-      after: Schema_Event;
+      kind: "edit" | "transition";
+      id: string;
+      before: Event;
+      after: Event;
     }
-  | { kind: "delete" | "delete-someday"; event: Schema_Event };
+  | { kind: "delete"; event: Event };
 
 export interface State_UndoHistory {
   past: UndoHistoryEntry[];

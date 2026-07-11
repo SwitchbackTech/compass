@@ -56,6 +56,18 @@ mock.module("@web/common/utils/toast/error-toast.util", () => ({
 afterAll(() => {
   isStatusToastMocked = false;
   isErrorToastMocked = false;
+  // mock.module's useSession replacement is process-wide and never rebinds
+  // once other files import it (see comment above), so whatever this file's
+  // last-run test left mockUseSession returning leaks into every later
+  // suite's first `useSession()` call — including calendar.query.ts's
+  // authenticated branch, which then fires a real (unmocked) GET /calendars
+  // and hangs those tests. Settle it back to the safe/default "signed out"
+  // shape so later files see the same anon-mode behavior as if this file
+  // never ran.
+  mockUseSession.mockReturnValue({
+    authenticated: false,
+    setAuthenticated: () => {},
+  });
 });
 
 // CommandPalette.tsx statically imports this hook, so bun's module cache may

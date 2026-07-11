@@ -1,11 +1,14 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   cleanup,
   renderHook,
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
@@ -14,8 +17,13 @@ import { dayCalendarEventRegistry } from "@web/views/Day/interaction/registry/da
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
+// useUpdateEvent gates the nudge write on `EventIdSchema.safeParse(event._id)`
+// succeeding, so this id must be a real ObjectId (not a readable label) or
+// the mutation silently no-ops.
+const TIMED_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
+
 const timedEvent: Schema_GridEvent = {
-  _id: "timed-event",
+  _id: TIMED_EVENT_ID,
   endDate: "2026-05-20T10:00:00.000",
   isAllDay: false,
   origin: Origin.COMPASS,
@@ -25,6 +33,17 @@ const timedEvent: Schema_GridEvent = {
   title: "Timed event",
   user: "user-1",
 };
+
+const timedEventContract = createMockEvent({
+  id: EventIdSchema.parse(TIMED_EVENT_ID),
+  content: { kind: "details", title: "Timed event", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "timed",
+    start: "2026-05-20T09:00:00.000Z",
+    end: "2026-05-20T10:00:00.000Z",
+    timeZone: "UTC",
+  }),
+});
 
 const shiftKey = {
   keyDownInit: { shiftKey: true },
@@ -46,7 +65,7 @@ const focusCalendarTarget = (eventType: "all-day" | "timed") => {
 const renderNudgeShortcuts = () => {
   const queryClient = createCompassQueryClient();
   renderHook(() => useDayEventNudgeShortcuts({ timedEvents: [timedEvent] }), {
-    events: [timedEvent],
+    events: [timedEventContract],
     queryClient,
   });
   return { queryClient };
@@ -58,7 +77,7 @@ const getEditMutation = (
   queryClient
     .getMutationCache()
     .getAll()
-    .find((mutation) => mutation.options.mutationKey?.[2] === "edit");
+    .find((mutation) => mutation.options.mutationKey?.[2] === "replace");
 
 beforeEach(() => {
   HotkeyManager.resetInstance();
@@ -80,13 +99,13 @@ describe("useDayEventNudgeShortcuts", () => {
     await waitFor(() => {
       expect(getEditMutation(queryClient)).toBeDefined();
     });
-    const { event } = getEditMutation(queryClient)?.state.variables as {
-      event: { startDate: string; endDate: string };
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string; end: string } };
     };
-    expect(event.startDate).toBe(
+    expect(input.schedule.start).toBe(
       dayjs(timedEvent.startDate).subtract(15, "minutes").format(),
     );
-    expect(event.endDate).toBe(
+    expect(input.schedule.end).toBe(
       dayjs(timedEvent.endDate).subtract(15, "minutes").format(),
     );
   });
@@ -100,10 +119,10 @@ describe("useDayEventNudgeShortcuts", () => {
     await waitFor(() => {
       expect(getEditMutation(queryClient)).toBeDefined();
     });
-    const { event } = getEditMutation(queryClient)?.state.variables as {
-      event: { startDate: string };
+    const { input } = getEditMutation(queryClient)?.state.variables as {
+      input: { schedule: { start: string } };
     };
-    expect(event.startDate).toBe(
+    expect(input.schedule.start).toBe(
       dayjs(timedEvent.startDate).add(15, "minutes").format(),
     );
   });

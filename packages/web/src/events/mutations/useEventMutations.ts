@@ -1,17 +1,17 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useCallback, useMemo } from "react";
+import { useMemo } from "react";
+import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
+import { type Event, type EventRecurrence } from "@core/types/event.contracts";
 import {
-  type Payload_Order,
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+  type CreateEventInput,
+  type RecurrenceScope,
+  type ReorderEventsInput,
+  type ReplaceEventInput,
+  type TransitionEventInput,
+} from "@core/types/event-command.contracts";
+import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
-import {
-  type Payload_ConvertEvent,
-  type Payload_DeleteEvent,
-  type Payload_EditEvent,
-} from "@web/events/event.types";
 import {
   applyEventProjectionAcrossQueries,
   eventBelongsToEntry,
@@ -41,33 +41,112 @@ import {
   waitForPrecedingEventWrites,
 } from "./event.mutation.runtime";
 import {
-  recordEventConvertHistory,
+  isRecurringEvent,
   recordEventDeleteHistory,
   recordEventEditHistory,
+  recordEventTransitionHistory,
 } from "./event.mutation-history";
 
-// Convert mutations capture the fully-resolved converted event at the
-// `.mutate()` boundary (see wrappers below) so `onMutate` and the async
-// `mutationFn` operate on the identical snapshot even if the cache changes
-// (SSE/refetch) between them.
-type ConvertVariables = {
-  event: Payload_ConvertEvent["event"];
-  converted: Schema_Event | null;
+const nowDateTime = () => DateTimeSchema.parse(new Date().toISOString());
+
+// A create's optimistic insert needs a full Event before the server response
+// lands; recurrence is a strict subset of EditableRecurrence ("single" |
+// "series"), so it's assignable as-is.
+function optimisticEventFromCreate(input: CreateEventInput): Event {
+  return {
+    id: input.id as EventId,
+    calendarId: input.calendarId,
+    content: input.content,
+    schedule: input.schedule,
+    recurrence: input.recurrence as EventRecurrence,
+    priority: input.priority,
+    createdAt: nowDateTime(),
+    updatedAt: null,
+  };
+}
+
+function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {
+  const recurrence: EventRecurrence =
+    input.recurrence.kind === "preserve"
+      ? existing.recurrence
+      : input.recurrence.kind === "series"
+        ? { kind: "series", rules: input.recurrence.rules }
+        : { kind: "single" };
+
+  return {
+    ...existing,
+    content: input.content,
+    schedule: input.schedule,
+    recurrence,
+    priority: input.priority,
+    updatedAt: nowDateTime(),
+  };
+}
+
+// Optimistic best-effort of the server's transition result. `unschedule`'s
+// real target is the user's server-assigned local calendar (unknown client
+// side); the sentinel id stands in until the settle-time refetch corrects it
+// (no per-mutation rollback — see the mutation architecture note below).
+function transitionedEvent(
+  existing: Event,
+  input: TransitionEventInput,
+): Event {
+  return input.kind === "schedule"
+    ? {
+        ...existing,
+        calendarId: input.targetCalendarId,
+        schedule: input.schedule,
+        updatedAt: nowDateTime(),
+      }
+    : {
+        ...existing,
+        calendarId: getLocalCalendarSentinelId(),
+        schedule: input.schedule,
+        updatedAt: nowDateTime(),
+      };
+}
+
+// A series-scope replace ("all"/"thisAndFollowing") serializes against the
+// series id, not the (arbitrary) instance id the edit was submitted through
+// — otherwise concurrent edits to different instances of the same series
+// wouldn't serialize against each other.
+function seriesWriteKey(
+  original: Event | null,
+  scope: RecurrenceScope,
+  fallbackId: EventId,
+): EventId {
+  if (scope === "this" || !original) return fallbackId;
+  if (original.recurrence.kind === "occurrence") {
+    return original.recurrence.seriesId;
+  }
+  return original.id;
+}
+
+type CreateVariables = { input: CreateEventInput; writeKey: EventId };
+type ReplaceVariables = {
+  id: EventId;
+  input: ReplaceEventInput;
+  writeKey: EventId;
+};
+type DeleteVariables = {
+  id: EventId;
+  scope: RecurrenceScope;
+  writeKey: EventId;
+  skipRepository: boolean;
+};
+type TransitionVariables = {
+  id: EventId;
+  input: TransitionEventInput;
+  writeKey: EventId;
+  after: Event | null;
 };
 
-// Someday deletes capture, at the `.mutate()` boundary, whether the event is
-// absent from the cache (nothing to delete server-side); the optimistic
-// removal still runs but no repository write is issued.
-type DeleteSomedayVariables = Payload_DeleteEvent & { skipRepository: boolean };
-
 export type EventMutations = {
-  create: (event: Schema_Event) => void;
-  edit: (payload: Payload_EditEvent) => void;
-  delete: (payload: Payload_DeleteEvent) => void;
-  convertToSomeday: (payload: Payload_ConvertEvent) => void;
-  convertToCalendar: (payload: Payload_ConvertEvent) => void;
-  deleteSomeday: (payload: Payload_DeleteEvent) => void;
-  reorderSomeday: (payload: Payload_Order[]) => void;
+  create: (input: CreateEventInput) => void;
+  replace: (payload: { id: EventId; input: ReplaceEventInput }) => void;
+  delete: (payload: { id: EventId; scope: RecurrenceScope }) => void;
+  transition: (payload: { id: EventId; input: TransitionEventInput }) => void;
+  reorderSomeday: (input: ReorderEventsInput) => void;
 };
 
 export type EventMutationDependencies = {
@@ -124,7 +203,7 @@ export function useEventMutations(
   // event to finish, run the repository write only if `canWrite` says the
   // preceding outcome allows it, then mark the write regardless.
   const writeAfterPreceding = async (
-    eventId: string,
+    writeKey: string,
     variables: unknown,
     canWrite: (preceding: PrecedingEventWrites) => boolean,
     write: () => Promise<unknown>,
@@ -132,7 +211,7 @@ export function useEventMutations(
   ) => {
     const preceding = await waitForPrecedingEventWrites(
       queryClient,
-      eventId,
+      writeKey,
       variables,
     );
     // A newer edit for this event is already queued and will persist the final
@@ -140,7 +219,7 @@ export function useEventMutations(
     // the write (anon-change tracking) so a burst collapses to one request.
     if (
       coalesce &&
-      isSupersededByLaterEditWrite(queryClient, eventId, variables)
+      isSupersededByLaterEditWrite(queryClient, writeKey, variables)
     ) {
       await markWrite();
       return;
@@ -148,75 +227,60 @@ export function useEventMutations(
     if (canWrite(preceding)) await write();
     await markWrite();
   };
-  const convertedEvent = useCallback(
-    (event: Payload_ConvertEvent["event"], isSomeday: boolean) => {
-      const existing = findEventInCache(queryClient, event._id, source);
-      if (!existing) return { existing: null, converted: null };
-      const converted = { ...existing, ...event, isSomeday } as Schema_Event;
-      if (!isSomeday) delete converted.recurrence;
-      return { existing, converted };
-    },
-    [queryClient, source],
-  );
 
   const createMutation = useMutation(
-    buildMutation<Schema_Event>(
+    buildMutation<CreateVariables>(
       "create",
-      async (event) => {
-        // Undo-of-delete restores via create with the original _id; waiting
+      async (variables) => {
+        // Undo-of-delete restores via create with the original id; waiting
         // here keeps the POST from landing before the DELETE server-side.
         // Normal creates use fresh ids and resolve immediately.
         await writeAfterPreceding(
-          event._id as string,
-          event,
+          variables.writeKey,
+          variables,
           precedingDeleteOk,
-          () => repository.create(event),
+          () => repository.create(variables.input),
         );
-        return event;
       },
-      (event) =>
+      ({ input }) => {
+        const event = optimisticEventFromCreate(input);
         insertEventIntoQueries(queryClient, event, (entry) =>
           eventBelongsToEntry(event, entry, source),
-        ),
+        );
+      },
     ),
   );
 
-  const editMutation = useMutation(
-    buildMutation<Payload_EditEvent>(
-      "edit",
+  const replaceMutation = useMutation(
+    buildMutation<ReplaceVariables>(
+      "replace",
       async (variables) => {
-        const { _id, event, applyTo } = variables;
-        const seriesScope =
-          applyTo === RecurringEventUpdateScope.ALL_EVENTS ||
-          applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS;
-        const writeKey =
-          seriesScope && event.recurrence?.eventId
-            ? event.recurrence.eventId
-            : _id;
         await writeAfterPreceding(
-          writeKey,
+          variables.writeKey,
           variables,
           precedingCreateOk,
-          () => repository.edit(_id, event, { applyTo }),
+          () => repository.replace(variables.id, variables.input),
           { coalesce: true },
         );
       },
-      ({ _id, event, shouldRemove, applyTo }) => {
-        if (shouldRemove) {
-          removeEventFromQueries(queryClient, _id, { source });
-          return;
-        }
-        const edited = { ...event, _id };
-        const original = findEventInCache(queryClient, _id, source);
-        const seriesId = original?.recurrence?.eventId;
-        const scope = applyTo ?? RecurringEventUpdateScope.THIS_EVENT;
-        if (original && seriesId) {
+      ({ id, input }) => {
+        const existing = findEventInCache(queryClient, id, source);
+        if (!existing) return;
+        const edited = mergeReplaceInput(existing, input);
+        const seriesId =
+          existing.recurrence.kind === "occurrence"
+            ? existing.recurrence.seriesId
+            : existing.recurrence.kind === "series"
+              ? existing.id
+              : null;
+
+        if (seriesId && input.scope !== "this") {
           applyEventProjectionAcrossQueries(
             queryClient,
             projectRecurringEdit({
-              applyTo: scope,
+              scope: input.scope,
               edited,
-              original,
+              original: existing,
               seriesEvents: findSeriesEventsInCache(
                 queryClient,
                 seriesId,
@@ -241,93 +305,54 @@ export function useEventMutations(
   );
 
   const deleteMutation = useMutation(
-    buildMutation<Payload_DeleteEvent>(
+    buildMutation<DeleteVariables>(
       "delete",
       async (variables) => {
-        const { _id, applyTo } = variables;
-        await writeAfterPreceding(_id, variables, precedingCreateOk, () =>
-          repository.delete(_id, applyTo),
-        );
-      },
-      ({ _id }) => removeEventFromQueries(queryClient, _id, { source }),
-    ),
-  );
-
-  const convertToSomedayMutation = useMutation(
-    buildMutation<ConvertVariables>(
-      "convert-to-someday",
-      async (variables) => {
-        const { event, converted } = variables;
-        if (!converted) {
-          throw new Error(`Event ${event._id} not found for conversion`);
-        }
-        const applyTo = converted.recurrence?.eventId
-          ? RecurringEventUpdateScope.ALL_EVENTS
-          : RecurringEventUpdateScope.THIS_EVENT;
-        await writeAfterPreceding(event._id, variables, precedingCreateOk, () =>
-          repository.edit(event._id, converted, { applyTo }),
-        );
-      },
-      ({ event, converted }) => {
-        if (!converted) return;
-        removeEventFromQueries(queryClient, event._id, { source });
-        insertEventIntoQueries(queryClient, converted, (entry) =>
-          eventBelongsToEntry(converted, entry, source),
-        );
-      },
-    ),
-  );
-
-  const convertToCalendarMutation = useMutation(
-    buildMutation<ConvertVariables>(
-      "convert-to-calendar",
-      async (variables) => {
-        const { event, converted } = variables;
-        if (!converted) {
-          throw new Error(`Event ${event._id} not found for conversion`);
-        }
-        // Persist the captured event even when it overlaps no cached calendar
-        // range (off-screen target): the optimistic insert simply matches
-        // nothing, and settle-time invalidation establishes canonical membership.
-        await writeAfterPreceding(event._id, variables, precedingCreateOk, () =>
-          repository.edit(event._id, converted, {}),
-        );
-      },
-      ({ event, converted }) => {
-        if (!converted) return;
-        removeEventFromQueries(queryClient, event._id, { source });
-        insertEventIntoQueries(queryClient, converted, (entry) =>
-          eventBelongsToEntry(converted, entry, source),
-        );
-      },
-    ),
-  );
-
-  const deleteSomedayMutation = useMutation(
-    buildMutation<DeleteSomedayVariables>(
-      "delete-someday",
-      async (variables) => {
-        const { _id, applyTo, skipRepository } = variables;
         await writeAfterPreceding(
-          _id,
+          variables.writeKey,
           variables,
-          (preceding) => !skipRepository && precedingCreateOk(preceding),
-          () => repository.delete(_id, applyTo),
+          (preceding) =>
+            !variables.skipRepository && precedingCreateOk(preceding),
+          () => repository.delete(variables.id, variables.scope),
         );
       },
-      ({ _id }) =>
-        removeEventFromQueries(queryClient, _id, { source, scope: "someday" }),
+      ({ id }) => removeEventFromQueries(queryClient, id, { source }),
+    ),
+  );
+
+  const transitionMutation = useMutation(
+    buildMutation<TransitionVariables>(
+      "transition",
+      async (variables) => {
+        if (!variables.after) {
+          throw new Error(`Event ${variables.id} not found for transition`);
+        }
+        await writeAfterPreceding(
+          variables.writeKey,
+          variables,
+          precedingCreateOk,
+          () => repository.transition(variables.id, variables.input),
+        );
+      },
+      ({ id, after }) => {
+        if (!after) return;
+        removeEventFromQueries(queryClient, id, { source });
+        insertEventIntoQueries(queryClient, after, (entry) =>
+          eventBelongsToEntry(after, entry, source),
+        );
+      },
     ),
   );
 
   const reorderSomedayMutation = useMutation(
-    buildMutation<Payload_Order[]>(
+    buildMutation<ReorderEventsInput>(
       "reorder-someday",
-      async (order) => {
-        await repository.reorder(order);
+      async (input) => {
+        await repository.reorder(input);
         await markWrite();
       },
-      (order) => reorderSomedayEventsInQueries(queryClient, order, source),
+      (input) =>
+        reorderSomedayEventsInQueries(queryClient, input.items, source),
     ),
   );
 
@@ -335,64 +360,72 @@ export function useEventMutations(
   // place every caller funnels through and the cache still holds the
   // pre-mutation event. Replays from useUndoRedo set the restoring flag so
   // they don't record themselves.
-  return useMemo(() => {
-    const recordDelete = (
-      payload: Payload_DeleteEvent,
-      kind: "delete" | "delete-someday",
-    ) => recordEventDeleteHistory({ payload, kind, queryClient, source });
-
-    const recordConvert = (
-      event: Payload_ConvertEvent["event"],
-      isSomeday: boolean,
-    ) => {
-      const { existing, converted } = convertedEvent(event, isSomeday);
-      recordEventConvertHistory({ event, existing, converted, isSomeday });
-      return converted;
-    };
-
-    return {
-      create: (event: Schema_Event) =>
-        createMutation.mutate({
-          ...event,
-          _id: event._id ?? createObjectIdString(),
-        }),
-      edit: (payload: Payload_EditEvent) => {
-        recordEventEditHistory({ payload, queryClient, source });
-        editMutation.mutate(payload);
+  return useMemo(
+    () => ({
+      create: (input: CreateEventInput) => {
+        const id = input.id ?? (createObjectIdString() as EventId);
+        const finalInput = { ...input, id };
+        createMutation.mutate({ input: finalInput, writeKey: id });
       },
-      delete: (payload: Payload_DeleteEvent) => {
-        recordDelete(payload, "delete");
-        deleteMutation.mutate(payload);
+      replace: (payload: { id: EventId; input: ReplaceEventInput }) => {
+        const original = findEventInCache(queryClient, payload.id, source);
+        const writeKey = seriesWriteKey(
+          original,
+          payload.input.scope,
+          payload.id,
+        );
+        if (original) {
+          recordEventEditHistory({
+            id: payload.id,
+            after: mergeReplaceInput(original, payload.input),
+            scope: payload.input.scope,
+            queryClient,
+            source,
+          });
+        }
+        replaceMutation.mutate({ ...payload, writeKey });
       },
-      convertToSomeday: (payload: Payload_ConvertEvent) =>
-        convertToSomedayMutation.mutate({
-          event: payload.event,
-          converted: recordConvert(payload.event, true),
-        }),
-      convertToCalendar: (payload: Payload_ConvertEvent) =>
-        convertToCalendarMutation.mutate({
-          event: payload.event,
-          converted: recordConvert(payload.event, false),
-        }),
-      deleteSomeday: (payload: Payload_DeleteEvent) => {
-        const existing = recordDelete(payload, "delete-someday");
-        deleteSomedayMutation.mutate({
+      delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
+        const existing = recordEventDeleteHistory({
+          id: payload.id,
+          scope: payload.scope,
+          queryClient,
+          source,
+        });
+        deleteMutation.mutate({
           ...payload,
+          writeKey: payload.id,
           skipRepository: !existing,
         });
       },
+      transition: (payload: { id: EventId; input: TransitionEventInput }) => {
+        const existing = findEventInCache(queryClient, payload.id, source);
+        const after = existing
+          ? transitionedEvent(existing, payload.input)
+          : null;
+        recordEventTransitionHistory({
+          id: payload.id,
+          before: existing,
+          after,
+        });
+        transitionMutation.mutate({
+          ...payload,
+          writeKey: payload.id,
+          after,
+        });
+      },
       reorderSomeday: reorderSomedayMutation.mutate,
-    };
-  }, [
-    convertedEvent,
-    queryClient,
-    source,
-    createMutation.mutate,
-    deleteMutation.mutate,
-    deleteSomedayMutation.mutate,
-    editMutation.mutate,
-    convertToCalendarMutation.mutate,
-    convertToSomedayMutation.mutate,
-    reorderSomedayMutation.mutate,
-  ]);
+    }),
+    [
+      queryClient,
+      source,
+      createMutation.mutate,
+      deleteMutation.mutate,
+      replaceMutation.mutate,
+      transitionMutation.mutate,
+      reorderSomedayMutation.mutate,
+    ],
+  );
 }
+
+export { isRecurringEvent };

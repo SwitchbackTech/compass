@@ -2,12 +2,10 @@ import { type EventEmitter2 } from "eventemitter2";
 import { useCallback, useEffect } from "react";
 import { type Id } from "react-toastify";
 import {
-  GOOGLE_REVOKED,
-  IMPORT_GCAL_END,
-  IMPORT_GCAL_START,
-  USER_METADATA,
-} from "@core/constants/sse.constants";
-import { type ImportGCalEndPayload } from "@core/types/sse.types";
+  type ImportResultMessage,
+  type SyncStatusMessage,
+  type UserMetadataMessage,
+} from "@core/types/server-message.contracts";
 import { type UserMetadata } from "@core/types/user.types";
 import {
   clearGoogleSyncIndicatorOverride,
@@ -30,79 +28,66 @@ export type GcalSSEDependencies = {
 
 export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
   return function useGcalSSEWithDependencies() {
-    const onImportEnd = useCallback((payload?: ImportGCalEndPayload) => {
-      clearGoogleSyncIndicatorOverride();
-
-      if (payload?.status === "ERRORED") {
-        void dependencies.refreshUserMetadata();
-        if (payload.operation === "REPAIR") {
-          dependencies.showErrorToast(payload.message, {
-            toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
-          });
-        }
+    // B10 folds import start/progress/end into syncStatusChanged
+    // (syncing/healthy/attention) plus a separate importCompleted summary.
+    const onSyncStatusChanged = useCallback((message: SyncStatusMessage) => {
+      if (message.sync.status === "syncing") {
+        if (getGoogleSyncIndicatorOverride() !== null) return;
+        setSyncingSyncIndicatorOverride();
         return;
       }
 
-      if (payload?.status === "IGNORED") {
-        void dependencies.refreshUserMetadata();
+      if (message.sync.status === "healthy") {
+        clearGoogleSyncIndicatorOverride();
+        return;
+      }
+
+      // attention
+      clearGoogleSyncIndicatorOverride();
+
+      if (message.sync.code === "GOOGLE_REVOKED") {
+        dependencies.handleGoogleRevoked();
         return;
       }
 
       void dependencies.refreshUserMetadata();
+
+      if (message.sync.code === "WATCH_REPAIR_FAILED") {
+        dependencies.showErrorToast(undefined, {
+          toastId: GOOGLE_REPAIR_FAILED_TOAST_ID,
+        });
+      }
+    }, []);
+
+    const onImportCompleted = useCallback((_message: ImportResultMessage) => {
+      clearGoogleSyncIndicatorOverride();
+      void dependencies.refreshUserMetadata();
       dependencies.invalidateEventQueries();
     }, []);
 
-    const onImportStart = useCallback(() => {
-      if (getGoogleSyncIndicatorOverride() !== null) {
-        return;
-      }
-
-      setSyncingSyncIndicatorOverride();
-    }, []);
-
-    const onGoogleRevoked = useCallback(() => {
-      clearGoogleSyncIndicatorOverride();
-      dependencies.handleGoogleRevoked();
-    }, []);
-
-    const onMetadataFetch = useCallback((metadata: UserMetadata) => {
-      dependencies.setUserMetadata(metadata);
-    }, []);
+    const onUserMetadataChanged = useCallback(
+      (message: UserMetadataMessage) => {
+        // The backend replays the whole user-metadata payload here (packet-01
+        // contract note); the web-side UserMetadata shape is still a plain
+        // interface with no schema of its own to validate against.
+        dependencies.setUserMetadata(message.metadata as UserMetadata);
+      },
+      [],
+    );
 
     useEffect(() => {
-      const importEndHandler = (e: Event) => {
-        const payload = JSON.parse(
-          String((e as MessageEvent).data),
-        ) as ImportGCalEndPayload;
-        onImportEnd(payload);
-      };
-
-      const importStartHandler = () => {
-        onImportStart();
-      };
-
-      const googleRevokedHandler = () => {
-        onGoogleRevoked();
-      };
-
-      const userMetadataHandler = (e: Event) => {
-        const metadata = JSON.parse(
-          String((e as MessageEvent).data),
-        ) as UserMetadata;
-        onMetadataFetch(metadata);
-      };
-
-      dependencies.sseEmitter.on(IMPORT_GCAL_START, importStartHandler);
-      dependencies.sseEmitter.on(IMPORT_GCAL_END, importEndHandler);
-      dependencies.sseEmitter.on(GOOGLE_REVOKED, googleRevokedHandler);
-      dependencies.sseEmitter.on(USER_METADATA, userMetadataHandler);
+      dependencies.sseEmitter.on("syncStatusChanged", onSyncStatusChanged);
+      dependencies.sseEmitter.on("importCompleted", onImportCompleted);
+      dependencies.sseEmitter.on("userMetadataChanged", onUserMetadataChanged);
 
       return () => {
-        dependencies.sseEmitter.off(IMPORT_GCAL_START, importStartHandler);
-        dependencies.sseEmitter.off(IMPORT_GCAL_END, importEndHandler);
-        dependencies.sseEmitter.off(GOOGLE_REVOKED, googleRevokedHandler);
-        dependencies.sseEmitter.off(USER_METADATA, userMetadataHandler);
+        dependencies.sseEmitter.off("syncStatusChanged", onSyncStatusChanged);
+        dependencies.sseEmitter.off("importCompleted", onImportCompleted);
+        dependencies.sseEmitter.off(
+          "userMetadataChanged",
+          onUserMetadataChanged,
+        );
       };
-    }, [onImportEnd, onImportStart, onGoogleRevoked, onMetadataFetch]);
+    }, [onSyncStatusChanged, onImportCompleted, onUserMetadataChanged]);
   };
 };

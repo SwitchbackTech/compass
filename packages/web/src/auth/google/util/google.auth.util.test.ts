@@ -25,7 +25,7 @@ const mockClearUserMetadata = mock();
 const mockCloseStream = mock();
 const mockOpenStream = mock();
 const mockRefreshEventRepositorySource = mock();
-const mockRemoveEventsByOrigin = mock();
+const mockRemoveEventsByGoogleCalendars = mock();
 const mockRemoveEventQueries = mock();
 
 const googleAuthUtil = createGoogleAuthUtil({
@@ -35,7 +35,7 @@ const googleAuthUtil = createGoogleAuthUtil({
   markGoogleAsRevoked,
   openStream: mockOpenStream,
   refreshEventRepositorySource: mockRefreshEventRepositorySource,
-  removeEventsByOrigin: mockRemoveEventsByOrigin,
+  removeEventsByGoogleCalendars: mockRemoveEventsByGoogleCalendars,
   removeEventQueries: mockRemoveEventQueries,
   syncLocalEventsToCloud: mockSyncLocalEventsToCloud,
   toastError: mockToastError,
@@ -54,7 +54,7 @@ describe("google-auth.util", () => {
     mockCloseStream.mockClear();
     mockOpenStream.mockClear();
     mockRefreshEventRepositorySource.mockClear();
-    mockRemoveEventsByOrigin.mockClear();
+    mockRemoveEventsByGoogleCalendars.mockClear();
     mockRemoveEventQueries.mockClear();
 
     clearGoogleRevokedState();
@@ -161,7 +161,7 @@ describe("google-auth.util", () => {
       handleGoogleRevoked();
 
       expect(mockClearUserMetadata).toHaveBeenCalledTimes(1);
-      expect(mockRemoveEventsByOrigin).toHaveBeenCalledTimes(1);
+      expect(mockRemoveEventsByGoogleCalendars).toHaveBeenCalledTimes(1);
     });
 
     it("re-keys queries to local and removes stale remote cache entries", () => {

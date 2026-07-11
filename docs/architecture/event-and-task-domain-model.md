@@ -2,12 +2,14 @@
 
 The event domain is the most cross-cutting part of Compass. Read this before changing event shape, recurrence logic, sync behavior, or local persistence.
 
-## Target Contracts (sub-calendar v1, pre-cutover)
+## Current Contracts (sub-calendar v1)
 
-Strict calendar-owned contracts exist alongside the legacy model and become the
-runtime shape at the sub-calendar v1 cutover. Until then the legacy sections
-below describe live behavior; the contracts describe where every consumer is
-headed.
+The runtime now uses the strict calendar-owned contracts everywhere: Mongo
+storage, the HTTP API, SSE, IndexedDB, and the web data/state layers. The
+legacy sections further down describe the RETIRED pre-cutover model; they
+remain only until the last web components stop converting shapes through
+`packages/web/src/events/queries/event.legacy-bridge.ts`, after which the
+legacy types are deleted.
 
 - `packages/core/src/types/domain-primitives.ts` — branded ids, `DateOnly`,
   `DateTime` (RFC 3339 with offset), `TimeZone`, `SortOrder`, `RRule`.

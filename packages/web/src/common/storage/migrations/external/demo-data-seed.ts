@@ -1,34 +1,59 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Event_Core } from "@core/types/event.types";
+import { Priorities } from "@core/constants/core.constants";
+import { DateTimeSchema, EventIdSchema } from "@core/types/domain-primitives";
+import {
+  type Event,
+  type EventContent,
+  EventScheduleSchema,
+} from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
+import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
+import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { type Task } from "@web/common/types/task.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { getModifierKeyLabel } from "@web/shortcuts/shortcut.util";
 import { VIEW_SHORTCUTS } from "@web/shortcuts/shortcuts.constants";
 import { type OfflineDataStore } from "../../offline-data/offline-data.store";
-import { markLocalDemoEvent } from "../../types/local-event.types";
 import { type ExternalMigration } from "../migration.types";
 
-type Event_WithPosition = Event_Core & Pick<Schema_GridEvent, "position">;
-type Event_Seeded = Event_Core | Event_WithPosition;
-
 /**
- * Creates a demo event with sensible defaults.
+ * Creates a demo LocalEventRecord (B13/D) with sensible defaults, marked
+ * `isDemo` so it's excluded from `syncLocalEventsToCloud`.
  */
-function createEvent(
-  overrides: Partial<Event_Core> & Pick<Event_Core, "startDate" | "endDate">,
-): Event_Core {
-  return {
-    _id: createObjectIdString(),
-    origin: Origin.COMPASS,
-    priority: Priorities.UNASSIGNED,
-    isSomeday: false,
-    user: UNAUTHENTICATED_USER,
-    ...overrides,
+function createEventRecord(overrides: {
+  title: string;
+  description?: string;
+  priority?: Event["priority"];
+  schedule:
+    | { kind: "timed"; start: string; end: string; timeZone: string }
+    | { kind: "allDay"; start: string; end: string }
+    | {
+        kind: "someday";
+        period: "week" | "month";
+        anchorDate: string;
+        sortOrder: number;
+      };
+}): LocalEventRecord {
+  const id = EventIdSchema.parse(createObjectIdString());
+  const content: EventContent = {
+    kind: "details",
+    title: overrides.title,
+    description: overrides.description ?? "",
   };
+  const now = DateTimeSchema.parse(new Date().toISOString());
+
+  const event: Event = {
+    id,
+    calendarId: getLocalCalendarSentinelId(),
+    content,
+    schedule: EventScheduleSchema.parse(overrides.schedule),
+    recurrence: { kind: "single" },
+    priority: overrides.priority ?? Priorities.UNASSIGNED,
+    createdAt: now,
+    updatedAt: null,
+  };
+
+  return { version: 2, id, event, isDemo: true };
 }
 
 /**
@@ -40,7 +65,7 @@ function createTask(overrides: Partial<Task> & Pick<Task, "title">): Task {
     status: "todo",
     order: 0,
     createdAt: dayjs().toISOString(),
-    user: UNAUTHENTICATED_USER,
+    user: "unauthenticated",
     ...overrides,
   };
 }
@@ -55,87 +80,94 @@ function generateDemoData() {
   const tomorrow = now.add(1, "day").toYearMonthDayString();
   const { week, month } = now.weekMonthRange();
   const modKey = getModifierKeyLabel();
+  const timeZone = getBrowserTimeZone();
 
-  // Helper for creating timed events today (clone to avoid mutating now)
-  // Use offset format and 15-minute alignment - consistent with event creation in the app
+  // Helper for creating timed events today (clone to avoid mutating now).
+  // 15-minute-aligned, consistent with event creation in the app.
   const todayAt = (h: number, m = 0) =>
-    now
-      .clone()
-      .hour(h)
-      .minute(m)
-      .second(0)
-      .millisecond(0)
-      .toRFC3339OffsetString();
+    now.clone().hour(h).minute(m).second(0).millisecond(0).format();
 
   // ─── Someday Events ─────────────────────────────────────────────────────────
-  const somedayEvents: Event_Core[] = [
-    // Someday Week
-    createEvent({
+  const somedayEvents: LocalEventRecord[] = [
+    createEventRecord({
       title: "Learn a new shortcut",
       description: "Click the keyboard icon in the bottom-left of this sidebar",
-      startDate: week.startDate,
-      endDate: week.endDate,
-      isSomeday: true,
+      schedule: {
+        kind: "someday",
+        period: "week",
+        anchorDate: week.startDate,
+        sortOrder: 0,
+      },
     }),
-    // Someday Month
-    createEvent({
+    createEventRecord({
       title: "Review quarterly goals",
       description: "Or just go with the flow, goals are overrated.",
-      startDate: month.startDate,
-      endDate: month.endDate,
-      isSomeday: true,
+      schedule: {
+        kind: "someday",
+        period: "month",
+        anchorDate: month.startDate,
+        sortOrder: 0,
+      },
     }),
   ];
 
   // ─── Regular Events (Today) ─────────────────────────────────────────────────
-  const todayEvents: Event_Core[] = [
-    createEvent({
+  const todayEvents: LocalEventRecord[] = [
+    createEventRecord({
       title: "Morning standup",
       description:
         "Let's be honest. No one here has actually done anything. You are just making things up as you go. And yet, all of you sit here, pretending as if we are making progress. It seems, my dear team, that the only thing we do efficiently is exceed the stand up time.",
-      startDate: todayAt(9, 0),
-      endDate: todayAt(9, 30),
       priority: Priorities.WORK,
-      isAllDay: false,
-      isSomeday: false,
+      schedule: {
+        kind: "timed",
+        start: todayAt(9, 0),
+        end: todayAt(9, 30),
+        timeZone,
+      },
     }),
-    createEvent({
+    createEventRecord({
       title: "Try Compass",
       description: `Welcome! Explore the calendar and tasks. When ready to bring in Google events, select 'Connect Google Calendar' from the command palette (${modKey}+K)`,
-      startDate: todayAt(10, 0),
-      endDate: todayAt(11, 0),
       priority: Priorities.UNASSIGNED,
-      isAllDay: false,
-      isSomeday: false,
+      schedule: {
+        kind: "timed",
+        start: todayAt(10, 0),
+        end: todayAt(11, 0),
+        timeZone,
+      },
     }),
-    createEvent({
+    createEventRecord({
       title: "Exercise",
       description: "I'm sorry for what I said during burpees.",
-      startDate: todayAt(12, 0),
-      endDate: todayAt(13, 0),
       priority: Priorities.SELF,
-      isAllDay: false,
-      isSomeday: false,
+      schedule: {
+        kind: "timed",
+        start: todayAt(12, 0),
+        end: todayAt(13, 0),
+        timeZone,
+      },
     }),
-    createEvent({
+    createEventRecord({
       title: "Call a friend",
       description: "Of all possessions, a friend is the most precious.",
-      startDate: todayAt(17, 0),
-      endDate: todayAt(18, 0),
       priority: Priorities.RELATIONS,
-      isAllDay: false,
-      isSomeday: false,
+      schedule: {
+        kind: "timed",
+        start: todayAt(17, 0),
+        end: todayAt(18, 0),
+        timeZone,
+      },
     }),
-    // All-day event
-    createEvent({
+    createEventRecord({
       title: "Deep work day",
       description:
         "The ability to perform deep work is becoming increasingly rare at exactly the same time it is becoming increasingly valuable in our economy. As a consequence, the few who cultivate this skill, and then make it the core of their working life, will thrive.",
-      startDate: today,
-      endDate: today,
-      isAllDay: true,
-      isSomeday: false,
       priority: Priorities.WORK,
+      schedule: {
+        kind: "allDay",
+        start: today,
+        end: dayjs(today).add(1, "day").toYearMonthDayString(),
+      },
     }),
   ];
 
@@ -191,21 +223,7 @@ function generateDemoData() {
   ];
 
   return {
-    events: [...somedayEvents, ...todayEvents].map((event): Event_Seeded => {
-      const localDemoEvent = markLocalDemoEvent(event);
-
-      if (localDemoEvent.isSomeday || localDemoEvent.isAllDay) {
-        return localDemoEvent;
-      }
-
-      return {
-        ...localDemoEvent,
-        position: {
-          ...gridEventDefaultPosition,
-          dragOffset: { ...gridEventDefaultPosition.dragOffset },
-        },
-      };
-    }),
+    events: [...somedayEvents, ...todayEvents],
     tasks: {
       [today]: todayTasks,
       [yesterday]: yesterdayTasks,
@@ -232,20 +250,12 @@ export const demoDataSeedMigration: ExternalMigration = {
   description: "Seed demo data for first-time users",
 
   async migrate(store: OfflineDataStore): Promise<void> {
-    // Check if user already has data
     const existingEvents = await store.getAllEvents();
     const existingTasks = await store.getAllTasks();
-
-    if (existingEvents.length > 0 || existingTasks.length > 0) {
-      return;
-    }
+    if (existingEvents.length > 0 || existingTasks.length > 0) return;
 
     const demoData = generateDemoData();
-
-    // Save events
     await store.putEvents(demoData.events);
-
-    // Save tasks by date
     for (const [dateKey, tasks] of Object.entries(demoData.tasks)) {
       await store.putTasks(dateKey, tasks);
     }

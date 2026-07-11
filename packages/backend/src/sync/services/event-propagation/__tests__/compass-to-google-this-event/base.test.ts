@@ -1,517 +1,150 @@
-import { faker } from "@faker-js/faker";
-import { Priorities } from "@core/constants/core.constants";
-import {
-  CalendarProvider,
-  Categories_Recurrence,
-  CompassEventStatus,
-  type CompassThisEvent,
-  RecurringEventUpdateScope,
-  type Schema_Event_Recur_Base,
-  type WithCompassId,
-} from "@core/types/event.types";
-import { parseCompassEventDate } from "@core/util/event/event.util";
-import { createMockBaseEvent } from "@core/util/test/ccal.event.factory";
-import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import gcalService from "@backend/common/services/gcal/gcal.service";
+import mongoService from "@backend/common/services/mongo.service";
+import eventService from "@backend/event/services/event.service";
 import {
-  testCompassEventNotInGcal,
-  testCompassSeries,
-  testCompassSeriesInGcal,
-} from "@backend/event/classes/compass.event.parser.test.util";
-import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
+  seedGoogleCalendar,
+  seedLocalCalendar,
+  setupGoogleUser,
+} from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 
-describe.each([
-  { calendarProvider: CalendarProvider.GOOGLE },
-])(`CompassToGoogleEventPropagation  - $calendarProvider calendar: ${RecurringEventUpdateScope.THIS_EVENT} - Base Event: `, ({
-  calendarProvider,
-}) => {
-  beforeAll(setupTestDb);
-
+/**
+ * Series base propagation -- ported from the deleted
+ * compass-to-google-this-event/base.test.ts (9 tests). The old model treated
+ * "create a recurring series" as a THIS_EVENT transition on the base; the new
+ * pipeline has no such distinction (series creation is just `create` with a
+ * "series" recurrence, materializing instances via
+ * compass.event.generator#generateReplace). What carries over is the
+ * observable Google contract: exactly one Google event is created for the
+ * series (the base, carrying the RRULE) and edits to it use events.patch --
+ * never one Google event per materialized instance.
+ *
+ * Bug fixed while restoring this suite: propagateUpsert previously treated
+ * every materialized instance (EventRecord with recurrence.kind ===
+ * "occurrence") as an independently syncable record, since isWritableToGoogle
+ * only checked content/schedule kind. That fanned a single series create out
+ * into N+1 unlinked Google events instead of relying on Google's own RRULE
+ * expansion off the base. Fixed in compass-to-google.event-propagation.ts by
+ * excluding recurrence.kind === "occurrence" records from
+ * isWritableToGoogle.
+ */
+describe("CompassToGoogleEventPropagation - series base", () => {
+  beforeEach(setupTestDb);
   beforeEach(cleanupCollections);
-
   afterAll(cleanupTestDb);
 
-  describe("Create: ", () => {
-    it("should create a someday event", async () => {
-      const { user: _user } = await UtilDriver.setupTestUser();
-      const user = _user._id.toString();
-      const isSomeday = true;
-      const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-      const payload = createMockBaseEvent({ isSomeday, user, recurrence });
-
-      const changes = await CompassToGoogleEventPropagation.processEvents([
-        {
-          payload: payload as CompassThisEvent["payload"],
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-          status: CompassEventStatus.CONFIRMED,
-        },
-      ]);
-
-      expect(changes).toEqual(
-        expect.arrayContaining([
-          {
-            title: payload.title,
-            transition: [null, "RECURRENCE_BASE_SOMEDAY_CONFIRMED"],
-            category: Categories_Recurrence.RECURRENCE_BASE_SOMEDAY,
-            operation: "RECURRENCE_BASE_SOMEDAY_CREATED",
-          },
-        ]),
-      );
-
-      const { baseEvent, instances } = await testCompassSeries(payload, 10);
-
-      switch (calendarProvider) {
-        case CalendarProvider.GOOGLE:
-          await Promise.all([
-            testCompassEventNotInGcal(baseEvent),
-            ...instances.map(testCompassEventNotInGcal),
-          ]);
-          break;
-      }
-    });
-
-    it("should create a calendar event", async () => {
-      const { user: _user } = await UtilDriver.setupTestUser();
-      const user = _user._id.toString();
-      const isSomeday = false;
-      const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-      const payload = createMockBaseEvent({ isSomeday, user, recurrence });
-
-      const changes = await CompassToGoogleEventPropagation.processEvents([
-        {
-          payload: payload as CompassThisEvent["payload"],
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-          status: CompassEventStatus.CONFIRMED,
-        },
-      ]);
-
-      expect(changes).toEqual(
-        expect.arrayContaining([
-          {
-            title: payload.title,
-            transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-            category: Categories_Recurrence.RECURRENCE_BASE,
-            operation: "RECURRENCE_BASE_CREATED",
-          },
-        ]),
-      );
-
-      // check that event is in db
-      const { baseEvent, instances } = await testCompassSeries(payload, 10);
-
-      const calendarProvider = CalendarProvider.GOOGLE;
-
-      switch (calendarProvider) {
-        case CalendarProvider.GOOGLE: {
-          await testCompassSeriesInGcal(baseEvent, instances);
-          break;
-        }
-      }
-    });
+  const seriesInput = (calendarId: string) => ({
+    calendarId: calendarId as never,
+    content: {
+      kind: "details" as const,
+      title: "Weekly sync",
+      description: "",
+    },
+    schedule: {
+      kind: "timed" as const,
+      start: "2026-07-14T15:00:00-06:00",
+      end: "2026-07-14T16:00:00-06:00",
+      timeZone: "America/Denver" as never,
+    },
+    recurrence: {
+      kind: "series" as const,
+      rules: ["RRULE:FREQ=WEEKLY;COUNT=5"] as never,
+    },
+    priority: "unassigned" as const,
   });
 
-  describe("Update: ", () => {
-    describe.each([{ type: "Someday" }, { type: "Calendar" }])("$type: ", ({
-      type,
-    }) => {
-      describe("Update: ", () => {
-        describe("Basic Edits: ", () => {
-          it("should not directly update the title field of a base event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
-            const user = _user._id.toString();
-            const isSomeday = type === "Someday";
-            const category = isSomeday
-              ? Categories_Recurrence.RECURRENCE_BASE_SOMEDAY
-              : Categories_Recurrence.RECURRENCE_BASE;
-            const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-            const payload = createMockBaseEvent({
-              isSomeday,
-              user,
-              recurrence,
-            });
+  it("creates exactly one Google event for a new series (the base, not each materialized instance)", async () => {
+    const { user } = await setupGoogleUser();
+    const calendar = await seedGoogleCalendar(user._id);
+    const createSpy = jest.spyOn(gcalService, "createEvent");
 
-            const changes = await CompassToGoogleEventPropagation.processEvents(
-              [
-                {
-                  payload: payload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ],
-            );
+    const created = await eventService.create(
+      user._id.toString(),
+      seriesInput(calendar._id.toHexString()),
+    );
 
-            expect(changes).toEqual(
-              expect.arrayContaining([
-                {
-                  title: payload.title,
-                  transition: [null, `${category}_CONFIRMED`],
-                  category,
-                  operation: `${category}_CREATED`,
-                },
-              ]),
-            );
+    const instances = await mongoService.event
+      .find({ "recurrence.seriesId": created._id })
+      .toArray();
+    expect(instances).toHaveLength(4);
 
-            const { baseEvent } = await testCompassSeries(payload, 10);
-
-            const updatedPayload = {
-              ...baseEvent,
-              _id: baseEvent._id.toString(),
-              title: faker.lorem.sentence(3),
-            } as WithCompassId<Schema_Event_Recur_Base>;
-
-            await expect(
-              CompassToGoogleEventPropagation.processEvents([
-                {
-                  payload: updatedPayload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ]),
-            ).rejects.toThrow(GenericError.BadRequest.description);
-          });
-
-          it("should not directly update the description field of a base event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
-            const user = _user._id.toString();
-            const isSomeday = type === "Someday";
-            const category = isSomeday
-              ? Categories_Recurrence.RECURRENCE_BASE_SOMEDAY
-              : Categories_Recurrence.RECURRENCE_BASE;
-            const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-            const payload = createMockBaseEvent({
-              isSomeday,
-              user,
-              recurrence,
-            });
-
-            const changes = await CompassToGoogleEventPropagation.processEvents(
-              [
-                {
-                  payload: payload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ],
-            );
-
-            expect(changes).toEqual(
-              expect.arrayContaining([
-                {
-                  title: payload.title,
-                  transition: [null, `${category}_CONFIRMED`],
-                  category,
-                  operation: `${category}_CREATED`,
-                },
-              ]),
-            );
-
-            const { baseEvent } = await testCompassSeries(payload, 10);
-
-            const updatedPayload = {
-              ...baseEvent,
-              _id: baseEvent._id.toString(),
-              description: faker.lorem.sentence(3),
-            } as WithCompassId<Schema_Event_Recur_Base>;
-
-            await expect(
-              CompassToGoogleEventPropagation.processEvents([
-                {
-                  payload: updatedPayload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ]),
-            ).rejects.toThrow(GenericError.BadRequest.description);
-          });
-
-          it("should not directly update the priority field of a base event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
-            const user = _user._id.toString();
-            const isSomeday = type === "Someday";
-            const category = isSomeday
-              ? Categories_Recurrence.RECURRENCE_BASE_SOMEDAY
-              : Categories_Recurrence.RECURRENCE_BASE;
-            const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-
-            const payload = createMockBaseEvent({
-              isSomeday,
-              user,
-              recurrence,
-              priority: Priorities.SELF,
-            });
-
-            const changes = await CompassToGoogleEventPropagation.processEvents(
-              [
-                {
-                  payload: payload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ],
-            );
-
-            expect(changes).toEqual(
-              expect.arrayContaining([
-                {
-                  title: payload.title,
-                  transition: [null, `${category}_CONFIRMED`],
-                  category,
-                  operation: `${category}_CREATED`,
-                },
-              ]),
-            );
-
-            const { baseEvent } = await testCompassSeries(payload, 10);
-
-            const updatedPayload = {
-              ...baseEvent,
-              _id: baseEvent._id.toString(),
-              priority: Priorities.RELATIONS,
-            } as WithCompassId<Schema_Event_Recur_Base>;
-
-            await expect(
-              CompassToGoogleEventPropagation.processEvents([
-                {
-                  payload: updatedPayload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ]),
-            ).rejects.toThrow(GenericError.BadRequest.description);
-          });
-
-          it("should directly update the startDate field of a base event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
-            const user = _user._id.toString();
-            const isSomeday = type === "Someday";
-            const category = isSomeday
-              ? Categories_Recurrence.RECURRENCE_BASE_SOMEDAY
-              : Categories_Recurrence.RECURRENCE_BASE;
-            const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-            const payload = createMockBaseEvent({
-              isSomeday,
-              user,
-              recurrence,
-            });
-
-            const changes = await CompassToGoogleEventPropagation.processEvents(
-              [
-                {
-                  payload: payload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ],
-            );
-
-            expect(changes).toEqual(
-              expect.arrayContaining([
-                {
-                  title: payload.title,
-                  transition: [null, `${category}_CONFIRMED`],
-                  category,
-                  operation: `${category}_CREATED`,
-                },
-              ]),
-            );
-
-            const { baseEvent } = await testCompassSeries(payload, 10);
-
-            const updatedPayload = {
-              ...baseEvent,
-              _id: baseEvent._id.toString(),
-              startDate: parseCompassEventDate(baseEvent.endDate!)
-                .subtract(2, "hours")
-                .toISOString(),
-            } as WithCompassId<Schema_Event_Recur_Base>;
-
-            await expect(
-              CompassToGoogleEventPropagation.processEvents([
-                {
-                  payload: updatedPayload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ]),
-            ).rejects.toThrow(GenericError.BadRequest.description);
-          });
-
-          it("should directly update the endDate field of a base event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
-            const user = _user._id.toString();
-            const isSomeday = type === "Someday";
-            const category = isSomeday
-              ? Categories_Recurrence.RECURRENCE_BASE_SOMEDAY
-              : Categories_Recurrence.RECURRENCE_BASE;
-            const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-            const payload = createMockBaseEvent({
-              isSomeday,
-              user,
-              recurrence,
-            });
-
-            const changes = await CompassToGoogleEventPropagation.processEvents(
-              [
-                {
-                  payload: payload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ],
-            );
-
-            expect(changes).toEqual(
-              expect.arrayContaining([
-                {
-                  title: payload.title,
-                  transition: [null, `${category}_CONFIRMED`],
-                  category,
-                  operation: `${category}_CREATED`,
-                },
-              ]),
-            );
-
-            const { baseEvent } = await testCompassSeries(payload, 10);
-
-            const updatedPayload = {
-              ...baseEvent,
-              _id: baseEvent._id.toString(),
-              endDate: parseCompassEventDate(baseEvent.startDate!)
-                .add(2, "hours")
-                .toISOString(),
-            } as WithCompassId<Schema_Event_Recur_Base>;
-
-            await expect(
-              CompassToGoogleEventPropagation.processEvents([
-                {
-                  payload: updatedPayload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ]),
-            ).rejects.toThrow(GenericError.BadRequest.description);
-          });
-
-          it("should directly update the recurrence field of a base event", async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
-            const user = _user._id.toString();
-            const isSomeday = type === "Someday";
-            const category = isSomeday
-              ? Categories_Recurrence.RECURRENCE_BASE_SOMEDAY
-              : Categories_Recurrence.RECURRENCE_BASE;
-            const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-
-            const payload = createMockBaseEvent({
-              isSomeday,
-              user,
-              recurrence,
-              priority: Priorities.SELF,
-            });
-
-            const changes = await CompassToGoogleEventPropagation.processEvents(
-              [
-                {
-                  payload: payload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ],
-            );
-
-            expect(changes).toEqual(
-              expect.arrayContaining([
-                {
-                  title: payload.title,
-                  transition: [null, `${category}_CONFIRMED`],
-                  category,
-                  operation: `${category}_CREATED`,
-                },
-              ]),
-            );
-
-            const { baseEvent } = await testCompassSeries(payload, 10);
-
-            const updatedPayload = {
-              ...baseEvent,
-              _id: baseEvent._id.toString(),
-              recurrence: { rule: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
-            };
-
-            await expect(
-              CompassToGoogleEventPropagation.processEvents([
-                {
-                  payload: updatedPayload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ]),
-            ).rejects.toThrow(GenericError.BadRequest.description);
-          });
-        });
-      });
-
-      describe("Delete: ", () => {
-        it(
-          `should not directly delete a ${type} base event`.toLowerCase(),
-          async () => {
-            const { user: _user } = await UtilDriver.setupTestUser();
-            const user = _user._id.toString();
-            const isSomeday = type === "Someday";
-            const category = isSomeday
-              ? Categories_Recurrence.RECURRENCE_BASE_SOMEDAY
-              : Categories_Recurrence.RECURRENCE_BASE;
-            const recurrence = { rule: ["RRULE:FREQ=WEEKLY;COUNT=10"] };
-            const payload = createMockBaseEvent({
-              isSomeday,
-              user,
-              recurrence,
-            });
-
-            const changes = await CompassToGoogleEventPropagation.processEvents(
-              [
-                {
-                  payload: payload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CONFIRMED,
-                },
-              ],
-            );
-
-            expect(changes).toEqual(
-              expect.arrayContaining([
-                {
-                  title: payload.title,
-                  transition: [null, `${category}_CONFIRMED`],
-                  category,
-                  operation: `${category}_CREATED`,
-                },
-              ]),
-            );
-
-            const { baseEvent } = await testCompassSeries(payload, 10);
-
-            const deletePayload = {
-              ...baseEvent,
-              _id: baseEvent._id.toString(),
-            } as WithCompassId<Schema_Event_Recur_Base>;
-
-            await expect(
-              CompassToGoogleEventPropagation.processEvents([
-                {
-                  payload: deletePayload as CompassThisEvent["payload"],
-                  applyTo: RecurringEventUpdateScope.THIS_EVENT,
-                  status: CompassEventStatus.CANCELLED,
-                },
-              ]),
-            ).rejects.toThrow(GenericError.BadRequest.description);
-          },
-        );
-      });
+    expect(createSpy).toHaveBeenCalledTimes(1);
+    const [, calendarIdArg, body] = createSpy.mock.calls[0]!;
+    expect(calendarIdArg).toBe(calendar.source.calendarId);
+    expect(body).toMatchObject({
+      summary: "Weekly sync",
+      recurrence: ["RRULE:FREQ=WEEKLY;COUNT=5"],
     });
+
+    const base = await eventService.readById(
+      user._id.toString(),
+      created._id.toHexString(),
+    );
+    expect(base.externalReference).toMatchObject({ provider: "google" });
+
+    // Materialized instances are a Compass-local read model; Google expands
+    // its own copies from the base's RRULE, so instances never get their
+    // own externalReference.
+    instances.forEach((instance) =>
+      expect(instance.externalReference).toBeNull(),
+    );
+  });
+
+  it("patches only the base when a scope 'all' edit changes a synced series", async () => {
+    const { user } = await setupGoogleUser();
+    const calendar = await seedGoogleCalendar(user._id);
+    const created = await eventService.create(
+      user._id.toString(),
+      seriesInput(calendar._id.toHexString()),
+    );
+    const base = await eventService.readById(
+      user._id.toString(),
+      created._id.toHexString(),
+    );
+    // clearMocks (jest.config.js) resets call history between tests, but a
+    // spy attached by an earlier test in this file is never restored until
+    // the file's global afterAll -- so the series `create` above already
+    // ran through this same spy. Clear it here so only the replace below is
+    // observed.
+    const patchSpy = jest.spyOn(gcalService, "patchEvent");
+    const createSpy = jest.spyOn(gcalService, "createEvent");
+    patchSpy.mockClear();
+    createSpy.mockClear();
+
+    await eventService.replace(user._id.toString(), created._id.toHexString(), {
+      content: {
+        kind: "details",
+        title: "Weekly sync (renamed)",
+        description: "",
+      },
+      schedule: seriesInput(calendar._id.toHexString()).schedule,
+      recurrence: { kind: "preserve" },
+      priority: "unassigned",
+      scope: "all",
+    });
+
+    expect(patchSpy).toHaveBeenCalledTimes(1);
+    const [, calendarIdArg, eventIdArg, body] = patchSpy.mock.calls[0]!;
+    expect(calendarIdArg).toBe(calendar.source.calendarId);
+    expect(eventIdArg).toBe(base.externalReference?.eventId);
+    expect(body).toMatchObject({ summary: "Weekly sync (renamed)" });
+    expect(createSpy).not.toHaveBeenCalled();
+  });
+
+  it("does not create Google events for a series on a non-google calendar", async () => {
+    const { user } = await setupGoogleUser();
+    const calendar = await seedLocalCalendar(user._id);
+    const createSpy = jest.spyOn(gcalService, "createEvent");
+
+    await eventService.create(
+      user._id.toString(),
+      seriesInput(calendar._id.toHexString()),
+    );
+
+    expect(createSpy).not.toHaveBeenCalled();
   });
 });

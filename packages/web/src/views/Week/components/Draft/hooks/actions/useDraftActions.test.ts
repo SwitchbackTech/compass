@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
@@ -172,6 +172,13 @@ describe("useDraftActions", () => {
       { wrapper },
     );
 
+    // The default target calendar resolves from the (async, though
+    // synchronous-in-practice for anon mode) calendars query; wait for it so
+    // duplicateEvent doesn't race an undefined calendar list.
+    await waitFor(() => {
+      expect(queryClient.getQueryData(["calendars"])).toBeDefined();
+    });
+
     act(() => {
       result.current.duplicateEvent();
     });
@@ -180,10 +187,13 @@ describe("useDraftActions", () => {
       const created = queryClient
         .getMutationCache()
         .getAll()
-        .map((mutation) => mutation.state.variables as Schema_Event)
-        .find(
-          (event) => event._id !== "event-1" && event.title === "Seed event",
-        );
+        .map(
+          (mutation) =>
+            mutation.state.variables as {
+              input?: { content?: { title?: string } };
+            },
+        )
+        .find((variables) => variables.input?.content?.title === "Seed event");
       expect(created).toBeDefined();
     });
   });

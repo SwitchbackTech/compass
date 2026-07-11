@@ -111,7 +111,17 @@ export class BaseDriver {
             } else if (line === "") {
               if (dataLine) {
                 const parsed = JSON.parse(dataLine) as unknown;
-                const listeners = eventListeners.get(eventName) ?? [];
+                // B10: every publish uses the single `message` SSE event
+                // name; dispatch test listeners by the ServerMessage's own
+                // `type` field instead.
+                const dispatchKey =
+                  parsed &&
+                  typeof parsed === "object" &&
+                  "type" in parsed &&
+                  typeof (parsed as { type: unknown }).type === "string"
+                    ? (parsed as { type: string }).type
+                    : eventName;
+                const listeners = eventListeners.get(dispatchKey) ?? [];
                 for (const cb of listeners) cb(parsed);
                 eventName = "message";
                 dataLine = "";

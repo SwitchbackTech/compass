@@ -8,6 +8,8 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import { refocusEventElement } from "@web/common/utils/event/event.util";
@@ -16,6 +18,7 @@ import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/SomedayEvent";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { createLegacyEventMutationsAdapter } from "@web/events/queries/event.legacy-bridge";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
@@ -51,7 +54,14 @@ export const SomedayEventContainer = ({
   weekViewRange,
 }: Props) => {
   const { state, actions, setters } = useSidebarContext();
-  const { convertToCalendar } = useEventMutations();
+  const mutations = useEventMutations();
+  const { data: calendars } = useCalendarsQuery();
+  // TODO(packet-03-phase-3c): legacy-shaped facade until this component's
+  // Schema_Event-based props are converted to the new contracts.
+  const { convertToCalendar } = createLegacyEventMutationsAdapter(
+    mutations,
+    () => getDefaultTargetCalendar(calendars ?? [])?.id,
+  );
 
   const formProps = useDraftForm(
     category,

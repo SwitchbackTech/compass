@@ -1,7 +1,9 @@
 import Dexie, { type Table } from "dexie";
-import { type Payload_Order } from "@core/types/event.types";
-import { isDateRangeOverlapping } from "@core/util/date/date.util";
-import { type LocalStoredEvent } from "@web/common/storage/types/local-event.types";
+import { type EventId } from "@core/types/domain-primitives";
+import { type EventListQuery } from "@core/types/event-command.contracts";
+import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
+import { transformLegacyEvents } from "@web/common/storage/migrations/data/legacy-event-to-local-record.transform";
+import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import {
   normalizeTask,
   normalizeTasks,
@@ -13,6 +15,7 @@ import {
   isPrimaryKeyUpgradeError,
 } from "./legacy-primary-key.migration";
 import {
+  type LocalEventOrderPatch,
   type MigrationRecord,
   type OfflineDataStore,
   type StoredTask,
@@ -24,7 +27,7 @@ import {
  * Schema versioning is handled by Dexie's built-in version() method.
  */
 class CompassDB extends Dexie {
-  events!: Table<LocalStoredEvent, string>;
+  events!: Table<LocalEventRecord, string>;
   tasks!: Table<StoredTask, string>;
   _migrations!: Table<MigrationRecord, string>;
 
@@ -45,6 +48,19 @@ class CompassDB extends Dexie {
     // Version 3: add migrations tracking table
     this.version(3).stores({
       events: "_id, startDate, endDate, isSomeday",
+      tasks: "_id, dateKey, status, order",
+      _migrations: "id",
+    });
+
+    // Version 4 (B13): events store LocalEventRecord ({ version, id, event,
+    // isDemo }), keyed by "id", indexed on the nested schedule so range/
+    // someday reads can eventually use the index instead of a full scan.
+    // The primary key rename from "_id" to "id" is not an in-place Dexie
+    // upgrade (see isPrimaryKeyUpgradeError); rows are migrated in
+    // migrateFromLegacySchema below.
+    this.version(4).stores({
+      events:
+        "id, event.schedule.kind, event.schedule.start, event.schedule.end",
       tasks: "_id, dateKey, status, order",
       _migrations: "id",
     });
@@ -75,38 +91,48 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
         throw error;
       }
 
-      await this.migrateFromLegacyPrimaryKey();
+      await this.migrateFromLegacySchema();
     }
 
     this.initialized = true;
   }
 
   /**
-   * Handle UpgradeError from legacy DB where tasks used "id" instead of "_id".
-   * Read data with legacy schema, delete DB, re-open with current schema, re-insert.
+   * Handle UpgradeError from a legacy DB whose primary key(s) Dexie cannot
+   * rename in place: tasks used "id" instead of "_id", and/or events used
+   * "_id" with flat fields instead of "id" with a nested LocalEventRecord
+   * (B13). Read data with the legacy schema, delete the DB, re-open with
+   * the current schema, transform and re-insert.
    */
-  private async migrateFromLegacyPrimaryKey(): Promise<void> {
-    const { events, tasks } = await extractDataFromLegacySchema();
+  private async migrateFromLegacySchema(): Promise<void> {
+    const { events, tasks, migrations } = await extractDataFromLegacySchema();
     await deleteCompassLocalDb();
     await this.db.open();
 
-    if (events.length > 0 || tasks.length > 0) {
+    const sentinelCalendarId = getLocalCalendarSentinelId();
+    const eventRecords = transformLegacyEvents(events, sentinelCalendarId);
+
+    if (eventRecords.length > 0 || tasks.length > 0 || migrations.length > 0) {
       await this.db.transaction(
         "rw",
         this.db.events,
         this.db.tasks,
+        this.db._migrations,
         async () => {
-          if (events.length > 0) {
-            await this.db.events.bulkPut(events);
+          if (eventRecords.length > 0) {
+            await this.db.events.bulkPut(eventRecords);
           }
           if (tasks.length > 0) {
             await this.db.tasks.bulkPut(tasks);
+          }
+          if (migrations.length > 0) {
+            await this.db._migrations.bulkPut(migrations);
           }
         },
       );
       // biome-ignore lint/suspicious/noConsole: Preserve local migration summary output.
       console.log(
-        `[Migration] Migrated ${events.length} events and ${tasks.length} tasks from legacy primary key schema`,
+        `[Migration] Migrated ${eventRecords.length} events and ${tasks.length} tasks from legacy schema`,
       );
     }
   }
@@ -128,7 +154,6 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
       .equals(dateKey)
       .toArray();
 
-    // Remove dateKey and normalize (ensures defaults like user are applied)
     return storedTasks.map(({ dateKey: _, ...task }) => normalizeTask(task));
   }
 
@@ -170,16 +195,9 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
 
     await this.db.transaction("rw", this.db.tasks, async () => {
       const existingTask = await this.db.tasks.get(normalizedTask._id);
+      if (existingTask && existingTask.dateKey !== fromDateKey) return;
 
-      // If the task exists for a different date, don't move it
-      if (existingTask && existingTask.dateKey !== fromDateKey) {
-        return;
-      }
-
-      // Remove from source date (task id stays the same)
       await this.db.tasks.delete(normalizedTask._id);
-
-      // Add to target date
       const storedTask: StoredTask = { ...normalizedTask, dateKey: toDateKey };
       await this.db.tasks.put(storedTask);
     });
@@ -191,54 +209,78 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
 
   // ─── Event Operations ──────────────────────────────────────────────────────
 
-  async getEvents(
-    startDate: string,
-    endDate: string,
-    isSomeday?: boolean,
-  ): Promise<LocalStoredEvent[]> {
-    const allEvents = await this.db.events.toArray();
+  async getEvents(query: EventListQuery): Promise<LocalEventRecord[]> {
+    const all = await this.db.events.toArray();
 
-    return allEvents.filter((event) => {
-      if (!event.startDate || !event.endDate) return false;
-      if (isSomeday !== undefined && event.isSomeday !== isSomeday) {
+    if (query.kind === "someday") {
+      return all.filter(
+        ({ event }) =>
+          event.schedule.kind === "someday" &&
+          event.schedule.period === query.period &&
+          event.schedule.anchorDate === query.anchorDate,
+      );
+    }
+
+    const start = Date.parse(query.start);
+    const end = Date.parse(query.end);
+    const allDayStart = query.start.slice(0, 10);
+    const allDayEnd = query.end.slice(0, 10);
+
+    return all.filter(({ event }) => {
+      if (
+        query.priorities.length > 0 &&
+        !query.priorities.includes(event.priority)
+      ) {
         return false;
       }
-      return isDateRangeOverlapping(
-        event.startDate,
-        event.endDate,
-        startDate,
-        endDate,
-        "day",
-      );
+
+      if (event.schedule.kind === "timed") {
+        return (
+          Date.parse(event.schedule.start) < end &&
+          Date.parse(event.schedule.end) > start
+        );
+      }
+
+      if (event.schedule.kind === "allDay") {
+        return (
+          event.schedule.start < allDayEnd && event.schedule.end > allDayStart
+        );
+      }
+
+      return false;
     });
   }
 
-  async getAllEvents(): Promise<LocalStoredEvent[]> {
+  async getAllEvents(): Promise<LocalEventRecord[]> {
     return this.db.events.toArray();
   }
 
-  async putEvent(event: LocalStoredEvent): Promise<void> {
-    if (!event._id) {
-      throw new Error("Event must have an _id to save");
-    }
-    await this.db.events.put(event);
+  async putEvent(record: LocalEventRecord): Promise<void> {
+    await this.db.events.put(record);
   }
 
-  async putEvents(events: LocalStoredEvent[]): Promise<void> {
-    const validEvents = events.filter((e) => e._id);
-    if (validEvents.length > 0) {
-      await this.db.events.bulkPut(validEvents);
+  async putEvents(records: LocalEventRecord[]): Promise<void> {
+    if (records.length > 0) {
+      await this.db.events.bulkPut(records);
     }
   }
 
-  async deleteEvent(eventId: string): Promise<void> {
+  async deleteEvent(eventId: EventId): Promise<void> {
     await this.db.events.delete(eventId);
   }
 
-  async updateEventOrders(order: Payload_Order[]): Promise<void> {
+  async updateEventOrders(items: LocalEventOrderPatch[]): Promise<void> {
     await this.db.transaction("rw", this.db.events, async () => {
-      for (const { _id, order: nextOrder } of order) {
-        await this.db.events.update(_id, { order: nextOrder });
+      for (const { eventId, sortOrder } of items) {
+        const existing = await this.db.events.get(eventId);
+        if (!existing || existing.event.schedule.kind !== "someday") continue;
+
+        await this.db.events.update(eventId, {
+          event: {
+            ...existing.event,
+            schedule: { ...existing.event.schedule, sortOrder },
+          },
+        });
       }
     });
   }

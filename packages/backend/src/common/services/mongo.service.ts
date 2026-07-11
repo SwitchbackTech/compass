@@ -9,22 +9,22 @@ import {
   ObjectId,
 } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { type Schema_Calendar } from "@core/types/calendar.types";
-import { type Schema_Event } from "@core/types/event.types";
 import { type Schema_Priority } from "@core/types/priority.types";
 import { type Schema_Sync } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
 import { type Schema_Watch } from "@core/types/watch.types";
+import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { Collections } from "@backend/common/constants/collections";
 import { CONFIG } from "@backend/common/constants/config.constants";
+import { type EventRecord } from "@backend/event/event.record";
 
 const logger = Logger("app:mongo.service");
 
 interface InternalClient {
   db: Db;
   client: MongoClient;
-  calendar: Collection<Schema_Calendar>;
-  event: Collection<Omit<Schema_Event, "_id">>;
+  calendar: Collection<CalendarRecord>;
+  event: Collection<EventRecord>;
   priority: Collection<Omit<Schema_Priority, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
@@ -117,8 +117,8 @@ class MongoService {
     return {
       db,
       client,
-      calendar: db.collection<Schema_Calendar>(Collections.CALENDAR),
-      event: db.collection<Omit<Schema_Event, "_id">>(Collections.EVENT),
+      calendar: db.collection<CalendarRecord>(Collections.CALENDAR),
+      event: db.collection<EventRecord>(Collections.EVENT),
       priority: db.collection<Omit<Schema_Priority, "_id">>(
         Collections.PRIORITY,
       ),

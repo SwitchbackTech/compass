@@ -1,9 +1,13 @@
+import { type CreateEventInput } from "@core/types/event-command.contracts";
+import { CalendarApi } from "@web/calendars/calendar.api";
+import { getLocalCalendar } from "@web/calendars/calendar.util";
+import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store";
 import {
   ensureOfflineDataStoreReady,
   getOfflineDataStore,
 } from "@web/common/storage/offline-data/offline-data.store.registry";
-import { isLocalDemoEvent } from "@web/common/storage/types/local-event.types";
+import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { EventApi } from "@web/events/event.api";
 
 type LocalEventSyncStorage = Pick<
@@ -12,41 +16,71 @@ type LocalEventSyncStorage = Pick<
 >;
 
 type LocalEventSyncDependencies = {
-  createEvents: typeof EventApi.create;
+  createEvent: typeof EventApi.create;
+  listCalendars: typeof CalendarApi.list;
   ensureOfflineDataStoreReady: typeof ensureOfflineDataStoreReady;
   getOfflineDataStore: () => LocalEventSyncStorage;
 };
 
+// Maps a locally-stored record (calendarId = the client-generated sentinel)
+// onto the server's own local calendar id, preserving the client-generated
+// event id (A25).
+function toCreateInput(
+  record: LocalEventRecord,
+  serverLocalCalendarId: string,
+): CreateEventInput {
+  return {
+    id: record.event.id,
+    calendarId: serverLocalCalendarId as CreateEventInput["calendarId"],
+    schedule: record.event.schedule,
+    recurrence:
+      record.event.recurrence.kind === "series"
+        ? { kind: "series", rules: record.event.recurrence.rules }
+        : { kind: "single" },
+    priority: record.event.priority,
+    // Local storage only ever holds "details" content (never a synthesized
+    // "busy" block), so this narrowing cast is safe.
+    content: record.event.content as CreateEventInput["content"],
+  };
+}
+
 export function createSyncLocalEventsToCloud({
-  createEvents,
+  createEvent,
+  listCalendars,
   ensureOfflineDataStoreReady,
   getOfflineDataStore,
 }: LocalEventSyncDependencies) {
   return async function syncLocalEventsToCloud(): Promise<number> {
     await ensureOfflineDataStoreReady();
     const store = getOfflineDataStore();
-    const events = await store.getAllEvents();
+    const records = await store.getAllEvents();
 
-    if (events.length === 0) {
+    if (records.length === 0) {
       return 0;
     }
 
-    // No local-field stripping here: EventApi validates outbound events
-    // against the backend schema, which drops local-only fields.
-    const eventsToSync = events.filter((event) => !isLocalDemoEvent(event));
+    const recordsToSync = records.filter((record) => !record.isDemo);
 
-    if (eventsToSync.length > 0) {
-      await createEvents(eventsToSync);
+    if (recordsToSync.length > 0) {
+      const calendars = await listCalendars();
+      const serverLocalCalendar = getLocalCalendar(calendars);
+      const serverLocalCalendarId =
+        serverLocalCalendar?.id ?? getLocalCalendarSentinelId();
+
+      for (const record of recordsToSync) {
+        await createEvent(toCreateInput(record, serverLocalCalendarId));
+      }
     }
 
     await store.clearAllEvents();
 
-    return eventsToSync.length;
+    return recordsToSync.length;
   };
 }
 
 export const syncLocalEventsToCloud = createSyncLocalEventsToCloud({
-  createEvents: EventApi.create,
+  createEvent: EventApi.create,
+  listCalendars: CalendarApi.list,
   ensureOfflineDataStoreReady,
   getOfflineDataStore,
 });

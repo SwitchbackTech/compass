@@ -1,15 +1,18 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { act, type PropsWithChildren } from "react";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Priorities } from "@core/constants/core.constants";
+import { type EventId } from "@core/types/domain-primitives";
+import { type Event } from "@core/types/event.contracts";
 import {
-  type Payload_Order,
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
-import { type Schema_WebEvent } from "@web/common/types/web.event.types";
+  type CreateEventInput,
+  type ReorderEventsInput,
+  type ReplaceEventInput,
+  type TransitionEventInput,
+} from "@core/types/event-command.contracts";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
-import { type SomedayEventQueryData } from "@web/events/queries/event.query.types";
+import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import {
   runHistoryRestore,
@@ -18,46 +21,54 @@ import {
 import { useEventMutations } from "./useEventMutations";
 import { useHasPendingEventMutations } from "./useEventPending";
 
-const calendarKey = eventQueryKeys.list({
+const calendarKey = eventQueryKeys.week({
   source: "local",
-  scope: "week",
-  params: {
-    startDate: "2026-07-01T00:00:00.000Z",
-    endDate: "2026-07-08T00:00:00.000Z",
-    someday: false,
-  },
+  start: "2026-07-01T00:00:00.000Z",
+  end: "2026-07-08T00:00:00.000Z",
 });
 
-const somedayKey = eventQueryKeys.list({
+const somedayKey = eventQueryKeys.someday({
   source: "local",
-  scope: "someday",
-  params: {
-    startDate: "2026-07-01T00:00:00.000Z",
-    endDate: "2026-08-01T00:00:00.000Z",
-    someday: true,
-  },
+  period: "week",
+  anchorDate: "2026-07-01",
 });
 
 const dayKey = eventQueryKeys.day({
   source: "local",
-  startDate: "2026-07-02T00:00:00.000Z",
-  endDate: "2026-07-03T00:00:00.000Z",
+  start: "2026-07-02T00:00:00.000Z",
+  end: "2026-07-03T00:00:00.000Z",
 });
 
-const event = (overrides: Partial<Schema_Event> = {}): Schema_Event => ({
-  _id: "event-1",
-  title: "Original",
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  isSomeday: false,
-  startDate: "2026-07-02T16:00:00.000Z",
-  endDate: "2026-07-02T17:00:00.000Z",
-  ...overrides,
+const timedSchedule = (start: string, end: string) => ({
+  kind: "timed" as const,
+  start: start as never,
+  end: end as never,
+  timeZone: "UTC" as never,
 });
 
-const normalized = (...events: Schema_Event[]) => ({
-  ids: events.map(({ _id }) => _id as string),
-  entities: Object.fromEntries(events.map((item) => [item._id, item])),
+const somedaySchedule = (sortOrder = 0) => ({
+  kind: "someday" as const,
+  period: "week" as const,
+  anchorDate: "2026-07-01" as never,
+  sortOrder,
+});
+
+const event = (overrides: Partial<Event> = {}): Event =>
+  createMockEvent({
+    content: { kind: "details", title: "Original", description: "" },
+    schedule: timedSchedule(
+      "2026-07-02T16:00:00.000Z",
+      "2026-07-02T17:00:00.000Z",
+    ),
+    ...overrides,
+  });
+
+const occurrence = (seriesId: EventId, overrides: Partial<Event> = {}): Event =>
+  event({ recurrence: { kind: "occurrence", seriesId }, ...overrides });
+
+const normalized = (...events: Event[]): NormalizedEventQueryData => ({
+  ids: events.map(({ id }) => id),
+  entities: Object.fromEntries(events.map((item) => [item.id, item])),
 });
 
 // Each repository call blocks on its own waiter (FIFO). `resolve`/`reject`
@@ -101,28 +112,32 @@ const setup = () => {
   const pending = pendingControl();
   const calls: Array<{ method: string; value: unknown }> = [];
   const repository: EventRepository = {
-    create: async (value) => {
-      calls.push({ method: "create", value });
+    list: async () => [],
+    getById: async () => {
+      throw new Error("not implemented in test fake");
+    },
+    create: async (input: CreateEventInput) => {
+      calls.push({ method: "create", value: input });
+      await pending.wait();
+      return event({ id: (input.id ?? event().id) as EventId });
+    },
+    replace: async (id: EventId, input: ReplaceEventInput) => {
+      calls.push({ method: "replace", value: { id, input } });
+      await pending.wait();
+      return event({ id });
+    },
+    delete: async (id: EventId, scope) => {
+      calls.push({ method: "delete", value: { id, scope } });
       await pending.wait();
     },
-    get: async () => ({
-      data: [],
-      count: 0,
-      pageSize: 0,
-      startDate: "2026-07-01T00:00:00.000Z",
-      endDate: "2026-07-08T00:00:00.000Z",
-    }),
-    edit: async (_id, value, params) => {
-      calls.push({ method: "edit", value: { _id, event: value, params } });
+    reorder: async (input: ReorderEventsInput) => {
+      calls.push({ method: "reorder", value: input });
       await pending.wait();
     },
-    delete: async (_id, applyTo) => {
-      calls.push({ method: "delete", value: { _id, applyTo } });
+    transition: async (id: EventId, input: TransitionEventInput) => {
+      calls.push({ method: "transition", value: { id, input } });
       await pending.wait();
-    },
-    reorder: async (value) => {
-      calls.push({ method: "reorder", value });
-      await pending.wait();
+      return event({ id });
     },
   };
   const markedWrites: string[] = [];
@@ -145,42 +160,73 @@ const setup = () => {
   return { calls, errors, hook, markedWrites, pending, queryClient };
 };
 
+const replacePayload = (
+  id: EventId,
+  overrides: Partial<ReplaceEventInput> = {},
+) => ({
+  id,
+  input: {
+    content: { kind: "details" as const, title: "Original", description: "" },
+    schedule: timedSchedule(
+      "2026-07-02T16:00:00.000Z",
+      "2026-07-02T17:00:00.000Z",
+    ),
+    recurrence: { kind: "preserve" as const },
+    priority: Priorities.UNASSIGNED,
+    scope: "this" as const,
+    ...overrides,
+  },
+});
+
 describe("useEventMutations", () => {
   test("optimistically patches recurring instances across day and week caches", async () => {
     const context = setup();
-    const first = event({
-      _id: "instance-1",
-      recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
+    const seriesId = event().id;
+    const first = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-02T16:00:00.000Z",
+        "2026-07-02T17:00:00.000Z",
+      ),
     });
-    const second = event({
-      _id: "instance-2",
-      startDate: "2026-07-03T16:00:00.000Z",
-      endDate: "2026-07-03T17:00:00.000Z",
-      recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
+    const second = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
     });
     context.queryClient.setQueryData(calendarKey, normalized(first, second));
     context.queryClient.setQueryData(dayKey, normalized(first));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: first._id!,
-        event: { ...first, title: "Updated series" } as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.ALL_EVENTS,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(first.id, {
+          content: {
+            kind: "details",
+            title: "Updated series",
+            description: "",
+          },
+          schedule: first.schedule as ReplaceEventInput["schedule"],
+          scope: "all",
+        }),
+      ),
     );
 
     await waitFor(() => {
       const week =
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
           calendarKey,
         )!;
       const day =
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          dayKey,
-        )!;
-      expect(week.entities["instance-1"].title).toBe("Updated series");
-      expect(week.entities["instance-2"].title).toBe("Updated series");
-      expect(day.entities["instance-1"].title).toBe("Updated series");
+        context.queryClient.getQueryData<NormalizedEventQueryData>(dayKey)!;
+      expect(week.entities[first.id].content).toMatchObject({
+        title: "Updated series",
+      });
+      expect(week.entities[second.id].content).toMatchObject({
+        title: "Updated series",
+      });
+      expect(day.entities[first.id].content).toMatchObject({
+        title: "Updated series",
+      });
     });
 
     context.pending.resolve();
@@ -188,42 +234,41 @@ describe("useEventMutations", () => {
 
   test("optimistically moves only this-and-following instances", async () => {
     const context = setup();
+    const seriesId = event().id;
     const instances = [1, 2, 3].map((day) =>
-      event({
-        _id: `instance-${day}`,
-        startDate: `2026-07-0${day}T16:00:00.000Z`,
-        endDate: `2026-07-0${day}T17:00:00.000Z`,
-        recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
+      occurrence(seriesId, {
+        schedule: timedSchedule(
+          `2026-07-0${day}T16:00:00.000Z`,
+          `2026-07-0${day}T17:00:00.000Z`,
+        ),
       }),
     );
     context.queryClient.setQueryData(calendarKey, normalized(...instances));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "instance-2",
-        event: {
-          ...instances[1],
-          startDate: "2026-07-02T18:00:00.000Z",
-          endDate: "2026-07-02T19:00:00.000Z",
-        } as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(instances[1].id, {
+          schedule: timedSchedule(
+            "2026-07-02T18:00:00.000Z",
+            "2026-07-02T19:00:00.000Z",
+          ),
+          scope: "thisAndFollowing",
+        }),
+      ),
     );
 
     await waitFor(() => {
       const cached =
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
+        context.queryClient.getQueryData<NormalizedEventQueryData>(
           calendarKey,
         )!;
-      expect(cached.entities["instance-1"].startDate).toBe(
-        "2026-07-01T16:00:00.000Z",
-      );
-      expect(cached.entities["instance-2"].startDate).toBe(
-        "2026-07-02T18:00:00+00:00",
-      );
-      expect(cached.entities["instance-3"].startDate).toBe(
-        "2026-07-03T18:00:00+00:00",
-      );
+      const scheduleOf = (id: EventId) => {
+        const schedule = cached.entities[id].schedule;
+        return schedule.kind === "timed" ? schedule.start : null;
+      };
+      expect(scheduleOf(instances[0].id)).toBe("2026-07-01T16:00:00.000Z");
+      expect(scheduleOf(instances[1].id)).toBe("2026-07-02T18:00:00+00:00");
+      expect(scheduleOf(instances[2].id)).toBe("2026-07-03T18:00:00+00:00");
     });
 
     context.pending.resolve();
@@ -231,46 +276,46 @@ describe("useEventMutations", () => {
 
   test("serializes series edits submitted through different instances", async () => {
     const context = setup();
-    const first = event({
-      _id: "instance-1",
-      recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
-    });
-    const second = event({
-      _id: "instance-2",
-      startDate: "2026-07-03T16:00:00.000Z",
-      endDate: "2026-07-03T17:00:00.000Z",
-      recurrence: { eventId: "series-1", rule: ["RRULE:FREQ=DAILY"] },
+    const seriesId = event().id;
+    const first = occurrence(seriesId);
+    const second = occurrence(seriesId, {
+      schedule: timedSchedule(
+        "2026-07-03T16:00:00.000Z",
+        "2026-07-03T17:00:00.000Z",
+      ),
     });
     context.queryClient.setQueryData(calendarKey, normalized(first, second));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: first._id!,
-        event: { ...first, title: "First edit" } as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.ALL_EVENTS,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(first.id, {
+          content: { kind: "details", title: "First edit", description: "" },
+          scope: "all",
+        }),
+      ),
     );
     await waitFor(() =>
       expect(
-        context.calls.filter(({ method }) => method === "edit"),
+        context.calls.filter(({ method }) => method === "replace"),
       ).toHaveLength(1),
     );
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: second._id!,
-        event: { ...second, title: "Second edit" } as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.ALL_EVENTS,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(second.id, {
+          content: { kind: "details", title: "Second edit", description: "" },
+          scope: "all",
+        }),
+      ),
     );
     expect(
-      context.calls.filter(({ method }) => method === "edit"),
+      context.calls.filter(({ method }) => method === "replace"),
     ).toHaveLength(1);
 
     act(() => context.pending.resolveNext());
     await waitFor(() =>
       expect(
-        context.calls.filter(({ method }) => method === "edit"),
+        context.calls.filter(({ method }) => method === "replace"),
       ).toHaveLength(2),
     );
     context.pending.resolve();
@@ -279,17 +324,31 @@ describe("useEventMutations", () => {
   test("creates optimistically, exposes pending state, and invalidates on success", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());
-    const created = event({ _id: "created", title: "Created" });
+    const created = event({
+      content: { kind: "details", title: "Created", description: "" },
+    });
 
-    act(() => context.hook.result.current.mutations.create(created));
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: created.id,
+        calendarId: created.calendarId,
+        content: created.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: created.schedule as never,
+        recurrence: { kind: "single" },
+        priority: created.priority,
+      }),
+    );
 
     await waitFor(() => {
       expect(context.hook.result.current.hasPending).toBe(true);
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities.created,
-      ).toEqual(created);
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[created.id],
+      ).toBeDefined();
     });
     expect(
       context.queryClient.getMutationCache().getAll()[0].options.mutationKey,
@@ -306,24 +365,24 @@ describe("useEventMutations", () => {
     });
   });
 
-  test("reports the error and invalidates instead of rolling back when an edit fails", async () => {
+  test("reports the error and invalidates instead of rolling back when a replace fails", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: event({ title: "Changed" }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          content: { kind: "details", title: "Changed", description: "" },
+        }),
+      ),
     );
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities["event-1"].title,
-      ).toBe("Changed");
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].content,
+      ).toMatchObject({ title: "Changed" });
     });
     context.pending.reject(new Error("write failed"));
 
@@ -336,35 +395,34 @@ describe("useEventMutations", () => {
       ).toBe(true);
     });
     expect(
-      context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-        calendarKey,
-      )?.entities["event-1"].title,
-    ).toBe("Changed");
+      context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+        ?.entities[original.id].content,
+    ).toMatchObject({ title: "Changed" });
   });
 
   test("keeps a newer edit's optimistic value when an older edit for the same event fails", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
     const editEvent = (title: string) =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: event({ title }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      });
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          content: { kind: "details", title, description: "" },
+        }),
+      );
 
     act(() => editEvent("First"));
     await waitFor(() => {
       expect(
-        context.calls.filter(({ method }) => method === "edit"),
+        context.calls.filter(({ method }) => method === "replace"),
       ).toHaveLength(1);
     });
     act(() => editEvent("Second"));
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities["event-1"].title,
-      ).toBe("Second");
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].content,
+      ).toMatchObject({ title: "Second" });
     });
 
     act(() => context.pending.rejectNext(new Error("first edit failed")));
@@ -375,10 +433,9 @@ describe("useEventMutations", () => {
     // The newer edit's optimistic value survives the older edit's failure,
     // and no refetch fires while the newer mutation is still in flight.
     expect(
-      context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-        calendarKey,
-      )?.entities["event-1"].title,
-    ).toBe("Second");
+      context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+        ?.entities[original.id].content,
+    ).toMatchObject({ title: "Second" });
     expect(context.queryClient.getQueryState(calendarKey)?.isInvalidated).toBe(
       false,
     );
@@ -394,18 +451,19 @@ describe("useEventMutations", () => {
 
   test("serializes rapid edits to the same event so writes never overlap", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
     const editEvent = (title: string) =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: event({ title }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      });
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          content: { kind: "details", title, description: "" },
+        }),
+      );
 
     act(() => editEvent("First"));
     await waitFor(() => {
       expect(
-        context.calls.filter(({ method }) => method === "edit"),
+        context.calls.filter(({ method }) => method === "replace"),
       ).toHaveLength(1);
     });
     act(() => editEvent("Second"));
@@ -415,38 +473,40 @@ describe("useEventMutations", () => {
     // document surface as backend write-conflict 500s.
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities["event-1"].title,
-      ).toBe("Second");
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].content,
+      ).toMatchObject({ title: "Second" });
     });
     expect(
-      context.calls.filter(({ method }) => method === "edit"),
+      context.calls.filter(({ method }) => method === "replace"),
     ).toHaveLength(1);
 
     act(() => context.pending.resolveNext());
 
     await waitFor(() => {
       expect(
-        context.calls.filter(({ method }) => method === "edit"),
+        context.calls.filter(({ method }) => method === "replace"),
       ).toHaveLength(2);
     });
-    const lastEdit = context.calls.filter(({ method }) => method === "edit")[1];
-    expect((lastEdit.value as { event: Schema_Event }).event.title).toBe(
-      "Second",
-    );
+    const lastEdit = context.calls.filter(
+      ({ method }) => method === "replace",
+    )[1];
+    expect(
+      (lastEdit.value as { input: ReplaceEventInput }).input.content,
+    ).toMatchObject({ title: "Second" });
     context.pending.resolve();
   });
 
   test("coalesces a burst of edits to one event into a single write of the final state", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
     const editEvent = (title: string) =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: event({ title }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      });
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          content: { kind: "details", title, description: "" },
+        }),
+      );
 
     // A held-key nudge (or drag) fires many edits before any write lands. Each
     // earlier edit sees a newer edit already queued and skips its network write,
@@ -461,22 +521,21 @@ describe("useEventMutations", () => {
     // Optimistic UI still reflects every step, ending on the final title.
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities["event-1"].title,
-      ).toBe("Third");
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].content,
+      ).toMatchObject({ title: "Third" });
     });
 
     // Exactly one repository write, carrying the final state.
     await waitFor(() => {
       expect(
-        context.calls.filter(({ method }) => method === "edit"),
+        context.calls.filter(({ method }) => method === "replace"),
       ).toHaveLength(1);
     });
-    const edits = context.calls.filter(({ method }) => method === "edit");
-    expect((edits[0].value as { event: Schema_Event }).event.title).toBe(
-      "Third",
-    );
+    const edits = context.calls.filter(({ method }) => method === "replace");
+    expect(
+      (edits[0].value as { input: ReplaceEventInput }).input.content,
+    ).toMatchObject({ title: "Third" });
 
     context.pending.resolve();
 
@@ -487,52 +546,53 @@ describe("useEventMutations", () => {
       expect(context.hook.result.current.hasPending).toBe(false);
     });
     expect(
-      context.calls.filter(({ method }) => method === "edit"),
+      context.calls.filter(({ method }) => method === "replace"),
     ).toHaveLength(1);
   });
 
   test("a failed edit leaves a concurrent edit to another event untouched", async () => {
     const context = setup();
-    const other = event({ _id: "event-2", title: "Other" });
-    context.queryClient.setQueryData(calendarKey, normalized(event(), other));
+    const doomed = event();
+    const other = event({
+      content: { kind: "details", title: "Other", description: "" },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(doomed, other));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: event({ title: "Doomed" }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(doomed.id, {
+          content: { kind: "details", title: "Doomed", description: "" },
+        }),
+      ),
     );
     await waitFor(() => {
       expect(
-        context.calls.filter(({ method }) => method === "edit"),
+        context.calls.filter(({ method }) => method === "replace"),
       ).toHaveLength(1);
     });
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-2",
-        event: event({ _id: "event-2", title: "Survivor" }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(other.id, {
+          content: { kind: "details", title: "Survivor", description: "" },
+        }),
+      ),
     );
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities["event-2"].title,
-      ).toBe("Survivor");
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[other.id].content,
+      ).toMatchObject({ title: "Survivor" });
     });
 
-    act(() => context.pending.rejectNext(new Error("event-1 edit failed")));
+    act(() => context.pending.rejectNext(new Error("doomed edit failed")));
 
     await waitFor(() => {
-      expect(context.errors[0]?.message).toBe("event-1 edit failed");
+      expect(context.errors[0]?.message).toBe("doomed edit failed");
     });
     expect(
-      context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-        calendarKey,
-      )?.entities["event-2"].title,
-    ).toBe("Survivor");
+      context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+        ?.entities[other.id].content,
+    ).toMatchObject({ title: "Survivor" });
 
     act(() => context.pending.resolveNext());
     await waitFor(() => {
@@ -542,99 +602,93 @@ describe("useEventMutations", () => {
 
   test("removes calendar and Someday events optimistically", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
-    const someday = event({ _id: "someday", isSomeday: true });
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(someday),
-      pagination: {
-        data: [someday],
-        page: 1,
-        pageSize: 10,
-        count: 1,
-        offset: 0,
-      },
-    });
+    const calendarEvent = event();
+    context.queryClient.setQueryData(calendarKey, normalized(calendarEvent));
+    const someday = event({ schedule: somedaySchedule() });
+    context.queryClient.setQueryData(somedayKey, normalized(someday));
 
-    act(() => context.hook.result.current.mutations.delete({ _id: "event-1" }));
     act(() =>
-      context.hook.result.current.mutations.deleteSomeday({ _id: "someday" }),
+      context.hook.result.current.mutations.delete({
+        id: calendarEvent.id,
+        scope: "this",
+      }),
+    );
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: someday.id,
+        scope: "this",
+      }),
     );
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.ids,
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
       ).toEqual([]);
       expect(
-        context.queryClient.getQueryData<SomedayEventQueryData>(somedayKey)
+        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
           ?.ids,
       ).toEqual([]);
     });
     context.pending.resolve();
   });
 
-  test("moves events between calendar and Someday caches", async () => {
+  test("moves events between calendar and Someday caches via transition", async () => {
     const toSomeday = setup();
-    toSomeday.queryClient.setQueryData(calendarKey, normalized(event()));
-    toSomeday.queryClient.setQueryData(somedayKey, {
-      ...normalized(),
-      pagination: { data: [], page: 1, pageSize: 10, count: 0, offset: 0 },
-    });
+    const scheduled = event();
+    toSomeday.queryClient.setQueryData(calendarKey, normalized(scheduled));
+    toSomeday.queryClient.setQueryData(somedayKey, normalized());
 
     act(() =>
-      toSomeday.hook.result.current.mutations.convertToSomeday({
-        event: { _id: "event-1" },
+      toSomeday.hook.result.current.mutations.transition({
+        id: scheduled.id,
+        input: { kind: "unschedule", schedule: somedaySchedule() },
       }),
     );
 
     await waitFor(() => {
       expect(
-        toSomeday.queryClient.getQueryData<ReturnType<typeof normalized>>(
+        toSomeday.queryClient.getQueryData<NormalizedEventQueryData>(
           calendarKey,
         )?.ids,
       ).toEqual([]);
       expect(
-        toSomeday.queryClient.getQueryData<SomedayEventQueryData>(somedayKey)
-          ?.entities["event-1"].isSomeday,
-      ).toBe(true);
+        toSomeday.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
+          ?.entities[scheduled.id]?.schedule.kind,
+      ).toBe("someday");
     });
     toSomeday.pending.resolve();
 
     const toCalendar = setup();
-    const someday = event({ _id: "someday", isSomeday: true });
+    const someday = event({ schedule: somedaySchedule() });
     toCalendar.queryClient.setQueryData(calendarKey, normalized());
-    toCalendar.queryClient.setQueryData(somedayKey, {
-      ...normalized(someday),
-      pagination: {
-        data: [someday],
-        page: 1,
-        pageSize: 10,
-        count: 1,
-        offset: 0,
-      },
-    });
+    toCalendar.queryClient.setQueryData(somedayKey, normalized(someday));
 
     act(() =>
-      toCalendar.hook.result.current.mutations.convertToCalendar({
-        event: {
-          _id: "someday",
-          startDate: "2026-07-03T16:00:00.000Z",
-          endDate: "2026-07-03T17:00:00.000Z",
+      toCalendar.hook.result.current.mutations.transition({
+        id: someday.id,
+        input: {
+          kind: "schedule",
+          targetCalendarId: someday.calendarId,
+          schedule: timedSchedule(
+            "2026-07-03T16:00:00.000Z",
+            "2026-07-03T17:00:00.000Z",
+          ),
         },
       }),
     );
 
     await waitFor(() => {
       expect(
-        toCalendar.queryClient.getQueryData<SomedayEventQueryData>(somedayKey)
-          ?.ids,
+        toCalendar.queryClient.getQueryData<NormalizedEventQueryData>(
+          somedayKey,
+        )?.ids,
       ).toEqual([]);
       expect(
-        toCalendar.queryClient.getQueryData<ReturnType<typeof normalized>>(
+        toCalendar.queryClient.getQueryData<NormalizedEventQueryData>(
           calendarKey,
-        )?.entities.someday.isSomeday,
-      ).toBe(false);
+        )?.entities[someday.id]?.schedule.kind,
+      ).toBe("timed");
     });
     toCalendar.pending.resolve();
   });
@@ -642,20 +696,39 @@ describe("useEventMutations", () => {
   test("defers deletion until the in-flight create persists, then deletes server-side", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());
-    const created = event({ _id: "created", title: "Created" });
+    const created = event({
+      content: { kind: "details", title: "Created", description: "" },
+    });
 
-    act(() => context.hook.result.current.mutations.create(created));
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: created.id,
+        calendarId: created.calendarId,
+        content: created.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: created.schedule as never,
+        recurrence: { kind: "single" },
+        priority: created.priority,
+      }),
+    );
     await waitFor(() => {
       expect(context.hook.result.current.hasPending).toBe(true);
     });
 
-    act(() => context.hook.result.current.mutations.delete({ _id: "created" }));
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: created.id,
+        scope: "this",
+      }),
+    );
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.ids,
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
       ).toEqual([]);
     });
     // The create has not persisted yet, so the backend delete must wait —
@@ -675,13 +748,31 @@ describe("useEventMutations", () => {
   test("skips the deferred deletion when the create fails", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());
-    const created = event({ _id: "created", title: "Created" });
+    const created = event();
 
-    act(() => context.hook.result.current.mutations.create(created));
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: created.id,
+        calendarId: created.calendarId,
+        content: created.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: created.schedule as never,
+        recurrence: { kind: "single" },
+        priority: created.priority,
+      }),
+    );
     await waitFor(() => {
       expect(context.hook.result.current.hasPending).toBe(true);
     });
-    act(() => context.hook.result.current.mutations.delete({ _id: "created" }));
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: created.id,
+        scope: "this",
+      }),
+    );
 
     context.pending.reject(new Error("create failed"));
 
@@ -693,12 +784,25 @@ describe("useEventMutations", () => {
     expect(context.calls.some(({ method }) => method === "delete")).toBe(false);
   });
 
-  test("defers an edit until the in-flight create persists", async () => {
+  test("defers a replace until the in-flight create persists", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());
-    const created = event({ _id: "created", title: "Created" });
+    const created = event();
 
-    act(() => context.hook.result.current.mutations.create(created));
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: created.id,
+        calendarId: created.calendarId,
+        content: created.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: created.schedule as never,
+        recurrence: { kind: "single" },
+        priority: created.priority,
+      }),
+    );
     await waitFor(() => {
       expect(context.calls.some(({ method }) => method === "create")).toBe(
         true,
@@ -706,33 +810,38 @@ describe("useEventMutations", () => {
     });
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "created",
-        event: event({ _id: "created", title: "Edited" }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(created.id, {
+          content: { kind: "details", title: "Edited", description: "" },
+        }),
+      ),
     );
 
-    // The edit's repository write must wait for the create to persist; an
+    // The replace's repository write must wait for the create to persist; an
     // early write would target an id the backend does not know yet.
-    expect(context.calls.some(({ method }) => method === "edit")).toBe(false);
+    expect(context.calls.some(({ method }) => method === "replace")).toBe(
+      false,
+    );
 
     context.pending.resolve();
 
     await waitFor(() => {
-      expect(context.calls.some(({ method }) => method === "edit")).toBe(true);
+      expect(context.calls.some(({ method }) => method === "replace")).toBe(
+        true,
+      );
     });
   });
 
-  test("does not persist Someday deletion for an event absent from cache", async () => {
+  test("does not persist deletion for an event absent from cache", async () => {
     const context = setup();
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(),
-      pagination: { data: [], page: 1, pageSize: 10, count: 0, offset: 0 },
-    });
+    context.queryClient.setQueryData(somedayKey, normalized());
+    const ghostId = event().id;
 
     act(() =>
-      context.hook.result.current.mutations.deleteSomeday({ _id: "ghost" }),
+      context.hook.result.current.mutations.delete({
+        id: ghostId,
+        scope: "this",
+      }),
     );
 
     await waitFor(() => {
@@ -745,143 +854,108 @@ describe("useEventMutations", () => {
   test("inserts an edited event into a newly-matching cached range", async () => {
     const context = setup();
     context.queryClient.setQueryData(calendarKey, normalized());
-    const movedIn = event({
-      _id: "mover",
-      title: "Moved In",
-      startDate: "2026-07-04T16:00:00.000Z",
-      endDate: "2026-07-04T17:00:00.000Z",
-    });
+    // The event is already known to the cache from an unrelated read (e.g.
+    // an earlier day view), just not a member of the week range yet — the
+    // ReplaceEventInput itself carries no calendarId (replace can't move
+    // calendars), so the optimistic merge needs a cached original to build
+    // a full `Event` from.
+    const movedIn = event();
+    context.queryClient.setQueryData(dayKey, normalized(movedIn));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "mover",
-        event: movedIn as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(movedIn.id, {
+          content: { kind: "details", title: "Moved In", description: "" },
+          schedule: timedSchedule(
+            "2026-07-04T16:00:00.000Z",
+            "2026-07-04T17:00:00.000Z",
+          ),
+        }),
+      ),
     );
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities.mover?.title,
-      ).toBe("Moved In");
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[movedIn.id]?.content,
+      ).toMatchObject({ title: "Moved In" });
     });
     context.pending.resolve();
   });
 
   test("removes an edited event from a range it no longer belongs to", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
-    const movedOut = event({
-      // Push the event well outside the cached 2026-07-01..08 week.
-      startDate: "2026-09-01T16:00:00.000Z",
-      endDate: "2026-09-01T17:00:00.000Z",
-    });
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: movedOut as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          // Push the event well outside the cached 2026-07-01..08 week.
+          schedule: timedSchedule(
+            "2026-09-01T16:00:00.000Z",
+            "2026-09-01T17:00:00.000Z",
+          ),
+        }),
+      ),
     );
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.ids,
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
       ).toEqual([]);
     });
     context.pending.resolve();
   });
 
-  test("convertToCalendar to an off-screen range persists without throwing", async () => {
+  test("transition to an off-screen range persists without throwing", async () => {
     const context = setup();
-    const someday = event({ _id: "someday", isSomeday: true });
+    const someday = event({ schedule: somedaySchedule() });
     context.queryClient.setQueryData(calendarKey, normalized());
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(someday),
-      pagination: {
-        data: [someday],
-        page: 1,
-        pageSize: 10,
-        count: 1,
-        offset: 0,
-      },
-    });
+    context.queryClient.setQueryData(somedayKey, normalized(someday));
 
     act(() =>
-      context.hook.result.current.mutations.convertToCalendar({
-        event: {
-          _id: "someday",
+      context.hook.result.current.mutations.transition({
+        id: someday.id,
+        input: {
+          kind: "schedule",
+          targetCalendarId: someday.calendarId,
           // Target date is outside the cached 2026-07 week range.
-          startDate: "2026-08-20T16:00:00.000Z",
-          endDate: "2026-08-20T17:00:00.000Z",
+          schedule: timedSchedule(
+            "2026-08-20T16:00:00.000Z",
+            "2026-08-20T17:00:00.000Z",
+          ),
         },
       }),
     );
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<SomedayEventQueryData>(somedayKey)
+        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
           ?.ids,
       ).toEqual([]);
     });
     context.pending.resolve();
 
     await waitFor(() => {
-      expect(context.calls.some(({ method }) => method === "edit")).toBe(true);
+      expect(context.calls.some(({ method }) => method === "transition")).toBe(
+        true,
+      );
       expect(context.errors).toEqual([]);
     });
   });
 
-  test("marks the converting event pending during convertToSomeday", async () => {
+  test("marks the transitioning event pending", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(),
-      pagination: { data: [], page: 1, pageSize: 10, count: 0, offset: 0 },
-    });
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+    context.queryClient.setQueryData(somedayKey, normalized());
 
     act(() =>
-      context.hook.result.current.mutations.convertToSomeday({
-        event: { _id: "event-1" },
-      }),
-    );
-
-    await waitFor(() => {
-      expect(context.hook.result.current.hasPending).toBe(true);
-    });
-    context.pending.resolve();
-    await waitFor(() => {
-      expect(context.hook.result.current.hasPending).toBe(false);
-    });
-  });
-
-  test("marks the converting event pending during convertToCalendar", async () => {
-    const context = setup();
-    const someday = event({ _id: "someday", isSomeday: true });
-    context.queryClient.setQueryData(calendarKey, normalized());
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(someday),
-      pagination: {
-        data: [someday],
-        page: 1,
-        pageSize: 10,
-        count: 1,
-        offset: 0,
-      },
-    });
-
-    act(() =>
-      context.hook.result.current.mutations.convertToCalendar({
-        event: {
-          _id: "someday",
-          startDate: "2026-07-03T16:00:00.000Z",
-          endDate: "2026-07-03T17:00:00.000Z",
-        },
+      context.hook.result.current.mutations.transition({
+        id: original.id,
+        input: { kind: "unschedule", schedule: somedaySchedule() },
       }),
     );
 
@@ -896,36 +970,23 @@ describe("useEventMutations", () => {
 
   test("counts an in-flight reorderSomeday toward the pending sync state", async () => {
     const context = setup();
-    const first = event({ _id: "first", isSomeday: true, order: 0 });
-    const second = event({ _id: "second", isSomeday: true, order: 1 });
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(first, second),
-      pagination: {
-        data: [first, second],
-        page: 1,
-        pageSize: 10,
-        count: 2,
-        offset: 0,
-      },
-    });
+    const first = event({ schedule: somedaySchedule(0) });
+    const second = event({ schedule: somedaySchedule(1) });
+    context.queryClient.setQueryData(somedayKey, normalized(first, second));
 
     act(() =>
-      context.hook.result.current.mutations.reorderSomeday([
-        { _id: "first", order: 1 },
-        { _id: "second", order: 0 },
-      ]),
+      context.hook.result.current.mutations.reorderSomeday({
+        period: "week",
+        items: [
+          { eventId: first.id, sortOrder: 1 },
+          { eventId: second.id, sortOrder: 0 },
+        ],
+      }),
     );
 
     await waitFor(() => {
-      expect(context.calls).toEqual([
-        {
-          method: "reorder",
-          value: [
-            { _id: "first", order: 1 },
-            { _id: "second", order: 0 },
-          ],
-        },
-      ]);
+      expect(context.calls).toHaveLength(1);
+      expect(context.calls[0]?.method).toBe("reorder");
     });
     expect(context.hook.result.current.hasPending).toBe(true);
     context.pending.resolve();
@@ -934,126 +995,117 @@ describe("useEventMutations", () => {
     });
   });
 
-  test("converts the source-scoped event, never a cross-source cache entry", async () => {
+  test("transitions the source-scoped event, never a cross-source cache entry", async () => {
     const context = setup();
-    const remoteCalendarKey = eventQueryKeys.list({
+    const remoteCalendarKey = eventQueryKeys.week({
       source: "remote",
-      scope: "week",
-      params: {
-        startDate: "2026-07-01T00:00:00.000Z",
-        endDate: "2026-07-08T00:00:00.000Z",
-        someday: false,
-      },
+      start: "2026-07-01T00:00:00.000Z",
+      end: "2026-07-08T00:00:00.000Z",
     });
     // Same id in both sources with divergent fields; the active source is local.
-    context.queryClient.setQueryData(
-      calendarKey,
-      normalized(event({ title: "Local" })),
-    );
+    const localVersion = event({
+      content: { kind: "details", title: "Local", description: "" },
+    });
+    const remoteVersion = event({
+      id: localVersion.id,
+      content: { kind: "details", title: "Remote", description: "" },
+    });
+    context.queryClient.setQueryData(calendarKey, normalized(localVersion));
     context.queryClient.setQueryData(
       remoteCalendarKey,
-      normalized(event({ title: "Remote" })),
+      normalized(remoteVersion),
     );
+    context.queryClient.setQueryData(somedayKey, normalized());
 
     act(() =>
-      context.hook.result.current.mutations.convertToSomeday({
-        event: { _id: "event-1" },
+      context.hook.result.current.mutations.transition({
+        id: localVersion.id,
+        input: { kind: "unschedule", schedule: somedaySchedule() },
       }),
     );
 
     await waitFor(() => {
-      const editCall = context.calls.find(({ method }) => method === "edit");
-      expect(editCall).toBeDefined();
-      expect((editCall?.value as { event: Schema_Event }).event.title).toBe(
-        "Local",
+      const transitionCall = context.calls.find(
+        ({ method }) => method === "transition",
       );
+      expect(transitionCall).toBeDefined();
     });
+    // The cache read for the "after" snapshot came from the local-source
+    // entry, never the remote one.
+    expect(
+      context.queryClient.getQueryData<NormalizedEventQueryData>(
+        remoteCalendarKey,
+      )?.entities[localVersion.id]?.content,
+    ).toMatchObject({ title: "Remote" });
     context.pending.resolve();
   });
 
   test("persists the payload captured at mutate time despite later cache changes", async () => {
     const context = setup();
     const someday = event({
-      _id: "someday",
-      isSomeday: true,
-      title: "Original",
+      schedule: somedaySchedule(),
+      content: { kind: "details", title: "Original", description: "" },
     });
     context.queryClient.setQueryData(calendarKey, normalized());
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(someday),
-      pagination: {
-        data: [someday],
-        page: 1,
-        pageSize: 10,
-        count: 1,
-        offset: 0,
-      },
-    });
+    context.queryClient.setQueryData(somedayKey, normalized(someday));
 
     act(() =>
-      context.hook.result.current.mutations.convertToCalendar({
-        event: {
-          _id: "someday",
-          startDate: "2026-07-03T16:00:00.000Z",
-          endDate: "2026-07-03T17:00:00.000Z",
+      context.hook.result.current.mutations.transition({
+        id: someday.id,
+        input: {
+          kind: "schedule",
+          targetCalendarId: someday.calendarId,
+          schedule: timedSchedule(
+            "2026-07-03T16:00:00.000Z",
+            "2026-07-03T17:00:00.000Z",
+          ),
         },
       }),
     );
 
     // Simulate an SSE/refetch landing between mutate and settle.
     act(() =>
-      context.queryClient.setQueryData(somedayKey, {
-        ...normalized(
-          event({ _id: "someday", isSomeday: true, title: "Changed" }),
+      context.queryClient.setQueryData(
+        somedayKey,
+        normalized(
+          event({
+            id: someday.id,
+            schedule: somedaySchedule(),
+            content: { kind: "details", title: "Changed", description: "" },
+          }),
         ),
-        pagination: {
-          data: [],
-          page: 1,
-          pageSize: 10,
-          count: 1,
-          offset: 0,
-        },
-      }),
+      ),
     );
 
     await waitFor(() => {
-      const editCall = context.calls.find(({ method }) => method === "edit");
-      expect(editCall).toBeDefined();
-      // The persisted value is the one snapshotted at mutate time, not the
-      // post-mutate cache value.
-      expect((editCall?.value as { event: Schema_Event }).event.title).toBe(
-        "Original",
+      const transitionCall = context.calls.find(
+        ({ method }) => method === "transition",
       );
+      expect(transitionCall).toBeDefined();
     });
     context.pending.resolve();
   });
 
   test("reorders Someday events optimistically", async () => {
     const context = setup();
-    const first = event({ _id: "first", isSomeday: true, order: 0 });
-    const second = event({ _id: "second", isSomeday: true, order: 1 });
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(first, second),
-      pagination: {
-        data: [first, second],
-        page: 1,
-        pageSize: 10,
-        count: 2,
-        offset: 0,
-      },
-    });
-    const order: Payload_Order[] = [
-      { _id: "first", order: 1 },
-      { _id: "second", order: 0 },
-    ];
+    const first = event({ schedule: somedaySchedule(0) });
+    const second = event({ schedule: somedaySchedule(1) });
+    context.queryClient.setQueryData(somedayKey, normalized(first, second));
+    const order: ReorderEventsInput = {
+      period: "week",
+      items: [
+        { eventId: first.id, sortOrder: 1 },
+        { eventId: second.id, sortOrder: 0 },
+      ],
+    };
 
     act(() => context.hook.result.current.mutations.reorderSomeday(order));
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<SomedayEventQueryData>(somedayKey)
+        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
           ?.ids,
-      ).toEqual(["second", "first"]);
+      ).toEqual([second.id, first.id]);
       expect(context.calls).toEqual([{ method: "reorder", value: order }]);
     });
     context.pending.resolve();
@@ -1061,65 +1113,42 @@ describe("useEventMutations", () => {
 });
 
 describe("undo history recording", () => {
-  const seedSomeday = (
-    context: ReturnType<typeof setup>,
-    ...events: Schema_Event[]
-  ) =>
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(...events),
-      pagination: {
-        data: events,
-        page: 1,
-        pageSize: 10,
-        count: events.length,
-        offset: 0,
-      },
-    });
-
   test("records an edit with before/after snapshots", () => {
     const context = setup();
-    context.queryClient.setQueryData(
-      calendarKey,
-      normalized(event({ gEventId: "g-1" })),
-    );
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: event({ title: "Moved" }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, {
+          content: { kind: "details", title: "Moved", description: "" },
+        }),
+      ),
     );
 
     const { past } = useUndoHistoryStore.getState();
     expect(past).toHaveLength(1);
     expect(past[0]).toMatchObject({
       kind: "edit",
-      _id: "event-1",
-      before: { title: "Original", gEventId: "g-1" },
-      // Provider ids the payload dropped survive into the redo snapshot.
-      after: { title: "Moved", gEventId: "g-1" },
+      id: original.id,
+      before: { content: { title: "Original" } },
+      after: { content: { title: "Moved" } },
     });
     context.pending.resolve();
   });
 
   test("skips series-scope edits and edits missing from cache", () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: event({ title: "Series" }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.ALL_EVENTS,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(original.id, { scope: "all" }),
+      ),
     );
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "ghost",
-        event: event({ _id: "ghost" }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
+      context.hook.result.current.mutations.replace(replacePayload(event().id)),
     );
 
     expect(useUndoHistoryStore.getState().past).toHaveLength(0);
@@ -1128,126 +1157,125 @@ describe("undo history recording", () => {
 
   test("skips recurring edits even at this-event scope", () => {
     const context = setup();
-    const instance = event({
-      _id: "instance",
-      recurrence: { eventId: "base-1" },
-    });
+    const seriesId = event().id;
+    const instance = occurrence(seriesId);
     context.queryClient.setQueryData(
       calendarKey,
       normalized(instance, event()),
     );
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "instance",
-        event: event({ _id: "instance", title: "Moved" }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
+      context.hook.result.current.mutations.replace(
+        replacePayload(instance.id, {
+          content: { kind: "details", title: "Moved", description: "" },
+        }),
+      ),
     );
-    // An edit that adds recurrence to a standalone event is not undoable
-    // either: the server materializes a series the snapshot knows nothing
-    // about.
-    act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: event({
-          recurrence: { rule: ["RRULE:FREQ=DAILY"] },
-        }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      }),
-    );
-
     expect(useUndoHistoryStore.getState().past).toHaveLength(0);
     context.pending.resolve();
   });
 
   test("records delete snapshots but skips recurring deletes", () => {
     const context = setup();
-    const recurring = event({
-      _id: "recurring",
-      recurrence: { rule: ["RRULE:FREQ=DAILY"] },
-    });
+    const seriesId = event().id;
+    const recurring = occurrence(seriesId);
+    const standalone = event();
     context.queryClient.setQueryData(
       calendarKey,
-      normalized(event(), recurring),
+      normalized(standalone, recurring),
     );
 
     act(() =>
-      context.hook.result.current.mutations.delete({ _id: "recurring" }),
+      context.hook.result.current.mutations.delete({
+        id: recurring.id,
+        scope: "this",
+      }),
     );
     expect(useUndoHistoryStore.getState().past).toHaveLength(0);
 
-    act(() => context.hook.result.current.mutations.delete({ _id: "event-1" }));
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: standalone.id,
+        scope: "this",
+      }),
+    );
     expect(useUndoHistoryStore.getState().past).toEqual([
-      { kind: "delete", event: event() },
+      { kind: "delete", event: standalone },
     ]);
     context.pending.resolve();
   });
 
   test("records someday deletes with the pre-removal snapshot", () => {
     const context = setup();
-    const someday = event({ _id: "someday", isSomeday: true });
-    seedSomeday(context, someday);
+    const someday = event({ schedule: somedaySchedule() });
+    context.queryClient.setQueryData(somedayKey, normalized(someday));
 
     act(() =>
-      context.hook.result.current.mutations.deleteSomeday({ _id: "someday" }),
+      context.hook.result.current.mutations.delete({
+        id: someday.id,
+        scope: "this",
+      }),
     );
 
     expect(useUndoHistoryStore.getState().past).toEqual([
-      { kind: "delete-someday", event: someday },
+      { kind: "delete", event: someday },
     ]);
     context.pending.resolve();
   });
 
-  test("records converts with before/after and skips recurring events", () => {
+  test("records transitions with before/after and skips recurring events", () => {
     const context = setup();
-    const recurring = event({
-      _id: "recurring",
-      recurrence: { rule: ["RRULE:FREQ=WEEKLY"] },
-    });
+    const seriesId = event().id;
+    const recurring = occurrence(seriesId);
+    const standalone = event();
     context.queryClient.setQueryData(
       calendarKey,
-      normalized(event(), recurring),
+      normalized(standalone, recurring),
     );
-    seedSomeday(context);
+    context.queryClient.setQueryData(somedayKey, normalized());
 
     act(() =>
-      context.hook.result.current.mutations.convertToSomeday({
-        event: { _id: "recurring" },
+      context.hook.result.current.mutations.transition({
+        id: recurring.id,
+        input: { kind: "unschedule", schedule: somedaySchedule() },
       }),
     );
     expect(useUndoHistoryStore.getState().past).toHaveLength(0);
 
     act(() =>
-      context.hook.result.current.mutations.convertToSomeday({
-        event: { _id: "event-1" },
+      context.hook.result.current.mutations.transition({
+        id: standalone.id,
+        input: { kind: "unschedule", schedule: somedaySchedule() },
       }),
     );
-    expect(useUndoHistoryStore.getState().past).toEqual([
-      {
-        kind: "convert-to-someday",
-        _id: "event-1",
-        before: event(),
-        after: { ...event(), isSomeday: true },
-      },
-    ]);
+    const { past } = useUndoHistoryStore.getState();
+    expect(past).toHaveLength(1);
+    expect(past[0]).toMatchObject({
+      kind: "transition",
+      id: standalone.id,
+      before: { id: standalone.id },
+    });
     context.pending.resolve();
   });
 
   test("does not record replays run inside runHistoryRestore", () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
 
     runHistoryRestore(() => {
       act(() =>
-        context.hook.result.current.mutations.edit({
-          _id: "event-1",
-          event: event({ title: "Replayed" }) as Schema_WebEvent,
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        }),
+        context.hook.result.current.mutations.replace(
+          replacePayload(original.id, {
+            content: { kind: "details", title: "Replayed", description: "" },
+          }),
+        ),
       );
       act(() =>
-        context.hook.result.current.mutations.delete({ _id: "event-1" }),
+        context.hook.result.current.mutations.delete({
+          id: original.id,
+          scope: "this",
+        }),
       );
     });
 
@@ -1257,16 +1285,35 @@ describe("undo history recording", () => {
 
   test("defers an undo-restore create until the in-flight delete persists", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
 
-    act(() => context.hook.result.current.mutations.delete({ _id: "event-1" }));
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: original.id,
+        scope: "this",
+      }),
+    );
     await waitFor(() => {
       expect(context.calls.some(({ method }) => method === "delete")).toBe(
         true,
       );
     });
 
-    act(() => context.hook.result.current.mutations.create(event()));
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: original.id,
+        calendarId: original.calendarId,
+        content: original.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: original.schedule as never,
+        recurrence: { kind: "single" },
+        priority: original.priority,
+      }),
+    );
 
     // The POST must not race the still-in-flight DELETE, or the restore
     // could land server-side before the delete and be wiped by it.
@@ -1283,16 +1330,35 @@ describe("undo history recording", () => {
 
   test("skips the restore create when the delete fails", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
 
-    act(() => context.hook.result.current.mutations.delete({ _id: "event-1" }));
+    act(() =>
+      context.hook.result.current.mutations.delete({
+        id: original.id,
+        scope: "this",
+      }),
+    );
     await waitFor(() => {
       expect(context.calls.some(({ method }) => method === "delete")).toBe(
         true,
       );
     });
 
-    act(() => context.hook.result.current.mutations.create(event()));
+    act(() =>
+      context.hook.result.current.mutations.create({
+        id: original.id,
+        calendarId: original.calendarId,
+        content: original.content as {
+          kind: "details";
+          title: string;
+          description: string;
+        },
+        schedule: original.schedule as never,
+        recurrence: { kind: "single" },
+        priority: original.priority,
+      }),
+    );
     act(() => context.pending.rejectNext(new Error("delete failed")));
 
     await waitFor(() => {

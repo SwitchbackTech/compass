@@ -1,4 +1,6 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import {
   cleanup,
@@ -8,6 +10,7 @@ import {
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -15,6 +18,12 @@ import { draftActions } from "@web/events/stores/draft.store";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
+
+// draft.store.ts still holds the legacy Schema_Event shape (see its own
+// TODO); these ids are also used to seed the strict-contract `Event` query
+// cache below, so they must satisfy EventIdSchema (real ObjectId shape).
+const EXISTING_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
+const RECURRING_EVENT_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
 
 const draft: Schema_Event = {
   endDate: "2026-05-21",
@@ -61,7 +70,7 @@ describe("FloatingEventForm", () => {
 
   it("deletes an already-saved event on Delete instead of just closing the form", async () => {
     const existingEvent: Schema_Event = {
-      _id: "existing-event-id",
+      _id: EXISTING_EVENT_ID,
       endDate: "2026-05-20T15:00:00.000Z",
       isAllDay: false,
       isSomeday: false,
@@ -74,10 +83,25 @@ describe("FloatingEventForm", () => {
     queryClient.setQueryData(
       eventQueryKeys.day({
         source: "local",
-        startDate: "2026-05-20T00:00:00.000Z",
-        endDate: "2026-05-21T00:00:00.000Z",
+        start: "2026-05-20T00:00:00.000Z",
+        end: "2026-05-21T00:00:00.000Z",
       }),
-      toNormalizedEventQueryData([existingEvent]),
+      toNormalizedEventQueryData([
+        createMockEvent({
+          id: EventIdSchema.parse(EXISTING_EVENT_ID),
+          content: {
+            kind: "details",
+            title: "Existing Event",
+            description: "",
+          },
+          schedule: EventScheduleSchema.parse({
+            kind: "timed",
+            start: "2026-05-20T14:00:00.000Z",
+            end: "2026-05-20T15:00:00.000Z",
+            timeZone: "UTC",
+          }),
+        }),
+      ]),
     );
 
     draftActions.start({
@@ -128,8 +152,8 @@ describe("FloatingEventForm", () => {
           .some(
             (mutation) =>
               mutation.options.mutationKey?.[2] === "delete" &&
-              (mutation.state.variables as { _id?: string })._id ===
-                "existing-event-id",
+              (mutation.state.variables as { id?: string }).id ===
+                EXISTING_EVENT_ID,
           ),
       ).toBe(true),
     );
@@ -137,12 +161,12 @@ describe("FloatingEventForm", () => {
 
   it("asks for a recurrence scope before deleting a recurring day event", async () => {
     const recurringEvent: Schema_Event = {
-      _id: "recurring-event-id",
+      _id: RECURRING_EVENT_ID,
       endDate: "2026-05-20T15:00:00.000Z",
       isAllDay: false,
       isSomeday: false,
       recurrence: {
-        eventId: "series-id",
+        eventId: RECURRING_EVENT_ID,
         rule: ["RRULE:FREQ=WEEKLY"],
       },
       startDate: "2026-05-20T14:00:00.000Z",
@@ -153,10 +177,26 @@ describe("FloatingEventForm", () => {
     queryClient.setQueryData(
       eventQueryKeys.day({
         source: "local",
-        startDate: "2026-05-20T00:00:00.000Z",
-        endDate: "2026-05-21T00:00:00.000Z",
+        start: "2026-05-20T00:00:00.000Z",
+        end: "2026-05-21T00:00:00.000Z",
       }),
-      toNormalizedEventQueryData([recurringEvent]),
+      toNormalizedEventQueryData([
+        createMockEvent({
+          id: EventIdSchema.parse(RECURRING_EVENT_ID),
+          content: {
+            kind: "details",
+            title: "Recurring Event",
+            description: "",
+          },
+          recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+          schedule: EventScheduleSchema.parse({
+            kind: "timed",
+            start: "2026-05-20T14:00:00.000Z",
+            end: "2026-05-20T15:00:00.000Z",
+            timeZone: "UTC",
+          }),
+        }),
+      ]),
     );
     draftActions.start({
       activity: "keyboardEdit",

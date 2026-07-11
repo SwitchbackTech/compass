@@ -2,13 +2,9 @@ import {
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
-import { type Schema_Event } from "@core/types/event.types";
-import { type Dayjs } from "@core/util/date/dayjs";
+import { type Event } from "@core/types/event.contracts";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
-import {
-  type Schema_GridEvent,
-  type Schema_SomedayEventsColumn,
-} from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
   type EventWithDates,
@@ -16,29 +12,44 @@ import {
 } from "@web/common/utils/event/event.util";
 import { categorizeSomedayEvents } from "@web/common/utils/event/someday.event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
+import { eventToSchemaEvent } from "./event.legacy-bridge";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
-const eventsFrom = (data?: NormalizedEventQueryData): Schema_Event[] =>
+const eventsFrom = (data?: NormalizedEventQueryData): Event[] =>
   data?.ids.flatMap((id) => (data.entities[id] ? [data.entities[id]] : [])) ??
   [];
 
-const timedEventsFrom = (events: Schema_Event[]) =>
+// assembleGridEvent/hasEventDates still operate on the legacy Schema_Event
+// shape; bridged via eventToSchemaEvent until the grid renderer converts to
+// `Event` directly. A cache entry with a missing/malformed `schedule` is a
+// bug upstream (normalizeEventList/query seeding), not a case to silently
+// swallow — but it must not crash this shared derivation, since every grid
+// consumer recomputes from it on every render (a throw here becomes a
+// render-crash loop). Log loudly and drop the offending event instead.
+const isValidScheduledEvent = (event: Event): boolean => {
+  const isValid =
+    event.schedule != null && typeof event.schedule.kind === "string";
+  if (!isValid) {
+    console.error(
+      `[event.view-model] dropping event ${event.id ?? "(no id)"} with malformed schedule`,
+      event,
+    );
+  }
+  return isValid;
+};
+
+const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") =>
   events
-    .filter(
-      (event): event is EventWithDates =>
-        !event.isAllDay && hasEventDates(event),
-    )
+    .filter(isValidScheduledEvent)
+    .filter((event) => event.schedule.kind === kind)
+    .map(eventToSchemaEvent)
+    .filter((event): event is EventWithDates => hasEventDates(event))
     .map(assembleGridEvent);
 
-const allDayEventsFrom = (events: Schema_Event[]) =>
-  assignEventsToRow(
-    events
-      .filter(
-        (event): event is EventWithDates =>
-          Boolean(event.isAllDay) && hasEventDates(event),
-      )
-      .map(assembleGridEvent),
-  ).allDayEvents;
+const timedEventsFrom = (events: Event[]) => gridEventsFrom(events, "timed");
+
+const allDayEventsFrom = (events: Event[]) =>
+  assignEventsToRow(gridEventsFrom(events, "allDay")).allDayEvents;
 
 const rowCountFrom = (events: Schema_GridEvent[]) => {
   const rows = events
@@ -49,7 +60,7 @@ const rowCountFrom = (events: Schema_GridEvent[]) => {
 
 type CalendarEventViewModel = {
   entities: NormalizedEventQueryData["entities"];
-  events: Schema_Event[];
+  events: Event[];
   timedEvents: Schema_GridEvent[];
   allDayEvents: Schema_GridEvent[];
   rowCount: number;
@@ -93,23 +104,26 @@ export const deriveCalendarEventViewModel = (
   return result;
 };
 
+/**
+ * `week`/`month` are the two independently-cached someday query results for
+ * the visible period's week and month buckets (kind: "someday"). Each bucket
+ * is already scoped server-side to exactly one (period, anchorDate) pair
+ * (A35), so categorization is just per-bucket sortOrder — see
+ * {@link categorizeSomedayEvents}.
+ */
 export function deriveSomedayEventViewModel(
-  data: NormalizedEventQueryData | undefined,
-  range: { start: Dayjs; end: Dayjs },
+  week: NormalizedEventQueryData | undefined,
+  month: NormalizedEventQueryData | undefined,
 ) {
-  const events =
-    data?.ids.reduce<Schema_SomedayEventsColumn["events"]>((result, id) => {
-      const event = data.entities[id];
-      if (event) result[id] = event;
-      return result;
-    }, {}) ?? {};
-  const categorized = categorizeSomedayEvents(events, range);
+  const categorized = categorizeSomedayEvents(week, month);
   const weekCount = categorized.columns[COLUMN_WEEK].eventIds.length;
   const monthCount = categorized.columns[COLUMN_MONTH].eventIds.length;
   return {
-    events,
-    orderedEvents:
-      data?.ids.flatMap((id) => (events[id] ? [events[id]] : [])) ?? [],
+    events: categorized.events,
+    orderedEvents: [
+      ...categorized.columns[COLUMN_WEEK].eventIds,
+      ...categorized.columns[COLUMN_MONTH].eventIds,
+    ].flatMap((id) => (categorized.events[id] ? [categorized.events[id]] : [])),
     categorized,
     weekCount,
     monthCount,

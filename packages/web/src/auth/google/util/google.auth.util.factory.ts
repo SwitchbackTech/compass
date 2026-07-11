@@ -1,5 +1,4 @@
 import { type Id, type toast } from "react-toastify";
-import { Origin } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import { type ApiError } from "@web/api/api.types";
 import {
@@ -24,7 +23,9 @@ type GoogleAuthUtilDependencies = {
   markGoogleAsRevoked: () => void;
   openStream: () => void;
   refreshEventRepositorySource: (sessionExists?: boolean) => void;
-  removeEventsByOrigin: (origins: Origin[]) => void;
+  // B14: drops cached events belonging to a google-provider calendar (by id),
+  // replacing the legacy origin-based prune.
+  removeEventsByGoogleCalendars: () => void;
   removeEventQueries: () => void;
   syncLocalEventsToCloud: () => Promise<number>;
   toastError: typeof toast.error;
@@ -40,7 +41,7 @@ export function createGoogleAuthUtil({
   markGoogleAsRevoked,
   openStream,
   refreshEventRepositorySource,
-  removeEventsByOrigin,
+  removeEventsByGoogleCalendars,
   removeEventQueries,
   syncLocalEventsToCloud,
   toastError,
@@ -60,7 +61,7 @@ export function createGoogleAuthUtil({
 
     clearUserMetadata();
 
-    removeEventsByOrigin([Origin.GOOGLE, Origin.GOOGLE_IMPORT]);
+    removeEventsByGoogleCalendars();
     removeEventQueries();
 
     closeStream();

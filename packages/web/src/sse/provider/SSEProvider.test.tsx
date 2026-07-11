@@ -25,11 +25,19 @@ mock.module("../client/sse.client", () => {
   };
   const { EventEmitter2 } = eventEmitterModule;
   const sseEmitter = new EventEmitter2({ maxListeners: 20 });
+  const onServerMessage = (
+    type: string,
+    handler: (message: unknown) => void,
+  ) => {
+    sseEmitter.on(type, handler);
+    return () => sseEmitter.off(type, handler);
+  };
   return {
     openStream,
     closeStream,
     getStream,
     sseEmitter,
+    onServerMessage,
   };
 });
 

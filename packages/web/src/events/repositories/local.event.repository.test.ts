@@ -1,9 +1,11 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Event_Core } from "@core/types/event.types";
+import { Priorities } from "@core/constants/core.constants";
 import {
-  isLocalDemoEvent,
-  markLocalDemoEvent,
-} from "@web/common/storage/types/local-event.types";
+  DateTimeSchema,
+  type EventId,
+  TimeZoneSchema,
+} from "@core/types/domain-primitives";
+import { createMockLocalEventRecord } from "@web/__tests__/utils/factories/event.factory";
+import { type OfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { LocalEventRepository } from "@web/events/repositories/local.event.repository";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -11,32 +13,13 @@ const putEvent = mock();
 const getAllEvents = mock();
 const updateEventOrders = mock();
 
-mock.module(
-  "@web/common/storage/offline-data/offline-data.store.registry",
-  () => ({
-    ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
-    getOfflineDataStore: () => ({
-      putEvent,
-      getAllEvents,
-      updateEventOrders,
-    }),
-    initializeOfflineDataStore: mock().mockResolvedValue(undefined),
-    isOfflineDataStoreReady: mock().mockReturnValue(true),
-    resetOfflineDataStore: mock(),
-    resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
-  }),
-);
+const fakeStore = {
+  putEvent,
+  getAllEvents,
+  updateEventOrders,
+} as unknown as OfflineDataStore;
 
-const makeEvent = (overrides: Partial<Event_Core> = {}): Event_Core => ({
-  _id: "event-1",
-  title: "Morning standup",
-  startDate: "2026-05-05T09:00:00.000Z",
-  endDate: "2026-05-05T10:00:00.000Z",
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  user: "unauthenticated",
-  ...overrides,
-});
+const repository = new LocalEventRepository(() => fakeStore);
 
 describe("LocalEventRepository", () => {
   beforeEach(() => {
@@ -45,29 +28,50 @@ describe("LocalEventRepository", () => {
     updateEventOrders.mockClear();
   });
 
-  it("preserves the demo marker when editing a seeded demo event", async () => {
-    const existing = markLocalDemoEvent(makeEvent());
+  it("preserves the demo marker when replacing a seeded demo event", async () => {
+    const existing = createMockLocalEventRecord({}, true);
     getAllEvents.mockResolvedValue([existing]);
 
-    await new LocalEventRepository().edit(
-      "event-1",
-      makeEvent({ title: "Renamed sample" }),
-      {},
-    );
+    await repository.replace(existing.id, {
+      content: { kind: "details", title: "Renamed sample", description: "" },
+      schedule: existing.event.schedule,
+      recurrence: { kind: "preserve" },
+      priority: existing.event.priority,
+      scope: "this",
+    });
 
-    expect(isLocalDemoEvent(putEvent.mock.calls[0][0])).toBe(true);
+    expect(putEvent.mock.calls[0][0].isDemo).toBe(true);
   });
 
   it("delegates reorder to the store without reading or rewriting whole events", async () => {
-    const order = [
-      { _id: "event-1", order: 0 },
-      { _id: "event-2", order: 1 },
+    const items = [
+      { eventId: "a".repeat(24) as EventId, sortOrder: 0 },
+      { eventId: "b".repeat(24) as EventId, sortOrder: 1 },
     ];
 
-    await new LocalEventRepository().reorder(order);
+    await repository.reorder({ period: "week", items });
 
-    expect(updateEventOrders).toHaveBeenCalledWith(order);
+    expect(updateEventOrders).toHaveBeenCalledWith(items);
     expect(getAllEvents).not.toHaveBeenCalled();
     expect(putEvent).not.toHaveBeenCalled();
+  });
+
+  it("throws when replacing an event that does not exist locally", async () => {
+    getAllEvents.mockResolvedValue([]);
+
+    await expect(
+      repository.replace("c".repeat(24) as EventId, {
+        content: { kind: "details", title: "x", description: "" },
+        schedule: {
+          kind: "timed",
+          start: DateTimeSchema.parse("2026-05-05T09:00:00.000-05:00"),
+          end: DateTimeSchema.parse("2026-05-05T10:00:00.000-05:00"),
+          timeZone: TimeZoneSchema.parse("America/Chicago"),
+        },
+        recurrence: { kind: "single" },
+        priority: Priorities.UNASSIGNED,
+        scope: "this",
+      }),
+    ).rejects.toThrow();
   });
 });

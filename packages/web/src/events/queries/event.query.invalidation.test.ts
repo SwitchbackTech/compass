@@ -24,7 +24,7 @@ describe("invalidateEventQueriesUnlessMutating", () => {
     queryClient
       .getMutationCache()
       .build(queryClient, {
-        mutationKey: eventMutationKeys.operation("edit"),
+        mutationKey: eventMutationKeys.operation("replace"),
         mutationFn: () => new Promise(() => undefined),
       })
       .execute(undefined);

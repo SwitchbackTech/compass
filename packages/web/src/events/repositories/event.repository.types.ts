@@ -1,19 +1,20 @@
+import { type EventId } from "@core/types/domain-primitives";
+import { type Event } from "@core/types/event.contracts";
 import {
-  type Params_Events,
-  type Payload_Order,
-  type RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
-import { type Response_GetEventsSuccess } from "@web/events/event.types";
+  type CreateEventInput,
+  type EventListQuery,
+  type RecurrenceScope,
+  type ReorderEventsInput,
+  type ReplaceEventInput,
+  type TransitionEventInput,
+} from "@core/types/event-command.contracts";
 
 export interface EventRepository {
-  create(event: Schema_Event | Schema_Event[]): Promise<void>;
-  get(params: Params_Events): Promise<Response_GetEventsSuccess>;
-  edit(
-    _id: string,
-    event: Schema_Event,
-    params: { applyTo?: RecurringEventUpdateScope },
-  ): Promise<void>;
-  delete(_id: string, applyTo?: RecurringEventUpdateScope): Promise<void>;
-  reorder(order: Payload_Order[]): Promise<void>;
+  list(query: EventListQuery): Promise<Event[]>;
+  getById(id: EventId): Promise<Event>;
+  create(input: CreateEventInput): Promise<Event>;
+  replace(id: EventId, input: ReplaceEventInput): Promise<Event>;
+  delete(id: EventId, scope: RecurrenceScope): Promise<void>;
+  reorder(input: ReorderEventsInput): Promise<void>;
+  transition(id: EventId, input: TransitionEventInput): Promise<Event>;
 }

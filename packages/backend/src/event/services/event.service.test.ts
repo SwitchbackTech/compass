@@ -1,264 +1,340 @@
 import { ObjectId } from "mongodb";
-import { CalendarProvider } from "@core/types/event.types";
-import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import {
-  createMockBaseEvent,
-  createMockStandaloneEvent,
-} from "@core/util/test/ccal.event.factory";
-import { UserDriver } from "@backend/__tests__/drivers/user.driver";
+import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
   cleanupCollections,
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import mongoService from "@backend/common/services/mongo.service";
-import {
-  _createCompassEvent,
-  _deleteSeries,
-} from "@backend/event/services/event.service";
+import eventService from "@backend/event/services/event.service";
 
-// Use real services, no mocks
+const seedLocalCalendar = async (userId: ObjectId) => {
+  const record = CalendarRecordSchema.parse({
+    _id: new ObjectId(),
+    userId,
+    name: "Compass",
+    description: "",
+    timeZone: null,
+    foregroundColor: "#000000",
+    backgroundColor: "#ffffff",
+    access: "owner",
+    isPrimary: false,
+    isVisible: true,
+    isActive: true,
+    source: { provider: "local" },
+    createdAt: new Date(),
+    updatedAt: null,
+  });
+  await mongoService.calendar.insertOne(record);
+  return record;
+};
 
-describe("Compass Event Service", () => {
-  beforeAll(setupTestDb);
+describe("EventService (local calendar)", () => {
+  beforeEach(setupTestDb);
   beforeEach(cleanupCollections);
   afterAll(cleanupTestDb);
 
-  describe("_createCompassEvent", () => {
-    it("creates a compass standalone event if it does not exist", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-      const baseEvent = createMockStandaloneEvent({ user: userId });
-      const _id = new ObjectId(baseEvent._id);
+  it("creates a standalone timed event", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
 
-      const result = await _createCompassEvent(
-        { ...baseEvent, _id, user: userId },
-        CalendarProvider.GOOGLE,
-      );
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          _id: baseEvent._id,
-          user: userId,
-          origin: CalendarProvider.COMPASS,
-        }),
-      );
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
     });
 
-    it("creates a compass base event and its instances if it does not exist", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-
-      const baseEvent = createMockBaseEvent({
-        recurrence: { rule: ["RRULE:FREQ=DAILY;COUNT=5"] },
-        user: userId,
-      });
-
-      const _id = new ObjectId(baseEvent._id);
-
-      const result = await _createCompassEvent(
-        { ...baseEvent, _id, user: userId },
-        CalendarProvider.GOOGLE,
-        new CompassEventRRule({ ...baseEvent, _id }),
-      );
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          _id: baseEvent._id,
-          user: userId,
-          origin: CalendarProvider.COMPASS,
-        }),
-      );
-
-      const instances = await mongoService.event
-        .find({ "recurrence.eventId": baseEvent._id, user: userId })
-        .toArray();
-
-      expect(instances).toHaveLength(5);
+    expect(created.content).toEqual({
+      kind: "details",
+      title: "Standup",
+      description: "",
     });
 
-    it("replaces a compass event if it exists", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-      const baseEvent = createMockStandaloneEvent({ user: userId });
-      const _id = new ObjectId(baseEvent._id);
-
-      const event = await _createCompassEvent(
-        { ...baseEvent, _id, user: userId },
-        CalendarProvider.GOOGLE,
-      );
-
-      expect(event).toEqual(
-        expect.objectContaining({
-          _id: baseEvent._id,
-          user: userId,
-          origin: CalendarProvider.COMPASS,
-        }),
-      );
-
-      const result = await _createCompassEvent(
-        {
-          ...event,
-          _id: new ObjectId(event._id),
-          user: event.user!,
-          title: "Updated Title",
-        },
-        CalendarProvider.GOOGLE,
-      );
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          _id: baseEvent._id,
-          user: userId,
-          title: "Updated Title",
-          origin: CalendarProvider.COMPASS,
-        }),
-      );
-    });
-
-    it("removes the provider data of an existing compass base event if isSomeday is true", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-      const baseEvent = createMockStandaloneEvent({ user: userId });
-      const _id = new ObjectId(baseEvent._id);
-
-      const event = await _createCompassEvent(
-        { ...baseEvent, _id, user: userId },
-        CalendarProvider.GOOGLE,
-      );
-
-      expect(event).toEqual(
-        expect.objectContaining({
-          _id: baseEvent._id,
-          user: userId,
-          origin: CalendarProvider.COMPASS,
-        }),
-      );
-
-      const result = await _createCompassEvent(
-        {
-          ...baseEvent,
-          _id: new ObjectId(event._id),
-          user: event.user!,
-          isSomeday: true,
-        },
-        CalendarProvider.GOOGLE,
-      );
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          _id: baseEvent._id,
-          user: userId,
-          origin: CalendarProvider.COMPASS,
-        }),
-      );
-
-      expect(result.gEventId).toBeUndefined();
-    });
+    const found = await eventService.readById(
+      user._id.toString(),
+      created._id.toHexString(),
+    );
+    expect(found._id).toEqual(created._id);
   });
 
-  describe("_deleteSeries", () => {
-    it("throws if userId is not valid", async () => {
-      await expect(
-        _deleteSeries("", new ObjectId().toString()),
-      ).rejects.toThrow("Invalid id");
+  it("rejects a duplicate client-supplied id", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+    const id = new ObjectId().toHexString();
+
+    const input = {
+      id: id as never,
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details" as const, title: "Standup", description: "" },
+      schedule: {
+        kind: "timed" as const,
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver" as never,
+      },
+      recurrence: { kind: "single" as const },
+      priority: "unassigned" as const,
+    };
+
+    await eventService.create(user._id.toString(), input);
+
+    await expect(
+      eventService.create(user._id.toString(), input),
+    ).rejects.toMatchObject({ mutationCode: "DUPLICATE_EVENT_ID" });
+  });
+
+  it("materializes instances for a series create", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Weekly sync", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+      priority: "unassigned",
     });
 
-    it("throws if baseId is not valid", async () => {
-      await expect(
-        _deleteSeries(new ObjectId().toString(), ""),
-      ).rejects.toThrow("Invalid id");
+    const instances = await mongoService.event
+      .find({ "recurrence.seriesId": created._id })
+      .toArray();
+
+    expect(instances).toHaveLength(2);
+  });
+
+  it("reorders someday events for the owning user only", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Read a book", description: "" },
+      schedule: {
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-13",
+        sortOrder: 0,
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
     });
 
-    it("deletes an entire series of events", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
-
-      const baseEvent = createMockBaseEvent({
-        recurrence: { rule: ["RRULE:FREQ=DAILY;COUNT=5"] },
-        user: userId,
-      });
-
-      const _id = new ObjectId(baseEvent._id);
-
-      const result = await _createCompassEvent(
-        { ...baseEvent, _id, user: userId },
-        CalendarProvider.GOOGLE,
-        new CompassEventRRule({ ...baseEvent, _id }),
-      );
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          _id: baseEvent._id,
-          user: userId,
-          origin: CalendarProvider.COMPASS,
-        }),
-      );
-
-      const instances = await mongoService.event
-        .find({ "recurrence.eventId": baseEvent._id, user: userId })
-        .toArray();
-
-      expect(instances).toHaveLength(5);
-
-      await _deleteSeries(userId, baseEvent._id);
-
-      const series = await mongoService.event
-        .find({
-          $or: [
-            { _id, user: userId },
-            { "recurrence.eventId": baseEvent._id, user: userId },
-          ],
-        })
-        .toArray();
-
-      expect(series).toHaveLength(0);
+    await eventService.reorder(user._id.toString(), {
+      period: "week",
+      items: [{ eventId: created._id.toHexString() as never, sortOrder: 3 }],
     });
 
-    it("deletes an entire series of events excluding the base event", async () => {
-      const user = await UserDriver.createUser();
-      const userId = user._id.toString();
+    const updated = await eventService.readById(
+      user._id.toString(),
+      created._id.toHexString(),
+    );
+    expect(
+      updated.schedule.kind === "someday" ? updated.schedule.sortOrder : null,
+    ).toBe(3);
+  });
 
-      const baseEvent = createMockBaseEvent({
-        recurrence: { rule: ["RRULE:FREQ=DAILY;COUNT=5"] },
-        user: userId,
-      });
+  it("deletes a standalone event", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
 
-      const _id = new ObjectId(baseEvent._id);
-
-      const result = await _createCompassEvent(
-        { ...baseEvent, _id, user: userId },
-        CalendarProvider.GOOGLE,
-        new CompassEventRRule({ ...baseEvent, _id }),
-      );
-
-      expect(result).toEqual(
-        expect.objectContaining({
-          _id: baseEvent._id,
-          user: userId,
-          origin: CalendarProvider.COMPASS,
-        }),
-      );
-
-      const instances = await mongoService.event
-        .find({ "recurrence.eventId": baseEvent._id, user: userId })
-        .toArray();
-
-      expect(instances).toHaveLength(5);
-
-      await _deleteSeries(userId, baseEvent._id, undefined, true);
-
-      const series = await mongoService.event
-        .find({
-          $or: [
-            { _id, user: userId },
-            { "recurrence.eventId": baseEvent._id, user: userId },
-          ],
-        })
-        .toArray();
-
-      expect(series).toHaveLength(1);
-      expect(series[0]!._id).toEqual(_id);
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
     });
+
+    await eventService.delete(user._id.toString(), created._id.toHexString(), {
+      scope: "this",
+    });
+
+    await expect(
+      eventService.readById(user._id.toString(), created._id.toHexString()),
+    ).rejects.toMatchObject({ mutationCode: "EVENT_NOT_FOUND" });
+  });
+
+  it("transitions a someday event onto a calendar (schedule)", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Plan trip", description: "" },
+      schedule: {
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-13",
+        sortOrder: 0,
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+
+    const transitioned = await eventService.transition(
+      user._id.toString(),
+      created._id.toHexString(),
+      {
+        kind: "schedule",
+        targetCalendarId: calendar._id.toHexString() as never,
+        schedule: {
+          kind: "timed",
+          start: "2026-07-14T15:00:00-06:00",
+          end: "2026-07-14T16:00:00-06:00",
+          timeZone: "America/Denver",
+        },
+      },
+    );
+
+    expect(transitioned.schedule.kind).toBe("timed");
+    expect(transitioned.calendarId).toEqual(calendar._id);
+  });
+
+  it("readAll returns events for a range query scoped to the user's calendars", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+
+    const results = await eventService.readAll(user._id.toString(), {
+      kind: "range",
+      start: "2026-07-14T00:00:00Z",
+      end: "2026-07-15T00:00:00Z",
+      priorities: [],
+    });
+
+    expect(results.map((e) => e._id.toHexString())).toContain(
+      created._id.toHexString(),
+    );
+  });
+
+  it("rejects deleting a series base directly with scope 'this'", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Weekly sync", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+      priority: "unassigned",
+    });
+
+    await expect(
+      eventService.delete(user._id.toString(), created._id.toHexString(), {
+        scope: "this",
+      }),
+    ).rejects.toMatchObject({ mutationCode: "RECURRENCE_CONFLICT" });
+  });
+
+  it("delete scope 'all' removes the whole series (base and every instance)", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Weekly sync", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+      priority: "unassigned",
+    });
+
+    const before = await mongoService.event
+      .find({ "recurrence.seriesId": created._id })
+      .toArray();
+    expect(before).toHaveLength(2);
+
+    await eventService.delete(user._id.toString(), created._id.toHexString(), {
+      scope: "all",
+    });
+
+    const remaining = await mongoService.event
+      .find({
+        $or: [{ _id: created._id }, { "recurrence.seriesId": created._id }],
+      })
+      .toArray();
+    expect(remaining).toHaveLength(0);
+  });
+
+  it("delete scope 'thisAndFollowing' truncates the series and keeps earlier instances", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Weekly sync", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+      priority: "unassigned",
+    });
+
+    const instances = await mongoService.event
+      .find({ "recurrence.seriesId": created._id })
+      .sort({ "schedule.start": 1 })
+      .toArray();
+    expect(instances).toHaveLength(2);
+    const [earlier, later] = instances;
+
+    await eventService.delete(user._id.toString(), later!._id.toHexString(), {
+      scope: "thisAndFollowing",
+    });
+
+    const remainingInstanceIds = (
+      await mongoService.event
+        .find({ "recurrence.seriesId": created._id })
+        .toArray()
+    ).map((e) => e._id.toHexString());
+
+    expect(remainingInstanceIds).toEqual([earlier!._id.toHexString()]);
+    expect(
+      await eventService.readById(
+        user._id.toString(),
+        created._id.toHexString(),
+      ),
+    ).toBeTruthy();
   });
 });
