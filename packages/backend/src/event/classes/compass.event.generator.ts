@@ -14,6 +14,9 @@ export type MaterializedMutation = {
   primary: EventRecord;
 };
 
+const materializeIfSeries = (base: EventRecord): EventRecord[] =>
+  base.recurrence.kind === "series" ? materializeSeriesInstances(base) : [];
+
 /**
  * Expands a replace/delete/transition plan into concrete records to persist.
  * Pure: any RRULE expansion for a (re)created series happens here.
@@ -22,28 +25,22 @@ export function generateReplace(plan: ReplacePlan): MaterializedMutation {
   switch (plan.kind) {
     case "replaceThis":
       return { upsert: [plan.updated], deleteIds: [], primary: plan.updated };
-    case "replaceSeries": {
-      const instances =
-        plan.updatedBase.recurrence.kind === "series"
-          ? materializeSeriesInstances(plan.updatedBase)
-          : [];
+    case "replaceSeries":
       return {
-        upsert: [plan.updatedBase, ...instances],
+        upsert: [plan.updatedBase, ...materializeIfSeries(plan.updatedBase)],
         deleteIds: plan.deleteInstanceIds,
         primary: plan.updatedBase,
       };
-    }
-    case "replaceSplit": {
-      const newInstances =
-        plan.newBase.recurrence.kind === "series"
-          ? materializeSeriesInstances(plan.newBase)
-          : [];
+    case "replaceSplit":
       return {
-        upsert: [plan.truncatedBase, plan.newBase, ...newInstances],
+        upsert: [
+          plan.truncatedBase,
+          plan.newBase,
+          ...materializeIfSeries(plan.newBase),
+        ],
         deleteIds: plan.deleteInstanceIds,
         primary: plan.newBase,
       };
-    }
   }
 }
 
