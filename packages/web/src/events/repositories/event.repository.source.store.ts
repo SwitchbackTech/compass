@@ -50,3 +50,18 @@ export function useEventRepositorySource(): EventRepositorySource {
 
   return useSyncExternalStore(sourceStore.subscribe, sourceStore.get);
 }
+
+/**
+ * Test-only: clears the lazily-computed source cache so the next
+ * `useEventRepositorySource()` call recomputes from scratch instead of
+ * inheriting whatever a previous test (possibly in a different file, since
+ * this module is a process-wide singleton) last resolved. Without this, a
+ * test that authenticates a session leaves `lastSessionExists`/`hasComputed`
+ * set, so every later test - even ones that never touch auth - silently
+ * reads/writes through the remote repository instead of the local one.
+ */
+export function resetEventRepositorySourceForTests(): void {
+  lastSessionExists = false;
+  hasComputed = false;
+  sourceStore.set("local");
+}
