@@ -1,6 +1,7 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
+import { type Event } from "@core/types/event.contracts";
 import {
   Categories_Event,
   type Schema_Event,
@@ -22,6 +23,38 @@ import {
 } from "@web/common/types/web.event.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
+
+/** Projects strict query data into the current grid renderer's flat view. */
+export const eventToGridEvent = (event: Event): Schema_GridEvent => {
+  const { schedule } = event;
+  const startDate =
+    schedule.kind === "someday" ? schedule.anchorDate : schedule.start;
+  const endDate =
+    schedule.kind === "someday" ? schedule.anchorDate : schedule.end;
+
+  return {
+    _id: event.id,
+    title: event.content.kind === "details" ? event.content.title : "",
+    description:
+      event.content.kind === "details" ? event.content.description : "",
+    origin: Origin.COMPASS,
+    user: "",
+    priority: event.priority,
+    isAllDay: schedule.kind === "allDay",
+    isSomeday: schedule.kind === "someday",
+    order: schedule.kind === "someday" ? schedule.sortOrder : undefined,
+    startDate,
+    endDate,
+    recurrence:
+      event.recurrence.kind === "series"
+        ? { rule: [...event.recurrence.rules], eventId: event.id }
+        : event.recurrence.kind === "occurrence"
+          ? { eventId: event.recurrence.seriesId }
+          : undefined,
+    updatedAt: event.updatedAt ?? undefined,
+    position: gridEventDefaultPosition,
+  };
+};
 
 export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
   isOverlapping: false,

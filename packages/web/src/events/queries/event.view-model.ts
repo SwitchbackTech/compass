@@ -5,23 +5,16 @@ import {
 import { type Event } from "@core/types/event.contracts";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  assembleGridEvent,
-  type EventWithDates,
-  hasEventDates,
-} from "@web/common/utils/event/event.util";
+import { eventToGridEvent } from "@web/common/utils/event/event.util";
 import { categorizeSomedayEvents } from "@web/common/utils/event/someday.event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
-import { eventToSchemaEvent } from "./event.legacy-bridge";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
 const eventsFrom = (data?: NormalizedEventQueryData): Event[] =>
   data?.ids.flatMap((id) => (data.entities[id] ? [data.entities[id]] : [])) ??
   [];
 
-// assembleGridEvent/hasEventDates still operate on the legacy Schema_Event
-// shape; bridged via eventToSchemaEvent until the grid renderer converts to
-// `Event` directly. A cache entry with a missing/malformed `schedule` is a
+// A cache entry with a missing/malformed `schedule` is a
 // bug upstream (normalizeEventList/query seeding), not a case to silently
 // swallow — but it must not crash this shared derivation, since every grid
 // consumer recomputes from it on every render (a throw here becomes a
@@ -42,9 +35,7 @@ const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") =>
   events
     .filter(isValidScheduledEvent)
     .filter((event) => event.schedule.kind === kind)
-    .map(eventToSchemaEvent)
-    .filter((event): event is EventWithDates => hasEventDates(event))
-    .map(assembleGridEvent);
+    .map(eventToGridEvent);
 
 const timedEventsFrom = (events: Event[]) => gridEventsFrom(events, "timed");
 
