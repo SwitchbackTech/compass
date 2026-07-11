@@ -59,6 +59,7 @@ import {
   duplicateSomedayEventDraft,
   editSomedayEventDraft,
   retargetSomedayEventDraft,
+  scheduleSomedayEventTransition,
 } from "@web/events/someday-event-draft.adapter";
 import {
   type Activity_DraftEvent,
@@ -449,14 +450,20 @@ export const useSidebarActions = (
   const commitSomedayInteraction = (result: SomedayInteractionCommitResult) => {
     if (result.type === "schedule") {
       clearSomedayInteractionPreview({ shouldRestore: true });
-      eventMutations.convertToCalendar({
-        event: {
-          ...result.dates,
-          _id: result.eventId,
-          isAllDay: result.isAllDay,
-          isSomeday: false,
-        },
-      });
+
+      const id = EventIdSchema.safeParse(result.eventId);
+      const input = calendarId
+        ? scheduleSomedayEventTransition(
+            result.dates,
+            result.isAllDay,
+            calendarId,
+          )
+        : null;
+
+      if (id.success && input) {
+        mutations.transition({ id: id.data, input });
+      }
+
       discardSomedayInteraction();
       return;
     }
