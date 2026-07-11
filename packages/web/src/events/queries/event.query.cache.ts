@@ -130,26 +130,39 @@ export function eventBelongsToEntry(
   return eventMatchesRange(event, entry.metadata.start, entry.metadata.end);
 }
 
+// Shared by every writer below: find the matching cached query entries and
+// replace each one's data via `update`, returning `current` unchanged (and
+// skipping the write) when there's nothing to update yet.
+function forEachEventQuery(
+  queryClient: QueryClient,
+  filter: EventQueryFilter,
+  update: (
+    current: NormalizedEventQueryData,
+    entry: EventQueryEntry,
+  ) => NormalizedEventQueryData,
+) {
+  for (const entry of getEventQueryEntries(queryClient, filter)) {
+    queryClient.setQueryData<NormalizedEventQueryData>(
+      entry.queryKey,
+      (current) => (current ? update(current, entry) : current),
+    );
+  }
+}
+
 export function insertEventIntoQueries(
   queryClient: QueryClient,
   event: Event,
   isMember: (entry: EventQueryEntry) => boolean,
 ) {
-  for (const entry of getEventQueryEntries(queryClient)) {
-    if (!isMember(entry)) continue;
-    queryClient.setQueryData<NormalizedEventQueryData>(
-      entry.queryKey,
-      (current) => {
-        if (!current) return current;
-        const isPresent = current.ids.includes(event.id);
-        return {
-          ...current,
-          ids: isPresent ? current.ids : [...current.ids, event.id],
-          entities: { ...current.entities, [event.id]: event },
-        };
-      },
-    );
-  }
+  forEachEventQuery(queryClient, {}, (current, entry) => {
+    if (!isMember(entry)) return current;
+    const isPresent = current.ids.includes(event.id);
+    return {
+      ...current,
+      ids: isPresent ? current.ids : [...current.ids, event.id],
+      entities: { ...current.entities, [event.id]: event },
+    };
+  });
 }
 
 /**
@@ -167,36 +180,28 @@ export function upsertEventAcrossQueries(
 ) {
   const id = event.id;
 
-  for (const entry of getEventQueryEntries(queryClient, filter)) {
-    const member = isMember(entry);
-    queryClient.setQueryData<NormalizedEventQueryData>(
-      entry.queryKey,
-      (current) => {
-        if (!current) return current;
-        const present =
-          current.ids.includes(id) || Boolean(current.entities[id]);
-        if (member) {
-          const existing = current.entities[id];
-          return {
-            ...current,
-            ids: present ? current.ids : [...current.ids, id],
-            entities: {
-              ...current.entities,
-              [id]: existing ? { ...existing, ...event } : event,
-            },
-          };
-        }
-        if (!present) return current;
-        const entities = { ...current.entities };
-        delete entities[id];
-        return {
-          ...current,
-          ids: current.ids.filter((entryId) => entryId !== id),
-          entities,
-        };
-      },
-    );
-  }
+  forEachEventQuery(queryClient, filter, (current, entry) => {
+    const present = current.ids.includes(id) || Boolean(current.entities[id]);
+    if (isMember(entry)) {
+      const existing = current.entities[id];
+      return {
+        ...current,
+        ids: present ? current.ids : [...current.ids, id],
+        entities: {
+          ...current.entities,
+          [id]: existing ? { ...existing, ...event } : event,
+        },
+      };
+    }
+    if (!present) return current;
+    const entities = { ...current.entities };
+    delete entities[id];
+    return {
+      ...current,
+      ids: current.ids.filter((entryId) => entryId !== id),
+      entities,
+    };
+  });
 }
 
 export function applyEventProjectionAcrossQueries(
@@ -204,31 +209,25 @@ export function applyEventProjectionAcrossQueries(
   projection: RecurringEditProjection,
   source: EventRepositorySource,
 ) {
-  for (const entry of getEventQueryEntries(queryClient, { source })) {
-    queryClient.setQueryData<NormalizedEventQueryData>(
-      entry.queryKey,
-      (current) => {
-        if (!current) return current;
-        const entities = { ...current.entities };
-        let ids = current.ids.filter((id) => !projection.removeIds.has(id));
-        for (const id of projection.removeIds) delete entities[asEventId(id)];
+  forEachEventQuery(queryClient, { source }, (current, entry) => {
+    const entities = { ...current.entities };
+    let ids = current.ids.filter((id) => !projection.removeIds.has(id));
+    for (const id of projection.removeIds) delete entities[asEventId(id)];
 
-        for (const event of projection.upserts) {
-          const id = event.id;
-          const belongs = eventBelongsToEntry(event, entry, source);
-          if (!belongs) {
-            ids = ids.filter((entryId) => entryId !== id);
-            delete entities[id];
-            continue;
-          }
-          if (!ids.includes(id)) ids.push(id);
-          entities[id] = entities[id] ? { ...entities[id], ...event } : event;
-        }
+    for (const event of projection.upserts) {
+      const id = event.id;
+      const belongs = eventBelongsToEntry(event, entry, source);
+      if (!belongs) {
+        ids = ids.filter((entryId) => entryId !== id);
+        delete entities[id];
+        continue;
+      }
+      if (!ids.includes(id)) ids.push(id);
+      entities[id] = entities[id] ? { ...entities[id], ...event } : event;
+    }
 
-        return { ...current, ids, entities };
-      },
-    );
-  }
+    return { ...current, ids, entities };
+  });
 }
 
 export function patchEventInQueries(
@@ -237,23 +236,16 @@ export function patchEventInQueries(
   patch: Partial<Event> | ((event: Event) => Event),
   filter: EventQueryFilter = {},
 ) {
-  for (const entry of getEventQueryEntries(queryClient, filter)) {
-    queryClient.setQueryData<NormalizedEventQueryData>(
-      entry.queryKey,
-      (current) => {
-        const existing = current?.entities[eventId as EventId];
-        if (!current || !existing) return current;
-        const updated =
-          typeof patch === "function"
-            ? patch(existing)
-            : { ...existing, ...patch };
-        return {
-          ...current,
-          entities: { ...current.entities, [asEventId(eventId)]: updated },
-        };
-      },
-    );
-  }
+  forEachEventQuery(queryClient, filter, (current) => {
+    const existing = current.entities[eventId as EventId];
+    if (!existing) return current;
+    const updated =
+      typeof patch === "function" ? patch(existing) : { ...existing, ...patch };
+    return {
+      ...current,
+      entities: { ...current.entities, [asEventId(eventId)]: updated },
+    };
+  });
 }
 
 export function removeEventFromQueries(
@@ -261,26 +253,21 @@ export function removeEventFromQueries(
   eventId: string,
   filter: EventQueryFilter = {},
 ) {
-  for (const entry of getEventQueryEntries(queryClient, filter)) {
-    queryClient.setQueryData<NormalizedEventQueryData>(
-      entry.queryKey,
-      (current) => {
-        if (
-          !current?.entities[asEventId(eventId)] &&
-          !current?.ids.includes(asEventId(eventId))
-        ) {
-          return current;
-        }
-        const entities = { ...current.entities };
-        delete entities[asEventId(eventId)];
-        return {
-          ...current,
-          ids: current.ids.filter((id) => id !== eventId),
-          entities,
-        };
-      },
-    );
-  }
+  forEachEventQuery(queryClient, filter, (current) => {
+    if (
+      !current.entities[asEventId(eventId)] &&
+      !current.ids.includes(asEventId(eventId))
+    ) {
+      return current;
+    }
+    const entities = { ...current.entities };
+    delete entities[asEventId(eventId)];
+    return {
+      ...current,
+      ids: current.ids.filter((id) => id !== eventId),
+      entities,
+    };
+  });
 }
 
 /**
@@ -293,27 +280,21 @@ export function removeEventsByCalendarFromQueries(
   calendarIds: ReadonlySet<string>,
 ) {
   if (calendarIds.size === 0) return;
-  for (const entry of getEventQueryEntries(queryClient)) {
-    queryClient.setQueryData<NormalizedEventQueryData>(
-      entry.queryKey,
-      (current) => {
-        if (!current) return current;
-        const removedIds = new Set(
-          current.ids.filter((id) =>
-            calendarIds.has(current.entities[id]?.calendarId ?? ""),
-          ),
-        );
-        if (removedIds.size === 0) return current;
-        const entities = { ...current.entities };
-        for (const id of removedIds) delete entities[id];
-        return {
-          ...current,
-          ids: current.ids.filter((id) => !removedIds.has(id)),
-          entities,
-        };
-      },
+  forEachEventQuery(queryClient, {}, (current) => {
+    const removedIds = new Set(
+      current.ids.filter((id) =>
+        calendarIds.has(current.entities[id]?.calendarId ?? ""),
+      ),
     );
-  }
+    if (removedIds.size === 0) return current;
+    const entities = { ...current.entities };
+    for (const id of removedIds) delete entities[id];
+    return {
+      ...current,
+      ids: current.ids.filter((id) => !removedIds.has(id)),
+      entities,
+    };
+  });
 }
 
 export function reorderSomedayEventsInQueries(
@@ -324,39 +305,30 @@ export function reorderSomedayEventsInQueries(
   const orderById = new Map(
     items.map(({ eventId, sortOrder }) => [eventId, sortOrder] as const),
   );
-  for (const entry of getEventQueryEntries(queryClient, {
-    source,
-    scope: "someday",
-  })) {
-    queryClient.setQueryData<NormalizedEventQueryData>(
-      entry.queryKey,
-      (current) => {
-        if (!current) return current;
-        const entities = { ...current.entities };
-        for (const [id, sortOrder] of orderById) {
-          const existing = entities[asEventId(id)];
-          if (existing?.schedule.kind === "someday") {
-            entities[asEventId(id)] = {
-              ...existing,
-              schedule: { ...existing.schedule, sortOrder },
-            };
-          }
-        }
-        const ids = [...current.ids].sort((left, right) => {
-          const leftSchedule = entities[left]?.schedule;
-          const rightSchedule = entities[right]?.schedule;
-          const leftOrder =
-            leftSchedule?.kind === "someday"
-              ? leftSchedule.sortOrder
-              : Number.MAX_SAFE_INTEGER;
-          const rightOrder =
-            rightSchedule?.kind === "someday"
-              ? rightSchedule.sortOrder
-              : Number.MAX_SAFE_INTEGER;
-          return leftOrder - rightOrder;
-        });
-        return { ...current, ids, entities };
-      },
-    );
-  }
+  forEachEventQuery(queryClient, { source, scope: "someday" }, (current) => {
+    const entities = { ...current.entities };
+    for (const [id, sortOrder] of orderById) {
+      const existing = entities[asEventId(id)];
+      if (existing?.schedule.kind === "someday") {
+        entities[asEventId(id)] = {
+          ...existing,
+          schedule: { ...existing.schedule, sortOrder },
+        };
+      }
+    }
+    const ids = [...current.ids].sort((left, right) => {
+      const leftSchedule = entities[left]?.schedule;
+      const rightSchedule = entities[right]?.schedule;
+      const leftOrder =
+        leftSchedule?.kind === "someday"
+          ? leftSchedule.sortOrder
+          : Number.MAX_SAFE_INTEGER;
+      const rightOrder =
+        rightSchedule?.kind === "someday"
+          ? rightSchedule.sortOrder
+          : Number.MAX_SAFE_INTEGER;
+      return leftOrder - rightOrder;
+    });
+    return { ...current, ids, entities };
+  });
 }
