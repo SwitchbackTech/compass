@@ -6,7 +6,7 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
-import { MapEvent } from "@core/mappers/map.event";
+import { type EventId, EventIdSchema } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
   Categories_Event,
@@ -46,12 +46,18 @@ import {
   type SomedayInteractionCommitResult,
   type SomedaySidebarCommitResult,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter.types";
+import { parseEventDraft } from "@web/events/event-draft.parser";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import {
   createLegacyEventMutationsAdapter,
   eventToSchemaEvent,
 } from "@web/events/queries/event.legacy-bridge";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
+import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
+import {
+  createSomedayEventDraft,
+  duplicateSomedayEventDraft,
+} from "@web/events/someday-event-draft.adapter";
 import {
   type Activity_DraftEvent,
   draftActions,
@@ -481,24 +487,40 @@ export const useSidebarActions = (
   ) => {
     // No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z
     const eventIdToDelete = state.draft?.id ?? draft?._id;
+    const id = eventIdToDelete
+      ? EventIdSchema.safeParse(eventIdToDelete)
+      : null;
 
-    if (eventIdToDelete) {
-      eventMutations.deleteSomeday({ _id: eventIdToDelete, applyTo });
+    if (id?.success) {
+      mutations.delete({ id: id.data, scope: toRecurrenceScope(applyTo) });
     }
 
     close();
   };
 
   const duplicateSomedayEvent = () => {
-    const eventToDuplicate = state.draft
-      ? eventToSchemaEvent(state.draft)
-      : draft;
-    if (!eventToDuplicate) return;
+    const eventToDuplicate: Event | null = state.draft
+      ? state.draft
+      : draft
+        ? schemaEventToLocalEvent(draft, calendarId ?? "")
+        : null;
 
-    const { _id: _duplicatedEventId, ...duplicateEvent } =
-      MapEvent.removeProviderData(eventToDuplicate);
+    const somedayDraft =
+      eventToDuplicate && calendarId
+        ? duplicateSomedayEventDraft(eventToDuplicate)
+        : null;
 
-    eventMutations.create(duplicateEvent);
+    if (somedayDraft && calendarId) {
+      const result = parseEventDraft({
+        ...somedayDraft,
+        values: { ...somedayDraft.values, calendarId },
+      });
+
+      if (result.ok && result.mode === "create") {
+        mutations.create(result.input);
+      }
+    }
+
     close();
   };
 
@@ -663,7 +685,7 @@ export const useSidebarActions = (
     } else {
       const columnName = getSomedayColumnName(category);
       const column = state.somedayEvents.columns[columnName];
-      const eventId = createObjectIdString();
+      const eventId = createObjectIdString() as EventId;
       const order = getNextSomedayOrder(category, state.somedayEvents);
 
       const eventWithOrder = {
@@ -687,7 +709,28 @@ export const useSidebarActions = (
         },
       });
 
-      eventMutations.create(eventWithOrder);
+      if (calendarId) {
+        const somedayDraft = createSomedayEventDraft(
+          category === Categories_Event.SOMEDAY_WEEK ? "week" : "month",
+          dayjs(parsedEvent.startDate).toDate(),
+          order,
+        );
+
+        const result = parseEventDraft({
+          ...somedayDraft,
+          values: {
+            ...somedayDraft.values,
+            title: parsedEvent.title ?? "",
+            description: parsedEvent.description ?? "",
+            priority: parsedEvent.priority,
+            calendarId,
+          },
+        });
+
+        if (result.ok && result.mode === "create") {
+          mutations.create({ ...result.input, id: eventId });
+        }
+      }
     }
 
     close();

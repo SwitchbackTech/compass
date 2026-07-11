@@ -64,8 +64,11 @@ export const useRecurrence = (
   },
 ) => {
   const { recurrence, endDate: _endDate, isSomeday } = event ?? {};
-  const startDate = event?.startDate ?? dayjs().toRFC3339OffsetString();
-  const endDate = _endDate ?? dayjs().add(1, "hour").toRFC3339OffsetString();
+  // `||`, not `??`: an undated someday draft-in-progress can carry
+  // `startDate: ""` (not yet assigned a real date), which `??` wouldn't
+  // catch and `parseCompassEventDate` throws on below.
+  const startDate = event?.startDate || dayjs().toRFC3339OffsetString();
+  const endDate = _endDate || dayjs().add(1, "hour").toRFC3339OffsetString();
   const _startDate = parseCompassEventDate(startDate);
   const hasRecurrence = (event?.recurrence?.rule?.length ?? 0) > 0;
   const currentRule = event?.recurrence?.rule;
