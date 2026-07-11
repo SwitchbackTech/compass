@@ -2,6 +2,37 @@
 
 The event domain is the most cross-cutting part of Compass. Read this before changing event shape, recurrence logic, sync behavior, or local persistence.
 
+## Target Contracts (sub-calendar v1, pre-cutover)
+
+Strict calendar-owned contracts exist alongside the legacy model and become the
+runtime shape at the sub-calendar v1 cutover. Until then the legacy sections
+below describe live behavior; the contracts describe where every consumer is
+headed.
+
+- `packages/core/src/types/domain-primitives.ts` — branded ids, `DateOnly`,
+  `DateTime` (RFC 3339 with offset), `TimeZone`, `SortOrder`, `RRule`.
+- `packages/core/src/types/event.contracts.ts` — canonical `Event`: required
+  `calendarId`, discriminated `content` (`details` | `busy`), `schedule`
+  (`timed` | `allDay` | `someday`, exclusive all-day ends), `recurrence`
+  (`single` | `series` | `occurrence`), plus `BusyPeriod` for free/busy-only
+  calendars.
+- `packages/core/src/types/event-command.contracts.ts` — create (optional
+  client id), full-replace, delete, someday reorder, the someday↔scheduled
+  transition (the only command that changes an event's calendar), list and
+  availability queries.
+- `packages/core/src/types/calendar.contracts.ts` — `Calendar` read model with
+  provider/access and derived capabilities (`getCalendarCapabilities`).
+- `packages/core/src/types/server-message.contracts.ts` — the discriminated
+  SSE union every backend publish site must emit.
+- `packages/backend/src/calendar/calendar.record.ts`,
+  `packages/backend/src/event/event.record.ts` — Mongo record shapes
+  (ObjectIds/BSON dates, single nullable `externalReference`, no `origin`).
+- `packages/backend/src/event/google-event.adapter.ts` — Google↔record
+  mapping; provider writes are `events.patch` bodies.
+- `packages/web/src/events/event-draft.types.ts` + `event-draft.parser.ts` —
+  the only intentionally incomplete event shape and the single parser that can
+  turn it into a command.
+
 ## Core Event Schema
 
 Primary source:
