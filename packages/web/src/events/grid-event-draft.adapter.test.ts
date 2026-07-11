@@ -3,6 +3,7 @@ import { type Event } from "@core/types/event.contracts";
 import {
   createGridEventDraft,
   editGridEventDraft,
+  gridEventDraftToSchemaEvent,
   parseGridEventDraft,
   replaceGridDraftSchedule,
 } from "./grid-event-draft.adapter";
@@ -76,6 +77,23 @@ test("replaces only the draft schedule during a drag or resize", () => {
 
   expect(updated.values.schedule.start).toEqual(new Date("2026-07-12"));
   expect(updated.values.calendarId).toBeNull();
+});
+
+test("keeps the schedule's own UTC offset instead of forcing Z", () => {
+  // _getTimeLabel (web.date.util.ts) reads the offset embedded in
+  // Schema_Event.startDate/endDate to decide what time to display - it does
+  // not localize to the browser's timezone. Date#toISOString() always
+  // produces a "Z" (UTC) suffix, which made every grid-created/dragged event
+  // display in UTC instead of local time for any non-UTC browser. dayjs's
+  // default format() preserves the local offset instead, matching every
+  // other Schema_Event producer (draft.util.ts, someday.draft.util.ts, etc).
+  const draft = editGridEventDraft(timedEvent);
+  if (!draft) throw new Error("Expected scheduled event draft");
+
+  const schemaEvent = gridEventDraftToSchemaEvent(draft);
+
+  expect(schemaEvent.startDate).not.toMatch(/Z$/);
+  expect(schemaEvent.endDate).not.toMatch(/Z$/);
 });
 
 test("parses an edit draft into a replace command", () => {

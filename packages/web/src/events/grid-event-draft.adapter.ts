@@ -2,6 +2,7 @@ import { Priorities } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
 import { type Schema_Event } from "@core/types/event.types";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import {
   type ParseEventDraftResult,
@@ -155,7 +156,7 @@ export function gridEventDraftToSchemaEvent(
     endDate:
       schedule.kind === "allDay"
         ? toDateOnlyString(schedule.end)
-        : schedule.end.toISOString(),
+        : dayjs(schedule.end).format(),
     isAllDay: schedule.kind === "allDay",
     isSomeday: false,
     priority: draft.values.priority ?? Priorities.UNASSIGNED,
@@ -166,7 +167,7 @@ export function gridEventDraftToSchemaEvent(
     startDate:
       schedule.kind === "allDay"
         ? toDateOnlyString(schedule.start)
-        : schedule.start.toISOString(),
+        : dayjs(schedule.start).format(),
     title: draft.values.title,
   };
 }
