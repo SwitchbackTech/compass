@@ -1,6 +1,5 @@
 import { type FC, type SetStateAction } from "react";
-import { type Event } from "@core/types/event.contracts";
-import { Categories_Event } from "@core/types/event.types";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type SelectOption } from "@web/common/types/component.types";
 import { DatePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/DatePickers";
 import { TimePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/TimePickers";
@@ -10,7 +9,7 @@ export interface Props {
   bgColor: string;
   category: Categories_Event;
   displayEndDate: Date;
-  event: Event;
+  event: Schema_Event;
   endTime: SelectOption<string>;
   inputColor?: string;
   isEndDatePickerOpen: boolean;
@@ -25,7 +24,7 @@ export interface Props {
   setSelectedEndDate: (value: Date) => void;
   setSelectedStartDate: (value: Date) => void;
   setStartTime: (value: SelectOption<string>) => void;
-  setEvent: (event: SetStateAction<Event | null>) => void;
+  setEvent: (event: SetStateAction<Schema_Event | null>) => void;
   startTime: SelectOption<string>;
 }
 

@@ -1,102 +1,74 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import { type Event } from "@core/types/event.contracts";
-import { type RecurrenceScope } from "@core/types/event-command.contracts";
-import { parseEventDraft } from "@web/events/event-draft.parser";
 import {
-  type EditEventDraft,
-  type EventDraft,
-} from "@web/events/event-draft.types";
+  RecurringEventUpdateScope,
+  type Schema_Event,
+} from "@core/types/event.types";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
+import { schemaEventToCreateInput } from "@web/events/queries/event.legacy-bridge";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
+import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
-const date = (value: string) => new Date(value);
-
-const toDraft = (
-  event: Event,
-  mode: "create" | "edit",
-  scope: RecurrenceScope,
-): EventDraft => {
-  const schedule =
-    event.schedule.kind === "someday"
-      ? {
-          kind: "someday" as const,
-          period: event.schedule.period,
-          anchorDate: date(event.schedule.anchorDate),
-          sortOrder: event.schedule.sortOrder,
-        }
-      : event.schedule.kind === "allDay"
-        ? {
-            kind: "allDay" as const,
-            start: date(event.schedule.start),
-            end: date(event.schedule.end),
-          }
-        : {
-            kind: "timed" as const,
-            start: date(event.schedule.start),
-            end: date(event.schedule.end),
-            timeZone: event.schedule.timeZone,
-          };
-  const content =
-    event.content.kind === "details"
-      ? event.content
-      : { kind: "details" as const, title: "", description: "" };
-
-  if (mode === "create") {
-    return {
-      mode,
-      isDirty: true,
-      submitError: null,
-      values: {
-        title: content.title,
-        description: content.description,
-        schedule,
-        priority: event.priority,
-        calendarId: event.calendarId,
-        recurrence:
-          event.recurrence.kind === "series"
-            ? { kind: "series", rules: [...event.recurrence.rules] }
-            : { kind: "single" },
-      },
-    };
-  }
-
-  const draft: EditEventDraft = {
-    mode,
-    eventId: event.id,
-    originalCalendarId: event.calendarId,
-    isDirty: true,
-    submitError: null,
-    values: {
-      title: content.title,
-      description: content.description,
-      schedule,
-      priority: event.priority,
-      calendarId: event.calendarId,
-      recurrence: { kind: "preserve" },
-      scope,
-    },
-  };
-  return draft;
-};
-
+// TODO(packet-03-phase-3c): OnSubmitParser still produces a legacy
+// Schema_Event; bridged onto CreateEventInput via schemaEventToCreateInput
+// until the EventForm submits an EventDraft directly (event-draft.parser.ts).
 export function useSaveEventForm() {
   const closeEventForm = useCloseEventForm();
   const queryClient = useQueryClient();
-  const { create, replace } = useEventMutations();
+  const updateEvent = useUpdateEvent();
+  const { create } = useEventMutations();
+  const { data: calendars } = useCalendarsQuery();
 
-  return useCallback(
-    (event: Event | null, applyTo: RecurrenceScope = "this") => {
-      if (!event) return closeEventForm();
-      const existing = Boolean(findEventInCache(queryClient, event.id));
-      const draft = toDraft(event, existing ? "edit" : "create", applyTo);
-      const parsed = parseEventDraft(draft);
-      if (!parsed.ok) return;
-      if (parsed.mode === "create") create(parsed.input);
-      else replace({ id: parsed.eventId, input: parsed.input });
+  const onCreate = useCallback(
+    (draft: Schema_GridEvent) => {
+      const event = new OnSubmitParser(draft).parse();
+      const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
+      if (!calendarId) return;
+      const input = schemaEventToCreateInput(event, calendarId);
+      if (!input) return;
+      create(input);
+    },
+    [create, calendars],
+  );
+
+  const onEdit = useCallback(
+    (
+      draft: Schema_GridEvent,
+      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
+    ) => {
+      const event = new OnSubmitParser(draft).parse();
+
+      updateEvent({ event, applyTo });
+    },
+    [updateEvent],
+  );
+
+  const saveEventForm = useCallback(
+    (
+      draft: Schema_Event | null,
+      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
+    ) => {
+      if (!draft) return closeEventForm();
+
+      const existing = Boolean(
+        draft._id && findEventInCache(queryClient, draft._id),
+      );
+
+      if (existing) {
+        onEdit(draft as Schema_GridEvent, applyTo);
+      } else {
+        onCreate(draft as Schema_GridEvent);
+      }
+
       closeEventForm();
     },
-    [closeEventForm, create, queryClient, replace],
+    [closeEventForm, onEdit, onCreate, queryClient],
   );
+
+  return saveEventForm;
 }

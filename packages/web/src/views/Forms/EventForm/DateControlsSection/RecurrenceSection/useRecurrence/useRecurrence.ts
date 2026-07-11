@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { Frequency, type Options, RRule, type Weekday } from "rrule";
-import { type Event } from "@core/types/event.contracts";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
@@ -54,27 +54,21 @@ const WEEKDAY_MAP: Record<
 );
 
 export const useRecurrence = (
-  event: Event | null,
+  event: Partial<
+    Pick<Schema_Event, "startDate" | "endDate" | "recurrence" | "isSomeday">
+  > | null,
   {
     setEvent,
   }: {
-    setEvent: Dispatch<SetStateAction<Event | null>>;
+    setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
   },
 ) => {
-  const schedule = event?.schedule;
-  const isSomeday = schedule?.kind === "someday";
-  const startDate =
-    schedule?.kind === "timed"
-      ? schedule.start
-      : dayjs().toRFC3339OffsetString();
-  const endDate =
-    schedule?.kind === "timed"
-      ? schedule.end
-      : dayjs().add(1, "hour").toRFC3339OffsetString();
+  const { recurrence, endDate: _endDate, isSomeday } = event ?? {};
+  const startDate = event?.startDate ?? dayjs().toRFC3339OffsetString();
+  const endDate = _endDate ?? dayjs().add(1, "hour").toRFC3339OffsetString();
   const _startDate = parseCompassEventDate(startDate);
-  const currentRule =
-    event?.recurrence.kind === "series" ? event.recurrence.rules : undefined;
-  const hasRecurrence = (currentRule?.length ?? 0) > 0;
+  const hasRecurrence = (event?.recurrence?.rule?.length ?? 0) > 0;
+  const currentRule = event?.recurrence?.rule;
 
   const { options } = useMemo(() => {
     if (!hasRecurrence) {
@@ -95,9 +89,9 @@ export const useRecurrence = (
       _id: new ObjectId(), // we do not need the event's actual id here
       startDate: startDate,
       endDate: endDate,
-      recurrence: { rule: currentRule as string[] },
+      recurrence: { rule: recurrence?.rule as string[] },
     });
-  }, [_startDate, startDate, endDate, hasRecurrence, currentRule]);
+  }, [_startDate, startDate, endDate, hasRecurrence, recurrence?.rule]);
 
   const defaultWeekDay: typeof WEEKDAYS = useMemo(
     () =>
@@ -151,16 +145,28 @@ export const useRecurrence = (
   const rule = useMemo(() => JSON.stringify(rrule.toRecurrence()), [rrule]);
 
   const toggleRecurrence = useCallback(() => {
-    setEvent((currentEvent) => {
-      if (!currentEvent) return currentEvent;
+    setEvent((gridEvent): Schema_Event | null => {
+      if (!gridEvent) return gridEvent;
+
+      const { recurrence, ...event } = gridEvent;
+      const { eventId, rule: _rule } = recurrence ?? {};
+
+      if (_rule) {
+        return {
+          ...event,
+          recurrence: {
+            ...(eventId ? { eventId } : {}),
+            rule: null as unknown as string[],
+          },
+        };
+      }
+
       return {
-        ...currentEvent,
-        recurrence: hasRecurrence
-          ? { kind: "single" }
-          : { kind: "series", rules: JSON.parse(rule) },
+        ...event,
+        recurrence: { ...(recurrence ?? {}), rule: JSON.parse(rule) },
       };
     });
-  }, [setEvent, rule, hasRecurrence]);
+  }, [setEvent, rule]);
 
   useEffect(() => {
     if (!hasRecurrence) return;
@@ -168,19 +174,16 @@ export const useRecurrence = (
     const nextRule = JSON.parse(rule);
     if (fastDeepEqual(currentRule, nextRule)) return;
 
-    setEvent((gridEvent) => {
+    setEvent((gridEvent): Schema_Event | null => {
       if (!gridEvent) return gridEvent;
 
-      if (
-        gridEvent.recurrence.kind === "series" &&
-        fastDeepEqual(gridEvent.recurrence.rules, nextRule)
-      ) {
+      if (fastDeepEqual(gridEvent.recurrence?.rule, nextRule)) {
         return gridEvent;
       }
 
       return {
         ...gridEvent,
-        recurrence: { kind: "series", rules: nextRule },
+        recurrence: { ...(gridEvent.recurrence ?? {}), rule: nextRule },
       };
     });
   }, [currentRule, rule, hasRecurrence, setEvent]);

@@ -1,5 +1,5 @@
 import { type FC, type SetStateAction, useState } from "react";
-import { type Event } from "@core/types/event.contracts";
+import { type Schema_Event } from "@core/types/event.types";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type Option_Time } from "@web/common/types/util.types";
 import {
@@ -12,12 +12,12 @@ import { TimePicker } from "./TimePicker";
 
 interface Props {
   bgColor: string;
-  event: Event;
+  event: Schema_Event;
   endTime: SelectOption<string>;
   selectedEndDate: Date;
   selectedStartDate: Date;
   setEndTime: (value: SelectOption<string>) => void;
-  setEvent: (event: SetStateAction<Event | null>) => void;
+  setEvent: (event: SetStateAction<Schema_Event | null>) => void;
   setStartTime: (value: SelectOption<string>) => void;
   startTime: SelectOption<string>;
 }
@@ -79,6 +79,8 @@ export const TimePickers: FC<Props> = ({
     const correctedStart = adjustComplimentTimeIfNeeded("end", option.value);
 
     if (endTime.value && endTime.value !== option.value) {
+      // TODO(packet-03-phase-3c): mapToBackend now returns an EventSchedule;
+      // this component still operates on legacy Schema_Event startDate/endDate.
       const schedule = mapToBackend({
         startDate: selectedStartDate,
         endDate: selectedEndDate,
@@ -87,9 +89,10 @@ export const TimePickers: FC<Props> = ({
         isAllDay: false,
       });
 
-      const _event: Event = {
+      const _event = {
         ...event,
-        schedule,
+        startDate: schedule.start,
+        endDate: schedule.end,
       };
 
       setEvent(_event);
@@ -102,6 +105,8 @@ export const TimePickers: FC<Props> = ({
     const correctedEnd = adjustComplimentTimeIfNeeded("start", option.value);
 
     if (startTime.value && startTime.value !== option.value) {
+      // TODO(packet-03-phase-3c): mapToBackend now returns an EventSchedule;
+      // this component still operates on legacy Schema_Event startDate/endDate.
       const schedule = mapToBackend({
         startDate: selectedStartDate,
         endDate: selectedEndDate,
@@ -110,9 +115,10 @@ export const TimePickers: FC<Props> = ({
         isAllDay: false,
       });
 
-      const _event: Event = {
+      const _event = {
         ...event,
-        schedule,
+        startDate: schedule.start,
+        endDate: schedule.end,
       };
 
       setEvent(_event);

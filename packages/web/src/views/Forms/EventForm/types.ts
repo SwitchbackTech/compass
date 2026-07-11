@@ -1,13 +1,13 @@
 import { type Ref, type SetStateAction } from "react";
 import { type Priority } from "@core/constants/core.constants";
-import { type Event } from "@core/types/event.contracts";
 import {
   type Categories_Event,
   type Direction_Migrate,
+  type Schema_Event,
 } from "@core/types/event.types";
 
 export interface FormProps {
-  event: Event;
+  event: Schema_Event;
   category: Categories_Event;
   isDraft: boolean;
   isExistingEvent: boolean;
@@ -15,25 +15,26 @@ export interface FormProps {
   onCloseEventForm?: () => void;
   onConvert?: () => void;
   onDelete: () => void;
-  onDuplicate?: (event: Event) => void;
+  onDuplicate?: (event: Schema_Event) => void;
   onMigrate?: (
-    event: Event,
+    event: Schema_Event,
     category: Categories_Event,
     direction: Direction_Migrate,
   ) => void;
-  onSubmit: (event: Event | null) => void;
-  onSubmitEventForm?: (event: Event) => void;
+  onSubmit: (event: Schema_Event | null) => void;
+  onSubmitEventForm?: (event: Schema_Event) => void;
   priority?: Priority;
-  setEvent: (event: SetStateAction<Event | null>) => void;
+  setEvent: (event: SetStateAction<Schema_Event | null>) => void;
   titleInputRef?: Ref<HTMLInputElement>;
 }
 
+type EventField =
+  | "title"
+  | "description"
+  | "startDate"
+  | "endDate"
+  | "priority";
 export type SetEventFormField = (
-  field: Partial<Pick<Event, "priority">> &
-    Partial<{
-      title: string;
-      description: string;
-      schedule: Event["schedule"];
-    }>,
-  value?: string | Event["priority"],
+  field: Partial<Schema_Event>,
+  value?: Schema_Event[EventField],
 ) => void;

@@ -1,6 +1,6 @@
 import { type Dispatch, type SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
-import { type Event } from "@core/types/event.contracts";
+import { type Schema_Event } from "@core/types/event.types";
 import { isBackendUnavailable as getIsBackendUnavailable } from "@web/api/util/backend-unavailable-error.util";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { useSession } from "@web/auth/compass/session/useSession";
@@ -14,8 +14,8 @@ import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/Re
 
 export interface RecurrenceSectionProps {
   bgColor: string;
-  event: Event;
-  setEvent: Dispatch<SetStateAction<Event | null>>;
+  event: Schema_Event;
+  setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
 }
 
 interface RecurrenceSectionDependencies {
@@ -70,9 +70,7 @@ export function createRecurrenceSection({
               hoverColorByPriority[event.priority ?? Priorities.UNASSIGNED]
             }
             until={until}
-            minDate={
-              event.schedule.kind === "timed" ? event.schedule.end : undefined
-            }
+            minDate={event.endDate}
             setUntil={setUntil}
           />
         </ConditionalRender>

@@ -11,8 +11,6 @@ import {
   useState,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
-import { type Event } from "@core/types/event.contracts";
-import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { darken } from "@web/common/styles/color.utils";
@@ -22,6 +20,7 @@ import {
 } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
+import { getCategory } from "@web/common/utils/event/event.util";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
@@ -124,26 +123,13 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     isExistingEvent,
     ...props
   }) => {
-    const { title } = event.content.kind === "details" ? event.content : {};
+    const { title } = event || {};
     const priority = event.priority || Priorities.UNASSIGNED;
     const priorityColor = colorByPriority[priority];
-    const category: Categories_Event =
-      event.schedule.kind === "allDay"
-        ? Categories_Event.ALLDAY
-        : event.schedule.kind === "someday"
-          ? event.schedule.period === "week"
-            ? Categories_Event.SOMEDAY_WEEK
-            : Categories_Event.SOMEDAY_MONTH
-          : Categories_Event.TIMED;
+    const category = getCategory(event);
     const latestEventRef = useRef(event);
-    const eventStartDate =
-      event.schedule.kind === "someday"
-        ? event.schedule.anchorDate
-        : event.schedule.start;
-    const eventEndDate =
-      event.schedule.kind === "someday"
-        ? event.schedule.anchorDate
-        : event.schedule.end;
+    const eventStartDate = event.startDate as string;
+    const eventEndDate = event.endDate as string;
 
     /********
      * State
@@ -309,9 +295,11 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         startTime,
         endDate: selectedEndDate,
         endTime,
-        isAllDay: eventToSubmit.schedule.kind === "allDay",
+        isAllDay: eventToSubmit.isAllDay || false,
       };
 
+      // TODO(packet-03-phase-3c): mapToBackend now returns an EventSchedule;
+      // this component still operates on legacy Schema_Event startDate/endDate.
       const schedule = mapToBackend(selectedDateTimes);
       const startDate = schedule.start;
       const endDate = schedule.end;
@@ -323,30 +311,18 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
         return;
       }
 
-      const finalEvent: Event = {
+      const finalEvent = {
         ...eventToSubmit,
         priority: eventToSubmit.priority || Priorities.UNASSIGNED,
-        schedule,
+        startDate,
+        endDate,
       };
 
       onSubmit(finalEvent);
     };
 
     const onSetEventField: SetEventFormField = (field) => {
-      const content =
-        latestEventRef.current.content.kind === "details"
-          ? latestEventRef.current.content
-          : { kind: "details" as const, title: "", description: "" };
-      setLatestEvent({
-        ...latestEventRef.current,
-        content: {
-          kind: "details",
-          title: field.title ?? content.title,
-          description: field.description ?? content.description,
-        },
-        ...(field.priority === undefined ? {} : { priority: field.priority }),
-        ...(field.schedule === undefined ? {} : { schedule: field.schedule }),
-      });
+      setLatestEvent({ ...latestEventRef.current, ...field });
     };
 
     const dateTimeSectionProps = {
@@ -498,9 +474,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
           onKeyDown={handleIgnoredKeys}
           placeholder="Description"
           ref={descriptionRef}
-          value={
-            event.content.kind === "details" ? event.content.description : ""
-          }
+          value={event.description || ""}
           className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent transition-all duration-300 hover:bg-border-primary hover:brightness-90"
         />
 
