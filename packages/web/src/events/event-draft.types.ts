@@ -3,6 +3,7 @@ import {
   type EventId,
   type Priority,
 } from "@core/types/domain-primitives";
+import { type Event } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 
 // Drafts use required keys with nullable incomplete values. This confines
@@ -78,3 +79,30 @@ export type EditEventDraft = DraftState<EditEventFormValues> & {
 };
 
 export type EventDraft = NewEventDraft | EditEventDraft;
+
+export type GridScheduleDraft = Extract<
+  EventScheduleDraft,
+  { kind: "timed" | "allDay" }
+> & {
+  start: Date;
+  end: Date;
+};
+
+type GridDraftValues<TValues extends EventFormValues> = Omit<
+  TValues,
+  "schedule"
+> & {
+  schedule: GridScheduleDraft;
+};
+
+export type GridEventDraft =
+  | {
+      kind: "create";
+      source: null;
+      values: GridDraftValues<NewEventFormValues>;
+    }
+  | {
+      kind: "edit";
+      source: Event;
+      values: GridDraftValues<EditEventFormValues>;
+    };
