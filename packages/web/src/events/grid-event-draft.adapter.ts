@@ -1,5 +1,6 @@
 import { Priorities } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
+import { type Schema_Event } from "@core/types/event.types";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import {
@@ -106,3 +107,32 @@ export function parseGridEventDraft(
 export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
   return { kind: "timed", start, end, timeZone: getBrowserTimeZone() };
 }
+
+// TODO(packet-03-phase-3c): remove once remaining grid consumers no longer
+// require Schema_Event. Keeping this projection beside the GridEventDraft
+// adapter lets the draft store expose one canonical grid draft without a
+// second store while legacy consumers are migrated incrementally.
+export function gridEventDraftToSchemaEvent(
+  draft: GridEventDraft,
+): Schema_Event {
+  const { schedule } = draft.values;
+
+  return {
+    _id: draft.kind === "edit" ? draft.source.id : undefined,
+    description: draft.values.description,
+    endDate:
+      schedule.kind === "allDay"
+        ? toDateOnlyString(schedule.end)
+        : schedule.end.toISOString(),
+    isAllDay: schedule.kind === "allDay",
+    isSomeday: false,
+    priority: draft.values.priority ?? Priorities.UNASSIGNED,
+    startDate:
+      schedule.kind === "allDay"
+        ? toDateOnlyString(schedule.start)
+        : schedule.start.toISOString(),
+    title: draft.values.title,
+  };
+}
+
+const toDateOnlyString = (date: Date) => date.toISOString().slice(0, 10);

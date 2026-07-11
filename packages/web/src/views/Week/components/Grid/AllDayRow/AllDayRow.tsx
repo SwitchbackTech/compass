@@ -1,7 +1,7 @@
 import { type FC, type MouseEvent, type ReactNode, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type Schema_Event } from "@core/types/event.types";
 import { type Ref_Callback } from "@web/common/types/util.types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import { CalendarAllDayRow } from "@web/layout/calendar-grid/components/CalendarAllDayRow";
@@ -47,12 +47,12 @@ export const AllDayRow: FC<Props> = ({
       startOfView,
       YEAR_MONTH_DAY_FORMAT,
     );
-  const openAllDayDraft = (event: Schema_Event) => {
-    draftActions.startGridClick(event);
+  const openAllDayDraft = (draft: GridEventDraft) => {
+    draftActions.startGridDraft({ activity: "gridClick", draft });
   };
   const onMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,
-    onCreateDraft: openAllDayDraft,
+    onCreateGridDraft: openAllDayDraft,
   });
 
   if (children) {
