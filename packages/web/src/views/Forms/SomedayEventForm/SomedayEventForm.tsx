@@ -46,10 +46,10 @@ export const SomedayEventForm: React.FC<FormProps> = ({
   ...props
 }) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
-  const { priority = Priorities.UNASSIGNED, title } = event || {};
+  const { priority = Priorities.UNASSIGNED } = event;
+  const title = event.content.kind === "details" ? event.content.title : "";
   const bgColor = colorByPriority[priority];
 
-  const origRecurrence = useRef(event?.recurrence).current;
   const latestEventRef = useRef(event);
 
   const setLatestEvent = useCallback(
@@ -102,26 +102,27 @@ export const SomedayEventForm: React.FC<FormProps> = ({
 
   const onSetEventField: SetEventFormField = useCallback(
     (field) => {
-      setLatestEvent({ ...latestEventRef.current, ...field });
+      const content =
+        latestEventRef.current.content.kind === "details"
+          ? latestEventRef.current.content
+          : { kind: "details" as const, title: "", description: "" };
+      setLatestEvent({
+        ...latestEventRef.current,
+        content: {
+          kind: "details",
+          title: field.title ?? content.title,
+          description: field.description ?? content.description,
+        },
+        ...(field.priority === undefined ? {} : { priority: field.priority }),
+        ...(field.schedule === undefined ? {} : { schedule: field.schedule }),
+      });
     },
     [setLatestEvent],
   );
 
   const _onSubmit = useCallback(() => {
-    let eventToSubmit = latestEventRef.current;
-    const hasInstances = origRecurrence?.eventId !== undefined;
-    const removedRecurrence =
-      hasInstances && eventToSubmit.recurrence?.rule?.length === 0;
-
-    if (removedRecurrence) {
-      eventToSubmit = {
-        ...eventToSubmit,
-        recurrence: { ...eventToSubmit.recurrence, rule: [] },
-      };
-    }
-
-    onSubmit(eventToSubmit);
-  }, [origRecurrence?.eventId, onSubmit]);
+    onSubmit(latestEventRef.current);
+  }, [onSubmit]);
 
   const onChangeEventTextField =
     <T extends HTMLInputElement | HTMLTextAreaElement = HTMLTextAreaElement>(
@@ -236,7 +237,9 @@ export const SomedayEventForm: React.FC<FormProps> = ({
         onKeyDown={ignoreDelete}
         placeholder="Description"
         underlineColor={colorByPriority[priority]}
-        value={event.description || ""}
+        value={
+          event.content.kind === "details" ? event.content.description : ""
+        }
         className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent transition-all duration-300 hover:bg-border-primary hover:brightness-90"
       />
 

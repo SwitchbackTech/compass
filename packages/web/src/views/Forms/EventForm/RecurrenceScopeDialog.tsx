@@ -1,7 +1,6 @@
 import { useCallback, useState } from "react";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
+import { type Event } from "@core/types/event.contracts";
+import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
@@ -10,15 +9,15 @@ import {
 import { selectDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
-const UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
-  RecurringEventUpdateScope.THIS_EVENT,
-  RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-  RecurringEventUpdateScope.ALL_EVENTS,
+const UPDATE_SCOPE_OPTIONS: RecurrenceScope[] = [
+  "this",
+  "thisAndFollowing",
+  "all",
 ];
 
-const RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS: RecurringEventUpdateScope[] = [
-  RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS,
-  RecurringEventUpdateScope.ALL_EVENTS,
+const RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS: RecurrenceScope[] = [
+  "thisAndFollowing",
+  "all",
 ];
 
 const updateScopeOptionClassName =
@@ -43,16 +42,16 @@ export function RecurrenceScopeDialog() {
 
   return (
     <RecurringEventUpdateScopeDialogContent
-      draft={draft}
-      onUpdateScopeChange={onUpdateScopeChange}
+      draft={draft as unknown as Event}
+      onUpdateScopeChange={(scope) => onUpdateScopeChange(scope as never)}
       setRecurrenceUpdateScopeDialogOpen={setRecurrenceUpdateScopeDialogOpen}
     />
   );
 }
 
 interface RecurringEventUpdateScopeDialogContentProps {
-  draft: Schema_GridEvent | null;
-  onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
+  draft: Event | null;
+  onUpdateScopeChange: (applyTo: RecurrenceScope) => void;
   recurrenceChanged?: boolean;
   setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;
   title?: string;
@@ -69,16 +68,19 @@ export function RecurringEventUpdateScopeDialogContent({
   const currentDraft = draft ?? draftFromStore;
   const recurrenceChanged =
     recurrenceChangedOverride ??
-    (currentDraft && draftFromStore
-      ? DirtyParser.recurrenceChanged(currentDraft, draftFromStore)
-      : false);
+    Boolean(
+      currentDraft &&
+        draftFromStore &&
+        JSON.stringify(currentDraft.recurrence) !==
+          JSON.stringify(draftFromStore.recurrence),
+    );
   const options = recurrenceChanged
     ? RECURRENCE_CHANGED_UPDATE_SCOPE_OPTIONS
     : UPDATE_SCOPE_OPTIONS;
   const [fallbackScope] = options;
 
   const [selectedScope, setSelectedScope] =
-    useState<RecurringEventUpdateScope>(fallbackScope);
+    useState<RecurrenceScope>(fallbackScope);
   const activeScope = options.includes(selectedScope)
     ? selectedScope
     : fallbackScope;
@@ -89,7 +91,7 @@ export function RecurringEventUpdateScopeDialogContent({
 
   const onSubmitHandler = useCallback(() => {
     onUpdateScopeChange(activeScope);
-    setSelectedScope(RecurringEventUpdateScope.THIS_EVENT);
+    setSelectedScope("this");
   }, [activeScope, onUpdateScopeChange]);
 
   return (

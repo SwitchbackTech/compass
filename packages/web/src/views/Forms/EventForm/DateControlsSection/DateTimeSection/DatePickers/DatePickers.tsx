@@ -1,6 +1,7 @@
 import type React from "react";
 import { type FC } from "react";
 import { MONTH_DAY_YEAR } from "@core/constants/date.constants";
+import { DateOnlySchema } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import { darken } from "@web/common/styles/color.utils";
 import { dateIsValid } from "@web/common/utils/datetime/web.date.util";
@@ -12,6 +13,8 @@ import { type SetEventFormField } from "@web/views/Forms/EventForm/types";
 const stopPropagation = (e: React.MouseEvent<HTMLDivElement>) => {
   e.stopPropagation();
 };
+
+const dateOnly = (date: string) => DateOnlySchema.parse(date);
 
 interface Props {
   bgColor: string;
@@ -144,12 +147,21 @@ export const DatePickers: FC<Props> = ({
       setSelectedEndDate(compliment);
 
       onSetEventField({
-        startDate: formatDate(start),
-        endDate: formatDate(compliment),
+        schedule: {
+          kind: "allDay",
+          start: dateOnly(formatDate(start)),
+          end: dateOnly(formatDate(compliment)),
+        },
       });
     } else {
       const newStartDate = formatDate(start);
-      onSetEventField({ startDate: newStartDate });
+      onSetEventField({
+        schedule: {
+          kind: "allDay",
+          start: dateOnly(newStartDate),
+          end: dateOnly(formatDate(selectedEndDate)),
+        },
+      });
     }
   };
 
@@ -166,12 +178,19 @@ export const DatePickers: FC<Props> = ({
       setSelectedEndDate(compliment);
       setDisplayEndDate(compliment);
       onSetEventField({
-        startDate: formatDate(compliment),
-        endDate: formatDate(compliment),
+        schedule: {
+          kind: "allDay",
+          start: dateOnly(formatDate(compliment)),
+          end: dateOnly(formatDate(compliment)),
+        },
       });
     } else {
       onSetEventField({
-        endDate: formatDate(dayjs(end).add(1, "day").toDate()),
+        schedule: {
+          kind: "allDay",
+          start: dateOnly(formatDate(selectedStartDate)),
+          end: dateOnly(formatDate(dayjs(end).add(1, "day").toDate())),
+        },
       });
     }
   };

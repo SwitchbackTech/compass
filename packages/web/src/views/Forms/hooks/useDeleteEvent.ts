@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { type EventId } from "@core/types/domain-primitives";
-import { type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useEventById } from "@web/events/queries/useEventById";
@@ -10,11 +10,11 @@ import { draftActions } from "@web/events/stores/draft.store";
 // layer records a snapshot and shows a "Deleted" toast with the undo hint).
 export function deleteEventAndDiscardDraft(
   deleteEvent?: (payload: { id: EventId; scope: RecurrenceScope }) => void,
-  existingEvent?: Schema_Event | null,
+  existingEvent?: Event | null,
 ) {
-  if (existingEvent?._id) {
+  if (existingEvent?.id) {
     deleteEvent?.({
-      id: existingEvent._id as EventId,
+      id: existingEvent.id,
       scope: "this",
     });
   }

@@ -1,16 +1,12 @@
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { useCallback, useState } from "react";
-import {
-  type RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
+import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import {
   Z_INDEX_FLOATING_FORM,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { legacyScopeToRecurrenceScope } from "@web/events/queries/event.legacy-bridge";
 import { useEventById } from "@web/events/queries/useEventById";
 import {
   draftActions,
@@ -33,13 +29,13 @@ export function FloatingEventForm({
 }) {
   const draft = useDraftStore(selectDraft);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
-  const _id = draft?._id;
+  const _id = draft?.id;
   const [pendingAction, setPendingAction] = useState<
-    { event: Schema_Event; type: "save" } | { type: "delete" } | null
+    { event: Event; type: "save" } | { type: "delete" } | null
   >(null);
   const onSave = useSaveEventForm();
-  const onDelete = useDeleteEvent(draft?._id as string);
-  const onDuplicate = useDuplicateEvent(draft?._id as string);
+  const onDelete = useDeleteEvent(_id as string);
+  const onDuplicate = useDuplicateEvent(_id as string);
   const onClose = useCloseEventForm();
   const maxZIndex = useGridMaxZIndex();
   const formZIndex = Math.max(
@@ -49,20 +45,12 @@ export function FloatingEventForm({
   const open = isFormOpen && !!draft;
   const existingEvent = useEventById(_id);
   const existing = Boolean(existingEvent);
-  // TODO(packet-03-phase-3c): existingEvent is now the new `Event` contract
-  // (recurrence.kind "single" | "series" | "occurrence"); this form still
-  // targets the legacy Schema_Event draft shape.
   const needsRecurrenceScope = Boolean(
     existingEvent && existingEvent.recurrence.kind !== "single",
   );
 
   const setEvent = useCallback(
-    (
-      cb:
-        | ((event: Schema_Event | null) => Schema_Event | null)
-        | Schema_Event
-        | null,
-    ) => {
+    (cb: ((event: Event | null) => Event | null) | Event | null) => {
       const update = typeof cb === "function" ? cb(draft) : cb;
       draftActions.setEvent(update);
     },
@@ -72,15 +60,15 @@ export function FloatingEventForm({
   if (!open) return null;
 
   const closeScopeDialog = () => setPendingAction(null);
-  const submitWithScope = (applyTo: RecurringEventUpdateScope) => {
+  const submitWithScope = (applyTo: RecurrenceScope) => {
     if (pendingAction?.type === "save") {
       onSave(pendingAction.event, applyTo);
     } else if (pendingAction?.type === "delete") {
-      onDelete(legacyScopeToRecurrenceScope(applyTo));
+      onDelete(applyTo);
     }
     setPendingAction(null);
   };
-  const submit = (event: Schema_Event | null) => {
+  const submit = (event: Event | null) => {
     if (event && needsRecurrenceScope) {
       setPendingAction({ event, type: "save" });
       return;
@@ -128,11 +116,7 @@ export function FloatingEventForm({
       </FloatingFocusManager>
       {pendingAction && (
         <RecurringEventUpdateScopeDialogContent
-          draft={
-            (pendingAction.type === "save"
-              ? pendingAction.event
-              : draft) as Schema_GridEvent | null
-          }
+          draft={pendingAction.type === "save" ? pendingAction.event : draft}
           onUpdateScopeChange={submitWithScope}
           setRecurrenceUpdateScopeDialogOpen={(isOpen) => {
             if (!isOpen) closeScopeDialog();

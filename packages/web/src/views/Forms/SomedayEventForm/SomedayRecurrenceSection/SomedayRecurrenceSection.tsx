@@ -1,6 +1,6 @@
 import React, { type Dispatch, type SetStateAction, useRef } from "react";
 import { Frequency } from "rrule";
-import { type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { useRecurrence } from "../../EventForm/DateControlsSection/RecurrenceSection/useRecurrence/useRecurrence";
 import {
@@ -10,8 +10,8 @@ import {
 
 export interface SomedayRecurrenceSectionProps {
   bgColor: string;
-  event: Schema_Event;
-  setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
+  event: Event;
+  setEvent: Dispatch<SetStateAction<Event | null>>;
 }
 
 export const SomedayRecurrenceSection = ({

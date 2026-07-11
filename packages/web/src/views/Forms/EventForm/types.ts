@@ -1,13 +1,13 @@
 import { type Ref, type SetStateAction } from "react";
 import { type Priority } from "@core/constants/core.constants";
+import { type Event } from "@core/types/event.contracts";
 import {
   type Categories_Event,
   type Direction_Migrate,
-  type Schema_Event,
 } from "@core/types/event.types";
 
 export interface FormProps {
-  event: Schema_Event;
+  event: Event;
   category: Categories_Event;
   isDraft: boolean;
   isExistingEvent: boolean;
@@ -15,26 +15,25 @@ export interface FormProps {
   onCloseEventForm?: () => void;
   onConvert?: () => void;
   onDelete: () => void;
-  onDuplicate?: (event: Schema_Event) => void;
+  onDuplicate?: (event: Event) => void;
   onMigrate?: (
-    event: Schema_Event,
+    event: Event,
     category: Categories_Event,
     direction: Direction_Migrate,
   ) => void;
-  onSubmit: (event: Schema_Event | null) => void;
-  onSubmitEventForm?: (event: Schema_Event) => void;
+  onSubmit: (event: Event | null) => void;
+  onSubmitEventForm?: (event: Event) => void;
   priority?: Priority;
-  setEvent: (event: SetStateAction<Schema_Event | null>) => void;
+  setEvent: (event: SetStateAction<Event | null>) => void;
   titleInputRef?: Ref<HTMLInputElement>;
 }
 
-type EventField =
-  | "title"
-  | "description"
-  | "startDate"
-  | "endDate"
-  | "priority";
 export type SetEventFormField = (
-  field: Partial<Schema_Event>,
-  value?: Schema_Event[EventField],
+  field: Partial<Pick<Event, "priority">> &
+    Partial<{
+      title: string;
+      description: string;
+      schedule: Event["schedule"];
+    }>,
+  value?: string | Event["priority"],
 ) => void;

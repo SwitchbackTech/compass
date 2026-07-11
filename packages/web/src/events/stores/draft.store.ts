@@ -1,22 +1,8 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
+import { Categories_Event } from "@core/types/event.types";
 import { IS_DEV } from "@web/common/constants/env.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-
-// TODO(packet-03-phase-3c): deliberately left on the legacy Schema_Event
-// shape for this phase. This store backs the Week grid's drag/resize/swap
-// interactions (~10 consumers: useDraftActions, useSidebarActions,
-// GridContextMenuWrapper, DayCalendarGrid, EventForm, etc.), all of which
-// build/consume Schema_Event/Schema_GridEvent objects with no test coverage
-// in this packet's scope. Converting the store type without converting those
-// call sites in the same pass risks silently breaking drag/resize/swap
-// behavior with no way to verify it here; the boundary is bridged instead
-// via event.legacy-bridge.ts (eventToSchemaEvent / schemaEventToCreateInput /
-// schemaEventToReplaceInput / createLegacyEventMutationsAdapter). 3c should
-// convert this store's `event: Event` and rewire its consumers together,
-// verified against the real grid interactions (see docs/frontend or a
-// browser-driven check), not just a type-level pass.
 
 export type Activity_DraftEvent =
   | "createShortcut"
@@ -38,28 +24,28 @@ export interface Status_DraftEvent {
    * but the form stays closed until the gesture finishes).
    */
   isFormOpen: boolean;
-  dateToResize?: "startDate" | "endDate" | null;
+  dateToResize?: "start" | "end" | null;
 }
 
 export interface State_DraftEvent {
   status: Status_DraftEvent | null;
-  event: Schema_Event | null;
+  event: Event | null;
 }
 
 export interface Payload_DraftEvent {
   activity: Activity_DraftEvent;
-  event: Schema_Event | null;
+  event: Event | null;
   eventType: Categories_Event;
 }
 
 export interface Payload_Draft_Resize {
   category: Categories_Event;
-  event: Schema_Event;
-  dateToChange: "startDate" | "endDate";
+  event: Event;
+  dateToChange: "start" | "end";
 }
 
 export interface Payload_Draft_Swap {
-  event: Schema_GridEvent;
+  event: Event;
   category: Categories_Event;
 }
 
@@ -76,8 +62,12 @@ export const initialDraftState: State_DraftEvent = {
   event: null,
 };
 
-const getEventType = (event: Schema_Event) =>
-  event.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED;
+const getEventType = (event: Event) =>
+  event.schedule.kind === "allDay"
+    ? Categories_Event.ALLDAY
+    : event.schedule.kind === "someday"
+      ? Categories_Event.SOMEDAY_WEEK
+      : Categories_Event.TIMED;
 
 // Selectors passed to this hook must return primitives or stable references;
 // a selector that builds a new object/array each call needs `useShallow`.
@@ -113,7 +103,7 @@ export const draftActions = {
       (state) => ({
         event,
         status: {
-          ...state.status,
+          ...(state.status ?? initialDraftStatus),
           activity: "resizing" as const,
           dateToResize: dateToChange,
           eventType: category,
@@ -139,7 +129,7 @@ export const draftActions = {
       { type: "startDnd" },
     ),
 
-  startGridClick: (event: Schema_Event) =>
+  startGridClick: (event: Event) =>
     useDraftStore.setState(
       {
         event,
@@ -154,7 +144,7 @@ export const draftActions = {
       { type: "startGridClick" },
     ),
 
-  setEvent: (event: Schema_Event | null) =>
+  setEvent: (event: Event | null) =>
     useDraftStore.setState(
       (state) => {
         if (!event) {
@@ -210,7 +200,7 @@ export const selectDraftActivity = (state: State_DraftEvent) =>
 export const selectDraftCategory = (state: State_DraftEvent) =>
   state.status?.eventType;
 
-export const selectDraftId = (state: State_DraftEvent) => state.event?._id;
+export const selectDraftId = (state: State_DraftEvent) => state.event?.id;
 
 export const selectDraftStatus = (state: State_DraftEvent) => state.status;
 
@@ -224,7 +214,7 @@ export const selectIsDrafting = (state: State_DraftEvent) =>
   state.status?.isDrafting;
 
 export const selectIsDraftingExisting = (state: State_DraftEvent) =>
-  state.event?._id !== undefined;
+  state.event !== null;
 
 export const selectIsDraftingSomeday = (state: State_DraftEvent) =>
   state.status?.eventType === Categories_Event.SOMEDAY_WEEK ||
