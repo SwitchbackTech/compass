@@ -25,7 +25,10 @@ async function migrations(
   const migrationsRoot = resolve(__dirname, "..", folder);
   const unsafeText = unsafe ? "unsafe " : "";
   const fileGlob = `${migrationsRoot}/**/*.{ts,js}`;
-  const files = glob.sync(fileGlob, { absolute: true });
+  const files = glob.sync(fileGlob, {
+    absolute: true,
+    ignore: [`${migrationsRoot}/**/*.test.{ts,js}`],
+  });
 
   const migrations = await Promise.all(
     files.map(async (path) => {

@@ -294,6 +294,41 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
       );
     });
 
+    it("verifies cleanly when an assigned someday sortOrder is nonzero", async () => {
+      // Regression: the backfill assigns missing sortOrders after the
+      // transform, so verification must replicate the assignment. A lone
+      // missing-order event gets assigned 0 (indistinguishable from the
+      // transform placeholder), which hid this — force a nonzero assignment
+      // by seeding an explicit order in the same period bucket.
+      const user = await UserDriver.createUser({ withGoogle: false });
+      await insertLocalCalendar(user._id);
+      const userIdHex = user._id.toHexString();
+
+      const explicitOrder = legacyEvent(userIdHex, {
+        title: "Someday week, explicit order 5",
+        isSomeday: true,
+        startDate: "2026-03-10",
+        endDate: "2026-03-11",
+        order: 5,
+      });
+      const missingOrder = legacyEvent(userIdHex, {
+        title: "Someday week, missing order",
+        isSomeday: true,
+        startDate: "2026-03-10",
+        endDate: "2026-03-11",
+      });
+
+      await legacyCollection().insertMany([explicitOrder, missingOrder]);
+
+      // Throws on any verification mismatch, so completing IS the assertion.
+      await migration.up(migrationContext);
+
+      const assigned = await destinationCollection().findOne({
+        _id: missingOrder._id,
+      });
+      expect((assigned?.["schedule"] as Document)["sortOrder"]).toBe(6);
+    });
+
     it("throws on malformed rows, naming each failure reason, and leaves legacy data untouched", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
       await insertLocalCalendar(user._id);
