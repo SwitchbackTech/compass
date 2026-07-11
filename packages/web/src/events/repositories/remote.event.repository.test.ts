@@ -9,7 +9,7 @@ import {
   isBackendUnavailable,
   resetBackendAvailabilityForTests,
 } from "@web/api/util/backend-unavailable-error.util";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockCreate = mock();
 const mockList = mock();
@@ -34,6 +34,12 @@ mock.module("@web/events/event.api", () => ({
   },
 }));
 
+// Capture the real module before mocking it below — mock.module replaces it
+// process-wide for the rest of the test run (bun mock.module leaks across
+// files), so afterAll restores it for every test file that loads after this
+// one.
+const realOfflineDataStoreRegistry = require("@web/common/storage/offline-data/offline-data.store.registry");
+
 mock.module(
   "@web/common/storage/offline-data/offline-data.store.registry",
   () => ({
@@ -49,6 +55,13 @@ mock.module(
     resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
   }),
 );
+
+afterAll(() => {
+  mock.module(
+    "@web/common/storage/offline-data/offline-data.store.registry",
+    () => realOfflineDataStoreRegistry,
+  );
+});
 
 const { RemoteEventRepository } =
   require("./remote.event.repository") as typeof import("./remote.event.repository");

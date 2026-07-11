@@ -2,11 +2,17 @@ import { Priorities } from "@core/constants/core.constants";
 import { type EventId } from "@core/types/domain-primitives";
 import { createMockLocalEventRecord } from "@web/__tests__/utils/factories/event.factory";
 import { LocalEventRepository } from "@web/events/repositories/local.event.repository";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const putEvent = mock();
 const getAllEvents = mock();
 const updateEventOrders = mock();
+
+// Capture the real module before mocking it below — mock.module replaces it
+// process-wide for the rest of the test run (bun mock.module leaks across
+// files), so afterAll restores it for every test file that loads after this
+// one.
+const realOfflineDataStoreRegistry = require("@web/common/storage/offline-data/offline-data.store.registry");
 
 mock.module(
   "@web/common/storage/offline-data/offline-data.store.registry",
@@ -23,6 +29,13 @@ mock.module(
     resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
   }),
 );
+
+afterAll(() => {
+  mock.module(
+    "@web/common/storage/offline-data/offline-data.store.registry",
+    () => realOfflineDataStoreRegistry,
+  );
+});
 
 describe("LocalEventRepository", () => {
   beforeEach(() => {
