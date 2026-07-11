@@ -11,7 +11,7 @@ import {
   type SliceStateContext,
 } from "@web/events/event.types";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { legacyScopeToRecurrenceScope } from "@web/events/queries/event.legacy-bridge";
+import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import {
   findEventInCache,
   removeEventFromQueries,
@@ -79,7 +79,7 @@ export function useUpdateEvent() {
           schedule: schedule.data,
           recurrence: { kind: "preserve" },
           priority: event.priority ?? Priorities.UNASSIGNED,
-          scope: legacyScopeToRecurrenceScope(applyTo),
+          scope: toRecurrenceScope(applyTo),
         },
       });
     },

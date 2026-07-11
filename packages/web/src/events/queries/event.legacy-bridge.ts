@@ -20,23 +20,6 @@ import {
 } from "@core/types/event-command.contracts";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 
-// TODO(packet-03-phase-3c): maps the legacy recurring-edit scope enum (still
-// used by the EventForm's scope-choice dialog) onto the new RecurrenceScope
-// wire values, until that dialog is converted to emit RecurrenceScope
-// directly.
-export function legacyScopeToRecurrenceScope(
-  applyTo?: RecurringEventUpdateScope,
-): RecurrenceScope {
-  switch (applyTo) {
-    case RecurringEventUpdateScope.ALL_EVENTS:
-      return "all";
-    case RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS:
-      return "thisAndFollowing";
-    default:
-      return "this";
-  }
-}
-
 // TODO(packet-03-phase-3c): the grid renderer (assembleGridEvent,
 // Schema_GridEvent, the sidebar Someday components) still consumes the
 // legacy Schema_Event shape. This bridges the new normalized `Event` contract
@@ -204,7 +187,12 @@ export function createLegacyEventMutationsAdapter(
   ) => {
     const id = EventIdSchema.safeParse(payload._id);
     if (!id.success) return;
-    const scope = legacyScopeToRecurrenceScope(payload.applyTo);
+    const scope: RecurrenceScope =
+      payload.applyTo === RecurringEventUpdateScope.ALL_EVENTS
+        ? "all"
+        : payload.applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS
+          ? "thisAndFollowing"
+          : "this";
 
     if (action === "edit" && payload.event) {
       const input = schemaEventToReplaceInput(payload.event, scope);
