@@ -34,21 +34,28 @@ mock.module("@web/events/event.api", () => ({
   },
 }));
 
-mock.module(
-  "@web/common/storage/offline-data/offline-data.store.registry",
-  () => ({
-    ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
-    getOfflineDataStore: () => ({
-      getEvents: mockGetEvents,
-      getAllEvents: mockGetAllEvents,
-      putEvent: mockPutEvent,
+// The shared web.preload.ts afterEach restores the real
+// offline-data-store registry after every test (mock.module is process-wide
+// and otherwise leaks into unrelated files), so this file re-applies its own
+// mock before each of its tests, not just once at load time.
+const registerOfflineDataStoreMock = () =>
+  mock.module(
+    "@web/common/storage/offline-data/offline-data.store.registry",
+    () => ({
+      ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
+      getOfflineDataStore: () => ({
+        getEvents: mockGetEvents,
+        getAllEvents: mockGetAllEvents,
+        putEvent: mockPutEvent,
+      }),
+      initializeOfflineDataStore: mock().mockResolvedValue(undefined),
+      isOfflineDataStoreReady: mock().mockReturnValue(true),
+      resetOfflineDataStore: mock(),
+      resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
     }),
-    initializeOfflineDataStore: mock().mockResolvedValue(undefined),
-    isOfflineDataStoreReady: mock().mockReturnValue(true),
-    resetOfflineDataStore: mock(),
-    resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
-  }),
-);
+  );
+
+registerOfflineDataStoreMock();
 
 const { RemoteEventRepository } =
   require("./remote.event.repository") as typeof import("./remote.event.repository");
@@ -64,6 +71,7 @@ describe("RemoteEventRepository", () => {
   let repository: RemoteEventRepositoryInstance;
 
   beforeEach(() => {
+    registerOfflineDataStoreMock();
     mockCreate.mockClear();
     mockList.mockClear();
     mockGetById.mockClear();

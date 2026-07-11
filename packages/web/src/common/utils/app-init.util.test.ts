@@ -13,17 +13,24 @@ import {
 const mockInitializeStorage = mock();
 const mockToastError = mock();
 
-mock.module(
-  "@web/common/storage/offline-data/offline-data.store.registry",
-  () => ({
-    ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
-    getOfflineDataStore: mock(),
-    initializeOfflineDataStore: mockInitializeStorage,
-    isOfflineDataStoreReady: mock().mockReturnValue(true),
-    resetOfflineDataStore: mock(),
-    resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
-  }),
-);
+// The shared web.preload.ts afterEach restores the real
+// offline-data-store registry after every test (mock.module is process-wide
+// and otherwise leaks into unrelated files), so this file re-applies its own
+// mock before each of its tests, not just once at load time.
+const registerOfflineDataStoreMock = () =>
+  mock.module(
+    "@web/common/storage/offline-data/offline-data.store.registry",
+    () => ({
+      ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
+      getOfflineDataStore: mock(),
+      initializeOfflineDataStore: mockInitializeStorage,
+      isOfflineDataStoreReady: mock().mockReturnValue(true),
+      resetOfflineDataStore: mock(),
+      resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
+    }),
+  );
+
+registerOfflineDataStoreMock();
 
 // Mock react-toastify. mock.module leaks process-wide, and other suites call
 // `toast(...)` directly (e.g. the Deleted toast fired by event delete
@@ -46,6 +53,7 @@ describe("app-init.util", () => {
   let timeoutCallback: (() => void) | undefined;
 
   beforeEach(() => {
+    registerOfflineDataStoreMock();
     mockInitializeStorage.mockClear();
     mockToastError.mockClear();
     timeoutCallback = undefined;

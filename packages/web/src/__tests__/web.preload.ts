@@ -300,6 +300,19 @@ const sessionModule = await import("supertokens-web-js/recipe/session");
 const { cleanup } = await import("@testing-library/react");
 const { resetAllStores } = await import("./utils/state/reset-stores");
 
+// A handful of suites replace this module wholesale with `mock.module` to
+// stub IndexedDB access (see e.g. app-init.util.test.ts,
+// local.event.repository.test.ts). `mock.module` mutates Bun's shared module
+// registry, so the replacement is visible to every test file in the same
+// worker, not just the file that called it — those suites re-apply their own
+// mock in a `beforeEach` and rely on this preload's `afterEach` to restore
+// the real module afterward, so no other file ever observes a stubbed
+// `getOfflineDataStore()`. This import happens before any test file's
+// top-level code runs, so it is guaranteed to capture the true module.
+const realOfflineDataStoreRegistry = await import(
+  "@web/common/storage/offline-data/offline-data.store.registry"
+);
+
 function resetDocument() {
   document.body.innerHTML = "";
   document.body.removeAttribute("style");
@@ -338,6 +351,10 @@ afterEach(async () => {
   resetBrowserState();
   resetAllStores();
   server.resetHandlers();
+  mock.module(
+    "@web/common/storage/offline-data/offline-data.store.registry",
+    () => realOfflineDataStoreRegistry,
+  );
 });
 afterAll(() => server.close());
 afterAll(() => mock.restore());

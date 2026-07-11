@@ -2,21 +2,28 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { type Task } from "@web/common/types/task.types";
 import { type TaskRepository } from "@web/tasks/repositories/task.repository";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
-import { describe, expect, it, mock } from "bun:test";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const ensureOfflineDataStoreReadyMock = mock(() => Promise.resolve());
 
-mock.module(
-  "@web/common/storage/offline-data/offline-data.store.registry",
-  () => ({
-    ensureOfflineDataStoreReady: ensureOfflineDataStoreReadyMock,
-    getOfflineDataStore: mock(),
-    initializeOfflineDataStore: mock().mockResolvedValue(undefined),
-    isOfflineDataStoreReady: mock().mockReturnValue(true),
-    resetOfflineDataStore: mock(),
-    resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
-  }),
-);
+// The shared web.preload.ts afterEach restores the real
+// offline-data-store registry after every test (mock.module is process-wide
+// and otherwise leaks into unrelated files), so this file re-applies its own
+// mock before each of its tests, not just once at load time.
+const registerOfflineDataStoreMock = () =>
+  mock.module(
+    "@web/common/storage/offline-data/offline-data.store.registry",
+    () => ({
+      ensureOfflineDataStoreReady: ensureOfflineDataStoreReadyMock,
+      getOfflineDataStore: mock(),
+      initializeOfflineDataStore: mock().mockResolvedValue(undefined),
+      isOfflineDataStoreReady: mock().mockReturnValue(true),
+      resetOfflineDataStore: mock(),
+      resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
+    }),
+  );
+
+registerOfflineDataStoreMock();
 
 const makeTask = (overrides: Partial<Task> = {}): Task => ({
   _id: "task-1",
@@ -39,6 +46,10 @@ function deferred<T>() {
 }
 
 describe("useTaskState", () => {
+  beforeEach(() => {
+    registerOfflineDataStoreMock();
+  });
+
   it("keeps loaded tasks visible while the next date loads", async () => {
     ensureOfflineDataStoreReadyMock.mockResolvedValue(undefined);
 
