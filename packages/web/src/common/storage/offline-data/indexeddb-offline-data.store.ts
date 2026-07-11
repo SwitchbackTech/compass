@@ -154,7 +154,6 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
       .equals(dateKey)
       .toArray();
 
-    // Remove dateKey and normalize (ensures defaults like user are applied)
     return storedTasks.map(({ dateKey: _, ...task }) => normalizeTask(task));
   }
 
@@ -196,16 +195,9 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
 
     await this.db.transaction("rw", this.db.tasks, async () => {
       const existingTask = await this.db.tasks.get(normalizedTask._id);
+      if (existingTask && existingTask.dateKey !== fromDateKey) return;
 
-      // If the task exists for a different date, don't move it
-      if (existingTask && existingTask.dateKey !== fromDateKey) {
-        return;
-      }
-
-      // Remove from source date (task id stays the same)
       await this.db.tasks.delete(normalizedTask._id);
-
-      // Add to target date
       const storedTask: StoredTask = { ...normalizedTask, dateKey: toDateKey };
       await this.db.tasks.put(storedTask);
     });

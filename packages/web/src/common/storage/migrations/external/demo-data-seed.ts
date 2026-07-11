@@ -250,20 +250,12 @@ export const demoDataSeedMigration: ExternalMigration = {
   description: "Seed demo data for first-time users",
 
   async migrate(store: OfflineDataStore): Promise<void> {
-    // Check if user already has data
     const existingEvents = await store.getAllEvents();
     const existingTasks = await store.getAllTasks();
-
-    if (existingEvents.length > 0 || existingTasks.length > 0) {
-      return;
-    }
+    if (existingEvents.length > 0 || existingTasks.length > 0) return;
 
     const demoData = generateDemoData();
-
-    // Save events
     await store.putEvents(demoData.events);
-
-    // Save tasks by date
     for (const [dateKey, tasks] of Object.entries(demoData.tasks)) {
       await store.putTasks(dateKey, tasks);
     }

@@ -24,6 +24,9 @@ function toDateOnly(value: string): string {
   return value.slice(0, 10);
 }
 
+const isValidLegacyOrder = (order: unknown): order is number =>
+  typeof order === "number" && Number.isInteger(order) && order >= 0;
+
 function resolveRecurrence(legacy: LegacyLocalEvent): EventRecurrence {
   const rec = legacy.recurrence;
   if (!rec) return { kind: "single" };
@@ -64,10 +67,6 @@ function resolveSchedule(legacy: LegacyLocalEvent): ScheduleCandidate | null {
     const diffDays = (endMs - startMs) / DAY_MS;
     const period: "week" | "month" = diffDays > 7 ? "month" : "week";
     const anchorDate = toDateOnly(startDate);
-    const orderValid =
-      typeof legacy.order === "number" &&
-      Number.isInteger(legacy.order) &&
-      legacy.order >= 0;
 
     return {
       kind: "someday",
@@ -75,7 +74,7 @@ function resolveSchedule(legacy: LegacyLocalEvent): ScheduleCandidate | null {
       anchorDate,
       // A deterministic append pass fixes up records missing an explicit
       // legacy order after this first build; see assignMissingSortOrders.
-      sortOrder: orderValid ? (legacy.order as number) : 0,
+      sortOrder: isValidLegacyOrder(legacy.order) ? legacy.order : 0,
     };
   }
 
@@ -192,12 +191,8 @@ export function transformLegacyEvents(
     if (schedule.kind !== "someday") continue;
 
     const key = `${schedule.period}:${schedule.anchorDate}`;
-    const orderValid =
-      typeof item.legacy.order === "number" &&
-      Number.isInteger(item.legacy.order) &&
-      item.legacy.order >= 0;
 
-    if (orderValid) {
+    if (isValidLegacyOrder(item.legacy.order)) {
       maxByBucket.set(
         key,
         Math.max(maxByBucket.get(key) ?? -1, schedule.sortOrder),
