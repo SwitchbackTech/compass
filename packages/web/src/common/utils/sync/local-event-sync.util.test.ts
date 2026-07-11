@@ -1,16 +1,16 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Event_Core } from "@core/types/event.types";
-import { markLocalDemoEvent } from "../../storage/types/local-event.types";
+import { createMockLocalEventRecord } from "@web/__tests__/utils/factories/event.factory";
 import { createSyncLocalEventsToCloud } from "./local-event-sync.util";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const ensureOfflineDataStoreReady = mock();
 const getAllEvents = mock();
 const clearAllEvents = mock();
-const create = mock();
+const createEvent = mock();
+const listCalendars = mock();
 
 const syncLocalEventsToCloud = createSyncLocalEventsToCloud({
-  createEvents: create,
+  createEvent,
+  listCalendars,
   ensureOfflineDataStoreReady,
   getOfflineDataStore: () => ({
     clearAllEvents,
@@ -18,46 +18,72 @@ const syncLocalEventsToCloud = createSyncLocalEventsToCloud({
   }),
 });
 
-const makeEvent = (overrides: Partial<Event_Core> = {}): Event_Core => ({
-  _id: overrides._id ?? "event-1",
-  title: overrides.title ?? "User event",
-  startDate: "2026-05-05T09:00:00.000Z",
-  endDate: "2026-05-05T10:00:00.000Z",
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  user: "unauthenticated",
-  ...overrides,
-});
+const SERVER_LOCAL_CALENDAR_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 
 describe("syncLocalEventsToCloud", () => {
   beforeEach(() => {
     ensureOfflineDataStoreReady.mockClear();
     getAllEvents.mockClear();
     clearAllEvents.mockClear();
-    create.mockClear();
+    createEvent.mockClear();
+    listCalendars.mockClear();
+    listCalendars.mockResolvedValue([
+      {
+        id: SERVER_LOCAL_CALENDAR_ID,
+        name: "Local",
+        description: "",
+        timeZone: null,
+        foregroundColor: "#000000",
+        backgroundColor: "#ffffff",
+        provider: "local",
+        access: "owner",
+        capabilities: {
+          canReadAvailability: true,
+          canReadDetails: true,
+          canWrite: true,
+          canManage: false,
+          canWatchEvents: false,
+        },
+        isPrimary: true,
+        isVisible: true,
+        isActive: true,
+      },
+    ]);
   });
 
-  it("syncs user-created events and skips demo events", async () => {
-    const userEvent = makeEvent({ _id: "user-event" });
-    const demoEvent = markLocalDemoEvent(
-      makeEvent({ _id: "demo-event", title: "Try Compass" }),
-    );
-    getAllEvents.mockResolvedValue([userEvent, demoEvent]);
+  it("syncs user-created events and skips demo events, mapping onto the server local calendar", async () => {
+    const userRecord = createMockLocalEventRecord({}, false);
+    const demoRecord = createMockLocalEventRecord({}, true);
+    getAllEvents.mockResolvedValue([userRecord, demoRecord]);
 
     await expect(syncLocalEventsToCloud()).resolves.toBe(1);
 
-    expect(create).toHaveBeenCalledWith([userEvent]);
+    expect(createEvent).toHaveBeenCalledTimes(1);
+    expect(createEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: userRecord.event.id,
+        calendarId: SERVER_LOCAL_CALENDAR_ID,
+      }),
+    );
     expect(clearAllEvents).toHaveBeenCalledTimes(1);
   });
 
   it("clears local demo events without sending them to the backend", async () => {
-    getAllEvents.mockResolvedValue([
-      markLocalDemoEvent(makeEvent({ _id: "demo-event" })),
-    ]);
+    getAllEvents.mockResolvedValue([createMockLocalEventRecord({}, true)]);
 
     await expect(syncLocalEventsToCloud()).resolves.toBe(0);
 
-    expect(create).not.toHaveBeenCalled();
+    expect(createEvent).not.toHaveBeenCalled();
+    expect(listCalendars).not.toHaveBeenCalled();
     expect(clearAllEvents).toHaveBeenCalledTimes(1);
+  });
+
+  it("returns 0 and skips network calls entirely when storage is empty", async () => {
+    getAllEvents.mockResolvedValue([]);
+
+    await expect(syncLocalEventsToCloud()).resolves.toBe(0);
+
+    expect(createEvent).not.toHaveBeenCalled();
+    expect(clearAllEvents).not.toHaveBeenCalled();
   });
 });

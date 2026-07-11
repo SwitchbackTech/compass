@@ -1,43 +1,59 @@
-import { type Params_Events } from "@core/types/event.types";
+import { type Priority } from "@core/types/domain-primitives";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 
 export const eventQueryKeys = {
   all: ["events"] as const,
   /**
    * Prefix builder for scoped invalidation/removal. Matches every cached entry
-   * for a read scope regardless of source/date-range, e.g. `scope("week")` →
+   * for a read scope regardless of source/params, e.g. `scope("week")` →
    * `["events", "week"]`.
    */
   scope: (scope: "day" | "week" | "someday") =>
     [...eventQueryKeys.all, scope] as const,
   day: (args: {
     source: EventRepositorySource;
-    startDate: string;
-    endDate: string;
+    start: string;
+    end: string;
+    priorities?: Priority[];
   }) =>
     [
       ...eventQueryKeys.all,
       "day",
       {
         source: args.source,
-        startDate: args.startDate,
-        endDate: args.endDate,
-        someday: false,
+        start: args.start,
+        end: args.end,
+        priorities: args.priorities ?? [],
       },
     ] as const,
-  list: (args: {
+  week: (args: {
     source: EventRepositorySource;
-    scope: "week" | "someday";
-    params: Partial<Params_Events>;
+    start: string;
+    end: string;
+    priorities?: Priority[];
   }) =>
     [
       ...eventQueryKeys.all,
-      args.scope,
+      "week",
       {
         source: args.source,
-        startDate: args.params.startDate,
-        endDate: args.params.endDate,
-        someday: args.params.someday,
+        start: args.start,
+        end: args.end,
+        priorities: args.priorities ?? [],
+      },
+    ] as const,
+  someday: (args: {
+    source: EventRepositorySource;
+    period: "week" | "month";
+    anchorDate: string;
+  }) =>
+    [
+      ...eventQueryKeys.all,
+      "someday",
+      {
+        source: args.source,
+        period: args.period,
+        anchorDate: args.anchorDate,
       },
     ] as const,
 };

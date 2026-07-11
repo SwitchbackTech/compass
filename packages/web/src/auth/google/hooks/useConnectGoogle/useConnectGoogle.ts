@@ -67,8 +67,8 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
         await SyncApi.importGCal({ force: true });
       } catch (error) {
         clearGoogleSyncIndicatorOverride();
-        // TODO(packet-03-phase-3): "GOOGLE_REVOKED" is now a
-        // syncStatusChanged attention code (B10), not an SSE constant.
+        // "GOOGLE_REVOKED" here is the HTTP error envelope code (independent
+        // of the syncStatusChanged SSE code of the same name, B10).
         const isGoogleRevoked =
           isApiError(error) && getApiErrorCode(error) === "GOOGLE_REVOKED";
 

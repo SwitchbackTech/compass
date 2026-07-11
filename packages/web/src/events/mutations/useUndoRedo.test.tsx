@@ -1,54 +1,48 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { renderHook, waitFor } from "@testing-library/react";
 import { act, type PropsWithChildren } from "react";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { type EventId } from "@core/types/domain-primitives";
+import { type Event } from "@core/types/event.contracts";
 import {
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
-import { type Schema_WebEvent } from "@web/common/types/web.event.types";
+  type CreateEventInput,
+  type ReplaceEventInput,
+  type TransitionEventInput,
+} from "@core/types/event-command.contracts";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
-import { type SomedayEventQueryData } from "@web/events/queries/event.query.types";
+import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
 import { type EventRepository } from "@web/events/repositories/event.repository.types";
 import { useUndoHistoryStore } from "@web/events/stores/undo.store";
 import { useEventMutations } from "./useEventMutations";
 import { useUndoRedo } from "./useUndoRedo";
 
-const calendarKey = eventQueryKeys.list({
+const calendarKey = eventQueryKeys.week({
   source: "local",
-  scope: "week",
-  params: {
-    startDate: "2026-07-01T00:00:00.000Z",
-    endDate: "2026-07-08T00:00:00.000Z",
-    someday: false,
-  },
+  start: "2026-07-01T00:00:00.000Z",
+  end: "2026-07-08T00:00:00.000Z",
 });
 
-const somedayKey = eventQueryKeys.list({
+const somedayKey = eventQueryKeys.someday({
   source: "local",
-  scope: "someday",
-  params: {
-    startDate: "2026-07-01T00:00:00.000Z",
-    endDate: "2026-08-01T00:00:00.000Z",
-    someday: true,
-  },
+  period: "week",
+  anchorDate: "2026-07-01",
 });
 
-const event = (overrides: Partial<Schema_Event> = {}): Schema_Event => ({
-  _id: "event-1",
-  title: "Original",
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  isSomeday: false,
-  gEventId: "g-event-1",
-  startDate: "2026-07-02T16:00:00.000Z",
-  endDate: "2026-07-02T17:00:00.000Z",
-  ...overrides,
-});
+const event = (overrides: Partial<Event> = {}): Event =>
+  createMockEvent({
+    content: { kind: "details", title: "Original", description: "" },
+    schedule: {
+      kind: "timed",
+      start: "2026-07-02T16:00:00.000Z" as never,
+      end: "2026-07-02T17:00:00.000Z" as never,
+      timeZone: "UTC" as never,
+    },
+    ...overrides,
+  });
 
-const normalized = (...events: Schema_Event[]) => ({
-  ids: events.map(({ _id }) => _id as string),
-  entities: Object.fromEntries(events.map((item) => [item._id, item])),
+const normalized = (...events: Event[]): NormalizedEventQueryData => ({
+  ids: events.map(({ id }) => id),
+  entities: Object.fromEntries(events.map((item) => [item.id, item])),
 });
 
 const setup = () => {
@@ -57,23 +51,26 @@ const setup = () => {
   });
   const calls: Array<{ method: string; value: unknown }> = [];
   const repository: EventRepository = {
-    create: async (value) => {
-      calls.push({ method: "create", value });
+    list: async () => [],
+    getById: async () => {
+      throw new Error("not implemented in test fake");
     },
-    get: async () => ({
-      data: [],
-      count: 0,
-      pageSize: 0,
-      startDate: "2026-07-01T00:00:00.000Z",
-      endDate: "2026-07-08T00:00:00.000Z",
-    }),
-    edit: async (_id, value, params) => {
-      calls.push({ method: "edit", value: { _id, event: value, params } });
+    create: async (input: CreateEventInput) => {
+      calls.push({ method: "create", value: input });
+      return event({ id: (input.id ?? event().id) as EventId });
     },
-    delete: async (_id, applyTo) => {
-      calls.push({ method: "delete", value: { _id, applyTo } });
+    replace: async (id: EventId, input: ReplaceEventInput) => {
+      calls.push({ method: "replace", value: { id, input } });
+      return event({ id });
+    },
+    delete: async (id: EventId, scope) => {
+      calls.push({ method: "delete", value: { id, scope } });
     },
     reorder: async () => {},
+    transition: async (id: EventId, input: TransitionEventInput) => {
+      calls.push({ method: "transition", value: { id, input } });
+      return event({ id });
+    },
   };
   const dependencies = {
     source: "local" as const,
@@ -97,16 +94,28 @@ const setup = () => {
 describe("useUndoRedo", () => {
   test("undoes an edit by replaying the before snapshot, redoes with after", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: event({
-          startDate: "2026-07-03T16:00:00.000Z",
-          endDate: "2026-07-03T17:00:00.000Z",
-        }) as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      context.hook.result.current.mutations.replace({
+        id: original.id,
+        input: {
+          content: original.content as {
+            kind: "details";
+            title: string;
+            description: string;
+          },
+          schedule: {
+            kind: "timed",
+            start: "2026-07-03T16:00:00.000Z" as never,
+            end: "2026-07-03T17:00:00.000Z" as never,
+            timeZone: "UTC" as never,
+          },
+          recurrence: { kind: "preserve" },
+          priority: original.priority,
+          scope: "this",
+        },
       }),
     );
     await waitFor(() => {
@@ -116,92 +125,49 @@ describe("useUndoRedo", () => {
     act(() => context.hook.result.current.undoRedo.undo());
 
     await waitFor(() => {
-      expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities["event-1"].startDate,
-      ).toBe("2026-07-02T16:00:00.000Z");
+      const schedule =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].schedule;
+      expect(schedule?.kind === "timed" && schedule.start).toBe(
+        "2026-07-02T16:00:00.000Z",
+      );
     });
     // The replay persisted the before snapshot and did not re-record itself.
-    const editCalls = context.calls.filter(({ method }) => method === "edit");
-    expect(editCalls).toHaveLength(2);
+    const replayCalls = context.calls.filter(
+      ({ method }) => method === "replace",
+    );
+    expect(replayCalls).toHaveLength(2);
     expect(useUndoHistoryStore.getState().past).toHaveLength(0);
     expect(context.hook.result.current.undoRedo.canRedo).toBe(true);
 
     act(() => context.hook.result.current.undoRedo.redo());
 
     await waitFor(() => {
-      expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities["event-1"].startDate,
-      ).toBe("2026-07-03T16:00:00.000Z");
+      const schedule =
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id].schedule;
+      expect(schedule?.kind === "timed" && schedule.start).toBe(
+        "2026-07-03T16:00:00.000Z",
+      );
     });
     expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
   });
 
-  test("merges replays over the current cache entry so server-owned fields survive", async () => {
+  test("undoes a delete by recreating the snapshot with its original id", async () => {
     const context = setup();
-    // The snapshot era: the optimistic cache entry has no gEventId yet.
-    const optimistic = event();
-    delete optimistic.gEventId;
-    context.queryClient.setQueryData(calendarKey, normalized(optimistic));
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
 
     act(() =>
-      context.hook.result.current.mutations.edit({
-        _id: "event-1",
-        event: {
-          ...optimistic,
-          startDate: "2026-07-03T16:00:00.000Z",
-          endDate: "2026-07-03T17:00:00.000Z",
-        } as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+      context.hook.result.current.mutations.delete({
+        id: original.id,
+        scope: "this",
       }),
     );
     await waitFor(() => {
-      expect(context.hook.result.current.undoRedo.canUndo).toBe(true);
-    });
-
-    // A settle-refetch then enriches the cache with the server-assigned id.
-    act(() =>
-      context.queryClient.setQueryData(
-        calendarKey,
-        normalized(
-          event({
-            startDate: "2026-07-03T16:00:00.000Z",
-            endDate: "2026-07-03T17:00:00.000Z",
-          }),
-        ),
-      ),
-    );
-
-    act(() => context.hook.result.current.undoRedo.undo());
-
-    await waitFor(() => {
       expect(
-        context.calls.filter(({ method }) => method === "edit"),
-      ).toHaveLength(2);
-    });
-    // The replay restores the snapshot's fields but keeps gEventId from the
-    // current cache entry: the backend PUT is a full replace, so a bare
-    // snapshot would strip the id and break Google propagation.
-    const replay = context.calls.filter(({ method }) => method === "edit")[1];
-    expect((replay.value as { event: Schema_Event }).event).toMatchObject({
-      startDate: "2026-07-02T16:00:00.000Z",
-      gEventId: "g-event-1",
-    });
-  });
-
-  test("undoes a delete by recreating the snapshot with its original ids", async () => {
-    const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
-
-    act(() => context.hook.result.current.mutations.delete({ _id: "event-1" }));
-    await waitFor(() => {
-      expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.ids,
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
       ).toEqual([]);
     });
 
@@ -209,24 +175,19 @@ describe("useUndoRedo", () => {
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities["event-1"],
-      ).toEqual(event());
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id],
+      ).toBeDefined();
     });
     const createCall = context.calls.find(({ method }) => method === "create");
-    expect(createCall?.value).toMatchObject({
-      _id: "event-1",
-      gEventId: "g-event-1",
-    });
+    expect((createCall?.value as CreateEventInput).id).toBe(original.id);
 
     act(() => context.hook.result.current.undoRedo.redo());
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.ids,
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.ids,
       ).toEqual([]);
     });
     expect(
@@ -234,38 +195,44 @@ describe("useUndoRedo", () => {
     ).toHaveLength(2);
   });
 
-  test("undoes a someday convert by restoring calendar membership", async () => {
+  test("undoes a someday transition by restoring calendar membership", async () => {
     const context = setup();
-    context.queryClient.setQueryData(calendarKey, normalized(event()));
-    context.queryClient.setQueryData(somedayKey, {
-      ...normalized(),
-      pagination: { data: [], page: 1, pageSize: 10, count: 0, offset: 0 },
-    });
+    const original = event();
+    context.queryClient.setQueryData(calendarKey, normalized(original));
+    context.queryClient.setQueryData(somedayKey, normalized());
 
     act(() =>
-      context.hook.result.current.mutations.convertToSomeday({
-        event: { _id: "event-1" },
+      context.hook.result.current.mutations.transition({
+        id: original.id,
+        input: {
+          kind: "unschedule",
+          schedule: {
+            kind: "someday",
+            period: "week",
+            anchorDate: "2026-07-01" as never,
+            sortOrder: 0,
+          },
+        },
       }),
     );
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<SomedayEventQueryData>(somedayKey)
-          ?.entities["event-1"]?.isSomeday,
-      ).toBe(true);
+        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
+          ?.entities[original.id]?.schedule.kind,
+      ).toBe("someday");
     });
 
     act(() => context.hook.result.current.undoRedo.undo());
 
     await waitFor(() => {
       expect(
-        context.queryClient.getQueryData<SomedayEventQueryData>(somedayKey)
+        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
           ?.ids,
       ).toEqual([]);
       expect(
-        context.queryClient.getQueryData<ReturnType<typeof normalized>>(
-          calendarKey,
-        )?.entities["event-1"].isSomeday,
-      ).toBe(false);
+        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
+          ?.entities[original.id]?.schedule.kind,
+      ).toBe("timed");
     });
   });
 

@@ -14,6 +14,7 @@ import {
   getCalendarEventIdFromElement,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
+import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
 import {
   draftActions,
@@ -75,7 +76,9 @@ export const ContextMenuWrapper = ({
     if (hasClickedOnEvent) {
       e.preventDefault();
 
-      const event = getSelectedEvent(eventId);
+      // TODO(packet-03-phase-3c): draft.store.ts still holds the legacy
+      // Schema_Event shape; bridge until it's converted to `Event`.
+      const event = eventToSchemaEvent(getSelectedEvent(eventId));
 
       // Create a virtual element where the user clicked
       refs.setReference({

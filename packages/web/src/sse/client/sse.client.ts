@@ -1,19 +1,15 @@
 import { EventEmitter2 } from "eventemitter2";
 import { SSE_MESSAGE_EVENT } from "@core/constants/sse.constants";
+import {
+  type ServerMessage,
+  ServerMessageSchema,
+} from "@core/types/server-message.contracts";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 
-// TODO(packet-03-phase-3): the backend now publishes a single `message` SSE
-// event whose JSON `data` is a ServerMessageSchema member (B10) instead of
-// the six named events this emitter used to forward 1:1. This is a minimal
-// mechanical fix so the module compiles: it re-emits using the payload's own
-// `type` field (the new ServerMessage type strings, e.g. "eventsChanged"),
-// which do not match the old EVENT_CHANGED/SOMEDAY_EVENT_CHANGED/etc names
-// consumers still listen for. Hooks need to be rewired to parse
-// ServerMessageSchema and switch on `type`.
-
-// Stable emitter that survives stream reconnects. Hooks subscribe here instead
-// of directly to the EventSource, so closeStream()+openStream() cycles are
-// invisible to anything above this module.
+// The backend publishes one `message` SSE event per B10; its JSON `data` is a
+// ServerMessageSchema member. This module is the single parse point: every
+// consumer subscribes here by the message's own `type` and receives the
+// already-validated ServerMessage, never the raw EventSource payload.
 export const sseEmitter = new EventEmitter2({
   wildcard: false,
   maxListeners: 20,
@@ -29,12 +25,23 @@ export const openStream = (): EventSource => {
     withCredentials: true,
   });
   forwardingHandler = (e: MessageEvent) => {
+    let raw: unknown;
     try {
-      const message = JSON.parse(e.data as string) as { type?: string };
-      if (message.type) sseEmitter.emit(message.type, e);
+      raw = JSON.parse(e.data as string);
     } catch {
-      // malformed message: log + ignore (B10)
+      // eslint-disable-next-line no-console
+      console.error("[sse] malformed message payload", e.data);
+      return;
     }
+
+    const parsed = ServerMessageSchema.safeParse(raw);
+    if (!parsed.success) {
+      // eslint-disable-next-line no-console
+      console.error("[sse] unrecognized message shape", parsed.error, raw);
+      return;
+    }
+
+    sseEmitter.emit(parsed.data.type, parsed.data);
   };
   es.addEventListener(SSE_MESSAGE_EVENT, forwardingHandler);
   return es;
@@ -50,3 +57,14 @@ export const closeStream = (): void => {
 };
 
 export const getStream = (): EventSource | null => es;
+
+// Typed subscribe helper so hooks never have to re-narrow `ServerMessage` by
+// hand; the emitter is otherwise stringly-typed (EventEmitter2's own API).
+export function onServerMessage<T extends ServerMessage["type"]>(
+  type: T,
+  handler: (message: Extract<ServerMessage, { type: T }>) => void,
+): () => void {
+  const listener = (message: ServerMessage) => handler(message as never);
+  sseEmitter.on(type, listener);
+  return () => sseEmitter.off(type, listener);
+}

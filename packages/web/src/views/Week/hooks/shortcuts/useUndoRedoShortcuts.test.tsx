@@ -2,8 +2,8 @@ import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Schema_Event } from "@core/types/event.types";
+import { type ReplaceEventInput } from "@core/types/event-command.contracts";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   undoHistoryActions,
@@ -12,32 +12,31 @@ import {
 import { useUndoRedoShortcuts } from "./useUndoRedoShortcuts";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 
-const before: Schema_Event = {
-  _id: "event-1",
-  title: "Before",
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  isSomeday: false,
-  startDate: "2026-07-02T16:00:00.000Z",
-  endDate: "2026-07-02T17:00:00.000Z",
-};
+const before = createMockEvent({
+  content: { kind: "details", title: "Before", description: "" },
+});
 
 const editEntry = {
   kind: "edit" as const,
-  _id: "event-1",
+  id: before.id,
   before,
-  after: { ...before, title: "After" },
+  after: {
+    ...before,
+    content: { kind: "details" as const, title: "After", description: "" },
+  },
 };
 
 const editMutations = (queryClient: QueryClient) =>
   queryClient
     .getMutationCache()
     .getAll()
-    .filter((mutation) => mutation.options.mutationKey?.[2] === "edit")
-    .map(
-      (mutation) =>
-        (mutation.state.variables as { event: Schema_Event }).event.title,
-    );
+    .filter((mutation) => mutation.options.mutationKey?.[2] === "replace")
+    .map((mutation) => {
+      const { input } = mutation.state.variables as {
+        input: ReplaceEventInput;
+      };
+      return input.content.kind === "details" ? input.content.title : null;
+    });
 
 const setup = () => {
   const queryClient = new QueryClient({

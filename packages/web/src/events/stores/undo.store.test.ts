@@ -1,4 +1,5 @@
-import { type Schema_Event } from "@core/types/event.types";
+import { type EventId } from "@core/types/domain-primitives";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
   isRestoringHistory,
   runHistoryRestore,
@@ -8,13 +9,20 @@ import {
 } from "./undo.store";
 import { describe, expect, it } from "bun:test";
 
-const event = (id: string): Schema_Event => ({ _id: id, title: id });
+const event = (id: string) =>
+  createMockEvent({
+    id: id as EventId,
+    content: { kind: "details", title: id, description: "" },
+  });
 
 const editEntry = (id: string): UndoHistoryEntry => ({
   kind: "edit",
-  _id: id,
+  id,
   before: event(id),
-  after: { ...event(id), title: `${id}-moved` },
+  after: {
+    ...event(id),
+    content: { kind: "details", title: `${id}-moved`, description: "" },
+  },
 });
 
 describe("undoHistoryActions", () => {
@@ -26,7 +34,7 @@ describe("undoHistoryActions", () => {
     undoHistoryActions.record(editEntry("b"));
 
     const { past, future } = useUndoHistoryStore.getState();
-    expect(past.map((e) => (e.kind === "edit" ? e._id : null))).toEqual(["b"]);
+    expect(past.map((e) => (e.kind === "edit" ? e.id : null))).toEqual(["b"]);
     expect(future).toHaveLength(0);
   });
 
@@ -37,8 +45,8 @@ describe("undoHistoryActions", () => {
 
     const { past } = useUndoHistoryStore.getState();
     expect(past).toHaveLength(30);
-    expect(past[0]).toMatchObject({ _id: "e5" });
-    expect(past.at(-1)).toMatchObject({ _id: "e34" });
+    expect(past[0]).toMatchObject({ id: "e5" });
+    expect(past.at(-1)).toMatchObject({ id: "e34" });
   });
 
   it("moves entries between stacks on popUndo/popRedo", () => {

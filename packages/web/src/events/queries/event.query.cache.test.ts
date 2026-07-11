@@ -1,81 +1,74 @@
 import { QueryClient } from "@tanstack/react-query";
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Schema_Event } from "@core/types/event.types";
+import { CalendarIdSchema } from "@core/types/domain-primitives";
+import { SomedayScheduleSchema } from "@core/types/event.contracts";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   findEventInCache,
   getEventQueryEntries,
   insertEventIntoQueries,
   patchEventInQueries,
   removeEventFromQueries,
-  removeEventsByOriginFromQueries,
+  removeEventsByCalendarFromQueries,
   reorderSomedayEventsInQueries,
 } from "./event.query.cache";
 import { eventQueryKeys } from "./event.query.keys";
-import { type SomedayEventQueryData } from "./event.query.types";
+import { type NormalizedEventQueryData } from "./event.query.types";
 
-const event = (overrides: Partial<Schema_Event> = {}): Schema_Event => ({
-  _id: "event-1",
-  title: "Original",
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  isSomeday: false,
-  ...overrides,
-});
-
-const normalized = (...events: Schema_Event[]) => ({
-  ids: events.map(({ _id }) => _id as string),
-  entities: Object.fromEntries(events.map((item) => [item._id, item])),
+const normalized = (
+  ...events: ReturnType<typeof createMockEvent>[]
+): NormalizedEventQueryData => ({
+  ids: events.map(({ id }) => id),
+  entities: Object.fromEntries(events.map((item) => [item.id, item])),
 });
 
 const keys = {
-  localWeek: eventQueryKeys.list({
+  localWeek: eventQueryKeys.week({
     source: "local",
-    scope: "week",
-    params: {
-      startDate: "2026-07-01T00:00:00.000Z",
-      endDate: "2026-07-08T00:00:00.000Z",
-      someday: false,
-    },
+    start: "2026-07-01T00:00:00.000Z",
+    end: "2026-07-08T00:00:00.000Z",
   }),
-  remoteWeek: eventQueryKeys.list({
+  remoteWeek: eventQueryKeys.week({
     source: "remote",
-    scope: "week",
-    params: {
-      startDate: "2026-07-01T00:00:00.000Z",
-      endDate: "2026-07-08T00:00:00.000Z",
-      someday: false,
-    },
+    start: "2026-07-01T00:00:00.000Z",
+    end: "2026-07-08T00:00:00.000Z",
   }),
-  someday: eventQueryKeys.list({
+  someday: eventQueryKeys.someday({
     source: "local",
-    scope: "someday",
-    params: {
-      startDate: "2026-07-01T00:00:00.000Z",
-      endDate: "2026-08-01T00:00:00.000Z",
-      someday: true,
-    },
+    period: "week",
+    anchorDate: "2026-07-01",
   }),
 };
 
 describe("event query cache", () => {
   test("enumerates Event entries and finds by source", () => {
     const client = new QueryClient();
-    client.setQueryData(keys.localWeek, normalized(event()));
+    const event = createMockEvent();
+    client.setQueryData(keys.localWeek, normalized(event));
     client.setQueryData(
       keys.remoteWeek,
-      normalized(event({ title: "Remote" })),
+      normalized(
+        createMockEvent({
+          content: { kind: "details", title: "Remote", description: "" },
+        }),
+      ),
     );
     client.setQueryData(["tasks"], { ids: ["task-1"] });
 
     expect(getEventQueryEntries(client)).toHaveLength(2);
-    expect(findEventInCache(client, "event-1", "remote")?.title).toBe("Remote");
+    expect(findEventInCache(client, event.id, "local")?.content).toMatchObject({
+      title: "Test Event",
+    });
   });
 
   test("inserts only into entries accepted by membership", () => {
     const client = new QueryClient();
-    client.setQueryData(keys.localWeek, normalized(event()));
-    client.setQueryData(keys.remoteWeek, normalized(event()));
-    const created = event({ _id: "event-2", title: "Created" });
+    const event = createMockEvent();
+    client.setQueryData(keys.localWeek, normalized(event));
+    client.setQueryData(keys.remoteWeek, normalized(event));
+    const created = createMockEvent({
+      content: { kind: "details", title: "Created", description: "" },
+    });
 
     insertEventIntoQueries(
       client,
@@ -83,78 +76,79 @@ describe("event query cache", () => {
       ({ metadata }) => metadata.source === "local",
     );
 
-    expect(client.getQueryData<typeof normalized>(keys.localWeek)).toEqual(
-      normalized(event(), created),
-    );
     expect(
-      client.getQueryData<ReturnType<typeof normalized>>(keys.remoteWeek)?.ids,
-    ).toEqual(["event-1"]);
+      client.getQueryData<NormalizedEventQueryData>(keys.localWeek),
+    ).toEqual(normalized(event, created));
+    expect(
+      client.getQueryData<NormalizedEventQueryData>(keys.remoteWeek)?.ids,
+    ).toEqual([event.id]);
   });
 
   test("patches and removes every cached copy immutably", () => {
     const client = new QueryClient();
-    const initial = normalized(event());
+    const event = createMockEvent();
+    const initial = normalized(event);
     client.setQueryData(keys.localWeek, initial);
-    client.setQueryData(keys.someday, {
-      ...initial,
-      pagination: { data: [], page: 1, pageSize: 10, count: 1, offset: 0 },
-    });
 
-    patchEventInQueries(client, "event-1", { title: "Patched" });
-    expect(initial.entities["event-1"].title).toBe("Original");
-    expect(findEventInCache(client, "event-1")?.title).toBe("Patched");
-    removeEventFromQueries(client, "event-1");
+    patchEventInQueries(client, event.id, {
+      content: { kind: "details", title: "Patched", description: "" },
+    });
+    expect(initial.entities[event.id].content).toEqual(event.content);
+    expect(findEventInCache(client, event.id)?.content).toMatchObject({
+      title: "Patched",
+    });
+    removeEventFromQueries(client, event.id);
 
     expect(
-      client.getQueryData<ReturnType<typeof normalized>>(keys.localWeek),
+      client.getQueryData<NormalizedEventQueryData>(keys.localWeek),
     ).toEqual({ ids: [], entities: {} });
-    const someday = client.getQueryData<SomedayEventQueryData>(keys.someday);
-    expect(someday?.pagination).toEqual({
-      data: [],
-      page: 1,
-      pageSize: 10,
-      count: 1,
-      offset: 0,
-    });
   });
 
-  test("removes matching origins without touching other events", () => {
+  test("removes events belonging to the given calendar ids without touching other events", () => {
     const client = new QueryClient();
-    const compass = event();
-    const google = event({ _id: "google", origin: Origin.GOOGLE });
-    client.setQueryData(keys.localWeek, normalized(compass, google));
+    const keptCalendarId = CalendarIdSchema.parse(createObjectIdString());
+    const revokedCalendarId = CalendarIdSchema.parse(createObjectIdString());
+    const kept = createMockEvent({ calendarId: keptCalendarId });
+    const revoked = createMockEvent({ calendarId: revokedCalendarId });
+    client.setQueryData(keys.localWeek, normalized(kept, revoked));
 
-    removeEventsByOriginFromQueries(client, [Origin.GOOGLE]);
+    removeEventsByCalendarFromQueries(client, new Set([revokedCalendarId]));
 
     expect(
-      client.getQueryData<ReturnType<typeof normalized>>(keys.localWeek),
-    ).toEqual(normalized(compass));
+      client.getQueryData<NormalizedEventQueryData>(keys.localWeek),
+    ).toEqual(normalized(kept));
   });
 
-  test("reorders each Someday entry and preserves pagination", () => {
+  test("reorders each Someday entry by schedule.sortOrder", () => {
     const client = new QueryClient();
-    const first = event({ _id: "first", isSomeday: true, order: 0 });
-    const second = event({ _id: "second", isSomeday: true, order: 1 });
-    const pagination = {
-      data: [first, second],
-      page: 1,
-      pageSize: 10,
-      count: 2,
-      offset: 0,
-    };
-    client.setQueryData(keys.someday, {
-      ...normalized(first, second),
-      pagination,
+    const first = createMockEvent({
+      schedule: SomedayScheduleSchema.parse({
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-01",
+        sortOrder: 0,
+      }),
     });
+    const second = createMockEvent({
+      schedule: SomedayScheduleSchema.parse({
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-01",
+        sortOrder: 1,
+      }),
+    });
+    client.setQueryData(keys.someday, normalized(first, second));
 
     reorderSomedayEventsInQueries(client, [
-      { _id: "first", order: 1 },
-      { _id: "second", order: 0 },
+      { eventId: first.id, sortOrder: 1 },
+      { eventId: second.id, sortOrder: 0 },
     ]);
 
-    const result = client.getQueryData<SomedayEventQueryData>(keys.someday);
-    expect(result?.ids).toEqual(["second", "first"]);
-    expect(result?.entities.first.order).toBe(1);
-    expect(result?.pagination).toBe(pagination);
+    const result = client.getQueryData<NormalizedEventQueryData>(keys.someday);
+    expect(result?.ids).toEqual([second.id, first.id]);
+    const firstSchedule = result?.entities[first.id].schedule;
+    expect(firstSchedule?.kind === "someday" && firstSchedule.sortOrder).toBe(
+      1,
+    );
   });
 });

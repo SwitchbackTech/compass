@@ -74,8 +74,8 @@ describe("FloatingEventForm", () => {
     queryClient.setQueryData(
       eventQueryKeys.day({
         source: "local",
-        startDate: "2026-05-20T00:00:00.000Z",
-        endDate: "2026-05-21T00:00:00.000Z",
+        start: "2026-05-20T00:00:00.000Z",
+        end: "2026-05-21T00:00:00.000Z",
       }),
       toNormalizedEventQueryData([existingEvent]),
     );
@@ -153,8 +153,8 @@ describe("FloatingEventForm", () => {
     queryClient.setQueryData(
       eventQueryKeys.day({
         source: "local",
-        startDate: "2026-05-20T00:00:00.000Z",
-        endDate: "2026-05-21T00:00:00.000Z",
+        start: "2026-05-20T00:00:00.000Z",
+        end: "2026-05-21T00:00:00.000Z",
       }),
       toNormalizedEventQueryData([recurringEvent]),
     );

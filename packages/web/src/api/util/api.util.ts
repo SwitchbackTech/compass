@@ -140,9 +140,9 @@ export const handleErrorResponse = async <T>(
 
   if (
     (status === Status.GONE || status === Status.UNAUTHORIZED) &&
-    // TODO(packet-03-phase-3): "GOOGLE_REVOKED" is now a syncStatusChanged
-    // attention code (B10), not an SSE constant; this HTTP error-code check
-    // still matches on the literal string the backend sends.
+    // "GOOGLE_REVOKED" here is the HTTP error envelope code the backend sends
+    // on this response (independent of the syncStatusChanged SSE code of the
+    // same name, B10).
     getApiErrorCode(error) === "GOOGLE_REVOKED"
   ) {
     if (!onGoogleRevoked) {

@@ -1,101 +1,115 @@
-import {
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
+import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { getCompassEventDateFormat } from "@core/util/event/event.util";
 
 export type RecurringEditProjection = {
   removeIds: ReadonlySet<string>;
-  upserts: readonly Schema_Event[];
+  upserts: readonly Event[];
 };
 
 type ProjectRecurringEditInput = {
-  applyTo: RecurringEventUpdateScope;
-  edited: Schema_Event;
-  original: Schema_Event;
-  seriesEvents: readonly Schema_Event[];
+  scope: RecurrenceScope;
+  edited: Event;
+  original: Event;
+  seriesEvents: readonly Event[];
 };
 
-const seriesPatch = (event: Schema_Event, edited: Schema_Event) => ({
+// Instances keep their own `occurrence` recurrence pointer; only content and
+// priority propagate from the edit. The series base (and a standalone
+// "single" edited into a series) take the edited recurrence itself.
+const seriesPatch = (event: Event, edited: Event): Event => ({
   ...event,
-  description: edited.description,
-  isSomeday: edited.isSomeday,
+  content: edited.content,
   priority: edited.priority,
-  title: edited.title,
-  recurrence: event.recurrence?.eventId
-    ? {
-        eventId: event.recurrence.eventId,
-        rule: edited.recurrence?.rule ?? event.recurrence.rule,
-      }
-    : event.recurrence,
+  recurrence:
+    event.recurrence.kind === "occurrence"
+      ? event.recurrence
+      : edited.recurrence,
 });
 
-const shiftEvent = (
-  event: Schema_Event,
-  original: Schema_Event,
-  edited: Schema_Event,
-) => {
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+// Shift every affected instance by the drag's delta so the change renders
+// optimistically. Both series-wide scopes shift by the same delta; they
+// differ only in which instances are affected (computed by the caller). Each
+// instance shifts relative to its own time, and the dragged instance — still
+// at its old time in the cache here — lands on the edited time because
+// (old + (edited - original)) === edited. Someday schedules have no
+// start/end to shift and pass through unchanged (drag-reorder doesn't route
+// through this projection).
+const shiftEvent = (event: Event, original: Event, edited: Event): Event => {
   if (
-    !event.startDate ||
-    !event.endDate ||
-    !original.startDate ||
-    !original.endDate ||
-    !edited.startDate ||
-    !edited.endDate
+    event.schedule.kind === "someday" ||
+    original.schedule.kind === "someday" ||
+    edited.schedule.kind === "someday"
   ) {
     return event;
   }
 
-  const startDelta = dayjs(edited.startDate).diff(original.startDate);
-  const endDelta = dayjs(edited.endDate).diff(original.endDate);
-  const startFormat = getCompassEventDateFormat(event.startDate);
-  const endFormat = getCompassEventDateFormat(event.endDate);
+  const startDelta = dayjs(edited.schedule.start).diff(original.schedule.start);
+  const endDelta = dayjs(edited.schedule.end).diff(original.schedule.end);
 
+  if (event.schedule.kind === "timed") {
+    return {
+      ...event,
+      schedule: {
+        ...event.schedule,
+        start: dayjs(event.schedule.start)
+          .add(startDelta, "milliseconds")
+          .format(),
+        end: dayjs(event.schedule.end).add(endDelta, "milliseconds").format(),
+      } as Event["schedule"],
+    };
+  }
+
+  // allDay: DateOnly strings, shifted by whole days.
   return {
     ...event,
-    startDate: dayjs(event.startDate)
-      .add(startDelta, "milliseconds")
-      .format(startFormat),
-    endDate: dayjs(event.endDate)
-      .add(endDelta, "milliseconds")
-      .format(endFormat),
+    schedule: {
+      ...event.schedule,
+      start: dayjs(event.schedule.start)
+        .add(Math.round(startDelta / MS_PER_DAY), "day")
+        .format("YYYY-MM-DD"),
+      end: dayjs(event.schedule.end)
+        .add(Math.round(endDelta / MS_PER_DAY), "day")
+        .format("YYYY-MM-DD"),
+    } as Event["schedule"],
   };
 };
 
-const isAtOrAfter = (event: Schema_Event, cutoff?: string) =>
-  Boolean(
-    event.startDate && cutoff && !dayjs(event.startDate).isBefore(cutoff),
-  );
+const isAtOrAfter = (event: Event, cutoff: Event["schedule"]) => {
+  if (event.schedule.kind === "someday" || cutoff.kind === "someday") {
+    return true;
+  }
+  return !dayjs(event.schedule.start).isBefore(cutoff.start);
+};
 
 export function projectRecurringEdit({
-  applyTo,
+  scope,
   edited,
   original,
   seriesEvents,
 }: ProjectRecurringEditInput): RecurringEditProjection {
-  if (applyTo === RecurringEventUpdateScope.THIS_EVENT) {
+  if (scope === "this") {
     return { removeIds: new Set(), upserts: [edited] };
   }
 
   const affected =
-    applyTo === RecurringEventUpdateScope.ALL_EVENTS
+    scope === "all"
       ? seriesEvents
-      : seriesEvents.filter((event) => isAtOrAfter(event, original.startDate));
+      : seriesEvents.filter((event) => isAtOrAfter(event, original.schedule));
 
-  if (edited.recurrence?.rule === null) {
+  // Downgrading a series/occurrence to a standalone single event: drop every
+  // other affected instance and keep only the edited one.
+  if (edited.recurrence.kind === "single") {
     return {
-      removeIds: new Set(affected.flatMap(({ _id }) => (_id ? [_id] : []))),
-      upserts: [{ ...edited, recurrence: undefined }],
+      removeIds: new Set(
+        affected.flatMap((event) => (event.id === edited.id ? [] : [event.id])),
+      ),
+      upserts: [edited],
     };
   }
 
-  // Shift every affected instance by the drag's delta so the change renders
-  // optimistically. Both scopes shift by the same delta; they differ only in
-  // which instances are affected (all vs. only those at/after the cutoff),
-  // computed above. Each instance shifts relative to its own time, and the
-  // dragged instance — still at its old time in the cache here — lands on the
-  // edited time because (old + (edited - original)) === edited.
   const upserts = affected.map((event) =>
     shiftEvent(seriesPatch(event, edited), original, edited),
   );

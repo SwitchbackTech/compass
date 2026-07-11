@@ -1,18 +1,12 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import {
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { type EventId } from "@core/types/domain-primitives";
+import { type Event } from "@core/types/event.contracts";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
-import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { showRestoredToast } from "@web/common/utils/toast/deleted-toast.util";
 import {
   type EventMutationDependencies,
   useEventMutations,
 } from "@web/events/mutations/useEventMutations";
-import { findEventInCache } from "@web/events/queries/event.query.cache";
-import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import {
   runHistoryRestore,
   selectCanRedo,
@@ -24,11 +18,11 @@ import {
 
 const isDeleteEntry = (
   entry: UndoHistoryEntry,
-): entry is Extract<UndoHistoryEntry, { kind: "delete" | "delete-someday" }> =>
-  entry.kind === "delete" || entry.kind === "delete-someday";
+): entry is Extract<UndoHistoryEntry, { kind: "delete" }> =>
+  entry.kind === "delete";
 
 const entryEventId = (entry: UndoHistoryEntry): string =>
-  isDeleteEntry(entry) ? (entry.event._id as string) : entry._id;
+  isDeleteEntry(entry) ? entry.event.id : entry.id;
 
 // Not `refocusEventElement`: that helper waits for the DOM node to be
 // *replaced*, but an edit replay updates the node in place (same React key),
@@ -53,35 +47,35 @@ const refocusAfterReplay = (eventId: string) => {
 
 /**
  * Replays undo history through the regular event mutations. Edits and
- * converts are symmetric `edit` replays of the full before/after snapshots
- * (the optimistic upsert handles someday<->calendar membership); deletes are
- * undone by recreating the snapshot, which preserves the Compass `_id` and
- * resurrects the same Google event (the backend re-confirms a cancelled
- * gcal id on create).
+ * transitions are symmetric `replace` replays of the full before/after
+ * snapshots (the optimistic upsert handles someday<->calendar membership);
+ * deletes are undone by recreating the snapshot under its original id (A25),
+ * which resurrects the same provider-linked event server-side.
  */
 export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
   const mutations = useEventMutations(dependencies);
-  const queryClient = useQueryClient();
-  const activeSource = useEventRepositorySource();
-  const source = dependencies.source ?? activeSource;
   const canUndo = useUndoHistoryStore(selectCanUndo);
   const canRedo = useUndoHistoryStore(selectCanRedo);
 
-  // Snapshots merge over the current cache entry rather than replaying bare:
-  // a snapshot captured before the create's settle-refetch lacks server-owned
-  // fields (gEventId, updatedAt), and the backend PUT is a full document
-  // replace — replaying the bare snapshot would strip those ids server-side
-  // and break Google propagation ("cannot update gcal event without id").
+  // History only ever records non-recurring events (event.mutation-history.ts
+  // excludes recurring snapshots), so a snapshot's recurrence is always
+  // "single" and its content is always "details" (busy-provider events are
+  // never user-edited through our mutations).
   const replaySnapshot = useCallback(
-    (_id: string, snapshot: Schema_Event) => {
-      const current = findEventInCache(queryClient, _id, source);
-      mutations.edit({
-        _id,
-        event: { ...current, ...snapshot } as Schema_WebEvent,
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
+    (id: EventId, snapshot: Event) => {
+      if (snapshot.content.kind !== "details") return;
+      mutations.replace({
+        id,
+        input: {
+          content: snapshot.content,
+          schedule: snapshot.schedule,
+          recurrence: { kind: "single" },
+          priority: snapshot.priority,
+          scope: "this",
+        },
       });
     },
-    [mutations, queryClient, source],
+    [mutations],
   );
 
   const undo = useCallback(() => {
@@ -90,9 +84,21 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
 
     runHistoryRestore(() => {
       if (isDeleteEntry(entry)) {
-        mutations.create(entry.event);
+        const { event } = entry;
+        if (event.content.kind !== "details") return;
+        mutations.create({
+          id: event.id,
+          calendarId: event.calendarId,
+          content: event.content,
+          schedule: event.schedule,
+          recurrence:
+            event.recurrence.kind === "series"
+              ? { kind: "series", rules: event.recurrence.rules }
+              : { kind: "single" },
+          priority: event.priority,
+        });
       } else {
-        replaySnapshot(entry._id, entry.before);
+        replaySnapshot(entry.id as EventId, entry.before);
       }
     });
     // A delete surfaced a "Deleted" toast; if it's still up, flip it to
@@ -107,18 +113,13 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
 
     runHistoryRestore(() => {
       if (isDeleteEntry(entry)) {
-        const payload = {
-          _id: entry.event._id as string,
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        };
-        if (entry.kind === "delete") mutations.delete(payload);
-        else mutations.deleteSomeday(payload);
+        mutations.delete({ id: entry.event.id as EventId, scope: "this" });
       } else {
-        replaySnapshot(entry._id, entry.after);
+        replaySnapshot(entry.id as EventId, entry.after);
       }
     });
     if (!isDeleteEntry(entry)) {
-      refocusAfterReplay(entry._id);
+      refocusAfterReplay(entry.id);
     }
   }, [mutations, replaySnapshot]);
 

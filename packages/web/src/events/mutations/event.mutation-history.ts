@@ -1,15 +1,7 @@
 import { type QueryClient } from "@tanstack/react-query";
-import {
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
-import { isRecurringEvent } from "@core/util/event/event.util";
+import { type Event } from "@core/types/event.contracts";
+import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { showDeletedToast } from "@web/common/utils/toast/deleted-toast.util";
-import {
-  type Payload_ConvertEvent,
-  type Payload_DeleteEvent,
-  type Payload_EditEvent,
-} from "@web/events/event.types";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import {
@@ -20,89 +12,70 @@ import {
 // Recurring events are excluded from undo history entirely: series-wide ops
 // can't be restored from a client snapshot (the server rewrites the series),
 // undoing a deleted instance via `create` would spawn a duplicate standalone
-// event instead of clearing the exdate, and even a THIS_EVENT instance edit
-// confirms the instance server-side, so its pre-edit snapshot is stale by
-// the time an undo would replay it.
-const isThisEventScope = (applyTo?: RecurringEventUpdateScope) =>
-  !applyTo || applyTo === RecurringEventUpdateScope.THIS_EVENT;
+// event instead of clearing the exdate, and even a "this"-scope instance edit
+// confirms the instance server-side, so its pre-edit snapshot is stale by the
+// time an undo would replay it.
+export const isRecurringEvent = (event: Event): boolean =>
+  event.recurrence.kind !== "single";
+
+const isThisScope = (scope?: RecurrenceScope) => !scope || scope === "this";
 
 export function recordEventEditHistory({
-  payload,
+  id,
+  after,
+  scope,
   queryClient,
   source,
 }: {
-  payload: Payload_EditEvent;
+  id: string;
+  after: Event;
+  scope: RecurrenceScope;
   queryClient: QueryClient;
   source: EventRepositorySource;
 }): void {
-  if (isRestoringHistory() || !isThisEventScope(payload.applyTo)) return;
+  if (isRestoringHistory() || !isThisScope(scope)) return;
 
-  const before = findEventInCache(queryClient, payload._id, source);
-  if (
-    !before ||
-    isRecurringEvent(before) ||
-    isRecurringEvent(payload.event as Schema_Event)
-  ) {
+  const before = findEventInCache(queryClient, id, source);
+  if (!before || isRecurringEvent(before) || isRecurringEvent(after)) {
     return;
   }
 
-  undoHistoryActions.record({
-    kind: "edit",
-    _id: payload._id,
-    before,
-    // Merge over `before` so fields the payload dropped (e.g. provider ids)
-    // survive a redo replay.
-    after: { ...before, ...payload.event, _id: payload._id },
-  });
+  undoHistoryActions.record({ kind: "edit", id, before, after });
 }
 
 export function recordEventDeleteHistory({
-  kind,
-  payload,
+  id,
+  scope,
   queryClient,
   source,
 }: {
-  kind: "delete" | "delete-someday";
-  payload: Payload_DeleteEvent;
+  id: string;
+  scope: RecurrenceScope;
   queryClient: QueryClient;
   source: EventRepositorySource;
-}): Schema_Event | null {
-  const existing = findEventInCache(queryClient, payload._id, source);
+}): Event | null {
+  const existing = findEventInCache(queryClient, id, source);
   if (isRestoringHistory()) return existing;
 
   const undoable =
-    !!existing &&
-    !isRecurringEvent(existing) &&
-    isThisEventScope(payload.applyTo);
-  if (undoable) undoHistoryActions.record({ kind, event: existing });
+    !!existing && !isRecurringEvent(existing) && isThisScope(scope);
+  if (undoable) undoHistoryActions.record({ kind: "delete", event: existing });
   showDeletedToast(undoable);
   return existing;
 }
 
-export function recordEventConvertHistory({
-  event,
-  converted,
-  existing,
-  isSomeday,
+export function recordEventTransitionHistory({
+  id,
+  before,
+  after,
 }: {
-  event: Payload_ConvertEvent["event"];
-  converted: Schema_Event | null;
-  existing: Schema_Event | null;
-  isSomeday: boolean;
+  id: string;
+  before: Event | null;
+  after: Event | null;
 }): void {
-  if (
-    isRestoringHistory() ||
-    !existing ||
-    !converted ||
-    isRecurringEvent(existing)
-  ) {
+  if (isRestoringHistory() || !before || !after || isRecurringEvent(before)) {
     return;
   }
 
-  undoHistoryActions.record({
-    kind: isSomeday ? "convert-to-someday" : "convert-to-calendar",
-    _id: event._id,
-    before: existing,
-    after: converted,
-  });
+  undoHistoryActions.record({ kind: "transition", id, before, after });
 }

@@ -1,4 +1,5 @@
 import { waitFor } from "@testing-library/react";
+import { type EventId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -43,7 +44,9 @@ describe("useWeekEventsQuery", () => {
     });
 
     await waitFor(() => {
-      expect(result.result.current.data?.ids).toEqual(["week-1"]);
+      expect(result.result.current.data?.ids).toEqual([
+        "week-1",
+      ] as unknown as EventId[]);
     });
   });
 
@@ -64,7 +67,9 @@ describe("useWeekEventsQuery", () => {
       queryClient,
     });
     await waitFor(() => {
-      expect(second.result.current.data?.ids).toEqual(["week-1"]);
+      expect(second.result.current.data?.ids).toEqual([
+        "week-1",
+      ] as unknown as EventId[]);
     });
     expect(fetchWeekEvents.mock.calls.length).toBe(callsAfterFirst);
   });

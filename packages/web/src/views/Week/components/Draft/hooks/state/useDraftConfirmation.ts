@@ -4,6 +4,7 @@ import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { type Entities_Event } from "@web/events/event.types";
+import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
 import { useEventById } from "@web/events/queries/useEventById";
 import { type useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
@@ -56,8 +57,13 @@ export const useDraftConfirmation = ({
   const isSomeday = actions.isSomeday();
   const baseEventId = draft?.recurrence?.eventId;
   const baseEvent = useEventById(baseEventId);
+  // TODO(packet-03-phase-3c): baseEvent is now the new `Event` contract;
+  // bridged until this file's Schema_GridEvent-based recurrence checks are
+  // converted.
   const eventEntities =
-    baseEventId && baseEvent ? { [baseEventId]: baseEvent } : {};
+    baseEventId && baseEvent
+      ? { [baseEventId]: eventToSchemaEvent(baseEvent) }
+      : {};
 
   const [
     isRecurrenceUpdateScopeDialogOpen,

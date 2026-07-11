@@ -42,24 +42,20 @@ const next = {
   endDate: nextStart.endOf("week").format(),
 };
 
-const previousKey = eventQueryKeys.list({
+const previousKey = eventQueryKeys.week({
   source: "local",
-  scope: "week",
-  params: { ...previous, someday: false },
+  start: previous.startDate,
+  end: previous.endDate,
 });
-const nextKey = eventQueryKeys.list({
+const nextKey = eventQueryKeys.week({
   source: "local",
-  scope: "week",
-  params: { ...next, someday: false },
+  start: next.startDate,
+  end: next.endDate,
 });
-const currentKey = eventQueryKeys.list({
+const currentKey = eventQueryKeys.week({
   source: "local",
-  scope: "week",
-  params: {
-    startDate: currentStart.format(),
-    endDate: currentStart.endOf("week").format(),
-    someday: false,
-  },
+  start: currentStart.format(),
+  end: currentStart.endOf("week").format(),
 });
 
 describe("usePrefetchAdjacentEvents", () => {

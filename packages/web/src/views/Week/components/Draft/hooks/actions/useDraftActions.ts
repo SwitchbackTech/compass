@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -8,12 +8,13 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { MapEvent } from "@core/mappers/map.event";
 import {
   Categories_Event,
-  type Recurrence,
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   type Schema_GridEvent,
@@ -30,6 +31,7 @@ import { EventInViewParser } from "@web/common/utils/parse/view.parser";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { type Payload_EditEvent } from "@web/events/event.types";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { createLegacyEventMutationsAdapter } from "@web/events/queries/event.legacy-bridge";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
   draftActions,
@@ -60,7 +62,18 @@ export const useDraftActions = (
   dateCalcs: DateCalcs,
   weekProps: WeekProps,
 ) => {
-  const eventMutations = useEventMutations();
+  const mutations = useEventMutations();
+  const { data: calendars } = useCalendarsQuery();
+  // TODO(packet-03-phase-3c): legacy-shaped facade until this file's
+  // Schema_Event-based drag/drop state is converted to the new contracts.
+  const eventMutations = useMemo(
+    () =>
+      createLegacyEventMutationsAdapter(
+        mutations,
+        () => getDefaultTargetCalendar(calendars ?? [])?.id,
+      ),
+    [mutations, calendars],
+  );
   const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
     useSomedayEventViewModel(
       weekProps.component.startOfView,
@@ -253,10 +266,7 @@ export const useDraftActions = (
           return;
         case "CREATE": {
           const event = new OnSubmitParser(draft).parse();
-          eventMutations.create({
-            ...event,
-            recurrence: event.recurrence as Recurrence["recurrence"],
-          });
+          eventMutations.create(event);
           return;
         }
         case "UPDATE": {

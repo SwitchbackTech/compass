@@ -3,6 +3,7 @@ import { PlusIcon } from "@phosphor-icons/react";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { renderWithStore } from "@web/__tests__/render-with-store";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
   undoHistoryActions,
   useUndoHistoryStore,
@@ -236,11 +237,17 @@ describe("CommandPalette", () => {
   });
 
   it("undoes the last change and closes when the Undo row is clicked", async () => {
+    const before = createMockEvent({
+      content: { kind: "details", title: "Before", description: "" },
+    });
     undoHistoryActions.record({
       kind: "edit",
-      _id: "event-1",
-      before: { _id: "event-1", title: "Before" },
-      after: { _id: "event-1", title: "After" },
+      id: before.id,
+      before,
+      after: {
+        ...before,
+        content: { kind: "details", title: "After", description: "" },
+      },
     });
     renderPalette();
 

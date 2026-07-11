@@ -11,14 +11,20 @@ import { type NormalizedEventQueryData } from "@web/events/queries/event.query.t
  * Events without an `_id` are skipped. Shared by the render test harnesses so
  * they seed the cache identically.
  */
+// TODO(packet-03-phase-3c): render-test harnesses across the component tree
+// still seed legacy Schema_Event-shaped (`_id`) fixtures; cast until those
+// fixtures are converted to the new `Event` contract (see
+// packages/web/src/__tests__/utils/factories/event.factory.ts for the
+// contract-shaped factory new tests should use instead).
 export const toNormalizedEventQueryData = (
   events: Array<{ _id?: string }>,
-): NormalizedEventQueryData => ({
-  ids: events.flatMap((event) => (event._id ? [event._id] : [])),
-  entities: Object.fromEntries(
-    events.flatMap((event) => (event._id ? [[event._id, event]] : [])),
-  ),
-});
+): NormalizedEventQueryData =>
+  ({
+    ids: events.flatMap((event) => (event._id ? [event._id] : [])),
+    entities: Object.fromEntries(
+      events.flatMap((event) => (event._id ? [[event._id, event]] : [])),
+    ),
+  }) as unknown as NormalizedEventQueryData;
 
 /**
  * First-class query-seeding entry point for tests: registers the given events
@@ -42,7 +48,7 @@ export const seedEventQueries = (
 export const seedPendingEventMutations = (
   queryClient: QueryClient,
   eventIds: string[],
-  operation: EventMutationOperation = "edit",
+  operation: EventMutationOperation = "replace",
 ) => {
   for (const eventId of eventIds) {
     queryClient.getMutationCache().build(

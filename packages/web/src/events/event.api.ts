@@ -1,56 +1,78 @@
+import { type EventId } from "@core/types/domain-primitives";
+import { type Event } from "@core/types/event.contracts";
 import {
-  type CompassCoreEvent,
-  type Params_Events,
-  type Payload_Order,
-  type RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
-import { type ApiResponse } from "@web/api/api.types";
+  type CreateEventInput,
+  type EventListQuery,
+  EventListResponseSchema,
+  EventResponseSchema,
+  type ReorderEventsInput,
+  type ReplaceEventInput,
+  type TransitionEventInput,
+} from "@core/types/event-command.contracts";
 import { BaseApi } from "@web/api/base/base.api";
-import { type Response_HttpPaginatedSuccess } from "@web/common/types/api.types";
-import {
-  validateApiEvent,
-  validateApiEvents,
-} from "@web/common/validators/api.event.validator";
+
+// Every response is parsed with the core schemas (B4) — the client never
+// trusts an unparsed payload, matching the strict-parsed ingress on the
+// backend.
+
+function buildListQueryString(query: EventListQuery): string {
+  const params = new URLSearchParams();
+  params.set("kind", query.kind);
+
+  if (query.kind === "range") {
+    params.set("start", query.start);
+    params.set("end", query.end);
+    if (query.priorities.length > 0) {
+      params.set("priorities", query.priorities.join(","));
+    }
+  } else {
+    params.set("period", query.period);
+    params.set("anchorDate", query.anchorDate);
+  }
+
+  return params.toString();
+}
 
 const EventApi = {
-  // Outbound events are validated against the backend's own request schema
-  // (see validateApiEvent), which also strips client-only fields the API
-  // has no use for (grid layout state, local-store markers).
-  create: (event: Schema_Event | Schema_Event[]) => {
-    const body: CompassCoreEvent | CompassCoreEvent[] = Array.isArray(event)
-      ? validateApiEvents(event)
-      : validateApiEvent(event);
-    return BaseApi.post<void>(`/event`, body);
+  list: async (query: EventListQuery): Promise<Event[]> => {
+    const response = await BaseApi.get<unknown>(
+      `/event?${buildListQueryString(query)}`,
+    );
+    return EventListResponseSchema.parse(response.data).events;
   },
-  delete: (_id: string, applyTo?: RecurringEventUpdateScope) => {
-    return BaseApi.delete<void>(`/event/${_id}?applyTo=${applyTo}`);
-  },
-  edit: (
-    _id: string,
-    event: Schema_Event,
-    params: { applyTo?: RecurringEventUpdateScope },
-  ): Promise<ApiResponse<void>> => {
-    const body: CompassCoreEvent = validateApiEvent(event);
-    if (params?.applyTo) {
-      return BaseApi.put<void>(`/event/${_id}?applyTo=${params.applyTo}`, body);
-    }
 
-    return BaseApi.put<void>(`/event/${_id}`, body);
+  getById: async (id: EventId): Promise<Event> => {
+    const response = await BaseApi.get<unknown>(`/event/${id}`);
+    return EventResponseSchema.parse(response.data).event;
   },
-  get: (params: Params_Events) => {
-    if (params.someday) {
-      return BaseApi.get<Response_HttpPaginatedSuccess<Schema_Event[]>>(
-        `/event?someday=true&start=${params.startDate}&end=${params.endDate}`,
-      );
-    } else {
-      return BaseApi.get<Response_HttpPaginatedSuccess<Schema_Event[]>>(
-        `/event?start=${params.startDate}&end=${params.endDate}`,
-      );
-    }
+
+  create: async (input: CreateEventInput): Promise<Event> => {
+    const response = await BaseApi.post<unknown>(`/event`, input);
+    return EventResponseSchema.parse(response.data).event;
   },
-  reorder: (order: Payload_Order[]) => {
-    return BaseApi.put(`/event/reorder`, order);
+
+  replace: async (id: EventId, input: ReplaceEventInput): Promise<Event> => {
+    const response = await BaseApi.put<unknown>(`/event/${id}`, input);
+    return EventResponseSchema.parse(response.data).event;
+  },
+
+  delete: (id: EventId, scope: "this" | "thisAndFollowing" | "all") => {
+    return BaseApi.delete<void>(`/event/${id}?scope=${scope}`);
+  },
+
+  reorder: (input: ReorderEventsInput) => {
+    return BaseApi.put<void>(`/event/reorder`, input);
+  },
+
+  transition: async (
+    id: EventId,
+    input: TransitionEventInput,
+  ): Promise<Event> => {
+    const response = await BaseApi.post<unknown>(
+      `/event/${id}/transition`,
+      input,
+    );
+    return EventResponseSchema.parse(response.data).event;
   },
 };
 

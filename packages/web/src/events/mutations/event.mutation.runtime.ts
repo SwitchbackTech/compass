@@ -1,5 +1,4 @@
 import { type Mutation, type QueryClient } from "@tanstack/react-query";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { session } from "@web/auth/compass/session/Session";
 import {
   hasUserEverAuthenticated,
@@ -30,25 +29,15 @@ export const precedingCreateOk = (preceding: PrecedingEventWrites) =>
 export const precedingDeleteOk = (preceding: PrecedingEventWrites) =>
   preceding.delete !== "error";
 
-// Reorder-someday variables are an array and carry no single id, which keeps
-// them out of per-event serialization (they batch-write order fields, not
-// event documents one at a time).
-const variablesEventId = (mutation: AnyMutation): string | undefined => {
-  const variables = mutation.state.variables as
-    | {
-        _id?: string;
-        applyTo?: RecurringEventUpdateScope;
-        event?: { _id?: string; recurrence?: { eventId?: string } };
-      }
-    | undefined;
-  const seriesScope =
-    variables?.applyTo === RecurringEventUpdateScope.ALL_EVENTS ||
-    variables?.applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS;
-  if (seriesScope && variables.event?.recurrence?.eventId) {
-    return variables.event.recurrence.eventId;
-  }
-  return variables?._id ?? variables?.event?._id;
-};
+// Every serialized mutation's variables carry an explicit `writeKey` — the id
+// (event id, or series id for an "all"/"thisAndFollowing"-scope replace) that
+// identifies which document this write serializes against. Reorder-someday
+// variables carry no `writeKey` (an array, batch-writing order fields, not
+// one event document), which keeps them out of per-event serialization.
+type WriteKeyed = { writeKey?: string };
+
+const variablesEventId = (mutation: AnyMutation): string | undefined =>
+  (mutation.state.variables as WriteKeyed | undefined)?.writeKey;
 
 const operationOf = (mutation: AnyMutation): string | undefined => {
   const key = mutation.options.mutationKey;
@@ -130,7 +119,7 @@ export async function waitForPrecedingEventWrites(
 
   return {
     create: lastStatus(["create"]),
-    delete: lastStatus(["delete", "delete-someday"]),
+    delete: lastStatus(["delete"]),
   };
 }
 
@@ -158,7 +147,7 @@ export function isSupersededByLaterEditWrite(
     (mutation) =>
       mutation.state.status === "pending" &&
       mutation.mutationId > self.mutationId &&
-      operationOf(mutation) === "edit" &&
+      operationOf(mutation) === "replace" &&
       variablesEventId(mutation) === eventId,
   );
 }

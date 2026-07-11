@@ -3,6 +3,8 @@ import { SOMEDAY_WEEK_LIMIT_MSG } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
+import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -23,6 +25,7 @@ import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { focusFirstSomedaySidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import { createLegacyEventMutationsAdapter } from "@web/events/queries/event.legacy-bridge";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
@@ -70,7 +73,16 @@ export const useWeekShortcuts = ({
   util,
   scrollUtil,
 }: ShortcutProps) => {
-  const { delete: deleteEvent, convertToSomeday } = useEventMutations();
+  const mutations = useEventMutations();
+  const { delete: deleteEvent } = mutations;
+  const { data: calendars } = useCalendarsQuery();
+  // TODO(packet-03-phase-3c): legacy-shaped facade until this file's
+  // Schema_GridEvent-based someday conversion is converted to the new
+  // contracts.
+  const { convertToSomeday } = createLegacyEventMutationsAdapter(
+    mutations,
+    () => getDefaultTargetCalendar(calendars ?? [])?.id,
+  );
   const context = useSidebarContext(true);
   const {
     actions: { repositionDraftByKeyboard },

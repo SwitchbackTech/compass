@@ -1,9 +1,10 @@
+import { type EventId } from "@core/types/domain-primitives";
 import {
-  type Params_Events,
-  type Payload_Order,
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+  type CreateEventInput,
+  type EventListQuery,
+  type TransitionEventInput,
+} from "@core/types/event-command.contracts";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
   isBackendUnavailable,
   resetBackendAvailabilityForTests,
@@ -11,20 +12,25 @@ import {
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockCreate = mock();
-const mockGet = mock();
-const mockEdit = mock();
+const mockList = mock();
+const mockGetById = mock();
+const mockReplace = mock();
 const mockDelete = mock();
 const mockReorder = mock();
+const mockTransition = mock();
 const mockPutEvent = mock();
 const mockGetEvents = mock();
+const mockGetAllEvents = mock();
 
 mock.module("@web/events/event.api", () => ({
   EventApi: {
     create: mockCreate,
-    get: mockGet,
-    edit: mockEdit,
+    list: mockList,
+    getById: mockGetById,
+    replace: mockReplace,
     delete: mockDelete,
     reorder: mockReorder,
+    transition: mockTransition,
   },
 }));
 
@@ -34,6 +40,7 @@ mock.module(
     ensureOfflineDataStoreReady: mock().mockResolvedValue(undefined),
     getOfflineDataStore: () => ({
       getEvents: mockGetEvents,
+      getAllEvents: mockGetAllEvents,
       putEvent: mockPutEvent,
     }),
     initializeOfflineDataStore: mock().mockResolvedValue(undefined),
@@ -58,227 +65,141 @@ describe("RemoteEventRepository", () => {
 
   beforeEach(() => {
     mockCreate.mockClear();
-    mockGet.mockClear();
-    mockEdit.mockClear();
+    mockList.mockClear();
+    mockGetById.mockClear();
+    mockReplace.mockClear();
     mockDelete.mockClear();
     mockReorder.mockClear();
+    mockTransition.mockClear();
     mockPutEvent.mockClear();
     mockGetEvents.mockClear();
+    mockGetAllEvents.mockClear();
     resetBackendAvailabilityForTests();
     repository = new RemoteEventRepository();
   });
 
   describe("create", () => {
-    it("should call EventApi.create with a single event", async () => {
-      const event: Schema_Event = {
-        _id: "event-1",
-        title: "Test Event",
+    it("calls EventApi.create with the command input", async () => {
+      const event = createMockEvent();
+      const input: CreateEventInput = {
+        calendarId: event.calendarId,
+        content: event.content as CreateEventInput["content"],
+        schedule: event.schedule,
+        recurrence: { kind: "single" as const },
+        priority: event.priority,
       };
 
-      mockCreate.mockResolvedValue({ status: 200 });
+      mockCreate.mockResolvedValue(event);
 
-      await repository.create(event);
+      const result = await repository.create(input);
 
-      expect(mockCreate).toHaveBeenCalledWith(event);
-      expect(mockCreate).toHaveBeenCalledTimes(1);
+      expect(mockCreate).toHaveBeenCalledWith(input);
+      expect(result).toEqual(event);
     });
 
-    it("should call EventApi.create with an array of events", async () => {
-      const events: Schema_Event[] = [
-        { _id: "event-1", title: "Event 1" },
-        { _id: "event-2", title: "Event 2" },
-      ];
-
-      mockCreate.mockResolvedValue({ status: 200 });
-
-      await repository.create(events);
-
-      expect(mockCreate).toHaveBeenCalledWith(events);
-      expect(mockCreate).toHaveBeenCalledTimes(1);
-    });
-
-    it("saves locally when the backend is unavailable", async () => {
-      const event: Schema_Event = {
-        _id: "event-1",
-        title: "Test Event",
+    it("falls back to the local repository when the backend is unavailable", async () => {
+      const event = createMockEvent();
+      const input: CreateEventInput = {
+        calendarId: event.calendarId,
+        content: event.content as CreateEventInput["content"],
+        schedule: event.schedule,
+        recurrence: { kind: "single" as const },
+        priority: event.priority,
       };
 
       mockCreate.mockRejectedValue(createBackendUnavailableError());
       mockPutEvent.mockResolvedValue(undefined);
 
-      await repository.create(event);
+      await repository.create(input);
 
-      expect(mockCreate).toHaveBeenCalledWith(event);
-      expect(mockPutEvent).toHaveBeenCalledWith(event);
+      expect(mockPutEvent).toHaveBeenCalledTimes(1);
       expect(isBackendUnavailable()).toBe(true);
     });
   });
 
-  describe("get", () => {
-    it("should call EventApi.get and return formatted response", async () => {
-      const params: Params_Events = {
-        startDate: "2024-01-01",
-        endDate: "2024-01-31",
-        someday: false,
-      };
+  describe("list", () => {
+    it("calls EventApi.list and returns its events", async () => {
+      const events = [createMockEvent()];
+      mockList.mockResolvedValue(events);
 
-      const mockResponse = {
-        data: {
-          data: [{ _id: "event-1", title: "Test" }],
-          count: 1,
-          page: 1,
-          pageSize: 10,
-          offset: 0,
-          startDate: params.startDate,
-          endDate: params.endDate,
-        },
-      };
+      const query = {
+        kind: "range" as const,
+        start: "2024-01-01T00:00:00.000Z",
+        end: "2024-01-31T00:00:00.000Z",
+        priorities: [],
+      } as unknown as EventListQuery;
+      const result = await repository.list(query);
 
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await repository.get(params);
-
-      expect(mockGet).toHaveBeenCalledWith(params);
-      expect(mockGet).toHaveBeenCalledTimes(1);
-      expect(result.data).toHaveLength(1);
-      expect(result.count).toBe(1);
-      expect(result.page).toBe(1);
-      expect(result.pageSize).toBe(10);
-      expect(result.offset).toBe(0);
-      expect(result.startDate).toBe(params.startDate);
-      expect(result.endDate).toBe(params.endDate);
-    });
-
-    it("should merge params with response data", async () => {
-      const params: Params_Events = {
-        startDate: "2024-01-01",
-        endDate: "2024-01-31",
-        someday: true,
-      };
-
-      const mockResponse = {
-        data: {
-          data: [],
-          count: 0,
-          page: 1,
-          pageSize: 10,
-          offset: 0,
-        },
-      };
-
-      mockGet.mockResolvedValue(mockResponse);
-
-      const result = await repository.get(params);
-
-      expect(result.startDate).toBe(params.startDate);
-      expect(result.endDate).toBe(params.endDate);
-      expect(result.someday).toBe(params.someday);
+      expect(mockList).toHaveBeenCalledWith(query);
+      expect(result).toEqual(events);
     });
 
     it("loads local events when the backend is unavailable", async () => {
-      const params: Params_Events = {
-        startDate: "2024-01-01",
-        endDate: "2024-01-31",
-        someday: false,
-      };
-      const localEvents = [{ _id: "event-1", title: "Local Event" }];
+      const localEvents = [createMockEvent()];
+      const query = {
+        kind: "someday" as const,
+        period: "week" as const,
+        anchorDate: "2024-01-01",
+      } as unknown as EventListQuery;
 
-      mockGet.mockRejectedValue(createBackendUnavailableError());
-      mockGetEvents.mockResolvedValue(localEvents);
-
-      const result = await repository.get(params);
-
-      expect(mockGet).toHaveBeenCalledWith(params);
-      expect(mockGetEvents).toHaveBeenCalledWith(
-        params.startDate,
-        params.endDate,
-        params.someday,
+      mockList.mockRejectedValue(createBackendUnavailableError());
+      mockGetEvents.mockResolvedValue(
+        localEvents.map((event) => ({ id: event.id, event })),
       );
-      expect(result.data).toEqual(localEvents);
-    });
-  });
 
-  describe("edit", () => {
-    it("should call EventApi.edit with event and params", async () => {
-      const event: Schema_Event = {
-        _id: "event-1",
-        title: "Updated Title",
-      };
+      const result = await repository.list(query);
 
-      const params = {
-        applyTo: RecurringEventUpdateScope.THIS_EVENT,
-      };
-
-      mockEdit.mockResolvedValue({ status: 200 });
-
-      await repository.edit("event-1", event, params);
-
-      expect(mockEdit).toHaveBeenCalledWith("event-1", event, params);
-      expect(mockEdit).toHaveBeenCalledTimes(1);
-    });
-
-    it("should call EventApi.edit without applyTo param", async () => {
-      const event: Schema_Event = {
-        _id: "event-1",
-        title: "Updated Title",
-      };
-
-      mockEdit.mockResolvedValue({ status: 200 });
-
-      await repository.edit("event-1", event, {});
-
-      expect(mockEdit).toHaveBeenCalledWith("event-1", event, {});
-      expect(mockEdit).toHaveBeenCalledTimes(1);
+      expect(mockGetEvents).toHaveBeenCalledWith(query);
+      expect(result).toEqual(localEvents);
     });
   });
 
   describe("delete", () => {
-    it("should call EventApi.delete with event id and applyTo", async () => {
-      mockDelete.mockResolvedValue({ status: 200 });
+    it("calls EventApi.delete with the event id and scope", async () => {
+      mockDelete.mockResolvedValue(undefined);
 
-      await repository.delete("event-1", RecurringEventUpdateScope.ALL_EVENTS);
+      await repository.delete("event-1" as EventId, "all");
 
-      expect(mockDelete).toHaveBeenCalledWith(
-        "event-1",
-        RecurringEventUpdateScope.ALL_EVENTS,
-      );
-      expect(mockDelete).toHaveBeenCalledTimes(1);
-    });
-
-    it("should call EventApi.delete without applyTo param", async () => {
-      mockDelete.mockResolvedValue({ status: 200 });
-
-      await repository.delete("event-1");
-
-      expect(mockDelete).toHaveBeenCalledWith("event-1", undefined);
+      expect(mockDelete).toHaveBeenCalledWith("event-1", "all");
       expect(mockDelete).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("reorder", () => {
-    it("should call EventApi.reorder with order array", async () => {
-      const order: Payload_Order[] = [
-        { _id: "event-1", order: 0 },
-        { _id: "event-2", order: 1 },
-      ];
+    it("calls EventApi.reorder with the reorder input", async () => {
+      const input = {
+        period: "week" as const,
+        items: [{ eventId: "event-1" as EventId, sortOrder: 0 }],
+      };
 
-      mockReorder.mockResolvedValue({ status: 200 });
+      mockReorder.mockResolvedValue(undefined);
 
-      await repository.reorder(order);
+      await repository.reorder(input);
 
-      expect(mockReorder).toHaveBeenCalledWith(order);
+      expect(mockReorder).toHaveBeenCalledWith(input);
       expect(mockReorder).toHaveBeenCalledTimes(1);
     });
+  });
 
-    it("should handle empty order array", async () => {
-      const order: Payload_Order[] = [];
+  describe("transition", () => {
+    it("calls EventApi.transition with the transition input", async () => {
+      const event = createMockEvent();
+      const input = {
+        kind: "unschedule" as const,
+        schedule: {
+          kind: "someday" as const,
+          period: "week" as const,
+          anchorDate: "2024-01-01",
+          sortOrder: 0,
+        },
+      } as unknown as TransitionEventInput;
 
-      mockReorder.mockResolvedValue({ status: 200 });
+      mockTransition.mockResolvedValue(event);
 
-      await repository.reorder(order);
+      const result = await repository.transition(event.id, input);
 
-      expect(mockReorder).toHaveBeenCalledWith(order);
-      expect(mockReorder).toHaveBeenCalledTimes(1);
+      expect(mockTransition).toHaveBeenCalledWith(event.id, input);
+      expect(result).toEqual(event);
     });
   });
 });

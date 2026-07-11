@@ -1,57 +1,48 @@
-import { type Params_Events, type Schema_Event } from "@core/types/event.types";
-import dayjs from "@core/util/date/dayjs";
+import { type Event } from "@core/types/event.contracts";
+import { type NormalizedEvents } from "@web/events/event-view.types";
 
 /**
- * Normalize a list of events into the `{ ids, entities }` shape the query caches
- * store, keyed by `_id`. Duplicate ids resolve last-write-wins in `entities`,
- * matching the prior `normalizr` behavior this replaced.
+ * Normalize a list of events into the `{ ids, entities }` shape the query
+ * caches store, keyed by `id`. Duplicate ids resolve last-write-wins in
+ * `entities`.
  */
-export const normalizeEventList = (events: Schema_Event[]) => ({
-  ids: events.map((event) => event._id as string),
-  entities: events.reduce<Record<string, Schema_Event>>((entities, event) => {
-    entities[event._id as string] = event;
+export const normalizeEventList = (events: Event[]): NormalizedEvents => ({
+  ids: events.map((event) => event.id),
+  entities: events.reduce<NormalizedEvents["entities"]>((entities, event) => {
+    entities[event.id] = event;
     return entities;
   }, {}),
 });
 
 /**
- * Single source of truth for "does this event belong in a [startDate, endDate]
- * range". Shared by the read/normalize filter ({@link EventDateUtils.filterEventsByStartEndDate})
- * and the mutation optimistic-insert logic so reads and optimistic writes agree
- * on membership. Timed events use containment; all-day events use overlap —
- * preserving the pre-migration read semantics exactly.
+ * Single source of truth for "does this event belong in this [start, end)
+ * instant range". Shared by the read/normalize pipeline and the mutation
+ * optimistic-insert logic so reads and optimistic writes agree on membership.
+ * Mirrors the backend's own overlap semantics exactly (event.repository.ts
+ * range branches): timed events overlap by instant, all-day events overlap by
+ * the calendar-date slice of the query's own start/end instants — see
+ * LocalEventRepository/indexeddb-offline-data.store.ts `getEvents`, which
+ * implements the identical filter for local/offline mode.
  */
 export const eventMatchesRange = (
-  event: Schema_Event,
-  startDate?: string,
-  endDate?: string,
+  event: Event,
+  start?: string,
+  end?: string,
 ): boolean => {
-  if (!startDate || !endDate || !event.startDate || !event.endDate) {
-    return false;
-  }
-  const eventStart = dayjs(event.startDate).utc(true);
-  const eventEnd = dayjs(event.endDate).utc(true);
-  if (event.isAllDay) {
+  if (!start || !end) return false;
+
+  if (event.schedule.kind === "timed") {
     return (
-      eventStart.isBefore(dayjs(endDate)) && eventEnd.isAfter(dayjs(startDate))
+      Date.parse(event.schedule.start) < Date.parse(end) &&
+      Date.parse(event.schedule.end) > Date.parse(start)
     );
   }
-  return (
-    eventStart.isSameOrAfter(startDate) && eventEnd.isSameOrBefore(endDate)
-  );
-};
 
-export const EventDateUtils = {
-  adjustStartEndDate: (payload: Params_Events) => {
-    if (payload.someday || payload.dontAdjustDates) return payload;
-    return {
-      ...payload,
-      startDate: dayjs(payload.startDate).subtract(1, "day").format(),
-    };
-  },
-  filterEventsByStartEndDate: (
-    events: Schema_Event[],
-    startDate: string,
-    endDate: string,
-  ) => events.filter((event) => eventMatchesRange(event, startDate, endDate)),
-} as const;
+  if (event.schedule.kind === "allDay") {
+    const allDayStart = start.slice(0, 10);
+    const allDayEnd = end.slice(0, 10);
+    return event.schedule.start < allDayEnd && event.schedule.end > allDayStart;
+  }
+
+  return false;
+};

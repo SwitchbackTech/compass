@@ -1,10 +1,15 @@
 import Dexie, { type Table } from "dexie";
 import { type Event_Core } from "@core/types/event.types";
-import { type StoredTask } from "./offline-data.store";
+import { type MigrationRecord, type StoredTask } from "./offline-data.store";
 
 const DB_NAME = "compass-local";
 
-/** Detect Dexie UpgradeError from legacy schema (tasks keyed by "id" not "_id"). */
+/**
+ * Detect a Dexie UpgradeError from a schema change Dexie cannot apply
+ * in-place (e.g. a table's primary key changing name/shape). Both the
+ * tasks "id" → "_id" rename and the v4 events restructure
+ * ("_id" → "id", flat fields → { version, id, event, isDemo }) trigger this.
+ */
 export function isPrimaryKeyUpgradeError(error: unknown): boolean {
   return (
     error instanceof Error &&
@@ -17,14 +22,16 @@ export function isPrimaryKeyUpgradeError(error: unknown): boolean {
 type LegacyStoredTask = Omit<StoredTask, "_id"> & { id: string };
 
 /**
- * Dexie database matching the OLD CompassLocalDB schema (tasks: "id").
- * Used only to read and migrate data when UpgradeError occurs.
+ * Dexie database matching the OLD CompassLocalDB schema (events keyed by
+ * "_id" with flat fields, tasks keyed by "id"). Used only to read and
+ * migrate data when UpgradeError occurs opening the current schema.
  *
  * @internal Exported for testing
  */
 export class LegacyCompassDB extends Dexie {
   events!: Table<Event_Core, string>;
   tasks!: Table<LegacyStoredTask, string>;
+  _migrations!: Table<MigrationRecord, string>;
 
   constructor(dbName = DB_NAME) {
     super(dbName);
@@ -34,6 +41,11 @@ export class LegacyCompassDB extends Dexie {
     this.version(2).stores({
       events: "_id, startDate, endDate, isSomeday",
       tasks: "id, dateKey, status, order",
+    });
+    this.version(3).stores({
+      events: "_id, startDate, endDate, isSomeday",
+      tasks: "_id, dateKey, status, order",
+      _migrations: "id",
     });
   }
 }
@@ -46,25 +58,34 @@ function legacyTaskToStoredTask(legacy: LegacyStoredTask): StoredTask {
 export interface LegacyMigrationResult {
   events: Event_Core[];
   tasks: StoredTask[];
+  migrations: MigrationRecord[];
 }
 
 /**
- * Extract all events and tasks from a database using the legacy schema
- * (tasks table keyed by "id" instead of "_id").
+ * Extract all events, tasks, and completed-migration records from a
+ * database using a legacy schema (events with flat fields keyed by "_id",
+ * tasks possibly keyed by "id" instead of "_id").
  */
 export async function extractDataFromLegacySchema(): Promise<LegacyMigrationResult> {
   const legacyDb = new LegacyCompassDB();
   await legacyDb.open();
 
-  const [events, legacyTasks] = await Promise.all([
+  const [events, legacyTasks, migrations] = await Promise.all([
     legacyDb.events.toArray(),
     legacyDb.tasks.toArray(),
+    legacyDb._migrations ? legacyDb._migrations.toArray() : Promise.resolve([]),
   ]);
 
-  const tasks: StoredTask[] = legacyTasks.map(legacyTaskToStoredTask);
+  // Tasks may already be keyed by "_id" (post task-migration) or still by
+  // "id" (pre-migration); normalize either shape to StoredTask.
+  const tasks: StoredTask[] = legacyTasks.map((task) =>
+    "id" in task && !("_id" in task)
+      ? legacyTaskToStoredTask(task as LegacyStoredTask)
+      : (task as unknown as StoredTask),
+  );
   legacyDb.close();
 
-  return { events, tasks };
+  return { events, tasks, migrations };
 }
 
 export async function deleteCompassLocalDb(): Promise<void> {

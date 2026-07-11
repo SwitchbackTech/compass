@@ -79,7 +79,9 @@ export const TimePickers: FC<Props> = ({
     const correctedStart = adjustComplimentTimeIfNeeded("end", option.value);
 
     if (endTime.value && endTime.value !== option.value) {
-      const { startDate, endDate } = mapToBackend({
+      // TODO(packet-03-phase-3c): mapToBackend now returns an EventSchedule;
+      // this component still operates on legacy Schema_Event startDate/endDate.
+      const schedule = mapToBackend({
         startDate: selectedStartDate,
         endDate: selectedEndDate,
         startTime: correctedStart ? correctedStart : startTime,
@@ -89,8 +91,8 @@ export const TimePickers: FC<Props> = ({
 
       const _event = {
         ...event,
-        startDate,
-        endDate,
+        startDate: schedule.start,
+        endDate: schedule.end,
       };
 
       setEvent(_event);
@@ -103,7 +105,9 @@ export const TimePickers: FC<Props> = ({
     const correctedEnd = adjustComplimentTimeIfNeeded("start", option.value);
 
     if (startTime.value && startTime.value !== option.value) {
-      const { startDate, endDate } = mapToBackend({
+      // TODO(packet-03-phase-3c): mapToBackend now returns an EventSchedule;
+      // this component still operates on legacy Schema_Event startDate/endDate.
+      const schedule = mapToBackend({
         startDate: selectedStartDate,
         endDate: selectedEndDate,
         startTime: option,
@@ -113,8 +117,8 @@ export const TimePickers: FC<Props> = ({
 
       const _event = {
         ...event,
-        startDate,
-        endDate,
+        startDate: schedule.start,
+        endDate: schedule.end,
       };
 
       setEvent(_event);

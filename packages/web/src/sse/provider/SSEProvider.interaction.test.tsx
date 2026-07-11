@@ -1,7 +1,7 @@
 import { render, waitFor } from "@testing-library/react";
 import { EventEmitter2 } from "eventemitter2";
 import { act } from "react";
-import { type ImportGCalEndPayload } from "@core/types/sse.types";
+import { type ServerMessage } from "@core/types/server-message.contracts";
 import { type UserMetadata } from "@core/types/user.types";
 import {
   getGoogleSyncIndicatorOverride,
@@ -14,17 +14,6 @@ import {
 } from "@web/auth/state/user-metadata.store";
 import { createUseGcalSSE } from "../hooks/useGcalSSE.factory";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-
-// TODO(packet-03-phase-3): these string literals stand in for the retired
-// IMPORT_GCAL_START/END, GOOGLE_REVOKED, and USER_METADATA SSE constants
-// (B10 replaces them with syncStatusChanged/importCompleted/
-// userMetadataChanged messages on a single "message" event). This test
-// still drives the emitter directly with the old names so it compiles;
-// rewrite it against the new ServerMessage shapes.
-const IMPORT_GCAL_START = "syncStatusChanged";
-const IMPORT_GCAL_END = "importCompleted";
-const GOOGLE_REVOKED = "syncStatusChanged";
-const USER_METADATA = "userMetadataChanged";
 
 const mockHandleGoogleRevoked = mock();
 const mockInvalidateEventQueries = mock();
@@ -46,31 +35,22 @@ const HookHost = () => {
   return null;
 };
 
-const getSseEmitter = () => {
-  return sseEmitter;
-};
-
-const fireImportStart = () => {
-  getSseEmitter().emit(IMPORT_GCAL_START, new MessageEvent(IMPORT_GCAL_START));
-};
-
-const fireImportEnd = (payload: ImportGCalEndPayload) => {
-  getSseEmitter().emit(
-    IMPORT_GCAL_END,
-    new MessageEvent(IMPORT_GCAL_END, { data: JSON.stringify(payload) }),
-  );
+// Mirrors sse.client's emit convention: listeners subscribe by the message's
+// own `type` and receive the already-parsed ServerMessage (B10).
+const fireMessage = (message: ServerMessage) => {
+  sseEmitter.emit(message.type, message);
 };
 
 const fireUserMetadata = (metadata: UserMetadata) => {
-  getSseEmitter().emit(
-    USER_METADATA,
-    new MessageEvent(USER_METADATA, { data: JSON.stringify(metadata) }),
-  );
+  fireMessage({
+    type: "userMetadataChanged",
+    metadata: metadata as unknown as Record<string, unknown>,
+  });
 };
 
 describe("useGcalSSE", () => {
   beforeEach(() => {
-    getSseEmitter().removeAllListeners();
+    sseEmitter.removeAllListeners();
     mockHandleGoogleRevoked.mockClear();
     mockInvalidateEventQueries.mockClear();
     mockShowErrorToast.mockClear();
@@ -110,11 +90,11 @@ describe("useGcalSSE", () => {
     });
   });
 
-  it("sets the syncing override when IMPORT_GCAL_START arrives", async () => {
+  it("sets the syncing override when syncStatusChanged reports syncing", async () => {
     render(<HookHost />);
 
     act(() => {
-      fireImportStart();
+      fireMessage({ type: "syncStatusChanged", sync: { status: "syncing" } });
     });
 
     await waitFor(() => {
@@ -122,15 +102,15 @@ describe("useGcalSSE", () => {
     });
   });
 
-  it("clears the syncing override and triggers refetch after REPAIR completion", async () => {
+  it("clears the syncing override and triggers refetch after importCompleted", async () => {
     setRepairingSyncIndicatorOverride();
 
     render(<HookHost />);
 
     act(() => {
-      fireImportEnd({
-        operation: "REPAIR",
-        status: "COMPLETED",
+      fireMessage({
+        type: "importCompleted",
+        operation: "repair",
         eventsCount: 4,
         calendarsCount: 1,
       });
@@ -142,23 +122,26 @@ describe("useGcalSSE", () => {
     });
   });
 
-  it("clears the syncing override and shows the repair toast after REPAIR failure", async () => {
+  it("clears the syncing override and shows the repair toast on WATCH_REPAIR_FAILED", async () => {
     setRepairingSyncIndicatorOverride();
 
     render(<HookHost />);
 
     act(() => {
-      fireImportEnd({
-        operation: "REPAIR",
-        status: "ERRORED",
-        message: "Google Calendar repair failed",
+      fireMessage({
+        type: "syncStatusChanged",
+        sync: {
+          status: "attention",
+          code: "WATCH_REPAIR_FAILED",
+          retryable: true,
+        },
       });
     });
 
     await waitFor(() => {
       expect(getGoogleSyncIndicatorOverride()).toBe(null);
       expect(mockShowErrorToast).toHaveBeenCalledWith(
-        "Google Calendar repair failed",
+        undefined,
         expect.anything(),
       );
     });
@@ -170,7 +153,10 @@ describe("useGcalSSE", () => {
     render(<HookHost />);
 
     act(() => {
-      getSseEmitter().emit(GOOGLE_REVOKED, new MessageEvent(GOOGLE_REVOKED));
+      fireMessage({
+        type: "syncStatusChanged",
+        sync: { status: "attention", code: "GOOGLE_REVOKED", retryable: false },
+      });
     });
 
     await waitFor(() => {
