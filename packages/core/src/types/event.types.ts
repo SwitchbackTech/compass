@@ -1,5 +1,4 @@
 import { type ObjectId } from "bson";
-import { type Query } from "express-serve-static-core";
 import { z } from "zod";
 import {
   Origin,
@@ -56,27 +55,6 @@ export enum RecurringEventUpdateScope {
 
 export type Direction_Migrate = "forward" | "back" | "up" | "down";
 
-export interface Params_DeleteMany {
-  key: string;
-  ids: string[];
-}
-export interface Params_Events {
-  startDate: string;
-  endDate: string;
-  someday: boolean;
-  dontAdjustDates?: boolean;
-}
-
-export interface Payload_Order {
-  _id: string;
-  order: number;
-}
-
-export interface Result_DeleteMany {
-  deletedCount: number;
-  errors: unknown[];
-}
-
 export interface Schema_Event {
   _id?: string;
   allDayOrder?: number;
@@ -125,29 +103,12 @@ export interface Schema_Event_Core extends Schema_Event {
   user: string;
 }
 
-export interface Query_Event extends Query {
-  end?: string;
-  someday?: string;
-  start?: string;
-  priorities?: string; // example: 'p1,p2,p3'
-}
-
-export interface Query_Event_Update extends Query {
-  applyTo?: RecurringEventUpdateScope;
-}
-
 const Recurrence = z.object({
   rule: z.array(z.string()).optional(),
   eventId: z.string().optional(),
 });
 
 export type Recurrence = Schema_Event_Recur_Base | Schema_Event_Recur_Instance;
-export type RecurrenceWithId =
-  | WithCompassId<Schema_Event_Recur_Instance>
-  | WithCompassId<Schema_Event_Recur_Base>;
-export type RecurrenceWithoutId =
-  | WithoutCompassId<Schema_Event_Recur_Instance>
-  | WithoutCompassId<Schema_Event_Recur_Base>;
 
 export enum CompassEventStatus {
   CONFIRMED = "CONFIRMED",
