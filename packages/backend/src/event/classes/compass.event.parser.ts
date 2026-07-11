@@ -11,6 +11,14 @@ import { withUntil } from "@backend/event/services/recur/util/recur.util";
 const conflict = (message: string) =>
   eventMutationError("RECURRENCE_CONFLICT", message);
 
+const scheduleStartMs = (schedule: EventRecord["schedule"]): number => {
+  if (schedule.kind === "timed") return schedule.start.getTime();
+  if (schedule.kind === "allDay") {
+    return new Date(`${schedule.start}T00:00:00.000Z`).getTime();
+  }
+  return 0;
+};
+
 /**
  * A recurring series in context: the base document plus its currently
  * materialized instances.
@@ -134,23 +142,10 @@ export function analyzeReplace(
   }
 
   const { base, instances } = series;
-  const cutoffMs =
-    target.schedule.kind === "someday"
-      ? 0
-      : (target.schedule.kind === "timed"
-          ? target.schedule.start.getTime()
-          : new Date(`${target.schedule.start}T00:00:00.000Z`).getTime()) - 1;
+  const cutoffMs = scheduleStartMs(target.schedule) - 1;
 
   const followingInstanceIds = instances
-    .filter((instance) => {
-      const startMs =
-        instance.schedule.kind === "timed"
-          ? instance.schedule.start.getTime()
-          : instance.schedule.kind === "allDay"
-            ? new Date(`${instance.schedule.start}T00:00:00.000Z`).getTime()
-            : 0;
-      return startMs >= cutoffMs + 1;
-    })
+    .filter((instance) => scheduleStartMs(instance.schedule) >= cutoffMs + 1)
     .map((i) => i._id);
 
   const truncatedBase: EventRecord =
@@ -212,23 +207,10 @@ export function analyzeDelete(
   }
 
   const { base, instances } = series;
-  const cutoffMs =
-    target.schedule.kind === "timed"
-      ? target.schedule.start.getTime()
-      : target.schedule.kind === "allDay"
-        ? new Date(`${target.schedule.start}T00:00:00.000Z`).getTime()
-        : 0;
+  const cutoffMs = scheduleStartMs(target.schedule);
 
   const followingInstanceIds = instances
-    .filter((instance) => {
-      const startMs =
-        instance.schedule.kind === "timed"
-          ? instance.schedule.start.getTime()
-          : instance.schedule.kind === "allDay"
-            ? new Date(`${instance.schedule.start}T00:00:00.000Z`).getTime()
-            : 0;
-      return startMs >= cutoffMs;
-    })
+    .filter((instance) => scheduleStartMs(instance.schedule) >= cutoffMs)
     .map((i) => i._id)
     .concat(target._id);
 
