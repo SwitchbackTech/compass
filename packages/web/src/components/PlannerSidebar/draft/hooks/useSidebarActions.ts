@@ -505,18 +505,20 @@ export const useSidebarActions = (
         ? schemaEventToLocalEvent(draft, calendarId ?? "")
         : null;
 
-    if (!eventToDuplicate || !calendarId) return;
+    const somedayDraft =
+      eventToDuplicate && calendarId
+        ? duplicateSomedayEventDraft(eventToDuplicate)
+        : null;
 
-    const somedayDraft = duplicateSomedayEventDraft(eventToDuplicate);
-    if (!somedayDraft) return;
+    if (somedayDraft && calendarId) {
+      const result = parseEventDraft({
+        ...somedayDraft,
+        values: { ...somedayDraft.values, calendarId },
+      });
 
-    const result = parseEventDraft({
-      ...somedayDraft,
-      values: { ...somedayDraft.values, calendarId },
-    });
-
-    if (result.ok && result.mode === "create") {
-      mutations.create(result.input);
+      if (result.ok && result.mode === "create") {
+        mutations.create(result.input);
+      }
     }
 
     close();
