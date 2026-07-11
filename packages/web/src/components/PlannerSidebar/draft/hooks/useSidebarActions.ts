@@ -600,10 +600,17 @@ export const useSidebarActions = (
     if (!event) return;
 
     const _event = { ...event };
-    // We need to provide it to pass zod validation.
-    // Order is already corrected after the event is submitted
-    // so its okay to provide any random int (hence -1)
-    _event.order = -1;
+    // New drafts have no sortOrder yet; a placeholder passes the legacy
+    // validator here and the real (nonnegative) order is computed below once
+    // we know the target column, then overwrites this on the create payload.
+    // Edits already carry their real sortOrder (from the cached event) and
+    // must keep it: SortOrderSchema on the new ReplaceEventInput contract
+    // rejects negative values, so forcing -1 here made every someday edit's
+    // schemaEventToReplaceInput parse fail silently (mutations.replace never
+    // fired, so the sidebar kept showing the pre-edit event).
+    if (typeof _event.order !== "number" || Number.isNaN(_event.order)) {
+      _event.order = -1;
+    }
 
     if (!_event.startDate || !_event.endDate) {
       // This probably means we are creating a new event, hence why we don't have start/end dates

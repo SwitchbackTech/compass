@@ -19,11 +19,28 @@ const eventsFrom = (data?: NormalizedEventQueryData): Event[] =>
   data?.ids.flatMap((id) => (data.entities[id] ? [data.entities[id]] : [])) ??
   [];
 
-// TODO(packet-03-phase-3c): assembleGridEvent/hasEventDates still operate on
-// the legacy Schema_Event shape; bridged via eventToSchemaEvent until the
-// grid renderer converts to `Event` directly.
+// assembleGridEvent/hasEventDates still operate on the legacy Schema_Event
+// shape; bridged via eventToSchemaEvent until the grid renderer converts to
+// `Event` directly. A cache entry with a missing/malformed `schedule` is a
+// bug upstream (normalizeEventList/query seeding), not a case to silently
+// swallow — but it must not crash this shared derivation, since every grid
+// consumer recomputes from it on every render (a throw here becomes a
+// render-crash loop). Log loudly and drop the offending event instead.
+const isValidScheduledEvent = (event: Event): boolean => {
+  const isValid =
+    event.schedule != null && typeof event.schedule.kind === "string";
+  if (!isValid) {
+    console.error(
+      `[event.view-model] dropping event ${event.id ?? "(no id)"} with malformed schedule`,
+      event,
+    );
+  }
+  return isValid;
+};
+
 const timedEventsFrom = (events: Event[]) =>
   events
+    .filter(isValidScheduledEvent)
     .filter((event) => event.schedule.kind === "timed")
     .map(eventToSchemaEvent)
     .filter((event): event is EventWithDates => hasEventDates(event))
@@ -32,6 +49,7 @@ const timedEventsFrom = (events: Event[]) =>
 const allDayEventsFrom = (events: Event[]) =>
   assignEventsToRow(
     events
+      .filter(isValidScheduledEvent)
       .filter((event) => event.schedule.kind === "allDay")
       .map(eventToSchemaEvent)
       .filter((event): event is EventWithDates => hasEventDates(event))

@@ -11,6 +11,7 @@ import {
   type PropsWithChildren,
   type ReactElement,
 } from "react";
+import { type Event } from "@core/types/event.contracts";
 import { seedEventQueries } from "@web/__tests__/utils/event-query-test-data";
 import {
   seedStoresFromState,
@@ -33,7 +34,7 @@ interface CustomRenderOptions extends RenderOptions {
   router?: AnyRouter;
   wrapper?: ComponentType<PropsWithChildren>;
   /** Seed the event query cache directly (replaces the Redux→query bridge). */
-  events?: Array<{ _id?: string }>;
+  events?: Event[];
 }
 
 interface CustomRenderHookOptions<Props>

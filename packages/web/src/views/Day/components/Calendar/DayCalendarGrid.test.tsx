@@ -1,5 +1,7 @@
 import userEvent from "@testing-library/user-event";
 import { act } from "react";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -10,6 +12,7 @@ import {
   waitFor,
   within,
 } from "@web/__tests__/__mocks__/mock.render";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
   DATA_CALENDAR_TIMED_GRID_ROW,
   ZIndex,
@@ -18,6 +21,7 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   draftActions,
   selectIsEventFormOpen,
@@ -29,7 +33,7 @@ import { type EventFormProps } from "@web/views/Forms/hooks/useEventForm";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
-let seededEvents: Schema_Event[] = [];
+let seededEvents: Event[] = [];
 const originalScroll = HTMLElement.prototype.scroll;
 
 const measurements = {
@@ -116,6 +120,11 @@ const renderDayCalendarGrid = () => ({
   ),
 });
 
+// `_id` in the overrides below is a readable test label, not the real id —
+// draft.store.ts's mutation call sites gate on `EventIdSchema.safeParse`
+// succeeding (see useUpdateEvent.ts), so every fixture gets a real generated
+// ObjectId as its actual `_id`; tests that need to assert on "which event"
+// read `event._id` back off the returned fixture, never a literal.
 const createTimedEvent = (
   overrides: Partial<Schema_Event> & {
     _id: string;
@@ -130,6 +139,7 @@ const createTimedEvent = (
     title: overrides._id,
     user: "user",
     ...overrides,
+    _id: createObjectIdString(),
   }) as Schema_Event;
 
 const createAllDayEvent = (
@@ -146,10 +156,40 @@ const createAllDayEvent = (
     title: overrides._id,
     user: "user",
     ...overrides,
+    _id: createObjectIdString(),
   }) as Schema_Event;
 
+// DateTimeSchema requires an explicit offset; fixture timestamps above are
+// written offset-free (browser-local style), so normalize to UTC here.
+const withOffset = (dateTime: string) =>
+  /[Zz]|[+-]\d\d:\d\d$/.test(dateTime) ? dateTime : `${dateTime}Z`;
+
+// The query cache (unlike draft.store.ts, still legacy Schema_Event-shaped
+// per its own TODO) requires strict-contract `Event`s.
+const toStrictEvent = (event: Schema_Event): Event =>
+  createMockEvent({
+    id: EventIdSchema.parse(event._id!),
+    content: {
+      kind: "details",
+      title: event.title ?? "",
+      description: event.description ?? "",
+    },
+    schedule: event.isAllDay
+      ? EventScheduleSchema.parse({
+          kind: "allDay",
+          start: event.startDate!.slice(0, 10),
+          end: event.endDate!.slice(0, 10),
+        })
+      : EventScheduleSchema.parse({
+          kind: "timed",
+          start: withOffset(event.startDate!),
+          end: withOffset(event.endDate!),
+          timeZone: "UTC",
+        }),
+  });
+
 const setDayEvents = (events: Schema_Event[]) => {
-  seededEvents = events;
+  seededEvents = events.map(toStrictEvent);
 };
 
 const getDraft = () => useDraftStore.getState().event;
@@ -327,7 +367,9 @@ describe("DayCalendarGrid", () => {
     await user.click(back);
 
     await waitFor(() => {
-      expect(getDraft()?._id).toBe("back");
+      expect(getDraft()?._id).toBe(
+        back.getAttribute("data-day-interaction-event-id") ?? undefined,
+      );
       expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
       expect(parseFloat(back.style.width)).toBe(frontWidth);
     });
@@ -350,7 +392,7 @@ describe("DayCalendarGrid", () => {
       screen
         .getByRole("button", { name: /timed event: existing draft/i })
         .getAttribute("data-day-interaction-event-id"),
-    ).toBe("existing-draft");
+    ).toBe(event._id ?? null);
   });
 
   it("anchors the event form through a virtual element that tracks the Day card", async () => {
@@ -372,7 +414,7 @@ describe("DayCalendarGrid", () => {
     await user.keyboard("{Enter}");
 
     await waitFor(() => {
-      expect(getDraft()?._id).toBe(event._id);
+      expect(getDraft()?._id).toBe(event._id ?? undefined);
     });
 
     expectFormAnchoredTo(card, cardRect);
@@ -396,7 +438,7 @@ describe("DayCalendarGrid", () => {
     await user.click(card);
 
     await waitFor(() => {
-      expect(getDraft()?._id).toBe(event._id);
+      expect(getDraft()?._id).toBe(event._id ?? undefined);
     });
 
     expectFormAnchoredTo(card, cardRect);

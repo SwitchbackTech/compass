@@ -4,6 +4,10 @@ type SomedaySection = "week" | "month";
 
 const LOCAL_DB_NAME = "compass-local";
 
+// LocalEventRecord (B13) nests the event under `.event`; title lives at
+// `.event.content.title` (kind "details") and the schedule is a discriminated
+// union ("timed"/"allDay" use start/end, "someday" uses anchorDate) rather
+// than flat startDate/endDate columns on the row.
 export const getSavedEventsByTitle = (page: Page, title: string) =>
   page.evaluate(async (eventTitle) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -13,22 +17,43 @@ export const getSavedEventsByTitle = (page: Page, title: string) =>
       request.onsuccess = () => resolve(request.result);
     });
 
-    try {
-      return await new Promise<
-        { endDate?: string; startDate?: string; title?: string }[]
-      >((resolve, reject) => {
-        const transaction = db.transaction("events", "readonly");
-        const request = transaction.objectStore("events").getAll();
+    type LocalEventRecord = {
+      event: {
+        content: { kind: string; title?: string };
+        schedule:
+          | { kind: "timed" | "allDay"; start: string; end: string }
+          | { kind: "someday"; anchorDate: string };
+      };
+    };
 
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-          resolve(
-            request.result.filter(
-              (event: { title?: string }) => event.title === eventTitle,
-            ),
-          );
-        };
-      });
+    try {
+      const records = await new Promise<LocalEventRecord[]>(
+        (resolve, reject) => {
+          const transaction = db.transaction("events", "readonly");
+          const request = transaction.objectStore("events").getAll();
+
+          request.onerror = () => reject(request.error);
+          request.onsuccess = () => resolve(request.result);
+        },
+      );
+
+      return records
+        .filter(
+          (record) =>
+            record.event.content.kind === "details" &&
+            record.event.content.title === eventTitle,
+        )
+        .map(({ event }) => ({
+          title: event.content.title,
+          startDate:
+            event.schedule.kind === "someday"
+              ? event.schedule.anchorDate
+              : event.schedule.start,
+          endDate:
+            event.schedule.kind === "someday"
+              ? event.schedule.anchorDate
+              : event.schedule.end,
+        }));
     } finally {
       db.close();
     }

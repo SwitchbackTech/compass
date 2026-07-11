@@ -3,11 +3,15 @@ import { act, renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
 import { type PropsWithChildren } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { normalizeEventList } from "@web/events/queries/event.query.normalize";
 import { useDraftConfirmation } from "./useDraftConfirmation";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -35,6 +39,29 @@ const createDraft = (
   ...overrides,
 });
 
+// The query cache requires strict-contract `Event`s (unlike the draft
+// itself, which is still legacy Schema_GridEvent-shaped per draft.store.ts's
+// own TODO).
+const toStrictEvent = (event: Schema_Event): Event =>
+  createMockEvent({
+    id: EventIdSchema.parse(event._id!),
+    content: {
+      kind: "details",
+      title: event.title ?? "",
+      description: event.description ?? "",
+    },
+    recurrence:
+      Array.isArray(event.recurrence?.rule) && event.recurrence.rule.length > 0
+        ? { kind: "series", rules: event.recurrence.rule }
+        : { kind: "single" },
+    schedule: EventScheduleSchema.parse({
+      kind: "timed",
+      start: event.startDate!,
+      end: event.endDate!,
+      timeZone: "UTC",
+    }),
+  });
+
 const renderDraftConfirmation = ({
   draft = createDraft(),
   events = [],
@@ -51,21 +78,11 @@ const renderDraftConfirmation = ({
   const discard = mock();
   const deleteEvent = mock();
   const submit = mock();
-  const eventEntities = events.reduce<Record<string, Schema_Event>>(
-    (entities, event) => {
-      if (event._id) {
-        entities[event._id] = event;
-      }
-
-      return entities;
-    },
-    {},
-  );
   const queryClient = new QueryClient();
-  queryClient.setQueryData(["events", "week", { source: "local" }], {
-    ids: Object.keys(eventEntities),
-    entities: eventEntities,
-  });
+  queryClient.setQueryData(
+    ["events", "week", { source: "local" }],
+    normalizeEventList(events.map(toStrictEvent)),
+  );
   const wrapper = ({ children }: PropsWithChildren) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );

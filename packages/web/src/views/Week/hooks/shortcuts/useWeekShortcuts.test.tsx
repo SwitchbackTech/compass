@@ -2,12 +2,14 @@ import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   seedPendingEventMutations,
   toNormalizedEventQueryData,
 } from "@web/__tests__/utils/event-query-test-data";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
@@ -15,6 +17,7 @@ import {
   ID_EVENT_FORM,
   ID_SIDEBAR,
 } from "@web/common/constants/web.constants";
+import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
@@ -26,32 +29,47 @@ import {
 } from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
-const editableEvent = {
-  _id: "event-1",
-  endDate: "2026-05-20T10:00:00.000Z",
-  isAllDay: false,
-  startDate: "2026-05-20T09:00:00.000Z",
-  title: "Editable event",
-};
-const editableAllDayEvent = {
-  _id: "all-day-event-1",
-  endDate: "2026-05-21T00:00:00.000Z",
-  isAllDay: true,
-  startDate: "2026-05-20T00:00:00.000Z",
-  title: "Editable all-day event",
-};
+// Fixed 24-hex-char ids so fixtures satisfy EventIdSchema (real ObjectId
+// shape) while staying stable/readable across assertions.
+const EVENT_1_ID = EventIdSchema.parse("aaaaaaaaaaaaaaaaaaaaaaaa");
+const ALL_DAY_EVENT_1_ID = EventIdSchema.parse("bbbbbbbbbbbbbbbbbbbbbbbb");
+const LEFTMOST_EVENT_ID = EventIdSchema.parse("665f0c2f8b3e4a1d9c2b7a01");
+
+const editableEvent = createMockEvent({
+  id: EVENT_1_ID,
+  content: { kind: "details", title: "Editable event", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "timed",
+    start: "2026-05-20T09:00:00.000Z",
+    end: "2026-05-20T10:00:00.000Z",
+    timeZone: "UTC",
+  }),
+});
+const editableAllDayEvent = createMockEvent({
+  id: ALL_DAY_EVENT_1_ID,
+  content: {
+    kind: "details",
+    title: "Editable all-day event",
+    description: "",
+  },
+  schedule: EventScheduleSchema.parse({
+    kind: "allDay",
+    start: "2026-05-20",
+    end: "2026-05-21",
+  }),
+});
 // Converted someday events are re-validated against SomedayEventSchema, so
 // this fixture needs a real ObjectId and the required core fields
-const leftmostEvent = {
-  _id: "665f0c2f8b3e4a1d9c2b7a01",
-  endDate: "2026-05-18T10:00:00",
-  isAllDay: false,
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  startDate: "2026-05-18T09:00:00",
-  title: "Leftmost event",
-  user: "user-1",
-};
+const leftmostEvent = createMockEvent({
+  id: LEFTMOST_EVENT_ID,
+  content: { kind: "details", title: "Leftmost event", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "timed",
+    start: "2026-05-18T09:00:00.000Z",
+    end: "2026-05-18T10:00:00.000Z",
+    timeZone: "UTC",
+  }),
+});
 const shiftKey = {
   keyDownInit: { shiftKey: true },
   keyUpInit: { shiftKey: true },
@@ -79,7 +97,7 @@ afterEach(() => {
 });
 
 const addCalendarTarget = (
-  eventId = editableEvent._id,
+  eventId = editableEvent.id,
   eventType: "all-day" | "timed" = "timed",
 ) => {
   const button = document.createElement("button");
@@ -182,12 +200,12 @@ describe("useWeekShortcuts calendar event targeting", () => {
     await waitFor(() => {
       expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(useDraftStore.getState().event?._id).toBe("event-1");
+    expect(useDraftStore.getState().event?._id).toBe(EVENT_1_ID);
     expect(useDraftStore.getState().event).toHaveProperty("position");
   });
 
   it("edits the prepared all-day calendar event with M", async () => {
-    const button = addCalendarTarget(editableAllDayEvent._id, "all-day");
+    const button = addCalendarTarget(editableAllDayEvent.id, "all-day");
     button.focus();
 
     renderShortcuts({ includeAllDayEvent: true });
@@ -196,7 +214,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     await waitFor(() => {
       expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(useDraftStore.getState().event?._id).toBe("all-day-event-1");
+    expect(useDraftStore.getState().event?._id).toBe(ALL_DAY_EVENT_1_ID);
     expect(useDraftStore.getState().event).toHaveProperty("position");
   });
 
@@ -210,11 +228,11 @@ describe("useWeekShortcuts calendar event targeting", () => {
     await waitFor(() => {
       expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(useDraftStore.getState().event?._id).toBe("event-1");
+    expect(useDraftStore.getState().event?._id).toBe(EVENT_1_ID);
   });
 
   it("edits pending calendar events with M", async () => {
-    pendingEventIds = ["event-1"];
+    pendingEventIds = [EVENT_1_ID];
     const button = addCalendarTarget();
     button.focus();
 
@@ -224,7 +242,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     await waitFor(() => {
       expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(useDraftStore.getState().event?._id).toBe("event-1");
+    expect(useDraftStore.getState().event?._id).toBe(EVENT_1_ID);
   });
 
   it("edits an event loaded after shortcuts are registered", async () => {
@@ -239,8 +257,8 @@ describe("useWeekShortcuts calendar event targeting", () => {
       queryClient.setQueriesData(
         { queryKey: ["events", "week"] },
         {
-          ids: [editableEvent._id],
-          entities: { [editableEvent._id]: editableEvent },
+          ids: [editableEvent.id],
+          entities: { [editableEvent.id]: editableEvent },
         },
       );
     });
@@ -248,7 +266,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
       expect(
         queryClient
           .getQueriesData<{ ids: string[] }>({ queryKey: ["events", "week"] })
-          .some(([, data]) => data?.ids.includes(editableEvent._id)),
+          .some(([, data]) => data?.ids.includes(editableEvent.id)),
       ).toBe(true);
     });
     pressKey("M");
@@ -256,7 +274,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
     await waitFor(() => {
       expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
-    expect(useDraftStore.getState().event?._id).toBe("event-1");
+    expect(useDraftStore.getState().event?._id).toBe(EVENT_1_ID);
   });
 
   it("moves the active shortcut-created draft with arrow keys", () => {
@@ -305,13 +323,13 @@ describe("useWeekShortcuts calendar event targeting", () => {
         .getAll()
         .some(
           (mutation) =>
-            (mutation.state.variables as { _id?: string })._id === "event-1",
+            (mutation.state.variables as { id?: string }).id === EVENT_1_ID,
         ),
     ).toBe(true);
   });
 
   it("deletes the focused all-day calendar event with Delete", () => {
-    const button = addCalendarTarget(editableAllDayEvent._id, "all-day");
+    const button = addCalendarTarget(editableAllDayEvent.id, "all-day");
     button.focus();
 
     const { queryClient } = renderShortcuts({ includeAllDayEvent: true });
@@ -323,8 +341,8 @@ describe("useWeekShortcuts calendar event targeting", () => {
         .getAll()
         .some(
           (mutation) =>
-            (mutation.state.variables as { _id?: string })._id ===
-            "all-day-event-1",
+            (mutation.state.variables as { id?: string }).id ===
+            ALL_DAY_EVENT_1_ID,
         ),
     ).toBe(true);
   });
@@ -342,13 +360,13 @@ describe("useWeekShortcuts calendar event targeting", () => {
         .getAll()
         .some(
           (mutation) =>
-            (mutation.state.variables as { _id?: string })._id === "event-1",
+            (mutation.state.variables as { id?: string }).id === EVENT_1_ID,
         ),
     ).toBe(true);
   });
 
   it("deletes pending calendar events with Delete", () => {
-    pendingEventIds = ["event-1"];
+    pendingEventIds = [EVENT_1_ID];
     const button = addCalendarTarget();
     button.focus();
 
@@ -362,7 +380,7 @@ describe("useWeekShortcuts calendar event targeting", () => {
         .some(
           (mutation) =>
             mutation.options.mutationKey?.[2] === "delete" &&
-            (mutation.state.variables as { _id?: string })._id === "event-1",
+            (mutation.state.variables as { id?: string }).id === EVENT_1_ID,
         ),
     ).toBe(true);
   });
@@ -422,10 +440,10 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
       endDate: string;
     };
     expect(submitted.startDate).toBe(
-      dayjs(editableEvent.startDate).add(1, "day").format(),
+      dayjs("2026-05-20T09:00:00.000Z").add(1, "day").format(),
     );
     expect(submitted.endDate).toBe(
-      dayjs(editableEvent.endDate).add(1, "day").format(),
+      dayjs("2026-05-20T10:00:00.000Z").add(1, "day").format(),
     );
   });
 
@@ -443,7 +461,7 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
       startDate: string;
     };
     expect(movedUp.startDate).toBe(
-      dayjs(editableEvent.startDate).subtract(15, "minutes").format(),
+      dayjs("2026-05-20T09:00:00.000Z").subtract(15, "minutes").format(),
     );
 
     pressKey("ArrowDown", shiftKey);
@@ -455,13 +473,24 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
       startDate: string;
     };
     expect(movedDown.startDate).toBe(
-      dayjs(editableEvent.startDate).add(15, "minutes").format(),
+      dayjs("2026-05-20T09:00:00.000Z").add(15, "minutes").format(),
     );
   });
 
   it("converts the focused event to someday with Shift+ArrowLeft on the first visible day", async () => {
-    const button = addCalendarTarget(leftmostEvent._id);
+    const button = addCalendarTarget(leftmostEvent.id);
     button.focus();
+
+    // The transition mutation writes through the local (IndexedDB)
+    // repository, which reads the pre-mutation record independently of the
+    // query cache seeded below — mirroring production, where the cache is
+    // always populated from the repository.
+    await getOfflineDataStore().putEvent({
+      version: 2,
+      id: leftmostEvent.id,
+      event: leftmostEvent,
+      isDemo: false,
+    });
 
     const { queryClient } = renderShortcuts({ includeLeftmostEvent: true });
     pressKey("ArrowLeft", shiftKey);
@@ -473,7 +502,9 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
           .getAll()
           .some(
             (mutation) =>
-              mutation.options.mutationKey?.[2] === "convert-to-someday",
+              mutation.options.mutationKey?.[2] === "transition" &&
+              (mutation.state.variables as { input?: { kind?: string } }).input
+                ?.kind === "unschedule",
           ),
       ).toBe(true);
     });
@@ -481,7 +512,7 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
   });
 
   it("does not move all-day events with Shift+ArrowUp", () => {
-    const button = addCalendarTarget(editableAllDayEvent._id, "all-day");
+    const button = addCalendarTarget(editableAllDayEvent.id, "all-day");
     button.focus();
 
     renderShortcuts({ includeAllDayEvent: true });

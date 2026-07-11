@@ -1,5 +1,7 @@
 import { type FC, useCallback } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { EventIdSchema } from "@core/types/domain-primitives";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   act,
@@ -9,6 +11,7 @@ import {
   screen,
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
@@ -21,8 +24,10 @@ import { dayCalendarEventRegistry } from "./registry/dayCalendarEventRegistry";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
+const TIMED_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
+
 const timedEvent: Schema_GridEvent = {
-  _id: "timed-event",
+  _id: TIMED_EVENT_ID,
   endDate: "2026-05-20T10:00:00.000",
   isAllDay: false,
   origin: Origin.COMPASS,
@@ -32,6 +37,17 @@ const timedEvent: Schema_GridEvent = {
   title: "Timed event",
   user: "user-1",
 };
+
+const timedEventContract = createMockEvent({
+  id: EventIdSchema.parse(TIMED_EVENT_ID),
+  content: { kind: "details", title: "Timed event", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "timed",
+    start: "2026-05-20T09:00:00.000Z",
+    end: "2026-05-20T10:00:00.000Z",
+    timeZone: "UTC",
+  }),
+});
 
 const setRect = (
   element: HTMLElement,
@@ -157,7 +173,7 @@ const renderCoordinator = () => {
     >
       <TestTimedEventTarget />
     </DayInteractionCoordinator>,
-    { events: [timedEvent] },
+    { events: [timedEventContract] },
   );
 };
 
