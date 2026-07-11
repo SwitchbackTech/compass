@@ -52,7 +52,11 @@ export function duplicateSomedayEventDraft(event: Event): NewEventDraft | null {
       schedule: {
         kind: "someday",
         period: schedule.period,
-        anchorDate: new Date(schedule.anchorDate),
+        // dayjs(...), not new Date(...): a bare "YYYY-MM-DD" string parses
+        // as UTC midnight via the Date constructor, which reads back as the
+        // previous local day in a negative-UTC-offset zone once
+        // parseEventDraft reformats it - see editSomedayEventDraft's note.
+        anchorDate: dayjs(schedule.anchorDate).toDate(),
         sortOrder: schedule.sortOrder,
       },
       priority: event.priority,
