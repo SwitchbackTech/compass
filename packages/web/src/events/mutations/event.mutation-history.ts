@@ -4,7 +4,6 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { isRecurringEvent } from "@core/util/event/event.util";
-import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
 import { showDeletedToast } from "@web/common/utils/toast/deleted-toast.util";
 import {
   type Payload_ConvertEvent,
@@ -12,6 +11,7 @@ import {
   type Payload_EditEvent,
 } from "@web/events/event.types";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
+import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import {
   isRestoringHistory,
   undoHistoryActions,

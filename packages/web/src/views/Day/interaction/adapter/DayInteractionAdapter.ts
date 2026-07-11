@@ -1,58 +1,58 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
-  CALENDAR_GRID_TIME_STEP,
-  CALENDAR_TIMED_VISIBLE_HOURS,
-} from "@web/common/calendar-grid/calendarGrid.constants";
-import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
-import {
-  createCalendarInteractionDraftEventMount,
-  getCalendarResizeHandleEdge,
-  updateCalendarDraftEventTimeLabel,
-} from "@web/common/calendar-grid/interaction/calendarInteractionDom";
-import {
-  buildAllDayCalendarLayoutCache,
-  buildTimedCalendarLayoutCache,
-  type CalendarLayoutCache,
-  type CalendarLayoutCacheSources,
-} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
-import {
-  createAllDayDragVisual,
-  updateAllDayDragVisual,
-} from "@web/common/calendar-grid/interaction/math/allDayDrag";
-import {
-  createAllDayResizeVisual,
-  updateAllDayResizeVisual,
-} from "@web/common/calendar-grid/interaction/math/allDayResize";
-import { getSmartScrollFrame } from "@web/common/calendar-grid/interaction/math/smartScroll";
-import {
-  createTimedDragVisual,
-  updateTimedDragVisual,
-} from "@web/common/calendar-grid/interaction/math/timedDrag";
-import {
-  createTimedResizeVisual,
-  updateTimedResizeVisual,
-} from "@web/common/calendar-grid/interaction/math/timedResize";
-import { type AllDayDragVisual } from "@web/common/calendar-grid/interaction/model/AllDayDragVisual";
-import { type AllDayResizeVisual } from "@web/common/calendar-grid/interaction/model/AllDayResizeVisual";
-import {
-  type TimedDragVisual,
-  type VisualPoint,
-} from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
-import { type TimedResizeVisual } from "@web/common/calendar-grid/interaction/model/TimedResizeVisual";
-import { type CalendarInteractionAdapter } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
-import {
-  type CalendarInteractionCancellationTargets,
-  type CalendarInteractionEngine,
-  createCalendarInteractionEngine,
-} from "@web/common/calendar-interaction/CalendarInteractionEngine";
-import { isEligibleCalendarInteractionPointerDown } from "@web/common/calendar-interaction/calendarInteractionPointer";
-import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type CalendarInteractionAdapter } from "@web/interaction/CalendarInteractionAdapter";
+import {
+  type CalendarInteractionCancellationTargets,
+  type CalendarInteractionEngine,
+  createCalendarInteractionEngine,
+} from "@web/interaction/CalendarInteractionEngine";
+import { isEligibleCalendarInteractionPointerDown } from "@web/interaction/calendarInteractionPointer";
+import {
+  CALENDAR_GRID_TIME_STEP,
+  CALENDAR_TIMED_VISIBLE_HOURS,
+} from "@web/layout/calendar-grid/calendarGrid.constants";
+import { getLocalMinutes } from "@web/layout/calendar-grid/interaction/calendarInteractionDate";
+import {
+  createCalendarInteractionDraftEventMount,
+  getCalendarResizeHandleEdge,
+  updateCalendarDraftEventTimeLabel,
+} from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
+import {
+  buildAllDayCalendarLayoutCache,
+  buildTimedCalendarLayoutCache,
+  type CalendarLayoutCache,
+  type CalendarLayoutCacheSources,
+} from "@web/layout/calendar-grid/interaction/calendarLayoutCache";
+import {
+  createAllDayDragVisual,
+  updateAllDayDragVisual,
+} from "@web/layout/calendar-grid/interaction/math/allDayDrag";
+import {
+  createAllDayResizeVisual,
+  updateAllDayResizeVisual,
+} from "@web/layout/calendar-grid/interaction/math/allDayResize";
+import { getSmartScrollFrame } from "@web/layout/calendar-grid/interaction/math/smartScroll";
+import {
+  createTimedDragVisual,
+  updateTimedDragVisual,
+} from "@web/layout/calendar-grid/interaction/math/timedDrag";
+import {
+  createTimedResizeVisual,
+  updateTimedResizeVisual,
+} from "@web/layout/calendar-grid/interaction/math/timedResize";
+import { type AllDayDragVisual } from "@web/layout/calendar-grid/interaction/model/AllDayDragVisual";
+import { type AllDayResizeVisual } from "@web/layout/calendar-grid/interaction/model/AllDayResizeVisual";
+import {
+  type TimedDragVisual,
+  type VisualPoint,
+} from "@web/layout/calendar-grid/interaction/model/TimedDragVisual";
+import { type TimedResizeVisual } from "@web/layout/calendar-grid/interaction/model/TimedResizeVisual";
 import {
   type DayInteractionEventType,
   dayCalendarEventRegistry,

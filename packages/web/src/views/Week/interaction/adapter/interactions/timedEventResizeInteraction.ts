@@ -1,14 +1,14 @@
-import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
+import { type CalendarInteractionPoint } from "@web/interaction/CalendarInteractionSession";
+import { getLocalMinutes } from "@web/layout/calendar-grid/interaction/calendarInteractionDate";
 import {
   createTimedResizeVisual,
   updateTimedResizeVisual,
-} from "@web/common/calendar-grid/interaction/math/timedResize";
+} from "@web/layout/calendar-grid/interaction/math/timedResize";
 import {
   type VisualPoint,
   type VisualRect,
-} from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
-import { type TimedResizeVisual } from "@web/common/calendar-grid/interaction/model/TimedResizeVisual";
-import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
+} from "@web/layout/calendar-grid/interaction/model/TimedDragVisual";
+import { type TimedResizeVisual } from "@web/layout/calendar-grid/interaction/model/TimedResizeVisual";
 import {
   hasTimedResizeVisualMoved,
   timedResizeVisualToGridEvent,

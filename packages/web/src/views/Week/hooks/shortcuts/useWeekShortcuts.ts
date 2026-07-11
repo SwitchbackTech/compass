@@ -4,7 +4,6 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   createAlldayDraft,
@@ -32,6 +31,10 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
+import {
+  useAppShortcut,
+  useAppShortcutUp,
+} from "@web/shortcuts/useAppShortcut";
 import { deleteEventAndDiscardDraft } from "@web/views/Forms/hooks/useDeleteEvent";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { type Util_Scroll } from "@web/views/Week/hooks/grid/useScroll";
@@ -328,41 +331,41 @@ export const useWeekShortcuts = ({
     [repositionDraftByKeyboard],
   );
 
-  useAppHotkeyUp("J", goToPreviousWeek);
-  useAppHotkeyUp("K", goToNextWeek);
-  useAppHotkeyUp("T", toToday);
-  useAppHotkeyUp("A", createAllDayDraftEvent);
-  useAppHotkeyUp("C", createTimedDraftEvent);
-  useAppHotkeyUp("U", focusSidebar);
-  useAppHotkeyUp("I", focusFirstCalendarEvent);
-  useAppHotkeyUp("M", editTargetedCalendarEvent);
-  useAppHotkey("Delete", deleteTargetedCalendarEvent, {
+  useAppShortcutUp("J", goToPreviousWeek);
+  useAppShortcutUp("K", goToNextWeek);
+  useAppShortcutUp("T", toToday);
+  useAppShortcutUp("A", createAllDayDraftEvent);
+  useAppShortcutUp("C", createTimedDraftEvent);
+  useAppShortcutUp("U", focusSidebar);
+  useAppShortcutUp("I", focusFirstCalendarEvent);
+  useAppShortcutUp("M", editTargetedCalendarEvent);
+  useAppShortcut("Delete", deleteTargetedCalendarEvent, {
     ignoreInputs: false,
   });
-  useAppHotkey(
+  useAppShortcut(
     "ArrowUp",
     moveShortcutCreatedDraft,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
-  useAppHotkey(
+  useAppShortcut(
     "ArrowDown",
     moveShortcutCreatedDraft,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
-  useAppHotkey(
+  useAppShortcut(
     "ArrowLeft",
     moveShortcutCreatedDraft,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
-  useAppHotkey(
+  useAppShortcut(
     "ArrowRight",
     moveShortcutCreatedDraft,
     DRAFT_MOVEMENT_HOTKEY_OPTIONS,
   );
-  useAppHotkey("Shift+ArrowUp", moveFocusedCalendarEvent);
-  useAppHotkey("Shift+ArrowDown", moveFocusedCalendarEvent);
-  useAppHotkey("Shift+ArrowLeft", moveFocusedCalendarEvent);
-  useAppHotkey("Shift+ArrowRight", moveFocusedCalendarEvent);
-  useAppHotkeyUp("Shift+M", createSomedayMonthDraft);
-  useAppHotkeyUp("Shift+W", createSomedayWeekDraft);
+  useAppShortcut("Shift+ArrowUp", moveFocusedCalendarEvent);
+  useAppShortcut("Shift+ArrowDown", moveFocusedCalendarEvent);
+  useAppShortcut("Shift+ArrowLeft", moveFocusedCalendarEvent);
+  useAppShortcut("Shift+ArrowRight", moveFocusedCalendarEvent);
+  useAppShortcutUp("Shift+M", createSomedayMonthDraft);
+  useAppShortcutUp("Shift+W", createSomedayWeekDraft);
 };

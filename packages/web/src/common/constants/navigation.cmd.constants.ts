@@ -6,11 +6,11 @@ import {
   KeyboardIcon,
 } from "@phosphor-icons/react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
 import {
   VIEW_SHORTCUTS,
   type ViewName,
-} from "@web/common/constants/shortcuts.constants";
-import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
+} from "@web/shortcuts/shortcuts.constants";
 
 interface GetNavigationCommandItemsArgs {
   currentView: ViewName;

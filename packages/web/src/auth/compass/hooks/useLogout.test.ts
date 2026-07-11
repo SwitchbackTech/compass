@@ -14,7 +14,7 @@ mock.module("@web/auth/compass/state/auth.state.util", () => ({
   clearAuthenticationState,
 }));
 
-mock.module("@web/common/classes/Session", () => ({
+mock.module("@web/auth/compass/session/Session", () => ({
   session: {
     signOut,
   },

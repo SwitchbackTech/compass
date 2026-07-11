@@ -5,18 +5,18 @@ import {
   useRef,
 } from "react";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import { CALENDAR_DRAFT_DURATION_MIN } from "@web/common/calendar-grid/calendarGrid.constants";
-import { type CalendarDateCalcs } from "@web/common/calendar-grid/hooks/useCalendarDateCalcs";
-import {
-  hasExceededCalendarInteractionMoveThreshold,
-  isEligibleCalendarInteractionPointerDown,
-} from "@web/common/calendar-interaction/calendarInteractionPointer";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   addId,
   assembleDefaultEvent,
 } from "@web/common/utils/event/event.util";
 import { draftActions } from "@web/events/stores/draft.store";
+import {
+  hasExceededCalendarInteractionMoveThreshold,
+  isEligibleCalendarInteractionPointerDown,
+} from "@web/interaction/calendarInteractionPointer";
+import { CALENDAR_DRAFT_DURATION_MIN } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { type CalendarDateCalcs } from "@web/layout/calendar-grid/hooks/useCalendarDateCalcs";
 
 const TIMED_DRAFT_CREATE_MOVE_THRESHOLD_PX = 4;
 

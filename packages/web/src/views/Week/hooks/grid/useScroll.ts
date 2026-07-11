@@ -1,6 +1,6 @@
 import { type MutableRefObject, useCallback, useEffect } from "react";
-import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { WEEK_TIMED_VISIBLE_HOURS } from "@web/views/Week/layout.constants";
 
 export const useScroll = (
@@ -23,7 +23,7 @@ export const useScroll = (
   }, [timedGridRef]);
 
   // Scroll when pressing "c"
-  useAppHotkey("C", scrollToNow);
+  useAppShortcut("C", scrollToNow);
 
   // Optional: scroll to now on mount
   useEffect(() => {

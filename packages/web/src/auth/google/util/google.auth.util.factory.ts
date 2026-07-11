@@ -1,7 +1,7 @@
 import { type Id, type toast } from "react-toastify";
 import { Origin } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
-import { type ApiError } from "@web/common/apis/api.types";
+import { type ApiError } from "@web/api/api.types";
 import {
   GOOGLE_REVOKED_TOAST_ID,
   toastDefaultOptions,

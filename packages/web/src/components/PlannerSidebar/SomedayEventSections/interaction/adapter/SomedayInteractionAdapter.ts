@@ -2,15 +2,6 @@ import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { type CalendarInteractionAdapter } from "@web/common/calendar-interaction/CalendarInteractionAdapter";
-import {
-  type CalendarInteractionCancellationTargets,
-  type CalendarInteractionEngine,
-  createCalendarInteractionEngine,
-} from "@web/common/calendar-interaction/CalendarInteractionEngine";
-import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
-import { isEligibleCalendarInteractionPointerDown } from "@web/common/calendar-interaction/calendarInteractionPointer";
-import { createDraftEventClone } from "@web/common/calendar-interaction/dom/clone/createDraftEventClone";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import {
@@ -18,6 +9,15 @@ import {
   gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
+import { type CalendarInteractionAdapter } from "@web/interaction/CalendarInteractionAdapter";
+import {
+  type CalendarInteractionCancellationTargets,
+  type CalendarInteractionEngine,
+  createCalendarInteractionEngine,
+} from "@web/interaction/CalendarInteractionEngine";
+import { type CalendarInteractionPoint } from "@web/interaction/CalendarInteractionSession";
+import { isEligibleCalendarInteractionPointerDown } from "@web/interaction/calendarInteractionPointer";
+import { createDraftEventClone } from "@web/interaction/dom/clone/createDraftEventClone";
 import {
   buildAllDayWeekLayoutCache,
   buildTimedWeekLayoutCache,

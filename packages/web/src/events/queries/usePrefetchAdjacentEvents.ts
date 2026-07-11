@@ -1,6 +1,6 @@
 import { type FetchQueryOptions, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
+import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { type EventsQueryArgs } from "./event.query.options";
 
 type AdjacentRange = Omit<EventsQueryArgs, "source">;

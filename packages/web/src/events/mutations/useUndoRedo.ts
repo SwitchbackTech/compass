@@ -5,7 +5,6 @@ import {
   type Schema_Event,
 } from "@core/types/event.types";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
-import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { type Schema_WebEvent } from "@web/common/types/web.event.types";
 import { showRestoredToast } from "@web/common/utils/toast/deleted-toast.util";
 import {
@@ -13,6 +12,7 @@ import {
   useEventMutations,
 } from "@web/events/mutations/useEventMutations";
 import { findEventInCache } from "@web/events/queries/event.query.cache";
+import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import {
   runHistoryRestore,
   selectCanRedo,

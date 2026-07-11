@@ -1,9 +1,9 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   CALENDAR_DAY_COLUMN_MIN_USABLE_WIDTH,
   CALENDAR_GRID_MARGIN_LEFT,
-} from "@web/common/calendar-grid/calendarGrid.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+} from "@web/layout/calendar-grid/calendarGrid.constants";
 
 export const WEEK_DAY_COUNT = 7;
 

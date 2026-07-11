@@ -1,8 +1,8 @@
 import { type FC, type MutableRefObject, type ReactNode, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { CalendarTimedGrid } from "@web/common/calendar-grid/components/CalendarTimedGrid";
 import { type Ref_Callback } from "@web/common/types/util.types";
+import { CalendarTimedGrid } from "@web/layout/calendar-grid/components/CalendarTimedGrid";
 import { MainGridEvents } from "@web/views/Week/components/Grid/MainGrid/MainGridEvents";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useDragEventSmartScroll } from "@web/views/Week/hooks/grid/useDragEventSmartScroll";

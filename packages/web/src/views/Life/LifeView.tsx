@@ -6,7 +6,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { useIsMobile } from "@web/common/hooks/useIsMobile";
+import { useIsMobile } from "@web/views/Life/useIsMobile";
 import { LifeAboutDialog } from "./LifeAboutDialog";
 import { LifeDotTooltip } from "./LifeDotTooltip";
 import { LifeSelect } from "./LifeSelect";

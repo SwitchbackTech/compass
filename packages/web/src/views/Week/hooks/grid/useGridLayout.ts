@@ -1,4 +1,4 @@
-import { useCalendarGridLayout } from "@web/common/calendar-grid/hooks/useCalendarGridLayout";
+import { useCalendarGridLayout } from "@web/layout/calendar-grid/hooks/useCalendarGridLayout";
 import { isWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
 import { WEEK_DAY_COUNT } from "@web/views/Week/util/week-window.util";
 

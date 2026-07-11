@@ -3,11 +3,6 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { CALENDAR_TIMED_VISIBLE_HOURS } from "@web/common/calendar-grid/calendarGrid.constants";
-import { CalendarGrid } from "@web/common/calendar-grid/components/CalendarGrid";
-import { useAllDayDraftCreation } from "@web/common/calendar-grid/hooks/useAllDayDraftCreation";
-import { useCalendarDateCalcs } from "@web/common/calendar-grid/hooks/useCalendarDateCalcs";
-import { useCalendarGridLayout } from "@web/common/calendar-grid/hooks/useCalendarGridLayout";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   CompassDOMEvents,
@@ -29,6 +24,11 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { CALENDAR_TIMED_VISIBLE_HOURS } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { CalendarGrid } from "@web/layout/calendar-grid/components/CalendarGrid";
+import { useAllDayDraftCreation } from "@web/layout/calendar-grid/hooks/useAllDayDraftCreation";
+import { useCalendarDateCalcs } from "@web/layout/calendar-grid/hooks/useCalendarDateCalcs";
+import { useCalendarGridLayout } from "@web/layout/calendar-grid/hooks/useCalendarGridLayout";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";

@@ -1,6 +1,6 @@
 import { Status } from "@core/errors/status.codes";
+import { UserApi } from "@web/api/user.api";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
-import { UserApi } from "@web/common/apis/user.api";
 
 let refreshUserMetadataRequest: Promise<void> | null = null;
 

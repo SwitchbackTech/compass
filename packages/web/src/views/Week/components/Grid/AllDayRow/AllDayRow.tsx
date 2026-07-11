@@ -1,11 +1,11 @@
 import { type FC, type MouseEvent, type ReactNode, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Schema_Event } from "@core/types/event.types";
-import { CalendarAllDayRow } from "@web/common/calendar-grid/components/CalendarAllDayRow";
-import { useAllDayDraftCreation } from "@web/common/calendar-grid/hooks/useAllDayDraftCreation";
 import { type Ref_Callback } from "@web/common/types/util.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
+import { CalendarAllDayRow } from "@web/layout/calendar-grid/components/CalendarAllDayRow";
+import { useAllDayDraftCreation } from "@web/layout/calendar-grid/hooks/useAllDayDraftCreation";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";

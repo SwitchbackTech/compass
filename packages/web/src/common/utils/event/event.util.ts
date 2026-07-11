@@ -7,8 +7,8 @@ import {
   type Schema_Event_Recur_Base,
 } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
-import { isBackendUnavailableError } from "@web/common/apis/util/backend-unavailable-error.util";
 import {
   DATA_EVENT_ELEMENT_ID,
   ID_GRID_ALLDAY_ROW,

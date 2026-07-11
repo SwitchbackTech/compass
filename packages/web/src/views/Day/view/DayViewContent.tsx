@@ -3,7 +3,6 @@ import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { useCollapsiblePanel } from "@web/common/hooks/useCollapsiblePanel";
-import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -18,6 +17,7 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
+import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
 import { TaskList } from "@web/views/Day/components/TaskList/TaskList";

@@ -14,11 +14,11 @@ import {
   seedEventQueries,
   seedPendingEventMutations,
 } from "@web/__tests__/utils/event-query-test-data";
+import { createCompassQueryClient } from "@web/api/query-client";
 import {
   ID_GRID_COLUMNS_TIMED,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { createCompassQueryClient } from "@web/common/query/query-client";
 import { gridColorByPriority } from "@web/common/styles/theme.util";
 import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";

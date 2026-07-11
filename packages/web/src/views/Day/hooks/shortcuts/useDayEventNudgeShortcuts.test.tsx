@@ -6,7 +6,7 @@ import {
   renderHook,
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
-import { createCompassQueryClient } from "@web/common/query/query-client";
+import { createCompassQueryClient } from "@web/api/query-client";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";

@@ -5,16 +5,16 @@ import EmailVerification from "supertokens-web-js/recipe/emailverification";
 import Session from "supertokens-web-js/recipe/session";
 import ThirdParty from "supertokens-web-js/recipe/thirdparty";
 import { APP_NAME } from "@core/constants/core.constants";
+import { session } from "@web/auth/compass/session/Session";
 import {
   getLastKnownEmail,
   markUserAsAuthenticated,
 } from "@web/auth/compass/state/auth.state.util";
 import { userMetadataActions } from "@web/auth/state/user-metadata.store";
-import { session } from "@web/common/classes/Session";
 import { ENV_WEB } from "@web/common/constants/env.constants";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
-import { refreshEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { createExternalStore } from "@web/common/utils/external-store.util";
+import { refreshEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import * as sse from "@web/sse/provider/SSEProvider";
 import { clearGoogleSyncIndicatorOverride } from "../../google/state/google.sync.state";
 import { refreshUserMetadata } from "../user/util/user-metadata.util";

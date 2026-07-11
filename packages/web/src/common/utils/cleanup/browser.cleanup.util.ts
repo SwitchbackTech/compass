@@ -1,4 +1,4 @@
-import { session } from "@web/common/classes/Session";
+import { session } from "@web/auth/compass/session/Session";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "@web/common/utils/storage/storage.util";
 

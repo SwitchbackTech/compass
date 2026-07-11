@@ -1,8 +1,8 @@
 import cn from "classnames";
 import { type FC } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { CALENDAR_EVENT_WIDTH_MINIMUM } from "@web/common/calendar-grid/calendarGrid.constants";
 import { getWeekDayLabel } from "@web/common/utils/event/event.util";
+import { CALENDAR_EVENT_WIDTH_MINIMUM } from "@web/layout/calendar-grid/calendarGrid.constants";
 
 interface Props {
   today: Dayjs;

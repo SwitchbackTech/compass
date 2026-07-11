@@ -1,8 +1,8 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
-import { type AllDayDragVisual } from "@web/common/calendar-grid/interaction/model/AllDayDragVisual";
-import { type AllDayResizeVisual } from "@web/common/calendar-grid/interaction/model/AllDayResizeVisual";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type AllDayDragVisual } from "@web/layout/calendar-grid/interaction/model/AllDayDragVisual";
+import { type AllDayResizeVisual } from "@web/layout/calendar-grid/interaction/model/AllDayResizeVisual";
 
 export const hasAllDayDragVisualMoved = (visual: AllDayDragVisual) =>
   visual.dayDate !== visual.initialDayDate;

@@ -16,9 +16,9 @@ import {
   seedStoresFromState,
   type TestAppState,
 } from "@web/__tests__/utils/state/seed-stores";
+import { createCompassQueryClient } from "@web/api/query-client";
 import { ID_ROOT } from "@web/common/constants/web.constants";
 import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
-import { createCompassQueryClient } from "@web/common/query/query-client";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
 import { mock } from "bun:test";
 

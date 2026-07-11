@@ -1,13 +1,13 @@
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { positionAllDayDraftEvent } from "@web/common/calendar-grid/layout/allDayDraftEventPosition";
-import { type CalendarGridVisibleDate } from "@web/common/calendar-grid/types/calendarGrid.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
   type EventWithDates,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
+import { positionAllDayDraftEvent } from "@web/layout/calendar-grid/layout/allDayDraftEventPosition";
+import { type CalendarGridVisibleDate } from "@web/layout/calendar-grid/types/calendarGrid.types";
 
 export const addVisibleDraftEvent = ({
   draft,

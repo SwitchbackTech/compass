@@ -1,4 +1,4 @@
-import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
+import { type CalendarInteractionPoint } from "@web/interaction/CalendarInteractionSession";
 
 export interface ClampZoneRect {
   bottom: number;

@@ -16,7 +16,7 @@ export async function loadAuthenticated() {
     return { authenticated: false };
   }
 
-  const { session } = await import("../common/classes/Session");
+  const { session } = await import("../auth/compass/session/Session");
 
   const authenticated = await session.doesSessionExist();
 

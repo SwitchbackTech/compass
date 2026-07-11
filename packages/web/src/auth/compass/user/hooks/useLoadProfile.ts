@@ -1,12 +1,12 @@
 import { useCallback, useLayoutEffect, useRef, useState } from "react";
 import { Status } from "@core/errors/status.codes";
 import { type UserProfile } from "@core/types/user.types";
+import { UserApi } from "@web/api/user.api";
+import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import {
   getLastKnownEmail,
   markUserAsAuthenticated,
 } from "@web/auth/compass/state/auth.state.util";
-import { UserApi } from "@web/common/apis/user.api";
-import { isBackendUnavailableError } from "@web/common/apis/util/backend-unavailable-error.util";
 import { showSessionExpiredToast } from "@web/common/utils/toast/error-toast.util";
 
 export type UseLoadProfileResult = {
