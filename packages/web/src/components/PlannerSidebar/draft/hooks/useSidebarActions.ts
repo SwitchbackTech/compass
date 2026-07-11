@@ -57,6 +57,8 @@ import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import {
   createSomedayEventDraft,
   duplicateSomedayEventDraft,
+  editSomedayEventDraft,
+  retargetSomedayEventDraft,
 } from "@web/events/someday-event-draft.adapter";
 import {
   type Activity_DraftEvent,
@@ -574,11 +576,35 @@ export const useSidebarActions = (
     if (_event._id) {
       if (!hasEventDates(_event)) return;
 
-      const eventId = _event._id;
-      eventMutations.edit({
-        _id: eventId,
-        event: assembleWebEvent(_event),
-      });
+      const idResult = EventIdSchema.safeParse(_event._id);
+      const existingEvent = idResult.success
+        ? state.somedayEvents.events[idResult.data]
+        : undefined;
+
+      if (idResult.success && existingEvent?.schedule.kind === "someday") {
+        const editDraft = editSomedayEventDraft(existingEvent);
+        const period =
+          direction === "up"
+            ? "week"
+            : direction === "down"
+              ? "month"
+              : category === Categories_Event.SOMEDAY_WEEK
+                ? "week"
+                : "month";
+
+        if (editDraft) {
+          const retargeted = retargetSomedayEventDraft(editDraft, {
+            period,
+            anchorDate: dayjs(_event.startDate).toDate(),
+            sortOrder: existingEvent.schedule.sortOrder,
+          });
+          const result = parseEventDraft(retargeted);
+
+          if (result.ok && result.mode === "edit") {
+            mutations.replace({ id: result.eventId, input: result.input });
+          }
+        }
+      }
     } else {
       eventMutations.create(_event);
     }
@@ -681,7 +707,51 @@ export const useSidebarActions = (
           ? RecurringEventUpdateScope.ALL_EVENTS
           : RecurringEventUpdateScope.THIS_EVENT;
 
-      eventMutations.edit({ _id: eventId, event: parsedEvent, applyTo });
+      const idResult = EventIdSchema.safeParse(eventId);
+      const existingEvent = idResult.success
+        ? state.somedayEvents.events[idResult.data]
+        : undefined;
+      const existingSchedule = existingEvent?.schedule;
+      const editDraft =
+        existingEvent && existingSchedule?.kind === "someday"
+          ? editSomedayEventDraft(existingEvent, toRecurrenceScope(applyTo))
+          : null;
+
+      if (editDraft && existingSchedule?.kind === "someday") {
+        const rule = parsedEvent.recurrence?.rule;
+        const recurrence =
+          Array.isArray(rule) && rule.length > 0
+            ? { kind: "series" as const, rules: rule }
+            : { kind: "single" as const };
+
+        const result = parseEventDraft({
+          ...editDraft,
+          values: {
+            ...editDraft.values,
+            title: parsedEvent.title ?? "",
+            description: parsedEvent.description ?? "",
+            priority: parsedEvent.priority ?? editDraft.values.priority,
+            schedule: {
+              kind: "someday",
+              period: existingSchedule.period,
+              // dayjs (not `new Date`) parses a bare "YYYY-MM-DD" string as
+              // local midnight; `new Date` parses it as UTC midnight, which
+              // reads back as the previous local day in a negative-offset
+              // zone once parseEventDraft reformats it — silently dropping
+              // the edited event into the prior week/month's bucket.
+              anchorDate: parsedEvent.startDate
+                ? dayjs(parsedEvent.startDate).toDate()
+                : dayjs(existingSchedule.anchorDate).toDate(),
+              sortOrder: parsedEvent.order ?? existingSchedule.sortOrder,
+            },
+            recurrence,
+          },
+        });
+
+        if (result.ok && result.mode === "edit") {
+          mutations.replace({ id: result.eventId, input: result.input });
+        }
+      }
     } else {
       const columnName = getSomedayColumnName(category);
       const column = state.somedayEvents.columns[columnName];
