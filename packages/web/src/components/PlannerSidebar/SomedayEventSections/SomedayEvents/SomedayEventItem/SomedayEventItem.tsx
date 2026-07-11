@@ -1,5 +1,5 @@
 import { type FC, useLayoutEffect, useRef } from "react";
-import { type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import {
   type SomedayInteractionCategory,
@@ -14,7 +14,7 @@ const SOMEDAY_SORT_ANIMATION_EASING = "cubic-bezier(0.2, 0, 0, 1)";
 export interface Props {
   category: SomedayInteractionCategory;
   draftId: string;
-  event: Schema_Event;
+  event: Event;
   index: number;
   isDrafting: boolean;
   animateEnter?: boolean;
@@ -116,19 +116,17 @@ export const SomedayEventItem: FC<Props> = ({
   index,
   animateEnter = false,
 }) => {
-  const isDraftingThisEvent =
-    isDrafting && (draftId === event._id || !event._id);
+  const isDraftingThisEvent = isDrafting && (draftId === event.id || !event.id);
   const enterAnimationRef = useRef(animateEnter);
   const layoutAnimationRef = useSomedayRowLayoutAnimation();
   const { actions, setters, state } = useSidebarContext();
   const { start, end } = useViewStore(selectDatesInView);
-  const isDraggingThisEvent =
-    state.isDragging && state.draft?._id === event._id;
+  const isDraggingThisEvent = state.isDragging && state.draft?.id === event.id;
   const interactionRef = useSomedayEventRegistrationRef({
     category,
-    eventId: event._id,
+    eventId: event.id,
     index,
-    isEnabled: Boolean(event._id),
+    isEnabled: Boolean(event.id),
   });
 
   return (

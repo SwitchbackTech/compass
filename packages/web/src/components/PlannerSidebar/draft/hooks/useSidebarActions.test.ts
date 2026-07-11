@@ -20,10 +20,10 @@ const { useSidebarActions } =
 
 const SOMEDAY_EVENT_ID = "664e21f9a6b3f0b1c2d3e4f5";
 
-// draft.store.ts/useSidebarState still hold the legacy Schema_Event shape
-// (see draft.store.ts's own TODO); `somedayEvent` drives those, while
-// `somedayEventContract` (below) seeds the strict-contract `Event` query
-// cache and the local repository the transition mutation reads through.
+// draft.store.ts still holds the legacy Schema_Event shape (see its own
+// TODO); `somedayEvent` seeds that, while `somedayEventContract` (below)
+// seeds the strict-contract `Event` sidebar cache/query and the local
+// repository the transition mutation reads through.
 const somedayEvent: Schema_Event = {
   _id: SOMEDAY_EVENT_ID,
   endDate: "2024-01-21",
@@ -51,7 +51,7 @@ const somedayEventContract = createMockEvent({
 const createState = (): State_Sidebar =>
   ({
     blockedSomedayDropColumn: null,
-    draft: somedayEvent,
+    draft: somedayEventContract,
     isDrafting: true,
     isDraftingExisting: true,
     isDraftingNew: false,
@@ -70,7 +70,7 @@ const createState = (): State_Sidebar =>
         },
       },
       events: {
-        [somedayEvent._id!]: somedayEvent,
+        [somedayEvent._id!]: somedayEventContract,
       },
     },
     somedayIds: [somedayEvent._id!],

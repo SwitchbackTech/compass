@@ -4,7 +4,8 @@ import {
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
+import { Categories_Event } from "@core/types/event.types";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
@@ -51,7 +52,7 @@ const getActiveDropZoneHeight = (
 
 export interface Props {
   category: SomedayInteractionCategory;
-  events: Schema_Event[];
+  events: Event[];
   isDraftingNew: boolean;
 }
 
@@ -104,11 +105,11 @@ export const SomedayEventsContainer: FC<Props> = ({
           <SomedayEventItem
             animateEnter={shouldAnimateRowEntrance}
             category={category}
-            draftId={state.draft?._id || ID_SOMEDAY_DRAFT}
+            draftId={state.draft?.id || ID_SOMEDAY_DRAFT}
             event={event}
             index={index}
-            isDrafting={state.draft?._id === event._id}
-            key={event?._id || "draft"}
+            isDrafting={state.draft?.id === event.id}
+            key={event?.id || "draft"}
           />
         ))}
       </div>

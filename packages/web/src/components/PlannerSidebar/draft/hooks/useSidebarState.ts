@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
@@ -16,19 +16,24 @@ export const useSidebarState = () => {
     dayjs(dates.start),
     dayjs(dates.end),
   );
+  const isDNDing = useDraftStore(selectIsDNDing);
   const [somedayEvents, setSomedayEventsState] = useState(categorizedEvents);
 
+  // Only resync from the query's derived view while no sidebar drag is in
+  // flight. A live reorder preview (and a just-submitted create) sets this
+  // state directly with its own already-correct value; letting a query
+  // refetch overwrite it mid-drag would blow away the preview out from
+  // under the pointer.
   useEffect(() => {
+    if (isDNDing) return;
     setSomedayEventsState(categorizedEvents);
-  }, [categorizedEvents]);
+  }, [categorizedEvents, isDNDing]);
 
   const setSomedayEvents = useCallback((nextEvents: SidebarSomedayEvents) => {
     setSomedayEventsState(nextEvents);
   }, []);
 
-  const isDNDing = useDraftStore(selectIsDNDing);
-
-  const [draft, setDraft] = useState<Schema_Event | null>(null);
+  const [draft, setDraft] = useState<Event | null>(null);
   const [isDrafting, setIsDrafting] = useState(false);
   const [isDraftingExisting, setIsDraftingExisting] = useState(false);
   const [blockedSomedayDropColumn, setBlockedSomedayDropColumn] = useState<
@@ -45,7 +50,7 @@ export const useSidebarState = () => {
   const isDraftingNew =
     isDrafting &&
     !isDraftingExisting &&
-    !somedayIds.includes(draft?._id as string);
+    !somedayIds.includes(draft?.id as string);
 
   const state = {
     draft,

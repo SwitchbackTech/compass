@@ -1,5 +1,7 @@
 import { render, screen } from "@testing-library/react";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
+import { Categories_Event } from "@core/types/event.types";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
 import { describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
@@ -13,15 +15,19 @@ const formProps = {
   getReferenceProps: () => ({}),
 } as unknown as Props_DraftForm;
 
-const createEvent = (overrides: Partial<Schema_Event> = {}): Schema_Event =>
-  ({
-    _id: "someday-1",
-    isSomeday: true,
-    title: "Read a book",
+const createEvent = (overrides: Partial<Event> = {}): Event =>
+  createMockEvent({
+    content: { kind: "details", title: "Read a book", description: "" },
+    schedule: EventScheduleSchema.parse({
+      kind: "someday",
+      period: "week",
+      anchorDate: "2026-05-17",
+      sortOrder: 0,
+    }),
     ...overrides,
-  }) as Schema_Event;
+  });
 
-const renderRectangle = (event: Schema_Event) =>
+const renderRectangle = (event: Event) =>
   render(
     <SomedayEventRectangle
       category={Categories_Event.SOMEDAY_WEEK}
@@ -46,7 +52,9 @@ describe("SomedayEventRectangle", () => {
 
   it("shows a passive repeat indicator instead of a migrate control for a recurring event", () => {
     renderRectangle(
-      createEvent({ recurrence: { rule: ["RRULE:FREQ=WEEKLY"] } }),
+      createEvent({
+        recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+      }),
     );
 
     // The recurrence is announced, but there is no interactive migrate/warning

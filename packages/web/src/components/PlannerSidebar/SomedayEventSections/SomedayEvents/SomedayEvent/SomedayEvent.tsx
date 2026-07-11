@@ -1,6 +1,6 @@
 import { type KeyboardEvent, type Ref } from "react";
 import { type Priorities } from "@core/constants/core.constants";
-import { type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { colorByPriority } from "@web/common/styles/theme.util";
@@ -15,7 +15,7 @@ import {
 
 interface Props {
   category: SomedayInteractionCategory;
-  event: Schema_Event;
+  event: Event;
   status: {
     isDrafting: boolean;
     isDragging: boolean;
@@ -57,7 +57,7 @@ export const SomedayEvent = ({
   const tint = (percent: number) =>
     `color-mix(in srgb, ${colorByPriority[priority]} ${percent}%, transparent)`;
   const somedayEventProps = {
-    [DATA_EVENT_ELEMENT_ID]: event._id,
+    [DATA_EVENT_ELEMENT_ID]: event.id,
     "aria-hidden": isDragging || undefined,
     onBlur,
     onClick,

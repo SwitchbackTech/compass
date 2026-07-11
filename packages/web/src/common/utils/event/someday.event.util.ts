@@ -1,3 +1,6 @@
+import { Priorities } from "@core/constants/core.constants";
+import { type DateOnly } from "@core/types/domain-primitives";
+import { type Event } from "@core/types/event.contracts";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import {
@@ -6,11 +9,11 @@ import {
   ID_SOMEDAY_EVENT_ACTION_MENU,
 } from "@web/common/constants/web.constants";
 import {
-  type Schema_SomedayEventsColumn,
   type Schema_WebEvent,
+  type Someday_EventsColumn,
 } from "@web/common/types/web.event.types";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type Payload_ConvertEvent } from "@web/events/event.types";
-import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
 import { type NormalizedEventQueryData } from "@web/events/queries/event.query.types";
 import { parseSomedayEventBeforeSubmit } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
@@ -87,16 +90,13 @@ export const getSomedayEventCategory = (
  * contract's required field (no more client backfill for a missing legacy
  * `order`).
  *
- * Returns the legacy `Schema_SomedayEventsColumn` shape (bridged via
- * eventToSchemaEvent) so the sidebar components consuming it don't need to
- * change in this phase.
- * TODO(packet-03-phase-3c): return `Event`-shaped columns once the sidebar
- * renderer is converted, and drop the bridge.
+ * Returns `Event`-shaped columns directly — the sidebar renderer consumes
+ * the strict contract, no legacy `Schema_Event` bridge involved.
  */
 export const categorizeSomedayEvents = (
   weekData: NormalizedEventQueryData | undefined,
   monthData: NormalizedEventQueryData | undefined,
-): Schema_SomedayEventsColumn => {
+): Someday_EventsColumn => {
   const bySortOrder = (data: NormalizedEventQueryData | undefined) =>
     data
       ? [...data.ids]
@@ -113,9 +113,9 @@ export const categorizeSomedayEvents = (
   const weekEvents = bySortOrder(weekData);
   const monthEvents = bySortOrder(monthData);
 
-  const events: Schema_SomedayEventsColumn["events"] = {};
+  const events: Someday_EventsColumn["events"] = {};
   for (const event of [...weekEvents, ...monthEvents]) {
-    events[event.id] = eventToSchemaEvent(event);
+    events[event.id] = event;
   }
 
   return {
@@ -133,6 +133,98 @@ export const categorizeSomedayEvents = (
     events,
   };
 };
+
+// The sidebar's local draft/preview state holds strict `Event` objects, but
+// the someday create/edit form and its supporting utils (submit.parser,
+// web.date.util, event.util) still speak the legacy `Schema_Event` shape —
+// see event.legacy-bridge.ts's own TODO. These two helpers are the reverse
+// direction of `eventToSchemaEvent`: they build a best-effort `Event` from a
+// `Schema_Event` at the specific points the sidebar needs to hand a
+// Schema_Event-shaped draft/edit back into Event-typed local state
+// (freshly-created events, drag-computed date ranges). Never sent to a
+// mutation — those still submit the `Schema_Event`-shaped draft directly via
+// the legacy adapter.
+const someEventScheduleFromLegacy = (
+  event: Schema_Event,
+): Event["schedule"] => ({
+  kind: "someday",
+  period:
+    dayjs(event.endDate).diff(dayjs(event.startDate), "day") > 7
+      ? "month"
+      : "week",
+  // A brand-new draft has no startDate yet (assigned at submit time from the
+  // target category/view range, see useSidebarActions.ts's onSubmit) --
+  // anchor on today rather than an empty string, which downstream date
+  // parsing (parseCompassEventDate) throws on.
+  anchorDate: (event.startDate || dayjs().toYearMonthDayString()).slice(
+    0,
+    10,
+  ) as DateOnly,
+  sortOrder: event.order ?? 0,
+});
+
+const someEventRecurrenceFromLegacy = (
+  event: Schema_Event,
+): Event["recurrence"] => {
+  const rule = event.recurrence?.rule;
+
+  if (Array.isArray(rule) && rule.length > 0) {
+    return { kind: "series", rules: rule };
+  }
+
+  if (event.recurrence?.eventId) {
+    return {
+      kind: "occurrence",
+      seriesId: event.recurrence.eventId as Event["id"],
+    };
+  }
+
+  return { kind: "single" };
+};
+
+/**
+ * Reapplies a legacy `Schema_Event`'s user-editable fields (title,
+ * description, dates, recurrence, priority) onto an existing local `Event`,
+ * keeping `id`/`calendarId` from `base` unless the schema event carries a
+ * (real, already-persisted) id of its own.
+ */
+export const applySchemaEventToLocalEvent = (
+  base: Event,
+  schemaEvent: Schema_Event,
+): Event => ({
+  ...base,
+  id: (schemaEvent._id ?? base.id) as Event["id"],
+  content: {
+    kind: "details",
+    title: schemaEvent.title ?? "",
+    description: schemaEvent.description ?? "",
+  },
+  schedule: someEventScheduleFromLegacy(schemaEvent),
+  recurrence: someEventRecurrenceFromLegacy(schemaEvent),
+  priority: schemaEvent.priority ?? base.priority,
+});
+
+/**
+ * Builds a full local `Event` from a legacy `Schema_Event`, generating an id
+ * if the schema event doesn't have one yet (a brand-new, unsaved draft).
+ */
+export const schemaEventToLocalEvent = (
+  schemaEvent: Schema_Event,
+  calendarId: string,
+): Event => ({
+  id: (schemaEvent._id ?? createObjectIdString()) as Event["id"],
+  calendarId: calendarId as Event["calendarId"],
+  content: {
+    kind: "details",
+    title: schemaEvent.title ?? "",
+    description: schemaEvent.description ?? "",
+  },
+  schedule: someEventScheduleFromLegacy(schemaEvent),
+  recurrence: someEventRecurrenceFromLegacy(schemaEvent),
+  priority: schemaEvent.priority ?? Priorities.UNASSIGNED,
+  createdAt: dayjs().toISOString() as Event["createdAt"],
+  updatedAt: null,
+});
 
 export const isSomedayEventActionMenuOpen = () => {
   const actionMenu = document.getElementById(ID_SOMEDAY_EVENT_ACTION_MENU);

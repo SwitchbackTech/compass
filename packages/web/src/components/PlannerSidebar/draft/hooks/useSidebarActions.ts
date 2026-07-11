@@ -7,6 +7,7 @@ import {
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
+import { type Event } from "@core/types/event.contracts";
 import {
   Categories_Event,
   type Direction_Migrate,
@@ -28,6 +29,10 @@ import {
   assembleWebEvent,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
+import {
+  applySchemaEventToLocalEvent,
+  schemaEventToLocalEvent,
+} from "@web/common/utils/event/someday.event.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
@@ -42,7 +47,10 @@ import {
   type SomedaySidebarCommitResult,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter.types";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { createLegacyEventMutationsAdapter } from "@web/events/queries/event.legacy-bridge";
+import {
+  createLegacyEventMutationsAdapter,
+  eventToSchemaEvent,
+} from "@web/events/queries/event.legacy-bridge";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
   type Activity_DraftEvent,
@@ -99,9 +107,11 @@ const getNextSomedayOrder = (
   const columnName = getSomedayColumnName(category);
   const events = somedayEvents.columns[columnName].eventIds
     .map((eventId) => somedayEvents.events[eventId])
-    .filter(Boolean);
+    .filter((event): event is Event => Boolean(event));
   const orders = events
-    .map((event) => event.order)
+    .map((event) =>
+      event.schedule.kind === "someday" ? event.schedule.sortOrder : undefined,
+    )
     .filter(
       (order): order is number =>
         typeof order === "number" && !Number.isNaN(order),
@@ -186,13 +196,13 @@ const applySomedayColumnOrder = ({
   const orderUpdates = eventIds.flatMap((eventId, order) => {
     const event = orderedEvents[eventId];
 
-    if (!event) {
+    if (!event || event.schedule.kind !== "someday") {
       return [];
     }
 
     orderedEvents[eventId] = {
       ...event,
-      order,
+      schedule: { ...event.schedule, sortOrder: order },
     };
 
     return [{ _id: eventId, order }];
@@ -211,15 +221,12 @@ export const useSidebarActions = (
 ) => {
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
+  const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
   // TODO(packet-03-phase-3c): legacy-shaped facade until this file's
   // Schema_Event-based drag/drop state is converted to the new contracts.
   const eventMutations = useMemo(
-    () =>
-      createLegacyEventMutationsAdapter(
-        mutations,
-        () => getDefaultTargetCalendar(calendars ?? [])?.id,
-      ),
-    [mutations, calendars],
+    () => createLegacyEventMutationsAdapter(mutations, () => calendarId),
+    [mutations, calendarId],
   );
   const interactionPreviewKeyRef = useRef<string | null>(null);
   const interactionSnapshotRef = useRef<State_Sidebar["somedayEvents"] | null>(
@@ -271,10 +278,10 @@ export const useSidebarActions = (
   }, [setIsSomedayFormOpen]);
 
   const create = useCallback(() => {
-    setDraft(draft);
+    setDraft(draft ? schemaEventToLocalEvent(draft, calendarId ?? "") : null);
     setIsDrafting(true);
     openForm();
-  }, [openForm, draft, setDraft, setIsDrafting]);
+  }, [openForm, draft, calendarId, setDraft, setIsDrafting]);
 
   const discard = useCallback(() => {
     if (state.draft) {
@@ -302,10 +309,12 @@ export const useSidebarActions = (
   // NOT converted to GridEventDraft/editGridEventDraft: onDraft only opens
   // someday events (see SomedayEventContainer/SomedayInteractionCoordinator
   // call sites), and editGridEventDraft explicitly rejects "someday"
-  // schedules. See packet-03-phase-3c scoping note.
+  // schedules. See packet-03-phase-3c scoping note. Kept Schema_Event-typed:
+  // ContextMenuItems.tsx (the grid right-click menu) also calls this with a
+  // Schema_GridEvent, outside this packet's someday-sidebar file set.
   const onDraft = (event: Schema_Event, category: Categories_Event) => {
     setIsDrafting(true);
-    setDraft(event);
+    setDraft(schemaEventToLocalEvent(event, calendarId ?? ""));
     setIsSomedayFormOpen(true);
 
     draftActions.start({
@@ -471,17 +480,19 @@ export const useSidebarActions = (
     applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
   ) => {
     // No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z
-    const eventToDelete = state.draft ?? draft;
+    const eventIdToDelete = state.draft?.id ?? draft?._id;
 
-    if (eventToDelete?._id) {
-      eventMutations.deleteSomeday({ _id: eventToDelete._id, applyTo });
+    if (eventIdToDelete) {
+      eventMutations.deleteSomeday({ _id: eventIdToDelete, applyTo });
     }
 
     close();
   };
 
   const duplicateSomedayEvent = () => {
-    const eventToDuplicate = state.draft ?? draft;
+    const eventToDuplicate = state.draft
+      ? eventToSchemaEvent(state.draft)
+      : draft;
     if (!eventToDuplicate) return;
 
     const { _id: _duplicatedEventId, ...duplicateEvent } =
@@ -596,14 +607,16 @@ export const useSidebarActions = (
       return;
     }
 
-    setDraft(event);
+    setDraft(schemaEventToLocalEvent(event, calendarId ?? ""));
     setIsSomedayFormOpen(true);
     setIsDrafting(true);
   };
 
   const onSubmit = async (
     category: Categories_Event,
-    event: Schema_Event | null = state.draft,
+    event: Schema_Event | null = state.draft
+      ? eventToSchemaEvent(state.draft)
+      : null,
   ) => {
     if (!event) return;
 
@@ -670,7 +683,7 @@ export const useSidebarActions = (
         },
         events: {
           ...state.somedayEvents.events,
-          [eventId]: eventWithOrder,
+          [eventId]: schemaEventToLocalEvent(eventWithOrder, calendarId ?? ""),
         },
       });
 
@@ -718,7 +731,9 @@ export const useSidebarActions = (
       events: sourceOrder.events,
     });
 
-    let draggedEvent = destOrder.events[draggableId];
+    const draggedEvent = destOrder.events[draggableId];
+
+    if (!draggedEvent) return;
 
     const draggedToMonthColumn = destColumn.id === COLUMN_MONTH;
 
@@ -726,25 +741,17 @@ export const useSidebarActions = (
       startDate: viewStart.format(),
       endDate: viewEnd.format(),
     };
-    if (draggedToMonthColumn) {
-      draggedEvent = computeCurrentEventDateRange(
-        { duration: "month" },
-        draggedEvent,
-        weekViewRange,
-      );
-    } else {
-      draggedEvent = computeCurrentEventDateRange(
-        { duration: "week" },
-        draggedEvent,
-        weekViewRange,
-      );
-    }
+    const draggedSchemaEvent = computeCurrentEventDateRange(
+      { duration: draggedToMonthColumn ? "month" : "week" },
+      eventToSchemaEvent(draggedEvent),
+      weekViewRange,
+    );
 
-    if (!draggedEvent?._id) return;
+    if (!draggedSchemaEvent._id) return;
 
-    const draggedEventId = draggedEvent._id;
+    const draggedEventId = draggedSchemaEvent._id;
 
-    if (!hasEventDates(draggedEvent)) return;
+    if (!hasEventDates(draggedSchemaEvent)) return;
 
     const orderUpdates = [
       ...sourceOrder.orderUpdates,
@@ -766,7 +773,10 @@ export const useSidebarActions = (
       },
       events: {
         ...destOrder.events,
-        [draggableId]: draggedEvent,
+        [draggableId]: applySchemaEventToLocalEvent(
+          draggedEvent,
+          draggedSchemaEvent,
+        ),
       },
     };
     setSomedayEvents(newState);
@@ -774,7 +784,7 @@ export const useSidebarActions = (
 
     eventMutations.edit({
       _id: draggedEventId,
-      event: assembleWebEvent(draggedEvent),
+      event: assembleWebEvent(draggedSchemaEvent),
     });
   };
 

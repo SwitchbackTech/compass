@@ -59,7 +59,7 @@ describe("Event query view models", () => {
       undefined,
     );
 
-    expect(result.orderedEvents.map(({ _id }) => _id)).toEqual([
+    expect(result.orderedEvents.map(({ id }) => id)).toEqual([
       first.id,
       second.id,
     ]);

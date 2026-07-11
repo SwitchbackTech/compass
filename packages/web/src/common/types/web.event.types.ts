@@ -1,8 +1,6 @@
 import { z } from "zod";
-import {
-  CompassCoreEventSchema,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
+import { CompassCoreEventSchema } from "@core/types/event.types";
 import { IDSchema } from "@core/types/type.utils";
 import { type SelectOption } from "@web/common/types/component.types";
 
@@ -58,7 +56,7 @@ export interface Schema_SelectedDates {
   endTime: SelectOption<string>;
   isAllDay: boolean;
 }
-export interface Schema_SomedayEventsColumn {
+export interface Someday_EventsColumn {
   columns: {
     [key: string]: {
       id: string;
@@ -67,7 +65,7 @@ export interface Schema_SomedayEventsColumn {
   };
   columnOrder: string[];
   events: {
-    [key: string]: Schema_Event;
+    [key: string]: Event;
   };
 }
 

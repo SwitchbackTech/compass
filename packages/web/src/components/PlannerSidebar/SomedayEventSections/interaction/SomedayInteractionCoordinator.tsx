@@ -1,5 +1,6 @@
 import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
+import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { type WeekLayoutCacheSources } from "@web/views/Week/interaction/adapter/geometry/weekLayoutCache";
@@ -46,7 +47,8 @@ export const SomedayInteractionCoordinator: FC<Props> = ({
     getVisibleDays: () => visibleDayKeys,
     isSidebarDropAllowed: actions.isSomedaySidebarDropAllowed,
     onCancelInteraction: actions.cancelSomedayInteraction,
-    onClickSomedayEvent: actions.onDraft,
+    onClickSomedayEvent: (event, category) =>
+      actions.onDraft(eventToSchemaEvent(event), category),
     onCommitSomedayInteraction: (result) => {
       // Mark before dispatching so the freshly rendered GridEvent /
       // AllDayEvent picks up the acknowledgment on its first paint.
@@ -57,7 +59,7 @@ export const SomedayInteractionCoordinator: FC<Props> = ({
       actions.commitSomedayInteraction(result);
     },
     onMotionActivation: (target) => {
-      actions.startSomedayInteraction(target.event._id);
+      actions.startSomedayInteraction(target.event.id);
     },
     onPreviewSomedaySidebarDrop: (result) => {
       if (!result) {
