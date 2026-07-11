@@ -49,8 +49,8 @@ unfinished.
 
 - [x] 00. [Project ledger](./00-project-ledger.md) — reconcile and retire issue
       cards.
-- [ ] 01. [Domain contracts](./01-domain-contracts.md) — freeze calendar/event/API
-      semantics before migration work. Use the companion
+- [x] 01. [Domain contracts](./01-domain-contracts.md) — freeze calendar/event/API
+      semantics before migration work. Shipped in PR #2015. Use the companion
       [full schemas](./01a-proposed-contract-schemas.md) and
       [examples/flows](./01b-contract-examples-and-flows.md) as the concrete
       implementation reference.
