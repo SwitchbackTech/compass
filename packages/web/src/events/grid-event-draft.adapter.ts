@@ -64,6 +64,41 @@ export function editGridEventDraft(
   };
 }
 
+// A duplicate is a brand-new, standalone event: it starts from the source
+// event's fields but is never linked back to it (kind "create", source
+// null), so editing/deleting the duplicate never touches the original.
+export function duplicateGridEventDraft(event: Event): GridEventDraft | null {
+  if (event.schedule.kind === "someday") return null;
+
+  const schedule: GridScheduleDraft =
+    event.schedule.kind === "timed"
+      ? {
+          kind: "timed",
+          start: new Date(event.schedule.start),
+          end: new Date(event.schedule.end),
+          timeZone: event.schedule.timeZone,
+        }
+      : {
+          kind: "allDay",
+          start: new Date(event.schedule.start),
+          end: new Date(event.schedule.end),
+        };
+
+  return {
+    kind: "create",
+    source: null,
+    values: {
+      title: event.content.kind === "details" ? event.content.title : "",
+      description:
+        event.content.kind === "details" ? event.content.description : "",
+      schedule,
+      priority: event.priority,
+      calendarId: event.calendarId,
+      recurrence: { kind: "single" },
+    },
+  };
+}
+
 export function replaceGridDraftSchedule(
   draft: GridEventDraft,
   schedule: GridScheduleDraft,

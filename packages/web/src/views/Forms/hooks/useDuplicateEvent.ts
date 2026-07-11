@@ -1,6 +1,5 @@
-import { ObjectId } from "bson";
 import { useCallback } from "react";
-import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
+import { duplicateGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useEventById } from "@web/events/queries/useEventById";
 import { draftActions } from "@web/events/stores/draft.store";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
@@ -17,16 +16,14 @@ export function useDuplicateEvent(_id: string) {
   const duplicateEvent = useCallback(() => {
     if (!event) return;
 
-    onClose();
+    const duplicate = duplicateGridEventDraft(event);
+    if (!duplicate) return;
 
-    const newId = new ObjectId().toString();
-    // TODO(packet-03-phase-3c): draft.store.ts still holds the legacy
-    // Schema_Event shape; bridge until it's converted to `Event`.
-    const duplicate = { ...eventToSchemaEvent(event), _id: newId };
+    onClose();
 
     // The duplicated draft renders into the grid and its card attaches the
     // floating reference, so the form anchors itself once mounted.
-    draftActions.startGridClick(duplicate);
+    draftActions.startGridDraft({ activity: "gridClick", draft: duplicate });
     draftActions.setFormOpen(true);
   }, [event, onClose]);
 

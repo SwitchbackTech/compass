@@ -1,10 +1,9 @@
 import { ObjectId } from "bson";
 import { useCallback, useState } from "react";
+import { type Event } from "@core/types/event.contracts";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { type Entities_Event } from "@web/events/event.types";
-import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
 import { useEventById } from "@web/events/queries/useEventById";
 import { type useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
@@ -32,19 +31,20 @@ const hasMultipleRecurrenceOccurrences = (
 
 const getScopeDecisionRecurrenceRule = (
   event: Schema_GridEvent,
-  eventEntities: Entities_Event,
+  baseEvent: Event | null | undefined,
 ): string[] | null | undefined => {
   const rule = event.recurrence?.rule;
   if (Array.isArray(rule) || rule === null) {
     return rule;
   }
 
-  const baseEventId = event.recurrence?.eventId;
-  if (!baseEventId) {
+  if (!event.recurrence?.eventId || !baseEvent) {
     return undefined;
   }
 
-  return eventEntities[baseEventId]?.recurrence?.rule;
+  return baseEvent.recurrence.kind === "series"
+    ? [...baseEvent.recurrence.rules]
+    : undefined;
 };
 
 export const useDraftConfirmation = ({
@@ -57,13 +57,6 @@ export const useDraftConfirmation = ({
   const isSomeday = actions.isSomeday();
   const baseEventId = draft?.recurrence?.eventId;
   const baseEvent = useEventById(baseEventId);
-  // TODO(packet-03-phase-3c): baseEvent is now the new `Event` contract;
-  // bridged until this file's Schema_GridEvent-based recurrence checks are
-  // converted.
-  const eventEntities =
-    baseEventId && baseEvent
-      ? { [baseEventId]: eventToSchemaEvent(baseEvent) }
-      : {};
 
   const [
     isRecurrenceUpdateScopeDialogOpen,
@@ -105,7 +98,7 @@ export const useDraftConfirmation = ({
 
   const onSubmit = useCallback(
     async (_draft: Schema_GridEvent) => {
-      const rule = getScopeDecisionRecurrenceRule(_draft, eventEntities);
+      const rule = getScopeDecisionRecurrenceRule(_draft, baseEvent);
       const draftIsInstance = ObjectId.isValid(
         _draft.recurrence?.eventId ?? "",
       );
@@ -143,7 +136,7 @@ export const useDraftConfirmation = ({
       submit(_draft, applyTo);
       discard();
     },
-    [submit, isRecurrence, isInstance, discard, eventEntities],
+    [submit, isRecurrence, isInstance, discard, baseEvent],
   );
 
   const onDelete = useCallback(async () => {

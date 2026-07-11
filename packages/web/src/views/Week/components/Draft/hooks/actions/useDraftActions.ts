@@ -1,37 +1,40 @@
 import { ObjectId } from "bson";
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import {
   Priorities,
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { MapEvent } from "@core/mappers/map.event";
+import { DateOnlySchema, EventIdSchema } from "@core/types/domain-primitives";
 import {
   Categories_Event,
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
+import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import {
-  type Schema_GridEvent,
-  type Schema_WebEvent,
-} from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import {
   getArrowKeyMovement,
   isTimedEventInsideOneDay,
 } from "@web/common/utils/event/event-nudge.util";
-import { buildConvertToSomedayEvent } from "@web/common/utils/event/someday.event.util";
+import {
+  buildConvertToSomedayEvent,
+  getSomedayEventCategory,
+} from "@web/common/utils/event/someday.event.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
-import { EventInViewParser } from "@web/common/utils/parse/view.parser";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-import { type Payload_EditEvent } from "@web/events/event.types";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { createLegacyEventMutationsAdapter } from "@web/events/queries/event.legacy-bridge";
+import {
+  schemaEventToCreateInput,
+  schemaEventToReplaceInput,
+} from "@web/events/queries/event.legacy-bridge";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
   draftActions,
@@ -39,7 +42,6 @@ import {
   selectDraftStatus,
   useDraftStore,
 } from "@web/events/stores/draft.store";
-import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
 import {
   type Setters_Draft,
@@ -50,6 +52,15 @@ import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 import { getDragDurationMinutes } from "./drag-duration.util";
+
+const scopeFromApplyTo = (
+  applyTo: RecurringEventUpdateScope,
+): RecurrenceScope =>
+  applyTo === RecurringEventUpdateScope.ALL_EVENTS
+    ? "all"
+    : applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS
+      ? "thisAndFollowing"
+      : "this";
 
 const canRepositionDraftByKeyboard = (activity: string | null | undefined) =>
   activity === "createShortcut" ||
@@ -64,16 +75,6 @@ export const useDraftActions = (
 ) => {
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
-  // TODO(packet-03-phase-3c): legacy-shaped facade until this file's
-  // Schema_Event-based drag/drop state is converted to the new contracts.
-  const eventMutations = useMemo(
-    () =>
-      createLegacyEventMutationsAdapter(
-        mutations,
-        () => getDefaultTargetCalendar(calendars ?? [])?.id,
-      ),
-    [mutations, calendars],
-  );
   const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
     useSomedayEventViewModel(
       weekProps.component.startOfView,
@@ -178,13 +179,16 @@ export const useDraftActions = (
     ) => {
       // No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z
       const eventToDelete = draft ?? draftFromStore;
+      const id = eventToDelete?._id
+        ? EventIdSchema.safeParse(eventToDelete._id)
+        : undefined;
 
-      if (eventToDelete?._id) {
-        eventMutations.delete({ _id: eventToDelete._id, applyTo });
+      if (id?.success) {
+        mutations.delete({ id: id.data, scope: scopeFromApplyTo(applyTo) });
       }
       discard();
     },
-    [draft, draftFromStore, discard, eventMutations],
+    [draft, draftFromStore, discard, mutations],
   );
 
   const convert = useCallback(
@@ -194,17 +198,36 @@ export const useDraftActions = (
         return;
       }
 
-      const event = buildConvertToSomedayEvent(
+      const somedayEvent = buildConvertToSomedayEvent(
         draft!,
         { startDate: start, endDate: end },
         somedayWeekCount,
       );
+      const id = EventIdSchema.safeParse(somedayEvent._id);
 
-      eventMutations.convertToSomeday({ event });
+      if (id.success) {
+        const category = getSomedayEventCategory(somedayEvent);
+
+        mutations.transition({
+          id: id.data,
+          input: {
+            kind: "unschedule",
+            schedule: {
+              kind: "someday",
+              period:
+                category === Categories_Event.SOMEDAY_MONTH ? "month" : "week",
+              anchorDate: DateOnlySchema.parse(
+                somedayEvent.startDate!.slice(0, 10),
+              ),
+              sortOrder: somedayEvent.order ?? 0,
+            },
+          },
+        });
+      }
 
       discard();
     },
-    [discard, draft, eventMutations, isAtWeeklyLimit, somedayWeekCount],
+    [discard, draft, isAtWeeklyLimit, mutations, somedayWeekCount],
   );
 
   const openForm = useCallback(() => {
@@ -212,7 +235,7 @@ export const useDraftActions = (
   }, [setIsFormOpen]);
 
   const determineSubmitAction = useCallback(
-    (draft: Schema_WebEvent) => {
+    (draft: Schema_GridEvent) => {
       const isExisting = !!draft._id;
       if (!isExisting) return "CREATE";
 
@@ -233,24 +256,6 @@ export const useDraftActions = (
     [draftFromStore, isFormOpenBeforeDragging],
   );
 
-  const getEditSlicePayload = useCallback(
-    (
-      event: Schema_WebEvent,
-      applyTo: RecurringEventUpdateScope,
-    ): Payload_EditEvent => {
-      const viewParser = new EventInViewParser(
-        event,
-        weekProps.component.startOfView,
-        weekProps.component.endOfView,
-      );
-      const shouldRemove = viewParser.isEventOutsideView();
-      const payload = { _id: event._id!, event, shouldRemove, applyTo };
-
-      return payload;
-    },
-    [weekProps.component.endOfView, weekProps.component.startOfView],
-  );
-
   const submit = useCallback(
     async (
       draft: Schema_GridEvent,
@@ -265,19 +270,25 @@ export const useDraftActions = (
           discard();
           return;
         case "CREATE": {
-          const event = new OnSubmitParser(draft).parse();
-          eventMutations.create(event);
+          const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
+          if (!calendarId) return;
+
+          const input = schemaEventToCreateInput(draft, calendarId);
+          if (input) mutations.create(input);
           return;
         }
         case "UPDATE": {
-          if (!draft._id) {
+          const id = draft._id ? EventIdSchema.safeParse(draft._id) : undefined;
+          if (!id?.success) {
             discard();
             return;
           }
 
-          const event = new OnSubmitParser(draft).parse();
-          const payload = getEditSlicePayload(event, applyTo);
-          eventMutations.edit(payload);
+          const input = schemaEventToReplaceInput(
+            draft,
+            scopeFromApplyTo(applyTo),
+          );
+          if (input) mutations.replace({ id: id.data, input });
 
           if (isFormOpenBeforeDragging) {
             openForm();
@@ -291,11 +302,11 @@ export const useDraftActions = (
       }
     },
     [
+      calendars,
       determineSubmitAction,
       discard,
-      eventMutations,
-      getEditSlicePayload,
       isFormOpenBeforeDragging,
+      mutations,
       openForm,
     ],
   );
