@@ -68,6 +68,67 @@ the mid-drag pixel geometry, not the persisted event shape, and converting it
 is a separate concern from the `Schema_Event`→`Event` cutover this packet is
 about.
 
+Update (2026-07-11, someday sidebar phases A-F, PRs #2022-#2027): the someday
+sidebar's **entire mutation surface** (create, edit, delete, duplicate,
+migrate forward/back/up/down, someday→scheduled drag conversion, same-column
+reorder, cross-column reorder + weekly/monthly limits) is now on strict
+`Event`/`EventDraft`/`EventMutations` contracts, via a new
+`events/someday-event-draft.adapter.ts` (mirrors `grid-event-draft.adapter.ts`
+but for the generic `EventDraft`/`EventScheduleDraft` contracts, since
+`GridScheduleDraft` deliberately excludes `"someday"`). `useSidebarState.ts`
+reads `Event`-typed data directly from the query-derived view model (no more
+`useEffect`-synced local mirror, except a small ids/order-only staging
+structure kept for the duration of an active drag). The "Someday sidebar
+subsystem" gap above is **resolved** — treat any reference to it above as
+historical. Two legacy-adapter callers remain outside this scope:
+`useSidebarActions.ts`'s `onMigrate` create-fallback edge case, and
+`useWeekShortcuts.ts`'s unrelated `convertToSomeday` grid shortcut.
+
+Every one of the 6 phases found and fixed at least one real, previously
+undetected bug — not just mechanical type errors. Most notably: `Date
+#toISOString()`/`new Date("YYYY-MM-DD")` producing UTC-anchored strings that
+`_getTimeLabel`/`parseEventDraft` silently misinterpret as local time (or, in
+the someday case, as landing in the wrong week/month bucket) in any non-UTC
+browser timezone — CI runs with `TZ=UTC`, where this class of bug is
+invisible, so each fix also added a regression test that asserts the offset
+suffix/bucket directly rather than comparing wall-clock output. `dayjs(...)`
+(not `new Date(...)`/`.toISOString()`) is now the required pattern for any
+code producing a `Schema_Event`-shaped date string or an `Event`-shaped
+someday `anchorDate` in this file tree.
+
+Update (2026-07-11, forms-cluster re-investigation): with the someday and Day
+drag-preview-id gaps resolved, `EventForm.tsx`/`FloatingEventForm.tsx`/
+`TimePickers.tsx`/`useSaveEventForm.ts` were re-investigated for conversion.
+**Newly identified, still-blocking finding**: `EventForm.tsx`/`TimePickers.tsx`
+are shared rendering components between two structurally different draft
+pipelines — Day's already-converted Zustand `gridDraft` (`draft.store.ts`)
+and Week's still-legacy local `useDraftState.ts` (`Schema_GridEvent`
+`useState`, synced to/from the store's legacy `event` field by
+`useDraftActions.ts` around its `drag()`/`repositionDraftByKeyboard()`
+functions). Converting the forms cluster requires migrating Week's local
+drag-geometry state to `GridEventDraft` first (the same `useDraftState.ts`
+10+-consumer piece flagged two paragraphs up) — restating, in more precise
+terms, what the "keyboard-edit drag continuation" gap above was pointing at.
+`RecurrenceSection.tsx`/`useRecurrence.ts` (shared with the already-converted
+someday sidebar's `SomedayRecurrenceSection.tsx`) is a second, smaller
+legacy-shape dependency inside the forms cluster, but is navigable with a
+local bridge once the structural Week/Day sharing blocker is resolved — it
+is not itself blocking.
+
+**Net remaining scope to fully dissolve `event.legacy-bridge.ts`**: migrate
+`useDraftState.ts`'s local `Schema_GridEvent` drag-geometry state (and its
+10+ consumers) to `GridEventDraft`-based state, which unblocks the forms
+cluster and `useWeekShortcuts.ts`'s "M" shortcut in the same pass, then
+convert `DayCalendarGrid.tsx`'s `getDayEventById`/`assembleGridEvent`
+renderer bridge and `useUpdateEvent.ts`'s live drag/resize position updates
+(step 2's wider `Schema_GridEvent`/`web.event.types.ts` renderer conversion),
+then delete `event.legacy-bridge.ts` and shrink/delete
+`common/types/web.event.types.ts` per this packet's step 2. This is
+comparable in size to the someday sidebar effort (6 phases) — plan it the
+same way: an initial read-only architectural mapping pass, then small,
+independently-verified, independently-mergeable phases, each gated on
+`bun run type-check` + `bun test` + `bunx playwright test`.
+
 Depends on: `01-domain-contracts.md`, `02-safe-event-data-migration.md`.
 
 ## Design constraint
