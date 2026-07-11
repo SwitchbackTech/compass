@@ -10,8 +10,8 @@ import {
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import { useEventById } from "@web/events/queries/useEventById";
+import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import {
   draftActions,
   selectDraft,

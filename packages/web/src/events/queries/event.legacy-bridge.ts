@@ -190,7 +190,8 @@ export function createLegacyEventMutationsAdapter(
     const scope: RecurrenceScope =
       payload.applyTo === RecurringEventUpdateScope.ALL_EVENTS
         ? "all"
-        : payload.applyTo === RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS
+        : payload.applyTo ===
+            RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS
           ? "thisAndFollowing"
           : "this";
 

@@ -11,11 +11,11 @@ import {
   type SliceStateContext,
 } from "@web/events/event.types";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import {
   findEventInCache,
   removeEventFromQueries,
 } from "@web/events/queries/event.query.cache";
+import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import { draftActions } from "@web/events/stores/draft.store";
 
 // TODO(packet-03-phase-3c): bridges the legacy Schema_WebEvent grid-edit

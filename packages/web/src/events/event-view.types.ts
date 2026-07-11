@@ -1,5 +1,14 @@
-import { type CalendarId, type EventId } from "@core/types/domain-primitives";
-import { type BusyPeriod, type Event } from "@core/types/event.contracts";
+import {
+  type CalendarId,
+  type EventId,
+  type Priority,
+} from "@core/types/domain-primitives";
+import {
+  type BusyPeriod,
+  type Event,
+  type EventContent,
+  type EventRecurrence,
+} from "@core/types/event.contracts";
 
 export type EventEntityMap = Record<EventId, Event>;
 
@@ -50,3 +59,44 @@ export type SomedayColumnView = {
 };
 
 export type CalendarEventIndex = Record<CalendarId, EventId[]>;
+
+type EventPresentationBase = {
+  eventId: EventId;
+  calendarId: CalendarId;
+  content: EventContent;
+  priority: Priority;
+  recurrence: EventRecurrence;
+};
+
+type TimedSchedule = Extract<Event["schedule"], { kind: "timed" }>;
+type AllDaySchedule = Extract<Event["schedule"], { kind: "allDay" }>;
+type SomedaySchedule = Extract<Event["schedule"], { kind: "someday" }>;
+
+export type TimedGridEventPresentation = EventPresentationBase & {
+  kind: "timed";
+  start: TimedSchedule["start"];
+  end: TimedSchedule["end"];
+  timeZone: TimedSchedule["timeZone"];
+};
+
+export type AllDayGridEventPresentation = EventPresentationBase & {
+  kind: "allDay";
+  start: AllDaySchedule["start"];
+  /** Exclusive end date, matching the persisted event contract. */
+  end: AllDaySchedule["end"];
+};
+
+export type GridEventPresentation =
+  | TimedGridEventPresentation
+  | AllDayGridEventPresentation;
+
+export type SomedayEventPresentation = EventPresentationBase & {
+  kind: "someday";
+  period: SomedaySchedule["period"];
+  anchorDate: SomedaySchedule["anchorDate"];
+  sortOrder: SomedaySchedule["sortOrder"];
+};
+
+export type EventPresentation =
+  | GridEventPresentation
+  | SomedayEventPresentation;

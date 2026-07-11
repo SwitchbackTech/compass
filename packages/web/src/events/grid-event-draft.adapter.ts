@@ -4,14 +4,14 @@ import { type Schema_Event } from "@core/types/event.types";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import {
+  type ParseEventDraftResult,
+  parseEventDraft,
+} from "@web/events/event-draft.parser";
+import {
   type EventDraft,
   type GridEventDraft,
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
-import {
-  parseEventDraft,
-  type ParseEventDraftResult,
-} from "@web/events/event-draft.parser";
 
 export function createGridEventDraft(
   schedule: GridScheduleDraft,

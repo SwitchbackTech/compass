@@ -1,4 +1,3 @@
-import { expect, test } from "bun:test";
 import { Priorities } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
 import {
@@ -7,6 +6,7 @@ import {
   parseGridEventDraft,
   replaceGridDraftSchedule,
 } from "./grid-event-draft.adapter";
+import { expect, test } from "bun:test";
 
 const timedEvent = {
   id: "0123456789abcdef01234567",
