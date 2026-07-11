@@ -27,13 +27,9 @@ import {
 } from "@web/common/utils/datetime/web.date.util";
 import {
   assembleDefaultEvent,
-  assembleWebEvent,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
-import {
-  applySchemaEventToLocalEvent,
-  schemaEventToLocalEvent,
-} from "@web/common/utils/event/someday.event.util";
+import { schemaEventToLocalEvent } from "@web/common/utils/event/someday.event.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
@@ -835,6 +831,10 @@ export const useSidebarActions = (
       return;
     }
 
+    const draggedEvent = baseEvents.events[draggableId];
+
+    if (!draggedEvent || draggedEvent.schedule.kind !== "someday") return;
+
     // Remove from source column
     const sourceEventIds = Array.from(sourceColumn.eventIds);
     sourceEventIds.splice(source.index, 1);
@@ -852,32 +852,38 @@ export const useSidebarActions = (
       events: sourceOrder.events,
     });
 
-    const draggedEvent = destOrder.events[draggableId];
+    const draggedSortOrder = destOrder.orderUpdates.find(
+      ({ _id }) => _id === draggableId,
+    )?.order;
 
-    if (!draggedEvent) return;
+    if (draggedSortOrder === undefined) return;
 
-    const draggedToMonthColumn = destColumn.id === COLUMN_MONTH;
+    const editDraft = editSomedayEventDraft(draggedEvent);
 
-    const weekViewRange = {
-      startDate: viewStart.format(),
-      endDate: viewEnd.format(),
+    if (!editDraft) return;
+
+    const destPeriod = destColumn.id === COLUMN_MONTH ? "month" : "week";
+    // viewStart is already a local-zone Dayjs; deriving anchorDate from it
+    // directly (rather than round-tripping through a formatted string and
+    // reparsing) sidesteps the UTC-midnight parsing bug prior phases hit.
+    const anchorDate =
+      destPeriod === "month"
+        ? viewStart.startOf("month").toDate()
+        : viewStart.toDate();
+
+    const retargeted = retargetSomedayEventDraft(editDraft, {
+      period: destPeriod,
+      anchorDate,
+      sortOrder: draggedSortOrder,
+    });
+    const result = parseEventDraft(retargeted);
+
+    if (!result.ok || result.mode !== "edit") return;
+
+    const updatedDraggedEvent: Event = {
+      ...draggedEvent,
+      schedule: result.input.schedule,
     };
-    const draggedSchemaEvent = computeCurrentEventDateRange(
-      { duration: draggedToMonthColumn ? "month" : "week" },
-      eventToSchemaEvent(draggedEvent),
-      weekViewRange,
-    );
-
-    if (!draggedSchemaEvent._id) return;
-
-    const draggedEventId = draggedSchemaEvent._id;
-
-    if (!hasEventDates(draggedSchemaEvent)) return;
-
-    const orderUpdates = [
-      ...sourceOrder.orderUpdates,
-      ...destOrder.orderUpdates,
-    ];
 
     const newState = {
       ...baseEvents,
@@ -894,19 +900,36 @@ export const useSidebarActions = (
       },
       events: {
         ...destOrder.events,
-        [draggableId]: applySchemaEventToLocalEvent(
-          draggedEvent,
-          draggedSchemaEvent,
-        ),
+        [draggableId]: updatedDraggedEvent,
       },
     };
     setSomedayEvents(newState);
-    eventMutations.reorderSomeday(orderUpdates);
 
-    eventMutations.edit({
-      _id: draggedEventId,
-      event: assembleWebEvent(draggedSchemaEvent),
-    });
+    // The dragged event's own period/anchorDate/sortOrder move through the
+    // replace call below, not a reorder call: its someday.period is still
+    // the old value server-side until that replace lands, and reorderSomeday
+    // isn't sequenced against other mutations, so folding it into either
+    // column's reorder items here could race the backend's per-item
+    // period-match check. Excluding it keeps every reorder item's period
+    // already correct server-side, independent of call order.
+    const sourcePeriod = sourceColumn.id === COLUMN_MONTH ? "month" : "week";
+    const sourceItems = sourceOrder.orderUpdates.map(({ _id, order }) => ({
+      eventId: _id as EventId,
+      sortOrder: order,
+    }));
+    const destItems = destOrder.orderUpdates
+      .filter(({ _id }) => _id !== draggableId)
+      .map(({ _id, order }) => ({ eventId: _id as EventId, sortOrder: order }));
+
+    if (sourceItems.length > 0) {
+      mutations.reorderSomeday({ period: sourcePeriod, items: sourceItems });
+    }
+
+    if (destItems.length > 0) {
+      mutations.reorderSomeday({ period: destPeriod, items: destItems });
+    }
+
+    mutations.replace({ id: result.eventId, input: result.input });
   };
 
   const handleSameColumnReordering = (

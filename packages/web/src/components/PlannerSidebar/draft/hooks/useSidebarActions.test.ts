@@ -122,6 +122,55 @@ const createTwoEventWeekState = (): State_Sidebar =>
     somedayWeekIds: [somedayEvent._id!, SECOND_SOMEDAY_EVENT_ID],
   }) as State_Sidebar;
 
+const THIRD_SOMEDAY_EVENT_ID = "664e21f9a6b3f0b1c2d3e4f7";
+
+const thirdSomedayEventContract = createMockEvent({
+  id: EventIdSchema.parse(THIRD_SOMEDAY_EVENT_ID),
+  content: { kind: "details", title: "Third someday event", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "someday",
+    period: "month",
+    anchorDate: "2024-01-01",
+    sortOrder: 0,
+  }),
+});
+
+const createCrossColumnState = (): State_Sidebar =>
+  ({
+    blockedSomedayDropColumn: null,
+    draft: null,
+    isDrafting: false,
+    isDraftingExisting: false,
+    isDraftingNew: false,
+    isDragging: true,
+    isSomedayFormOpen: false,
+    somedayEvents: {
+      columnOrder: [COLUMN_WEEK, COLUMN_MONTH],
+      columns: {
+        [COLUMN_MONTH]: {
+          id: COLUMN_MONTH,
+          eventIds: [THIRD_SOMEDAY_EVENT_ID],
+        },
+        [COLUMN_WEEK]: {
+          id: COLUMN_WEEK,
+          eventIds: [somedayEvent._id!, SECOND_SOMEDAY_EVENT_ID],
+        },
+      },
+      events: {
+        [somedayEvent._id!]: somedayEventContract,
+        [SECOND_SOMEDAY_EVENT_ID]: secondSomedayEventContract,
+        [THIRD_SOMEDAY_EVENT_ID]: thirdSomedayEventContract,
+      },
+    },
+    somedayIds: [
+      somedayEvent._id!,
+      SECOND_SOMEDAY_EVENT_ID,
+      THIRD_SOMEDAY_EVENT_ID,
+    ],
+    somedayMonthIds: [THIRD_SOMEDAY_EVENT_ID],
+    somedayWeekIds: [somedayEvent._id!, SECOND_SOMEDAY_EVENT_ID],
+  }) as State_Sidebar;
+
 const createSetters = (): Setters_Sidebar =>
   ({
     setBlockedSomedayDropColumn: mock(),
@@ -286,6 +335,136 @@ describe("useSidebarActions", () => {
         columns: expect.objectContaining({
           [COLUMN_WEEK]: expect.objectContaining({
             eventIds: [SECOND_SOMEDAY_EVENT_ID, SOMEDAY_EVENT_ID],
+          }),
+        }),
+      }),
+    );
+  });
+
+  it("moves a Someday event across columns via reorderSomeday + replace mutations", async () => {
+    await getOfflineDataStore().putEvent({
+      version: 2,
+      id: somedayEventContract.id,
+      event: somedayEventContract,
+      isDemo: false,
+    });
+    await getOfflineDataStore().putEvent({
+      version: 2,
+      id: secondSomedayEventContract.id,
+      event: secondSomedayEventContract,
+      isDemo: false,
+    });
+    await getOfflineDataStore().putEvent({
+      version: 2,
+      id: thirdSomedayEventContract.id,
+      event: thirdSomedayEventContract,
+      isDemo: false,
+    });
+
+    const state = createCrossColumnState();
+    const { queryClient, wrapper } = createStoreWrapper(currentState, {
+      events: [
+        somedayEventContract,
+        secondSomedayEventContract,
+        thirdSomedayEventContract,
+      ],
+    });
+    const setSomedayEvents = mock();
+    const setters = { ...createSetters(), setSomedayEvents };
+
+    const { result } = renderHook(
+      () =>
+        useSidebarActions(
+          {
+            onGoToDate: mock(),
+            viewEnd: dayjs("2024-01-21"),
+            viewStart: dayjs("2024-01-15"),
+          },
+          state,
+          setters,
+        ),
+      { wrapper },
+    );
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData(["calendars"])).toBeDefined();
+    });
+
+    // Move the first week event into the month column, ahead of the
+    // existing month event.
+    result.current.commitSomedayInteraction({
+      destination: { droppableId: COLUMN_MONTH, index: 0 },
+      eventId: SOMEDAY_EVENT_ID,
+      source: { droppableId: COLUMN_WEEK, index: 0 },
+      type: "sidebarDrop",
+    });
+
+    await waitFor(() => {
+      const mutations = queryClient.getMutationCache().getAll();
+
+      // The dragged event's own period/sortOrder move via `replace`.
+      const replaced = mutations.some((mutation) => {
+        if (mutation.options.mutationKey?.[2] !== "replace") return false;
+        const variables = mutation.state.variables as {
+          id?: string;
+          input?: { schedule?: { period?: string; sortOrder?: number } };
+        };
+        return (
+          variables.id === SOMEDAY_EVENT_ID &&
+          variables.input?.schedule?.period === "month" &&
+          variables.input?.schedule?.sortOrder === 0
+        );
+      });
+
+      // The remaining week-column sibling is reordered under "week".
+      const weekReordered = mutations.some((mutation) => {
+        if (mutation.options.mutationKey?.[2] !== "reorder-someday") {
+          return false;
+        }
+        const input = mutation.state.variables as {
+          period?: string;
+          items?: { eventId: string; sortOrder: number }[];
+        };
+        return (
+          input.period === "week" &&
+          input.items?.length === 1 &&
+          input.items?.[0]?.eventId === SECOND_SOMEDAY_EVENT_ID &&
+          input.items?.[0]?.sortOrder === 0
+        );
+      });
+
+      // The existing month-column sibling is reordered under "month",
+      // without the dragged event mixed in (it moved via `replace` above).
+      const monthReordered = mutations.some((mutation) => {
+        if (mutation.options.mutationKey?.[2] !== "reorder-someday") {
+          return false;
+        }
+        const input = mutation.state.variables as {
+          period?: string;
+          items?: { eventId: string; sortOrder: number }[];
+        };
+        return (
+          input.period === "month" &&
+          input.items?.length === 1 &&
+          input.items?.[0]?.eventId === THIRD_SOMEDAY_EVENT_ID &&
+          input.items?.[0]?.sortOrder === 1
+        );
+      });
+
+      expect(replaced).toBe(true);
+      expect(weekReordered).toBe(true);
+      expect(monthReordered).toBe(true);
+    });
+
+    // Local optimistic move is applied before the mutations fire.
+    expect(setSomedayEvents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        columns: expect.objectContaining({
+          [COLUMN_WEEK]: expect.objectContaining({
+            eventIds: [SECOND_SOMEDAY_EVENT_ID],
+          }),
+          [COLUMN_MONTH]: expect.objectContaining({
+            eventIds: [SOMEDAY_EVENT_ID, THIRD_SOMEDAY_EVENT_ID],
           }),
         }),
       }),
