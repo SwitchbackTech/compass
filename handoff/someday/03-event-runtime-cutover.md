@@ -16,6 +16,49 @@ types. `event_new.types.ts` stays as long as the frozen 2025 migrations
 import it. Scope-`this` provider sync for series occurrences is deferred to
 `05` (recorded there).
 
+Update (2026-07-11, `refactor/web-event-legacy-bridge`): the grid draft
+pipeline (click-to-open, right-click, keyboard-created timed/all-day drafts,
+Week drag/resize/duplicate mutations) now runs on the strict
+`GridEventDraft`/`EventMutations` contracts via a new
+`events/grid-event-draft.adapter.ts` + `events/event-view.adapter.ts`, with
+`draft.store.ts`'s canonical `gridDraft` field populated everywhere the grid
+opens a draft. `event.legacy-bridge.ts` still backs the store's legacy
+`event: Schema_Event` projection (kept in sync automatically by
+`startGridDraft`) and the still-unconverted call sites below. Bridge
+dissolution is NOT complete; three structural gaps were found that block the
+remaining ~13 files, in addition to what's converted:
+
+- **Someday sidebar subsystem** (`useSidebarActions.ts`,
+  `SomedayEventContainer.tsx`, `someday.event.util.ts`,
+  `someday.draft.util.ts`) is not a simple type swap: it's a self-contained
+  state machine (drag/drop reorder, week/month migration, its own
+  `State_Sidebar["somedayEvents"]` cache, weekly/monthly limits) built
+  entirely around `Schema_Event`, independent of the grid's draft pipeline.
+  `GridEventDraft`'s schedule type also has no `someday` variant by design
+  (`GridScheduleDraft` is deliberately `timed | allDay` only — someday events
+  don't live on the grid). Converting this is its own scoped effort, not a
+  follow-on of the grid conversion.
+- **Keyboard-edit drag continuation**: `useDraftActions.ts` reads
+  `draft.position.dragOffset` off the store's legacy `event` field when a
+  keyboard-opened draft (`useWeekShortcuts.ts`'s "M" shortcut,
+  `AllDayEvents.tsx`/`MainGridEvents.tsx` keyboardEdit paths) is subsequently
+  dragged; `GridEventDraft` carries no grid-layout position data. Needs
+  either a position field added to the draft or the keyboard-edit path
+  routed differently.
+- **Day drag-preview client id**: `useDayTimedDraftCreation.ts`'s in-progress
+  drag preview carries a client-assigned `_id` that `dayCalendarDraft.util.ts`
+  matches against; `GridEventDraft`'s `"create"` kind has no field for a
+  pre-assigned id.
+
+`useUpdateEvent.ts`'s live drag/resize position updates and the local
+`Schema_GridEvent` drag-geometry state in `useDraftState.ts` (10+ consumers:
+`GridDraft.tsx`, `MainGridEvents.tsx`, `AllDayEvents.tsx`,
+`WeekInteractionCoordinator.tsx`, `useGridMouseMove.ts`, `useGridMouseUp.ts`,
+`useDragEdgeNavigation.ts`, etc.) are also untouched — that local state is
+the mid-drag pixel geometry, not the persisted event shape, and converting it
+is a separate concern from the `Schema_Event`→`Event` cutover this packet is
+about.
+
 Depends on: `01-domain-contracts.md`, `02-safe-event-data-migration.md`.
 
 ## Design constraint
