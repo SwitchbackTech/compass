@@ -152,14 +152,17 @@ const someEventScheduleFromLegacy = (
     dayjs(event.endDate).diff(dayjs(event.startDate), "day") > 7
       ? "month"
       : "week",
-  // A brand-new draft has no startDate yet (assigned at submit time from the
-  // target category/view range, see useSidebarActions.ts's onSubmit) --
-  // anchor on today rather than an empty string, which downstream date
-  // parsing (parseCompassEventDate) throws on.
-  anchorDate: (event.startDate || dayjs().toYearMonthDayString()).slice(
-    0,
-    10,
-  ) as DateOnly,
+  // A brand-new draft has no startDate yet: leave anchorDate empty (not
+  // today's date) so onSubmit's `!_event.startDate` check still detects
+  // "not yet dated" and assigns the real target-category/view-range dates
+  // via getDatesByCategory. Defaulting to today here would look plausible
+  // but silently commits every new someday item to today's date instead of
+  // the week/month bucket the user actually picked (verified via
+  // `DEBUG insertEventIntoQueries`: with the today-default, a newly created
+  // someday-week item's schedule.anchorDate never matched the visible
+  // week-bucket query, so it silently never landed in the cache the sidebar
+  // reads from).
+  anchorDate: (event.startDate ?? "").slice(0, 10) as DateOnly,
   sortOrder: event.order ?? 0,
 });
 
