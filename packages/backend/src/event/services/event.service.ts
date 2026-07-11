@@ -79,6 +79,17 @@ class EventService {
     return event;
   }
 
+  private async withEventTransaction(
+    run: (session: ClientSession) => Promise<unknown>,
+  ): Promise<void> {
+    const session = await mongoService.startSession();
+    try {
+      await session.withTransaction(run);
+    } finally {
+      await session.endSession();
+    }
+  }
+
   private async seriesContext(
     event: EventRecord,
     ownedCalendarIds: ObjectId[],
@@ -129,12 +140,6 @@ class EventService {
     if (!calendar) {
       throw eventMutationError("CALENDAR_NOT_FOUND", "Calendar not found");
     }
-    if (!calendar.isActive) {
-      throw eventMutationError(
-        "CALENDAR_READ_ONLY",
-        "Calendar is not writable",
-      );
-    }
 
     if (input.id) {
       const existing = await mongoService.event.findOne({
@@ -158,14 +163,9 @@ class EventService {
           })
         : { upsert: [base], deleteIds: [], primary: base };
 
-    const session = await mongoService.startSession();
-    try {
-      await session.withTransaction(async (session) => {
-        await executeMutation(materialized, session);
-      });
-    } finally {
-      await session.endSession();
-    }
+    await this.withEventTransaction((session) =>
+      executeMutation(materialized, session),
+    );
 
     await CompassToGoogleEventPropagation.propagate(userId, {
       upserted: materialized.upsert,
@@ -190,14 +190,9 @@ class EventService {
       (record) => materialized.deleteIds.some((id) => id.equals(record._id)),
     );
 
-    const session = await mongoService.startSession();
-    try {
-      await session.withTransaction(async (session) => {
-        await executeMutation(materialized, session);
-      });
-    } finally {
-      await session.endSession();
-    }
+    await this.withEventTransaction((session) =>
+      executeMutation(materialized, session),
+    );
 
     await CompassToGoogleEventPropagation.propagate(userId, {
       upserted: materialized.upsert,
@@ -228,14 +223,9 @@ class EventService {
       ...new Map(candidates.map((r) => [r._id.toHexString(), r])).values(),
     ];
 
-    const session = await mongoService.startSession();
-    try {
-      await session.withTransaction(async (session) => {
-        await executeDelete(materialized, session);
-      });
-    } finally {
-      await session.endSession();
-    }
+    await this.withEventTransaction((session) =>
+      executeDelete(materialized, session),
+    );
 
     await CompassToGoogleEventPropagation.propagate(userId, {
       upserted: materialized.upsert,
@@ -260,12 +250,6 @@ class EventService {
       if (!calendar) {
         throw eventMutationError("CALENDAR_NOT_FOUND", "Calendar not found");
       }
-      if (!calendar.isActive) {
-        throw eventMutationError(
-          "CALENDAR_READ_ONLY",
-          "Calendar is not writable",
-        );
-      }
       targetCalendarId = calendar._id;
     } else {
       const local = await calendarService.getLocalCalendar(userId);
@@ -281,14 +265,9 @@ class EventService {
     const plan = analyzeTransition(target, input, targetCalendarId, new Date());
     const materialized = generateTransition(plan);
 
-    const session = await mongoService.startSession();
-    try {
-      await session.withTransaction(async (session) => {
-        await executeMutation(materialized, session);
-      });
-    } finally {
-      await session.endSession();
-    }
+    await this.withEventTransaction((session) =>
+      executeMutation(materialized, session),
+    );
 
     // "schedule" needs a provider copy created on the target calendar;
     // "unschedule" needs the old provider copy deleted (B7/B16). The old
