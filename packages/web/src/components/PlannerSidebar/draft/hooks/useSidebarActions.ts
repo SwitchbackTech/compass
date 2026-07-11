@@ -299,6 +299,10 @@ export const useSidebarActions = (
     }
   }, [activity, create, draftType]);
 
+  // NOT converted to GridEventDraft/editGridEventDraft: onDraft only opens
+  // someday events (see SomedayEventContainer/SomedayInteractionCoordinator
+  // call sites), and editGridEventDraft explicitly rejects "someday"
+  // schedules. See packet-03-phase-3c scoping note.
   const onDraft = (event: Schema_Event, category: Categories_Event) => {
     setIsDrafting(true);
     setDraft(event);
@@ -576,6 +580,10 @@ export const useSidebarActions = (
 
     const event = (await assembleDefaultEvent(category)) as Schema_Event;
 
+    // NOT converted to GridEventDraft/createGridEventDraft: `category` is
+    // always SOMEDAY_WEEK/SOMEDAY_MONTH here (see the limit checks above),
+    // and GridScheduleDraft only models "timed" | "allDay" schedules. See
+    // packet-03-phase-3c scoping note.
     draftActions.start({
       activity,
       eventType: category,

@@ -37,6 +37,11 @@ export function useUpdateEvent() {
 
       if (!event._id) return;
 
+      // NOT converted to GridEventDraft/startGridDraft: `payload.event` is a
+      // Schema_GridEvent carrying live drag/resize geometry (`position`)
+      // that GridEventDraft has no field for. This is the local
+      // drag-geometry state called out as out of scope in the
+      // packet-03-phase-3c scoping note.
       draftActions.setEvent(payload.event);
 
       if (!saveImmediate) return;

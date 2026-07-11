@@ -124,6 +124,14 @@ export const useDayTimedDraftCreation = ({
               return;
             }
 
+            // NOT converted to GridEventDraft/createGridEventDraft: nextEvent
+            // carries a client-assigned `_id` (via addId) that
+            // dayCalendarDraft.util.ts's isPlaceholder/isActiveDraft matching
+            // depends on. GridEventDraft's "create" kind has no field for a
+            // pre-assigned id (source is null), so routing this through
+            // startGridDraft would drop the id and break placeholder
+            // matching during drag-preview. See packet-03-phase-3c scoping
+            // note.
             draftActions.startGridClick(nextEvent);
           },
         );

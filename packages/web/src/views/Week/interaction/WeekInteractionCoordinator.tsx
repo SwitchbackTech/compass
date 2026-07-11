@@ -1,5 +1,7 @@
 import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
+import { type Event } from "@core/types/event.contracts";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/interaction/react/CalendarInteractionPointerCaptureBoundary";
@@ -26,7 +28,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   getLayoutSources,
   weekProps,
 }) => {
-  const { allDayEvents, timedEvents } = useWeekEventViewModel({
+  const { allDayEvents, events, timedEvents } = useWeekEventViewModel({
     startOfView: weekProps.component.startOfView,
     endOfView: weekProps.component.endOfView,
   });
@@ -38,6 +40,13 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   const allDayEventsById = useMemo(() => {
     return mapEventsById(allDayEvents);
   }, [allDayEvents]);
+  const eventsById = useMemo(() => {
+    const map = new Map<string, Event>();
+    for (const event of events) {
+      map.set(event.id, event);
+    }
+    return map;
+  }, [events]);
   const runtimeRef = useRef<WeekInteractionRuntime>({
     getTimedEventById: () => null,
     getVisibleDays: () => [],
@@ -56,13 +65,21 @@ export const WeekInteractionCoordinator: FC<Props> = ({
 
   layoutSourcesRef.current = getLayoutSources;
 
-  const openTimedEvent = (event: Schema_GridEvent) => {
-    draftActions.startGridClick(event);
+  const openClickedGridEvent = (event: Schema_GridEvent) => {
+    const sourceEvent = event._id ? eventsById.get(event._id) : undefined;
+    const draft = sourceEvent ? editGridEventDraft(sourceEvent) : null;
+
+    if (!draft) {
+      draftActions.startGridClick(event);
+      return;
+    }
+
+    draftActions.startGridDraft({ activity: "gridClick", draft });
   };
 
-  const openAllDayEvent = (event: Schema_GridEvent) => {
-    draftActions.startGridClick(event);
-  };
+  const openTimedEvent = openClickedGridEvent;
+
+  const openAllDayEvent = openClickedGridEvent;
 
   const commitSavedMutation = (
     result:
