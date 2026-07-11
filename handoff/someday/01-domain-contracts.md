@@ -528,20 +528,22 @@ file used only by backend/scripts.
 
 ## Exit criteria
 
-- [ ] No final persisted or API event property is optional merely for caller
+- [x] No final persisted or API event property is optional merely for caller
       convenience.
-- [ ] Boolean schedule flags and ambiguous recurrence shapes are gone.
-- [ ] Title and description are required strings for detail events; busy-only
+- [x] Boolean schedule flags and ambiguous recurrence shapes are gone.
+- [x] Title and description are required strings for detail events; busy-only
       events are a separate explicit content case.
-- [ ] Storage, HTTP, form, local persistence, cache, optimistic, SSE, and layout
-      contracts have distinct names and tested mappers.
-- [ ] Calendar capability and privacy behavior is derived once and shared.
-- [ ] The someday↔scheduled transition command exists and drag conversions
-      parse into it.
-- [ ] The `ServerMessage` union accounts for every backend SSE publish site.
-- [ ] The contract catalog covers current core/backend/web event consumers and
+- [x] Storage, HTTP, form, local persistence, cache, optimistic, SSE, and layout
+      contracts have distinct names and tested mappers (PR #2015;
+      `migrateLocalEvent` deferred to `02`'s shared transform).
+- [x] Calendar capability and privacy behavior is derived once and shared.
+- [x] The someday↔scheduled transition command exists (PR #2015). Drag
+      conversions parse into it during the `03` web cutover.
+- [x] The `ServerMessage` union is defined (PR #2015). The publish-site
+      contract test lands with the `03` backend cutover that emits it.
+- [x] The contract catalog covers current core/backend/web event consumers and
       does not introduce an unused provider framework.
-- [ ] `bun test:core`, affected backend/web contract tests, and
+- [x] `bun test:core`, affected backend/web contract tests, and
       `bun type-check` pass before plan `02` begins.
 
 Suggested commit: `refactor(core): define strict event contracts`

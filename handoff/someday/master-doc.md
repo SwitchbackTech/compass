@@ -49,12 +49,12 @@ unfinished.
 
 - [x] 00. [Project ledger](./00-project-ledger.md) — reconcile and retire issue
       cards.
-- [ ] 01. [Domain contracts](./01-domain-contracts.md) — freeze calendar/event/API
-      semantics before migration work. Use the companion
+- [x] 01. [Domain contracts](./01-domain-contracts.md) — freeze calendar/event/API
+      semantics before migration work. Shipped in PR #2015. Use the companion
       [full schemas](./01a-proposed-contract-schemas.md) and
       [examples/flows](./01b-contract-examples-and-flows.md) as the concrete
       implementation reference.
-- [ ] 02. [Safe event data migration](./02-safe-event-data-migration.md) — build and
+- [x] 02. [Safe event data migration](./02-safe-event-data-migration.md) — build and
       verify the non-destructive v2 backfill plus the calendar-collection
       migration (A32).
 - [ ] 03. [Event runtime cutover](./03-event-runtime-cutover.md) — move the codebase

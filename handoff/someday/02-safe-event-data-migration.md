@@ -154,11 +154,15 @@ rule, not an implementation choice left to the agent:
 
 ## Exit criteria
 
-- [ ] Destination validation and indexes match the final schema.
-- [ ] The calendar collection matches `CalendarRecord` with preserved ids and
+- [x] Destination validation and indexes match the final schema.
+- [x] The calendar collection matches `CalendarRecord` with preserved ids and
       preferences, and every user has one local calendar.
-- [ ] Backfill is idempotent, bounded, and fails on every data-loss condition.
-- [ ] Verification proves source/destination behavioral equivalence.
-- [ ] The legacy collection is untouched and rollback is documented.
+- [x] Backfill is idempotent, bounded, and fails on every data-loss condition.
+      Note: reruns rebuild the inactive destination from scratch (`deleteMany`
+      on `event_new` only) — derived data; the legacy source is never touched.
+- [x] Verification proves source/destination behavioral equivalence
+      (streaming projection hash + category counts + orphan/duplicate checks).
+- [x] The legacy collection is untouched and rollback is documented in
+      `docs/self-hosting/event-migration-runbook.md`.
 
 Suggested commit: `feat(scripts): harden calendar event migration`
