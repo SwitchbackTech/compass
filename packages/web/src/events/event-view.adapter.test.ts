@@ -16,6 +16,7 @@ test("presents a timed event for the grid with its recurrence and priority", () 
     end: "2026-07-11T10:00:00.000-06:00",
     timeZone: "America/Denver",
   });
+  if (schedule.kind !== "timed") throw new Error("expected timed schedule");
   const event = createMockEvent({
     priority: Priorities.WORK,
     recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
@@ -29,9 +30,9 @@ test("presents a timed event for the grid with its recurrence and priority", () 
     priority: Priorities.WORK,
     recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
     kind: "timed",
-    start: "2026-07-11T09:00:00.000-06:00",
-    end: "2026-07-11T10:00:00.000-06:00",
-    timeZone: "America/Denver",
+    start: schedule.start,
+    end: schedule.end,
+    timeZone: schedule.timeZone,
   });
 });
 
