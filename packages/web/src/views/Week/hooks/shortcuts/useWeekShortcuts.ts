@@ -210,6 +210,11 @@ export const useWeekShortcuts = ({
 
     const { event, target } = resolvedTarget;
 
+    // NOT converted to GridEventDraft/editGridEventDraft: useDraftActions.ts
+    // reads `draft.position.dragOffset` off this store's `event` field when
+    // the keyboard-opened draft is subsequently dragged, and
+    // gridEventDraftToSchemaEvent has no grid-layout `position` to give it.
+    // See packet-03-phase-3c scoping note.
     draftActions.start({
       activity: "keyboardEdit",
       event,

@@ -127,12 +127,26 @@ export function gridEventDraftToSchemaEvent(
     isAllDay: schedule.kind === "allDay",
     isSomeday: false,
     priority: draft.values.priority ?? Priorities.UNASSIGNED,
+    recurrence:
+      draft.kind === "edit" ? recurrenceFromSource(draft.source) : undefined,
     startDate:
       schedule.kind === "allDay"
         ? toDateOnlyString(schedule.start)
         : schedule.start.toISOString(),
     title: draft.values.title,
   };
+}
+
+// Mirrors eventToSchemaEvent's recurrence mapping (event.legacy-bridge.ts) so
+// consumers still reading the draft store's Schema_Event projection (e.g. the
+// Week form's recurrence-scope UI) don't lose recurrence identity for edits
+// of existing events routed through the GridEventDraft path.
+function recurrenceFromSource(event: Event): Schema_Event["recurrence"] {
+  return event.recurrence.kind === "series"
+    ? { rule: [...event.recurrence.rules], eventId: event.id }
+    : event.recurrence.kind === "occurrence"
+      ? { eventId: event.recurrence.seriesId }
+      : undefined;
 }
 
 const toDateOnlyString = (date: Date) => date.toISOString().slice(0, 10);

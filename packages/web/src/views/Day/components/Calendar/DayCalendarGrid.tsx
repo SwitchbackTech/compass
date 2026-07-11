@@ -17,6 +17,11 @@ import {
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
+import {
+  createGridEventDraft,
+  editGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
 import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
@@ -178,10 +183,32 @@ export function DayCalendarGrid() {
       const eventElement = getCalendarEventElementFromGrid(event._id);
       setFormReference(eventElement);
       setFormPositionReference(createEventFormAnchor(event._id));
-      draftActions.startGridClick({ ...event, _id: event._id });
+
+      const sourceEvent = dayEvents.find(
+        (candidate) => candidate.id === event._id,
+      );
+      const draft = sourceEvent
+        ? editGridEventDraft(sourceEvent)
+        : createGridEventDraft(
+            event.isAllDay
+              ? {
+                  kind: "allDay",
+                  start: new Date(event.startDate),
+                  end: new Date(event.endDate),
+                }
+              : timedGridSchedule(
+                  new Date(event.startDate),
+                  new Date(event.endDate),
+                ),
+          );
+      if (!draft) {
+        return;
+      }
+
+      draftActions.startGridDraft({ activity: "gridClick", draft });
       draftActions.setFormOpen(true);
     },
-    [setFormPositionReference, setFormReference],
+    [dayEvents, setFormPositionReference, setFormReference],
   );
 
   // TODO(packet-03-phase-3c): dayEvents is now `Event[]` (new contract);

@@ -199,7 +199,10 @@ export const draftActions = {
     dateToResize = null,
     draft,
   }: {
-    activity: Extract<Activity_DraftEvent, "gridClick" | "resizing">;
+    activity: Extract<
+      Activity_DraftEvent,
+      "eventRightClick" | "gridClick" | "resizing"
+    >;
     dateToResize?: "startDate" | "endDate" | null;
     draft: GridEventDraft;
   }) =>
