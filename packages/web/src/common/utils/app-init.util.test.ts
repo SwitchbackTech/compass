@@ -1,6 +1,5 @@
 import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import {
-  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -14,12 +13,6 @@ import {
 const mockInitializeStorage = mock();
 const mockToastError = mock();
 
-// Capture the real module before mocking it below — mock.module replaces it
-// process-wide for the rest of the test run (bun mock.module leaks across
-// files), so afterAll restores it for every test file that loads after this
-// one.
-const realOfflineDataStoreRegistry = require("@web/common/storage/offline-data/offline-data.store.registry");
-
 mock.module(
   "@web/common/storage/offline-data/offline-data.store.registry",
   () => ({
@@ -31,13 +24,6 @@ mock.module(
     resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
   }),
 );
-
-afterAll(() => {
-  mock.module(
-    "@web/common/storage/offline-data/offline-data.store.registry",
-    () => realOfflineDataStoreRegistry,
-  );
-});
 
 // Mock react-toastify. mock.module leaks process-wide, and other suites call
 // `toast(...)` directly (e.g. the Deleted toast fired by event delete

@@ -2,15 +2,9 @@ import { renderHook, waitFor } from "@testing-library/react";
 import { type Task } from "@web/common/types/task.types";
 import { type TaskRepository } from "@web/tasks/repositories/task.repository";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
-import { afterAll, describe, expect, it, mock } from "bun:test";
+import { describe, expect, it, mock } from "bun:test";
 
 const ensureOfflineDataStoreReadyMock = mock(() => Promise.resolve());
-
-// Capture the real module before mocking it below — mock.module replaces it
-// process-wide for the rest of the test run (bun mock.module leaks across
-// files), so afterAll restores it for every test file that loads after this
-// one.
-const realOfflineDataStoreRegistry = require("@web/common/storage/offline-data/offline-data.store.registry");
 
 mock.module(
   "@web/common/storage/offline-data/offline-data.store.registry",
@@ -23,13 +17,6 @@ mock.module(
     resetOfflineDataStoreAsync: mock().mockResolvedValue(undefined),
   }),
 );
-
-afterAll(() => {
-  mock.module(
-    "@web/common/storage/offline-data/offline-data.store.registry",
-    () => realOfflineDataStoreRegistry,
-  );
-});
 
 const makeTask = (overrides: Partial<Task> = {}): Task => ({
   _id: "task-1",
