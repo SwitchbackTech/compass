@@ -1,5 +1,7 @@
 import { useCallback, useSyncExternalStore } from "react";
 import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
+import { SyncApi } from "@web/api/sync.api";
+import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
 import { useStartGoogleAuthorization } from "@web/auth/google/authorization/useStartGoogleAuthorization";
 import {
@@ -14,8 +16,6 @@ import {
   selectUserMetadataStatus,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
-import { SyncApi } from "@web/common/apis/sync.api";
-import { getApiErrorCode, isApiError } from "@web/common/apis/util/api.util";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { settingsActions } from "@web/settings/settings.store";

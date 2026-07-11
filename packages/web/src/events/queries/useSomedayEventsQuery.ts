@@ -1,10 +1,10 @@
 import { useIsFetching, useQuery } from "@tanstack/react-query";
 import { useMemo } from "react";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
 import { computeSomedayEventsRequestFilter } from "@web/common/utils/datetime/web.date.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { somedayEventsQueryOptions } from "@web/events/queries/event.query.options";
+import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
 import { deriveSomedayEventViewModel } from "./event.view-model";
 
 /**

@@ -1,7 +1,7 @@
 import dayjs from "@core/util/date/dayjs";
-import { type TimedDragVisual } from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
-import { type TimedResizeVisual } from "@web/common/calendar-grid/interaction/model/TimedResizeVisual";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type TimedDragVisual } from "@web/layout/calendar-grid/interaction/model/TimedDragVisual";
+import { type TimedResizeVisual } from "@web/layout/calendar-grid/interaction/model/TimedResizeVisual";
 
 export const hasTimedDragVisualMoved = (visual: TimedDragVisual) =>
   visual.dayDate !== visual.initialDayDate ||

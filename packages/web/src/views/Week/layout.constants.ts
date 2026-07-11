@@ -1,3 +1,4 @@
+import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import {
   CALENDAR_DECK_INDENT,
   CALENDAR_DECK_MIN_WIDTH,
@@ -19,8 +20,7 @@ import {
   CALENDAR_MIN_EVENT_WIDTH_FOR_TIME_LABEL,
   CALENDAR_TIMED_EVENT_COLUMN_INSET,
   CALENDAR_TIMED_VISIBLE_HOURS,
-} from "@web/common/calendar-grid/calendarGrid.constants";
-import { ID_SIDEBAR } from "@web/common/constants/web.constants";
+} from "@web/layout/calendar-grid/calendarGrid.constants";
 
 export const AFTER_TMRW_MULTIPLE = 1.5;
 

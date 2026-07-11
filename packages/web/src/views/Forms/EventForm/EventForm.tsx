@@ -13,7 +13,6 @@ import {
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
-import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import { darken } from "@web/common/styles/color.utils";
 import {
   colorByPriority,
@@ -32,6 +31,7 @@ import {
   INPUT_RESET_CLASSNAME,
 } from "@web/components/Focusable/Focusable";
 import { Textarea } from "@web/components/Textarea/Textarea";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
@@ -350,7 +350,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setEvent: setLatestEvent,
     };
 
-    useAppHotkey(
+    useAppShortcut(
       "Delete",
       (keyboardEvent) => {
         if (isDeleteTextEditingTarget(keyboardEvent)) {
@@ -364,7 +364,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    useAppHotkey(
+    useAppShortcut(
       "Enter",
       (keyboardEvent) => {
         if (isDraft) {
@@ -380,7 +380,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    useAppHotkey(
+    useAppShortcut(
       "Mod+D",
       (keyboardEvent) => {
         keyboardEvent.preventDefault();
@@ -390,7 +390,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );
 
-    useAppHotkey(
+    useAppShortcut(
       "Mod+Enter",
       (e) => {
         e.preventDefault();

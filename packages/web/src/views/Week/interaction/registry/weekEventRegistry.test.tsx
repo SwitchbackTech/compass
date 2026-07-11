@@ -2,14 +2,14 @@ import { render, screen } from "@testing-library/react";
 import { act } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { createCalendarInteractionDraftEventMount } from "@web/common/calendar-grid/interaction/calendarInteractionDom";
-import { FloatingDraftEvent } from "@web/common/calendar-interaction/dom/draft-event/FloatingDraftEvent";
 import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   __resetSomedayCommitAcknowledgementState,
   markSomedayCommitAcknowledgement,
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
+import { FloatingDraftEvent } from "@web/interaction/dom/draft-event/FloatingDraftEvent";
+import { createCalendarInteractionDraftEventMount } from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";

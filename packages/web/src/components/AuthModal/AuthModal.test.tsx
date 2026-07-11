@@ -12,7 +12,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
 import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 // Mock useSession
 const mockUseSession = mock(() => ({
@@ -55,10 +55,31 @@ mock.module("@web/auth/compass/hooks/useCompleteAuthentication", () => ({
   useCompleteAuthentication: () => mockCompleteAuthentication,
 }));
 
+// mock.module is process-wide and not reliably restorable, so the real
+// UserApi is captured up front and a flag (flipped off in afterAll) decides
+// which implementation runs on each call. Without this, this file's partial
+// UserApi shape (updateMetadata only) would permanently shadow the real
+// module for other files' UserApi methods (e.g. useSubscribeCmdItems.test.ts's
+// own updateMetadata mock).
+const actualUserApi = (await import("@web/api/user.api")).UserApi;
 const mockUpdateMetadata = mock();
-mock.module("@web/common/apis/user.api", () => ({
-  UserApi: { updateMetadata: mockUpdateMetadata },
+let isUserApiMocked = true;
+
+mock.module("@web/api/user.api", () => ({
+  UserApi: {
+    ...actualUserApi,
+    updateMetadata: (
+      ...args: Parameters<typeof actualUserApi.updateMetadata>
+    ) =>
+      isUserApiMocked
+        ? mockUpdateMetadata(...args)
+        : actualUserApi.updateMetadata(...args),
+  },
 }));
+
+afterAll(() => {
+  isUserApiMocked = false;
+});
 
 const mockEmailPassword = {
   getResetPasswordTokenFromURL: mock(),

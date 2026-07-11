@@ -1,13 +1,13 @@
+import { type CalendarInteractionPoint } from "@web/interaction/CalendarInteractionSession";
 import {
   createAllDayDragVisual,
   updateAllDayDragVisual,
-} from "@web/common/calendar-grid/interaction/math/allDayDrag";
-import { type AllDayDragVisual } from "@web/common/calendar-grid/interaction/model/AllDayDragVisual";
+} from "@web/layout/calendar-grid/interaction/math/allDayDrag";
+import { type AllDayDragVisual } from "@web/layout/calendar-grid/interaction/model/AllDayDragVisual";
 import {
   type VisualPoint,
   type VisualRect,
-} from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
-import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
+} from "@web/layout/calendar-grid/interaction/model/TimedDragVisual";
 import {
   allDayDragVisualToGridEvent,
   hasAllDayDragVisualMoved,

@@ -1,4 +1,9 @@
 import {
+  ID_ALLDAY_COLUMNS,
+  ID_GRID_COLUMNS_TIMED,
+  ID_GRID_MAIN,
+} from "@web/common/constants/web.constants";
+import {
   buildAllDayCalendarLayoutCache,
   buildTimedCalendarLayoutCache,
   type CalendarDayColumnCache,
@@ -7,12 +12,7 @@ import {
   type CalendarLayoutCacheSources,
   getNearestDayColumn,
   type SmartScrollCache,
-} from "@web/common/calendar-grid/interaction/calendarLayoutCache";
-import {
-  ID_ALLDAY_COLUMNS,
-  ID_GRID_COLUMNS_TIMED,
-  ID_GRID_MAIN,
-} from "@web/common/constants/web.constants";
+} from "@web/layout/calendar-grid/interaction/calendarLayoutCache";
 import {
   GRID_TIME_STEP,
   WEEK_TIMED_VISIBLE_HOURS,

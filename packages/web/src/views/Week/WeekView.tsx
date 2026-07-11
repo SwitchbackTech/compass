@@ -1,6 +1,5 @@
 import { useCallback, useMemo } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
-import { getShortcutMenuSections } from "@web/common/shortcuts/data/shortcuts.data";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
@@ -15,6 +14,7 @@ import {
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
+import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { ConvertToStandaloneDialog } from "@web/views/Forms/EventForm/ConvertToStandaloneDialog";
 import { RecurrenceScopeDialog } from "@web/views/Forms/EventForm/RecurrenceScopeDialog";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";

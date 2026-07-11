@@ -1,14 +1,14 @@
 import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
-import { type CalendarLayoutCacheSources } from "@web/common/calendar-grid/interaction/calendarLayoutCache";
-import { CalendarInteractionPointerCaptureBoundary } from "@web/common/calendar-interaction/react/CalendarInteractionPointerCaptureBoundary";
-import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import {
   draftActions,
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { CalendarInteractionPointerCaptureBoundary } from "@web/interaction/react/CalendarInteractionPointerCaptureBoundary";
+import { type CalendarLayoutCacheSources } from "@web/layout/calendar-grid/interaction/calendarLayoutCache";
 import {
   createDayInteractionAdapter,
   type DayAllDayDragCommitResult,

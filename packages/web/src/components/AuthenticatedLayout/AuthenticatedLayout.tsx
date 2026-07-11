@@ -1,5 +1,5 @@
 import { Outlet } from "@tanstack/react-router";
-import { useResponsiveLayout } from "@web/common/hooks/useResponsiveLayout";
+import { useResponsiveLayout } from "@web/components/AuthenticatedLayout/useResponsiveLayout";
 
 /**
  * Layout component for authenticated routes

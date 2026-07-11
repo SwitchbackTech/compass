@@ -76,7 +76,7 @@ mock.module("@web/auth/compass/state/auth.state.util", () => ({
   updateAuthState,
 }));
 
-mock.module("@web/common/classes/Session", () => ({
+mock.module("@web/auth/compass/session/Session", () => ({
   session: {
     doesSessionExist,
     onAnyEvent: (listener: (event: { action: string }) => void) => {
@@ -95,7 +95,7 @@ mock.module("@web/common/classes/Session", () => ({
 }));
 
 // Dynamic import after mocking
-const { session } = require("@web/common/classes/Session") as {
+const { session } = require("@web/auth/compass/session/Session") as {
   session: {
     doesSessionExist: ReturnType<typeof mock>;
     onAnyEvent: (listener: (event: { action: string }) => void) => () => void;

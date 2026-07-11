@@ -23,7 +23,7 @@ mock.module("@web/events/queries/day.event.query", () => ({
 const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
 const { createCompassQueryClient } =
-  require("@web/common/query/query-client") as typeof import("@web/common/query/query-client");
+  require("@web/api/query-client") as typeof import("@web/api/query-client");
 const { useDayEvents } =
   require("@web/views/Day/hooks/events/useDayEvents") as typeof import("@web/views/Day/hooks/events/useDayEvents");
 

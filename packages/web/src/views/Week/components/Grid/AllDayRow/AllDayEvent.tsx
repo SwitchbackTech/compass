@@ -1,9 +1,9 @@
 import { type ForwardedRef, forwardRef, type MouseEvent, memo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { CalendarAllDayEventCard } from "@web/common/calendar-grid/components/CalendarAllDayEventCard";
-import { getCalendarAllDayEventPosition } from "@web/common/calendar-grid/layout/calendarEventPosition";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
+import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
+import { getCalendarAllDayEventPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import {

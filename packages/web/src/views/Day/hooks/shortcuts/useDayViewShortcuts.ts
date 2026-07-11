@@ -1,5 +1,8 @@
 import { useCallback } from "react";
-import { useAppHotkey, useAppHotkeyUp } from "@web/common/hotkeys/useAppHotkey";
+import {
+  useAppShortcut,
+  useAppShortcutUp,
+} from "@web/shortcuts/useAppShortcut";
 import {
   getFocusedTaskId,
   isFocusedOnTaskCheckbox,
@@ -93,42 +96,42 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
     [onMigrateTask],
   );
 
-  useAppHotkeyUp("J", () => {
+  useAppShortcutUp("J", () => {
     onPrevDay?.();
   });
 
-  useAppHotkeyUp("K", () => {
+  useAppShortcutUp("K", () => {
     onNextDay?.();
   });
 
-  useAppHotkeyUp("T", () => {
+  useAppShortcutUp("T", () => {
     onGoToToday?.();
   });
 
   // Tasks shortcuts
-  useAppHotkeyUp("U", () => {
+  useAppShortcutUp("U", () => {
     onFocusTasks?.();
   });
 
-  useAppHotkeyUp("C", () => {
+  useAppShortcutUp("C", () => {
     onAddTask?.();
   });
 
-  useAppHotkeyUp("A", () => {
+  useAppShortcutUp("A", () => {
     onCreateAllDayEvent?.();
   });
 
-  useAppHotkeyUp("E", () => {
+  useAppShortcutUp("E", () => {
     onEditTask?.();
   });
 
-  useAppHotkeyUp("Delete", handleDeleteTask);
+  useAppShortcutUp("Delete", handleDeleteTask);
 
-  useAppHotkeyUp("Backspace", handleDeleteTask);
+  useAppShortcutUp("Backspace", handleDeleteTask);
 
-  useAppHotkeyUp("Enter", handleEnterKey);
+  useAppShortcutUp("Enter", handleEnterKey);
 
-  useAppHotkey(
+  useAppShortcut(
     "Escape",
     () => {
       onEscape?.();
@@ -141,16 +144,16 @@ export function useDayViewShortcuts(config: KeyboardShortcutsConfig) {
 
   // No `blurOnTrigger` here: it blurs before the handler runs, which would
   // clear the focused task and stop the migration from ever firing.
-  useAppHotkey("Shift+ArrowRight", handleMigrationNavigation("forward"));
+  useAppShortcut("Shift+ArrowRight", handleMigrationNavigation("forward"));
 
-  useAppHotkey("Shift+ArrowLeft", handleMigrationNavigation("backward"));
+  useAppShortcut("Shift+ArrowLeft", handleMigrationNavigation("backward"));
 
   // Calendar shortcuts
-  useAppHotkeyUp("I", () => {
+  useAppShortcutUp("I", () => {
     onFocusCalendar?.();
   });
 
-  useAppHotkeyUp("M", () => {
+  useAppShortcutUp("M", () => {
     onEditEvent?.();
   });
 }

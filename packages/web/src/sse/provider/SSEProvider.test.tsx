@@ -1,7 +1,7 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { render, waitFor } from "@testing-library/react";
 import { type EventEmitter2 } from "eventemitter2";
-import { createCompassQueryClient } from "@web/common/query/query-client";
+import { createCompassQueryClient } from "@web/api/query-client";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockUseSession = mock();

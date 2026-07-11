@@ -1,4 +1,4 @@
-import { session } from "@web/common/classes/Session";
+import { session } from "@web/auth/compass/session/Session";
 import { UNAUTHENTICATED_USER } from "@web/common/constants/auth.constants";
 
 interface AccessTokenPayload {

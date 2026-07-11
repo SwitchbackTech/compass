@@ -1,9 +1,5 @@
 import { type MouseEvent as ReactMouseEvent, useEffect, useRef } from "react";
 import { Categories_Event } from "@core/types/event.types";
-import {
-  hasExceededCalendarInteractionMoveThreshold,
-  isEligibleCalendarInteractionPointerDown,
-} from "@web/common/calendar-interaction/calendarInteractionPointer";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
 import {
@@ -11,6 +7,10 @@ import {
   selectIsDrafting,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import {
+  hasExceededCalendarInteractionMoveThreshold,
+  isEligibleCalendarInteractionPointerDown,
+} from "@web/interaction/calendarInteractionPointer";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { DRAFT_DURATION_MIN } from "@web/views/Week/layout.constants";
 import { type WeekProps } from "../useWeek";

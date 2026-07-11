@@ -9,7 +9,7 @@ import {
   WindowsLogoIcon,
 } from "@phosphor-icons/react";
 import { detectPlatform } from "@tanstack/react-hotkeys";
-import { expandModInShortcutDisplay } from "@web/common/shortcuts/shortcut.util";
+import { expandModInShortcutDisplay } from "@web/shortcuts/shortcut.util";
 
 // `Meta` is the platform "command" key: ⌘ on macOS, the Windows logo elsewhere.
 const metaIcon: Icon =

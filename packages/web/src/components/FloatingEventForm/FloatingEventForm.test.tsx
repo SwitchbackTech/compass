@@ -8,7 +8,7 @@ import {
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
-import { createCompassQueryClient } from "@web/common/query/query-client";
+import { createCompassQueryClient } from "@web/api/query-client";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { draftActions } from "@web/events/stores/draft.store";

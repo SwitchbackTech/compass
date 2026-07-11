@@ -123,7 +123,11 @@ describe("toCompass", () => {
 
     it("maps a titleless Google event to an empty string, not 'untitled'", () => {
       // Google omits `summary` entirely for events with no title.
-      const cEvent = MapEvent.toCompass("user1", [baseGEvent], Origin.GOOGLE)[0];
+      const cEvent = MapEvent.toCompass(
+        "user1",
+        [baseGEvent],
+        Origin.GOOGLE,
+      )[0];
       if (!cEvent) {
         throw new Error("Failed to map event");
       }

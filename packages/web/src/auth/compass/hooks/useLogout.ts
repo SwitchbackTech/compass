@@ -1,7 +1,7 @@
 import { useCallback } from "react";
+import { session } from "@web/auth/compass/session/Session";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { clearAuthenticationState } from "@web/auth/compass/state/auth.state.util";
-import { session } from "@web/common/classes/Session";
 
 export function useLogout() {
   const { setAuthenticated } = useSession();

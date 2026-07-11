@@ -13,15 +13,11 @@ import { useCallback, useRef, useState } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
-import {
-  VIEW_SHORTCUTS,
-  type ViewName,
-} from "@web/common/constants/shortcuts.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
-import { useAuthCmdItems } from "@web/common/hooks/useAuthCmdItems";
-import { useGoogleCmdItems } from "@web/common/hooks/useGoogleCmdItems";
-import { useLogoutCmdItems } from "@web/common/hooks/useLogoutCmdItems";
-import { useSubscribeCmdItems } from "@web/common/hooks/useSubscribeCmdItems";
+import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
+import { useGoogleCmdItems } from "@web/components/CommandPalette/hooks/useGoogleCmdItems";
+import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
+import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
 import {
@@ -29,6 +25,10 @@ import {
   settingsActions,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import {
+  VIEW_SHORTCUTS,
+  type ViewName,
+} from "@web/shortcuts/shortcuts.constants";
 import { type CommandItem, type CommandSection } from "./command-palette.types";
 
 interface CommandPaletteProps {

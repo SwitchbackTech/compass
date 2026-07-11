@@ -1,5 +1,5 @@
-import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 /**
  * Registers Mod+Z (undo) and Mod+Shift+Z (redo) for event changes.
@@ -12,7 +12,7 @@ import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
 export function useUndoRedoShortcuts() {
   const { undo, redo } = useUndoRedo();
 
-  useAppHotkey(
+  useAppShortcut(
     "Mod+Z",
     (event) => {
       // Never undo on a shifted press, regardless of how the hotkey
@@ -23,5 +23,5 @@ export function useUndoRedoShortcuts() {
     { ignoreInputs: true },
   );
 
-  useAppHotkey("Mod+Shift+Z", () => redo(), { ignoreInputs: true });
+  useAppShortcut("Mod+Shift+Z", () => redo(), { ignoreInputs: true });
 }

@@ -1,8 +1,8 @@
-import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
 } from "@web/common/utils/form/form.util";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
 export const SOMEDAY_HOTKEY_OPTIONS = {
   enabled: true,
@@ -46,12 +46,12 @@ export const useSomedayFormShortcuts = ({
   onDelete,
   onDuplicate,
 }: SomedayFormShortcutsProps) => {
-  useAppHotkey("Delete", stopPropagationWrapper(onDelete), {
+  useAppShortcut("Delete", stopPropagationWrapper(onDelete), {
     ...SOMEDAY_HOTKEY_OPTIONS,
     ignoreInputs: false,
   });
 
-  useAppHotkey(
+  useAppShortcut(
     "Enter",
     (keyboardEvent) => {
       if (
@@ -69,7 +69,7 @@ export const useSomedayFormShortcuts = ({
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
-  useAppHotkey(
+  useAppShortcut(
     "Mod+Enter",
     (keyboardEvent) => {
       keyboardEvent.preventDefault();
@@ -79,7 +79,7 @@ export const useSomedayFormShortcuts = ({
     SOMEDAY_HOTKEY_OPTIONS,
   );
 
-  useAppHotkey(
+  useAppShortcut(
     "Mod+D",
     stopPropagationWrapper(onDuplicate),
     SOMEDAY_HOTKEY_OPTIONS,

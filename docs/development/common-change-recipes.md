@@ -73,7 +73,7 @@ Do not edit recurring behavior from one layer only.
 
 ## Change Repository Selection Or Offline Behavior
 
-1. Start in `packages/web/src/common/repositories/event/event.repository.util.ts`.
+1. Start in `packages/web/src/events/repositories/event.repository.util.ts`.
 2. Verify auth-state implications in `packages/web/src/auth/session/SessionProvider.tsx` and auth-state helpers.
 3. Test both never-authenticated and previously-authenticated behavior.
 

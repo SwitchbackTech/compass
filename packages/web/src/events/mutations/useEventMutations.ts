@@ -5,10 +5,6 @@ import {
   RecurringEventUpdateScope,
   type Schema_Event,
 } from "@core/types/event.types";
-import { type EventRepositorySource } from "@web/common/repositories/event/event.repository.factory";
-import { useEventRepositorySource } from "@web/common/repositories/event/event.repository.source.store";
-import { type EventRepository } from "@web/common/repositories/event/event.repository.types";
-import { getEventRepositoryBySource } from "@web/common/repositories/event/event.repository.util";
 import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
@@ -28,6 +24,10 @@ import {
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { projectRecurringEdit } from "@web/events/recurrence/projectRecurringEdit";
+import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
+import { useEventRepositorySource } from "@web/events/repositories/event.repository.source.store";
+import { type EventRepository } from "@web/events/repositories/event.repository.types";
+import { getEventRepositoryBySource } from "@web/events/repositories/event.repository.util";
 import {
   type EventMutationOperation,
   eventMutationKeys,

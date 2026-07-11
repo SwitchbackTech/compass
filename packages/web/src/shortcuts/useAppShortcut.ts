@@ -1,0 +1,81 @@
+import {
+  type ConflictBehavior,
+  type HotkeySequence,
+  type RegisterableHotkey,
+  type UseHotkeySequenceOptions,
+  useHotkey,
+  useHotkeySequence,
+} from "@tanstack/react-hotkeys";
+
+export interface UseAppShortcutOptions {
+  enabled?: boolean;
+  ignoreInputs?: boolean;
+  blurOnTrigger?: boolean;
+  eventType?: "keydown" | "keyup";
+  preventDefault?: boolean;
+  stopPropagation?: boolean;
+  /** @default 'allow' — multiple features often register the same global key (e.g. Escape). */
+  conflictBehavior?: ConflictBehavior;
+}
+
+export function useAppShortcut(
+  hotkey: RegisterableHotkey,
+  handler: (event: KeyboardEvent) => void,
+  options: UseAppShortcutOptions = {},
+) {
+  const {
+    enabled = true,
+    ignoreInputs,
+    blurOnTrigger = false,
+    eventType = "keydown",
+    preventDefault,
+    stopPropagation,
+    conflictBehavior = "allow",
+  } = options;
+
+  useHotkey(
+    hotkey,
+    (event) => {
+      if (document.body.dataset.appLocked === "true") {
+        return;
+      }
+
+      if (blurOnTrigger) {
+        (document.activeElement as HTMLElement | null)?.blur?.();
+      }
+
+      handler(event);
+    },
+    {
+      enabled,
+      ignoreInputs,
+      eventType,
+      preventDefault,
+      stopPropagation,
+      conflictBehavior,
+    },
+  );
+}
+
+export const useAppShortcutUp = (
+  hotkey: RegisterableHotkey,
+  handler: (event: KeyboardEvent) => void,
+  options?: Omit<UseAppShortcutOptions, "eventType">,
+) => useAppShortcut(hotkey, handler, { ...options, eventType: "keyup" });
+
+export function useAppShortcutSequence(
+  sequence: HotkeySequence,
+  handler: () => void,
+  options: UseHotkeySequenceOptions = {},
+) {
+  useHotkeySequence(
+    sequence,
+    () => {
+      if (document.body.dataset.appLocked === "true") {
+        return;
+      }
+      handler();
+    },
+    options,
+  );
+}

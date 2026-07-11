@@ -1,9 +1,9 @@
 import { type Dispatch, type SetStateAction } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
+import { isBackendUnavailable as getIsBackendUnavailable } from "@web/api/util/backend-unavailable-error.util";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { useSession } from "@web/auth/compass/session/useSession";
-import { isBackendUnavailable as getIsBackendUnavailable } from "@web/common/apis/util/backend-unavailable-error.util";
 import { hoverColorByPriority } from "@web/common/styles/theme.util";
 import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
 import { EndsOnDate } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate";

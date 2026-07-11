@@ -1,16 +1,16 @@
 import { useMemo } from "react";
 import { type Schema_Event } from "@core/types/event.types";
-import { CALENDAR_GRID_MARGIN_LEFT } from "@web/common/calendar-grid/calendarGrid.constants";
-import { createCalendarTimedEventLayout } from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
-import {
-  type CalendarGridMeasurements,
-  type CalendarGridVisibleDate,
-} from "@web/common/calendar-grid/types/calendarGrid.types";
 import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { CALENDAR_GRID_MARGIN_LEFT } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { createCalendarTimedEventLayout } from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
+import {
+  type CalendarGridMeasurements,
+  type CalendarGridVisibleDate,
+} from "@web/layout/calendar-grid/types/calendarGrid.types";
 import {
   DayAllDayCalendarEvent,
   DayTimedCalendarEvent,

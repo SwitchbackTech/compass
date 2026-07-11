@@ -1,16 +1,16 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
-import { getLocalMinutes } from "@web/common/calendar-grid/interaction/calendarInteractionDate";
+import { type CalendarInteractionPoint } from "@web/interaction/CalendarInteractionSession";
+import { getLocalMinutes } from "@web/layout/calendar-grid/interaction/calendarInteractionDate";
 import {
   createTimedDragVisual,
   updateTimedDragVisual,
-} from "@web/common/calendar-grid/interaction/math/timedDrag";
+} from "@web/layout/calendar-grid/interaction/math/timedDrag";
 import {
   type TimedDragVisual,
   type VisualPoint,
   type VisualRect,
-} from "@web/common/calendar-grid/interaction/model/TimedDragVisual";
-import { type CalendarInteractionPoint } from "@web/common/calendar-interaction/CalendarInteractionSession";
+} from "@web/layout/calendar-grid/interaction/model/TimedDragVisual";
 import {
   hasTimedDragVisualMoved,
   timedDragVisualToGridEvent,

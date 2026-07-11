@@ -1,9 +1,9 @@
 import dayjs from "@core/util/date/dayjs";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   type CalendarTimedDeckLayout,
   createCalendarTimedEventLayout,
-} from "@web/common/calendar-grid/layout/calendarTimedDeckLayout";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+} from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
 
 export const getActiveTimedDraftDeckLayout = (
   draft: Schema_GridEvent | null,

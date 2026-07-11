@@ -3,10 +3,7 @@ import {
   type GoogleAuthCodeRequest,
   GoogleConnectErrorResponseSchema,
 } from "@core/types/auth.types";
-import {
-  type ApiError,
-  type ApiMethodConfig,
-} from "@web/common/apis/api.types";
+import { type ApiError, type ApiMethodConfig } from "@web/api/api.types";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   GOOGLE_AUTH_SCOPES_REQUIRED,

@@ -10,8 +10,6 @@ import {
   waitFor,
   within,
 } from "@web/__tests__/__mocks__/mock.render";
-import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/common/calendar-grid/calendarGrid.constants";
-import { type CalendarGridMeasurements } from "@web/common/calendar-grid/types/calendarGrid.types";
 import {
   DATA_CALENDAR_TIMED_GRID_ROW,
   ZIndex,
@@ -25,6 +23,8 @@ import {
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
+import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/layout/calendar-grid/calendarGrid.constants";
+import { type CalendarGridMeasurements } from "@web/layout/calendar-grid/types/calendarGrid.types";
 import { type EventFormProps } from "@web/views/Forms/hooks/useEventForm";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
@@ -61,7 +61,7 @@ mock.module("@web/views/Day/hooks/navigation/useDateInView", () => ({
   useDateInView: () => dayjs("2026-05-20T00:00:00.000"),
 }));
 
-mock.module("@web/common/calendar-grid/hooks/useCalendarGridLayout", () => ({
+mock.module("@web/layout/calendar-grid/hooks/useCalendarGridLayout", () => ({
   useCalendarGridLayout: () => {
     const allDayColumnsRef = { current: null as HTMLDivElement | null };
     const mainGridRef = { current: null as HTMLDivElement | null };

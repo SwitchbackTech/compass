@@ -2,6 +2,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import { type UserProfile } from "@core/types/user.types";
 import { type UseLoadProfileResult } from "@web/auth/compass/user/hooks/useLoadProfile";
 import {
+  afterAll,
   afterEach,
   beforeEach,
   describe,
@@ -33,15 +34,47 @@ mock.module("@web/auth/compass/state/auth.state.util", () => ({
   markUserAsAuthenticated,
 }));
 
-mock.module("@web/common/apis/user.api", () => ({
+// mock.module is process-wide and not reliably restorable, so the real
+// UserApi is captured up front and a flag (flipped off in afterAll) decides
+// which implementation runs on each call. Without this, this file's partial
+// UserApi shape (getProfile only) would permanently shadow the real module
+// for other files' UserApi methods (e.g. useSubscribeCmdItems.test.ts's
+// updateMetadata).
+const actualUserApi = (await import("@web/api/user.api")).UserApi;
+let isUserApiMocked = true;
+
+mock.module("@web/api/user.api", () => ({
   UserApi: {
-    getProfile,
+    ...actualUserApi,
+    getProfile: (...args: Parameters<typeof actualUserApi.getProfile>) =>
+      isUserApiMocked ? getProfile(...args) : actualUserApi.getProfile(...args),
   },
 }));
 
+afterAll(() => {
+  isUserApiMocked = false;
+});
+
+// Same rationale as the UserApi mock above: spread the real module's other
+// exports (showErrorToast, dismissErrorToast, etc.) and only conditionally
+// override showSessionExpiredToast, so this file's mock doesn't permanently
+// strip the rest of the module for other files that resolve it afterward.
+const actualErrorToastUtil = await import(
+  "@web/common/utils/toast/error-toast.util"
+);
+let isErrorToastUtilMocked = true;
+
 mock.module("@web/common/utils/toast/error-toast.util", () => ({
-  showSessionExpiredToast,
+  ...actualErrorToastUtil,
+  showSessionExpiredToast: () =>
+    isErrorToastUtilMocked
+      ? showSessionExpiredToast()
+      : actualErrorToastUtil.showSessionExpiredToast(),
 }));
+
+afterAll(() => {
+  isErrorToastUtilMocked = false;
+});
 
 async function importHook() {
   const moduleUrl = new URL(

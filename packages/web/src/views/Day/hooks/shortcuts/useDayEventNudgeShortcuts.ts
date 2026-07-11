@@ -1,9 +1,9 @@
-import { useUpdateEvent } from "@web/common/hooks/useUpdateEvent";
-import { useAppHotkey } from "@web/common/hotkeys/useAppHotkey";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { nudgeEventFromKeyboard } from "@web/common/utils/event/event-nudge-shortcut.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { draftActions } from "@web/events/stores/draft.store";
+import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { getFocusedDayCalendarEventTarget } from "@web/views/Day/interaction/targeting/dayCalendarEventTargeting";
 
 /**
@@ -38,6 +38,6 @@ export function useDayEventNudgeShortcuts({
     });
   };
 
-  useAppHotkey("Shift+ArrowUp", nudgeFocusedEvent);
-  useAppHotkey("Shift+ArrowDown", nudgeFocusedEvent);
+  useAppShortcut("Shift+ArrowUp", nudgeFocusedEvent);
+  useAppShortcut("Shift+ArrowDown", nudgeFocusedEvent);
 }

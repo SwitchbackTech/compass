@@ -97,7 +97,7 @@ Responsibilities:
 
 Files:
 
-- `packages/web/src/common/hooks/useVersionCheck.ts`
+- `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/useVersionCheck.ts`
 - `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
 
 Runtime behavior:
@@ -177,7 +177,7 @@ The web app uses multiple state layers:
 | Draft Event and calendar interaction state | Zustand draft store | `packages/web/src/events/stores/draft.store.ts` |
 | View dates/sidebar, cmd palette, user metadata | Zustand stores | `packages/web/src/events/stores/view.store.ts`, `packages/web/src/settings/settings.store.ts`, `packages/web/src/auth/state/user-metadata.store.ts` |
 | Offline persistence | IndexedDB offline data store | `packages/web/src/common/storage/offline-data/indexeddb-offline-data.store.ts` |
-| Local vs remote persistence choice | Repository factory | `packages/web/src/common/repositories/event/event.repository.util.ts` |
+| Local vs remote persistence choice | Repository factory | `packages/web/src/events/repositories/event.repository.util.ts` |
 
 These layers are intentional. Do not mirror persisted Event entities into the
 Zustand stores or call IndexedDB directly from components.
@@ -263,7 +263,7 @@ File:
 
 File:
 
-- `packages/web/src/common/repositories/event/event.repository.util.ts`
+- `packages/web/src/events/repositories/event.repository.util.ts`
 
 Repository choice:
 
@@ -324,7 +324,7 @@ Files:
 - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.ts`
 - `packages/web/src/auth/google/hooks/useConnectGoogle/useConnectGoogle.util.ts`
 - `packages/web/src/components/PlannerSidebar/PlannerAccountSummary/PlannerAccountSummary.tsx`
-- `packages/web/src/common/hooks/useGoogleCmdItems.ts`
+- `packages/web/src/components/CommandPalette/hooks/useGoogleCmdItems.ts`
 
 UI state comes from a single server-enriched metadata field (`google.connectionState`) plus two client-only states (`checking`, `repairing`). The sidebar account email text itself is the status indicator, via `getGoogleAccountSummaryStatus`:
 

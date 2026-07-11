@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 const mockDoesSessionExist = mock();
 const mockGetAccessTokenPayloadSecurely = mock();
 
-mock.module("@web/common/classes/Session", () => ({
+mock.module("@web/auth/compass/session/Session", () => ({
   session: {
     doesSessionExist: mockDoesSessionExist,
     getAccessTokenPayloadSecurely: mockGetAccessTokenPayloadSecurely,

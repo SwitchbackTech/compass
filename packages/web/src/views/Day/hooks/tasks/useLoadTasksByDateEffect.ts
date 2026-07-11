@@ -1,8 +1,8 @@
 import { type MutableRefObject, useEffect } from "react";
-import { type TaskRepository } from "@web/common/repositories/task/task.repository";
 import { ensureOfflineDataStoreReady } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { type Task } from "@web/common/types/task.types";
 import { sortTasksByStatus } from "@web/common/utils/task/sort.task";
+import { type TaskRepository } from "@web/tasks/repositories/task.repository";
 
 interface UseLoadTasksByDateEffectProps {
   dateKey: string;
