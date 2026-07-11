@@ -72,6 +72,10 @@ and one `freeBusyReader`) plus the Compass-local calendar:
 
 ## Migration and rollback rehearsal
 
+Per A36 the production cutover happens exactly once, only after every gate in
+this file passes on staging; until then the `Deploy Production` action is not
+run and production stays on the pre-cutover release.
+
 1. Restore a sanitized production-shaped backup into staging.
 2. Record source counts/category hashes and create a fresh backup.
 3. Run forward migrations without modifying old collections.
