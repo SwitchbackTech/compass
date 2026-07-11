@@ -378,17 +378,3 @@ export const computeRelativeEventDateRange = (
     endDate: end.format(),
   };
 };
-
-export const computeSomedayEventsRequestFilter = (
-  start: Dayjs,
-  end?: Dayjs,
-) => {
-  const startDate = start.subtract(1, "month").endOf("month");
-  const validEnd = end?.isAfter(start) ?? false;
-  const endDate = validEnd ? end! : start.endOf("month").add(1, "week");
-
-  return {
-    startDate: toUTCOffset(startDate),
-    endDate: toUTCOffset(endDate),
-  };
-};
