@@ -1,7 +1,15 @@
 import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { type Event } from "@core/types/event.contracts";
+import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import { type GridScheduleDraft } from "@web/events/event-draft.types";
+import {
+  editGridEventDraft,
+  parseGridEventDraft,
+  replaceGridDraftSchedule,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import { draftActions } from "@web/events/stores/draft.store";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/interaction/react/CalendarInteractionPointerCaptureBoundary";
@@ -33,6 +41,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     endOfView: weekProps.component.endOfView,
   });
   const { actions, confirmation, setters, state } = useDraftContext();
+  const mutations = useEventMutations();
   const layoutSourcesRef = useRef(getLayoutSources);
   const timedEventsById = useMemo(() => {
     return mapEventsById(timedEvents);
@@ -81,6 +90,37 @@ export const WeekInteractionCoordinator: FC<Props> = ({
 
   const openAllDayEvent = openClickedGridEvent;
 
+  // Non-recurring saved events skip the Draft confirmation flow entirely and
+  // commit straight through the strict mutation. Recurring events (source
+  // event carries `recurrence`) still need the scope-confirmation dialog,
+  // which lives in useDraftConfirmation (out of scope here) — those keep
+  // going through the legacy confirmation.onSubmit path below.
+  const commitStrictSavedMutation = (event: Schema_GridEvent) => {
+    const sourceEvent = event._id ? eventsById.get(event._id) : undefined;
+    const draft = sourceEvent ? editGridEventDraft(sourceEvent, "this") : null;
+
+    if (!draft) return;
+
+    const schedule: GridScheduleDraft = event.isAllDay
+      ? {
+          kind: "allDay",
+          start: dayjs(event.startDate).toDate(),
+          end: dayjs(event.endDate).toDate(),
+        }
+      : timedGridSchedule(
+          dayjs(event.startDate).toDate(),
+          dayjs(event.endDate).toDate(),
+        );
+
+    const parsed = parseGridEventDraft(
+      replaceGridDraftSchedule(draft, schedule),
+    );
+
+    if (parsed.ok && parsed.mode === "edit") {
+      mutations.replace({ id: parsed.eventId, input: parsed.input });
+    }
+  };
+
   const commitSavedMutation = (
     result:
       | WeekAllDayDragCommitResult
@@ -103,7 +143,12 @@ export const WeekInteractionCoordinator: FC<Props> = ({
       return;
     }
 
-    void confirmation.onSubmit(result.event);
+    if (result.event.recurrence) {
+      void confirmation.onSubmit(result.event);
+      return;
+    }
+
+    commitStrictSavedMutation(result.event);
   };
 
   runtimeRef.current = {
