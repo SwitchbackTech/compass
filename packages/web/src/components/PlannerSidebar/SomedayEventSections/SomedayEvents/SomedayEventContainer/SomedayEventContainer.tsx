@@ -2,6 +2,7 @@ import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { type Ref, useRef } from "react";
 import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
+import { type Event } from "@core/types/event.contracts";
 import {
   Categories_Event,
   RecurringEventUpdateScope,
@@ -13,12 +14,16 @@ import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import { refocusEventElement } from "@web/common/utils/event/event.util";
+import { schemaEventToLocalEvent } from "@web/common/utils/event/someday.event.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/SomedayEvent";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { createLegacyEventMutationsAdapter } from "@web/events/queries/event.legacy-bridge";
+import {
+  createLegacyEventMutationsAdapter,
+  eventToSchemaEvent,
+} from "@web/events/queries/event.legacy-bridge";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
@@ -27,7 +32,7 @@ import { getSidebarOpenWidth } from "@web/views/Week/layout.constants";
 
 export interface Props {
   category: SomedayInteractionCategory;
-  event: Schema_Event;
+  event: Event;
   isDrafting: boolean;
   isDragging: boolean;
   onSubmit: (event: Schema_Event | null) => void;
@@ -65,7 +70,7 @@ export const SomedayEventContainer = ({
 
   const formProps = useDraftForm(
     category,
-    state.isSomedayFormOpen && state.draft?._id === event._id,
+    state.isSomedayFormOpen && state.draft?.id === event.id,
     actions.discard,
     actions.reset,
     setters.setIsSomedayFormOpen,
@@ -75,12 +80,11 @@ export const SomedayEventContainer = ({
 
   useAppShortcut("Enter", () => {
     if (!isFocusedRef.current) return;
-    actions.onDraft(event, category);
+    actions.onDraft(eventToSchemaEvent(event), category);
   });
 
   const migrateEvent = (direction: "up" | "down") => {
-    const canMigrate =
-      !event.recurrence?.rule || event.recurrence?.rule.length === 0;
+    const canMigrate = event.recurrence.kind === "single";
     if (!canMigrate) {
       toast.error("Can't migrate recurring events");
       return;
@@ -91,16 +95,16 @@ export const SomedayEventContainer = ({
         : (["month", Categories_Event.SOMEDAY_MONTH] as const);
     void actions.onSubmit(
       targetCategory,
-      computeCurrentEventDateRange({ duration }, event, weekViewRange),
+      computeCurrentEventDateRange(
+        { duration },
+        eventToSchemaEvent(event),
+        weekViewRange,
+      ),
     );
-    if (event._id) {
-      refocusEventElement(event._id);
-    }
+    refocusEventElement(event.id);
   };
 
   const scheduleEvent = () => {
-    if (!event._id) return;
-
     const isCurrentWeek = dayjs().isBetween(
       weekViewRange.startDate,
       weekViewRange.endDate,
@@ -114,14 +118,14 @@ export const SomedayEventContainer = ({
 
     convertToCalendar({
       event: {
-        _id: event._id,
+        _id: event.id,
         startDate,
         endDate,
         isAllDay: false,
         isSomeday: false,
       },
     });
-    refocusEventElement(event._id);
+    refocusEventElement(event.id);
   };
 
   const whenFocused =
@@ -141,9 +145,24 @@ export const SomedayEventContainer = ({
   );
   useAppShortcut("Shift+ArrowRight", whenFocused(scheduleEvent));
 
-  const isDraftingThisEvent =
-    state.isDrafting && state.draft?._id === event._id;
-  const formEvent = isDraftingThisEvent && state.draft ? state.draft : event;
+  const isDraftingThisEvent = state.isDrafting && state.draft?.id === event.id;
+  // A brand-new draft's `state.draft.id`/dates are client-synthesized
+  // placeholders (schemaEventToLocalEvent invents an id and anchors the
+  // schedule on today to satisfy Event's required fields, since this local
+  // cache always holds full Event bodies). Neither must read back as real:
+  // a synthesized `_id` makes onSubmit's edit/create branch pick "edit" for
+  // an id nothing in the repository has, silently dropping the create; a
+  // synthesized `startDate`/`endDate` short-circuits onSubmit's own
+  // getDatesByCategory computation, persisting today's date instead of the
+  // target column's actual (week-start-normalized) range.
+  const formEvent = {
+    ...eventToSchemaEvent(
+      isDraftingThisEvent && state.draft ? state.draft : event,
+    ),
+    ...(state.isDraftingNew
+      ? { _id: undefined, startDate: undefined, endDate: undefined }
+      : {}),
+  };
 
   return (
     <>
@@ -158,7 +177,7 @@ export const SomedayEventContainer = ({
           isFocusedRef.current = false;
         }}
         onClick={() => {
-          actions.onDraft(event, category);
+          actions.onDraft(eventToSchemaEvent(event), category);
         }}
         onFocus={() => {
           isFocusedRef.current = true;
@@ -189,9 +208,7 @@ export const SomedayEventContainer = ({
                 }}
                 onDelete={() => {
                   // For recurring someday events, delete the entire series
-                  const isRecurring =
-                    Array.isArray(event.recurrence?.rule) ||
-                    typeof event.recurrence?.eventId === "string";
+                  const isRecurring = event.recurrence.kind !== "single";
                   const deleteScope = isRecurring
                     ? RecurringEventUpdateScope.ALL_EVENTS
                     : RecurringEventUpdateScope.THIS_EVENT;
@@ -200,7 +217,18 @@ export const SomedayEventContainer = ({
                 onDuplicate={duplicateEvent}
                 onMigrate={actions.onMigrate}
                 onSubmit={onSubmit}
-                setEvent={setEvent}
+                setEvent={(next) =>
+                  setEvent((previous) => {
+                    const resolved =
+                      typeof next === "function"
+                        ? next(previous ? eventToSchemaEvent(previous) : null)
+                        : next;
+
+                    return resolved
+                      ? schemaEventToLocalEvent(resolved, event.calendarId)
+                      : null;
+                  })
+                }
               />
             </FloatingFormContainer>
           </FloatingFocusManager>

@@ -1,5 +1,5 @@
 import { type FC } from "react";
-import { type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEventsContainer } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEventsContainer/SomedayEventsContainer";
@@ -10,7 +10,7 @@ import {
 
 interface Props {
   category: SomedayInteractionCategory;
-  events: Schema_Event[];
+  events: Event[];
 }
 export const SomedayEvents: FC<Props> = ({ category, events }) => {
   const { state } = useSidebarContext();

@@ -1,16 +1,17 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { Priorities } from "@core/constants/core.constants";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
+import { Categories_Event } from "@core/types/event.types";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
 import { SomedayEvent } from "./SomedayEvent";
 import { describe, expect, it, mock } from "bun:test";
 
-const createEvent = (): Schema_Event =>
-  ({
-    _id: "event-1",
+const createEvent = (): Event =>
+  createMockEvent({
     priority: Priorities.WORK,
-    title: "Plan launch",
-  }) as Schema_Event;
+    content: { kind: "details", title: "Plan launch", description: "" },
+  });
 
 const formProps = {
   getReferenceProps: () => ({}),

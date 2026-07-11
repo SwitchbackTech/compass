@@ -1,8 +1,9 @@
 import { CaretLeft, CaretRight, DotsSixVertical } from "@phosphor-icons/react";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
-import { isRecurringEvent } from "@core/util/event/event.util";
+import { type Event } from "@core/types/event.contracts";
+import { Categories_Event } from "@core/types/event.types";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
+import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
 
 const ACTIONS_CLASS_NAME =
@@ -13,7 +14,7 @@ const ACTION_BUTTON_CLASS_NAME =
 
 interface Props {
   category: Categories_Event;
-  event: Schema_Event;
+  event: Event;
   onMigrate: Actions_Sidebar["onMigrate"];
   formProps: Props_DraftForm;
 }
@@ -25,7 +26,8 @@ export const SomedayEventRectangle = ({
   onMigrate,
 }: Props) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
-  const canMigrate = !isRecurringEvent(event);
+  const canMigrate = event.recurrence.kind === "single";
+  const title = event.content.kind === "details" ? event.content.title : "";
 
   return (
     <div
@@ -49,7 +51,7 @@ export const SomedayEventRectangle = ({
             className="relative min-w-0 truncate text-m"
             style={{ lineHeight: "16px" }}
           >
-            {event.title}
+            {title}
           </span>
         </div>
 
@@ -63,7 +65,7 @@ export const SomedayEventRectangle = ({
               className={ACTION_BUTTON_CLASS_NAME}
               onClick={(e) => {
                 e.stopPropagation();
-                onMigrate(event, category, "back");
+                onMigrate(eventToSchemaEvent(event), category, "back");
               }}
               title={`Migrate to previous ${target}`}
               type="button"
@@ -75,7 +77,7 @@ export const SomedayEventRectangle = ({
               className={ACTION_BUTTON_CLASS_NAME}
               onClick={(e) => {
                 e.stopPropagation();
-                onMigrate(event, category, "forward");
+                onMigrate(eventToSchemaEvent(event), category, "forward");
               }}
               title={`Migrate to next ${target}`}
               type="button"

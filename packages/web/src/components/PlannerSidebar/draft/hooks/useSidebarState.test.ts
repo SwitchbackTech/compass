@@ -1,6 +1,6 @@
 import { act } from "@testing-library/react";
-import { type Schema_Event } from "@core/types/event.types";
 import { renderHookWithStore } from "@web/__tests__/render-with-store";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
 import { beforeEach, describe, expect, it } from "bun:test";
 
@@ -9,10 +9,9 @@ let isDNDing = false;
 const { useSidebarState } =
   require("./useSidebarState") as typeof import("./useSidebarState");
 
-const draftEvent = {
-  _id: "draft-event-id",
-  title: "Draft",
-} as Schema_Event;
+const draftEvent = createMockEvent({
+  content: { kind: "details", title: "Draft", description: "" },
+});
 
 const createSidebarState = () => {
   if (!isDNDing) {

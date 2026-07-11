@@ -1,6 +1,7 @@
 import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
+import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
@@ -252,7 +253,7 @@ export const createSomedayInteractionAdapter = ({
 
         return {
           drop: null,
-          eventId: target.event._id!,
+          eventId: target.event.id,
           pointerStart,
           sourceIndex: target.registered.index,
           sourceRect,
@@ -338,7 +339,7 @@ export const createSomedayInteractionAdapter = ({
     const currentRuntime = runtime();
     const somedayEvent = currentRuntime.getSomedayEventById(registered.eventId);
 
-    if (!somedayEvent?._id) {
+    if (!somedayEvent?.id) {
       return null;
     }
 
@@ -491,7 +492,7 @@ export const createSomedayInteractionAdapter = ({
   ): SomedayInteractionCommitResult {
     const drop = visual.drop;
 
-    if (!drop || !target.event._id) {
+    if (!drop || !target.event.id) {
       return { type: "noop" };
     }
 
@@ -508,7 +509,7 @@ export const createSomedayInteractionAdapter = ({
           endDate: start.add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
           startDate: start.format(YEAR_MONTH_DAY_FORMAT),
         },
-        eventId: target.event._id!,
+        eventId: target.event.id,
         isAllDay: true,
         type: "schedule",
       };
@@ -523,7 +524,7 @@ export const createSomedayInteractionAdapter = ({
         endDate: start.add(ONE_HOUR_MINUTES, "minutes").format(),
         startDate: start.format(),
       },
-      eventId: target.event._id!,
+      eventId: target.event.id,
       isAllDay: false,
       type: "schedule",
     };
@@ -539,7 +540,7 @@ export const createSomedayInteractionAdapter = ({
         droppableId: getColumnName(drop.category),
         index: drop.index,
       },
-      eventId: target.event._id!,
+      eventId: target.event.id,
       source: {
         droppableId: getColumnName(target.category),
         index: visual.sourceIndex,
@@ -555,7 +556,7 @@ export const createSomedayInteractionAdapter = ({
   ) {
     const currentRuntime = runtime();
 
-    if (drop?.type !== "sidebar" || !target.event._id) {
+    if (drop?.type !== "sidebar" || !target.event.id) {
       clearSidebarPreview(currentRuntime);
       return;
     }
@@ -702,10 +703,7 @@ export const createSomedayInteractionAdapter = ({
   };
 };
 
-const createSomedayDraftEventClone = (
-  source: HTMLElement,
-  event: Schema_Event,
-) => {
+const createSomedayDraftEventClone = (source: HTMLElement, event: Event) => {
   const clone = createDraftEventClone(source);
 
   clone.style.zIndex = "25";
@@ -730,7 +728,7 @@ const createSomedayDraftEventClone = (
 const mutateDraftEvent = (
   node: HTMLElement,
   drop: SomedayInteractionDrop | null,
-  event: Schema_Event,
+  event: Event,
 ) => {
   node.style.overflow = "hidden";
 

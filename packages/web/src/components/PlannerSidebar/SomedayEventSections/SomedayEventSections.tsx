@@ -1,5 +1,5 @@
 import { type FC } from "react";
-import { type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type State_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarState";
@@ -17,9 +17,9 @@ interface Props {
 const getSectionEvents = (
   columnName: typeof COLUMN_WEEK | typeof COLUMN_MONTH,
   somedayEvents: State_Sidebar["somedayEvents"],
-): Schema_Event[] =>
-  somedayEvents.columns[columnName].eventIds.map(
-    (eventId) => somedayEvents.events[eventId],
+): Event[] =>
+  somedayEvents.columns[columnName].eventIds.flatMap((eventId) =>
+    somedayEvents.events[eventId] ? [somedayEvents.events[eventId]] : [],
   );
 
 export const SomedayEventSections: FC<Props> = ({

@@ -75,14 +75,14 @@ describe("categorizeSomedayEvents", () => {
     expect(result.columnOrder).toEqual([COLUMN_WEEK, COLUMN_MONTH]);
   });
 
-  it("bridges each event into the legacy Schema_Event shape for the sidebar renderer", () => {
+  it("returns each event as the strict Event contract for the sidebar renderer", () => {
     const event = someday({ period: "week" });
     const result = categorizeSomedayEvents(normalized([event]), undefined);
 
-    expect(result.events[event.id]).toMatchObject({
-      _id: event.id,
-      isSomeday: true,
-      order: 0,
+    expect(result.events[event.id]).toBe(event);
+    expect(result.events[event.id]?.schedule).toMatchObject({
+      kind: "someday",
+      sortOrder: 0,
     });
   });
 });

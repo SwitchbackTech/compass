@@ -1,12 +1,13 @@
 import { type FC } from "react";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
+import { Categories_Event } from "@core/types/event.types";
 import { SomedaySectionHeader } from "@web/components/PlannerSidebar/SomedayEventSections/SomedaySectionHeader/SomedaySectionHeader";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { SomedayEvents } from "../SomedayEvents/SomedayEvents";
 import { useMonthLabel } from "./useMonthLabel";
 
 interface Props {
-  events: Schema_Event[];
+  events: Event[];
   monthDate: WeekProps["component"]["startOfView"];
 }
 

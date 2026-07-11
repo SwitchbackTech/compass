@@ -1,6 +1,9 @@
 import { Priorities } from "@core/constants/core.constants";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type EventId } from "@core/types/domain-primitives";
+import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
+import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_COLUMNS_TIMED,
@@ -14,17 +17,18 @@ import { somedayEventRegistry } from "@web/components/PlannerSidebar/SomedayEven
 import { resetWeekInteractionEdgeNavigationState } from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-const createSomedayEvent = (
-  overrides: Partial<Schema_Event> = {},
-): Schema_Event => ({
-  _id: "someday-event",
-  endDate: "2026-05-23",
-  isSomeday: true,
-  order: 0,
-  startDate: "2026-05-17",
-  title: "Someday event",
-  ...overrides,
-});
+const createSomedayEvent = (overrides: Partial<Event> = {}): Event =>
+  createMockEvent({
+    id: "someday-event" as EventId,
+    content: { kind: "details", title: "Someday event", description: "" },
+    schedule: EventScheduleSchema.parse({
+      kind: "someday",
+      period: "week",
+      anchorDate: "2026-05-17",
+      sortOrder: 0,
+    }),
+    ...overrides,
+  });
 
 const setRect = (
   element: HTMLElement,
@@ -195,7 +199,7 @@ const createHarness = ({
   somedayEventRegistry.register({
     category: Categories_Event.SOMEDAY_WEEK,
     element: source,
-    eventId: event._id!,
+    eventId: event.id,
     index: 0,
   });
 
@@ -226,7 +230,7 @@ const createHarness = ({
       timedColumnsElement: timedColumns,
     }),
     runtime: () => ({
-      getSomedayEventById: (eventId) => (eventId === event._id ? event : null),
+      getSomedayEventById: (eventId) => (eventId === event.id ? event : null),
       getVisibleDays: () => currentVisibleDays,
       onCancelInteraction,
       onClickSomedayEvent,

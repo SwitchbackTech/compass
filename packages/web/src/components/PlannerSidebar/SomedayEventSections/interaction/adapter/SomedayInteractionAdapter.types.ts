@@ -1,4 +1,4 @@
-import { type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
 import {
   type CalendarInteractionCancellationTargets,
   type CalendarInteractionEngineSchedulerOptions,
@@ -21,7 +21,7 @@ export interface SomedayInteractionAdapterOptions {
 }
 
 export interface SomedayInteractionRuntime {
-  getSomedayEventById(eventId: string): Schema_Event | null;
+  getSomedayEventById(eventId: string): Event | null;
   /**
    * Local YYYY-MM-DD dates of the rendered day columns, in window order.
    * Sourced from the same React render that painted the columns so drop
@@ -30,10 +30,7 @@ export interface SomedayInteractionRuntime {
   getVisibleDays(): string[];
   isSidebarDropAllowed?: (result: SomedaySidebarCommitResult) => boolean;
   onCancelInteraction?: () => void;
-  onClickSomedayEvent(
-    event: Schema_Event,
-    category: SomedayInteractionCategory,
-  ): void;
+  onClickSomedayEvent(event: Event, category: SomedayInteractionCategory): void;
   onCommitSomedayInteraction(result: SomedayInteractionCommitResult): void;
   onMotionActivation?: (target: SomedayInteractionTarget) => void;
   onPreviewSomedaySidebarDrop?: (
@@ -44,7 +41,7 @@ export interface SomedayInteractionRuntime {
 
 export interface SomedayInteractionTarget {
   category: SomedayInteractionCategory;
-  event: Schema_Event;
+  event: Event;
   registered: SomedayInteractionRegisteredEvent;
 }
 

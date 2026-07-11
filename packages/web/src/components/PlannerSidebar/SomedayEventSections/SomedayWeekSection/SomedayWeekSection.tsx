@@ -1,10 +1,11 @@
 import { type FC } from "react";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type Event } from "@core/types/event.contracts";
+import { Categories_Event } from "@core/types/event.types";
 import { SomedaySectionHeader } from "@web/components/PlannerSidebar/SomedayEventSections/SomedaySectionHeader/SomedaySectionHeader";
 import { SomedayEvents } from "../SomedayEvents/SomedayEvents";
 
 interface Props {
-  events: Schema_Event[];
+  events: Event[];
   weekLabel: string;
 }
 
