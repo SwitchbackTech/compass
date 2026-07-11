@@ -12,6 +12,7 @@ import {
 import { zObjectId } from "@core/types/type.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
+import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
 export default class Migration implements RunnableMigration<MigrationContext> {
@@ -114,11 +115,14 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         if (eventId) {
           let rule = rrules.get(eventId);
           if (!rule) {
-            const baseEvent = await mongoService.event.findOne({
-              _id: new ObjectId(eventId),
-            });
+            // Deviation (packet-03): frozen historical migration still reads the
+            // pre-cutover Schema_Event shape; raw collection access avoids
+            // fighting the now EventRecord-typed mongoService.event proxy.
+            const baseEvent = await mongoService.db
+              .collection(Collections.EVENT)
+              .findOne({ _id: new ObjectId(eventId) });
 
-            const baseRule = baseEvent?.recurrence?.rule;
+            const baseRule = baseEvent?.["recurrence"]?.["rule"];
             if (Array.isArray(baseRule)) {
               rule = baseRule;
               rrules.set(eventId, rule);

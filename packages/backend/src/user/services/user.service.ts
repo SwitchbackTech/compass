@@ -338,9 +338,25 @@ class UserService {
     return this.updateGoogleConnection(cUserId, gUser);
   };
 
+  /**
+   * Prunes Google data for a user after revoked/missing access (B9/A16):
+   * deletes events owned by Google-provider calendars, archives those
+   * calendars (`isActive: false`, never deletes the rows so reactivation
+   * reuses the same Compass id and visibility preference), drops watches
+   * and Google sync records, and clears the stored refresh token.
+   * Local-calendar events (including all someday events) are untouched.
+   */
   pruneGoogleData = async (userId: string): Promise<void> => {
     const _id = zObjectId.parse(userId);
-    await this.stopGoogleCalendarSync(userId, { skipGoogleWatchStop: true });
+
+    await eventService.deleteByIntegration("google", userId);
+    await mongoService.calendar.updateMany(
+      { userId: _id, "source.provider": "google" },
+      { $set: { isActive: false, updatedAt: new Date() } },
+    );
+    await googleWatchService.deleteWatchesByUser(userId);
+    await syncRecords.deleteByIntegration("google", userId);
+
     await mongoService.user.updateOne(
       { _id },
       { $set: { "google.gRefreshToken": "" } },

@@ -1,153 +1,148 @@
-import { ObjectId } from "mongodb";
+import { type Request, type Response } from "express";
 import { type SessionRequest } from "supertokens-node/framework/express";
-import { ID_OPTIMISTIC_PREFIX } from "@core/constants/core.constants";
 import { Status } from "@core/errors/status.codes";
 import {
-  CompassCoreEventSchema,
-  type CompassEvent,
-  CompassEventStatus,
-  type CompassThisEvent,
-  type Params_DeleteMany,
-  type Payload_Order,
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
-import {
-  type Res_Promise,
-  type SReqBody,
-} from "@backend/common/types/express.types";
+  CreateEventInputSchema,
+  DeleteEventInputSchema,
+  type EventListQuery,
+  EventListQuerySchema,
+  ReorderEventsInputSchema,
+  ReplaceEventInputSchema,
+  TransitionEventInputSchema,
+} from "@core/types/event-command.contracts";
+import { toEventMutationError } from "@backend/event/event.error";
+import { mapEventRecord } from "@backend/event/event.record.mapper";
 import eventService from "@backend/event/services/event.service";
-import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
 
-/**
- * Event controller for CRUD operations on Compass events.
- *
- * Methods use `res.promise()` instead of try/catch to ensure errors are routed
- * through the centralized error handler (handleExpressError). This is critical
- * for proper handling of Google API errors like `invalid_grant`, which triggers
- * automatic cleanup of revoked Google data and appropriate client notifications.
- */
-class EventController {
-  private async processEvents(_events: CompassEvent[]) {
-    const events = _events.map((e) => ({
-      ...e,
-      payload: CompassCoreEventSchema.parse({
-        ...e.payload,
-        _id:
-          e.payload._id?.replace(`${ID_OPTIMISTIC_PREFIX}-`, "") ??
-          new ObjectId().toString(),
-      }),
-    })) as CompassEvent[];
+const send = (res: Response, e: unknown) => {
+  const { status, body } = toEventMutationError(e);
+  res.status(status).json(body);
+};
 
-    await CompassToGoogleEventPropagation.processEvents(events);
+const parseListQuery = (query: Request["query"]): EventListQuery => {
+  if (query["kind"] === "someday") {
+    return EventListQuerySchema.parse({
+      kind: "someday",
+      period: query["period"],
+      anchorDate: query["anchorDate"],
+    });
   }
 
-  create = (
-    req: SReqBody<CompassEvent["payload"] | CompassEvent["payload"][]>,
-    res: Res_Promise,
-  ) => {
-    const { body } = req;
-    const user = req.session?.getUserId() as string;
-    const events = Array.isArray(body) ? body : [body];
+  const priorities =
+    typeof query["priorities"] === "string" && query["priorities"].length > 0
+      ? query["priorities"].split(",")
+      : [];
 
-    res.promise(
-      this.processEvents(
-        events.map((e) => ({
-          payload: { ...e, user },
-          status: CompassEventStatus.CONFIRMED,
-          applyTo: RecurringEventUpdateScope.THIS_EVENT,
-        })) as CompassEvent[],
-      ).then(() => ({ statusCode: Status.NO_CONTENT })),
-    );
-  };
+  return EventListQuerySchema.parse({
+    kind: "range",
+    start: query["start"],
+    end: query["end"],
+    priorities,
+  });
+};
 
-  delete = (req: SessionRequest, res: Res_Promise) => {
-    const { query } = req;
-    const user = req.session?.getUserId() as string;
-    const _id = req.params["id"] as string;
-    const applyTo = query["applyTo"] ?? RecurringEventUpdateScope.THIS_EVENT;
-
-    res.promise(
-      eventService.readById(user, _id).then((event) =>
-        this.processEvents([
-          {
-            payload: event as CompassThisEvent["payload"],
-            status: CompassEventStatus.CANCELLED,
-            applyTo: applyTo as RecurringEventUpdateScope.THIS_EVENT,
-          },
-        ]).then(() => ({ statusCode: Status.NO_CONTENT })),
-      ),
-    );
-  };
-
-  deleteAllByUser = async (req: SessionRequest, res: Res_Promise) => {
-    const userToRemove = req.params["userId"] as string;
-    try {
-      const deleteAllRes = await eventService.deleteAllByUser(userToRemove);
-      res.promise(deleteAllRes);
-    } catch (e) {
-      res.promise(Promise.reject(e));
-    }
-  };
-
-  deleteMany = async (req: SReqBody<Params_DeleteMany>, res: Res_Promise) => {
-    const userId = req.session?.getUserId() as string;
-    try {
-      const deleteResponse = await eventService.deleteMany(userId, req.body);
-      res.promise(deleteResponse);
-    } catch (e) {
-      res.promise(Promise.reject(e));
-    }
-  };
-
-  readById = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.session?.getUserId() as string;
-    const eventId = req.params["id"] as string;
-    try {
-      const response = await eventService.readById(userId, eventId);
-      res.promise(response);
-    } catch (e) {
-      res.promise(Promise.reject(e));
-    }
-  };
-
-  readAll = async (req: SessionRequest, res: Res_Promise) => {
-    const userId = req.session?.getUserId() as string;
-    try {
-      const usersEvents = await eventService.readAll(userId, req.query);
-      res.promise(usersEvents);
-    } catch (e) {
-      res.promise(Promise.reject(e));
-    }
-  };
-
-  reorder = async (req: SReqBody<Payload_Order[]>, res: Res_Promise) => {
+class EventController {
+  readAll = async (req: SessionRequest, res: Response) => {
     try {
       const userId = req.session?.getUserId() as string;
-      const newOrder = req.body;
-      const result = await eventService.reorder(userId, newOrder);
-      res.promise(result);
+      const query = parseListQuery(req.query);
+      const events = await eventService.readAll(userId, query);
+
+      res.status(Status.OK).json({ events: events.map(mapEventRecord) });
     } catch (e) {
-      res.promise(Promise.reject(e));
+      send(res, e);
     }
   };
 
-  update = (req: SReqBody<Schema_Event>, res: Res_Promise) => {
-    const { body, query, params, session } = req;
-    const user = session?.getUserId() as string;
-    const _id = params["id"] as string;
-    const payload = { ...body, user, _id } as CompassThisEvent["payload"];
-    const applyTo = query["applyTo"] as RecurringEventUpdateScope.THIS_EVENT;
+  readById = async (req: SessionRequest, res: Response) => {
+    try {
+      const userId = req.session?.getUserId() as string;
+      const eventId = req.params["id"] as string;
+      const event = await eventService.readById(userId, eventId);
 
-    res.promise(
-      this.processEvents([
-        {
-          payload,
-          status: CompassEventStatus.CONFIRMED,
-          applyTo: applyTo ?? RecurringEventUpdateScope.THIS_EVENT,
-        },
-      ]).then(() => ({ statusCode: Status.NO_CONTENT })),
-    );
+      res.status(Status.OK).json({ event: mapEventRecord(event) });
+    } catch (e) {
+      send(res, e);
+    }
+  };
+
+  create = async (req: SessionRequest, res: Response) => {
+    try {
+      const userId = req.session?.getUserId() as string;
+      const input = CreateEventInputSchema.parse(req.body);
+      const event = await eventService.create(userId, input);
+
+      res.status(Status.OK).json({ event: mapEventRecord(event) });
+    } catch (e) {
+      send(res, e);
+    }
+  };
+
+  replace = async (req: SessionRequest, res: Response) => {
+    try {
+      const userId = req.session?.getUserId() as string;
+      const eventId = req.params["id"] as string;
+      const input = ReplaceEventInputSchema.parse(req.body);
+      const event = await eventService.replace(userId, eventId, input);
+
+      res.status(Status.OK).json({ event: mapEventRecord(event) });
+    } catch (e) {
+      send(res, e);
+    }
+  };
+
+  delete = async (req: SessionRequest, res: Response) => {
+    try {
+      const userId = req.session?.getUserId() as string;
+      const eventId = req.params["id"] as string;
+      const scopeParam = req.query["scope"];
+      const input = DeleteEventInputSchema.parse({
+        scope: typeof scopeParam === "string" ? scopeParam : "this",
+      });
+
+      await eventService.delete(userId, eventId, input);
+
+      res.status(Status.NO_CONTENT).send();
+    } catch (e) {
+      send(res, e);
+    }
+  };
+
+  transition = async (req: SessionRequest, res: Response) => {
+    try {
+      const userId = req.session?.getUserId() as string;
+      const eventId = req.params["id"] as string;
+      const input = TransitionEventInputSchema.parse(req.body);
+      const event = await eventService.transition(userId, eventId, input);
+
+      res.status(Status.OK).json({ event: mapEventRecord(event) });
+    } catch (e) {
+      send(res, e);
+    }
+  };
+
+  reorder = async (req: SessionRequest, res: Response) => {
+    try {
+      const userId = req.session?.getUserId() as string;
+      const input = ReorderEventsInputSchema.parse(req.body);
+
+      await eventService.reorder(userId, input);
+
+      res.status(Status.NO_CONTENT).send();
+    } catch (e) {
+      send(res, e);
+    }
+  };
+
+  deleteAllByUser = async (req: SessionRequest, res: Response) => {
+    try {
+      const userToRemove = req.params["userId"] as string;
+      const result = await eventService.deleteAllByUser(userToRemove);
+
+      res.status(Status.OK).json(result);
+    } catch (e) {
+      send(res, e);
+    }
   };
 }
 

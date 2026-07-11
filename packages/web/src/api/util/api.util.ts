@@ -1,5 +1,4 @@
 import { type ZodType } from "zod";
-import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
 import {
   type GoogleConnectErrorResponse,
@@ -141,7 +140,10 @@ export const handleErrorResponse = async <T>(
 
   if (
     (status === Status.GONE || status === Status.UNAUTHORIZED) &&
-    getApiErrorCode(error) === GOOGLE_REVOKED
+    // TODO(packet-03-phase-3): "GOOGLE_REVOKED" is now a syncStatusChanged
+    // attention code (B10), not an SSE constant; this HTTP error-code check
+    // still matches on the literal string the backend sends.
+    getApiErrorCode(error) === "GOOGLE_REVOKED"
   ) {
     if (!onGoogleRevoked) {
       throw new Error("Google revocation handler is not configured");

@@ -48,19 +48,20 @@ class GCalService {
 
   async createEvent(
     gcal: gCalendar,
+    calendarId: string,
     event: gSchema$Event,
   ): Promise<gSchema$Event> {
     const response = await gcal.events.insert({
-      calendarId: GCAL_PRIMARY,
+      calendarId,
       requestBody: event,
     });
 
     return this.validateGCalResponse(response).data;
   }
 
-  async deleteEvent(gcal: gCalendar, gcalEventId: string) {
+  async deleteEvent(gcal: gCalendar, calendarId: string, gcalEventId: string) {
     const response = await gcal.events.delete({
-      calendarId: GCAL_PRIMARY,
+      calendarId,
       eventId: gcalEventId,
       sendUpdates: "all",
     });
@@ -215,9 +216,19 @@ class GCalService {
     return response.data;
   }
 
-  async updateEvent(gcal: gCalendar, gEventId: string, event: gSchema$Event) {
-    const response = await gcal.events.update({
-      calendarId: GCAL_PRIMARY,
+  /**
+   * events.patch semantics (A28): merges by key so fields Compass does not
+   * model (attendees, location, reminders, ...) are left untouched. Never
+   * events.update, which replaces the whole resource.
+   */
+  async patchEvent(
+    gcal: gCalendar,
+    calendarId: string,
+    gEventId: string,
+    event: gSchema$Event,
+  ) {
+    const response = await gcal.events.patch({
+      calendarId,
       eventId: gEventId,
       requestBody: event,
     });

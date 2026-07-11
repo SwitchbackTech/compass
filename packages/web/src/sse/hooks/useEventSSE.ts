@@ -1,9 +1,5 @@
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import {
-  EVENT_CHANGED,
-  SOMEDAY_EVENT_CHANGED,
-} from "@core/constants/sse.constants";
 import { invalidateEventQueriesUnlessMutating } from "@web/events/queries/event.query.invalidation";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { sseEmitter } from "../client/sse.client";
@@ -35,12 +31,17 @@ export const useEventSSE = () => {
       );
     };
 
-    sseEmitter.on(EVENT_CHANGED, eventChangedHandler);
-    sseEmitter.on(SOMEDAY_EVENT_CHANGED, somedayChangedHandler);
+    // TODO(packet-03-phase-3): the backend now publishes one "eventsChanged"
+    // message carrying { calendarId, eventIds, reason } (B10) instead of the
+    // separate EVENT_CHANGED/SOMEDAY_EVENT_CHANGED events this hook used to
+    // split on; rewire to parse the message and invalidate by calendar
+    // (local calendar invalidates both someday and grid scopes per B10).
+    sseEmitter.on("eventsChanged", eventChangedHandler);
+    sseEmitter.on("eventsChanged", somedayChangedHandler);
 
     return () => {
-      sseEmitter.off(EVENT_CHANGED, eventChangedHandler);
-      sseEmitter.off(SOMEDAY_EVENT_CHANGED, somedayChangedHandler);
+      sseEmitter.off("eventsChanged", eventChangedHandler);
+      sseEmitter.off("eventsChanged", somedayChangedHandler);
     };
   }, [queryClient]);
 };

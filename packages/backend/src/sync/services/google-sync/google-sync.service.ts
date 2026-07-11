@@ -1,10 +1,12 @@
 import { Logger } from "@core/logger/winston.logger";
+import { type CalendarId } from "@core/types/domain-primitives";
 import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
   shouldDoIncrementalGCalSync,
   shouldImportGCal,
 } from "@core/util/event/event.util";
+import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
@@ -12,8 +14,10 @@ import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import compassToGoogleBackfill from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google-backfill";
 import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
-import { createSyncImport } from "@backend/sync/services/import/google-import.service";
-import { updateSync } from "@backend/sync/services/records/sync-records.repository";
+import {
+  createSyncImport,
+  type SyncImport,
+} from "@backend/sync/services/import/google-import.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 import userMetadataService from "@backend/user/services/user-metadata.service";
@@ -22,9 +26,47 @@ const logger = Logger("app:google-sync.service");
 
 const activeFullSyncRestarts = new Set<string>();
 
+const notifyImportStart = (userId: string): void => {
+  sseServer.publishSyncStatus(userId, { status: "syncing" });
+};
+
+const notifyImportEnd = (
+  userId: string,
+  payload: {
+    operation: string;
+    status: "COMPLETED" | "ERRORED" | "IGNORED";
+    message?: string;
+    eventsCount?: number;
+    calendarsCount?: number;
+  },
+): void => {
+  if (payload.status === "COMPLETED") {
+    sseServer.publishImportCompleted(userId, {
+      operation: payload.operation === "REPAIR" ? "repair" : "incremental",
+      eventsCount: payload.eventsCount ?? 0,
+      calendarsCount: payload.calendarsCount ?? 0,
+    });
+    sseServer.publishSyncStatus(userId, { status: "healthy" });
+    return;
+  }
+
+  if (payload.status === "ERRORED") {
+    sseServer.publishSyncStatus(userId, {
+      status: "attention",
+      code: "IMPORT_FAILED",
+      retryable: true,
+    });
+  }
+};
+
+/**
+ * Full import for the primary Google calendar (import stays
+ * primary-calendar-only at this packet; multi-calendar discovery/import is
+ * packet 04), inside a single transaction.
+ */
 async function importFull(
-  gcal: gCalendar,
-  gCalendarIds: string[],
+  syncImport: SyncImport,
+  calendar: CalendarRecord,
   userId: string,
 ) {
   const session = await mongoService.startSession({
@@ -34,35 +76,22 @@ async function importFull(
   session.startTransaction();
 
   try {
-    const syncImport = await createSyncImport(gcal);
-
-    const eventImports = await Promise.all(
-      gCalendarIds.map(async (gCalId) => {
-        const { nextSyncToken, ...result } = await syncImport.importAllEvents(
-          userId,
-          gCalId,
-          2500,
-        );
-
-        await updateSync(
-          Resource_Sync.EVENTS,
-          userId,
-          gCalId,
-          { nextSyncToken },
-          session,
-        );
-
-        return { gCalId, ...result };
-      }),
+    const result = await syncImport.importAllEvents(
+      userId,
+      calendar,
+      2500,
+      session,
     );
 
     await session.commitTransaction();
 
-    return eventImports;
-  } catch (error: unknown) {
+    return result;
+  } catch (err: unknown) {
     await session.abortTransaction();
 
-    throw error;
+    throw err;
+  } finally {
+    await session.endSession();
   }
 }
 
@@ -74,7 +103,7 @@ async function importLatestGoogleCalendarChanges(
   logger.info(`Starting incremental Google Calendar sync for user: ${userId}`);
 
   try {
-    sseServer.handleImportGCalStart(userId);
+    notifyImportStart(userId);
 
     const userMeta = await userMetadataService.fetchUserMetadata(
       userId,
@@ -86,7 +115,7 @@ async function importLatestGoogleCalendarChanges(
     const proceed = shouldDoIncrementalGCalSync(userMeta);
 
     if (!proceed) {
-      sseServer.handleImportGCalEnd(userId, {
+      notifyImportEnd(userId, {
         operation: "INCREMENTAL",
         status: "IGNORED",
         message: `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
@@ -100,22 +129,51 @@ async function importLatestGoogleCalendarChanges(
       data: { sync: { incrementalGCalSync: "IMPORTING" } },
     });
 
+    const calendar = await calendarService.getPrimaryGoogleCalendar(userId);
+
+    if (!calendar) {
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { incrementalGCalSync: "COMPLETED" } },
+      });
+
+      notifyImportEnd(userId, {
+        operation: "INCREMENTAL",
+        status: "COMPLETED",
+        eventsCount: 0,
+        calendarsCount: 0,
+      });
+
+      return;
+    }
+
     const syncImport = gcal
       ? await createSyncImport(gcal)
       : await createSyncImport(userId);
 
-    const result = await syncImport.importLatestEvents(userId, perPage);
+    const result = await syncImport.importLatestEvents(
+      userId,
+      calendar,
+      perPage,
+    );
 
     await userMetadataService.updateUserMetadata({
       userId,
       data: { sync: { incrementalGCalSync: "COMPLETED" } },
     });
 
-    sseServer.handleImportGCalEnd(userId, {
+    notifyImportEnd(userId, {
       operation: "INCREMENTAL",
       status: "COMPLETED",
+      eventsCount: result.totalSaved + result.totalDeleted,
+      calendarsCount: 1,
     });
-    sseServer.handleBackgroundCalendarChange(userId);
+
+    sseServer.publishEventsChanged(userId, {
+      calendarId: calendar._id.toHexString() as CalendarId,
+      eventIds: [],
+      reason: "reconciled",
+    });
 
     return result;
   } catch (error) {
@@ -129,7 +187,7 @@ async function importLatestGoogleCalendarChanges(
       error,
     );
 
-    sseServer.handleImportGCalEnd(userId, {
+    notifyImportEnd(userId, {
       operation: "INCREMENTAL",
       status: "ERRORED",
       message: `Incremental Google Calendar sync failed for user: ${userId}`,
@@ -151,7 +209,7 @@ async function runGoogleCalendarSyncSetup(
   const ignoreMessage = `User ${userId} gcal import is in progress or completed, ignoring this request`;
 
   if (activeFullSyncRestarts.has(userId)) {
-    sseServer.handleImportGCalEnd(userId, {
+    notifyImportEnd(userId, {
       operation,
       status: "IGNORED",
       message: ignoreMessage,
@@ -168,7 +226,7 @@ async function runGoogleCalendarSyncSetup(
     const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
 
     if (!proceed) {
-      sseServer.handleImportGCalEnd(userId, {
+      notifyImportEnd(userId, {
         operation,
         status: "IGNORED",
         message: ignoreMessage,
@@ -180,7 +238,7 @@ async function runGoogleCalendarSyncSetup(
     logger.warn(
       `Restarting Google Calendar sync for user: ${userId}${isForce ? " (forced)" : ""}`,
     );
-    sseServer.handleImportGCalStart(userId);
+    notifyImportStart(userId);
     await userMetadataService.updateUserMetadata({
       userId,
       data: { sync: { importGCal: "IMPORTING" } },
@@ -204,12 +262,20 @@ async function runGoogleCalendarSyncSetup(
       data: { sync: { importGCal: "COMPLETED" } },
     });
 
-    sseServer.handleImportGCalEnd(userId, {
+    notifyImportEnd(userId, {
       operation,
       status: "COMPLETED",
       ...importResults,
     });
-    sseServer.handleBackgroundCalendarChange(userId);
+
+    const calendar = await calendarService.getPrimaryGoogleCalendar(userId);
+    if (calendar) {
+      sseServer.publishEventsChanged(userId, {
+        calendarId: calendar._id.toHexString() as CalendarId,
+        eventIds: [],
+        reason: "reconciled",
+      });
+    }
   } catch (err) {
     try {
       await userService.stopGoogleCalendarSync(userId);
@@ -226,7 +292,11 @@ async function runGoogleCalendarSyncSetup(
       );
 
       await userService.pruneGoogleData(userId);
-      sseServer.handleGoogleRevoked(userId);
+      sseServer.publishSyncStatus(userId, {
+        status: "attention",
+        code: "GOOGLE_REVOKED",
+        retryable: false,
+      });
       return;
     }
 
@@ -237,7 +307,7 @@ async function runGoogleCalendarSyncSetup(
 
     logger.error(`Re-sync failed for user: ${userId}`, err);
 
-    sseServer.handleImportGCalEnd(userId, {
+    notifyImportEnd(userId, {
       operation,
       status: "ERRORED",
       message: getGoogleRepairErrorMessage(err),
@@ -247,41 +317,42 @@ async function runGoogleCalendarSyncSetup(
   }
 }
 
+/**
+ * Discovers the user's Google calendars, then imports events for the
+ * primary calendar only (A per the packet-03-phase-2 scope: multi-calendar
+ * import/discovery is packet 04) and starts webhook watches for it.
+ */
 async function initializeGoogleCalendarSync(
   user: string,
 ): Promise<{ eventsCount: number; calendarsCount: number }> {
   const gcal = await getGcalClient(user);
 
-  const calendarInit = await calendarService.initializeGoogleCalendars(
-    user,
-    gcal,
-  );
+  await calendarService.initializeGoogleCalendars(user, gcal);
 
-  const gCalendarIds = calendarInit.googleCalendars
-    .map(({ id }) => id)
-    .filter((id): id is string => id !== undefined && id !== null);
+  const calendar = await calendarService.getPrimaryGoogleCalendar(user);
 
-  const importResults = await importFull(gcal, gCalendarIds, user);
+  if (!calendar || calendar.source.provider !== "google") {
+    logger.warn(`No primary Google calendar found for user: ${user}`);
+    return { eventsCount: 0, calendarsCount: 0 };
+  }
+
+  const syncImport = await createSyncImport(gcal);
+  const importResult = await importFull(syncImport, calendar, user);
 
   if (isUsingGcalWebhookHttps()) {
     await googleWatchService.startGoogleWatches(
       user,
       [
         { gCalendarId: Resource_Sync.CALENDAR },
-        ...gCalendarIds.map((gCalendarId) => ({ gCalendarId })),
+        { gCalendarId: calendar.source.calendarId },
       ],
       gcal,
     );
   }
 
-  const eventsCount = importResults.reduce(
-    (sum, result) => sum + result.totalChanged,
-    0,
-  );
-
   return {
-    eventsCount,
-    calendarsCount: gCalendarIds.length,
+    eventsCount: importResult.totalSaved,
+    calendarsCount: 1,
   };
 }
 

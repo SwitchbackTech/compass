@@ -1,12 +1,6 @@
 import { render, waitFor } from "@testing-library/react";
 import { EventEmitter2 } from "eventemitter2";
 import { act } from "react";
-import {
-  GOOGLE_REVOKED,
-  IMPORT_GCAL_END,
-  IMPORT_GCAL_START,
-  USER_METADATA,
-} from "@core/constants/sse.constants";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
 import {
@@ -20,6 +14,17 @@ import {
 } from "@web/auth/state/user-metadata.store";
 import { createUseGcalSSE } from "../hooks/useGcalSSE.factory";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
+
+// TODO(packet-03-phase-3): these string literals stand in for the retired
+// IMPORT_GCAL_START/END, GOOGLE_REVOKED, and USER_METADATA SSE constants
+// (B10 replaces them with syncStatusChanged/importCompleted/
+// userMetadataChanged messages on a single "message" event). This test
+// still drives the emitter directly with the old names so it compiles;
+// rewrite it against the new ServerMessage shapes.
+const IMPORT_GCAL_START = "syncStatusChanged";
+const IMPORT_GCAL_END = "importCompleted";
+const GOOGLE_REVOKED = "syncStatusChanged";
+const USER_METADATA = "userMetadataChanged";
 
 const mockHandleGoogleRevoked = mock();
 const mockInvalidateEventQueries = mock();

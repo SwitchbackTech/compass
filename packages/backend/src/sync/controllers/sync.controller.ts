@@ -1,6 +1,5 @@
 import { type NextFunction, type Request, type Response } from "express";
 import { ObjectId } from "mongodb";
-import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { Status } from "@core/errors/status.codes";
 import { Logger } from "@core/logger/winston.logger";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -37,7 +36,11 @@ export class SyncController {
     if (watch) {
       await pruneAndNotifyGoogleRevoked(watch.user, "missing refresh token");
       res.status(Status.GONE).send({
-        code: GOOGLE_REVOKED,
+        // This ack body goes back to Google's webhook infra, not to our
+        // frontend; the client-facing signal is the syncStatusChanged/
+        // GOOGLE_REVOKED message published by pruneAndNotifyGoogleRevoked
+        // below.
+        code: "GOOGLE_REVOKED",
         message: "Missing refresh token, pruned Google data",
       });
       return;
@@ -57,7 +60,11 @@ export class SyncController {
     if (userId) {
       await pruneAndNotifyGoogleRevoked(userId, "revoked access");
       res.status(Status.GONE).send({
-        code: GOOGLE_REVOKED,
+        // This ack body goes back to Google's webhook infra, not to our
+        // frontend; the client-facing signal is the syncStatusChanged/
+        // GOOGLE_REVOKED message published by pruneAndNotifyGoogleRevoked
+        // below.
+        code: "GOOGLE_REVOKED",
         message: "User revoked access, pruned Google data",
       });
       return;
@@ -284,5 +291,9 @@ const pruneAndNotifyGoogleRevoked = async (
 ): Promise<void> => {
   logger.warn(`Cleaning data after ${reason} for user: ${userId}`);
   await userService.pruneGoogleData(userId);
-  sseServer.handleGoogleRevoked(userId);
+  sseServer.publishSyncStatus(userId, {
+    status: "attention",
+    code: "GOOGLE_REVOKED",
+    retryable: false,
+  });
 };

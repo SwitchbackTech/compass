@@ -47,6 +47,12 @@ Depends on: `04-initial-multi-calendar-import.md`.
 4. Pass the resolved provider calendar through Compass-to-Google planning and
    effects. Provider success updates the event's provider reference in the same
    owning calendar.
+   Known `03` gap this packet closes: scope-`this` edits/deletes on a synced
+   series occurrence do not propagate to Google (the `03` pipeline has no way
+   to resolve Google's per-instance event id for Compass-created series).
+   Imported occurrences already carry their instance id in
+   `externalReference`; Compass-created series need an `events.instances`
+   lookup before the per-occurrence `events.patch`/delete.
 5. Scope Google-to-Compass matching by calendar plus provider event id so equal
    event ids in different calendars cannot collide.
 6. Enforce read-only roles before optimistic writes reach Google. Return a

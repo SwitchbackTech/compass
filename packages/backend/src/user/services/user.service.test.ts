@@ -1,7 +1,6 @@
 import { faker } from "@faker-js/faker";
 import * as supertokensNode from "supertokens-node";
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
-import { CompassCalendarSchema } from "@core/types/calendar.types";
 import { CalendarProvider } from "@core/types/event.types";
 import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
 import { GoogleSyncDriver } from "@backend/__tests__/drivers/google-sync.driver";
@@ -13,6 +12,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
 import supertokensUserCleanupService from "@backend/auth/services/supertokens/supertokens.user-cleanup.service";
+import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import * as supertokensMiddleware from "@backend/common/middleware/supertokens.middleware";
@@ -281,9 +281,9 @@ describe("UserService", () => {
 
       expect(await mongoService.user.findOne({ _id: user._id })).toBeNull();
       expect(
-        await mongoService.calendar.countDocuments({ user: user._id }),
+        await mongoService.calendar.countDocuments({ userId: user._id }),
       ).toBe(0);
-      expect(await mongoService.event.countDocuments({ user: userId })).toBe(0);
+      expect(await mongoService.event.countDocuments({})).toBe(0);
       expect(await mongoService.sync.findOne({ user: userId })).toBeNull();
       expect(await mongoService.watch.findOne({ user: userId })).toBeNull();
       expect(
@@ -538,14 +538,12 @@ describe("UserService", () => {
 
       await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
-      const listCalendarsForUser =
-        calendarService.getByUser.bind(calendarService);
-      const calendars = await listCalendarsForUser(userId);
+      const calendars = await calendarService.list(userId);
 
       expect(calendars.length).toBeGreaterThan(0);
 
       expect(
-        calendars.map((calendar) => CompassCalendarSchema.safeParse(calendar)),
+        calendars.map((calendar) => CalendarRecordSchema.safeParse(calendar)),
       ).toEqual(
         expect.arrayContaining(
           calendars.map((): unknown =>
@@ -560,11 +558,11 @@ describe("UserService", () => {
 
       expect(
         await mongoService.calendar.countDocuments({
-          user: mongoService.objectId(userId),
+          userId: mongoService.objectId(userId),
         }),
       ).toBe(calendars.length);
 
-      expect(await mongoService.event.countDocuments({ user: userId })).toBe(0);
+      expect(await mongoService.event.countDocuments({})).toBe(0);
       expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
       expect(sync?.user).toBe(userId);
       expect(sync).not.toHaveProperty(CalendarProvider.GOOGLE);
@@ -653,9 +651,13 @@ describe("UserService", () => {
 
       await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
 
-      const eventCountBefore = await mongoService.event.countDocuments({
-        user: userId,
-      });
+      const calendarsBefore = await calendarService.list(userId);
+      const googleCalendarIdsBefore = calendarsBefore
+        .filter((c) => c.source.provider === "google")
+        .map((c) => c._id.toHexString());
+      expect(googleCalendarIdsBefore.length).toBeGreaterThan(0);
+
+      const eventCountBefore = await mongoService.event.countDocuments({});
       expect(eventCountBefore).toBeGreaterThan(0);
 
       await userMetadataService.updateUserMetadata({
@@ -675,8 +677,22 @@ describe("UserService", () => {
       expect(storedUser?.google?.picture).toBe(user.google?.picture);
       expect(storedUser?.google?.gRefreshToken).toBe("");
 
-      expect(await mongoService.event.countDocuments({ user: userId })).toBe(0);
+      // Events owned by Google-provider calendars are gone (B9).
+      expect(await mongoService.event.countDocuments({})).toBe(0);
       expect(await mongoService.watch.countDocuments({ user: userId })).toBe(0);
+
+      // Google calendars are archived, never deleted (A16).
+      const calendarsAfter = await calendarService.list(userId);
+      expect(calendarsAfter.length).toBe(calendarsBefore.length);
+      const stillGoogleIds = calendarsAfter
+        .filter((c) => c.source.provider === "google")
+        .map((c) => c._id.toHexString());
+      expect(stillGoogleIds.sort()).toEqual(googleCalendarIdsBefore.sort());
+      expect(
+        calendarsAfter
+          .filter((c) => c.source.provider === "google")
+          .every((c) => c.isActive === false),
+      ).toBe(true);
       const sync = await mongoService.sync.findOne({ user: userId });
       expect(sync).not.toHaveProperty(CalendarProvider.GOOGLE);
 

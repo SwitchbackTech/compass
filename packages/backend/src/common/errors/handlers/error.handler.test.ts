@@ -1,4 +1,3 @@
-import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
@@ -65,10 +64,7 @@ describe("error.handler", () => {
     it("returns 401 with GOOGLE_REVOKED payload when Google token is invalid", async () => {
       const userId = "507f1f77bcf86cd799439011";
       jest.spyOn(userService, "pruneGoogleData").mockResolvedValue();
-      const handleGoogleRevokedSpy = jest.spyOn(
-        sseServer,
-        "handleGoogleRevoked",
-      );
+      const handleGoogleRevokedSpy = jest.spyOn(sseServer, "publishSyncStatus");
       handleGoogleRevokedSpy.mockImplementation(() => undefined);
       jest.spyOn(errorHandler, "isOperational").mockReturnValue(true);
 
@@ -87,10 +83,14 @@ describe("error.handler", () => {
 
       expect(res.status).toHaveBeenCalledWith(Status.UNAUTHORIZED);
       expect(send).toHaveBeenCalledWith({
-        code: GOOGLE_REVOKED,
+        code: "GOOGLE_REVOKED",
         message: "Google access revoked. Your Google data has been removed.",
       });
-      expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId);
+      expect(handleGoogleRevokedSpy).toHaveBeenCalledWith(userId, {
+        status: "attention",
+        code: "GOOGLE_REVOKED",
+        retryable: false,
+      });
       handleGoogleRevokedSpy.mockRestore();
     });
   });

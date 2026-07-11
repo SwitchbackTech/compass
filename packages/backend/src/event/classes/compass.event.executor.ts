@@ -1,101 +1,40 @@
-import { type ClientSession } from "mongodb";
-import { type Schema_Event, type WithCompassId } from "@core/types/event.types";
-import {
-  type CompassOperationPlan,
-  type CompassPersistenceStep,
-} from "@backend/event/classes/compass.event.parser";
-import {
-  _createCompassEvent,
-  _deleteInstancesAfterUntil,
-  _deleteSeries,
-  _deleteSingleCompassEvent,
-  _updateCompassEvent,
-  _updateCompassSeries,
-} from "@backend/event/services/event.service";
-import { type Event_Transition } from "@backend/sync/sync.types";
+import { type ClientSession, type ObjectId } from "mongodb";
+import { type MaterializedMutation } from "@backend/event/classes/compass.event.generator";
+import { type EventRecord } from "@backend/event/event.record";
+import { eventRepository } from "@backend/event/event.repository";
 
-export type CompassApplyResult = {
-  applied: boolean;
-  summary: Event_Transition;
-  persistedEvent?: WithCompassId<Omit<Schema_Event, "_id">>;
-  googleDeleteEventId?: string;
-};
-
-async function executeStep(
-  plan: CompassOperationPlan,
-  step: CompassPersistenceStep,
+export async function executeMutation(
+  mutation: MaterializedMutation,
   session?: ClientSession,
-): Promise<WithCompassId<Omit<Schema_Event, "_id">> | undefined> {
-  switch (step.type) {
-    case "create":
-      return _createCompassEvent(
-        { ...step.event, user: step.event.user! },
-        plan.provider,
-        step.rrule,
-        session,
-      );
-    case "update":
-      return _updateCompassEvent(
-        { ...step.event, user: step.event.user! },
-        session,
-      );
-    case "update_series":
-      return _updateCompassSeries(
-        { ...step.event, user: step.event.user! },
-        session,
-      );
-    case "delete_single":
-      return _deleteSingleCompassEvent(
-        { ...step.event, user: step.event.user! },
-        session,
-      );
-    case "delete_series":
-      await _deleteSeries(step.userId, step.baseId, session, step.keepBase);
-
-      return undefined;
-    case "delete_instances_after_until":
-      await _deleteInstancesAfterUntil(
-        step.userId,
-        step.baseId,
-        step.until,
-        session,
-      );
-
-      return undefined;
+): Promise<EventRecord> {
+  if (mutation.deleteIds.length > 0) {
+    await eventRepository.deleteMany(mutation.deleteIds, session);
   }
+  if (mutation.upsert.length > 0) {
+    await eventRepository.bulkReplace(mutation.upsert, session);
+  }
+  return mutation.primary;
 }
 
-export async function applyCompassPlan(
-  plan: CompassOperationPlan,
+export async function executeDelete(
+  materialized: {
+    deleteIds: ObjectId[];
+    upsert: EventRecord[];
+    deleteSeriesId: ObjectId | null;
+  },
   session?: ClientSession,
-): Promise<CompassApplyResult> {
-  const summary: Event_Transition = {
-    ...plan.summary,
-    operation: plan.operation,
-  };
-
-  let persistedEvent: WithCompassId<Omit<Schema_Event, "_id">> | undefined;
-
-  for (const step of plan.steps) {
-    const result = await executeStep(plan, step, session);
-
-    if (result) {
-      persistedEvent = result;
-    }
+): Promise<void> {
+  if (materialized.deleteSeriesId) {
+    await eventRepository.deleteBySeriesId(
+      materialized.deleteSeriesId,
+      session,
+    );
+    return;
   }
-
-  if (plan.clearRecurrenceBeforeGoogleUpdate && persistedEvent) {
-    Object.assign(persistedEvent, { recurrence: null });
+  if (materialized.deleteIds.length > 0) {
+    await eventRepository.deleteMany(materialized.deleteIds, session);
   }
-
-  return {
-    applied: true,
-    summary,
-    persistedEvent,
-    googleDeleteEventId:
-      persistedEvent?.gEventId ??
-      (plan.googleEffect.type === "delete"
-        ? plan.googleEffect.deleteEventId
-        : undefined),
-  };
+  if (materialized.upsert.length > 0) {
+    await eventRepository.bulkReplace(materialized.upsert, session);
+  }
 }

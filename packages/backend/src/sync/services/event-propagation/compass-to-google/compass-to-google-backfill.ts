@@ -1,85 +1,77 @@
-import { type Filter } from "mongodb";
-import { MapEvent } from "@core/mappers/map.event";
-import {
-  type Schema_Event,
-  type Schema_Event_Core,
-} from "@core/types/event.types";
+import { Logger } from "@core/logger/winston.logger";
+import calendarService from "@backend/calendar/services/calendar.service";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { _createGcal } from "@backend/event/services/event.service";
+import { eventRepository } from "@backend/event/event.repository";
+import { mapEventRecordToGoogle } from "@backend/event/google-event.adapter";
+import { isWritableToGoogle } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 
+const logger = Logger("app:compass-to-google-backfill");
+
+/**
+ * Reconnect backfill (B9/A34): candidates are events whose owning calendar
+ * is Google-sourced and that have never been synced to Google
+ * (`externalReference === null`). Pushes each through the same write path
+ * as normal Compass->Google propagation and persists the resulting
+ * `externalReference` on success.
+ */
 export const syncCompassEventsToGoogle = async (
   userId: string,
 ): Promise<number> => {
-  const compassEvents = await mongoService.event
+  const calendars = await calendarService.list(userId);
+  const googleCalendars = calendars.filter(
+    (c) => c.source.provider === "google" && c.isActive,
+  );
+
+  if (googleCalendars.length === 0) return 0;
+
+  const calendarById = new Map(
+    googleCalendars.map((c) => [c._id.toHexString(), c]),
+  );
+
+  const candidates = await mongoService.event
     .find({
-      user: userId,
-      isSomeday: false,
-      "recurrence.eventId": { $exists: false },
-      $or: [
-        { gEventId: { $exists: false } },
-        { gEventId: null },
-        { gEventId: "" },
-      ],
-    } as Filter<Omit<Schema_Event, "_id">>)
-    .sort({ startDate: 1 })
+      calendarId: { $in: googleCalendars.map((c) => c._id) },
+      externalReference: null,
+    })
     .toArray();
 
+  if (candidates.length === 0) return 0;
+
+  const gcal = await getGcalClient(userId);
   let syncedCount = 0;
 
-  for (const compassEvent of compassEvents) {
-    if (
-      !compassEvent.startDate ||
-      !compassEvent.endDate ||
-      !compassEvent.user
-    ) {
-      continue;
-    }
+  for (const record of candidates) {
+    if (!isWritableToGoogle(record)) continue;
 
-    const gEvent = await _createGcal(
-      userId,
-      compassEvent as unknown as Schema_Event_Core,
-    );
-    const gEventId = gEvent.id;
+    const calendar = calendarById.get(record.calendarId.toHexString());
+    if (!calendar || calendar.source.provider !== "google") continue;
 
-    if (!gEventId) {
-      continue;
-    }
-
-    await mongoService.event.updateOne(
-      { _id: compassEvent._id, user: userId },
-      { $set: { gEventId } },
-    );
-
-    syncedCount += 1;
-
-    if (!compassEvent.recurrence?.rule) {
-      continue;
-    }
-
-    const instances = await mongoService.event
-      .find({
-        user: userId,
-        "recurrence.eventId": compassEvent._id.toString(),
-      })
-      .sort({ startDate: 1 })
-      .toArray();
-
-    for (const instance of instances) {
-      const providerData = MapEvent.toGcalInstanceProviderData(
-        {
-          ...instance,
-          _id: instance._id.toString(),
-        } as Parameters<typeof MapEvent.toGcalInstanceProviderData>[0],
-        {
-          ...compassEvent,
-          _id: compassEvent._id.toString(),
-          gEventId,
-        } as Parameters<typeof MapEvent.toGcalInstanceProviderData>[1],
+    try {
+      const body = mapEventRecordToGoogle(record);
+      const created = await gcalService.createEvent(
+        gcal,
+        calendar.source.calendarId,
+        body,
       );
 
-      await mongoService.event.updateOne(
-        { _id: instance._id, user: userId },
-        { $set: providerData },
+      if (!created.id) continue;
+
+      await eventRepository.replaceOne({
+        ...record,
+        externalReference: {
+          provider: "google",
+          eventId: created.id,
+          recurringEventId: created.recurringEventId ?? null,
+        },
+      });
+
+      syncedCount += 1;
+    } catch (err) {
+      logger.error(
+        `Failed to backfill event ${record._id.toHexString()} to Google for user ${userId}`,
+        err,
       );
     }
   }

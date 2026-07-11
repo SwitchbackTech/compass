@@ -1,5 +1,4 @@
 import { useCallback, useSyncExternalStore } from "react";
-import { GOOGLE_REVOKED } from "@core/constants/sse.constants";
 import { SyncApi } from "@web/api/sync.api";
 import { getApiErrorCode, isApiError } from "@web/api/util/api.util";
 import { hasUserEverAuthenticated } from "@web/auth/compass/state/auth.state.util";
@@ -68,8 +67,10 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
         await SyncApi.importGCal({ force: true });
       } catch (error) {
         clearGoogleSyncIndicatorOverride();
+        // TODO(packet-03-phase-3): "GOOGLE_REVOKED" is now a
+        // syncStatusChanged attention code (B10), not an SSE constant.
         const isGoogleRevoked =
-          isApiError(error) && getApiErrorCode(error) === GOOGLE_REVOKED;
+          isApiError(error) && getApiErrorCode(error) === "GOOGLE_REVOKED";
 
         if (isGoogleRevoked) {
           return;

@@ -1,216 +1,150 @@
-import { type ClientSession, ObjectId } from "mongodb";
-import {
-  EVENT_CHANGED,
-  SOMEDAY_EVENT_CHANGED,
-} from "@core/constants/sse.constants";
+import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { type CompassEvent } from "@core/types/event.types";
-import { GenericError } from "@backend/common/errors/generic/generic.errors";
-import { error } from "@backend/common/errors/handlers/error.handler";
+import { type CalendarRecord } from "@backend/calendar/calendar.record";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import {
-  applyCompassPlan,
-  type CompassApplyResult,
-} from "@backend/event/classes/compass.event.executor";
-import { CompassEventFactory } from "@backend/event/classes/compass.event.generator";
-import {
-  analyzeCompassTransition,
-  type CompassOperationPlan,
-} from "@backend/event/classes/compass.event.parser";
-import {
-  _createGcal,
-  _deleteGcal,
-  _updateGcal,
-} from "@backend/event/services/event.service";
-import { sseServer } from "@backend/servers/sse/sse.server";
+import { eventMutationError } from "@backend/event/event.error";
+import { type EventRecord } from "@backend/event/event.record";
+import { eventRepository } from "@backend/event/event.repository";
+import { mapEventRecordToGoogle } from "@backend/event/google-event.adapter";
+import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
-import { type Event_Transition } from "@backend/sync/sync.types";
-import {
-  isPersistedCoreEvent,
-  type PersistedCompassEvent,
-} from "./compass-to-google.event-propagation.util";
 
 const logger = Logger("app:compass-to-google.event-propagation");
 
-type AppliedCompassChange = {
-  plan: CompassOperationPlan;
-  applyResult: CompassApplyResult;
+export type EventChangeSet = {
+  /** Records created or replaced in this mutation (post-materialization). */
+  upserted: EventRecord[];
+  /** Records as they existed immediately before being deleted. */
+  deletedBefore: EventRecord[];
 };
 
+export const isWritableToGoogle = (record: EventRecord): boolean =>
+  record.content.kind === "details" &&
+  record.schedule.kind !== "someday" &&
+  // Materialized series instances (B6) are a Compass-local read model:
+  // Google expands its own copy of an occurrence from the base event's
+  // RRULE, so pushing each instance through events.insert/patch would
+  // create duplicate, unlinked Google events instead of relying on
+  // Google's own recurrence expansion. Only the series base (and
+  // standalone/single events) carry a syncable identity of their own.
+  record.recurrence.kind !== "occurrence";
+
+/**
+ * Propagates a Compass mutation to the OWNING calendar's Google copy (B7,
+ * F). Google effects run strictly after the Mongo transaction that produced
+ * `change` has committed: the caller awaits the transaction first, then
+ * calls this. Google writes never run inside an open transaction — they
+ * would repeat on a transient-write-conflict retry, and awaiting network
+ * I/O inside an open transaction is what made write conflicts likely to
+ * begin with.
+ */
 export class CompassToGoogleEventPropagation {
-  static async processEvents(
-    events: CompassEvent[],
-  ): Promise<Event_Transition[]> {
-    logger.debug(`Processing ${events.length} event(s)...`);
-
-    const session = await mongoService.startSession();
-
-    try {
-      // The transaction covers only the Mongo writes. withTransaction retries
-      // the callback on TransientTransactionError (a WriteConflict with a
-      // concurrent write — e.g. a Google webhook import triggered by the
-      // previous save of the same event), so the Google calls must stay
-      // outside it: they would repeat on retry, and awaiting network I/O
-      // inside an open transaction is what made conflicts likely to begin
-      // with.
-      const applied = await session.withTransaction(async (session) => {
-        const compassEvents = (
-          await Promise.all(
-            events.map((event) =>
-              CompassEventFactory.generateEvents(event, session),
-            ),
-          )
-        ).flat();
-
-        const results: AppliedCompassChange[] = [];
-
-        for (const event of compassEvents) {
-          const change = await CompassToGoogleEventPropagation.applyChange(
-            event,
-            session,
-          );
-
-          if (change) results.push(change);
-        }
-
-        return results;
-      });
-
-      const summary: Event_Transition[] = [];
-
-      for (const { plan, applyResult } of applied) {
-        const didExecuteGoogleEffect =
-          await CompassToGoogleEventPropagation.executeGoogleEffect(
-            plan,
-            applyResult,
-          );
-
-        if (didExecuteGoogleEffect) summary.push(applyResult.summary);
-      }
-
-      CompassToGoogleEventPropagation.notifyClients(events, summary);
-
-      return summary;
-    } finally {
-      await session.endSession();
-    }
-  }
-
-  private static getNotificationType(
-    this: void,
-    { transition: [from, to] }: Event_Transition,
-  ): Array<typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED> {
-    const notifications: Array<
-      typeof EVENT_CHANGED | typeof SOMEDAY_EVENT_CHANGED
-    > = [];
-
-    if (from) {
-      const isSomeday = from.includes("SOMEDAY");
-
-      notifications.push(isSomeday ? SOMEDAY_EVENT_CHANGED : EVENT_CHANGED);
-    }
-
-    const isSomeday = to.includes("SOMEDAY");
-
-    notifications.push(isSomeday ? SOMEDAY_EVENT_CHANGED : EVENT_CHANGED);
-
-    return notifications;
-  }
-
-  private static notifyClients(
-    events: CompassEvent[],
-    summary: Event_Transition[],
-  ): void {
-    const notifications = [
+  static async propagate(
+    userId: string,
+    change: EventChangeSet,
+  ): Promise<void> {
+    const calendarIds = [
       ...new Set(
-        summary.flatMap(CompassToGoogleEventPropagation.getNotificationType),
+        [...change.upserted, ...change.deletedBefore].map((event) =>
+          event.calendarId.toHexString(),
+        ),
       ),
     ];
 
-    const uniqueUserIds = new Set(events.map((e) => e.payload.user));
+    if (calendarIds.length === 0) return;
 
-    uniqueUserIds.forEach((userId) => {
-      notifications.forEach((notification) => {
-        switch (notification) {
-          case EVENT_CHANGED:
-            sseServer.handleBackgroundCalendarChange(userId);
-            break;
-          case SOMEDAY_EVENT_CHANGED:
-            sseServer.handleBackgroundSomedayChange(userId);
-            break;
-          default:
-            logger.error(`Unknown notification type for user: ${userId}`);
-        }
-      });
-    });
-  }
-
-  private static async applyChange(
-    event: CompassEvent,
-    session?: ClientSession,
-  ): Promise<AppliedCompassChange | null> {
-    const eventId = event.payload._id;
-    const dbEvent = await mongoService.event.findOne(
-      { _id: new ObjectId(eventId), user: event.payload.user },
-      { session },
+    const calendars = await mongoService.calendar
+      .find({ _id: { $in: calendarIds.map((id) => new ObjectId(id)) } })
+      .toArray();
+    const calendarById = new Map(
+      calendars.map((c) => [c._id.toHexString(), c]),
     );
-    const plan = analyzeCompassTransition(event, dbEvent);
-    const transition = plan.transitionKey;
 
-    logger.info(`Handle Compass event(${eventId}): ${transition}`);
-
-    const applyResult = await applyCompassPlan(plan, session);
-
-    return applyResult.applied ? { plan, applyResult } : null;
-  }
-
-  private static async executeGoogleEffect(
-    plan: CompassOperationPlan,
-    { googleDeleteEventId, persistedEvent }: CompassApplyResult,
-  ): Promise<boolean> {
     try {
-      return await CompassToGoogleEventPropagation.handleGoogleEffectByType(
-        plan,
-        persistedEvent,
-        googleDeleteEventId,
-      );
+      for (const record of change.deletedBefore) {
+        await CompassToGoogleEventPropagation.propagateDelete(
+          userId,
+          record,
+          calendarById.get(record.calendarId.toHexString()),
+        );
+      }
+
+      for (const record of change.upserted) {
+        await CompassToGoogleEventPropagation.propagateUpsert(
+          userId,
+          record,
+          calendarById.get(record.calendarId.toHexString()),
+        );
+      }
     } catch (err) {
       if (isMissingGoogleRefreshToken(err)) {
         logger.info(
-          `Skipping Google effect for user ${plan.event.user} because Google is not connected.`,
+          `Skipping Google effect for user ${userId} because Google is not connected.`,
         );
-        return true;
+        return;
       }
 
-      throw err;
+      logger.error("Compass->Google propagation failed", err as Error);
+      throw eventMutationError(
+        "PROVIDER_FAILURE",
+        "Failed to sync the change to Google Calendar",
+      );
     }
   }
 
-  private static async handleGoogleEffectByType(
-    plan: CompassOperationPlan,
-    persistedEvent: PersistedCompassEvent,
-    googleDeleteEventId: string | undefined,
-  ): Promise<boolean> {
-    switch (plan.googleEffect.type) {
-      case "none":
-        return true;
-      case "create":
-        if (!isPersistedCoreEvent(persistedEvent)) return false;
-        await _createGcal(persistedEvent.user, persistedEvent);
-        return true;
-      case "update":
-        if (!isPersistedCoreEvent(persistedEvent)) return false;
-        await _updateGcal(persistedEvent.user, persistedEvent);
-        return true;
-      case "delete":
-        return googleDeleteEventId
-          ? _deleteGcal(plan.event.user!, googleDeleteEventId)
-          : true;
-      default:
-        throw error(
-          GenericError.DeveloperError,
-          `Unknown Google effect for Compass transition: ${plan.transitionKey}`,
-        );
+  private static async propagateDelete(
+    userId: string,
+    record: EventRecord,
+    calendar: CalendarRecord | undefined,
+  ): Promise<void> {
+    if (!calendar || calendar.source.provider !== "google") return;
+    if (!record.externalReference) return;
+
+    const gcal = await getGcalClient(userId);
+    await gcalService.deleteEvent(
+      gcal,
+      calendar.source.calendarId,
+      record.externalReference.eventId,
+    );
+  }
+
+  private static async propagateUpsert(
+    userId: string,
+    record: EventRecord,
+    calendar: CalendarRecord | undefined,
+  ): Promise<void> {
+    if (!calendar || calendar.source.provider !== "google") return;
+    if (!isWritableToGoogle(record)) return;
+
+    const gcal = await getGcalClient(userId);
+    const body = mapEventRecordToGoogle(record);
+
+    if (record.externalReference) {
+      await gcalService.patchEvent(
+        gcal,
+        calendar.source.calendarId,
+        record.externalReference.eventId,
+        body,
+      );
+      return;
+    }
+
+    const created = await gcalService.createEvent(
+      gcal,
+      calendar.source.calendarId,
+      body,
+    );
+
+    if (created.id) {
+      await eventRepository.replaceOne({
+        ...record,
+        externalReference: {
+          provider: "google",
+          eventId: created.id,
+          recurringEventId: created.recurringEventId ?? null,
+        },
+      });
     }
   }
 }

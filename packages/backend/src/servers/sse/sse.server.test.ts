@@ -5,11 +5,7 @@
  */
 
 import { ObjectId } from "mongodb";
-import {
-  EVENT_CHANGED,
-  SOMEDAY_EVENT_CHANGED,
-  USER_METADATA,
-} from "@core/constants/sse.constants";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { BaseDriver } from "@backend/__tests__/drivers/base.driver";
 
 jest.mock("supertokens-node/recipe/session/framework/express", () => ({
@@ -57,70 +53,81 @@ describe("SSE Server", () => {
 
   afterAll(async () => baseDriver.teardown());
 
-  describe("Subscription and events:", () => {
-    it("delivers EVENT_CHANGED to a subscribed user", async () => {
+  describe("Subscription and events (B10 — single `message` event, dispatched by payload.type):", () => {
+    it("delivers eventsChanged to a subscribed user", async () => {
       const userId = new ObjectId().toString();
 
       const stream = baseDriver.openSSEStream({ userId });
-      await stream.waitForEvent(USER_METADATA, 2000);
+      await stream.waitForEvent("userMetadataChanged", 2000);
 
-      const eventPromise = stream.waitForEvent(EVENT_CHANGED, 2000);
+      const eventPromise = stream.waitForEvent("eventsChanged", 2000);
 
       const { sseServer } = await import("./sse.server");
-      sseServer.handleBackgroundCalendarChange(userId);
+      sseServer.publishEventsChanged(userId, {
+        calendarId: new ObjectId().toHexString() as CalendarId,
+        eventIds: [new ObjectId().toHexString() as EventId],
+        reason: "updated",
+      });
 
-      await expect(eventPromise).resolves.toBeDefined();
+      await expect(eventPromise).resolves.toMatchObject({
+        type: "eventsChanged",
+        reason: "updated",
+      });
 
       stream.close();
     });
 
-    it("delivers SOMEDAY_EVENT_CHANGED to a subscribed user", async () => {
+    it("delivers calendarsChanged to a subscribed user", async () => {
       const userId = new ObjectId().toString();
 
       const stream = baseDriver.openSSEStream({ userId });
-      await stream.waitForEvent(USER_METADATA, 2000);
+      await stream.waitForEvent("userMetadataChanged", 2000);
 
-      const eventPromise = stream.waitForEvent(SOMEDAY_EVENT_CHANGED, 2000);
+      const eventPromise = stream.waitForEvent("calendarsChanged", 2000);
 
       const { sseServer } = await import("./sse.server");
-      sseServer.handleBackgroundSomedayChange(userId);
+      sseServer.publishCalendarsChanged(userId, [
+        new ObjectId().toHexString() as CalendarId,
+      ]);
 
-      await expect(eventPromise).resolves.toBeDefined();
+      await expect(eventPromise).resolves.toMatchObject({
+        type: "calendarsChanged",
+      });
 
       stream.close();
     });
 
-    it("replays USER_METADATA on connection (cold start)", async () => {
+    it("replays userMetadataChanged on connection (cold start)", async () => {
       const userId = new ObjectId().toString();
 
       const stream = baseDriver.openSSEStream({ userId });
 
       await expect(
-        stream.waitForEvent(USER_METADATA, 2000),
-      ).resolves.toBeDefined();
+        stream.waitForEvent("userMetadataChanged", 2000),
+      ).resolves.toMatchObject({ type: "userMetadataChanged" });
 
       stream.close();
     });
 
-    it("does not replay USER_METADATA to existing tabs when a new tab opens", async () => {
+    it("does not replay userMetadataChanged to existing tabs when a new tab opens", async () => {
       const userId = new ObjectId().toString();
 
       // Tab A opens and receives its initial replay.
       const streamA = baseDriver.openSSEStream({ userId });
       await expect(
-        streamA.waitForEvent(USER_METADATA, 2000),
+        streamA.waitForEvent("userMetadataChanged", 2000),
       ).resolves.toBeDefined();
 
       // Register a second listener on tab A BEFORE tab B connects.
-      const spuriousReplay = streamA.waitForEvent(USER_METADATA, 300);
+      const spuriousReplay = streamA.waitForEvent("userMetadataChanged", 300);
 
       // Tab B opens for the same user — should only replay to tab B.
       const streamB = baseDriver.openSSEStream({ userId });
       await expect(
-        streamB.waitForEvent(USER_METADATA, 2000),
+        streamB.waitForEvent("userMetadataChanged", 2000),
       ).resolves.toBeDefined();
 
-      // Tab A must NOT receive a second USER_METADATA.
+      // Tab A must NOT receive a second userMetadataChanged.
       await expect(spuriousReplay).rejects.toThrow("Timeout");
 
       streamA.close();
@@ -132,12 +139,16 @@ describe("SSE Server", () => {
       const otherUserId = new ObjectId().toString();
 
       const stream = baseDriver.openSSEStream({ userId });
-      await stream.waitForEvent(USER_METADATA, 2000);
+      await stream.waitForEvent("userMetadataChanged", 2000);
 
-      const eventPromise = stream.waitForEvent(EVENT_CHANGED, 300);
+      const eventPromise = stream.waitForEvent("eventsChanged", 300);
 
       const { sseServer } = await import("./sse.server");
-      sseServer.handleBackgroundCalendarChange(otherUserId);
+      sseServer.publishEventsChanged(otherUserId, {
+        calendarId: new ObjectId().toHexString() as CalendarId,
+        eventIds: [],
+        reason: "reconciled",
+      });
 
       await expect(eventPromise).rejects.toThrow("Timeout");
 

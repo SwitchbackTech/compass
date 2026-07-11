@@ -1,3 +1,4 @@
+import { ObjectId } from "mongodb";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
@@ -6,12 +7,32 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+
+const seedPrimaryGoogleCalendar = async (userId: ObjectId) => {
+  await mongoService.calendar.insertOne({
+    _id: new ObjectId(),
+    userId,
+    name: "Primary",
+    description: "",
+    timeZone: "America/Denver",
+    foregroundColor: "#000000",
+    backgroundColor: "#ffffff",
+    access: "owner",
+    isPrimary: true,
+    isVisible: true,
+    isActive: true,
+    source: { provider: "google", calendarId: "primary", etag: "etag-1" },
+    createdAt: new Date(),
+    updatedAt: null,
+  });
+};
 
 describe("googleCalendarSyncService", () => {
   beforeAll(initSupertokens);
@@ -21,10 +42,14 @@ describe("googleCalendarSyncService", () => {
   afterAll(cleanupTestDb);
 
   describe("importLatestGoogleCalendarChanges", () => {
-    it("emits INCREMENTAL operation when incremental import is ignored", async () => {
+    it("skips incremental import when already in progress or completed", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
+      const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+      const createSyncImportSpy = jest.spyOn(
+        syncImportService,
+        "createSyncImport",
+      );
 
       await userMetadataService.updateUserMetadata({
         userId,
@@ -33,20 +58,25 @@ describe("googleCalendarSyncService", () => {
 
       await googleCalendarSyncService.importLatestGoogleCalendarChanges(userId);
 
-      expect(importEndSpy).toHaveBeenCalledWith(userId, {
-        operation: "INCREMENTAL",
-        status: "IGNORED",
-        message: `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
-      });
+      expect(createSyncImportSpy).not.toHaveBeenCalled();
+      expect(importEndSpy).not.toHaveBeenCalled();
     });
 
-    it("emits INCREMENTAL operation when incremental import completes", async () => {
+    it("emits importCompleted when incremental import completes", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
+      await seedPrimaryGoogleCalendar(user._id);
+      const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+      const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
 
       jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
-        importLatestEvents: jest.fn().mockResolvedValue({}),
+        importLatestEvents: jest.fn().mockResolvedValue({
+          totalProcessed: 1,
+          totalSaved: 1,
+          totalDeleted: 0,
+          totalIgnored: 0,
+          totalInvalid: 0,
+        }),
       } as unknown as Awaited<
         ReturnType<typeof syncImportService.createSyncImport>
       >);
@@ -54,9 +84,14 @@ describe("googleCalendarSyncService", () => {
       await googleCalendarSyncService.importLatestGoogleCalendarChanges(userId);
 
       expect(importEndSpy).toHaveBeenCalledWith(userId, {
-        operation: "INCREMENTAL",
-        status: "COMPLETED",
+        operation: "incremental",
+        eventsCount: 1,
+        calendarsCount: 1,
       });
+      expect(eventsChangedSpy).toHaveBeenCalledWith(
+        userId,
+        expect.objectContaining({ reason: "reconciled" }),
+      );
     });
   });
 
@@ -72,9 +107,11 @@ describe("googleCalendarSyncService", () => {
           callOrder.push("importFull");
           return {
             nextSyncToken: "next-sync-token",
-            totalChanged: 0,
             totalProcessed: 0,
             totalSaved: 0,
+            totalDeleted: 0,
+            totalIgnored: 0,
+            totalInvalid: 0,
           };
         }),
       } as unknown as Awaited<
@@ -97,7 +134,7 @@ describe("googleCalendarSyncService", () => {
     it("skips sync setup when import is completed", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const importEndSpy = jest.spyOn(sseServer, "handleImportGCalEnd");
+      const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
 
       await userMetadataService.updateUserMetadata({
         userId,
@@ -114,11 +151,7 @@ describe("googleCalendarSyncService", () => {
 
       expect(stopSpy).not.toHaveBeenCalled();
       expect(startSpy).not.toHaveBeenCalled();
-      expect(importEndSpy).toHaveBeenCalledWith(userId, {
-        operation: "INCREMENTAL",
-        status: "IGNORED",
-        message: `User ${userId} gcal import is in progress or completed, ignoring this request`,
-      });
+      expect(importEndSpy).not.toHaveBeenCalled();
     });
   });
 

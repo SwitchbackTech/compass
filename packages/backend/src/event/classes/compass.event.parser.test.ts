@@ -1,172 +1,262 @@
-/** @jest-environment node */
-
-import { ObjectId, type WithId } from "mongodb";
-import { RRule } from "rrule";
+import { ObjectId } from "mongodb";
 import {
-  Categories_Recurrence,
-  type CompassEvent,
-  CompassEventStatus,
-  type Schema_Event,
-} from "@core/types/event.types";
-import {
-  createMockBaseEvent,
-  createMockStandaloneEvent,
-} from "@core/util/test/ccal.event.factory";
-import {
-  analyzeCompassTransition,
-  buildCompassTransitionContext,
+  analyzeDelete,
+  analyzeReplace,
+  analyzeTransition,
 } from "@backend/event/classes/compass.event.parser";
+import { type EventRecord } from "@backend/event/event.record";
 
-function toDbEvent(event: Schema_Event): WithId<Omit<Schema_Event, "_id">> {
-  return {
-    ...event,
-    _id: new ObjectId(event._id),
-  } as WithId<Omit<Schema_Event, "_id">>;
-}
+const now = new Date("2026-07-10T00:00:00.000Z");
+const calendarId = new ObjectId();
 
-describe("compass.event.parser", () => {
-  it("builds an explicit transition context", () => {
-    const payload = createMockBaseEvent();
-    const event = {
-      payload,
-      status: CompassEventStatus.CONFIRMED,
-    } as CompassEvent;
+const buildEvent = (overrides: Partial<EventRecord> = {}): EventRecord => ({
+  _id: new ObjectId(),
+  calendarId,
+  content: { kind: "details", title: "Standup", description: "" },
+  schedule: {
+    kind: "timed",
+    start: new Date("2026-07-14T15:00:00.000Z"),
+    end: new Date("2026-07-14T16:00:00.000Z"),
+    timeZone: "America/Denver",
+  },
+  recurrence: { kind: "single" },
+  priority: "unassigned",
+  externalReference: null,
+  createdAt: now,
+  updatedAt: null,
+  ...overrides,
+});
 
-    const context = buildCompassTransitionContext(event, null);
+const replaceInput = (
+  overrides: Partial<Parameters<typeof analyzeReplace>[2]> = {},
+) => ({
+  content: { kind: "details" as const, title: "Updated", description: "" },
+  schedule: {
+    kind: "timed" as const,
+    start: "2026-07-14T15:00:00-06:00",
+    end: "2026-07-14T16:00:00-06:00",
+    timeZone: "America/Denver",
+  },
+  recurrence: { kind: "preserve" as const },
+  priority: "unassigned" as const,
+  scope: "this" as const,
+  ...overrides,
+});
 
-    expect(context.eventCategory).toBe(Categories_Recurrence.RECURRENCE_BASE);
-    expect(context.dbCategory).toBeNull();
-    expect(context.summary).toEqual({
-      title: payload.title ?? payload._id ?? "unknown",
-      transition: [null, "RECURRENCE_BASE_CONFIRMED"],
-      category: Categories_Recurrence.RECURRENCE_BASE,
+describe("analyzeReplace", () => {
+  it("scope this: updates a standalone event in place", () => {
+    const target = buildEvent();
+    const plan = analyzeReplace(target, null, replaceInput(), now);
+
+    expect(plan.kind).toBe("replaceThis");
+    if (plan.kind !== "replaceThis") throw new Error("expected replaceThis");
+    expect(plan.updated.content.kind).toBe("details");
+    expect(plan.updated._id).toEqual(target._id);
+  });
+
+  it("scope this: rejects editing a series base directly", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
     });
-    expect(context.transitionKey).toBe("NIL->>RECURRENCE_BASE_CONFIRMED");
-    expect(context.rrule).toBeInstanceOf(RRule);
+
+    expect(() =>
+      analyzeReplace(base, { base, instances: [] }, replaceInput(), now),
+    ).toThrow();
   });
 
-  it("plans a calendar create without Google work for someday events", () => {
-    const payload = createMockStandaloneEvent({ isSomeday: true });
-    const event = {
-      payload,
-      status: CompassEventStatus.CONFIRMED,
-    } as CompassEvent;
+  it("scope all: replaces the base and marks every instance for deletion", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+    });
+    const instances = [
+      buildEvent({ recurrence: { kind: "occurrence", seriesId: base._id } }),
+      buildEvent({ recurrence: { kind: "occurrence", seriesId: base._id } }),
+    ];
 
-    const plan = analyzeCompassTransition(event, null);
-
-    expect(plan.compassMutation).toBe("CREATE");
-    expect(plan.operation).toBe("STANDALONE_SOMEDAY_CREATED");
-    expect(plan.googleEffect).toEqual({ type: "none" });
-    expect(plan.steps).toEqual([
-      expect.objectContaining({ type: "create", event: expect.any(Object) }),
-    ]);
-  });
-
-  it("keeps the from-category in the summary when transitioning someday to calendar", () => {
-    const payload = createMockStandaloneEvent({ isSomeday: false });
-    const event = {
-      payload,
-      status: CompassEventStatus.CONFIRMED,
-    } as CompassEvent;
-    const dbEvent = toDbEvent({ ...payload, isSomeday: true });
-
-    const plan = analyzeCompassTransition(event, dbEvent);
-
-    expect(plan.summary.category).toBe(
-      Categories_Recurrence.STANDALONE_SOMEDAY,
+    const plan = analyzeReplace(
+      base,
+      { base, instances },
+      replaceInput({ scope: "all" }),
+      now,
     );
-    expect(plan.operation).toBe("STANDALONE_CREATED");
-    expect(plan.googleEffect).toEqual({ type: "create" });
+
+    expect(plan.kind).toBe("replaceSeries");
+    if (plan.kind !== "replaceSeries")
+      throw new Error("expected replaceSeries");
+    expect(plan.deleteInstanceIds).toHaveLength(2);
   });
 
-  it("uses truncate_series when only the recurrence until changes", () => {
-    const dbPayload = createMockBaseEvent({
-      recurrence: {
-        rule: ["RRULE:FREQ=WEEKLY;UNTIL=20260131T170000Z"],
-      },
-    }) as Schema_Event;
-    const payload = {
-      ...dbPayload,
-      recurrence: {
-        rule: ["RRULE:FREQ=WEEKLY;UNTIL=20260124T170000Z"],
-      },
-    };
-    const event = {
-      payload,
-      status: CompassEventStatus.CONFIRMED,
-    } as CompassEvent;
-
-    const plan = analyzeCompassTransition(event, toDbEvent(dbPayload));
-
-    expect(plan.compassMutation).toBe("TRUNCATE_SERIES");
-    expect(plan.steps.map(({ type }) => type)).toEqual([
-      "delete_instances_after_until",
-      "update_series",
-    ]);
-  });
-
-  it("uses recreate_series when recurrence semantics other than until change", () => {
-    const dbPayload = createMockBaseEvent({
-      recurrence: {
-        rule: ["RRULE:FREQ=WEEKLY;COUNT=10"],
-      },
-    }) as Schema_Event;
-    const payload = {
-      ...dbPayload,
-      recurrence: {
-        rule: ["RRULE:FREQ=DAILY;COUNT=5"],
-      },
-    };
-    const event = {
-      payload,
-      status: CompassEventStatus.CONFIRMED,
-    } as CompassEvent;
-
-    const plan = analyzeCompassTransition(event, toDbEvent(dbPayload));
-
-    expect(plan.compassMutation).toBe("RECREATE_SERIES");
-    expect(plan.steps.map(({ type }) => type)).toEqual([
-      "delete_series",
-      "create",
-    ]);
-  });
-
-  it("marks series-to-standalone updates to clear recurrence before Google sync", () => {
-    const dbPayload = createMockBaseEvent({
-      recurrence: {
-        rule: ["RRULE:FREQ=WEEKLY;COUNT=10"],
-      },
-    }) as Schema_Event;
-    const payload = createMockStandaloneEvent({
-      _id: dbPayload._id,
-      user: dbPayload.user,
-      isSomeday: false,
+  it("scope thisAndFollowing: splits the series at the target occurrence", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
     });
-    const event = {
-      payload,
-      status: CompassEventStatus.CONFIRMED,
-    } as CompassEvent;
+    const target = buildEvent({
+      schedule: {
+        kind: "timed",
+        start: new Date("2026-07-21T15:00:00.000Z"),
+        end: new Date("2026-07-21T16:00:00.000Z"),
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+    const laterInstance = buildEvent({
+      schedule: {
+        kind: "timed",
+        start: new Date("2026-07-28T15:00:00.000Z"),
+        end: new Date("2026-07-28T16:00:00.000Z"),
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
 
-    const plan = analyzeCompassTransition(event, toDbEvent(dbPayload));
+    const plan = analyzeReplace(
+      target,
+      { base, instances: [laterInstance] },
+      replaceInput({ scope: "thisAndFollowing" }),
+      now,
+    );
 
-    expect(plan.operation).toBe("RECURRENCE_BASE_UPDATED");
-    expect(plan.googleEffect).toEqual({ type: "update" });
-    expect(plan.clearRecurrenceBeforeGoogleUpdate).toBe(true);
+    expect(plan.kind).toBe("replaceSplit");
+    if (plan.kind !== "replaceSplit") throw new Error("expected replaceSplit");
+    expect(plan.newBase._id).toEqual(target._id);
+    expect(plan.deleteInstanceIds).toEqual([laterInstance._id]);
   });
 
-  it("prefers the persisted gEventId for delete-oriented Google effects", () => {
-    const payload = createMockStandaloneEvent();
-    const event = {
-      payload: { ...payload, gEventId: undefined },
-      status: CompassEventStatus.CANCELLED,
-    } as CompassEvent;
-    const dbEvent = toDbEvent({ ...payload, gEventId: "persisted-g-event-id" });
-
-    const plan = analyzeCompassTransition(event, dbEvent);
-
-    expect(plan.googleEffect).toEqual({
-      type: "delete",
-      deleteEventId: "persisted-g-event-id",
+  it("scope all: converts a series to standalone when recurrence.kind is 'single'", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
     });
+    const instances = [
+      buildEvent({ recurrence: { kind: "occurrence", seriesId: base._id } }),
+      buildEvent({ recurrence: { kind: "occurrence", seriesId: base._id } }),
+    ];
+
+    const plan = analyzeReplace(
+      base,
+      { base, instances },
+      replaceInput({ scope: "all", recurrence: { kind: "single" } }),
+      now,
+    );
+
+    expect(plan.kind).toBe("replaceSeries");
+    if (plan.kind !== "replaceSeries")
+      throw new Error("expected replaceSeries");
+    expect(plan.updatedBase.recurrence).toEqual({ kind: "single" });
+    expect(plan.deleteInstanceIds).toHaveLength(2);
+  });
+});
+
+describe("analyzeDelete", () => {
+  it("scope this: deletes only the target", () => {
+    const target = buildEvent();
+    const plan = analyzeDelete(target, null, { scope: "this" });
+    expect(plan).toEqual({ kind: "deleteThis", target });
+  });
+
+  it("scope this: rejects deleting a series base directly", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    expect(() =>
+      analyzeDelete(base, { base, instances: [] }, { scope: "this" }),
+    ).toThrow();
+  });
+
+  it("scope all: deletes the whole series", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const occurrence = buildEvent({
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+    const plan = analyzeDelete(
+      occurrence,
+      { base, instances: [occurrence] },
+      { scope: "all" },
+    );
+    expect(plan).toEqual({ kind: "deleteSeries", seriesId: base._id });
+  });
+});
+
+describe("analyzeTransition", () => {
+  it("schedule: moves an event onto the target calendar", () => {
+    const target = buildEvent({
+      schedule: {
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-13",
+        sortOrder: 0,
+      },
+    });
+    const targetCalendarId = new ObjectId();
+
+    const plan = analyzeTransition(
+      target,
+      {
+        kind: "schedule",
+        targetCalendarId: targetCalendarId.toHexString() as never,
+        schedule: {
+          kind: "timed",
+          start: "2026-07-14T15:00:00-06:00",
+          end: "2026-07-14T16:00:00-06:00",
+          timeZone: "America/Denver",
+        },
+      },
+      targetCalendarId,
+      now,
+    );
+
+    expect(plan.kind).toBe("schedule");
+    expect(plan.updated.calendarId).toEqual(targetCalendarId);
+    expect(plan.updated.externalReference).toBeNull();
+  });
+
+  it("unschedule: moves an event to the local calendar as a someday event", () => {
+    const target = buildEvent();
+    const localCalendarId = new ObjectId();
+
+    const plan = analyzeTransition(
+      target,
+      {
+        kind: "unschedule",
+        schedule: {
+          kind: "someday",
+          period: "week",
+          anchorDate: "2026-07-13",
+          sortOrder: 0,
+        },
+      },
+      localCalendarId,
+      now,
+    );
+
+    expect(plan.kind).toBe("unschedule");
+    expect(plan.updated.calendarId).toEqual(localCalendarId);
+    expect(plan.updated.schedule.kind).toBe("someday");
+    expect(plan.updated.recurrence).toEqual({ kind: "single" });
+  });
+
+  it("rejects transitioning a bare occurrence", () => {
+    const seriesId = new ObjectId();
+    const occurrence = buildEvent({
+      recurrence: { kind: "occurrence", seriesId },
+    });
+
+    expect(() =>
+      analyzeTransition(
+        occurrence,
+        {
+          kind: "unschedule",
+          schedule: {
+            kind: "someday",
+            period: "week",
+            anchorDate: "2026-07-13",
+            sortOrder: 0,
+          },
+        },
+        new ObjectId(),
+        now,
+      ),
+    ).toThrow();
   });
 });

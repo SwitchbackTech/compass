@@ -1,12 +1,6 @@
 import { type EventEmitter2 } from "eventemitter2";
 import { useCallback, useEffect } from "react";
 import { type Id } from "react-toastify";
-import {
-  GOOGLE_REVOKED,
-  IMPORT_GCAL_END,
-  IMPORT_GCAL_START,
-  USER_METADATA,
-} from "@core/constants/sse.constants";
 import { type ImportGCalEndPayload } from "@core/types/sse.types";
 import { type UserMetadata } from "@core/types/user.types";
 import {
@@ -92,16 +86,21 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
         onMetadataFetch(metadata);
       };
 
-      dependencies.sseEmitter.on(IMPORT_GCAL_START, importStartHandler);
-      dependencies.sseEmitter.on(IMPORT_GCAL_END, importEndHandler);
-      dependencies.sseEmitter.on(GOOGLE_REVOKED, googleRevokedHandler);
-      dependencies.sseEmitter.on(USER_METADATA, userMetadataHandler);
+      // TODO(packet-03-phase-3): these listener names no longer match what
+      // the backend publishes (B10: syncStatusChanged/importCompleted/
+      // userMetadataChanged, single "message" event carrying a
+      // ServerMessageSchema member). Rewire onImportStart/onImportEnd/
+      // onGoogleRevoked/onMetadataFetch against the new message shapes.
+      dependencies.sseEmitter.on("syncStatusChanged", importStartHandler);
+      dependencies.sseEmitter.on("importCompleted", importEndHandler);
+      dependencies.sseEmitter.on("syncStatusChanged", googleRevokedHandler);
+      dependencies.sseEmitter.on("userMetadataChanged", userMetadataHandler);
 
       return () => {
-        dependencies.sseEmitter.off(IMPORT_GCAL_START, importStartHandler);
-        dependencies.sseEmitter.off(IMPORT_GCAL_END, importEndHandler);
-        dependencies.sseEmitter.off(GOOGLE_REVOKED, googleRevokedHandler);
-        dependencies.sseEmitter.off(USER_METADATA, userMetadataHandler);
+        dependencies.sseEmitter.off("syncStatusChanged", importStartHandler);
+        dependencies.sseEmitter.off("importCompleted", importEndHandler);
+        dependencies.sseEmitter.off("syncStatusChanged", googleRevokedHandler);
+        dependencies.sseEmitter.off("userMetadataChanged", userMetadataHandler);
       };
     }, [onImportEnd, onImportStart, onGoogleRevoked, onMetadataFetch]);
   };

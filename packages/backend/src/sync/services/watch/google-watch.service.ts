@@ -1,5 +1,6 @@
 import { type ClientSession, ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type gCalendar } from "@core/types/gcal";
 import {
   type Params_WatchEvents,
@@ -190,9 +191,15 @@ async function handleGoogleWatchNotification(payload: Payload_Sync_Notif) {
     nextSyncToken,
   );
 
-  await handler.handleNotification();
+  const notification = await handler.handleNotification();
 
-  sseServer.handleBackgroundCalendarChange(userId);
+  if (notification.calendarId) {
+    sseServer.publishEventsChanged(userId, {
+      calendarId: notification.calendarId.toHexString() as CalendarId,
+      eventIds: notification.eventIds as EventId[],
+      reason: "reconciled",
+    });
+  }
 
   const result = "PROCESSED";
 

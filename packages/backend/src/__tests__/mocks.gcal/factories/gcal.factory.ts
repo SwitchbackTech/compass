@@ -165,13 +165,11 @@ export const mockGcal = ({
           events.push(...newEvents);
 
           return Promise.resolve(
-            createMockGaxiosResponse(
-              params.requestBody as gSchema$Event,
-              options,
-              200,
-              "OK",
-              id,
-            ),
+            // Return the stored event (which carries the generated `id`),
+            // not the bare request body -- callers (e.g. Compass->Google
+            // propagation) read `created.id` off the response to persist
+            // the new externalReference, same as the real Google API.
+            createMockGaxiosResponse(event, options, 200, "OK", id),
           );
         },
       ),
