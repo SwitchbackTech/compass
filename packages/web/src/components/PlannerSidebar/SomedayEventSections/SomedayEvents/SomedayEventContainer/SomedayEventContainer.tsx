@@ -20,10 +20,8 @@ import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/SomedayEvent";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import {
-  createLegacyEventMutationsAdapter,
-  eventToSchemaEvent,
-} from "@web/events/queries/event.legacy-bridge";
+import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
+import { scheduleSomedayEventTransition } from "@web/events/someday-event-draft.adapter";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
@@ -61,12 +59,6 @@ export const SomedayEventContainer = ({
   const { state, actions, setters } = useSidebarContext();
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
-  // TODO(packet-03-phase-3c): legacy-shaped facade until this component's
-  // Schema_Event-based props are converted to the new contracts.
-  const { convertToCalendar } = createLegacyEventMutationsAdapter(
-    mutations,
-    () => getDefaultTargetCalendar(calendars ?? [])?.id,
-  );
 
   const formProps = useDraftForm(
     category,
@@ -116,15 +108,18 @@ export const SomedayEventContainer = ({
       dayjs(weekViewRange.startDate),
     );
 
-    convertToCalendar({
-      event: {
-        _id: event.id,
-        startDate,
-        endDate,
-        isAllDay: false,
-        isSomeday: false,
-      },
-    });
+    const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
+    const input = calendarId
+      ? scheduleSomedayEventTransition(
+          { startDate, endDate },
+          false,
+          calendarId,
+        )
+      : null;
+
+    if (input) {
+      mutations.transition({ id: event.id, input });
+    }
     refocusEventElement(event.id);
   };
 

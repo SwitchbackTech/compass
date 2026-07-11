@@ -1,7 +1,13 @@
 import { Priorities } from "@core/constants/core.constants";
+import { type CalendarId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
-import { type RecurrenceScope } from "@core/types/event-command.contracts";
+import {
+  type RecurrenceScope,
+  type TransitionEventInput,
+  TransitionEventInputSchema,
+} from "@core/types/event-command.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import {
   type EditEventDraft,
   type NewEventDraft,
@@ -119,4 +125,34 @@ export function retargetSomedayEventDraft(
     ...draft,
     values: { ...draft.values, schedule: { kind: "someday", ...schedule } },
   };
+}
+
+// Builds the TransitionEventInput for dragging/shortcutting a someday event
+// onto the calendar grid. Mirrors schemaEventToCreateInput/
+// schemaEventToReplaceInput's safeParse-and-return-null-on-failure shape
+// (event.legacy-bridge.ts) so a malformed drop never reaches the mutation
+// layer. `dates` are already local-zone strings from the drop/shortcut call
+// site (YYYY-MM-DD for all-day, full offset-ISO for timed) - see
+// SomedayInteractionAdapter's schedule-drop construction.
+export function scheduleSomedayEventTransition(
+  dates: { startDate: string; endDate: string },
+  isAllDay: boolean,
+  targetCalendarId: CalendarId,
+): TransitionEventInput | null {
+  const schedule = isAllDay
+    ? { kind: "allDay" as const, start: dates.startDate, end: dates.endDate }
+    : {
+        kind: "timed" as const,
+        start: dates.startDate,
+        end: dates.endDate,
+        timeZone: getBrowserTimeZone(),
+      };
+
+  const parsed = TransitionEventInputSchema.safeParse({
+    kind: "schedule",
+    targetCalendarId,
+    schedule,
+  });
+
+  return parsed.success ? parsed.data : null;
 }
