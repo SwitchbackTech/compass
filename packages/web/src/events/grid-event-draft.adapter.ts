@@ -3,9 +3,14 @@ import { type Event } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import {
+  type EventDraft,
   type GridEventDraft,
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
+import {
+  parseEventDraft,
+  type ParseEventDraftResult,
+} from "@web/events/event-draft.parser";
 
 export function createGridEventDraft(
   schedule: GridScheduleDraft,
@@ -73,6 +78,29 @@ export function replaceGridDraftSchedule(
     ...draft,
     values: { ...draft.values, schedule },
   };
+}
+
+export function parseGridEventDraft(
+  draft: GridEventDraft,
+): ParseEventDraftResult {
+  const eventDraft: EventDraft =
+    draft.kind === "create"
+      ? {
+          mode: "create",
+          isDirty: true,
+          submitError: null,
+          values: draft.values,
+        }
+      : {
+          mode: "edit",
+          eventId: draft.source.id,
+          originalCalendarId: draft.source.calendarId,
+          isDirty: true,
+          submitError: null,
+          values: draft.values,
+        };
+
+  return parseEventDraft(eventDraft);
 }
 
 export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {

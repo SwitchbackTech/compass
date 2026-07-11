@@ -4,6 +4,7 @@ import { type Event } from "@core/types/event.contracts";
 import {
   createGridEventDraft,
   editGridEventDraft,
+  parseGridEventDraft,
   replaceGridDraftSchedule,
 } from "./grid-event-draft.adapter";
 
@@ -75,4 +76,22 @@ test("replaces only the draft schedule during a drag or resize", () => {
 
   expect(updated.values.schedule.start).toEqual(new Date("2026-07-12"));
   expect(updated.values.calendarId).toBeNull();
+});
+
+test("parses an edit draft into a replace command", () => {
+  const draft = editGridEventDraft(timedEvent);
+  if (!draft) throw new Error("Expected scheduled event draft");
+
+  const result = parseGridEventDraft(draft);
+
+  expect(result).toMatchObject({
+    ok: true,
+    mode: "edit",
+    eventId: timedEvent.id,
+    input: {
+      scope: "this",
+      schedule: { kind: "timed" },
+      recurrence: { kind: "preserve" },
+    },
+  });
 });
