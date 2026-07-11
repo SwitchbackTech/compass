@@ -4,12 +4,17 @@ import {
   useEffect,
   useRef,
 } from "react";
+import { type EventId } from "@core/types/domain-primitives";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   addId,
   assembleDefaultEvent,
 } from "@web/common/utils/event/event.util";
+import {
+  createGridEventDraft,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
   hasExceededCalendarInteractionMoveThreshold,
@@ -124,15 +129,19 @@ export const useDayTimedDraftCreation = ({
               return;
             }
 
-            // NOT converted to GridEventDraft/createGridEventDraft: nextEvent
-            // carries a client-assigned `_id` (via addId) that
+            // GridEventDraft's clientId keeps the same client-assigned id
+            // (from addId, below) across preview updates so
             // dayCalendarDraft.util.ts's isPlaceholder/isActiveDraft matching
-            // depends on. GridEventDraft's "create" kind has no field for a
-            // pre-assigned id (source is null), so routing this through
-            // startGridDraft would drop the id and break placeholder
-            // matching during drag-preview. See packet-03-phase-3c scoping
-            // note.
-            draftActions.startGridClick(nextEvent);
+            // can recognize this draft before it has a server-issued id.
+            const draft = createGridEventDraft(
+              timedGridSchedule(
+                new Date(nextEvent.startDate),
+                new Date(nextEvent.endDate),
+              ),
+              nextEvent._id as EventId,
+            );
+
+            draftActions.startGridDraft({ activity: "gridClick", draft });
           },
         );
       };

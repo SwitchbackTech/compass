@@ -99,6 +99,13 @@ export type GridEventDraft =
   | {
       kind: "create";
       source: null;
+      /**
+       * Optional client-assigned id for a not-yet-saved draft. Lets
+       * placeholder-matching code (e.g. dayCalendarDraft.util.ts) recognize
+       * the same in-progress draft across re-renders before it has a
+       * server-issued id.
+       */
+      clientId?: EventId;
       values: GridDraftValues<NewEventFormValues>;
     }
   | {

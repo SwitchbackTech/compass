@@ -45,10 +45,19 @@ remaining ~13 files, in addition to what's converted:
   dragged; `GridEventDraft` carries no grid-layout position data. Needs
   either a position field added to the draft or the keyboard-edit path
   routed differently.
-- **Day drag-preview client id**: `useDayTimedDraftCreation.ts`'s in-progress
-  drag preview carries a client-assigned `_id` that `dayCalendarDraft.util.ts`
-  matches against; `GridEventDraft`'s `"create"` kind has no field for a
-  pre-assigned id.
+- ~~**Day drag-preview client id**~~ — closed on `refactor/web-event-legacy-bridge-2`:
+  added an optional `clientId` to `GridEventDraft`'s `"create"` kind so
+  `useDayTimedDraftCreation.ts`'s in-progress drag preview can carry the
+  same client-assigned id `dayCalendarDraft.util.ts`'s
+  `isDraftOnlyEvent`/`isActiveDraftEvent` match against. Note this gap was
+  Day-specific: Week's equivalent (`useTimedGridDraftCreation.ts`) never
+  needed an id because Week overlays the draft separately rather than
+  merging it into the persisted-events array by `_id`. `DayCalendarGrid.tsx`
+  still has its own separate remaining marker — `getDayEventById` bridges to
+  `assembleGridEvent`, which still expects `Schema_Event`; that's the grid
+  *renderer* (not draft-opening) and is part of the wider
+  `Schema_GridEvent`/`web.event.types.ts` renderer conversion referenced in
+  this packet's step 2, not this gap.
 
 `useUpdateEvent.ts`'s live drag/resize position updates and the local
 `Schema_GridEvent` drag-geometry state in `useDraftState.ts` (10+ consumers:

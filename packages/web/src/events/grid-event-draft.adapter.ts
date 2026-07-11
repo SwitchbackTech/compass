@@ -1,4 +1,5 @@
 import { Priorities } from "@core/constants/core.constants";
+import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { type Schema_Event } from "@core/types/event.types";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
@@ -40,10 +41,12 @@ function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
 
 export function createGridEventDraft(
   schedule: GridScheduleDraft,
+  clientId?: EventId,
 ): GridEventDraft {
   return {
     kind: "create",
     source: null,
+    clientId,
     values: {
       title: "",
       description: "",
@@ -151,7 +154,7 @@ export function gridEventDraftToSchemaEvent(
   const { schedule } = draft.values;
 
   return {
-    _id: draft.kind === "edit" ? draft.source.id : undefined,
+    _id: draft.kind === "edit" ? draft.source.id : draft.clientId,
     description: draft.values.description,
     endDate:
       schedule.kind === "allDay"
