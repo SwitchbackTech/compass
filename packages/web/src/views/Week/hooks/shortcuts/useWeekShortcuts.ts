@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef } from "react";
 import { SOMEDAY_WEEK_LIMIT_MSG } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type EventId } from "@core/types/domain-primitives";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
@@ -24,6 +25,12 @@ import {
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { focusFirstSomedaySidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
+import { type GridScheduleDraft } from "@web/events/event-draft.types";
+import {
+  editGridEventDraft,
+  replaceGridDraftSchedule,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { createLegacyEventMutationsAdapter } from "@web/events/queries/event.legacy-bridge";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
@@ -92,7 +99,7 @@ export const useWeekShortcuts = ({
     useSomedayEventViewModel(startOfView, endOfView);
 
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
-  const { allDayEvents, timedEvents } = useWeekEventViewModel({
+  const { allDayEvents, entities, timedEvents } = useWeekEventViewModel({
     startOfView,
     endOfView,
   });
@@ -208,22 +215,19 @@ export const useWeekShortcuts = ({
     const resolvedTarget = getTargetedCalendarEvent();
     if (!resolvedTarget) return;
 
-    const { event, target } = resolvedTarget;
+    const { event } = resolvedTarget;
 
-    // NOT converted to GridEventDraft/editGridEventDraft: useDraftActions.ts
-    // reads `draft.position.dragOffset` off this store's `event` field when
-    // the keyboard-opened draft is subsequently dragged, and
-    // gridEventDraftToSchemaEvent has no grid-layout `position` to give it.
-    // See packet-03-phase-3c scoping note.
-    draftActions.start({
-      activity: "keyboardEdit",
-      event,
-      eventType:
-        target.eventType === "all-day"
-          ? Categories_Event.ALLDAY
-          : Categories_Event.TIMED,
-    });
-  }, [getTargetedCalendarEvent]);
+    const sourceEvent = event._id ? entities[event._id as EventId] : undefined;
+    const draft = sourceEvent ? editGridEventDraft(sourceEvent) : null;
+
+    if (!draft) return;
+
+    // dragOffset (the cursor-to-event pixel offset a subsequent drag needs)
+    // lives in useDraftState's sibling state, populated by
+    // GridDraft.tsx's handleDrag the moment a drag actually starts — the
+    // "M"-then-drag continuation this closes needs no position data here.
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
+  }, [entities, getTargetedCalendarEvent]);
 
   const deleteTargetedCalendarEvent = useCallback(
     (keyboardEvent: KeyboardEvent) => {
@@ -322,14 +326,34 @@ export const useWeekShortcuts = ({
       nudgeEventFromKeyboard({
         event,
         keyboardEvent,
-        onNudge: (event) => {
-          void confirmation.onSubmit(event);
+        onNudge: (nudgedEvent) => {
+          const sourceEvent = nudgedEvent._id
+            ? entities[nudgedEvent._id as EventId]
+            : undefined;
+          const draft = sourceEvent
+            ? editGridEventDraft(sourceEvent, "this")
+            : null;
+          if (!draft) return;
+
+          const schedule: GridScheduleDraft = nudgedEvent.isAllDay
+            ? {
+                kind: "allDay",
+                start: dayjs(nudgedEvent.startDate).toDate(),
+                end: dayjs(nudgedEvent.endDate).toDate(),
+              }
+            : timedGridSchedule(
+                dayjs(nudgedEvent.startDate).toDate(),
+                dayjs(nudgedEvent.endDate).toDate(),
+              );
+
+          void confirmation.onSubmit(replaceGridDraftSchedule(draft, schedule));
         },
       });
     },
     [
       confirmation,
       convertFocusedEventToSomeday,
+      entities,
       findCalendarEventForTarget,
       weekDays,
     ],

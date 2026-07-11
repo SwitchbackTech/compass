@@ -144,6 +144,34 @@ export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
   return { kind: "timed", start, end, timeZone: getBrowserTimeZone() };
 }
 
+// Reflects the draft's *live* recurrence edit (e.g. from RecurrenceSection's
+// toggle, mid-form), not just the source event's original recurrence — a
+// user editing recurrence on an existing draft must see that edit echoed
+// back through the Schema_Event projection the form renders from.
+function legacyRecurrenceFromDraft(
+  draft: GridEventDraft,
+): Schema_Event["recurrence"] {
+  const { recurrence } = draft.values;
+
+  if (draft.kind === "edit" && recurrence.kind === "preserve") {
+    return legacyRecurrenceFromEvent(draft.source);
+  }
+
+  if (recurrence.kind === "series") {
+    const eventId =
+      draft.kind === "edit" && draft.source.recurrence.kind === "occurrence"
+        ? draft.source.recurrence.seriesId
+        : undefined;
+
+    return { rule: [...recurrence.rules], ...(eventId ? { eventId } : {}) };
+  }
+
+  // "single": explicitly no recurrence. `rule: null` (not undefined)
+  // mirrors useRecurrence.ts's toggleRecurrence-off shape so `hasRecurrence`
+  // reads false rather than falling through to a stale truthy rule.
+  return { rule: null as unknown as string[] };
+}
+
 // TODO(packet-03-phase-3c): remove once remaining grid consumers no longer
 // require Schema_Event. Keeping this projection beside the GridEventDraft
 // adapter lets the draft store expose one canonical grid draft without a
@@ -163,15 +191,81 @@ export function gridEventDraftToSchemaEvent(
     isAllDay: schedule.kind === "allDay",
     isSomeday: false,
     priority: draft.values.priority ?? Priorities.UNASSIGNED,
-    recurrence:
-      draft.kind === "edit"
-        ? legacyRecurrenceFromEvent(draft.source)
-        : undefined,
+    recurrence: legacyRecurrenceFromDraft(draft),
     startDate:
       schedule.kind === "allDay"
         ? toDateOnlyString(schedule.start)
         : dayjs(schedule.start).format(),
     title: draft.values.title,
+  };
+}
+
+// The reverse direction of gridEventDraftToSchemaEvent, scoped to the one
+// boundary that needs it: EventForm/RecurrenceSection write back into a
+// legacy Schema_Event-shaped `setEvent`, which this reapplies onto the
+// canonical GridEventDraft (preserving `kind`/`source`/`clientId`, which a
+// Schema_Event patch has no way to express).
+export function applySchemaEventPatchToGridDraft(
+  current: GridEventDraft,
+  patch: Schema_Event,
+): GridEventDraft {
+  const rule = patch.recurrence?.rule;
+  const recurrence =
+    Array.isArray(rule) && rule.length > 0
+      ? ({ kind: "series", rules: rule } as const)
+      : current.kind === "edit"
+        ? ({ kind: "preserve" } as const)
+        : ({ kind: "single" } as const);
+
+  const scheduleDates: GridScheduleDraft =
+    current.values.schedule.kind === "allDay"
+      ? {
+          kind: "allDay",
+          start: patch.startDate
+            ? dayjs(patch.startDate).toDate()
+            : current.values.schedule.start,
+          end: patch.endDate
+            ? dayjs(patch.endDate).toDate()
+            : current.values.schedule.end,
+        }
+      : {
+          kind: "timed",
+          start: patch.startDate
+            ? dayjs(patch.startDate).toDate()
+            : current.values.schedule.start,
+          end: patch.endDate
+            ? dayjs(patch.endDate).toDate()
+            : current.values.schedule.end,
+          timeZone: current.values.schedule.timeZone,
+        };
+
+  const sharedValues = {
+    title: patch.title ?? "",
+    description: patch.description ?? "",
+    schedule: scheduleDates,
+    priority: patch.priority ?? current.values.priority,
+  };
+
+  if (current.kind === "create") {
+    return {
+      ...current,
+      values: {
+        ...sharedValues,
+        calendarId: current.values.calendarId,
+        recurrence:
+          recurrence.kind === "preserve" ? { kind: "single" } : recurrence,
+      },
+    };
+  }
+
+  return {
+    ...current,
+    values: {
+      ...sharedValues,
+      calendarId: current.values.calendarId,
+      recurrence,
+      scope: current.values.scope,
+    },
   };
 }
 

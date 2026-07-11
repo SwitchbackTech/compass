@@ -5,12 +5,10 @@ import {
   SOMEDAY_WEEK_LIMIT_MSG,
 } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { MapEvent } from "@core/mappers/map.event";
 import { DateOnlySchema, EventIdSchema } from "@core/types/domain-primitives";
 import {
   Categories_Event,
   RecurringEventUpdateScope,
-  type Schema_Event,
 } from "@core/types/event.types";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { devAlert } from "@core/util/app.util";
@@ -18,8 +16,7 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleDefaultEvent } from "@web/common/utils/event/event.util";
+import { assembleWebEvent } from "@web/common/utils/event/event.util";
 import {
   getArrowKeyMovement,
   isTimedEventInsideOneDay,
@@ -30,16 +27,25 @@ import {
 } from "@web/common/utils/event/someday.event.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import {
-  schemaEventToCreateInput,
-  schemaEventToReplaceInput,
-} from "@web/events/queries/event.legacy-bridge";
+  type GridEventDraft,
+  type GridScheduleDraft,
+} from "@web/events/event-draft.types";
+import {
+  createGridEventDraft,
+  duplicateGridEventDraft,
+  gridEventDraftToSchemaEvent,
+  parseGridEventDraft,
+  replaceGridDraftSchedule,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
+import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
   draftActions,
   selectDraft,
   selectDraftStatus,
+  selectGridDraft,
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { useDraftEffects } from "@web/views/Week/components/Draft/hooks/effects/useDraftEffects";
@@ -81,6 +87,7 @@ export const useDraftActions = (
       weekProps.component.endOfView,
     );
   const draftFromStore = useDraftStore(selectDraft);
+  const gridDraftFromStore = useDraftStore(selectGridDraft);
 
   const { activity, dateToResize, eventType, isDrafting } =
     useDraftStore(selectDraftStatus)!;
@@ -88,6 +95,7 @@ export const useDraftActions = (
   const {
     dateBeingChanged,
     draft,
+    dragOffset,
     dragStatus,
     isDragging,
     isResizing,
@@ -178,13 +186,14 @@ export const useDraftActions = (
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
       // No confirmation prompt: deletes are undoable via Cmd/Ctrl+Z
-      const eventToDelete = draft ?? draftFromStore;
-      const id = eventToDelete?._id
-        ? EventIdSchema.safeParse(eventToDelete._id)
+      const draftId = draft?.kind === "edit" ? draft.source.id : undefined;
+      const storeId = draftFromStore?._id
+        ? EventIdSchema.safeParse(draftFromStore._id)
         : undefined;
+      const id = draftId ?? (storeId?.success ? storeId.data : undefined);
 
-      if (id?.success) {
-        mutations.delete({ id: id.data, scope: scopeFromApplyTo(applyTo) });
+      if (id) {
+        mutations.delete({ id, scope: scopeFromApplyTo(applyTo) });
       }
       discard();
     },
@@ -198,31 +207,40 @@ export const useDraftActions = (
         return;
       }
 
-      const somedayEvent = buildConvertToSomedayEvent(
-        draft!,
-        { startDate: start, endDate: end },
-        somedayWeekCount,
-      );
-      const id = EventIdSchema.safeParse(somedayEvent._id);
-
-      if (id.success) {
-        const category = getSomedayEventCategory(somedayEvent);
-
-        mutations.transition({
-          id: id.data,
-          input: {
-            kind: "unschedule",
-            schedule: {
-              kind: "someday",
-              period:
-                category === Categories_Event.SOMEDAY_MONTH ? "month" : "week",
-              anchorDate: DateOnlySchema.parse(
-                somedayEvent.startDate!.slice(0, 10),
-              ),
-              sortOrder: somedayEvent.order ?? 0,
-            },
-          },
+      if (draft) {
+        const schemaEvent = assembleWebEvent({
+          ...gridEventDraftToSchemaEvent(draft),
+          startDate: dayjs(draft.values.schedule.start).format(),
+          endDate: dayjs(draft.values.schedule.end).format(),
         });
+        const somedayEvent = buildConvertToSomedayEvent(
+          schemaEvent,
+          { startDate: start, endDate: end },
+          somedayWeekCount,
+        );
+        const id = EventIdSchema.safeParse(somedayEvent._id);
+
+        if (id.success) {
+          const category = getSomedayEventCategory(somedayEvent);
+
+          mutations.transition({
+            id: id.data,
+            input: {
+              kind: "unschedule",
+              schedule: {
+                kind: "someday",
+                period:
+                  category === Categories_Event.SOMEDAY_MONTH
+                    ? "month"
+                    : "week",
+                anchorDate: DateOnlySchema.parse(
+                  somedayEvent.startDate!.slice(0, 10),
+                ),
+                sortOrder: somedayEvent.order ?? 0,
+              },
+            },
+          });
+        }
       }
 
       discard();
@@ -235,30 +253,27 @@ export const useDraftActions = (
   }, [setIsFormOpen]);
 
   const determineSubmitAction = useCallback(
-    (draft: Schema_GridEvent) => {
-      const isExisting = !!draft._id;
-      if (!isExisting) return "CREATE";
+    (draft: GridEventDraft) => {
+      if (draft.kind !== "edit") return "CREATE";
 
-      if (isExisting) {
-        if (isFormOpenBeforeDragging) {
-          return "OPEN_FORM";
-        }
-        const isSame = draftFromStore
-          ? !DirtyParser.isEventDirty(draft, draftFromStore)
-          : false;
-        if (isSame) {
-          // no need to make HTTP request
-          return "DISCARD";
-        }
+      if (isFormOpenBeforeDragging) {
+        return "OPEN_FORM";
       }
+
+      const isSame = !DirtyParser.isGridDraftDirty(draft);
+      if (isSame) {
+        // no need to make HTTP request
+        return "DISCARD";
+      }
+
       return "UPDATE";
     },
-    [draftFromStore, isFormOpenBeforeDragging],
+    [isFormOpenBeforeDragging],
   );
 
   const submit = useCallback(
     async (
-      draft: Schema_GridEvent,
+      draft: GridEventDraft,
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
       const action = determineSubmitAction(draft);
@@ -270,25 +285,36 @@ export const useDraftActions = (
           discard();
           return;
         case "CREATE": {
+          if (draft.kind !== "create") return;
+
           const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
           if (!calendarId) return;
 
-          const input = schemaEventToCreateInput(draft, calendarId);
-          if (input) mutations.create(input);
+          const parsed = parseGridEventDraft({
+            ...draft,
+            values: { ...draft.values, calendarId },
+          });
+
+          if (parsed.ok && parsed.mode === "create") {
+            mutations.create(parsed.input);
+          }
           return;
         }
         case "UPDATE": {
-          const id = draft._id ? EventIdSchema.safeParse(draft._id) : undefined;
-          if (!id?.success) {
+          if (draft.kind !== "edit") {
             discard();
             return;
           }
 
-          const input = schemaEventToReplaceInput(
-            draft,
-            scopeFromApplyTo(applyTo),
-          );
-          if (input) mutations.replace({ id: id.data, input });
+          const scope = scopeFromApplyTo(applyTo);
+          const parsed = parseGridEventDraft({
+            ...draft,
+            values: { ...draft.values, scope },
+          });
+
+          if (parsed.ok && parsed.mode === "edit") {
+            mutations.replace({ id: parsed.eventId, input: parsed.input });
+          }
 
           if (isFormOpenBeforeDragging) {
             openForm();
@@ -312,14 +338,53 @@ export const useDraftActions = (
   );
 
   const duplicateEvent = useCallback(() => {
-    const draft = MapEvent.removeProviderData({
-      ...(draftFromStore as Schema_Event),
-    }) as Schema_GridEvent;
-    const { _id: _duplicatedEventId, ...duplicateDraft } = draft;
+    if (!gridDraftFromStore) {
+      discard();
+      return;
+    }
 
-    submit(duplicateDraft);
+    if (gridDraftFromStore.kind !== "edit") {
+      // In-progress, not-yet-saved draft: duplicate its current form values.
+      void submit({
+        kind: "create",
+        source: null,
+        values: { ...gridDraftFromStore.values },
+      });
+      discard();
+      return;
+    }
+
+    const duplicate = duplicateGridEventDraft(gridDraftFromStore.source);
+    if (!duplicate) {
+      discard();
+      return;
+    }
+
+    // duplicateGridEventDraft always drops recurrence (built for Day, which
+    // has no recurring-series duplication UX). Week must preserve a
+    // series-base event's rule on duplicate — matching the legacy
+    // MapEvent.removeProviderData behavior this replaces, which kept
+    // `recurrence.rule` for a series but dropped an occurrence's `eventId`
+    // link (an occurrence's duplicate becomes standalone, since it carries
+    // no rule of its own).
+    const sourceRecurrence = gridDraftFromStore.source.recurrence;
+    const withRecurrence: GridEventDraft =
+      sourceRecurrence.kind === "series" && duplicate.kind === "create"
+        ? {
+            ...duplicate,
+            values: {
+              ...duplicate.values,
+              recurrence: {
+                kind: "series",
+                rules: [...sourceRecurrence.rules],
+              },
+            },
+          }
+        : duplicate;
+
+    void submit(withRecurrence);
     discard();
-  }, [draftFromStore, submit, discard]);
+  }, [gridDraftFromStore, submit, discard]);
 
   const isInsideVisibleWeek = useCallback(
     (start: Dayjs) => {
@@ -337,11 +402,12 @@ export const useDraftActions = (
     (key: string) => {
       if (!canRepositionDraftByKeyboard(activity) || !draft) return false;
 
-      const movement = getArrowKeyMovement(key, Boolean(draft.isAllDay));
+      const isAllDay = draft.values.schedule.kind === "allDay";
+      const movement = getArrowKeyMovement(key, isAllDay);
       if (!movement) return false;
 
-      const start = dayjs(draft.startDate);
-      const end = dayjs(draft.endDate);
+      const start = dayjs(draft.values.schedule.start);
+      const end = dayjs(draft.values.schedule.end);
       const nextStart = start
         .add(movement.days, "day")
         .add(movement.minutes, "minutes");
@@ -351,15 +417,19 @@ export const useDraftActions = (
 
       if (!isInsideVisibleWeek(nextStart)) return false;
 
-      if (!draft.isAllDay && !isTimedEventInsideOneDay(nextStart, nextEnd)) {
+      if (!isAllDay && !isTimedEventInsideOneDay(nextStart, nextEnd)) {
         return false;
       }
 
-      setDraft({
-        ...draft,
-        startDate: nextStart.format(),
-        endDate: nextEnd.format(),
-      });
+      const schedule: GridScheduleDraft = isAllDay
+        ? { kind: "allDay", start: nextStart.toDate(), end: nextEnd.toDate() }
+        : {
+            ...draft.values.schedule,
+            start: nextStart.toDate(),
+            end: nextEnd.toDate(),
+          };
+
+      setDraft(replaceGridDraftSchedule(draft, schedule));
 
       return true;
     },
@@ -373,11 +443,15 @@ export const useDraftActions = (
       ) => {
         if (!draft) return;
 
+        const isAllDay = draft.values.schedule.kind === "allDay";
         const rawX = e.clientX;
-        const x = draft.isAllDay ? rawX - draft.position.dragOffset.x : rawX;
-        const startEndDurationMin = getDragDurationMinutes(draft, dragStatus);
+        const x = isAllDay ? rawX - dragOffset.x : rawX;
+        const startEndDurationMin = getDragDurationMinutes(
+          draft.values.schedule,
+          dragStatus,
+        );
 
-        const y = e.clientY - draft.position.dragOffset.y;
+        const y = e.clientY - dragOffset.y;
 
         let eventStart = dateCalcs.getDateByXY(
           x,
@@ -387,7 +461,7 @@ export const useDraftActions = (
 
         let eventEnd = eventStart.add(startEndDurationMin, "minutes");
 
-        if (!draft.isAllDay) {
+        if (!isAllDay) {
           // Edge case: timed events' end times can overflow past midnight at the bottom of the grid.
           // Below logic prevents that from occurring.
           if (eventEnd.date() !== eventStart.date()) {
@@ -396,18 +470,27 @@ export const useDraftActions = (
           }
         }
 
-        const _draft: Schema_GridEvent = {
-          ...draft,
-          startDate: draft.isAllDay
-            ? eventStart.format(YEAR_MONTH_DAY_FORMAT)
-            : eventStart.format(),
-          endDate: draft.isAllDay
-            ? eventEnd.format(YEAR_MONTH_DAY_FORMAT)
-            : eventEnd.format(),
-          priority: draft.priority || Priorities.UNASSIGNED,
-        };
+        const schedule: GridScheduleDraft = isAllDay
+          ? {
+              kind: "allDay",
+              start: eventStart.toDate(),
+              end: eventEnd.toDate(),
+            }
+          : {
+              ...draft.values.schedule,
+              start: eventStart.toDate(),
+              end: eventEnd.toDate(),
+            };
 
-        setDraft(_draft);
+        const nextDraft = replaceGridDraftSchedule(draft, schedule);
+
+        setDraft({
+          ...nextDraft,
+          values: {
+            ...nextDraft.values,
+            priority: nextDraft.values.priority || Priorities.UNASSIGNED,
+          },
+        } as GridEventDraft);
       };
       if (!isDragging) {
         devAlert("not dragging (anymore?)");
@@ -419,7 +502,10 @@ export const useDraftActions = (
         e.clientY,
         weekProps.component.startOfView,
       );
-      const hasMoved = currTime !== draft?.startDate;
+      const draftStartStr = draft
+        ? dayjs(draft.values.schedule.start).format()
+        : undefined;
+      const hasMoved = currTime !== draftStartStr;
 
       if (!dragStatus?.hasMoved && hasMoved) {
         setDragStatus(
@@ -437,6 +523,7 @@ export const useDraftActions = (
       dateCalcs,
       weekProps.component.startOfView,
       draft,
+      dragOffset,
       dragStatus,
       setDraft,
       setDragStatus,
@@ -447,19 +534,26 @@ export const useDraftActions = (
     (currTime: dayjs.Dayjs) => {
       if (!draft || !dateBeingChanged) return false;
 
-      if (draft.isAllDay) {
+      const isAllDay = draft.values.schedule.kind === "allDay";
+      if (isAllDay) {
         return true;
       }
 
+      const draftDate =
+        dateBeingChanged === "startDate"
+          ? draft.values.schedule.start
+          : draft.values.schedule.end;
       const _currTime = currTime.format();
-      const noChange = draft[dateBeingChanged] === _currTime;
+      const noChange = dayjs(draftDate).format() === _currTime;
 
       if (noChange) return false;
 
-      const diffDay = currTime.day() !== dayjs(draft.startDate).day();
+      const diffDay =
+        currTime.day() !== dayjs(draft.values.schedule.start).day();
       if (diffDay) return false;
 
-      const sameStart = currTime.format() === draft.startDate;
+      const sameStart =
+        _currTime === dayjs(draft.values.schedule.start).format();
       if (sameStart) return false;
 
       return true;
@@ -471,24 +565,40 @@ export const useDraftActions = (
     (e: MouseEvent) => {
       if (!draft || !draftFromStore) return; // TS Guard
 
+      const isAllDay = draft.values.schedule.kind === "allDay";
       const _dateBeingChanged = dateBeingChanged as "startDate" | "endDate";
       const oppositeKey =
         _dateBeingChanged === "startDate" ? "endDate" : "startDate";
 
+      // String mirrors of the draft's live schedule, formatted exactly as
+      // the legacy Schema_GridEvent draft stored them (all-day: day-only
+      // YEAR_MONTH_DAY_FORMAT strings; timed: full offset strings). The flip
+      // math below is unchanged dayjs-string arithmetic ported verbatim from
+      // before the GridEventDraft conversion, reading/writing through this
+      // mirror instead of native Schema_GridEvent fields.
+      const formatDraftDate = (date: Date) =>
+        isAllDay
+          ? dayjs(date).format(YEAR_MONTH_DAY_FORMAT)
+          : dayjs(date).format();
+      const draftDates: Record<"startDate" | "endDate", string> = {
+        startDate: formatDraftDate(draft.values.schedule.start),
+        endDate: formatDraftDate(draft.values.schedule.end),
+      };
+
       const flipIfNeeded = (currTime: Dayjs) => {
-        let startDate = draft?.startDate;
-        let endDate = draft?.endDate;
+        let startDate = draftDates.startDate;
+        let endDate = draftDates.endDate;
 
         let justFlipped = false;
         let dateKey = dateBeingChanged;
-        const opposite = dayjs(draft?.[oppositeKey]);
+        const opposite = dayjs(draftDates[oppositeKey]);
         const comparisonKeyword =
           dateBeingChanged === "startDate" ? "after" : "before";
 
         if (comparisonKeyword === "after") {
           if (currTime.isAfter(opposite)) {
             dateKey = oppositeKey;
-            startDate = draft?.endDate;
+            startDate = draftDates.endDate;
             setDateBeingChanged(dateKey);
 
             justFlipped = true;
@@ -496,7 +606,7 @@ export const useDraftActions = (
         } else if (comparisonKeyword === "before") {
           if (currTime.isBefore(opposite)) {
             setDateBeingChanged(oppositeKey);
-            if (draft?.isAllDay) {
+            if (isAllDay) {
               // For all-day events, move by day
               startDate = dayjs(startDate)
                 .subtract(1, "day")
@@ -519,15 +629,31 @@ export const useDraftActions = (
         }
 
         closeForm();
-        setDraft((_draft): Schema_GridEvent => {
+
+        const schedule: GridScheduleDraft = isAllDay
+          ? {
+              kind: "allDay",
+              start: dayjs(startDate).toDate(),
+              end: dayjs(endDate).toDate(),
+            }
+          : {
+              ...draft.values.schedule,
+              start: dayjs(startDate).toDate(),
+              end: dayjs(endDate).toDate(),
+            };
+
+        setDraft((_draft) => {
+          if (!_draft) return _draft;
+
+          const withSchedule = replaceGridDraftSchedule(_draft, schedule);
+
           return {
-            ..._draft!,
-            _id: _draft!._id,
-            hasFlipped: justFlipped,
-            endDate: endDate,
-            startDate: startDate,
-            priority: draft.priority,
-          };
+            ...withSchedule,
+            values: {
+              ...withSchedule.values,
+              priority: draft.values.priority,
+            },
+          } as GridEventDraft;
         });
 
         return justFlipped;
@@ -539,7 +665,7 @@ export const useDraftActions = (
       if (!isResizing) return;
 
       // For all-day events, use a fixed Y coordinate (0) because Y positioning is irrelevant:
-      const y = draft.isAllDay ? 0 : e.clientY;
+      const y = isAllDay ? 0 : e.clientY;
       const currTime = dateCalcs.getDateByXY(
         e.clientX,
         y,
@@ -558,7 +684,7 @@ export const useDraftActions = (
       let updatedTime: string;
       let hasMoved: boolean;
 
-      if (draft?.isAllDay) {
+      if (isAllDay) {
         // For all-day events, work with day differences
         const diffDays = currTime.diff(origTime, "day", true);
         updatedTime = currTime
@@ -576,11 +702,17 @@ export const useDraftActions = (
         setResizeStatus({ hasMoved: true });
       }
 
-      setDraft((_draft): Schema_GridEvent => {
-        return {
-          ..._draft!,
-          ...(dateChanged ? { [dateChanged]: updatedTime } : {}),
-        };
+      setDraft((_draft) => {
+        if (!_draft) return _draft;
+
+        const nextSchedule: GridScheduleDraft = {
+          ..._draft.values.schedule,
+          ...(dateChanged === "startDate"
+            ? { start: dayjs(updatedTime).toDate() }
+            : { end: dayjs(updatedTime).toDate() }),
+        } as GridScheduleDraft;
+
+        return replaceGridDraftSchedule(_draft, nextSchedule);
       });
     },
     [
@@ -602,23 +734,42 @@ export const useDraftActions = (
   const create = useCallback(async () => {
     setDraftSessionKey((key) => key + 1);
 
-    if (draftFromStore !== null) {
-      setDraft(draftFromStore as Schema_GridEvent);
+    if (gridDraftFromStore) {
+      setDraft(gridDraftFromStore);
     } else {
-      const { startDate, endDate } = draftFromStore ?? {
-        startDate: undefined,
-        endDate: undefined,
-      };
+      // Rare fallback: a "gridClick" activity started via
+      // draftActions.startGridClick (a source event not yet in the query
+      // cache), which has no GridEventDraft to hand off. Build a default
+      // from the legacy Schema_Event mirror's dates instead.
+      const startDate = draftFromStore?.startDate;
+      const endDate = draftFromStore?.endDate;
+      const isAllDay = eventType === Categories_Event.ALLDAY;
 
-      const defaultDraft = (await assembleDefaultEvent(
-        eventType,
-        startDate,
-        endDate,
-      )) as Schema_GridEvent;
-      setDraft(defaultDraft);
+      const schedule: GridScheduleDraft = isAllDay
+        ? {
+            kind: "allDay",
+            start: startDate ? dayjs(startDate).toDate() : dayjs().toDate(),
+            end: endDate
+              ? dayjs(endDate).toDate()
+              : dayjs().add(1, "day").toDate(),
+          }
+        : timedGridSchedule(
+            startDate ? dayjs(startDate).toDate() : dayjs().toDate(),
+            endDate ? dayjs(endDate).toDate() : dayjs().add(1, "hour").toDate(),
+          );
+
+      setDraft(createGridEventDraft(schedule));
     }
+
     openForm();
-  }, [openForm, draftFromStore, eventType, setDraft, setDraftSessionKey]);
+  }, [
+    openForm,
+    gridDraftFromStore,
+    draftFromStore,
+    eventType,
+    setDraft,
+    setDraftSessionKey,
+  ]);
 
   const handleChange = useCallback(async () => {
     const isSomeday =
@@ -630,7 +781,7 @@ export const useDraftActions = (
     }
     if (!isSomeday && activity === "keyboardEdit") {
       setDraftSessionKey((key) => key + 1);
-      setDraft(draftFromStore as Schema_GridEvent);
+      if (gridDraftFromStore) setDraft(gridDraftFromStore);
       openForm();
       return;
     }
@@ -643,7 +794,7 @@ export const useDraftActions = (
     }
     if (activity === "resizing") {
       setDraftSessionKey((key) => key + 1);
-      setDraft(draftFromStore as Schema_GridEvent);
+      if (gridDraftFromStore) setDraft(gridDraftFromStore);
       startResizing();
     }
   }, [
@@ -653,7 +804,7 @@ export const useDraftActions = (
     create,
     setDraft,
     setDraftSessionKey,
-    draftFromStore,
+    gridDraftFromStore,
     startResizing,
     openForm,
   ]);

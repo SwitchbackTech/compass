@@ -15,7 +15,7 @@ export function ConvertToStandaloneDialog() {
 
   if (!standaloneDraft) return null;
 
-  const eventName = standaloneDraft.title || "this event";
+  const eventName = standaloneDraft.values.title || "this event";
 
   return (
     <OverlayPanel

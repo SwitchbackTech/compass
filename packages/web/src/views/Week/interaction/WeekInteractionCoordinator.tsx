@@ -90,16 +90,16 @@ export const WeekInteractionCoordinator: FC<Props> = ({
 
   const openAllDayEvent = openClickedGridEvent;
 
-  // Non-recurring saved events skip the Draft confirmation flow entirely and
-  // commit straight through the strict mutation. Recurring events (source
-  // event carries `recurrence`) still need the scope-confirmation dialog,
-  // which lives in useDraftConfirmation (out of scope here) — those keep
-  // going through the legacy confirmation.onSubmit path below.
-  const commitStrictSavedMutation = (event: Schema_GridEvent) => {
+  // Rebuilds the GridEventDraft for a saved event after the modern
+  // pointer-capture engine (WeekInteractionAdapter) commits a drag/resize —
+  // it operates on Schema_GridEvent geometry, so this re-derives the strict
+  // draft from the query cache's source Event plus the engine's resulting
+  // dates.
+  const gridEventDraftFromSavedResult = (event: Schema_GridEvent) => {
     const sourceEvent = event._id ? eventsById.get(event._id) : undefined;
     const draft = sourceEvent ? editGridEventDraft(sourceEvent, "this") : null;
 
-    if (!draft) return;
+    if (!draft) return null;
 
     const schedule: GridScheduleDraft = event.isAllDay
       ? {
@@ -112,9 +112,19 @@ export const WeekInteractionCoordinator: FC<Props> = ({
           dayjs(event.endDate).toDate(),
         );
 
-    const parsed = parseGridEventDraft(
-      replaceGridDraftSchedule(draft, schedule),
-    );
+    return replaceGridDraftSchedule(draft, schedule);
+  };
+
+  // Non-recurring saved events skip the Draft confirmation flow entirely and
+  // commit straight through the strict mutation. Recurring events (source
+  // event carries `recurrence`) still need the scope-confirmation dialog,
+  // which lives in useDraftConfirmation (out of scope here) — those keep
+  // going through the legacy confirmation.onSubmit path below.
+  const commitStrictSavedMutation = (event: Schema_GridEvent) => {
+    const draft = gridEventDraftFromSavedResult(event);
+    if (!draft) return;
+
+    const parsed = parseGridEventDraft(draft);
 
     if (parsed.ok && parsed.mode === "edit") {
       mutations.replace({ id: parsed.eventId, input: parsed.input });
@@ -138,13 +148,16 @@ export const WeekInteractionCoordinator: FC<Props> = ({
     }
 
     if (result.hadFormOpenBeforeInteraction) {
-      setters.setDraft(result.event);
+      const draft = gridEventDraftFromSavedResult(result.event);
+      if (draft) setters.setDraft(draft);
+
       actions.openForm();
       return;
     }
 
     if (result.event.recurrence) {
-      void confirmation.onSubmit(result.event);
+      const draft = gridEventDraftFromSavedResult(result.event);
+      if (draft) void confirmation.onSubmit(draft);
       return;
     }
 

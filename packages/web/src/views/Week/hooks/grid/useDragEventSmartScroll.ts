@@ -13,7 +13,7 @@ export const useDragEventSmartScroll = (
 
   useEffect(() => {
     if (!state.isDragging) return;
-    if (state.draft?.isAllDay !== false) return;
+    if (state.draft?.values.schedule.kind !== "timed") return;
 
     const updateMousePosition = (event: MouseEvent) => {
       setMousePosition({ x: event.clientX, y: event.clientY });
@@ -24,7 +24,7 @@ export const useDragEventSmartScroll = (
     return () => {
       window.removeEventListener("mousemove", updateMousePosition);
     };
-  }, [state.draft?.isAllDay, state.isDragging]);
+  }, [state.draft?.values.schedule.kind, state.isDragging]);
 
   useEffect(() => {
     if (!mainGridRef.current) return;
@@ -33,7 +33,7 @@ export const useDragEventSmartScroll = (
     const scrollIfNeeded = () => {
       if (!state.isDragging) return;
       if (!container) return;
-      if (state.draft?.isAllDay !== false) return;
+      if (state.draft?.values.schedule.kind !== "timed") return;
 
       const containerRect = container.getBoundingClientRect();
       const { top, bottom } = {
@@ -76,7 +76,7 @@ export const useDragEventSmartScroll = (
     state.isDragging,
     mousePosition.x,
     mousePosition.y,
-    state.draft?.isAllDay,
+    state.draft?.values.schedule.kind,
     mousePosition,
     mainGridRef.current,
   ]);

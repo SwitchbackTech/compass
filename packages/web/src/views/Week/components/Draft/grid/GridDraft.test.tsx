@@ -2,9 +2,12 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type PropsWithChildren, type Ref, useState } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
+import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { CALENDAR_DECK_MIN_WIDTH } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
@@ -41,8 +44,8 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
     onSubmit,
     titleInputRef,
   }: {
-    event: Schema_GridEvent;
-    onSubmit?: (event: Schema_GridEvent) => void;
+    event: Schema_Event;
+    onSubmit?: (event: Schema_Event) => void;
     titleInputRef?: Ref<HTMLInputElement>;
   }) => (
     <>
@@ -65,7 +68,44 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
 
 const { GridDraft } = require("./GridDraft") as typeof import("./GridDraft");
 
+// The interactive draft GridDraft.tsx reads from context — always a
+// not-yet-saved "create" GridEventDraft in these fixtures (none of these
+// tests exercise editing an existing event).
 const createDraft = (
+  overrides: {
+    endDate?: string;
+    isAllDay?: boolean;
+    startDate?: string;
+    title?: string;
+  } = {},
+): GridEventDraft => {
+  const {
+    endDate = "2026-05-26T15:00:00.000Z",
+    isAllDay = false,
+    startDate = "2026-05-26T14:00:00.000Z",
+    title = "Planning",
+  } = overrides;
+
+  const draft = createGridEventDraft(
+    isAllDay
+      ? { kind: "allDay", start: new Date(startDate), end: new Date(endDate) }
+      : {
+          kind: "timed",
+          start: new Date(startDate),
+          end: new Date(endDate),
+          timeZone: "UTC",
+        },
+  );
+  if (draft.kind !== "create") throw new Error("Expected a create draft");
+
+  return { ...draft, values: { ...draft.values, title } };
+};
+
+// activeAllDayDraftEvent/recurringPreviews are still Schema_GridEvent-shaped
+// props (out of this phase's scope — the wider grid *renderer* conversion),
+// so they need their own Schema_GridEvent-shaped fixture, independent of the
+// interactive GridEventDraft above.
+const createSchemaGridEvent = (
   overrides: Partial<Schema_GridEvent> = {},
 ): Schema_GridEvent => ({
   description: "",
@@ -120,7 +160,7 @@ const renderGridDraft = ({
 }: {
   activeAllDayDraftEvent?: Schema_GridEvent | null;
   deckLayout?: { groupSize: number; order: number } | null;
-  draft?: Schema_GridEvent;
+  draft?: GridEventDraft;
   recurringPreviews?: Schema_GridEvent[];
 } = {}) => {
   const repositionDraftByKeyboard = mock(() => true);
@@ -140,10 +180,12 @@ const renderGridDraft = ({
     setters: {
       setDateBeingChanged: mock(),
       setDraft: mock(),
+      setDragOffset: mock(),
       setIsResizing: mock(),
     },
     state: {
       draft,
+      dragOffset: { x: 0, y: 0 },
       formProps: createFormProps(),
       isDragging: false,
       isFormOpen: true,
@@ -181,7 +223,6 @@ describe("GridDraft keyboard focus", () => {
       draft: createDraft({
         endDate: "2026-05-27T00:00:00.000Z",
         isAllDay: true,
-        position: undefined,
         startDate: "2026-05-26T00:00:00.000Z",
       }),
     });
@@ -200,13 +241,16 @@ describe("GridDraft keyboard focus", () => {
     const draft = createDraft({
       endDate: "2026-05-27T00:00:00.000Z",
       isAllDay: true,
-      position: undefined,
       startDate: "2026-05-26T00:00:00.000Z",
     });
 
     renderGridDraft({
       activeAllDayDraftEvent: {
-        ...draft,
+        ...createSchemaGridEvent({
+          endDate: "2026-05-27T00:00:00.000Z",
+          isAllDay: true,
+          startDate: "2026-05-26T00:00:00.000Z",
+        }),
         row: 3,
       },
       draft,
@@ -256,12 +300,12 @@ describe("GridDraft keyboard focus", () => {
   it("renders a read-only card for each recurring preview occurrence", () => {
     renderGridDraft({
       recurringPreviews: [
-        createDraft({
+        createSchemaGridEvent({
           _id: undefined,
           endDate: "2026-05-27T15:00:00.000Z",
           startDate: "2026-05-27T14:00:00.000Z",
         }),
-        createDraft({
+        createSchemaGridEvent({
           _id: undefined,
           endDate: "2026-05-28T15:00:00.000Z",
           startDate: "2026-05-28T14:00:00.000Z",
@@ -290,7 +334,9 @@ describe("GridDraft keyboard focus", () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit.mock.calls[0]?.[0]).toEqual(
-      expect.objectContaining({ title: "Planning" }),
+      expect.objectContaining({
+        values: expect.objectContaining({ title: "Planning" }),
+      }),
     );
     expect(document.activeElement).not.toBe(draftBlock);
   });
