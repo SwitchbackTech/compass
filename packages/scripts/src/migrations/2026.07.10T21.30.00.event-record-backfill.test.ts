@@ -502,7 +502,10 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
       const growthMb = (after - before) / (1024 * 1024);
 
       expect(await destinationCollection().countDocuments()).toBe(total);
-      expect(growthMb).toBeLessThan(250);
+      // Guards against accumulation proportional to the dataset (which would
+      // measure in gigabytes at this fixture size), not GC precision: shared
+      // CI runners have shown 245-296 MB of GC-timing noise for the same code.
+      expect(growthMb).toBeLessThan(400);
     }, 120_000);
   });
 });
