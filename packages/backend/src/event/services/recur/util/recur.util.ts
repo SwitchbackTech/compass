@@ -93,13 +93,6 @@ export const materializeSeriesInstances = (
   }));
 };
 
-/**
- * The offset (ms) between a schedule's own start and the series anchor,
- * used to compute a truncation UNTIL just before a given occurrence.
- */
-export const getScheduleStartMs = (schedule: EventScheduleRecord): number =>
-  getAnchorDate(schedule).getTime();
-
 export const withUntil = (rules: readonly string[], until: Date): string[] => {
   const untilString = `${until
     .toISOString()

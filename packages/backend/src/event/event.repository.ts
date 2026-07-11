@@ -241,10 +241,6 @@ class EventRepository {
     await mongoService.event.bulkWrite(operations, { ordered: false, session });
   }
 
-  async deleteOne(eventId: ObjectId, session?: ClientSession): Promise<void> {
-    await mongoService.event.deleteOne({ _id: eventId }, { session });
-  }
-
   async deleteMany(
     eventIds: ObjectId[],
     session?: ClientSession,

@@ -243,7 +243,6 @@ export class SyncImport {
   }
 }
 
-// Factory function to create instances
 export const createSyncImport = async (id: string | gCalendar) => {
   const gcal = typeof id === "string" ? await getGcalClient(id) : id;
   return new SyncImport(gcal);
