@@ -1,4 +1,3 @@
-import { setOfflineDataStoreTestOverrides } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { DatabaseInitError } from "@web/common/utils/storage/db-errors.util";
 import {
   afterEach,
@@ -10,22 +9,9 @@ import {
   spyOn,
 } from "bun:test";
 
-// Mock the offline data store. `setOfflineDataStoreTestOverrides` is a
-// runtime override read at call time by the real registry module, not a
-// `mock.module` swap — it works regardless of which files already imported
-// the registry (see offline-data.store.registry.ts for why that distinction
-// matters). The shared web.preload.ts afterEach clears overrides after every
-// test, so this file re-applies its own override in `beforeEach`.
+// The initializer is injected as an argument; only the toast needs a mock.
 const mockInitializeStorage = mock();
 const mockToastError = mock();
-
-const registerOfflineDataStoreMock = () =>
-  setOfflineDataStoreTestOverrides({
-    initializeOfflineDataStore: mockInitializeStorage,
-    isOfflineDataStoreReady: () => true,
-  });
-
-registerOfflineDataStoreMock();
 
 // Mock react-toastify. mock.module leaks process-wide, and other suites call
 // `toast(...)` directly (e.g. the Deleted toast fired by event delete
@@ -48,7 +34,6 @@ describe("app-init.util", () => {
   let timeoutCallback: (() => void) | undefined;
 
   beforeEach(() => {
-    registerOfflineDataStoreMock();
     mockInitializeStorage.mockClear();
     mockToastError.mockClear();
     timeoutCallback = undefined;
@@ -74,7 +59,9 @@ describe("app-init.util", () => {
     it("should return null error when storage initializes successfully", async () => {
       mockInitializeStorage.mockResolvedValue(undefined);
 
-      const result = await initializeDatabaseWithErrorHandling();
+      const result = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(result.dbInitError).toBeNull();
       expect(mockInitializeStorage).toHaveBeenCalledTimes(1);
@@ -84,7 +71,9 @@ describe("app-init.util", () => {
       const dbError = new DatabaseInitError("Storage quota exceeded");
       mockInitializeStorage.mockRejectedValue(dbError);
 
-      const result = await initializeDatabaseWithErrorHandling();
+      const result = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(result.dbInitError).toBeInstanceOf(DatabaseInitError);
       expect(result.dbInitError?.message).toBe("Storage quota exceeded");
@@ -94,7 +83,9 @@ describe("app-init.util", () => {
       const genericError = new Error("Some other error");
       mockInitializeStorage.mockRejectedValue(genericError);
 
-      const result = await initializeDatabaseWithErrorHandling();
+      const result = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(result.dbInitError).toBeNull();
     });
@@ -104,7 +95,9 @@ describe("app-init.util", () => {
       mockInitializeStorage.mockRejectedValue(dbError);
 
       // Should not throw - just return the error
-      await expect(initializeDatabaseWithErrorHandling()).resolves.toEqual({
+      await expect(
+        initializeDatabaseWithErrorHandling(mockInitializeStorage),
+      ).resolves.toEqual({
         dbInitError: dbError,
       });
     });
@@ -164,7 +157,9 @@ describe("app-init.util", () => {
       mockInitializeStorage.mockRejectedValue(dbError);
 
       // Simulate what index.tsx does
-      const { dbInitError } = await initializeDatabaseWithErrorHandling();
+      const { dbInitError } = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(dbInitError).not.toBeNull();
 
@@ -185,7 +180,9 @@ describe("app-init.util", () => {
     it("should handle full initialization flow without error", async () => {
       mockInitializeStorage.mockResolvedValue(undefined);
 
-      const { dbInitError } = await initializeDatabaseWithErrorHandling();
+      const { dbInitError } = await initializeDatabaseWithErrorHandling(
+        mockInitializeStorage,
+      );
 
       expect(dbInitError).toBeNull();
 

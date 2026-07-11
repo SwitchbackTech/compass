@@ -4,30 +4,6 @@ import { type OfflineDataStore } from "./offline-data.store";
 let store: OfflineDataStore | null = null;
 let initPromise: Promise<void> | null = null;
 
-// Test-only function overrides, keyed by export name. `bun:test`'s
-// `mock.module` redirects future module *resolution*, but a module that
-// already captured a live binding to one of these exports before a later
-// `mock.module` call (e.g. local.event.repository.ts calling
-// `getOfflineDataStore` internally) keeps referencing whatever was current
-// at its own first import, forever — a later `mock.module` call cannot fix
-// an already-linked consumer. Every export below instead reads this object
-// at CALL time, so every caller (regardless of when it first imported this
-// module) always observes the current test's override.
-type RegistryTestOverrides = Partial<{
-  getOfflineDataStore: () => OfflineDataStore;
-  ensureOfflineDataStoreReady: () => Promise<void>;
-  initializeOfflineDataStore: () => Promise<void>;
-  isOfflineDataStoreReady: () => boolean;
-}>;
-
-let testOverrides: RegistryTestOverrides = {};
-
-export function setOfflineDataStoreTestOverrides(
-  overrides: RegistryTestOverrides,
-): void {
-  testOverrides = overrides;
-}
-
 /**
  * Get the offline data store singleton.
  *
@@ -36,10 +12,6 @@ export function setOfflineDataStoreTestOverrides(
  * here.
  */
 export function getOfflineDataStore(): OfflineDataStore {
-  if (testOverrides.getOfflineDataStore) {
-    return testOverrides.getOfflineDataStore();
-  }
-
   if (!store) {
     store = new IndexedDbOfflineDataStore();
   }
@@ -57,10 +29,6 @@ export function getOfflineDataStore(): OfflineDataStore {
  * Safe to call multiple times - subsequent calls return the same promise.
  */
 export async function initializeOfflineDataStore(): Promise<void> {
-  if (testOverrides.initializeOfflineDataStore) {
-    return testOverrides.initializeOfflineDataStore();
-  }
-
   if (initPromise) {
     return initPromise;
   }
@@ -85,10 +53,6 @@ export async function initializeOfflineDataStore(): Promise<void> {
  * Check if the offline data store is ready for operations.
  */
 export function isOfflineDataStoreReady(): boolean {
-  if (testOverrides.isOfflineDataStoreReady) {
-    return testOverrides.isOfflineDataStoreReady();
-  }
-
   return store?.isReady() ?? false;
 }
 
@@ -97,10 +61,6 @@ export function isOfflineDataStoreReady(): boolean {
  * If not initialized, triggers initialization.
  */
 export async function ensureOfflineDataStoreReady(): Promise<void> {
-  if (testOverrides.ensureOfflineDataStoreReady) {
-    return testOverrides.ensureOfflineDataStoreReady();
-  }
-
   if (!isOfflineDataStoreReady()) {
     await initializeOfflineDataStore();
   }

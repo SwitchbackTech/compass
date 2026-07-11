@@ -16,11 +16,13 @@ export interface AppInitResult {
  *
  * Returns any initialization error so the caller can handle it appropriately.
  */
-export async function initializeDatabaseWithErrorHandling(): Promise<AppInitResult> {
+export async function initializeDatabaseWithErrorHandling(
+  initialize: typeof initializeOfflineDataStore = initializeOfflineDataStore,
+): Promise<AppInitResult> {
   let dbInitError: DatabaseInitError | null = null;
 
   try {
-    await initializeOfflineDataStore();
+    await initialize();
   } catch (error) {
     if (error instanceof DatabaseInitError) {
       dbInitError = error;

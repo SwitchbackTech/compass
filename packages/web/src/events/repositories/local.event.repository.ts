@@ -9,7 +9,10 @@ import {
   type TransitionEventInput,
 } from "@core/types/event-command.contracts";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
-import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
+import {
+  getOfflineDataStore,
+  type OfflineDataStore,
+} from "@web/common/storage/offline-data/offline-data.store.registry";
 import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type EventRepository } from "./event.repository.types";
@@ -28,8 +31,12 @@ function nowDateTime() {
 }
 
 export class LocalEventRepository implements EventRepository {
+  constructor(
+    private readonly getStore: () => OfflineDataStore = getOfflineDataStore,
+  ) {}
+
   private get store() {
-    return getOfflineDataStore();
+    return this.getStore();
   }
 
   async list(query: EventListQuery): Promise<Event[]> {

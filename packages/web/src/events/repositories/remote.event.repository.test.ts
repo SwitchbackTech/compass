@@ -9,57 +9,35 @@ import {
   isBackendUnavailable,
   resetBackendAvailabilityForTests,
 } from "@web/api/util/backend-unavailable-error.util";
-import {
-  type OfflineDataStore,
-  setOfflineDataStoreTestOverrides,
-} from "@web/common/storage/offline-data/offline-data.store.registry";
+import { type EventApi } from "@web/events/event.api";
+import { type EventRepository } from "@web/events/repositories/event.repository.types";
+import { RemoteEventRepository } from "@web/events/repositories/remote.event.repository";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
-const mockCreate = mock();
-const mockList = mock();
-const mockGetById = mock();
-const mockReplace = mock();
-const mockDelete = mock();
-const mockReorder = mock();
-const mockTransition = mock();
-const mockPutEvent = mock();
-const mockGetEvents = mock();
-const mockGetAllEvents = mock();
+const api = {
+  create: mock(),
+  list: mock(),
+  getById: mock(),
+  replace: mock(),
+  delete: mock(),
+  reorder: mock(),
+  transition: mock(),
+} satisfies Record<keyof typeof EventApi, ReturnType<typeof mock>>;
 
-mock.module("@web/events/event.api", () => ({
-  EventApi: {
-    create: mockCreate,
-    list: mockList,
-    getById: mockGetById,
-    replace: mockReplace,
-    delete: mockDelete,
-    reorder: mockReorder,
-    transition: mockTransition,
-  },
-}));
+const localRepository = {
+  create: mock(),
+  list: mock(),
+  getById: mock(),
+  replace: mock(),
+  delete: mock(),
+  reorder: mock(),
+  transition: mock(),
+} satisfies Record<keyof EventRepository, ReturnType<typeof mock>>;
 
-// setOfflineDataStoreTestOverrides is a runtime override read at call time
-// by the real registry module, not a `mock.module` swap — it works
-// regardless of which files already imported the registry (see
-// offline-data.store.registry.ts). The shared web.preload.ts afterEach
-// clears overrides after every test, so this file re-applies its own in
-// `beforeEach`.
-const fakeStore = {
-  getEvents: mockGetEvents,
-  getAllEvents: mockGetAllEvents,
-  putEvent: mockPutEvent,
-} as unknown as OfflineDataStore;
-
-const registerOfflineDataStoreMock = () =>
-  setOfflineDataStoreTestOverrides({
-    getOfflineDataStore: () => fakeStore,
-  });
-
-registerOfflineDataStoreMock();
-
-const { RemoteEventRepository } =
-  require("./remote.event.repository") as typeof import("./remote.event.repository");
-type RemoteEventRepositoryInstance = InstanceType<typeof RemoteEventRepository>;
+const repository = new RemoteEventRepository(
+  api as unknown as typeof EventApi,
+  localRepository as unknown as EventRepository,
+);
 
 function createBackendUnavailableError(): Error {
   const error = new Error("Request failed");
@@ -68,22 +46,10 @@ function createBackendUnavailableError(): Error {
 }
 
 describe("RemoteEventRepository", () => {
-  let repository: RemoteEventRepositoryInstance;
-
   beforeEach(() => {
-    registerOfflineDataStoreMock();
-    mockCreate.mockClear();
-    mockList.mockClear();
-    mockGetById.mockClear();
-    mockReplace.mockClear();
-    mockDelete.mockClear();
-    mockReorder.mockClear();
-    mockTransition.mockClear();
-    mockPutEvent.mockClear();
-    mockGetEvents.mockClear();
-    mockGetAllEvents.mockClear();
+    for (const fn of Object.values(api)) fn.mockClear();
+    for (const fn of Object.values(localRepository)) fn.mockClear();
     resetBackendAvailabilityForTests();
-    repository = new RemoteEventRepository();
   });
 
   describe("create", () => {
@@ -97,11 +63,11 @@ describe("RemoteEventRepository", () => {
         priority: event.priority,
       };
 
-      mockCreate.mockResolvedValue(event);
+      api.create.mockResolvedValue(event);
 
       const result = await repository.create(input);
 
-      expect(mockCreate).toHaveBeenCalledWith(input);
+      expect(api.create).toHaveBeenCalledWith(input);
       expect(result).toEqual(event);
     });
 
@@ -115,12 +81,12 @@ describe("RemoteEventRepository", () => {
         priority: event.priority,
       };
 
-      mockCreate.mockRejectedValue(createBackendUnavailableError());
-      mockPutEvent.mockResolvedValue(undefined);
+      api.create.mockRejectedValue(createBackendUnavailableError());
+      localRepository.create.mockResolvedValue(event);
 
       await repository.create(input);
 
-      expect(mockPutEvent).toHaveBeenCalledTimes(1);
+      expect(localRepository.create).toHaveBeenCalledWith(input);
       expect(isBackendUnavailable()).toBe(true);
     });
   });
@@ -128,7 +94,7 @@ describe("RemoteEventRepository", () => {
   describe("list", () => {
     it("calls EventApi.list and returns its events", async () => {
       const events = [createMockEvent()];
-      mockList.mockResolvedValue(events);
+      api.list.mockResolvedValue(events);
 
       const query = {
         kind: "range" as const,
@@ -138,7 +104,7 @@ describe("RemoteEventRepository", () => {
       } as unknown as EventListQuery;
       const result = await repository.list(query);
 
-      expect(mockList).toHaveBeenCalledWith(query);
+      expect(api.list).toHaveBeenCalledWith(query);
       expect(result).toEqual(events);
     });
 
@@ -150,26 +116,24 @@ describe("RemoteEventRepository", () => {
         anchorDate: "2024-01-01",
       } as unknown as EventListQuery;
 
-      mockList.mockRejectedValue(createBackendUnavailableError());
-      mockGetEvents.mockResolvedValue(
-        localEvents.map((event) => ({ id: event.id, event })),
-      );
+      api.list.mockRejectedValue(createBackendUnavailableError());
+      localRepository.list.mockResolvedValue(localEvents);
 
       const result = await repository.list(query);
 
-      expect(mockGetEvents).toHaveBeenCalledWith(query);
+      expect(localRepository.list).toHaveBeenCalledWith(query);
       expect(result).toEqual(localEvents);
     });
   });
 
   describe("delete", () => {
     it("calls EventApi.delete with the event id and scope", async () => {
-      mockDelete.mockResolvedValue(undefined);
+      api.delete.mockResolvedValue(undefined);
 
       await repository.delete("event-1" as EventId, "all");
 
-      expect(mockDelete).toHaveBeenCalledWith("event-1", "all");
-      expect(mockDelete).toHaveBeenCalledTimes(1);
+      expect(api.delete).toHaveBeenCalledWith("event-1", "all");
+      expect(api.delete).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -180,12 +144,12 @@ describe("RemoteEventRepository", () => {
         items: [{ eventId: "event-1" as EventId, sortOrder: 0 }],
       };
 
-      mockReorder.mockResolvedValue(undefined);
+      api.reorder.mockResolvedValue(undefined);
 
       await repository.reorder(input);
 
-      expect(mockReorder).toHaveBeenCalledWith(input);
-      expect(mockReorder).toHaveBeenCalledTimes(1);
+      expect(api.reorder).toHaveBeenCalledWith(input);
+      expect(api.reorder).toHaveBeenCalledTimes(1);
     });
   });
 
@@ -202,11 +166,11 @@ describe("RemoteEventRepository", () => {
         },
       } as unknown as TransitionEventInput;
 
-      mockTransition.mockResolvedValue(event);
+      api.transition.mockResolvedValue(event);
 
       const result = await repository.transition(event.id, input);
 
-      expect(mockTransition).toHaveBeenCalledWith(event.id, input);
+      expect(api.transition).toHaveBeenCalledWith(event.id, input);
       expect(result).toEqual(event);
     });
   });

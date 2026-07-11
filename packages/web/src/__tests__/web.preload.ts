@@ -299,9 +299,6 @@ mockNodeModules();
 const sessionModule = await import("supertokens-web-js/recipe/session");
 const { cleanup } = await import("@testing-library/react");
 const { resetAllStores } = await import("./utils/state/reset-stores");
-const { setOfflineDataStoreTestOverrides } = await import(
-  "@web/common/storage/offline-data/offline-data.store.registry"
-);
 
 function resetDocument() {
   document.body.innerHTML = "";
@@ -341,7 +338,6 @@ afterEach(async () => {
   resetBrowserState();
   resetAllStores();
   server.resetHandlers();
-  setOfflineDataStoreTestOverrides({});
 });
 afterAll(() => server.close());
 afterAll(() => mock.restore());

@@ -1,24 +1,8 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { setOfflineDataStoreTestOverrides } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { type Task } from "@web/common/types/task.types";
 import { type TaskRepository } from "@web/tasks/repositories/task.repository";
 import { useTaskState } from "@web/views/Day/hooks/tasks/useTaskState";
-import { beforeEach, describe, expect, it, mock } from "bun:test";
-
-const ensureOfflineDataStoreReadyMock = mock(() => Promise.resolve());
-
-// setOfflineDataStoreTestOverrides is a runtime override read at call time
-// by the real registry module, not a `mock.module` swap — it works
-// regardless of which files already imported the registry (see
-// offline-data.store.registry.ts). The shared web.preload.ts afterEach
-// clears overrides after every test, so this file re-applies its own in
-// `beforeEach`.
-const registerOfflineDataStoreMock = () =>
-  setOfflineDataStoreTestOverrides({
-    ensureOfflineDataStoreReady: ensureOfflineDataStoreReadyMock,
-  });
-
-registerOfflineDataStoreMock();
+import { describe, expect, it, mock } from "bun:test";
 
 const makeTask = (overrides: Partial<Task> = {}): Task => ({
   _id: "task-1",
@@ -41,13 +25,7 @@ function deferred<T>() {
 }
 
 describe("useTaskState", () => {
-  beforeEach(() => {
-    registerOfflineDataStoreMock();
-  });
-
   it("keeps loaded tasks visible while the next date loads", async () => {
-    ensureOfflineDataStoreReadyMock.mockResolvedValue(undefined);
-
     const firstDateTasks = deferred<Task[]>();
     const nextDateTasks = deferred<Task[]>();
     const repository = {
