@@ -78,6 +78,50 @@ const createState = (): State_Sidebar =>
     somedayWeekIds: [somedayEvent._id!],
   }) as State_Sidebar;
 
+const SECOND_SOMEDAY_EVENT_ID = "664e21f9a6b3f0b1c2d3e4f6";
+
+const secondSomedayEventContract = createMockEvent({
+  id: EventIdSchema.parse(SECOND_SOMEDAY_EVENT_ID),
+  content: { kind: "details", title: "Second someday event", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "someday",
+    period: "week",
+    anchorDate: "2024-01-15",
+    sortOrder: 1,
+  }),
+});
+
+const createTwoEventWeekState = (): State_Sidebar =>
+  ({
+    blockedSomedayDropColumn: null,
+    draft: null,
+    isDrafting: false,
+    isDraftingExisting: false,
+    isDraftingNew: false,
+    isDragging: true,
+    isSomedayFormOpen: false,
+    somedayEvents: {
+      columnOrder: [COLUMN_WEEK, COLUMN_MONTH],
+      columns: {
+        [COLUMN_MONTH]: {
+          id: COLUMN_MONTH,
+          eventIds: [],
+        },
+        [COLUMN_WEEK]: {
+          id: COLUMN_WEEK,
+          eventIds: [somedayEvent._id!, SECOND_SOMEDAY_EVENT_ID],
+        },
+      },
+      events: {
+        [somedayEvent._id!]: somedayEventContract,
+        [SECOND_SOMEDAY_EVENT_ID]: secondSomedayEventContract,
+      },
+    },
+    somedayIds: [somedayEvent._id!, SECOND_SOMEDAY_EVENT_ID],
+    somedayMonthIds: [],
+    somedayWeekIds: [somedayEvent._id!, SECOND_SOMEDAY_EVENT_ID],
+  }) as State_Sidebar;
+
 const createSetters = (): Setters_Sidebar =>
   ({
     setBlockedSomedayDropColumn: mock(),
@@ -163,5 +207,88 @@ describe("useSidebarActions", () => {
     });
     // Scheduling a someday drop must not start a grid draft.
     expect(useDraftStore.getState().status?.isDrafting).toBe(false);
+  });
+
+  it("reorders within the same someday column via the strict reorderSomeday mutation", async () => {
+    await getOfflineDataStore().putEvent({
+      version: 2,
+      id: somedayEventContract.id,
+      event: somedayEventContract,
+      isDemo: false,
+    });
+    await getOfflineDataStore().putEvent({
+      version: 2,
+      id: secondSomedayEventContract.id,
+      event: secondSomedayEventContract,
+      isDemo: false,
+    });
+
+    const state = createTwoEventWeekState();
+    const { queryClient, wrapper } = createStoreWrapper(currentState, {
+      events: [somedayEventContract, secondSomedayEventContract],
+    });
+    const setSomedayEvents = mock();
+    const setters = { ...createSetters(), setSomedayEvents };
+
+    const { result } = renderHook(
+      () =>
+        useSidebarActions(
+          {
+            onGoToDate: mock(),
+            viewEnd: dayjs("2024-01-21"),
+            viewStart: dayjs("2024-01-15"),
+          },
+          state,
+          setters,
+        ),
+      { wrapper },
+    );
+
+    await waitFor(() => {
+      expect(queryClient.getQueryData(["calendars"])).toBeDefined();
+    });
+
+    // Swap the two week-column events: second event moves from index 1 to 0.
+    result.current.commitSomedayInteraction({
+      destination: { droppableId: COLUMN_WEEK, index: 0 },
+      eventId: SECOND_SOMEDAY_EVENT_ID,
+      source: { droppableId: COLUMN_WEEK, index: 1 },
+      type: "sidebarDrop",
+    });
+
+    await waitFor(() => {
+      expect(
+        queryClient
+          .getMutationCache()
+          .getAll()
+          .some((mutation) => {
+            if (mutation.options.mutationKey?.[2] !== "reorder-someday") {
+              return false;
+            }
+            const input = mutation.state.variables as {
+              period?: string;
+              items?: { eventId: string; sortOrder: number }[];
+            };
+            return (
+              input.period === "week" &&
+              input.items?.[0]?.eventId === SECOND_SOMEDAY_EVENT_ID &&
+              input.items?.[0]?.sortOrder === 0 &&
+              input.items?.[1]?.eventId === SOMEDAY_EVENT_ID &&
+              input.items?.[1]?.sortOrder === 1
+            );
+          }),
+      ).toBe(true);
+    });
+
+    // Local optimistic reorder is applied before the mutation fires.
+    expect(setSomedayEvents).toHaveBeenCalledWith(
+      expect.objectContaining({
+        columns: expect.objectContaining({
+          [COLUMN_WEEK]: expect.objectContaining({
+            eventIds: [SECOND_SOMEDAY_EVENT_ID, SOMEDAY_EVENT_ID],
+          }),
+        }),
+      }),
+    );
   });
 });
