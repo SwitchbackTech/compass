@@ -1,6 +1,11 @@
 import { Priorities } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
-import { type NewEventDraft } from "@web/events/event-draft.types";
+import { type RecurrenceScope } from "@core/types/event-command.contracts";
+import dayjs from "@core/util/date/dayjs";
+import {
+  type EditEventDraft,
+  type NewEventDraft,
+} from "@web/events/event-draft.types";
 
 // Mirrors grid-event-draft.adapter.ts's createGridEventDraft/
 // duplicateGridEventDraft, but for someday drafts, which use the generic
@@ -47,12 +52,71 @@ export function duplicateSomedayEventDraft(event: Event): NewEventDraft | null {
       schedule: {
         kind: "someday",
         period: schedule.period,
-        anchorDate: new Date(schedule.anchorDate),
+        // dayjs(...), not new Date(...): a bare "YYYY-MM-DD" string parses
+        // as UTC midnight via the Date constructor, which reads back as the
+        // previous local day in a negative-UTC-offset zone once
+        // parseEventDraft reformats it - see editSomedayEventDraft's note.
+        anchorDate: dayjs(schedule.anchorDate).toDate(),
         sortOrder: schedule.sortOrder,
       },
       priority: event.priority,
       calendarId: null,
       recurrence: { kind: "single" },
     },
+  };
+}
+
+// Mirrors editGridEventDraft, but for someday drafts. "preserve" is the
+// baseline recurrence (matches editGridEventDraft's default); call sites
+// that submit an explicit recurrence change (e.g. the someday form's rule
+// editor) overwrite `values.recurrence` before parsing. Returns null for a
+// non-someday source, mirroring editGridEventDraft's null-return guard.
+export function editSomedayEventDraft(
+  event: Event,
+  scope: RecurrenceScope = "this",
+): EditEventDraft | null {
+  const { schedule } = event;
+  if (schedule.kind !== "someday") return null;
+
+  return {
+    mode: "edit",
+    eventId: event.id,
+    originalCalendarId: event.calendarId,
+    isDirty: true,
+    submitError: null,
+    values: {
+      title: event.content.kind === "details" ? event.content.title : "",
+      description:
+        event.content.kind === "details" ? event.content.description : "",
+      schedule: {
+        kind: "someday",
+        period: schedule.period,
+        // `new Date("YYYY-MM-DD")` parses as UTC midnight; in a negative
+        // UTC-offset zone that reads back as the previous local day once
+        // parseEventDraft's toDateOnlyString reformats it, silently shifting
+        // the event into the prior week/month's bucket. dayjs(...) parses a
+        // bare date-only string as local midnight instead.
+        anchorDate: dayjs(schedule.anchorDate).toDate(),
+        sortOrder: schedule.sortOrder,
+      },
+      priority: event.priority,
+      calendarId: event.calendarId,
+      recurrence: { kind: "preserve" },
+      scope,
+    },
+  };
+}
+
+// Shifts an existing edit draft's someday schedule (period/anchorDate/
+// sortOrder) for the migrate forward/back/up/down flows, keeping every other
+// field (title, description, recurrence, scope) untouched. Mirrors
+// replaceGridDraftSchedule's spread-and-override shape.
+export function retargetSomedayEventDraft(
+  draft: EditEventDraft,
+  schedule: { period: "week" | "month"; anchorDate: Date; sortOrder: number },
+): EditEventDraft {
+  return {
+    ...draft,
+    values: { ...draft.values, schedule: { kind: "someday", ...schedule } },
   };
 }
