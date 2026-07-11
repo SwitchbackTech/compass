@@ -19,6 +19,65 @@ make code easier for other contributors to verify and change.
 - Workflow: find existing abstractions first → apply the principles below →
   verify with focused checks → report the diff with principles applied.
 
+## Finding Complexity — Where to Start
+
+Don't read the diff top to bottom hoping smells jump out. Hunt with
+detectors, in rough order of payoff (each proven on this codebase):
+
+1. **Size first.** `git diff <base> --numstat | sort -rn | head -20` — the
+   biggest churn concentrates the smells. Start there, not alphabetically.
+2. **Comment density.** Simple code is mostly self-explanatory. A paragraph
+   of comments explaining _why something works_ means the mechanism is too
+   clever — fix the mechanism and the comments evaporate (a test-override
+   registry that needed the same 6-line explanation in five files collapsed
+   into ordinary constructor defaults that needed none). One-liners that
+   restate the next line (`// save the event`) are pure deletions. Keep only
+   comments stating a constraint the code cannot show (transaction
+   boundaries, spec references, cross-realm quirks).
+3. **Mock volume and shape.** Lots of mocks = missing seam. `mock.module` on
+   a shared singleton is the worst offender: it mutates the process-wide
+   module registry, cannot be un-leaked for already-linked consumers, and
+   fails order-dependently (Linux CI orders files differently than macOS).
+   The fix is never better mock bookkeeping — it's a constructor/parameter
+   default (`constructor(getStore = getOfflineDataStore)`) and a plain fake.
+   Search: `rg "mock.module" --glob "*.test.*"` and treat each hit on a
+   multi-consumer module as a candidate seam.
+4. **Test-only hooks in production code.** Any `setXForTests`,
+   `testOverrides`, `__test__` export, or `if (process.env.NODE_ENV ===
+"test")` branch in a production module means tests are steering design
+   from the wrong side. Replace with dependency injection at the caller.
+5. **Casts.** `as unknown as`, `as any`, and `Parameters<...>[n]` casts in
+   tests mean the fake isn't shaped like the real collaborator — usually
+   because the seam is a whole module instead of a small interface. In
+   production code, casts at construction sites of branded/validated types
+   are tolerable; casts that silence a structural mismatch are debt.
+   Search: `rg "as unknown as"`.
+6. **Copy-pasted scaffolding.** The same open/do/close or
+   iterate/write/guard shape repeated across siblings (session +
+   transaction + endSession in four service methods; seven cache writers
+   each re-implementing iterate-entries → setQueryData → null-guard). Extract
+   ONE helper owning the shape; the variants become one-liners.
+7. **Dead and unreachable code.** Every exported symbol in the diff:
+   `rg "<name>" --type ts` across all packages — zero call sites means
+   delete (including its tests). Every defensive branch: read the callee —
+   a `!x.isActive` check after a query that already filters `isActive: true`
+   can never fire and only misleads readers about invariants.
+8. **Coupling via hidden shared state.** Tests that pass alone but fail in
+   suite (or only on CI) point at module-level mutable state that no reset
+   registry covers. The fix is to register the reset or inject the state —
+   never to reorder tests or widen timeouts.
+9. **Bridges and adapters.** Transition scaffolding is legitimate, but audit
+   it: every adapter function must have a live call site (`rg` each export),
+   and the file should shrink release over release, not grow.
+
+Balance — restraint is part of the skill. Don't unify code that only looks
+similar (two query builders with genuinely different shapes stay separate).
+Don't break a repo-wide convention locally just because it repeats (the
+per-handler try/catch shape in controllers is uniform across the codebase;
+"fixing" one file creates inconsistency, not simplicity). When you decide
+NOT to change something you inspected, say so in the report with the reason
+— "considered, left alone because X" is as valuable as a diff.
+
 ## Before Making Changes
 
 1. **Necessity**: does this change only address what's required?
@@ -157,13 +216,13 @@ const getLabel = (type: string) => LABELS[type] ?? "Unknown";
 
 ## Complexity Thresholds
 
-| Metric               | Prefer     | Flag       | Action                       |
-| -------------------- | ---------- | ---------- | ---------------------------- |
-| Function length      | < 20 lines | > 30 lines | Split or extract             |
-| Nesting depth        | ≤ 2 levels | > 3 levels | Guard clauses, early returns |
-| Parameters           | ≤ 3        | > 4        | Options object or context    |
-| Conditional branches | ≤ 3        | > 4        | Record lookup or polymorphism|
-| Similar blocks       | 0          | 2+         | Extract and parameterize     |
+| Metric               | Prefer     | Flag       | Action                        |
+| -------------------- | ---------- | ---------- | ----------------------------- |
+| Function length      | < 20 lines | > 30 lines | Split or extract              |
+| Nesting depth        | ≤ 2 levels | > 3 levels | Guard clauses, early returns  |
+| Parameters           | ≤ 3        | > 4        | Options object or context     |
+| Conditional branches | ≤ 3        | > 4        | Record lookup or polymorphism |
+| Similar blocks       | 0          | 2+         | Extract and parameterize      |
 
 ## Verify
 
