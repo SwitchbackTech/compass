@@ -1,4 +1,8 @@
 import { transformLegacyEvent } from "@scripts/common/legacy-event.transform";
+import {
+  assignMissingSomedaySortOrders,
+  type SomedaySortAssignmentInput,
+} from "@scripts/common/legacy-event.transform.sort";
 import { type Collection, type Document, type ObjectId } from "mongodb";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
@@ -114,6 +118,12 @@ export const verifyEventMigration = async (
     { batchSize: MONGO_BATCH_SIZE },
   );
   let transformFailures = 0;
+  // Someday records are hashed after the scan: the backfill assigns missing
+  // sortOrders post-transform (assignMissingSomedaySortOrders), so the
+  // verification must replicate that assignment or every assigned order
+  // mismatches the destination. Buffering is bounded: someday lists are
+  // product-capped per user period.
+  const somedayResults: SomedaySortAssignmentInput[] = [];
   for await (const legacyDoc of legacyCursor) {
     const userKey = legacyUserOf(legacyDoc);
     const localCalendarId = userKey
@@ -143,7 +153,22 @@ export const verifyEventMigration = async (
     }
 
     legacyCategoryCounts[result.record.schedule.kind] += 1;
+
+    if (result.record.schedule.kind === "someday") {
+      somedayResults.push({
+        record: result.record,
+        sortOrderAssigned: result.sortOrderAssigned,
+        legacyStartDate: result.legacyStartDate,
+      });
+      continue;
+    }
+
     legacyHash.add(projectionOf(result.record));
+  }
+
+  assignMissingSomedaySortOrders(somedayResults);
+  for (const { record } of somedayResults) {
+    legacyHash.add(projectionOf(record));
   }
 
   if (transformFailures > 0) {
