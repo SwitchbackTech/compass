@@ -94,6 +94,16 @@ Verification runs automatically at the end of the backfill and rechecks:
 - a deterministic content hash of every behavior-bearing field, source vs
   destination.
 
+Cutover data policy (confirmed on staging, applies to production too): the
+backfill fail-closes on rows the strict contracts cannot represent, and the
+approved treatment is deletion, because each class is recoverable from its
+source of truth or unreachable: zero-duration timed Google events
+(`start == end`; re-importable from Google, though Compass will count them
+`invalid` and not model them), Google events owned by users with no calendar
+row (re-imported on that user's next sign-in), duplicate `gEventId` copies
+(keep the original, strip the bogus id), and events owned by deleted user
+accounts (unreachable). Take the backup first; it preserves everything.
+
 A successful run ends with the verification summary. If you need to re-check
 later without re-migrating, the same checks are exposed as
 `verifyEventMigration` in `packages/scripts/src/common/event-migration.verify.ts`.
