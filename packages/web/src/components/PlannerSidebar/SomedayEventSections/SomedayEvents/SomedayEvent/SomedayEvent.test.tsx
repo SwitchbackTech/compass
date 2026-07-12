@@ -62,7 +62,9 @@ describe("SomedayEvent", () => {
     expect(event.className).toContain("text-text-dark");
     expect(event.className).toContain("hover:cursor-pointer");
     expect(
-      event.querySelector("[data-someday-drag-affordance]")?.className.baseVal,
+      event
+        .querySelector("[data-someday-drag-affordance]")
+        ?.getAttribute("class"),
     ).toContain("cursor-grab");
   });
 
