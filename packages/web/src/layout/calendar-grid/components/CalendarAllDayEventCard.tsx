@@ -9,6 +9,7 @@ import {
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { isRecurringEvent } from "@core/util/event/event.util";
+import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
@@ -26,6 +27,8 @@ import { GridEventRepeatIcon } from "./GridEventRepeatIcon";
 const REPEAT_ICON_MIN_WIDTH = 60;
 
 export interface CalendarAllDayEventCardProps {
+  /** Resolved by a list-level useCalendarLookup call, not fetched here. */
+  calendarIdentity?: CalendarCardIdentity | null;
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
   isCommitAcknowledged?: boolean;
@@ -44,6 +47,7 @@ export interface CalendarAllDayEventCardProps {
 
 const CalendarAllDayEventCardBase = (
   {
+    calendarIdentity = null,
     event,
     interactionAttributes,
     isCommitAcknowledged = false,
@@ -91,7 +95,13 @@ const CalendarAllDayEventCardBase = (
     cursor: showResizeCursor ? "col-resize" : undefined,
     ...placement,
   });
-  const accessibleLabel = `${isRecurring ? "Recurring " : ""}All-day event: ${event.title || "Untitled event"}`;
+  const baseAccessibleLabel = `${isRecurring ? "Recurring " : ""}All-day event: ${event.title || "Untitled event"}`;
+  // Priority remains the card's fill; the accent + this suffix are the only
+  // calendar signal, and the name (never color alone) is what makes it
+  // accessible (A9).
+  const accessibleLabel = calendarIdentity
+    ? `${baseAccessibleLabel}, ${calendarIdentity.name} calendar`
+    : baseAccessibleLabel;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: All-day events are draggable/resizable blocks, not native buttons.
@@ -130,6 +140,13 @@ const CalendarAllDayEventCardBase = (
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
+      {calendarIdentity && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 w-[3px]"
+          style={{ backgroundColor: calendarIdentity.backgroundColor }}
+        />
+      )}
       <div
         className={cn("flex min-w-0 items-center", {
           // Reserve room so a long title truncates before the bottom-right icon.

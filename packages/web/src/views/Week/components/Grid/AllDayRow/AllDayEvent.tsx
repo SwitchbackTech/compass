@@ -1,5 +1,6 @@
 import { type ForwardedRef, forwardRef, type MouseEvent, memo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
@@ -12,6 +13,7 @@ import {
 } from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
 
 interface Props {
+  calendarIdentity?: CalendarCardIdentity | null;
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
   isPlaceholder: boolean;
@@ -28,6 +30,7 @@ interface Props {
 
 const AllDayEventBase = (
   {
+    calendarIdentity = null,
     event,
     interactionAttributes,
     isPlaceholder,
@@ -68,6 +71,7 @@ const AllDayEventBase = (
 
   return (
     <CalendarAllDayEventCard
+      calendarIdentity={calendarIdentity}
       event={event}
       interactionAttributes={interactionAttributes}
       isCommitAcknowledged={shouldAcknowledgeCommit}
@@ -93,6 +97,7 @@ const AllDayEvent = forwardRef(AllDayEventBase);
 
 export const AllDayEventMemo = memo(AllDayEvent, (prev, next) => {
   return (
+    prev.calendarIdentity === next.calendarIdentity &&
     prev.event === next.event &&
     prev.interactionAttributes === next.interactionAttributes &&
     prev.isPlaceholder === next.isPlaceholder &&

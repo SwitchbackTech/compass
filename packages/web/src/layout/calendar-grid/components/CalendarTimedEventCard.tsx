@@ -10,6 +10,7 @@ import {
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { isRecurringEvent } from "@core/util/event/event.util";
+import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
@@ -47,6 +48,8 @@ const REPEAT_ICON_MIN_WIDTH = 40;
 
 interface CalendarTimedEventCardProps {
   boxShadow?: CSSProperties["boxShadow"];
+  /** Resolved by a list-level useCalendarLookup call, not fetched here. */
+  calendarIdentity?: CalendarCardIdentity | null;
   displayMode: "draft" | "placeholder" | "saved";
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
@@ -70,6 +73,7 @@ interface CalendarTimedEventCardProps {
 const CalendarTimedEventCardBase = (
   {
     boxShadow,
+    calendarIdentity = null,
     displayMode,
     event,
     interactionAttributes,
@@ -191,9 +195,15 @@ const CalendarTimedEventCardBase = (
       ? getTimesLabel(event.startDate, event.endDate)
       : null;
   const recurringPrefix = isRecurring ? "Recurring " : "";
-  const accessibleLabel = event.isAllDay
+  const baseAccessibleLabel = event.isAllDay
     ? `${recurringPrefix}All-day event: ${eventTitle}`
     : `${recurringPrefix}Timed event: ${eventTitle}, ${timeRange ?? "time not set"}`;
+  // Priority remains the card's fill; the accent + this suffix are the only
+  // calendar signal, and the name (never color alone) is what makes it
+  // accessible (A9).
+  const accessibleLabel = calendarIdentity
+    ? `${baseAccessibleLabel}, ${calendarIdentity.name} calendar`
+    : baseAccessibleLabel;
 
   return (
     // biome-ignore lint/a11y/useSemanticElements: Grid events are draggable/resizable blocks, not native buttons.
@@ -239,6 +249,13 @@ const CalendarTimedEventCardBase = (
       onMouseEnter={onMouseEnter}
       onMouseLeave={onMouseLeave}
     >
+      {calendarIdentity && (
+        <div
+          aria-hidden="true"
+          className="absolute inset-y-0 left-0 w-[3px]"
+          style={{ backgroundColor: calendarIdentity.backgroundColor }}
+        />
+      )}
       <div className="flex flex-col flex-wrap items-start">
         <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (

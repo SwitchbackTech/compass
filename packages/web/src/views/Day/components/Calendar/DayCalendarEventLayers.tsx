@@ -1,6 +1,10 @@
 import { useMemo } from "react";
 import { type Schema_Event } from "@core/types/event.types";
 import {
+  resolveCalendarCardIdentity,
+  useCalendarLookup,
+} from "@web/calendars/useCalendarLookup";
+import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
@@ -37,6 +41,8 @@ export const DayCalendarAllDayEventsLayer = ({
   onOpenEvent,
   visibleDates,
 }: DayEventsProps) => {
+  // One lookup build for the whole list (packet 08 step 5) - not per card.
+  const calendarLookup = useCalendarLookup();
   const savedEventIds = useMemo(
     () => getCalendarEventIdSet(allDayEvents),
     [allDayEvents],
@@ -64,6 +70,10 @@ export const DayCalendarAllDayEventsLayer = ({
     >
       {renderedEvents.map((event) => (
         <DayAllDayCalendarEvent
+          calendarIdentity={resolveCalendarCardIdentity(
+            calendarLookup,
+            event.calendarId,
+          )}
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
@@ -84,6 +94,8 @@ export const DayCalendarTimedEventsLayer = ({
   onOpenEvent,
   visibleDates,
 }: DayEventsProps) => {
+  // One lookup build for the whole list (packet 08 step 5) - not per card.
+  const calendarLookup = useCalendarLookup();
   const savedEventIds = useMemo(
     () => getCalendarEventIdSet(timedEvents),
     [timedEvents],
@@ -107,6 +119,10 @@ export const DayCalendarTimedEventsLayer = ({
     <div id={ID_GRID_EVENTS_TIMED}>
       {timedEventItems.map(({ deckLayout, event }) => (
         <DayTimedCalendarEvent
+          calendarIdentity={resolveCalendarCardIdentity(
+            calendarLookup,
+            event.calendarId,
+          )}
           deckLayout={deckLayout}
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}

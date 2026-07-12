@@ -12,8 +12,10 @@ import {
   useState,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import { type CalendarId } from "@core/types/domain-primitives";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { useCalendarLookup } from "@web/calendars/useCalendarLookup";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { darken } from "@web/common/styles/color.utils";
 import {
@@ -39,6 +41,7 @@ import {
   replaceGridDraftSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
+import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/RecurrenceSection";
@@ -142,6 +145,15 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
       draft.values.schedule.kind === "allDay"
         ? Categories_Event.ALLDAY
         : Categories_Event.TIMED;
+    // A6: an existing event's calendar is display-only here, never a move
+    // control - draft.source.calendarId is the only calendar an edit draft
+    // can show.
+    const calendarLookup = useCalendarLookup();
+    const originalCalendarName =
+      draft.kind === "edit"
+        ? (calendarLookup.get(draft.source.calendarId)?.name ??
+          "Unknown calendar")
+        : null;
     const latestDraftRef = useRef(draft);
     const eventStartDate = event.startDate as string;
     const eventEndDate = event.endDate as string;
@@ -232,6 +244,19 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
         setDraft(resolvedDraft);
       },
       [setDraft],
+    );
+
+    // Only a "create" draft (new or duplicate) can target a calendar; an
+    // "edit" draft's calendar is fixed (A6) and CalendarSelect isn't shown
+    // for it.
+    const onSelectCalendar = useCallback(
+      (calendarId: CalendarId) => {
+        setLatestDraft((current) => {
+          if (!current || current.kind !== "create") return current;
+          return { ...current, values: { ...current.values, calendarId } };
+        });
+      },
+      [setLatestDraft],
     );
 
     // Schema_Event-shaped writer for the still-unconverted DatePickers/
@@ -509,6 +534,17 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
           onSetEventField={onSetEventField}
           priority={priority}
         />
+
+        {draft.kind === "create" ? (
+          <CalendarSelect
+            onChange={onSelectCalendar}
+            value={draft.values.calendarId}
+          />
+        ) : (
+          <p className="my-1.5 text-text-light text-xs">
+            Calendar: {originalCalendarName}
+          </p>
+        )}
 
         <DateControlsSection
           dateTimeSectionProps={dateTimeSectionProps}

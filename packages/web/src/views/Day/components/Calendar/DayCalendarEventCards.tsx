@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useRef, useState } from "react";
+import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -27,6 +28,7 @@ import {
 } from "@web/views/Day/interaction/targeting/dayCalendarEventTargeting";
 
 interface DayEventCardProps {
+  calendarIdentity?: CalendarCardIdentity | null;
   event: Schema_GridEvent;
   isActiveDraft: boolean;
   isPlaceholder: boolean;
@@ -40,6 +42,7 @@ interface DayTimedEventCardProps extends DayEventCardProps {
 }
 
 export const DayAllDayCalendarEvent = ({
+  calendarIdentity = null,
   event,
   isActiveDraft,
   isPlaceholder,
@@ -72,6 +75,7 @@ export const DayAllDayCalendarEvent = ({
 
   return (
     <CalendarAllDayEventCard
+      calendarIdentity={calendarIdentity}
       event={event}
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
@@ -96,6 +100,7 @@ export const DayAllDayCalendarEvent = ({
 };
 
 export const DayTimedCalendarEvent = ({
+  calendarIdentity = null,
   deckLayout,
   event,
   isActiveDraft,
@@ -146,6 +151,7 @@ export const DayTimedCalendarEvent = ({
   return (
     <CalendarTimedEventCard
       boxShadow={deckBoxShadow}
+      calendarIdentity={calendarIdentity}
       displayMode={isPlaceholder ? "placeholder" : "saved"}
       event={event}
       interactionAttributes={interactionAttributes}

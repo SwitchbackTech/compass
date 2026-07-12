@@ -6,6 +6,7 @@ import {
   useState,
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -26,6 +27,7 @@ import {
 } from "@web/views/Week/interaction/targeting/weekCalendarEventTargeting";
 
 interface Props {
+  calendarIdentity?: CalendarCardIdentity | null;
   deckLayout?: CalendarTimedDeckLayout | null;
   displayMode: GridEventDisplayMode;
   event: Schema_GridEvent;
@@ -47,6 +49,7 @@ type GridEventMotionMode = "dragging" | "idle" | "resizing";
 
 const GridEventBase = (
   {
+    calendarIdentity = null,
     deckLayout = null,
     displayMode,
     event: _event,
@@ -142,6 +145,7 @@ const GridEventBase = (
     <CalendarTimedEventCard
       onBlur={isDeck ? () => setIsFocused(false) : undefined}
       boxShadow={deckBoxShadow}
+      calendarIdentity={calendarIdentity}
       displayMode={displayMode}
       event={event}
       onFocus={isDeck ? () => setIsFocused(true) : undefined}
@@ -168,6 +172,7 @@ const GridEventBase = (
 export const GridEvent = forwardRef(GridEventBase);
 export const GridEventMemo = memo(GridEvent, (prev, next) => {
   return (
+    prev.calendarIdentity === next.calendarIdentity &&
     prev.displayMode === next.displayMode &&
     prev.deckLayout === next.deckLayout &&
     prev.event === next.event &&

@@ -1,9 +1,10 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createRef, type SetStateAction, useState } from "react";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
@@ -161,7 +162,7 @@ describe("EventForm", () => {
   });
 
   it("renders the title before the actions on the same row", () => {
-    render(
+    renderWithStore(
       <EventForm
         draft={createEditDraft({ description: "Plan the launch" })}
         isDraft={false}
@@ -190,7 +191,7 @@ describe("EventForm", () => {
     const draft = createEditDraft();
     const onDuplicate = mock();
 
-    render(
+    renderWithStore(
       <EventForm
         draft={draft}
         isDraft={false}
@@ -219,7 +220,7 @@ describe("EventForm", () => {
     const onClose = mock();
     const onDelete = mock();
 
-    render(
+    renderWithStore(
       <EventForm
         draft={createNewDraft({ title: "Unsaved draft" })}
         isDraft={true}
@@ -242,7 +243,7 @@ describe("EventForm", () => {
     const onClose = mock();
     const onDelete = mock();
 
-    render(
+    renderWithStore(
       <EventForm
         draft={createEditDraft()}
         isDraft={false}
@@ -269,7 +270,7 @@ describe("EventForm", () => {
     const onClose = mock();
     const onDelete = mock();
 
-    render(
+    renderWithStore(
       <EventForm
         draft={createEditDraft({ description: "Plan the launch" })}
         isDraft={false}
@@ -296,7 +297,7 @@ describe("EventForm", () => {
     const onClose = mock();
     const onDelete = mock();
 
-    render(
+    renderWithStore(
       <EventForm
         draft={createEditDraft()}
         isDraft={false}
@@ -330,7 +331,7 @@ describe("EventForm", () => {
       timeZone: "UTC",
     });
 
-    const { rerender } = render(
+    const { rerender } = renderWithStore(
       <EventForm
         draft={draft}
         isDraft={false}
@@ -374,7 +375,7 @@ describe("EventForm", () => {
   it("lets an untouched empty draft title keep normal arrow-key behavior", () => {
     const draft = createNewDraft({ title: "" });
 
-    render(
+    renderWithStore(
       <EventForm
         draft={draft}
         isDraft={true}
@@ -396,7 +397,7 @@ describe("EventForm", () => {
   it("lets an untouched existing event title keep normal arrow-key behavior", () => {
     const draft = createEditDraft({ title: "Planning" });
 
-    render(
+    renderWithStore(
       <EventForm
         draft={draft}
         isDraft={false}
@@ -416,7 +417,7 @@ describe("EventForm", () => {
   });
 
   it("lets the description field keep normal arrow-key behavior", () => {
-    render(
+    renderWithStore(
       <EventForm
         draft={createEditDraft({ description: "Plan the launch" })}
         isDraft={false}
@@ -438,7 +439,7 @@ describe("EventForm", () => {
   it("lets directly edited existing event titles keep normal arrow-key behavior", () => {
     const draft = createEditDraft({ title: "Planning" });
 
-    render(
+    renderWithStore(
       <EventForm
         draft={draft}
         isDraft={false}
@@ -493,7 +494,7 @@ describe("EventForm", () => {
       );
     }
 
-    render(<Harness />);
+    renderWithStore(<Harness />);
 
     const titleField = screen.getByPlaceholderText("Title");
     titleField.focus();
@@ -513,7 +514,7 @@ describe("EventForm", () => {
     const user = userEvent.setup();
     const onSubmit = mock();
 
-    render(
+    renderWithStore(
       <EventForm
         draft={createEditDraft()}
         isDraft={true}
@@ -538,7 +539,7 @@ describe("EventForm", () => {
     const user = userEvent.setup();
     const onSubmit = mock();
 
-    render(
+    renderWithStore(
       <>
         <button type="button">Draft block</button>
         <EventForm
@@ -564,7 +565,7 @@ describe("EventForm", () => {
   it("exposes the title input ref to the parent", () => {
     const titleInputRef = createRef<HTMLInputElement>();
 
-    render(
+    renderWithStore(
       <EventForm
         draft={createEditDraft()}
         isDraft={true}

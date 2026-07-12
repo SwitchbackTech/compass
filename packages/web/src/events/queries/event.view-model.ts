@@ -69,13 +69,39 @@ const isValidScheduledEvent = (event: Event): boolean => {
   return isValid;
 };
 
-const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") =>
-  events
+// Re-attaches calendarId onto the Schema_GridEvent produced by the
+// Event -> Schema_Event -> Schema_GridEvent bridge above. scheduledEventToSchemaEvent
+// returns the legacy, hand-written core `Schema_Event` shape (event.types.ts),
+// which has no calendarId field, so the bridge itself can't carry it through
+// without widening that shared type (used by 10+ unrelated consumers). Joining
+// back by event id after assembleGridEvent keeps the bridge untouched and scopes
+// the new field to Schema_GridEvent only (packet 08 step 5).
+const withCalendarId = (
+  events: Event[],
+  gridEvents: Schema_GridEvent[],
+): Schema_GridEvent[] => {
+  const calendarIdByEventId = new Map<string, Event["calendarId"]>(
+    events.map((event) => [event.id, event.calendarId]),
+  );
+  return gridEvents.map((gridEvent) => ({
+    ...gridEvent,
+    calendarId: gridEvent._id
+      ? calendarIdByEventId.get(gridEvent._id)
+      : undefined,
+  }));
+};
+
+const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") => {
+  const scheduled = events
     .filter(isValidScheduledEvent)
-    .filter((event) => event.schedule.kind === kind)
+    .filter((event) => event.schedule.kind === kind);
+  const assembled = scheduled
     .map(scheduledEventToSchemaEvent)
     .filter((event): event is EventWithDates => hasEventDates(event))
     .map(assembleGridEvent);
+
+  return withCalendarId(scheduled, assembled);
+};
 
 const timedEventsFrom = (events: Event[]) => gridEventsFrom(events, "timed");
 

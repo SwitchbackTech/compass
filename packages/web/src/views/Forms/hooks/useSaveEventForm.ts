@@ -21,7 +21,12 @@ export function useSaveEventForm() {
       if (!draft) return closeEventForm();
 
       if (draft.kind === "create") {
-        const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
+        // Respects a calendar the user explicitly chose via CalendarSelect;
+        // only an untouched draft (calendarId still null) falls back to the
+        // default target calendar.
+        const calendarId =
+          draft.values.calendarId ??
+          getDefaultTargetCalendar(calendars ?? [])?.id;
         if (!calendarId) return closeEventForm();
 
         const parsed = parseGridEventDraft({

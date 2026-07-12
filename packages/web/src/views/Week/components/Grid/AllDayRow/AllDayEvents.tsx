@@ -1,5 +1,10 @@
 import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
+import {
+  type CalendarCardIdentity,
+  resolveCalendarCardIdentity,
+  useCalendarLookup,
+} from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
@@ -37,6 +42,8 @@ export const AllDayEvents = ({
   });
 
   const draftId = useDraftStore(selectDraftId);
+  // One lookup build for the whole list (packet 08 step 5) - not per card.
+  const calendarLookup = useCalendarLookup();
   // The query covers the full week; only mount events overlapping the visible
   // window so off-window events never land in the DOM or the interaction
   // registry.
@@ -46,6 +53,20 @@ export const AllDayEvents = ({
         isAllDayEventInVisibleDays(event, weekDays),
       ),
     [allDayEvents, weekDays],
+  );
+  // Resolved once per event here (not inside each card) and kept referentially
+  // stable across renders where neither the events nor the calendars changed,
+  // so AllDayEventMemo's per-card comparator doesn't over-invalidate.
+  const visibleAllDayEventsWithIdentity = useMemo(
+    () =>
+      visibleAllDayEvents.map((event) => ({
+        event,
+        calendarIdentity: resolveCalendarCardIdentity(
+          calendarLookup,
+          event.calendarId,
+        ),
+      })),
+    [visibleAllDayEvents, calendarLookup],
   );
 
   // NOT converted to GridEventDraft/editGridEventDraft: useDraftActions.ts
@@ -67,15 +88,25 @@ export const AllDayEvents = ({
       id={ID_GRID_EVENTS_ALLDAY}
     >
       {!isLoadingWeekView &&
-        visibleAllDayEvents.map((event: Schema_GridEvent) => {
+        visibleAllDayEventsWithIdentity.map(({ event, calendarIdentity }) => {
           const isPlaceholder = event._id === draftId;
           const eventForDisplay =
             isPlaceholder && draft && draft._id === event._id
               ? { ...event, ...draft }
               : event;
+          // The placeholder can carry a live (dragging/resizing) calendarId
+          // from the draft store; everything else reuses the stable,
+          // list-level resolved identity above.
+          const identityForDisplay = isPlaceholder
+            ? resolveCalendarCardIdentity(
+                calendarLookup,
+                eventForDisplay.calendarId,
+              )
+            : calendarIdentity;
 
           return (
             <AllDayEventItem
+              calendarIdentity={identityForDisplay}
               event={eventForDisplay}
               isPlaceholder={isPlaceholder}
               key={event._id}
@@ -90,6 +121,7 @@ export const AllDayEvents = ({
 };
 
 interface AllDayEventItemProps {
+  calendarIdentity: CalendarCardIdentity | null;
   event: Schema_GridEvent;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
@@ -98,6 +130,7 @@ interface AllDayEventItemProps {
 }
 
 const AllDayEventItem = ({
+  calendarIdentity,
   event,
   isPlaceholder,
   measurements,
@@ -124,6 +157,7 @@ const AllDayEventItem = ({
 
   return (
     <AllDayEventMemo
+      calendarIdentity={calendarIdentity}
       event={event}
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
