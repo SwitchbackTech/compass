@@ -329,10 +329,110 @@ new credentials that don't match the old volumes.
 To keep the old data, restore the matching `compass.yaml` from a backup, then
 rerun the installer.
 
+## Sub-calendar v1 collection cutover (backup & rollback)
+
+This section is scoped to one specific event: the sub-calendar v1 release
+migrates events out of the legacy `event` collection into a calendar-owned
+schema (`packages/scripts/src/migrations/`, plan packets `02` and `03`). It
+adds only the backup and rollback commands around the one-time collection
+**cutover** (the write-pause-and-rename step) next to the rest of this file's
+backup material. For everything else — disk-space preflight, running the
+forward migration, reading its verification summary, and the full
+staging-first rollout sequence — read the
+[Event migration runbook](./event-migration-runbook.md) in full first; this
+section does not repeat that material.
+
+This documents the REHEARSED procedure the release runbook requires
+operators to exercise on staging before it is ever run for real. Per
+decision A36, the production cutover runs exactly once, manually, only after
+every gate in `handoff/someday/09-v1-release-hardening.md` passes on
+staging — do not run these commands against production outside that single
+planned window.
+
+### Before cutover: dump the affected collections
+
+In addition to the full volume backup above, take a collection-level
+`mongodump` of the three collections the cutover touches, immediately before
+you pause writes for the rename. A collection-level dump restores faster
+than a whole-volume restore when only event/calendar data is in question,
+and it captures the exact moment before the rename:
+
+```bash
+mongodump --db prod_calendar --collection calendar --out /tmp/pre-cutover-dump
+mongodump --db prod_calendar --collection event --out /tmp/pre-cutover-dump
+mongodump --db prod_calendar --collection event_new --out /tmp/pre-cutover-dump
+```
+
+Run these from a machine or container that can reach the compose network —
+on a Docker install the Mongo port is not published to the host. `prod_calendar`
+is the production database name; dev databases use the `_dev.` collection
+prefix instead. Use your own connection details; never hardcode real
+credentials into a saved script or ticket.
+
+### Cutover: the rename
+
+The cutover renames collections instead of copying data, so the final
+validators and indexes travel with the data and the `Collections` constants
+in code never change (A31). This is the same step documented in the [Event
+migration runbook](./event-migration-runbook.md)'s Cutover section:
+
+```javascript
+// mongosh, e.g.: docker compose exec mongo mongosh -u ... -p ...
+use prod_calendar;
+db.event.renameCollection("event_legacy_v1");
+db.event_new.renameCollection("event");
+```
+
+Keep `event_legacy_v1` — it is the untouched legacy collection and the only
+rollback source. Do not drop it in v1.
+
+### Rollback: restore the untouched legacy collection
+
+Rolling back means redeploying the pre-cutover app version and pointing it
+back at the untouched `event_legacy_v1` collection.
+
+> **Accepted loss window.** Rolling back after the cutover abandons every
+> write made since the cutover — there is no dual-write to replay from.
+> That loss is the accepted trade for a short, simple migration instead of
+> an always-on replication setup. Keep the window short by rolling back
+> promptly or not at all. The new collection is dumped **first**, below, so
+> those abandoned writes stay recoverable by hand from the dump — they are
+> not gone, just not automatically restored.
+
+```bash
+# 1. Stop the backend so no writes land mid-rename.
+COMPOSE_PROFILES=selfhosted docker compose stop backend
+
+# 2. Dump the new collection FIRST so post-cutover writes stay recoverable
+#    by hand, before anything is renamed back.
+mongodump --db prod_calendar --collection event --out /tmp/post-cutover-dump
+```
+
+```javascript
+// mongosh
+use prod_calendar;
+db.event.renameCollection("event_new");
+db.event_legacy_v1.renameCollection("event");
+```
+
+```bash
+# 3. Redeploy the previous (pre-cutover) app version, then start the backend.
+cd ~/compass
+./compass start
+```
+
+Then verify: sign in, confirm events are readable, and confirm the running
+app is the pre-cutover version.
+
+Never include real credentials or user event content when copying any of
+the commands above into a runbook, ticket, or chat — use placeholder
+connection details, as this section does.
+
 ## What to read next
 
 After you have a backup you trust, return to [Server hosting guide](./server-guide.md)
-for server checks and update notes.
+for server checks, or [Upgrades](./upgrades.md) for update and migration
+notes.
 
 ----
 

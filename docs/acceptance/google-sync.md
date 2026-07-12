@@ -14,11 +14,18 @@ Use this guide to validate:
 - sync needing attention and user triggering a sync
 - Google access revoked — events removed and reconnect prompt shown
 - re-connecting Google after revocation
+- per-calendar visibility hide/show and its server-side read filtering
+- Google-side calendar add/rename/recolor/hide/delete reconciling into Compass
+- watch repair self-healing after an expired/deleted watch
+- freeBusyReader calendars showing availability without event details
+- revoked access pruning Google data while Compass-local data survives
 
 Do not use this guide to validate:
 
 - first-time Google sign-in from a logged-out state (see `docs/acceptance/auth.md`, Scenario 5)
 - connecting Google during initial signup (see `docs/acceptance/auth.md`, Scenario 7)
+- calendar-target selection and read-only event interaction (see `events.md`,
+  "Calendar-Aware Events")
 
 ## Setup
 
@@ -27,11 +34,18 @@ Do not use this guide to validate:
 3. Ensure `compass.yaml` at the repo root has valid Google OAuth client credentials.
 4. Use a Google account you control and can create test events in.
 5. For revocation scenarios, you need access to the Google account's security settings at `myaccount.google.com/permissions`.
+6. Scenarios 9-13 are easiest with three calendars on the connected account:
+   one you own (writable), one shared with you as a reader, and one shared
+   with you as `freeBusyReader` ("See only free/busy"). Scenarios 10-12 need
+   only the specific calendar role each one calls out.
 
 Helpful notes:
 
 - There is no user-facing "Disconnect Google" button. Revocation only happens when the user removes access in Google's own account settings.
-- All Google calendars sync by default. There is no UI to select which calendars to include or exclude.
+- All eligible Google calendars import by default — there's no UI to opt a
+  calendar out of import. The sidebar's "Calendars" list controls per-calendar
+  *visibility* in Compass instead (Scenario 9); a hidden calendar keeps
+  syncing in the background, it just stops showing events.
 - The email shimmer animation appears during import and sync. There is no granular progress bar.
 - Toasts appear only on errors, not on successful sync operations.
 
@@ -219,6 +233,179 @@ After revocation, the user can reconnect Google using the same flow as the initi
 
 ---
 
+## Scenario 9: Per-Calendar Visibility Persists Across Reload
+
+### UX
+
+The sidebar lists every active calendar under "Calendars" with a visibility
+switch per calendar. Turning a calendar off hides its events from the grid
+without unsubscribing sync; the choice is a Compass preference that survives
+reloads and other sessions, and the server filters what it sends based on it.
+
+### Steps
+
+1. Confirm Google Calendar is connected and import is complete, with at
+   least two calendars visible in the sidebar "Calendars" list.
+2. Note an event on the grid from a secondary (non-primary) calendar.
+3. In the sidebar, toggle that calendar's visibility switch off.
+4. Reload the page.
+5. Toggle it back on.
+6. Sign in with the same account from a second session (a private/incognito
+   window works).
+
+### Expected Results
+
+- Turning a calendar off immediately removes its events from the grid, no
+  page reload needed.
+- After reloading, the calendar still shows off and its events stay hidden —
+  the preference is stored server-side (`isVisible`), not just client state.
+- The second session shows the same visibility state.
+- The event read request (`GET /api/event`) omits events on the hidden
+  calendar entirely rather than returning and filtering them client-side —
+  confirm via the browser's network inspector.
+- Toggling the calendar back on restores its events.
+
+---
+
+## Scenario 10: Google-Side Calendar Changes Reconcile Without A Reset
+
+### UX
+
+Adding, renaming, recoloring, hiding, or deleting a calendar in Google
+Calendar reconciles into the Compass sidebar automatically. None of these
+require a reconnect or a full reimport of the account.
+
+### Steps
+
+1. Confirm Google Calendar is connected and the sidebar "Calendars" list
+   matches Google's current calendar set.
+2. In Google Calendar's settings, create a new secondary calendar.
+3. Wait up to 30 seconds (or trigger a sync — see Scenario 6) and check the
+   Compass sidebar.
+4. Rename the new calendar in Google Calendar, and change its color.
+5. Check Compass again.
+6. Hide the calendar in Google Calendar (uncheck it in "My calendars"
+   without deleting it), then check Compass.
+7. Unhide it in Google Calendar, then check Compass.
+8. Delete the calendar entirely in Google Calendar.
+
+### Expected Results
+
+- The new calendar appears in the Compass sidebar without a reconnect or
+  full reimport; any of its existing events import normally.
+- The rename and recolor both reconcile into the sidebar's name and color
+  marker.
+- Hiding it in Google removes it from the Compass sidebar and stops syncing
+  its events, without touching any other calendar's events or visibility.
+- Unhiding it restores it under the same Compass identity — the same
+  visibility preference as before, not reset to a default.
+- Deleting it in Google removes it, and only its own events, from Compass.
+- Throughout, every other calendar's events, visibility, and sync state stay
+  undisturbed.
+
+---
+
+## Scenario 11: Watch Repair Self-Heals After An Expired Or Deleted Watch
+
+### UX
+
+Compass keeps a live Google notification subscription ("watch") per
+syncable calendar. If a watch expires or is deleted outside Compass,
+reopening the app repairs it automatically — no manual "Sync now" click
+required (compare Scenario 6, which covers the manual trigger).
+
+### Steps
+
+1. Confirm Google Calendar is connected and HEALTHY.
+2. In a dev environment, expire or delete a watch record (for example, by
+   forcing a short `google.channelExpirationMin` and waiting, or by directly
+   invalidating the stored watch).
+3. Without clicking anything in Compass, close and reopen the tab (or
+   reload) to reconnect.
+4. Wait a few seconds, then create an event directly in Google Calendar.
+5. Switch back to Compass and wait up to 30 seconds.
+
+### Expected Results
+
+- Reopening/reloading the app alone triggers a defensive repair check on
+  reconnect — you don't need to notice an ATTENTION state or click "Sync
+  now" for the watch to be repaired.
+- The sidebar email converges to HEALTHY (normal color, "Up-to-date"
+  tooltip) on its own.
+- The event created directly in Google Calendar appears in Compass without
+  a page reload, proving the repaired watch (or the incremental catch-up
+  sync behind it) is live again.
+- No duplicate events appear as a result of the repair.
+
+---
+
+## Scenario 12: freeBusyReader Calendars Show Availability Without Event Details
+
+### UX
+
+A calendar where your Google access is "See only free/busy" never produces
+Compass event records. Compass shows its busy time ranges as inert striped
+blocks on the grid, with no event content and no way to interact with them.
+
+### Steps
+
+1. Confirm a `freeBusyReader` calendar is connected and visible in the
+   Compass sidebar (see Setup).
+2. Create a titled event on that calendar directly in Google Calendar,
+   during a time range visible in Compass.
+3. Wait up to 30 seconds and check Compass.
+4. Try to click, right-click, hover, and drag the striped block that
+   appears.
+
+### Expected Results
+
+- Compass shows a diagonally-striped block for the busy period, matching
+  the event's time range, with no title or other details shown.
+- Left-click does nothing — no form opens.
+- Right-click does nothing — no context menu opens.
+- The block cannot be dragged, resized, or deleted; no cursor affordance
+  suggests it can be.
+- The calendar's sidebar visibility toggle still works, hiding/showing its
+  busy blocks the same way it hides/shows real events on other calendars.
+
+---
+
+## Scenario 13: Revoked Access Prunes Google Data While Compass-Local Data Survives
+
+### UX
+
+Revoking Compass's Google access removes every Google-sourced calendar and
+its events — not just the primary one — while the Compass-local calendar
+and anything created without Google (password-only events, Someday items)
+is never touched.
+
+### Steps
+
+1. Before connecting Google (or on a separate password-only account),
+   create at least one scheduled event and one Someday event on your
+   Compass-local calendar.
+2. Connect Google Calendar (see Scenario 1) with multiple calendars
+   available — at least one writable calendar and, if possible, a reader or
+   `freeBusyReader` calendar too. Let import complete.
+3. Confirm events/availability from every Google calendar are visible,
+   alongside your original Compass-local events.
+4. Revoke Compass's access at `myaccount.google.com/permissions` (see
+   Scenario 7).
+5. Return to Compass and wait for the revocation to be detected.
+
+### Expected Results
+
+- Every Google-sourced calendar disappears from the sidebar, not just the
+  primary one.
+- All events and availability blocks from every Google calendar are
+  removed.
+- The Compass-local calendar, and the scheduled and Someday events you
+  created on it before ever connecting Google, remain exactly as they
+  were — nothing about the account, priorities, or local data is deleted.
+- The toast and reconnect-prompt behavior matches Scenario 7.
+
+---
+
 ## Focused Regression Checks
 
 If time is limited, run these checks before shipping Google sync changes:
@@ -233,3 +420,8 @@ If time is limited, run these checks before shipping Google sync changes:
 8. After the sync completes, status returns to HEALTHY.
 9. Revoking access in Google's settings removes all Google-origin events from Compass and shows the revocation toast.
 10. Re-connecting after revocation triggers a fresh import and repopulates Google events.
+11. Hiding/showing a calendar in the sidebar persists across reload, and the server excludes hidden-calendar events from event reads.
+12. A Google-side calendar add/rename/recolor/hide/delete reconciles into the sidebar without a full reset.
+13. Reopening the app after a watch expires or is deleted repairs it automatically, with no manual action.
+14. A freeBusyReader calendar's busy blocks show no title, details, or event actions.
+15. Revoking access prunes only Google-sourced calendars/events; the Compass-local calendar and its events survive.
