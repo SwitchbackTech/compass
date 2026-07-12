@@ -3,6 +3,10 @@ import { Priorities } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
 import { Categories_Event } from "@core/types/event.types";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import {
+  gridColorByPriority,
+  gridHoverColorByPriority,
+} from "@web/common/styles/theme.util";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
 import { SomedayEvent } from "./SomedayEvent";
 import { describe, expect, it, mock } from "bun:test";
@@ -44,6 +48,19 @@ const renderSomedayEvent = ({
 };
 
 describe("SomedayEvent", () => {
+  it("uses the calendar grid priority colors for saved events", () => {
+    renderSomedayEvent();
+
+    const event = screen.getAllByRole("button")[0];
+
+    expect(event.style.getPropertyValue("--someday-event-bg")).toBe(
+      gridColorByPriority[Priorities.WORK],
+    );
+    expect(event.style.getPropertyValue("--someday-event-hover-bg")).toBe(
+      gridHoverColorByPriority[Priorities.WORK],
+    );
+  });
+
   it("does not open the row when Space is pressed on an inner action button", () => {
     const { onClick } = renderSomedayEvent();
 
