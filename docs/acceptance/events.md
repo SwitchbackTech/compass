@@ -21,6 +21,8 @@ Use this guide to validate:
 - failed-write optimistic rollback
 - Week/Day navigation cache reuse
 - Google revocation and SSE-driven query refresh
+- picking a target calendar when creating/duplicating events, and read-only
+  calendar/busy-event behavior
 
 Do not use this guide to validate:
 
@@ -33,6 +35,10 @@ Do not use this guide to validate:
 2. Start the backend if you need events to persist across page reloads.
 3. Log in with any account that does not need Google connected (password-only is fine).
 4. Navigate to the Week view (`/week`) or Day view (`/day`) depending on the scenario.
+5. Scenarios 16 and 17 need a read-only Google calendar (a `reader` or
+   `freeBusyReader` calendar) in addition to a writable one — see
+   `google-sync.md` to connect Google and import one. Skip those two
+   scenarios if only writable calendars are available.
 
 Helpful notes:
 
@@ -301,6 +307,155 @@ After deleting an event, a brief undo opportunity is available. Pressing Cmd+Z (
 
 ---
 
+## Calendar-Aware Events
+
+### UX
+
+Every event belongs to exactly one calendar. Creating and duplicating let
+you pick a target calendar; once an event exists, its calendar is fixed
+(A6) — there is no move-to-another-calendar control anywhere in the UI.
+Events on a calendar you can't write to (a Google reader or free/busy-only
+calendar) can still be opened and inspected, but every mutation surface is
+blocked.
+
+---
+
+## Scenario 13: Create An Event On A Specific Calendar
+
+### UX
+
+The new-event form includes a "Calendar" field. It lists only calendars you
+can write to, defaults to your primary calendar, and is fully keyboard
+operable.
+
+### Steps
+
+1. Navigate to `/week`.
+2. Click an empty slot in the hourly grid to open a new event form.
+3. Open the "Calendar" field.
+4. Confirm only writable calendars are listed (no reader or free/busy-only
+   calendars appear) and the primary calendar is preselected.
+5. Choose a non-primary writable calendar, if you have one.
+6. Enter a title and submit.
+7. Reload the page.
+
+### Expected Results
+
+- The "Calendar" field offers only writable calendars; the primary calendar
+  is preselected and labeled "(primary)".
+- The field is operable with arrow keys and Enter, not just the mouse.
+- After submitting, the event is associated with the calendar you chose.
+- If no writable calendar exists at all, the field shows "No writable
+  calendar available" instead of a picker.
+- The choice persists after a page reload.
+
+---
+
+## Scenario 14: Duplicating An Event Defaults To Its Source Calendar
+
+### UX
+
+Cmd+D (see Scenario 11) creates a copy on the same calendar as the
+original, as long as that calendar is still writable.
+
+### Steps
+
+1. Open the form of an existing event on a writable, non-primary calendar
+   (if you have more than one writable calendar).
+2. Press Cmd+D (Mac) or Ctrl+D (Windows).
+3. Open the new duplicate's form and check its "Calendar" field.
+
+### Expected Results
+
+- The duplicate is created on the same calendar as the source event, not
+  the primary calendar, as long as the source calendar is writable.
+- The duplicate's form still shows a "Calendar" picker (it's a new,
+  independent event), with that calendar preselected.
+
+---
+
+## Scenario 15: Editing Shows The Calendar As Read-Only Text
+
+### UX
+
+Once an event exists, its calendar assignment cannot change from the event
+form — moving an event to a different calendar is out of scope for v1 (A6).
+
+### Steps
+
+1. Open an existing, previously-saved event's form (any calendar).
+2. Look for the calendar field.
+
+### Expected Results
+
+- The form shows "Calendar: `<calendar name>`" as plain text, not a picker
+  or dropdown.
+- There is no control anywhere in the form to change which calendar the
+  event belongs to.
+
+---
+
+## Scenario 16: Read-Only Calendar Events Are Inspectable But Never Editable
+
+### UX
+
+An event on a calendar you can't write to (or a private event showing busy
+content) can still be opened to view its details, but every mutating
+action is unavailable.
+
+### Steps
+
+1. Locate an event on a read-only calendar on the grid.
+2. Hover the event (or Tab to focus it, without clicking) and press `M`.
+3. Close the form, then right-click the same event.
+4. Try to drag the event to a new time slot.
+5. Hover the event's edges, looking for a resize cursor.
+6. If the event is in the Someday sidebar, try to drag it to reorder it
+   among other Someday events.
+
+### Expected Results
+
+- Pressing `M` opens the event in a read-only form: fields are disabled,
+  no Save button appears, and a note reads "Read-only — you don't have
+  permission to edit this event."
+- The right-click context menu shows "View" (not "Edit"), "Duplicate", and
+  no Delete option or priority-color picker.
+- The event cannot be picked up and dragged to a new time or day; no drag
+  preview appears.
+- No resize cursor or resize handle appears at the event's edges.
+- A read-only Someday event cannot be reordered by drag.
+- A direct left-click on the event may not reliably open the form (a known
+  intermittent gap); `M` and the context menu's "View" are the reliable
+  ways to inspect a read-only event.
+
+---
+
+## Scenario 17: Busy Private Events Show No Details
+
+### UX
+
+A private event on a calendar you only have reader access to is redacted:
+Compass shows that the time is busy without exposing Google's private
+title, description, or attendees.
+
+### Steps
+
+1. In Google Calendar, mark a test event as private on a calendar you've
+   shared with your Compass account as a reader.
+2. Confirm the event syncs to Compass (see `google-sync.md`).
+3. Open the busy event in Compass, using `M` or the context menu's "View".
+
+### Expected Results
+
+- The event displays with the title "Busy" on the grid and in its form,
+  regardless of the event's real Google title.
+- No description, location, or attendee details are shown anywhere.
+- The event is read-only the same way Scenario 16 describes. (Busy content
+  forces read-only even on a calendar you can otherwise write to — the
+  redaction is per-event, not just per-calendar.)
+
+---
+
 ## Focused Regression Checks
 
 If time is limited, run these checks before shipping event-related changes:
@@ -317,3 +472,7 @@ If time is limited, run these checks before shipping event-related changes:
 10. Dragging to/from the Someday sidebar correctly converts events between scheduled and unscheduled states.
 11. Cmd+D duplicates an event with the same properties.
 12. Cmd+Z / Ctrl+Z after deletion restores the event.
+13. A new/duplicate event form offers only writable calendars, defaulting to
+    primary; an existing event's form shows its calendar as read-only text.
+14. Read-only calendar events can be inspected (`M` / context-menu "View")
+    but never dragged, resized, deleted, or reordered.

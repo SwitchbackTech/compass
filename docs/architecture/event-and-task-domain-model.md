@@ -35,6 +35,38 @@ legacy types are deleted.
   the only intentionally incomplete event shape and the single parser that can
   turn it into a command.
 
+## Deferred Beyond V1
+
+These are scoped out of the sub-calendar v1 contracts above, not overlooked.
+Each line names the decision in `handoff/someday/master-doc.md`'s assumption
+log that anchors the carve-out, so a future v2 effort starts from the
+recorded reasoning instead of rediscovering it:
+
+- **Cross-calendar event moves.** An existing event's `calendarId` is
+  immutable once created (A6) — creating and duplicating pick a calendar,
+  editing shows it as read-only text, and there is no move control. The one
+  exception is the someday↔scheduled transition command noted above, which
+  A24 carves out as the sole calendar-changing command in v1, because it was
+  already live UX (`convertToSomeday`/`convertToCalendar`) the cutover had to
+  preserve. General cross-calendar moves need their own Google and recurrence
+  semantics (what happens to a moved recurring series, a moved event's
+  provider identity) that v1 never had to answer.
+- **Non-Google providers.** `Calendar` and event provider identity are
+  discriminated unions with exactly one live member: Google (plus the
+  Compass-local calendar) (A1, A23). Outlook and iCalendar adapters would add
+  new discriminant members rather than change the shape — the extension point
+  is deliberately in place, but no second adapter is implemented.
+- **Shared-calendar administration.** Compass reads Google's CalendarList and
+  lets a user change Compass-local visibility, but never creates, deletes, or
+  manages sharing/ACLs on a provider calendar (A1, A15). Calendar lifecycle
+  stays server-owned and Google-authoritative in v1.
+- **Per-event Google colors.** Compass models calendar identity as an
+  accent/marker plus text label, while an event card's fill stays
+  priority-driven (A9) — there is no per-event color field in
+  `event.contracts.ts` anywhere, so Google's per-event `colorId` overrides are
+  neither imported nor exposed. Surfacing them would need a second color
+  dimension on the card that A9 deliberately avoided.
+
 ## Core Event Schema
 
 Primary source:
