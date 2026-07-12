@@ -1,5 +1,7 @@
+import { type calendar_v3 } from "@googleapis/calendar";
 import {
   type AnyBulkWriteOperation,
+  type BulkWriteResult,
   type ClientSession,
   type ObjectId,
 } from "mongodb";
@@ -43,6 +45,68 @@ class CalendarService {
       session,
     );
 
+    const { result } = await this.upsertGoogleCalendarEntries(
+      userObjectId,
+      googleCalendars,
+      session,
+    );
+
+    const googleCalendarIds = googleCalendars
+      .map(({ id }) => id)
+      .filter((id): id is string => !!id);
+
+    // Valid ONLY here because `googleCalendars` is the complete calendarlist
+    // (full discovery), not a delta - archiving every google calendar absent
+    // from a delta would wipe out calendars the delta simply didn't mention.
+    // Kept out of `upsertGoogleCalendarEntries` for that reason.
+    const sweepResult = await mongoService.calendar.updateMany(
+      {
+        userId: userObjectId,
+        "source.provider": "google",
+        "source.calendarId": { $nin: googleCalendarIds },
+      },
+      { $set: { isActive: false, updatedAt: new Date() } },
+      { session },
+    );
+
+    const upsertOk = result === null || result.ok === 1;
+
+    return {
+      googleCalendars,
+      nextPageToken,
+      nextSyncToken,
+      acknowledged: upsertOk && sweepResult.acknowledged,
+      insertedCount: result?.insertedCount ?? 0,
+      insertedIds: result?.insertedIds ?? {},
+      modifiedCount: (result?.modifiedCount ?? 0) + sweepResult.modifiedCount,
+      upsertedIds: result?.upsertedIds ?? {},
+      deletedCount: result?.deletedCount ?? 0,
+    };
+  }
+
+  /**
+   * upsertGoogleCalendarEntries
+   *
+   * Shared upsert core for both full-list discovery
+   * (initializeGoogleCalendars) and incremental calendarlist reconciliation
+   * (google-calendarlist.service): maps each Google entry onto its Compass
+   * CalendarRecord - reusing an existing row's _id/isVisible when one exists
+   * (A3, A16) - and bulk-upserts. Deliberately does NOT archive anything
+   * absent from `entries`; that sweep is only correct against a full list
+   * (see initializeGoogleCalendars) and would wrongly archive every calendar
+   * a partial delta simply didn't mention.
+   */
+  async upsertGoogleCalendarEntries(
+    userId: ObjectId | string,
+    entries: calendar_v3.Schema$CalendarListEntry[],
+    session?: ClientSession,
+  ): Promise<{ records: CalendarRecord[]; result: BulkWriteResult | null }> {
+    const userObjectId = zObjectId.parse(userId);
+
+    if (entries.length === 0) {
+      return { records: [], result: null };
+    }
+
     const existingByGoogleId = new Map<
       string,
       Pick<CalendarRecord, "_id" | "isVisible">
@@ -66,7 +130,7 @@ class CalendarService {
       ),
     );
 
-    const records = googleCalendars.map((entry) =>
+    const records = entries.map((entry) =>
       mapGoogleCalendar(entry, {
         userId: userObjectId,
         existing: entry.id ? existingByGoogleId.get(entry.id) : undefined,
@@ -112,38 +176,50 @@ class CalendarService {
       },
     );
 
-    const googleCalendarIds = googleCalendars
-      .map(({ id }) => id)
-      .filter((id): id is string => !!id);
-
-    operations.push({
-      updateMany: {
-        filter: {
-          userId: userObjectId,
-          "source.provider": "google",
-          "source.calendarId": { $nin: googleCalendarIds },
-        },
-        update: { $set: { isActive: false, updatedAt: new Date() } },
-      },
-    });
-
     const result = await mongoService.calendar.bulkWrite(operations, {
       ordered: false,
       session,
     });
 
-    return {
-      googleCalendars,
-      nextPageToken,
-      nextSyncToken,
-      acknowledged: result.ok === 1,
-      insertedCount: result.insertedCount,
-      insertedIds: result.insertedIds,
-      modifiedCount: result.modifiedCount,
-      upsertedIds: result.upsertedIds,
-      deletedCount: result.deletedCount,
-    };
+    const googleCalendarIds = entries
+      .map(({ id }) => id)
+      .filter((id): id is string => !!id);
+
+    const freshRecords = await mongoService.calendar
+      .find(
+        {
+          userId: userObjectId,
+          "source.provider": "google",
+          "source.calendarId": { $in: googleCalendarIds },
+        },
+        { session },
+      )
+      .toArray();
+
+    return { records: freshRecords, result };
   }
+
+  /**
+   * Soft-deletes one Google calendar (the calendarlist delta says it was
+   * hidden or removed). Idempotent: archiving an already-inactive row is a
+   * no-op state-wise. Returns null when the user never had a row for this
+   * Google calendar id (e.g. it was never imported) - callers should treat
+   * that as "nothing to tear down", not create an archived row for it.
+   */
+  archiveGoogleCalendar = async (
+    userId: ObjectId | string,
+    gCalendarId: string,
+  ) => {
+    return mongoService.calendar.findOneAndUpdate(
+      {
+        userId: zObjectId.parse(userId),
+        "source.provider": "google",
+        "source.calendarId": gCalendarId,
+      },
+      { $set: { isActive: false, updatedAt: new Date() } },
+      { returnDocument: "after" },
+    );
+  };
 
   /**
    * Get every calendar record owned by a user.
