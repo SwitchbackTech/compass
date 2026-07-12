@@ -42,7 +42,7 @@ export const SomedayEventRectangle = ({
         >
           <DotsSixVertical
             aria-hidden="true"
-            className="shrink-0 text-text-light"
+            className="shrink-0 cursor-grab text-text-light"
             data-someday-drag-affordance="true"
             size={14}
             weight="bold"

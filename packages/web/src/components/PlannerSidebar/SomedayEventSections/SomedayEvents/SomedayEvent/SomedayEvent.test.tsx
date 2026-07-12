@@ -61,6 +61,11 @@ describe("SomedayEvent", () => {
     );
     expect(event.className).toContain("text-text-dark");
     expect(event.className).toContain("hover:cursor-pointer");
+    expect(
+      event
+        .querySelector("[data-someday-drag-affordance]")
+        ?.getAttribute("class"),
+    ).toContain("cursor-grab");
   });
 
   it("does not open the row when Space is pressed on an inner action button", () => {
