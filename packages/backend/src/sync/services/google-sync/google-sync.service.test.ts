@@ -1,5 +1,6 @@
 import { ObjectId } from "mongodb";
 import { createMockCalendarListEntry } from "@core/__tests__/helpers/gcal.factory";
+import { Resource_Sync } from "@core/types/sync.types";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
@@ -319,6 +320,78 @@ describe("googleCalendarSyncService", () => {
         ]),
         expect.anything(),
       );
+    });
+
+    it("starts an Events watch for every successfully-imported event-capable calendar plus exactly one CalendarList watch", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      compassTestState().calendarlist = [
+        createMockCalendarListEntry({
+          id: "primary-cal",
+          primary: true,
+          accessRole: "owner",
+        }),
+        createMockCalendarListEntry({
+          id: "reader-cal",
+          primary: false,
+          accessRole: "reader",
+        }),
+        createMockCalendarListEntry({
+          id: "broken-cal",
+          primary: false,
+          accessRole: "writer",
+        }),
+        createMockCalendarListEntry({
+          id: "freebusy-cal",
+          primary: false,
+          accessRole: "freeBusyReader",
+        }),
+      ];
+
+      const importAllEvents = jest
+        .fn()
+        .mockImplementation(
+          async (
+            _userId: string,
+            calendar: { source: { calendarId: string } },
+          ) => {
+            if (calendar.source.calendarId === "broken-cal") {
+              throw new Error("simulated calendar import failure");
+            }
+            return {
+              totalProcessed: 1,
+              totalSaved: 1,
+              totalDeleted: 0,
+              totalIgnored: 0,
+              totalInvalid: 0,
+              nextSyncToken: `token-${calendar.source.calendarId}`,
+            };
+          },
+        );
+      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+        importAllEvents,
+      } as unknown as Awaited<
+        ReturnType<typeof syncImportService.createSyncImport>
+      >);
+      const startWatchesSpy = jest
+        .spyOn(googleWatchService, "startGoogleWatches")
+        .mockResolvedValue(undefined as never);
+
+      await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
+
+      expect(startWatchesSpy).toHaveBeenCalledTimes(1);
+      const watchParams = startWatchesSpy.mock.calls[0]?.[1] ?? [];
+      const gCalendarIds = watchParams.map((p) => p.gCalendarId);
+
+      expect(
+        gCalendarIds.filter((id) => id === Resource_Sync.CALENDAR),
+      ).toHaveLength(1);
+      expect(gCalendarIds.sort()).toEqual(
+        [Resource_Sync.CALENDAR, "primary-cal", "reader-cal"].sort(),
+      );
+      expect(gCalendarIds).not.toContain("broken-cal");
+      expect(gCalendarIds).not.toContain("freebusy-cal");
     });
 
     it("fails the whole sync when the primary calendar's import fails", async () => {

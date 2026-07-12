@@ -48,7 +48,7 @@ export class GCalNotificationHandler {
 
     if (!calendar) {
       logger.warn(
-        `Ignoring notification because no owning calendar was found for user ${this.userId}, gCalendarId ${this.gCalendarId}`,
+        `Ignoring notification because no owning calendar was found for user ${this.userId}`,
       );
       return { summary: "IGNORED", calendarId: null, eventIds: [] };
     }
@@ -84,14 +84,14 @@ export class GCalNotificationHandler {
     // If the nextSyncToken matches our current syncToken, we've already processed these changes
     if (nextSyncToken === this.nextSyncToken) {
       logger.info(
-        `Skipping notification - changes already processed for calendar ${this.gCalendarId}`,
+        `Skipping notification - changes already processed for user: ${this.userId}`,
       );
       return { hasChanges: false, changes: [] };
     }
 
     const changes = response.data.items;
     if (!changes || changes.length === 0) {
-      logger.info(`No changes found for calendar ${this.gCalendarId}`);
+      logger.info(`No changes found for user: ${this.userId}`);
       return { hasChanges: false, changes: [] };
     }
 

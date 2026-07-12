@@ -51,29 +51,30 @@ Depends on: `03-event-runtime-cutover.md`.
    Preserve existing Compass `isVisible`; use Google's `selected` only to seed
    it in `$setOnInsert`. Mark stale Google calendars inactive only after a
    complete list is available; never delete their preference/identity row.
-4. For owner/writer/reader calendars, import Events with the final Compass
+4. [x] For owner/writer/reader calendars, import Events with the final Compass
    calendar `_id` so every event is correctly owned and persist an Events sync
    token per calendar. For `freeBusyReader`, persist only calendar metadata;
    availability is fetched through the bounded range-query contract in `01`,
    never stored as synthetic events. Persist one CalendarList sync token per
    user.
-5. Use the existing concurrency-limiter utility with a small configurable
+5. [x] Use the existing concurrency-limiter utility with a small configurable
    calendar concurrency (start at 4). Bound recurring-instance expansion too;
    do not replace rate control with fixed sleeps.
-6. Make each calendar resumable with its page token. A failed calendar reports
-   failure and retains progress; successful calendars need not be reimported on
-   retry.
-7. Remove the outer transaction around Google network work. Commit each event
-   batch and its resumable progress together; a final sync token becomes durable
-   only after the full calendar succeeds.
-8. Treat rejected event work as an import failure with a structured summary.
-   Do not advance a final sync token past unpersisted changes.
-9. Start the CalendarList watch and each event-capable calendar's Events watch
-   only after the matching final sync token is durable. Do not create Events
-   watches for `freeBusyReader` calendars. Watch failure marks sync attention
-   but does not erase successfully imported events.
-10. Publish accurate `eventsCount`/`calendarsCount` and per-calendar structured
-    logs without titles, Google ids, tokens, or user emails.
+6. [x] Make each calendar resumable with its page token. A failed calendar
+   reports failure and retains progress; successful calendars need not be
+   reimported on retry.
+7. [x] Remove the outer transaction around Google network work. Commit each
+   event batch and its resumable progress together; a final sync token
+   becomes durable only after the full calendar succeeds.
+8. [x] Treat rejected event work as an import failure with a structured
+   summary. Do not advance a final sync token past unpersisted changes.
+9. [x] Start the CalendarList watch and each event-capable calendar's Events
+   watch only after the matching final sync token is durable. Do not create
+   Events watches for `freeBusyReader` calendars. Watch failure marks sync
+   attention but does not erase successfully imported events. (this PR)
+10. [x] Publish accurate `eventsCount`/`calendarsCount` and per-calendar
+    structured logs without titles, Google ids, tokens, or user emails.
+    (this PR)
 11. Update sync/import docs to distinguish eligible, active, visible, writable,
     and watched calendars.
 
