@@ -116,12 +116,45 @@ limits retries to one method. Replace that with a shared policy.
 
 ## Exit criteria
 
-- [ ] Scheduled and user-start paths call one repair coordinator.
-- [ ] Healthy checks are cheap and repairs are multi-process idempotent.
-- [ ] All Google requests use stable user quota attribution.
-- [ ] Retry/concurrency behavior is centralized, bounded, and observable.
-- [ ] Every archived #1722 and #727 requirement has matching implementation and
-      test evidence.
+- [x] Scheduled and user-start paths call one repair coordinator. Shipped in
+      PR #2059: scheduled maintenance (active users), SSE subscribe, and the
+      sync-start ignored paths all call
+      `googleWatchRepairService.repairGoogleWatchesForUser`.
+- [x] Healthy checks are cheap and repairs are multi-process idempotent.
+      PR #2058 (inspector: zero Google calls, Compass state only) and
+      PR #2059 (Mongo lease on the sync doc with crashed-holder expiry
+      recovery plus a persisted five-minute cooldown; healthy outcomes never
+      touch the lease).
+- [x] All Google requests use stable user quota attribution. Already true
+      entering this packet (packet 04's request context); PR #2060 adds the
+      table-driven proof across every GCalService method with a reflection
+      guard so a new method must join the table. Step 7's "remaining random
+      quota ids on stop/prune paths" were already gone — verification only.
+- [x] Retry/concurrency behavior is centralized, bounded, and observable.
+      PR #2060: Retry-After hints honored (clamped to the 30s cap),
+      structured attempts/elapsed/outcome logging on any retried call;
+      import concurrency bounds pre-existing (4 calendars per user, 5 users
+      in maintenance).
+- [x] Every archived #1722 and #727 requirement has matching implementation
+      and test evidence. PRs #2058, #2059, #2060.
+
+Corrections discovered while implementing (recorded in `master-doc.md`):
+
+- Step 1's "the shipped channel TTL is 10 minutes … every live watch is
+  permanently 'expiring'" was stale — packet 04 shipped the 7-day
+  `CHANNEL_EXPIRATION_MIN` default (A30), so no timing change was needed;
+  PR #2060 pins the default and the store-Google's-returned-expiration
+  behavior with tests instead.
+- The activity gate `hasUpdatedCompassEventRecently` queried legacy
+  `user`/`origin` event fields that post-cutover EventRecords never have,
+  classifying every user inactive. Replaced by `hasUserBeenActiveSince`
+  (`lastSeenAt` touched on SSE (re)connect, or `lastLoggedInAt`) — decision
+  A40, PR #2060.
+- A29 landed in PR #2059: every revoked-access site funnels through
+  `pruneGoogleDataAndNotifyRevoked`; `deleteCompassDataForUser` remains only
+  for the account-deletion CLI.
+
+Shipped in PRs #2058, #2059, #2060.
 
 Suggested commit boundaries:
 
