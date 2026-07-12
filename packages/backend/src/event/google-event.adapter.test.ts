@@ -379,4 +379,30 @@ describe("mapEventRecordToGoogle", () => {
     });
     expect(() => mapEventRecordToGoogle(record)).toThrow();
   });
+
+  // Packet 05 tests list: "An events.patch update of a Google event with
+  // attendees, location, and reminders preserves all three." GcalService
+  // uses events.patch (merge-by-key) rather than events.update (whole-
+  // resource replace), so any key omitted from the write body is left
+  // untouched on Google. GoogleEventWriteInput's `Pick` already excludes
+  // attendees/location/reminders at the type level -- EventRecord has no
+  // such fields to begin with -- so mapEventRecordToGoogle structurally
+  // cannot include them. This test guards that invariant at runtime so a
+  // future loosening of the `Pick` (e.g. to plumb through a new field) would
+  // fail a test instead of silently regressing into an events.update-style
+  // wipe of attendees, location, and reminders.
+  it("never includes attendees, location, or reminders in the write body", () => {
+    const record = buildRecord();
+    const patch = mapEventRecordToGoogle(record);
+    expect(patch).not.toHaveProperty("attendees");
+    expect(patch).not.toHaveProperty("location");
+    expect(patch).not.toHaveProperty("reminders");
+    expect(Object.keys(patch).sort()).toEqual([
+      "description",
+      "end",
+      "recurrence",
+      "start",
+      "summary",
+    ]);
+  });
 });
