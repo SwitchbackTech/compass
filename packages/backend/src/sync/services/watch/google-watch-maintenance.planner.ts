@@ -1,22 +1,17 @@
-import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { type Result_Watch_Stop } from "@core/types/sync.types";
 import { type Schema_Watch } from "@core/types/watch.types";
 import dayjs from "@core/util/date/dayjs";
 import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
-import {
-  isFullSyncRequired,
-  isInvalidGoogleToken,
-} from "@backend/common/services/gcal/gcal.utils";
+import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
+import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { hasUpdatedCompassEventRecently } from "@backend/sync/services/watch/google-watch-activity";
 import {
   syncExpired,
   syncExpiresSoon,
 } from "@backend/sync/services/watch/google-watch-timing";
-import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:google-watch-maintenance.planner");
 
@@ -53,7 +48,12 @@ const getWatchesToRefresh = async (user: string) => {
 
 export const prepWatchMaintenanceForUser = async (
   userId: string,
-): Promise<Record<"prune" | "ignore" | "refresh", Schema_Watch[]>> => {
+): Promise<{
+  prune: Schema_Watch[];
+  ignore: Schema_Watch[];
+  refresh: Schema_Watch[];
+  isActive: boolean;
+}> => {
   const deadline = getActiveDeadline();
   const isUserActive = await hasUpdatedCompassEventRecently(userId, deadline);
   const { active, expired, refresh } = await getWatchesToRefresh(userId);
@@ -62,6 +62,7 @@ export const prepWatchMaintenanceForUser = async (
     refresh: isUserActive ? refresh : [],
     prune: expired.concat(isUserActive ? [] : [...active, ...refresh]),
     ignore: isUserActive ? active : [],
+    isActive: isUserActive,
   };
 };
 
@@ -69,7 +70,7 @@ export const pruneSync = async (
   records: Array<{ user: string; payload: Schema_Watch[] }>,
 ) => {
   const _prunes = records.map(async ({ user, payload }) => {
-    let deletedUserData = false;
+    let prunedGoogleData = false;
     let stopped: Result_Watch_Stop = [];
 
     const context = await createGoogleRequestContext(user);
@@ -91,74 +92,21 @@ export const pruneSync = async (
       );
     } catch (e) {
       if (isInvalidGoogleToken(e as Error)) {
-        await userService.deleteCompassDataForUser(user, false);
-        deletedUserData = true;
+        // A29: prune Google-owned data (archives google calendars, deletes
+        // google events, clears watches/sync/refresh token) and preserve
+        // everything Compass-local - never deleteCompassDataForUser, which
+        // wipes the whole account including local-only data.
+        await pruneGoogleDataAndNotifyRevoked(user, "watch maintenance");
+        prunedGoogleData = true;
       } else {
         logger.warn("Unexpected error during prune:", e);
         throw e;
       }
     }
 
-    return { user, results: stopped, deletedUserData };
+    return { user, results: stopped, prunedGoogleData };
   });
 
   const pruneResult = await Promise.all(_prunes);
   return pruneResult;
-};
-
-export const refreshWatch = async (
-  toRefresh: {
-    user: string;
-    payload: Schema_Watch[];
-  }[],
-) => {
-  const _refreshes = toRefresh.map(async (r) => {
-    let resynced = false;
-
-    try {
-      const context = await createGoogleRequestContext(r.user);
-
-      const refreshesByUser = await Promise.all(
-        r.payload.map(async ({ _id, user, expiration, ...syncPayload }) => {
-          const _refresh = await googleWatchService.refreshWatch(
-            user,
-            {
-              ...syncPayload,
-              channelId: _id.toString(),
-              expiration: expiration.getTime().toString(),
-            },
-            context,
-          );
-
-          return {
-            gcalendarId: syncPayload.gCalendarId,
-            success:
-              _refresh?.acknowledged &&
-              ObjectId.isValid(_refresh.insertedId ?? ""),
-          };
-        }),
-      );
-
-      return {
-        user: r.user,
-        results: refreshesByUser,
-        resynced,
-      };
-    } catch (e) {
-      if (isFullSyncRequired(e as Error)) {
-        void googleCalendarSyncService.repairGoogleCalendarSync(r.user);
-        resynced = true;
-      } else {
-        logger.error(
-          `Unexpected error during refresh for user: ${r.user}:\n`,
-          e,
-        );
-        throw e;
-      }
-      return { user: r.user, results: [], resynced };
-    }
-  });
-
-  const refreshes = await Promise.all(_refreshes);
-  return refreshes;
 };

@@ -16,17 +16,36 @@ import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import { createConcurrencyLimiter } from "@backend/common/util/concurrency-limiter.util";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import compassToGoogleBackfill from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google-backfill";
+import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import {
   createSyncImport,
   type SyncImport,
 } from "@backend/sync/services/import/google-import.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 
 const logger = Logger("app:google-sync.service");
 
 const activeFullSyncRestarts = new Set<string>();
+
+/**
+ * Defensive, fire-and-forget nudge for the watch repair coordinator from
+ * the sync-start "ignored" paths below (an already-in-progress or
+ * already-completed sync still leaves stale/missing watches un-repaired).
+ * Cooldown+lease inside the coordinator keep this cheap on what is a hot
+ * path. Static import above (not the dynamic pattern used for
+ * user.service in runGoogleCalendarSyncSetup) because this call site runs
+ * on every ignored request; google-watch-repair.service.ts reaches back to
+ * this module dynamically instead, which breaks the cycle without paying
+ * dynamic-import cost here - same trade-off as google-watch.service.ts:192-193.
+ */
+const triggerWatchRepairInBackground = (userId: string): void => {
+  googleWatchRepairService.repairGoogleWatchesForUser(userId).catch((err) => {
+    logger.error(`Google watch repair failed for user: ${userId}`, err);
+  });
+};
 
 const notifyImportStart = (userId: string): void => {
   sseServer.publishSyncStatus(userId, { status: "syncing" });
@@ -206,6 +225,7 @@ async function runGoogleCalendarSyncSetup(
       status: "IGNORED",
       message: ignoreMessage,
     });
+    triggerWatchRepairInBackground(userId);
     return;
   }
 
@@ -223,6 +243,7 @@ async function runGoogleCalendarSyncSetup(
         status: "IGNORED",
         message: ignoreMessage,
       });
+      triggerWatchRepairInBackground(userId);
 
       return;
     }
@@ -285,16 +306,10 @@ async function runGoogleCalendarSyncSetup(
     }
 
     if (isInvalidGoogleToken(err)) {
-      logger.warn(
-        `Google Calendar repair failed because access was revoked for user: ${userId}`,
+      await pruneGoogleDataAndNotifyRevoked(
+        userId,
+        "google calendar sync setup",
       );
-
-      await userService.pruneGoogleData(userId);
-      sseServer.publishSyncStatus(userId, {
-        status: "attention",
-        code: "GOOGLE_REVOKED",
-        retryable: false,
-      });
       return;
     }
 

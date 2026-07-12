@@ -6,8 +6,11 @@ import { createConcurrencyLimiter } from "@backend/common/util/concurrency-limit
 import {
   prepWatchMaintenanceForUser,
   pruneSync,
-  refreshWatch,
 } from "@backend/sync/services/watch/google-watch-maintenance.planner";
+import {
+  type GoogleWatchRepairAction,
+  googleWatchRepairService,
+} from "@backend/sync/services/watch/google-watch-repair.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 
 const logger = Logger("app:google-watch-maintenance.service");
@@ -100,25 +103,30 @@ async function runMaintenanceByUser(
     revoked: 0,
     deleted: 0,
     resynced: 0,
+    repairAction: undefined as GoogleWatchRepairAction | "INACTIVE" | undefined,
   };
 
   if (params?.dry) return result;
 
   const pruneResult = await pruneSync(prune);
-  const pruned = pruneResult.filter((p) => !p.deletedUserData);
-  const deletedDuringPrune = pruneResult.filter((p) => p.deletedUserData);
-  const refreshResult = await refreshWatch(refresh);
-  const refreshed = refreshResult;
-  const resynced = refreshResult.filter((r) => r.resynced);
+  const pruned = pruneResult.filter((p) => !p.prunedGoogleData);
+  const revokedDuringPrune = pruneResult.filter((p) => p.prunedGoogleData);
+
+  // The coordinator re-inspects fresh state itself, so it must only run
+  // for active users: calling it right after an inactive user's watches
+  // were just stopped above would see them as newly "missing" and restart
+  // them, undoing prepWatchMaintenanceForUser's activity gate.
+  const repair = maintenance.isActive
+    ? await googleWatchRepairService.repairGoogleWatchesForUser(userId)
+    : undefined;
 
   if (params?.log) {
     logger.debug(`Sync Maintenance Results:
       IGNORED: ${ignore.length}
       PRUNED: ${pruned.flatMap((p) => p.results).length}
-      REFRESHED: ${refreshed.flatMap((r) => r.results.filter((r) => r.success)).length}
+      REPAIR ACTION: ${repair?.action ?? "INACTIVE"}
 
-      DELETED DURING PRUNE: ${deletedDuringPrune.map((r) => r.user).toString()}
-      RESYNCED DURING REFRESH: ${resynced.map((r) => r.user).toString()}
+      REVOKED DURING PRUNE: ${revokedDuringPrune.map((r) => r.user).toString()}
     `);
   }
 
@@ -126,11 +134,16 @@ async function runMaintenanceByUser(
     ...result,
     ignored: ignore.flatMap(({ payload }) => payload).length,
     pruned: pruned.flatMap(({ results }) => results).length,
-    refreshed: refreshed.flatMap(({ results }) =>
-      results.filter((r) => r.success),
-    ).length,
-    deleted: deletedDuringPrune.length,
-    resynced: resynced.length,
+    refreshed:
+      repair?.action === "REFRESHED"
+        ? repair.inspection.watchesToRefresh.length
+        : 0,
+    revoked: revokedDuringPrune.length + (repair?.action === "PRUNED" ? 1 : 0),
+    // A29: deleteCompassDataForUser is never called from maintenance
+    // anymore - kept at 0 for response-shape stability.
+    deleted: 0,
+    resynced: repair?.action === "FULL_REPAIR_STARTED" ? 1 : 0,
+    repairAction: repair?.action ?? "INACTIVE",
   };
 }
 
