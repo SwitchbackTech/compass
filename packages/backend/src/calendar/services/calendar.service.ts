@@ -39,7 +39,7 @@ class CalendarService {
       Resource_Sync.CALENDAR,
       userObjectId.toString(),
       Resource_Sync.CALENDAR,
-      { nextSyncToken, nextPageToken: nextPageToken! },
+      { nextSyncToken, nextPageToken },
       session,
     );
 

@@ -28,8 +28,8 @@ Depends on: `03-event-runtime-cutover.md`.
 
 ## Implementation steps
 
-0. Prerequisite pulled forward from `07` (A30), because a 25-calendar fan-out
-   without it hits rate limits and 10-minute channels cannot survive
+0. [x] Prerequisite pulled forward from `07` (A30), because a 25-calendar
+   fan-out without it hits rate limits and 10-minute channels cannot survive
    multi-calendar renewal churn:
    - introduce the small Google request context (authenticated client, stable
      Compass user id as `quotaUser`, retry policy) and require it in every
@@ -39,6 +39,8 @@ Depends on: `03-event-runtime-cutover.md`.
    - request seven-day channel expirations, persist Google's returned
      expiration, and keep short expirations a dev/test override.
      `07` then owns only inspection, repair, the lease, and coverage tests.
+   Shipped in PR #2036 (`GoogleRequestContext`, `withGoogleRetry`,
+   `CHANNEL_EXPIRATION_MIN` default raised to 10080 minutes / 7 days).
 1. Replace the single-page helper with a CalendarList page generator that
    preserves the original request parameters, follows `nextPageToken`, and
    returns `nextSyncToken` only from the final page.
