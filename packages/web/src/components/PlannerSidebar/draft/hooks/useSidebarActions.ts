@@ -1,6 +1,7 @@
 import { ObjectId } from "bson";
 import { useCallback, useMemo, useRef } from "react";
 import {
+  Priorities,
   SOMEDAY_MONTH_LIMIT_MSG,
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEK_LIMIT_MSG,
@@ -45,16 +46,13 @@ import {
 } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/adapter/SomedayInteractionAdapter.types";
 import { parseEventDraft } from "@web/events/event-draft.parser";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import {
-  createLegacyEventMutationsAdapter,
-  eventToSchemaEvent,
-} from "@web/events/queries/event.legacy-bridge";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import {
   createSomedayEventDraft,
   duplicateSomedayEventDraft,
   editSomedayEventDraft,
+  eventToSchemaEvent,
   retargetSomedayEventDraft,
   scheduleSomedayEventTransition,
 } from "@web/events/someday-event-draft.adapter";
@@ -228,12 +226,6 @@ export const useSidebarActions = (
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
   const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
-  // TODO(packet-03-phase-3c): legacy-shaped facade until this file's
-  // Schema_Event-based drag/drop state is converted to the new contracts.
-  const eventMutations = useMemo(
-    () => createLegacyEventMutationsAdapter(mutations, () => calendarId),
-    [mutations, calendarId],
-  );
   const interactionPreviewKeyRef = useRef<string | null>(null);
   const interactionSnapshotRef = useRef<State_Sidebar["somedayEvents"] | null>(
     null,
@@ -609,8 +601,39 @@ export const useSidebarActions = (
           }
         }
       }
-    } else {
-      eventMutations.create(_event);
+    } else if (calendarId && hasEventDates(_event)) {
+      // Create-fallback: migrating a not-yet-persisted someday draft (no
+      // _id) just needs a fresh create at the retargeted period/anchorDate,
+      // mirroring onSubmit's create branch below.
+      const period =
+        direction === "up"
+          ? "week"
+          : direction === "down"
+            ? "month"
+            : category === Categories_Event.SOMEDAY_WEEK
+              ? "week"
+              : "month";
+
+      const somedayDraft = createSomedayEventDraft(
+        period,
+        dayjs(_event.startDate).toDate(),
+        _event.order ?? 0,
+      );
+
+      const result = parseEventDraft({
+        ...somedayDraft,
+        values: {
+          ...somedayDraft.values,
+          title: _event.title ?? "",
+          description: _event.description ?? "",
+          priority: _event.priority ?? Priorities.UNASSIGNED,
+          calendarId,
+        },
+      });
+
+      if (result.ok && result.mode === "create") {
+        mutations.create(result.input);
+      }
     }
 
     close();

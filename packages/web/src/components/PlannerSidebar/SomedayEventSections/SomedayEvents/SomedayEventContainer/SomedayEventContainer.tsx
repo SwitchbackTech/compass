@@ -20,8 +20,10 @@ import { type Setters_Sidebar } from "@web/components/PlannerSidebar/draft/hooks
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { SomedayEvent } from "@web/components/PlannerSidebar/SomedayEventSections/SomedayEvents/SomedayEvent/SomedayEvent";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
-import { scheduleSomedayEventTransition } from "@web/events/someday-event-draft.adapter";
+import {
+  eventToSchemaEvent,
+  scheduleSomedayEventTransition,
+} from "@web/events/someday-event-draft.adapter";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";

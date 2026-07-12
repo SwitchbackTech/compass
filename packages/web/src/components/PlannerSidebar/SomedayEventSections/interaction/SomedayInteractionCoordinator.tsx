@@ -1,6 +1,6 @@
 import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
+import { eventToSchemaEvent } from "@web/events/someday-event-draft.adapter";
 import { CalendarInteractionPointerCaptureBoundary } from "@web/interaction/react/CalendarInteractionPointerCaptureBoundary";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { type WeekLayoutCacheSources } from "@web/views/Week/interaction/adapter/geometry/weekLayoutCache";
