@@ -208,7 +208,7 @@ async function handleGoogleWatchNotification(
 
   const notification = await handler.handleNotification();
 
-  if (notification.calendar && notification.calendar.isVisible !== false) {
+  if (notification.calendar?.isVisible) {
     sseServer.publishEventsChanged(userId, {
       calendarId: notification.calendar._id.toHexString() as CalendarId,
       eventIds: notification.eventIds as EventId[],

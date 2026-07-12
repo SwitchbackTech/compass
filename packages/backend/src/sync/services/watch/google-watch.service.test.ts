@@ -50,6 +50,56 @@ const createWatch = async (
   return watch;
 };
 
+/**
+ * Seeds a user with healthy Google sync state, points gcalService.getEvents
+ * at the given items, and returns a notify() bound to that user's events
+ * watch. `seedCalendar` controls whether an owning CalendarRecord exists and
+ * whether it is visible.
+ */
+const seedEventsNotification = async (options: {
+  seedCalendar?: { isVisible: boolean };
+  gcalItems: ReturnType<typeof mockRegularGcalEvent>[];
+}) => {
+  const user = await UserDriver.createUser();
+  await GoogleSyncDriver.createHealthyGoogleSync(user, true);
+  const userId = user._id.toString();
+
+  const watch = await mongoService.watch.findOne({
+    user: userId,
+    gCalendarId: { $ne: Resource_Sync.CALENDAR },
+  });
+  if (!watch) throw new Error("expected an events watch from the sync driver");
+
+  const calendar = options.seedCalendar
+    ? await seedGoogleCalendar(user._id, {
+        isVisible: options.seedCalendar.isVisible,
+        source: {
+          provider: "google",
+          calendarId: watch.gCalendarId,
+          etag: "etag-1",
+        },
+      })
+    : null;
+
+  jest.spyOn(gcalService, "getEvents").mockResolvedValue({
+    status: 200,
+    statusText: "OK",
+    data: { items: options.gcalItems },
+  } as unknown as GaxiosResponse);
+  const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+
+  const notify = () =>
+    googleWatchService.handleGoogleWatchNotification({
+      resource: Resource_Sync.EVENTS,
+      channelId: watch._id,
+      resourceId: watch.resourceId,
+      resourceState: XGoogleResourceState.EXISTS,
+      expiration: watch.expiration,
+    });
+
+  return { userId, calendar, eventsChangedSpy, notify };
+};
+
 describe("googleWatchService", () => {
   beforeAll(initSupertokens);
   beforeEach(setupTestDb);
@@ -168,117 +218,39 @@ describe("googleWatchService", () => {
   });
 
   it("returns IGNORED when the events handler finds no changes to process", async () => {
-    const user = await UserDriver.createUser();
-    await GoogleSyncDriver.createHealthyGoogleSync(user, true);
-    const userId = user._id.toString();
-
-    const watch = await mongoService.watch.findOne({
-      user: userId,
-      gCalendarId: { $ne: Resource_Sync.CALENDAR },
+    const { eventsChangedSpy, notify } = await seedEventsNotification({
+      gcalItems: [],
     });
-    expect(watch).not.toBeNull();
 
-    jest.spyOn(gcalService, "getEvents").mockResolvedValue({
-      status: 200,
-      statusText: "OK",
-      data: { items: [] },
-    } as unknown as GaxiosResponse);
-    const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
-
-    await expect(
-      googleWatchService.handleGoogleWatchNotification({
-        resource: Resource_Sync.EVENTS,
-        channelId: watch!._id,
-        resourceId: watch!.resourceId,
-        resourceState: XGoogleResourceState.EXISTS,
-        expiration: watch!.expiration,
-      }),
-    ).resolves.toBe("IGNORED");
+    await expect(notify()).resolves.toBe("IGNORED");
 
     expect(eventsChangedSpy).not.toHaveBeenCalled();
   });
 
   it("suppresses the eventsChanged publish for a hidden calendar but still reports PROCESSED", async () => {
-    const user = await UserDriver.createUser();
-    await GoogleSyncDriver.createHealthyGoogleSync(user, true);
-    const userId = user._id.toString();
-
-    const watch = await mongoService.watch.findOne({
-      user: userId,
-      gCalendarId: { $ne: Resource_Sync.CALENDAR },
-    });
-    expect(watch).not.toBeNull();
-
-    await seedGoogleCalendar(user._id, {
-      isVisible: false,
-      source: {
-        provider: "google",
-        calendarId: watch!.gCalendarId,
-        etag: "etag-1",
-      },
+    const { eventsChangedSpy, notify } = await seedEventsNotification({
+      seedCalendar: { isVisible: false },
+      gcalItems: [mockRegularGcalEvent({ summary: "Hidden event" })],
     });
 
-    jest.spyOn(gcalService, "getEvents").mockResolvedValue({
-      status: 200,
-      statusText: "OK",
-      data: { items: [mockRegularGcalEvent({ summary: "Hidden event" })] },
-    } as unknown as GaxiosResponse);
-    const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
-
-    await expect(
-      googleWatchService.handleGoogleWatchNotification({
-        resource: Resource_Sync.EVENTS,
-        channelId: watch!._id,
-        resourceId: watch!.resourceId,
-        resourceState: XGoogleResourceState.EXISTS,
-        expiration: watch!.expiration,
-      }),
-    ).resolves.toBe("PROCESSED");
+    await expect(notify()).resolves.toBe("PROCESSED");
 
     expect(eventsChangedSpy).not.toHaveBeenCalled();
   });
 
   it("publishes the eventsChanged for a visible calendar", async () => {
-    const user = await UserDriver.createUser();
-    await GoogleSyncDriver.createHealthyGoogleSync(user, true);
-    const userId = user._id.toString();
+    const { userId, calendar, eventsChangedSpy, notify } =
+      await seedEventsNotification({
+        seedCalendar: { isVisible: true },
+        gcalItems: [mockRegularGcalEvent({ summary: "Visible event" })],
+      });
 
-    const watch = await mongoService.watch.findOne({
-      user: userId,
-      gCalendarId: { $ne: Resource_Sync.CALENDAR },
-    });
-    expect(watch).not.toBeNull();
-
-    const calendar = await seedGoogleCalendar(user._id, {
-      isVisible: true,
-      source: {
-        provider: "google",
-        calendarId: watch!.gCalendarId,
-        etag: "etag-1",
-      },
-    });
-
-    jest.spyOn(gcalService, "getEvents").mockResolvedValue({
-      status: 200,
-      statusText: "OK",
-      data: { items: [mockRegularGcalEvent({ summary: "Visible event" })] },
-    } as unknown as GaxiosResponse);
-    const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
-
-    await expect(
-      googleWatchService.handleGoogleWatchNotification({
-        resource: Resource_Sync.EVENTS,
-        channelId: watch!._id,
-        resourceId: watch!.resourceId,
-        resourceState: XGoogleResourceState.EXISTS,
-        expiration: watch!.expiration,
-      }),
-    ).resolves.toBe("PROCESSED");
+    await expect(notify()).resolves.toBe("PROCESSED");
 
     expect(eventsChangedSpy).toHaveBeenCalledWith(
       userId,
       expect.objectContaining({
-        calendarId: calendar._id.toHexString(),
+        calendarId: calendar!._id.toHexString(),
         reason: "reconciled",
       }),
     );
