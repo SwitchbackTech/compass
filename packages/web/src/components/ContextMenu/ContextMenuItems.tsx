@@ -5,9 +5,10 @@ import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { getSomedayEventCategory } from "@web/common/utils/event/someday.event.util";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
 export interface ContextMenuAction {
@@ -133,6 +134,11 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const { actions, setters, confirmation } = useDraftContext();
   const { openForm, duplicateEvent, submit } = actions;
   const { setDraft } = setters;
+  // The right-click flow (GridContextMenuWrapper.tsx) already builds a
+  // GridEventDraft via editGridEventDraft and pushes it into the store, so
+  // this reads that canonical draft rather than re-deriving one from
+  // `event` (a Schema_GridEvent render projection with no strict source).
+  const gridDraft = useDraftStore(selectGridDraft);
 
   const sidebarContext = useSidebarContext(true);
 
@@ -141,7 +147,7 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     duplicate: duplicateEvent,
     edit: () => {
       if (!event.isSomeday) {
-        setDraft(assembleGridEvent(event));
+        if (gridDraft) setDraft(gridDraft);
         openForm();
         return;
       }
@@ -151,7 +157,16 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
       const category = getSomedayEventCategory(event);
       sidebarActions.onDraft(event, category);
     },
-    editPriority: (priority) => submit({ ...event, priority }),
+    editPriority: (priority) => {
+      if (!gridDraft) return;
+
+      const updated: GridEventDraft = {
+        ...gridDraft,
+        values: { ...gridDraft.values, priority },
+      } as GridEventDraft;
+
+      void submit(updated);
+    },
   };
 
   return (

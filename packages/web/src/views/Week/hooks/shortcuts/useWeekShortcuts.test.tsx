@@ -19,6 +19,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
@@ -201,7 +202,12 @@ describe("useWeekShortcuts calendar event targeting", () => {
       expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
     expect(useDraftStore.getState().event?._id).toBe(EVENT_1_ID);
-    expect(useDraftStore.getState().event).toHaveProperty("position");
+    // The canonical GridEventDraft must be populated too — this is what
+    // lets a subsequent drag continue the keyboard-opened edit (the
+    // "M"-then-drag gap this conversion closes).
+    const gridDraft = useDraftStore.getState().gridDraft;
+    expect(gridDraft?.kind).toBe("edit");
+    expect(gridDraft?.kind === "edit" && gridDraft.source.id).toBe(EVENT_1_ID);
   });
 
   it("edits the prepared all-day calendar event with M", async () => {
@@ -215,7 +221,11 @@ describe("useWeekShortcuts calendar event targeting", () => {
       expect(useDraftStore.getState().status?.activity).toBe("keyboardEdit");
     });
     expect(useDraftStore.getState().event?._id).toBe(ALL_DAY_EVENT_1_ID);
-    expect(useDraftStore.getState().event).toHaveProperty("position");
+    const gridDraft = useDraftStore.getState().gridDraft;
+    expect(gridDraft?.kind).toBe("edit");
+    expect(gridDraft?.kind === "edit" && gridDraft.source.id).toBe(
+      ALL_DAY_EVENT_1_ID,
+    );
   });
 
   it("edits the hovered calendar event with M when no event is focused", async () => {
@@ -435,14 +445,11 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
     await waitFor(() => {
       expect(confirmationOnSubmit).toHaveBeenCalledTimes(1);
     });
-    const submitted = confirmationOnSubmit.mock.calls[0]?.[0] as {
-      startDate: string;
-      endDate: string;
-    };
-    expect(submitted.startDate).toBe(
+    const submitted = confirmationOnSubmit.mock.calls[0]?.[0] as GridEventDraft;
+    expect(dayjs(submitted.values.schedule.start).format()).toBe(
       dayjs("2026-05-20T09:00:00.000Z").add(1, "day").format(),
     );
-    expect(submitted.endDate).toBe(
+    expect(dayjs(submitted.values.schedule.end).format()).toBe(
       dayjs("2026-05-20T10:00:00.000Z").add(1, "day").format(),
     );
   });
@@ -457,10 +464,8 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
     await waitFor(() => {
       expect(confirmationOnSubmit).toHaveBeenCalledTimes(1);
     });
-    const movedUp = confirmationOnSubmit.mock.calls[0]?.[0] as {
-      startDate: string;
-    };
-    expect(movedUp.startDate).toBe(
+    const movedUp = confirmationOnSubmit.mock.calls[0]?.[0] as GridEventDraft;
+    expect(dayjs(movedUp.values.schedule.start).format()).toBe(
       dayjs("2026-05-20T09:00:00.000Z").subtract(15, "minutes").format(),
     );
 
@@ -469,10 +474,8 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
     await waitFor(() => {
       expect(confirmationOnSubmit).toHaveBeenCalledTimes(2);
     });
-    const movedDown = confirmationOnSubmit.mock.calls[1]?.[0] as {
-      startDate: string;
-    };
-    expect(movedDown.startDate).toBe(
+    const movedDown = confirmationOnSubmit.mock.calls[1]?.[0] as GridEventDraft;
+    expect(dayjs(movedDown.values.schedule.start).format()).toBe(
       dayjs("2026-05-20T09:00:00.000Z").add(15, "minutes").format(),
     );
   });

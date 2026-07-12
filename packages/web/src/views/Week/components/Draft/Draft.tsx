@@ -1,7 +1,11 @@
 import { type FC, useMemo } from "react";
 import { createPortal } from "react-dom";
+import { Origin } from "@core/constants/core.constants";
 import { Categories_Event } from "@core/types/event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getDraftContainer } from "@web/common/utils/draft/draft.util";
+import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
   selectDraftCategory,
@@ -33,29 +37,51 @@ export const Draft: FC<Props> = ({ measurements, weekProps }) => {
   });
   const { state } = useDraftContext();
   const { draft } = state;
+  // Schema_GridEvent-shaped projection of the canonical GridEventDraft, for
+  // the still-unconverted grid-layout helpers below (deck layout, all-day
+  // positioning, recurrence previews) — see grid-event-draft.adapter.ts's
+  // gridEventDraftToSchemaEvent doc comment. `position` is a placeholder
+  // default: these helpers never read it, only startDate/endDate/isAllDay/
+  // recurrence/_id.
+  const draftSchemaEvent: Schema_GridEvent | null = useMemo(
+    () =>
+      draft
+        ? ({
+            ...gridEventDraftToSchemaEvent(draft),
+            origin: Origin.COMPASS,
+            user: "",
+            position: gridEventDefaultPosition,
+          } as Schema_GridEvent)
+        : null,
+    [draft],
+  );
   const activeAllDayDraftEvent = useMemo(
     () =>
       positionAllDayDraftEvent({
-        draft,
+        draft: draftSchemaEvent,
         events: allDayEvents,
       }).activeDraftEvent,
-    [allDayEvents, draft],
+    [allDayEvents, draftSchemaEvent],
   );
   const deckLayout = useMemo(
-    () => getActiveTimedDraftDeckLayout(draft, timedEvents),
-    [draft, timedEvents],
+    () => getActiveTimedDraftDeckLayout(draftSchemaEvent, timedEvents),
+    [draftSchemaEvent, timedEvents],
   );
   const recurringPreviews = useMemo(
     () =>
       getRecurringDraftPreviews(
-        draft,
+        draftSchemaEvent,
         weekProps.component.startOfView,
         weekProps.component.endOfView,
       ),
-    [draft, weekProps.component.startOfView, weekProps.component.endOfView],
+    [
+      draftSchemaEvent,
+      weekProps.component.startOfView,
+      weekProps.component.endOfView,
+    ],
   );
 
-  if (draft?.isAllDay === undefined) {
+  if (!draft) {
     return null;
   }
   if (!category) return null;

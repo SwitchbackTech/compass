@@ -1,7 +1,8 @@
 import userEvent from "@testing-library/user-event";
 import { type ReactElement } from "react";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { ConvertToStandaloneDialog } from "@web/views/Forms/EventForm/ConvertToStandaloneDialog";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { describe, expect, it, mock } from "bun:test";
@@ -9,7 +10,19 @@ import { describe, expect, it, mock } from "bun:test";
 const onConfirm = mock();
 const onCancel = mock();
 
-const renderDialog = (standaloneDraft: Schema_GridEvent | null) => {
+const draftWithTitle = (title: string): GridEventDraft => {
+  const draft = createGridEventDraft({
+    kind: "timed",
+    start: new Date("2026-05-31T10:00:00.000Z"),
+    end: new Date("2026-05-31T11:00:00.000Z"),
+    timeZone: "UTC",
+  });
+  if (draft.kind !== "create") throw new Error("Expected a create draft");
+
+  return { ...draft, values: { ...draft.values, title } };
+};
+
+const renderDialog = (standaloneDraft: GridEventDraft | null) => {
   const ui: ReactElement = (
     <DraftContext.Provider
       value={
@@ -39,7 +52,7 @@ describe("ConvertToStandaloneDialog", () => {
   });
 
   it("shows the event name when a draft is pending", () => {
-    renderDialog({ title: "Gym" } as Schema_GridEvent);
+    renderDialog(draftWithTitle("Gym"));
 
     expect(
       screen.getByText("Convert to standalone event?"),
@@ -50,7 +63,7 @@ describe("ConvertToStandaloneDialog", () => {
   });
 
   it("falls back to a generic name for an untitled draft", () => {
-    renderDialog({ title: "" } as Schema_GridEvent);
+    renderDialog(draftWithTitle(""));
 
     expect(
       screen.getByText(
@@ -61,7 +74,7 @@ describe("ConvertToStandaloneDialog", () => {
 
   it("confirms and cancels via the action buttons", async () => {
     const user = userEvent.setup();
-    renderDialog({ title: "Gym" } as Schema_GridEvent);
+    renderDialog(draftWithTitle("Gym"));
 
     await user.click(screen.getByRole("button", { name: "Convert" }));
     expect(onConfirm).toHaveBeenCalledTimes(1);

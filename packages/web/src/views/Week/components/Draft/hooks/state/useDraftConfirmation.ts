@@ -2,13 +2,16 @@ import { ObjectId } from "bson";
 import { useCallback, useState } from "react";
 import { type Event } from "@core/types/event.contracts";
 import { RecurringEventUpdateScope } from "@core/types/event.types";
+import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useEventById } from "@web/events/queries/useEventById";
 import { type useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
+type EditGridEventDraft = Extract<GridEventDraft, { kind: "edit" }>;
+
 const hasMultipleRecurrenceOccurrences = (
-  event: Schema_GridEvent,
+  schedule: { start: Date; end: Date },
   rule: string[] | null | undefined,
 ): boolean => {
   if (!Array.isArray(rule) || rule.length === 0) {
@@ -18,8 +21,8 @@ const hasMultipleRecurrenceOccurrences = (
   try {
     const recurrence = new CompassEventRRule({
       _id: new ObjectId(),
-      startDate: event.startDate,
-      endDate: event.endDate,
+      startDate: dayjs(schedule.start).format(),
+      endDate: dayjs(schedule.end).format(),
       recurrence: { rule },
     });
 
@@ -29,22 +32,31 @@ const hasMultipleRecurrenceOccurrences = (
   }
 };
 
+// Returns the recurrence rule that should decide the update-scope prompt:
+// an explicit "series"/"single" choice on the draft (the user toggled
+// recurrence in the form) always wins; otherwise ("preserve") falls back to
+// the source event's own rule, or — for an occurrence with no rule of its
+// own — the loaded series base's rule.
 const getScopeDecisionRecurrenceRule = (
-  event: Schema_GridEvent,
+  draft: EditGridEventDraft,
   baseEvent: Event | null | undefined,
 ): string[] | null | undefined => {
-  const rule = event.recurrence?.rule;
-  if (Array.isArray(rule) || rule === null) {
-    return rule;
+  const recurrence = draft.values.recurrence;
+
+  if (recurrence.kind === "series") return recurrence.rules;
+  if (recurrence.kind === "single") return null;
+
+  if (draft.source.recurrence.kind === "series") {
+    return [...draft.source.recurrence.rules];
   }
 
-  if (!event.recurrence?.eventId || !baseEvent) {
-    return undefined;
+  if (draft.source.recurrence.kind === "occurrence") {
+    return baseEvent?.recurrence.kind === "series"
+      ? [...baseEvent.recurrence.rules]
+      : undefined;
   }
 
-  return baseEvent.recurrence.kind === "series"
-    ? [...baseEvent.recurrence.rules]
-    : undefined;
+  return undefined;
 };
 
 export const useDraftConfirmation = ({
@@ -55,7 +67,10 @@ export const useDraftConfirmation = ({
   const { isInstance, isRecurrence } = actions;
   const { draft } = state;
   const isSomeday = actions.isSomeday();
-  const baseEventId = draft?.recurrence?.eventId;
+  const baseEventId =
+    draft?.kind === "edit" && draft.source.recurrence.kind === "occurrence"
+      ? draft.source.recurrence.seriesId
+      : undefined;
   const baseEvent = useEventById(baseEventId);
 
   const [
@@ -63,10 +78,11 @@ export const useDraftConfirmation = ({
     setRecurrenceUpdateScopeDialogOpen,
   ] = useState<boolean>(false);
 
-  const [finalDraft, setFinalDraft] = useState<Schema_GridEvent | null>(null);
+  const [finalDraft, setFinalDraft] = useState<GridEventDraft | null>(null);
 
-  const [standaloneDraft, setStandaloneDraft] =
-    useState<Schema_GridEvent | null>(null);
+  const [standaloneDraft, setStandaloneDraft] = useState<GridEventDraft | null>(
+    null,
+  );
 
   const onConfirmConvertToStandalone = useCallback(() => {
     if (standaloneDraft) {
@@ -97,20 +113,20 @@ export const useDraftConfirmation = ({
   );
 
   const onSubmit = useCallback(
-    async (_draft: Schema_GridEvent) => {
-      const rule = getScopeDecisionRecurrenceRule(_draft, baseEvent);
-      const draftIsInstance = ObjectId.isValid(
-        _draft.recurrence?.eventId ?? "",
-      );
-      const isExistingDraft = Boolean(_draft._id) || draftIsInstance;
+    async (_draft: GridEventDraft) => {
+      const isEditDraft = _draft.kind === "edit";
+      const rule = isEditDraft
+        ? getScopeDecisionRecurrenceRule(_draft, baseEvent)
+        : undefined;
+      const draftIsInstance =
+        isEditDraft && _draft.source.recurrence.kind === "occurrence";
       const isRecurringEvent =
-        isExistingDraft && (isRecurrence() || draftIsInstance);
+        isEditDraft && (isRecurrence() || draftIsInstance);
       const instanceEvent = isInstance() || draftIsInstance;
       const toStandAlone = instanceEvent && rule === null;
-      const hasMultipleOccurrences = hasMultipleRecurrenceOccurrences(
-        _draft,
-        rule,
-      );
+      const hasMultipleOccurrences = isEditDraft
+        ? hasMultipleRecurrenceOccurrences(_draft.values.schedule, rule)
+        : true;
       const isSingleOccurrenceInstance =
         isRecurringEvent && instanceEvent && !hasMultipleOccurrences;
       const shouldAskForUpdateScope =

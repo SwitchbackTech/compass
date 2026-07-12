@@ -1,6 +1,8 @@
 import { renderHook, waitFor } from "@testing-library/react";
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { Priorities } from "@core/constants/core.constants";
+import { type Event } from "@core/types/event.contracts";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import {
   type Setters_Draft,
   type State_Draft_Local,
@@ -10,29 +12,27 @@ import { type WeekProps } from "@web/views/Week/hooks/useWeek";
 import { useDraftEffects } from "./useDraftEffects";
 import { describe, expect, it, mock } from "bun:test";
 
-const createDraft = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent => ({
-  _id: "event-1",
-  title: "Moved event",
-  startDate: "2024-01-15T10:00:00.000Z",
-  endDate: "2024-01-15T11:00:00.000Z",
-  isAllDay: false,
-  isSomeday: false,
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  user: "user-1",
-  position: {
-    isOverlapping: false,
-    totalEventsInGroup: 1,
-    widthMultiplier: 1,
-    horizontalOrder: 1,
-    dragOffset: { x: 0, y: 0 },
-    initialX: null,
-    initialY: null,
+const sourceEvent: Event = {
+  id: "0123456789abcdef01234567",
+  calendarId: "0123456789abcdef76543210",
+  content: { kind: "details", title: "Moved event", description: "" },
+  schedule: {
+    kind: "timed",
+    start: "2024-01-15T10:00:00.000Z",
+    end: "2024-01-15T11:00:00.000Z",
+    timeZone: "UTC",
   },
-  ...overrides,
-});
+  recurrence: { kind: "single" },
+  priority: Priorities.UNASSIGNED,
+  createdAt: "2024-01-01T00:00:00.000Z",
+  updatedAt: null,
+} as unknown as Event;
+
+const createDraft = (): GridEventDraft => {
+  const draft = editGridEventDraft(sourceEvent);
+  if (!draft) throw new Error("Expected an edit draft");
+  return draft;
+};
 
 const createState = (
   overrides: Partial<State_Draft_Local> = {},
@@ -40,6 +40,7 @@ const createState = (
   dateBeingChanged: "endDate",
   draft: createDraft(),
   draftSessionKey: 0,
+  dragOffset: { x: 0, y: 0 },
   dragStatus: { durationMin: 60, hasMoved: true },
   isDragging: true,
   isFormOpen: false,
@@ -54,6 +55,7 @@ const createSetters = (
 ): Setters_Draft => ({
   setDateBeingChanged: mock(),
   setDraft: mock(),
+  setDragOffset: mock(),
   setDraftSessionKey: mock(),
   setDragStatus: mock(),
   setIsDragging: mock(),

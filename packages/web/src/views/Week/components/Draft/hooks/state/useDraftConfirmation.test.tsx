@@ -2,86 +2,85 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, renderHook } from "@testing-library/react";
 import { ObjectId } from "bson";
 import { type PropsWithChildren } from "react";
-import { Origin, Priorities } from "@core/constants/core.constants";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
-import {
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  type EditEventRecurrenceDraft,
+  type GridEventDraft,
+  type NewEventRecurrenceDraft,
+} from "@web/events/event-draft.types";
+import {
+  createGridEventDraft,
+  editGridEventDraft,
+} from "@web/events/grid-event-draft.adapter";
 import { normalizeEventList } from "@web/events/queries/event.query.normalize";
 import { useDraftConfirmation } from "./useDraftConfirmation";
 import { describe, expect, it, mock } from "bun:test";
 
-const createDraft = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent => ({
-  _id: "event-1",
-  title: "Seed event",
-  startDate: "2026-05-31T10:00:00.000Z",
-  endDate: "2026-05-31T11:00:00.000Z",
-  isAllDay: false,
-  isSomeday: false,
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  user: "user-1",
-  position: {
-    isOverlapping: false,
-    totalEventsInGroup: 1,
-    widthMultiplier: 1,
-    horizontalOrder: 1,
-    dragOffset: { x: 0, y: 0 },
-    initialX: null,
-    initialY: null,
-  },
-  ...overrides,
+const SCHEDULE = EventScheduleSchema.parse({
+  kind: "timed",
+  start: "2026-05-31T10:00:00.000Z",
+  end: "2026-05-31T11:00:00.000Z",
+  timeZone: "UTC",
 });
 
-// The query cache requires strict-contract `Event`s (unlike the draft
-// itself, which is still legacy Schema_GridEvent-shaped per draft.store.ts's
-// own TODO).
-const toStrictEvent = (event: Schema_Event): Event =>
-  createMockEvent({
-    id: EventIdSchema.parse(event._id!),
-    content: {
-      kind: "details",
-      title: event.title ?? "",
-      description: event.description ?? "",
-    },
-    recurrence:
-      Array.isArray(event.recurrence?.rule) && event.recurrence.rule.length > 0
-        ? { kind: "series", rules: event.recurrence.rule }
-        : { kind: "single" },
-    schedule: EventScheduleSchema.parse({
-      kind: "timed",
-      start: event.startDate!,
-      end: event.endDate!,
-      timeZone: "UTC",
-    }),
+const buildCreateDraft = (
+  recurrence: NewEventRecurrenceDraft = { kind: "single" },
+): GridEventDraft => {
+  const draft = createGridEventDraft({
+    kind: "timed",
+    start: new Date("2026-05-31T10:00:00.000Z"),
+    end: new Date("2026-05-31T11:00:00.000Z"),
+    timeZone: "UTC",
   });
+  if (draft.kind !== "create") throw new Error("Expected a create draft");
+
+  return { ...draft, values: { ...draft.values, recurrence } };
+};
+
+const buildEditDraft = ({
+  id = "0123456789abcdef01234567",
+  recurrence = { kind: "single" },
+  liveRecurrence = { kind: "preserve" },
+}: {
+  id?: string;
+  recurrence?: Event["recurrence"];
+  liveRecurrence?: EditEventRecurrenceDraft;
+} = {}): GridEventDraft => {
+  const source = createMockEvent({
+    id: EventIdSchema.parse(id),
+    recurrence,
+    schedule: SCHEDULE,
+  });
+  const draft = editGridEventDraft(source);
+  if (!draft || draft.kind !== "edit")
+    throw new Error("Expected an edit draft");
+
+  return { ...draft, values: { ...draft.values, recurrence: liveRecurrence } };
+};
 
 const renderDraftConfirmation = ({
-  draft = createDraft(),
-  events = [],
+  draft,
+  seriesEvents = [],
   isInstance = false,
   isRecurrence = false,
   isSomeday = false,
 }: {
-  draft?: Schema_GridEvent;
-  events?: Schema_Event[];
+  draft: GridEventDraft;
+  seriesEvents?: Event[];
   isInstance?: boolean;
   isRecurrence?: boolean;
   isSomeday?: boolean;
-} = {}) => {
+}) => {
   const discard = mock();
   const deleteEvent = mock();
   const submit = mock();
   const queryClient = new QueryClient();
   queryClient.setQueryData(
     ["events", "week", { source: "local" }],
-    normalizeEventList(events.map(toStrictEvent)),
+    normalizeEventList(seriesEvents),
   );
   const wrapper = ({ children }: PropsWithChildren) => (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
@@ -110,11 +109,9 @@ const renderDraftConfirmation = ({
 
 describe("useDraftConfirmation", () => {
   it("submits a new recurring draft without opening the update scope dialog", async () => {
-    const draft = createDraft({
-      _id: undefined,
-      recurrence: {
-        rule: ["FREQ=WEEKLY;COUNT=4"],
-      },
+    const draft = buildCreateDraft({
+      kind: "series",
+      rules: ["FREQ=WEEKLY;COUNT=4"],
     });
     const { discard, result, submit } = renderDraftConfirmation({ draft });
 
@@ -134,20 +131,20 @@ describe("useDraftConfirmation", () => {
 
   it("opens the update scope dialog for existing multi-occurrence recurring instances", async () => {
     const baseEventId = new ObjectId().toString();
-    const baseEvent = createDraft({
-      _id: baseEventId,
-      recurrence: {
-        rule: ["FREQ=WEEKLY;COUNT=4"],
-      },
+    const baseEvent = createMockEvent({
+      id: EventIdSchema.parse(baseEventId),
+      recurrence: { kind: "series", rules: ["FREQ=WEEKLY;COUNT=4"] },
+      schedule: SCHEDULE,
     });
-    const draft = createDraft({
+    const draft = buildEditDraft({
       recurrence: {
-        eventId: baseEventId,
+        kind: "occurrence",
+        seriesId: EventIdSchema.parse(baseEventId),
       },
     });
     const { discard, result, submit } = renderDraftConfirmation({
       draft,
-      events: [baseEvent],
+      seriesEvents: [baseEvent],
     });
 
     await act(async () => {
@@ -161,10 +158,9 @@ describe("useDraftConfirmation", () => {
   });
 
   it("submits an existing standalone draft made recurring without opening the update scope dialog", async () => {
-    const draft = createDraft({
-      recurrence: {
-        rule: ["FREQ=WEEKLY;COUNT=4"],
-      },
+    const draft = buildEditDraft({
+      recurrence: { kind: "single" },
+      liveRecurrence: { kind: "series", rules: ["FREQ=WEEKLY;COUNT=4"] },
     });
     const { discard, result, submit } = renderDraftConfirmation({ draft });
 
@@ -184,20 +180,20 @@ describe("useDraftConfirmation", () => {
 
   it("submits a single-occurrence recurring instance without opening the update scope dialog", async () => {
     const baseEventId = new ObjectId().toString();
-    const baseEvent = createDraft({
-      _id: baseEventId,
-      recurrence: {
-        rule: ["RRULE:FREQ=WEEKLY;COUNT=1"],
-      },
+    const baseEvent = createMockEvent({
+      id: EventIdSchema.parse(baseEventId),
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=1"] },
+      schedule: SCHEDULE,
     });
-    const draft = createDraft({
+    const draft = buildEditDraft({
       recurrence: {
-        eventId: baseEventId,
+        kind: "occurrence",
+        seriesId: EventIdSchema.parse(baseEventId),
       },
     });
     const { discard, result, submit } = renderDraftConfirmation({
       draft,
-      events: [baseEvent],
+      seriesEvents: [baseEvent],
     });
 
     await act(async () => {
@@ -215,10 +211,8 @@ describe("useDraftConfirmation", () => {
   });
 
   it("opens the update scope dialog before deleting recurring timed drafts", async () => {
-    const draft = createDraft({
-      recurrence: {
-        rule: ["RRULE:FREQ=WEEKLY;COUNT=4"],
-      },
+    const draft = buildEditDraft({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=4"] },
     });
     const { deleteEvent, discard, result } = renderDraftConfirmation({
       draft,

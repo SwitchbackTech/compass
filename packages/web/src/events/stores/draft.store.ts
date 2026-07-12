@@ -201,7 +201,11 @@ export const draftActions = {
   }: {
     activity: Extract<
       Activity_DraftEvent,
-      "createShortcut" | "eventRightClick" | "gridClick" | "resizing"
+      | "createShortcut"
+      | "eventRightClick"
+      | "gridClick"
+      | "keyboardEdit"
+      | "resizing"
     >;
     dateToResize?: "startDate" | "endDate" | null;
     draft: GridEventDraft;

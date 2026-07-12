@@ -1,12 +1,15 @@
 import { useCallback, useState } from "react";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  RecurringEventUpdateScope,
+  type Schema_Event,
+} from "@core/types/event.types";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import {
   OverlayPanel,
   OverlayPanelActionButton,
   OverlayPanelActions,
 } from "@web/components/OverlayPanel/OverlayPanel";
+import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { selectDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
@@ -43,7 +46,7 @@ export function RecurrenceScopeDialog() {
 
   return (
     <RecurringEventUpdateScopeDialogContent
-      draft={draft}
+      draft={draft ? gridEventDraftToSchemaEvent(draft) : null}
       onUpdateScopeChange={onUpdateScopeChange}
       setRecurrenceUpdateScopeDialogOpen={setRecurrenceUpdateScopeDialogOpen}
     />
@@ -51,7 +54,7 @@ export function RecurrenceScopeDialog() {
 }
 
 interface RecurringEventUpdateScopeDialogContentProps {
-  draft: Schema_GridEvent | null;
+  draft: Schema_Event | null;
   onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
   recurrenceChanged?: boolean;
   setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;

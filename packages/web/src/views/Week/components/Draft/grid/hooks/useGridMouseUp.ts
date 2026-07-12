@@ -21,22 +21,22 @@ export const useGridMouseUp = () => {
     (category: Categories_Event) => {
       let shouldSubmit = false;
       let hasMoved = false;
-      const isNew = !draft?._id;
+      const isNew = draft?.kind !== "edit";
 
       if (category === Categories_Event.TIMED) {
         hasMoved = resizeStatus?.hasMoved || dragStatus?.hasMoved || false;
-        shouldSubmit = !draft?.isOpen;
+        shouldSubmit = true;
       } else if (category === Categories_Event.ALLDAY) {
         hasMoved = dragStatus?.hasMoved || resizeStatus?.hasMoved || false;
         shouldSubmit = hasMoved;
       }
 
       const clickedOnExisting = !isNew && !hasMoved;
-      const shouldOpenForm = (isNew || clickedOnExisting) && !draft?.isOpen;
+      const shouldOpenForm = isNew || clickedOnExisting;
 
       return { shouldOpenForm, shouldSubmit };
     },
-    [draft?._id, draft?.isOpen, dragStatus?.hasMoved, resizeStatus?.hasMoved],
+    [draft?.kind, dragStatus?.hasMoved, resizeStatus?.hasMoved],
   );
 
   const stopMotion = useCallback(() => {
@@ -115,12 +115,12 @@ export const useGridMouseUp = () => {
       if (
         isDrafting &&
         draftType === Categories_Event.SOMEDAY_WEEK &&
-        !draft?.isAllDay
+        draft?.values.schedule.kind !== "allDay"
       ) {
         e.stopPropagation();
       }
 
-      if (draft?.isAllDay) {
+      if (draft?.values.schedule.kind === "allDay") {
         handleAllDayRowMouseUp();
       } else {
         handleMainGridMouseUp();

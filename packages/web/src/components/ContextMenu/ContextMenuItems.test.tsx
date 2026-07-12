@@ -4,8 +4,11 @@ import { type ReactElement } from "react";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
+import { useDraftStore } from "@web/events/stores/draft.store";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -32,6 +35,22 @@ const createMockGridEvent = (
     position: gridEventDefaultPosition,
     ...overrides,
   } as Schema_GridEvent;
+};
+
+// GridContextMenuWrapper.tsx (the real right-click flow, unconverted here)
+// already pushes a GridEventDraft into the store's `gridDraft` field before
+// ContextMenuItems mounts; seed the same field directly so edit/editPriority
+// have a canonical draft to read.
+const seedGridDraftForEvent = (event: Schema_GridEvent) => {
+  const strictEvent = createMockEvent({
+    content: {
+      kind: "details",
+      title: event.title ?? "",
+      description: event.description ?? "",
+    },
+  });
+  const draft = editGridEventDraft(strictEvent);
+  useDraftStore.setState({ gridDraft: draft });
 };
 
 const { ContextMenuItems } =
@@ -77,6 +96,7 @@ describe("ContextMenuItems", () => {
     mockSetDraft.mockClear();
     mockSubmit.mockClear();
     mockOnDelete.mockClear();
+    useDraftStore.setState({ gridDraft: null });
   });
 
   it("should render menu items", () => {
@@ -98,6 +118,7 @@ describe("ContextMenuItems", () => {
       _id: "event-1",
       title: "Test Event",
     });
+    seedGridDraftForEvent(event);
 
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
 
@@ -134,6 +155,7 @@ describe("ContextMenuItems", () => {
       _id: "pending-event-1",
       title: "Pending Event",
     });
+    seedGridDraftForEvent(event);
 
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />, {
       pendingEventIds: ["pending-event-1"],
@@ -186,6 +208,7 @@ describe("ContextMenuItems", () => {
       _id: "event-1",
       title: "Normal Event",
     });
+    seedGridDraftForEvent(event);
 
     renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
 
@@ -194,7 +217,9 @@ describe("ContextMenuItems", () => {
     );
 
     expect(mockSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ priority: "work" }),
+      expect.objectContaining({
+        values: expect.objectContaining({ priority: "work" }),
+      }),
     );
     expect(mockClose).toHaveBeenCalled();
   });
