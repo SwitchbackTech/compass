@@ -220,6 +220,30 @@ Auto-import guardrail:
 
 - client auto-starts import only when `sync.importGCal === "RESTART"` **and** `google.connectionState` is not `NOT_CONNECTED` or `RECONNECT_REQUIRED`
 
+## Calendar Import And Lifecycle
+
+Compass imports every eligible Google calendar, not just primary. Five distinct
+states apply to a Google-sourced `CalendarRecord` — a calendar can be `true` on
+some and `false` on others independently (e.g. active + not currently watched,
+if its last import attempt failed):
+
+| State        | Meaning                                                                                                                                       | Source                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| **Eligible** | Present in Google's CalendarList with `deleted !== true` and `hidden !== true`. Determines whether Compass keeps a `CalendarRecord` at all.  | `getCalendarsToSync` (`sync/services/init/google-sync-init.ts`)                              |
+| **Active**   | `CalendarRecord.isActive`. Reconciled from the eligible list on every CalendarList sync; a calendar that drops out of a later, complete list is archived (`isActive: false`), never deleted — its identity/preference row survives (A16). | `calendarService.initializeGoogleCalendars` (`calendar/services/calendar.service.ts`)        |
+| **Visible**  | `CalendarRecord.isVisible`. A Compass user preference, seeded from Google's `selected` only on first insert and never overwritten by a later sync (A3). | `mapGoogleCalendar` (`calendar/calendar.record.mapper.ts`)                                   |
+| **Writable** | Derived from `CalendarRecord.access` (`owner`/`writer` writable; `reader`/`freeBusyReader` not). Not a stored field.                          | `getCalendarCapabilities` (`packages/core/src/types/calendar.contracts.ts`)                  |
+| **Watched**  | Compass currently holds a live Events webhook subscription. Only active, event-capable (`owner`/`writer`/`reader`) calendars whose most recent import succeeded are watched; `freeBusyReader` calendars are never watched (no Events resource to subscribe to). | `initializeGoogleCalendarSync` (`sync/services/google-sync/google-sync.service.ts`)          |
+
+Event import mirrors access role: `owner`/`writer`/`reader` calendars get their
+events imported (with per-calendar bounded concurrency and a resumable,
+per-calendar sync token); `freeBusyReader` calendars get only a `CalendarRecord`
+— their live availability comes from a bounded `freeBusy.query` contract, never
+synthetic events. One calendar's import failure is isolated and does not abort
+the others (only a primary-calendar failure fails the whole sync); a failed
+calendar retains whatever pages it already durably imported and can be retried
+without duplicating work.
+
 ## Import Flow
 
 1. Backend starts import.
