@@ -177,6 +177,71 @@ export const deleteAllByUser = (userId: string, session?: ClientSession) => {
   return mongoService.sync.deleteMany({ user: userId }, { session });
 };
 
+/**
+ * Ensures a sync doc exists for `userId` before the atomic acquisition
+ * below - the acquisition itself must never upsert, since an upserting
+ * acquire would let a losing racer "succeed" by creating a brand new doc
+ * instead of correctly losing to the real holder. Same upsert-on-user
+ * pattern `updateSync` uses above; a concurrent first-ever-call race can
+ * still insert two docs for the same user here (pre-existing to this
+ * pattern, accepted).
+ */
+export const acquireWatchRepairLease = async (
+  userId: string,
+  leaseMs: number,
+): Promise<boolean> => {
+  await mongoService.sync.updateOne(
+    { user: userId },
+    { $setOnInsert: { user: userId } },
+    { upsert: true },
+  );
+
+  const acquired = await mongoService.sync.findOneAndUpdate(
+    {
+      user: userId,
+      $or: [
+        { "googleWatchRepair.leaseExpiresAt": { $exists: false } },
+        { "googleWatchRepair.leaseExpiresAt": null },
+        { "googleWatchRepair.leaseExpiresAt": { $lt: new Date() } },
+      ],
+    },
+    {
+      $set: {
+        "googleWatchRepair.leaseExpiresAt": new Date(Date.now() + leaseMs),
+      },
+    },
+  );
+
+  return acquired !== null;
+};
+
+export const releaseWatchRepairLease = (
+  userId: string,
+): Promise<UpdateResult<Schema_Sync>> =>
+  mongoService.sync.updateOne(
+    { user: userId },
+    { $set: { "googleWatchRepair.leaseExpiresAt": null } },
+  );
+
+export const markWatchRepairAttempt = (
+  userId: string,
+): Promise<UpdateResult<Schema_Sync>> =>
+  mongoService.sync.updateOne(
+    { user: userId },
+    { $set: { "googleWatchRepair.lastAttemptAt": new Date() } },
+  );
+
+export const getWatchRepairState = async (
+  userId: string,
+): Promise<{ leaseExpiresAt: Date | null; lastAttemptAt: Date | null }> => {
+  const sync = await mongoService.sync.findOne({ user: userId });
+
+  return {
+    leaseExpiresAt: sync?.googleWatchRepair?.leaseExpiresAt ?? null,
+    lastAttemptAt: sync?.googleWatchRepair?.lastAttemptAt ?? null,
+  };
+};
+
 export const deleteByIntegration = (integration: "google", userId: string) => {
   return mongoService.db
     .collection(Collections.SYNC)
@@ -184,6 +249,7 @@ export const deleteByIntegration = (integration: "google", userId: string) => {
 };
 
 const syncRecords = {
+  acquireWatchRepairLease,
   canDoIncrementalSync,
   deleteAllByGcalId,
   deleteAllByUser,
@@ -191,6 +257,9 @@ const syncRecords = {
   getGCalEventsSyncPageToken,
   getSync,
   getSyncByToken,
+  getWatchRepairState,
+  markWatchRepairAttempt,
+  releaseWatchRepairLease,
   removeSyncEntry,
   updateSync,
 };

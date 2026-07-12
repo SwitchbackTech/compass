@@ -83,4 +83,11 @@ export interface Schema_Sync {
     calendarlist: SyncDetails[];
     events: SyncDetails[];
   };
+  // Packet 07: per-user Mongo lease + persisted cooldown guarding the
+  // Google watch repair coordinator (multi-process safe, recovers from a
+  // crashed lease holder once leaseExpiresAt passes).
+  googleWatchRepair?: {
+    leaseExpiresAt?: Date | null;
+    lastAttemptAt?: Date | null;
+  };
 }

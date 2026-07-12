@@ -28,6 +28,7 @@ import { GCalEventsNotificationHandler } from "@backend/sync/services/notify/han
 import * as syncQueries from "@backend/sync/services/records/sync-records.repository";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
+import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { randomUUID } from "node:crypto";
@@ -540,15 +541,25 @@ describe("SyncController", () => {
 
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
         const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+        // The ignored path also fire-and-forgets the watch repair
+        // coordinator (packet 07); this fixture wasn't crafted to be
+        // watch-healthy, so a real coordinator run would do unrelated
+        // repair work within this test's wait window. Stub it out - it's
+        // covered on its own in google-watch-repair.service.test.ts.
+        const repairSpy = jest
+          .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
+          .mockResolvedValue(undefined as never);
 
         await syncDriver.importGCal({ userId });
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         expect(importEndSpy).not.toHaveBeenCalled();
         expect(getAllEventsSpy).not.toHaveBeenCalled();
+        expect(repairSpy).toHaveBeenCalledWith(userId);
 
         getAllEventsSpy.mockRestore();
         importEndSpy.mockRestore();
+        repairSpy.mockRestore();
       });
 
       it("ignores a request while an import is already in progress", async () => {
@@ -563,15 +574,21 @@ describe("SyncController", () => {
         });
 
         const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+        // Same reasoning as the sibling test above.
+        const repairSpy = jest
+          .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
+          .mockResolvedValue(undefined as never);
 
         await syncDriver.importGCal({ userId });
         await new Promise((resolve) => setTimeout(resolve, 200));
 
         expect(importEndSpy).not.toHaveBeenCalled();
         expect(getAllEventsSpy).not.toHaveBeenCalled();
+        expect(repairSpy).toHaveBeenCalledWith(userId);
 
         getAllEventsSpy.mockRestore();
         importEndSpy.mockRestore();
+        repairSpy.mockRestore();
       });
 
       it("retries a non-forced import after a restart is requested", async () => {

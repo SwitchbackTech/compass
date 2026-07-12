@@ -22,11 +22,10 @@ import {
   type Info_Error,
 } from "@backend/common/types/error.types";
 import { type SessionResponse } from "@backend/common/types/express.types";
-import { sseServer } from "@backend/servers/sse/sse.server";
+import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { getSyncByToken } from "@backend/sync/services/records/sync-records.repository";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
-import userService from "@backend/user/services/user.service";
 
 const logger = Logger("app:express.handler");
 
@@ -115,16 +114,7 @@ const handleGoogleError = async (
   e: GaxiosError,
 ) => {
   if (isInvalidGoogleToken(e)) {
-    await userService.pruneGoogleData(userId);
-    sseServer.publishSyncStatus(userId, {
-      status: "attention",
-      code: "GOOGLE_REVOKED",
-      retryable: false,
-    });
-
-    logger.warn(
-      `Invalid Google token for user: ${userId}. Google data pruned and client notified.`,
-    );
+    await pruneGoogleDataAndNotifyRevoked(userId, "invalid google token");
 
     res.status(Status.UNAUTHORIZED).send({
       code: "GOOGLE_REVOKED",

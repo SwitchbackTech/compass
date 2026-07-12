@@ -11,15 +11,14 @@ import {
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { sseServer } from "@backend/servers/sse/sse.server";
 import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
+import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { type NotificationOutcome } from "@backend/sync/services/notify/notification.outcome";
 import { publicWatchNotificationIngress } from "@backend/sync/services/public-watch-notifications/public-watch-notification.ingress";
 import { getSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
-import userService from "@backend/user/services/user.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
 import { ImportGCalRequestSchema } from "../sync.types";
 
@@ -36,12 +35,15 @@ export class SyncController {
     const watch = await mongoService.watch.findOne({ _id, resourceId });
 
     if (watch) {
-      await pruneAndNotifyGoogleRevoked(watch.user, "missing refresh token");
+      await pruneGoogleDataAndNotifyRevoked(
+        watch.user,
+        "missing refresh token",
+      );
       res.status(Status.GONE).send({
         // This ack body goes back to Google's webhook infra, not to our
         // frontend; the client-facing signal is the syncStatusChanged/
-        // GOOGLE_REVOKED message published by pruneAndNotifyGoogleRevoked
-        // below.
+        // GOOGLE_REVOKED message published by pruneGoogleDataAndNotifyRevoked
+        // above.
         code: "GOOGLE_REVOKED",
         message: "Missing refresh token, pruned Google data",
       });
@@ -60,12 +62,12 @@ export class SyncController {
     userId: string | undefined,
   ): Promise<void> => {
     if (userId) {
-      await pruneAndNotifyGoogleRevoked(userId, "revoked access");
+      await pruneGoogleDataAndNotifyRevoked(userId, "revoked access");
       res.status(Status.GONE).send({
         // This ack body goes back to Google's webhook infra, not to our
         // frontend; the client-facing signal is the syncStatusChanged/
-        // GOOGLE_REVOKED message published by pruneAndNotifyGoogleRevoked
-        // below.
+        // GOOGLE_REVOKED message published by pruneGoogleDataAndNotifyRevoked
+        // above.
         code: "GOOGLE_REVOKED",
         message: "User revoked access, pruned Google data",
       });
@@ -287,20 +289,3 @@ export class SyncController {
     res.status(Status.NO_CONTENT).send();
   };
 }
-
-/**
- * Prunes Google data for a user and notifies connected clients.
- * Used when Google access has been revoked or refresh token is missing.
- */
-const pruneAndNotifyGoogleRevoked = async (
-  userId: string,
-  reason: string,
-): Promise<void> => {
-  logger.warn(`Cleaning data after ${reason} for user: ${userId}`);
-  await userService.pruneGoogleData(userId);
-  sseServer.publishSyncStatus(userId, {
-    status: "attention",
-    code: "GOOGLE_REVOKED",
-    retryable: false,
-  });
-};
