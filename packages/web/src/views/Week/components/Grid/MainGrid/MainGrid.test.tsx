@@ -175,6 +175,7 @@ const createWeekProps = () => ({
     getLastNavigationSource: mock(() => "manual" as const),
     goToToday: mock(),
     incrementWeek: mock(),
+    shiftViewByDay: mock(),
   },
 });
 

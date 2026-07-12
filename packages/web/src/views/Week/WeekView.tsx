@@ -29,6 +29,7 @@ import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
 import { useVisibleDayCount } from "@web/views/Week/hooks/grid/useVisibleDayCount";
+import { useDayShiftTransition } from "@web/views/Week/hooks/useDayShiftTransition";
 import { useHorizontalWeekNavigation } from "@web/views/Week/hooks/useHorizontalWeekNavigation";
 import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
@@ -53,11 +54,24 @@ export const WeekView = () => {
 
   const weekProps = useWeek(today, visibleDayCount);
   const mainRef = useRef<HTMLDivElement | null>(null);
+  const weekTrackElementRef = useRef<HTMLDivElement | null>(null);
+  const setTrackRef = useCallback(
+    (node: HTMLDivElement | null) => {
+      weekTrackElementRef.current = node;
+      trackRef(node);
+    },
+    [trackRef],
+  );
   useHorizontalWeekNavigation({
     containerRef: mainRef,
     onNext: weekProps.util.incrementWeek,
     onPrevious: weekProps.util.decrementWeek,
   });
+  useDayShiftTransition(
+    weekTrackElementRef,
+    weekProps.component.startOfView,
+    weekProps.util.getLastNavigationSource(),
+  );
 
   const { gridRefs, measurements } = useGridLayout(visibleDayCount);
 
@@ -167,7 +181,7 @@ export const WeekView = () => {
 
                 <WeekGridScrollArea>
                   <div
-                    ref={trackRef}
+                    ref={setTrackRef}
                     className="@container relative flex h-full w-full min-w-47.5 flex-col [container-name:week-grid-track]"
                   >
                     <DayLabels

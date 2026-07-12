@@ -156,6 +156,8 @@ const renderShortcuts = (options?: {
     );
   }
 
+  const shiftViewByDay = mock();
+
   renderHook(
     () =>
       useWeekShortcuts({
@@ -171,13 +173,32 @@ const renderShortcuts = (options?: {
           getLastNavigationSource: mock(),
           goToToday: mock(),
           incrementWeek: mock(),
+          shiftViewByDay,
         },
       }),
     { wrapper },
   );
 
-  return { queryClient };
+  return { queryClient, shiftViewByDay };
 };
+
+describe("useWeekShortcuts day shifting", () => {
+  it("shifts the view backward with Shift+J", () => {
+    const { shiftViewByDay } = renderShortcuts();
+
+    pressKey("J", shiftKey);
+
+    expect(shiftViewByDay).toHaveBeenCalledWith(-1);
+  });
+
+  it("shifts the view forward with Shift+K", () => {
+    const { shiftViewByDay } = renderShortcuts();
+
+    pressKey("K", shiftKey);
+
+    expect(shiftViewByDay).toHaveBeenCalledWith(1);
+  });
+});
 
 describe("useWeekShortcuts calendar event targeting", () => {
   it("focuses the first visible calendar event with I", async () => {

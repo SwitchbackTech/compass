@@ -58,7 +58,7 @@ describe("useWeek", () => {
     const { result } = renderHook(() => useWeek(today));
 
     expect(result.current.component.startOfView.format(DATE_FORMAT)).toBe(
-      dayjs("2026-05-20", DATE_FORMAT).startOf("week").format(DATE_FORMAT),
+      "2026-05-20",
     );
     expect(result.current.component.isCurrentWeek).toBe(false);
     expect(
@@ -104,6 +104,35 @@ describe("useWeek", () => {
     });
   });
 
+  it("shifts the visible range forward by one day", () => {
+    mockParams.dateString = "2026-05-20";
+    const { result } = renderHook(() =>
+      useWeek(dayjs("2026-05-20", DATE_FORMAT)),
+    );
+
+    act(() => result.current.util.shiftViewByDay(1));
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/week/$dateString",
+      params: { dateString: "2026-05-21" },
+    });
+    expect(result.current.util.getLastNavigationSource()).toBe("day-shift");
+  });
+
+  it("shifts the visible range backward by one day", () => {
+    mockParams.dateString = "2026-05-20";
+    const { result } = renderHook(() =>
+      useWeek(dayjs("2026-05-20", DATE_FORMAT)),
+    );
+
+    act(() => result.current.util.shiftViewByDay(-1));
+
+    expect(mockNavigate).toHaveBeenCalledWith({
+      to: "/week/$dateString",
+      params: { dateString: "2026-05-19" },
+    });
+  });
+
   it("navigates to the given date on goToDate", () => {
     mockParams.dateString = "2026-05-20";
     const today = dayjs("2026-05-20", DATE_FORMAT);
@@ -130,7 +159,7 @@ describe("useWeek", () => {
 
     expect(mockNavigate).toHaveBeenCalledWith({
       to: "/week/$dateString",
-      params: { dateString: "2026-05-20" },
+      params: { dateString: "2026-05-17" },
     });
   });
 
@@ -146,11 +175,7 @@ describe("useWeek", () => {
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 
-  it("pages within a narrower visible window before crossing the week edge", () => {
-    // 2026-05-20 (Wed) sits at window offset 2 in a 3-day window (Tue/Wed/Thu
-    // of the Sun-start week). Paging forward by 3 days lands inside the same
-    // week (offset clamps to maxOffset 4) rather than crossing into the next
-    // one — that edge-crossing behavior is covered by the full-week test above.
+  it("pages by the number of visible days", () => {
     mockParams.dateString = "2026-05-20";
     const today = dayjs("2026-05-20", DATE_FORMAT);
     const { result } = renderHook(() => useWeek(today, 3));
@@ -161,7 +186,7 @@ describe("useWeek", () => {
 
     expect(mockNavigate).toHaveBeenCalledWith({
       to: "/week/$dateString",
-      params: { dateString: "2026-05-22" },
+      params: { dateString: "2026-05-23" },
     });
   });
 });
