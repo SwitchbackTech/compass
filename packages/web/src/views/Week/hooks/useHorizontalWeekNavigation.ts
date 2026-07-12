@@ -74,11 +74,11 @@ export const useHorizontalWeekNavigation = ({
       if (Math.abs(accumulatedDelta) < NAVIGATION_THRESHOLD_PX) return;
 
       hasNavigated = true;
-      if (accumulatedDelta > 0) {
-        callbacksRef.current.onNext();
-      } else {
-        callbacksRef.current.onPrevious();
-      }
+      const navigate =
+        accumulatedDelta > 0
+          ? callbacksRef.current.onNext
+          : callbacksRef.current.onPrevious;
+      navigate();
     };
 
     container.addEventListener("wheel", handleWheel, { passive: false });
