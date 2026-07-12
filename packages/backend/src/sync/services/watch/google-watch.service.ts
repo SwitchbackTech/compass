@@ -188,14 +188,20 @@ async function handleGoogleWatchNotification(
   }
 
   if (resource === Resource_Sync.CALENDAR) {
-    // Calendarlist reconciliation (upsert/archive from the notified change)
-    // lands in a later phase; for now just acknowledge so Google stops
-    // retrying.
-    logger.info(
-      "calendarlist notification acknowledged; reconciliation lands with calendar-list sync",
+    const context = await createGoogleRequestContext(userId);
+    // Dynamic import mirrors google-sync.service's user.service pattern to
+    // avoid a static import cycle with this module.
+    const { googleCalendarListService } = await import(
+      "@backend/sync/services/calendarlist/google-calendarlist.service"
+    );
+    const { outcome } = await googleCalendarListService.reconcileCalendarList(
+      context,
+      userId,
     );
 
-    return "IGNORED";
+    logger.info(`CalendarList notification for user: ${userId} ${outcome}`);
+
+    return outcome;
   }
 
   const context = await createGoogleRequestContext(userId);

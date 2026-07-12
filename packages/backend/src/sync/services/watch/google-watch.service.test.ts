@@ -17,6 +17,7 @@ import { initSupertokens } from "@backend/common/middleware/supertokens.middlewa
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
+import { googleCalendarListService } from "@backend/sync/services/calendarlist/google-calendarlist.service";
 import { seedGoogleCalendar } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
@@ -191,7 +192,7 @@ describe("googleWatchService", () => {
     expect(cleanupSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("acknowledges a calendarlist notification without processing events or publishing SSE", async () => {
+  it("dispatches a calendarlist notification to the reconciler and returns its outcome", async () => {
     const user = await UserDriver.createUser();
     const userId = user._id.toString();
 
@@ -201,7 +202,9 @@ describe("googleWatchService", () => {
     const watch = await createWatch(userId, Resource_Sync.CALENDAR);
 
     const getEventsSpy = jest.spyOn(gcalService, "getEvents");
-    const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+    const reconcileSpy = jest
+      .spyOn(googleCalendarListService, "reconcileCalendarList")
+      .mockResolvedValue({ outcome: "RECONCILED" });
 
     await expect(
       googleWatchService.handleGoogleWatchNotification({
@@ -211,10 +214,10 @@ describe("googleWatchService", () => {
         resourceState: XGoogleResourceState.EXISTS,
         expiration: watch.expiration,
       }),
-    ).resolves.toBe("IGNORED");
+    ).resolves.toBe("RECONCILED");
 
+    expect(reconcileSpy).toHaveBeenCalledWith(expect.anything(), userId);
     expect(getEventsSpy).not.toHaveBeenCalled();
-    expect(eventsChangedSpy).not.toHaveBeenCalled();
   });
 
   it("returns IGNORED when the events handler finds no changes to process", async () => {

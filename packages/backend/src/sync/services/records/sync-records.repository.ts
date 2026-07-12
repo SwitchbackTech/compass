@@ -151,6 +151,28 @@ export const deleteAllByGcalId = (
   );
 };
 
+/**
+ * Removes a single resource's sync entry (by gCalendarId) from the user's
+ * sync document, leaving the rest of the document - the calendarlist token
+ * and every other calendar's entries - untouched. Unlike `deleteAllByGcalId`
+ * (which deletes the whole sync document), this only ever touches one array
+ * entry.
+ */
+export const removeSyncEntry = (
+  resource: Exclude<Resource_Sync, Resource_Sync.SETTINGS>,
+  userId: string,
+  gCalendarId: string,
+  session?: ClientSession,
+): Promise<UpdateResult<Schema_Sync>> => {
+  const operation: UpdateFilter<Schema_Sync> = {
+    $pull: { [`google.${resource}`]: { gCalendarId } },
+  };
+
+  return mongoService.sync.updateOne({ user: userId }, operation, {
+    session,
+  });
+};
+
 export const deleteAllByUser = (userId: string, session?: ClientSession) => {
   return mongoService.sync.deleteMany({ user: userId }, { session });
 };
@@ -169,6 +191,7 @@ const syncRecords = {
   getGCalEventsSyncPageToken,
   getSync,
   getSyncByToken,
+  removeSyncEntry,
   updateSync,
 };
 
