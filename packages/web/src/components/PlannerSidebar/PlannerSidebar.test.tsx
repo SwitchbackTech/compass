@@ -5,6 +5,7 @@ import { describe, expect, it, mock } from "bun:test";
 
 const PlannerSidebar = createPlannerSidebar({
   PlannerAccountSummary: () => <div>Account summary</div>,
+  PlannerCalendarList: () => <div>Calendar list</div>,
   PlannerMonthPicker: () => <div>Calendar picker</div>,
   PlannerSidebarActions: () => <div>Sidebar actions</div>,
   ShortcutsOverlay: () => null,

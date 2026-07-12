@@ -87,6 +87,19 @@ class EventService {
   }
 
   /**
+   * Narrower than `ownedCalendarIds`: list reads only ever surface events on
+   * calendars the user has left visible (packet 08 step 4). Hiding a
+   * calendar is presentation-only (A8) -- it must not affect ownership, so
+   * mutation/lookup call sites (requireOwnedEvent, seriesContext, reorder,
+   * etc.) keep using the wider active-only `ownedCalendarIds` and stay able
+   * to edit/delete events on a calendar the user has hidden.
+   */
+  private async visibleCalendarIds(userId: string): Promise<ObjectId[]> {
+    const calendars = await calendarService.list(userId);
+    return calendars.filter((c) => c.isActive && c.isVisible).map((c) => c._id);
+  }
+
+  /**
    * Resolves a calendar the user owns and is currently active, and enforces
    * write capability derived from its access role (packet 05 step 6):
    * reader/freeBusyReader calendars must reject mutations before any
@@ -172,8 +185,8 @@ class EventService {
     userId: string,
     query: EventListQuery,
   ): Promise<EventRecord[]> => {
-    const ownedCalendarIds = await this.ownedCalendarIds(userId);
-    return eventRepository.list(query, ownedCalendarIds);
+    const visibleCalendarIds = await this.visibleCalendarIds(userId);
+    return eventRepository.list(query, visibleCalendarIds);
   };
 
   readById = async (userId: string, eventId: string): Promise<EventRecord> => {

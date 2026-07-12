@@ -815,3 +815,158 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
     );
   });
 });
+
+/**
+ * Packet 08 step 4: `readAll` (list reads) only ever surfaces events on
+ * calendars the user has left visible. Hiding a calendar is presentation-only
+ * (A8) -- it must not affect ownership, so mutation/lookup paths keep working
+ * on a hidden calendar's events even though list reads no longer return them.
+ */
+describe("EventService (visibility filtering for list reads, packet 08)", () => {
+  beforeEach(setupTestDb);
+  beforeEach(cleanupCollections);
+  afterAll(cleanupTestDb);
+
+  it("excludes a hidden calendar's events from a range list read", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const visible = await seedLocalCalendar(user._id);
+    const hidden = await seedGoogleCalendar(user._id, { access: "writer" });
+    await mongoService.calendar.updateOne(
+      { _id: hidden._id },
+      { $set: { isVisible: false } },
+    );
+
+    const visibleEvent = await eventService.create(user._id.toString(), {
+      calendarId: visible._id.toHexString() as never,
+      content: { kind: "details", title: "Visible standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+    const hiddenEvent = await eventService.create(user._id.toString(), {
+      calendarId: hidden._id.toHexString() as never,
+      content: { kind: "details", title: "Hidden standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T17:00:00-06:00",
+        end: "2026-07-14T18:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+
+    const results = await eventService.readAll(user._id.toString(), {
+      kind: "range",
+      start: "2026-07-14T00:00:00Z",
+      end: "2026-07-15T00:00:00Z",
+      priorities: [],
+    });
+    const resultIds = results.map((e) => e._id.toHexString());
+
+    expect(resultIds).toContain(visibleEvent._id.toHexString());
+    expect(resultIds).not.toContain(hiddenEvent._id.toHexString());
+  });
+
+  it("excludes a hidden calendar's events from a someday list read", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const visible = await seedLocalCalendar(user._id);
+    const hidden = await seedGoogleCalendar(user._id, { access: "writer" });
+    await mongoService.calendar.updateOne(
+      { _id: hidden._id },
+      { $set: { isVisible: false } },
+    );
+
+    const visibleEvent = await eventService.create(user._id.toString(), {
+      calendarId: visible._id.toHexString() as never,
+      content: { kind: "details", title: "Visible someday", description: "" },
+      schedule: {
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-13",
+        sortOrder: 0,
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+    const hiddenEvent = await eventService.create(user._id.toString(), {
+      calendarId: hidden._id.toHexString() as never,
+      content: { kind: "details", title: "Hidden someday", description: "" },
+      schedule: {
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-13",
+        sortOrder: 1,
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+
+    const results = await eventService.readAll(user._id.toString(), {
+      kind: "someday",
+      period: "week",
+      anchorDate: "2026-07-13",
+    });
+    const resultIds = results.map((e) => e._id.toHexString());
+
+    expect(resultIds).toContain(visibleEvent._id.toHexString());
+    expect(resultIds).not.toContain(hiddenEvent._id.toHexString());
+  });
+
+  it("still allows mutating an event on a hidden calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+
+    await mongoService.calendar.updateOne(
+      { _id: calendar._id },
+      { $set: { isVisible: false } },
+    );
+
+    const replaced = await eventService.replace(
+      user._id.toString(),
+      created._id.toHexString(),
+      {
+        content: { kind: "details", title: "Renamed", description: "" },
+        schedule: {
+          kind: "timed",
+          start: "2026-07-14T15:00:00-06:00",
+          end: "2026-07-14T16:00:00-06:00",
+          timeZone: "America/Denver" as never,
+        },
+        recurrence: { kind: "preserve" },
+        priority: "unassigned",
+        scope: "all",
+      },
+    );
+
+    expect(replaced.content).toEqual({
+      kind: "details",
+      title: "Renamed",
+      description: "",
+    });
+
+    await expect(
+      eventService.delete(user._id.toString(), created._id.toHexString(), {
+        scope: "this",
+      }),
+    ).resolves.toBeUndefined();
+  });
+});
