@@ -379,6 +379,50 @@ describe("EventRepository", () => {
     });
   });
 
+  // Packet 05 tests list: "Same Google event id in two calendars." Scoping
+  // the lookup by (calendarId, externalReference.eventId) together -- not
+  // externalReference.eventId alone -- is what lets two different Compass
+  // calendars each import their own event carrying an identical Google
+  // event id without one calendar's record shadowing the other's.
+  describe("findByExternalReference (scoped by calendar, step 5)", () => {
+    it("returns only the owning calendar's event when two calendars share the same Google event id", async () => {
+      const calendarA = new ObjectId();
+      const calendarB = new ObjectId();
+      const sharedGoogleEventId = "shared-gevent-1";
+
+      const eventOnA = buildEvent({
+        calendarId: calendarA,
+        externalReference: {
+          provider: "google",
+          eventId: sharedGoogleEventId,
+          recurringEventId: null,
+        },
+      });
+      const eventOnB = buildEvent({
+        calendarId: calendarB,
+        externalReference: {
+          provider: "google",
+          eventId: sharedGoogleEventId,
+          recurringEventId: null,
+        },
+      });
+      await eventRepository.insertMany([eventOnA, eventOnB]);
+
+      const foundOnA = await eventRepository.findByExternalReference(
+        calendarA,
+        sharedGoogleEventId,
+      );
+      const foundOnB = await eventRepository.findByExternalReference(
+        calendarB,
+        sharedGoogleEventId,
+      );
+
+      expect(foundOnA?._id.toHexString()).toBe(eventOnA._id.toHexString());
+      expect(foundOnB?._id.toHexString()).toBe(eventOnB._id.toHexString());
+      expect(foundOnA?._id.toHexString()).not.toBe(foundOnB?._id.toHexString());
+    });
+  });
+
   describe("deleteBySeriesId", () => {
     it("deletes the base and every occurrence", async () => {
       const base = buildEvent({

@@ -8,6 +8,7 @@ import {
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
+import { sseServer } from "@backend/servers/sse/sse.server";
 import {
   buildEventRecord,
   seedGoogleCalendar,
@@ -649,5 +650,168 @@ describe("EventService (series-calendar consistency guard, step 7)", () => {
         scope: "all",
       }),
     ).rejects.toMatchObject({ mutationCode: "RECURRENCE_CONFLICT" });
+  });
+});
+
+/**
+ * Packet 05 step 9: `notify()` (event.service.ts) suppresses the
+ * `eventsChanged` SSE push for calendars the user has hidden -- the web has
+ * nothing rendered for an invisible calendar, so there's no client state for
+ * that push to reconcile.
+ */
+describe("EventService (SSE suppression for invisible calendars, step 9)", () => {
+  beforeEach(setupTestDb);
+  beforeEach(cleanupCollections);
+  afterAll(cleanupTestDb);
+
+  it("does not publish eventsChanged for a create on a hidden calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+    await mongoService.calendar.updateOne(
+      { _id: calendar._id },
+      { $set: { isVisible: false } },
+    );
+    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+
+    await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Hidden event", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+
+    expect(publishSpy).not.toHaveBeenCalled();
+  });
+
+  it("publishes eventsChanged for a create on a visible calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Visible event", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+
+    expect(publishSpy).toHaveBeenCalledWith(
+      user._id.toString(),
+      expect.objectContaining({
+        calendarId: calendar._id.toHexString(),
+        eventIds: [created._id.toHexString()],
+        reason: "created",
+      }),
+    );
+  });
+
+  it("publishes only for the visible calendar when a transition spans a hidden and a visible calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const hiddenLocal = await seedLocalCalendar(user._id);
+    await mongoService.calendar.updateOne(
+      { _id: hiddenLocal._id },
+      { $set: { isVisible: false } },
+    );
+    const visibleWriter = await seedGoogleCalendar(user._id, {
+      access: "writer",
+    });
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: hiddenLocal._id.toHexString() as never,
+      content: { kind: "details", title: "Plan trip", description: "" },
+      schedule: {
+        kind: "someday",
+        period: "week",
+        anchorDate: "2026-07-13",
+        sortOrder: 0,
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+
+    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+
+    await eventService.transition(
+      user._id.toString(),
+      created._id.toHexString(),
+      {
+        kind: "schedule",
+        targetCalendarId: visibleWriter._id.toHexString() as never,
+        schedule: {
+          kind: "timed",
+          start: "2026-07-14T15:00:00-06:00",
+          end: "2026-07-14T16:00:00-06:00",
+          timeZone: "America/Denver",
+        },
+      },
+    );
+
+    expect(publishSpy).toHaveBeenCalledTimes(1);
+    expect(publishSpy).toHaveBeenCalledWith(
+      user._id.toString(),
+      expect.objectContaining({ calendarId: visibleWriter._id.toHexString() }),
+    );
+  });
+
+  it("fails open (still publishes) when a touched calendar record's visibility lookup comes back empty", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedLocalCalendar(user._id);
+
+    const created = await eventService.create(user._id.toString(), {
+      calendarId: calendar._id.toHexString() as never,
+      content: { kind: "details", title: "Standup", description: "" },
+      schedule: {
+        kind: "timed",
+        start: "2026-07-14T15:00:00-06:00",
+        end: "2026-07-14T16:00:00-06:00",
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "single" },
+      priority: "unassigned",
+    });
+
+    // Simulate the notify() visibility lookup racing a calendar record that
+    // vanished out from under it -- only the `_id: { $in: [...] }` query
+    // notify() runs is stubbed to come back empty; every other `find` call
+    // (e.g. calendarService.list's ownership checks) passes through
+    // untouched. notify() should still publish rather than silently drop it.
+    const originalFind = mongoService.calendar.find.bind(mongoService.calendar);
+    jest
+      .spyOn(mongoService.calendar, "find")
+      .mockImplementation(
+        (...args: Parameters<typeof mongoService.calendar.find>) => {
+          const [filter] = args;
+          const idFilter = (filter as { _id?: { $in?: unknown[] } } | undefined)
+            ?._id?.$in;
+          if (idFilter) {
+            return { toArray: async () => [] } as ReturnType<
+              typeof mongoService.calendar.find
+            >;
+          }
+          return originalFind(...args);
+        },
+      );
+    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
+
+    await eventService.delete(user._id.toString(), created._id.toHexString(), {
+      scope: "this",
+    });
+
+    expect(publishSpy).toHaveBeenCalledWith(
+      user._id.toString(),
+      expect.objectContaining({ calendarId: calendar._id.toHexString() }),
+    );
   });
 });

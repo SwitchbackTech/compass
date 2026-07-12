@@ -35,11 +35,20 @@ import { getAnchorDate } from "@backend/event/services/recur/util/recur.util";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
 
-const notify = (
+/**
+ * Publishes `eventsChanged` once per calendar touched by a mutation, but
+ * suppresses the push for calendars the user has hidden (packet 05 step 9):
+ * the web has nothing rendered for an invisible calendar, so there's no
+ * client-side state for that push to reconcile. A calendar record that can't
+ * be found at all (shouldn't happen -- the mutation just touched it) fails
+ * open and still publishes, since suppression is only for a confirmed
+ * `isVisible: false`, not a lookup gap.
+ */
+const notify = async (
   userId: string,
   records: EventRecord[],
   reason: "created" | "updated" | "deleted",
-): void => {
+): Promise<void> => {
   const byCalendar = new Map<string, EventId[]>();
   for (const record of records) {
     const calendarId = record.calendarId.toHexString();
@@ -47,7 +56,20 @@ const notify = (
     ids.push(record._id.toHexString() as EventId);
     byCalendar.set(calendarId, ids);
   }
+
+  const calendarIds = [...byCalendar.keys()].map((id) => new ObjectId(id));
+  const visibilityById = new Map<string, boolean>(
+    (
+      await mongoService.calendar
+        .find({ _id: { $in: calendarIds } }, { projection: { isVisible: 1 } })
+        .toArray()
+    ).map((calendar) => [calendar._id.toHexString(), calendar.isVisible]),
+  );
+
   for (const [calendarId, eventIds] of byCalendar) {
+    const isVisible = visibilityById.get(calendarId) ?? true;
+    if (!isVisible) continue;
+
     sseServer.publishEventsChanged(userId, {
       calendarId: calendarId as CalendarId,
       eventIds,
@@ -194,7 +216,7 @@ class EventService {
       upserted: materialized.upsert,
       deletedBefore: [],
     });
-    notify(userId, [materialized.primary], "created");
+    await notify(userId, [materialized.primary], "created");
 
     return materialized.primary;
   };
@@ -238,7 +260,7 @@ class EventService {
       deletedBefore,
       originalStartByEventId,
     });
-    notify(userId, [materialized.primary], "updated");
+    await notify(userId, [materialized.primary], "updated");
 
     return materialized.primary;
   };
@@ -272,7 +294,7 @@ class EventService {
       upserted: materialized.upsert,
       deletedBefore,
     });
-    notify(userId, deletedBefore, "deleted");
+    await notify(userId, deletedBefore, "deleted");
   };
 
   transition = async (
@@ -315,7 +337,7 @@ class EventService {
       upserted: plan.kind === "schedule" ? [materialized.primary] : [],
       deletedBefore: plan.kind === "unschedule" ? [target] : [],
     });
-    notify(userId, [target, materialized.primary], "updated");
+    await notify(userId, [target, materialized.primary], "updated");
 
     return materialized.primary;
   };
