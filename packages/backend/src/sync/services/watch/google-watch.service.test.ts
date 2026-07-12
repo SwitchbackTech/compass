@@ -23,6 +23,10 @@ import { seedGoogleCalendar } from "@backend/sync/services/event-propagation/__t
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
+import {
+  GoogleWatchStateStatus,
+  inspectGoogleWatchState,
+} from "@backend/sync/services/watch/google-watch-state";
 
 jest.mock("@backend/sync/services/watch/google-watch-config", () => {
   const actual = jest.requireActual(
@@ -83,10 +87,17 @@ const seedEventsNotification = async (options: {
       })
     : null;
 
+  // A realistic sync-token-bearing response (Google always returns one on
+  // the final page): a fixed value distinct from the driver's seeded
+  // initial token, so the first notify() sees a change and advances the
+  // stored token to it, and a second notify() with the same mock sees no
+  // further change (nextSyncToken === the now-current stored token) -- the
+  // real dedupe path handleNotification/getLatestChanges relies on.
+  const nextSyncToken = faker.string.alphanumeric(20);
   jest.spyOn(gcalService, "getEvents").mockResolvedValue({
     status: 200,
     statusText: "OK",
-    data: { items: options.gcalItems },
+    data: { items: options.gcalItems, nextSyncToken },
   } as unknown as GaxiosResponse);
   const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
 
@@ -330,6 +341,32 @@ describe("googleWatchService", () => {
     );
   });
 
+  it("ignores a duplicate delivery of the same events notification via sync-token dedupe, with no additional writes or publishes (packet 09 fault matrix: duplicate notification)", async () => {
+    const { eventsChangedSpy, notify } = await seedEventsNotification({
+      seedCalendar: { isVisible: true },
+      gcalItems: [
+        mockRegularGcalEvent({ summary: "Duplicate-delivery event" }),
+      ],
+    });
+
+    await expect(notify()).resolves.toBe("PROCESSED");
+    expect(eventsChangedSpy).toHaveBeenCalledTimes(1);
+
+    const eventCountAfterFirst = await mongoService.event.countDocuments();
+
+    // Google redelivers notifications; the same channelId/resourceId/
+    // expiration payload arrives again. The packet 06 sync-token dedupe
+    // (GCalEventsNotificationHandler.getLatestChanges: the just-advanced
+    // stored nextSyncToken comes back unchanged from Google) must make this
+    // second delivery a no-op.
+    await expect(notify()).resolves.toBe("IGNORED");
+
+    expect(eventsChangedSpy).toHaveBeenCalledTimes(1);
+    expect(await mongoService.event.countDocuments()).toBe(
+      eventCountAfterFirst,
+    );
+  });
+
   it("routes an events notification to the calendar its watch names, not any other calendar the user has (packet 06 step 9 secondary-calendar routing proof)", async () => {
     const user = await UserDriver.createUser();
     const userId = user._id.toString();
@@ -475,5 +512,168 @@ describe("googleWatchService", () => {
 
     expect(watch).not.toBeNull();
     expect(watch?.expiration.getTime()).toBe(Number(googleExpiration));
+  });
+
+  describe("startGoogleWatches fault containment (packet 09 step 4: watch creation failure)", () => {
+    const future = () => String(Date.now() + 60 * 60 * 1000);
+
+    beforeEach(() => {
+      // isUsingGcalWebhookHttps is a jest.fn() from the jest.mock() factory
+      // at the top of this file, not a jest.spyOn() - the file's
+      // `afterEach(() => jest.restoreAllMocks())` doesn't reset it, and the
+      // "skips direct Google watch setup..." test above permanently stubs
+      // it to false. These tests exercise startGoogleWatches's gated path
+      // directly, so restore its HTTPS-configured default first.
+      (isUsingGcalWebhookHttps as jest.Mock).mockReturnValue(true);
+    });
+
+    it("contains a single event-watch failure: the other watches still start, no watch record persists for the failed calendar, and the inspector reports WATCHES_MISSING for it", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const context = await createGoogleRequestContext(userId);
+
+      const healthyGCalId = faker.string.uuid();
+      const failingGCalId = faker.string.uuid();
+
+      await seedGoogleCalendar(user._id, {
+        isPrimary: true,
+        source: {
+          provider: "google",
+          calendarId: healthyGCalId,
+          etag: "etag-1",
+        },
+      });
+      await seedGoogleCalendar(user._id, {
+        isPrimary: false,
+        source: {
+          provider: "google",
+          calendarId: failingGCalId,
+          etag: "etag-1",
+        },
+      });
+
+      // Sync tokens are already established (as they would be after initial
+      // import) for both calendars -- only watch *creation* is failing here,
+      // a separate concern from token issuance.
+      await updateSync(Resource_Sync.CALENDAR, userId, Resource_Sync.CALENDAR, {
+        nextSyncToken: faker.string.alphanumeric(16),
+      });
+      await updateSync(Resource_Sync.EVENTS, userId, healthyGCalId, {
+        nextSyncToken: faker.string.alphanumeric(16),
+      });
+      await updateSync(Resource_Sync.EVENTS, userId, failingGCalId, {
+        nextSyncToken: faker.string.alphanumeric(16),
+      });
+
+      jest.spyOn(gcalService, "watchCalendars").mockResolvedValue({
+        watch: { resourceId: "resource-calendarlist", expiration: future() },
+      });
+      jest
+        .spyOn(gcalService, "watchEvents")
+        .mockImplementation(async (_ctx, params) => {
+          if (params.gCalendarId === failingGCalId) {
+            throw createGoogleError({ code: "500", responseStatus: 500 });
+          }
+
+          return {
+            watch: {
+              resourceId: `resource-${params.gCalendarId}`,
+              expiration: future(),
+            },
+          };
+        });
+
+      const results = await googleWatchService.startGoogleWatches(
+        userId,
+        [
+          { gCalendarId: Resource_Sync.CALENDAR },
+          { gCalendarId: healthyGCalId },
+          { gCalendarId: failingGCalId },
+        ],
+        context,
+      );
+
+      // Promise.all never rejects: startEventWatch/startCalendarListWatch
+      // each contain their own errors and resolve to {acknowledged: false}.
+      expect(results).toHaveLength(3);
+
+      expect(
+        await mongoService.watch.findOne({
+          user: userId,
+          gCalendarId: healthyGCalId,
+        }),
+      ).not.toBeNull();
+      expect(
+        await mongoService.watch.findOne({
+          user: userId,
+          gCalendarId: Resource_Sync.CALENDAR,
+        }),
+      ).not.toBeNull();
+      expect(
+        await mongoService.watch.findOne({
+          user: userId,
+          gCalendarId: failingGCalId,
+        }),
+      ).toBeNull();
+
+      const inspection = await inspectGoogleWatchState(userId);
+      expect(inspection.status).toBe(GoogleWatchStateStatus.REPAIR_REQUIRED);
+      expect(inspection.reason).toBe("WATCHES_MISSING");
+      expect(inspection.missingWatchCalendarIds).toContain(failingGCalId);
+    });
+
+    it("contains a calendarlist-watch failure: event watches still start, and the inspector reports WATCHES_MISSING for the calendar list", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const context = await createGoogleRequestContext(userId);
+
+      const gCalendarId = faker.string.uuid();
+
+      await seedGoogleCalendar(user._id, {
+        isPrimary: true,
+        source: { provider: "google", calendarId: gCalendarId, etag: "etag-1" },
+      });
+
+      await updateSync(Resource_Sync.CALENDAR, userId, Resource_Sync.CALENDAR, {
+        nextSyncToken: faker.string.alphanumeric(16),
+      });
+      await updateSync(Resource_Sync.EVENTS, userId, gCalendarId, {
+        nextSyncToken: faker.string.alphanumeric(16),
+      });
+
+      jest
+        .spyOn(gcalService, "watchCalendars")
+        .mockRejectedValue(
+          createGoogleError({ code: "500", responseStatus: 500 }),
+        );
+      jest.spyOn(gcalService, "watchEvents").mockResolvedValue({
+        watch: { resourceId: `resource-${gCalendarId}`, expiration: future() },
+      });
+
+      const results = await googleWatchService.startGoogleWatches(
+        userId,
+        [{ gCalendarId: Resource_Sync.CALENDAR }, { gCalendarId }],
+        context,
+      );
+
+      expect(results).toHaveLength(2);
+
+      expect(
+        await mongoService.watch.findOne({ user: userId, gCalendarId }),
+      ).not.toBeNull();
+      expect(
+        await mongoService.watch.findOne({
+          user: userId,
+          gCalendarId: Resource_Sync.CALENDAR,
+        }),
+      ).toBeNull();
+
+      const inspection = await inspectGoogleWatchState(userId);
+      expect(inspection.status).toBe(GoogleWatchStateStatus.REPAIR_REQUIRED);
+      expect(inspection.reason).toBe("WATCHES_MISSING");
+      expect(inspection.missingWatchCalendarIds).toContain(
+        Resource_Sync.CALENDAR as string,
+      );
+    });
   });
 });

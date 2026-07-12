@@ -2,7 +2,12 @@ import { ObjectId } from "mongodb";
 import { type SessionRequest } from "supertokens-node/framework/express";
 import { BaseError } from "@core/errors/errors.base";
 import { Status } from "@core/errors/status.codes";
-import { type AvailabilityResponse } from "@core/types/event-command.contracts";
+import { CalendarListResponseSchema } from "@core/types/calendar.contracts";
+import {
+  type AvailabilityResponse,
+  AvailabilityResponseSchema,
+} from "@core/types/event-command.contracts";
+import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarController from "@backend/calendar/controllers/calendar.controller";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { type Res_Promise } from "@backend/common/types/express.types";
@@ -59,6 +64,10 @@ describe("CalendarController availability", () => {
       }),
     );
     expect(res.promise).toHaveBeenCalledWith(availabilityResponse);
+    // Packet 09 step 2: pin the response-boundary shape of GET
+    // /api/calendars/availability against the shared core schema.
+    const sentBody = (res.promise as jest.Mock).mock.calls[0]?.[0];
+    expect(() => AvailabilityResponseSchema.parse(sentBody)).not.toThrow();
   });
 
   it("rejects a range longer than 62 days with a 400, without calling calendarService.getAvailability (A7 bounded)", async () => {
@@ -85,5 +94,54 @@ describe("CalendarController availability", () => {
       // arg's `.description` does) - see error.handler.ts.
       expect((e as BaseError).result).toMatch(/62 days/i);
     });
+  });
+});
+
+// No prior test in this file exercised calendarController.list (GET
+// /api/calendars) at all; this pins its happy path plus the packet 09 step 2
+// response-boundary parse, using the same fake req/res driver as the
+// describe block above.
+describe("CalendarController list", () => {
+  const userId = "507f1f77bcf86cd799439011";
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it("returns a CalendarListResponse-shaped body for the session user's calendars", async () => {
+    const record = CalendarRecordSchema.parse({
+      _id: new ObjectId(),
+      userId: new ObjectId(userId),
+      name: "Work",
+      description: "",
+      timeZone: "America/Denver",
+      foregroundColor: "#000000",
+      backgroundColor: "#ffffff",
+      access: "owner",
+      isPrimary: true,
+      isVisible: true,
+      isActive: true,
+      source: { provider: "google", calendarId: "gcal-1", etag: "etag-1" },
+      createdAt: new Date(),
+      updatedAt: null,
+    });
+    const listSpy = jest
+      .spyOn(calendarService, "list")
+      .mockResolvedValue([record]);
+
+    const req = {
+      query: {},
+      session: { getUserId: () => userId },
+    } as unknown as SessionRequest;
+    const promise = jest.fn();
+    const res = { promise } as unknown as Res_Promise;
+
+    await calendarController.list(req, res);
+
+    expect(listSpy).toHaveBeenCalledWith(expect.any(ObjectId));
+    expect(promise).toHaveBeenCalledTimes(1);
+
+    const sentBody = promise.mock.calls[0]?.[0];
+    expect(() => CalendarListResponseSchema.parse(sentBody)).not.toThrow();
   });
 });

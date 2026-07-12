@@ -1,7 +1,17 @@
 import { MigratorType } from "@scripts/common/cli.types";
 import { verifyEventMigration } from "@scripts/common/event-migration.verify";
+import NewEventsCollectionMigration from "@scripts/migrations/2025.10.18T19.43.00.new-events-collection";
+import CalendarRecordMigration from "@scripts/migrations/2026.07.10T21.00.00.calendar-record-migration";
 import Migration from "@scripts/migrations/2026.07.10T21.30.00.event-record-backfill";
-import { type Document, ObjectId } from "mongodb";
+import {
+  type AnyBulkWriteOperation,
+  type BulkWriteOptions,
+  type BulkWriteResult,
+  Collection,
+  type Document,
+  ObjectId,
+} from "mongodb";
+import { MongoDBStorage, Umzug } from "umzug";
 import { Priorities } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
@@ -11,6 +21,7 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
+import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
 import { Collections } from "@backend/common/constants/collections";
 import mongoService from "@backend/common/services/mongo.service";
 
@@ -443,6 +454,175 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
           }),
       );
       expect(startIndex).toBeDefined();
+    });
+  });
+
+  describe("interrupted-partial-backfill resume (packet 09 step 3)", () => {
+    // This migration has no incremental checkpoint to resume from: `up`
+    // unconditionally does `destination.deleteMany({})` before writing
+    // anything (see the top of the migration), so its only recovery
+    // strategy -- for a clean rerun AND for a rerun after a mid-run crash --
+    // is "wipe and rebuild from the untouched legacy source". That makes an
+    // injected crash the honest simulation here (per the packet's seam
+    // guidance) rather than hand-authoring a "checkpoint" shape the
+    // implementation doesn't have: it exercises the real per-batch write
+    // seam (`flush`'s `destination.bulkWrite` call) and proves the
+    // wipe-and-rebuild recovery actually converges from a ragged,
+    // mid-batch-written state, not just from a clean prior success (already
+    // covered by the "converges on rerun" test above).
+    it("converges with no duplicates after a mid-run bulkWrite crash, on the next run", async () => {
+      const userA = await UserDriver.createUser({ withGoogle: false });
+      await insertLocalCalendar(userA._id);
+      const userAHex = userA._id.toHexString();
+
+      const userB = await UserDriver.createUser({ withGoogle: false });
+      await insertLocalCalendar(userB._id);
+      const userBHex = userB._id.toHexString();
+
+      // One full batch plus a one-event remainder -- guarantees exactly two
+      // `bulkWrite` calls per user (batch flush mid-loop, remainder flush
+      // after) regardless of what MONGO_BATCH_SIZE resolves to in this test
+      // environment (mocked to a small value; see mock.setup.ts).
+      const eventsPerUser = MONGO_BATCH_SIZE + 1;
+      const makeEvents = (userIdHex: string, label: string) =>
+        Array.from({ length: eventsPerUser }, (_, i) => {
+          const day = 1 + (i % 25);
+          const date = `2026-06-${String(day).padStart(2, "0")}`;
+          return legacyEvent(userIdHex, {
+            title: `${label} ${i}`,
+            startDate: new Date(`${date}T09:00:00.000Z`).toISOString(),
+            endDate: new Date(`${date}T10:00:00.000Z`).toISOString(),
+          });
+        });
+
+      await legacyCollection().insertMany(makeEvents(userAHex, "A"));
+      await legacyCollection().insertMany(makeEvents(userBHex, "B"));
+
+      // Users are processed in `mongoService.user.find({})` order and each
+      // contributes exactly 2 bulkWrite calls (batch + remainder), so call
+      // #3 is always the first user's-worth-of-writes into the second
+      // user's processing -- crashing there always leaves exactly one
+      // user's events durably written and the other user's entirely
+      // unwritten, regardless of which user Mongo iterates first.
+      const originalBulkWrite = Collection.prototype.bulkWrite;
+      let bulkWriteCallCount = 0;
+      const bulkWriteSpy = jest
+        .spyOn(Collection.prototype, "bulkWrite")
+        .mockImplementation(function (
+          this: Collection,
+          operations: ReadonlyArray<AnyBulkWriteOperation<Document>>,
+          options?: BulkWriteOptions,
+        ): Promise<BulkWriteResult> {
+          bulkWriteCallCount += 1;
+          if (bulkWriteCallCount === 3) {
+            return Promise.reject(
+              new Error("simulated process crash mid-batch-write"),
+            );
+          }
+          return originalBulkWrite.call(this, operations, options);
+        });
+
+      try {
+        await expect(migration.up(migrationContext)).rejects.toThrow(
+          /simulated process crash/,
+        );
+      } finally {
+        bulkWriteSpy.mockRestore();
+      }
+
+      // Crash left a ragged state: exactly one user's worth of events
+      // durably written (2 successful flushes), the other user's first
+      // batch never attempted.
+      expect(await destinationCollection().countDocuments()).toBe(
+        eventsPerUser,
+      );
+
+      // Resume = simply rerunning the migration. bulkWrite is real again, so
+      // this is an ordinary full run against the ragged state left above.
+      await expect(migration.up(migrationContext)).resolves.not.toThrow();
+
+      const afterResume = await destinationCollection().find({}).toArray();
+      expect(afterResume).toHaveLength(eventsPerUser * 2);
+
+      const ids = afterResume.map((d) => (d["_id"] as ObjectId).toHexString());
+      expect(new Set(ids).size).toBe(ids.length);
+    }, 30_000);
+  });
+
+  describe("event_new migration already recorded (packet 09 step 3, umzug chain)", () => {
+    const migrationsCollectionName = `${MigratorType.MIGRATION.toLowerCase()}s`;
+    const storageCollection = () =>
+      mongoService.db.collection(migrationsCollectionName);
+
+    afterEach(() =>
+      storageCollection()
+        .drop()
+        .catch(() => undefined),
+    );
+
+    // Mirrors commands/migrate.ts's production wiring (Umzug + MongoDBStorage
+    // over a `migrations` collection) rather than hand-rolling a parallel
+    // migration list -- `migrations()` there isn't exported, so this
+    // constructs the same three-migration slice of the real chain directly
+    // from the migration classes themselves. Returns the storage alongside
+    // the umzug instance (rather than reaching into `umzug`'s private
+    // `storage` field) so the test can pre-seed it through Umzug's own
+    // public UmzugStorage API.
+    const buildUmzug = () => {
+      const storage = new MongoDBStorage({ collection: storageCollection() });
+      const umzug = new Umzug<typeof migrationContext.context>({
+        storage,
+        logger: undefined,
+        migrations: [
+          new NewEventsCollectionMigration(),
+          new CalendarRecordMigration(),
+          migration,
+        ],
+        context: async () => migrationContext.context,
+      });
+
+      return { umzug, storage };
+    };
+
+    it("skips the already-recorded new-events-collection migration and still completes the later backfill", async () => {
+      // Simulate a prior deployment: the 2025.10.18 migration already ran
+      // for real (creating event_new in its old, now-superseded shape) and
+      // Umzug's changelog already has it recorded as executed.
+      // NewEventsCollectionMigration#up ignores its params entirely (it
+      // takes none -- see the migration source), matching how the sibling
+      // 2025.10.18T19.43.00.new-events-collection.test.ts drives it too.
+      const priorDeploymentMigration = new NewEventsCollectionMigration();
+      await priorDeploymentMigration.up();
+
+      const { umzug, storage } = buildUmzug();
+      await storage.logMigration({ name: priorDeploymentMigration.name });
+
+      const user = await UserDriver.createUser({ withGoogle: false });
+      await legacyCollection().insertOne(
+        legacyEvent(user._id.toHexString(), { title: "Chain event" }),
+      );
+
+      const executed = await umzug.up();
+      const executedNames = executed.map((m) => m.name);
+
+      expect(executedNames).not.toContain(priorDeploymentMigration.name);
+      expect(executedNames).toContain(migration.name);
+      expect(executedNames).toContain(
+        "2026.07.10T21.00.00.calendar-record-migration",
+      );
+
+      // The later backfill wasn't broken by inheriting event_new from the
+      // already-skipped migration: it converged to its own final shape.
+      const docs = await destinationCollection().find({}).toArray();
+      expect(docs).toHaveLength(1);
+      expect((docs[0]?.["content"] as Document)["title"]).toBe("Chain event");
+
+      const indexNames = (
+        await destinationCollection().listIndexes().toArray()
+      ).map((i) => i.name);
+      expect(indexNames).toEqual(
+        expect.arrayContaining(["event_calendar_externalReference_unique"]),
+      );
     });
   });
 
