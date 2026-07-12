@@ -399,11 +399,26 @@ async function initializeGoogleCalendarSync(user: string): Promise<{
   }
 
   if (isUsingGcalWebhookHttps()) {
+    // Events watches only make sense for calendars whose import actually
+    // succeeded this run - a failed calendar's sync token isn't durable
+    // (see the comment above outcomes.forEach), so watching it would just
+    // produce notifications with nothing valid to reconcile against.
+    // freeBusyReader calendars fall out naturally since they were already
+    // excluded from importableCalendars/outcomes above.
+    const successfulCalendarIds = outcomes
+      .filter((outcome) => outcome.status === "fulfilled")
+      .map((outcome) => outcome.value.calendar.source)
+      .filter(
+        (source): source is Extract<typeof source, { provider: "google" }> =>
+          source.provider === "google",
+      )
+      .map((source) => source.calendarId);
+
     await googleWatchService.startGoogleWatches(
       user,
       [
         { gCalendarId: Resource_Sync.CALENDAR },
-        { gCalendarId: primaryCalendar.source.calendarId },
+        ...successfulCalendarIds.map((gCalendarId) => ({ gCalendarId })),
       ],
       context,
     );

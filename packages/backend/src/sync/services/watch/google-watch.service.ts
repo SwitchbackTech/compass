@@ -206,7 +206,7 @@ async function handleGoogleWatchNotification(payload: Payload_Sync_Notif) {
   const result = "PROCESSED";
 
   logger.info(
-    `GCal Notification for user: ${userId}, calendarId: ${calendarId} ${result}`,
+    `GCal Notification for user: ${userId}, calendarId: ${notification.calendarId?.toHexString() ?? "unknown"} ${result}`,
   );
 
   return result;
@@ -318,7 +318,7 @@ async function startEventWatch(
 
     if (alreadyWatching) {
       logger.error(
-        `Skipped Start Watch for ${params.gCalendarId} ${Resource_Sync.EVENTS}`,
+        `Skipped Start Watch for ${Resource_Sync.EVENTS} (user: ${user})`,
         WatchError.EventWatchExists,
       );
 

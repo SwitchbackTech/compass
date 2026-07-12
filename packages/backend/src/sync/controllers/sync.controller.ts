@@ -106,12 +106,10 @@ export class SyncController {
       return;
     }
 
-    const { user: userId, gCalendarId } = watch;
+    const { user: userId } = watch;
     logger.warn("Recovering Google sync after missing sync token", {
       userId,
-      gCalendarId,
       channelId,
-      resourceId,
     });
 
     const metadata = await userMetadataService.fetchUserMetadata(

@@ -22,6 +22,35 @@ jest.mock("@backend/common/services/gcal/gcal.service", () => ({
   },
 }));
 
+type MockLoggerModule = {
+  __mockLogger: {
+    debug: jest.Mock;
+    error: jest.Mock;
+    info: jest.Mock;
+    verbose: jest.Mock;
+    warn: jest.Mock;
+  };
+};
+
+jest.mock("@core/logger/winston.logger", () => {
+  const mockLogger: MockLoggerModule["__mockLogger"] = {
+    debug: jest.fn(),
+    error: jest.fn(),
+    info: jest.fn(),
+    verbose: jest.fn(),
+    warn: jest.fn(),
+  };
+
+  return {
+    __mockLogger: mockLogger,
+    Logger: jest.fn(() => mockLogger),
+  };
+});
+
+const getMockLogger = () =>
+  (jest.requireMock("@core/logger/winston.logger") as MockLoggerModule)
+    .__mockLogger;
+
 describe("GCalNotificationHandler", () => {
   let handler: GCalNotificationHandler;
   let mockGcal: gCalendar;
@@ -33,6 +62,15 @@ describe("GCalNotificationHandler", () => {
 
   beforeAll(setupTestDb);
   beforeEach(cleanupCollections);
+
+  beforeEach(() => {
+    const mockLogger = getMockLogger();
+    mockLogger.debug.mockReset();
+    mockLogger.error.mockReset();
+    mockLogger.info.mockReset();
+    mockLogger.verbose.mockReset();
+    mockLogger.warn.mockReset();
+  });
 
   beforeEach(async () => {
     mockUserId = new ObjectId().toString();
@@ -144,6 +182,21 @@ describe("GCalNotificationHandler", () => {
       const result = await handler.handleNotification();
       expect(result.summary).toBe("IGNORED");
       expect(result.eventIds).toEqual([]);
+    });
+
+    it("should not log the raw Google calendar id when there are no changes to process", async () => {
+      (gcalService.getEvents as jest.Mock).mockResolvedValue({
+        data: { items: [] },
+      });
+
+      await handler.handleNotification();
+
+      const mockLogger = getMockLogger();
+      const loggedMessages = mockLogger.info.mock.calls.map((call) => call[0]);
+
+      for (const message of loggedMessages) {
+        expect(String(message)).not.toContain(mockCalendarId);
+      }
     });
 
     it("should return IGNORED when no owning calendar is found for the user", async () => {
