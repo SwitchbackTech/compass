@@ -76,7 +76,7 @@ export const SomedayEvent = ({
   return (
     <div
       {...somedayEventProps}
-      className="group w-full cursor-grab rounded-xs bg-(--someday-event-bg) px-2 py-0.75 text-text-lighter text-xs transition-[background-color_.2s,opacity_.12s,box-shadow_.2s] hover:bg-(--someday-event-hover-bg) focus-visible:outline-1 focus-visible:outline-accent-primary focus-visible:outline-offset-1 data-[dragging=true]:pointer-events-none data-[dragging=true]:cursor-grabbing data-[dragging=true]:opacity-0"
+      className="group w-full cursor-grab rounded-xs bg-(--someday-event-bg) px-2 py-0.75 text-text-dark text-xs transition-[background-color_.2s,opacity_.12s,box-shadow_.2s] hover:cursor-pointer hover:bg-(--someday-event-hover-bg) focus-visible:outline-1 focus-visible:outline-accent-primary focus-visible:outline-offset-1 data-[dragging=true]:pointer-events-none data-[dragging=true]:cursor-grabbing data-[dragging=true]:opacity-0"
       data-dragging={isDragging}
       style={
         {
