@@ -7,6 +7,7 @@
  * web.preload.ts calls resetAllStores() in a global afterEach so individual
  * test files never need to remember it.
  */
+import { resetBackendAvailabilityForTests } from "@web/api/util/backend-unavailable-error.util";
 import {
   initialUserMetadataState,
   useUserMetadataStore,
@@ -25,6 +26,7 @@ import {
   initialSettingsState,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
 
 type StoreReset = () => void;
 
@@ -34,7 +36,19 @@ const storeResets: StoreReset[] = [
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
   () => useDraftStore.setState(initialDraftState, true),
   () => useUndoHistoryStore.setState(initialUndoHistoryState, true),
+  // Order matters for this pair: the availability flag must be cleared
+  // BEFORE the source store recomputes, or a test that tripped
+  // markBackendUnavailable() leaves every later file's repository source
+  // stuck on "local" (fetch failures are tolerated by BaseApi, so the
+  // poisoning is silent and only surfaces under CI's file ordering).
+  resetBackendAvailabilityForTests,
   resetEventRepositorySourceForTests,
+  // Lives on window.__weekInteractionMotionActive, which survives across
+  // test files (the preload reuses one jsdom window). A test that starts a
+  // real drag and never completes it would otherwise leave every later
+  // file's grid mousedown handlers inert (they early-return while motion
+  // is active) - order-dependent, so it only surfaces on some runners.
+  () => setWeekInteractionMotionActive(false),
 ];
 
 export function resetAllStores() {

@@ -173,23 +173,47 @@ describe("googleWatchRepairService", () => {
       expect(state).toEqual({ leaseExpiresAt: null, lastAttemptAt: null });
     });
 
-    it("2: two concurrent runs perform exactly one repair; the other is SKIPPED/LOCKED", async () => {
+    it("2: two concurrent runs perform exactly one repair; the other is skipped", async () => {
       const { userId, gCalendarId } = await seedUserWithOneMissingWatch();
-      const startGoogleWatchesSpy = jest.spyOn(
-        googleWatchService,
-        "startGoogleWatches",
-      );
 
-      const [first, second] = await Promise.all([
-        googleWatchRepairService.repairGoogleWatchesForUser(userId),
-        googleWatchRepairService.repairGoogleWatchesForUser(userId),
-      ]);
+      // Hold the winner INSIDE its repair (lease acquired, watch-start in
+      // flight) until the loser has fully returned. Without this gate the
+      // interleaving is timing-dependent: a fast winner completes and
+      // releases before the loser even reaches the lease, and the loser
+      // then trips the cooldown instead - or worse, repairs again. The
+      // invariant under test is exactly-once repair, not which of the two
+      // guards (cooldown vs lease) turned the loser away, so the loser's
+      // skip reason may be either.
+      const realStartGoogleWatches =
+        googleWatchService.startGoogleWatches.bind(googleWatchService);
+      let releaseWinner!: () => void;
+      const winnerGate = new Promise<void>((resolve) => {
+        releaseWinner = resolve;
+      });
+      const startGoogleWatchesSpy = jest
+        .spyOn(googleWatchService, "startGoogleWatches")
+        .mockImplementation(async (...args) => {
+          await winnerGate;
+          return realStartGoogleWatches(...args);
+        });
 
-      const actions = [first.action, second.action].sort();
-      expect(actions).toEqual(["REPAIRED", "SKIPPED"]);
+      const firstPromise =
+        googleWatchRepairService.repairGoogleWatchesForUser(userId);
 
-      const skipped = first.action === "SKIPPED" ? first : second;
-      expect(skipped.reason).toBe("LOCKED");
+      // Wait until the winner is provably inside the repair step (lease
+      // held) before racing the loser against it.
+      while (startGoogleWatchesSpy.mock.calls.length === 0) {
+        await new Promise((resolve) => setTimeout(resolve, 5));
+      }
+
+      const second =
+        await googleWatchRepairService.repairGoogleWatchesForUser(userId);
+      releaseWinner();
+      const first = await firstPromise;
+
+      expect(first.action).toBe("REPAIRED");
+      expect(second.action).toBe("SKIPPED");
+      expect(["COOLDOWN", "LOCKED"]).toContain(second.reason);
 
       // Only the winner actually attempted to start the missing watch.
       expect(startGoogleWatchesSpy).toHaveBeenCalledTimes(1);

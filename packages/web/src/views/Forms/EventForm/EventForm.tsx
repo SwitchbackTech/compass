@@ -15,7 +15,10 @@ import { Priorities } from "@core/constants/core.constants";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { useCalendarLookup } from "@web/calendars/useCalendarLookup";
+import {
+  isEventReadOnly,
+  useCalendarLookup,
+} from "@web/calendars/useCalendarLookup";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { darken } from "@web/common/styles/color.utils";
 import {
@@ -40,6 +43,7 @@ import {
   gridEventDraftToSchemaEvent,
   replaceGridDraftSchedule,
 } from "@web/events/grid-event-draft.adapter";
+import { BUSY_EVENT_TITLE } from "@web/events/queries/event.view-model";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { CalendarSelect } from "@web/views/Forms/EventForm/CalendarSelect/CalendarSelect";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
@@ -154,6 +158,18 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
         ? (calendarLookup.get(draft.source.calendarId)?.name ??
           "Unknown calendar")
         : null;
+    // Only an "edit" draft can be read-only - CalendarSelect only offers
+    // writable calendars to a "create"/duplicate draft (packet 08 step 8).
+    // isBusy comes straight off the source event's real content, not the
+    // draft's `values.title` (which stays "" for a busy source - see
+    // editGridEventDraft) - "Busy" below is a display-only override, never
+    // a value that could round-trip through a save.
+    const isBusy =
+      draft.kind === "edit" && draft.source.content.kind === "busy";
+    const isReadOnly =
+      draft.kind === "edit" &&
+      isEventReadOnly(calendarLookup, draft.source.calendarId, isBusy);
+    const displayTitle = isBusy ? BUSY_EVENT_TITLE : (title ?? "");
     const latestDraftRef = useRef(draft);
     const eventStartDate = event.startDate as string;
     const eventEndDate = event.endDate as string;
@@ -353,6 +369,12 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     };
 
     const onSubmitForm = () => {
+      // Belt for the read-only gate above: the Save button doesn't render,
+      // but Enter/Mod+Enter shortcuts below call this directly regardless
+      // of what's on screen, so the block has to live here too (packet 08
+      // step 8).
+      if (isReadOnly) return;
+
       const draftToSubmit = latestDraftRef.current;
       const isAllDay = draftToSubmit.values.schedule.kind === "allDay";
       const selectedDateTimes = {
@@ -435,6 +457,13 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
           return;
         }
 
+        // Belt for the read-only gate: EventActionMenu already hides
+        // Delete for a read-only draft, but the keyboard shortcut fires
+        // regardless of what's rendered (packet 08 step 8).
+        if (isReadOnly) {
+          return;
+        }
+
         keyboardEvent.preventDefault();
         keyboardEvent.stopPropagation();
         onDeleteEvent();
@@ -506,13 +535,14 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
                 "bg-transparent font-semibold text-2xl transition-all duration-300",
               )}
               autoFocus
+              disabled={isReadOnly}
               onChange={onChangeEventTextField("title")}
               onKeyDown={handleTitleKeyDown}
               placeholder="Title"
               name="Event Title"
               ref={titleInputRef}
               underlineColor={priorityColor}
-              value={title ?? ""}
+              value={displayTitle}
               withUnderline
             />
           }
@@ -521,6 +551,7 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
               bgColor={darken(priorityColor)}
               isDraft={isDraft}
               isExistingEvent={isExistingEvent}
+              isReadOnly={isReadOnly}
               onConvert={() => {
                 onConvert?.();
               }}
@@ -530,40 +561,52 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
           }
         />
 
-        <PrioritySection
-          onSetEventField={onSetEventField}
-          priority={priority}
-        />
-
-        {draft.kind === "create" ? (
-          <CalendarSelect
-            onChange={onSelectCalendar}
-            value={draft.values.calendarId}
+        {/* Same fieldset mechanism as the title above, covering priority/
+            calendar/date/recurrence/description in one wrapper. */}
+        <fieldset className="contents" disabled={isReadOnly}>
+          <PrioritySection
+            onSetEventField={onSetEventField}
+            priority={priority}
           />
-        ) : (
-          <p className="my-1.5 text-text-light text-xs">
-            Calendar: {originalCalendarName}
+
+          {draft.kind === "create" ? (
+            <CalendarSelect
+              onChange={onSelectCalendar}
+              value={draft.values.calendarId}
+            />
+          ) : (
+            <p className="my-1.5 text-text-light text-xs">
+              Calendar: {originalCalendarName}
+            </p>
+          )}
+
+          <DateControlsSection
+            dateTimeSectionProps={dateTimeSectionProps}
+            eventCategory={category}
+          />
+
+          <RecurrenceSection {...recurrenceSectionProps} />
+
+          <Textarea
+            underlineColor={priorityColor}
+            onChange={onChangeEventTextField("description")}
+            onKeyDown={handleIgnoredKeys}
+            placeholder="Description"
+            ref={descriptionRef}
+            value={event.description || ""}
+            className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent transition-all duration-300 hover:bg-border-primary hover:brightness-90"
+          />
+        </fieldset>
+
+        {isReadOnly && (
+          <p role="note" className="my-1.5 text-text-light text-xs">
+            Read-only — you don't have permission to edit this event.
           </p>
         )}
 
-        <DateControlsSection
-          dateTimeSectionProps={dateTimeSectionProps}
-          eventCategory={category}
-        />
-
-        <RecurrenceSection {...recurrenceSectionProps} />
-
-        <Textarea
-          underlineColor={priorityColor}
-          onChange={onChangeEventTextField("description")}
-          onKeyDown={handleIgnoredKeys}
-          placeholder="Description"
-          ref={descriptionRef}
-          value={event.description || ""}
-          className="relative max-h-45 w-full overflow-y-auto border-hidden bg-transparent transition-all duration-300 hover:bg-border-primary hover:brightness-90"
-        />
-
-        <SaveSection priority={priority} onSubmit={onSubmitForm} />
+        {!isReadOnly && (
+          <SaveSection priority={priority} onSubmit={onSubmitForm} />
+        )}
       </EventFormShell>
     );
   },

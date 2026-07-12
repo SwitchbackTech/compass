@@ -2,14 +2,19 @@ import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { act, cleanup, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
-import { EventIdSchema } from "@core/types/domain-primitives";
-import { EventScheduleSchema } from "@core/types/event.contracts";
+import {
+  type Calendar,
+  getCalendarCapabilities,
+} from "@core/types/calendar.contracts";
+import { CalendarIdSchema, EventIdSchema } from "@core/types/domain-primitives";
+import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   seedPendingEventMutations,
   toNormalizedEventQueryData,
 } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   COLUMN_MONTH,
   COLUMN_WEEK,
@@ -19,6 +24,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { initialViewState, useViewStore } from "@web/events/stores/view.store";
@@ -71,6 +77,37 @@ const leftmostEvent = createMockEvent({
     timeZone: "UTC",
   }),
 });
+
+// packet 08 step 8: read-only (unwritable calendar) fixtures for the
+// delete/nudge gating tests below.
+const READ_ONLY_EVENT_ID = EventIdSchema.parse("cccccccccccccccccccccccc");
+const readOnlyCalendarId = CalendarIdSchema.parse(createObjectIdString());
+const readOnlyCalendar: Calendar = {
+  id: readOnlyCalendarId,
+  name: "Shared calendar",
+  description: "",
+  timeZone: null,
+  foregroundColor: "#000000",
+  backgroundColor: "#3b82f6",
+  provider: "google",
+  access: "reader",
+  capabilities: getCalendarCapabilities("reader"),
+  isPrimary: false,
+  isVisible: true,
+  isActive: true,
+};
+const readOnlyEvent = createMockEvent({
+  id: READ_ONLY_EVENT_ID,
+  calendarId: readOnlyCalendarId,
+  content: { kind: "details", title: "Read-only event", description: "" },
+  schedule: EventScheduleSchema.parse({
+    kind: "timed",
+    start: "2026-05-20T13:00:00.000Z",
+    end: "2026-05-20T14:00:00.000Z",
+    timeZone: "UTC",
+  }),
+});
+
 const shiftKey = {
   keyDownInit: { shiftKey: true },
   keyUpInit: { shiftKey: true },
@@ -119,6 +156,10 @@ const renderShortcuts = (options?: {
   includeEditableEvent?: boolean;
   includeAllDayEvent?: boolean;
   includeLeftmostEvent?: boolean;
+  /** Extra fixtures beyond the three flags above - e.g. a read-only-calendar event. */
+  extraEvents?: Event[];
+  /** Seeds the calendars query (packet 08 step 8's read-only gate reads it). Omitted -> unseeded -> every event resolves writable (fails open). */
+  calendars?: Calendar[];
 }) => {
   const queryClient = new QueryClient();
   seedPendingEventMutations(queryClient, pendingEventIds);
@@ -126,10 +167,14 @@ const renderShortcuts = (options?: {
     ...(options?.includeEditableEvent === false ? [] : [editableEvent]),
     ...(options?.includeAllDayEvent ? [editableAllDayEvent] : []),
     ...(options?.includeLeftmostEvent ? [leftmostEvent] : []),
+    ...(options?.extraEvents ?? []),
   ];
   queryClient.setQueryDefaults(["events"], {
     initialData: toNormalizedEventQueryData(events),
   });
+  if (options?.calendars) {
+    queryClient.setQueryData(calendarQueryKeys.all, options.calendars);
+  }
   // The someday view model validates every entity; keep its query empty so the
   // minimal grid fixtures above don't fail someday-schema parsing
   queryClient.setQueryDefaults(["events", "someday"], {
@@ -416,6 +461,54 @@ describe("useWeekShortcuts calendar event targeting", () => {
     ).toBe(true);
   });
 
+  // packet 08 step 8: a read-only event (unwritable calendar) can be
+  // inspected but never mutated - Delete must be a no-op blocked before any
+  // mutation reaches the query cache.
+  it("does not delete a read-only calendar event with Delete", () => {
+    const button = addCalendarTarget(readOnlyEvent.id);
+    button.focus();
+
+    const { queryClient } = renderShortcuts({
+      extraEvents: [readOnlyEvent],
+      calendars: [readOnlyCalendar],
+    });
+    pressKey("Delete");
+
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some(
+          (mutation) =>
+            (mutation.state.variables as { id?: string }).id ===
+            READ_ONLY_EVENT_ID,
+        ),
+    ).toBe(false);
+  });
+
+  // Same fixture set, but the targeted event is the ordinary writable one -
+  // proves the read-only gate above doesn't leak into unrelated events.
+  it("still deletes a writable calendar event with Delete when a read-only calendar is also present", () => {
+    const button = addCalendarTarget();
+    button.focus();
+
+    const { queryClient } = renderShortcuts({
+      extraEvents: [readOnlyEvent],
+      calendars: [readOnlyCalendar],
+    });
+    pressKey("Delete");
+
+    expect(
+      queryClient
+        .getMutationCache()
+        .getAll()
+        .some(
+          (mutation) =>
+            (mutation.state.variables as { id?: string }).id === EVENT_1_ID,
+        ),
+    ).toBe(true);
+  });
+
   it("does not delete calendar events when Delete is pressed inside an editable field", () => {
     addCalendarTarget();
     const input = document.createElement("input");
@@ -473,6 +566,26 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
     expect(dayjs(submitted.values.schedule.end).format()).toBe(
       dayjs("2026-05-20T10:00:00.000Z").add(1, "day").format(),
     );
+  });
+
+  // packet 08 step 8: nudging (moving) a read-only event must be blocked
+  // the same way deleting it is - no draft ever reaches confirmation.onSubmit.
+  it("does not move a read-only calendar event with Shift+ArrowRight", async () => {
+    const button = addCalendarTarget(readOnlyEvent.id);
+    button.focus();
+    renderShortcuts({
+      extraEvents: [readOnlyEvent],
+      calendars: [readOnlyCalendar],
+    });
+
+    pressKey("ArrowRight", shiftKey);
+
+    // No async work should follow a blocked nudge, but give any stray
+    // microtask a turn before asserting the negative.
+    await act(async () => {
+      await Promise.resolve();
+    });
+    expect(confirmationOnSubmit).not.toHaveBeenCalled();
   });
 
   it("moves the focused timed event by 15 minutes with Shift+ArrowUp and Shift+ArrowDown", async () => {

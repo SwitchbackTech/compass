@@ -55,8 +55,18 @@ export type Schema_SomedayEvent = z.infer<typeof SomedayEventSchema>;
 // matching the strict core `Event` contract) so the legacy bridge doesn't
 // have to guarantee it in every branch - card rendering degrades gracefully
 // (no accent/label suffix) when it's missing.
+//
+// isBusy mirrors calendarId's out-of-band-join treatment for the same
+// reason: the legacy core `Schema_Event` (event.types.ts) has no concept of
+// content.kind, so it can't survive the Event -> Schema_Event -> Schema_GridEvent
+// bridge as a real field. It backs the read-only gate (packet 08 step 8) -
+// see isEventReadOnly in calendars/useCalendarLookup.ts. Defaults to
+// false/missing when unpopulated (e.g. a legacy caller that hand-builds a
+// Schema_GridEvent) - fail-open, matching isEventReadOnly's own
+// missing-data handling.
 export type Schema_GridEvent = z.infer<typeof GridEventSchema> & {
   calendarId?: CalendarId;
+  isBusy?: boolean;
 };
 
 export interface Schema_OptimisticEvent extends Schema_GridEvent {

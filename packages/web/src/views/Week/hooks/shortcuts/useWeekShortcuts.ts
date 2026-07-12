@@ -4,6 +4,10 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type EventId, EventIdSchema } from "@core/types/domain-primitives";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
+import {
+  isEventReadOnly,
+  useCalendarLookup,
+} from "@web/calendars/useCalendarLookup";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -81,6 +85,11 @@ export const useWeekShortcuts = ({
   const mutations = useEventMutations();
   const { delete: deleteEvent } = mutations;
   const context = useSidebarContext(true);
+  // Read-only (unwritable calendar or busy content) events can be inspected
+  // (the "M" edit shortcut still opens the read-only form) but never
+  // mutated - delete and nudge/move below gate on this before touching the
+  // store (packet 08 step 8).
+  const calendarLookup = useCalendarLookup();
   const {
     actions: { repositionDraftByKeyboard },
     confirmation,
@@ -249,12 +258,22 @@ export const useWeekShortcuts = ({
         return;
       }
 
+      if (
+        isEventReadOnly(
+          calendarLookup,
+          resolvedTarget.event.calendarId,
+          resolvedTarget.event.isBusy ?? false,
+        )
+      ) {
+        return;
+      }
+
       keyboardEvent.preventDefault();
       keyboardEvent.stopPropagation();
 
       deleteEventAndDiscardDraft(deleteEvent, resolvedTarget.event);
     },
-    [deleteEvent, getTargetedCalendarEvent],
+    [calendarLookup, deleteEvent, getTargetedCalendarEvent],
   );
 
   const convertFocusedEventToSomeday = useCallback(
@@ -315,6 +334,12 @@ export const useWeekShortcuts = ({
       const event = findCalendarEventForTarget(target);
       if (!event?._id) return;
 
+      if (
+        isEventReadOnly(calendarLookup, event.calendarId, event.isBusy ?? false)
+      ) {
+        return;
+      }
+
       const movement = getArrowKeyMovement(
         keyboardEvent.key,
         Boolean(event.isAllDay),
@@ -364,6 +389,7 @@ export const useWeekShortcuts = ({
       });
     },
     [
+      calendarLookup,
       confirmation,
       convertFocusedEventToSomeday,
       entities,

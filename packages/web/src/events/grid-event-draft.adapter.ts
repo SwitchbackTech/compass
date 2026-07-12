@@ -206,14 +206,20 @@ function legacyRecurrenceFromDraft(
 // adapter lets the draft store expose one canonical grid draft without a
 // second store while legacy consumers are migrated incrementally.
 //
-// Return type is widened (rather than adding calendarId to the shared,
+// Return type is widened (rather than adding calendarId/isBusy to the shared,
 // hand-written core `Schema_Event` interface, which 10+ unrelated consumers
 // also use) so the calendar-colored card accent/label stays correct on a
 // dragging/resizing existing-event placeholder (draft.store.ts stores this
 // projection for that display path) without touching Schema_Event itself.
+// isBusy is derived straight from the edit draft's real source event (never
+// from `values.title`, which stays "" for a busy source - see
+// editGridEventDraft) - it's what lets the right-click context menu
+// (GridContextMenuWrapper.tsx -> draft store -> ContextMenu's `event` prop)
+// resolve the read-only gate without a second, separate lookup (packet 08
+// step 8).
 export function gridEventDraftToSchemaEvent(
   draft: GridEventDraft,
-): Schema_Event & { calendarId?: CalendarId } {
+): Schema_Event & { calendarId?: CalendarId; isBusy?: boolean } {
   const { schedule } = draft.values;
 
   return {
@@ -225,6 +231,7 @@ export function gridEventDraftToSchemaEvent(
         ? toDateOnlyString(schedule.end)
         : dayjs(schedule.end).format(),
     isAllDay: schedule.kind === "allDay",
+    isBusy: draft.kind === "edit" && draft.source.content.kind === "busy",
     isSomeday: false,
     priority: draft.values.priority ?? Priorities.UNASSIGNED,
     recurrence: legacyRecurrenceFromDraft(draft),

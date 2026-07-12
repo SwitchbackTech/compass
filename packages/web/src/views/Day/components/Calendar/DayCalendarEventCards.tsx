@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { type MouseEvent, useCallback, useMemo, useRef, useState } from "react";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
@@ -32,6 +32,7 @@ interface DayEventCardProps {
   event: Schema_GridEvent;
   isActiveDraft: boolean;
   isPlaceholder: boolean;
+  isReadOnly: boolean;
   measurements: CalendarGridMeasurements;
   onOpenEvent: (event: Schema_GridEvent) => void;
   visibleDates: CalendarGridVisibleDate[];
@@ -46,11 +47,15 @@ export const DayAllDayCalendarEvent = ({
   event,
   isActiveDraft,
   isPlaceholder,
+  isReadOnly,
   measurements,
   onOpenEvent,
   visibleDates,
 }: DayEventCardProps) => {
-  const isRegistered = Boolean(event._id) && !isPlaceholder;
+  // Read-only events never register as an interaction target below, so the
+  // drag/resize engine can't find them - blocked before any optimistic
+  // state change reaches the store (packet 08 step 8).
+  const isRegistered = Boolean(event._id) && !isPlaceholder && !isReadOnly;
   const registrationRef = useDayEventRegistrationRef({
     eventId: event._id,
     eventType: "all-day",
@@ -66,6 +71,15 @@ export const DayAllDayCalendarEvent = ({
         : undefined,
     [event._id, isRegistered],
   );
+  // Being unregistered above also means the interaction engine's own click
+  // resolution never fires, so a read-only card would otherwise stop being
+  // clickable - events must stay inspectable even when they can't be
+  // mutated. Wiring the click straight to the same "open" action the
+  // keyboard path uses bypasses the engine entirely for this card.
+  const onEventMouseDown = isReadOnly
+    ? (_mouseEvent: MouseEvent, clickedEvent: Schema_GridEvent) =>
+        onOpenEvent(clickedEvent)
+    : undefined;
 
   const position = getCalendarAllDayEventPosition(event, {
     isDraft: isPlaceholder,
@@ -80,6 +94,7 @@ export const DayAllDayCalendarEvent = ({
       interactionAttributes={interactionAttributes}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onOpenEvent}
+      onEventMouseDown={onEventMouseDown}
       onMouseEnter={(mouseEvent) => {
         if (!isRegistered) return;
 
@@ -105,11 +120,15 @@ export const DayTimedCalendarEvent = ({
   event,
   isActiveDraft,
   isPlaceholder,
+  isReadOnly,
   measurements,
   onOpenEvent,
   visibleDates,
 }: DayTimedEventCardProps) => {
-  const isRegistered = Boolean(event._id) && !isPlaceholder;
+  // Read-only events never register as an interaction target below, so the
+  // drag/resize engine can't find them - blocked before any optimistic
+  // state change reaches the store (packet 08 step 8).
+  const isRegistered = Boolean(event._id) && !isPlaceholder && !isReadOnly;
   const isDeck = Boolean(deckLayout);
   const [isFocused, setIsFocused] = useState(false);
   const registrationRef = useDayEventRegistrationRef({
@@ -127,6 +146,14 @@ export const DayTimedCalendarEvent = ({
         : undefined,
     [event._id, isRegistered],
   );
+  // Being unregistered above also means the interaction engine's own click
+  // resolution never fires, so a read-only card would otherwise stop being
+  // clickable - events must stay inspectable even when they can't be
+  // mutated. Wiring the click straight to the same "open" action the
+  // keyboard path uses bypasses the engine entirely for this card.
+  const onEventMouseDown = isReadOnly
+    ? (clickedEvent: Schema_GridEvent) => onOpenEvent(clickedEvent)
+    : undefined;
   const deckBoxShadow = (() => {
     if (!isDeck) return undefined;
     const ring = `0 0 0 0.75px ${theme.color.bg.primary}`;
@@ -159,6 +186,7 @@ export const DayTimedCalendarEvent = ({
       motionMode="idle"
       onBlur={isDeck ? () => setIsFocused(false) : undefined}
       onEventKeyDown={onOpenEvent}
+      onEventMouseDown={onEventMouseDown}
       onFocus={isDeck ? () => setIsFocused(true) : undefined}
       onMouseEnter={(mouseEvent) => {
         if (!isRegistered) return;
