@@ -1,4 +1,5 @@
 import type React from "react";
+import { useRef } from "react";
 import ReactSelect, { type Props as RSProps } from "react-select";
 import { darken } from "@web/common/styles/color.utils";
 import { type CSSVariables } from "@web/common/styles/css.types";
@@ -26,10 +27,12 @@ export const TimePicker = ({
   ...props
 }: Props) => {
   const TIMEPICKER = "timepicker";
+  const containerRef = useRef<HTMLDivElement>(null);
   let scrollTimer: number;
 
   return (
     <div
+      ref={containerRef}
       className="c-time-picker"
       style={
         {
@@ -71,7 +74,7 @@ export const TimePicker = ({
         }}
         onMenuOpen={() => {
           scrollTimer = window.setTimeout(() => {
-            const defaultOpt = document.getElementsByClassName(
+            const defaultOpt = containerRef.current?.getElementsByClassName(
               `${TIMEPICKER}__option--is-selected`,
             )[0];
             if (defaultOpt) {
@@ -82,6 +85,7 @@ export const TimePicker = ({
         }}
         onMenuClose={() => {
           clearTimeout(scrollTimer);
+          setIsMenuOpen(false);
         }}
         openMenuOnFocus={true}
         options={options}
