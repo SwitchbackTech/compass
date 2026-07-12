@@ -59,10 +59,10 @@ unfinished.
       migration (A32).
 - [x] 03. [Event runtime cutover](./03-event-runtime-cutover.md) — move the codebase
       from the legacy user-owned event shape to calendar-owned storage.
-- [ ] 04. [Initial multi-calendar import](./04-initial-multi-calendar-import.md) —
+- [x] 04. [Initial multi-calendar import](./04-initial-multi-calendar-import.md) —
       import all eligible Google calendars and events; starts with the request
       context, retry policy, and 7-day channel expiration pulled forward from
-      `07` (A30).
+      `07` (A30). Shipped in PRs #2036, #2038, #2040, #2043.
 - [ ] 05. [Calendar-aware CRUD](./05-calendar-aware-crud.md) — route writes to the
       correct provider calendar and enforce permissions.
 - [ ] 06. [Calendar-list sync and watch routing](./06-calendar-list-sync-and-watch-routing.md)
@@ -114,8 +114,11 @@ unfinished.
   and selection routes, and Google calendar mapping already exist.
 - `POST /api/calendars` accepts a client-supplied calendar document even though
   v1 calendar lifecycle is server-owned; the plan removes that unused authority.
-- `getCalendarsToSync()` intentionally returns only the primary Google
-  calendar, so the current initial and incremental flows remain single-calendar.
+- `getCalendarsToSync()` returns every eligible Google calendar (packet `04`,
+  PRs #2036/#2038/#2040/#2043) and initial sync imports/watches all of them;
+  `importLatestGoogleCalendarChanges` (the incremental/webhook-triggered path)
+  remains intentionally primary-only, since multi-calendar incremental sync is
+  driven by per-calendar watches rather than this function.
 - `event_new.types.ts` and an `event_new` collection/backfill exist, but the
   application still reads/writes the legacy `event` collection and legacy
   `Schema_Event` with a `user` field.
