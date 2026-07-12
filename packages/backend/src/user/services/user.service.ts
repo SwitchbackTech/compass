@@ -368,6 +368,20 @@ class UserService {
     });
   };
 
+  /**
+   * Records that `userId`'s client is actively connected right now (called
+   * on every SSE (re)connect). This is what the watch-maintenance activity
+   * gate (A40) reads to tell an active user apart from an abandoned account,
+   * since post-cutover EventRecords carry no `user`/`origin` field to query
+   * instead. Callers fire this off without awaiting/blocking on it.
+   */
+  touchLastSeenAt = async (userId: string): Promise<void> => {
+    await mongoService.user.updateOne(
+      { _id: zObjectId.parse(userId) },
+      { $set: { lastSeenAt: new Date() } },
+    );
+  };
+
   fetchUserMetadata = async (
     userId: string,
     userContext?: Record<string, JSONObject>,

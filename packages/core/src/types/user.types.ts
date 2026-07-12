@@ -14,6 +14,10 @@ export interface Schema_User {
   };
   signedUpAt?: Date;
   lastLoggedInAt?: Date;
+  /** Last time this user's client connected to the SSE stream -- touched on
+   *  every (re)connect, distinct from `lastLoggedInAt`'s sign-in moment.
+   *  Used to tell an active user apart from an abandoned account (A40). */
+  lastSeenAt?: Date;
 }
 
 type SyncStatus = "IMPORTING" | "ERRORED" | "COMPLETED" | "RESTART" | null;

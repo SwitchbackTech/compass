@@ -162,6 +162,8 @@ To confirm sync is live: create or edit one event directly in Google Calendar an
 
 The repo has the code paths for Google watches and repair. The self-host Docker stack does not schedule watch renewal, so you need to verify and wire up maintenance separately before treating ongoing Google sync as dependable.
 
+Google push delivery to `/api/sync/gcal/notifications` is not guaranteed. Notifications can be delayed or dropped, so Compass does not depend on them alone. Every calendar also converges through incremental catch-up sync (per-calendar sync tokens). The watch repair coordinator keeps channels registered too, combining a defensive repair check on every client SSE (re)connect with scheduled maintenance that re-verifies all watches via `POST /api/sync/maintain-all`. Channels expire after 7 days by default (`google.channelExpirationMin`, in minutes) and renew inside a 3-day buffer before expiry.
+
 ## What to read next
 
 If you need public Google watch notifications, continue with [Server hosting guide](./server-guide.md).

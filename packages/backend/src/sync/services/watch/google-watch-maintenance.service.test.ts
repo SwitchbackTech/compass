@@ -19,7 +19,6 @@ import {
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import * as googleWatchActivityService from "@backend/sync/services/watch/google-watch-activity";
 import { googleWatchMaintenanceService } from "@backend/sync/services/watch/google-watch-maintenance.service";
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userService from "@backend/user/services/user.service";
@@ -57,8 +56,9 @@ describe("googleWatchMaintenanceService", () => {
     const user = await UserDriver.createUser();
     const userId = user._id.toString();
 
-    // No recent Compass-origin event -> inactive -> every watch lands in
-    // the prune bucket (prepWatchMaintenanceForUser's activity gate).
+    // A freshly created user has no lastSeenAt/lastLoggedInAt yet -> inactive
+    // -> every watch lands in the prune bucket (prepWatchMaintenanceForUser's
+    // activity gate).
     const localCalendar = await seedLocalCalendar(user._id);
     const localEvent = await mongoService.event.insertOne(
       buildEventRecord(localCalendar._id),
@@ -114,13 +114,13 @@ describe("googleWatchMaintenanceService", () => {
     const user = await UserDriver.createUser();
     const userId = user._id.toString();
 
-    // hasUpdatedCompassEventRecently is a plain function export (not part
-    // of a service object) - mocking it directly isolates "does
-    // runMaintenanceByUser wire an active user through the coordinator"
-    // from activity-detection itself, which is a separate concern.
-    jest
-      .spyOn(googleWatchActivityService, "hasUpdatedCompassEventRecently")
-      .mockResolvedValue(true);
+    // A recent lastSeenAt (touched on every SSE (re)connect) is what the
+    // activity gate now keys off - seeding it directly exercises the real
+    // hasUserBeenActiveSince check instead of mocking it away.
+    await mongoService.user.updateOne(
+      { _id: user._id },
+      { $set: { lastSeenAt: new Date() } },
+    );
 
     await updateSync(Resource_Sync.CALENDAR, userId, Resource_Sync.CALENDAR, {
       nextSyncToken: faker.string.alphanumeric(16),
