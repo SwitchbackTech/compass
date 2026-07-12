@@ -9,6 +9,7 @@ import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal
 import {
   loadAuthenticated,
   loadDateParam,
+  redirectToCurrentWeek,
   redirectToToday,
   validateDayDateParam,
   validateWeekDateParam,
@@ -90,7 +91,7 @@ export const weekDateRoute = createRoute({
 export const weekIndexRoute = createRoute({
   getParentRoute: () => weekRoute,
   path: "/",
-  beforeLoad: () => redirectToToday(ROOT_ROUTES.WEEK_DATE),
+  beforeLoad: redirectToCurrentWeek,
 });
 
 export const rootIndexRoute = createRoute({

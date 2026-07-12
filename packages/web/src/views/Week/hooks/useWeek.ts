@@ -8,14 +8,10 @@ import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjace
 import { useSomedayEventsQuery } from "@web/events/queries/useSomedayEventsQuery";
 import { useWeekEventsQuery } from "@web/events/queries/useWeekEventsQuery";
 import { viewActions } from "@web/events/stores/view.store";
-import {
-  anchorDateForWindowOffset,
-  computeVisibleWindowOffset,
-  WEEK_DAY_COUNT,
-} from "@web/views/Week/util/week-window.util";
+import { WEEK_DAY_COUNT } from "@web/views/Week/util/week-window.util";
 import { type Category_View } from "@web/views/Week/week-view.types";
 
-export type WeekNavigationSource = "manual" | "drag-to-edge";
+export type WeekNavigationSource = "manual" | "drag-to-edge" | "day-shift";
 
 const DATE_FORMAT = dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT;
 
@@ -23,13 +19,9 @@ export const useWeek = (
   today: Dayjs,
   visibleDayCount: number = WEEK_DAY_COUNT,
 ) => {
-  // The anchor is the day the visible window centers on. The week range and
-  // the window offset both derive from it, so a day-count change re-windows
-  // around the anchor without extra state. The anchor itself lives in the
-  // URL (rather than useState) so a refresh restores the same week; it is
-  // memoized on the date *string* because `today` is a fresh Dayjs every
-  // render, and memoizing on the Dayjs instance would re-derive start/end
-  // (and re-fire the updateDates effect below) on every render.
+  // The URL date is the first visible day, so custom windows survive refresh
+  // and can cross calendar-week boundaries. Memoize from the date string
+  // because `today` is a fresh Dayjs instance on every render.
   const navigate = useNavigate();
   const params = useParams({
     from: ROUTE_IDS.WEEK_DATE,
@@ -47,48 +39,50 @@ export const useWeek = (
     });
   const navigationSourceRef = useRef<WeekNavigationSource>("manual");
 
-  const start = useMemo(() => anchor.startOf("week"), [anchor]);
-  const end = useMemo(() => start.endOf("week"), [start]);
+  const start = useMemo(() => anchor.startOf("day"), [anchor]);
+  const end = useMemo(
+    () => start.add(visibleDayCount - 1, "day").endOf("day"),
+    [start, visibleDayCount],
+  );
 
   const week = useMemo(() => start.week(), [start]);
 
-  const isCurrentWeek = today.week() === start.week();
-
-  const windowOffset = computeVisibleWindowOffset({
-    anchorIndex: anchor.startOf("day").diff(start.startOf("day"), "day"),
-    visibleDayCount,
-  });
+  const isCurrentWeek = today.isBetween(start, end, "day", "[]");
 
   const weekDays = useMemo(
     () =>
       Array.from({ length: visibleDayCount }, (_, index) =>
-        start.add(windowOffset + index, "day"),
+        start.add(index, "day"),
       ),
-    [start, visibleDayCount, windowOffset],
+    [start, visibleDayCount],
   );
 
-  // Week + someday reads are driven by TanStack Query: changing start/end
-  // re-keys the queries (fetch on new ranges, instant render from cache on
-  // revisits). Queries stay week-granular even when fewer days render, so
-  // window paging within a week never refetches.
+  // Changing the visible range re-keys the query; revisits use cached data.
   useWeekEventsQuery({ startOfView: start, endOfView: end });
   useSomedayEventsQuery(start);
 
-  // Warm the previous/next week so the next prev/next click resolves from
-  // cache. Uses the same toUTCOffset formatting useWeekEventsQuery uses for
-  // the current range, so the prefetched entries land under the exact keys a
-  // subsequent read looks up.
-  const previousStart = useMemo(() => start.subtract(7, "day"), [start]);
-  const nextStart = useMemo(() => start.add(7, "day"), [start]);
+  // Warm the previous and next visible pages using the exact read-key format.
+  const previousStart = useMemo(
+    () => start.subtract(visibleDayCount, "day"),
+    [start, visibleDayCount],
+  );
+  const nextStart = useMemo(
+    () => start.add(visibleDayCount, "day"),
+    [start, visibleDayCount],
+  );
   usePrefetchAdjacentEvents(
     weekEventsQueryOptions,
     {
       startDate: toUTCOffset(previousStart),
-      endDate: toUTCOffset(previousStart.endOf("week")),
+      endDate: toUTCOffset(
+        previousStart.add(visibleDayCount - 1, "day").endOf("day"),
+      ),
     },
     {
       startDate: toUTCOffset(nextStart),
-      endDate: toUTCOffset(nextStart.endOf("week")),
+      endDate: toUTCOffset(
+        nextStart.add(visibleDayCount - 1, "day").endOf("day"),
+      ),
     },
   );
 
@@ -104,35 +98,9 @@ export const useWeek = (
     setAnchor(date);
   };
 
-  // Shift the visible window by one page of visibleDayCount days; at the
-  // week's edge, cross into the adjacent week entering from its near side.
   const pageWindow = (direction: 1 | -1, source: WeekNavigationSource) => {
     navigationSourceRef.current = source;
-    const maxOffset = WEEK_DAY_COUNT - visibleDayCount;
-    const isAtWeekEdge =
-      direction === 1 ? windowOffset >= maxOffset : windowOffset <= 0;
-
-    if (isAtWeekEdge) {
-      setAnchor(
-        anchorDateForWindowOffset({
-          weekStart: start.add(direction * WEEK_DAY_COUNT, "day"),
-          windowOffset: direction === 1 ? 0 : maxOffset,
-          visibleDayCount,
-        }),
-      );
-      return;
-    }
-
-    setAnchor(
-      anchorDateForWindowOffset({
-        weekStart: start,
-        windowOffset: Math.min(
-          Math.max(windowOffset + direction * visibleDayCount, 0),
-          maxOffset,
-        ),
-        visibleDayCount,
-      }),
-    );
+    setAnchor(start.add(direction * visibleDayCount, "day"));
   };
 
   const incrementWeek = (source: WeekNavigationSource = "manual") =>
@@ -141,10 +109,15 @@ export const useWeek = (
   const decrementWeek = (source: WeekNavigationSource = "manual") =>
     pageWindow(-1, source);
 
+  const shiftViewByDay = (direction: 1 | -1) => {
+    navigationSourceRef.current = "day-shift";
+    setAnchor(start.add(direction, "day"));
+  };
+
   const goToToday = () => {
     navigationSourceRef.current = "manual";
-    if (!anchor.isSame(today, "day")) {
-      setAnchor(today);
+    if (!isCurrentWeek) {
+      setAnchor(today.startOf("week"));
     }
   };
 
@@ -160,7 +133,13 @@ export const useWeek = (
       weekDays,
     },
     state: { goToDate },
-    util: { decrementWeek, goToToday, incrementWeek, getLastNavigationSource },
+    util: {
+      decrementWeek,
+      getLastNavigationSource,
+      goToToday,
+      incrementWeek,
+      shiftViewByDay,
+    },
   };
   return weekProps;
 };

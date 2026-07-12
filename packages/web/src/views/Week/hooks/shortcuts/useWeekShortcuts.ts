@@ -95,7 +95,7 @@ export const useWeekShortcuts = ({
   });
   const allDayEventsRef = useRef(allDayEvents);
   const timedEventsRef = useRef(timedEvents);
-  const { decrementWeek, incrementWeek, goToToday } = util;
+  const { decrementWeek, incrementWeek, goToToday, shiftViewByDay } = util;
   const { scrollToNow } = scrollUtil;
 
   useEffect(() => {
@@ -138,6 +138,16 @@ export const useWeekShortcuts = ({
     _discardDraft();
     incrementWeek();
   }, [incrementWeek, _discardDraft]);
+
+  const shiftViewBackward = useCallback(() => {
+    _discardDraft();
+    shiftViewByDay(-1);
+  }, [_discardDraft, shiftViewByDay]);
+
+  const shiftViewForward = useCallback(() => {
+    _discardDraft();
+    shiftViewByDay(1);
+  }, [_discardDraft, shiftViewByDay]);
 
   const createAllDayDraftEvent = useCallback(() => {
     void createAlldayDraft(startOfView, endOfView, "createShortcut");
@@ -377,6 +387,8 @@ export const useWeekShortcuts = ({
 
   useAppShortcutUp("J", goToPreviousWeek);
   useAppShortcutUp("K", goToNextWeek);
+  useAppShortcutUp("Shift+J", shiftViewBackward);
+  useAppShortcutUp("Shift+K", shiftViewForward);
   useAppShortcutUp("T", toToday);
   useAppShortcutUp("A", createAllDayDraftEvent);
   useAppShortcutUp("C", createTimedDraftEvent);

@@ -42,6 +42,18 @@ export function redirectToToday(
   });
 }
 
+export function redirectToCurrentWeek(): never {
+  const dateString = dayjs()
+    .startOf("week")
+    .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
+
+  throw redirect({
+    to: ROOT_ROUTES.WEEK_DATE,
+    params: { dateString },
+    search: (prev: Record<string, unknown>) => prev,
+  });
+}
+
 // Deliberately not params.parse: a throwing parser makes the route not
 // match (-> NotFound), but the existing UX redirects an invalid dateString
 // to the base route instead. Runs in beforeLoad so an invalid param never

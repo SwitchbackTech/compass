@@ -16,6 +16,12 @@ const getNavigateShortcuts = ({
 }: ShortcutMenuConfig): Shortcut[] => [
   { keys: ["j"], label: `Previous ${view}` },
   { keys: ["k"], label: `Next ${view}` },
+  ...(view === "week"
+    ? [
+        { keys: ["Shift", "j"], label: "Shift view back one day" },
+        { keys: ["Shift", "k"], label: "Shift view forward one day" },
+      ]
+    : []),
   {
     keys: ["t"],
     label: isViewingCurrentPeriod
