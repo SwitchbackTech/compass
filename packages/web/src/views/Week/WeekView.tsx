@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
@@ -29,6 +29,7 @@ import { useDateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
 import { useVisibleDayCount } from "@web/views/Week/hooks/grid/useVisibleDayCount";
+import { useHorizontalWeekNavigation } from "@web/views/Week/hooks/useHorizontalWeekNavigation";
 import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
@@ -51,6 +52,12 @@ export const WeekView = () => {
   const { trackRef, visibleDayCount } = useVisibleDayCount();
 
   const weekProps = useWeek(today, visibleDayCount);
+  const mainRef = useRef<HTMLDivElement | null>(null);
+  useHorizontalWeekNavigation({
+    containerRef: mainRef,
+    onNext: weekProps.util.incrementWeek,
+    onPrevious: weekProps.util.decrementWeek,
+  });
 
   const { gridRefs, measurements } = useGridLayout(visibleDayCount);
 
@@ -153,6 +160,7 @@ export const WeekView = () => {
               </ContextMenuWrapper>
               <div
                 id={ID_MAIN}
+                ref={mainRef}
                 className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
               >
                 <Header scrollUtil={scrollUtil} weekProps={weekProps} />
