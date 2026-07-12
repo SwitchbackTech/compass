@@ -1,4 +1,5 @@
 import { type ClientSession, ObjectId } from "mongodb";
+import { getCalendarCapabilities } from "@core/types/calendar.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import {
   type CreateEventInput,
@@ -8,6 +9,7 @@ import {
   type ReplaceEventInput,
   type TransitionEventInput,
 } from "@core/types/event-command.contracts";
+import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
 import mongoService from "@backend/common/services/mongo.service";
 import {
@@ -59,6 +61,32 @@ class EventService {
   private async ownedCalendarIds(userId: string): Promise<ObjectId[]> {
     const calendars = await calendarService.list(userId);
     return calendars.filter((c) => c.isActive).map((c) => c._id);
+  }
+
+  /**
+   * Resolves a calendar the user owns and is currently active, and enforces
+   * write capability derived from its access role (packet 05 step 6):
+   * reader/freeBusyReader calendars must reject mutations before any
+   * optimistic write reaches Google.
+   */
+  private async requireWritableCalendar(
+    userId: string,
+    calendarId: ObjectId | string,
+  ): Promise<CalendarRecord> {
+    const calendar = await calendarService.getOwnedActiveCalendar(
+      userId,
+      calendarId,
+    );
+    if (!calendar) {
+      throw eventMutationError("CALENDAR_NOT_FOUND", "Calendar not found");
+    }
+    if (!getCalendarCapabilities(calendar.access).canWrite) {
+      throw eventMutationError(
+        "CALENDAR_READ_ONLY",
+        "Calendar does not permit writes",
+      );
+    }
+    return calendar;
   }
 
   private async requireOwnedEvent(
@@ -133,13 +161,7 @@ class EventService {
     userId: string,
     input: CreateEventInput,
   ): Promise<EventRecord> => {
-    const calendar = await calendarService.getOwnedActiveCalendar(
-      userId,
-      input.calendarId,
-    );
-    if (!calendar) {
-      throw eventMutationError("CALENDAR_NOT_FOUND", "Calendar not found");
-    }
+    await this.requireWritableCalendar(userId, input.calendarId);
 
     if (input.id) {
       const existing = await mongoService.event.findOne({
@@ -182,6 +204,7 @@ class EventService {
     input: ReplaceEventInput,
   ): Promise<EventRecord> => {
     const target = await this.requireOwnedEvent(userId, eventId);
+    await this.requireWritableCalendar(userId, target.calendarId);
     const ownedCalendarIds = await this.ownedCalendarIds(userId);
     const series = await this.seriesContext(target, ownedCalendarIds);
     const plan = analyzeReplace(target, series, input, new Date());
@@ -209,6 +232,7 @@ class EventService {
     input: DeleteEventInput,
   ): Promise<void> => {
     const target = await this.requireOwnedEvent(userId, eventId);
+    await this.requireWritableCalendar(userId, target.calendarId);
     const ownedCalendarIds = await this.ownedCalendarIds(userId);
     const series = await this.seriesContext(target, ownedCalendarIds);
     const plan = analyzeDelete(target, series, input);
@@ -243,13 +267,10 @@ class EventService {
 
     let targetCalendarId: ObjectId | null = null;
     if (input.kind === "schedule") {
-      const calendar = await calendarService.getOwnedActiveCalendar(
+      const calendar = await this.requireWritableCalendar(
         userId,
         input.targetCalendarId,
       );
-      if (!calendar) {
-        throw eventMutationError("CALENDAR_NOT_FOUND", "Calendar not found");
-      }
       targetCalendarId = calendar._id;
     } else {
       const local = await calendarService.getLocalCalendar(userId);

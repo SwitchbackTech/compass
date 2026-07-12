@@ -8,6 +8,11 @@ import {
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import mongoService from "@backend/common/services/mongo.service";
 import eventService from "@backend/event/services/event.service";
+import {
+  buildEventRecord,
+  seedGoogleCalendar,
+  seedLocalCalendar as seedLocalCalendarHelper,
+} from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 
 const seedLocalCalendar = async (userId: ObjectId) => {
   const record = CalendarRecordSchema.parse({
@@ -336,5 +341,229 @@ describe("EventService (local calendar)", () => {
         created._id.toHexString(),
       ),
     ).toBeTruthy();
+  });
+});
+
+describe("EventService (calendar write-capability enforcement)", () => {
+  beforeEach(setupTestDb);
+  beforeEach(cleanupCollections);
+  afterAll(cleanupTestDb);
+
+  const createInput = (calendarId: string) => ({
+    calendarId: calendarId as never,
+    content: { kind: "details" as const, title: "Standup", description: "" },
+    schedule: {
+      kind: "timed" as const,
+      start: "2026-07-14T15:00:00-06:00",
+      end: "2026-07-14T16:00:00-06:00",
+      timeZone: "America/Denver" as never,
+    },
+    recurrence: { kind: "single" as const },
+    priority: "unassigned" as const,
+  });
+
+  const replaceInput = () => ({
+    content: { kind: "details" as const, title: "Updated", description: "" },
+    schedule: {
+      kind: "timed" as const,
+      start: "2026-07-14T15:00:00-06:00",
+      end: "2026-07-14T16:00:00-06:00",
+      timeZone: "America/Denver" as never,
+    },
+    recurrence: { kind: "single" as const },
+    priority: "unassigned" as const,
+    scope: "this" as const,
+  });
+
+  const somedayCreateInput = (calendarId: string) => ({
+    calendarId: calendarId as never,
+    content: { kind: "details" as const, title: "Plan trip", description: "" },
+    schedule: {
+      kind: "someday" as const,
+      period: "week" as const,
+      anchorDate: "2026-07-13",
+      sortOrder: 0,
+    },
+    recurrence: { kind: "single" as const },
+    priority: "unassigned" as const,
+  });
+
+  const scheduleTransitionInput = (targetCalendarId: string) => ({
+    kind: "schedule" as const,
+    targetCalendarId: targetCalendarId as never,
+    schedule: {
+      kind: "timed" as const,
+      start: "2026-07-14T15:00:00-06:00",
+      end: "2026-07-14T16:00:00-06:00",
+      timeZone: "America/Denver" as never,
+    },
+  });
+
+  it("create succeeds on a writer calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedGoogleCalendar(user._id, { access: "writer" });
+
+    const created = await eventService.create(
+      user._id.toString(),
+      createInput(calendar._id.toHexString()),
+    );
+
+    expect(created.calendarId).toEqual(calendar._id);
+  });
+
+  it("create fails with CALENDAR_READ_ONLY on a reader calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedGoogleCalendar(user._id, { access: "reader" });
+
+    await expect(
+      eventService.create(
+        user._id.toString(),
+        createInput(calendar._id.toHexString()),
+      ),
+    ).rejects.toMatchObject({ mutationCode: "CALENDAR_READ_ONLY" });
+  });
+
+  it("create fails with CALENDAR_READ_ONLY on a freeBusyReader calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedGoogleCalendar(user._id, {
+      access: "freeBusyReader",
+    });
+
+    await expect(
+      eventService.create(
+        user._id.toString(),
+        createInput(calendar._id.toHexString()),
+      ),
+    ).rejects.toMatchObject({ mutationCode: "CALENDAR_READ_ONLY" });
+  });
+
+  it("create fails with CALENDAR_NOT_FOUND for a cross-user calendar id", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const { user: otherUser } = await UtilDriver.setupTestUser();
+    const calendar = await seedGoogleCalendar(otherUser._id, {
+      access: "writer",
+    });
+
+    await expect(
+      eventService.create(
+        user._id.toString(),
+        createInput(calendar._id.toHexString()),
+      ),
+    ).rejects.toMatchObject({ mutationCode: "CALENDAR_NOT_FOUND" });
+  });
+
+  it("create fails with CALENDAR_NOT_FOUND for a stale calendar id", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const staleId = new ObjectId().toHexString();
+
+    await expect(
+      eventService.create(user._id.toString(), createInput(staleId)),
+    ).rejects.toMatchObject({ mutationCode: "CALENDAR_NOT_FOUND" });
+  });
+
+  it("replace succeeds on an existing event on a writer calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedGoogleCalendar(user._id, { access: "writer" });
+    const event = buildEventRecord(calendar._id);
+    await mongoService.event.insertOne(event);
+
+    const replaced = await eventService.replace(
+      user._id.toString(),
+      event._id.toHexString(),
+      replaceInput() as never,
+    );
+
+    expect(replaced.content).toEqual({
+      kind: "details",
+      title: "Updated",
+      description: "",
+    });
+  });
+
+  it("replace fails with CALENDAR_READ_ONLY on an existing event on a reader calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedGoogleCalendar(user._id, { access: "reader" });
+    const event = buildEventRecord(calendar._id);
+    await mongoService.event.insertOne(event);
+
+    await expect(
+      eventService.replace(
+        user._id.toString(),
+        event._id.toHexString(),
+        replaceInput() as never,
+      ),
+    ).rejects.toMatchObject({ mutationCode: "CALENDAR_READ_ONLY" });
+  });
+
+  it("delete succeeds on an existing event on a writer calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedGoogleCalendar(user._id, { access: "writer" });
+    const event = buildEventRecord(calendar._id);
+    await mongoService.event.insertOne(event);
+
+    await eventService.delete(user._id.toString(), event._id.toHexString(), {
+      scope: "this",
+    });
+
+    await expect(
+      eventService.readById(user._id.toString(), event._id.toHexString()),
+    ).rejects.toMatchObject({ mutationCode: "EVENT_NOT_FOUND" });
+  });
+
+  it("delete fails with CALENDAR_READ_ONLY on an existing event on a reader calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendar = await seedGoogleCalendar(user._id, { access: "reader" });
+    const event = buildEventRecord(calendar._id);
+    await mongoService.event.insertOne(event);
+
+    await expect(
+      eventService.delete(user._id.toString(), event._id.toHexString(), {
+        scope: "this",
+      }),
+    ).rejects.toMatchObject({ mutationCode: "CALENDAR_READ_ONLY" });
+
+    expect(
+      await eventService.readById(user._id.toString(), event._id.toHexString()),
+    ).toBeTruthy();
+  });
+
+  it("transition schedule fails with CALENDAR_READ_ONLY when the target calendar is a reader calendar", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const local = await seedLocalCalendarHelper(user._id);
+    const readerCalendar = await seedGoogleCalendar(user._id, {
+      access: "reader",
+    });
+
+    const created = await eventService.create(
+      user._id.toString(),
+      somedayCreateInput(local._id.toHexString()),
+    );
+
+    await expect(
+      eventService.transition(
+        user._id.toString(),
+        created._id.toHexString(),
+        scheduleTransitionInput(readerCalendar._id.toHexString()),
+      ),
+    ).rejects.toMatchObject({ mutationCode: "CALENDAR_READ_ONLY" });
+  });
+
+  it("transition schedule fails with CALENDAR_NOT_FOUND for a stale target calendar id", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const local = await seedLocalCalendarHelper(user._id);
+    const staleId = new ObjectId().toHexString();
+
+    const created = await eventService.create(
+      user._id.toString(),
+      somedayCreateInput(local._id.toHexString()),
+    );
+
+    await expect(
+      eventService.transition(
+        user._id.toString(),
+        created._id.toHexString(),
+        scheduleTransitionInput(staleId),
+      ),
+    ).rejects.toMatchObject({ mutationCode: "CALENDAR_NOT_FOUND" });
   });
 });
