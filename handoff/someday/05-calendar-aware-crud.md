@@ -84,9 +84,20 @@ Depends on: `04-initial-multi-calendar-import.md`.
 
 ## Exit criteria
 
-- [ ] No GCal event write has a primary-calendar default.
-- [ ] Server authorization covers every CRUD path and recurrence expansion.
-- [ ] All provider event lookups include calendar scope.
-- [ ] CRUD works for writable secondary calendars and fails clearly for readers.
+- [x] No GCal event write has a primary-calendar default. (Already true
+      entering this packet except `GCalService.getEvent`'s read-only default;
+      every write path already threaded an explicit calendar id.)
+- [x] Server authorization covers every CRUD path and recurrence expansion.
+      Shipped in PR #2046 (write-capability enforcement) and PR #2049
+      (series-occurrence Google sync + series-calendar consistency guard).
+- [x] All provider event lookups include calendar scope. Google-to-Compass
+      matching was already scoped by `(calendarId, externalReference.eventId)`
+      entering this packet; PR #2050 added the missing test proving an
+      identical Google event id in two calendars never collides.
+- [x] CRUD works for writable secondary calendars and fails clearly for
+      readers. Shipped in PR #2046 (403 `CALENDAR_READ_ONLY`) and PR #2050
+      (SSE suppression for invisible calendars).
+
+Shipped in PRs #2046, #2049, #2050.
 
 Suggested commit: `feat(events): route writes by calendar`
