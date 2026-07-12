@@ -3,8 +3,8 @@ import fastDeepEqual from "fast-deep-equal/react";
 import type React from "react";
 import {
   type KeyboardEvent,
-  type SetStateAction,
   memo,
+  type SetStateAction,
   useCallback,
   useEffect,
   useMemo,
@@ -240,11 +240,11 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     // projection, then reapplies it onto the canonical GridEventDraft.
     const setLatestEvent = useCallback(
       (nextEvent: SetStateAction<Schema_Event | null>) => {
-        const currentEvent = gridEventDraftToSchemaEvent(latestDraftRef.current);
+        const currentEvent = gridEventDraftToSchemaEvent(
+          latestDraftRef.current,
+        );
         const resolvedEvent =
-          typeof nextEvent === "function"
-            ? nextEvent(currentEvent)
-            : nextEvent;
+          typeof nextEvent === "function" ? nextEvent(currentEvent) : nextEvent;
 
         if (!resolvedEvent) return;
 

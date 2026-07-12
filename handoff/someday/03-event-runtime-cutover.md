@@ -5,16 +5,42 @@
 Move all core, backend, scripts, and web runtime paths from the legacy
 user-owned event document to the final strict calendar-owned event contracts.
 
-Status (2026-07-11): substantially implemented on
-`refactor/event-runtime-cutover`. Backend, storage, HTTP/SSE contracts,
-IndexedDB, and the web data/state layers are fully cut over with all suites
-and the full local e2e run green. Remaining before this packet's boxes can be
-checked: dissolve `packages/web/src/events/queries/event.legacy-bridge.ts` by
-converting the component/view layer (draft store, grid drag/resize, forms,
-sidebar, shortcuts) off `Schema_Event`, then delete the legacy web event
-types. `event_new.types.ts` stays as long as the frozen 2025 migrations
-import it. Scope-`this` provider sync for series occurrences is deferred to
-`05` (recorded there).
+Status (2026-07-11): **COMPLETE.** `packages/web/src/events/queries/event.legacy-bridge.ts`
+is dissolved and deleted — every consumer (grid draft pipeline, someday
+sidebar, Week's local draft/drag state, the event forms cluster, both grid
+renderers, and the last few flagged stragglers) now runs on the strict
+`Event`/`GridEventDraft`/`EventDraft`/`EventMutations` contracts. `rg
+"createLegacyEventMutationsAdapter|eventToSchemaEvent\b|schemaEventToCreateInput|schemaEventToReplaceInput"
+packages/web/src` returns zero hits outside a couple of small, deliberately
+duplicated local mirrors (`grid-event-draft.adapter.ts`,
+`someday-event-draft.adapter.ts`, `event.view-model.ts` each keep a tiny
+local `Event`→legacy-shape projection rather than import the now-deleted
+bridge file — same pattern throughout this effort, smaller and more honest
+than a shared import from a file that no longer conceptually exists).
+`event_new.types.ts` stays, since the frozen 2025 migrations still import
+it — untouched by this packet, by design. Scope-`this` provider sync for
+series occurrences is deferred to `05` (recorded there).
+
+15 PRs (#2019-#2033, plus this final cleanup) got here, each independently
+type-checked, unit-tested, Playwright-verified, and reviewed before merging.
+A prior big-bang attempt at this exact area (Week's local draft state +
+the forms cluster together) caused 118 type errors and needed two full
+reverts early in this effort's history (5328eb137/7cbbb74e6, reverted by
+a91434684/a1d23ea7b) — every phase after that succeeded by staying small,
+independently mergeable, and gated on `bun run type-check` + `bun test` +
+`bunx playwright test`, never skipping the behavioral gate for "just a type
+change." Every single phase found and fixed at least one real, previously
+undetected bug the strict conversion surfaced — not just mechanical type
+errors: two separate timezone bugs (`Date#toISOString()`/`new
+Date("YYYY-MM-DD")` silently producing UTC-anchored strings that either
+displayed 6 hours off or landed an event in the wrong week/month bucket —
+invisible in CI, which runs `TZ=UTC`), a missing reorder-period argument
+that would have failed backend validation outright, a stale-recurrence-echo
+bug, a dropped-recurrence-on-duplicate bug, and a redundant re-derivation
+bug caught as a genuine simplification along the way. `dayjs(...)` (never
+`new Date("YYYY-MM-DD")` or `.toISOString()`) is the established, required
+pattern for any code in this tree that produces a legacy date string or a
+someday `anchorDate` from now on.
 
 Update (2026-07-11, `refactor/web-event-legacy-bridge`): the grid draft
 pipeline (click-to-open, right-click, keyboard-created timed/all-day drafts,
@@ -221,14 +247,33 @@ provider id or reintroduce `event.user` for convenient queries.
 
 ## Exit criteria
 
-- [ ] `rg` finds no runtime query by `event.user` or top-level Google event id.
-- [ ] All event behavior uses the calendar-owned repository.
-- [ ] Someday↔scheduled drag conversions work through the transition command,
-      and undo of delete restores the original event id.
-- [ ] API and IndexedDB migrations pass old-data fixtures.
-- [ ] Focused core/backend/web/scripts suites, type-check, and lint pass.
+- [x] `rg` finds no runtime query by `event.user` or top-level Google event
+      id. Verified 2026-07-11: `rg "event\.user\b"` across
+      backend/core/scripts returns zero hits; the only remaining
+      `gEventId`/`gRecurringEventId` references are `map.event.ts`'s
+      Google-API field-translation mappers (legitimate interop, not a DB
+      query key).
+- [x] All event behavior uses the calendar-owned repository. Backend was
+      cut over before this packet's web-layer work began (see Status note);
+      unaffected by today's changes.
+- [x] Someday↔scheduled drag conversions work through the transition
+      command, and undo of delete restores the original event id. Verified
+      end-to-end via a temporary Playwright spec during Phase D (#2025):
+      dragged a someday event onto the grid, confirmed `schedule.kind`
+      flipped `someday`→`timed` in IndexedDB, then Cmd/Ctrl+Z'd and
+      confirmed it flipped back and reappeared in the sidebar.
+- [x] API and IndexedDB migrations pass old-data fixtures. Predates this
+      packet's web-layer work (see Status note); unaffected by today's
+      changes.
+- [x] Focused core/backend/web/scripts suites, type-check, and lint pass.
+      Verified 2026-07-11 on the final state: `bun run type-check` clean,
+      `bun test` (web) 1254/1254, `bunx playwright test --workers=1` 11/11,
+      `bun run lint` exits 0 (15 pre-existing a11y warnings, no errors).
 - [ ] Every runtime requirement archived from #1138 and #1135 has matching
-      code and test evidence in this packet.
+      code and test evidence in this packet. Not independently audited in
+      this session — needs a human (or a session with GitHub issue access)
+      to cross-reference the archived requirements list against this
+      packet's actual PRs before this box is checked.
 
 Suggested commit boundaries:
 

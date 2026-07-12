@@ -14,7 +14,6 @@ import {
   type GridEventDraft,
   type GridScheduleDraft,
 } from "@web/events/event-draft.types";
-import { legacyRecurrenceFromEvent } from "@web/events/queries/event.legacy-bridge";
 
 function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
   const { schedule } = event;
@@ -142,6 +141,17 @@ export function parseGridEventDraft(
 
 export function timedGridSchedule(start: Date, end: Date): GridScheduleDraft {
   return { kind: "timed", start, end, timeZone: getBrowserTimeZone() };
+}
+
+// Mirrors event.legacy-bridge.ts's legacyRecurrenceFromEvent, duplicated
+// locally so this adapter doesn't depend on the bridge file being dissolved
+// (see event.view-model.ts's prior conversion for the same pattern).
+function legacyRecurrenceFromEvent(event: Event): Schema_Event["recurrence"] {
+  return event.recurrence.kind === "series"
+    ? { rule: [...event.recurrence.rules], eventId: event.id }
+    : event.recurrence.kind === "occurrence"
+      ? { eventId: event.recurrence.seriesId }
+      : undefined;
 }
 
 // Reflects the draft's *live* recurrence edit (e.g. from RecurrenceSection's

@@ -3,7 +3,7 @@ import { type Event } from "@core/types/event.contracts";
 import { Categories_Event } from "@core/types/event.types";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
-import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
+import { eventToSchemaEvent } from "@web/events/someday-event-draft.adapter";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
 
 const ACTIONS_CLASS_NAME =

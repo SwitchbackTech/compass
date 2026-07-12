@@ -1,6 +1,7 @@
-import { Priorities } from "@core/constants/core.constants";
+import { Origin, Priorities } from "@core/constants/core.constants";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
+import { type Schema_Event } from "@core/types/event.types";
 import {
   type RecurrenceScope,
   type TransitionEventInput,
@@ -155,4 +156,60 @@ export function scheduleSomedayEventTransition(
   });
 
   return parsed.success ? parsed.data : null;
+}
+
+// The reverse direction of scheduleSomedayEventTransition: builds the
+// TransitionEventInput for the grid's "convert to someday" keyboard
+// shortcut. Mirrors its safeParse-and-return-null-on-failure shape.
+export function unscheduleSomedayEventTransition(schedule: {
+  period: "week" | "month";
+  anchorDate: string;
+  sortOrder: number;
+}): TransitionEventInput | null {
+  const parsed = TransitionEventInputSchema.safeParse({
+    kind: "unschedule",
+    schedule: { kind: "someday", ...schedule },
+  });
+
+  return parsed.success ? parsed.data : null;
+}
+
+// Mirrors event.legacy-bridge.ts's eventToSchemaEvent, duplicated locally so
+// the someday sidebar's remaining Schema_Event boundary (SomedayEventForm /
+// RecurrenceSection's useRecurrence contract) doesn't depend on the bridge
+// file being dissolved. See grid-event-draft.adapter.ts's local
+// legacyRecurrenceFromEvent duplication for the equivalent grid-side case.
+function somedayEventRecurrenceToSchema(
+  event: Event,
+): Schema_Event["recurrence"] {
+  return event.recurrence.kind === "series"
+    ? { rule: [...event.recurrence.rules], eventId: event.id }
+    : event.recurrence.kind === "occurrence"
+      ? { eventId: event.recurrence.seriesId }
+      : undefined;
+}
+
+export function eventToSchemaEvent(event: Event): Schema_Event {
+  const { schedule } = event;
+
+  const startDate =
+    schedule.kind === "someday" ? schedule.anchorDate : schedule.start;
+  const endDate =
+    schedule.kind === "someday" ? schedule.anchorDate : schedule.end;
+
+  return {
+    _id: event.id,
+    title: event.content.kind === "details" ? event.content.title : "",
+    description:
+      event.content.kind === "details" ? event.content.description : "",
+    origin: Origin.COMPASS,
+    priority: event.priority,
+    isAllDay: schedule.kind === "allDay",
+    isSomeday: schedule.kind === "someday",
+    order: schedule.kind === "someday" ? schedule.sortOrder : undefined,
+    startDate,
+    endDate,
+    recurrence: somedayEventRecurrenceToSchema(event),
+    updatedAt: event.updatedAt ?? undefined,
+  };
 }

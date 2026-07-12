@@ -1,11 +1,9 @@
 import { useCallback, useEffect, useRef } from "react";
 import { SOMEDAY_WEEK_LIMIT_MSG } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type EventId } from "@core/types/domain-primitives";
+import { type EventId, EventIdSchema } from "@core/types/domain-primitives";
 import { Categories_Event } from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -32,9 +30,9 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { createLegacyEventMutationsAdapter } from "@web/events/queries/event.legacy-bridge";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { unscheduleSomedayEventTransition } from "@web/events/someday-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,
@@ -82,14 +80,6 @@ export const useWeekShortcuts = ({
 }: ShortcutProps) => {
   const mutations = useEventMutations();
   const { delete: deleteEvent } = mutations;
-  const { data: calendars } = useCalendarsQuery();
-  // TODO(packet-03-phase-3c): legacy-shaped facade until this file's
-  // Schema_GridEvent-based someday conversion is converted to the new
-  // contracts.
-  const { convertToSomeday } = createLegacyEventMutationsAdapter(
-    mutations,
-    () => getDefaultTargetCalendar(calendars ?? [])?.id,
-  );
   const context = useSidebarContext(true);
   const {
     actions: { repositionDraftByKeyboard },
@@ -273,7 +263,20 @@ export const useWeekShortcuts = ({
         somedayWeekCount,
       );
 
-      convertToSomeday({ event: somedayEvent });
+      // This shortcut always drops into the SOMEDAY_WEEK column (only the
+      // weekly limit is checked above), so period is always "week".
+      const id = EventIdSchema.safeParse(somedayEvent._id);
+      const input = somedayEvent.startDate
+        ? unscheduleSomedayEventTransition({
+            period: "week",
+            anchorDate: somedayEvent.startDate,
+            sortOrder: somedayEvent.order ?? 0,
+          })
+        : null;
+
+      if (id.success && input) {
+        mutations.transition({ id: id.data, input });
+      }
 
       if (!isSidebarOpen) {
         viewActions.toggleSidebar();
@@ -281,10 +284,10 @@ export const useWeekShortcuts = ({
       refocusEventElement(somedayEvent._id);
     },
     [
-      convertToSomeday,
       endOfView,
       isAtWeeklyLimit,
       isSidebarOpen,
+      mutations,
       somedayWeekCount,
       startOfView,
     ],
