@@ -14,6 +14,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
+import { type NotificationOutcome } from "@backend/sync/services/notify/notification.outcome";
 import { publicWatchNotificationIngress } from "@backend/sync/services/public-watch-notifications/public-watch-notification.ingress";
 import { getSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
@@ -23,6 +24,7 @@ import userMetadataService from "@backend/user/services/user-metadata.service";
 import { ImportGCalRequestSchema } from "../sync.types";
 
 const logger = Logger("app:sync.controller");
+const REPAIR_STARTED = "REPAIR_STARTED" satisfies NotificationOutcome;
 
 export class SyncController {
   private static handleMissingRefreshToken = async (
@@ -87,7 +89,10 @@ export class SyncController {
       );
     });
 
-    res.status(Status.OK).send({ message: "Full sync in progress." });
+    res.status(Status.OK).send({
+      outcome: REPAIR_STARTED,
+      message: "Full sync in progress.",
+    });
   };
 
   private static handleMissingSyncToken = async (
@@ -131,6 +136,10 @@ export class SyncController {
     // When Google returns 410 (sync token invalid), the token may still exist
     // in the database but is no longer valid. assessGoogleMetadata checks token
     // existence, not validity, so we must force-restart directly.
+    logger.info(
+      `${REPAIR_STARTED}: restarting Google sync for user: ${userId}`,
+    );
+
     googleCalendarSyncService.repairGoogleCalendarSync(userId).catch((err) => {
       logger.error(
         `Something went wrong with recovering google calendars for user: ${userId}`,

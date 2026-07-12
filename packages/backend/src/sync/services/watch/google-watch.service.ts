@@ -27,7 +27,8 @@ import {
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
-import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
+import { GCalEventsNotificationHandler } from "@backend/sync/services/notify/handler/gcal-events.notification.handler";
+import { type NotificationOutcome } from "@backend/sync/services/notify/notification.outcome";
 import { getSync } from "@backend/sync/services/records/sync-records.repository";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 import { isWatchingGoogleResource } from "@backend/sync/services/watch/google-watch-state";
@@ -126,7 +127,9 @@ async function cleanupStaleWatch({
   }
 }
 
-async function handleGoogleWatchNotification(payload: Payload_Sync_Notif) {
+async function handleGoogleWatchNotification(
+  payload: Payload_Sync_Notif,
+): Promise<NotificationOutcome> {
   const { channelId, resourceId, resourceState, resource } = payload;
   const { expiration } = payload;
 
@@ -184,10 +187,20 @@ async function handleGoogleWatchNotification(payload: Payload_Sync_Notif) {
     );
   }
 
+  if (resource === Resource_Sync.CALENDAR) {
+    // Calendarlist reconciliation (upsert/archive from the notified change)
+    // lands in a later phase; for now just acknowledge so Google stops
+    // retrying.
+    logger.info(
+      "calendarlist notification acknowledged; reconciliation lands with calendar-list sync",
+    );
+
+    return "IGNORED";
+  }
+
   const context = await createGoogleRequestContext(userId);
-  const handler = new GCalNotificationHandler(
+  const handler = new GCalEventsNotificationHandler(
     context,
-    resource,
     userId,
     watch.gCalendarId,
     nextSyncToken,
@@ -195,21 +208,19 @@ async function handleGoogleWatchNotification(payload: Payload_Sync_Notif) {
 
   const notification = await handler.handleNotification();
 
-  if (notification.calendarId) {
+  if (notification.calendar?.isVisible) {
     sseServer.publishEventsChanged(userId, {
-      calendarId: notification.calendarId.toHexString() as CalendarId,
+      calendarId: notification.calendar._id.toHexString() as CalendarId,
       eventIds: notification.eventIds as EventId[],
       reason: "reconciled",
     });
   }
 
-  const result = "PROCESSED";
-
   logger.info(
-    `GCal Notification for user: ${userId}, calendarId: ${notification.calendarId?.toHexString() ?? "unknown"} ${result}`,
+    `GCal Notification for user: ${userId}, calendarId: ${notification.calendar?._id.toHexString() ?? "unknown"} ${notification.summary}`,
   );
 
-  return result;
+  return notification.summary;
 }
 
 async function refreshWatch(
