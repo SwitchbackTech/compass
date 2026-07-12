@@ -1,5 +1,5 @@
-import { type FC, type SetStateAction, useState } from "react";
-import { type Schema_Event } from "@core/types/event.types";
+import { type FC, useState } from "react";
+import dayjs from "@core/util/date/dayjs";
 import { type SelectOption } from "@web/common/types/component.types";
 import { type Option_Time } from "@web/common/types/util.types";
 import {
@@ -8,28 +8,30 @@ import {
   mapToBackend,
 } from "@web/common/utils/datetime/web.date.util";
 import { shouldAdjustComplimentTime } from "@web/common/utils/datetime/web.datetime.util";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { replaceGridDraftSchedule } from "@web/events/grid-event-draft.adapter";
 import { TimePicker } from "./TimePicker";
 
 interface Props {
   bgColor: string;
-  event: Schema_Event;
+  draft: GridEventDraft;
   endTime: SelectOption<string>;
   selectedEndDate: Date;
   selectedStartDate: Date;
+  setDraft: (draft: GridEventDraft) => void;
   setEndTime: (value: SelectOption<string>) => void;
-  setEvent: (event: SetStateAction<Schema_Event | null>) => void;
   setStartTime: (value: SelectOption<string>) => void;
   startTime: SelectOption<string>;
 }
 
 export const TimePickers: FC<Props> = ({
   bgColor,
+  draft,
   endTime,
-  event,
   selectedEndDate,
   selectedStartDate,
+  setDraft,
   setEndTime,
-  setEvent,
   setStartTime,
   startTime,
 }) => {
@@ -79,8 +81,6 @@ export const TimePickers: FC<Props> = ({
     const correctedStart = adjustComplimentTimeIfNeeded("end", option.value);
 
     if (endTime.value && endTime.value !== option.value) {
-      // TODO(packet-03-phase-3c): mapToBackend now returns an EventSchedule;
-      // this component still operates on legacy Schema_Event startDate/endDate.
       const schedule = mapToBackend({
         startDate: selectedStartDate,
         endDate: selectedEndDate,
@@ -89,13 +89,16 @@ export const TimePickers: FC<Props> = ({
         isAllDay: false,
       });
 
-      const _event = {
-        ...event,
-        startDate: schedule.start,
-        endDate: schedule.end,
-      };
+      if (schedule.kind !== "timed") return; // TS guard: isAllDay: false above always yields "timed"
 
-      setEvent(_event);
+      setDraft(
+        replaceGridDraftSchedule(draft, {
+          kind: "timed",
+          start: dayjs(schedule.start).toDate(),
+          end: dayjs(schedule.end).toDate(),
+          timeZone: schedule.timeZone,
+        }),
+      );
     }
     setIsEndMenuOpen(false);
   };
@@ -105,8 +108,6 @@ export const TimePickers: FC<Props> = ({
     const correctedEnd = adjustComplimentTimeIfNeeded("start", option.value);
 
     if (startTime.value && startTime.value !== option.value) {
-      // TODO(packet-03-phase-3c): mapToBackend now returns an EventSchedule;
-      // this component still operates on legacy Schema_Event startDate/endDate.
       const schedule = mapToBackend({
         startDate: selectedStartDate,
         endDate: selectedEndDate,
@@ -115,13 +116,16 @@ export const TimePickers: FC<Props> = ({
         isAllDay: false,
       });
 
-      const _event = {
-        ...event,
-        startDate: schedule.start,
-        endDate: schedule.end,
-      };
+      if (schedule.kind !== "timed") return; // TS guard: isAllDay: false above always yields "timed"
 
-      setEvent(_event);
+      setDraft(
+        replaceGridDraftSchedule(draft, {
+          kind: "timed",
+          start: dayjs(schedule.start).toDate(),
+          end: dayjs(schedule.end).toDate(),
+          timeZone: schedule.timeZone,
+        }),
+      );
       setIsStartMenuOpen(false);
     }
   };

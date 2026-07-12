@@ -1,7 +1,7 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { Categories_Event } from "@core/types/event.types";
 import {
   cleanup,
   fireEvent,
@@ -13,26 +13,18 @@ import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-tes
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
+import {
+  createGridEventDraft,
+  editGridEventDraft,
+} from "@web/events/grid-event-draft.adapter";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { draftActions } from "@web/events/stores/draft.store";
 import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
-// draft.store.ts still holds the legacy Schema_Event shape (see its own
-// TODO); these ids are also used to seed the strict-contract `Event` query
-// cache below, so they must satisfy EventIdSchema (real ObjectId shape).
 const EXISTING_EVENT_ID = "aaaaaaaaaaaaaaaaaaaaaaaa";
 const RECURRING_EVENT_ID = "bbbbbbbbbbbbbbbbbbbbbbbb";
-
-const draft: Schema_Event = {
-  endDate: "2026-05-21",
-  isAllDay: true,
-  isSomeday: false,
-  startDate: "2026-05-20",
-  title: "",
-  user: "user",
-};
 
 beforeEach(() => {
   HotkeyManager.resetInstance();
@@ -45,7 +37,12 @@ afterEach(() => {
 
 describe("FloatingEventForm", () => {
   it("focuses the title when the form opens", async () => {
-    draftActions.startGridClick(draft);
+    const draft = createGridEventDraft({
+      kind: "allDay",
+      start: new Date("2026-05-20"),
+      end: new Date("2026-05-21"),
+    });
+    draftActions.startGridDraft({ activity: "gridClick", draft });
     draftActions.setFormOpen(true);
 
     const Harness = () => {
@@ -69,15 +66,20 @@ describe("FloatingEventForm", () => {
   });
 
   it("deletes an already-saved event on Delete instead of just closing the form", async () => {
-    const existingEvent: Schema_Event = {
-      _id: EXISTING_EVENT_ID,
-      endDate: "2026-05-20T15:00:00.000Z",
-      isAllDay: false,
-      isSomeday: false,
-      startDate: "2026-05-20T14:00:00.000Z",
-      title: "Existing Event",
-      user: "user",
-    };
+    const existingEvent = createMockEvent({
+      id: EventIdSchema.parse(EXISTING_EVENT_ID),
+      content: {
+        kind: "details",
+        title: "Existing Event",
+        description: "",
+      },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-05-20T14:00:00.000Z",
+        end: "2026-05-20T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
 
     const queryClient = createCompassQueryClient();
     queryClient.setQueryData(
@@ -86,29 +88,12 @@ describe("FloatingEventForm", () => {
         start: "2026-05-20T00:00:00.000Z",
         end: "2026-05-21T00:00:00.000Z",
       }),
-      toNormalizedEventQueryData([
-        createMockEvent({
-          id: EventIdSchema.parse(EXISTING_EVENT_ID),
-          content: {
-            kind: "details",
-            title: "Existing Event",
-            description: "",
-          },
-          schedule: EventScheduleSchema.parse({
-            kind: "timed",
-            start: "2026-05-20T14:00:00.000Z",
-            end: "2026-05-20T15:00:00.000Z",
-            timeZone: "UTC",
-          }),
-        }),
-      ]),
+      toNormalizedEventQueryData([existingEvent]),
     );
 
-    draftActions.start({
-      activity: "keyboardEdit",
-      event: existingEvent,
-      eventType: Categories_Event.TIMED,
-    });
+    const draft = editGridEventDraft(existingEvent);
+    if (!draft) throw new Error("expected an edit draft");
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
     draftActions.setFormOpen(true);
 
     const Harness = () => {
@@ -160,19 +145,21 @@ describe("FloatingEventForm", () => {
   });
 
   it("asks for a recurrence scope before deleting a recurring day event", async () => {
-    const recurringEvent: Schema_Event = {
-      _id: RECURRING_EVENT_ID,
-      endDate: "2026-05-20T15:00:00.000Z",
-      isAllDay: false,
-      isSomeday: false,
-      recurrence: {
-        eventId: RECURRING_EVENT_ID,
-        rule: ["RRULE:FREQ=WEEKLY"],
+    const recurringEvent = createMockEvent({
+      id: EventIdSchema.parse(RECURRING_EVENT_ID),
+      content: {
+        kind: "details",
+        title: "Recurring Event",
+        description: "",
       },
-      startDate: "2026-05-20T14:00:00.000Z",
-      title: "Recurring Event",
-      user: "user",
-    };
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+      schedule: EventScheduleSchema.parse({
+        kind: "timed",
+        start: "2026-05-20T14:00:00.000Z",
+        end: "2026-05-20T15:00:00.000Z",
+        timeZone: "UTC",
+      }),
+    });
     const queryClient = createCompassQueryClient();
     queryClient.setQueryData(
       eventQueryKeys.day({
@@ -180,29 +167,12 @@ describe("FloatingEventForm", () => {
         start: "2026-05-20T00:00:00.000Z",
         end: "2026-05-21T00:00:00.000Z",
       }),
-      toNormalizedEventQueryData([
-        createMockEvent({
-          id: EventIdSchema.parse(RECURRING_EVENT_ID),
-          content: {
-            kind: "details",
-            title: "Recurring Event",
-            description: "",
-          },
-          recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
-          schedule: EventScheduleSchema.parse({
-            kind: "timed",
-            start: "2026-05-20T14:00:00.000Z",
-            end: "2026-05-20T15:00:00.000Z",
-            timeZone: "UTC",
-          }),
-        }),
-      ]),
+      toNormalizedEventQueryData([recurringEvent]),
     );
-    draftActions.start({
-      activity: "keyboardEdit",
-      event: recurringEvent,
-      eventType: Categories_Event.TIMED,
-    });
+
+    const draft = editGridEventDraft(recurringEvent);
+    if (!draft) throw new Error("expected an edit draft");
+    draftActions.startGridDraft({ activity: "keyboardEdit", draft });
     draftActions.setFormOpen(true);
 
     const Harness = () => {

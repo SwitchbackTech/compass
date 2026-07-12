@@ -3,6 +3,7 @@ import fastDeepEqual from "fast-deep-equal/react";
 import type React from "react";
 import {
   type KeyboardEvent,
+  type SetStateAction,
   memo,
   useCallback,
   useEffect,
@@ -11,6 +12,7 @@ import {
   useState,
 } from "react";
 import { Priorities } from "@core/constants/core.constants";
+import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { darken } from "@web/common/styles/color.utils";
@@ -20,7 +22,6 @@ import {
 } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
-import { getCategory } from "@web/common/utils/event/event.util";
 import {
   isComboboxInteraction,
   isDeleteTextEditingTarget,
@@ -31,6 +32,12 @@ import {
   INPUT_RESET_CLASSNAME,
 } from "@web/components/Focusable/Focusable";
 import { Textarea } from "@web/components/Textarea/Textarea";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  applySchemaEventPatchToGridDraft,
+  gridEventDraftToSchemaEvent,
+  replaceGridDraftSchedule,
+} from "@web/events/grid-event-draft.adapter";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 import { DateControlsSection } from "@web/views/Forms/EventForm/DateControlsSection/DateControlsSection/DateControlsSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
@@ -40,7 +47,7 @@ import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
-  type FormProps,
+  type GridEventFormProps,
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
@@ -109,25 +116,33 @@ const handleEventFormDelete = ({
   onDelete();
 };
 
-export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
+export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
   ({
-    event,
+    draft,
     onClose: _onClose,
     onConvert,
     onDelete,
     onSubmit,
     onDuplicate,
-    setEvent,
+    setDraft,
     titleInputRef,
     isDraft,
     isExistingEvent,
     ...props
   }) => {
-    const { title } = event || {};
+    // Schema_Event-shaped projection of the canonical draft, for the
+    // still-unconverted DatePickers/PrioritySection field-patch API and
+    // RecurrenceSection's Schema_Event contract — see
+    // grid-event-draft.adapter.ts's gridEventDraftToSchemaEvent doc comment.
+    const event = useMemo(() => gridEventDraftToSchemaEvent(draft), [draft]);
+    const { title } = event;
     const priority = event.priority || Priorities.UNASSIGNED;
     const priorityColor = colorByPriority[priority];
-    const category = getCategory(event);
-    const latestEventRef = useRef(event);
+    const category =
+      draft.values.schedule.kind === "allDay"
+        ? Categories_Event.ALLDAY
+        : Categories_Event.TIMED;
+    const latestDraftRef = useRef(draft);
     const eventStartDate = event.startDate as string;
     const eventEndDate = event.endDate as string;
 
@@ -203,25 +218,49 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       [updateDateTimeState],
     );
 
-    const setLatestEvent = useCallback(
-      (nextEvent: Parameters<typeof setEvent>[0]) => {
-        const resolvedEvent =
-          typeof nextEvent === "function"
-            ? nextEvent(latestEventRef.current)
-            : nextEvent;
+    const setLatestDraft = useCallback(
+      (nextDraft: SetStateAction<GridEventDraft | null>) => {
+        const resolvedDraft =
+          typeof nextDraft === "function"
+            ? nextDraft(latestDraftRef.current)
+            : nextDraft;
 
-        if (resolvedEvent) {
-          latestEventRef.current = resolvedEvent;
+        if (resolvedDraft) {
+          latestDraftRef.current = resolvedDraft;
         }
 
-        setEvent(resolvedEvent);
+        setDraft(resolvedDraft);
       },
-      [setEvent],
+      [setDraft],
+    );
+
+    // Schema_Event-shaped writer for the still-unconverted DatePickers/
+    // PrioritySection field-patch API and RecurrenceSection's setEvent
+    // contract: merges the patch onto the current draft's Schema_Event
+    // projection, then reapplies it onto the canonical GridEventDraft.
+    const setLatestEvent = useCallback(
+      (nextEvent: SetStateAction<Schema_Event | null>) => {
+        const currentEvent = gridEventDraftToSchemaEvent(latestDraftRef.current);
+        const resolvedEvent =
+          typeof nextEvent === "function"
+            ? nextEvent(currentEvent)
+            : nextEvent;
+
+        if (!resolvedEvent) return;
+
+        setLatestDraft(
+          applySchemaEventPatchToGridDraft(
+            latestDraftRef.current,
+            resolvedEvent,
+          ),
+        );
+      },
+      [setLatestDraft],
     );
 
     useEffect(() => {
-      latestEventRef.current = event;
-    }, [event]);
+      latestDraftRef.current = draft;
+    }, [draft]);
 
     /***********
      * Handlers
@@ -245,9 +284,9 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     }, [isDraft, onClose, onDelete]);
 
     const onDuplicateEvent = useCallback(() => {
-      onDuplicate?.(event);
+      onDuplicate?.(draft);
       onClose();
-    }, [onDuplicate, onClose, event]);
+    }, [onDuplicate, onClose, draft]);
 
     const handleIgnoredKeys = (e: KeyboardEvent) => {
       // Ignores certain keys and key combinations to prevent default behavior.
@@ -289,46 +328,56 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
     };
 
     const onSubmitForm = () => {
-      const eventToSubmit = latestEventRef.current;
+      const draftToSubmit = latestDraftRef.current;
+      const isAllDay = draftToSubmit.values.schedule.kind === "allDay";
       const selectedDateTimes = {
         startDate: selectedStartDate,
         startTime,
         endDate: selectedEndDate,
         endTime,
-        isAllDay: eventToSubmit.isAllDay || false,
+        isAllDay,
       };
 
-      // TODO(packet-03-phase-3c): mapToBackend now returns an EventSchedule;
-      // this component still operates on legacy Schema_Event startDate/endDate.
       const schedule = mapToBackend(selectedDateTimes);
-      const startDate = schedule.start;
-      const endDate = schedule.end;
+      const start = dayjs(schedule.start).toDate();
+      const end = dayjs(schedule.end).toDate();
 
-      if (dayjs(startDate).isAfter(dayjs(endDate))) {
+      if (dayjs(start).isAfter(dayjs(end))) {
         showErrorToast(
           "uff-dah, looks like you got the start & end times mixed up",
         );
         return;
       }
 
-      const finalEvent = {
-        ...eventToSubmit,
-        priority: eventToSubmit.priority || Priorities.UNASSIGNED,
-        startDate,
-        endDate,
-      };
+      const withSchedule = replaceGridDraftSchedule(
+        draftToSubmit,
+        schedule.kind === "allDay"
+          ? { kind: "allDay", start, end }
+          : { kind: "timed", start, end, timeZone: schedule.timeZone },
+      );
 
-      onSubmit(finalEvent);
+      const finalDraft: GridEventDraft = {
+        ...withSchedule,
+        values: {
+          ...withSchedule.values,
+          priority: withSchedule.values.priority || Priorities.UNASSIGNED,
+        },
+      } as GridEventDraft;
+
+      onSubmit(finalDraft);
     };
 
     const onSetEventField: SetEventFormField = (field) => {
-      setLatestEvent({ ...latestEventRef.current, ...field });
+      setLatestEvent({
+        ...gridEventDraftToSchemaEvent(latestDraftRef.current),
+        ...field,
+      });
     };
 
     const dateTimeSectionProps = {
       bgColor: priorityColor,
       displayEndDate,
-      event,
+      draft,
       category,
       endTime,
       inputColor: hoverColorByPriority[priority],
@@ -345,7 +394,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       setDisplayEndDate,
       setIsEndDatePickerOpen,
       setIsStartDatePickerOpen,
-      setEvent: setLatestEvent,
+      setDraft: setLatestDraft,
     };
 
     const recurrenceSectionProps = {
@@ -389,7 +438,7 @@ export const EventForm: React.FC<Omit<FormProps, "category">> = memo(
       (keyboardEvent) => {
         keyboardEvent.preventDefault();
         keyboardEvent.stopPropagation();
-        onDuplicate?.(event);
+        onDuplicate?.(draft);
       },
       EVENT_FORM_PLAIN_HOTKEY_OPTIONS,
     );

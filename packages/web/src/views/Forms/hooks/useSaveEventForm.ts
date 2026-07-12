@@ -1,73 +1,52 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback } from "react";
-import {
-  RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { parseGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
-import { schemaEventToCreateInput } from "@web/events/queries/event.legacy-bridge";
-import { findEventInCache } from "@web/events/queries/event.query.cache";
+import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
-import { OnSubmitParser } from "@web/views/Week/components/Draft/hooks/actions/submit.parser";
 
-// TODO(packet-03-phase-3c): OnSubmitParser still produces a legacy
-// Schema_Event; bridged onto CreateEventInput via schemaEventToCreateInput
-// until the EventForm submits an EventDraft directly (event-draft.parser.ts).
 export function useSaveEventForm() {
   const closeEventForm = useCloseEventForm();
-  const queryClient = useQueryClient();
-  const updateEvent = useUpdateEvent();
-  const { create } = useEventMutations();
+  const { create, replace } = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
-
-  const onCreate = useCallback(
-    (draft: Schema_GridEvent) => {
-      const event = new OnSubmitParser(draft).parse();
-      const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
-      if (!calendarId) return;
-      const input = schemaEventToCreateInput(event, calendarId);
-      if (!input) return;
-      create(input);
-    },
-    [create, calendars],
-  );
-
-  const onEdit = useCallback(
-    (
-      draft: Schema_GridEvent,
-      applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
-    ) => {
-      const event = new OnSubmitParser(draft).parse();
-
-      updateEvent({ event, applyTo });
-    },
-    [updateEvent],
-  );
 
   const saveEventForm = useCallback(
     (
-      draft: Schema_Event | null,
+      draft: GridEventDraft | null,
       applyTo: RecurringEventUpdateScope = RecurringEventUpdateScope.THIS_EVENT,
     ) => {
       if (!draft) return closeEventForm();
 
-      const existing = Boolean(
-        draft._id && findEventInCache(queryClient, draft._id),
-      );
+      if (draft.kind === "create") {
+        const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
+        if (!calendarId) return closeEventForm();
 
-      if (existing) {
-        onEdit(draft as Schema_GridEvent, applyTo);
+        const parsed = parseGridEventDraft({
+          ...draft,
+          values: { ...draft.values, calendarId },
+        });
+
+        if (parsed.ok && parsed.mode === "create") {
+          create(parsed.input);
+        }
       } else {
-        onCreate(draft as Schema_GridEvent);
+        const scope = toRecurrenceScope(applyTo);
+        const parsed = parseGridEventDraft({
+          ...draft,
+          values: { ...draft.values, scope },
+        });
+
+        if (parsed.ok && parsed.mode === "edit") {
+          replace({ id: parsed.eventId, input: parsed.input });
+        }
       }
 
       closeEventForm();
     },
-    [closeEventForm, onEdit, onCreate, queryClient],
+    [calendars, closeEventForm, create, replace],
   );
 
   return saveEventForm;

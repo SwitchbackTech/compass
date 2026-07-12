@@ -1,20 +1,18 @@
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
-import { useCallback, useState } from "react";
-import {
-  type RecurringEventUpdateScope,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { type Dispatch, type SetStateAction, useCallback, useState } from "react";
+import { type RecurringEventUpdateScope } from "@core/types/event.types";
 import {
   Z_INDEX_FLOATING_FORM,
   ZIndex,
 } from "@web/common/constants/web.constants";
 import { useGridMaxZIndex } from "@web/common/hooks/useGridMaxZIndex";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { useEventById } from "@web/events/queries/useEventById";
 import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import {
   draftActions,
-  selectDraft,
+  selectGridDraft,
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
@@ -31,15 +29,15 @@ export function FloatingEventForm({
 }: {
   form: ReturnType<typeof useEventForm>;
 }) {
-  const draft = useDraftStore(selectDraft);
+  const draft = useDraftStore(selectGridDraft);
   const isFormOpen = useDraftStore(selectIsEventFormOpen);
-  const _id = draft?._id;
+  const _id = draft?.kind === "edit" ? draft.source.id : undefined;
   const [pendingAction, setPendingAction] = useState<
-    { event: Schema_Event; type: "save" } | { type: "delete" } | null
+    { draft: GridEventDraft; type: "save" } | { type: "delete" } | null
   >(null);
   const onSave = useSaveEventForm();
-  const onDelete = useDeleteEvent(draft?._id as string);
-  const onDuplicate = useDuplicateEvent(draft?._id as string);
+  const onDelete = useDeleteEvent(_id as string);
+  const onDuplicate = useDuplicateEvent(_id as string);
   const onClose = useCloseEventForm();
   const maxZIndex = useGridMaxZIndex();
   const formZIndex = Math.max(
@@ -49,43 +47,36 @@ export function FloatingEventForm({
   const open = isFormOpen && !!draft;
   const existingEvent = useEventById(_id);
   const existing = Boolean(existingEvent);
-  // TODO(packet-03-phase-3c): existingEvent is now the new `Event` contract
-  // (recurrence.kind "single" | "series" | "occurrence"); this form still
-  // targets the legacy Schema_Event draft shape.
   const needsRecurrenceScope = Boolean(
     existingEvent && existingEvent.recurrence.kind !== "single",
   );
 
-  const setEvent = useCallback(
-    (
-      cb:
-        | ((event: Schema_Event | null) => Schema_Event | null)
-        | Schema_Event
-        | null,
-    ) => {
-      const update = typeof cb === "function" ? cb(draft) : cb;
-      draftActions.setEvent(update);
-    },
-    [draft],
-  );
+  const setDraft: Dispatch<SetStateAction<GridEventDraft | null>> =
+    useCallback(
+      (next) => {
+        const resolved = typeof next === "function" ? next(draft) : next;
+        draftActions.setGridDraft(resolved);
+      },
+      [draft],
+    );
 
-  if (!open) return null;
+  if (!open || !draft) return null;
 
   const closeScopeDialog = () => setPendingAction(null);
   const submitWithScope = (applyTo: RecurringEventUpdateScope) => {
     if (pendingAction?.type === "save") {
-      onSave(pendingAction.event, applyTo);
+      onSave(pendingAction.draft, applyTo);
     } else if (pendingAction?.type === "delete") {
       onDelete(toRecurrenceScope(applyTo));
     }
     setPendingAction(null);
   };
-  const submit = (event: Schema_Event | null) => {
-    if (event && needsRecurrenceScope) {
-      setPendingAction({ event, type: "save" });
+  const submit = (nextDraft: GridEventDraft | null) => {
+    if (nextDraft && needsRecurrenceScope) {
+      setPendingAction({ draft: nextDraft, type: "save" });
       return;
     }
-    onSave(event);
+    onSave(nextDraft);
   };
   const deleteEvent = () => {
     if (needsRecurrenceScope) {
@@ -115,23 +106,23 @@ export function FloatingEventForm({
           }}
         >
           <EventForm
-            event={draft}
+            draft={draft}
             isDraft={!existing}
             isExistingEvent={existing}
             onClose={onClose}
             onDelete={deleteEvent}
             onDuplicate={onDuplicate}
             onSubmit={submit}
-            setEvent={setEvent}
+            setDraft={setDraft}
           />
         </div>
       </FloatingFocusManager>
       {pendingAction && (
         <RecurringEventUpdateScopeDialogContent
           draft={
-            (pendingAction.type === "save"
-              ? pendingAction.event
-              : draft) as Schema_GridEvent | null
+            pendingAction.type === "save"
+              ? gridEventDraftToSchemaEvent(pendingAction.draft)
+              : gridEventDraftToSchemaEvent(draft)
           }
           onUpdateScopeChange={submitWithScope}
           setRecurrenceUpdateScopeDialogOpen={(isOpen) => {

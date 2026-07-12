@@ -230,6 +230,29 @@ export const draftActions = {
       { type: "startGridDraft" },
     ),
 
+  // Writes the canonical draft directly, keeping the legacy `event`
+  // projection in sync for the remaining consumers (Day's grid-layer
+  // rendering) that still read it via `selectDraft`.
+  setGridDraft: (draft: GridEventDraft | null) =>
+    useDraftStore.setState(
+      (state) => ({
+        gridDraft: draft,
+        event: draft ? gridEventDraftToSchemaEvent(draft) : null,
+        status: draft
+          ? {
+              ...(state.status ?? initialDraftStatus),
+              eventType:
+                draft.values.schedule.kind === "allDay"
+                  ? Categories_Event.ALLDAY
+                  : Categories_Event.TIMED,
+              isDrafting: true,
+            }
+          : initialDraftStatus,
+      }),
+      false,
+      { type: "setGridDraft" },
+    ),
+
   setFormOpen: (isFormOpen: boolean) =>
     useDraftStore.setState(
       (state) => ({
