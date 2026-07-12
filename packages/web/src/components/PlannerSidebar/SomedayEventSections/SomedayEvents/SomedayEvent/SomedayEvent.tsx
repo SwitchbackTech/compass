@@ -3,7 +3,10 @@ import { type Priorities } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
 import { DATA_EVENT_ELEMENT_ID } from "@web/common/constants/web.constants";
 import { type CSSVariables } from "@web/common/styles/css.types";
-import { colorByPriority } from "@web/common/styles/theme.util";
+import {
+  gridColorByPriority,
+  gridHoverColorByPriority,
+} from "@web/common/styles/theme.util";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
 import { type Props_DraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
@@ -54,8 +57,10 @@ export const SomedayEvent = ({
     onClick();
   };
 
-  const tint = (percent: number) =>
-    `color-mix(in srgb, ${colorByPriority[priority]} ${percent}%, transparent)`;
+  const baseColor = gridColorByPriority[priority];
+  const hoverColor = gridHoverColorByPriority[priority];
+  const tint = (color: string, percent: number) =>
+    `color-mix(in srgb, ${color} ${percent}%, transparent)`;
   const somedayEventProps = {
     [DATA_EVENT_ELEMENT_ID]: event.id,
     "aria-hidden": isDragging || undefined,
@@ -75,8 +80,12 @@ export const SomedayEvent = ({
       data-dragging={isDragging}
       style={
         {
-          "--someday-event-bg": tint(isDrafting ? (isDragging ? 45 : 35) : 15),
-          "--someday-event-hover-bg": tint(25),
+          "--someday-event-bg": isDrafting
+            ? tint(baseColor, isDragging ? 45 : 35)
+            : baseColor,
+          "--someday-event-hover-bg": isDrafting
+            ? tint(hoverColor, 25)
+            : hoverColor,
           height: SOMEDAY_EVENT_ROW_HEIGHT,
           marginBlock: SOMEDAY_EVENT_ROW_VERTICAL_MARGIN,
         } as CSSVariables
