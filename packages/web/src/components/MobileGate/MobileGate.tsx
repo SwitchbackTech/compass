@@ -10,7 +10,7 @@ export const MobileGate: React.FC = () => {
   return (
     <div className="flex min-h-dvh items-center justify-center bg-bg-primary p-4">
       <div className="flex w-[400px] max-w-[90vw] flex-col items-center rounded border border-border-primary bg-bg-secondary p-8 text-center">
-        <h1 className="mb-6 font-medium font-sans text-2xl text-white">
+        <h1 className="mb-6 font-medium font-sans text-2xl text-text-lighter">
           Compass isn&apos;t built for mobile yet
         </h1>
         <p className="mb-8 font-sans text-base text-text-light-inactive leading-relaxed">
@@ -20,7 +20,7 @@ export const MobileGate: React.FC = () => {
         <button
           type="button"
           onClick={handleJoinWaitlist}
-          className="min-h-[44px] cursor-pointer rounded border-none bg-accent-primary px-8 py-2 font-medium font-sans text-base text-white transition-opacity duration-300 hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent-primary focus:outline-offset-2"
+          className="min-h-[44px] cursor-pointer rounded border-none bg-accent-primary px-8 py-2 font-medium font-sans text-base text-text-lighter transition-opacity duration-300 hover:opacity-90 focus:outline focus:outline-2 focus:outline-accent-primary focus:outline-offset-2"
         >
           Join Mobile Waitlist
         </button>

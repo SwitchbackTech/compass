@@ -7,7 +7,7 @@ export const TaskCircleIcon = ({
     <>
       {status === "completed" ? (
         <svg
-          className="h-4 w-4 text-green"
+          className="h-4 w-4 text-status-success"
           fill="currentColor"
           viewBox="0 0 20 20"
           aria-hidden="true"
@@ -20,7 +20,7 @@ export const TaskCircleIcon = ({
         </svg>
       ) : (
         <svg
-          className="h-4 w-4 text-gray-200 opacity-80 transition-opacity group-hover:opacity-100"
+          className="h-4 w-4 text-text-light-inactive opacity-80 transition-opacity group-hover:opacity-100"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

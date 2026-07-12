@@ -51,7 +51,7 @@ export const Task = ({
       key={task._id}
       {...{ [DATA_TASK_ELEMENT_ID]: task._id }}
       data-testid={task._id}
-      className={`group flex items-start gap-3 rounded border p-2 transition-colors duration-200 focus-within:border-blue-200/50 focus-within:ring-1 focus-within:ring-blue-200/30 ${task.status === "completed" ? "opacity-50" : ""}`}
+      className={`group flex items-start gap-3 rounded border p-2 transition-colors duration-200 focus-within:border-accent-secondary/50 focus-within:ring-1 focus-within:ring-accent-secondary/30 ${task.status === "completed" ? "opacity-50" : ""}`}
     >
       {/* biome-ignore lint/a11y/useSemanticElements: This custom checkbox button keeps the existing task keyboard flow and icon state. */}
       <button
@@ -67,7 +67,7 @@ export const Task = ({
         }}
         onKeyDown={(e) => onCheckboxKeyDown(e, task._id, task.title)}
         onClick={() => onStatusToggle(task._id)}
-        className="mt-1 rounded-full focus:outline-none focus:ring-2 focus:ring-blue-200"
+        className="mt-1 rounded-full focus:outline-none focus:ring-2 focus:ring-accent-secondary"
       >
         <TaskCircleIcon status={task.status} />
       </button>
@@ -79,9 +79,9 @@ export const Task = ({
           id={`task-input-${task._id}`}
           name={`task-title-${task._id}`}
           className={classNames(
-            "w-full text-sm text-white-100 outline-none",
+            "w-full text-sm text-text-lighter outline-none",
             "border-transparent border-b bg-transparent",
-            { "border-white/20": isEditing },
+            { "border-text-lighter/20": isEditing },
           )}
           type="text"
           value={title}

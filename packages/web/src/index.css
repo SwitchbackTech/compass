@@ -9,6 +9,7 @@
  */
 :root {
   --compass-color-accent-primary: hsl(202 100 67);
+  --compass-color-accent-secondary: hsl(196 60 59);
   --compass-color-accent-primary-shadow: hsl(202 100 42);
   --compass-color-bg-primary: hsl(222 28 7);
   --compass-color-bg-secondary: hsl(218 24 9);
@@ -29,6 +30,7 @@
   --compass-color-menu-tooltip-bg: hsl(0 0 20);
   --compass-color-menu-tooltip-text: hsl(0 0 100);
   --compass-color-not-found-gradient-highlight: hsl(218 27 8);
+  --compass-color-overlay-backdrop: hsl(0 0 0 / 80%);
   --compass-color-panel-badge-bg: hsl(0 0 100 / 7%);
   --compass-color-panel-bg: hsl(219 8 46 / 20%);
   --compass-color-panel-scrollbar: hsl(219 8 46 / 20%);
@@ -59,6 +61,7 @@
 @theme inline {
   --color-accent-primary: var(--compass-color-accent-primary);
   --color-accent-primary-shadow: var(--compass-color-accent-primary-shadow);
+  --color-accent-secondary: var(--compass-color-accent-secondary);
   --color-bg-primary: var(--compass-color-bg-primary);
   --color-bg-secondary: var(--compass-color-bg-secondary);
   --color-border-primary: var(--compass-color-border-primary);
@@ -88,6 +91,7 @@
   --color-not-found-gradient-highlight: var(
     --compass-color-not-found-gradient-highlight
   );
+  --color-overlay-backdrop: var(--compass-color-overlay-backdrop);
   --color-panel-badge-bg: var(--compass-color-panel-badge-bg);
   --color-panel-bg: var(--compass-color-panel-bg);
   --color-panel-scrollbar: var(--compass-color-panel-scrollbar);
@@ -136,22 +140,6 @@
 
   /* Border radius */
   --radius-default: 4px;
-
-  /**
-   * Raw colors
-   * Do NOT use these anymore - use the semantic colors instead
-   * https://github.com/SwitchbackTech/compass/issues/1265
-   */
-  --color-blue-200: hsl(196 60 59);
-  --color-gray-900: hsl(0 0 0 / 50.2%);
-  --color-gray-800: hsl(219 18 34 / 20%);
-  --color-gray-700: hsl(219 18 34 / 25.1%);
-  --color-gray-600: hsl(219 8 46 / 20%);
-  --color-gray-500: hsl(219 8 46 / 20%);
-  --color-gray-400: hsl(221 9 37);
-  --color-gray-300: hsl(219 8 46 / 90.2%);
-  --color-gray-200: hsl(208 13 71 / 54.9%);
-  --color-white-100: hsl(0 0 100);
 
   /* Animations */
   --animate-progress-slide: progressSlide 2s ease-out infinite;
@@ -401,7 +389,7 @@
 }
 
 @utility c-loader-spinner {
-  @apply relative my-15 h-[10em] w-[10em] animate-loader-spin rounded-full border-[1.1em] border-white/20 border-l-text-lighter text-[4px] -indent-[9999em];
+  @apply relative my-15 h-[10em] w-[10em] animate-loader-spin rounded-full border-[1.1em] border-text-lighter/20 border-l-text-lighter text-[4px] -indent-[9999em];
   transform: translateZ(0);
 }
 

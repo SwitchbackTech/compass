@@ -73,13 +73,13 @@ export function DraggableTask({
             "hover:cursor-grab hover:bg-border-primary",
             "rounded-xs py-2 transition-colors",
             "hover:opacity-100 focus-visible:opacity-100 group-hover:opacity-100",
-            "text-white",
-            "focus-visible:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/50",
+            "text-text-lighter",
+            "focus-visible:bg-text-lighter/20 focus-visible:ring-2 focus-visible:ring-text-lighter/50",
             "focus:outline-none",
             {
               // A distinct accent (vs. the white focus ring) so keyboard users
               // can see the grab actually registered, not just that it's focused.
-              "cursor-grabbing bg-blue-200/20 opacity-100 ring-2 ring-blue-200":
+              "cursor-grabbing bg-accent-secondary/20 opacity-100 ring-2 ring-accent-secondary":
                 isDragging,
             },
           )}

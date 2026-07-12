@@ -23,7 +23,7 @@
     "dev:ports": "bun packages/scripts/src/commands/dev-ports.ts",
     "dev:update": "git checkout main && git pull &&bun install",
     "dev:web": "bun run dev:ports && cd packages/web &&bun run dev.ts",
-    "lint": "biome check .",
+    "lint": "bun packages/scripts/src/testing/check-semantic-colors.ts && biome check .",
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "format:check": "biome format .",

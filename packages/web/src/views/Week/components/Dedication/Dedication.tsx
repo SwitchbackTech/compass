@@ -39,7 +39,7 @@ export const Dedication = () => {
   return (
     <dialog
       ref={dialogRef}
-      className={`max-h-none max-w-none bg-transparent p-0 transition-[opacity,overlay,display] duration-300 ease-out backdrop:bg-black/80 backdrop:transition-opacity backdrop:duration-300 ${
+      className={`max-h-none max-w-none bg-transparent p-0 transition-[opacity,overlay,display] duration-300 ease-out backdrop:bg-overlay-backdrop backdrop:transition-opacity backdrop:duration-300 ${
         isVisible
           ? "opacity-100 backdrop:opacity-100"
           : "opacity-0 backdrop:opacity-0"

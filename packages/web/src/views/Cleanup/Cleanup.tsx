@@ -61,7 +61,7 @@ export const CleanupView = () => {
           <button
             type="button"
             onClick={handleRedirect}
-            className="rounded-sm bg-accent-primary px-6 py-3 text-white transition-colors hover:bg-accent-primary/90"
+            className="rounded-sm bg-accent-primary px-6 py-3 text-text-lighter transition-colors hover:bg-accent-primary/90"
           >
             Continue to Home
           </button>

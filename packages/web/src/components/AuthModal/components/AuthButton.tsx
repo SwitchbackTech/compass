@@ -36,7 +36,7 @@ export const AuthButton: FC<AuthButtonProps> = ({
         isDisabled ? "cursor-not-allowed" : "cursor-pointer",
         {
           // Primary variant
-          "h-10 w-full bg-accent-primary px-4 text-white focus:ring-accent-primary":
+          "h-10 w-full bg-accent-primary px-4 text-text-lighter focus:ring-accent-primary":
             variant === "primary",
           "c-button-elevated": variant === "primary" && !isDisabled,
           "hover:brightness-110": variant === "primary" && !isDisabled,
@@ -48,7 +48,7 @@ export const AuthButton: FC<AuthButtonProps> = ({
           "hover:bg-bg-tertiary": variant === "secondary" && !isDisabled,
 
           // Outline variant (white/black, matches Google button)
-          "h-10 w-full border border-[#1f1f1f] bg-white px-4 text-[#1f1f1f]":
+          "h-10 w-full border border-[#1f1f1f] bg-text-lighter px-4 text-[#1f1f1f]":
             variant === "outline",
           "hover:border-[#151515] hover:bg-[#f0f0f0]":
             variant === "outline" && !isDisabled,
