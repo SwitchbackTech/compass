@@ -21,25 +21,35 @@ continues to work.
 
 V1 is complete only when all of the following are true:
 
-- [ ] Every event belongs to a Compass calendar and the active event
-      collection uses the final validated schema.
-- [ ] Existing event data migrates without silent drops and has a tested
-      rollback path.
-- [ ] Initial Google import handles all eligible calendars with bounded
+- [x] Every event belongs to a Compass calendar and the active event
+      collection uses the final validated schema. (Packets 01-03.)
+- [x] Existing event data migrates without silent drops and has a tested
+      rollback path. (Packet 02; interrupted-run and already-recorded
+      states added in PR #2068; rollback commands documented in PR #2070 —
+      the staging REHEARSAL itself is the last unchecked box below.)
+- [x] Initial Google import handles all eligible calendars with bounded
       concurrency, resumable pagination, and per-calendar sync tokens.
-- [ ] Event CRUD resolves the owning calendar, enforces access roles, and never
-      silently falls back to the Google primary calendar.
-- [ ] Calendar-list changes add, update, and remove calendars and their watches
-      without a full user reset in the normal case.
-- [ ] Watch health is inspected and repaired through one idempotent path.
-- [ ] Every Google Calendar API request flows through one request context with
+      (Packet 04.)
+- [x] Event CRUD resolves the owning calendar, enforces access roles, and never
+      silently falls back to the Google primary calendar. (Packet 05.)
+- [x] Calendar-list changes add, update, and remove calendars and their watches
+      without a full user reset in the normal case. (Packet 06, PRs
+      #2054-#2056.)
+- [x] Watch health is inspected and repaired through one idempotent path.
+      (Packet 07, PRs #2058-#2060.)
+- [x] Every Google Calendar API request flows through one request context with
       centralized bounded retries; the context supplies a stable `quotaUser` as
-      hardening (A33).
-- [ ] The sidebar lists calendars with persistent visibility controls, forms
+      hardening (A33). (Packet 04; proven by the reflection-guarded table
+      test from packet 07, PR #2060.)
+- [x] The sidebar lists calendars with persistent visibility controls, forms
       select writable target calendars, and calendar identity is not conveyed by
-      color alone.
+      color alone. (Packet 08, PRs #2062-#2066; one known follow-up: the
+      read-only card left-click open race.)
 - [ ] The release migration, rollback, observability, performance, and manual
       acceptance runbooks have been exercised on production-shaped data.
+      (Automated portions pass — PRs #2068-#2070; the staging rehearsal and
+      manual acceptance are PO-gated, see packet 09's "Remaining PO-gated
+      work". Production cutover happens only after they pass, per A36.)
 
 ## Ordered execution
 
@@ -76,7 +86,10 @@ unfinished.
       #2064, #2065, #2066 (one known follow-up: read-only card left-click
       open race, see the packet's exit criteria).
 - [ ] 09. [V1 release hardening](./09-v1-release-hardening.md) — prove migration,
-      reliability, performance, accessibility, and rollback.
+      reliability, performance, accessibility, and rollback. Automated gate,
+      benchmarks, observability, and docs shipped in PRs #2068, #2069,
+      #2070; the box stays open until the PO-gated staging rehearsal and
+      manual acceptance pass (see the packet's "Remaining PO-gated work").
 
 ## Progress rules for agents
 
@@ -234,6 +247,8 @@ only by appending a dated decision and updating every affected plan.
 | A40 | (2026-07-12) Watch-maintenance activity is `lastSeenAt` (a new `Schema_User` field touched fire-and-forget on every SSE (re)connect) or `lastLoggedInAt` within the 14-day window — not event-edit history.                                                                                                                                                              | The prior gate queried EventRecord `user`/`origin` fields that post-cutover records never have, so it always returned false: maintenance classified every user inactive and pruned all watches each run. Packet 07, PR #2060. |
 | A41 | (2026-07-12) The sidebar calendar list renders as its own `<section aria-label="Calendars">` inside the sidebar scroll area, between the month picker and the someday sections — not "below account status" as packet 08 wrote.                                                                                                                                          | The packet's wording predates the current DOM: account status is a bottom bar outside the scroll area, so the literal placement is unrealizable; the scroll-area slot preserves the intent (calendar controls before someday lists). Packet 08, PR #2062.                    |
 | A42 | (2026-07-12) The packet 08 e2e item "verify Google-origin update appears" is covered by packet 06's backend integration tests (reconciler + SSE publication) and packet 09's manual staging acceptance runbook — not by a Playwright spec.                                                                                                                               | The e2e harness stubs `/api/**` at the network layer and has no fake-Google backend; building one is packet-09-scale infrastructure that the existing coverage layers don't justify. Packet 08, PR #2066.                                                                    |
+| A43 | (2026-07-12) Raw Google wire data stays typed via the `calendar_v3` `.d.ts` re-exports, not parsed with Zod; strictness applies at Compass's own mappers and record/contract schemas. Packet 09 step 2's "parse representative Google responses with shared Zod" is satisfied by mapper tests over the shared fixtures plus strict parsing of every Compass boundary.     | Zod-modeling Google's full resource surface duplicates a vendor contract we do not own and violates "keep optionality at the edges: untrusted Google responses"; the mapper is the validation boundary. Packet 09, PR #2068.                                                 |
+| A44 | (2026-07-12) V1 observability is structured logs (import summaries, watch repair actions, retry attempts/outcomes, maintenance tallies) — no metrics/counter subsystem ships in v1; the ops counters in packet 09's list derive from log aggregation.                                                                                                                     | The repo has zero metrics infrastructure; adding one for the release would be a speculative subsystem against the complexity guardrails, and every listed counter already exists as a structured log line. Packet 09, PR #2069.                                              |
 
 ## Complexity guardrails
 

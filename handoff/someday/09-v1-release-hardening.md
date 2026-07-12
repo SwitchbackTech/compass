@@ -122,10 +122,51 @@ run and production stays on the pre-cutover release.
 ## Final exit criteria
 
 - [ ] Automated, performance, fault, accessibility, and manual gates pass.
+      AUTOMATED/PERFORMANCE/FAULT: passing — PR #2068 closed the remaining
+      fault/contract gaps (A27 publish-site conformance, interrupted-backfill
+      and already-recorded migration states, watch-creation-failure
+      injection, named duplicate-notification, response-boundary parses) on
+      top of the packets 02-08 test base; PR #2069 added the import
+      benchmark at 1/5/25 calendars with the batch-bounded memory assertion
+      and the index-plan (IXSCAN-never-COLLSCAN) regression suite.
+      ACCESSIBILITY: covered by packet 08's role/name/keyboard test suite
+      and the acceptance docs. MANUAL: **pending PO** — the 12-step manual
+      acceptance runbook below needs a real Google account with the three
+      calendar types on staging; note the known packet 08 issue (read-only
+      card left-click open race — keyboard "M" and context-menu View are
+      the reliable inspection paths) when exercising step 5.
 - [ ] Forward migration and rollback were both rehearsed successfully.
-- [ ] Operator/developer/user-facing docs describe the shipped behavior.
-- [ ] Every Project 6 card has a recorded final disposition.
-- [ ] This Markdown set contains the durable requirement and implementation
-      history for every Project 6 card.
+      **Pending PO** — the exact backup/cutover/rollback commands are
+      documented in `docs/self-hosting/backup-and-restore.md` (PR #2070)
+      and the event migration runbook; the rehearsal itself needs a
+      sanitized production-shaped backup restored into staging (A36), which
+      an agent cannot fetch or authorize.
+- [x] Operator/developer/user-facing docs describe the shipped behavior.
+      PRs #2060 (self-hosting google-calendar/monitoring/config), #2070
+      (cutover backup/rollback, upgrades guide, calendar-aware acceptance
+      scenarios, deferred-v2 note), plus the per-packet doc updates.
+- [x] Every Project 6 card has a recorded final disposition. Ledger
+      re-audited with shipped-PR citations per implemented card (PR #2070).
+- [x] This Markdown set contains the durable requirement and implementation
+      history for every Project 6 card. Packets 01-09 each cite their
+      shipped PRs in their exit criteria; the ledger cross-links cards to
+      packets and PRs.
+
+## Remaining PO-gated work (agents must not perform these)
+
+1. **Staging migration/rollback rehearsal** — restore a sanitized
+   production-shaped backup into staging, run the forward migration,
+   rehearse cutover + rollback + repeat-cutover per
+   `docs/self-hosting/backup-and-restore.md` and the event migration
+   runbook, and record counts/hashes.
+2. **Manual acceptance runbook** — the 12 steps above on staging with a
+   real Google account (writer + reader-with-private-event + freeBusyReader
+   calendars). The evening `/qa-staging` ritual covers parts of steps 1-6
+   with the authed test profile.
+3. **Production cutover** — one production migration run plus one manual
+   `Deploy Production` action, only after 1-2 pass (A36). Never run by
+   agents.
+
+Shipped (automated + docs portions) in PRs #2068, #2069, #2070.
 
 Suggested commit: `docs(release): finalize sub-calendar v1 runbook`
