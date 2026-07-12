@@ -5,14 +5,30 @@ import {
   type ClientSession,
   type ObjectId,
 } from "mongodb";
+import { Logger } from "@core/logger/winston.logger";
+import { type CalendarId } from "@core/types/domain-primitives";
+import { type BusyPeriod, BusyPeriodSchema } from "@core/types/event.contracts";
+import {
+  type AvailabilityQuery,
+  type AvailabilityResponse,
+  AvailabilityResponseSchema,
+} from "@core/types/event-command.contracts";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { mapGoogleCalendar } from "@backend/calendar/calendar.record.mapper";
-import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
+import { GenericError } from "@backend/common/errors/generic/generic.errors";
+import { error } from "@backend/common/errors/handlers/error.handler";
+import {
+  createGoogleRequestContext,
+  type GoogleRequestContext,
+} from "@backend/common/services/gcal/gcal.context";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { getCalendarsToSync } from "@backend/sync/services/init/google-sync-init";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
+
+const logger = Logger("app:calendar.service");
 
 class CalendarService {
   /**
@@ -304,6 +320,101 @@ class CalendarService {
       userId: zObjectId.parse(userId),
       isActive: true,
     });
+  };
+
+  /**
+   * Resolves compass calendar ids -> BusyPeriod[] via Google's freebusy API
+   * (packet 08 phase 4; A7). Strict-parse ethos: every requested id must
+   * resolve to a calendar this user owns that's active, google-sourced, and
+   * freeBusyReader specifically - an owner/writer/reader calendar's busy
+   * time is already derivable from its synced events, so re-querying
+   * freebusy for it here would just double it up and cost an extra Google
+   * round trip. A hidden calendar is filtered out silently rather than
+   * rejected (mirrors packet 08 step 4's read filtering) - the server must
+   * never leak a hidden calendar's busy time even if the client still asks
+   * for it mid visibility-toggle.
+   */
+  getAvailability = async (
+    userId: ObjectId | string,
+    query: AvailabilityQuery,
+  ): Promise<AvailabilityResponse> => {
+    const userObjectId = zObjectId.parse(userId);
+    const requestedIds = query.calendarIds.map((id) => zObjectId.parse(id));
+
+    const records = await mongoService.calendar
+      .find({ _id: { $in: requestedIds }, userId: userObjectId })
+      .toArray();
+    const recordById = new Map(
+      records.map((record) => [record._id.toHexString(), record]),
+    );
+
+    const resolved = requestedIds.map((id) => {
+      const record = recordById.get(id.toHexString());
+      const isOwnedFreeBusyReaderCalendar =
+        !!record &&
+        record.isActive &&
+        record.source.provider === "google" &&
+        record.access === "freeBusyReader";
+
+      if (!isOwnedFreeBusyReaderCalendar) {
+        throw error(
+          GenericError.BadRequest,
+          "Availability can only be queried for the user's own active freeBusyReader Google calendars",
+        );
+      }
+
+      return record;
+    });
+
+    const visible = resolved.filter((record) => record.isVisible);
+    if (visible.length === 0) {
+      return { busyPeriods: [] };
+    }
+
+    const googleIdToCompassId = new Map<string, CalendarId>();
+    for (const record of visible) {
+      if (record.source.provider === "google") {
+        googleIdToCompassId.set(
+          record.source.calendarId,
+          record._id.toHexString() as CalendarId,
+        );
+      }
+    }
+
+    const context = await createGoogleRequestContext(userObjectId.toString());
+    const response = await gcalService.queryFreeBusy(context, {
+      timeMin: query.start,
+      timeMax: query.end,
+      gCalendarIds: [...googleIdToCompassId.keys()],
+    });
+
+    const busyPeriods: BusyPeriod[] = [];
+    for (const [googleId, compassId] of googleIdToCompassId) {
+      const calendarResult = response.calendars?.[googleId];
+      if (!calendarResult) continue;
+
+      if (calendarResult.errors && calendarResult.errors.length > 0) {
+        // Never log the google calendar id - compassId is the safe handle.
+        logger.warn(
+          `getAvailability: Google returned a freebusy error for calendar ${compassId}`,
+        );
+        continue;
+      }
+
+      for (const busy of calendarResult.busy ?? []) {
+        if (!busy.start || !busy.end) continue;
+
+        busyPeriods.push(
+          BusyPeriodSchema.parse({
+            calendarId: compassId,
+            start: busy.start,
+            end: busy.end,
+          }),
+        );
+      }
+    }
+
+    return AvailabilityResponseSchema.parse({ busyPeriods });
   };
 
   /**

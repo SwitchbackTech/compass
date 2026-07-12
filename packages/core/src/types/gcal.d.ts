@@ -27,6 +27,8 @@ export declare type gSchema$EventInstance = WithGcalId<
 
 export declare type gSchema$Events = calendar_v3.Schema$Events;
 export declare type gSchema$Events$Union = gSchema$Events | gSchema$Events[];
+export declare type gSchema$FreeBusyResponse =
+  calendar_v3.Schema$FreeBusyResponse;
 export declare type gSchema$ErrorReason = {
   reason?: string;
 };

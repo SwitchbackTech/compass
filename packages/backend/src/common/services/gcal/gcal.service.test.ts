@@ -241,6 +241,11 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
       channels: {
         stop: jest.fn().mockResolvedValue({ status: 204, data: {} }),
       },
+      freebusy: {
+        query: jest
+          .fn()
+          .mockResolvedValue({ status: 200, data: { calendars: {} } }),
+      },
     },
     quotaUser: QUOTA_USER,
   } as unknown as GoogleRequestContext;
@@ -299,6 +304,16 @@ describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
       method: "getEvents",
       call: () => gcalService.getEvents(context, { calendarId: "cal-1" }),
       mock: () => context.gcal.events.list as jest.Mock,
+    },
+    {
+      method: "queryFreeBusy",
+      call: () =>
+        gcalService.queryFreeBusy(context, {
+          timeMin: "2024-01-01T00:00:00.000Z",
+          timeMax: "2024-01-02T00:00:00.000Z",
+          gCalendarIds: ["cal-1"],
+        }),
+      mock: () => context.gcal.freebusy.query as jest.Mock,
     },
     {
       method: "patchEvent",

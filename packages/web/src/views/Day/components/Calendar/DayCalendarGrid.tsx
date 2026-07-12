@@ -41,6 +41,7 @@ import {
   type EventFormProps,
   useEventForm,
 } from "@web/views/Forms/hooks/useEventForm";
+import { DayCalendarBusyPeriodsLayer } from "./DayCalendarBusyPeriods";
 import { useDayCalendarContextMenu } from "./DayCalendarContextMenu";
 import {
   DayCalendarAllDayEventsLayer,
@@ -305,15 +306,29 @@ export function DayCalendarGrid() {
   );
   const timedEventsLayer = useMemo(
     () => (
-      <DayCalendarTimedEventsLayer
-        events={timedEvents}
-        draft={draft}
-        measurements={measurements}
-        onOpenEvent={openEventFormForEvent}
-        visibleDates={visibleDates}
-      />
+      <>
+        <DayCalendarBusyPeriodsLayer
+          dateInView={dateInView}
+          measurements={measurements}
+          visibleDates={visibleDates}
+        />
+        <DayCalendarTimedEventsLayer
+          events={timedEvents}
+          draft={draft}
+          measurements={measurements}
+          onOpenEvent={openEventFormForEvent}
+          visibleDates={visibleDates}
+        />
+      </>
     ),
-    [draft, measurements, openEventFormForEvent, timedEvents, visibleDates],
+    [
+      dateInView,
+      draft,
+      measurements,
+      openEventFormForEvent,
+      timedEvents,
+      visibleDates,
+    ],
   );
 
   return (

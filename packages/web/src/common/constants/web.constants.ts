@@ -37,6 +37,11 @@ export const CLASS_MONTH_SOMEDAY_EVENT = "month-someday-event";
 export const SOMEDAY_EVENT_HEIGHT = 28;
 
 export enum ZIndex {
+  // Below LAYER_1 (the default saved-event-card z-index) so a freeBusy
+  // decoration block never paints over a real event card sharing its slot
+  // (packet 08 phase 4; A7 - busy blocks are inert decoration, never a
+  // stand-in for the real event).
+  BUSY_PERIOD = 0,
   LAYER_1 = 1,
   LAYER_2 = 2,
   LAYER_3 = 3,

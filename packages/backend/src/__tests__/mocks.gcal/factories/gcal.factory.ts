@@ -17,6 +17,7 @@ import {
   type gSchema$Event,
   type gSchema$EventBase,
   type gSchema$Events,
+  type gSchema$FreeBusyResponse,
   type WithGcalId,
 } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
@@ -476,6 +477,29 @@ export const mockGcal = ({
               Status.NO_CONTENT,
               "OK",
               params.requestBody!.address!,
+            ),
+          ),
+      ),
+    },
+    freebusy: {
+      ...calendarClient.freebusy,
+      // Default to "nobody's busy" - no shared compassTestState() slot exists
+      // for freebusy (unlike events/calendarlist), so tests that care about a
+      // specific busy response override this per-test with
+      // `jest.spyOn(gcalService, "queryFreeBusy")` instead of reaching down
+      // into this mock (see calendar.service.test.ts's getAvailability
+      // describe block).
+      query: jest.fn(
+        async (
+          _params: calendar_v3.Params$Resource$Freebusy$Query,
+          options: MethodOptions = {},
+        ): GaxiosPromise<gSchema$FreeBusyResponse> =>
+          Promise.resolve(
+            createMockGaxiosResponse<gSchema$FreeBusyResponse>(
+              { calendars: {} },
+              options,
+              200,
+              "OK",
             ),
           ),
       ),
