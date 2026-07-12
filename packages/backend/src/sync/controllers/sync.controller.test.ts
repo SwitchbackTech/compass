@@ -19,6 +19,10 @@ import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/e
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
+import {
+  buildEventRecord,
+  seedLocalCalendar,
+} from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { GCalEventsNotificationHandler } from "@backend/sync/services/notify/handler/gcal-events.notification.handler";
 import * as syncQueries from "@backend/sync/services/records/sync-records.repository";
@@ -329,6 +333,56 @@ describe("SyncController", () => {
       handleGoogleWatchNotificationSpy.mockRestore();
       pruneGoogleDataSpy.mockRestore();
       handleGoogleRevokedSpy.mockRestore();
+    });
+
+    it("preserves the Compass-local calendar and its events when access is revoked (pins the safe prune, not a wipe)", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+
+      const localCalendar = await seedLocalCalendar(user._id);
+      await mongoService.event.insertOne(buildEventRecord(localCalendar._id));
+
+      const watch = await mongoService.watch.findOne({
+        user: userId,
+        gCalendarId: { $ne: Resource_Sync.CALENDAR },
+      });
+
+      expect(watch).toBeDefined();
+      expect(watch).not.toBeNull();
+
+      // Unlike the sibling "user revokes access" test above, pruneGoogleData
+      // is NOT mocked here - it runs for real so this test actually pins
+      // local-data survival through the notification path, not just that
+      // pruneGoogleData was called.
+      const handleGoogleWatchNotificationSpy = jest
+        .spyOn(googleWatchService, "handleGoogleWatchNotification")
+        .mockRejectedValue(invalidGrant400Error);
+
+      const response = await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: watch!._id,
+          resourceId: watch!.resourceId,
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: watch!.expiration,
+        },
+        Status.GONE,
+      );
+
+      expect(response.body).toEqual(
+        expect.objectContaining({ code: "GOOGLE_REVOKED" }),
+      );
+
+      expect(
+        await mongoService.calendar.findOne({ _id: localCalendar._id }),
+      ).not.toBeNull();
+      expect(
+        await mongoService.event.countDocuments({
+          calendarId: localCalendar._id,
+        }),
+      ).toBe(1);
+
+      handleGoogleWatchNotificationSpy.mockRestore();
     });
 
     it("should prune Google data, notify client via SSE, and return structured response when refresh token is missing", async () => {

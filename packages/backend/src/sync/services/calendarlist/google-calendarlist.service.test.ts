@@ -10,6 +10,8 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
+import { createGoogleError } from "@backend/__tests__/mocks.gcal/errors/error.google.factory";
+import { invalidSyncTokenError } from "@backend/__tests__/mocks.gcal/errors/error.invalidSyncToken";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
@@ -18,6 +20,7 @@ import mongoService from "@backend/common/services/mongo.service";
 import { type EventRecord } from "@backend/event/event.record";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { googleCalendarListService } from "@backend/sync/services/calendarlist/google-calendarlist.service";
+import { seedLocalCalendar } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 
@@ -670,6 +673,126 @@ describe("googleCalendarListService", () => {
         .find({ user: userId, gCalendarId: "cal-a" })
         .toArray();
       expect(watches).toHaveLength(1);
+    });
+  });
+
+  describe("410 recovery: targeted full-list rebuild", () => {
+    it("rebuilds from a full CalendarList fetch when the stored token is rejected, preserving survivors (events/token/watch/visibility) and Compass-local data, while archiving what disappeared (visibility preserved)", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      // isVisible: false on both proves visibility survives each path this
+      // recovery can take: cal-a survives via the upsert path, cal-b is
+      // torn down via the removal path.
+      const calA = await seedActiveGoogleCalendar(user._id, "cal-a", {
+        isVisible: false,
+      });
+      const calB = await seedActiveGoogleCalendar(user._id, "cal-b", {
+        isVisible: false,
+      });
+      await seedEventsSyncEntry(userId, "cal-a");
+      await seedEventsSyncEntry(userId, "cal-b");
+      await seedWatch(userId, "cal-a");
+      await seedWatch(userId, "cal-b");
+      await mongoService.event.insertMany([
+        buildEvent(calA._id),
+        buildEvent(calA._id),
+      ]);
+      await mongoService.event.insertMany([buildEvent(calB._id)]);
+
+      const localCalendar = await seedLocalCalendar(user._id);
+      await mongoService.event.insertOne(buildEvent(localCalendar._id));
+
+      const initialToken = await seedCalendarlistToken(userId);
+
+      // The full list Google serves once cal-b has disappeared: only cal-a
+      // remains.
+      compassTestState().calendarlist = [
+        createMockCalendarListEntry({
+          id: "cal-a",
+          primary: false,
+          selected: true,
+          accessRole: "writer",
+        }),
+      ];
+
+      jest
+        .spyOn(gcalService, "getAllCalendarListPages")
+        .mockImplementationOnce(() => {
+          throw invalidSyncTokenError;
+        });
+
+      const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+
+      const result = await reconcile(userId);
+
+      expect(result).toEqual({ outcome: "RECONCILED" });
+
+      // cal-a survives untouched: active, events intact, sync entry +
+      // watch intact, visibility preserved.
+      const rowA = await mongoService.calendar.findOne({ _id: calA._id });
+      expect(rowA?.isActive).toBe(true);
+      expect(rowA?.isVisible).toBe(false);
+      expect(
+        await mongoService.event.countDocuments({ calendarId: calA._id }),
+      ).toBe(2);
+      const eventsSyncGCalIds = await getEventsSyncGCalIds(userId);
+      expect(eventsSyncGCalIds).toContain("cal-a");
+      expect(
+        await mongoService.watch.findOne({
+          user: userId,
+          gCalendarId: "cal-a",
+        }),
+      ).not.toBeNull();
+
+      // cal-b was archived: watch stopped, events sync entry pulled,
+      // events deleted, but visibility preserved on the archived row.
+      const rowB = await mongoService.calendar.findOne({ _id: calB._id });
+      expect(rowB?.isActive).toBe(false);
+      expect(rowB?.isVisible).toBe(false);
+      expect(stopWatchSpy).toHaveBeenCalled();
+      expect(
+        await mongoService.watch.findOne({
+          user: userId,
+          gCalendarId: "cal-b",
+        }),
+      ).toBeNull();
+      expect(eventsSyncGCalIds).not.toContain("cal-b");
+      expect(
+        await mongoService.event.countDocuments({ calendarId: calB._id }),
+      ).toBe(0);
+
+      // Compass-local data is untouched by the recovery.
+      expect(
+        await mongoService.calendar.findOne({ _id: localCalendar._id }),
+      ).not.toBeNull();
+      expect(
+        await mongoService.event.countDocuments({
+          calendarId: localCalendar._id,
+        }),
+      ).toBe(1);
+
+      // The stored token was replaced by the recovery fetch's token, not
+      // the (rejected) one Google returned the 410 for.
+      const newToken = await getCalendarlistToken(userId);
+      expect(newToken).toBeTruthy();
+      expect(newToken).not.toBe(initialToken);
+    });
+
+    it("propagates a non-410 calendarlist fetch error without recovering and without touching the stored token", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      const initialToken = await seedCalendarlistToken(userId);
+
+      jest
+        .spyOn(gcalService, "getAllCalendarListPages")
+        .mockImplementationOnce(() => {
+          throw createGoogleError({ code: "500", responseStatus: 500 });
+        });
+
+      await expect(reconcile(userId)).rejects.toMatchObject({ code: "500" });
+
+      expect(await getCalendarlistToken(userId)).toBe(initialToken);
     });
   });
 });

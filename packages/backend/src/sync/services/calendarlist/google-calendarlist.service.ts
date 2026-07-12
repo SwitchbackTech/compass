@@ -9,6 +9,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
+import { isFullSyncRequired } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { eventRepository } from "@backend/event/event.repository";
 import { sseServer } from "@backend/servers/sse/sse.server";
@@ -77,11 +78,26 @@ async function runReconcile(
   const items: calendar_v3.Schema$CalendarListEntry[] = [];
   let finalToken: string | undefined;
 
-  for await (const page of gcalService.getAllCalendarListPages(context, {
-    nextSyncToken: storedToken,
-  })) {
-    items.push(...(page.items ?? []));
-    if (page.nextSyncToken) finalToken = page.nextSyncToken;
+  try {
+    for await (const page of gcalService.getAllCalendarListPages(context, {
+      nextSyncToken: storedToken,
+    })) {
+      items.push(...(page.items ?? []));
+      if (page.nextSyncToken) finalToken = page.nextSyncToken;
+    }
+  } catch (err) {
+    if (!isFullSyncRequired(err)) throw err;
+
+    // The stored token is rejected (410) - rebuild from a full CalendarList
+    // fetch instead of the nuclear full repair (which deletes every google
+    // event and reimports everything). Called directly rather than through
+    // reconcileCalendarList so it stays inside this call's per-user
+    // serialization instead of re-entering the lock.
+    logger.warn(
+      `CalendarList sync token rejected (410) for user: ${userId}; recovering via full list fetch`,
+    );
+
+    return reconcileFromFullList(context, userId);
   }
 
   if (!finalToken) {
@@ -131,7 +147,6 @@ async function runReconcile(
 
   const affectedHexIds = new Set<string>();
   const eventsChangedHexIds = new Set<string>();
-  let importedCount = 0;
 
   for (const entry of removals) {
     const gCalendarId = entry.id;
@@ -139,22 +154,14 @@ async function runReconcile(
 
     // Only tear down calendars Compass actually knows about; a removal for
     // a calendar that was never imported has nothing to reconcile away.
-    const row = await calendarService.archiveGoogleCalendar(
-      userId,
-      gCalendarId,
-    );
-    if (!row) continue;
+    const removed = await teardownRemovedCalendar(userId, gCalendarId, context);
+    if (!removed) continue;
 
-    affectedHexIds.add(row._id.toHexString());
-
-    await stopWatchIfPresent(userId, gCalendarId, context);
-    await removeSyncEntry(Resource_Sync.EVENTS, userId, gCalendarId);
-    await eventRepository.deleteByCalendarIds([row._id]);
-
-    if (row.isVisible) eventsChangedHexIds.add(row._id.toHexString());
+    affectedHexIds.add(removed.hexId);
+    if (removed.isVisible) eventsChangedHexIds.add(removed.hexId);
   }
 
-  let syncImport: SyncImport | undefined;
+  let importedCount = 0;
 
   if (upserts.length > 0) {
     const { records } = await calendarService.upsertGoogleCalendarEntries(
@@ -162,42 +169,14 @@ async function runReconcile(
       upserts,
     );
 
-    for (const record of records) {
-      if (record.source.provider !== "google") continue;
-
-      const hexId = record._id.toHexString();
-      const gCalendarId = record.source.calendarId;
-      affectedHexIds.add(hexId);
-
-      if (record.access === "freeBusyReader") {
-        // A7: freeBusyReader calendars never manufacture event records -
-        // tear down anything left behind by a prior, more-permissive role.
-        await stopWatchIfPresent(userId, gCalendarId, context);
-        await removeSyncEntry(Resource_Sync.EVENTS, userId, gCalendarId);
-        await eventRepository.deleteByCalendarIds([record._id]);
-        continue;
-      }
-
-      if (!alreadyImportedGCalIds.has(gCalendarId)) {
-        syncImport ??= await createSyncImport(context);
-        await syncImport.importAllEvents(userId, record, 2500);
-        importedCount += 1;
-        if (record.isVisible) eventsChangedHexIds.add(hexId);
-      }
-
-      // Idempotent (already-watching-guarded) and HTTPS-gated internally,
-      // so it's safe to call unconditionally for every event-capable
-      // calendar in this delta, not just newly-imported ones.
-      await googleWatchService.startGoogleWatches(
-        userId,
-        [{ gCalendarId }],
-        context,
-      );
-    }
-
-    const userObjectId = new ObjectId(userId);
-    const clearedIds = await clearStalePrimaryFlags(userObjectId, records);
-    clearedIds.forEach((id) => affectedHexIds.add(id.toHexString()));
+    ({ importedCount } = await applyUpsertedRecords(
+      userId,
+      context,
+      records,
+      alreadyImportedGCalIds,
+      affectedHexIds,
+      eventsChangedHexIds,
+    ));
   }
 
   // Advance the token only after every removal/upsert/primary-cleanup step
@@ -226,6 +205,217 @@ async function runReconcile(
   );
 
   return { outcome: "RECONCILED" };
+}
+
+/**
+ * Targeted 410 recovery: rebuilds calendar state from a full CalendarList
+ * fetch (the rejected token is discarded, not retried) rather than the
+ * nuclear full repair, which deletes every google event and reimports
+ * everything. Preserves Compass-local data (never touched here), each
+ * calendar's own events sync token (untouched unless that calendar is torn
+ * down), and user visibility preferences (upsertGoogleCalendarEntries
+ * reuses each existing row's _id/isVisible).
+ *
+ * Drives the identical removal/upsert logic runReconcile uses for a delta,
+ * just decided by "missing from the full list" instead of "flagged
+ * deleted/hidden in the delta" - Google's full calendarList.list omits
+ * hidden/deleted entries outright, so there's no delta-style flag to read.
+ */
+async function reconcileFromFullList(
+  context: GoogleRequestContext,
+  userId: string,
+): Promise<ReconcileResult> {
+  const entries: calendar_v3.Schema$CalendarListEntry[] = [];
+  let finalToken: string | undefined;
+
+  for await (const page of gcalService.getAllCalendarListPages(context, {})) {
+    entries.push(...(page.items ?? []));
+    if (page.nextSyncToken) finalToken = page.nextSyncToken;
+  }
+
+  if (!finalToken) {
+    // getAllCalendarListPages always yields a nextSyncToken on whichever
+    // page ends pagination (it throws GcalError.PaginationNotSupported
+    // otherwise), so this is unreachable - kept only to narrow the type.
+    throw error(
+      SyncError.NoSyncToken,
+      `CalendarList full-list recovery finished without a sync token for user: ${userId}`,
+    );
+  }
+
+  // Belt-and-braces: a full list shouldn't contain either flag (Google's
+  // default showHidden: false omits hidden calendars, and deleted ones
+  // don't appear at all), but don't trust that blindly.
+  const upserts = entries.filter(
+    (entry) => entry.deleted !== true && entry.hidden !== true,
+  );
+  const fetchedGCalendarIds = new Set(
+    upserts.map((entry) => entry.id).filter((id): id is string => !!id),
+  );
+
+  // Same rationale as runReconcile's alreadyImportedGCalIds: only entries
+  // holding a nextSyncToken count as "already imported", so an import left
+  // mid-checkpoint by an earlier run resumes instead of being skipped.
+  const sync = await getSync({ userId });
+  const alreadyImportedGCalIds = new Set(
+    (sync?.google?.events ?? [])
+      .filter((entry) => entry.nextSyncToken)
+      .map((entry) => entry.gCalendarId),
+  );
+
+  const userObjectId = new ObjectId(userId);
+  const staleRows = await mongoService.calendar
+    .find({
+      userId: userObjectId,
+      "source.provider": "google",
+      isActive: true,
+    })
+    .toArray();
+  const staleGCalendarIds = staleRows.flatMap((row) =>
+    row.source.provider === "google" &&
+    !fetchedGCalendarIds.has(row.source.calendarId)
+      ? [row.source.calendarId]
+      : [],
+  );
+
+  const affectedHexIds = new Set<string>();
+  const eventsChangedHexIds = new Set<string>();
+
+  for (const gCalendarId of staleGCalendarIds) {
+    const removed = await teardownRemovedCalendar(userId, gCalendarId, context);
+    if (!removed) continue;
+
+    affectedHexIds.add(removed.hexId);
+    if (removed.isVisible) eventsChangedHexIds.add(removed.hexId);
+  }
+
+  let importedCount = 0;
+
+  if (upserts.length > 0) {
+    const { records } = await calendarService.upsertGoogleCalendarEntries(
+      userId,
+      upserts,
+    );
+
+    ({ importedCount } = await applyUpsertedRecords(
+      userId,
+      context,
+      records,
+      alreadyImportedGCalIds,
+      affectedHexIds,
+      eventsChangedHexIds,
+    ));
+  }
+
+  // Advance the token only after every removal/upsert/primary-cleanup step
+  // above has succeeded, same invariant as runReconcile.
+  await updateSync(Resource_Sync.CALENDAR, userId, Resource_Sync.CALENDAR, {
+    nextSyncToken: finalToken,
+  });
+
+  if (affectedHexIds.size > 0) {
+    sseServer.publishCalendarsChanged(userId, [
+      ...affectedHexIds,
+    ] as CalendarId[]);
+  }
+
+  eventsChangedHexIds.forEach((hexId) => {
+    sseServer.publishEventsChanged(userId, {
+      calendarId: hexId as CalendarId,
+      eventIds: [] as EventId[],
+      reason: "reconciled",
+    });
+  });
+
+  logger.info(
+    `CalendarList recovered from full list for user: ${userId} (upserted=${upserts.length} archived=${staleGCalendarIds.length} imported=${importedCount})`,
+  );
+
+  return { outcome: "RECONCILED" };
+}
+
+/**
+ * Archives one Google calendar row and tears down everything that depends
+ * on it being live: its watch, its events sync entry, and its events.
+ * Shared by the delta path (an entry flagged deleted/hidden) and the
+ * full-list recovery path (a row missing from a fresh CalendarList).
+ * Returns null when Compass never had a row for this calendar - nothing to
+ * tear down.
+ */
+async function teardownRemovedCalendar(
+  userId: string,
+  gCalendarId: string,
+  context: GoogleRequestContext,
+): Promise<{ hexId: string; isVisible: boolean } | null> {
+  const row = await calendarService.archiveGoogleCalendar(userId, gCalendarId);
+  if (!row) return null;
+
+  await stopWatchIfPresent(userId, gCalendarId, context);
+  await removeSyncEntry(Resource_Sync.EVENTS, userId, gCalendarId);
+  await eventRepository.deleteByCalendarIds([row._id]);
+
+  return { hexId: row._id.toHexString(), isVisible: row.isVisible };
+}
+
+/**
+ * Applies a batch of freshly-upserted Google CalendarRecords: tears down
+ * event machinery for anything that dropped to freeBusyReader, imports
+ * events for any not-yet-imported event-capable calendar, ensures a watch
+ * for every event-capable calendar, and clears stale isPrimary flags.
+ * Shared by the delta path and the full-list recovery path. Mutates
+ * affectedHexIds/eventsChangedHexIds in place (both are accumulated across
+ * the removal step too); returns the imported count for the caller's log
+ * line.
+ */
+async function applyUpsertedRecords(
+  userId: string,
+  context: GoogleRequestContext,
+  records: CalendarRecord[],
+  alreadyImportedGCalIds: Set<string>,
+  affectedHexIds: Set<string>,
+  eventsChangedHexIds: Set<string>,
+): Promise<{ importedCount: number }> {
+  let syncImport: SyncImport | undefined;
+  let importedCount = 0;
+
+  for (const record of records) {
+    if (record.source.provider !== "google") continue;
+
+    const hexId = record._id.toHexString();
+    const gCalendarId = record.source.calendarId;
+    affectedHexIds.add(hexId);
+
+    if (record.access === "freeBusyReader") {
+      // A7: freeBusyReader calendars never manufacture event records - tear
+      // down anything left behind by a prior, more-permissive role.
+      await stopWatchIfPresent(userId, gCalendarId, context);
+      await removeSyncEntry(Resource_Sync.EVENTS, userId, gCalendarId);
+      await eventRepository.deleteByCalendarIds([record._id]);
+      continue;
+    }
+
+    if (!alreadyImportedGCalIds.has(gCalendarId)) {
+      syncImport ??= await createSyncImport(context);
+      await syncImport.importAllEvents(userId, record, 2500);
+      importedCount += 1;
+      if (record.isVisible) eventsChangedHexIds.add(hexId);
+    }
+
+    // Idempotent (already-watching-guarded) and HTTPS-gated internally, so
+    // it's safe to call unconditionally for every event-capable calendar
+    // processed here, not just newly-imported ones.
+    await googleWatchService.startGoogleWatches(
+      userId,
+      [{ gCalendarId }],
+      context,
+    );
+  }
+
+  const userObjectId = new ObjectId(userId);
+  const clearedIds = await clearStalePrimaryFlags(userObjectId, records);
+  clearedIds.forEach((id) => affectedHexIds.add(id.toHexString()));
+
+  return { importedCount };
 }
 
 async function stopWatchIfPresent(

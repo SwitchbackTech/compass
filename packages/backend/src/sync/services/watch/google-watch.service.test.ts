@@ -2,7 +2,7 @@ import { faker } from "@faker-js/faker";
 import { type GaxiosResponse } from "gaxios";
 import { ObjectId } from "mongodb";
 import { Resource_Sync, XGoogleResourceState } from "@core/types/sync.types";
-import { WatchSchema } from "@core/types/watch.types";
+import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { GoogleSyncDriver } from "@backend/__tests__/drivers/google-sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
@@ -192,6 +192,76 @@ describe("googleWatchService", () => {
     expect(cleanupSpy).toHaveBeenCalledTimes(1);
   });
 
+  it("ignores a notification whose channelId matches but resourceId doesn't, leaving the real watch untouched", async () => {
+    const user = await UserDriver.createUser();
+    const watch = await createWatch(user._id.toString());
+
+    const cleanupSpy = jest.spyOn(googleWatchService, "cleanupStaleWatch");
+    const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+
+    await expect(
+      googleWatchService.handleGoogleWatchNotification({
+        resource: Resource_Sync.EVENTS,
+        channelId: watch._id,
+        // Right channel, wrong resource - cleanupStaleWatch's exact
+        // (channelId, resourceId) lookup misses this watch too, so there's
+        // nothing to clean up.
+        resourceId: faker.string.uuid(),
+        resourceState: XGoogleResourceState.EXISTS,
+        expiration: watch.expiration,
+      }),
+    ).resolves.toBe("IGNORED");
+
+    expect(cleanupSpy).toHaveBeenCalledTimes(1);
+    expect(stopWatchSpy).not.toHaveBeenCalled();
+    expect(await mongoService.watch.findOne({ _id: watch._id })).toEqual(
+      expect.objectContaining({
+        user: user._id.toString(),
+        resourceId: watch.resourceId,
+      }),
+    );
+  });
+
+  it("cleans up a stale watch record when the notification's expiration is newer than the stored one", async () => {
+    const user = await UserDriver.createUser();
+    const userId = user._id.toString();
+
+    // Built directly rather than through WatchSchema.parse: its
+    // ExpirationDateSchema requires a future date (correct for a freshly
+    // created watch), but this fixture needs to represent one that's
+    // already expired.
+    const expiredWatch: Schema_Watch = {
+      _id: new ObjectId(),
+      user: userId,
+      resourceId: faker.string.uuid(),
+      expiration: new Date(Date.now() - 60_000), // already expired
+      gCalendarId: faker.string.uuid(),
+      createdAt: new Date(),
+    };
+    await mongoService.watch.insertOne(expiredWatch);
+
+    const stopWatchSpy = jest.spyOn(gcalService, "stopWatch");
+
+    await expect(
+      googleWatchService.handleGoogleWatchNotification({
+        resource: Resource_Sync.EVENTS,
+        channelId: expiredWatch._id,
+        resourceId: expiredWatch.resourceId,
+        resourceState: XGoogleResourceState.EXISTS,
+        // Newer than the stored (already expired) watch, so the exact
+        // `expiration: {$gte: ...}` lookup misses and this falls through to
+        // cleanupStaleWatch's looser (channelId, resourceId) lookup, which
+        // finds and stops the stale record.
+        expiration: new Date(),
+      }),
+    ).resolves.toBe("IGNORED");
+
+    expect(stopWatchSpy).toHaveBeenCalled();
+    expect(
+      await mongoService.watch.findOne({ _id: expiredWatch._id }),
+    ).toBeNull();
+  });
+
   it("dispatches a calendarlist notification to the reconciler and returns its outcome", async () => {
     const user = await UserDriver.createUser();
     const userId = user._id.toString();
@@ -255,6 +325,78 @@ describe("googleWatchService", () => {
       expect.objectContaining({
         calendarId: calendar!._id.toHexString(),
         reason: "reconciled",
+      }),
+    );
+  });
+
+  it("routes an events notification to the calendar its watch names, not any other calendar the user has (packet 06 step 9 secondary-calendar routing proof)", async () => {
+    const user = await UserDriver.createUser();
+    const userId = user._id.toString();
+
+    const primaryGCalId = faker.string.uuid();
+    const secondaryGCalId = faker.string.uuid();
+
+    await seedGoogleCalendar(user._id, {
+      isPrimary: true,
+      source: {
+        provider: "google",
+        calendarId: primaryGCalId,
+        etag: "etag-1",
+      },
+    });
+    const secondaryCalendar = await seedGoogleCalendar(user._id, {
+      isPrimary: false,
+      source: {
+        provider: "google",
+        calendarId: secondaryGCalId,
+        etag: "etag-1",
+      },
+    });
+
+    await updateSync(Resource_Sync.EVENTS, userId, primaryGCalId, {
+      nextSyncToken: faker.string.alphanumeric(16),
+    });
+    await updateSync(Resource_Sync.EVENTS, userId, secondaryGCalId, {
+      nextSyncToken: faker.string.alphanumeric(16),
+    });
+
+    await createWatch(userId, primaryGCalId);
+    const secondaryWatch = await createWatch(userId, secondaryGCalId);
+
+    const getEventsSpy = jest
+      .spyOn(gcalService, "getEvents")
+      .mockResolvedValue({
+        status: 200,
+        statusText: "OK",
+        data: { items: [mockRegularGcalEvent({ summary: "Secondary event" })] },
+      } as unknown as GaxiosResponse);
+    const eventsChangedSpy = jest.spyOn(sseServer, "publishEventsChanged");
+
+    // The notification only names the secondary watch's channel/resource -
+    // no calendar id travels with it anywhere else. The stored watch is the
+    // only thing that routes this to the right calendar.
+    await expect(
+      googleWatchService.handleGoogleWatchNotification({
+        resource: Resource_Sync.EVENTS,
+        channelId: secondaryWatch._id,
+        resourceId: secondaryWatch.resourceId,
+        resourceState: XGoogleResourceState.EXISTS,
+        expiration: secondaryWatch.expiration,
+      }),
+    ).resolves.toBe("PROCESSED");
+
+    expect(getEventsSpy).toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ calendarId: secondaryGCalId }),
+    );
+    expect(getEventsSpy).not.toHaveBeenCalledWith(
+      expect.anything(),
+      expect.objectContaining({ calendarId: primaryGCalId }),
+    );
+    expect(eventsChangedSpy).toHaveBeenCalledWith(
+      userId,
+      expect.objectContaining({
+        calendarId: secondaryCalendar._id.toHexString(),
       }),
     );
   });
