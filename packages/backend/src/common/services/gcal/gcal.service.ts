@@ -2,6 +2,7 @@ import { type GaxiosResponse } from "gaxios";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import {
   type gParamsEventsList,
+  type gSchema$CalendarList,
   type gSchema$Event,
   type gSchema$Events,
 } from "@core/types/gcal";
@@ -205,28 +206,54 @@ class GCalService {
     } while (hasNextPage || !isLastPage);
   }
 
-  async getCalendarlist(
+  /**
+   * getAllCalendarListPages
+   * generator function to list all pages of the user's Google CalendarList.
+   *
+   * Google only returns `nextSyncToken` on the FINAL page - intermediate
+   * pages return `nextPageToken` instead. `PaginationNotSupported` only
+   * fires when the final page (no `nextPageToken`) also lacks a
+   * `nextSyncToken`, since that's a genuine API contract violation rather
+   * than a normal mid-pagination state.
+   */
+  async *getAllCalendarListPages(
     { gcal, quotaUser }: GoogleRequestContext,
     {
       nextSyncToken: syncToken,
       nextPageToken: pageToken,
     }: Partial<Pick<SyncDetails, "nextSyncToken" | "nextPageToken">> = {},
-  ) {
-    const response = await withGoogleRetry(() =>
-      gcal.calendarList.list({ syncToken, pageToken, quotaUser }),
-    );
+  ): AsyncGenerator<
+    Pick<gSchema$CalendarList, "nextPageToken" | "nextSyncToken" | "items">
+  > {
+    let hasNextPage = false;
 
-    if (!response.data.nextSyncToken) {
-      throw error(
-        GcalError.PaginationNotSupported,
-        "Calendarlist sync token not saved",
+    do {
+      const response = await withGoogleRetry(() =>
+        gcal.calendarList.list({ syncToken, pageToken, quotaUser }),
       );
-    }
 
-    if (!response.data.items) {
-      throw error(GcalError.CalendarlistMissing, "gCalendarlist not found");
-    }
-    return response.data;
+      const { data = {} } = this.validateGCalResponse(
+        response,
+        "Failed to fetch gcal calendarlist",
+      );
+
+      const { nextPageToken, nextSyncToken, items = [] } = data;
+
+      pageToken = nextPageToken === null ? undefined : nextPageToken;
+      syncToken = nextSyncToken === null ? undefined : nextSyncToken;
+
+      hasNextPage =
+        typeof nextPageToken === "string" && nextPageToken.length > 0;
+
+      if (!hasNextPage && !nextSyncToken) {
+        throw error(
+          GcalError.PaginationNotSupported,
+          "Calendarlist sync token not saved",
+        );
+      }
+
+      yield { nextPageToken, nextSyncToken, items };
+    } while (hasNextPage);
   }
 
   /**

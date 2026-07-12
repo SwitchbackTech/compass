@@ -6,6 +6,7 @@ interface GcalErrors {
   CalendarlistMissing: ErrorMetadata;
   CodeInvalid: ErrorMetadata;
   CodeMissing: ErrorMetadata;
+  MultiplePrimaryCalendars: ErrorMetadata;
   NoSyncToken: ErrorMetadata;
   PaginationNotSupported: ErrorMetadata;
   Unauthorized: ErrorMetadata;
@@ -29,13 +30,18 @@ export const GcalError: GcalErrors = {
     status: Status.FORBIDDEN,
     isOperational: true,
   },
+  MultiplePrimaryCalendars: {
+    description: "Google CalendarList returned more than one primary calendar",
+    status: Status.INTERNAL_SERVER,
+    isOperational: true,
+  },
   NoSyncToken: {
     description: "nextSyncToken is missing",
     status: Status.INTERNAL_SERVER,
     isOperational: true,
   },
   PaginationNotSupported: {
-    description: "Compass doesn't support pagination yet",
+    description: "Calendarlist final page is missing a sync token",
     status: Status.INTERNAL_SERVER,
     isOperational: true,
   },

@@ -123,3 +123,80 @@ describe("gcal.service watch callbacks", () => {
     expect(result.data).toEqual({ items: [] });
   });
 });
+
+describe("gcal.service getAllCalendarListPages", () => {
+  it("follows nextPageToken across pages and only returns nextSyncToken from the final page", async () => {
+    const list = jest
+      .fn()
+      .mockResolvedValueOnce({
+        status: 200,
+        data: { items: [{ id: "cal-1" }], nextPageToken: "page-2" },
+      })
+      .mockResolvedValueOnce({
+        status: 200,
+        data: { items: [{ id: "cal-2" }], nextSyncToken: "final-token" },
+      });
+    const context = {
+      gcal: { calendarList: { list } },
+      quotaUser: "user-1",
+    } as unknown as GoogleRequestContext;
+
+    const pages = [];
+
+    for await (const page of gcalService.getAllCalendarListPages(context)) {
+      pages.push(page);
+    }
+
+    expect(list).toHaveBeenCalledTimes(2);
+    expect(list).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ pageToken: "page-2" }),
+    );
+    expect(pages.map((p) => p.nextSyncToken)).toEqual([
+      undefined,
+      "final-token",
+    ]);
+    expect(pages.flatMap((p) => p.items ?? [])).toEqual([
+      { id: "cal-1" },
+      { id: "cal-2" },
+    ]);
+  });
+
+  it("defaults a page's items to an empty array when Google omits them", async () => {
+    const list = jest.fn().mockResolvedValueOnce({
+      status: 200,
+      data: { nextSyncToken: "final-token" },
+    });
+    const context = {
+      gcal: { calendarList: { list } },
+      quotaUser: "user-1",
+    } as unknown as GoogleRequestContext;
+
+    const pages = [];
+
+    for await (const page of gcalService.getAllCalendarListPages(context)) {
+      pages.push(page);
+    }
+
+    expect(pages).toEqual([{ items: [], nextSyncToken: "final-token" }]);
+  });
+
+  it("throws PaginationNotSupported when the final page has neither a nextPageToken nor a nextSyncToken", async () => {
+    const list = jest.fn().mockResolvedValueOnce({
+      status: 200,
+      data: { items: [{ id: "cal-1" }] },
+    });
+    const context = {
+      gcal: { calendarList: { list } },
+      quotaUser: "user-1",
+    } as unknown as GoogleRequestContext;
+
+    const drain = async () => {
+      for await (const _page of gcalService.getAllCalendarListPages(context)) {
+        // draining the generator
+      }
+    };
+
+    await expect(drain()).rejects.toThrow(/sync token/i);
+  });
+});
