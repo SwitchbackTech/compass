@@ -7,6 +7,7 @@
  * web.preload.ts calls resetAllStores() in a global afterEach so individual
  * test files never need to remember it.
  */
+import { resetBackendAvailabilityForTests } from "@web/api/util/backend-unavailable-error.util";
 import {
   initialUserMetadataState,
   useUserMetadataStore,
@@ -34,6 +35,12 @@ const storeResets: StoreReset[] = [
   () => useUserMetadataStore.setState(initialUserMetadataState, true),
   () => useDraftStore.setState(initialDraftState, true),
   () => useUndoHistoryStore.setState(initialUndoHistoryState, true),
+  // Order matters for this pair: the availability flag must be cleared
+  // BEFORE the source store recomputes, or a test that tripped
+  // markBackendUnavailable() leaves every later file's repository source
+  // stuck on "local" (fetch failures are tolerated by BaseApi, so the
+  // poisoning is silent and only surfaces under CI's file ordering).
+  resetBackendAvailabilityForTests,
   resetEventRepositorySourceForTests,
 ];
 
