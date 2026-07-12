@@ -19,13 +19,9 @@ export const useWeek = (
   today: Dayjs,
   visibleDayCount: number = WEEK_DAY_COUNT,
 ) => {
-  // The anchor is the day the visible window centers on. The week range and
-  // the window offset both derive from it, so a day-count change re-windows
-  // around the anchor without extra state. The anchor itself lives in the
-  // URL (rather than useState) so a refresh restores the same week; it is
-  // memoized on the date *string* because `today` is a fresh Dayjs every
-  // render, and memoizing on the Dayjs instance would re-derive start/end
-  // (and re-fire the updateDates effect below) on every render.
+  // The URL date is the first visible day, so custom windows survive refresh
+  // and can cross calendar-week boundaries. Memoize from the date string
+  // because `today` is a fresh Dayjs instance on every render.
   const navigate = useNavigate();
   const params = useParams({
     from: ROUTE_IDS.WEEK_DATE,
@@ -61,17 +57,11 @@ export const useWeek = (
     [start, visibleDayCount],
   );
 
-  // Week + someday reads are driven by TanStack Query: changing start/end
-  // re-keys the queries (fetch on new ranges, instant render from cache on
-  // revisits). Queries stay week-granular even when fewer days render, so
-  // window paging within a week never refetches.
+  // Changing the visible range re-keys the query; revisits use cached data.
   useWeekEventsQuery({ startOfView: start, endOfView: end });
   useSomedayEventsQuery(start);
 
-  // Warm the previous/next week so the next prev/next click resolves from
-  // cache. Uses the same toUTCOffset formatting useWeekEventsQuery uses for
-  // the current range, so the prefetched entries land under the exact keys a
-  // subsequent read looks up.
+  // Warm the previous and next visible pages using the exact read-key format.
   const previousStart = useMemo(
     () => start.subtract(visibleDayCount, "day"),
     [start, visibleDayCount],
