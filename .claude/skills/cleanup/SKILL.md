@@ -1,6 +1,6 @@
 ---
 name: cleanup
-description: The evening cleanup ritual from HANDOFF.md. Review everything merged to main since the last cleanup, run the `simplify` skill over those diffs, and auto-merge simplification PR(s) so the day's code ends up cleaner than it started — never sloppier. Then finalize the day's summary.md and run a `/qa-staging` sweep so the PO can do a final review of the living app in staging. Use when the PO says "/cleanup", "run the evening cleanup", "clean up the day's work", or "tidy up before I review staging".
+description: The evening cleanup ritual from HANDOFF.md. Review everything merged to main since the last cleanup, run the `simplify` skill over those diffs, and auto-merge simplification PR(s) so the day's code ends up cleaner than it started — never sloppier. Also run a `ux-sweep` over the day's merge window to catch usability/a11y friction and auto-fix it. Then finalize the day's summary.md and run a `/qa-staging` sweep so the PO can do a final review of the living app in staging. Use when the PO says "/cleanup", "run the evening cleanup", "clean up the day's work", or "tidy up before I review staging".
 ---
 
 # cleanup
@@ -13,9 +13,10 @@ with a clean staging environment to review.
 **This skill is an orchestrator — it does not restate the rules.** The source of
 truth is `handoff/HANDOFF.md` (the rhythm, esp. the "Evening cleanup" section)
 and `handoff/agent-operating-rules.md` (self-governance). It delegates the actual
-work to three existing skills — do not reimplement them here:
+work to existing skills — do not reimplement them here:
 
 - **`simplify`** — finds and applies the quality/legibility fixes.
+- **`ux-sweep`** — proactively explores the day's merge window for usability/a11y friction.
 - **`ship`** — validates, reviews, opens the PR, watches CI, squash-merges on green.
 - **`qa-staging`** — the post-deploy staging sweep in the user's real Chrome.
 
@@ -83,7 +84,22 @@ Ship every cleanup PR via the **`ship`** skill:
   don't force it: leave that PR open, note it under the summary's PO follow-ups, and carry
   on with the rest. Own the call — never spawn a task chip (`no-task-chips-during-handoff`).
 
-## 4. Advance the marker
+## 4. Proactive UX sweep over the day's window
+
+Run the **`ux-sweep`** skill scoped to the full `START..END` review window (not just the
+cleanup PRs — the day's whole merge window, same range established in step 0). This is
+the evening counterpart to the per-PR sweep `handoff` already runs during the day: a
+second pass, with fresh eyes, over everything that shipped.
+
+- `ux-sweep` drives the changed surfaces in the browser looking for usability/a11y
+  friction — confusing focus order, missing labels, unclear states — and fixes what's
+  fixable through the normal `ship` flow, auto-merging on green.
+- Anything it can't fix confidently (needs a product/design call) gets logged under PO
+  follow-ups, not force-fixed and not spawned as a task chip.
+- If the window is UI-only complexity work with no behavior change (rare, but possible
+  after step 2), `ux-sweep` may find nothing — that's a valid, non-padded outcome.
+
+## 5. Advance the marker
 
 Once the cleanup PRs are merged, record the window you reviewed so tomorrow starts fresh:
 
@@ -93,37 +109,45 @@ Once the cleanup PRs are merged, record the window you reviewed so tomorrow star
 - Commit the marker with the cleanup (or as a tiny `chore(handoff): advance cleanup marker`
   commit). It lives in `handoff/`, which is committed — not gitignored like `workflow/`.
 
-## 5. Finalize the day's summary
+## 6. Finalize the day's summary
 
 Close out `handoff/<date>/summary.md` so it's the authoritative record of the day:
 
 - Confirm the **before/after** table reflects the merged state.
 - Fold the cleanup into **Decisions**: what you simplified and why (one or two lines per PR).
+- Fold in what `ux-sweep` found/fixed in step 4 alongside the simplification decisions.
 - Verify **PO follow-ups** are current (add any cleanup PR you left open for review).
 - Record the day's **token spend** (`/usage`) if not already logged.
 
-## 6. Staging sweep, then hand off to the PO
+## 7. Staging sweep, then hand off to the PO
 
 The cleanup PRs auto-deploy to staging on merge. Before the PO reviews:
 
 - Run the **`qa-staging`** skill: verify the correct signed-in staging profile, run the
   standard flows watching console/network, and exercise the Manual Testing Steps from the
   cleanup PRs (and the day's other merged PRs) to catch any regression the simplification
-  introduced. Requires an unlocked screen with the extension connected in the staging
-  profile — if that precondition isn't met, say so and leave the sweep for the PO rather
-  than reporting a green run you didn't do.
+  or `ux-sweep` fixes introduced. Requires an unlocked screen with the extension connected
+  in the staging profile — if that precondition isn't met, say so and leave the sweep for
+  the PO rather than reporting a green run you didn't do.
 
 Then hand off with a short close-out:
 
 - What was simplified (link the merged PRs) and the net effect (lines/indirection removed).
+- What `ux-sweep` found and fixed (link the merged PRs), and anything it flagged for the
+  PO instead.
 - The `qa-staging` result — green, or exactly what looked off.
 - A short **"review in staging"** checklist: the specific flows the PO should click through
   to confirm the living app still works, drawn from the areas the cleanup touched.
 
 ## Guardrails
 
-- **Quality only.** Cleanup never changes behavior. If you spot a correctness bug, that's
-  `/code-review` territory — note it under PO follow-ups, don't silently fix it here.
+- **Quality only, with one deliberate exception.** Steps 1-3 (`simplify`) never change
+  behavior. Step 4 (`ux-sweep`) is the one place this ritual *does* change behavior on
+  purpose — adding a missing keyboard handler or focus ring is a real, if small, behavior
+  change, not a refactor. That's fine: it's still in the "simple, accessible product"
+  remit from `HANDOFF.md` → Priorities, just not literally behavior-preserving. If you spot
+  a correctness bug (not a11y/UX friction), that's `/code-review` territory — note it under
+  PO follow-ups, don't silently fix it here.
 - **Nothing to do is a valid outcome.** If the day's diffs are already clean, say so and
   advance the marker. Don't manufacture churn to justify a PR.
 - **Own follow-up decisions.** Incidental findings are yours to fold in or drop

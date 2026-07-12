@@ -48,6 +48,9 @@ Per `HANDOFF.md` → Daily implementation and `agent-operating-rules.md`:
   - Gate merges on authoritative signals (`gh pr checks --watch` exit code +
     `mergeStateStatus == CLEAN`), never a `grep -c fail` count (grep exits non-zero on
     zero matches — a green PR would look red).
+  - After a PR merges, run the **`ux-sweep`** skill scoped to that PR — it drives the
+    changed surface in the browser looking for usability/a11y friction the correctness
+    review wouldn't catch, and ships fixes the same way (via `ship`, auto-merge on green).
 - Respect `.claude/settings.json` deny-list. Anything needing a denied action is a
   push-notify, not a workaround.
 - **Blocked or need a PO-only decision:** send a mobile push notification, log it under
