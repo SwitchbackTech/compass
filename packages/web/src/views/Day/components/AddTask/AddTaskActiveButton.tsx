@@ -20,14 +20,14 @@ export function AddTaskActiveButton({
   onBlur,
 }: AddTaskActiveButtonProps) {
   return (
-    <div className="flex items-start gap-3 rounded border border-blue-200/30 bg-blue-200/5 p-2">
+    <div className="flex items-start gap-3 rounded border border-accent-secondary/30 bg-accent-secondary/5 p-2">
       <button
         type="button"
         onClick={onAddTask}
         aria-label="Create task"
         className="mt-1"
       >
-        <PlusIcon className="h-4 w-4 text-blue-200" />
+        <PlusIcon className="h-4 w-4 text-accent-secondary" />
       </button>
       <div className="flex-1">
         <input
@@ -41,7 +41,7 @@ export function AddTaskActiveButton({
           onBlur={onBlur}
           placeholder="Enter task title..."
           aria-label="Task title"
-          className="w-full bg-transparent text-sm text-white-100 placeholder-gray-200 outline-none"
+          className="w-full bg-transparent text-sm text-text-lighter placeholder-text-light-inactive outline-none"
         />
       </div>
     </div>

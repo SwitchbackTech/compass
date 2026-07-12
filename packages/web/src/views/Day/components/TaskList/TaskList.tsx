@@ -56,7 +56,7 @@ export function TaskList({ width }: { width: number }) {
     <section
       aria-label="daily-tasks"
       style={{ width }}
-      className="flex h-full shrink-0 flex-col bg-darkBlue-400 text-white"
+      className="flex h-full shrink-0 flex-col bg-bg-primary text-text-lighter"
     >
       <div className="flex flex-1 flex-col gap-2 overflow-hidden p-4">
         <TaskContextMenuWrapper>

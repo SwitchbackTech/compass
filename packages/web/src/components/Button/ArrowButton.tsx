@@ -12,12 +12,12 @@ export const ArrowButton = ({
   tabIndex?: number;
   onClick: () => void;
 }) => {
-  const hoverColor = "bg-white/20";
+  const hoverColor = "bg-text-lighter/20";
 
   return (
     <button
       type="button"
-      className={`flex h-6 w-6 items-center justify-center rounded-full text-white transition-colors hover:${hoverColor} focus:${hoverColor} focus:outline-none focus:ring-2 focus:ring-white/50`}
+      className={`flex h-6 w-6 items-center justify-center rounded-full text-text-lighter transition-colors hover:${hoverColor} focus:${hoverColor} focus:outline-none focus:ring-2 focus:ring-text-lighter/50`}
       aria-label={label}
       onClick={onClick}
       tabIndex={tabIndex}

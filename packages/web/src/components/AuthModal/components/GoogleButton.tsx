@@ -51,7 +51,7 @@ export const GoogleButton = ({
       disabled={disabled}
       aria-label={label}
       className={clsx(
-        "inline-flex h-10 items-center justify-center gap-2.5 whitespace-nowrap rounded-full border border-[#1f1f1f] bg-white px-3 font-medium text-[#1f1f1f] text-sm transition-[background-color,box-shadow,transform] duration-200",
+        "inline-flex h-10 items-center justify-center gap-2.5 whitespace-nowrap rounded-full border border-[#1f1f1f] bg-text-lighter px-3 font-medium text-[#1f1f1f] text-sm transition-[background-color,box-shadow,transform] duration-200",
         disabled
           ? "cursor-not-allowed opacity-60"
           : "c-button-elevated cursor-pointer hover:bg-[#f8f8f8]",

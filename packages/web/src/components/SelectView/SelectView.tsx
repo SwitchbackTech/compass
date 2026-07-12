@@ -111,7 +111,7 @@ export const SelectView = ({
         {...getReferenceProps()}
         className={
           buttonClassName ??
-          "flex items-center gap-2 rounded px-3 py-1.5 text-sm text-white/90 transition-colors hover:bg-white/10"
+          "flex items-center gap-2 rounded px-3 py-1.5 text-sm text-text-lighter/90 transition-colors hover:bg-text-lighter/10"
         }
         aria-expanded={isOpen}
         aria-haspopup="listbox"
@@ -179,7 +179,7 @@ export const SelectView = ({
                 className={classNames(
                   "flex w-full cursor-pointer items-center gap-2 px-3 py-2 text-left text-sm transition-colors",
                   isSelected ? "text-accent-primary" : "text-text-light",
-                  isActive ? "bg-white/10" : "hover:bg-white/10",
+                  isActive ? "bg-text-lighter/10" : "hover:bg-text-lighter/10",
                 )}
               >
                 <span>{option.label}</span>
