@@ -3,6 +3,7 @@ import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import { PlannerAccountSummary } from "./PlannerAccountSummary/PlannerAccountSummary";
+import { PlannerCalendarList } from "./PlannerCalendarList/PlannerCalendarList";
 import { PlannerMonthPicker } from "./PlannerMonthPicker/PlannerMonthPicker";
 import { PlannerSidebarActions } from "./PlannerSidebarActions/PlannerSidebarActions";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
@@ -25,6 +26,7 @@ export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
 
 type PlannerSidebarDependencies = {
   PlannerAccountSummary: typeof PlannerAccountSummary;
+  PlannerCalendarList: typeof PlannerCalendarList;
   PlannerMonthPicker: typeof PlannerMonthPicker;
   PlannerSidebarActions: typeof PlannerSidebarActions;
   ShortcutsOverlay: typeof ShortcutsOverlay;
@@ -33,6 +35,7 @@ type PlannerSidebarDependencies = {
 
 export function createPlannerSidebar({
   PlannerAccountSummary: PlannerAccountSummaryComponent,
+  PlannerCalendarList: PlannerCalendarListComponent,
   PlannerMonthPicker: PlannerMonthPickerComponent,
   PlannerSidebarActions: PlannerSidebarActionsComponent,
   ShortcutsOverlay: ShortcutsOverlayComponent,
@@ -68,6 +71,8 @@ export function createPlannerSidebar({
             selectedDate={calendarDate}
           />
 
+          <PlannerCalendarListComponent />
+
           {showSomedayEventSections ? (
             <section aria-label="Someday events">
               <SomedayEventSectionsComponent
@@ -99,6 +104,7 @@ export function createPlannerSidebar({
 
 export const PlannerSidebar = createPlannerSidebar({
   PlannerAccountSummary,
+  PlannerCalendarList,
   PlannerMonthPicker,
   PlannerSidebarActions,
   ShortcutsOverlay,
