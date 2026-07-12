@@ -78,11 +78,29 @@ disagree with the stored watch.
 
 ## Exit criteria
 
-- [ ] CalendarList notifications no longer log “NOT IMPLEMENTED.”
-- [ ] Normal calendar changes reconcile without a full user reset.
-- [ ] Event watches and sync records exactly match imported event-capable
-      calendars; free/busy-only calendars have neither.
-- [ ] Every archived #1070 requirement is implemented and the #734 no-work
-      disposition remains valid.
+- [x] CalendarList notifications no longer log “NOT IMPLEMENTED.” Shipped in
+      PR #2054 (resource-specific dispatch, honest structured outcomes,
+      webhook-path SSE suppression) and PR #2055 (the reconciler behind the
+      calendarlist branch).
+- [x] Normal calendar changes reconcile without a full user reset. Shipped in
+      PR #2055: incremental delta fetch with the stored calendarlist token;
+      add/rename/recolor/hide/delete/role/primary changes all apply without
+      touching other calendars' events or tokens. PR #2056 extends this to a
+      rejected calendarlist token (410): targeted full-list rebuild instead of
+      the event-deleting full repair.
+- [x] Event watches and sync records exactly match imported event-capable
+      calendars; free/busy-only calendars have neither. Shipped in PRs #2055
+      and #2056: removals and freeBusyReader transitions tear down the watch,
+      the events sync entry, and that calendar's events; event-capable
+      upserts ensure import + watch idempotently (a checkpoint-only entry
+      from an interrupted import resumes rather than counting as complete).
+- [x] Every archived #1070 requirement is implemented and the #734 no-work
+      disposition remains valid. PR #2056 closes the test matrix:
+      cross-calendar move convergence (both delivery orders),
+      wrong-resource-id, expired-watch, revoked-access preserving
+      Compass-local data, and the secondary-calendar routing proof that the
+      stored watch — not any route parameter — is the authoritative router.
+
+Shipped in PRs #2054, #2055, #2056.
 
 Suggested commit: `feat(sync): reconcile google calendar list changes`

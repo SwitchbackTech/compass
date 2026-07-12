@@ -66,8 +66,8 @@ unfinished.
 - [x] 05. [Calendar-aware CRUD](./05-calendar-aware-crud.md) — route writes to the
       correct provider calendar and enforce permissions. Shipped in PRs
       #2046, #2049, #2050.
-- [ ] 06. [Calendar-list sync and watch routing](./06-calendar-list-sync-and-watch-routing.md)
-      — keep the calendar set current.
+- [x] 06. [Calendar-list sync and watch routing](./06-calendar-list-sync-and-watch-routing.md)
+      — keep the calendar set current. Shipped in PRs #2054, #2055, #2056.
 - [ ] 07. [Watch repair, quota, and retries](./07-watch-repair-quota-and-retries.md) —
       self-heal notifications and control Google API pressure.
 - [ ] 08. [Web calendar experience](./08-web-calendar-experience.md) — ship visibility,
@@ -138,8 +138,14 @@ unfinished.
 - The public notification endpoint already resolves a stored watch by channel
   id/resource id and derives its Google calendar. A calendar id in the route is
   unnecessary and less trustworthy than that stored association.
-- Event watch notifications work per stored Google calendar id. Calendar-list
-  notifications reach `GCalNotificationHandler` but are explicitly ignored.
+- ~~Event watch notifications work per stored Google calendar id. Calendar-list
+  notifications reach `GCalNotificationHandler` but are explicitly ignored.~~
+  (2026-07-12, packet 06: calendarlist notifications now drive an incremental
+  reconcile — `googleCalendarListService.reconcileCalendarList` — with
+  archive/import/watch side effects, per-user serialization, token-advance
+  only after success, and targeted full-list recovery on a rejected token.
+  Events notifications additionally suppress SSE for invisible calendars on
+  the webhook path. PRs #2054, #2055, #2056.)
 - `quotaUser` is used only by watch start/stop paths and is sometimes a new
   random id. Normal list/get/insert/update/delete requests do not carry it.
 - The two `invalid_grant` paths diverge dangerously: the interactive path runs
@@ -206,6 +212,9 @@ only by appending a dated decision and updating every affected plan.
 | A34 | (2026-07-10) `EventRecord` has no `origin` field. Provider cleanup and backfill use `calendar.source.provider` plus `externalReference` (null = never synced). Restore `origin` only if plan `03` names a concrete consumer.                                                                                                                                                         | Legacy `origin` (`compass`/`google`/`googleimport`/`unsure`) duplicates information the calendar and external reference already carry.                                                                     |
 | A35 | (2026-07-10) Someday list queries drop cursor pagination; the query is period + anchor date only. `LocalEventRecord` drops the `syncState` field.                                                                                                                                                                                                                                    | The product caps someday lists at 9 per period, and local sync is push-all-then-clear on connect; both fields modeled machinery that does not exist.                                                       |
 | A36 | (2026-07-11) The v1 rollout is staging-first: the collection cutover runs on STAGING with the runtime-cutover merge, packets `03`-`09` merge continuously (main auto-deploys staging), and production stays on the pre-cutover release until every `09` gate passes on staging — then one production migration run plus one manual `Deploy Production` action completes the rollout. | Staging becomes the living integration test for the whole v1; production sees exactly one change window instead of nine, and the rerunnable backfill absorbs everything production writes in the meantime. |
+| A37 | (2026-07-12) An access transition to `freeBusyReader` deletes that calendar's previously-synced Compass events along with its watch and events sync entry; the calendar row stays active with the new role.                                                                                                                                                             | A7 says freeBusyReader calendars never manufacture event records; keeping already-synced events that can no longer receive updates would display silently-stale data. Packet 06, PR #2055.                  |
+| A38 | (2026-07-12) A calendarlist delta entry flagged `hidden` is reconciled identically to `deleted`: archive the row and tear down its watch/sync entry/events. Re-adding either way reuses the archived row's id and visibility (A16).                                                                                                                                       | A2 makes hidden calendars ineligible for import; in delta form an ineligible calendar must be reconciled away, not skipped the way the initial full-list filter does. Packet 06, PR #2055.                  |
+| A39 | (2026-07-12) A rejected CalendarList sync token (410) recovers via a targeted full-list reconcile inside the calendarlist reconciler — surviving calendars keep their events, per-calendar events tokens, watches, and visibility. The controller's event-deleting full repair now serves only events-token 410s.                                                        | The calendarlist token's validity is independent of per-calendar events tokens, so discarding every google event to rebuild one list token was disproportionate. Packet 06, PR #2056.                       |
 
 ## Complexity guardrails
 
