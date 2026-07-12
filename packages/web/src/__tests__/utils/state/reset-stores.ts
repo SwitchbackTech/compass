@@ -26,6 +26,7 @@ import {
   initialSettingsState,
   useSettingsStore,
 } from "@web/settings/settings.store";
+import { setWeekInteractionMotionActive } from "@web/views/Week/interaction/state/weekInteractionMotionState";
 
 type StoreReset = () => void;
 
@@ -42,6 +43,12 @@ const storeResets: StoreReset[] = [
   // poisoning is silent and only surfaces under CI's file ordering).
   resetBackendAvailabilityForTests,
   resetEventRepositorySourceForTests,
+  // Lives on window.__weekInteractionMotionActive, which survives across
+  // test files (the preload reuses one jsdom window). A test that starts a
+  // real drag and never completes it would otherwise leave every later
+  // file's grid mousedown handlers inert (they early-return while motion
+  // is active) - order-dependent, so it only surfaces on some runners.
+  () => setWeekInteractionMotionActive(false),
 ];
 
 export function resetAllStores() {
