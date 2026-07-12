@@ -2,7 +2,7 @@ import { type calendar_v3 } from "@googleapis/calendar";
 import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
-import { Resource_Sync } from "@core/types/sync.types";
+import { Resource_Sync, type SyncDetails } from "@core/types/sync.types";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { error } from "@backend/common/errors/handlers/error.handler";
@@ -75,16 +75,13 @@ async function runReconcile(
     );
   }
 
-  const items: calendar_v3.Schema$CalendarListEntry[] = [];
-  let finalToken: string | undefined;
+  let items: calendar_v3.Schema$CalendarListEntry[];
+  let finalToken: string;
 
   try {
-    for await (const page of gcalService.getAllCalendarListPages(context, {
+    ({ items, finalToken } = await drainCalendarListPages(context, userId, {
       nextSyncToken: storedToken,
-    })) {
-      items.push(...(page.items ?? []));
-      if (page.nextSyncToken) finalToken = page.nextSyncToken;
-    }
+    }));
   } catch (err) {
     if (!isFullSyncRequired(err)) throw err;
 
@@ -98,16 +95,6 @@ async function runReconcile(
     );
 
     return reconcileFromFullList(context, userId);
-  }
-
-  if (!finalToken) {
-    // getAllCalendarListPages always yields a nextSyncToken on whichever
-    // page ends pagination (it throws GcalError.PaginationNotSupported
-    // otherwise), so this is unreachable - kept only to narrow the type.
-    throw error(
-      SyncError.NoSyncToken,
-      `Calendarlist delta finished without a sync token for user: ${userId}`,
-    );
   }
 
   if (items.length === 0) {
@@ -186,6 +173,57 @@ async function runReconcile(
     nextSyncToken: finalToken,
   });
 
+  publishReconcileChanges(userId, affectedHexIds, eventsChangedHexIds);
+
+  logger.info(
+    `CalendarList reconciled for user: ${userId} (upserted=${upserts.length} archived=${removals.length} imported=${importedCount})`,
+  );
+
+  return { outcome: "RECONCILED" };
+}
+
+/**
+ * Pages the CalendarList (delta when params carry a nextSyncToken, full
+ * list otherwise) and returns every entry plus the final sync token.
+ * getAllCalendarListPages always yields a nextSyncToken on whichever page
+ * ends pagination (throwing GcalError.PaginationNotSupported otherwise),
+ * so the missing-token throw here is unreachable - kept only to narrow the
+ * type.
+ */
+async function drainCalendarListPages(
+  context: GoogleRequestContext,
+  userId: string,
+  params: Partial<Pick<SyncDetails, "nextSyncToken" | "nextPageToken">>,
+): Promise<{
+  items: calendar_v3.Schema$CalendarListEntry[];
+  finalToken: string;
+}> {
+  const items: calendar_v3.Schema$CalendarListEntry[] = [];
+  let finalToken: string | undefined;
+
+  for await (const page of gcalService.getAllCalendarListPages(
+    context,
+    params,
+  )) {
+    items.push(...(page.items ?? []));
+    if (page.nextSyncToken) finalToken = page.nextSyncToken;
+  }
+
+  if (!finalToken) {
+    throw error(
+      SyncError.NoSyncToken,
+      `CalendarList pagination finished without a sync token for user: ${userId}`,
+    );
+  }
+
+  return { items, finalToken };
+}
+
+function publishReconcileChanges(
+  userId: string,
+  affectedHexIds: Set<string>,
+  eventsChangedHexIds: Set<string>,
+): void {
   if (affectedHexIds.size > 0) {
     sseServer.publishCalendarsChanged(userId, [
       ...affectedHexIds,
@@ -199,12 +237,6 @@ async function runReconcile(
       reason: "reconciled",
     });
   });
-
-  logger.info(
-    `CalendarList reconciled for user: ${userId} (upserted=${upserts.length} archived=${removals.length} imported=${importedCount})`,
-  );
-
-  return { outcome: "RECONCILED" };
 }
 
 /**
@@ -225,23 +257,11 @@ async function reconcileFromFullList(
   context: GoogleRequestContext,
   userId: string,
 ): Promise<ReconcileResult> {
-  const entries: calendar_v3.Schema$CalendarListEntry[] = [];
-  let finalToken: string | undefined;
-
-  for await (const page of gcalService.getAllCalendarListPages(context, {})) {
-    entries.push(...(page.items ?? []));
-    if (page.nextSyncToken) finalToken = page.nextSyncToken;
-  }
-
-  if (!finalToken) {
-    // getAllCalendarListPages always yields a nextSyncToken on whichever
-    // page ends pagination (it throws GcalError.PaginationNotSupported
-    // otherwise), so this is unreachable - kept only to narrow the type.
-    throw error(
-      SyncError.NoSyncToken,
-      `CalendarList full-list recovery finished without a sync token for user: ${userId}`,
-    );
-  }
+  const { items: entries, finalToken } = await drainCalendarListPages(
+    context,
+    userId,
+    {},
+  );
 
   // Belt-and-braces: a full list shouldn't contain either flag (Google's
   // default showHidden: false omits hidden calendars, and deleted ones
@@ -313,19 +333,7 @@ async function reconcileFromFullList(
     nextSyncToken: finalToken,
   });
 
-  if (affectedHexIds.size > 0) {
-    sseServer.publishCalendarsChanged(userId, [
-      ...affectedHexIds,
-    ] as CalendarId[]);
-  }
-
-  eventsChangedHexIds.forEach((hexId) => {
-    sseServer.publishEventsChanged(userId, {
-      calendarId: hexId as CalendarId,
-      eventIds: [] as EventId[],
-      reason: "reconciled",
-    });
-  });
+  publishReconcileChanges(userId, affectedHexIds, eventsChangedHexIds);
 
   logger.info(
     `CalendarList recovered from full list for user: ${userId} (upserted=${upserts.length} archived=${staleGCalendarIds.length} imported=${importedCount})`,
