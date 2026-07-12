@@ -71,8 +71,10 @@ unfinished.
 - [x] 07. [Watch repair, quota, and retries](./07-watch-repair-quota-and-retries.md) —
       self-heal notifications and control Google API pressure. Shipped in
       PRs #2058, #2059, #2060.
-- [ ] 08. [Web calendar experience](./08-web-calendar-experience.md) — ship visibility,
-      identity, selection, and read-only UX.
+- [x] 08. [Web calendar experience](./08-web-calendar-experience.md) — ship visibility,
+      identity, selection, and read-only UX. Shipped in PRs #2062, #2063,
+      #2064, #2065, #2066 (one known follow-up: read-only card left-click
+      open race, see the packet's exit criteria).
 - [ ] 09. [V1 release hardening](./09-v1-release-hardening.md) — prove migration,
       reliability, performance, accessibility, and rollback.
 
@@ -176,8 +178,12 @@ unfinished.
   remote branch, `origin/refactor/google-sync-domain-modules-1719`, contains
   useful watch-repair work in commits `61c3bc0db` and `b572a3ca4`; port the
   relevant ideas, not the divergent branch wholesale.
-- The web has no calendar query/store/sidebar controls or target-calendar form
-  field. Event cards are currently colored by priority.
+- ~~The web has no calendar query/store/sidebar controls or target-calendar form
+  field. Event cards are currently colored by priority.~~ (2026-07-12,
+  packet 08: sidebar calendar list with coalesced visibility toggles,
+  calendar accents + names on every card surface (priority keeps the fill),
+  CalendarSelect on new/duplicate forms, web read-only mode, busy-content
+  rendering, and freeBusyReader availability blocks. PRs #2062-#2066.)
 
 ## Assumption and decision log
 
@@ -226,6 +232,8 @@ only by appending a dated decision and updating every affected plan.
 | A38 | (2026-07-12) A calendarlist delta entry flagged `hidden` is reconciled identically to `deleted`: archive the row and tear down its watch/sync entry/events. Re-adding either way reuses the archived row's id and visibility (A16).                                                                                                                                       | A2 makes hidden calendars ineligible for import; in delta form an ineligible calendar must be reconciled away, not skipped the way the initial full-list filter does. Packet 06, PR #2055.                  |
 | A39 | (2026-07-12) A rejected CalendarList sync token (410) recovers via a targeted full-list reconcile inside the calendarlist reconciler — surviving calendars keep their events, per-calendar events tokens, watches, and visibility. The controller's event-deleting full repair now serves only events-token 410s.                                                        | The calendarlist token's validity is independent of per-calendar events tokens, so discarding every google event to rebuild one list token was disproportionate. Packet 06, PR #2056.                       |
 | A40 | (2026-07-12) Watch-maintenance activity is `lastSeenAt` (a new `Schema_User` field touched fire-and-forget on every SSE (re)connect) or `lastLoggedInAt` within the 14-day window — not event-edit history.                                                                                                                                                              | The prior gate queried EventRecord `user`/`origin` fields that post-cutover records never have, so it always returned false: maintenance classified every user inactive and pruned all watches each run. Packet 07, PR #2060. |
+| A41 | (2026-07-12) The sidebar calendar list renders as its own `<section aria-label="Calendars">` inside the sidebar scroll area, between the month picker and the someday sections — not "below account status" as packet 08 wrote.                                                                                                                                          | The packet's wording predates the current DOM: account status is a bottom bar outside the scroll area, so the literal placement is unrealizable; the scroll-area slot preserves the intent (calendar controls before someday lists). Packet 08, PR #2062.                    |
+| A42 | (2026-07-12) The packet 08 e2e item "verify Google-origin update appears" is covered by packet 06's backend integration tests (reconciler + SSE publication) and packet 09's manual staging acceptance runbook — not by a Playwright spec.                                                                                                                               | The e2e harness stubs `/api/**` at the network layer and has no fake-Google backend; building one is packet-09-scale infrastructure that the existing coverage layers don't justify. Packet 08, PR #2066.                                                                    |
 
 ## Complexity guardrails
 
