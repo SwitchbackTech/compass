@@ -1,5 +1,6 @@
 import { type GaxiosResponse } from "gaxios";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
+import { Logger } from "@core/logger/winston.logger";
 import {
   type gParamsEventsList,
   type gSchema$CalendarList,
@@ -22,6 +23,8 @@ import { encodeChannelToken } from "@backend/sync/services/watch/google-watch-to
 
 const getGcalNotificationAddress = () =>
   CONFIG.GCAL_WEBHOOK_BASEURL + GCAL_NOTIFICATION_ENDPOINT;
+
+const logger = Logger("app:gcal.service");
 
 class GCalService {
   private validateGCalResponse<T>(
@@ -98,6 +101,61 @@ class GCalService {
     );
 
     return this.validateGCalResponse(response);
+  }
+
+  /**
+   * Resolves the single Google-side instance of a recurring event whose
+   * *original* (pre-edit) position in the recurrence pattern matches
+   * `originalStart` -- Google's `originalStartTime` stays fixed even after
+   * that instance's own `start`/`end` are later edited, so this is how a
+   * Compass occurrence's Google instance id is found the first time it needs
+   * to sync (packet 05 step 4). A narrow window around `originalStart` keeps
+   * this a single page in the overwhelming common case (instance starts
+   * within one series never collide within a few hours of each other).
+   * Returns null -- never throws -- when no instance in that window matches;
+   * the caller decides how to handle a miss.
+   */
+  async findEventInstance(
+    { gcal, quotaUser }: GoogleRequestContext,
+    calendarId: string,
+    recurringEventId: string,
+    originalStart: Date,
+  ): Promise<gSchema$Event | null> {
+    const windowMs = 3 * 60 * 60 * 1000; // +/- 3 hours
+    const timeMin = new Date(originalStart.getTime() - windowMs).toISOString();
+    const timeMax = new Date(originalStart.getTime() + windowMs).toISOString();
+
+    const response = await withGoogleRetry(() =>
+      gcal.events.instances({
+        calendarId,
+        eventId: recurringEventId,
+        timeMin,
+        timeMax,
+        quotaUser,
+      }),
+    );
+
+    const { data } = this.validateGCalResponse(
+      response,
+      `Failed to fetch gcal instances for base event ${recurringEventId}`,
+    );
+
+    const targetMs = originalStart.getTime();
+    const match = (data.items ?? []).find((item) => {
+      const original = item.originalStartTime;
+      const value = original?.dateTime ?? original?.date;
+      if (!value) return false;
+      return new Date(value).getTime() === targetMs;
+    });
+
+    if (!match) {
+      logger.warn(
+        `findEventInstance: no instance of recurring event ${recurringEventId} on calendar ${calendarId} matched originalStartTime ${originalStart.toISOString()}`,
+      );
+      return null;
+    }
+
+    return match;
   }
 
   async getEvents(context: GoogleRequestContext, params: gParamsEventsList) {

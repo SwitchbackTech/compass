@@ -44,6 +44,15 @@ export const syncCompassEventsToGoogle = async (
 
   for (const record of candidates) {
     if (!isWritableToGoogle(record)) continue;
+    // Series occurrences with no externalReference are a Compass-local read
+    // model (packet 05 step 4): the per-instance events.instances
+    // resolution that a real scope "this" edit/delete uses lives in
+    // CompassToGoogleEventPropagation, not here. Backfill only ever
+    // events.insert's a record, and doing that for an occurrence would
+    // create a duplicate, unlinked Google event instead of relying on
+    // Google's own RRULE expansion off the (already- or not-yet-synced)
+    // series base.
+    if (record.recurrence.kind === "occurrence") continue;
 
     const calendar = calendarById.get(record.calendarId.toHexString());
     if (!calendar || calendar.source.provider !== "google") continue;

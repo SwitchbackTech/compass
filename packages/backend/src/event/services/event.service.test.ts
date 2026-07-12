@@ -567,3 +567,87 @@ describe("EventService (calendar write-capability enforcement)", () => {
     ).rejects.toMatchObject({ mutationCode: "CALENDAR_NOT_FOUND" });
   });
 });
+
+/**
+ * Packet 05 step 7: A6 makes calendar assignment immutable and every
+ * materialized instance copies its base's calendarId, so no code path
+ * reachable through the public API can construct a series whose instances
+ * span more than one calendar. This is defense-in-depth for that invariant
+ * having somehow been violated anyway (a bad migration, a hand-edited
+ * document, ...) -- seeded directly via Mongo, not through create/replace,
+ * since the public API is exactly what's supposed to make this unreachable.
+ */
+describe("EventService (series-calendar consistency guard, step 7)", () => {
+  beforeEach(setupTestDb);
+  beforeEach(cleanupCollections);
+  afterAll(cleanupTestDb);
+
+  it("fails loudly (RECURRENCE_CONFLICT) on a scope 'all' delete when an instance has drifted onto a different calendar than its base", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendarA = await seedLocalCalendar(user._id);
+    const calendarB = await seedLocalCalendar(user._id);
+
+    const base = buildEventRecord(calendarA._id, {
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+    });
+    const driftedInstance = buildEventRecord(calendarB._id, {
+      recurrence: { kind: "occurrence", seriesId: base._id },
+      schedule: {
+        kind: "timed",
+        start: new Date("2026-07-21T15:00:00.000Z"),
+        end: new Date("2026-07-21T16:00:00.000Z"),
+        timeZone: "America/Denver",
+      },
+    });
+    await mongoService.event.insertOne(base);
+    await mongoService.event.insertOne(driftedInstance);
+
+    await expect(
+      eventService.delete(user._id.toString(), base._id.toHexString(), {
+        scope: "all",
+      }),
+    ).rejects.toMatchObject({ mutationCode: "RECURRENCE_CONFLICT" });
+
+    // Nothing should have been deleted -- the guard fires before any write.
+    expect(await mongoService.event.findOne({ _id: base._id })).toBeTruthy();
+    expect(
+      await mongoService.event.findOne({ _id: driftedInstance._id }),
+    ).toBeTruthy();
+  });
+
+  it("fails loudly (RECURRENCE_CONFLICT) on a scope 'all' replace when an instance has drifted onto a different calendar than its base", async () => {
+    const { user } = await UtilDriver.setupTestUser();
+    const calendarA = await seedLocalCalendar(user._id);
+    const calendarB = await seedLocalCalendar(user._id);
+
+    const base = buildEventRecord(calendarA._id, {
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+    });
+    const driftedInstance = buildEventRecord(calendarB._id, {
+      recurrence: { kind: "occurrence", seriesId: base._id },
+      schedule: {
+        kind: "timed",
+        start: new Date("2026-07-21T15:00:00.000Z"),
+        end: new Date("2026-07-21T16:00:00.000Z"),
+        timeZone: "America/Denver",
+      },
+    });
+    await mongoService.event.insertOne(base);
+    await mongoService.event.insertOne(driftedInstance);
+
+    await expect(
+      eventService.replace(user._id.toString(), base._id.toHexString(), {
+        content: { kind: "details", title: "Renamed", description: "" },
+        schedule: {
+          kind: "timed",
+          start: "2026-07-14T15:00:00-06:00",
+          end: "2026-07-14T16:00:00-06:00",
+          timeZone: "America/Denver" as never,
+        },
+        recurrence: { kind: "preserve" },
+        priority: "unassigned",
+        scope: "all",
+      }),
+    ).rejects.toMatchObject({ mutationCode: "RECURRENCE_CONFLICT" });
+  });
+});
