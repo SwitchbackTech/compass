@@ -8,6 +8,14 @@ interface Props {
   bgColor: string;
   isDraft: boolean;
   isExistingEvent: boolean;
+  /**
+   * Read-only events (unwritable calendar or busy content, packet 08 step
+   * 8) can be inspected but never mutated - Convert and Delete are entry
+   * points to real mutations (a schedule change, a deletion), so both are
+   * hidden here the same way ContextMenuItems.tsx hides its Delete item.
+   * Duplicate stays: it always creates a new, independent event.
+   */
+  isReadOnly?: boolean;
   onConvert?: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -17,6 +25,7 @@ export const EventActionMenu: React.FC<Props> = ({
   bgColor,
   isDraft,
   isExistingEvent,
+  isReadOnly = false,
   onConvert,
   onDuplicate,
   onDelete,
@@ -25,7 +34,7 @@ export const EventActionMenu: React.FC<Props> = ({
     <ActionsMenu bgColor={bgColor}>
       {(close) => (
         <>
-          {!isDraft && (
+          {!isDraft && !isReadOnly && (
             <MoveToSidebarMenuButton
               onClick={() => {
                 onConvert?.();
@@ -43,13 +52,15 @@ export const EventActionMenu: React.FC<Props> = ({
               }}
             />
           )}
-          <DeleteMenuButton
-            bgColor={bgColor}
-            onClick={() => {
-              onDelete();
-              close();
-            }}
-          />
+          {!isReadOnly && (
+            <DeleteMenuButton
+              bgColor={bgColor}
+              onClick={() => {
+                onDelete();
+                close();
+              }}
+            />
+          )}
         </>
       )}
     </ActionsMenu>

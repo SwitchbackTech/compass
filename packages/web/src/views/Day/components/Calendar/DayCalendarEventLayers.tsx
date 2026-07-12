@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { type Schema_Event } from "@core/types/event.types";
 import {
+  isEventReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
@@ -77,6 +78,11 @@ export const DayCalendarAllDayEventsLayer = ({
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
+          isReadOnly={isEventReadOnly(
+            calendarLookup,
+            event.calendarId,
+            event.isBusy ?? false,
+          )}
           key={event._id}
           measurements={measurements}
           onOpenEvent={onOpenEvent}
@@ -127,6 +133,11 @@ export const DayCalendarTimedEventsLayer = ({
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
+          isReadOnly={isEventReadOnly(
+            calendarLookup,
+            event.calendarId,
+            event.isBusy ?? false,
+          )}
           key={event._id}
           measurements={measurements}
           onOpenEvent={onOpenEvent}

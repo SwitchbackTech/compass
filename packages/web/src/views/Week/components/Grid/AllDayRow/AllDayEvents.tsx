@@ -1,7 +1,8 @@
-import { useMemo } from "react";
+import { type MouseEvent, useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import {
   type CalendarCardIdentity,
+  isEventReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
@@ -65,6 +66,15 @@ export const AllDayEvents = ({
           calendarLookup,
           event.calendarId,
         ),
+        // Read-only (unwritable calendar or busy content) events never
+        // attach interaction attributes/registration below, so the drag/
+        // resize engine can't find them as a target - blocked before any
+        // optimistic state change (packet 08 step 8).
+        isReadOnly: isEventReadOnly(
+          calendarLookup,
+          event.calendarId,
+          event.isBusy ?? false,
+        ),
       })),
     [visibleAllDayEvents, calendarLookup],
   );
@@ -88,34 +98,37 @@ export const AllDayEvents = ({
       id={ID_GRID_EVENTS_ALLDAY}
     >
       {!isLoadingWeekView &&
-        visibleAllDayEventsWithIdentity.map(({ event, calendarIdentity }) => {
-          const isPlaceholder = event._id === draftId;
-          const eventForDisplay =
-            isPlaceholder && draft && draft._id === event._id
-              ? { ...event, ...draft }
-              : event;
-          // The placeholder can carry a live (dragging/resizing) calendarId
-          // from the draft store; everything else reuses the stable,
-          // list-level resolved identity above.
-          const identityForDisplay = isPlaceholder
-            ? resolveCalendarCardIdentity(
-                calendarLookup,
-                eventForDisplay.calendarId,
-              )
-            : calendarIdentity;
+        visibleAllDayEventsWithIdentity.map(
+          ({ event, calendarIdentity, isReadOnly }) => {
+            const isPlaceholder = event._id === draftId;
+            const eventForDisplay =
+              isPlaceholder && draft && draft._id === event._id
+                ? { ...event, ...draft }
+                : event;
+            // The placeholder can carry a live (dragging/resizing) calendarId
+            // from the draft store; everything else reuses the stable,
+            // list-level resolved identity above.
+            const identityForDisplay = isPlaceholder
+              ? resolveCalendarCardIdentity(
+                  calendarLookup,
+                  eventForDisplay.calendarId,
+                )
+              : calendarIdentity;
 
-          return (
-            <AllDayEventItem
-              calendarIdentity={identityForDisplay}
-              event={eventForDisplay}
-              isPlaceholder={isPlaceholder}
-              key={event._id}
-              measurements={measurements}
-              onKeyDown={handleKeyDown}
-              weekDays={weekDays}
-            />
-          );
-        })}
+            return (
+              <AllDayEventItem
+                calendarIdentity={identityForDisplay}
+                event={eventForDisplay}
+                isPlaceholder={isPlaceholder}
+                isReadOnly={isReadOnly}
+                key={event._id}
+                measurements={measurements}
+                onKeyDown={handleKeyDown}
+                weekDays={weekDays}
+              />
+            );
+          },
+        )}
     </div>
   );
 };
@@ -124,6 +137,7 @@ interface AllDayEventItemProps {
   calendarIdentity: CalendarCardIdentity | null;
   event: Schema_GridEvent;
   isPlaceholder: boolean;
+  isReadOnly: boolean;
   measurements: Measurements_Grid;
   onKeyDown: (event: Schema_GridEvent) => void;
   weekDays: WeekProps["component"]["weekDays"];
@@ -133,11 +147,16 @@ const AllDayEventItem = ({
   calendarIdentity,
   event,
   isPlaceholder,
+  isReadOnly,
   measurements,
   onKeyDown,
   weekDays,
 }: AllDayEventItemProps) => {
-  const isRegisteredForWeekInteraction = Boolean(event._id) && !isPlaceholder;
+  // Read-only events never register as an interaction target below, so the
+  // drag/resize engine can't find them - blocked before any optimistic
+  // state change reaches the store (packet 08 step 8).
+  const isRegisteredForWeekInteraction =
+    Boolean(event._id) && !isPlaceholder && !isReadOnly;
   const registrationRef = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "all-day",
@@ -154,6 +173,15 @@ const AllDayEventItem = ({
         : undefined,
     [event._id, isRegisteredForWeekInteraction],
   );
+  // Being unregistered above also means the interaction engine's own click
+  // resolution never fires, so a read-only card would otherwise stop being
+  // clickable - events must stay inspectable even when they can't be
+  // mutated. Wiring the click straight to the same "open" action the
+  // keyboard path uses bypasses the engine entirely for this card.
+  const onMouseDown = isReadOnly
+    ? (_e: MouseEvent, clickedEvent: Schema_GridEvent) =>
+        onKeyDown(clickedEvent)
+    : undefined;
 
   return (
     <AllDayEventMemo
@@ -163,6 +191,7 @@ const AllDayEventItem = ({
       isPlaceholder={isPlaceholder}
       measurements={measurements}
       onKeyDown={onKeyDown}
+      onMouseDown={onMouseDown}
       ref={registrationRef}
       weekDays={weekDays}
     />

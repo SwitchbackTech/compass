@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
+import { type Calendar } from "@core/types/calendar.contracts";
 import { DateTimeSchema, type EventId } from "@core/types/domain-primitives";
 import { type Event, type EventRecurrence } from "@core/types/event.contracts";
 import {
@@ -9,7 +10,12 @@ import {
   type ReplaceEventInput,
   type TransitionEventInput,
 } from "@core/types/event-command.contracts";
+import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
+import {
+  buildCalendarLookup,
+  isEventReadOnly,
+} from "@web/calendars/useCalendarLookup";
 import { handleError } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
@@ -168,6 +174,36 @@ export function useEventMutations(
   );
   const markWrite = dependencies.markWrite ?? markAnonymousEventWrite;
   const reportError = dependencies.reportError ?? handleError;
+
+  // Backstop only - the real enforcement is the UI gates (cards, shortcuts,
+  // context menu, form) that block a read-only mutation before it ever
+  // reaches here (packet 08 step 8). Reads the calendars query's cache
+  // snapshot directly via `queryClient.getQueryData` rather than calling
+  // useCalendarLookup()/useCalendarsQuery() as hooks, which would pull in
+  // useSession() as a new dependency this hook doesn't otherwise have -
+  // this hook's existing test harness (useEventMutations.test.tsx) renders
+  // it with a bare QueryClientProvider, no session/auth context. A cache
+  // miss (calendars not fetched yet) resolves the same way an unresolved
+  // calendarId does in isEventReadOnly - fails open as writable.
+  //
+  // useCallback (not a plain closure) so this has a referentially stable
+  // identity across renders when `queryClient` doesn't change - the mutate
+  // object below is memoized on it, and a fresh function reference every
+  // render would recompute that memo on every render too.
+  const isTargetReadOnly = useCallback(
+    (event: Event | null): boolean => {
+      if (!event) return false;
+      const lookup = buildCalendarLookup(
+        queryClient.getQueryData<Calendar[]>(calendarQueryKeys.all),
+      );
+      return isEventReadOnly(
+        lookup,
+        event.calendarId,
+        event.content.kind === "busy",
+      );
+    },
+    [queryClient],
+  );
 
   // No per-mutation rollback: failed mutations leave their optimistic write
   // in place and rely on the settle-time refetch to restore server truth.
@@ -369,6 +405,12 @@ export function useEventMutations(
       },
       replace: (payload: { id: EventId; input: ReplaceEventInput }) => {
         const original = findEventInCache(queryClient, payload.id, source);
+        if (isTargetReadOnly(original)) {
+          console.warn(
+            `[useEventMutations] blocked replace on read-only event ${payload.id}`,
+          );
+          return;
+        }
         const writeKey = seriesWriteKey(
           original,
           payload.input.scope,
@@ -386,6 +428,14 @@ export function useEventMutations(
         replaceMutation.mutate({ ...payload, writeKey });
       },
       delete: (payload: { id: EventId; scope: RecurrenceScope }) => {
+        if (
+          isTargetReadOnly(findEventInCache(queryClient, payload.id, source))
+        ) {
+          console.warn(
+            `[useEventMutations] blocked delete on read-only event ${payload.id}`,
+          );
+          return;
+        }
         const existing = recordEventDeleteHistory({
           id: payload.id,
           scope: payload.scope,
@@ -400,6 +450,12 @@ export function useEventMutations(
       },
       transition: (payload: { id: EventId; input: TransitionEventInput }) => {
         const existing = findEventInCache(queryClient, payload.id, source);
+        if (isTargetReadOnly(existing)) {
+          console.warn(
+            `[useEventMutations] blocked transition on read-only event ${payload.id}`,
+          );
+          return;
+        }
         const after = existing
           ? transitionedEvent(existing, payload.input)
           : null;
@@ -419,6 +475,7 @@ export function useEventMutations(
     [
       queryClient,
       source,
+      isTargetReadOnly,
       createMutation.mutate,
       deleteMutation.mutate,
       replaceMutation.mutate,

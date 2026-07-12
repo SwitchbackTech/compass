@@ -19,6 +19,15 @@ export interface Props
   autoFocus?: boolean;
   bgColor?: string;
   Component: ElementType;
+  /**
+   * Not part of the generic `HTMLAttributes<HTMLElement>` this otherwise
+   * extends (that's specific to input/textarea/button/select elements) -
+   * declared here so callers whose `Component` is one of those can disable
+   * it directly, without a wrapping `<fieldset disabled>` that would add an
+   * extra DOM level around every Focusable (packet 08 step 8's read-only
+   * event form).
+   */
+  disabled?: boolean;
   name?: string;
   onChange?: ChangeEventHandler<HTMLInputElement | HTMLTextAreaElement>;
   placeholder?: string;

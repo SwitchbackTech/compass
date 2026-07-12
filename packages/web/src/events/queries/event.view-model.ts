@@ -16,6 +16,16 @@ import { categorizeSomedayEvents } from "@web/common/utils/event/someday.event.u
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
+// The ONE authoritative spot for a busy event's display title (packet 08
+// step 8, A18): the server never sends a busy event's real title/description
+// (content is just `{ kind: "busy" }`), so this is a synthetic label for
+// rendering only - never real content. Cards (below) and the read-only
+// form's title position (EventForm.tsx) both read this constant rather than
+// each hand-rolling the same fallback; a draft's actual editable `title`
+// value (grid-event-draft.adapter.ts) stays "" for a busy source, since
+// there's nothing real to duplicate/resubmit.
+export const BUSY_EVENT_TITLE = "Busy";
+
 // The grid renderer (assembleGridEvent) still consumes the legacy
 // Schema_Event shape. This mirrors the mapping event.legacy-bridge.ts uses,
 // scoped to scheduled (timed/allDay) events only — this file never sees
@@ -27,7 +37,8 @@ const scheduledEventToSchemaEvent = (event: Event): Schema_Event => {
   }
   return {
     _id: event.id,
-    title: event.content.kind === "details" ? event.content.title : "",
+    title:
+      event.content.kind === "details" ? event.content.title : BUSY_EVENT_TITLE,
     description:
       event.content.kind === "details" ? event.content.description : "",
     origin: Origin.COMPASS,
@@ -69,26 +80,37 @@ const isValidScheduledEvent = (event: Event): boolean => {
   return isValid;
 };
 
-// Re-attaches calendarId onto the Schema_GridEvent produced by the
+// Re-attaches calendarId + isBusy onto the Schema_GridEvent produced by the
 // Event -> Schema_Event -> Schema_GridEvent bridge above. scheduledEventToSchemaEvent
 // returns the legacy, hand-written core `Schema_Event` shape (event.types.ts),
-// which has no calendarId field, so the bridge itself can't carry it through
+// which has neither field, so the bridge itself can't carry them through
 // without widening that shared type (used by 10+ unrelated consumers). Joining
 // back by event id after assembleGridEvent keeps the bridge untouched and scopes
-// the new field to Schema_GridEvent only (packet 08 step 5).
-const withCalendarId = (
+// the new fields to Schema_GridEvent only (packet 08 steps 5 and 8). isBusy
+// backs the read-only gate - see isEventReadOnly in calendars/useCalendarLookup.ts.
+const withCalendarMetadata = (
   events: Event[],
   gridEvents: Schema_GridEvent[],
 ): Schema_GridEvent[] => {
-  const calendarIdByEventId = new Map<string, Event["calendarId"]>(
-    events.map((event) => [event.id, event.calendarId]),
+  const metadataByEventId = new Map<
+    string,
+    { calendarId: Event["calendarId"]; isBusy: boolean }
+  >(
+    events.map((event) => [
+      event.id,
+      { calendarId: event.calendarId, isBusy: event.content.kind === "busy" },
+    ]),
   );
-  return gridEvents.map((gridEvent) => ({
-    ...gridEvent,
-    calendarId: gridEvent._id
-      ? calendarIdByEventId.get(gridEvent._id)
-      : undefined,
-  }));
+  return gridEvents.map((gridEvent) => {
+    const metadata = gridEvent._id
+      ? metadataByEventId.get(gridEvent._id)
+      : undefined;
+    return {
+      ...gridEvent,
+      calendarId: metadata?.calendarId,
+      isBusy: metadata?.isBusy ?? false,
+    };
+  });
 };
 
 const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") => {
@@ -100,7 +122,7 @@ const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") => {
     .filter((event): event is EventWithDates => hasEventDates(event))
     .map(assembleGridEvent);
 
-  return withCalendarId(scheduled, assembled);
+  return withCalendarMetadata(scheduled, assembled);
 };
 
 const timedEventsFrom = (events: Event[]) => gridEventsFrom(events, "timed");

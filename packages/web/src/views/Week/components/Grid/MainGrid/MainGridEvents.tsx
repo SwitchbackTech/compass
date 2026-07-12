@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { Categories_Event } from "@core/types/event.types";
 import {
   type CalendarCardIdentity,
+  isEventReadOnly,
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
@@ -64,6 +65,15 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
           calendarLookup,
           item.event.calendarId,
         ),
+        // Read-only (unwritable calendar or busy content) events never
+        // attach interaction attributes/registration below, so the drag/
+        // resize engine can't find them as a target - blocked before any
+        // optimistic state change (packet 08 step 8).
+        isReadOnly: isEventReadOnly(
+          calendarLookup,
+          item.event.calendarId,
+          item.event.isBusy ?? false,
+        ),
       })),
     [timedEventItems, calendarLookup],
   );
@@ -86,7 +96,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
     <div id={ID_GRID_EVENTS_TIMED}>
       {!isLoadingWeekView &&
         timedEventItemsWithIdentity.map(
-          ({ deckLayout, event, calendarIdentity }) => {
+          ({ deckLayout, event, calendarIdentity, isReadOnly }) => {
             const isPlaceholder = event._id === draftId;
             const eventForDisplay =
               isPlaceholder && draft && draft._id === event._id
@@ -108,6 +118,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
                 deckLayout={deckLayout}
                 event={eventForDisplay}
                 isPlaceholder={isPlaceholder}
+                isReadOnly={isReadOnly}
                 key={`initial-${event._id}`}
                 measurements={measurements}
                 onEventKeyDown={handleKeyDown}
@@ -125,6 +136,7 @@ interface MainGridEventItemProps {
   deckLayout: CalendarTimedDeckLayout | null;
   event: Schema_GridEvent;
   isPlaceholder: boolean;
+  isReadOnly: boolean;
   measurements: Measurements_Grid;
   onEventKeyDown: (event: Schema_GridEvent) => void;
   weekProps: WeekProps;
@@ -135,11 +147,18 @@ const MainGridEventItem = ({
   deckLayout,
   event,
   isPlaceholder,
+  isReadOnly,
   measurements,
   onEventKeyDown,
   weekProps,
 }: MainGridEventItemProps) => {
-  const isRegisteredForWeekInteraction = Boolean(event._id) && !isPlaceholder;
+  // Read-only events never register as an interaction target below, so the
+  // drag/resize engine can't find them - blocked before any optimistic
+  // state change reaches the store (packet 08 step 8). A placeholder is
+  // already mid-drag by its own (necessarily writable) owner, so it's
+  // exempted the same way it always was.
+  const isRegisteredForWeekInteraction =
+    Boolean(event._id) && !isPlaceholder && !isReadOnly;
   const registrationRef = useWeekEventRegistrationRef({
     eventId: event._id,
     eventType: "timed",
@@ -155,6 +174,15 @@ const MainGridEventItem = ({
         : undefined,
     [event._id, isRegisteredForWeekInteraction],
   );
+  // Being unregistered above also means the interaction engine's own click
+  // resolution never fires, so a read-only card would otherwise stop being
+  // clickable - events must stay inspectable even when they can't be
+  // mutated. Wiring the click straight to the same "open" action the
+  // keyboard path uses bypasses the engine entirely for this card, so it
+  // never becomes a drag/resize target no matter how the pointer moves.
+  const onEventMouseDown = isReadOnly
+    ? (clickedEvent: Schema_GridEvent) => onEventKeyDown(clickedEvent)
+    : undefined;
 
   return (
     <GridEventMemo
@@ -165,6 +193,7 @@ const MainGridEventItem = ({
       interactionAttributes={interactionAttributes}
       measurements={measurements}
       onEventKeyDown={onEventKeyDown}
+      onEventMouseDown={onEventMouseDown}
       ref={registrationRef}
       weekProps={weekProps}
     />
