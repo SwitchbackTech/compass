@@ -287,7 +287,12 @@ export const useDraftActions = (
         case "CREATE": {
           if (draft.kind !== "create") return;
 
-          const calendarId = getDefaultTargetCalendar(calendars ?? [])?.id;
+          // Respects a calendar the user explicitly chose via CalendarSelect;
+          // only an untouched draft (calendarId still null) falls back to the
+          // default target calendar.
+          const calendarId =
+            draft.values.calendarId ??
+            getDefaultTargetCalendar(calendars ?? [])?.id;
           if (!calendarId) return;
 
           const parsed = parseGridEventDraft({
@@ -354,7 +359,10 @@ export const useDraftActions = (
       return;
     }
 
-    const duplicate = duplicateGridEventDraft(gridDraftFromStore.source);
+    const duplicate = duplicateGridEventDraft(
+      gridDraftFromStore.source,
+      calendars ?? [],
+    );
     if (!duplicate) {
       discard();
       return;
@@ -384,7 +392,7 @@ export const useDraftActions = (
 
     void submit(withRecurrence);
     discard();
-  }, [gridDraftFromStore, submit, discard]);
+  }, [calendars, gridDraftFromStore, submit, discard]);
 
   const isInsideVisibleWeek = useCallback(
     (start: Dayjs) => {

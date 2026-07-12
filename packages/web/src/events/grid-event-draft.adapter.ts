@@ -1,5 +1,6 @@
 import { Priorities } from "@core/constants/core.constants";
-import { type EventId } from "@core/types/domain-primitives";
+import { type Calendar } from "@core/types/calendar.contracts";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { type Schema_Event } from "@core/types/event.types";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
@@ -83,9 +84,27 @@ export function editGridEventDraft(
 // A duplicate is a brand-new, standalone event: it starts from the source
 // event's fields but is never linked back to it (kind "create", source
 // null), so editing/deleting the duplicate never touches the original.
-export function duplicateGridEventDraft(event: Event): GridEventDraft | null {
+//
+// Defaults the new draft's calendar to the source event's calendar only when
+// that calendar is still writable - duplicating an event viewed on a
+// read-only calendar can't recreate it there, so this leaves calendarId
+// unset and lets the same null-calendarId fallback every other new draft
+// uses (CalendarSelect's displayed default, useSaveEventForm.ts/
+// useDraftActions.ts's submit-time fallback) pick the default target
+// calendar instead.
+export function duplicateGridEventDraft(
+  event: Event,
+  calendars: Calendar[],
+): GridEventDraft | null {
   const schedule = gridScheduleFromEvent(event);
   if (!schedule) return null;
+
+  const sourceCalendar = calendars.find(
+    (calendar) => calendar.id === event.calendarId,
+  );
+  const calendarId: CalendarId | null = sourceCalendar?.capabilities.canWrite
+    ? event.calendarId
+    : null;
 
   return {
     kind: "create",
@@ -96,7 +115,7 @@ export function duplicateGridEventDraft(event: Event): GridEventDraft | null {
         event.content.kind === "details" ? event.content.description : "",
       schedule,
       priority: event.priority,
-      calendarId: event.calendarId,
+      calendarId,
       recurrence: { kind: "single" },
     },
   };
@@ -186,13 +205,20 @@ function legacyRecurrenceFromDraft(
 // require Schema_Event. Keeping this projection beside the GridEventDraft
 // adapter lets the draft store expose one canonical grid draft without a
 // second store while legacy consumers are migrated incrementally.
+//
+// Return type is widened (rather than adding calendarId to the shared,
+// hand-written core `Schema_Event` interface, which 10+ unrelated consumers
+// also use) so the calendar-colored card accent/label stays correct on a
+// dragging/resizing existing-event placeholder (draft.store.ts stores this
+// projection for that display path) without touching Schema_Event itself.
 export function gridEventDraftToSchemaEvent(
   draft: GridEventDraft,
-): Schema_Event {
+): Schema_Event & { calendarId?: CalendarId } {
   const { schedule } = draft.values;
 
   return {
     _id: draft.kind === "edit" ? draft.source.id : draft.clientId,
+    calendarId: draft.values.calendarId ?? undefined,
     description: draft.values.description,
     endDate:
       schedule.kind === "allDay"

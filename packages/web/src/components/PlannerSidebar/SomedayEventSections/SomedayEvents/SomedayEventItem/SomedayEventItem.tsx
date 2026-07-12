@@ -1,5 +1,6 @@
 import { type FC, useLayoutEffect, useRef } from "react";
 import { type Event } from "@core/types/event.contracts";
+import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import {
   type SomedayInteractionCategory,
@@ -12,6 +13,7 @@ const SOMEDAY_SORT_ANIMATION_MS = 180;
 const SOMEDAY_SORT_ANIMATION_EASING = "cubic-bezier(0.2, 0, 0, 1)";
 
 export interface Props {
+  calendarIdentity?: CalendarCardIdentity | null;
   category: SomedayInteractionCategory;
   draftId: string;
   event: Event;
@@ -109,6 +111,7 @@ const useSomedayRowLayoutAnimation = () => {
 };
 
 export const SomedayEventItem: FC<Props> = ({
+  calendarIdentity,
   category,
   draftId,
   event,
@@ -137,6 +140,7 @@ export const SomedayEventItem: FC<Props> = ({
       ref={layoutAnimationRef}
     >
       <SomedayEventContainer
+        calendarIdentity={calendarIdentity}
         category={category}
         event={event}
         interactionRef={interactionRef}

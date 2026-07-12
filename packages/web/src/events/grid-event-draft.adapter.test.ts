@@ -1,7 +1,12 @@
 import { Priorities } from "@core/constants/core.constants";
+import {
+  type Calendar,
+  getCalendarCapabilities,
+} from "@core/types/calendar.contracts";
 import { type Event } from "@core/types/event.contracts";
 import {
   createGridEventDraft,
+  duplicateGridEventDraft,
   editGridEventDraft,
   gridEventDraftToSchemaEvent,
   parseGridEventDraft,
@@ -112,4 +117,40 @@ test("parses an edit draft into a replace command", () => {
       recurrence: { kind: "preserve" },
     },
   });
+});
+
+test("duplicate defaults to the source event's calendar when it's still writable", () => {
+  const writableSourceCalendar = {
+    id: timedEvent.calendarId,
+    capabilities: getCalendarCapabilities("owner"),
+  } as unknown as Calendar;
+
+  const duplicate = duplicateGridEventDraft(timedEvent, [
+    writableSourceCalendar,
+  ]);
+
+  expect(duplicate).toMatchObject({
+    kind: "create",
+    source: null,
+    values: { calendarId: timedEvent.calendarId, title: "Focus" },
+  });
+});
+
+test("duplicate falls back to no calendar (later defaulted) when the source calendar is read-only", () => {
+  const readOnlySourceCalendar = {
+    id: timedEvent.calendarId,
+    capabilities: getCalendarCapabilities("reader"),
+  } as unknown as Calendar;
+
+  const duplicate = duplicateGridEventDraft(timedEvent, [
+    readOnlySourceCalendar,
+  ]);
+
+  expect(duplicate?.values.calendarId).toBeNull();
+});
+
+test("duplicate falls back to no calendar when the source calendar isn't in the given list", () => {
+  const duplicate = duplicateGridEventDraft(timedEvent, []);
+
+  expect(duplicate?.values.calendarId).toBeNull();
 });

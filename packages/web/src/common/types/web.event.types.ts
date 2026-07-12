@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { type CalendarId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { CompassCoreEventSchema } from "@core/types/event.types";
 import { IDSchema } from "@core/types/type.utils";
@@ -43,7 +44,20 @@ export type Schema_WebEvent = z.infer<typeof WebCoreEventSchema>;
 
 export type Schema_SomedayEvent = z.infer<typeof SomedayEventSchema>;
 
-export type Schema_GridEvent = z.infer<typeof GridEventSchema>;
+// calendarId is a plain type-level addition, not part of GridEventSchema
+// itself: CalendarIdSchema (domain-primitives.ts) is a zod/v4 schema, while
+// this file's schemas are all zod v3 ("zod") - z.object.extend() with a v4
+// field schema mixed into a v3 shape crashes at parse time ("_parse is not a
+// function"). calendarId is populated out-of-band (event.view-model.ts's
+// gridEventsFrom, grid-event-draft.adapter.ts's gridEventDraftToSchemaEvent)
+// rather than through GridEventSchema.parse, so it never needed to be a
+// schema-validated field - only a typed one. Optional (rather than required,
+// matching the strict core `Event` contract) so the legacy bridge doesn't
+// have to guarantee it in every branch - card rendering degrades gracefully
+// (no accent/label suffix) when it's missing.
+export type Schema_GridEvent = z.infer<typeof GridEventSchema> & {
+  calendarId?: CalendarId;
+};
 
 export interface Schema_OptimisticEvent extends Schema_GridEvent {
   _id: string; // We guarantee that we have an _id for optimistic events, unlike `Schema_Event`

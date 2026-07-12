@@ -25,12 +25,15 @@ const formProps = {
 } as unknown as Props_DraftForm;
 
 const renderSomedayEvent = ({
+  calendarIdentity,
   onClick = mock(),
 }: {
+  calendarIdentity?: { name: string; backgroundColor: string } | null;
   onClick?: () => void;
 } = {}) => {
   render(
     <SomedayEvent
+      calendarIdentity={calendarIdentity}
       category={Categories_Event.SOMEDAY_WEEK}
       event={createEvent()}
       formProps={formProps}
@@ -77,5 +80,22 @@ describe("SomedayEvent", () => {
     );
 
     expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("includes the calendar name in its accessible label when a calendar identity is resolved", () => {
+    renderSomedayEvent({
+      calendarIdentity: { name: "Local", backgroundColor: "#ffffff" },
+    });
+
+    expect(
+      screen.getByRole("button", { name: "Plan launch, Local calendar" }),
+    ).toBeInTheDocument();
+  });
+
+  it("omits a calendar suffix from its accessible label when no calendar identity is resolved", () => {
+    renderSomedayEvent();
+
+    const event = screen.getAllByRole("button")[0];
+    expect(event.getAttribute("aria-label")).toBeNull();
   });
 });

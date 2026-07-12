@@ -7,6 +7,10 @@ import {
 import { type Event } from "@core/types/event.contracts";
 import { Categories_Event } from "@core/types/event.types";
 import {
+  resolveCalendarCardIdentity,
+  useCalendarLookup,
+} from "@web/calendars/useCalendarLookup";
+import {
   COLUMN_MONTH,
   COLUMN_WEEK,
   ID_SOMEDAY_DRAFT,
@@ -67,6 +71,8 @@ export const SomedayEventsContainer: FC<Props> = ({
   const dropTargetRef = useSomedayDropTargetRegistrationRef({
     category,
   });
+  // One lookup build for the whole list (packet 08 step 5) - not per card.
+  const calendarLookup = useCalendarLookup();
 
   const { isFetching } = useSomedayEventsQueryStatus();
   const { reservedMinHeight, shouldAnimateRowEntrance } =
@@ -104,6 +110,10 @@ export const SomedayEventsContainer: FC<Props> = ({
         {events.map((event, index) => (
           <SomedayEventItem
             animateEnter={shouldAnimateRowEntrance}
+            calendarIdentity={resolveCalendarCardIdentity(
+              calendarLookup,
+              event.calendarId,
+            )}
             category={category}
             draftId={state.draft?.id || ID_SOMEDAY_DRAFT}
             event={event}
@@ -131,6 +141,10 @@ export const SomedayEventsContainer: FC<Props> = ({
 
       {isDraftingThisCategory && state.draft && (
         <SomedayEventItem
+          calendarIdentity={resolveCalendarCardIdentity(
+            calendarLookup,
+            state.draft.calendarId,
+          )}
           category={category}
           draftId={ID_SOMEDAY_DRAFT}
           event={state.draft}

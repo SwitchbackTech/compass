@@ -1,4 +1,5 @@
 import { useCallback } from "react";
+import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { duplicateGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { useEventById } from "@web/events/queries/useEventById";
 import { draftActions } from "@web/events/stores/draft.store";
@@ -12,11 +13,12 @@ import { useCloseEventForm } from "@web/views/Forms/hooks/useCloseEventForm";
 export function useDuplicateEvent(_id: string) {
   const event = useEventById(_id);
   const onClose = useCloseEventForm();
+  const { data: calendars } = useCalendarsQuery();
 
   const duplicateEvent = useCallback(() => {
     if (!event) return;
 
-    const duplicate = duplicateGridEventDraft(event);
+    const duplicate = duplicateGridEventDraft(event, calendars ?? []);
     if (!duplicate) return;
 
     onClose();
@@ -25,7 +27,7 @@ export function useDuplicateEvent(_id: string) {
     // floating reference, so the form anchors itself once mounted.
     draftActions.startGridDraft({ activity: "gridClick", draft: duplicate });
     draftActions.setFormOpen(true);
-  }, [event, onClose]);
+  }, [calendars, event, onClose]);
 
   return duplicateEvent;
 }

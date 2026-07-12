@@ -11,6 +11,7 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
+import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { computeCurrentEventDateRange } from "@web/common/utils/datetime/web.date.util";
 import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import { refocusEventElement } from "@web/common/utils/event/event.util";
@@ -31,6 +32,7 @@ import { useDraftForm } from "@web/views/Week/components/Draft/hooks/state/useDr
 import { getSidebarOpenWidth } from "@web/views/Week/layout.constants";
 
 export interface Props {
+  calendarIdentity?: CalendarCardIdentity | null;
   category: SomedayInteractionCategory;
   event: Event;
   isDrafting: boolean;
@@ -47,6 +49,7 @@ export interface Props {
 }
 
 export const SomedayEventContainer = ({
+  calendarIdentity,
   category,
   event,
   isDrafting,
@@ -164,6 +167,7 @@ export const SomedayEventContainer = ({
   return (
     <>
       <SomedayEvent
+        calendarIdentity={calendarIdentity}
         category={category}
         event={event}
         status={{
