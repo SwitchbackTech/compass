@@ -10,6 +10,7 @@ import {
   mockRegularGcalEvent,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
+import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { GoogleToCompassEventPropagation } from "@backend/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation";
@@ -38,6 +39,7 @@ const asAsyncPage = async function* (items: gSchema$Event[]) {
 describe("GoogleToCompassEventPropagation", () => {
   let calendar: CalendarRecord;
   const gcal = {} as gCalendar;
+  const context: GoogleRequestContext = { gcal, quotaUser: "user-1" };
 
   beforeAll(setupTestDb);
   beforeEach(cleanupCollections);
@@ -66,7 +68,7 @@ describe("GoogleToCompassEventPropagation", () => {
 
   it("creates a standalone event", async () => {
     const gEvent = mockRegularGcalEvent();
-    const propagation = new GoogleToCompassEventPropagation(gcal, calendar);
+    const propagation = new GoogleToCompassEventPropagation(context, calendar);
 
     const result = await propagation.processEvents([gEvent]);
 
@@ -83,7 +85,7 @@ describe("GoogleToCompassEventPropagation", () => {
 
   it("updates the matching event by (calendarId, externalReference.eventId)", async () => {
     const gEvent = mockRegularGcalEvent();
-    const propagation = new GoogleToCompassEventPropagation(gcal, calendar);
+    const propagation = new GoogleToCompassEventPropagation(context, calendar);
     await propagation.processEvents([gEvent]);
 
     const result = await propagation.processEvents([
@@ -102,7 +104,7 @@ describe("GoogleToCompassEventPropagation", () => {
 
   it("deletes the matching event when Google reports it cancelled", async () => {
     const gEvent = mockRegularGcalEvent();
-    const propagation = new GoogleToCompassEventPropagation(gcal, calendar);
+    const propagation = new GoogleToCompassEventPropagation(context, calendar);
     await propagation.processEvents([gEvent]);
 
     const result = await propagation.processEvents([
@@ -122,7 +124,7 @@ describe("GoogleToCompassEventPropagation", () => {
     (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReturnValue(
       asAsyncPage(instances),
     );
-    const propagation = new GoogleToCompassEventPropagation(gcal, calendar);
+    const propagation = new GoogleToCompassEventPropagation(context, calendar);
 
     const result = await propagation.processEvents([base]);
 
@@ -153,7 +155,7 @@ describe("GoogleToCompassEventPropagation", () => {
     (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReturnValue(
       asAsyncPage(instances),
     );
-    const propagation = new GoogleToCompassEventPropagation(gcal, calendar);
+    const propagation = new GoogleToCompassEventPropagation(context, calendar);
     await propagation.processEvents([base]);
 
     const cancellations = [
@@ -171,7 +173,7 @@ describe("GoogleToCompassEventPropagation", () => {
     (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReturnValue(
       asAsyncPage(instances),
     );
-    const propagation = new GoogleToCompassEventPropagation(gcal, calendar);
+    const propagation = new GoogleToCompassEventPropagation(context, calendar);
     await propagation.processEvents([base]);
 
     const [firstInstance] = instances;
@@ -191,7 +193,7 @@ describe("GoogleToCompassEventPropagation", () => {
     (
       gcalService.getBaseRecurringEventInstances as jest.Mock
     ).mockReturnValueOnce(asAsyncPage(instances));
-    const propagation = new GoogleToCompassEventPropagation(gcal, calendar);
+    const propagation = new GoogleToCompassEventPropagation(context, calendar);
     await propagation.processEvents([base]);
 
     const { base: splitBase, instances: splitInstances } =
@@ -209,7 +211,7 @@ describe("GoogleToCompassEventPropagation", () => {
 
   it("ignores unsupported event types without dropping them silently", async () => {
     const gEvent = mockRegularGcalEvent({ eventType: "outOfOffice" });
-    const propagation = new GoogleToCompassEventPropagation(gcal, calendar);
+    const propagation = new GoogleToCompassEventPropagation(context, calendar);
 
     const result = await propagation.processEvents([gEvent]);
 

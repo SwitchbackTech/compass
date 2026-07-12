@@ -1,7 +1,6 @@
 import { type GaxiosResponse } from "gaxios";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
 import {
-  type gCalendar,
   type gParamsEventsList,
   type gSchema$Event,
   type gSchema$Events,
@@ -16,6 +15,8 @@ import { GCAL_PRIMARY } from "@backend/common/constants/backend.constants";
 import { CONFIG } from "@backend/common/constants/config.constants";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
+import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
+import { withGoogleRetry } from "@backend/common/services/gcal/gcal.retry";
 import { encodeChannelToken } from "@backend/sync/services/watch/google-watch-token";
 
 const getGcalNotificationAddress = () =>
@@ -34,43 +35,48 @@ class GCalService {
   }
 
   async getEvent(
-    gcal: gCalendar,
+    { gcal, quotaUser }: GoogleRequestContext,
     gcalEventId: string,
     calendarId = GCAL_PRIMARY,
   ): Promise<gSchema$Event> {
-    const response = await gcal.events.get({
-      calendarId,
-      eventId: gcalEventId,
-    });
+    const response = await withGoogleRetry(() =>
+      gcal.events.get({ calendarId, eventId: gcalEventId, quotaUser }),
+    );
 
     return this.validateGCalResponse(response).data;
   }
 
   async createEvent(
-    gcal: gCalendar,
+    { gcal, quotaUser }: GoogleRequestContext,
     calendarId: string,
     event: gSchema$Event,
   ): Promise<gSchema$Event> {
-    const response = await gcal.events.insert({
-      calendarId,
-      requestBody: event,
-    });
+    const response = await withGoogleRetry(() =>
+      gcal.events.insert({ calendarId, quotaUser, requestBody: event }),
+    );
 
     return this.validateGCalResponse(response).data;
   }
 
-  async deleteEvent(gcal: gCalendar, calendarId: string, gcalEventId: string) {
-    const response = await gcal.events.delete({
-      calendarId,
-      eventId: gcalEventId,
-      sendUpdates: "all",
-    });
+  async deleteEvent(
+    { gcal, quotaUser }: GoogleRequestContext,
+    calendarId: string,
+    gcalEventId: string,
+  ) {
+    const response = await withGoogleRetry(() =>
+      gcal.events.delete({
+        calendarId,
+        eventId: gcalEventId,
+        quotaUser,
+        sendUpdates: "all",
+      }),
+    );
 
     return response;
   }
 
   private async getEventInstances(
-    gcal: gCalendar,
+    { gcal, quotaUser }: GoogleRequestContext,
     calendarId: string,
     eventId: string,
     timeMin?: string,
@@ -78,26 +84,31 @@ class GCalService {
     pageToken?: string,
     maxResults?: number,
   ) {
-    const response = await gcal.events.instances({
-      calendarId,
-      eventId,
-      timeMin,
-      timeMax,
-      pageToken,
-      maxResults,
-    });
+    const response = await withGoogleRetry(() =>
+      gcal.events.instances({
+        calendarId,
+        eventId,
+        timeMin,
+        timeMax,
+        pageToken,
+        maxResults,
+        quotaUser,
+      }),
+    );
 
     return this.validateGCalResponse(response);
   }
 
-  async getEvents(gcal: gCalendar, params: gParamsEventsList) {
-    const response = await gcal.events.list(params);
+  async getEvents(context: GoogleRequestContext, params: gParamsEventsList) {
+    const response = await withGoogleRetry(() =>
+      context.gcal.events.list({ ...params, quotaUser: context.quotaUser }),
+    );
 
     return this.validateGCalResponse(response);
   }
 
   async *getBaseRecurringEventInstances({
-    gCal,
+    context,
     calendarId,
     eventId,
     maxResults = 1000,
@@ -105,7 +116,7 @@ class GCalService {
     timeMax,
     pageToken,
   }: {
-    gCal: gCalendar;
+    context: GoogleRequestContext;
     calendarId: string;
     eventId: string;
     maxResults?: number;
@@ -119,7 +130,7 @@ class GCalService {
 
     do {
       const { data = {} } = await this.getEventInstances(
-        gCal,
+        context,
         calendarId,
         eventId,
         timeMin,
@@ -149,14 +160,14 @@ class GCalService {
    * generator function to list all google calendar events
    */
   async *getAllEvents({
-    gCal,
+    context,
     calendarId,
     maxResults = 1000,
     singleEvents = false,
     pageToken,
     syncToken,
   }: {
-    gCal: gCalendar;
+    context: GoogleRequestContext;
     calendarId: string;
     maxResults?: number;
     singleEvents?: boolean;
@@ -169,7 +180,7 @@ class GCalService {
     let isLastPage = true;
 
     do {
-      const { data = {} } = await this.getEvents(gCal, {
+      const { data = {} } = await this.getEvents(context, {
         calendarId,
         singleEvents,
         maxResults,
@@ -195,13 +206,15 @@ class GCalService {
   }
 
   async getCalendarlist(
-    gcal: gCalendar,
+    { gcal, quotaUser }: GoogleRequestContext,
     {
       nextSyncToken: syncToken,
       nextPageToken: pageToken,
     }: Partial<Pick<SyncDetails, "nextSyncToken" | "nextPageToken">> = {},
   ) {
-    const response = await gcal.calendarList.list({ syncToken, pageToken });
+    const response = await withGoogleRetry(() =>
+      gcal.calendarList.list({ syncToken, pageToken, quotaUser }),
+    );
 
     if (!response.data.nextSyncToken) {
       throw error(
@@ -222,72 +235,81 @@ class GCalService {
    * events.update, which replaces the whole resource.
    */
   async patchEvent(
-    gcal: gCalendar,
+    { gcal, quotaUser }: GoogleRequestContext,
     calendarId: string,
     gEventId: string,
     event: gSchema$Event,
   ) {
-    const response = await gcal.events.patch({
-      calendarId,
-      eventId: gEventId,
-      requestBody: event,
-    });
+    const response = await withGoogleRetry(() =>
+      gcal.events.patch({
+        calendarId,
+        eventId: gEventId,
+        quotaUser,
+        requestBody: event,
+      }),
+    );
 
     return this.validateGCalResponse(response).data;
   }
 
   watchCalendars = async (
-    gcal: gCalendar,
+    { gcal, quotaUser }: GoogleRequestContext,
     params: Omit<Params_WatchEvents, "gCalendarId" | "resourceId">,
   ) => {
-    const response = await gcal.calendarList.watch({
-      quotaUser: params.quotaUser,
-      requestBody: {
-        // reminder: address always needs to be HTTPS
-        address: getGcalNotificationAddress(),
-        expiration: params.expiration,
-        id: IDSchemaV4.parse(params.channelId),
-        token: encodeChannelToken({ resource: Resource_Sync.CALENDAR }),
-        type: "web_hook",
-      },
-    });
+    const response = await withGoogleRetry(() =>
+      gcal.calendarList.watch({
+        quotaUser,
+        requestBody: {
+          // reminder: address always needs to be HTTPS
+          address: getGcalNotificationAddress(),
+          expiration: params.expiration,
+          id: IDSchemaV4.parse(params.channelId),
+          token: encodeChannelToken({ resource: Resource_Sync.CALENDAR }),
+          type: "web_hook",
+        },
+      }),
+    );
 
     return { watch: this.validateGCalResponse(response).data };
   };
 
   watchEvents = async (
-    gcal: gCalendar,
+    { gcal, quotaUser }: GoogleRequestContext,
     params: Omit<Params_WatchEvents, "resourceId">,
   ) => {
-    const response = await gcal.events.watch({
-      calendarId: params.gCalendarId,
-      quotaUser: params.quotaUser,
-      requestBody: {
-        // reminder: address always needs to be HTTPS
-        address: getGcalNotificationAddress(),
-        expiration: params.expiration,
-        id: IDSchemaV4.parse(params.channelId),
-        token: encodeChannelToken({ resource: Resource_Sync.EVENTS }),
-        type: "web_hook",
-      },
-    });
+    const response = await withGoogleRetry(() =>
+      gcal.events.watch({
+        calendarId: params.gCalendarId,
+        quotaUser,
+        requestBody: {
+          // reminder: address always needs to be HTTPS
+          address: getGcalNotificationAddress(),
+          expiration: params.expiration,
+          id: IDSchemaV4.parse(params.channelId),
+          token: encodeChannelToken({ resource: Resource_Sync.EVENTS }),
+          type: "web_hook",
+        },
+      }),
+    );
 
     return { watch: this.validateGCalResponse(response).data };
   };
 
   stopWatch = async (
-    gcal: gCalendar,
-    params: Pick<Params_WatchEvents, "channelId" | "quotaUser"> & {
+    { gcal, quotaUser }: GoogleRequestContext,
+    params: Pick<Params_WatchEvents, "channelId"> & {
       resourceId: string;
     },
   ) => {
-    const response = await gcal.channels.stop({
-      quotaUser: params.quotaUser,
-      requestBody: {
-        id: params.channelId,
-        resourceId: params.resourceId,
-      },
-    });
+    const response = await withGoogleRetry(() =>
+      gcal.channels.stop({
+        quotaUser,
+        requestBody: {
+          id: params.channelId,
+          resourceId: params.resourceId,
+        },
+      }),
+    );
 
     return this.validateGCalResponse(response);
   };

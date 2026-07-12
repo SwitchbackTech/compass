@@ -16,7 +16,7 @@ const logger = Logger("app:constants");
 const ConfigSchema = z
   .object({
     BASEURL: z.string().nonempty(),
-    CHANNEL_EXPIRATION_MIN: z.string().nonempty().default("10"),
+    CHANNEL_EXPIRATION_MIN: z.string().nonempty().default("10080"),
     GOOGLE_CLIENT_ID: z.string().nonempty().optional(),
     GOOGLE_CLIENT_SECRET: z.string().nonempty().optional(),
     DB: z.string().nonempty(),
@@ -85,7 +85,8 @@ function parseRawConfig(config: CompassConfig): Config {
 
   return ConfigSchema.parse({
     BASEURL: config.backend.apiUrl,
-    CHANNEL_EXPIRATION_MIN: toStr(config.google?.channelExpirationMin) ?? "10",
+    CHANNEL_EXPIRATION_MIN:
+      toStr(config.google?.channelExpirationMin) ?? "10080",
     GOOGLE_CLIENT_ID: nonEmpty(config.google?.clientId),
     GOOGLE_CLIENT_SECRET: nonEmpty(config.google?.clientSecret),
     DB: isDev(nodeEnv) ? "dev_calendar" : "prod_calendar",

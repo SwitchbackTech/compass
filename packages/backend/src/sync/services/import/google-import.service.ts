@@ -1,14 +1,16 @@
 import { type ClientSession } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { error } from "@backend/common/errors/handlers/error.handler";
 import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
+import {
+  createGoogleRequestContext,
+  type GoogleRequestContext,
+} from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { GoogleEventSync } from "@backend/event/google-event-sync.service";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import {
   getGCalEventsSyncPageToken,
   getSync,
@@ -57,10 +59,10 @@ const addStats = (
  * pass it in.
  */
 export class SyncImport {
-  private gcal: gCalendar;
+  private context: GoogleRequestContext;
 
-  constructor(gcal: gCalendar) {
-    this.gcal = gcal;
+  constructor(context: GoogleRequestContext) {
+    this.context = context;
   }
 
   /**
@@ -85,7 +87,7 @@ export class SyncImport {
     );
 
     const startTime = performance.now();
-    const sync = new GoogleEventSync(this.gcal, calendar);
+    const sync = new GoogleEventSync(this.context, calendar);
 
     let stats = emptyStats();
     let syncToken: string | undefined;
@@ -97,7 +99,7 @@ export class SyncImport {
     );
 
     const gCalResponse = gcalService.getAllEvents({
-      gCal: this.gcal,
+      context: this.context,
       calendarId: calendar.source.calendarId,
       maxResults: perPage,
       pageToken: pageToken ?? undefined,
@@ -196,7 +198,7 @@ export class SyncImport {
       );
     }
 
-    const sync = new GoogleEventSync(this.gcal, calendar);
+    const sync = new GoogleEventSync(this.context, calendar);
 
     let stats = emptyStats();
     let syncToken: string | undefined = initialSyncToken;
@@ -211,7 +213,7 @@ export class SyncImport {
         );
       }
 
-      const response = await gcalService.getEvents(this.gcal, {
+      const response = await gcalService.getEvents(this.context, {
         calendarId: calendar.source.calendarId,
         ...(pageToken ? { pageToken } : { syncToken: token }),
         maxResults: perPage,
@@ -243,7 +245,13 @@ export class SyncImport {
   }
 }
 
-export const createSyncImport = async (id: string | gCalendar) => {
-  const gcal = typeof id === "string" ? await getGcalClient(id) : id;
-  return new SyncImport(gcal);
+export const createSyncImport = async (
+  idOrContext: string | GoogleRequestContext,
+) => {
+  const context =
+    typeof idOrContext === "string"
+      ? await createGoogleRequestContext(idOrContext)
+      : idOrContext;
+
+  return new SyncImport(context);
 };

@@ -1,7 +1,6 @@
 import { type ClientSession, ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
-import { type gCalendar } from "@core/types/gcal";
 import {
   type Params_WatchEvents,
   type Payload_Sync_Notif,
@@ -16,6 +15,10 @@ import { GcalError } from "@backend/common/errors/integration/gcal/gcal.errors";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { WatchError } from "@backend/common/errors/sync/watch.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
+import {
+  createGoogleRequestContext,
+  type GoogleRequestContext,
+} from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import {
   getGoogleErrorStatus,
@@ -23,7 +26,6 @@ import {
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
 import { getSync } from "@backend/sync/services/records/sync-records.repository";
@@ -52,15 +54,15 @@ async function deleteWatchesByUser(
 
 async function prepareStopWatches(
   user: string,
-  gcal?: gCalendar,
+  context?: GoogleRequestContext,
   session?: ClientSession,
 ) {
   const watches = await mongoService.watch
     .find({ user }, { session })
     .toArray();
 
-  if (watches.length === 0 || gcal) {
-    return { watches, gcal };
+  if (watches.length === 0 || context) {
+    return { watches, context };
   }
 
   const compassUser = await findCompassUserBy("_id", user);
@@ -76,12 +78,12 @@ async function prepareStopWatches(
       "Google refresh token is missing. Corresponding watch records deleted",
     );
 
-    return { watches: [], gcal };
+    return { watches: [], context };
   }
 
   return {
     watches,
-    gcal: await getGcalClient(user),
+    context: await createGoogleRequestContext(user),
   };
 }
 
@@ -182,9 +184,9 @@ async function handleGoogleWatchNotification(payload: Payload_Sync_Notif) {
     );
   }
 
-  const gcal = await getGcalClient(userId);
+  const context = await createGoogleRequestContext(userId);
   const handler = new GCalNotificationHandler(
-    gcal,
+    context,
     resource,
     userId,
     watch.gCalendarId,
@@ -213,9 +215,9 @@ async function handleGoogleWatchNotification(payload: Payload_Sync_Notif) {
 async function refreshWatch(
   userId: string,
   payload: Params_WatchEvents,
-  gcal?: gCalendar,
+  context?: GoogleRequestContext,
 ) {
-  if (!gcal) gcal = await getGcalClient(userId);
+  if (!context) context = await createGoogleRequestContext(userId);
 
   const watchExists = payload.channelId && payload.resourceId;
 
@@ -224,14 +226,14 @@ async function refreshWatch(
       userId,
       payload.channelId,
       payload.resourceId,
-      gcal,
+      context,
     );
   }
 
   const watchResult = await googleWatchService.startGoogleWatches(
     userId,
-    [{ gCalendarId: payload.gCalendarId, quotaUser: payload.quotaUser }],
-    gcal,
+    [{ gCalendarId: payload.gCalendarId }],
+    context,
   );
 
   return watchResult[0];
@@ -239,8 +241,7 @@ async function refreshWatch(
 
 async function startCalendarListWatch(
   user: string,
-  params: Pick<Params_WatchEvents, "quotaUser">,
-  gcal: gCalendar,
+  context: GoogleRequestContext,
 ): Promise<{ acknowledged: boolean; insertedId?: ObjectId }> {
   try {
     const alreadyWatching = await isWatchingGoogleResource(
@@ -261,8 +262,7 @@ async function startCalendarListWatch(
     const _id = new ObjectId();
     const channelId = _id.toString();
 
-    const { watch: gcalWatch } = await gcalService.watchCalendars(gcal, {
-      ...params,
+    const { watch: gcalWatch } = await gcalService.watchCalendars(context, {
       channelId,
       expiration,
     });
@@ -287,7 +287,12 @@ async function startCalendarListWatch(
         }),
       )
       .catch(async (error) => {
-        await googleWatchService.stopWatch(user, channelId, resourceId, gcal);
+        await googleWatchService.stopWatch(
+          user,
+          channelId,
+          resourceId,
+          context,
+        );
 
         throw error;
       });
@@ -302,8 +307,8 @@ async function startCalendarListWatch(
 
 async function startEventWatch(
   user: string,
-  params: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">,
-  gcal: gCalendar,
+  params: Pick<Params_WatchEvents, "gCalendarId">,
+  context: GoogleRequestContext,
 ): Promise<{ acknowledged: boolean; insertedId?: ObjectId }> {
   try {
     const alreadyWatching = await isWatchingGoogleResource(
@@ -324,7 +329,7 @@ async function startEventWatch(
     const _id = new ObjectId();
     const channelId = _id.toString();
 
-    const { watch: gcalWatch } = await gcalService.watchEvents(gcal, {
+    const { watch: gcalWatch } = await gcalService.watchEvents(context, {
       ...params,
       channelId,
       expiration,
@@ -347,7 +352,12 @@ async function startEventWatch(
         }),
       )
       .catch(async (error) => {
-        await googleWatchService.stopWatch(user, channelId, resourceId, gcal);
+        await googleWatchService.stopWatch(
+          user,
+          channelId,
+          resourceId,
+          context,
+        );
 
         throw error;
       });
@@ -362,8 +372,8 @@ async function startEventWatch(
 
 async function startGoogleWatches(
   userId: string,
-  watchParams: Pick<Params_WatchEvents, "gCalendarId" | "quotaUser">[],
-  gcal: gCalendar,
+  watchParams: Pick<Params_WatchEvents, "gCalendarId">[],
+  context: GoogleRequestContext,
 ) {
   if (!isUsingGcalWebhookHttps()) {
     return [];
@@ -372,10 +382,10 @@ async function startGoogleWatches(
   return Promise.all(
     watchParams.map(async (params) => {
       if (params.gCalendarId === (Resource_Sync.CALENDAR as string)) {
-        return googleWatchService.startCalendarListWatch(userId, params, gcal);
+        return googleWatchService.startCalendarListWatch(userId, context);
       }
 
-      return googleWatchService.startEventWatch(userId, params, gcal);
+      return googleWatchService.startEventWatch(userId, params, context);
     }),
   ).then((results) => results.filter((r) => r !== undefined));
 }
@@ -384,17 +394,15 @@ async function stopWatch(
   user: string,
   channelId: string,
   resourceId: string,
-  gcal?: gCalendar,
-  quotaUser?: string,
+  context?: GoogleRequestContext,
   session?: ClientSession,
 ) {
   const filter = { user, _id: new ObjectId(channelId), resourceId };
 
   try {
-    if (!gcal) gcal = await getGcalClient(user);
+    if (!context) context = await createGoogleRequestContext(user);
 
-    await gcalService.stopWatch(gcal, {
-      quotaUser,
+    await gcalService.stopWatch(context, {
       channelId,
       resourceId,
     });
@@ -441,11 +449,10 @@ async function stopWatch(
 
 async function stopWatches(
   user: string,
-  gcal?: gCalendar,
-  quotaUser?: string,
+  context?: GoogleRequestContext,
   session?: ClientSession,
 ): Promise<Result_Watch_Stop> {
-  const prepared = await prepareStopWatches(user, gcal, session);
+  const prepared = await prepareStopWatches(user, context, session);
 
   if (prepared.watches.length === 0) {
     return [];
@@ -457,14 +464,7 @@ async function stopWatches(
   const result = await Promise.all(
     prepared.watches.map(async ({ _id, resourceId }) =>
       googleWatchService
-        .stopWatch(
-          user,
-          _id.toString(),
-          resourceId,
-          prepared.gcal,
-          quotaUser,
-          session,
-        )
+        .stopWatch(user, _id.toString(), resourceId, prepared.context, session)
         .catch((error) => {
           logger.error(
             `Error stopping watch for user: ${user}, channelId: ${_id.toString()}`,

@@ -3,12 +3,12 @@ import { Logger } from "@core/logger/winston.logger";
 import { type Result_Watch_Stop } from "@core/types/sync.types";
 import { type Schema_Watch } from "@core/types/watch.types";
 import dayjs from "@core/util/date/dayjs";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import {
   isFullSyncRequired,
   isInvalidGoogleToken,
 } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { hasUpdatedCompassEventRecently } from "@backend/sync/services/watch/google-watch-activity";
@@ -72,8 +72,7 @@ export const pruneSync = async (
     let deletedUserData = false;
     let stopped: Result_Watch_Stop = [];
 
-    const quotaUser = new ObjectId().toString();
-    const gcal = await getGcalClient(user);
+    const context = await createGoogleRequestContext(user);
 
     try {
       const results = await Promise.all(
@@ -82,8 +81,7 @@ export const pruneSync = async (
             user,
             _id.toString(),
             resourceId,
-            gcal,
-            quotaUser,
+            context,
           ),
         ),
       );
@@ -118,7 +116,7 @@ export const refreshWatch = async (
     let resynced = false;
 
     try {
-      const gcal = await getGcalClient(r.user);
+      const context = await createGoogleRequestContext(r.user);
 
       const refreshesByUser = await Promise.all(
         r.payload.map(async ({ _id, user, expiration, ...syncPayload }) => {
@@ -129,7 +127,7 @@ export const refreshWatch = async (
               channelId: _id.toString(),
               expiration: expiration.getTime().toString(),
             },
-            gcal,
+            context,
           );
 
           return {

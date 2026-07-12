@@ -11,6 +11,7 @@ import {
   mockRegularGcalEvent,
 } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
+import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { SyncImport } from "@backend/sync/services/import/google-import.service";
@@ -64,6 +65,7 @@ describe("SyncImport", () => {
   let calendar: CalendarRecord;
   let userId: string;
   const gcal = {} as gCalendar;
+  const context: GoogleRequestContext = { gcal, quotaUser: "user-1" };
 
   beforeAll(setupTestDb);
   beforeEach(cleanupCollections);
@@ -94,7 +96,7 @@ describe("SyncImport", () => {
         asInstancePage(instances),
       );
 
-      const syncImport = new SyncImport(gcal);
+      const syncImport = new SyncImport(context);
       const result = await syncImport.importAllEvents(userId, calendar, 1000);
 
       expect(result.totalSaved).toBe(1 + instances.length);
@@ -121,7 +123,7 @@ describe("SyncImport", () => {
           asPages({ items: [gEvent], nextSyncToken: "sync-token-2" }),
         );
 
-      const syncImport = new SyncImport(gcal);
+      const syncImport = new SyncImport(context);
       await syncImport.importAllEvents(userId, calendar, 1000);
       await syncImport.importAllEvents(userId, calendar, 1000);
 
@@ -137,7 +139,7 @@ describe("SyncImport", () => {
         asPages({ items: [gEvent], nextSyncToken: "sync-token-1" }),
       );
 
-      const syncImport = new SyncImport(gcal);
+      const syncImport = new SyncImport(context);
       const result = await syncImport.importAllEvents(userId, calendar, 1000);
 
       expect(result.totalSaved).toBe(0);
@@ -161,7 +163,7 @@ describe("SyncImport", () => {
         asPages({ items: [gEvent], nextSyncToken: "sync-token-1" }),
       );
 
-      const syncImport = new SyncImport(gcal);
+      const syncImport = new SyncImport(context);
       const pageToken = await getGCalEventsSyncPageToken(
         userId,
         calendar.source.provider === "google" ? calendar.source.calendarId : "",
@@ -190,7 +192,7 @@ describe("SyncImport", () => {
         data: { items: [gEvent], nextSyncToken: "next-sync-token" },
       });
 
-      const syncImport = new SyncImport(gcal);
+      const syncImport = new SyncImport(context);
       const result = await syncImport.importLatestEvents(
         userId,
         calendar,
@@ -199,7 +201,7 @@ describe("SyncImport", () => {
 
       expect(result.totalSaved).toBe(1);
       expect(gcalService.getEvents).toHaveBeenCalledWith(
-        gcal,
+        context,
         expect.objectContaining({ syncToken: "existing-sync-token" }),
       );
 
@@ -215,7 +217,7 @@ describe("SyncImport", () => {
     });
 
     it("returns empty stats when no sync token is known yet", async () => {
-      const syncImport = new SyncImport(gcal);
+      const syncImport = new SyncImport(context);
       const result = await syncImport.importLatestEvents(
         userId,
         calendar,
@@ -232,7 +234,7 @@ describe("SyncImport", () => {
         data: { items: [gEvent], nextSyncToken: "sync-token-1" },
       });
 
-      const syncImport = new SyncImport(gcal);
+      const syncImport = new SyncImport(context);
       await syncImport.importEventsByCalendar(
         userId,
         calendar,

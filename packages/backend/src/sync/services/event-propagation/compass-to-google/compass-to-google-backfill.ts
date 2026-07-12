@@ -1,11 +1,11 @@
 import { Logger } from "@core/logger/winston.logger";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { eventRepository } from "@backend/event/event.repository";
 import { mapEventRecordToGoogle } from "@backend/event/google-event.adapter";
 import { isWritableToGoogle } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 
 const logger = Logger("app:compass-to-google-backfill");
 
@@ -39,7 +39,7 @@ export const syncCompassEventsToGoogle = async (
 
   if (candidates.length === 0) return 0;
 
-  const gcal = await getGcalClient(userId);
+  const context = await createGoogleRequestContext(userId);
   let syncedCount = 0;
 
   for (const record of candidates) {
@@ -51,7 +51,7 @@ export const syncCompassEventsToGoogle = async (
     try {
       const body = mapEventRecordToGoogle(record);
       const created = await gcalService.createEvent(
-        gcal,
+        context,
         calendar.source.calendarId,
         body,
       );

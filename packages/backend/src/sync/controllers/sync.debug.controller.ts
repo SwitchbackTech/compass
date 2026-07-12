@@ -3,12 +3,12 @@ import { type SessionRequest } from "supertokens-node/framework/express";
 import { type BaseError } from "@core/errors/errors.base";
 import { type CalendarId } from "@core/types/domain-primitives";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import {
   type Res_Promise,
   type SReqBody,
 } from "@backend/common/types/express.types";
 import { sseServer } from "@backend/servers/sse/sse.server";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { getSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
@@ -110,14 +110,14 @@ class SyncDebugController {
     try {
       const userId = req.session?.getUserId() as string;
       const calendarId = req.body.calendarId;
-      const gcal = await getGcalClient(userId);
+      const context = await createGoogleRequestContext(userId);
 
       const watchResult = await googleWatchService.startEventWatch(
         userId,
         {
           gCalendarId: calendarId,
         },
-        gcal,
+        context,
       );
 
       res.promise(watchResult);

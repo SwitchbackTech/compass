@@ -1,6 +1,5 @@
 import { Logger } from "@core/logger/winston.logger";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import {
   shouldDoIncrementalGCalSync,
@@ -9,11 +8,14 @@ import {
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
 import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
+import {
+  createGoogleRequestContext,
+  type GoogleRequestContext,
+} from "@backend/common/services/gcal/gcal.context";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import compassToGoogleBackfill from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google-backfill";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import {
   createSyncImport,
   type SyncImport,
@@ -97,7 +99,7 @@ async function importFull(
 
 async function importLatestGoogleCalendarChanges(
   userId: string,
-  gcal?: gCalendar,
+  context?: GoogleRequestContext,
   perPage = 1000,
 ) {
   logger.info(`Starting incremental Google Calendar sync for user: ${userId}`);
@@ -147,8 +149,8 @@ async function importLatestGoogleCalendarChanges(
       return;
     }
 
-    const syncImport = gcal
-      ? await createSyncImport(gcal)
+    const syncImport = context
+      ? await createSyncImport(context)
       : await createSyncImport(userId);
 
     const result = await syncImport.importLatestEvents(
@@ -325,9 +327,9 @@ async function runGoogleCalendarSyncSetup(
 async function initializeGoogleCalendarSync(
   user: string,
 ): Promise<{ eventsCount: number; calendarsCount: number }> {
-  const gcal = await getGcalClient(user);
+  const context = await createGoogleRequestContext(user);
 
-  await calendarService.initializeGoogleCalendars(user, gcal);
+  await calendarService.initializeGoogleCalendars(user, context);
 
   const calendar = await calendarService.getPrimaryGoogleCalendar(user);
 
@@ -336,7 +338,7 @@ async function initializeGoogleCalendarSync(
     return { eventsCount: 0, calendarsCount: 0 };
   }
 
-  const syncImport = await createSyncImport(gcal);
+  const syncImport = await createSyncImport(context);
   const importResult = await importFull(syncImport, calendar, user);
 
   if (isUsingGcalWebhookHttps()) {
@@ -346,7 +348,7 @@ async function initializeGoogleCalendarSync(
         { gCalendarId: Resource_Sync.CALENDAR },
         { gCalendarId: calendar.source.calendarId },
       ],
-      gcal,
+      context,
     );
   }
 

@@ -14,7 +14,6 @@ export interface Params_WatchEvents {
   channelId: string; // use a valid mongo object id string
   resourceId: string;
   expiration: string;
-  quotaUser?: string; // added to aid gcal API quota calculations
 }
 
 export interface SyncDetails {

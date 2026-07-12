@@ -3,11 +3,11 @@ import {
   type ClientSession,
   type ObjectId,
 } from "mongodb";
-import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
 import { zObjectId } from "@core/types/type.utils";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { mapGoogleCalendar } from "@backend/calendar/calendar.record.mapper";
+import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import mongoService from "@backend/common/services/mongo.service";
 import { getCalendarsToSync } from "@backend/sync/services/init/google-sync-init";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
@@ -23,12 +23,12 @@ class CalendarService {
    */
   async initializeGoogleCalendars(
     userId: ObjectId | string,
-    gcal: gCalendar,
+    context: GoogleRequestContext,
     session?: ClientSession,
   ) {
     const userObjectId = zObjectId.parse(userId);
 
-    const googleCalendarResult = await getCalendarsToSync(gcal);
+    const googleCalendarResult = await getCalendarsToSync(context);
     const {
       calendars: googleCalendars,
       nextPageToken,

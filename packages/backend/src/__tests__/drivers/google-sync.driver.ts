@@ -4,8 +4,8 @@ import { Resource_Sync, type Schema_Sync } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
 import dayjs from "@core/util/date/dayjs";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 
@@ -15,7 +15,7 @@ export class GoogleSyncDriver {
     defaultUser = false,
   ): Promise<void> {
     const gCalendarId = defaultUser ? "test-calendar" : faker.string.uuid();
-    const gcal = await getGcalClient(user._id.toString());
+    const context = await createGoogleRequestContext(user._id.toString());
 
     // Avoid racing multiple upserts for the same user's sync document in tests.
     await updateSync(Resource_Sync.CALENDAR, user._id.toString(), gCalendarId, {
@@ -27,7 +27,7 @@ export class GoogleSyncDriver {
     await googleWatchService.startGoogleWatches(
       user._id.toString(),
       [{ gCalendarId }, { gCalendarId: Resource_Sync.CALENDAR }], // Watch all selected calendars and calendar list
-      gcal,
+      context,
     );
   }
 
