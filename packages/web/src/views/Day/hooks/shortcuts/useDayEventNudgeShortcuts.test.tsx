@@ -2,17 +2,20 @@ import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
-import dayjs from "@core/util/date/dayjs";
+import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   cleanup,
   renderHook,
   waitFor,
 } from "@web/__tests__/__mocks__/mock.render";
+import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
+import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { dayCalendarEventRegistry } from "@web/views/Day/interaction/registry/dayCalendarEventRegistry";
 import { useDayEventNudgeShortcuts } from "./useDayEventNudgeShortcuts";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
@@ -64,12 +67,31 @@ const focusCalendarTarget = (eventType: "all-day" | "timed") => {
 
 const renderNudgeShortcuts = () => {
   const queryClient = createCompassQueryClient();
+  // useUpdateEvent now reads the source `Event` straight from the query
+  // cache (editGridEventDraft needs it), rather than the seeded-events
+  // `initialData` default this harness normally relies on — that default
+  // only applies once a real query mounts, and this hook mounts none of its
+  // own. Register a real cache entry so `findEventInCache` can see it.
+  queryClient.setQueryData(
+    eventQueryKeys.day({
+      source: "local",
+      start: "2026-05-20T00:00:00.000Z",
+      end: "2026-05-21T00:00:00.000Z",
+    }),
+    toNormalizedEventQueryData([timedEventContract]),
+  );
   renderHook(() => useDayEventNudgeShortcuts({ timedEvents: [timedEvent] }), {
     events: [timedEventContract],
     queryClient,
   });
   return { queryClient };
 };
+
+// The mutation's write path formats the moved instant in the browser's own
+// time zone (matching every other GridEventDraft-based submit path), not
+// dayjs's default local-offset `.format()`.
+const offsetString = (date: Dayjs) =>
+  dayjs.tz(date.toDate(), getBrowserTimeZone()).format();
 
 const getEditMutation = (
   queryClient: ReturnType<typeof createCompassQueryClient>,
@@ -103,10 +125,10 @@ describe("useDayEventNudgeShortcuts", () => {
       input: { schedule: { start: string; end: string } };
     };
     expect(input.schedule.start).toBe(
-      dayjs(timedEvent.startDate).subtract(15, "minutes").format(),
+      offsetString(dayjs(timedEvent.startDate).subtract(15, "minutes")),
     );
     expect(input.schedule.end).toBe(
-      dayjs(timedEvent.endDate).subtract(15, "minutes").format(),
+      offsetString(dayjs(timedEvent.endDate).subtract(15, "minutes")),
     );
   });
 
@@ -123,7 +145,7 @@ describe("useDayEventNudgeShortcuts", () => {
       input: { schedule: { start: string } };
     };
     expect(input.schedule.start).toBe(
-      dayjs(timedEvent.startDate).add(15, "minutes").format(),
+      offsetString(dayjs(timedEvent.startDate).add(15, "minutes")),
     );
   });
 

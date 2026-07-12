@@ -22,7 +22,6 @@ import {
   editGridEventDraft,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
-import { eventToSchemaEvent } from "@web/events/queries/event.legacy-bridge";
 import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
   draftActions,
@@ -211,22 +210,22 @@ export function DayCalendarGrid() {
     [dayEvents, setFormPositionReference, setFormReference],
   );
 
-  // TODO(packet-03-phase-3c): dayEvents is now `Event[]` (new contract);
-  // bridged to the legacy Schema_Event shape assembleGridEvent still expects
-  // until the grid renderer is converted.
+  // timedEvents/allDayEvents are the same Schema_GridEvent objects the grid
+  // layers render from (assembled once in event.view-model.ts), so the
+  // context menu/right-click lookup reuses them directly instead of
+  // re-deriving a fresh Schema_GridEvent from `dayEvents` (Event[]).
+  const dayGridEventsById = useMemo(() => {
+    const map = new Map<string, Schema_GridEvent>();
+    for (const gridEvent of [...timedEvents, ...allDayEvents]) {
+      if (gridEvent._id) map.set(gridEvent._id, gridEvent);
+    }
+    return map;
+  }, [timedEvents, allDayEvents]);
+
   const getDayEventById = useCallback(
-    (eventId: string): Schema_GridEvent | null => {
-      const event = dayEvents.find((dayEvent) => dayEvent.id === eventId);
-      if (!event) return null;
-
-      const schemaEvent = eventToSchemaEvent(event);
-      if (!hasEventDates(schemaEvent)) {
-        return null;
-      }
-
-      return assembleGridEvent(schemaEvent);
-    },
-    [dayEvents],
+    (eventId: string): Schema_GridEvent | null =>
+      dayGridEventsById.get(eventId) ?? null,
+    [dayGridEventsById],
   );
 
   const { contextMenu, handleContextMenu } = useDayCalendarContextMenu({
