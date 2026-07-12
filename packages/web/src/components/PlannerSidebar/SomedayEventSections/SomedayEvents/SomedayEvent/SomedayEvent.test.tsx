@@ -59,6 +59,8 @@ describe("SomedayEvent", () => {
     expect(event.style.getPropertyValue("--someday-event-hover-bg")).toBe(
       gridHoverColorByPriority[Priorities.WORK],
     );
+    expect(event.className).toContain("text-text-dark");
+    expect(event.className).toContain("hover:cursor-pointer");
   });
 
   it("does not open the row when Space is pressed on an inner action button", () => {
