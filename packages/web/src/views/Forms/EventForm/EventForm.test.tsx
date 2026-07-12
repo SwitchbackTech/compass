@@ -2,9 +2,16 @@ import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createRef, type SetStateAction, useState } from "react";
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Schema_Event } from "@core/types/event.types";
+import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { type GridEventDraft } from "@web/events/event-draft.types";
+import {
+  createGridEventDraft,
+  editGridEventDraft,
+  replaceGridDraftSchedule,
+  timedGridSchedule,
+} from "@web/events/grid-event-draft.adapter";
 import { type Props as DateTimeSectionProps } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DateTimeSection";
 import { getFormDates } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/form.datetime.util";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
@@ -94,19 +101,61 @@ function dispatchDelete(target: HTMLElement) {
   return event;
 }
 
-const createEvent = (overrides: Partial<Schema_Event> = {}): Schema_Event => ({
-  _id: "event-1",
-  description: "",
-  endDate: "2026-04-24T15:00:00.000Z",
-  isAllDay: false,
-  isSomeday: false,
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  startDate: "2026-04-24T14:00:00.000Z",
-  title: "Keyboard duplicate event",
-  user: "user-1",
-  ...overrides,
-});
+// An "edit" GridEventDraft for an already-saved event, built from the strict
+// `Event` contract via the same editGridEventDraft adapter production code
+// uses (DayCalendarGrid.tsx, GridDraft.tsx).
+const createEditDraft = (
+  overrides: {
+    description?: string;
+    endDate?: string;
+    startDate?: string;
+    title?: string;
+  } = {},
+): GridEventDraft => {
+  const {
+    description = "",
+    endDate = "2026-04-24T15:00:00.000Z",
+    startDate = "2026-04-24T14:00:00.000Z",
+    title = "Keyboard duplicate event",
+  } = overrides;
+
+  const event = createMockEvent({
+    content: { kind: "details", title, description },
+    schedule: EventScheduleSchema.parse({
+      kind: "timed",
+      start: startDate,
+      end: endDate,
+      timeZone: "UTC",
+    }),
+  });
+
+  const draft = editGridEventDraft(event);
+  if (!draft) throw new Error("expected an edit draft");
+
+  return draft;
+};
+
+// A "create" GridEventDraft for a not-yet-saved draft (no source event).
+const createNewDraft = (
+  overrides: {
+    endDate?: string;
+    startDate?: string;
+    title?: string;
+  } = {},
+): GridEventDraft => {
+  const {
+    endDate = "2026-04-24T15:00:00.000Z",
+    startDate = "2026-04-24T14:00:00.000Z",
+    title = "Unsaved draft",
+  } = overrides;
+
+  const draft = createGridEventDraft(
+    timedGridSchedule(new Date(startDate), new Date(endDate)),
+  );
+  if (draft.kind !== "create") throw new Error("expected a create draft");
+
+  return { ...draft, values: { ...draft.values, title } };
+};
 
 describe("EventForm", () => {
   beforeEach(() => {
@@ -118,14 +167,14 @@ describe("EventForm", () => {
   it("renders the title before the actions on the same row", () => {
     render(
       <EventForm
-        event={createEvent({ description: "Plan the launch" })}
+        draft={createEditDraft({ description: "Plan the launch" })}
         isDraft={false}
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -142,19 +191,19 @@ describe("EventForm", () => {
   });
 
   it("duplicates the event with Mod+D while the title field is focused", async () => {
-    const event = createEvent();
+    const draft = createEditDraft();
     const onDuplicate = mock();
 
     render(
       <EventForm
-        event={event}
+        draft={draft}
         isDraft={false}
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={onDuplicate}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -166,7 +215,7 @@ describe("EventForm", () => {
     await waitFor(() => {
       expect(onDuplicate).toHaveBeenCalledTimes(1);
     });
-    expect(onDuplicate).toHaveBeenCalledWith(event);
+    expect(onDuplicate).toHaveBeenCalledWith(draft);
   });
 
   it("closes a draft event immediately when deleting from the menu", async () => {
@@ -176,14 +225,14 @@ describe("EventForm", () => {
 
     render(
       <EventForm
-        event={createEvent({ _id: undefined, title: "Unsaved draft" })}
+        draft={createNewDraft({ title: "Unsaved draft" })}
         isDraft={true}
         isExistingEvent={false}
         onClose={onClose}
         onDelete={onDelete}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -199,14 +248,14 @@ describe("EventForm", () => {
 
     render(
       <EventForm
-        event={createEvent()}
+        draft={createEditDraft()}
         isDraft={false}
         isExistingEvent={true}
         onClose={onClose}
         onDelete={onDelete}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -226,14 +275,14 @@ describe("EventForm", () => {
 
     render(
       <EventForm
-        event={createEvent({ description: "Plan the launch" })}
+        draft={createEditDraft({ description: "Plan the launch" })}
         isDraft={false}
         isExistingEvent={true}
         onClose={onClose}
         onDelete={onDelete}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -253,14 +302,14 @@ describe("EventForm", () => {
 
     render(
       <EventForm
-        event={createEvent()}
+        draft={createEditDraft()}
         isDraft={false}
         isExistingEvent={true}
         onClose={onClose}
         onDelete={onDelete}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -277,40 +326,44 @@ describe("EventForm", () => {
   });
 
   it("rebases date and time controls during render when event dates change", () => {
-    const event = createEvent();
-    const nextEvent = {
-      ...event,
-      endDate: "2026-04-27T17:30:00.000Z",
-      startDate: "2026-04-25T16:30:00.000Z",
-    };
+    const draft = createEditDraft();
+    const nextDraft = replaceGridDraftSchedule(draft, {
+      kind: "timed",
+      start: new Date("2026-04-25T16:30:00.000Z"),
+      end: new Date("2026-04-27T17:30:00.000Z"),
+      timeZone: "UTC",
+    });
 
     const { rerender } = render(
       <EventForm
-        event={event}
+        draft={draft}
         isDraft={false}
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
     rerender(
       <EventForm
-        event={nextEvent}
+        draft={nextDraft}
         isDraft={false}
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
-    const expected = getFormDates(nextEvent.startDate, nextEvent.endDate);
+    const expected = getFormDates(
+      "2026-04-25T16:30:00.000Z",
+      "2026-04-27T17:30:00.000Z",
+    );
     const props = capturedDateControlsSectionProps?.dateTimeSectionProps;
 
     expect(props?.startTime).toEqual(expected.startTime);
@@ -323,18 +376,18 @@ describe("EventForm", () => {
   });
 
   it("lets an untouched empty draft title keep normal arrow-key behavior", () => {
-    const event = { ...createEvent(), title: "" };
+    const draft = createNewDraft({ title: "" });
 
     render(
       <EventForm
-        event={event}
+        draft={draft}
         isDraft={true}
         isExistingEvent={false}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -345,18 +398,18 @@ describe("EventForm", () => {
   });
 
   it("lets an untouched existing event title keep normal arrow-key behavior", () => {
-    const event = { ...createEvent(), title: "Planning" };
+    const draft = createEditDraft({ title: "Planning" });
 
     render(
       <EventForm
-        event={event}
+        draft={draft}
         isDraft={false}
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -369,14 +422,14 @@ describe("EventForm", () => {
   it("lets the description field keep normal arrow-key behavior", () => {
     render(
       <EventForm
-        event={createEvent({ description: "Plan the launch" })}
+        draft={createEditDraft({ description: "Plan the launch" })}
         isDraft={false}
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -387,18 +440,18 @@ describe("EventForm", () => {
   });
 
   it("lets directly edited existing event titles keep normal arrow-key behavior", () => {
-    const event = { ...createEvent(), title: "Planning" };
+    const draft = createEditDraft({ title: "Planning" });
 
     render(
       <EventForm
-        event={event}
+        draft={draft}
         isDraft={false}
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -414,32 +467,32 @@ describe("EventForm", () => {
     const onSubmit = mock();
 
     function Harness() {
-      const [event, setEvent] = useState<Schema_Event>(
-        createEvent({ _id: undefined, title: "" }),
+      const [draft, setDraftState] = useState<GridEventDraft>(
+        createNewDraft({ title: "" }),
       );
-      const setEventFromForm = (
-        nextEvent: SetStateAction<Schema_Event | null>,
+      const setDraftFromForm = (
+        nextDraft: SetStateAction<GridEventDraft | null>,
       ) => {
-        setEvent((currentEvent) => {
-          const resolvedEvent =
-            typeof nextEvent === "function"
-              ? nextEvent(currentEvent)
-              : nextEvent;
+        setDraftState((currentDraft) => {
+          const resolvedDraft =
+            typeof nextDraft === "function"
+              ? nextDraft(currentDraft)
+              : nextDraft;
 
-          return resolvedEvent ?? currentEvent;
+          return resolvedDraft ?? currentDraft;
         });
       };
 
       return (
         <EventForm
-          event={event}
+          draft={draft}
           isDraft={true}
           isExistingEvent={false}
           onClose={mock()}
           onDelete={mock()}
           onDuplicate={mock()}
           onSubmit={onSubmit}
-          setEvent={setEventFromForm}
+          setDraft={setDraftFromForm}
         />
       );
     }
@@ -454,7 +507,9 @@ describe("EventForm", () => {
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     expect(onSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({ title: "Plan" }),
+      expect.objectContaining({
+        values: expect.objectContaining({ title: "Plan" }),
+      }),
     );
   });
 
@@ -464,14 +519,14 @@ describe("EventForm", () => {
 
     render(
       <EventForm
-        event={createEvent()}
+        draft={createEditDraft()}
         isDraft={true}
         isExistingEvent={true}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={mock()}
         onSubmit={onSubmit}
-        setEvent={mock()}
+        setDraft={mock()}
       />,
     );
 
@@ -491,14 +546,14 @@ describe("EventForm", () => {
       <>
         <button type="button">Draft block</button>
         <EventForm
-          event={createEvent()}
+          draft={createEditDraft()}
           isDraft={true}
           isExistingEvent={false}
           onClose={mock()}
           onDelete={mock()}
           onDuplicate={mock()}
           onSubmit={onSubmit}
-          setEvent={mock()}
+          setDraft={mock()}
         />
       </>,
     );
@@ -515,14 +570,14 @@ describe("EventForm", () => {
 
     render(
       <EventForm
-        event={createEvent()}
+        draft={createEditDraft()}
         isDraft={true}
         isExistingEvent={false}
         onClose={mock()}
         onDelete={mock()}
         onDuplicate={mock()}
         onSubmit={mock()}
-        setEvent={mock()}
+        setDraft={mock()}
         titleInputRef={titleInputRef}
       />,
     );

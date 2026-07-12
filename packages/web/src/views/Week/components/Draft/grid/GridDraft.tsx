@@ -9,10 +9,7 @@ import {
   getEventDragOffset,
   gridEventDefaultPosition,
 } from "@web/common/utils/event/event.util";
-import {
-  applySchemaEventPatchToGridDraft,
-  gridEventDraftToSchemaEvent,
-} from "@web/events/grid-event-draft.adapter";
+import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { type CalendarTimedDeckLayout } from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
 import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
@@ -185,33 +182,17 @@ export const GridDraft: FC<Props> = ({
             {...getFloatingProps()}
           >
             <EventForm
-              event={draftSchemaEvent as Schema_Event}
+              draft={draft}
               onClose={discard}
               onConvert={onConvert}
               onDelete={onDelete}
               onDuplicate={duplicateEvent}
               isDraft={draft.kind === "create"}
               isExistingEvent={draft.kind === "edit"}
-              onSubmit={(event) => {
-                if (event && draft) {
-                  void onSubmit(applySchemaEventPatchToGridDraft(draft, event));
-                }
+              onSubmit={(nextDraft) => {
+                if (nextDraft) void onSubmit(nextDraft);
               }}
-              setEvent={(nextEvent) => {
-                if (!draft) return;
-
-                const patch =
-                  typeof nextEvent === "function"
-                    ? nextEvent(draftSchemaEvent)
-                    : nextEvent;
-
-                if (!patch) {
-                  setDraft(null);
-                  return;
-                }
-
-                setDraft(applySchemaEventPatchToGridDraft(draft, patch));
-              }}
+              setDraft={setDraft}
               titleInputRef={titleInputRef}
             />
           </FloatingFormContainer>

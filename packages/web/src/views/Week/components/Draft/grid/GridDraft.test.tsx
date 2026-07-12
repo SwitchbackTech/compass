@@ -2,7 +2,6 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { type PropsWithChildren, type Ref, useState } from "react";
 import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
@@ -40,12 +39,12 @@ mock.module("@floating-ui/react", () => ({
 
 mock.module("@web/views/Forms/EventForm/EventForm", () => ({
   EventForm: ({
-    event: draftEvent,
+    draft: formDraft,
     onSubmit,
     titleInputRef,
   }: {
-    event: Schema_Event;
-    onSubmit?: (event: Schema_Event) => void;
+    draft: GridEventDraft;
+    onSubmit?: (draft: GridEventDraft) => void;
     titleInputRef?: Ref<HTMLInputElement>;
   }) => (
     <>
@@ -54,7 +53,7 @@ mock.module("@web/views/Forms/EventForm/EventForm", () => ({
         onKeyDown={(event) => {
           if (event.key === "Enter") {
             event.preventDefault();
-            onSubmit?.(draftEvent);
+            onSubmit?.(formDraft);
           }
         }}
         ref={titleInputRef}
