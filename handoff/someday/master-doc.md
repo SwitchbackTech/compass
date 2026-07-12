@@ -63,8 +63,9 @@ unfinished.
       import all eligible Google calendars and events; starts with the request
       context, retry policy, and 7-day channel expiration pulled forward from
       `07` (A30). Shipped in PRs #2036, #2038, #2040, #2043.
-- [ ] 05. [Calendar-aware CRUD](./05-calendar-aware-crud.md) — route writes to the
-      correct provider calendar and enforce permissions.
+- [x] 05. [Calendar-aware CRUD](./05-calendar-aware-crud.md) — route writes to the
+      correct provider calendar and enforce permissions. Shipped in PRs
+      #2046, #2049, #2050.
 - [ ] 06. [Calendar-list sync and watch routing](./06-calendar-list-sync-and-watch-routing.md)
       — keep the calendar set current.
 - [ ] 07. [Watch repair, quota, and retries](./07-watch-repair-quota-and-retries.md) —
@@ -126,7 +127,14 @@ unfinished.
   drops someday `order`; it also omits the legacy but currently unused
   `allDayOrder`. The existing backfill can silently skip invalid rows,
   choose the wrong calendar, and accumulate the whole migration in memory.
-- Google event create/update/delete still default to `GCAL_PRIMARY`.
+- ~~Google event create/update/delete still default to `GCAL_PRIMARY`.~~
+  (2026-07-11 correction, packet 05: only `GCalService.getEvent`'s read
+  path ever had this default; `createEvent`/`updateEvent`/`deleteEvent`
+  already required an explicit calendar id entering packet 05, and
+  Compass-to-Google propagation already resolved the target from
+  `calendar.source.calendarId`. This bullet was stale by the time packet 05
+  started — likely already fixed as a side effect of packet 04's per-calendar
+  fan-out work without this summary being updated.)
 - The public notification endpoint already resolves a stored watch by channel
   id/resource id and derives its Google calendar. A calendar id in the route is
   unnecessary and less trustworthy than that stored association.
