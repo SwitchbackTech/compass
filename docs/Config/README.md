@@ -63,7 +63,7 @@ Both `google.clientId` and `google.clientSecret` must be real values for Google 
 |---|---|---|
 | `google.clientId` | No | Google OAuth client ID. Rebuild the web image after changing it. |
 | `google.clientSecret` | No | Google OAuth client secret. Backend-only. |
-| `google.channelExpirationMin` | No | Google Calendar watch channel lifetime in minutes. |
+| `google.channelExpirationMin` | No | Google Calendar watch channel lifetime in minutes. Defaults to `10080` (7 days). Watch repair renews a channel once it's within a 3-day buffer of expiring. Short values (e.g. single-digit minutes) are a dev/test override, not a self-hosting setting. |
 | `google.webhookUrl` | No | Public HTTPS API URL for Google Calendar push notifications. When omitted, Compass uses `backend.apiUrl`. |
 | `google.notificationToken` | Required for HTTPS Google webhooks | Token used to verify Google Calendar webhook requests. |
 

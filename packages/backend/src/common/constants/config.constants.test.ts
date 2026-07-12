@@ -31,6 +31,18 @@ describe("config.constants", () => {
     expect(env.GCAL_WEBHOOK_BASEURL).toBe("http://localhost:3000/api");
   });
 
+  it("defaults CHANNEL_EXPIRATION_MIN to 10080 minutes (7 days) when not provided (packet 07 step 11 pin)", () => {
+    // The test env always overrides CHANNEL_EXPIRATION_MIN (see
+    // backend.test.init.ts), so this pins the zod schema's own default
+    // directly rather than asserting against a real channel watch.
+    const env = parseConfigFromEnv({
+      ...validEnv,
+      CHANNEL_EXPIRATION_MIN: undefined,
+    });
+
+    expect(env.CHANNEL_EXPIRATION_MIN).toBe("10080");
+  });
+
   it("falls back GCAL_WEBHOOK_BASEURL to BASEURL when blank", () => {
     const env = parseConfigFromEnv({ ...validEnv, GCAL_WEBHOOK_BASEURL: "" });
 

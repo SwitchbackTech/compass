@@ -7,7 +7,7 @@ import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import mongoService from "@backend/common/services/mongo.service";
 import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
-import { hasUpdatedCompassEventRecently } from "@backend/sync/services/watch/google-watch-activity";
+import { hasUserBeenActiveSince } from "@backend/sync/services/watch/google-watch-activity";
 import {
   syncExpired,
   syncExpiresSoon,
@@ -55,7 +55,7 @@ export const prepWatchMaintenanceForUser = async (
   isActive: boolean;
 }> => {
   const deadline = getActiveDeadline();
-  const isUserActive = await hasUpdatedCompassEventRecently(userId, deadline);
+  const isUserActive = await hasUserBeenActiveSince(userId, deadline);
   const { active, expired, refresh } = await getWatchesToRefresh(userId);
 
   return {

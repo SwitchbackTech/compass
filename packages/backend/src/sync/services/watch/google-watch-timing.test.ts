@@ -1,11 +1,31 @@
 import { faker } from "@faker-js/faker";
 import dayjs from "@core/util/date/dayjs";
+import { CONFIG } from "@backend/common/constants/config.constants";
 import {
+  getChannelExpiration,
   syncExpired,
   syncExpiresSoon,
 } from "@backend/sync/services/watch/google-watch-timing";
 
 describe("googleWatchTiming", () => {
+  describe("getChannelExpiration", () => {
+    it("returns an epoch-ms timestamp CONFIG.CHANNEL_EXPIRATION_MIN minutes from now", () => {
+      // Reads the value straight off CONFIG rather than hardcoding either
+      // the prod default (10080) or the test env's override (backend.test
+      // .init.ts sets "5") - see config.constants.test.ts for the pin on
+      // what the default itself resolves to.
+      const numMin = Number(CONFIG.CHANNEL_EXPIRATION_MIN);
+      const before = dayjs().add(numMin, "minutes").valueOf();
+
+      const expiration = Number(getChannelExpiration());
+
+      const after = dayjs().add(numMin, "minutes").valueOf();
+
+      expect(expiration).toBeGreaterThanOrEqual(before);
+      expect(expiration).toBeLessThanOrEqual(after);
+    });
+  });
+
   describe("syncExpired", () => {
     it("returns true if expiry before now", () => {
       const expired = dayjs("1675097074000").toDate(); // Jan 30, 2023

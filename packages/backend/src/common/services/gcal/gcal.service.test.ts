@@ -8,6 +8,7 @@ jest.mock("@backend/sync/services/watch/google-watch-token", () => ({
 
 import { GaxiosError, type GaxiosResponse } from "gaxios";
 import { GCAL_NOTIFICATION_ENDPOINT } from "@core/constants/core.constants";
+import { type gSchema$Event } from "@core/types/gcal";
 import { type GoogleRequestContext } from "./gcal.context";
 import gcalService from "./gcal.service";
 
@@ -198,5 +199,217 @@ describe("gcal.service getAllCalendarListPages", () => {
     };
 
     await expect(drain()).rejects.toThrow(/sync token/i);
+  });
+});
+
+describe("gcal.service quotaUser passthrough (packet 07 step 7 pin)", () => {
+  const QUOTA_USER = "user-123";
+  const CHANNEL_ID = "507f1f77bcf86cd799439011";
+
+  // One shared context for the whole table: `clearMocks` (jest.config.js)
+  // wipes each jest.fn()'s recorded calls between tests, so reusing these
+  // mocks across `it.each` cases below doesn't leak call history.
+  const context = {
+    gcal: {
+      events: {
+        get: jest.fn().mockResolvedValue({ status: 200, data: {} }),
+        insert: jest.fn().mockResolvedValue({ status: 200, data: {} }),
+        delete: jest.fn().mockResolvedValue({ status: 204, data: {} }),
+        instances: jest
+          .fn()
+          .mockResolvedValue({ status: 200, data: { items: [] } }),
+        list: jest.fn().mockResolvedValue({
+          status: 200,
+          data: { items: [], nextSyncToken: "sync-token" },
+        }),
+        patch: jest.fn().mockResolvedValue({ status: 200, data: {} }),
+        watch: jest.fn().mockResolvedValue({
+          status: 200,
+          data: { resourceId: "resource-1" },
+        }),
+      },
+      calendarList: {
+        list: jest.fn().mockResolvedValue({
+          status: 200,
+          data: { items: [], nextSyncToken: "sync-token" },
+        }),
+        watch: jest.fn().mockResolvedValue({
+          status: 200,
+          data: { resourceId: "resource-1" },
+        }),
+      },
+      channels: {
+        stop: jest.fn().mockResolvedValue({ status: 204, data: {} }),
+      },
+    },
+    quotaUser: QUOTA_USER,
+  } as unknown as GoogleRequestContext;
+
+  // getEventInstances is a private method (TS-only), but it does call
+  // Google directly, so the packet asks for it to be covered too -- this
+  // narrow cast is the only way to reach it from outside the class. Kept as
+  // a property on the cast object (not destructured) so the call below
+  // still goes through `obj.method(...)` and keeps its `this` binding.
+  const gcalServiceInternal = gcalService as unknown as {
+    getEventInstances: (
+      ctx: GoogleRequestContext,
+      calendarId: string,
+      eventId: string,
+    ) => Promise<unknown>;
+  };
+
+  // Every GCalService method that reaches Google, paired with a call
+  // exercising it and the underlying client mock it should reach. A flat
+  // table (not a loop deriving calls from method names) so a signature
+  // mismatch fails as a normal assertion, not a runtime crash.
+  const cases: Array<{
+    method: string;
+    call: () => Promise<unknown>;
+    mock: () => jest.Mock;
+  }> = [
+    {
+      method: "getEvent",
+      call: () => gcalService.getEvent(context, "event-1"),
+      mock: () => context.gcal.events.get as jest.Mock,
+    },
+    {
+      method: "createEvent",
+      call: () =>
+        gcalService.createEvent(context, "cal-1", {} as gSchema$Event),
+      mock: () => context.gcal.events.insert as jest.Mock,
+    },
+    {
+      method: "deleteEvent",
+      call: () => gcalService.deleteEvent(context, "cal-1", "event-1"),
+      mock: () => context.gcal.events.delete as jest.Mock,
+    },
+    {
+      method: "getEventInstances",
+      call: () =>
+        gcalServiceInternal.getEventInstances(context, "cal-1", "event-1"),
+      mock: () => context.gcal.events.instances as jest.Mock,
+    },
+    {
+      method: "findEventInstance",
+      call: () =>
+        gcalService.findEventInstance(context, "cal-1", "event-1", new Date()),
+      mock: () => context.gcal.events.instances as jest.Mock,
+    },
+    {
+      method: "getEvents",
+      call: () => gcalService.getEvents(context, { calendarId: "cal-1" }),
+      mock: () => context.gcal.events.list as jest.Mock,
+    },
+    {
+      method: "patchEvent",
+      call: () =>
+        gcalService.patchEvent(
+          context,
+          "cal-1",
+          "event-1",
+          {} as gSchema$Event,
+        ),
+      mock: () => context.gcal.events.patch as jest.Mock,
+    },
+    {
+      method: "watchCalendars",
+      call: () =>
+        gcalService.watchCalendars(context, {
+          channelId: CHANNEL_ID,
+          expiration: "123",
+        }),
+      mock: () => context.gcal.calendarList.watch as jest.Mock,
+    },
+    {
+      method: "watchEvents",
+      call: () =>
+        gcalService.watchEvents(context, {
+          channelId: CHANNEL_ID,
+          expiration: "123",
+          gCalendarId: "cal-1",
+        }),
+      mock: () => context.gcal.events.watch as jest.Mock,
+    },
+    {
+      method: "stopWatch",
+      call: () =>
+        gcalService.stopWatch(context, {
+          channelId: "channel-1",
+          resourceId: "resource-1",
+        }),
+      mock: () => context.gcal.channels.stop as jest.Mock,
+    },
+    {
+      method: "getAllEvents",
+      call: async () => {
+        for await (const _page of gcalService.getAllEvents({
+          context,
+          calendarId: "cal-1",
+        })) {
+          break;
+        }
+      },
+      mock: () => context.gcal.events.list as jest.Mock,
+    },
+    {
+      method: "getAllCalendarListPages",
+      call: async () => {
+        for await (const _page of gcalService.getAllCalendarListPages(
+          context,
+        )) {
+          break;
+        }
+      },
+      mock: () => context.gcal.calendarList.list as jest.Mock,
+    },
+  ];
+
+  it.each(cases)("passes quotaUser through $method", async ({ call, mock }) => {
+    await call();
+
+    expect(mock()).toHaveBeenCalledWith(
+      expect.objectContaining({ quotaUser: QUOTA_USER }),
+    );
+  });
+
+  // Not covered above by design: validateGCalResponse never calls Google
+  // (it only inspects a response already received), and
+  // getBaseRecurringEventInstances is a thin generator wrapper around the
+  // already-covered getEventInstances.
+  const ACKNOWLEDGED_WITHOUT_OWN_CASE = [
+    "validateGCalResponse",
+    "getBaseRecurringEventInstances",
+  ];
+
+  /**
+   * GCalService's arrow-field methods (watchCalendars, watchEvents,
+   * stopWatch) are own properties of the instance; its regular `async`
+   * methods live on the prototype instead -- both have to be walked to see
+   * the whole method surface.
+   */
+  const listMethodNames = (instance: object): string[] => {
+    const ownNames = Object.getOwnPropertyNames(instance);
+    const proto = Object.getPrototypeOf(instance) as object | null;
+    const protoNames =
+      proto && proto !== Object.prototype
+        ? Object.getOwnPropertyNames(proto).filter(
+            (name) => name !== "constructor",
+          )
+        : [];
+
+    return [...new Set([...ownNames, ...protoNames])].filter(
+      (name) =>
+        typeof (instance as Record<string, unknown>)[name] === "function",
+    );
+  };
+
+  it("covers every GCalService method (fails loudly if a new one is added without updating this table)", () => {
+    const actualMethodNames = listMethodNames(gcalService);
+    const coveredMethodNames = [
+      ...cases.map((c) => c.method),
+      ...ACKNOWLEDGED_WITHOUT_OWN_CASE,
+    ];
+
+    expect(new Set(actualMethodNames)).toEqual(new Set(coveredMethodNames));
   });
 });

@@ -14,6 +14,7 @@ import { createGoogleError } from "@backend/__tests__/mocks.gcal/errors/error.go
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
@@ -422,5 +423,57 @@ describe("googleWatchService", () => {
 
     expect(startCalendarWatchSpy).not.toHaveBeenCalled();
     expect(startEventWatchSpy).not.toHaveBeenCalled();
+  });
+
+  it("persists the expiration Google actually returns for an event watch, not the requested one (packet 07 step 11 pin)", async () => {
+    const user = await UserDriver.createUser();
+    const userId = user._id.toString();
+    const context = await createGoogleRequestContext(userId);
+    // Deliberately far from getChannelExpiration()'s requested value (a few
+    // minutes out in the test env) so the assertion below can only pass if
+    // the persisted value came from Google's response.
+    const googleExpiration = (Date.now() + 30 * 24 * 60 * 60 * 1000).toString();
+
+    jest.spyOn(gcalService, "watchEvents").mockResolvedValueOnce({
+      watch: {
+        resourceId: "resource-from-google",
+        expiration: googleExpiration,
+      },
+    });
+
+    await googleWatchService.startEventWatch(
+      userId,
+      { gCalendarId: "some-calendar" },
+      context,
+    );
+
+    const watch = await mongoService.watch.findOne({ user: userId });
+
+    expect(watch).not.toBeNull();
+    expect(watch?.expiration.getTime()).toBe(Number(googleExpiration));
+  });
+
+  it("persists the expiration Google actually returns for a calendar-list watch, not the requested one (packet 07 step 11 pin)", async () => {
+    const user = await UserDriver.createUser();
+    const userId = user._id.toString();
+    const context = await createGoogleRequestContext(userId);
+    const googleExpiration = (Date.now() + 30 * 24 * 60 * 60 * 1000).toString();
+
+    jest.spyOn(gcalService, "watchCalendars").mockResolvedValueOnce({
+      watch: {
+        resourceId: "resource-from-google",
+        expiration: googleExpiration,
+      },
+    });
+
+    await googleWatchService.startCalendarListWatch(userId, context);
+
+    const watch = await mongoService.watch.findOne({
+      user: userId,
+      gCalendarId: Resource_Sync.CALENDAR,
+    });
+
+    expect(watch).not.toBeNull();
+    expect(watch?.expiration.getTime()).toBe(Number(googleExpiration));
   });
 });
