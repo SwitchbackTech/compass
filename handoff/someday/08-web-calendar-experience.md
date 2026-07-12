@@ -102,11 +102,52 @@ available before final integration.
 
 ## Exit criteria
 
-- [ ] Calendar list and toggles are persistent, accessible, and responsive.
-- [ ] Calendar identity appears on every event surface without replacing
-      priority semantics.
-- [ ] Draft CRUD targets any writable calendar; read-only calendars are safe.
-- [ ] Hidden calendars avoid unnecessary SSE refetch work.
+- [x] Calendar list and toggles are persistent, accessible, and responsive.
+      Shipped in PR #2062 (PlannerCalendarList, optimistic + coalesced
+      visibility mutation with rollback and aria-live failure announcement,
+      server-side visible-only event reads) and proven in a real browser in
+      PR #2066.
+- [x] Calendar identity appears on every event surface without replacing
+      priority semantics. Shipped in PR #2063: accent strip + calendar name
+      in accessible labels on timed/all-day/day/week/someday cards, one
+      memoized lookup per list, priority keeps the fill (A9).
+- [x] Draft CRUD targets any writable calendar; read-only calendars are
+      safe. Shipped in PRs #2063 (CalendarSelect on new/duplicate forms,
+      writable-only, primary default, keyboard flow; edit forms show
+      read-only calendar text per A6; fixed submit paths discarding explicit
+      choices) and #2064 (read-only gating before optimistic writes:
+      interaction registry, shortcuts, context menu, disabled-fieldset form,
+      mutation backstop; busy content renders as "Busy" and is forced
+      read-only, A18). Known issue: a direct left-click on a READ-ONLY card
+      opens its inspection form only ~50% of the time in a real browser (a
+      mousedown-time race with other press-cycle listeners; two fix attempts
+      were reverted rather than shipped half-understood — see PR #2066).
+      Keyboard ("M") and context-menu "View" are deterministic inspection
+      routes; follow-up owed before or during packet 09 acceptance.
+- [x] Hidden calendars avoid unnecessary SSE refetch work. Backend
+      suppression shipped in packets 05/06; PR #2062 filters event reads to
+      visible calendars server-side, and PR #2065 keys the availability
+      query by the visible freeBusyReader set so toggles drop busy periods
+      with no cache surgery.
+
+Scope notes recorded while implementing (details in `master-doc.md`):
+
+- Steps 1, 9, and 10 were already implemented before this packet started
+  (calendars query module, strict SSE union + reconnect invalidation +
+  local-calendar someday/grid invalidation, offline sentinel mapping in
+  `syncLocalEventsToCloud`) — fallout of the packet 01-03 contracts
+  refactor. Step 3's claim that `/api/calendars/select` still accepted the
+  legacy `[{id, selected}]` shape was stale: only the strict
+  `[{calendarId, isVisible}]` contract exists.
+- freeBusyReader availability (step 8) had contracts but no implementation
+  on either side; PR #2065 built the bounded `freebusy.query` endpoint and
+  the inert busy-period grid blocks end to end.
+- The packet's e2e item "verify Google-origin update appears" cannot run in
+  this Playwright harness (no fake-Google backend; specs stub `/api/**`) —
+  covered instead by packet 06's backend integration tests and packet 09's
+  manual staging runbook (A42).
+
+Shipped in PRs #2062, #2063, #2064, #2065, #2066.
 
 Suggested commit boundaries:
 
