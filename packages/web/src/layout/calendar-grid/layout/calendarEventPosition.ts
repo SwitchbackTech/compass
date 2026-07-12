@@ -55,6 +55,50 @@ export const getCalendarTimedEventPosition = (
   };
 };
 
+export interface CalendarBusyPeriodPositionInput {
+  measurements: CalendarGridMeasurements;
+  visibleDates: CalendarGridVisibleDate[];
+}
+
+/**
+ * Positions an already day-clamped {start, end} segment, reusing the same
+ * column/hour math as {@link getCalendarTimedEventPosition} (left/width from
+ * colWidths, top/height from minutes-of-day) minus its widthMultiplier/deck
+ * concerns - busy blocks never overlap-fan like event cards, they just
+ * render at full column width. Callers (MainGridBusyPeriods /
+ * DayCalendarBusyPeriods) clamp a possibly multi-day BusyPeriod to one day's
+ * [00:00, 24:00) window per call via splitBusyPeriodsByDay before reaching
+ * here, so `segment.start`/`segment.end` are always within a single day
+ * (packet 08 phase 4; A7). A full-day busy range still renders as one tall
+ * timed block per day rather than in the all-day row - acceptable for v1.
+ */
+export const getCalendarBusyPeriodPosition = (
+  segment: { start: string; end: string },
+  input: CalendarBusyPeriodPositionInput,
+): CalendarEventPosition => {
+  const start = dayjs(segment.start);
+  const end = dayjs(segment.end);
+  const dateIndex = getVisibleDateIndex(start, input.visibleDates);
+  if (dateIndex === null) {
+    return zeroPosition();
+  }
+
+  const columnLeft = sumWidthsBefore(input.measurements.colWidths, dateIndex);
+  const columnWidth = input.measurements.colWidths[dateIndex] ?? 0;
+  const minutesFromStartOfDay = start.diff(start.startOf("day"), "minute");
+  const durationMinutes = Math.max(1, end.diff(start, "minute"));
+
+  return {
+    height: (durationMinutes / 60) * input.measurements.hourHeight,
+    left:
+      CALENDAR_GRID_MARGIN_LEFT +
+      columnLeft +
+      CALENDAR_TIMED_EVENT_COLUMN_INSET,
+    top: (minutesFromStartOfDay / 60) * input.measurements.hourHeight,
+    width: Math.max(0, columnWidth - CALENDAR_TIMED_EVENT_COLUMN_INSET * 2),
+  };
+};
+
 export const getCalendarAllDayEventPosition = (
   event: Schema_GridEvent,
   input: CalendarEventPositionInput,

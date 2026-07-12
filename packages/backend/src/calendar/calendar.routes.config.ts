@@ -19,6 +19,11 @@ export class CalendarRoutes extends CommonRoutesConfig {
       .all(verifySession())
       .put(calendarController.setVisibility);
 
+    this.app
+      .route(`/api/calendars/availability`)
+      .all(verifySession())
+      .get(calendarController.availability);
+
     return this.app;
   }
 }

@@ -6,6 +6,7 @@ import {
   type gSchema$CalendarList,
   type gSchema$Event,
   type gSchema$Events,
+  type gSchema$FreeBusyResponse,
 } from "@core/types/gcal";
 import {
   type Params_WatchEvents,
@@ -164,6 +165,32 @@ class GCalService {
     );
 
     return this.validateGCalResponse(response);
+  }
+
+  /**
+   * Bounded free/busy lookup for a set of Google calendars (packet 08 phase
+   * 4; A7). Unlike getEvents, this never returns event details - Google
+   * collapses each calendar down to a list of opaque busy time ranges, which
+   * is exactly what a freeBusyReader grant exposes. Range bounding (A7
+   * "bounded") is enforced by the caller (calendar.controller's availability
+   * handler), not here - this method just forwards whatever window it's given.
+   */
+  async queryFreeBusy(
+    { gcal, quotaUser }: GoogleRequestContext,
+    params: { timeMin: string; timeMax: string; gCalendarIds: string[] },
+  ): Promise<gSchema$FreeBusyResponse> {
+    const response = await withGoogleRetry(() =>
+      gcal.freebusy.query({
+        quotaUser,
+        requestBody: {
+          timeMin: params.timeMin,
+          timeMax: params.timeMax,
+          items: params.gCalendarIds.map((id) => ({ id })),
+        },
+      }),
+    );
+
+    return this.validateGCalResponse(response).data;
   }
 
   async *getBaseRecurringEventInstances({

@@ -3,6 +3,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { type Ref_Callback } from "@web/common/types/util.types";
 import { CalendarTimedGrid } from "@web/layout/calendar-grid/components/CalendarTimedGrid";
+import { MainGridBusyPeriods } from "@web/views/Week/components/Grid/MainGrid/MainGridBusyPeriods";
 import { MainGridEvents } from "@web/views/Week/components/Grid/MainGrid/MainGridEvents";
 import { type DateCalcs } from "@web/views/Week/hooks/grid/useDateCalcs";
 import { useDragEventSmartScroll } from "@web/views/Week/hooks/grid/useDragEventSmartScroll";
@@ -88,7 +89,15 @@ const MainGridChildren: FC<MainGridChildrenProps> = ({
   weekProps,
 }) => {
   const timedEventsLayer = useMemo(
-    () => <MainGridEvents measurements={measurements} weekProps={weekProps} />,
+    () => (
+      <>
+        <MainGridBusyPeriods
+          measurements={measurements}
+          weekProps={weekProps}
+        />
+        <MainGridEvents measurements={measurements} weekProps={weekProps} />
+      </>
+    ),
     [measurements, weekProps],
   );
 
@@ -124,7 +133,15 @@ const MainGridCalendar: FC<MainGridCalendarProps> = ({
   weekProps,
 }) => {
   const timedEventsLayer = useMemo(
-    () => <MainGridEvents measurements={measurements} weekProps={weekProps} />,
+    () => (
+      <>
+        <MainGridBusyPeriods
+          measurements={measurements}
+          weekProps={weekProps}
+        />
+        <MainGridEvents measurements={measurements} weekProps={weekProps} />
+      </>
+    ),
     [measurements, weekProps],
   );
 
