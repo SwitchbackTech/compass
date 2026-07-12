@@ -1,6 +1,5 @@
 import { ObjectId } from "mongodb";
 import { type gCalendar } from "@core/types/gcal";
-import { Resource_Sync } from "@core/types/sync.types";
 import {
   cleanupCollections,
   cleanupTestDb,
@@ -11,7 +10,7 @@ import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
+import { GCalEventsNotificationHandler } from "@backend/sync/services/notify/handler/gcal-events.notification.handler";
 
 // Mock dependencies
 
@@ -51,8 +50,8 @@ const getMockLogger = () =>
   (jest.requireMock("@core/logger/winston.logger") as MockLoggerModule)
     .__mockLogger;
 
-describe("GCalNotificationHandler", () => {
-  let handler: GCalNotificationHandler;
+describe("GCalEventsNotificationHandler", () => {
+  let handler: GCalEventsNotificationHandler;
   let mockGcal: gCalendar;
   let mockContext: GoogleRequestContext;
   let mockUserId: string;
@@ -111,9 +110,8 @@ describe("GCalNotificationHandler", () => {
     } as unknown as gCalendar;
     mockContext = { gcal: mockGcal, quotaUser: mockUserId };
 
-    handler = new GCalNotificationHandler(
+    handler = new GCalEventsNotificationHandler(
       mockContext,
-      Resource_Sync.EVENTS,
       mockUserId,
       mockCalendarId,
       mockSyncToken,
@@ -144,7 +142,9 @@ describe("GCalNotificationHandler", () => {
         syncToken: "test-sync-token",
       });
       expect(result.summary).toEqual("PROCESSED");
-      expect(result.calendarId?.toHexString()).toBe(calendar._id.toHexString());
+      expect(result.calendar?._id.toHexString()).toBe(
+        calendar._id.toHexString(),
+      );
       expect(result.eventIds.length).toBe(1);
     });
 
@@ -157,19 +157,6 @@ describe("GCalNotificationHandler", () => {
       // Execute and verify
       const result = await handler.handleNotification();
       expect(result.summary).toEqual("IGNORED");
-    });
-
-    it("should return IGNORED if resource is not EVENTS", async () => {
-      handler = new GCalNotificationHandler(
-        mockContext,
-        Resource_Sync.SETTINGS, // Not EVENTS
-        mockUserId,
-        mockCalendarId,
-        mockSyncToken,
-      );
-      const result = await handler.handleNotification();
-      expect(result.summary).toBe("IGNORED");
-      expect(result.eventIds).toEqual([]);
     });
 
     it("should return IGNORED if no changes and nextSyncToken is different", async () => {
@@ -200,9 +187,8 @@ describe("GCalNotificationHandler", () => {
     });
 
     it("should return IGNORED when no owning calendar is found for the user", async () => {
-      handler = new GCalNotificationHandler(
+      handler = new GCalEventsNotificationHandler(
         mockContext,
-        Resource_Sync.EVENTS,
         new ObjectId().toString(),
         mockCalendarId,
         mockSyncToken,
@@ -213,7 +199,7 @@ describe("GCalNotificationHandler", () => {
 
       const result = await handler.handleNotification();
       expect(result.summary).toBe("IGNORED");
-      expect(result.calendarId).toBeNull();
+      expect(result.calendar).toBeNull();
     });
   });
 });

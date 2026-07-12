@@ -14,12 +14,13 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { invalidGrant400Error } from "@backend/__tests__/mocks.gcal/errors/error.google.invalidGrant";
+import { invalidSyncTokenError } from "@backend/__tests__/mocks.gcal/errors/error.invalidSyncToken";
 import { missingRefreshTokenError } from "@backend/__tests__/mocks.gcal/errors/error.missingRefreshToken";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
-import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
+import { GCalEventsNotificationHandler } from "@backend/sync/services/notify/handler/gcal-events.notification.handler";
 import * as syncQueries from "@backend/sync/services/records/sync-records.repository";
 import { updateSync } from "@backend/sync/services/records/sync-records.repository";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
@@ -236,10 +237,10 @@ describe("SyncController", () => {
       expect(watch).not.toBeNull();
 
       const notificationSpy = jest
-        .spyOn(GCalNotificationHandler.prototype, "handleNotification")
+        .spyOn(GCalEventsNotificationHandler.prototype, "handleNotification")
         .mockResolvedValue({
           summary: "PROCESSED",
-          calendarId: new ObjectId(),
+          calendar: { _id: new ObjectId(), isVisible: true },
           eventIds: [],
         });
       const backgroundChangeSpy = jest.spyOn(sseServer, "publishEventsChanged");
@@ -398,6 +399,47 @@ describe("SyncController", () => {
       expect(response.text).toBe("Missing refresh token");
 
       handleGoogleWatchNotificationSpy.mockRestore();
+    });
+
+    it("should acknowledge with REPAIR_STARTED and kick off a resync when Google requires a full sync", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+
+      const watch = await mongoService.watch.findOne({
+        user: userId,
+        gCalendarId: { $ne: Resource_Sync.CALENDAR },
+      });
+
+      expect(watch).toBeDefined();
+      expect(watch).not.toBeNull();
+
+      const handleGoogleWatchNotificationSpy = jest
+        .spyOn(googleWatchService, "handleGoogleWatchNotification")
+        .mockRejectedValue(invalidSyncTokenError);
+
+      const repairSpy = jest
+        .spyOn(googleCalendarSyncService, "repairGoogleCalendarSync")
+        .mockResolvedValue();
+
+      const response = await syncDriver.handleGoogleNotification(
+        {
+          resource: Resource_Sync.EVENTS,
+          channelId: watch!._id,
+          resourceId: watch!.resourceId,
+          resourceState: XGoogleResourceState.EXISTS,
+          expiration: watch!.expiration,
+        },
+        Status.OK,
+      );
+
+      expect(response.body).toEqual({
+        outcome: "REPAIR_STARTED",
+        message: "Full sync in progress.",
+      });
+      expect(repairSpy).toHaveBeenCalledWith(userId);
+
+      handleGoogleWatchNotificationSpy.mockRestore();
+      repairSpy.mockRestore();
     });
   });
 
