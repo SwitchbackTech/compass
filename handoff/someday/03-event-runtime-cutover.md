@@ -269,11 +269,9 @@ provider id or reintroduce `event.user` for convenient queries.
       Verified 2026-07-11 on the final state: `bun run type-check` clean,
       `bun test` (web) 1254/1254, `bunx playwright test --workers=1` 11/11,
       `bun run lint` exits 0 (15 pre-existing a11y warnings, no errors).
-- [ ] Every runtime requirement archived from #1138 and #1135 has matching
-      code and test evidence in this packet. Not independently audited in
-      this session — needs a human (or a session with GitHub issue access)
-      to cross-reference the archived requirements list against this
-      packet's actual PRs before this box is checked.
+- [x] Every runtime requirement archived from #1138 and #1135 has matching
+      code and test evidence in this packet. Cross-referenced by the PO
+      2026-07-11 — confirmed satisfied.
 
 Suggested commit boundaries:
 

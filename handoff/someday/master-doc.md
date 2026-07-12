@@ -57,7 +57,7 @@ unfinished.
 - [x] 02. [Safe event data migration](./02-safe-event-data-migration.md) — build and
       verify the non-destructive v2 backfill plus the calendar-collection
       migration (A32).
-- [ ] 03. [Event runtime cutover](./03-event-runtime-cutover.md) — move the codebase
+- [x] 03. [Event runtime cutover](./03-event-runtime-cutover.md) — move the codebase
       from the legacy user-owned event shape to calendar-owned storage.
 - [ ] 04. [Initial multi-calendar import](./04-initial-multi-calendar-import.md) —
       import all eligible Google calendars and events; starts with the request
