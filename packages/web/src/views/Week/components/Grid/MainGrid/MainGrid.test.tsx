@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { act, type PropsWithChildren } from "react";
+import { act, type PropsWithChildren, useState } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
@@ -77,9 +77,15 @@ const toStrictEvent = (event: Schema_Event): Event =>
   });
 
 function Provider({ children }: PropsWithChildren) {
-  const queryClient = createCompassQueryClient();
-  seedPendingEventMutations(queryClient, pendingEventIds);
-  seedEventQueries(queryClient, seededWeekEvents.map(toStrictEvent));
+  // useState initializer: one client per mounted tree. Rebuilding an empty
+  // client on re-render makes the grid's calendars query really fetch
+  // /api/calendars (no handler here) - timing-dependent on slow CI runners.
+  const [queryClient] = useState(() => {
+    const client = createCompassQueryClient();
+    seedPendingEventMutations(client, pendingEventIds);
+    seedEventQueries(client, seededWeekEvents.map(toStrictEvent));
+    return client;
+  });
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

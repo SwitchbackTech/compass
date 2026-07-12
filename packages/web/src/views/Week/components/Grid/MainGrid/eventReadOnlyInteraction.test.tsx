@@ -1,5 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { type PropsWithChildren } from "react";
+import { type PropsWithChildren, useState } from "react";
 import {
   type Calendar,
   getCalendarCapabilities,
@@ -47,9 +47,17 @@ let seededEvents: Event[] = [];
 let seededCalendars: Calendar[] = [];
 
 function Provider({ children }: PropsWithChildren) {
-  const queryClient = createCompassQueryClient();
-  seedEventQueries(queryClient, seededEvents);
-  queryClient.setQueryData(calendarQueryKeys.all, seededCalendars);
+  // useState initializer: exactly one client per mounted tree. Creating and
+  // seeding in the render body rebuilds an EMPTY client on every re-render,
+  // and the fresh cache then really fetches /api/calendars (no handler in
+  // this file) - a timing-dependent failure that only shows on slow (CI)
+  // runners.
+  const [queryClient] = useState(() => {
+    const client = createCompassQueryClient();
+    seedEventQueries(client, seededEvents);
+    client.setQueryData(calendarQueryKeys.all, seededCalendars);
+    return client;
+  });
 
   return (
     <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
