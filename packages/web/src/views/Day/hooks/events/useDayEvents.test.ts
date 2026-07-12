@@ -42,9 +42,7 @@ describe("useDayEvents", () => {
     const match = queryClient
       .getQueriesData({ queryKey: eventQueryKeys.scope("day") })
       .find(([key]) => {
-        const metadata = key[2] as
-          | { start?: string; end?: string }
-          | undefined;
+        const metadata = key[2] as { start?: string; end?: string } | undefined;
         return metadata?.start === startDate && metadata?.end === endDate;
       });
     return match?.[1];

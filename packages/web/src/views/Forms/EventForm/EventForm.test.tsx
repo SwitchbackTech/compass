@@ -137,11 +137,7 @@ const createEditDraft = (
 
 // A "create" GridEventDraft for a not-yet-saved draft (no source event).
 const createNewDraft = (
-  overrides: {
-    endDate?: string;
-    startDate?: string;
-    title?: string;
-  } = {},
+  overrides: { endDate?: string; startDate?: string; title?: string } = {},
 ): GridEventDraft => {
   const {
     endDate = "2026-04-24T15:00:00.000Z",

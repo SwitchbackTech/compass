@@ -31,8 +31,8 @@ import {
 } from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
-import { unscheduleSomedayEventTransition } from "@web/events/someday-event-draft.adapter";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
+import { unscheduleSomedayEventTransition } from "@web/events/someday-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,

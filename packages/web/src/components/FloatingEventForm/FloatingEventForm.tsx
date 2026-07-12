@@ -1,5 +1,10 @@
 import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
-import { type Dispatch, type SetStateAction, useCallback, useState } from "react";
+import {
+  type Dispatch,
+  type SetStateAction,
+  useCallback,
+  useState,
+} from "react";
 import { type RecurringEventUpdateScope } from "@core/types/event.types";
 import {
   Z_INDEX_FLOATING_FORM,
@@ -51,14 +56,13 @@ export function FloatingEventForm({
     existingEvent && existingEvent.recurrence.kind !== "single",
   );
 
-  const setDraft: Dispatch<SetStateAction<GridEventDraft | null>> =
-    useCallback(
-      (next) => {
-        const resolved = typeof next === "function" ? next(draft) : next;
-        draftActions.setGridDraft(resolved);
-      },
-      [draft],
-    );
+  const setDraft: Dispatch<SetStateAction<GridEventDraft | null>> = useCallback(
+    (next) => {
+      const resolved = typeof next === "function" ? next(draft) : next;
+      draftActions.setGridDraft(resolved);
+    },
+    [draft],
+  );
 
   if (!open || !draft) return null;
 
