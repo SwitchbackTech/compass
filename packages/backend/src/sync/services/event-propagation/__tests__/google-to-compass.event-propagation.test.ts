@@ -218,4 +218,100 @@ describe("GoogleToCompassEventPropagation", () => {
     expect(result.ignored).toBe(1);
     expect(result.saved).toBe(0);
   });
+
+  /**
+   * Packet 06 test-matrix item: a user moving an event between two of their
+   * own Google calendars delivers as an upsert on the target calendar and a
+   * cancellation on the source calendar, in either order (Google doesn't
+   * guarantee delivery order across two distinct watches). Convergence to
+   * exactly one copy, owned by the target, relies on deleteByExternalReference
+   * being scoped to `this.calendar._id` (google-event-sync.service.ts) - a
+   * cancellation on cal-src can never delete cal-tgt's copy of the same
+   * provider event id, regardless of delivery order.
+   */
+  describe("cross-calendar move convergence", () => {
+    // Both calendars belong to the same user - a move happens within one
+    // account's calendar set.
+    const moveUserId = new ObjectId();
+    const buildTestCalendar = (
+      gCalendarId: string,
+      overrides: Partial<CalendarRecord> = {},
+    ): CalendarRecord => ({
+      _id: new ObjectId(),
+      userId: moveUserId,
+      name: gCalendarId,
+      description: "",
+      timeZone: "America/Denver",
+      foregroundColor: "#000000",
+      backgroundColor: "#ffffff",
+      access: "owner",
+      isPrimary: false,
+      isVisible: true,
+      isActive: true,
+      source: { provider: "google", calendarId: gCalendarId, etag: "etag-1" },
+      createdAt: new Date(),
+      updatedAt: null,
+      ...overrides,
+    });
+
+    it("converges to one event owned by the target when the target upsert arrives before the source cancellation", async () => {
+      const calSrc = buildTestCalendar("cal-src");
+      const calTgt = buildTestCalendar("cal-tgt");
+      await mongoService.calendar.insertMany([calSrc, calTgt]);
+
+      const gEvent = mockRegularGcalEvent({ id: "evt-1" });
+      const srcPropagation = new GoogleToCompassEventPropagation(
+        context,
+        calSrc,
+      );
+      await srcPropagation.processEvents([gEvent]);
+
+      // Order A: target upsert, then source cancellation.
+      const tgtPropagation = new GoogleToCompassEventPropagation(
+        context,
+        calTgt,
+      );
+      await tgtPropagation.processEvents([gEvent]);
+      await srcPropagation.processEvents([{ ...gEvent, status: "cancelled" }]);
+
+      const matching = await mongoService.event
+        .find({ "externalReference.eventId": "evt-1" })
+        .toArray();
+      expect(matching).toHaveLength(1);
+      expect(matching[0]?.calendarId).toEqual(calTgt._id);
+      expect(
+        await mongoService.event.countDocuments({ calendarId: calSrc._id }),
+      ).toBe(0);
+    });
+
+    it("converges to one event owned by the target when the source cancellation arrives before the target upsert", async () => {
+      const calSrc = buildTestCalendar("cal-src");
+      const calTgt = buildTestCalendar("cal-tgt");
+      await mongoService.calendar.insertMany([calSrc, calTgt]);
+
+      const gEvent = mockRegularGcalEvent({ id: "evt-1" });
+      const srcPropagation = new GoogleToCompassEventPropagation(
+        context,
+        calSrc,
+      );
+      await srcPropagation.processEvents([gEvent]);
+
+      // Order B: source cancellation, then target upsert.
+      await srcPropagation.processEvents([{ ...gEvent, status: "cancelled" }]);
+      const tgtPropagation = new GoogleToCompassEventPropagation(
+        context,
+        calTgt,
+      );
+      await tgtPropagation.processEvents([gEvent]);
+
+      const matching = await mongoService.event
+        .find({ "externalReference.eventId": "evt-1" })
+        .toArray();
+      expect(matching).toHaveLength(1);
+      expect(matching[0]?.calendarId).toEqual(calTgt._id);
+      expect(
+        await mongoService.event.countDocuments({ calendarId: calSrc._id }),
+      ).toBe(0);
+    });
+  });
 });
