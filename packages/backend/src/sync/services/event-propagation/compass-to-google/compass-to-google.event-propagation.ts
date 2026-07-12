@@ -1,13 +1,13 @@
 import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { eventMutationError } from "@backend/event/event.error";
 import { type EventRecord } from "@backend/event/event.record";
 import { eventRepository } from "@backend/event/event.repository";
 import { mapEventRecordToGoogle } from "@backend/event/google-event.adapter";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { isMissingGoogleRefreshToken } from "@backend/sync/services/google-sync/google-sync.errors";
 
 const logger = Logger("app:compass-to-google.event-propagation");
@@ -101,9 +101,9 @@ export class CompassToGoogleEventPropagation {
     if (!calendar || calendar.source.provider !== "google") return;
     if (!record.externalReference) return;
 
-    const gcal = await getGcalClient(userId);
+    const context = await createGoogleRequestContext(userId);
     await gcalService.deleteEvent(
-      gcal,
+      context,
       calendar.source.calendarId,
       record.externalReference.eventId,
     );
@@ -117,12 +117,12 @@ export class CompassToGoogleEventPropagation {
     if (!calendar || calendar.source.provider !== "google") return;
     if (!isWritableToGoogle(record)) return;
 
-    const gcal = await getGcalClient(userId);
+    const context = await createGoogleRequestContext(userId);
     const body = mapEventRecordToGoogle(record);
 
     if (record.externalReference) {
       await gcalService.patchEvent(
-        gcal,
+        context,
         calendar.source.calendarId,
         record.externalReference.eventId,
         body,
@@ -131,7 +131,7 @@ export class CompassToGoogleEventPropagation {
     }
 
     const created = await gcalService.createEvent(
-      gcal,
+      context,
       calendar.source.calendarId,
       body,
     );

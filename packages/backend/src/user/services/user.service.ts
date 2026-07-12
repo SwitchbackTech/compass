@@ -202,7 +202,6 @@ class UserService {
         const watches = await googleWatchService.stopWatches(
           userId,
           undefined,
-          new ObjectId().toString(),
           session,
         );
         summary.eventWatches = watches.length;

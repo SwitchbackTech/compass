@@ -1,5 +1,4 @@
 import { GoogleCalendarMetadataSchema } from "@core/types/calendar.types";
-import { type gCalendar } from "@core/types/gcal";
 import { StringV4Schema } from "@core/types/type.utils";
 import { UtilDriver } from "@backend/__tests__/drivers/util.driver";
 import {
@@ -7,8 +6,8 @@ import {
   cleanupTestDb,
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { getCalendarsToSync } from "@backend/sync/services/init/google-sync-init";
 
 describe("getCalendarsToSync", () => {
@@ -18,8 +17,8 @@ describe("getCalendarsToSync", () => {
 
   it("returns calendars to sync for a user", async () => {
     const { user } = await UtilDriver.setupTestUser();
-    const gcal = await getGcalClient(user._id.toString());
-    const result = await getCalendarsToSync(gcal);
+    const context = await createGoogleRequestContext(user._id.toString());
+    const result = await getCalendarsToSync(context);
 
     expect(result.gCalendarIds).toEqual(
       expect.arrayContaining(result.calendars.map((c) => c.id)),
@@ -46,18 +45,18 @@ describe("getCalendarsToSync", () => {
 
   it("throws when nextSyncToken is invalid", async () => {
     const { user } = await UtilDriver.setupTestUser();
-    const gcal = await getGcalClient(user._id.toString());
+    const context = await createGoogleRequestContext(user._id.toString());
     const getCalendarlist = gcalService.getCalendarlist.bind(gcalService);
     const getCalendarlistSpy = jest.spyOn(gcalService, "getCalendarlist");
 
-    getCalendarlistSpy.mockImplementation(async (gcal: gCalendar) =>
-      getCalendarlist(gcal).then((res) => ({
+    getCalendarlistSpy.mockImplementation(async (context) =>
+      getCalendarlist(context).then((res) => ({
         ...res,
         nextSyncToken: "",
       })),
     );
 
-    await expect(getCalendarsToSync(gcal)).rejects.toThrow(
+    await expect(getCalendarsToSync(context)).rejects.toThrow(
       /Failed to get Calendar\(list\)s to sync/,
     );
   });

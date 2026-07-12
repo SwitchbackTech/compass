@@ -1,7 +1,7 @@
 import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { type gCalendar } from "@core/types/gcal";
 import { Resource_Sync } from "@core/types/sync.types";
+import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { GoogleToCompassEventPropagation } from "@backend/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation";
@@ -17,7 +17,7 @@ export type NotificationSummary = {
 
 export class GCalNotificationHandler {
   constructor(
-    private gcal: gCalendar,
+    private context: GoogleRequestContext,
     private resource: Resource_Sync,
     private userId: string,
     private gCalendarId: string,
@@ -53,7 +53,10 @@ export class GCalNotificationHandler {
       return { summary: "IGNORED", calendarId: null, eventIds: [] };
     }
 
-    const processor = new GoogleToCompassEventPropagation(this.gcal, calendar);
+    const processor = new GoogleToCompassEventPropagation(
+      this.context,
+      calendar,
+    );
     const result = await processor.processEvents(changes);
 
     logger.info(
@@ -71,7 +74,7 @@ export class GCalNotificationHandler {
    * Get the latest changes from Google Calendar using a sync token
    */
   private async getLatestChanges() {
-    const response = await gcalService.getEvents(this.gcal, {
+    const response = await gcalService.getEvents(this.context, {
       calendarId: this.gCalendarId,
       syncToken: this.nextSyncToken,
     });

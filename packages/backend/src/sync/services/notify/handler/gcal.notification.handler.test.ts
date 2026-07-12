@@ -8,6 +8,7 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { mockRegularGcalEvent } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
+import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
 import { GCalNotificationHandler } from "@backend/sync/services/notify/handler/gcal.notification.handler";
@@ -24,6 +25,7 @@ jest.mock("@backend/common/services/gcal/gcal.service", () => ({
 describe("GCalNotificationHandler", () => {
   let handler: GCalNotificationHandler;
   let mockGcal: gCalendar;
+  let mockContext: GoogleRequestContext;
   let mockUserId: string;
   let mockCalendarId: string;
   let mockSyncToken: string;
@@ -69,9 +71,10 @@ describe("GCalNotificationHandler", () => {
         instances: jest.fn(),
       },
     } as unknown as gCalendar;
+    mockContext = { gcal: mockGcal, quotaUser: mockUserId };
 
     handler = new GCalNotificationHandler(
-      mockGcal,
+      mockContext,
       Resource_Sync.EVENTS,
       mockUserId,
       mockCalendarId,
@@ -98,7 +101,7 @@ describe("GCalNotificationHandler", () => {
       const result = await handler.handleNotification();
 
       // Verify
-      expect(gcalService.getEvents).toHaveBeenCalledWith(mockGcal, {
+      expect(gcalService.getEvents).toHaveBeenCalledWith(mockContext, {
         calendarId: mockCalendarId,
         syncToken: "test-sync-token",
       });
@@ -120,7 +123,7 @@ describe("GCalNotificationHandler", () => {
 
     it("should return IGNORED if resource is not EVENTS", async () => {
       handler = new GCalNotificationHandler(
-        mockGcal,
+        mockContext,
         Resource_Sync.SETTINGS, // Not EVENTS
         mockUserId,
         mockCalendarId,
@@ -145,7 +148,7 @@ describe("GCalNotificationHandler", () => {
 
     it("should return IGNORED when no owning calendar is found for the user", async () => {
       handler = new GCalNotificationHandler(
-        mockGcal,
+        mockContext,
         Resource_Sync.EVENTS,
         new ObjectId().toString(),
         mockCalendarId,

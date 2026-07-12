@@ -1,6 +1,7 @@
 import { Logger } from "@core/logger/winston.logger";
-import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event } from "@core/types/gcal";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
+import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import mongoService from "@backend/common/services/mongo.service";
 import {
   GoogleEventSync,
@@ -17,7 +18,7 @@ const logger = Logger("app:google-to-compass.event-propagation");
  */
 export class GoogleToCompassEventPropagation {
   constructor(
-    private gcal: gCalendar,
+    private context: GoogleRequestContext,
     private calendar: CalendarRecord,
   ) {}
 
@@ -36,7 +37,7 @@ export class GoogleToCompassEventPropagation {
       // a second webhook fired by rapid saves), and without the retry that
       // transient conflict surfaced as a 500.
       return await session.withTransaction(async (session) => {
-        const sync = new GoogleEventSync(this.gcal, this.calendar);
+        const sync = new GoogleEventSync(this.context, this.calendar);
         return sync.apply(events, 1000, session);
       });
     } finally {

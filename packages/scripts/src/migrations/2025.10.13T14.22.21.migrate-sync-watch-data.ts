@@ -6,9 +6,9 @@ import { Resource_Sync } from "@core/types/sync.types";
 import { ExpirationDateSchema } from "@core/types/type.utils";
 import { type Schema_Watch, WatchSchema } from "@core/types/watch.types";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
 import { getChannelExpiration } from "@backend/sync/services/watch/google-watch-timing";
 
@@ -61,30 +61,30 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         return [parsed.data];
       });
 
-      const gcal = await getGcalClient(syncDoc.user).catch((err: unknown) => {
-        logger.error(
-          `Failed to get gcal client for user ${syncDoc.user}: ${err}`,
-        );
+      const context = await createGoogleRequestContext(syncDoc.user).catch(
+        (err: unknown) => {
+          logger.error(
+            `Failed to get gcal client for user ${syncDoc.user}: ${err}`,
+          );
 
-        return null;
-      });
+          return null;
+        },
+      );
 
-      if (!gcal) continue;
+      if (!context) continue;
 
       const expiration = getChannelExpiration();
-      const quotaUser = new ObjectId().toString();
 
       await Promise.allSettled([
         ...syncDocs.map(async (s) => {
           await googleWatchService
-            .stopWatch(syncDoc.user, s.channelId, s.resourceId, gcal, quotaUser)
+            .stopWatch(syncDoc.user, s.channelId, s.resourceId, context)
             .catch(logger.error);
 
-          const { watch } = await gcalService.watchEvents(gcal, {
+          const { watch } = await gcalService.watchEvents(context, {
             channelId: new ObjectId().toString(),
             expiration,
             gCalendarId: s.gCalendarId,
-            quotaUser,
           });
 
           if (!watch.id) return;
@@ -101,10 +101,9 @@ export default class Migration implements RunnableMigration<MigrationContext> {
           );
         }),
         gcalService
-          .watchCalendars(gcal, {
+          .watchCalendars(context, {
             channelId: new ObjectId().toString(),
             expiration,
-            quotaUser,
           })
           .then(({ watch }) => {
             if (!watch.id) return;

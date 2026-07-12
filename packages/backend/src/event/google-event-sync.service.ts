@@ -1,6 +1,7 @@
 import { type ClientSession, type ObjectId } from "mongodb";
-import { type gCalendar, type gSchema$Event } from "@core/types/gcal";
+import { type gSchema$Event } from "@core/types/gcal";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
+import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { eventRepository } from "@backend/event/event.repository";
 import { mapGoogleEvent } from "@backend/event/google-event.adapter";
@@ -58,7 +59,7 @@ export class GoogleEventSync {
   private readonly gCalendarId: string;
 
   constructor(
-    private readonly gcal: gCalendar,
+    private readonly context: GoogleRequestContext,
     private readonly calendar: CalendarRecord,
   ) {
     if (calendar.source.provider !== "google") {
@@ -197,7 +198,7 @@ export class GoogleEventSync {
   ): Promise<gSchema$Event[]> {
     const instances: gSchema$Event[] = [];
     const response = gcalService.getBaseRecurringEventInstances({
-      gCal: this.gcal,
+      context: this.context,
       calendarId: this.gCalendarId,
       eventId: gEventId,
       maxResults: perPage,

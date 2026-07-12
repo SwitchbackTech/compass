@@ -5,8 +5,8 @@ import { Origin, Priorities } from "@core/constants/core.constants";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 
 export class EventDriver {
   static async generateV0Data(count = 3) {
@@ -20,7 +20,7 @@ export class EventDriver {
       users.map(async (user) =>
         calendarService.initializeGoogleCalendars(
           user._id,
-          await getGcalClient(user._id.toString()),
+          await createGoogleRequestContext(user._id.toString()),
         ),
       ),
     );

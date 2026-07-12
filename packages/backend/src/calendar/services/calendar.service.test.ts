@@ -7,8 +7,8 @@ import {
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { CalendarRecordSchema } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
+import { createGoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import mongoService from "@backend/common/services/mongo.service";
-import { getGcalClient } from "@backend/sync/services/google-sync/gcal.client";
 
 describe("CalendarService", () => {
   beforeEach(setupTestDb);
@@ -40,11 +40,11 @@ describe("CalendarService", () => {
     it("upserts the user's Google calendars as CalendarRecords", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const gcal = await getGcalClient(userId);
+      const context = await createGoogleRequestContext(userId);
 
       const result = await calendarService.initializeGoogleCalendars(
         userId,
-        gcal,
+        context,
       );
 
       expect(result.acknowledged).toBe(true);
@@ -62,9 +62,9 @@ describe("CalendarService", () => {
     it("is idempotent: re-running preserves the record id and user-set visibility", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const gcal = await getGcalClient(userId);
+      const context = await createGoogleRequestContext(userId);
 
-      await calendarService.initializeGoogleCalendars(userId, gcal);
+      await calendarService.initializeGoogleCalendars(userId, context);
       const [before] = await mongoService.calendar
         .find({ userId: user._id, "source.provider": "google" })
         .toArray();
@@ -73,7 +73,7 @@ describe("CalendarService", () => {
         { calendarId: before!._id.toHexString(), isVisible: false },
       ]);
 
-      await calendarService.initializeGoogleCalendars(userId, gcal);
+      await calendarService.initializeGoogleCalendars(userId, context);
       const [after] = await mongoService.calendar
         .find({ userId: user._id, "source.provider": "google" })
         .toArray();
@@ -87,9 +87,9 @@ describe("CalendarService", () => {
     it("returns every calendar owned by the user", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const gcal = await getGcalClient(userId);
+      const context = await createGoogleRequestContext(userId);
 
-      await calendarService.initializeGoogleCalendars(userId, gcal);
+      await calendarService.initializeGoogleCalendars(userId, context);
       await seedLocalCalendar(user._id);
 
       const calendars = await calendarService.list(userId);
@@ -132,9 +132,9 @@ describe("CalendarService", () => {
     it("returns the active primary Google calendar", async () => {
       const { user } = await UtilDriver.setupTestUser();
       const userId = user._id.toString();
-      const gcal = await getGcalClient(userId);
+      const context = await createGoogleRequestContext(userId);
 
-      await calendarService.initializeGoogleCalendars(userId, gcal);
+      await calendarService.initializeGoogleCalendars(userId, context);
 
       const primary = await calendarService.getPrimaryGoogleCalendar(userId);
 

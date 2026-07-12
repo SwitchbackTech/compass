@@ -13,6 +13,7 @@ import { error } from "@backend/common/errors/handlers/error.handler";
 import { SyncError } from "@backend/common/errors/sync/sync.errors";
 import { UserError } from "@backend/common/errors/user/user.errors";
 import { normalizeEmail } from "@backend/common/helpers/email.util";
+import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import mongoService from "@backend/common/services/mongo.service";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
@@ -278,11 +279,17 @@ async function googleSignin(
   const googleOAuthClient = new GoogleOAuthClient();
   googleOAuthClient.oauthClient.setCredentials(oAuthTokens);
 
+  // Wrap the just-authenticated client directly instead of building a
+  // context via createGoogleRequestContext(cUserId): the refresh token may
+  // not be persisted to Mongo yet at this point in the OAuth callback, so
+  // re-fetching by userId here could fail.
+  const freshContext: GoogleRequestContext = {
+    gcal: googleOAuthClient.getGcalClient(),
+    quotaUser: cUserId,
+  };
+
   googleCalendarSyncService
-    .importLatestGoogleCalendarChanges(
-      cUserId,
-      googleOAuthClient.getGcalClient(),
-    )
+    .importLatestGoogleCalendarChanges(cUserId, freshContext)
     .catch(async (err) => {
       if (
         err instanceof Error &&
