@@ -203,6 +203,20 @@ class CalendarService {
   };
 
   /**
+   * Every active Google-sourced calendar the user has (any access level),
+   * used to fan out per-calendar event import (packet 04).
+   */
+  getActiveGoogleCalendars = async (userId: ObjectId | string) => {
+    return mongoService.calendar
+      .find({
+        userId: zObjectId.parse(userId),
+        "source.provider": "google",
+        isActive: true,
+      })
+      .toArray();
+  };
+
+  /**
    * A calendar the user owns and can currently write to.
    */
   getOwnedActiveCalendar = async (

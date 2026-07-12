@@ -1,4 +1,3 @@
-import { type ClientSession } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
 import { Resource_Sync } from "@core/types/sync.types";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
@@ -53,10 +52,10 @@ const addStats = (
 });
 
 /**
- * Imports Google Calendar events onto their owning CalendarRecord (B8). At
- * this packet, import is primary-calendar-only (multi-calendar discovery is
- * packet 04): callers resolve the primary Google CalendarRecord once and
- * pass it in.
+ * Imports Google Calendar events onto their owning CalendarRecord (B8).
+ * Callers resolve a Google CalendarRecord (any owner/writer/reader calendar,
+ * not just primary - packet 04) and pass it in; each call operates on
+ * exactly the one calendar it was given.
  */
 export class SyncImport {
   private context: GoogleRequestContext;
@@ -68,12 +67,19 @@ export class SyncImport {
   /**
    * Full sync: imports every event on the calendar (Compass never saw it
    * before, or is reconciling from scratch).
+   *
+   * Deliberately runs with no Mongo transaction/session: each page's event
+   * writes and its `nextPageToken` checkpoint (via `updateSync`) commit as
+   * their own atomic operation as the page completes. That gives resumable
+   * per-calendar progress for free - if a later page throws, the pages
+   * already processed stay durably saved and a retry of this calendar picks
+   * up from the last saved pageToken instead of re-importing everything or
+   * rolling back other calendars' work.
    */
   async importAllEvents(
     userId: string,
     calendar: CalendarRecord,
     perPage = 1000,
-    session?: ClientSession,
   ): Promise<ImportStats & { nextSyncToken: string }> {
     if (calendar.source.provider !== "google") {
       throw error(
@@ -95,7 +101,6 @@ export class SyncImport {
     const pageToken = await getGCalEventsSyncPageToken(
       userId,
       calendar.source.calendarId,
-      session,
     );
 
     const gCalResponse = gcalService.getAllEvents({
@@ -111,7 +116,7 @@ export class SyncImport {
       nextPageToken,
     } of gCalResponse) {
       if (items.length > 0) {
-        const delta = await sync.apply(items, perPage, session);
+        const delta = await sync.apply(items, perPage);
         stats = addStats(stats, delta);
       }
 
@@ -120,7 +125,6 @@ export class SyncImport {
         userId,
         calendar.source.calendarId,
         { nextPageToken: nextPageToken ?? undefined },
-        session,
       );
 
       if (nextSyncToken) syncToken = nextSyncToken;
@@ -132,6 +136,16 @@ export class SyncImport {
         `Failed to finalize full import because nextSyncToken was not found for ${calendar.source.calendarId}. Incremental sync may not work correctly.`,
       );
     }
+
+    // Only persisted once the loop finishes without throwing, so a final
+    // sync token becomes durable only after the whole calendar succeeds -
+    // a calendar that throws mid-import keeps its per-page pageToken
+    // checkpoint (written above) but never advances past it to a sync
+    // token, so a subsequent incremental sync can't run against
+    // unpersisted/partial data.
+    await updateSync(Resource_Sync.EVENTS, userId, calendar.source.calendarId, {
+      nextSyncToken: syncToken,
+    });
 
     const duration = (performance.now() - startTime) / 1000;
     logger.info(
