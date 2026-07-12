@@ -13,7 +13,7 @@ import {
   type GoogleRequestContext,
 } from "@backend/common/services/gcal/gcal.context";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
-import mongoService from "@backend/common/services/mongo.service";
+import { createConcurrencyLimiter } from "@backend/common/util/concurrency-limiter.util";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import compassToGoogleBackfill from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google-backfill";
 import {
@@ -62,40 +62,30 @@ const notifyImportEnd = (
 };
 
 /**
- * Full import for the primary Google calendar (import stays
- * primary-calendar-only at this packet; multi-calendar discovery/import is
- * packet 04), inside a single transaction.
+ * Bounds how many calendars import events concurrently (B5). Kept low
+ * relative to Google's per-user quota; each calendar's own paging already
+ * bounds how much work is in flight for that calendar.
+ */
+const CALENDAR_IMPORT_CONCURRENCY = 4;
+
+/**
+ * Full import for a single Google calendar. Deliberately runs with no
+ * Mongo transaction wrapper - see the comment on
+ * `SyncImport.importAllEvents` for why per-page durability (rather than
+ * one big rollback-or-commit) is what makes a failed calendar resumable.
  */
 async function importFull(
   syncImport: SyncImport,
   calendar: CalendarRecord,
   userId: string,
 ) {
-  const session = await mongoService.startSession({
-    causalConsistency: true,
-  });
-
-  session.startTransaction();
-
-  try {
-    const result = await syncImport.importAllEvents(
-      userId,
-      calendar,
-      2500,
-      session,
-    );
-
-    await session.commitTransaction();
-
-    return result;
-  } catch (err: unknown) {
-    await session.abortTransaction();
-
-    throw err;
-  } finally {
-    await session.endSession();
-  }
+  return syncImport.importAllEvents(userId, calendar, 2500);
 }
+
+type CalendarImportFailure = { calendarId: string; error: string };
+
+const toErrorMessage = (err: unknown): string =>
+  err instanceof Error ? err.message : "Unknown error";
 
 async function importLatestGoogleCalendarChanges(
   userId: string,
@@ -247,8 +237,14 @@ async function runGoogleCalendarSyncSetup(
     });
 
     await userService.stopGoogleCalendarSync(userId);
-    const importResults =
+    const { failedCalendars, ...importResults } =
       await googleCalendarSyncService.initializeGoogleCalendarSync(userId);
+
+    if (failedCalendars.length > 0) {
+      logger.error(
+        `Google Calendar import completed for user: ${userId} with ${failedCalendars.length} calendar(s) that failed to import; each retains any progress made before failing and can be retried in isolation.`,
+      );
+    }
 
     await compassToGoogleBackfill
       .syncCompassEventsToGoogle(userId)
@@ -320,42 +316,100 @@ async function runGoogleCalendarSyncSetup(
 }
 
 /**
- * Discovers the user's Google calendars, then imports events for the
- * primary calendar only (A per the packet-03-phase-2 scope: multi-calendar
- * import/discovery is packet 04) and starts webhook watches for it.
+ * Discovers the user's Google calendars, then imports events for every
+ * owner/writer/reader calendar (bounded concurrency, B5) - freeBusyReader
+ * calendars get a CalendarRecord from reconciliation above but no event
+ * import, since their availability comes from a separate freeBusy.query
+ * contract (packet 01, out of scope here). One calendar's import failure
+ * doesn't abort the others (B8): each is isolated via Promise.allSettled,
+ * and because `SyncImport.importAllEvents` persists per-page progress with
+ * no surrounding transaction, a failed calendar retains whatever pages it
+ * already completed and can be retried in isolation. A primary-calendar
+ * failure is still treated as fatal for this call (watches only start for
+ * primary + CalendarList, same as before this packet).
  */
-async function initializeGoogleCalendarSync(
-  user: string,
-): Promise<{ eventsCount: number; calendarsCount: number }> {
+async function initializeGoogleCalendarSync(user: string): Promise<{
+  eventsCount: number;
+  calendarsCount: number;
+  failedCalendars: CalendarImportFailure[];
+}> {
   const context = await createGoogleRequestContext(user);
 
   await calendarService.initializeGoogleCalendars(user, context);
 
-  const calendar = await calendarService.getPrimaryGoogleCalendar(user);
+  const calendars = await calendarService.getActiveGoogleCalendars(user);
+  const primaryCalendar = calendars.find(
+    (c) => c.source.provider === "google" && c.isPrimary,
+  );
 
-  if (!calendar || calendar.source.provider !== "google") {
+  if (!primaryCalendar || primaryCalendar.source.provider !== "google") {
     logger.warn(`No primary Google calendar found for user: ${user}`);
-    return { eventsCount: 0, calendarsCount: 0 };
+    return { eventsCount: 0, calendarsCount: 0, failedCalendars: [] };
   }
 
+  // freeBusyReader calendars get no event import - their CalendarRecord
+  // already exists from initializeGoogleCalendars above.
+  const importableCalendars = calendars.filter(
+    (c) => c.source.provider === "google" && c.access !== "freeBusyReader",
+  );
+
   const syncImport = await createSyncImport(context);
-  const importResult = await importFull(syncImport, calendar, user);
+  const limit = createConcurrencyLimiter(CALENDAR_IMPORT_CONCURRENCY);
+
+  const outcomes = await Promise.allSettled(
+    importableCalendars.map((calendar) =>
+      limit(async () => ({
+        calendar,
+        result: await importFull(syncImport, calendar, user),
+      })),
+    ),
+  );
+
+  let eventsCount = 0;
+  let calendarsCount = 0;
+  const failedCalendars: CalendarImportFailure[] = [];
+  let primaryFailure: unknown;
+
+  outcomes.forEach((outcome, index) => {
+    const calendar = importableCalendars[index]!;
+    const calendarId = calendar._id.toHexString();
+
+    if (outcome.status === "fulfilled") {
+      eventsCount += outcome.value.result.totalSaved;
+      calendarsCount += 1;
+      return;
+    }
+
+    failedCalendars.push({ calendarId, error: toErrorMessage(outcome.reason) });
+
+    // No calendar names/Google ids/tokens in logs (B10 head start) - a
+    // Compass calendar _id is an internal identifier, not user data.
+    logger.warn(
+      `Google Calendar event import failed for calendar ${calendarId} (user: ${user}); already-imported pages remain durable and this calendar can be retried in isolation.`,
+      outcome.reason,
+    );
+
+    if (calendar._id.equals(primaryCalendar._id)) {
+      primaryFailure = outcome.reason;
+    }
+  });
+
+  if (primaryFailure !== undefined) {
+    throw primaryFailure;
+  }
 
   if (isUsingGcalWebhookHttps()) {
     await googleWatchService.startGoogleWatches(
       user,
       [
         { gCalendarId: Resource_Sync.CALENDAR },
-        { gCalendarId: calendar.source.calendarId },
+        { gCalendarId: primaryCalendar.source.calendarId },
       ],
       context,
     );
   }
 
-  return {
-    eventsCount: importResult.totalSaved,
-    calendarsCount: 1,
-  };
+  return { eventsCount, calendarsCount, failedCalendars };
 }
 
 async function repairGoogleCalendarSync(userId: string) {

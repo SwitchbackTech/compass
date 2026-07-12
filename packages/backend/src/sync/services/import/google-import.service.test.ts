@@ -150,6 +150,77 @@ describe("SyncImport", () => {
       ).toBe(0);
     });
 
+    it("retains already-persisted pages and their pageToken checkpoint when a later page throws, then resumes on retry without duplicating or advancing the sync token prematurely", async () => {
+      const page1Event = mockRegularGcalEvent({ id: "page-1-event" });
+      const page2Event = mockRegularGcalEvent({ id: "page-2-event" });
+
+      const throwOnPage2 = async function* () {
+        yield { items: [page1Event], nextPageToken: "page-2-token" };
+        throw new Error("simulated network failure fetching page 2");
+      };
+      (gcalService.getAllEvents as jest.Mock).mockReturnValueOnce(
+        throwOnPage2(),
+      );
+
+      const syncImport = new SyncImport(context);
+
+      await expect(
+        syncImport.importAllEvents(userId, calendar, 1000),
+      ).rejects.toThrow("simulated network failure fetching page 2");
+
+      // Page 1's event and its pageToken checkpoint are durably saved even
+      // though the overall import threw - no surrounding transaction to
+      // roll them back.
+      expect(
+        await mongoService.event.countDocuments({
+          "externalReference.eventId": page1Event.id,
+        }),
+      ).toBe(1);
+
+      const pageTokenAfterFailure = await getGCalEventsSyncPageToken(
+        userId,
+        calendar.source.provider === "google" ? calendar.source.calendarId : "",
+      );
+      expect(pageTokenAfterFailure).toBe("page-2-token");
+
+      // The sync token must not have advanced past the unpersisted page.
+      const syncAfterFailure = await getSync({ userId });
+      const eventSyncAfterFailure = syncAfterFailure?.google?.events?.find(
+        (e) => e.gCalendarId === "primary",
+      );
+      expect(eventSyncAfterFailure?.nextSyncToken).toBeUndefined();
+
+      // A retry resumes from the saved pageToken rather than page 1.
+      (gcalService.getAllEvents as jest.Mock).mockReturnValueOnce(
+        asPages({ items: [page2Event], nextSyncToken: "final-sync-token" }),
+      );
+
+      const result = await syncImport.importAllEvents(userId, calendar, 1000);
+
+      expect(gcalService.getAllEvents).toHaveBeenLastCalledWith(
+        expect.objectContaining({ pageToken: "page-2-token" }),
+      );
+      expect(result.nextSyncToken).toBe("final-sync-token");
+
+      // Page 1's event was not re-fetched/duplicated by the retry.
+      expect(
+        await mongoService.event.countDocuments({
+          "externalReference.eventId": page1Event.id,
+        }),
+      ).toBe(1);
+      expect(
+        await mongoService.event.countDocuments({
+          "externalReference.eventId": page2Event.id,
+        }),
+      ).toBe(1);
+
+      const syncAfterRetry = await getSync({ userId });
+      const eventSyncAfterRetry = syncAfterRetry?.google?.events?.find(
+        (e) => e.gCalendarId === "primary",
+      );
+      expect(eventSyncAfterRetry?.nextSyncToken).toBe("final-sync-token");
+    });
+
     it("resumes import using the stored nextPageToken", async () => {
       await updateSync(
         Resource_Sync.EVENTS,
