@@ -68,8 +68,9 @@ unfinished.
       #2046, #2049, #2050.
 - [x] 06. [Calendar-list sync and watch routing](./06-calendar-list-sync-and-watch-routing.md)
       — keep the calendar set current. Shipped in PRs #2054, #2055, #2056.
-- [ ] 07. [Watch repair, quota, and retries](./07-watch-repair-quota-and-retries.md) —
-      self-heal notifications and control Google API pressure.
+- [x] 07. [Watch repair, quota, and retries](./07-watch-repair-quota-and-retries.md) —
+      self-heal notifications and control Google API pressure. Shipped in
+      PRs #2058, #2059, #2060.
 - [ ] 08. [Web calendar experience](./08-web-calendar-experience.md) — ship visibility,
       identity, selection, and read-only UX.
 - [ ] 09. [V1 release hardening](./09-v1-release-hardening.md) — prove migration,
@@ -146,20 +147,29 @@ unfinished.
   only after success, and targeted full-list recovery on a rejected token.
   Events notifications additionally suppress SSE for invisible calendars on
   the webhook path. PRs #2054, #2055, #2056.)
-- `quotaUser` is used only by watch start/stop paths and is sometimes a new
-  random id. Normal list/get/insert/update/delete requests do not carry it.
-- The two `invalid_grant` paths diverge dangerously: the interactive path runs
+- ~~`quotaUser` is used only by watch start/stop paths and is sometimes a new
+  random id. Normal list/get/insert/update/delete requests do not carry it.~~
+  (2026-07-12, packet 07: stale since packet 04's request context — every
+  GCalService method already carried the stable user id; PR #2060 adds the
+  table-driven proof with a reflection guard.)
+- ~~The two `invalid_grant` paths diverge dangerously: the interactive path runs
   `pruneGoogleData` (preserves Compass-local data), but the watch-maintenance
   planner calls `deleteCompassDataForUser`, deleting every event, calendar,
   priority, and the user document (`google-watch-maintenance.planner.ts:95-97`).
-  Plan `07` must remove that wipe path (A29).
+  Plan `07` must remove that wipe path (A29).~~ (2026-07-12, packet 07:
+  implemented in PR #2059 — every revoked-access site funnels through one
+  `pruneGoogleDataAndNotifyRevoked` helper; `deleteCompassDataForUser`
+  remains only for the account-deletion CLI.)
 - Google event updates go through `events.update` (full resource replace) with a
   partial body, so fields Compass does not model (attendees, location,
   reminders) are silently wiped on Google today. Plan `05` switches writes to
   `events.patch` (A28).
-- Watch channels default to a 10-minute expiration
+- ~~Watch channels default to a 10-minute expiration
   (`CHANNEL_EXPIRATION_MIN` default `"10"`), while the renew-soon buffer is 3
-  days, so every live watch is permanently classified as expiring.
+  days, so every live watch is permanently classified as expiring.~~
+  (2026-07-12 correction, packet 07: stale — packet 04 shipped the 7-day
+  default (`"10080"`, A30). PR #2060 pins the default and that watches
+  persist Google's returned expiration; short TTLs are a dev/test override.)
 - Timed events store only offset strings; no IANA time zone exists anywhere in
   the event data, and the Google mapper guesses the server zone at write time.
 - The merged domain-module refactor from issue #1719 is present. An unmerged
@@ -215,6 +225,7 @@ only by appending a dated decision and updating every affected plan.
 | A37 | (2026-07-12) An access transition to `freeBusyReader` deletes that calendar's previously-synced Compass events along with its watch and events sync entry; the calendar row stays active with the new role.                                                                                                                                                             | A7 says freeBusyReader calendars never manufacture event records; keeping already-synced events that can no longer receive updates would display silently-stale data. Packet 06, PR #2055.                  |
 | A38 | (2026-07-12) A calendarlist delta entry flagged `hidden` is reconciled identically to `deleted`: archive the row and tear down its watch/sync entry/events. Re-adding either way reuses the archived row's id and visibility (A16).                                                                                                                                       | A2 makes hidden calendars ineligible for import; in delta form an ineligible calendar must be reconciled away, not skipped the way the initial full-list filter does. Packet 06, PR #2055.                  |
 | A39 | (2026-07-12) A rejected CalendarList sync token (410) recovers via a targeted full-list reconcile inside the calendarlist reconciler — surviving calendars keep their events, per-calendar events tokens, watches, and visibility. The controller's event-deleting full repair now serves only events-token 410s.                                                        | The calendarlist token's validity is independent of per-calendar events tokens, so discarding every google event to rebuild one list token was disproportionate. Packet 06, PR #2056.                       |
+| A40 | (2026-07-12) Watch-maintenance activity is `lastSeenAt` (a new `Schema_User` field touched fire-and-forget on every SSE (re)connect) or `lastLoggedInAt` within the 14-day window — not event-edit history.                                                                                                                                                              | The prior gate queried EventRecord `user`/`origin` fields that post-cutover records never have, so it always returned false: maintenance classified every user inactive and pruned all watches each run. Packet 07, PR #2060. |
 
 ## Complexity guardrails
 
