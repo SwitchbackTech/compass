@@ -40,7 +40,14 @@ const shiftDateOnly = (dateOnly: DateOnly, offsetDays: number): DateOnly => {
   return date.toISOString().slice(0, 10) as DateOnly;
 };
 
-const getAnchorDate = (schedule: EventScheduleRecord): Date => {
+/**
+ * The instant a schedule occupies in the recurrence pattern: the timed
+ * instant itself, or midnight UTC of the all-day date. Shared by series
+ * materialization (below) and by Compass->Google propagation, which anchors
+ * an unresolved occurrence's `events.instances` lookup on this same instant
+ * (Google's `originalStartTime`, B-series/packet-05 step 4).
+ */
+export const getAnchorDate = (schedule: EventScheduleRecord): Date => {
   if (schedule.kind === "timed") return schedule.start;
   if (schedule.kind === "allDay") {
     return new Date(`${schedule.start}T00:00:00.000Z`);

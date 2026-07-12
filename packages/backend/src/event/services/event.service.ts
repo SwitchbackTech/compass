@@ -31,6 +31,7 @@ import { eventMutationError } from "@backend/event/event.error";
 import { type EventRecord } from "@backend/event/event.record";
 import { mapCreateInput } from "@backend/event/event.record.mapper";
 import { eventRepository } from "@backend/event/event.repository";
+import { getAnchorDate } from "@backend/event/services/recur/util/recur.util";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google.event-propagation";
 
@@ -213,6 +214,21 @@ class EventService {
       (record) => materialized.deleteIds.some((id) => id.equals(record._id)),
     );
 
+    // Google's originalStartTime is an occurrence's fixed position in the
+    // recurrence pattern -- it never moves even after the instance's own
+    // start/end are later edited. When this same replace() call is what's
+    // editing `target`'s schedule, `target` (the pre-edit record) still
+    // carries the true original anchor; anything derived from `plan`/
+    // `materialized` after this point already reflects the NEW schedule and
+    // would search Google's events.instances at the wrong position (packet
+    // 05 step 4). Only occurrences need this -- a base/single/someday event
+    // resolves by its own externalReference, no instances lookup involved.
+    const originalStartByEventId =
+      target.recurrence.kind === "occurrence" &&
+      target.schedule.kind !== "someday"
+        ? new Map([[target._id.toHexString(), getAnchorDate(target.schedule)]])
+        : undefined;
+
     await this.withEventTransaction((session) =>
       executeMutation(materialized, session),
     );
@@ -220,6 +236,7 @@ class EventService {
     await CompassToGoogleEventPropagation.propagate(userId, {
       upserted: materialized.upsert,
       deletedBefore,
+      originalStartByEventId,
     });
     notify(userId, [materialized.primary], "updated");
 

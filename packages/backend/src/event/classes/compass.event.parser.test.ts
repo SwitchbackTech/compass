@@ -122,6 +122,25 @@ describe("analyzeReplace", () => {
     expect(plan.deleteInstanceIds).toEqual([laterInstance._id]);
   });
 
+  it("scope all: throws RECURRENCE_CONFLICT when an instance has drifted onto a different calendar than its base (A6 defense-in-depth, step 7)", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+    });
+    const driftedInstance = buildEvent({
+      calendarId: new ObjectId(),
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+
+    expect(() =>
+      analyzeReplace(
+        base,
+        { base, instances: [driftedInstance] },
+        replaceInput({ scope: "all" }),
+        now,
+      ),
+    ).toThrow();
+  });
+
   it("scope all: converts a series to standalone when recurrence.kind is 'single'", () => {
     const base = buildEvent({
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
@@ -175,6 +194,24 @@ describe("analyzeDelete", () => {
       { scope: "all" },
     );
     expect(plan).toEqual({ kind: "deleteSeries", seriesId: base._id });
+  });
+
+  it("scope all: throws RECURRENCE_CONFLICT when an instance has drifted onto a different calendar than its base (A6 defense-in-depth, step 7)", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const driftedInstance = buildEvent({
+      calendarId: new ObjectId(),
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+
+    expect(() =>
+      analyzeDelete(
+        base,
+        { base, instances: [driftedInstance] },
+        { scope: "all" },
+      ),
+    ).toThrow();
   });
 });
 

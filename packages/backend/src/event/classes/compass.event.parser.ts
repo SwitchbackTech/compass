@@ -11,6 +11,30 @@ import { withUntil } from "@backend/event/services/recur/util/recur.util";
 const conflict = (message: string) =>
   eventMutationError("RECURRENCE_CONFLICT", message);
 
+/**
+ * Defense-in-depth for A6 (calendar assignment is immutable, so every
+ * materialized instance always copies its base's calendarId): no current
+ * code path can actually construct a series whose instances span more than
+ * one calendar, but an apply-to-series operation (scope "all" or
+ * "thisAndFollowing") trusts `series.instances` wholesale, so a corrupted or
+ * hand-edited document here would otherwise silently mutate/delete events on
+ * a calendar the caller never asked to touch. Fail loudly instead (packet 05
+ * step 7).
+ */
+const assertSeriesCalendarConsistency = (
+  series: SeriesContext | null,
+): void => {
+  if (!series) return;
+  const drifted = series.instances.find(
+    (instance) => !instance.calendarId.equals(series.base.calendarId),
+  );
+  if (drifted) {
+    throw conflict(
+      `Series ${series.base._id.toHexString()} has an instance (${drifted._id.toHexString()}) on a different calendar than its base; refusing to apply a series-wide operation.`,
+    );
+  }
+};
+
 const scheduleStartMs = (schedule: EventRecord["schedule"]): number => {
   if (schedule.kind === "timed") return schedule.start.getTime();
   if (schedule.kind === "allDay") {
@@ -89,6 +113,7 @@ export function analyzeReplace(
   input: ReplaceEventInput,
   now: Date,
 ): ReplacePlan {
+  assertSeriesCalendarConsistency(series);
   const { scope } = input;
 
   if (scope === "this") {
@@ -184,6 +209,7 @@ export function analyzeDelete(
   series: SeriesContext | null,
   input: DeleteEventInput,
 ): DeletePlan {
+  assertSeriesCalendarConsistency(series);
   const { scope } = input;
 
   if (scope === "this") {
