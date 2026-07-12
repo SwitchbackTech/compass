@@ -1,8 +1,10 @@
 import {
+  Origin,
   SOMEDAY_MONTHLY_LIMIT,
   SOMEDAY_WEEKLY_LIMIT,
 } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
+import { type Schema_Event } from "@core/types/event.types";
 import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -12,18 +14,47 @@ import {
 } from "@web/common/utils/event/event.util";
 import { categorizeSomedayEvents } from "@web/common/utils/event/someday.event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
-import { eventToSchemaEvent } from "./event.legacy-bridge";
 import { type NormalizedEventQueryData } from "./event.query.types";
+
+// The grid renderer (assembleGridEvent) still consumes the legacy
+// Schema_Event shape. This mirrors the mapping event.legacy-bridge.ts uses,
+// scoped to scheduled (timed/allDay) events only — this file never sees
+// someday events, so the someday-anchorDate branch there doesn't apply here.
+const scheduledEventToSchemaEvent = (event: Event): Schema_Event => {
+  const { schedule } = event;
+  if (schedule.kind === "someday") {
+    throw new Error("scheduledEventToSchemaEvent: someday event");
+  }
+  return {
+    _id: event.id,
+    title: event.content.kind === "details" ? event.content.title : "",
+    description:
+      event.content.kind === "details" ? event.content.description : "",
+    origin: Origin.COMPASS,
+    priority: event.priority,
+    isAllDay: schedule.kind === "allDay",
+    isSomeday: false,
+    startDate: schedule.start,
+    endDate: schedule.end,
+    recurrence:
+      event.recurrence.kind === "series"
+        ? { rule: [...event.recurrence.rules], eventId: event.id }
+        : event.recurrence.kind === "occurrence"
+          ? { eventId: event.recurrence.seriesId }
+          : undefined,
+    updatedAt: event.updatedAt ?? undefined,
+  };
+};
 
 const eventsFrom = (data?: NormalizedEventQueryData): Event[] =>
   data?.ids.flatMap((id) => (data.entities[id] ? [data.entities[id]] : [])) ??
   [];
 
 // assembleGridEvent/hasEventDates still operate on the legacy Schema_Event
-// shape; bridged via eventToSchemaEvent until the grid renderer converts to
-// `Event` directly. A cache entry with a missing/malformed `schedule` is a
-// bug upstream (normalizeEventList/query seeding), not a case to silently
-// swallow — but it must not crash this shared derivation, since every grid
+// shape; bridged via scheduledEventToSchemaEvent above. A cache entry with a
+// missing/malformed `schedule` is a bug upstream (normalizeEventList/query
+// seeding), not a case to silently swallow — but it must not crash this
+// shared derivation, since every grid
 // consumer recomputes from it on every render (a throw here becomes a
 // render-crash loop). Log loudly and drop the offending event instead.
 const isValidScheduledEvent = (event: Event): boolean => {
@@ -42,7 +73,7 @@ const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") =>
   events
     .filter(isValidScheduledEvent)
     .filter((event) => event.schedule.kind === kind)
-    .map(eventToSchemaEvent)
+    .map(scheduledEventToSchemaEvent)
     .filter((event): event is EventWithDates => hasEventDates(event))
     .map(assembleGridEvent);
 
