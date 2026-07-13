@@ -17,16 +17,6 @@ function sortCalendars(calendars: Calendar[]): Calendar[] {
   });
 }
 
-// Identity is never conveyed by color alone: primary/read-only context is
-// spelled out as text next to the calendar name.
-function calendarContextLabel(calendar: Calendar): string | null {
-  const labels = [
-    calendar.isPrimary ? "primary" : null,
-    calendar.capabilities.canWrite ? null : "read-only",
-  ].filter((label): label is string => label !== null);
-  return labels.length > 0 ? labels.join(", ") : null;
-}
-
 interface Props {
   /** Test seam only: production callers rely on useCalendarVisibility's default. */
   coalesceDelayMs?: number;
@@ -66,7 +56,6 @@ export const PlannerCalendarList: FC<Props> = ({ coalesceDelayMs }) => {
       ) : (
         <ul className="flex flex-col gap-1.5">
           {calendars.map((calendar) => {
-            const contextLabel = calendarContextLabel(calendar);
             const calendarRow = (
               <>
                 <span
@@ -81,12 +70,6 @@ export const PlannerCalendarList: FC<Props> = ({ coalesceDelayMs }) => {
                 />
                 <span className="min-w-0 flex-1 truncate">
                   {calendar.name}
-                  {contextLabel ? (
-                    <span className="text-text-light-inactive">
-                      {" "}
-                      · {contextLabel}
-                    </span>
-                  ) : null}
                 </span>
               </>
             );

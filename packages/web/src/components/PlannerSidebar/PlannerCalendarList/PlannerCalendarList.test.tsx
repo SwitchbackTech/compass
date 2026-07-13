@@ -107,7 +107,7 @@ describe("PlannerCalendarList", () => {
     });
   });
 
-  it("renders active calendars with pressed buttons, hides inactive calendars, and spells out primary/read-only context as text", () => {
+  it("renders active calendars with pressed buttons and hides inactive calendars", () => {
     const active = makeCalendar({ name: "Work" });
     const primary = makeCalendar({ name: "Personal", isPrimary: true });
     const readOnly = makeCalendar({
@@ -123,8 +123,6 @@ describe("PlannerCalendarList", () => {
     expect(
       screen.getByRole("button", { name: "Hide Work calendar" }),
     ).toBeInTheDocument();
-    expect(screen.getByText(/primary/)).toBeInTheDocument();
-    expect(screen.getByText(/read-only/)).toBeInTheDocument();
     expect(screen.queryByText("Archived")).not.toBeInTheDocument();
   });
 
