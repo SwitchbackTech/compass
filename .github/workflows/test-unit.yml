@@ -4,7 +4,7 @@ on:
   push:
     paths-ignore:
       - ".gitignore"
-      - "handoff/**"
+      - "team/**"
       - "**/*.md"
       - "docs/**"
 
