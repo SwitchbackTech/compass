@@ -3,7 +3,6 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   CompassDOMEvents,
@@ -50,7 +49,7 @@ import {
   DayCalendarAllDayEventsLayer,
   DayCalendarTimedEventsLayer,
 } from "./DayCalendarEventLayers";
-import { getDayViewCalendars } from "./dayCalendarColumns.util";
+import { useDayCalendarColumns } from "./useDayCalendarColumns";
 import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
 
 const isDayInteractionMotionActive = () => false;
@@ -69,46 +68,6 @@ const createEventFormAnchor = (eventId: string): VirtualElement => {
 
 export function DayCalendarGrid() {
   const dateInView = useDateInView();
-  const { data: calendars = [] } = useCalendarsQuery();
-  const displayedCalendars = useMemo(
-    () => getDayViewCalendars(calendars),
-    [calendars],
-  );
-  const calendarColumnIndexById = useMemo(
-    () =>
-      new Map(
-        displayedCalendars.map((calendar, index) => [calendar.id, index]),
-      ),
-    [displayedCalendars],
-  );
-  const calendarIds = useMemo(
-    () => new Set(calendars.map((calendar) => calendar.id)),
-    [calendars],
-  );
-  const visibleDates = useMemo(() => {
-    const calendarColumns = displayedCalendars.map((calendar) => ({
-      date: dateInView,
-      key: calendar.id,
-    }));
-
-    return calendarColumns.length > 0
-      ? calendarColumns
-      : [
-          {
-            date: dateInView,
-            key: dateInView.format(YEAR_MONTH_DAY_FORMAT),
-          },
-        ];
-  }, [dateInView, displayedCalendars]);
-  const { gridRefs, measurements } = useCalendarGridLayout({
-    isInteractionMotionActive: isDayInteractionMotionActive,
-    visibleDateCount: visibleDates.length,
-  });
-  const dateCalcs = useCalendarDateCalcs(
-    measurements,
-    gridRefs.mainGridRef,
-    visibleDates,
-  );
   const today = useMemo(() => dayjs(), []);
   const {
     allDayEvents,
@@ -119,32 +78,22 @@ export function DayCalendarGrid() {
     startDate: dateInView.startOf("day").utc(true).format(),
     endDate: dateInView.endOf("day").utc(true).format(),
   });
-  const getCalendarColumnIndex = useCallback(
-    (event: Schema_GridEvent) =>
-      (event.calendarId
-        ? calendarColumnIndexById.get(event.calendarId)
-        : undefined) ?? 0,
-    [calendarColumnIndexById],
-  );
-  const displayedTimedEvents = useMemo(
-    () =>
-      timedEvents.filter(
-        (event) =>
-          !event.calendarId ||
-          !calendarIds.has(event.calendarId) ||
-          calendarColumnIndexById.has(event.calendarId),
-      ),
-    [calendarColumnIndexById, calendarIds, timedEvents],
-  );
-  const displayedAllDayEvents = useMemo(
-    () =>
-      allDayEvents.filter(
-        (event) =>
-          !event.calendarId ||
-          !calendarIds.has(event.calendarId) ||
-          calendarColumnIndexById.has(event.calendarId),
-      ),
-    [allDayEvents, calendarColumnIndexById, calendarIds],
+  const {
+    calendarColumnIndexById,
+    displayedAllDayEvents,
+    displayedCalendars,
+    displayedTimedEvents,
+    getCalendarColumnIndex,
+    visibleDates,
+  } = useDayCalendarColumns({ allDayEvents, dateInView, timedEvents });
+  const { gridRefs, measurements } = useCalendarGridLayout({
+    isInteractionMotionActive: isDayInteractionMotionActive,
+    visibleDateCount: visibleDates.length,
+  });
+  const dateCalcs = useCalendarDateCalcs(
+    measurements,
+    gridRefs.mainGridRef,
+    visibleDates,
   );
   useDayEventNudgeShortcuts({ timedEvents: displayedTimedEvents });
   const draft = useDraftStore(selectDraft);
