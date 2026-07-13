@@ -1,6 +1,9 @@
 name: Test
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - "team/**"
 
 permissions:
   contents: read

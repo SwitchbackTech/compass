@@ -1,12 +1,12 @@
 ---
-name: ux-sweep
-description: Proactively explore the app's recently-changed surfaces like a first-time user, looking for usability, accessibility, and UX friction (confusing focus order, missing labels, awkward keyboard paths, unclear states) that automated tests wouldn't catch - then fix what's fixable and ship it through the normal PR flow, same autonomy as handoff. Use when the user says "/ux-sweep", "find UX bugs", "check for a11y issues", "play with the app and find problems", or when invoked as a step inside handoff (after a PR ships) or cleanup (over the day's merge window).
+name: qa-ux-sweep
+description: Proactively explore the app's recently-changed surfaces like a first-time user, looking for usability, accessibility, and UX friction (confusing focus order, missing labels, awkward keyboard paths, unclear states) that automated tests wouldn't catch - then fix what's fixable and ship it through the normal PR flow, same ship autonomy as any role session. Use when the user says "/qa-ux-sweep", "find UX bugs", "check for a11y issues", "play with the app and find problems", or when invoked by a role session after a PR ships, or by cleanup (over the merge window).
 ---
 
-# ux-sweep
+# qa-ux-sweep
 
-The proactive counterpart to `a11y-audit` (which reviews a diff statically) and
-`qa-staging` (which checks that staging didn't break). This skill actually
+The proactive counterpart to `qa-a11y-audit` (which reviews a diff statically) and
+`qa-test-staging` (which checks that staging didn't break). This skill actually
 **drives** the recently-changed surfaces of the app like someone using it for
 the first time, looking for friction a diff review or a breakage check would
 miss: a focus ring that never appears, a control with no accessible name, a
@@ -15,11 +15,11 @@ explain what to do next.
 
 **This skill is not diff review.** Don't read code and infer how it behaves —
 open it in the browser and interact with it the way a real user would, the
-same standard `ship` and `qa-staging` hold themselves to.
+same standard `ship` and `qa-test-staging` hold themselves to.
 
-Findings get fixed autonomously, same posture as the rest of the handoff
-workflow: no task chips, no waiting for a human to triage first. See
-`handoff/agent-operating-rules.md` → "I own follow-up decisions."
+Findings get fixed autonomously, same posture as any autonomous role session:
+no task chips, no waiting for a human to triage first. See
+`team/operating-rules.md` → "I own follow-up decisions."
 
 ## 0. Determine scope
 
@@ -30,9 +30,9 @@ this skill was invoked:
 - **On-demand, no args**: diff the current branch/worktree against `main`
   (`git diff main...HEAD --stat`). If there's nothing local, fall back to the
   most recently merged PR (`gh pr list --state merged --base main --limit 1`).
-- **Called from `/handoff`** (after a task's PR ships): scope to that PR's
+- **Called from a role session** (after a task's PR ships): scope to that PR's
   diff alone — `gh pr diff <number> --name-only`.
-- **Called from `/cleanup`**: scope to the day's whole review window,
+- **Called from `/cleanup`**: scope to the whole review window,
   `START..END` from the cleanup marker (same range `cleanup` already
   established) — `git diff START..END --stat`.
 
@@ -70,7 +70,7 @@ read the DOM, actually operate it with `computer` and confirm with
   from the keyboard, or does it have no equivalent at all?
 - **Accessible names**: for icon-only buttons, custom controls, and anything
   that isn't a native `<label>`-connected input, check `read_page`'s
-  accessible-name output. Borrow the exact checklist from `a11y-audit`
+  accessible-name output. Borrow the exact checklist from `qa-a11y-audit`
   (semantics, labels, ARIA correctness, contrast) but apply it to what's
   actually rendered, not to a diff.
 - **State coverage**: trigger the empty state (e.g. a day/week with nothing
@@ -102,7 +102,7 @@ Sort what you found into:
   obvious from the code alone (a whole new interaction pattern, a copy
   rewrite that changes tone, a layout decision). Don't guess at these.
 
-## 4. Fix autonomously, same posture as handoff
+## 4. Fix autonomously, same posture as any role session
 
 For each **fixable-now** finding:
 
@@ -114,20 +114,20 @@ For each **fixable-now** finding:
    CI, squash-merges once green. Don't reimplement any of that here.
 
 For each **needs-a-decision** finding: don't force a fix. Follow the same
-push-notify-vs-log rule as the rest of handoff
-(`agent-operating-rules.md` → "When to push-notify vs. log-and-continue") —
+push-notify-vs-log rule as any role session
+(`team/operating-rules.md` → "When to push-notify vs. log-and-continue") —
 log it, don't spawn a task chip, don't idle waiting for an answer.
 
 Never use `spawn_task` for anything found here — this skill inherits the
-"I own follow-up decisions" rule from the handoff workflow, whether or not
-it's literally running inside `/handoff`.
+"I own follow-up decisions" rule from `team/operating-rules.md`, whoever
+invoked it.
 
 ## 5. Report
 
-- **Run inside `/handoff` or `/cleanup`**: append what you found and fixed to
-  the day's `handoff/<date>/summary.md` — under Decisions for what shipped,
-  under PO follow-ups for anything needing a call.
-- **Run on-demand**: print a short report grouped the same way `qa-staging`
+- **Run inside a role session or `/cleanup`**: append what you found and fixed
+  to the QA daily note, `team/qa/notes/<date>.md` — under Decisions for what
+  shipped, under Founder follow-ups for anything needing a call.
+- **Run on-demand**: print a short report grouped the same way `qa-test-staging`
   does — fixed (with PR links), needs-a-decision (flagged, not asserted as a
   bug), and clean (surfaces explored that had nothing wrong, so scope is
   visible, not just failures).

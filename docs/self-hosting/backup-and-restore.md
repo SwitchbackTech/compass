@@ -345,7 +345,7 @@ section does not repeat that material.
 This documents the REHEARSED procedure the release runbook requires
 operators to exercise on staging before it is ever run for real. Per
 decision A36, the production cutover runs exactly once, manually, only after
-every gate in `handoff/someday/09-v1-release-hardening.md` passes on
+every gate in `team/backlog/09-v1-release-hardening.md` passes on
 staging — do not run these commands against production outside that single
 planned window.
 

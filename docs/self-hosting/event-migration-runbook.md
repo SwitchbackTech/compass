@@ -19,7 +19,7 @@ early is safe; the app keeps serving from legacy data.
 ## Rollout strategy (sub-calendar v1)
 
 The v1 rollout is staging-first (decision A36 in
-`handoff/someday/master-doc.md`):
+`team/backlog/master-doc.md`):
 
 1. **Staging cuts over now.** Run the full procedure below (migrate → verify →
    pause → rename → deploy) against staging when the runtime-cutover release

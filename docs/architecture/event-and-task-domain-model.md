@@ -38,7 +38,7 @@ legacy types are deleted.
 ## Deferred Beyond V1
 
 These are scoped out of the sub-calendar v1 contracts above, not overlooked.
-Each line names the decision in `handoff/someday/master-doc.md`'s assumption
+Each line names the decision in `team/backlog/master-doc.md`'s assumption
 log that anchors the carve-out, so a future v2 effort starts from the
 recorded reasoning instead of rediscovering it:
 

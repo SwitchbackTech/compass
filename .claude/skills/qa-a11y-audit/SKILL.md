@@ -1,5 +1,5 @@
 ---
-name: claude-a11y-audit
+name: qa-a11y-audit
 description: Use when reviewing UI diffs, accessibility audits, or flaky UI tests to catch a11y regressions, semantic issues, keyboard/focus problems, and to recommend minimal fixes plus role-based test selectors.
 ---
 

@@ -103,7 +103,7 @@ unfinished.
 4. Add behavior-focused regression tests before or with the implementation.
    Do not retain temporary probes or one-off debug code.
 5. Run the focused package tests first, then `bun type-check`, `bun lint`, and
-   `bun run verify` before handoff. A migration change also requires
+   `bun run verify` before shipping. A migration change also requires
    `bun test:scripts`; shared contracts require every affected package test.
 6. Update checkboxes and the decision log only after the corresponding code and
    tests are committed. Record deviations; do not silently rewrite an earlier
@@ -114,7 +114,7 @@ unfinished.
 
 ### Copy/paste agent kickoff
 
-> Work the next unchecked file in `handoff/someday/master-doc.md`. Read the
+> Work the next unchecked file in `team/backlog/master-doc.md`. Read the
 > master assumptions, `00-project-ledger.md`, the target file, its dependencies,
 > and `AGENTS.md`. If `01` is involved, read both `01a` and `01b`. Implement
 > only that packet, run its focused verification,

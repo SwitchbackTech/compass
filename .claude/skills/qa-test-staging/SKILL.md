@@ -1,9 +1,9 @@
 ---
-name: qa-staging
-description: Post-merge QA sweep of staging.compasscalendar.com in the user's real Chrome - select and verify the correct signed-in staging profile (never the localhost/temp-account one), run the standard usage flows as the authed test user watching console/network for breakage, then read the recent merged PRs and exercise their Manual Testing Steps to catch regressions in freshly-touched flows. Use when the user says "/qa-staging", "sanity check staging", "test staging", "check staging after deploy", "run the staging sweep", or asks to verify the staging deploy after a PR merged.
+name: qa-test-staging
+description: Post-merge QA sweep of staging.compasscalendar.com in the user's real Chrome - select and verify the correct signed-in staging profile (never the localhost/temp-account one), run the standard usage flows as the authed test user watching console/network for breakage, then read the recent merged PRs and exercise their Manual Testing Steps to catch regressions in freshly-touched flows. Use when the user says "/qa-test-staging", "sanity check staging", "test staging", "check staging after deploy", "run the staging sweep", or asks to verify the staging deploy after a PR merged.
 ---
 
-# qa-staging
+# qa-test-staging
 
 The manual ritual this replaces: after a PR merges and auto-deploys to
 `staging.compasscalendar.com`, a human opens staging as an anonymous user,

@@ -87,7 +87,7 @@ are tuned. No index changes in this phase.
 
 ## Regression rule
 
-Per `handoff/someday/09-v1-release-hardening.md` step 5: investigate any
+Per `team/backlog/09-v1-release-hardening.md` step 5: investigate any
 p95 query or render regression over 20% from the numbers recorded above.
 Re-run both suites after touching the import/sync path or
 `event.repository.ts`'s read paths, compare against this file, and update

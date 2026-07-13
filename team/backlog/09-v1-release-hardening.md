@@ -161,7 +161,7 @@ run and production stays on the pre-cutover release.
    runbook, and record counts/hashes.
 2. **Manual acceptance runbook** — the 12 steps above on staging with a
    real Google account (writer + reader-with-private-event + freeBusyReader
-   calendars). The evening `/qa-staging` ritual covers parts of steps 1-6
+   calendars). The evening `/qa-test-staging` ritual covers parts of steps 1-6
    with the authed test profile.
 3. **Production cutover** — one production migration run plus one manual
    `Deploy Production` action, only after 1-2 pass (A36). Never run by
