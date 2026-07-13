@@ -6,6 +6,7 @@ import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAu
 import { session } from "@web/auth/compass/session/Session";
 import { refreshUserMetadata } from "@web/auth/compass/user/util/user-metadata.util";
 import { completeGoogleAuthorization } from "@web/auth/google/authorization/complete-google-authorization";
+import { releaseNotesPromptActions } from "@web/auth/state/release-notes-prompt.store";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { OverlayPanel } from "@web/components/OverlayPanel/OverlayPanel";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -35,6 +36,8 @@ export async function completeGoogleAuthCallback({
 
   if (result.status === "failed") {
     showErrorToast(result.message);
+  } else if (result.isNewUser) {
+    releaseNotesPromptActions.open();
   }
 
   navigate(result.returnPath, { replace: true });

@@ -1,20 +1,15 @@
-import { type ChangeEvent, type FC, useCallback, useState } from "react";
+import { type ChangeEvent, type FC, useCallback } from "react";
 import {
   type SignUpFormData,
   SignUpSchema,
 } from "@web/auth/compass/schemas/auth.schemas";
-import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 import { AuthButton } from "../components/AuthButton";
 import { AuthInput } from "../components/AuthInput";
 import { useZodForm } from "../hooks/useZodForm";
 
-export type SignUpSubmitData = SignUpFormData & {
-  subscribeToUpdates: boolean;
-};
-
 interface SignUpFormProps {
   /** Callback when form is submitted with valid data */
-  onSubmit: (data: SignUpSubmitData) => void | Promise<void>;
+  onSubmit: (data: SignUpFormData) => void | Promise<void>;
   /** Callback when name field changes (for dynamic greeting) */
   onNameChange?: (name: string) => void;
   /** Whether form submission is in progress */
@@ -31,12 +26,10 @@ export const SignUpForm: FC<SignUpFormProps> = ({
   onNameChange,
   isSubmitting,
 }) => {
-  const [subscribeToUpdates, setSubscribeToUpdates] = useState(false);
-
   const form = useZodForm({
     schema: SignUpSchema,
     initialValues: { name: "", email: "", password: "" },
-    onSubmit: (data) => onSubmit({ ...data, subscribeToUpdates }),
+    onSubmit,
   });
 
   const handleNameChange = useCallback(
@@ -84,18 +77,6 @@ export const SignUpForm: FC<SignUpFormProps> = ({
         hasError={!!form.touched.password && !!form.errors.password}
         autoComplete="new-password"
       />
-
-      <TooltipWrapper description="Once a month. Unsubscribe anytime.">
-        <label className="flex w-fit items-center gap-2 text-sm text-text-lighter">
-          <input
-            type="checkbox"
-            checked={subscribeToUpdates}
-            onChange={(e) => setSubscribeToUpdates(e.target.checked)}
-            className="h-4 w-4 rounded-full border-border-primary accent-accent-primary"
-          />
-          Subscribe to updates
-        </label>
-      </TooltipWrapper>
 
       <AuthButton
         type="submit"

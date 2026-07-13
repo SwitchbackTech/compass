@@ -47,7 +47,11 @@ describe("completeGoogleAuthorization", () => {
         ...deps,
         search: callbackSearch("state-1"),
       }),
-    ).resolves.toEqual({ status: "completed", returnPath: "/week" });
+    ).resolves.toEqual({
+      status: "completed",
+      returnPath: "/week",
+      isNewUser: false,
+    });
 
     expect(deps.authApi.loginOrSignup).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -79,7 +83,11 @@ describe("completeGoogleAuthorization", () => {
         ...deps,
         search: callbackSearch("state-2"),
       }),
-    ).resolves.toEqual({ status: "completed", returnPath: "/day" });
+    ).resolves.toEqual({
+      status: "completed",
+      returnPath: "/day",
+      isNewUser: false,
+    });
 
     expect(deps.authApi.connectGoogle).toHaveBeenCalledTimes(1);
     expect(deps.refreshUserMetadata).toHaveBeenCalledTimes(1);
@@ -101,7 +109,11 @@ describe("completeGoogleAuthorization", () => {
         doesSessionExist: mock(async () => false),
         search: callbackSearch("state-session-missing"),
       }),
-    ).resolves.toEqual({ status: "completed", returnPath: "/day" });
+    ).resolves.toEqual({
+      status: "completed",
+      returnPath: "/day",
+      isNewUser: false,
+    });
 
     expect(deps.authApi.connectGoogle).not.toHaveBeenCalled();
     expect(deps.authApi.loginOrSignup).toHaveBeenCalledTimes(1);
@@ -133,7 +145,11 @@ describe("completeGoogleAuthorization", () => {
         ...deps,
         search: callbackSearch("state-session-expired"),
       }),
-    ).resolves.toEqual({ status: "completed", returnPath: "/day" });
+    ).resolves.toEqual({
+      status: "completed",
+      returnPath: "/day",
+      isNewUser: false,
+    });
 
     expect(deps.authApi.connectGoogle).toHaveBeenCalledTimes(1);
     expect(deps.authApi.loginOrSignup).toHaveBeenCalledTimes(1);
