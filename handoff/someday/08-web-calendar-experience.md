@@ -20,6 +20,10 @@ available before final integration.
   move control.
 - Read-only events can be inspected but not saved, resized, dragged, deleted,
   reordered, or recurrence-edited.
+- A series base never renders its own grid card (A45) — the view model
+  (`event.view-model.ts`) drops `recurrence.kind === "series"` events before
+  building timed/all-day cards. Every occurrence, including the first, is a
+  separately materialized event and renders normally.
 
 ## Primary code anchors
 

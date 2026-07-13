@@ -31,6 +31,7 @@ describe("2025.10.16T12.26.00.migrate-calendarlist-to-calendar", () => {
       logger: Logger("test:migration"),
       migratorType: MigratorType.MIGRATION,
       unsafe: false,
+      dryRun: false,
     },
   };
 

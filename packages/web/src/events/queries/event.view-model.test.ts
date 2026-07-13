@@ -71,6 +71,21 @@ describe("Event query view models", () => {
     expect(result.isAtWeeklyLimit).toBe(false);
   });
 
+  test("excludes a series base from grid cards but keeps its occurrence", () => {
+    const base = createMockEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
+    });
+    const occurrence = createMockEvent({
+      recurrence: { kind: "occurrence", seriesId: base.id },
+    });
+    const data = normalized(base, occurrence);
+
+    const result = deriveCalendarEventViewModel(data);
+
+    expect(result.timedEvents.map(({ _id }) => _id)).toEqual([occurrence.id]);
+    expect(result.events.map(({ id }) => id)).toEqual([base.id, occurrence.id]);
+  });
+
   test("returns stable empty shapes", () => {
     const week = deriveCalendarEventViewModel();
     expect(week).toEqual({

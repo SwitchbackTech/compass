@@ -75,7 +75,7 @@ describe("CompassToGoogleEventPropagation - scope 'all' - full series", () => {
     const remainingInstances = await mongoService.event
       .find({ "recurrence.seriesId": base._id })
       .toArray();
-    expect(remainingInstances).toHaveLength(1);
+    expect(remainingInstances).toHaveLength(2);
 
     expect(patchSpy).toHaveBeenCalledTimes(1);
     const [, , eventIdArg, body] = patchSpy.mock.calls[0]!;

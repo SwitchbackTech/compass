@@ -176,10 +176,15 @@ describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
     const [base] = await mongoService.event
       .find({ "recurrence.kind": "series" })
       .toArray();
-    const [splitPoint] = await mongoService.event
+    const instances = await mongoService.event
       .find({ "recurrence.seriesId": base!._id })
       .sort({ "schedule.start": 1 })
       .toArray();
+    // Splitting AT the series' earliest occurrence collapses to scope
+    // "all" (there's nothing earlier to keep on the old base), so this
+    // picks the second occurrence -- a genuine mid-series split point,
+    // matching the other tests in this file.
+    const splitPoint = instances[1];
 
     const patchSpy = jest.spyOn(gcalService, "patchEvent");
     const createSpy = jest.spyOn(gcalService, "createEvent");

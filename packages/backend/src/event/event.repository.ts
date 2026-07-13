@@ -195,6 +195,34 @@ class EventRepository {
       .toArray();
   }
 
+  /**
+   * Finds a not-yet-Google-linked occurrence of `seriesId` sitting at
+   * `anchor` (Google's `originalStartTime` for a webhook-delivered
+   * instance/cancellation) -- the local doc a Compass-created series
+   * materialized before it had ever synced to Google. Used to converge the
+   * Google echo of a Compass-created series onto the existing local
+   * documents instead of inserting duplicates alongside them.
+   */
+  async findUnlinkedOccurrence(
+    seriesId: ObjectId,
+    anchor: Date,
+    session?: ClientSession,
+  ): Promise<EventRecord | null> {
+    const allDayDate = anchor.toISOString().slice(0, 10);
+    return mongoService.event.findOne(
+      {
+        "recurrence.kind": "occurrence",
+        "recurrence.seriesId": seriesId,
+        externalReference: null,
+        $or: [
+          { "schedule.kind": "timed", "schedule.start": anchor },
+          { "schedule.kind": "allDay", "schedule.start": allDayDate },
+        ],
+      },
+      { session },
+    );
+  }
+
   async insertOne(
     record: EventRecord,
     session?: ClientSession,

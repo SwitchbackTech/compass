@@ -122,6 +122,42 @@ describe("analyzeReplace", () => {
     expect(plan.deleteInstanceIds).toEqual([laterInstance._id]);
   });
 
+  it("scope thisAndFollowing: collapses to scope all when the target is the series' earliest occurrence", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+    });
+    // Same schedule as `base` (buildEvent's default), matching the fact
+    // that the base's own schedule IS the first occurrence's schedule.
+    const earliest = buildEvent({
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+    const laterInstance = buildEvent({
+      schedule: {
+        kind: "timed",
+        start: new Date("2026-07-21T15:00:00.000Z"),
+        end: new Date("2026-07-21T16:00:00.000Z"),
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+
+    const plan = analyzeReplace(
+      earliest,
+      { base, instances: [laterInstance] },
+      replaceInput({ scope: "thisAndFollowing" }),
+      now,
+    );
+
+    // Truncating the base with an UNTIL before its own DTSTART would
+    // produce an empty, unrenderable series -- so this collapses to
+    // scope "all" instead, same as editing the base directly.
+    expect(plan.kind).toBe("replaceSeries");
+    if (plan.kind !== "replaceSeries")
+      throw new Error("expected replaceSeries");
+    expect(plan.updatedBase._id).toEqual(base._id);
+    expect(plan.deleteInstanceIds).toEqual([laterInstance._id]);
+  });
+
   it("scope all: throws RECURRENCE_CONFLICT when an instance has drifted onto a different calendar than its base (A6 defense-in-depth, step 7)", () => {
     const base = buildEvent({
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
@@ -193,6 +229,32 @@ describe("analyzeDelete", () => {
       { base, instances: [occurrence] },
       { scope: "all" },
     );
+    expect(plan).toEqual({ kind: "deleteSeries", seriesId: base._id });
+  });
+
+  it("scope thisAndFollowing: collapses to deleting the whole series when the target is the earliest occurrence", () => {
+    const base = buildEvent({
+      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
+    });
+    const earliest = buildEvent({
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+    const laterInstance = buildEvent({
+      schedule: {
+        kind: "timed",
+        start: new Date("2026-07-21T15:00:00.000Z"),
+        end: new Date("2026-07-21T16:00:00.000Z"),
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "occurrence", seriesId: base._id },
+    });
+
+    const plan = analyzeDelete(
+      earliest,
+      { base, instances: [laterInstance] },
+      { scope: "thisAndFollowing" },
+    );
+
     expect(plan).toEqual({ kind: "deleteSeries", seriesId: base._id });
   });
 

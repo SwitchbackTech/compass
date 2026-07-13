@@ -70,7 +70,7 @@ describe("CompassToGoogleEventPropagation - series base", () => {
     const instances = await mongoService.event
       .find({ "recurrence.seriesId": created._id })
       .toArray();
-    expect(instances).toHaveLength(4);
+    expect(instances).toHaveLength(5);
 
     expect(createSpy).toHaveBeenCalledTimes(1);
     const [, calendarIdArg, body] = createSpy.mock.calls[0]!;

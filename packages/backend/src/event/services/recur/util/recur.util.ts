@@ -56,10 +56,12 @@ export const getAnchorDate = (schedule: EventScheduleRecord): Date => {
 };
 
 /**
- * Materializes the occurrence instances for a series base (B6: instances
- * stay MATERIALIZED, not virtual). The base itself is not included in the
- * result. Capped at GCAL_MAX_RECURRENCES as a safety bound against unbounded
- * RRULEs (matches the Google-side cap the app already respects).
+ * Materializes every occurrence instance for a series base, including the
+ * first (B6: instances stay MATERIALIZED, not virtual; the base itself is
+ * metadata-only and never rendered -- see gridEventsFrom on the web side).
+ * The base document is not included in the result. Capped at
+ * GCAL_MAX_RECURRENCES as a safety bound against unbounded RRULEs (matches
+ * the Google-side cap the app already respects).
  */
 export const materializeSeriesInstances = (
   base: EventRecord,
@@ -69,10 +71,10 @@ export const materializeSeriesInstances = (
 
   // Someday events have no per-occurrence instant (schedule is a
   // period/anchorDate/sortOrder bucket, not a date). shiftSchedule cannot
-  // shift them, so materializing "following" dates here would create
-  // duplicate documents with the identical schedule as the base. Recurrence
-  // for someday events is surfaced only on the base (sidebar context
-  // display); it never fans out into separate instance rows.
+  // shift them, so materializing instances here would create duplicate
+  // documents with the identical schedule as the base. Recurrence for
+  // someday events is surfaced only on the base (sidebar context display);
+  // it never fans out into separate instance rows.
   if (base.schedule.kind === "someday") return [];
 
   const anchor = getAnchorDate(base.schedule);
@@ -81,13 +83,7 @@ export const materializeSeriesInstances = (
   });
   const dates = rule.all((_date, len) => len < maxInstances);
 
-  // The base itself represents the first occurrence; only materialize the
-  // rest as separate instance documents.
-  const followingDates = dates.filter(
-    (date) => date.getTime() !== anchor.getTime(),
-  );
-
-  return followingDates.map((date) => ({
+  return dates.map((date) => ({
     _id: new ObjectId(),
     calendarId: base.calendarId,
     content: base.content,

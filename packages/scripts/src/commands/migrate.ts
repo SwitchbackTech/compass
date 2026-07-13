@@ -122,8 +122,9 @@ async function createMigrationCli(
     },
     context: async (): Promise<MigrationContext> => {
       const unsafe = cli.getFlagParameter("--unsafe").value;
+      const dryRun = cli.getFlagParameter("--dry-run").value;
 
-      return { logger, migratorType, unsafe };
+      return { logger, migratorType, unsafe, dryRun };
     },
   });
 
@@ -137,6 +138,13 @@ async function createMigrationCli(
     parameterShortName: "-u",
     description: "Run unsafe migration code within up and down methods",
     environmentVariable: "MIGRATION_UNSAFE",
+  });
+
+  cli.defineFlagParameter({
+    parameterLongName: "--dry-run",
+    description:
+      "Report what a migration would change without writing (only migrations that opt in respect this)",
+    environmentVariable: "MIGRATION_DRY_RUN",
   });
 
   return cli;

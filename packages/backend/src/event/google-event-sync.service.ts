@@ -5,6 +5,22 @@ import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.co
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import { eventRepository } from "@backend/event/event.repository";
 import { mapGoogleEvent } from "@backend/event/google-event.adapter";
+import { getAnchorDate } from "@backend/event/services/recur/util/recur.util";
+
+/**
+ * The instant Google considers this event's fixed position in a recurrence
+ * pattern (stays fixed even after the instance's own start/end are edited).
+ * Present on both live instances and cancellation notifications, so it is
+ * the shared key for matching a webhook-delivered instance/cancellation
+ * against a not-yet-linked local occurrence -- see `findUnlinkedOccurrence`.
+ */
+const getInstanceAnchor = (event: gSchema$Event): Date | null => {
+  const original = event.originalStartTime;
+  const value = original?.dateTime ?? original?.date;
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
 
 export type GoogleEventSyncResult = {
   processed: number;
@@ -23,6 +39,13 @@ const emptyResult = (): GoogleEventSyncResult => ({
   ignored: 0,
   invalid: 0,
   affectedEventIds: [],
+});
+
+const deleteResult = (deletedIds: ObjectId[]): GoogleEventSyncResult => ({
+  ...emptyResult(),
+  processed: 1,
+  deleted: deletedIds.length,
+  affectedEventIds: deletedIds.map((id) => id.toHexString()),
 });
 
 const merge = (
@@ -129,20 +152,34 @@ export class GoogleEventSync {
     });
 
     if (mapped.kind === "cancelled") {
-      const { deletedCount, deletedIds } =
-        await eventRepository.deleteByExternalReference(
-          this.calendar._id,
-          mapped.providerEventId,
-          session,
-        );
-      return {
-        processed: 1,
-        saved: 0,
-        deleted: deletedCount,
-        ignored: 0,
-        invalid: 0,
-        affectedEventIds: deletedIds.map((id) => id.toHexString()),
-      };
+      const { deletedIds } = await eventRepository.deleteByExternalReference(
+        this.calendar._id,
+        mapped.providerEventId,
+        session,
+      );
+      if (deletedIds.length > 0) return deleteResult(deletedIds);
+
+      // No externally-linked doc matched -- this can be the cancellation of
+      // an instance a Compass-created series already materialized locally
+      // but never synced to Google. Fall back to matching it by series +
+      // original position, same as the insert-side convergence below.
+      const seriesId = mapped.providerRecurringEventId
+        ? seriesMap.get(mapped.providerRecurringEventId)
+        : undefined;
+      const anchor = getInstanceAnchor(event);
+      const unlinked =
+        seriesId && anchor
+          ? await eventRepository.findUnlinkedOccurrence(
+              seriesId,
+              anchor,
+              session,
+            )
+          : null;
+
+      if (!unlinked) return deleteResult([]);
+
+      await eventRepository.deleteMany([unlinked._id], session);
+      return deleteResult([unlinked._id]);
     }
 
     if (mapped.kind === "ignored") {
@@ -159,11 +196,27 @@ export class GoogleEventSync {
       session,
     );
 
-    const record = existing
-      ? { ...mapped.event, _id: existing._id, createdAt: existing.createdAt }
+    // An occurrence that isn't linked by external id yet may still already
+    // exist locally: a Compass-created series materializes every occurrence
+    // (including the first) before any of them have ever synced to Google.
+    // Match it by series + original position so this echo adopts the local
+    // doc instead of inserting a duplicate alongside it.
+    const unlinkedMatch =
+      !existing && mapped.event.recurrence.kind === "occurrence"
+        ? await eventRepository.findUnlinkedOccurrence(
+            mapped.event.recurrence.seriesId,
+            getInstanceAnchor(event) ?? getAnchorDate(mapped.event.schedule),
+            session,
+          )
+        : null;
+
+    const matched = existing ?? unlinkedMatch;
+
+    const record = matched
+      ? { ...mapped.event, _id: matched._id, createdAt: matched.createdAt }
       : mapped.event;
 
-    if (existing) {
+    if (matched) {
       await eventRepository.replaceOne(record, session);
     } else {
       await eventRepository.insertOne(record, session);

@@ -118,7 +118,7 @@ describe("EventService (local calendar)", () => {
       .find({ "recurrence.seriesId": created._id })
       .toArray();
 
-    expect(instances).toHaveLength(2);
+    expect(instances).toHaveLength(3);
   });
 
   it("reorders someday events for the owning user only", async () => {
@@ -287,7 +287,7 @@ describe("EventService (local calendar)", () => {
     const before = await mongoService.event
       .find({ "recurrence.seriesId": created._id })
       .toArray();
-    expect(before).toHaveLength(2);
+    expect(before).toHaveLength(3);
 
     await eventService.delete(user._id.toString(), created._id.toHexString(), {
       scope: "all",
@@ -322,10 +322,10 @@ describe("EventService (local calendar)", () => {
       .find({ "recurrence.seriesId": created._id })
       .sort({ "schedule.start": 1 })
       .toArray();
-    expect(instances).toHaveLength(2);
-    const [earlier, later] = instances;
+    expect(instances).toHaveLength(3);
+    const [earliest, middle, latest] = instances;
 
-    await eventService.delete(user._id.toString(), later!._id.toHexString(), {
+    await eventService.delete(user._id.toString(), latest!._id.toHexString(), {
       scope: "thisAndFollowing",
     });
 
@@ -335,7 +335,9 @@ describe("EventService (local calendar)", () => {
         .toArray()
     ).map((e) => e._id.toHexString());
 
-    expect(remainingInstanceIds).toEqual([earlier!._id.toHexString()]);
+    expect(remainingInstanceIds.sort()).toEqual(
+      [earliest!._id.toHexString(), middle!._id.toHexString()].sort(),
+    );
     expect(
       await eventService.readById(
         user._id.toString(),

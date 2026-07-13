@@ -49,6 +49,22 @@ const scheduleStartMs = (schedule: EventRecord["schedule"]): number => {
  */
 export type SeriesContext = { base: EventRecord; instances: EventRecord[] };
 
+/**
+ * True when a "thisAndFollowing" scope has nothing earlier to keep on the
+ * old base: `target` isn't an occurrence at all, there's no series context,
+ * or `target` IS the series' earliest occurrence (the base's schedule is
+ * metadata for that same first occurrence, per B6). Truncating the base
+ * with an UNTIL before its own DTSTART would otherwise produce an empty,
+ * unrenderable series -- so callers collapse to scope "all" instead.
+ */
+const hasNoEarlierOccurrence = (
+  target: EventRecord,
+  series: SeriesContext | null,
+): boolean =>
+  target.recurrence.kind !== "occurrence" ||
+  !series ||
+  scheduleStartMs(target.schedule) === scheduleStartMs(series.base.schedule);
+
 export type ReplacePlan =
   | { kind: "replaceThis"; updated: EventRecord }
   | {
@@ -160,9 +176,7 @@ export function analyzeReplace(
   }
 
   // scope === "thisAndFollowing"
-  if (target.recurrence.kind !== "occurrence" || !series) {
-    // No earlier occurrences exist relative to a base/single event; the
-    // whole thing transitions, same as "all".
+  if (hasNoEarlierOccurrence(target, series)) {
     return analyzeReplace(target, series, { ...input, scope: "all" }, now);
   }
 
@@ -227,7 +241,7 @@ export function analyzeDelete(
   }
 
   // scope === "thisAndFollowing"
-  if (target.recurrence.kind !== "occurrence" || !series) {
+  if (hasNoEarlierOccurrence(target, series)) {
     const seriesId = series?.base._id ?? target._id;
     return { kind: "deleteSeries", seriesId };
   }

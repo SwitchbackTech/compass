@@ -23,4 +23,5 @@ export interface MigrationContext {
   logger: ReturnType<typeof Logger>;
   migratorType: MigratorType;
   unsafe: boolean;
+  dryRun: boolean;
 }

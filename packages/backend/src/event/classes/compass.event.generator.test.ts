@@ -60,8 +60,8 @@ describe("generateReplace", () => {
 
     expect(result.primary).toBe(updatedBase);
     expect(result.deleteIds).toBe(deleteInstanceIds);
-    // base + 2 following instances (COUNT=3)
-    expect(result.upsert).toHaveLength(3);
+    // base + 3 materialized instances, including the first (COUNT=3)
+    expect(result.upsert).toHaveLength(4);
     expect(result.upsert[0]).toBe(updatedBase);
     result.upsert.slice(1).forEach((instance) => {
       expect(instance.recurrence).toEqual({
@@ -115,11 +115,13 @@ describe("generateReplace", () => {
     expect(result.deleteIds).toBe(deleteInstanceIds);
     expect(result.upsert[0]).toBe(truncatedBase);
     expect(result.upsert[1]).toBe(newBase);
-    // newBase (COUNT=2) materializes exactly 1 following instance
-    expect(result.upsert).toHaveLength(3);
-    expect(result.upsert[2]?.recurrence).toEqual({
-      kind: "occurrence",
-      seriesId: newBase._id,
+    // newBase (COUNT=2) materializes 2 instances, including the first
+    expect(result.upsert).toHaveLength(4);
+    result.upsert.slice(2).forEach((instance) => {
+      expect(instance.recurrence).toEqual({
+        kind: "occurrence",
+        seriesId: newBase._id,
+      });
     });
   });
 });

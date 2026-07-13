@@ -39,6 +39,7 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
       logger: Logger("test:migration"),
       migratorType: MigratorType.MIGRATION,
       unsafe: false,
+      dryRun: false,
     },
   };
 
