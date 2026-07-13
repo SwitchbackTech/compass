@@ -562,7 +562,7 @@ describe("SyncController", () => {
         repairSpy.mockRestore();
       });
 
-      it("ignores a request while an import is already in progress", async () => {
+      it("restarts an import left marked in progress", async () => {
         const getAllEventsSpy = jest.spyOn(gcalService, "getAllEvents");
         const user = await UserDriver.createUser();
         const userId = user._id.toString();
@@ -573,22 +573,23 @@ describe("SyncController", () => {
           data: { sync: { importGCal: "IMPORTING" } },
         });
 
-        const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
-        // Same reasoning as the sibling test above.
-        const repairSpy = jest
-          .spyOn(googleWatchRepairService, "repairGoogleWatchesForUser")
-          .mockResolvedValue(undefined as never);
+        const stream = baseDriver.openSSEStream({
+          userId,
+          sessionId: randomUUID(),
+        });
+        const importEndPromise = stream.waitForEvent(
+          "importCompleted",
+          importTimeoutMs,
+        );
 
         await syncDriver.importGCal({ userId });
-        await new Promise((resolve) => setTimeout(resolve, 200));
+        const result = (await importEndPromise) as ImportCompletedMessage;
+        stream.close();
 
-        expect(importEndSpy).not.toHaveBeenCalled();
-        expect(getAllEventsSpy).not.toHaveBeenCalled();
-        expect(repairSpy).toHaveBeenCalledWith(userId);
+        expect(parseImportResult(result).operation).toBe("full");
+        expect(getAllEventsSpy).toHaveBeenCalled();
 
         getAllEventsSpy.mockRestore();
-        importEndSpy.mockRestore();
-        repairSpy.mockRestore();
       });
 
       it("retries a non-forced import after a restart is requested", async () => {
@@ -618,7 +619,7 @@ describe("SyncController", () => {
         stream.close();
 
         const parsed = parseImportResult(result);
-        expect(parsed.operation).toBe("incremental");
+        expect(parsed.operation).toBe("full");
         expect(getAllEventsSpy).toHaveBeenCalledWith(
           expect.objectContaining({ pageToken: "5" }),
         );
@@ -654,7 +655,7 @@ describe("SyncController", () => {
         stream.close();
 
         const parsed = parseImportResult(result);
-        expect(parsed.operation).toBe("incremental");
+        expect(parsed.operation).toBe("full");
         expect(getAllEventsSpy).toHaveBeenCalledWith(
           expect.objectContaining({ pageToken: "5" }),
         );

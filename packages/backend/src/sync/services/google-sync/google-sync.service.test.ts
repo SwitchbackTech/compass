@@ -12,6 +12,12 @@ import { compassTestState } from "@backend/__tests__/helpers/mock.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
 import mongoService from "@backend/common/services/mongo.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
+import {
+  endGoogleSync,
+  isGoogleSyncActive,
+  resetGoogleSyncActivityForTests,
+  tryBeginGoogleSync,
+} from "@backend/sync/services/google-sync/google-sync.activity";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import * as syncImportService from "@backend/sync/services/import/google-import.service";
 import { googleWatchService } from "@backend/sync/services/watch/google-watch.service";
@@ -41,14 +47,18 @@ describe("googleCalendarSyncService", () => {
   beforeAll(initSupertokens);
   beforeEach(setupTestDb);
   beforeEach(cleanupCollections);
-  afterEach(() => jest.restoreAllMocks());
+  afterEach(() => {
+    resetGoogleSyncActivityForTests();
+    jest.restoreAllMocks();
+  });
   afterAll(cleanupTestDb);
 
   describe("importLatestGoogleCalendarChanges", () => {
-    it("skips incremental import when already in progress or completed", async () => {
+    it("skips a completed incremental import without publishing status", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+      const syncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
       const createSyncImportSpy = jest.spyOn(
         syncImportService,
         "createSyncImport",
@@ -63,6 +73,9 @@ describe("googleCalendarSyncService", () => {
 
       expect(createSyncImportSpy).not.toHaveBeenCalled();
       expect(importEndSpy).not.toHaveBeenCalled();
+      expect(syncStatusSpy).not.toHaveBeenCalledWith(userId, {
+        status: "syncing",
+      });
     });
 
     it("emits importCompleted when incremental import completes", async () => {
@@ -95,6 +108,34 @@ describe("googleCalendarSyncService", () => {
         userId,
         expect.objectContaining({ reason: "reconciled" }),
       );
+    });
+
+    it("retries an abandoned incremental import", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+      await seedPrimaryGoogleCalendar(user._id);
+      const importLatestEvents = jest.fn().mockResolvedValue({
+        totalProcessed: 0,
+        totalSaved: 0,
+        totalDeleted: 0,
+        totalIgnored: 0,
+        totalInvalid: 0,
+      });
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { incrementalGCalSync: "IMPORTING" } },
+      });
+      jest.spyOn(syncImportService, "createSyncImport").mockResolvedValue({
+        importLatestEvents,
+      } as unknown as Awaited<
+        ReturnType<typeof syncImportService.createSyncImport>
+      >);
+
+      await googleCalendarSyncService.importLatestGoogleCalendarChanges(userId);
+
+      expect(importLatestEvents).toHaveBeenCalledTimes(1);
+      expect(isGoogleSyncActive(userId)).toBe(false);
     });
   });
 
@@ -443,6 +484,34 @@ describe("googleCalendarSyncService", () => {
       expect(startSpy).not.toHaveBeenCalled();
       expect(importEndSpy).not.toHaveBeenCalled();
     });
+
+    it("restarts an abandoned full import and reports a full completion", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const importEndSpy = jest.spyOn(sseServer, "publishImportCompleted");
+
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "IMPORTING" } },
+      });
+      jest.spyOn(userService, "stopGoogleCalendarSync").mockResolvedValue();
+      jest
+        .spyOn(googleCalendarSyncService, "initializeGoogleCalendarSync")
+        .mockResolvedValue({
+          eventsCount: 2,
+          calendarsCount: 1,
+          failedCalendars: [],
+        });
+
+      await googleCalendarSyncService.startGoogleCalendarSyncIfNeeded(userId);
+
+      expect(importEndSpy).toHaveBeenCalledWith(userId, {
+        operation: "full",
+        eventsCount: 2,
+        calendarsCount: 1,
+      });
+      expect(isGoogleSyncActive(userId)).toBe(false);
+    });
   });
 
   describe("repairGoogleCalendarSync", () => {
@@ -470,6 +539,47 @@ describe("googleCalendarSyncService", () => {
 
       expect(stopSpy).toHaveBeenCalledWith(userId);
       expect(startSpy).toHaveBeenCalledWith(userId);
+    });
+
+    it("does not overlap either sync mode with active Google sync work", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const syncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
+      const stopSpy = jest.spyOn(userService, "stopGoogleCalendarSync");
+      const createSyncImportSpy = jest.spyOn(
+        syncImportService,
+        "createSyncImport",
+      );
+
+      expect(tryBeginGoogleSync(userId)).toBe(true);
+
+      await googleCalendarSyncService.importLatestGoogleCalendarChanges(userId);
+      await googleCalendarSyncService.repairGoogleCalendarSync(userId);
+
+      expect(createSyncImportSpy).not.toHaveBeenCalled();
+      expect(stopSpy).not.toHaveBeenCalled();
+      expect(syncStatusSpy).not.toHaveBeenCalled();
+
+      endGoogleSync(userId);
+    });
+
+    it("publishes attention and releases activity when error metadata cannot persist", async () => {
+      const { user } = await UtilDriver.setupTestUser();
+      const userId = user._id.toString();
+      const syncStatusSpy = jest.spyOn(sseServer, "publishSyncStatus");
+
+      jest
+        .spyOn(userMetadataService, "updateUserMetadata")
+        .mockRejectedValue(new Error("metadata unavailable"));
+
+      await googleCalendarSyncService.repairGoogleCalendarSync(userId);
+
+      expect(syncStatusSpy).toHaveBeenCalledWith(userId, {
+        status: "attention",
+        code: "IMPORT_FAILED",
+        retryable: true,
+      });
+      expect(isGoogleSyncActive(userId)).toBe(false);
     });
   });
 });

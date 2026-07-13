@@ -7,7 +7,6 @@ import {
 } from "@core/util/event/event.util";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
-import { getGoogleRepairErrorMessage } from "@backend/common/errors/integration/gcal/gcal.errors";
 import {
   createGoogleRequestContext,
   type GoogleRequestContext,
@@ -25,15 +24,13 @@ import { googleWatchService } from "@backend/sync/services/watch/google-watch.se
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 import { googleWatchRepairService } from "@backend/sync/services/watch/google-watch-repair.service";
 import userMetadataService from "@backend/user/services/user-metadata.service";
+import { endGoogleSync, tryBeginGoogleSync } from "./google-sync.activity";
 
 const logger = Logger("app:google-sync.service");
 
-const activeFullSyncRestarts = new Set<string>();
-
 /**
- * Defensive, fire-and-forget nudge for the watch repair coordinator from
- * the sync-start "ignored" paths below (an already-in-progress or
- * already-completed sync still leaves stale/missing watches un-repaired).
+ * Defensive, fire-and-forget nudge for the watch repair coordinator when a
+ * completed sync leaves stale or missing watches behind.
  * Cooldown+lease inside the coordinator keep this cheap on what is a hot
  * path. Static import above (not the dynamic pattern used for
  * user.service in runGoogleCalendarSyncSetup) because this call site runs
@@ -51,33 +48,28 @@ const notifyImportStart = (userId: string): void => {
   sseServer.publishSyncStatus(userId, { status: "syncing" });
 };
 
-const notifyImportEnd = (
+const notifyImportCompleted = (
   userId: string,
   payload: {
-    operation: string;
-    status: "COMPLETED" | "ERRORED" | "IGNORED";
-    message?: string;
+    operation: "full" | "incremental" | "repair";
     eventsCount?: number;
     calendarsCount?: number;
   },
 ): void => {
-  if (payload.status === "COMPLETED") {
-    sseServer.publishImportCompleted(userId, {
-      operation: payload.operation === "REPAIR" ? "repair" : "incremental",
-      eventsCount: payload.eventsCount ?? 0,
-      calendarsCount: payload.calendarsCount ?? 0,
-    });
-    sseServer.publishSyncStatus(userId, { status: "healthy" });
-    return;
-  }
+  sseServer.publishImportCompleted(userId, {
+    operation: payload.operation,
+    eventsCount: payload.eventsCount ?? 0,
+    calendarsCount: payload.calendarsCount ?? 0,
+  });
+  sseServer.publishSyncStatus(userId, { status: "healthy" });
+};
 
-  if (payload.status === "ERRORED") {
-    sseServer.publishSyncStatus(userId, {
-      status: "attention",
-      code: "IMPORT_FAILED",
-      retryable: true,
-    });
-  }
+const notifyImportFailed = (userId: string): void => {
+  sseServer.publishSyncStatus(userId, {
+    status: "attention",
+    code: "IMPORT_FAILED",
+    retryable: true,
+  });
 };
 
 /**
@@ -111,11 +103,14 @@ async function importLatestGoogleCalendarChanges(
   context?: GoogleRequestContext,
   perPage = 1000,
 ) {
-  logger.info(`Starting incremental Google Calendar sync for user: ${userId}`);
+  if (!tryBeginGoogleSync(userId)) {
+    logger.info(
+      `Skipping incremental Google Calendar sync because another sync is active for user: ${userId}`,
+    );
+    return;
+  }
 
   try {
-    notifyImportStart(userId);
-
     const userMeta = await userMetadataService.fetchUserMetadata(
       userId,
       undefined,
@@ -123,18 +118,16 @@ async function importLatestGoogleCalendarChanges(
         skipAssessment: true,
       },
     );
-    const proceed = shouldDoIncrementalGCalSync(userMeta);
+    const importStatus = userMeta.sync?.incrementalGCalSync;
+    const proceed =
+      importStatus === "IMPORTING" || shouldDoIncrementalGCalSync(userMeta);
 
-    if (!proceed) {
-      notifyImportEnd(userId, {
-        operation: "INCREMENTAL",
-        status: "IGNORED",
-        message: `User ${userId} gcal incremental sync is in progress or completed, ignoring this request`,
-      });
+    if (!proceed) return;
 
-      return;
-    }
-
+    logger.info(
+      `Starting incremental Google Calendar sync for user: ${userId}`,
+    );
+    notifyImportStart(userId);
     await userMetadataService.updateUserMetadata({
       userId,
       data: { sync: { incrementalGCalSync: "IMPORTING" } },
@@ -148,9 +141,8 @@ async function importLatestGoogleCalendarChanges(
         data: { sync: { incrementalGCalSync: "COMPLETED" } },
       });
 
-      notifyImportEnd(userId, {
-        operation: "INCREMENTAL",
-        status: "COMPLETED",
+      notifyImportCompleted(userId, {
+        operation: "incremental",
         eventsCount: 0,
         calendarsCount: 0,
       });
@@ -173,9 +165,8 @@ async function importLatestGoogleCalendarChanges(
       data: { sync: { incrementalGCalSync: "COMPLETED" } },
     });
 
-    notifyImportEnd(userId, {
-      operation: "INCREMENTAL",
-      status: "COMPLETED",
+    notifyImportCompleted(userId, {
+      operation: "incremental",
       eventsCount: result.totalSaved + result.totalDeleted,
       calendarsCount: 1,
     });
@@ -188,23 +179,28 @@ async function importLatestGoogleCalendarChanges(
 
     return result;
   } catch (error) {
-    await userMetadataService.updateUserMetadata({
-      userId,
-      data: { sync: { incrementalGCalSync: "ERRORED" } },
-    });
-
     logger.error(
       `Incremental Google Calendar sync failed for user: ${userId}`,
       error,
     );
 
-    notifyImportEnd(userId, {
-      operation: "INCREMENTAL",
-      status: "ERRORED",
-      message: `Incremental Google Calendar sync failed for user: ${userId}`,
-    });
+    try {
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { incrementalGCalSync: "ERRORED" } },
+      });
+    } catch (metadataError) {
+      logger.error(
+        `Failed to persist incremental Google Calendar sync error for user: ${userId}`,
+        metadataError,
+      );
+    }
+
+    notifyImportFailed(userId);
 
     throw error;
+  } finally {
+    endGoogleSync(userId);
   }
 }
 
@@ -216,33 +212,22 @@ async function runGoogleCalendarSyncSetup(
     "@backend/user/services/user.service"
   );
   const isForce = options.force === true;
-  const operation = isForce ? "REPAIR" : "INCREMENTAL";
-  const ignoreMessage = `User ${userId} gcal import is in progress or completed, ignoring this request`;
+  const operation = isForce ? "repair" : "full";
 
-  if (activeFullSyncRestarts.has(userId)) {
-    notifyImportEnd(userId, {
-      operation,
-      status: "IGNORED",
-      message: ignoreMessage,
-    });
-    triggerWatchRepairInBackground(userId);
+  if (!tryBeginGoogleSync(userId)) {
+    logger.info(
+      `Skipping ${operation} Google Calendar sync because another sync is active for user: ${userId}`,
+    );
     return;
   }
-
-  activeFullSyncRestarts.add(userId);
 
   try {
     const userMeta = await userService.fetchUserMetadata(userId);
     const importStatus = userMeta.sync?.importGCal;
-    const isImporting = importStatus === "IMPORTING";
-    const proceed = isForce ? !isImporting : shouldImportGCal(userMeta);
+    const proceed =
+      isForce || importStatus === "IMPORTING" || shouldImportGCal(userMeta);
 
     if (!proceed) {
-      notifyImportEnd(userId, {
-        operation,
-        status: "IGNORED",
-        message: ignoreMessage,
-      });
       triggerWatchRepairInBackground(userId);
 
       return;
@@ -281,9 +266,8 @@ async function runGoogleCalendarSyncSetup(
       data: { sync: { importGCal: "COMPLETED" } },
     });
 
-    notifyImportEnd(userId, {
+    notifyImportCompleted(userId, {
       operation,
-      status: "COMPLETED",
       ...importResults,
     });
 
@@ -313,20 +297,23 @@ async function runGoogleCalendarSyncSetup(
       return;
     }
 
-    await userMetadataService.updateUserMetadata({
-      userId,
-      data: { sync: { importGCal: "ERRORED" } },
-    });
-
     logger.error(`Re-sync failed for user: ${userId}`, err);
 
-    notifyImportEnd(userId, {
-      operation,
-      status: "ERRORED",
-      message: getGoogleRepairErrorMessage(err),
-    });
+    try {
+      await userMetadataService.updateUserMetadata({
+        userId,
+        data: { sync: { importGCal: "ERRORED" } },
+      });
+    } catch (metadataError) {
+      logger.error(
+        `Failed to persist Google Calendar sync error for user: ${userId}`,
+        metadataError,
+      );
+    }
+
+    notifyImportFailed(userId);
   } finally {
-    activeFullSyncRestarts.delete(userId);
+    endGoogleSync(userId);
   }
 }
 

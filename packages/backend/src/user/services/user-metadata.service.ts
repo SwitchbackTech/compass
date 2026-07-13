@@ -7,6 +7,7 @@ import {
   type UserMetadata,
 } from "@core/types/user.types";
 import EmailService from "@backend/email/email.service";
+import { isGoogleSyncActive } from "@backend/sync/services/google-sync/google-sync.activity";
 import { isGoogleCalendarSyncHealthy } from "@backend/sync/services/google-sync/google-sync.health";
 import { findCompassUserBy } from "@backend/user/queries/user.queries";
 import { type GetUserMetadataResponse } from "@backend/user/types/user.types";
@@ -49,12 +50,12 @@ class UserMetadataService {
       return { connectionState: "RECONNECT_REQUIRED" };
     }
 
-    const importStatus = storedMetadata.sync?.importGCal;
-    if (importStatus === "IMPORTING") {
+    if (isGoogleSyncActive(userId)) {
       return { connectionState: "IMPORTING" };
     }
 
-    if (importStatus === "RESTART") {
+    const importStatus = storedMetadata.sync?.importGCal;
+    if (importStatus === "IMPORTING" || importStatus === "RESTART") {
       return { connectionState: "ATTENTION" };
     }
 

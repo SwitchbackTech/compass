@@ -9,6 +9,11 @@ import {
   setupTestDb,
 } from "@backend/__tests__/helpers/mock.db.setup";
 import { initSupertokens } from "@backend/common/middleware/supertokens.middleware";
+import {
+  endGoogleSync,
+  resetGoogleSyncActivityForTests,
+  tryBeginGoogleSync,
+} from "@backend/sync/services/google-sync/google-sync.activity";
 import { googleCalendarSyncService } from "@backend/sync/services/google-sync/google-sync.service";
 import { isUsingGcalWebhookHttps } from "@backend/sync/services/watch/google-watch-config";
 
@@ -24,6 +29,7 @@ describe("UserMetadataService", () => {
   beforeAll(initSupertokens);
   beforeAll(setupTestDb);
   beforeEach(cleanupCollections);
+  afterEach(resetGoogleSyncActivityForTests);
   afterAll(cleanupTestDb);
 
   describe("updateUserMetadata", () => {
@@ -198,7 +204,7 @@ describe("UserMetadataService", () => {
       expect(metadata.google?.connectionState).toBe("ATTENTION");
     });
 
-    it("returns IMPORTING while an import is already running without scheduling a repair", async () => {
+    it("returns ATTENTION when stored importing metadata has no active sync", async () => {
       const user = await UserDriver.createUser();
       const userId = user._id.toString();
       const restartSpy = jest
@@ -212,10 +218,21 @@ describe("UserMetadataService", () => {
 
       const metadata = await driver.fetchUserMetadata(userId);
 
-      expect(metadata.google?.connectionState).toBe("IMPORTING");
+      expect(metadata.google?.connectionState).toBe("ATTENTION");
       expect(restartSpy).not.toHaveBeenCalled();
 
       restartSpy.mockRestore();
+    });
+
+    it("returns IMPORTING while Google sync work is active", async () => {
+      const user = await UserDriver.createUser();
+      const userId = user._id.toString();
+
+      expect(tryBeginGoogleSync(userId)).toBe(true);
+      const metadata = await driver.fetchUserMetadata(userId);
+      endGoogleSync(userId);
+
+      expect(metadata.google?.connectionState).toBe("IMPORTING");
     });
 
     it("returns ATTENTION when a restart is pending", async () => {
