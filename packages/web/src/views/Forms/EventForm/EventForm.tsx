@@ -535,7 +535,9 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
               Component="input"
               className={classNames(
                 INPUT_RESET_CLASSNAME,
-                "bg-transparent font-semibold text-2xl transition-all duration-300",
+                // w-full: an input's intrinsic size-attribute width would
+                // overflow the sidebar-width form and force horizontal scroll
+                "w-full bg-transparent font-semibold text-2xl transition-all duration-300",
               )}
               autoFocus
               disabled={isReadOnly}

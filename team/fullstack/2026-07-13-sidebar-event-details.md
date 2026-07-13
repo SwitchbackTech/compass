@@ -75,11 +75,43 @@ Both views already mount `ResizableSidebarPanel` + `PlannerSidebar`.
 - e2e specs select the form via `getByRole("form")` — should survive, but
   flows that click "outside to close" may need updates.
 
+## Verification findings (preview, 2026-07-13)
+
+Three real bugs surfaced in the browser that unit tests missed, all fixed:
+
+1. **Escape guard vs. permanently-mounted overlays.** The keyboard-shortcuts
+   overlay is a `role="dialog"` that stays mounted while hidden
+   (display:none in Day's tree, `aria-hidden` + laid-out in Week's), and the
+   sidebar month picker is a permanently-visible react-datepicker
+   `role="listbox"`. The naive "some floating layer is open → don't close on
+   Escape" guard matched all of them, making Escape dead. Guard now requires
+   visible + not aria-hidden + not inside the Planner month picker
+   (`useEscapeToCloseForm.ts`). This is a named wart — role-scraping the DOM
+   — kept because each nested layer owns its own Escape and there's no
+   shared "topmost layer" registry to ask.
+2. **Title input overflow at sidebar width.** `<input>`s have an intrinsic
+   `size`-attribute width (~305px) that overflowed the ~253px form and made
+   autofocus horizontally scroll the panel. Fixed with `w-full` on the
+   EventForm title input (SomedayEventForm already had it).
+3. (During dev only) real pointer clicks vs. synthetic: the Day/Week click →
+   store pipeline works with real input; earlier "clicks do nothing" was a
+   coordinate-space error in my own browser driving, not an app bug.
+
+Verified end-to-end in Chrome preview: Day click→details in sidebar,
+edit+save persists, Escape closes and restores sidebar body; Week
+click→details, drag-create reveals details on release; someday form expands
+inline in its sidebar section; collapsed sidebar transiently reveals for a
+form and re-collapses on close (persisted pref untouched,
+`compass.view.sidebar-open` stays false throughout).
+
 ## Status log
 
 - [x] Architecture mapped (Explore agent + direct reads)
-- [ ] Implementation
-- [ ] Dead code removal
-- [ ] Tests updated, type-check green
-- [ ] Preview verification (week + day + someday flows)
+- [x] Implementation (commit `feat(web): dock event forms in the sidebar`)
+- [x] Dead code removal (FloatingEventForm, useEventForm, useDraftForm,
+      FloatingFormContainer, formProps plumbing, Z_INDEX_FLOATING_FORM,
+      DATA_FULL_WIDTH/DATA_OVERLAPPING, getSidebarOpenWidth)
+- [x] Tests updated (1315 pass), type-check green
+- [x] Preview verification (week + day + someday flows)
+- [ ] e2e smoke specs
 - [ ] /simplify, /ship
