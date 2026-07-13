@@ -38,7 +38,7 @@ describe("useDayEvents", () => {
   // asserting a specific source.
   const findDayEntry = (queryClient: QueryClient, date: dayjs.Dayjs) => {
     const startDate = date.startOf("day").utc(true).format();
-    const endDate = date.endOf("day").utc(true).format();
+    const endDate = date.add(1, "day").startOf("day").utc(true).format();
     const match = queryClient
       .getQueriesData({ queryKey: eventQueryKeys.scope("day") })
       .find(([key]) => {

@@ -95,7 +95,7 @@ export function DayCalendarGrid() {
     timedEvents,
   } = useDayEventViewModel({
     startDate: dateInView.startOf("day").utc(true).format(),
-    endDate: dateInView.endOf("day").utc(true).format(),
+    endDate: dateInView.add(1, "day").startOf("day").utc(true).format(),
   });
   const {
     calendarColumnIndexById,

@@ -8,7 +8,7 @@ export const DayCalendarColumnHeaders = ({
 }) => (
   <section
     aria-label="Calendars"
-    className="grid min-h-12 shrink-0 border-border-secondary/25 border-b"
+    className="grid min-h-12 shrink-0"
     style={{
       gridTemplateColumns: `repeat(${calendars.length}, minmax(0, 1fr))`,
       marginLeft: CALENDAR_GRID_MARGIN_LEFT,

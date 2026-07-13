@@ -6,14 +6,14 @@ import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjace
 
 const dayRange = (date: dayjs.Dayjs) => ({
   startDate: date.startOf("day").utc(true).format(),
-  endDate: date.endOf("day").utc(true).format(),
+  endDate: date.add(1, "day").startOf("day").utc(true).format(),
 });
 
 export function useDayEvents(dateInView: dayjs.Dayjs) {
   const { startDateUtc, endDateUtc } = useMemo(
     () => ({
       startDateUtc: dateInView.startOf("day").utc(true).format(),
-      endDateUtc: dateInView.endOf("day").utc(true).format(),
+      endDateUtc: dateInView.add(1, "day").startOf("day").utc(true).format(),
     }),
     [dateInView],
   );
