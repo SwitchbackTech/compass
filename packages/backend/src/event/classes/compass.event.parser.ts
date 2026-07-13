@@ -50,19 +50,16 @@ const scheduleStartMs = (schedule: EventRecord["schedule"]): number => {
 export type SeriesContext = { base: EventRecord; instances: EventRecord[] };
 
 /**
- * True when a "thisAndFollowing" scope has nothing earlier to keep on the
- * old base: `target` isn't an occurrence at all, there's no series context,
- * or `target` IS the series' earliest occurrence (the base's schedule is
- * metadata for that same first occurrence, per B6). Truncating the base
- * with an UNTIL before its own DTSTART would otherwise produce an empty,
- * unrenderable series -- so callers collapse to scope "all" instead.
+ * True when `target` IS the series' earliest occurrence -- the base's
+ * schedule is metadata for that same first occurrence, per B6. Truncating
+ * the base with an UNTIL before its own DTSTART would otherwise produce an
+ * empty, unrenderable series -- so a "thisAndFollowing" scope on the
+ * earliest occurrence collapses to scope "all" instead (see call sites).
  */
-const hasNoEarlierOccurrence = (
+const isSeriesEarliestOccurrence = (
   target: EventRecord,
-  series: SeriesContext | null,
+  series: SeriesContext,
 ): boolean =>
-  target.recurrence.kind !== "occurrence" ||
-  !series ||
   scheduleStartMs(target.schedule) === scheduleStartMs(series.base.schedule);
 
 export type ReplacePlan =
@@ -176,7 +173,11 @@ export function analyzeReplace(
   }
 
   // scope === "thisAndFollowing"
-  if (hasNoEarlierOccurrence(target, series)) {
+  if (
+    target.recurrence.kind !== "occurrence" ||
+    !series ||
+    isSeriesEarliestOccurrence(target, series)
+  ) {
     return analyzeReplace(target, series, { ...input, scope: "all" }, now);
   }
 
@@ -241,7 +242,11 @@ export function analyzeDelete(
   }
 
   // scope === "thisAndFollowing"
-  if (hasNoEarlierOccurrence(target, series)) {
+  if (
+    target.recurrence.kind !== "occurrence" ||
+    !series ||
+    isSeriesEarliestOccurrence(target, series)
+  ) {
     const seriesId = series?.base._id ?? target._id;
     return { kind: "deleteSeries", seriesId };
   }
