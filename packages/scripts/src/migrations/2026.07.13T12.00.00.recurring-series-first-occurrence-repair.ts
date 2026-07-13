@@ -2,7 +2,11 @@ import { type MigrationContext } from "@scripts/common/cli.types";
 import { ObjectId } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
 import mongoService from "@backend/common/services/mongo.service";
+import { type EventRecord } from "@backend/event/event.record";
 import { getAnchorDate } from "@backend/event/services/recur/util/recur.util";
+
+const anchorMs = (record: EventRecord): number =>
+  getAnchorDate(record.schedule).getTime();
 
 /**
  * One-off repair for the pre-fix "base = first occurrence" model (see
@@ -48,7 +52,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       if (base.schedule.kind === "someday") continue;
 
       seriesScanned += 1;
-      const baseAnchorMs = getAnchorDate(base.schedule).getTime();
+      const baseAnchorMs = anchorMs(base);
 
       const occurrences = await mongoService.event
         .find({
@@ -60,14 +64,14 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       const linkedStartsMs = new Set(
         occurrences
           .filter((occurrence) => occurrence.externalReference !== null)
-          .map((occurrence) => getAnchorDate(occurrence.schedule).getTime()),
+          .map(anchorMs),
       );
 
       const dupeIds = occurrences
         .filter(
           (occurrence) =>
             occurrence.externalReference === null &&
-            linkedStartsMs.has(getAnchorDate(occurrence.schedule).getTime()),
+            linkedStartsMs.has(anchorMs(occurrence)),
         )
         .map((occurrence) => occurrence._id);
 
@@ -86,7 +90,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         const hasFirstOccurrence = occurrences.some(
           (occurrence) =>
             !dupeIdSet.has(occurrence._id.toHexString()) &&
-            getAnchorDate(occurrence.schedule).getTime() === baseAnchorMs,
+            anchorMs(occurrence) === baseAnchorMs,
         );
 
         if (!hasFirstOccurrence) {
