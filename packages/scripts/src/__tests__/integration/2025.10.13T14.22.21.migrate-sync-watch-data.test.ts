@@ -34,6 +34,7 @@ describe.each([
       logger: Logger(""),
       migratorType: MigratorType.MIGRATION,
       unsafe: false,
+      dryRun: false,
     },
   };
 

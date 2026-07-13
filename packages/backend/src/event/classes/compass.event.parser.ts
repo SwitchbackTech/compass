@@ -49,6 +49,19 @@ const scheduleStartMs = (schedule: EventRecord["schedule"]): number => {
  */
 export type SeriesContext = { base: EventRecord; instances: EventRecord[] };
 
+/**
+ * True when `target` IS the series' earliest occurrence -- the base's
+ * schedule is metadata for that same first occurrence, per B6. Truncating
+ * the base with an UNTIL before its own DTSTART would otherwise produce an
+ * empty, unrenderable series -- so a "thisAndFollowing" scope on the
+ * earliest occurrence collapses to scope "all" instead (see call sites).
+ */
+const isSeriesEarliestOccurrence = (
+  target: EventRecord,
+  series: SeriesContext,
+): boolean =>
+  scheduleStartMs(target.schedule) === scheduleStartMs(series.base.schedule);
+
 export type ReplacePlan =
   | { kind: "replaceThis"; updated: EventRecord }
   | {
@@ -160,9 +173,11 @@ export function analyzeReplace(
   }
 
   // scope === "thisAndFollowing"
-  if (target.recurrence.kind !== "occurrence" || !series) {
-    // No earlier occurrences exist relative to a base/single event; the
-    // whole thing transitions, same as "all".
+  if (
+    target.recurrence.kind !== "occurrence" ||
+    !series ||
+    isSeriesEarliestOccurrence(target, series)
+  ) {
     return analyzeReplace(target, series, { ...input, scope: "all" }, now);
   }
 
@@ -227,7 +242,11 @@ export function analyzeDelete(
   }
 
   // scope === "thisAndFollowing"
-  if (target.recurrence.kind !== "occurrence" || !series) {
+  if (
+    target.recurrence.kind !== "occurrence" ||
+    !series ||
+    isSeriesEarliestOccurrence(target, series)
+  ) {
     const seriesId = series?.base._id ?? target._id;
     return { kind: "deleteSeries", seriesId };
   }

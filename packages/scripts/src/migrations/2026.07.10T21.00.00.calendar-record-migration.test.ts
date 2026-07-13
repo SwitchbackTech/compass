@@ -25,6 +25,7 @@ describe("2026.07.10T21.00.00.calendar-record-migration", () => {
       logger: Logger("test:migration"),
       migratorType: MigratorType.MIGRATION,
       unsafe: false,
+      dryRun: false,
     },
   };
 

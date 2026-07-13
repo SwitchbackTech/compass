@@ -13,6 +13,7 @@ import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
 import mongoService from "@backend/common/services/mongo.service";
+import { mapGoogleEvent } from "@backend/event/google-event.adapter";
 import { GoogleToCompassEventPropagation } from "@backend/sync/services/event-propagation/google-to-compass/google-to-compass.event-propagation";
 
 jest.mock("@backend/common/services/gcal/gcal.service", () => ({
@@ -312,6 +313,110 @@ describe("GoogleToCompassEventPropagation", () => {
       expect(
         await mongoService.event.countDocuments({ calendarId: calSrc._id }),
       ).toBe(0);
+    });
+  });
+
+  /**
+   * A Compass-created series materializes every occurrence locally
+   * (including the first, B6) before any of them have ever synced to
+   * Google -- Compass->Google propagation only pushes the base. The
+   * webhook echo of that base's own creation must adopt those existing
+   * unlinked occurrences instead of inserting Google's copies alongside
+   * them.
+   */
+  describe("Compass-created series echo convergence", () => {
+    const seedLinkedBase = async (gBase: gSchema$Event) => {
+      const mapped = mapGoogleEvent(gBase, {
+        calendarId: calendar._id,
+        calendarTimeZone: calendar.timeZone,
+        resolveSeriesObjectId: () => undefined,
+        now: new Date(),
+      });
+      if (mapped.kind !== "mapped") throw new Error("expected mapped base");
+      await mongoService.event.insertOne(mapped.event);
+      return mapped.event;
+    };
+
+    const seedUnlinkedOccurrence = async (
+      gInstance: gSchema$Event,
+      seriesId: ObjectId,
+    ) => {
+      const mapped = mapGoogleEvent(gInstance, {
+        calendarId: calendar._id,
+        calendarTimeZone: calendar.timeZone,
+        resolveSeriesObjectId: () => seriesId,
+        now: new Date(),
+      });
+      if (mapped.kind !== "mapped")
+        throw new Error("expected mapped instance");
+      const unlinked = {
+        ...mapped.event,
+        _id: new ObjectId(),
+        externalReference: null,
+      };
+      await mongoService.event.insertOne(unlinked);
+      return unlinked;
+    };
+
+    it("adopts every locally materialized occurrence (including the first) instead of duplicating it", async () => {
+      const { base: gBase, instances: gInstances } = mockRecurringGcalEvents();
+      const base = await seedLinkedBase(gBase);
+      const seeded = [];
+      for (const gInstance of gInstances) {
+        seeded.push(await seedUnlinkedOccurrence(gInstance, base._id));
+      }
+
+      (
+        gcalService.getBaseRecurringEventInstances as jest.Mock
+      ).mockReturnValue(asAsyncPage(gInstances));
+      const propagation = new GoogleToCompassEventPropagation(
+        context,
+        calendar,
+      );
+      const result = await propagation.processEvents([gBase]);
+
+      expect(result.saved).toBe(1 + gInstances.length);
+
+      const occurrenceRecords = await mongoService.event
+        .find({ "recurrence.kind": "occurrence" })
+        .toArray();
+      expect(occurrenceRecords).toHaveLength(gInstances.length);
+      expect(
+        occurrenceRecords.every((r) => r.externalReference !== null),
+      ).toBe(true);
+
+      const adoptedIds = new Set(
+        occurrenceRecords.map((r) => r._id.toHexString()),
+      );
+      seeded.forEach((s) => {
+        expect(adoptedIds.has(s._id.toHexString())).toBe(true);
+      });
+    });
+
+    it("deletes an unlinked occurrence via series + original position when Google cancels an instance that never synced", async () => {
+      const { base: gBase, instances: gInstances } = mockRecurringGcalEvents();
+      const [firstGInstance] = gInstances;
+      if (!firstGInstance) throw new Error("expected at least one instance");
+
+      const base = await seedLinkedBase(gBase);
+      const unlinked = await seedUnlinkedOccurrence(firstGInstance, base._id);
+
+      const cancellation = {
+        ...firstGInstance,
+        status: "cancelled" as const,
+        originalStartTime: firstGInstance.start,
+      };
+
+      const propagation = new GoogleToCompassEventPropagation(
+        context,
+        calendar,
+      );
+      const result = await propagation.processEvents([cancellation]);
+
+      expect(result.deleted).toBe(1);
+      expect(
+        await mongoService.event.findOne({ _id: unlinked._id }),
+      ).toBeNull();
     });
   });
 });

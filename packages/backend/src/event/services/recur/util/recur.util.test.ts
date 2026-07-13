@@ -24,11 +24,11 @@ const buildBase = (overrides: Partial<EventRecord> = {}): EventRecord => ({
 });
 
 describe("materializeSeriesInstances", () => {
-  it("materializes the following occurrences, excluding the base's own start", () => {
+  it("materializes every occurrence, including the one at the base's own start", () => {
     const base = buildBase();
     const instances = materializeSeriesInstances(base);
 
-    expect(instances).toHaveLength(3);
+    expect(instances).toHaveLength(4);
     instances.forEach((instance) => {
       expect(instance.recurrence).toEqual({
         kind: "occurrence",
@@ -37,6 +37,14 @@ describe("materializeSeriesInstances", () => {
       expect(instance.calendarId).toEqual(base.calendarId);
       expect(instance.content).toEqual(base.content);
     });
+
+    const starts = instances
+      .map((i) => (i.schedule.kind === "timed" ? i.schedule.start.getTime() : 0))
+      .sort((a, b) => a - b);
+    expect(base.schedule.kind).toBe("timed");
+    expect(starts[0]).toBe(
+      base.schedule.kind === "timed" ? base.schedule.start.getTime() : 0,
+    );
   });
 
   it("preserves the duration between start and end for timed instances", () => {
@@ -58,12 +66,17 @@ describe("materializeSeriesInstances", () => {
     });
     const instances = materializeSeriesInstances(base);
 
-    expect(instances).toHaveLength(1);
-    const [instance] = instances;
-    if (instance?.schedule.kind !== "allDay")
-      throw new Error("expected allDay");
-    expect(instance.schedule.start).toBe("2026-08-10");
-    expect(instance.schedule.end).toBe("2026-08-13");
+    expect(instances).toHaveLength(2);
+    const starts = instances
+      .map((i) => (i.schedule.kind === "allDay" ? i.schedule.start : ""))
+      .sort();
+    expect(starts).toEqual(["2026-08-03", "2026-08-10"]);
+
+    const second = instances.find(
+      (i) => i.schedule.kind === "allDay" && i.schedule.start === "2026-08-10",
+    );
+    if (second?.schedule.kind !== "allDay") throw new Error("expected allDay");
+    expect(second.schedule.end).toBe("2026-08-13");
   });
 
   it("returns no instances for a non-series recurrence", () => {
@@ -76,7 +89,7 @@ describe("materializeSeriesInstances", () => {
       recurrence: { kind: "series", rules: ["RRULE:FREQ=DAILY;COUNT=100"] },
     });
     const instances = materializeSeriesInstances(base, 5);
-    expect(instances.length).toBeLessThanOrEqual(4);
+    expect(instances.length).toBeLessThanOrEqual(5);
   });
 
   it("does not materialize instances for a someday recurring series (recurrence surfaces only on the base)", () => {
@@ -121,6 +134,7 @@ describe("materializeSeriesInstances", () => {
       .sort((a, b) => a - b);
 
     expect(starts).toEqual([
+      base.schedule.kind === "timed" ? base.schedule.start.getTime() : 0,
       base.schedule.kind === "timed"
         ? base.schedule.start.getTime() + 7 * 24 * 60 * 60 * 1000
         : 0,
@@ -140,7 +154,7 @@ describe("materializeSeriesInstances", () => {
       .map((i) => (i.schedule.kind === "allDay" ? i.schedule.start : ""))
       .sort();
 
-    expect(starts).toEqual(["2026-12-01", "2027-01-01"]);
+    expect(starts).toEqual(["2026-11-01", "2026-12-01", "2027-01-01"]);
   });
 });
 

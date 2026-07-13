@@ -113,10 +113,15 @@ const withCalendarMetadata = (
   });
 };
 
+// A series base is metadata-only: its schedule is the first occurrence's
+// datetime (kept so the RRULE and series id are reachable for editing), but
+// the first occurrence itself is a separately materialized doc that renders
+// the actual card. Rendering the base too would double the first day.
 const gridEventsFrom = (events: Event[], kind: "timed" | "allDay") => {
   const scheduled = events
     .filter(isValidScheduledEvent)
-    .filter((event) => event.schedule.kind === kind);
+    .filter((event) => event.schedule.kind === kind)
+    .filter((event) => event.recurrence.kind !== "series");
   const assembled = scheduled
     .map(scheduledEventToSchemaEvent)
     .filter((event): event is EventWithDates => hasEventDates(event))
