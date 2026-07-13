@@ -25,3 +25,15 @@ export const focusFirstSomedaySidebarItem = (): boolean => {
   target?.focus();
   return Boolean(target);
 };
+
+/** Focuses the first interactive control in the planner sidebar. */
+export const focusFirstSidebarItem = (): boolean => {
+  const sidebar = document.getElementById(ID_SIDEBAR);
+  if (!sidebar) return false;
+
+  const target = sidebar.querySelector<HTMLElement>(
+    'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+  );
+  target?.focus();
+  return Boolean(target);
+};

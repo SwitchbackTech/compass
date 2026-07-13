@@ -1,12 +1,8 @@
 import { act, renderHook } from "@testing-library/react";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import {
-  SIDEBAR_AUTO_COLLAPSE_BREAKPOINT,
-  TASK_LIST_AUTO_COLLAPSE_BREAKPOINT,
-} from "@web/components/AuthenticatedLayout/responsive.constants";
+import { SIDEBAR_AUTO_COLLAPSE_BREAKPOINT } from "@web/components/AuthenticatedLayout/responsive.constants";
 import {
   selectIsSidebarOpen,
-  selectIsTaskListOpen,
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
@@ -43,34 +39,22 @@ const createMediaQueryMock = (matches: boolean) => {
 };
 
 /**
- * Installs a matchMedia mock that returns a distinct media query list per
- * breakpoint, so sidebar and task list crossings can be driven independently.
+ * Installs a matchMedia mock for the sidebar breakpoint.
  */
-const setupMatchMedia = ({
-  sidebarMatches,
-  taskListMatches,
-}: {
-  sidebarMatches: boolean;
-  taskListMatches: boolean;
-}) => {
+const setupMatchMedia = ({ sidebarMatches }: { sidebarMatches: boolean }) => {
   const sidebarQuery = createMediaQueryMock(sidebarMatches);
-  const taskListQuery = createMediaQueryMock(taskListMatches);
 
   window.matchMedia = mock((query: string) => {
     if (query.includes(`${SIDEBAR_AUTO_COLLAPSE_BREAKPOINT}px`)) {
       return sidebarQuery as unknown as MediaQueryList;
     }
-    if (query.includes(`${TASK_LIST_AUTO_COLLAPSE_BREAKPOINT}px`)) {
-      return taskListQuery as unknown as MediaQueryList;
-    }
     throw new Error(`Unexpected media query: ${query}`);
   });
 
-  return { sidebarQuery, taskListQuery };
+  return { sidebarQuery };
 };
 
 const getIsSidebarOpen = () => selectIsSidebarOpen(useViewStore.getState());
-const getIsTaskListOpen = () => selectIsTaskListOpen(useViewStore.getState());
 
 describe("useResponsiveLayout sidebar", () => {
   const originalMatchMedia = window.matchMedia;
@@ -80,7 +64,7 @@ describe("useResponsiveLayout sidebar", () => {
   });
 
   it("should open the sidebar on mount when screen is wide (>=1280px)", () => {
-    setupMatchMedia({ sidebarMatches: true, taskListMatches: true });
+    setupMatchMedia({ sidebarMatches: true });
 
     renderHook(() => useResponsiveLayout());
 
@@ -88,7 +72,7 @@ describe("useResponsiveLayout sidebar", () => {
   });
 
   it("should close the sidebar on mount when screen is narrow (<1280px)", () => {
-    setupMatchMedia({ sidebarMatches: false, taskListMatches: true });
+    setupMatchMedia({ sidebarMatches: false });
 
     renderHook(() => useResponsiveLayout());
 
@@ -98,7 +82,6 @@ describe("useResponsiveLayout sidebar", () => {
   it("should close the sidebar when screen resizes from wide to narrow", () => {
     const { sidebarQuery } = setupMatchMedia({
       sidebarMatches: true,
-      taskListMatches: true,
     });
 
     renderHook(() => useResponsiveLayout());
@@ -115,7 +98,6 @@ describe("useResponsiveLayout sidebar", () => {
   it("should open the sidebar when screen resizes from narrow to wide", () => {
     const { sidebarQuery } = setupMatchMedia({
       sidebarMatches: false,
-      taskListMatches: true,
     });
 
     renderHook(() => useResponsiveLayout());
@@ -130,10 +112,7 @@ describe("useResponsiveLayout sidebar", () => {
   });
 
   it("should keep a manual toggle until the next breakpoint crossing", () => {
-    const { sidebarQuery } = setupMatchMedia({
-      sidebarMatches: false,
-      taskListMatches: true,
-    });
+    const { sidebarQuery } = setupMatchMedia({ sidebarMatches: false });
 
     const { rerender } = renderHook(() => useResponsiveLayout());
 
@@ -160,7 +139,7 @@ describe("useResponsiveLayout sidebar", () => {
 
   it("should respect a saved closed preference on mount when screen is wide", () => {
     localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "false");
-    setupMatchMedia({ sidebarMatches: true, taskListMatches: true });
+    setupMatchMedia({ sidebarMatches: true });
 
     renderHook(() => useResponsiveLayout());
 
@@ -169,7 +148,7 @@ describe("useResponsiveLayout sidebar", () => {
 
   it("should ignore a saved open preference on mount when screen is narrow", () => {
     localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "true");
-    setupMatchMedia({ sidebarMatches: false, taskListMatches: true });
+    setupMatchMedia({ sidebarMatches: false });
 
     renderHook(() => useResponsiveLayout());
 
@@ -180,7 +159,6 @@ describe("useResponsiveLayout sidebar", () => {
     localStorage.setItem(STORAGE_KEYS.SIDEBAR_OPEN, "false");
     const { sidebarQuery } = setupMatchMedia({
       sidebarMatches: false,
-      taskListMatches: true,
     });
 
     renderHook(() => useResponsiveLayout());
@@ -195,92 +173,17 @@ describe("useResponsiveLayout sidebar", () => {
   });
 
   it("should remove the media query listeners on unmount", () => {
-    const { sidebarQuery, taskListQuery } = setupMatchMedia({
-      sidebarMatches: true,
-      taskListMatches: true,
-    });
+    const { sidebarQuery } = setupMatchMedia({ sidebarMatches: true });
 
     const { unmount } = renderHook(() => useResponsiveLayout());
     unmount();
 
     expect(sidebarQuery.removeEventListener).toHaveBeenCalledTimes(1);
-    expect(taskListQuery.removeEventListener).toHaveBeenCalledTimes(1);
 
     act(() => {
       sidebarQuery._triggerChange(false);
     });
 
     expect(getIsSidebarOpen()).toBe(true);
-  });
-});
-
-describe("useResponsiveLayout task list", () => {
-  const originalMatchMedia = window.matchMedia;
-
-  afterEach(() => {
-    window.matchMedia = originalMatchMedia;
-  });
-
-  it("should close the task list on mount when screen is narrower than its breakpoint", () => {
-    setupMatchMedia({ sidebarMatches: false, taskListMatches: false });
-
-    renderHook(() => useResponsiveLayout());
-
-    expect(getIsTaskListOpen()).toBe(false);
-  });
-
-  it("should collapse the sidebar before the task list as the screen shrinks", () => {
-    const { sidebarQuery, taskListQuery } = setupMatchMedia({
-      sidebarMatches: true,
-      taskListMatches: true,
-    });
-
-    renderHook(() => useResponsiveLayout());
-
-    // Crossing below 1280px collapses only the sidebar
-    act(() => {
-      sidebarQuery._triggerChange(false);
-    });
-
-    expect(getIsSidebarOpen()).toBe(false);
-    expect(getIsTaskListOpen()).toBe(true);
-
-    // Crossing below the task list breakpoint collapses the task list too
-    act(() => {
-      taskListQuery._triggerChange(false);
-    });
-
-    expect(getIsTaskListOpen()).toBe(false);
-  });
-
-  it("should reopen the task list when crossing back above its breakpoint", () => {
-    const { taskListQuery } = setupMatchMedia({
-      sidebarMatches: false,
-      taskListMatches: false,
-    });
-
-    renderHook(() => useResponsiveLayout());
-
-    expect(getIsTaskListOpen()).toBe(false);
-
-    act(() => {
-      taskListQuery._triggerChange(true);
-    });
-
-    expect(getIsTaskListOpen()).toBe(true);
-  });
-
-  it("should keep a manual task list toggle until the next crossing", () => {
-    setupMatchMedia({ sidebarMatches: false, taskListMatches: false });
-
-    renderHook(() => useResponsiveLayout());
-
-    expect(getIsTaskListOpen()).toBe(false);
-
-    act(() => {
-      viewActions.toggleTaskList();
-    });
-
-    expect(getIsTaskListOpen()).toBe(true);
   });
 });

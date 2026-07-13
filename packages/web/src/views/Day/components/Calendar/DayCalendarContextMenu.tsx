@@ -72,7 +72,7 @@ export const useDayCalendarContextMenu = ({
       }
 
       // Anchor the menu to a virtual element at the cursor (the idiomatic
-      // floating-ui pattern, matching GridContextMenuWrapper / TaskContextMenu).
+      // floating-ui pattern, matching GridContextMenuWrapper).
       refs.setReference({
         getBoundingClientRect: () =>
           new DOMRect(event.clientX, event.clientY, 0, 0),

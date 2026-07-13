@@ -8,6 +8,7 @@ import {
   CompassDOMEvents,
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
+import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import {
   addId,
   assembleDefaultEvent,
@@ -236,7 +237,9 @@ export function DayCalendarGrid() {
 
   const getAllDayDraftStartDate = (clientX: number) =>
     dateCalcs.getDateStrByXY(clientX, 0, YEAR_MONTH_DAY_FORMAT);
-  const openAllDayDraft = useCallback(
+  // Schedule-agnostic: opens the floating form for a freshly-built draft event,
+  // whether all-day or timed (openEventFormForEvent branches on isAllDay).
+  const openDraftEventForm = useCallback(
     (event: Schema_Event) => {
       if (!hasEventDates(event)) {
         return;
@@ -256,23 +259,51 @@ export function DayCalendarGrid() {
     const endDate = dateInView.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
 
     void assembleDefaultEvent(Categories_Event.ALLDAY, startDate, endDate).then(
-      openAllDayDraft,
+      openDraftEventForm,
     );
-  }, [dateInView, draft, openAllDayDraft]);
+  }, [dateInView, draft, openDraftEventForm]);
   const createAllDayDraftRef = useRef(createAllDayDraftFromShortcut);
 
   useEffect(() => {
     createAllDayDraftRef.current = createAllDayDraftFromShortcut;
   }, [createAllDayDraftFromShortcut]);
 
+  // "c" shortcut: create a timed draft on the day in view, defaulting to the
+  // next quarter-hour (or the current time when viewing today), mirroring the
+  // Week view's timed-create behavior.
+  const createTimedDraftFromShortcut = useCallback(() => {
+    if (draft) {
+      return;
+    }
+
+    const isViewingToday = dateInView.isSame(dayjs(), "day");
+    const { startDate, endDate } = getDraftTimes(isViewingToday, dateInView);
+
+    void assembleDefaultEvent(Categories_Event.TIMED, startDate, endDate).then(
+      openDraftEventForm,
+    );
+  }, [dateInView, draft, openDraftEventForm]);
+  const createTimedDraftRef = useRef(createTimedDraftFromShortcut);
+
+  useEffect(() => {
+    createTimedDraftRef.current = createTimedDraftFromShortcut;
+  }, [createTimedDraftFromShortcut]);
+
   useEffect(() => {
     const handleCreateAllDayDraft = () => {
       createAllDayDraftRef.current();
+    };
+    const handleCreateTimedDraft = () => {
+      createTimedDraftRef.current();
     };
 
     compassEventEmitter.on(
       CompassDOMEvents.CREATE_ALLDAY_DRAFT,
       handleCreateAllDayDraft,
+    );
+    compassEventEmitter.on(
+      CompassDOMEvents.CREATE_TIMED_DRAFT,
+      handleCreateTimedDraft,
     );
 
     return () => {
@@ -280,11 +311,15 @@ export function DayCalendarGrid() {
         CompassDOMEvents.CREATE_ALLDAY_DRAFT,
         handleCreateAllDayDraft,
       );
+      compassEventEmitter.off(
+        CompassDOMEvents.CREATE_TIMED_DRAFT,
+        handleCreateTimedDraft,
+      );
     };
   }, []);
   const onAllDayMouseDown = useAllDayDraftCreation({
     getStartDate: getAllDayDraftStartDate,
-    onCreateDraft: openAllDayDraft,
+    onCreateDraft: openDraftEventForm,
   });
 
   const { startTimedDraftCreation } = useDayTimedDraftCreation({
