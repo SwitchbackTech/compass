@@ -5,7 +5,6 @@ import {
   createRouter,
   isRedirect,
 } from "@tanstack/react-router";
-import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   loadDateParam,
@@ -93,10 +92,8 @@ describe("router redirects", () => {
     expect(router.state.location.pathname).toBe(`/day/${dateString}`);
   });
 
-  it("redirects /week to the start of the current week", async () => {
-    const dateString = dayjs()
-      .startOf("week")
-      .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
+  it("redirects /week to today's dated week route", async () => {
+    const { dateString } = loadTodayData();
     const router = createTestRouter(["/week"]);
 
     await router.load();

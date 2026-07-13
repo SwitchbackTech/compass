@@ -117,7 +117,7 @@ export const useWeek = (
   const goToToday = () => {
     navigationSourceRef.current = "manual";
     if (!isCurrentWeek) {
-      setAnchor(today.startOf("week"));
+      setAnchor(today);
     }
   };
 

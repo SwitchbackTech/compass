@@ -159,7 +159,7 @@ describe("useWeek", () => {
 
     expect(mockNavigate).toHaveBeenCalledWith({
       to: "/week/$dateString",
-      params: { dateString: "2026-05-17" },
+      params: { dateString: "2026-05-20" },
     });
   });
 
