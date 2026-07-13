@@ -14,12 +14,12 @@ import { type OfflineDataStore } from "../offline-data/offline-data.store";
  *
  * Example:
  * ```typescript
- * const addUserIdMigration: DataMigration = {
- *   id: "add-user-id-v1",
- *   description: "Add user field to tasks missing it",
+ * const backfillPriorityMigration: DataMigration = {
+ *   id: "backfill-priority-v1",
+ *   description: "Add priority field to events missing it",
  *   async migrate(store) {
- *     const tasks = await store.getAllTasks();
- *     // transform and save tasks...
+ *     const events = await store.getAllEvents();
+ *     // transform and save events...
  *   }
  * };
  * ```
