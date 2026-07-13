@@ -30,6 +30,7 @@ export type GoogleAuthorizationAuthAdapter = {
     config?: ApiMethodConfig,
   ): Promise<unknown>;
   loginOrSignup(data: GoogleAuthCodeRequest): Promise<{
+    createdNewRecipeUser: boolean;
     user: { emails?: string[] };
   }>;
 };
@@ -45,6 +46,7 @@ export type CompleteGoogleAuthorizationOptions = {
 
 export type CompleteGoogleAuthorizationResult =
   | {
+      isNewUser: boolean;
       returnPath: string;
       status: "completed";
     }
@@ -127,8 +129,13 @@ export async function completeGoogleAuthorization({
     redirectUri: buildGoogleAuthCallbackUrl(),
   });
 
+  // Whether this callback created a brand-new account (vs. a returning login or
+  // a Google connect). Drives the post-signup release-notes prompt downstream.
+  let isNewUser = false;
+
   const completeGoogleSignIn = async () => {
     const result = await authApi.loginOrSignup(payload);
+    isNewUser = result.createdNewRecipeUser;
     await completeAuthentication({
       email: result.user.emails?.[0],
     });
@@ -160,6 +167,7 @@ export async function completeGoogleAuthorization({
     }
 
     return {
+      isNewUser,
       returnPath,
       status: "completed",
     };

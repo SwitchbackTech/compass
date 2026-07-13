@@ -1,6 +1,11 @@
 import { Outlet } from "@tanstack/react-router";
+import {
+  selectReleaseNotesPromptOpen,
+  useReleaseNotesPromptStore,
+} from "@web/auth/state/release-notes-prompt.store";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
+import { ReleaseNotesPrompt } from "@web/components/ReleaseNotesPrompt/ReleaseNotesPrompt";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 
 /**
@@ -10,11 +15,16 @@ import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
  * available on every matched route, including 404s.
  */
 export function RootShell() {
+  const isReleaseNotesPromptOpen = useReleaseNotesPromptStore(
+    selectReleaseNotesPromptOpen,
+  );
+
   return (
     <AuthModalProvider>
       <Outlet />
       <AuthModal />
       <WelcomeModal />
+      {isReleaseNotesPromptOpen && <ReleaseNotesPrompt />}
     </AuthModalProvider>
   );
 }

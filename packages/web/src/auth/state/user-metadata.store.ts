@@ -54,6 +54,7 @@ export const userMetadataActions = {
 // Tests drive connection-status scenarios by setting metadata directly.
 if (typeof window !== "undefined") {
   window.__COMPASS_E2E_STORE__ = {
+    ...window.__COMPASS_E2E_STORE__,
     userMetadata: {
       getState: useUserMetadataStore.getState,
       set: userMetadataActions.set,

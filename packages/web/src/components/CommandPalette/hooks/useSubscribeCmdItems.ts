@@ -1,9 +1,8 @@
 import { BellIcon } from "@phosphor-icons/react";
-import { UserApi } from "@web/api/user.api";
 import { useSession } from "@web/auth/compass/session/useSession";
+import { subscribeToReleaseNotes } from "@web/auth/compass/user/util/subscribe.util";
 import {
   selectUserMetadata,
-  userMetadataActions,
   useUserMetadataStore,
 } from "@web/auth/state/user-metadata.store";
 import { SUBSCRIBE_TO_UPDATES_TOAST_ID } from "@web/common/constants/toast.constants";
@@ -32,9 +31,8 @@ export const useSubscribeCmdItems = (): CommandItem[] => {
       label: "Subscribe to Updates",
       icon: BellIcon,
       onClick: () => {
-        UserApi.updateMetadata({ subscribeToUpdates: true })
-          .then((metadata) => {
-            userMetadataActions.set(metadata);
+        subscribeToReleaseNotes()
+          .then(() => {
             showStatusToast(
               SUBSCRIBE_TO_UPDATES_TOAST_ID,
               "Subscribed to updates",

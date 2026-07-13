@@ -11,6 +11,7 @@ import "@testing-library/jest-dom";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { createTestRouter } from "@web/__tests__/utils/providers/createTestRouter";
+import { useReleaseNotesPromptStore } from "@web/auth/state/release-notes-prompt.store";
 import { validateAuthSearch } from "@web/components/AuthModal/hooks/useAuthModal";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -212,6 +213,7 @@ describe("AuthModal", () => {
     mockEmailPassword.submitNewPassword.mockClear();
     mockUpdateMetadata.mockClear();
     mockUpdateMetadata.mockResolvedValue({ subscribeToUpdates: true });
+    useReleaseNotesPromptStore.setState({ isOpen: false });
     mockUseSession.mockReturnValue({
       authenticated: false,
       setAuthenticated: mock(),
@@ -637,7 +639,7 @@ describe("AuthModal", () => {
       expect(mockUpdateMetadata).not.toHaveBeenCalled();
     });
 
-    it("subscribes to updates after sign-up when the checkbox is checked", async () => {
+    it("opens the release-notes prompt after a successful sign-up", async () => {
       const user = userEvent.setup();
       await renderWithProviders(<ModalTrigger />);
 
@@ -655,19 +657,23 @@ describe("AuthModal", () => {
         expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
       });
 
+      // The subscribe opt-in is no longer a checkbox on the form — it's a
+      // dedicated prompt raised (via its store) right after signup succeeds.
+      expect(
+        screen.queryByRole("checkbox", { name: /subscribe to updates/i }),
+      ).not.toBeInTheDocument();
+
       await user.type(screen.getByLabelText(/name/i), "Alex");
       await user.type(screen.getByLabelText(/email/i), "test@example.com");
       await user.type(screen.getByLabelText(/password/i), "password123");
-      await user.click(
-        screen.getByRole("checkbox", { name: /subscribe to updates/i }),
-      );
       await user.click(screen.getByRole("button", { name: /^sign up$/i }));
 
       await waitFor(() => {
-        expect(mockUpdateMetadata).toHaveBeenCalledWith({
-          subscribeToUpdates: true,
-        });
+        expect(useReleaseNotesPromptStore.getState().isOpen).toBe(true);
       });
+      // Signup itself must not write subscription metadata — that only happens
+      // if the user says yes in the prompt.
+      expect(mockUpdateMetadata).not.toHaveBeenCalled();
     });
 
     it("skips existing-session linking during email/password sign in", async () => {
