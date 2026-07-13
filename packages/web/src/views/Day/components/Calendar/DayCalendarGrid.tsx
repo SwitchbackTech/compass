@@ -44,6 +44,7 @@ import { CalendarGrid } from "@web/layout/calendar-grid/components/CalendarGrid"
 import { useAllDayDraftCreation } from "@web/layout/calendar-grid/hooks/useAllDayDraftCreation";
 import { useCalendarDateCalcs } from "@web/layout/calendar-grid/hooks/useCalendarDateCalcs";
 import { useCalendarGridLayout } from "@web/layout/calendar-grid/hooks/useCalendarGridLayout";
+import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
@@ -93,10 +94,7 @@ export function DayCalendarGrid() {
     events: dayEvents,
     rowCount: allDayRowsCount,
     timedEvents,
-  } = useDayEventViewModel({
-    startDate: dateInView.startOf("day").utc(true).format(),
-    endDate: dateInView.endOf("day").utc(true).format(),
-  });
+  } = useDayEventViewModel(dayEventQueryRange(dateInView));
   const {
     calendarColumnIndexById,
     displayedAllDayEvents,

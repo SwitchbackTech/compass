@@ -24,7 +24,7 @@ const { renderHook } =
   require("@web/__tests__/__mocks__/mock.render") as typeof import("@web/__tests__/__mocks__/mock.render");
 const { createCompassQueryClient } =
   require("@web/api/query-client") as typeof import("@web/api/query-client");
-const { useDayEvents } =
+const { dayEventQueryRange, useDayEvents } =
   require("@web/views/Day/hooks/events/useDayEvents") as typeof import("@web/views/Day/hooks/events/useDayEvents");
 
 describe("useDayEvents", () => {
@@ -37,8 +37,7 @@ describe("useDayEvents", () => {
   // date-range metadata (like the read hooks' own keys do) rather than
   // asserting a specific source.
   const findDayEntry = (queryClient: QueryClient, date: dayjs.Dayjs) => {
-    const startDate = date.startOf("day").utc(true).format();
-    const endDate = date.endOf("day").utc(true).format();
+    const { startDate, endDate } = dayEventQueryRange(date);
     const match = queryClient
       .getQueriesData({ queryKey: eventQueryKeys.scope("day") })
       .find(([key]) => {
