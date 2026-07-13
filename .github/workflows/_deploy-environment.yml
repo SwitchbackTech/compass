@@ -20,6 +20,10 @@ jobs:
     name: Deploy ${{ inputs.tag }} to ${{ inputs.environment }}
     runs-on: ubuntu-latest
     environment: ${{ inputs.environment }}
+    concurrency:
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+      queue: max
 
     steps:
       - name: Derive image version
