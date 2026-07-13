@@ -250,71 +250,49 @@ export function DayCalendarGrid() {
     [openEventFormForEvent],
   );
 
-  const createAllDayDraftFromShortcut = useCallback(() => {
-    if (draft) {
-      return;
-    }
+  // "a"/"c" shortcuts: build a default all-day or timed draft on the day in
+  // view (timed defaults to the next quarter-hour, or now when viewing today)
+  // and open its form. Held behind a ref so the one-time emitter subscription
+  // always calls the latest closure without re-subscribing on every change.
+  const createDraftFromShortcut = useCallback(
+    (category: Categories_Event.ALLDAY | Categories_Event.TIMED) => {
+      if (draft) {
+        return;
+      }
 
-    const startDate = dateInView.format(YEAR_MONTH_DAY_FORMAT);
-    const endDate = dateInView.add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
+      const { startDate, endDate } =
+        category === Categories_Event.ALLDAY
+          ? {
+              startDate: dateInView.format(YEAR_MONTH_DAY_FORMAT),
+              endDate: dateInView.add(1, "day").format(YEAR_MONTH_DAY_FORMAT),
+            }
+          : getDraftTimes(dateInView.isSame(dayjs(), "day"), dateInView);
 
-    void assembleDefaultEvent(Categories_Event.ALLDAY, startDate, endDate).then(
-      openDraftEventForm,
-    );
-  }, [dateInView, draft, openDraftEventForm]);
-  const createAllDayDraftRef = useRef(createAllDayDraftFromShortcut);
-
-  useEffect(() => {
-    createAllDayDraftRef.current = createAllDayDraftFromShortcut;
-  }, [createAllDayDraftFromShortcut]);
-
-  // "c" shortcut: create a timed draft on the day in view, defaulting to the
-  // next quarter-hour (or the current time when viewing today), mirroring the
-  // Week view's timed-create behavior.
-  const createTimedDraftFromShortcut = useCallback(() => {
-    if (draft) {
-      return;
-    }
-
-    const isViewingToday = dateInView.isSame(dayjs(), "day");
-    const { startDate, endDate } = getDraftTimes(isViewingToday, dateInView);
-
-    void assembleDefaultEvent(Categories_Event.TIMED, startDate, endDate).then(
-      openDraftEventForm,
-    );
-  }, [dateInView, draft, openDraftEventForm]);
-  const createTimedDraftRef = useRef(createTimedDraftFromShortcut);
+      void assembleDefaultEvent(category, startDate, endDate).then(
+        openDraftEventForm,
+      );
+    },
+    [dateInView, draft, openDraftEventForm],
+  );
+  const createDraftRef = useRef(createDraftFromShortcut);
 
   useEffect(() => {
-    createTimedDraftRef.current = createTimedDraftFromShortcut;
-  }, [createTimedDraftFromShortcut]);
+    createDraftRef.current = createDraftFromShortcut;
+  }, [createDraftFromShortcut]);
 
   useEffect(() => {
-    const handleCreateAllDayDraft = () => {
-      createAllDayDraftRef.current();
-    };
-    const handleCreateTimedDraft = () => {
-      createTimedDraftRef.current();
-    };
+    const handleAllDay = () => createDraftRef.current(Categories_Event.ALLDAY);
+    const handleTimed = () => createDraftRef.current(Categories_Event.TIMED);
 
-    compassEventEmitter.on(
-      CompassDOMEvents.CREATE_ALLDAY_DRAFT,
-      handleCreateAllDayDraft,
-    );
-    compassEventEmitter.on(
-      CompassDOMEvents.CREATE_TIMED_DRAFT,
-      handleCreateTimedDraft,
-    );
+    compassEventEmitter.on(CompassDOMEvents.CREATE_ALLDAY_DRAFT, handleAllDay);
+    compassEventEmitter.on(CompassDOMEvents.CREATE_TIMED_DRAFT, handleTimed);
 
     return () => {
       compassEventEmitter.off(
         CompassDOMEvents.CREATE_ALLDAY_DRAFT,
-        handleCreateAllDayDraft,
+        handleAllDay,
       );
-      compassEventEmitter.off(
-        CompassDOMEvents.CREATE_TIMED_DRAFT,
-        handleCreateTimedDraft,
-      );
+      compassEventEmitter.off(CompassDOMEvents.CREATE_TIMED_DRAFT, handleTimed);
     };
   }, []);
   const onAllDayMouseDown = useAllDayDraftCreation({
