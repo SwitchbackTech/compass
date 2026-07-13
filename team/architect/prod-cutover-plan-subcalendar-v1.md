@@ -219,11 +219,12 @@ Trigger if verification fails, health checks fail, or smoke reveals data issues.
 
 ## Known follow-ups (not blockers)
 
-- Two **stale internal links** persist on `main`: `docs/self-hosting/event-migration-runbook.md`
-  and the release-hardening packet point at `team/backlog/master-doc.md`, which moved
-  to `team/archive/google-subcalendar-project/master-doc.md` (#2074). The runbook also
-  still says the cutover is "performed with the runtime-cutover release, not now" —
-  that release has since shipped to staging. Worth a small docs fix.
+- The stale `team/backlog/…` doc references left over from the #2074 archive move
+  are fixed in this PR (runbook, backup-and-restore, performance-baselines, and the
+  domain-model doc now point at `team/archive/google-subcalendar-project/`). The
+  runbook still says the cutover is "performed with the runtime-cutover release, not
+  now" — that release has since shipped to staging; a phrasing refresh is a minor
+  future follow-up.
 - Read-only calendar card left-click open race — deferred, accepted; reliable
   inspection paths are keyboard "M" and context-menu "View".
 
