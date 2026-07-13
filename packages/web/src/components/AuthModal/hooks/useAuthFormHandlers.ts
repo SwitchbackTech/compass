@@ -1,14 +1,14 @@
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import EmailPassword from "supertokens-web-js/recipe/emailpassword";
-import { UserApi } from "@web/api/user.api";
 import { useCompleteAuthentication } from "@web/auth/compass/hooks/useCompleteAuthentication";
 import {
   type ForgotPasswordFormData,
   type LogInFormData,
   type ResetPasswordFormData,
+  type SignUpFormData,
 } from "@web/auth/compass/schemas/auth.schemas";
-import { type SignUpSubmitData } from "../forms/SignUpForm";
+import { releaseNotesPromptActions } from "@web/auth/state/release-notes-prompt.store";
 import { getAuthSubmitErrorMessage } from "./useAuthFormHandlers.util";
 import { type AuthView } from "./useAuthModal";
 
@@ -22,7 +22,7 @@ interface UseAuthFormHandlersOptions {
 export interface UseAuthFormHandlersResult {
   isSubmitting: boolean;
   submitError: string | null;
-  handleSignUp: (data: SignUpSubmitData) => Promise<void>;
+  handleSignUp: (data: SignUpFormData) => Promise<void>;
   handleLogin: (data: LogInFormData) => Promise<void>;
   handleForgotPassword: (data: ForgotPasswordFormData) => Promise<void>;
   handleResetPassword: (data: ResetPasswordFormData) => Promise<void>;
@@ -51,7 +51,7 @@ export function useAuthFormHandlers({
   }, [currentView]);
 
   const handleSignUp = useCallback(
-    async (data: SignUpSubmitData) => {
+    async (data: SignUpFormData) => {
       setIsSubmitting(true);
       setSubmitError(null);
 
@@ -69,12 +69,8 @@ export function useAuthFormHandlers({
             await completeAuthentication({
               email: response.user.emails[0] ?? data.email,
             });
-            if (data.subscribeToUpdates) {
-              void UserApi.updateMetadata({ subscribeToUpdates: true }).catch(
-                () => {},
-              );
-            }
             closeModal();
+            releaseNotesPromptActions.open();
             return;
           case "FIELD_ERROR":
             setSubmitError(response.formFields[0]?.error ?? "Sign up failed");

@@ -30,6 +30,7 @@ export type GoogleAuthorizationAuthAdapter = {
     config?: ApiMethodConfig,
   ): Promise<unknown>;
   loginOrSignup(data: GoogleAuthCodeRequest): Promise<{
+    createdNewRecipeUser: boolean;
     user: { emails?: string[] };
   }>;
 };
@@ -47,6 +48,7 @@ export type CompleteGoogleAuthorizationResult =
   | {
       returnPath: string;
       status: "completed";
+      isNewUser: boolean;
     }
   | {
       message: string;
@@ -132,11 +134,13 @@ export async function completeGoogleAuthorization({
     await completeAuthentication({
       email: result.user.emails?.[0],
     });
+    return result.createdNewRecipeUser;
   };
 
   try {
+    let isNewUser = false;
     if (savedIntent.intent === "signIn") {
-      await completeGoogleSignIn();
+      isNewUser = await completeGoogleSignIn();
     } else {
       const hasActiveSession = doesSessionExist
         ? await doesSessionExist()
@@ -162,6 +166,7 @@ export async function completeGoogleAuthorization({
     return {
       returnPath,
       status: "completed",
+      isNewUser,
     };
   } catch (error) {
     const parsedMessage = parseGoogleConnectErrorMessage(error);

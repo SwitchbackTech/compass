@@ -637,39 +637,6 @@ describe("AuthModal", () => {
       expect(mockUpdateMetadata).not.toHaveBeenCalled();
     });
 
-    it("subscribes to updates after sign-up when the checkbox is checked", async () => {
-      const user = userEvent.setup();
-      await renderWithProviders(<ModalTrigger />);
-
-      await user.click(screen.getByRole("button", { name: /open modal/i }));
-
-      await waitFor(() => {
-        expect(
-          screen.getByRole("button", { name: /^sign up$/i }),
-        ).toBeInTheDocument();
-      });
-
-      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-
-      await waitFor(() => {
-        expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
-      });
-
-      await user.type(screen.getByLabelText(/name/i), "Alex");
-      await user.type(screen.getByLabelText(/email/i), "test@example.com");
-      await user.type(screen.getByLabelText(/password/i), "password123");
-      await user.click(
-        screen.getByRole("checkbox", { name: /subscribe to updates/i }),
-      );
-      await user.click(screen.getByRole("button", { name: /^sign up$/i }));
-
-      await waitFor(() => {
-        expect(mockUpdateMetadata).toHaveBeenCalledWith({
-          subscribeToUpdates: true,
-        });
-      });
-    });
-
     it("skips existing-session linking during email/password sign in", async () => {
       const user = userEvent.setup();
       await renderWithProviders(<ModalTrigger />);

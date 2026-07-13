@@ -1,6 +1,7 @@
 import { Outlet } from "@tanstack/react-router";
 import { AuthModal } from "@web/components/AuthModal/AuthModal";
 import { AuthModalProvider } from "@web/components/AuthModal/AuthModalProvider";
+import { ReleaseNotesPrompt } from "@web/components/ReleaseNotesPrompt/ReleaseNotesPrompt";
 import { WelcomeModal } from "@web/components/WelcomeModal/WelcomeModal";
 
 /**
@@ -15,6 +16,7 @@ export function RootShell() {
       <Outlet />
       <AuthModal />
       <WelcomeModal />
+      <ReleaseNotesPrompt />
     </AuthModalProvider>
   );
 }
