@@ -37,13 +37,20 @@ declare const BUILD_VERSION: string;
 interface Window {
   /** Set by Playwright prepareOAuthTestPage; disables SuperTokens session checks in e2e mode. */
   __COMPASS_E2E_TEST__?: boolean;
-  /** Semantic user-metadata bridge for e2e tests. Set by packages/web/src/auth/state/user-metadata.store.ts. */
+  /** Semantic store bridges for e2e tests. Each store sets its own key (see
+   * user-metadata.store.ts, release-notes-prompt.store.ts); keys are optional
+   * because they populate independently as their modules evaluate. */
   __COMPASS_E2E_STORE__?: {
-    userMetadata: {
+    userMetadata?: {
       getState: () => import("@web/auth/state/user-metadata.store").UserMetadataState;
       set: (metadata: import("@core/types/user.types").UserMetadata) => void;
       setLoading: () => void;
       clear: () => void;
+    };
+    releaseNotesPrompt?: {
+      getState: () => import("@web/auth/state/release-notes-prompt.store").ReleaseNotesPromptState;
+      open: () => void;
+      close: () => void;
     };
   };
   /** Session test hooks exposed by SessionProvider for e2e auth control. */

@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-interface ReleaseNotesPromptState {
+export interface ReleaseNotesPromptState {
   isOpen: boolean;
 }
 
@@ -15,3 +15,17 @@ export const releaseNotesPromptActions = {
 
 export const selectReleaseNotesPromptOpen = (state: ReleaseNotesPromptState) =>
   state.isOpen;
+
+// Semantic bridge for e2e tests, mirroring the user-metadata store. Lets tests
+// raise the post-signup prompt without completing a real (backend-dependent)
+// signup. Merge (don't overwrite) so sibling stores' bridges survive.
+if (typeof window !== "undefined") {
+  window.__COMPASS_E2E_STORE__ = {
+    ...window.__COMPASS_E2E_STORE__,
+    releaseNotesPrompt: {
+      getState: useReleaseNotesPromptStore.getState,
+      open: releaseNotesPromptActions.open,
+      close: releaseNotesPromptActions.close,
+    },
+  };
+}
