@@ -8,7 +8,6 @@ import {
 import dayjs from "@core/util/date/dayjs";
 import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
-import { type Task } from "@web/common/types/task.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { getModifierKeyLabel } from "@web/shortcuts/shortcut.util";
@@ -57,27 +56,11 @@ function createEventRecord(overrides: {
 }
 
 /**
- * Creates a demo task with sensible defaults.
- */
-function createTask(overrides: Partial<Task> & Pick<Task, "title">): Task {
-  return {
-    _id: createObjectIdString(),
-    status: "todo",
-    order: 0,
-    createdAt: dayjs().toISOString(),
-    user: "unauthenticated",
-    ...overrides,
-  };
-}
-
-/**
  * Generate demo data relative to the current date.
  */
 function generateDemoData() {
   const now = dayjs();
   const today = now.toYearMonthDayString();
-  const yesterday = now.subtract(1, "day").toYearMonthDayString();
-  const tomorrow = now.add(1, "day").toYearMonthDayString();
   const { week, month } = now.weekMonthRange();
   const modKey = getModifierKeyLabel();
   const timeZone = getBrowserTimeZone();
@@ -127,7 +110,7 @@ function generateDemoData() {
     }),
     createEventRecord({
       title: "Try Compass",
-      description: `Welcome! Explore the calendar and tasks. When ready to bring in Google events, select 'Connect Google Calendar' from the command palette (${modKey}+K)`,
+      description: `Welcome! Explore your calendar. When ready to bring in Google events, select 'Connect Google Calendar' from the command palette (${modKey}+K)`,
       priority: Priorities.UNASSIGNED,
       schedule: {
         kind: "timed",
@@ -169,75 +152,42 @@ function generateDemoData() {
         end: dayjs(today).add(1, "day").toYearMonthDayString(),
       },
     }),
-  ];
-
-  // ─── Tasks (Today) ──────────────────────────────────────────────────────────
-  const todayTasks: Task[] = [
-    createTask({
-      title: `Open command palette (${modKey} + K)`,
-      order: 0,
+    // Onboarding hints (previously seeded as tasks, now calendar events).
+    createEventRecord({
+      title: "Peek at your week",
+      description: `Press '${VIEW_SHORTCUTS.week.key}' to switch to Week view and see the whole week at a glance.`,
+      priority: Priorities.SELF,
+      schedule: {
+        kind: "timed",
+        start: todayAt(14, 0),
+        end: todayAt(14, 30),
+        timeZone,
+      },
     }),
-    createTask({
-      title: "Move this forward",
-      order: 1,
-    }),
-    createTask({
-      title: "Move this backward",
-      order: 2,
-    }),
-    createTask({
-      title: `Go to Week view (${VIEW_SHORTCUTS.week.key})`,
-      order: 3,
-    }),
-    createTask({
-      title: "Move this to the top",
-      order: 4,
-    }),
-  ];
-
-  // ─── Tasks (Yesterday) - Completed ──────────────────────────────────────────
-  const yesterdayTasks: Task[] = [
-    createTask({
-      title: "Lurk on HN",
-      status: "completed",
-      order: 0,
-    }),
-    createTask({
-      title: "Watch Fireship",
-      status: "completed",
-      order: 1,
-    }),
-    createTask({
-      title: "Rewrite in Rust",
-      status: "completed",
-      order: 2,
-    }),
-  ];
-
-  // ─── Tasks (Tomorrow) ───────────────────────────────────────────────────────
-  const tomorrowTasks: Task[] = [
-    createTask({
-      title: "Create daily plan",
-      order: 0,
+    createEventRecord({
+      title: "Create your daily plan",
+      description: "Block time for what matters most, then let the day flow.",
+      priority: Priorities.WORK,
+      schedule: {
+        kind: "timed",
+        start: todayAt(15, 0),
+        end: todayAt(15, 30),
+        timeZone,
+      },
     }),
   ];
 
   return {
     events: [...somedayEvents, ...todayEvents],
-    tasks: {
-      [today]: todayTasks,
-      [yesterday]: yesterdayTasks,
-      [tomorrow]: tomorrowTasks,
-    },
   };
 }
 
 /**
  * Seeds demo data for first-time users.
  *
- * This migration checks if the user has any existing events or tasks.
+ * This migration checks if the user has any existing events.
  * If storage is empty (first-time user), it populates the app with
- * sample data so they can immediately explore functionality.
+ * sample events so they can immediately explore functionality.
  */
 
 const DEMO_DATA_SEED_MIGRATION_ID = "demo-data-seed-v1";
@@ -251,13 +201,9 @@ export const demoDataSeedMigration: ExternalMigration = {
 
   async migrate(store: OfflineDataStore): Promise<void> {
     const existingEvents = await store.getAllEvents();
-    const existingTasks = await store.getAllTasks();
-    if (existingEvents.length > 0 || existingTasks.length > 0) return;
+    if (existingEvents.length > 0) return;
 
     const demoData = generateDemoData();
     await store.putEvents(demoData.events);
-    for (const [dateKey, tasks] of Object.entries(demoData.tasks)) {
-      await store.putTasks(dateKey, tasks);
-    }
   },
 };

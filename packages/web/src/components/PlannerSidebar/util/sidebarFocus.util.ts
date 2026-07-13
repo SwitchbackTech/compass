@@ -25,3 +25,19 @@ export const focusFirstSomedaySidebarItem = (): boolean => {
   target?.focus();
   return Boolean(target);
 };
+
+/**
+ * Focuses the first interactive element in the planner sidebar (the month
+ * picker). Used by the Day view's "u" shortcut, which — unlike the Week view —
+ * has no someday list to focus. Returns whether a focus target was found.
+ */
+export const focusFirstSidebarItem = (): boolean => {
+  const sidebar = document.getElementById(ID_SIDEBAR);
+  if (!sidebar) return false;
+
+  const target = sidebar.querySelector<HTMLElement>(
+    'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])',
+  );
+  target?.focus();
+  return Boolean(target);
+};

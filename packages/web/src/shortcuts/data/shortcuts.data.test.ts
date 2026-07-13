@@ -77,7 +77,7 @@ describe("shortcuts.data", () => {
         );
 
       expect(findFocus("day")?.shortcuts).toEqual([
-        { keys: ["u"], label: "Focus tasks" },
+        { keys: ["u"], label: "Focus sidebar" },
         { keys: ["i"], label: "Focus calendar" },
       ]);
       expect(findFocus("week")?.shortcuts).toEqual([
@@ -122,20 +122,12 @@ describe("shortcuts.data", () => {
       });
     });
 
-    it("lists Shift+Arrow task migration in the day Edit section", () => {
+    it("lists event nudge shortcuts in the day Edit section", () => {
       const edit = getShortcutMenuSections({
         view: "day",
         isViewingCurrentPeriod: true,
       }).find((section) => section.id === "edit");
 
-      expect(edit?.shortcuts).toContainEqual({
-        keys: ["Shift", "ArrowRight"],
-        label: "Migrate task forward",
-      });
-      expect(edit?.shortcuts).toContainEqual({
-        keys: ["Shift", "ArrowLeft"],
-        label: "Migrate task backward",
-      });
       expect(edit?.shortcuts).toContainEqual({
         keys: ["Shift", "ArrowDown"],
         label: "Move event 15 min later",

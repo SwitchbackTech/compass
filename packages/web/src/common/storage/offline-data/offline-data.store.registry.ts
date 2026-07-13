@@ -89,8 +89,4 @@ export async function resetOfflineDataStoreAsync(): Promise<void> {
   resetOfflineDataStore();
 }
 
-export type {
-  MigrationRecord,
-  OfflineDataStore,
-  StoredTask,
-} from "./offline-data.store";
+export type { MigrationRecord, OfflineDataStore } from "./offline-data.store";

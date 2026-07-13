@@ -43,7 +43,7 @@ const getNavigateShortcuts = ({
 const getCreateShortcuts = (view: ShortcutMenuView): Shortcut[] =>
   view === "day"
     ? [
-        { keys: ["c"], label: "Create task" },
+        { keys: ["c"], label: "Create timed event" },
         { keys: ["a"], label: "Create all-day event" },
       ]
     : [
@@ -56,7 +56,7 @@ const getCreateShortcuts = (view: ShortcutMenuView): Shortcut[] =>
 const getFocusShortcuts = (view: ShortcutMenuView): Shortcut[] =>
   view === "day"
     ? [
-        { keys: ["u"], label: "Focus tasks" },
+        { keys: ["u"], label: "Focus sidebar" },
         { keys: ["i"], label: "Focus calendar" },
       ]
     : [
@@ -67,11 +67,6 @@ const getFocusShortcuts = (view: ShortcutMenuView): Shortcut[] =>
 const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
   view === "day"
     ? [
-        { keys: ["e"], label: "Edit task" },
-        { keys: ["Enter"], label: "Complete task" },
-        { keys: ["Delete"], label: "Delete task" },
-        { keys: ["Shift", "ArrowRight"], label: "Migrate task forward" },
-        { keys: ["Shift", "ArrowLeft"], label: "Migrate task backward" },
         { keys: ["m"], label: "Edit event" },
         {
           keys: ["Shift", "ArrowUp"],

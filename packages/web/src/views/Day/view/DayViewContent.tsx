@@ -1,8 +1,6 @@
-import classNames from "classnames";
 import { memo, useCallback, useMemo } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
-import { useCollapsiblePanel } from "@web/common/hooks/useCollapsiblePanel";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -11,63 +9,29 @@ import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
+import { focusFirstSidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
 import {
   selectIsSidebarOpen,
-  selectIsTaskListOpen,
   useViewStore,
   viewActions,
 } from "@web/events/stores/view.store";
 import { getShortcutMenuSections } from "@web/shortcuts/data/shortcuts.data";
 import { DayCalendarGrid } from "@web/views/Day/components/Calendar/DayCalendarGrid";
 import { Header } from "@web/views/Day/components/Header/Header";
-import { TaskList } from "@web/views/Day/components/TaskList/TaskList";
 import { getDayCmdTasks } from "@web/views/Day/getDayCmdTasks";
 import { useDayEvents } from "@web/views/Day/hooks/events/useDayEvents";
-import { useResizableTaskList } from "@web/views/Day/hooks/layout/useResizableTaskList";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDateNavigation } from "@web/views/Day/hooks/navigation/useDateNavigation";
 import { useDayViewShortcuts } from "@web/views/Day/hooks/shortcuts/useDayViewShortcuts";
-import { useTasks } from "@web/views/Day/hooks/tasks/useTasks";
 import {
   focusFirstDayCalendarEvent,
   openEventFormEditEvent,
 } from "@web/views/Day/interaction/dayCalendarFocus.util";
-import {
-  TASK_LIST_DIVIDER_WIDTH,
-  TASK_LIST_MAX_WIDTH,
-  TASK_LIST_MIN_WIDTH,
-} from "@web/views/Day/storage/task-list-width.constants";
-import {
-  focusOnAddTaskInput,
-  focusOnFirstTask,
-} from "@web/views/Day/util/day.shortcut.util";
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
 export const DayViewContent = memo(() => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
-  const isTaskListOpen = useViewStore(selectIsTaskListOpen);
-  // The task list and its resize divider animate as one unit, so they share
-  // a single transition instance instead of using CollapsiblePanel.
-  const taskListTransition = useCollapsiblePanel(isTaskListOpen);
-  const {
-    width: taskListWidth,
-    isResizing,
-    dividerProps,
-  } = useResizableTaskList();
-  // Only animate open/close: a live divider drag must track the pointer
-  // 1:1, not lag behind an in-flight width transition.
-  const animatesWidth = !isResizing;
 
-  const {
-    tasks,
-    selectedTaskIndex,
-    focusOnInput,
-    setSelectedTaskIndex,
-    setEditingTaskId,
-    setEditingTitle,
-    deleteTask,
-    migrateTask,
-  } = useTasks();
   const dateInView = useDateInView();
   const isViewingToday = dateInView.isSame(dayjs(), "day");
 
@@ -85,18 +49,18 @@ export const DayViewContent = memo(() => {
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();
   }, []);
-  // Task-focused shortcuts imply the user wants the list visible; reopen it
-  // first and defer focus a frame so the list exists in the DOM.
-  const withTaskListOpen = useCallback((focusTask: () => void) => {
-    return () => {
-      if (selectIsTaskListOpen(useViewStore.getState())) {
-        focusTask();
-        return;
-      }
-      viewActions.setTaskListOpen(true);
-      requestAnimationFrame(focusTask);
-    };
+
+  // "u" implies the user wants the sidebar; open it first and defer focus a
+  // frame so the sidebar exists in the DOM before we target it.
+  const handleFocusSidebar = useCallback(() => {
+    if (selectIsSidebarOpen(useViewStore.getState())) {
+      focusFirstSidebarItem();
+      return;
+    }
+    viewActions.setSidebarOpen(true);
+    requestAnimationFrame(() => focusFirstSidebarItem());
   }, []);
+
   const { closeShortcuts, isShortcutsOpen, toggleShortcuts } =
     usePlannerShortcuts({
       isSidebarOpen,
@@ -112,46 +76,6 @@ export const DayViewContent = memo(() => {
     [isViewingToday],
   );
 
-  const hasFocusedTask =
-    selectedTaskIndex >= 0 && selectedTaskIndex < tasks.length;
-
-  const getTaskIndexToEdit = useCallback(() => {
-    if (hasFocusedTask) {
-      return selectedTaskIndex;
-    } else if (tasks.length > 0) {
-      return 0;
-    }
-    return -1;
-  }, [hasFocusedTask, selectedTaskIndex, tasks.length]);
-
-  const handleEditTask = useCallback(() => {
-    const taskIndexToEdit = getTaskIndexToEdit();
-    if (taskIndexToEdit >= 0) {
-      const taskId = tasks[taskIndexToEdit]._id;
-      setEditingTaskId(taskId);
-      setEditingTitle(tasks[taskIndexToEdit].title);
-      setSelectedTaskIndex(taskIndexToEdit);
-      focusOnInput(taskId);
-    }
-  }, [
-    tasks,
-    getTaskIndexToEdit,
-    setEditingTaskId,
-    setEditingTitle,
-    setSelectedTaskIndex,
-    focusOnInput,
-  ]);
-
-  const handleDeleteTask = useCallback(() => {
-    // Get the task ID directly from the active element
-    const activeElement = document.activeElement as HTMLElement | null;
-    const taskId = activeElement?.dataset?.taskId;
-
-    if (taskId) {
-      deleteTask(taskId);
-    }
-  }, [deleteTask]);
-
   const handleGoToToday = useCallback(() => {
     // Compare dates in the same timezone to avoid timezone issues
     // Both dates are in local timezone, ensuring accurate day comparison
@@ -165,23 +89,23 @@ export const DayViewContent = memo(() => {
     }
   }, [dateInView, navigateToToday]);
 
+  const handleCreateTimedEvent = useCallback(() => {
+    compassEventEmitter.emit(CompassDOMEvents.CREATE_TIMED_DRAFT);
+  }, []);
+
   const handleCreateAllDayEvent = useCallback(() => {
     compassEventEmitter.emit(CompassDOMEvents.CREATE_ALLDAY_DRAFT);
   }, []);
 
   useDayViewShortcuts({
+    onCreateTimedEvent: handleCreateTimedEvent,
     onCreateAllDayEvent: handleCreateAllDayEvent,
-    onAddTask: withTaskListOpen(focusOnAddTaskInput),
-    onEditTask: handleEditTask,
-    onDeleteTask: handleDeleteTask,
-    onMigrateTask: migrateTask,
-    onFocusTasks: withTaskListOpen(focusOnFirstTask),
-    onFocusCalendar: focusFirstDayCalendarEvent,
     onEditEvent: openEventFormEditEvent,
+    onFocusSidebar: handleFocusSidebar,
+    onFocusCalendar: focusFirstDayCalendarEvent,
     onNextDay: navigateToNextDay,
     onPrevDay: navigateToPreviousDay,
     onGoToToday: handleGoToToday,
-    hasFocusedTask,
   });
 
   return (
@@ -218,64 +142,7 @@ export const DayViewContent = memo(() => {
       >
         <Header />
 
-        <div
-          className={classNames("flex w-full flex-1 overflow-hidden", {
-            "cursor-col-resize select-none": isResizing,
-          })}
-        >
-          {taskListTransition.isMounted ? (
-            <>
-              <div
-                className={classNames(
-                  "h-full min-w-0 shrink-0 overflow-hidden",
-                  {
-                    "transition-[width] duration-200 ease-out motion-reduce:transition-none":
-                      animatesWidth,
-                  },
-                )}
-                onTransitionEnd={taskListTransition.onTransitionEnd}
-                style={{
-                  width: taskListTransition.isExpanded ? taskListWidth : 0,
-                }}
-              >
-                <TaskList width={taskListWidth} />
-              </div>
-
-              {/* biome-ignore lint/a11y/useSemanticElements: An hr cannot host the focusable, draggable window-splitter interaction. */}
-              <div
-                {...dividerProps}
-                role="separator"
-                aria-orientation="vertical"
-                aria-label="Resize task list"
-                aria-valuemin={TASK_LIST_MIN_WIDTH}
-                aria-valuemax={TASK_LIST_MAX_WIDTH}
-                aria-valuenow={taskListWidth}
-                tabIndex={0}
-                className={classNames(
-                  "group relative min-w-0 shrink-0 cursor-col-resize touch-none overflow-hidden focus:outline-none",
-                  {
-                    "transition-[width] duration-200 ease-out motion-reduce:transition-none":
-                      animatesWidth,
-                  },
-                )}
-                style={{
-                  width: taskListTransition.isExpanded
-                    ? TASK_LIST_DIVIDER_WIDTH
-                    : 0,
-                }}
-              >
-                <div
-                  className={classNames(
-                    "absolute inset-y-1 left-0 w-px rounded-full bg-grid-line-primary transition-[width,background-color] duration-200 ease-out motion-reduce:transition-none",
-                    "group-hover:w-0.5 group-hover:bg-text-lighter/60",
-                    "group-focus-visible:w-0.5 group-focus-visible:bg-text-lighter/60",
-                    { "w-0.5 bg-text-lighter/60": isResizing },
-                  )}
-                />
-              </div>
-            </>
-          ) : null}
-
+        <div className="flex w-full flex-1 overflow-hidden">
           <DayCalendarGrid />
         </div>
       </div>
