@@ -238,7 +238,7 @@ suite:
 - `bun run verify` picks checks from the git diff automatically — good as a
   first pass, but confirm its output rather than treating it as sufficient
   on its own
-- `bun run lint` (Biome) before handoff for any non-docs change
+- `bun run lint` (Biome) before shipping any non-docs change
 
 ## Commit
 

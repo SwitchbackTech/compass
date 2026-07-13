@@ -27,7 +27,15 @@ export const useWeek = (
     from: ROUTE_IDS.WEEK_DATE,
     shouldThrow: false,
   });
-  const anchorDateString = params?.dateString ?? today.format(DATE_FORMAT);
+  // Bare /week has no dateString. Default to today when only one day is
+  // visible (phone width, where there is no someday sidebar), otherwise the
+  // week-aligned start so the desktop someday sidebar's week bucket stays
+  // aligned. Once navigation writes a dateString, that drives the anchor at
+  // every width.
+  const defaultAnchorDate =
+    visibleDayCount === 1 ? today : today.startOf("week");
+  const anchorDateString =
+    params?.dateString ?? defaultAnchorDate.format(DATE_FORMAT);
   const anchor = useMemo(
     () => dayjs(anchorDateString, DATE_FORMAT),
     [anchorDateString],

@@ -1,6 +1,12 @@
 name: Test
 
-on: [push]
+on:
+  push:
+    paths-ignore:
+      - ".gitignore"
+      - "team/**"
+      - "**/*.md"
+      - "docs/**"
 
 permissions:
   contents: read
