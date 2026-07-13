@@ -52,13 +52,13 @@ import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSectio
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
-import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
   type GridEventFormProps,
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
+import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
 
 const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,

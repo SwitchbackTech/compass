@@ -8,8 +8,8 @@ import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { CALENDAR_DECK_MIN_WIDTH } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
-import { afterEach, describe, expect, it, mock } from "bun:test";
 import { GridDraft } from "./GridDraft";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 
 // The interactive draft GridDraft.tsx reads from context — always a
 // not-yet-saved "create" GridEventDraft in these fixtures (none of these
@@ -86,19 +86,17 @@ const renderGridDraft = ({
   draft?: GridEventDraft;
   recurringPreviews?: Schema_GridEvent[];
 } = {}) => {
-  const repositionDraftByKeyboard = mock(() => true);
-  const onSubmit = mock();
   const value = {
     actions: {
       convert: mock(),
       discard: mock(),
       duplicateEvent: mock(),
-      repositionDraftByKeyboard,
+      repositionDraftByKeyboard: mock(() => true),
       startDragging: mock(),
     },
     confirmation: {
       onDelete: mock(),
-      onSubmit,
+      onSubmit: mock(),
     },
     setters: {
       setDateBeingChanged: mock(),
@@ -115,7 +113,7 @@ const renderGridDraft = ({
     },
   } as never;
 
-  const result = render(
+  return render(
     <DraftContext.Provider value={value}>
       <GridDraft
         activeAllDayDraftEvent={activeAllDayDraftEvent}
@@ -131,15 +129,13 @@ const renderGridDraft = ({
       />
     </DraftContext.Provider>,
   );
-
-  return { ...result, onSubmit, repositionDraftByKeyboard };
 };
 
 afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("GridDraft keyboard focus", () => {
+describe("GridDraft", () => {
   it("positions all-day drafts in the all-day row", () => {
     renderGridDraft({
       draft: createDraft({
@@ -221,5 +217,4 @@ describe("GridDraft keyboard focus", () => {
       screen.getAllByRole("button", { name: /Timed event: Planning/ }),
     ).toHaveLength(3);
   });
-
 });

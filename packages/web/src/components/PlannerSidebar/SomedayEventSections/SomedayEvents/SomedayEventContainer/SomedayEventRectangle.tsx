@@ -17,7 +17,11 @@ interface Props {
   onMigrate: Actions_Sidebar["onMigrate"];
 }
 
-export const SomedayEventRectangle = ({ category, event, onMigrate }: Props) => {
+export const SomedayEventRectangle = ({
+  category,
+  event,
+  onMigrate,
+}: Props) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
   const canMigrate = event.recurrence.kind === "single";
   const title = event.content.kind === "details" ? event.content.title : "";

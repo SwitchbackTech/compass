@@ -24,7 +24,10 @@ const createDraft = (): GridEventDraft => {
 const renderPanel = ({
   draft = createDraft(),
   isFormOpen = true,
-}: { draft?: GridEventDraft | null; isFormOpen?: boolean } = {}) => {
+}: {
+  draft?: GridEventDraft | null;
+  isFormOpen?: boolean;
+} = {}) => {
   const onSubmit = mock();
   const value = {
     actions: {

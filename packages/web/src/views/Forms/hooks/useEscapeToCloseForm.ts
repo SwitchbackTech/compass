@@ -11,7 +11,9 @@ import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 // react-datepicker month grid is a permanently-visible role="listbox".
 const isFloatingLayerOpen = () =>
   Array.from(
-    document.querySelectorAll('[role="menu"], [role="listbox"], [role="dialog"]'),
+    document.querySelectorAll(
+      '[role="menu"], [role="listbox"], [role="dialog"]',
+    ),
   ).some(
     (element) =>
       element.getAttribute("aria-hidden") !== "true" &&
