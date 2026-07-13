@@ -33,11 +33,38 @@ import {
 import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { type CalendarGridMeasurements } from "@web/layout/calendar-grid/types/calendarGrid.types";
 import { type EventFormProps } from "@web/views/Forms/hooks/useEventForm";
-import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
+import {
+  afterAll,
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  mock,
+} from "bun:test";
 import "@testing-library/jest-dom";
 
 let seededEvents: Event[] = [];
 const originalScroll = HTMLElement.prototype.scroll;
+const actualErrorToastUtil = await import(
+  "@web/common/utils/toast/error-toast.util"
+);
+const mockShowErrorToast = mock();
+let isErrorToastMocked = true;
+
+mock.module("@web/common/utils/toast/error-toast.util", () => ({
+  ...actualErrorToastUtil,
+  showErrorToast: (
+    ...args: Parameters<typeof actualErrorToastUtil.showErrorToast>
+  ) =>
+    isErrorToastMocked
+      ? mockShowErrorToast(...args)
+      : actualErrorToastUtil.showErrorToast(...args),
+}));
+
+afterAll(() => {
+  isErrorToastMocked = false;
+});
 
 const measurements = {
   allDayRow: {
@@ -228,6 +255,7 @@ const setDayEvents = (events: Schema_Event[]) => {
 };
 
 const getDraft = () => useDraftStore.getState().event;
+const getGridDraft = () => useDraftStore.getState().gridDraft;
 const getIsFormOpen = () => selectIsEventFormOpen(useDraftStore.getState());
 
 const resetDraft = () => {
@@ -274,6 +302,7 @@ const expectFormAnchoredTo = (card: HTMLElement, cardRect: DOMRect) => {
 beforeEach(() => {
   seededEvents = [];
   latestEventForm = null;
+  mockShowErrorToast.mockClear();
 });
 
 afterEach(() => {
@@ -677,6 +706,24 @@ describe("DayCalendarGrid", () => {
     await user.pointer({ keys: "[/MouseLeft]" });
   });
 
+  it("creates an all-day draft in the clicked calendar column", async () => {
+    const primary = makeCalendar("Primary", { isPrimary: true });
+    const projects = makeCalendar("Projects");
+    const { user } = renderDayCalendarGrid([primary, projects]);
+
+    await user.pointer({
+      coords: { clientX: 250, clientY: 1 },
+      keys: "[MouseLeft>]",
+      target: getAllDayRegion(),
+    });
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(projects.id);
+    });
+
+    await user.pointer({ keys: "[/MouseLeft]" });
+  });
+
   it("dismisses an open form when pressing empty Day all-day calendar space", async () => {
     const event = createTimedEvent({
       _id: "open-from-all-day-grid",
@@ -742,6 +789,65 @@ describe("DayCalendarGrid", () => {
       ).toBeVisible();
       expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
     });
+  });
+
+  it("creates a timed draft in the clicked calendar column", async () => {
+    const primary = makeCalendar("Primary", { isPrimary: true });
+    const projects = makeCalendar("Projects");
+    const { user } = renderDayCalendarGrid([primary, projects]);
+
+    await user.pointer([
+      {
+        coords: { clientX: 250, clientY: 120 },
+        keys: "[MouseLeft>]",
+        target: getTimedSlot(3),
+      },
+      {
+        coords: { clientX: 250, clientY: 120 },
+        keys: "[/MouseLeft]",
+        target: getTimedSlot(3),
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(getGridDraft()?.values.calendarId).toBe(projects.id);
+    });
+  });
+
+  it("rejects timed draft creation on a read-only calendar", async () => {
+    const primary = makeCalendar("Primary", { isPrimary: true });
+    const holidays = makeCalendar("Holidays", {
+      access: "reader",
+      capabilities: {
+        canReadAvailability: true,
+        canReadDetails: true,
+        canWrite: false,
+        canManage: false,
+        canWatchEvents: true,
+      },
+    });
+    const { user } = renderDayCalendarGrid([primary, holidays]);
+
+    await user.pointer([
+      {
+        coords: { clientX: 250, clientY: 120 },
+        keys: "[MouseLeft>]",
+        target: getTimedSlot(3),
+      },
+      {
+        coords: { clientX: 250, clientY: 120 },
+        keys: "[/MouseLeft]",
+        target: getTimedSlot(3),
+      },
+    ]);
+
+    await waitFor(() => {
+      expect(mockShowErrorToast).toHaveBeenCalledWith(
+        "You can't edit the Holidays calendar.",
+      );
+    });
+    expect(getDraft()).toBeNull();
+    expect(screen.queryByRole("dialog", { name: "Event form" })).toBeNull();
   });
 
   it("places a new all-day draft below existing all-day events", async () => {

@@ -34,6 +34,7 @@ export const useDayCalendarColumns = ({
     const columns = displayedCalendars.map((calendar) => ({
       date: dateInView,
       key: calendar.id,
+      surfaceLabel: `${calendar.name}, ${dateInView.format("dddd, MMMM D, YYYY")}`,
     }));
 
     return columns.length

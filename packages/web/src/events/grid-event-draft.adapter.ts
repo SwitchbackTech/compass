@@ -42,6 +42,7 @@ function gridScheduleFromEvent(event: Event): GridScheduleDraft | null {
 export function createGridEventDraft(
   schedule: GridScheduleDraft,
   clientId?: EventId,
+  calendarId: CalendarId | null = null,
 ): GridEventDraft {
   return {
     kind: "create",
@@ -52,7 +53,7 @@ export function createGridEventDraft(
       description: "",
       schedule,
       priority: Priorities.UNASSIGNED,
-      calendarId: null,
+      calendarId,
       recurrence: { kind: "single" },
     },
   };

@@ -4,7 +4,7 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { type EventId } from "@core/types/domain-primitives";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
@@ -50,7 +50,10 @@ export const useDayTimedDraftCreation = ({
   );
 
   const startTimedDraftCreation = useCallback(
-    (event: ReactMouseEvent<HTMLElement>) => {
+    (
+      event: ReactMouseEvent<HTMLElement>,
+      calendarId: CalendarId | null = null,
+    ) => {
       if (
         !isEligibleCalendarInteractionPointerDown({
           altKey: event.altKey,
@@ -110,6 +113,7 @@ export const useDayTimedDraftCreation = ({
 
         return {
           ...nextEvent,
+          calendarId: calendarId ?? undefined,
           endDate: resolvedEndDate.format(),
           startDate: resolvedStartDate.format(),
         };
@@ -139,6 +143,7 @@ export const useDayTimedDraftCreation = ({
                 new Date(nextEvent.endDate),
               ),
               nextEvent._id as EventId,
+              calendarId,
             );
 
             draftActions.startGridDraft({ activity: "gridClick", draft });
