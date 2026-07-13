@@ -50,7 +50,8 @@ function createTestRouter(initialEntries: string[]) {
   const weekIndexRoute = createRoute({
     getParentRoute: () => weekRoute,
     path: "/",
-    beforeLoad: () => redirectToToday(ROOT_ROUTES.WEEK_DATE),
+    // Bare /week renders the view (no redirect); useWeek derives the anchor.
+    component: () => null,
   });
   const weekDateRoute = createRoute({
     getParentRoute: () => weekRoute,
@@ -90,15 +91,6 @@ describe("router redirects", () => {
     await router.load();
 
     expect(router.state.location.pathname).toBe(`/day/${dateString}`);
-  });
-
-  it("redirects /week to today's dated week route", async () => {
-    const { dateString } = loadTodayData();
-    const router = createTestRouter(["/week"]);
-
-    await router.load();
-
-    expect(router.state.location.pathname).toBe(`/week/${dateString}`);
   });
 
   it("preserves ?auth=login across the today redirect", async () => {

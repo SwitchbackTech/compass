@@ -74,6 +74,15 @@ export const dayIndexRoute = createRoute({
 export const weekRoute = createRoute({
   getParentRoute: () => authenticatedLayoutRoute,
   path: ROOT_ROUTES.WEEK,
+  // WeekView lives on the parent so a single instance persists across the bare
+  // /week (index) and /week/$dateString routes. Navigating between them updates
+  // the anchor without remounting the view (a remount would restart the sidebar
+  // open-animation). useWeek reads the optional dateString param and falls back
+  // to a width-aware default (today at phone width, start of week on desktop).
+  component: lazyRouteComponent(
+    () => import("@web/views/Week/WeekView"),
+    "WeekView",
+  ),
 });
 
 export const weekDateRoute = createRoute({
@@ -81,16 +90,11 @@ export const weekDateRoute = createRoute({
   path: "$dateString",
   beforeLoad: validateWeekDateParam,
   loader: loadDateParam,
-  component: lazyRouteComponent(
-    () => import("@web/views/Week/WeekView"),
-    "WeekView",
-  ),
 });
 
 export const weekIndexRoute = createRoute({
   getParentRoute: () => weekRoute,
   path: "/",
-  beforeLoad: () => redirectToToday(ROOT_ROUTES.WEEK_DATE),
 });
 
 export const rootIndexRoute = createRoute({
