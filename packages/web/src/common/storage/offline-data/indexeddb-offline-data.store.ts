@@ -5,11 +5,6 @@ import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentin
 import { transformLegacyEvents } from "@web/common/storage/migrations/data/legacy-event-to-local-record.transform";
 import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import {
-  normalizeTask,
-  normalizeTasks,
-  type Task,
-} from "@web/common/types/task.types";
-import {
   deleteCompassLocalDb,
   extractDataFromLegacySchema,
   isPrimaryKeyUpgradeError,
@@ -27,6 +22,9 @@ import {
  */
 class CompassDB extends Dexie {
   events!: Table<LocalEventRecord, string>;
+  // The Tasks feature was removed (2026-07). This table is intentionally kept
+  // in the version chain so existing task rows are preserved (never dropped)
+  // and users can recover their data. Nothing reads or writes it anymore.
   tasks!: Table<StoredTask, string>;
   _migrations!: Table<MigrationRecord, string>;
 
@@ -164,67 +162,6 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
   close(): void {
     this.db.close();
     this.initialized = false;
-  }
-
-  // ─── Task Operations ───────────────────────────────────────────────────────
-
-  async getTasks(dateKey: string): Promise<Task[]> {
-    const storedTasks = await this.db.tasks
-      .where("dateKey")
-      .equals(dateKey)
-      .toArray();
-
-    return storedTasks.map(({ dateKey: _, ...task }) => normalizeTask(task));
-  }
-
-  async getAllTasks(): Promise<StoredTask[]> {
-    return this.db.tasks.toArray();
-  }
-
-  async putTasks(dateKey: string, tasks: Task[]): Promise<void> {
-    const storedTasks: StoredTask[] = normalizeTasks(tasks).map((task) => ({
-      ...task,
-      dateKey,
-    }));
-
-    await this.db.transaction("rw", this.db.tasks, async () => {
-      // Replace all tasks for this date atomically
-      await this.db.tasks.where("dateKey").equals(dateKey).delete();
-      if (storedTasks.length > 0) {
-        await this.db.tasks.bulkPut(storedTasks);
-      }
-    });
-  }
-
-  async putTask(dateKey: string, task: Task): Promise<void> {
-    const normalizedTask = normalizeTask(task);
-    const storedTask: StoredTask = { ...normalizedTask, dateKey };
-    await this.db.tasks.put(storedTask);
-  }
-
-  async deleteTask(taskId: string): Promise<void> {
-    await this.db.tasks.delete(taskId);
-  }
-
-  async moveTask(
-    task: Task,
-    fromDateKey: string,
-    toDateKey: string,
-  ): Promise<void> {
-    const normalizedTask = normalizeTask(task);
-
-    await this.db.transaction("rw", this.db.tasks, async () => {
-      const existingTask = await this.db.tasks.get(normalizedTask._id);
-      if (existingTask && existingTask.dateKey !== fromDateKey) return;
-
-      await this.db.tasks.delete(normalizedTask._id);
-      const storedTask: StoredTask = { ...normalizedTask, dateKey: toDateKey };
-      await this.db.tasks.put(storedTask);
-    });
-  }
-
-  async clearAllTasks(): Promise<void> {
-    await this.db.tasks.clear();
   }
 
   // ─── Event Operations ──────────────────────────────────────────────────────

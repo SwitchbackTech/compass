@@ -1,9 +1,10 @@
 import { session } from "@web/auth/compass/session/Session";
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
-import { TODAY_TASKS_STORAGE_KEY_PREFIX } from "@web/common/utils/storage/storage.util";
 
-const isCompassStorageKey = (key: string) =>
-  key.startsWith("compass.") || key.startsWith(TODAY_TASKS_STORAGE_KEY_PREFIX);
+// Legacy task keys ("compass.today.tasks.*") are still matched by this prefix,
+// so account-deletion cleanup keeps clearing them even though the Tasks
+// feature was removed.
+const isCompassStorageKey = (key: string) => key.startsWith("compass.");
 
 /**
  * Clears all Compass-related browser storage including:
