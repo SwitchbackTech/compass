@@ -3,7 +3,7 @@ import { type RefObject, useEffect, useRef } from "react";
 const GESTURE_IDLE_MS = 180;
 const NAVIGATION_THRESHOLD_PX = 60;
 
-type HorizontalWeekNavigationOptions = {
+type HorizontalNavigationOptions = {
   containerRef: RefObject<HTMLElement | null>;
   onNext: () => void;
   onPrevious: () => void;
@@ -30,11 +30,11 @@ const canScrollHorizontally = (
   return false;
 };
 
-export const useHorizontalWeekNavigation = ({
+export const useHorizontalNavigation = ({
   containerRef,
   onNext,
   onPrevious,
-}: HorizontalWeekNavigationOptions) => {
+}: HorizontalNavigationOptions) => {
   const callbacksRef = useRef({ onNext, onPrevious });
 
   useEffect(() => {
