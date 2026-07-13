@@ -102,6 +102,58 @@ describe("useGcalSSE", () => {
     });
   });
 
+  it("clears a stale syncing override when replayed metadata is healthy", async () => {
+    render(<HookHost />);
+
+    act(() => {
+      fireMessage({ type: "syncStatusChanged", sync: { status: "syncing" } });
+      fireUserMetadata({ google: { connectionState: "HEALTHY" } });
+    });
+
+    await waitFor(() => {
+      expect(getGoogleSyncIndicatorOverride()).toBe(null);
+    });
+  });
+
+  it("clears a stale syncing override when replayed metadata needs attention", async () => {
+    render(<HookHost />);
+
+    act(() => {
+      fireMessage({ type: "syncStatusChanged", sync: { status: "syncing" } });
+      fireUserMetadata({ google: { connectionState: "ATTENTION" } });
+    });
+
+    await waitFor(() => {
+      expect(getGoogleSyncIndicatorOverride()).toBe(null);
+    });
+  });
+
+  it("keeps the syncing override when replayed metadata confirms active work", async () => {
+    render(<HookHost />);
+
+    act(() => {
+      fireMessage({ type: "syncStatusChanged", sync: { status: "syncing" } });
+      fireUserMetadata({ google: { connectionState: "IMPORTING" } });
+    });
+
+    await waitFor(() => {
+      expect(getGoogleSyncIndicatorOverride()).toBe("syncing");
+    });
+  });
+
+  it("keeps the repairing override during an early healthy metadata replay", async () => {
+    setRepairingSyncIndicatorOverride();
+    render(<HookHost />);
+
+    act(() => {
+      fireUserMetadata({ google: { connectionState: "HEALTHY" } });
+    });
+
+    await waitFor(() => {
+      expect(getGoogleSyncIndicatorOverride()).toBe("repairing");
+    });
+  });
+
   it("clears the syncing override and triggers refetch after importCompleted", async () => {
     setRepairingSyncIndicatorOverride();
 

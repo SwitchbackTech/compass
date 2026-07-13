@@ -26,6 +26,12 @@ export const clearGoogleSyncIndicatorOverride = () => {
   setGoogleSyncIndicatorOverride(null);
 };
 
+export const clearSyncingSyncIndicatorOverride = () => {
+  if (gSyncIndicator === "syncing") {
+    clearGoogleSyncIndicatorOverride();
+  }
+};
+
 export const getGoogleSyncIndicatorOverride = () => gSyncIndicator;
 
 export const setRepairingSyncIndicatorOverride = () => {

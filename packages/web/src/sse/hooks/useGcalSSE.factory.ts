@@ -9,6 +9,7 @@ import {
 import { type UserMetadata } from "@core/types/user.types";
 import {
   clearGoogleSyncIndicatorOverride,
+  clearSyncingSyncIndicatorOverride,
   getGoogleSyncIndicatorOverride,
   setSyncingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
@@ -70,7 +71,12 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
         // The backend replays the whole user-metadata payload here (packet-01
         // contract note); the web-side UserMetadata shape is still a plain
         // interface with no schema of its own to validate against.
-        dependencies.setUserMetadata(message.metadata as UserMetadata);
+        const metadata = message.metadata as UserMetadata;
+        dependencies.setUserMetadata(metadata);
+
+        if (metadata.google?.connectionState !== "IMPORTING") {
+          clearSyncingSyncIndicatorOverride();
+        }
       },
       [],
     );
