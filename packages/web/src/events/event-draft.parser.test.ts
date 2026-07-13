@@ -40,16 +40,6 @@ const allDaySchedule = (
   ...overrides,
 });
 
-const somedaySchedule = (
-  overrides: Partial<Extract<EventScheduleDraft, { kind: "someday" }>> = {},
-): EventScheduleDraft => ({
-  kind: "someday",
-  period: "week",
-  anchorDate: new Date(2026, 6, 14),
-  sortOrder: 0,
-  ...overrides,
-});
-
 const newFormValues = (
   overrides: Partial<NewEventFormValues> = {},
 ): NewEventFormValues => ({
@@ -139,20 +129,6 @@ describe("parseEventDraft", () => {
         kind: "allDay",
         start: "2026-07-14",
         end: "2026-07-16",
-      });
-    });
-
-    it("parses a someday create draft", () => {
-      const result = parseEventDraft(newDraft({ schedule: somedaySchedule() }));
-
-      expect(result.ok).toBe(true);
-      if (!result.ok || result.mode !== "create")
-        throw new Error("expected create");
-      expect(result.input.schedule).toEqual({
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-14",
-        sortOrder: 0,
       });
     });
 
@@ -275,16 +251,6 @@ describe("parseEventDraft", () => {
       expect(result.ok).toBe(false);
       if (result.ok) throw new Error("expected failure");
       expect(result.fieldErrors.recurrence).toBeDefined();
-    });
-
-    it("reports a missing someday sortOrder", () => {
-      const result = parseEventDraft(
-        newDraft({ schedule: somedaySchedule({ sortOrder: null }) }),
-      );
-
-      expect(result.ok).toBe(false);
-      if (result.ok) throw new Error("expected failure");
-      expect(result.fieldErrors.sortOrder).toBeDefined();
     });
 
     it("reports every simultaneous error in one result", () => {

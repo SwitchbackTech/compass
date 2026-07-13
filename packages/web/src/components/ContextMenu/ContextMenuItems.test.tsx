@@ -26,13 +26,6 @@ const mockSetDraft = mock();
 const mockSubmit = mock();
 const mockOnDelete = mock();
 
-mock.module(
-  "@web/components/PlannerSidebar/draft/context/useSidebarContext",
-  () => ({
-    useSidebarContext: () => null,
-  }),
-);
-
 const createMockGridEvent = (
   overrides: Partial<Schema_GridEvent> = {},
 ): Schema_GridEvent => {

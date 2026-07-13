@@ -4,9 +4,7 @@ import {
   type CreateEventInput,
   type EventListQuery,
   type RecurrenceScope,
-  type ReorderEventsInput,
   type ReplaceEventInput,
-  type TransitionEventInput,
 } from "@core/types/event-command.contracts";
 import {
   isBackendUnavailableError,
@@ -70,20 +68,6 @@ export class RemoteEventRepository implements EventRepository {
     await this.withLocalFallback(
       () => this.api.delete(id, scope),
       () => this.localRepository.delete(id, scope),
-    );
-  }
-
-  async reorder(input: ReorderEventsInput): Promise<void> {
-    await this.withLocalFallback(
-      () => this.api.reorder(input),
-      () => this.localRepository.reorder(input),
-    );
-  }
-
-  async transition(id: EventId, input: TransitionEventInput): Promise<Event> {
-    return this.withLocalFallback(
-      () => this.api.transition(id, input),
-      () => this.localRepository.transition(id, input),
     );
   }
 }

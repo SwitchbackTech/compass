@@ -59,9 +59,6 @@ export const DayViewContent = memo(() => {
   });
   useDayEvents(dateInView);
 
-  const plannerViewStart = dateInView.startOf("week");
-  const plannerViewEnd = dateInView.endOf("week");
-
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();
   }, []);
@@ -147,9 +144,6 @@ export const DayViewContent = memo(() => {
           onToggleSidebar={toggleSidebar}
           shortcutSections={shortcutSections}
           shortcutsViewLabel="Day"
-          showSomedayEventSections={false}
-          viewEnd={plannerViewEnd}
-          viewStart={plannerViewStart}
         />
       </ResizableSidebarPanel>
 

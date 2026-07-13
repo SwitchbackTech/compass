@@ -6,7 +6,6 @@ import { type Event } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
   type ReplaceEventInput,
-  type TransitionEventInput,
 } from "@core/types/event-command.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -20,12 +19,6 @@ const calendarKey = eventQueryKeys.week({
   source: "local",
   start: "2026-07-01T00:00:00.000Z",
   end: "2026-07-08T00:00:00.000Z",
-});
-
-const somedayKey = eventQueryKeys.someday({
-  source: "local",
-  period: "week",
-  anchorDate: "2026-07-01",
 });
 
 const event = (overrides: Partial<Event> = {}): Event =>
@@ -65,11 +58,6 @@ const setup = () => {
     },
     delete: async (id: EventId, scope) => {
       calls.push({ method: "delete", value: { id, scope } });
-    },
-    reorder: async () => {},
-    transition: async (id: EventId, input: TransitionEventInput) => {
-      calls.push({ method: "transition", value: { id, input } });
-      return event({ id });
     },
   };
   const dependencies = {
@@ -193,47 +181,6 @@ describe("useUndoRedo", () => {
     expect(
       context.calls.filter(({ method }) => method === "delete"),
     ).toHaveLength(2);
-  });
-
-  test("undoes a someday transition by restoring calendar membership", async () => {
-    const context = setup();
-    const original = event();
-    context.queryClient.setQueryData(calendarKey, normalized(original));
-    context.queryClient.setQueryData(somedayKey, normalized());
-
-    act(() =>
-      context.hook.result.current.mutations.transition({
-        id: original.id,
-        input: {
-          kind: "unschedule",
-          schedule: {
-            kind: "someday",
-            period: "week",
-            anchorDate: "2026-07-01" as never,
-            sortOrder: 0,
-          },
-        },
-      }),
-    );
-    await waitFor(() => {
-      expect(
-        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
-          ?.entities[original.id]?.schedule.kind,
-      ).toBe("someday");
-    });
-
-    act(() => context.hook.result.current.undoRedo.undo());
-
-    await waitFor(() => {
-      expect(
-        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
-          ?.ids,
-      ).toEqual([]);
-      expect(
-        context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
-          ?.entities[original.id]?.schedule.kind,
-      ).toBe("timed");
-    });
   });
 
   test("undo and redo are no-ops with empty history", () => {

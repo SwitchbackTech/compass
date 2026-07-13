@@ -36,7 +36,7 @@ export type EventChangeSet = {
 };
 
 export const isWritableToGoogle = (record: EventRecord): boolean =>
-  record.content.kind === "details" && record.schedule.kind !== "someday";
+  record.content.kind === "details";
 
 /**
  * Propagates a Compass mutation to the OWNING calendar's Google copy (B7,

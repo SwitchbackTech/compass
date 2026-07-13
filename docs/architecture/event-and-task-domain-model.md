@@ -15,13 +15,11 @@ legacy types are deleted.
   `DateTime` (RFC 3339 with offset), `TimeZone`, `SortOrder`, `RRule`.
 - `packages/core/src/types/event.contracts.ts` — canonical `Event`: required
   `calendarId`, discriminated `content` (`details` | `busy`), `schedule`
-  (`timed` | `allDay` | `someday`, exclusive all-day ends), `recurrence`
+  (`timed` | `allDay`, exclusive all-day ends), `recurrence`
   (`single` | `series` | `occurrence`), plus `BusyPeriod` for free/busy-only
   calendars.
 - `packages/core/src/types/event-command.contracts.ts` — create (optional
-  client id), full-replace, delete, someday reorder, the someday↔scheduled
-  transition (the only command that changes an event's calendar), list and
-  availability queries.
+  client id), full-replace, delete, list and availability queries.
 - `packages/core/src/types/calendar.contracts.ts` — `Calendar` read model with
   provider/access and derived capabilities (`getCalendarCapabilities`).
 - `packages/core/src/types/server-message.contracts.ts` — the discriminated
@@ -44,11 +42,8 @@ recorded reasoning instead of rediscovering it:
 
 - **Cross-calendar event moves.** An existing event's `calendarId` is
   immutable once created (A6) — creating and duplicating pick a calendar,
-  editing shows it as read-only text, and there is no move control. The one
-  exception is the someday↔scheduled transition command noted above, which
-  A24 carves out as the sole calendar-changing command in v1, because it was
-  already live UX (`convertToSomeday`/`convertToCalendar`) the cutover had to
-  preserve. General cross-calendar moves need their own Google and recurrence
+  editing shows it as read-only text, and there is no move control. General
+  cross-calendar moves need their own Google and recurrence
   semantics (what happens to a moved recurring series, a moved event's
   provider identity) that v1 never had to answer.
 - **Non-Google providers.** `Calendar` and event provider identity are
@@ -78,7 +73,6 @@ Important event fields:
 - `_id`: Compass event id
 - `startDate`, `endDate`: ISO datetime or date strings
 - `isAllDay`: display semantics
-- `isSomeday`: local Compass someday bucket semantics
 - `origin`: where the event came from
 - `priority`: shared priority enum
 - `gEventId`: Google event id when synced
@@ -104,9 +98,6 @@ These are UI-facing categories, not storage categories.
 - `STANDALONE`
 - `RECURRENCE_BASE`
 - `RECURRENCE_INSTANCE`
-- `STANDALONE_SOMEDAY`
-- `RECURRENCE_BASE_SOMEDAY`
-- `RECURRENCE_INSTANCE_SOMEDAY`
 
 Many sync and parser decisions key off transitions between these states.
 
@@ -141,19 +132,6 @@ Primary code:
 - `packages/backend/src/event/classes/compass.event.parser.ts`
 - `packages/backend/src/event/classes/compass.event.executor.ts`
 - `packages/backend/src/event/classes/compass.event.generator.ts`
-
-## Someday Semantics
-
-`isSomeday` is not just a UI flag.
-
-It affects:
-
-- query behavior
-- sync transitions
-- SSE notification type
-- provider selection when mapping events
-
-For someday events, Compass often behaves as the provider of record instead of Google.
 
 ## Optimistic IDs
 
@@ -199,7 +177,6 @@ Source:
 - Every persisted event must have a stable Compass `_id`.
 - Instances reference a base event via `recurrence.eventId`.
 - Base recurring events carry the `recurrence.rule`.
-- `isSomeday` changes downstream sync and notification behavior.
 - Tasks should normalize through `normalizeTask` / `normalizeTasks` before persistence.
 - Local storage schemas can evolve, but migrations must preserve existing user data.
 

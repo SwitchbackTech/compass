@@ -60,9 +60,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Shared sidebar shell: `packages/web/src/components/PlannerSidebar/PlannerSidebar.tsx`
 - Month picker: `packages/web/src/components/PlannerSidebar/PlannerMonthPicker/PlannerMonthPicker.tsx`
 - Account row: `packages/web/src/components/PlannerSidebar/PlannerAccountSummary/PlannerAccountSummary.tsx`
-- Someday sections: `packages/web/src/components/PlannerSidebar/SomedayEventSections`
 - Sidebar actions and shortcuts overlay: `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`, `packages/web/src/components/PlannerSidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
-- Someday draft context and actions: `packages/web/src/components/PlannerSidebar/draft`
 - Week mount point: `packages/web/src/views/Week/WeekView.tsx`
 - Day mount point: `packages/web/src/views/Day/view/DayViewContent.tsx`
 

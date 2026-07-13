@@ -10,7 +10,7 @@ Use this guide to validate:
 - navigating between days in Day view (J, K, T)
 - navigating between weeks in Week view (J, K, T)
 - opening and using the command palette (Cmd+K)
-- creating events with keyboard shortcuts (C, A, Shift+W, Shift+M in Week view)
+- creating events with keyboard shortcuts (C, A in Week view)
 - creating tasks with the keyboard (C in Day view)
 - toggling the sidebar ([)
 - completing tasks with the keyboard (Enter on checkbox)
@@ -64,13 +64,9 @@ Helpful notes:
 | `T`                         | Week view | Go to today                       |
 | `C`                         | Week view | Create timed event                |
 | `A`                         | Week view | Create all-day event              |
-| `Shift+W`                   | Week view | Create Someday Week event         |
-| `Shift+M`                   | Week view | Create Someday Month event        |
-| `Shift+ArrowLeft`           | Week view | Move focused event to previous day; on the first visible day, move it to the This Week sidebar list |
+| `Shift+ArrowLeft`           | Week view | Move focused event to previous day |
 | `Shift+ArrowRight`          | Week view | Move focused event to next day    |
 | `Shift+ArrowUp` / `Shift+ArrowDown` | Week view | Move focused timed event 15 min earlier/later |
-| `Shift+ArrowRight`          | Week view | Schedule focused someday event at the next 15-min slot |
-| `Shift+ArrowUp` / `Shift+ArrowDown` | Week view | Move focused someday event between the week/month lists |
 
 ---
 
@@ -155,7 +151,7 @@ Pressing Cmd+K opens the command palette from any view, including while a text i
 ### Expected Results
 
 - The command palette opens immediately.
-- Items include: Create Event, Create All-Day Event, Create Week Event, Create Month Event, Go to Today, Connect Google Calendar (if not connected), Log Out.
+- Items include: Create Event, Create All-Day Event, Go to Today, Connect Google Calendar (if not connected), Log Out.
 - Typing filters the list.
 - Selecting "Create Event" opens the event creation form.
 - Pressing Escape closes the palette without taking action.
@@ -201,29 +197,7 @@ Pressing `A` in Week view opens a new event form pre-configured as an all-day ev
 
 ---
 
-## Scenario 7: Create Someday Events With Keyboard Shortcuts
-
-### UX
-
-`Shift+W` creates a Someday Week event and `Shift+M` creates a Someday Month event, both from Week view.
-
-### Steps
-
-1. Navigate to `/week`.
-2. Open the sidebar with `[` if it is not open.
-3. Press `Shift+W`.
-4. Enter a title and submit.
-5. Press `Shift+M`.
-6. Enter a title and submit.
-
-### Expected Results
-
-- `Shift+W` opens an event form for a Someday Week event; the saved event appears in the sidebar Week section.
-- `Shift+M` opens an event form for a Someday Month event; the saved event appears in the sidebar Month section.
-
----
-
-## Scenario 8: Create A Task With The Keyboard (C In Day View)
+## Scenario 7: Create A Task With The Keyboard (C In Day View)
 
 ### UX
 
@@ -243,7 +217,7 @@ Pressing `C` in Day view opens an inline task input — distinct from `C` in Wee
 
 ---
 
-## Scenario 9: Toggle The Sidebar ([)
+## Scenario 8: Toggle The Sidebar ([)
 
 ### UX
 
@@ -263,7 +237,7 @@ Pressing `[` toggles the sidebar open or closed from any view.
 
 ---
 
-## Scenario 10: Complete A Task With The Keyboard (Enter On Checkbox)
+## Scenario 9: Complete A Task With The Keyboard (Enter On Checkbox)
 
 ### UX
 
@@ -283,7 +257,7 @@ Pressing Enter while a task checkbox is focused marks the task as complete — e
 
 ---
 
-## Scenario 11: Delete A Task With The Keyboard (Delete/Backspace)
+## Scenario 10: Delete A Task With The Keyboard (Delete/Backspace)
 
 ### UX
 
@@ -303,7 +277,7 @@ Pressing Delete or Backspace while a task checkbox is focused removes the task �
 
 ---
 
-## Scenario 12: Undo With The Keyboard (Cmd+Z / Ctrl+Z)
+## Scenario 11: Undo With The Keyboard (Cmd+Z / Ctrl+Z)
 
 ### UX
 
@@ -321,7 +295,7 @@ After deleting an event or task, pressing Cmd+Z (Mac) or Ctrl+Z (Windows/Linux) 
 
 ---
 
-## Scenario 13: Shortcuts Do Not Fire While Typing In Inputs
+## Scenario 12: Shortcuts Do Not Fire While Typing In Inputs
 
 ### UX
 
@@ -353,9 +327,8 @@ If time is limited, run these checks before shipping shortcut-related changes:
 4. Cmd+K opens the command palette; Escape closes it without action.
 5. `C` in Week view opens an event form; `C` in Day view opens a task input.
 6. `A` in Week view opens an all-day event form.
-7. `Shift+W` and `Shift+M` create Someday events in the correct sidebar sections.
-8. `[` toggles the sidebar in both Week and Day view.
-9. Enter on a focused task checkbox marks the task complete.
-10. Delete/Backspace on a focused task checkbox removes the task.
-11. Cmd+Z / Ctrl+Z restores the last deleted task or event.
-12. No shortcuts fire inside a focused text input except Cmd+K.
+7. `[` toggles the sidebar in both Week and Day view.
+8. Enter on a focused task checkbox marks the task complete.
+9. Delete/Backspace on a focused task checkbox removes the task.
+10. Cmd+Z / Ctrl+Z restores the last deleted task or event.
+11. No shortcuts fire inside a focused text input except Cmd+K.

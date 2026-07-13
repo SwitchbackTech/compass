@@ -26,7 +26,7 @@ Do not use this guide to validate:
 
 Helpful notes:
 
-- Tasks are always tied to a specific date. There is no undated or Someday task concept — that is handled by Someday events.
+- Tasks are always tied to a specific date. There is no undated task concept.
 - Completed tasks display with reduced opacity and are sorted below incomplete tasks in the list.
 - Undo is available immediately after a deletion via toast or Cmd+Z / Ctrl+Z.
 - Keyboard shortcuts using `Mod` map to Command on Mac and Control on Windows/Linux.

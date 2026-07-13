@@ -34,7 +34,7 @@ export const updateCalendarDraftEventTimeLabel = (
   const timeLabel = getOrCreateCalendarDraftEventTimeLabel(node);
 
   timeLabel.removeAttribute("aria-hidden");
-  timeLabel.classList.remove("animate-someday-commit-time-exit", "opacity-0");
+  timeLabel.classList.remove("opacity-0");
   timeLabel.style.display = "block";
   timeLabel.textContent = getTimesLabel(event.startDate, event.endDate);
 };

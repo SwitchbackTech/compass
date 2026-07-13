@@ -12,7 +12,6 @@ import { sseServer } from "@backend/servers/sse/sse.server";
 import {
   buildEventRecord,
   seedGoogleCalendar,
-  seedLocalCalendar as seedLocalCalendarHelper,
 } from "@backend/sync/services/event-propagation/__tests__/event-propagation.test-helpers";
 
 const seedLocalCalendar = async (userId: ObjectId) => {
@@ -121,37 +120,6 @@ describe("EventService (local calendar)", () => {
     expect(instances).toHaveLength(3);
   });
 
-  it("reorders someday events for the owning user only", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const calendar = await seedLocalCalendar(user._id);
-
-    const created = await eventService.create(user._id.toString(), {
-      calendarId: calendar._id.toHexString() as never,
-      content: { kind: "details", title: "Read a book", description: "" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
-      recurrence: { kind: "single" },
-      priority: "unassigned",
-    });
-
-    await eventService.reorder(user._id.toString(), {
-      period: "week",
-      items: [{ eventId: created._id.toHexString() as never, sortOrder: 3 }],
-    });
-
-    const updated = await eventService.readById(
-      user._id.toString(),
-      created._id.toHexString(),
-    );
-    expect(
-      updated.schedule.kind === "someday" ? updated.schedule.sortOrder : null,
-    ).toBe(3);
-  });
-
   it("deletes a standalone event", async () => {
     const { user } = await UtilDriver.setupTestUser();
     const calendar = await seedLocalCalendar(user._id);
@@ -176,42 +144,6 @@ describe("EventService (local calendar)", () => {
     await expect(
       eventService.readById(user._id.toString(), created._id.toHexString()),
     ).rejects.toMatchObject({ mutationCode: "EVENT_NOT_FOUND" });
-  });
-
-  it("transitions a someday event onto a calendar (schedule)", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const calendar = await seedLocalCalendar(user._id);
-
-    const created = await eventService.create(user._id.toString(), {
-      calendarId: calendar._id.toHexString() as never,
-      content: { kind: "details", title: "Plan trip", description: "" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
-      recurrence: { kind: "single" },
-      priority: "unassigned",
-    });
-
-    const transitioned = await eventService.transition(
-      user._id.toString(),
-      created._id.toHexString(),
-      {
-        kind: "schedule",
-        targetCalendarId: calendar._id.toHexString() as never,
-        schedule: {
-          kind: "timed",
-          start: "2026-07-14T15:00:00-06:00",
-          end: "2026-07-14T16:00:00-06:00",
-          timeZone: "America/Denver",
-        },
-      },
-    );
-
-    expect(transitioned.schedule.kind).toBe("timed");
-    expect(transitioned.calendarId).toEqual(calendar._id);
   });
 
   it("readAll returns events for a range query scoped to the user's calendars", async () => {
@@ -378,30 +310,6 @@ describe("EventService (calendar write-capability enforcement)", () => {
     scope: "this" as const,
   });
 
-  const somedayCreateInput = (calendarId: string) => ({
-    calendarId: calendarId as never,
-    content: { kind: "details" as const, title: "Plan trip", description: "" },
-    schedule: {
-      kind: "someday" as const,
-      period: "week" as const,
-      anchorDate: "2026-07-13",
-      sortOrder: 0,
-    },
-    recurrence: { kind: "single" as const },
-    priority: "unassigned" as const,
-  });
-
-  const scheduleTransitionInput = (targetCalendarId: string) => ({
-    kind: "schedule" as const,
-    targetCalendarId: targetCalendarId as never,
-    schedule: {
-      kind: "timed" as const,
-      start: "2026-07-14T15:00:00-06:00",
-      end: "2026-07-14T16:00:00-06:00",
-      timeZone: "America/Denver" as never,
-    },
-  });
-
   it("create succeeds on a writer calendar", async () => {
     const { user } = await UtilDriver.setupTestUser();
     const calendar = await seedGoogleCalendar(user._id, { access: "writer" });
@@ -528,46 +436,6 @@ describe("EventService (calendar write-capability enforcement)", () => {
     expect(
       await eventService.readById(user._id.toString(), event._id.toHexString()),
     ).toBeTruthy();
-  });
-
-  it("transition schedule fails with CALENDAR_READ_ONLY when the target calendar is a reader calendar", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const local = await seedLocalCalendarHelper(user._id);
-    const readerCalendar = await seedGoogleCalendar(user._id, {
-      access: "reader",
-    });
-
-    const created = await eventService.create(
-      user._id.toString(),
-      somedayCreateInput(local._id.toHexString()),
-    );
-
-    await expect(
-      eventService.transition(
-        user._id.toString(),
-        created._id.toHexString(),
-        scheduleTransitionInput(readerCalendar._id.toHexString()),
-      ),
-    ).rejects.toMatchObject({ mutationCode: "CALENDAR_READ_ONLY" });
-  });
-
-  it("transition schedule fails with CALENDAR_NOT_FOUND for a stale target calendar id", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const local = await seedLocalCalendarHelper(user._id);
-    const staleId = new ObjectId().toHexString();
-
-    const created = await eventService.create(
-      user._id.toString(),
-      somedayCreateInput(local._id.toHexString()),
-    );
-
-    await expect(
-      eventService.transition(
-        user._id.toString(),
-        created._id.toHexString(),
-        scheduleTransitionInput(staleId),
-      ),
-    ).rejects.toMatchObject({ mutationCode: "CALENDAR_NOT_FOUND" });
   });
 });
 
@@ -719,54 +587,6 @@ describe("EventService (SSE suppression for invisible calendars, step 9)", () =>
     );
   });
 
-  it("publishes only for the visible calendar when a transition spans a hidden and a visible calendar", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const hiddenLocal = await seedLocalCalendar(user._id);
-    await mongoService.calendar.updateOne(
-      { _id: hiddenLocal._id },
-      { $set: { isVisible: false } },
-    );
-    const visibleWriter = await seedGoogleCalendar(user._id, {
-      access: "writer",
-    });
-
-    const created = await eventService.create(user._id.toString(), {
-      calendarId: hiddenLocal._id.toHexString() as never,
-      content: { kind: "details", title: "Plan trip", description: "" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
-      recurrence: { kind: "single" },
-      priority: "unassigned",
-    });
-
-    const publishSpy = jest.spyOn(sseServer, "publishEventsChanged");
-
-    await eventService.transition(
-      user._id.toString(),
-      created._id.toHexString(),
-      {
-        kind: "schedule",
-        targetCalendarId: visibleWriter._id.toHexString() as never,
-        schedule: {
-          kind: "timed",
-          start: "2026-07-14T15:00:00-06:00",
-          end: "2026-07-14T16:00:00-06:00",
-          timeZone: "America/Denver",
-        },
-      },
-    );
-
-    expect(publishSpy).toHaveBeenCalledTimes(1);
-    expect(publishSpy).toHaveBeenCalledWith(
-      user._id.toString(),
-      expect.objectContaining({ calendarId: visibleWriter._id.toHexString() }),
-    );
-  });
-
   it("fails open (still publishes) when a touched calendar record's visibility lookup comes back empty", async () => {
     const { user } = await UtilDriver.setupTestUser();
     const calendar = await seedLocalCalendar(user._id);
@@ -868,51 +688,6 @@ describe("EventService (visibility filtering for list reads, packet 08)", () => 
       start: "2026-07-14T00:00:00Z",
       end: "2026-07-15T00:00:00Z",
       priorities: [],
-    });
-    const resultIds = results.map((e) => e._id.toHexString());
-
-    expect(resultIds).toContain(visibleEvent._id.toHexString());
-    expect(resultIds).not.toContain(hiddenEvent._id.toHexString());
-  });
-
-  it("excludes a hidden calendar's events from a someday list read", async () => {
-    const { user } = await UtilDriver.setupTestUser();
-    const visible = await seedLocalCalendar(user._id);
-    const hidden = await seedGoogleCalendar(user._id, { access: "writer" });
-    await mongoService.calendar.updateOne(
-      { _id: hidden._id },
-      { $set: { isVisible: false } },
-    );
-
-    const visibleEvent = await eventService.create(user._id.toString(), {
-      calendarId: visible._id.toHexString() as never,
-      content: { kind: "details", title: "Visible someday", description: "" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
-      recurrence: { kind: "single" },
-      priority: "unassigned",
-    });
-    const hiddenEvent = await eventService.create(user._id.toString(), {
-      calendarId: hidden._id.toHexString() as never,
-      content: { kind: "details", title: "Hidden someday", description: "" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 1,
-      },
-      recurrence: { kind: "single" },
-      priority: "unassigned",
-    });
-
-    const results = await eventService.readAll(user._id.toString(), {
-      kind: "someday",
-      period: "week",
-      anchorDate: "2026-07-13",
     });
     const resultIds = results.map((e) => e._id.toHexString());
 

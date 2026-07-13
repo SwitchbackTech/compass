@@ -1,9 +1,4 @@
-export type EventMutationOperation =
-  | "create"
-  | "replace"
-  | "delete"
-  | "transition"
-  | "reorder-someday";
+export type EventMutationOperation = "create" | "replace" | "delete";
 
 export const eventMutationKeys = {
   all: ["events", "mutation"] as const,

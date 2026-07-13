@@ -226,7 +226,6 @@ export const gEventToCompassEvent = (
     title,
     description,
     isAllDay,
-    isSomeday: false,
     startDate: startDate!,
     endDate: endDate!,
     priority,

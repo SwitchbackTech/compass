@@ -11,32 +11,22 @@ import { IDSchema } from "@core/types/type.utils";
  * Event category, based on its display type
  * - ALLDAY: An all-day event
  * - TIMED: A timed event
- * - SOMEDAY_WEEK: A someday event that is displayed in the sidebarWeek view
- * - SOMEDAY_MONTH: A someday event that is displayed in the sidebarMonth view
  */
 export enum Categories_Event {
   ALLDAY = "allday",
   TIMED = "timed",
-  SOMEDAY_WEEK = "sidebarWeek",
-  SOMEDAY_MONTH = "sidebarMonth",
 }
 
 /**
- * Event category, based on its recurrence status and isSomeday flag
+ * Event category, based on its recurrence status
  * - STANDALONE: A regular event that is not recurring
  * - RECURRENCE_BASE: A base event that is the parent of a recurring series
  * - RECURRENCE_INSTANCE: An instance of a recurring event
- * - STANDALONE_SOMEDAY: A regular someday event that is not recurring
- * - RECURRENCE_BASE_SOMEDAY: A base someday event that is the parent of a recurring series
- * - RECURRENCE_INSTANCE_SOMEDAY: An instance of a someday recurring event
  */
 export enum Categories_Recurrence {
   STANDALONE = "STANDALONE",
   RECURRENCE_BASE = "RECURRENCE_BASE",
   RECURRENCE_INSTANCE = "RECURRENCE_INSTANCE",
-  STANDALONE_SOMEDAY = "STANDALONE_SOMEDAY",
-  RECURRENCE_BASE_SOMEDAY = "RECURRENCE_BASE_SOMEDAY",
-  RECURRENCE_INSTANCE_SOMEDAY = "RECURRENCE_INSTANCE_SOMEDAY",
 }
 
 export type TransitionStatus = "CONFIRMED" | "CANCELLED";
@@ -53,15 +43,12 @@ export enum RecurringEventUpdateScope {
   ALL_EVENTS = "All Events",
 }
 
-export type Direction_Migrate = "forward" | "back" | "up" | "down";
-
 export interface Schema_Event {
   _id?: string;
   allDayOrder?: number;
   description?: string | null | undefined;
   endDate?: string;
   isAllDay?: boolean;
-  isSomeday?: boolean;
   gEventId?: string;
   gRecurringEventId?: string;
   order?: number;
@@ -125,7 +112,6 @@ export const CoreEventSchema = z.object({
   description: z.string().nullable().optional(),
   endDate: eventDateSchema,
   isAllDay: z.boolean().optional(),
-  isSomeday: z.boolean().optional(),
   gEventId: z.string().optional(),
   gRecurringEventId: z.string().optional(),
   origin: z.nativeEnum(Origin),
@@ -152,7 +138,6 @@ export const EventUpdateSchema = z.object({
   startDate: eventDateSchema.optional(),
   endDate: eventDateSchema.optional(),
   title: z.string().optional(),
-  isSomeday: z.boolean().optional(),
 });
 
 export const CompassCoreEventSchema = CoreEventSchema.extend({
@@ -185,7 +170,6 @@ export const CompassThisAndFollowingEventSchema = BaseCompassEventSchema.merge(
   z.object({
     applyTo: z.literal(RecurringEventUpdateScope.THIS_AND_FOLLOWING_EVENTS),
     payload: CompassCoreEventSchema.extend({
-      isSomeday: z.literal(false),
       recurrence: CompassEventRecurrence,
     }),
   }),

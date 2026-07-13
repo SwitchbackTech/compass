@@ -37,17 +37,7 @@ type AllDayScheduleCandidate = {
   end: string;
 };
 
-type SomedayScheduleCandidate = {
-  kind: "someday";
-  period: "week" | "month";
-  anchorDate: string;
-  sortOrder: number;
-};
-
-type ScheduleCandidate =
-  | TimedScheduleCandidate
-  | AllDayScheduleCandidate
-  | SomedayScheduleCandidate;
+type ScheduleCandidate = TimedScheduleCandidate | AllDayScheduleCandidate;
 
 type RecurrenceCandidate =
   | { kind: "preserve" }
@@ -119,47 +109,30 @@ function buildSchedule(
     };
   }
 
-  if (schedule.kind === "allDay") {
-    const { start, end } = schedule;
+  const { start, end } = schedule;
 
-    if (start === null) fieldErrors.start = "Start is required";
-    if (end === null) fieldErrors.end = "End is required";
+  if (start === null) fieldErrors.start = "Start is required";
+  if (end === null) fieldErrors.end = "End is required";
 
-    if (start === null || end === null) return null;
+  if (start === null || end === null) return null;
 
-    const startStr = toDateOnlyString(start);
-    let endStr = toDateOnlyString(end);
+  const startStr = toDateOnlyString(start);
+  let endStr = toDateOnlyString(end);
 
-    if (endStr < startStr) {
-      fieldErrors.end = "End must not be before start";
-      return null;
-    }
-
-    // A same-day selection is valid input; normalize to an exclusive end by
-    // adding one day, mirroring the legacy mapToBackend behavior. A
-    // multi-day selection's end already represents an exclusive day and
-    // passes through unchanged.
-    if (endStr === startStr) {
-      endStr = dayjs(endStr).add(1, "day").toYearMonthDayString();
-    }
-
-    return { kind: "allDay", start: startStr, end: endStr };
+  if (endStr < startStr) {
+    fieldErrors.end = "End must not be before start";
+    return null;
   }
 
-  // someday
-  const { period, anchorDate, sortOrder } = schedule;
+  // A same-day selection is valid input; normalize to an exclusive end by
+  // adding one day, mirroring the legacy mapToBackend behavior. A
+  // multi-day selection's end already represents an exclusive day and
+  // passes through unchanged.
+  if (endStr === startStr) {
+    endStr = dayjs(endStr).add(1, "day").toYearMonthDayString();
+  }
 
-  if (anchorDate === null) fieldErrors.anchorDate = "Anchor date is required";
-  if (sortOrder === null) fieldErrors.sortOrder = "Sort order is required";
-
-  if (anchorDate === null || sortOrder === null) return null;
-
-  return {
-    kind: "someday",
-    period,
-    anchorDate: toDateOnlyString(anchorDate),
-    sortOrder,
-  };
+  return { kind: "allDay", start: startStr, end: endStr };
 }
 
 function buildRecurrenceRules(

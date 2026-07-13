@@ -3,7 +3,6 @@ import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
 import {
-  selectIsDraftingSomeday,
   selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
@@ -12,7 +11,6 @@ import { PlannerCalendarList } from "./PlannerCalendarList/PlannerCalendarList";
 import { PlannerMonthPicker } from "./PlannerMonthPicker/PlannerMonthPicker";
 import { PlannerSidebarActions } from "./PlannerSidebarActions/PlannerSidebarActions";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
-import { SomedayEventSections } from "./SomedayEventSections/SomedayEventSections";
 
 export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
   calendarDate: Dayjs;
@@ -30,9 +28,6 @@ export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
   onToggleSidebar?: () => void;
   shortcutSections: ShortcutOverlaySection[];
   shortcutsViewLabel?: string;
-  showSomedayEventSections?: boolean;
-  viewEnd: Dayjs;
-  viewStart: Dayjs;
 }
 
 type PlannerSidebarDependencies = {
@@ -41,7 +36,6 @@ type PlannerSidebarDependencies = {
   PlannerMonthPicker: typeof PlannerMonthPicker;
   PlannerSidebarActions: typeof PlannerSidebarActions;
   ShortcutsOverlay: typeof ShortcutsOverlay;
-  SomedayEventSections: typeof SomedayEventSections;
 };
 
 export function createPlannerSidebar({
@@ -50,7 +44,6 @@ export function createPlannerSidebar({
   PlannerMonthPicker: PlannerMonthPickerComponent,
   PlannerSidebarActions: PlannerSidebarActionsComponent,
   ShortcutsOverlay: ShortcutsOverlayComponent,
-  SomedayEventSections: SomedayEventSectionsComponent,
 }: PlannerSidebarDependencies) {
   return function PlannerSidebar({
     calendarDate,
@@ -63,17 +56,10 @@ export function createPlannerSidebar({
     onToggleSidebar,
     shortcutSections,
     shortcutsViewLabel,
-    showSomedayEventSections = true,
-    viewEnd,
-    viewStart,
     ...props
   }: PlannerSidebarProps) {
-    // The someday form renders inline inside the someday sections, so a
-    // someday draft keeps the normal sidebar body.
     const isGridFormOpen = useDraftStore(selectIsEventFormOpen);
-    const isDraftingSomeday = useDraftStore(selectIsDraftingSomeday);
-    const showEventDetails =
-      Boolean(eventDetails) && isGridFormOpen && !isDraftingSomeday;
+    const showEventDetails = Boolean(eventDetails) && isGridFormOpen;
 
     return (
       <aside
@@ -97,18 +83,7 @@ export function createPlannerSidebar({
               onToggleSidebar={onToggleSidebar}
               selectedDate={calendarDate}
             />
-
             <PlannerCalendarListComponent />
-
-            {showSomedayEventSections ? (
-              <section aria-label="Someday events">
-                <SomedayEventSectionsComponent
-                  calendarDate={calendarDate}
-                  viewEnd={viewEnd}
-                  viewStart={viewStart}
-                />
-              </section>
-            ) : null}
           </div>
         )}
 
@@ -136,5 +111,4 @@ export const PlannerSidebar = createPlannerSidebar({
   PlannerMonthPicker,
   PlannerSidebarActions,
   ShortcutsOverlay,
-  SomedayEventSections,
 });

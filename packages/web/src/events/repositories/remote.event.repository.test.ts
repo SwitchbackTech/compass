@@ -2,7 +2,6 @@ import { type EventId } from "@core/types/domain-primitives";
 import {
   type CreateEventInput,
   type EventListQuery,
-  type TransitionEventInput,
 } from "@core/types/event-command.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import {
@@ -20,8 +19,6 @@ const api = {
   getById: mock(),
   replace: mock(),
   delete: mock(),
-  reorder: mock(),
-  transition: mock(),
 } satisfies Record<keyof typeof EventApi, ReturnType<typeof mock>>;
 
 const localRepository = {
@@ -30,8 +27,6 @@ const localRepository = {
   getById: mock(),
   replace: mock(),
   delete: mock(),
-  reorder: mock(),
-  transition: mock(),
 } satisfies Record<keyof EventRepository, ReturnType<typeof mock>>;
 
 const repository = new RemoteEventRepository(
@@ -111,9 +106,10 @@ describe("RemoteEventRepository", () => {
     it("loads local events when the backend is unavailable", async () => {
       const localEvents = [createMockEvent()];
       const query = {
-        kind: "someday" as const,
-        period: "week" as const,
-        anchorDate: "2024-01-01",
+        kind: "range" as const,
+        start: "2024-01-01T00:00:00.000Z",
+        end: "2024-01-31T00:00:00.000Z",
+        priorities: [],
       } as unknown as EventListQuery;
 
       api.list.mockRejectedValue(createBackendUnavailableError());
@@ -134,44 +130,6 @@ describe("RemoteEventRepository", () => {
 
       expect(api.delete).toHaveBeenCalledWith("event-1", "all");
       expect(api.delete).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("reorder", () => {
-    it("calls EventApi.reorder with the reorder input", async () => {
-      const input = {
-        period: "week" as const,
-        items: [{ eventId: "event-1" as EventId, sortOrder: 0 }],
-      };
-
-      api.reorder.mockResolvedValue(undefined);
-
-      await repository.reorder(input);
-
-      expect(api.reorder).toHaveBeenCalledWith(input);
-      expect(api.reorder).toHaveBeenCalledTimes(1);
-    });
-  });
-
-  describe("transition", () => {
-    it("calls EventApi.transition with the transition input", async () => {
-      const event = createMockEvent();
-      const input = {
-        kind: "unschedule" as const,
-        schedule: {
-          kind: "someday" as const,
-          period: "week" as const,
-          anchorDate: "2024-01-01",
-          sortOrder: 0,
-        },
-      } as unknown as TransitionEventInput;
-
-      api.transition.mockResolvedValue(event);
-
-      const result = await repository.transition(event.id, input);
-
-      expect(api.transition).toHaveBeenCalledWith(event.id, input);
-      expect(result).toEqual(event);
     });
   });
 });

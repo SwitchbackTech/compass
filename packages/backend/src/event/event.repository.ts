@@ -51,9 +51,9 @@ class EventRepository {
   }
 
   /**
-   * Range/someday read, per B3: two indexed branches (timed BSON Dates vs.
-   * allDay/someday DateOnly strings), plus a join of the series base events
-   * referenced by any returned occurrence (dedupe by id).
+   * Range read, per B3: two indexed branches (timed BSON Dates vs. allDay
+   * DateOnly strings), plus a join of the series base events referenced by
+   * any returned occurrence (dedupe by id).
    */
   async list(
     query: EventListQuery,
@@ -62,10 +62,7 @@ class EventRepository {
   ): Promise<EventRecord[]> {
     if (ownedCalendarIds.length === 0) return [];
 
-    const primary =
-      query.kind === "range"
-        ? await this.listRange(query, ownedCalendarIds, session)
-        : await this.listSomeday(query, ownedCalendarIds, session);
+    const primary = await this.listRange(query, ownedCalendarIds, session);
 
     const seriesIds = [
       ...new Set(
@@ -99,7 +96,7 @@ class EventRepository {
   }
 
   private async listRange(
-    query: Extract<EventListQuery, { kind: "range" }>,
+    query: EventListQuery,
     ownedCalendarIds: ObjectId[],
     session?: ClientSession,
   ): Promise<EventRecord[]> {
@@ -137,24 +134,6 @@ class EventRepository {
     ]);
 
     return [...timed, ...allDay];
-  }
-
-  private async listSomeday(
-    query: Extract<EventListQuery, { kind: "someday" }>,
-    ownedCalendarIds: ObjectId[],
-    session?: ClientSession,
-  ): Promise<EventRecord[]> {
-    const filter: Filter<EventRecord> = {
-      calendarId: { $in: ownedCalendarIds },
-      "schedule.kind": "someday",
-      "schedule.period": query.period,
-      "schedule.anchorDate": query.anchorDate,
-    };
-
-    return mongoService.event
-      .find(filter, { session })
-      .sort({ "schedule.sortOrder": 1 })
-      .toArray();
   }
 
   async findByExternalReference(
@@ -300,29 +279,6 @@ class EventRepository {
       { session },
     );
     return { deletedCount: result.deletedCount };
-  }
-
-  async reorder(
-    items: Array<{ eventId: string; sortOrder: number }>,
-    ownedCalendarIds: ObjectId[],
-    session?: ClientSession,
-  ): Promise<void> {
-    if (items.length === 0) return;
-
-    const operations: AnyBulkWriteOperation<EventRecord>[] = items.map(
-      ({ eventId, sortOrder }) => ({
-        updateOne: {
-          filter: {
-            _id: new ObjectId(eventId),
-            calendarId: { $in: ownedCalendarIds },
-            "schedule.kind": "someday",
-          },
-          update: { $set: { "schedule.sortOrder": sortOrder } },
-        },
-      }),
-    );
-
-    await mongoService.event.bulkWrite(operations, { ordered: false, session });
   }
 }
 

@@ -50,7 +50,6 @@ export const EventSchema = z.object({
   // events are allowed — an empty title is valid in Compass (#1871).
   title: z.string(),
   description: z.string().default(""),
-  isSomeday: z.boolean().default(false),
   startDate: z.date(),
   endDate: z.date(),
   origin: z.enum(Origin).default(Origin.COMPASS),

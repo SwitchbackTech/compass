@@ -116,10 +116,6 @@ describe("shortcuts.data", () => {
         keys: ["Shift", "ArrowUp"],
         label: "Move event 15 min earlier",
       });
-      expect(edit?.shortcuts).toContainEqual({
-        keys: ["Shift", "ArrowRight"],
-        label: "Schedule someday event",
-      });
     });
 
     it("lists event nudge shortcuts in the day Edit section", () => {

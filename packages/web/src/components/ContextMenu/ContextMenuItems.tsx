@@ -9,8 +9,6 @@ import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { colorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { getSomedayEventCategory } from "@web/common/utils/event/someday.event.util";
-import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
@@ -160,22 +158,12 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   // `event` (a Schema_GridEvent render projection with no strict source).
   const gridDraft = useDraftStore(selectGridDraft);
 
-  const sidebarContext = useSidebarContext(true);
-
   const menuActions: ContextMenuItemsActions = {
     delete: confirmation.onDelete,
     duplicate: duplicateEvent,
     edit: () => {
-      if (!event.isSomeday) {
-        if (gridDraft) setDraft(gridDraft);
-        openForm();
-        return;
-      }
-
-      const sidebarActions = sidebarContext?.actions;
-      if (!sidebarActions) return;
-      const category = getSomedayEventCategory(event);
-      sidebarActions.onDraft(event, category);
+      if (gridDraft) setDraft(gridDraft);
+      openForm();
     },
     editPriority: (priority) => {
       if (!gridDraft) return;

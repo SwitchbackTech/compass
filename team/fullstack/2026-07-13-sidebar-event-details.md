@@ -117,4 +117,26 @@ form and re-collapses on close (persisted pref untouched,
       layout-settle wait (the sidebar now reveals/collapses around the form
       at reduced widths — intended behavior, test measured mid-transition);
       full-suite run kicked off before ship
-- [ ] /simplify, /ship
+- [x] /simplify (see `refactor(web): tidy sidebar form pass`)
+- [x] PR #2092 opened; e2e workflow never fired on `pull_request` (missed
+      webhook, confirmed by comparing against sibling PRs opened in the same
+      window) — close/reopen was needed to force it
+- [x] **Merged `main` mid-flight — `feat(events)!: remove someday events
+      feature` (#2091) landed after I branched, deleting every someday-\*
+      file this PR had touched (D5 is now moot).** Resolved by accepting
+      main's deletions for all someday files plus the three floating-form
+      files I'd already deleted myself (`useEventForm.ts`,
+      `FloatingFormContainer.tsx`, `useDraftForm.ts` — modify/delete
+      conflicts where main had touched them for its own cleanup but my
+      deletion still wins). Manually reconciled the 4 true content
+      conflicts (`PlannerSidebar.tsx`, `EventFormShell.tsx`, `WeekView.tsx`,
+      `GridDraft.tsx`) to keep the Day/Week grid-event sidebar docking
+      layered on top of main's simplified (someday-free) structure. Also had
+      to drop `onConvert`/"convert to someday" from `EventForm` and
+      `WeekSidebarEventDetails` — main removed that capability outright
+      (`MoveToSidebarMenuButton`, `actions.convert`), so `viewEnd`/`viewStart`
+      are no longer needed on the Week panel. Re-verified after merge:
+      type-check clean, 1164/1164 web unit tests, 13/13 e2e (3 someday specs
+      correctly gone), zero diff vs main in backend/core/scripts, and a
+      fresh Chrome pass confirming Week click→sidebar→edit→save still works.
+- [ ] Ship (push, watch CI, squash-merge)

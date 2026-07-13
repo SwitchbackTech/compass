@@ -53,7 +53,6 @@ interface CalendarTimedEventCardProps {
   displayMode: "draft" | "placeholder" | "saved";
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
-  isCommitAcknowledged?: boolean;
   isSelected?: boolean;
   motionMode: "dragging" | "idle" | "resizing";
   onBlur?: () => void;
@@ -77,7 +76,6 @@ const CalendarTimedEventCardBase = (
     displayMode,
     event,
     interactionAttributes,
-    isCommitAcknowledged = false,
     isSelected = false,
     motionMode,
     onBlur,
@@ -115,8 +113,6 @@ const CalendarTimedEventCardBase = (
     position.height >= CALENDAR_MIN_EVENT_HEIGHT_FOR_TIME_LABEL;
   const isWideEnoughForTimeLabel =
     position.width >= CALENDAR_MIN_EVENT_WIDTH_FOR_TIME_LABEL;
-  const shouldAnimatePastCommitTimeOut =
-    isCommitAcknowledged && isInPast && !isDraft && isTallEnoughForTimeLabel;
 
   const priority = event.priority || Priorities.UNASSIGNED;
   const baseColor = gridColorByPriority[priority];
@@ -126,7 +122,6 @@ const CalendarTimedEventCardBase = (
 
   const bgColor = (() => {
     if (isDraft) return draftColor;
-    if (isCommitAcknowledged) return hoverColor;
     if (isResizing || isDragging) return brighten(baseColor);
     return baseColor;
   })();
@@ -217,9 +212,6 @@ const CalendarTimedEventCardBase = (
       className={cn(
         "absolute min-h-2.5 select-none overflow-hidden rounded-xs pr-0.75 pl-1.25 transition-[background-color,filter] duration-[260ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
         "bg-(--event-bg) hover:bg-(--event-hover-bg)",
-        {
-          "animate-someday-commit-acknowledge": isCommitAcknowledged,
-        },
         "hover:cursor-pointer",
       )}
       style={eventStyle}
@@ -260,15 +252,11 @@ const CalendarTimedEventCardBase = (
         <span style={titleStyle}>{event.title}</span>
         {!event.isAllDay && (
           <>
-            {(isDraft || !isInPast || shouldAnimatePastCommitTimeOut) &&
+            {(isDraft || !isInPast) &&
               isTallEnoughForTimeLabel &&
               isWideEnoughForTimeLabel && (
                 <span
-                  aria-hidden={shouldAnimatePastCommitTimeOut || undefined}
-                  className={cn("relative", {
-                    "animate-someday-commit-time-exit opacity-0":
-                      shouldAnimatePastCommitTimeOut,
-                  })}
+                  className="relative"
                   {...{ [CALENDAR_EVENT_TIME_LABEL_ATTRIBUTE]: "true" }}
                   style={{ ...timeLabelStyle, zIndex: ZIndex.LAYER_3 }}
                 >

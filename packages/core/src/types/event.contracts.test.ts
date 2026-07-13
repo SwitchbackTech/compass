@@ -20,12 +20,6 @@ const allDaySchedule = {
   start: "2026-07-14",
   end: "2026-07-15",
 };
-const somedaySchedule = {
-  kind: "someday",
-  period: "week",
-  anchorDate: "2026-07-14",
-  sortOrder: 0,
-};
 
 const singleRecurrence = { kind: "single" };
 const seriesRecurrence = { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] };
@@ -136,23 +130,14 @@ describe("Event Contracts", () => {
     });
   });
 
-  describe("EventScheduleSchema (someday)", () => {
-    it("rejects a missing sortOrder", () => {
+  describe("EventScheduleSchema (rejects someday)", () => {
+    it("rejects a someday schedule now that the kind is removed", () => {
       const schedule = {
         kind: "someday",
         period: "week",
         anchorDate: "2026-07-14",
+        sortOrder: 0,
       };
-
-      expect(EventScheduleSchema.safeParse(schedule).success).toBe(false);
-    });
-
-    it("accepts a valid someday schedule", () => {
-      expect(EventScheduleSchema.safeParse(somedaySchedule).success).toBe(true);
-    });
-
-    it("rejects unknown keys", () => {
-      const schedule = { ...somedaySchedule, extra: 1 };
 
       expect(EventScheduleSchema.safeParse(schedule).success).toBe(false);
     });
@@ -217,7 +202,6 @@ describe("Event Contracts", () => {
     const schedules: [string, unknown][] = [
       ["timed", timedSchedule],
       ["allDay", allDaySchedule],
-      ["someday", somedaySchedule],
     ];
     const recurrences: [string, unknown][] = [
       ["single", singleRecurrence],

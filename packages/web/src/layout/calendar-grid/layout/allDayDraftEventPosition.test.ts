@@ -10,7 +10,6 @@ const createAllDayEvent = (
   _id: "event-1",
   endDate: "2026-05-26",
   isAllDay: true,
-  isSomeday: false,
   origin: Origin.COMPASS,
   position: gridEventDefaultPosition,
   priority: Priorities.UNASSIGNED,

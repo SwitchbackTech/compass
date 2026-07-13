@@ -6,9 +6,7 @@ import {
   DeleteEventInputSchema,
   type EventListQuery,
   EventListQuerySchema,
-  ReorderEventsInputSchema,
   ReplaceEventInputSchema,
-  TransitionEventInputSchema,
 } from "@core/types/event-command.contracts";
 import { toEventMutationError } from "@backend/event/event.error";
 import { mapEventRecord } from "@backend/event/event.record.mapper";
@@ -20,14 +18,6 @@ const send = (res: Response, e: unknown) => {
 };
 
 const parseListQuery = (query: Request["query"]): EventListQuery => {
-  if (query["kind"] === "someday") {
-    return EventListQuerySchema.parse({
-      kind: "someday",
-      period: query["period"],
-      anchorDate: query["anchorDate"],
-    });
-  }
-
   const priorities =
     typeof query["priorities"] === "string" && query["priorities"].length > 0
       ? query["priorities"].split(",")
@@ -101,32 +91,6 @@ class EventController {
       });
 
       await eventService.delete(userId, eventId, input);
-
-      res.status(Status.NO_CONTENT).send();
-    } catch (e) {
-      send(res, e);
-    }
-  };
-
-  transition = async (req: SessionRequest, res: Response) => {
-    try {
-      const userId = req.session?.getUserId() as string;
-      const eventId = req.params["id"] as string;
-      const input = TransitionEventInputSchema.parse(req.body);
-      const event = await eventService.transition(userId, eventId, input);
-
-      res.status(Status.OK).json({ event: mapEventRecord(event) });
-    } catch (e) {
-      send(res, e);
-    }
-  };
-
-  reorder = async (req: SessionRequest, res: Response) => {
-    try {
-      const userId = req.session?.getUserId() as string;
-      const input = ReorderEventsInputSchema.parse(req.body);
-
-      await eventService.reorder(userId, input);
 
       res.status(Status.NO_CONTENT).send();
     } catch (e) {

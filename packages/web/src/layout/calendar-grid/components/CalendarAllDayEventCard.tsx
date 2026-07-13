@@ -31,7 +31,6 @@ export interface CalendarAllDayEventCardProps {
   calendarIdentity?: CalendarCardIdentity | null;
   event: Schema_GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
-  isCommitAcknowledged?: boolean;
   isPlaceholder: boolean;
   onEventKeyDown?: (event: Schema_GridEvent) => void;
   onEventMouseDown?: (e: MouseEvent, event: Schema_GridEvent) => void;
@@ -50,7 +49,6 @@ const CalendarAllDayEventCardBase = (
     calendarIdentity = null,
     event,
     interactionAttributes,
-    isCommitAcknowledged = false,
     isPlaceholder,
     onEventKeyDown,
     onEventMouseDown,
@@ -71,7 +69,7 @@ const CalendarAllDayEventCardBase = (
   const hoverBgColor = !isPlaceholder ? hoverColor : baseColor;
 
   const eventStyle = {
-    "--event-bg": isCommitAcknowledged ? hoverColor : baseColor,
+    "--event-bg": baseColor,
     "--event-hover-bg": hoverBgColor,
     height: position.height,
     left: position.left,
@@ -115,7 +113,6 @@ const CalendarAllDayEventCardBase = (
       className={cn(
         "absolute min-h-2.5 select-none overflow-hidden rounded-xs bg-(--event-bg) pr-0.75 pl-1.25 transition-[background-color,filter] duration-260 ease-[cubic-bezier(0.16,1,0.3,1)] hover:bg-(--event-hover-bg) focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary",
         {
-          "animate-someday-commit-acknowledge": isCommitAcknowledged,
           "hover:cursor-pointer": !isPlaceholder,
         },
       )}

@@ -34,18 +34,8 @@ const MS_PER_DAY = 24 * 60 * 60 * 1000;
 // differ only in which instances are affected (computed by the caller). Each
 // instance shifts relative to its own time, and the dragged instance — still
 // at its old time in the cache here — lands on the edited time because
-// (old + (edited - original)) === edited. Someday schedules have no
-// start/end to shift and pass through unchanged (drag-reorder doesn't route
-// through this projection).
+// (old + (edited - original)) === edited.
 const shiftEvent = (event: Event, original: Event, edited: Event): Event => {
-  if (
-    event.schedule.kind === "someday" ||
-    original.schedule.kind === "someday" ||
-    edited.schedule.kind === "someday"
-  ) {
-    return event;
-  }
-
   const startDelta = dayjs(edited.schedule.start).diff(original.schedule.start);
   const endDelta = dayjs(edited.schedule.end).diff(original.schedule.end);
 
@@ -78,9 +68,6 @@ const shiftEvent = (event: Event, original: Event, edited: Event): Event => {
 };
 
 const isAtOrAfter = (event: Event, cutoff: Event["schedule"]) => {
-  if (event.schedule.kind === "someday" || cutoff.kind === "someday") {
-    return true;
-  }
   return !dayjs(event.schedule.start).isBefore(cutoff.start);
 };
 

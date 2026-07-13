@@ -17,7 +17,6 @@ const baseEvent = (): Schema_GridEvent =>
     endDate: "2026-04-24T15:00:00.000Z",
     priority: Priorities.UNASSIGNED,
     origin: Origin.COMPASS,
-    isSomeday: false,
     user: "user-1",
   });
 

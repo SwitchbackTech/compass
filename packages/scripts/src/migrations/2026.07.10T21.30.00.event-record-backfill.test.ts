@@ -139,36 +139,40 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
       );
     });
 
-    it("sends a password-only user's someday and local timed events to their local calendar", async () => {
+    it("sends a password-only user's local timed event to their local calendar and excludes their someday event", async () => {
       const user = await UserDriver.createUser({ withGoogle: false });
       const local = await insertLocalCalendar(user._id);
 
-      await legacyCollection().insertMany([
-        legacyEvent(user._id.toHexString(), {
-          title: "Local timed",
-          startDate: new Date("2026-02-01T09:00:00.000Z").toISOString(),
-          endDate: new Date("2026-02-01T10:00:00.000Z").toISOString(),
-        }),
-        legacyEvent(user._id.toHexString(), {
-          title: "Someday",
-          isSomeday: true,
-          startDate: "2026-02-03",
-          endDate: "2026-02-03",
-        }),
-      ]);
+      const timedEvent = legacyEvent(user._id.toHexString(), {
+        title: "Local timed",
+        startDate: new Date("2026-02-01T09:00:00.000Z").toISOString(),
+        endDate: new Date("2026-02-01T10:00:00.000Z").toISOString(),
+      });
+      const somedayEvent = legacyEvent(user._id.toHexString(), {
+        title: "Someday",
+        isSomeday: true,
+        startDate: "2026-02-03",
+        endDate: "2026-02-03",
+      });
+
+      await legacyCollection().insertMany([timedEvent, somedayEvent]);
 
       await migration.up(migrationContext);
 
       const docs = await destinationCollection().find({}).toArray();
-      expect(docs).toHaveLength(2);
-      for (const doc of docs) {
-        expect((doc["calendarId"] as ObjectId).equals(local._id)).toBe(true);
-      }
-
-      const timed = docs.find(
-        (d) => (d["schedule"] as Document)["kind"] === "timed",
-      );
+      // Only the timed event is migrated; the someday event is excluded.
+      expect(docs).toHaveLength(1);
+      const [timed] = docs;
+      expect((timed?.["_id"] as ObjectId).equals(timedEvent._id)).toBe(true);
+      expect((timed?.["calendarId"] as ObjectId).equals(local._id)).toBe(true);
+      expect((timed?.["schedule"] as Document)["kind"]).toBe("timed");
       expect((timed?.["schedule"] as Document)["timeZone"]).toBe("UTC");
+
+      // The someday event never reaches the destination.
+      const excluded = await destinationCollection().findOne({
+        _id: somedayEvent._id,
+      });
+      expect(excluded).toBeNull();
     });
 
     it("migrates the full event category matrix for a Google-connected user", async () => {
@@ -206,16 +210,18 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
         endDate: "2026-03-08",
       });
 
-      const somedayWeekExplicitOrder = legacyEvent(userIdHex, {
-        title: "Someday week, order 0",
+      // These two someday events are intentionally excluded from the
+      // destination (the Someday feature was removed); they must NOT appear in
+      // event_new even though they belong to the same user.
+      const somedayWeek = legacyEvent(userIdHex, {
+        title: "Someday week",
         isSomeday: true,
         startDate: "2026-03-10",
         endDate: "2026-03-11",
-        order: 0,
       });
 
-      const somedayMonthMissingOrder = legacyEvent(userIdHex, {
-        title: "Someday month, missing order",
+      const somedayMonth = legacyEvent(userIdHex, {
+        title: "Someday month",
         isSomeday: true,
         startDate: "2026-03-15",
         endDate: "2026-04-01",
@@ -231,15 +237,16 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
         occurrence,
         sameDateAllDay,
         multiDayAllDay,
-        somedayWeekExplicitOrder,
-        somedayMonthMissingOrder,
+        somedayWeek,
+        somedayMonth,
         googleTimed,
       ]);
 
       await migration.up(migrationContext);
 
       const docs = await destinationCollection().find({}).toArray();
-      expect(docs).toHaveLength(7);
+      // Seven legacy events, two of them someday: only five are migrated.
+      expect(docs).toHaveLength(5);
 
       const byId = new Map(
         docs.map((d) => [(d["_id"] as ObjectId).toHexString(), d]),
@@ -280,21 +287,9 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
       const multiDayDoc = byId.get(multiDayAllDay._id.toHexString())!;
       expect((multiDayDoc["schedule"] as Document)["end"]).toBe("2026-03-08");
 
-      // Someday week with explicit order 0 keeps it.
-      const somedayWeekDoc = byId.get(
-        somedayWeekExplicitOrder._id.toHexString(),
-      )!;
-      expect((somedayWeekDoc["schedule"] as Document)["period"]).toBe("week");
-      expect((somedayWeekDoc["schedule"] as Document)["sortOrder"]).toBe(0);
-
-      // Someday month with missing order is deterministically renumbered.
-      const somedayMonthDoc = byId.get(
-        somedayMonthMissingOrder._id.toHexString(),
-      )!;
-      expect((somedayMonthDoc["schedule"] as Document)["period"]).toBe("month");
-      expect(
-        typeof (somedayMonthDoc["schedule"] as Document)["sortOrder"],
-      ).toBe("number");
+      // Both someday events are excluded, so neither reaches the destination.
+      expect(byId.has(somedayWeek._id.toHexString())).toBe(false);
+      expect(byId.has(somedayMonth._id.toHexString())).toBe(false);
 
       // Google timed event lands on the primary Google calendar with its zone.
       const googleTimedDoc = byId.get(googleTimed._id.toHexString())!;
@@ -306,39 +301,82 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
       );
     });
 
-    it("verifies cleanly when an assigned someday sortOrder is nonzero", async () => {
-      // Regression: the backfill assigns missing sortOrders after the
-      // transform, so verification must replicate the assignment. A lone
-      // missing-order event gets assigned 0 (indistinguishable from the
-      // transform placeholder), which hid this — force a nonzero assignment
-      // by seeding an explicit order in the same period bucket.
+    it("excludes a mix of someday events, migrates timed/allDay, reports the excluded count, and verifies cleanly", async () => {
+      // Regression for the Someday-removal cutover: legacy someday events are
+      // counted and dropped rather than migrated, the timed/allDay events for
+      // the same user are migrated, the backfill logs the excluded count, and
+      // the independent verifier reconciles that count (up() throws on any
+      // verification mismatch, including an excluded-count divergence).
       const user = await UserDriver.createUser({ withGoogle: false });
-      await insertLocalCalendar(user._id);
+      const local = await insertLocalCalendar(user._id);
       const userIdHex = user._id.toHexString();
 
-      const explicitOrder = legacyEvent(userIdHex, {
-        title: "Someday week, explicit order 5",
+      const timed = legacyEvent(userIdHex, {
+        title: "Timed",
+        startDate: new Date("2026-03-01T09:00:00.000Z").toISOString(),
+        endDate: new Date("2026-03-01T10:00:00.000Z").toISOString(),
+      });
+      const allDay = legacyEvent(userIdHex, {
+        title: "All day",
+        isAllDay: true,
+        startDate: "2026-03-05",
+        endDate: "2026-03-08",
+      });
+      const somedayA = legacyEvent(userIdHex, {
+        title: "Someday A",
         isSomeday: true,
         startDate: "2026-03-10",
         endDate: "2026-03-11",
-        order: 5,
       });
-      const missingOrder = legacyEvent(userIdHex, {
-        title: "Someday week, missing order",
+      const somedayB = legacyEvent(userIdHex, {
+        title: "Someday B",
         isSomeday: true,
-        startDate: "2026-03-10",
-        endDate: "2026-03-11",
+        startDate: "2026-03-15",
+        endDate: "2026-04-01",
       });
 
-      await legacyCollection().insertMany([explicitOrder, missingOrder]);
+      const logger = Logger("test:migration:excluded");
+      const infoSpy = jest.spyOn(logger, "info");
 
-      // Throws on any verification mismatch, so completing IS the assertion.
-      await migration.up(migrationContext);
+      await legacyCollection().insertMany([timed, allDay, somedayA, somedayB]);
 
-      const assigned = await destinationCollection().findOne({
-        _id: missingOrder._id,
+      // Throws on any verification mismatch (including an excluded-count
+      // divergence between backfill and verifier), so completing without
+      // throwing already proves verification reconciled the two someday drops.
+      await migration.up({
+        ...migrationContext,
+        context: { ...migrationContext.context, logger },
       });
-      expect((assigned?.["schedule"] as Document)["sortOrder"]).toBe(6);
+
+      // (a) The someday events are absent from event_new.
+      expect(
+        await destinationCollection().findOne({ _id: somedayA._id }),
+      ).toBeNull();
+      expect(
+        await destinationCollection().findOne({ _id: somedayB._id }),
+      ).toBeNull();
+
+      // (b) The timed/allDay events are present.
+      const docs = await destinationCollection().find({}).toArray();
+      expect(docs).toHaveLength(2);
+      const ids = docs.map((d) => (d["_id"] as ObjectId).toHexString());
+      expect(ids).toEqual(
+        expect.arrayContaining([
+          timed._id.toHexString(),
+          allDay._id.toHexString(),
+        ]),
+      );
+      for (const doc of docs) {
+        expect((doc["calendarId"] as ObjectId).equals(local._id)).toBe(true);
+      }
+
+      // (c) The migration logs the correct excludedSomeday count.
+      const scanLog = infoSpy.mock.calls
+        .map((c) => String(c[0]))
+        .find((line) => line.includes("Event backfill scan complete"));
+      expect(scanLog).toContain("excludedSomeday=2");
+
+      infoSpy.mockRestore();
     });
 
     it("throws on malformed rows, naming each failure reason, and leaves legacy data untouched", async () => {
@@ -439,11 +477,12 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
 
       expect(names).toEqual(
         expect.arrayContaining([
-          "event_calendar_someday_order",
           "event_recurrence_seriesId",
           "event_calendar_externalReference_unique",
         ]),
       );
+      // The someday-order index is no longer created (Someday feature removed).
+      expect(names).not.toContain("event_calendar_someday_order");
 
       const startIndex = indexes.find(
         (i) =>

@@ -230,15 +230,8 @@ Seed both explicitly rather than reaching into module internals:
   (`@web/__tests__/utils/state/reset-stores.ts`) and the seeder, or it leaks
   state across tests silently.
 
-Two gotchas that produce confusing failures far from their actual cause:
+A gotcha that produces confusing failures far from its actual cause:
 
-- **Someday view-model seeding:** any component/hook rendering
-  `useSomedayEventViewModel` Zod-parses every entity in the someday query via
-  `validateSomedayEvents`. A test that seeds minimal grid fixtures with a
-  broad `setQueryDefaults(["events"], ...)` will have the someday query
-  inherit them, and the derive throws mid-render. Also seed
-  `setQueryDefaults(["events", "someday"], { initialData: toNormalizedEventQueryData([]) })`
-  (see `useWeekShortcuts.test.tsx` for a working example).
 - **Pending-mutation seeding:** a pending event is derived from an in-flight
   mutation whose `mutationKey` is a full 3-segment
   `eventMutationKeys.operation("edit" | "create" | ...)`. A bare

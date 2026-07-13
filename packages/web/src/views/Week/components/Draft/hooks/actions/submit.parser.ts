@@ -1,62 +1,22 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
-import { type Schema_Event } from "@core/types/event.types";
+import { Origin } from "@core/constants/core.constants";
 import {
   type Schema_GridEvent,
-  type Schema_SomedayEvent,
   type Schema_WebEvent,
 } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { validateGridEvent } from "@web/common/validators/grid.event.validator";
-import { validateSomedayEvent } from "@web/common/validators/someday.event.validator";
 
 export class OnSubmitParser {
-  private readonly event: Schema_GridEvent | Schema_SomedayEvent;
+  private readonly event: Schema_GridEvent;
 
   constructor(event: Schema_GridEvent) {
     this.event = event;
   }
 
   public parse() {
-    if (this.event.isSomeday) {
-      return parseSomedayEventBeforeSubmit(
-        this.event as Schema_SomedayEvent,
-        this.event.user ?? "",
-      );
-    }
     return prepEventBeforeSubmit(this.event, this.event.user ?? "");
   }
 }
-
-export const parseSomedayEventBeforeSubmit = (
-  draft: Schema_Event,
-  userId: string,
-): Schema_SomedayEvent => {
-  if (!draft.startDate || !draft.endDate) {
-    throw new Error("Someday event requires startDate and endDate");
-  }
-
-  const _event: Omit<Schema_SomedayEvent, "recurrence"> = {
-    ...draft,
-    origin: Origin.COMPASS,
-    isSomeday: true,
-    order: draft.order ?? 0,
-    user: userId,
-    _id: draft._id,
-    startDate: draft.startDate,
-    endDate: draft.endDate,
-    priority: draft.priority ?? Priorities.UNASSIGNED,
-  };
-
-  if (draft.recurrence) {
-    Object.assign(_event, {
-      recurrence: draft.recurrence as Schema_SomedayEvent["recurrence"],
-    });
-  }
-
-  const event = validateSomedayEvent(_event);
-
-  return event;
-};
 
 export const prepEventBeforeSubmit = (
   draft: Schema_GridEvent,

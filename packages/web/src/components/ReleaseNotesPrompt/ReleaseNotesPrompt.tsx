@@ -1,16 +1,11 @@
 import {
   type KeyboardEvent,
   type MouseEvent,
-  useEffect,
-  useRef,
+  useCallback,
   useState,
 } from "react";
 import { subscribeToReleaseNotes } from "@web/auth/compass/user/util/subscribe.util";
-import {
-  releaseNotesPromptActions,
-  selectReleaseNotesPromptOpen,
-  useReleaseNotesPromptStore,
-} from "@web/auth/state/release-notes-prompt.store";
+import { releaseNotesPromptActions } from "@web/auth/state/release-notes-prompt.store";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { PixelPirate } from "@web/components/WelcomeModal/PixelPirate";
@@ -18,30 +13,22 @@ import { PixelPirate } from "@web/components/WelcomeModal/PixelPirate";
 type PromptState = "asking" | "confirmed" | "declined";
 
 export function ReleaseNotesPrompt() {
-  const isOpen = useReleaseNotesPromptStore(selectReleaseNotesPromptOpen);
   const [state, setState] = useState<PromptState>("asking");
   const [closing, setClosing] = useState(false);
-  const backdropRef = useRef<HTMLDivElement>(null);
-  const timerRef = useRef<number | undefined>(undefined);
 
-  useEffect(() => {
-    if (isOpen) {
-      setState("asking");
-      setClosing(false);
-      backdropRef.current?.focus();
-    }
-  }, [isOpen]);
-
-  useEffect(() => () => window.clearTimeout(timerRef.current), []);
-
-  if (!isOpen) return null;
+  // RootShell mounts this only while the store flag is open, so each open is a
+  // fresh mount (state starts at "asking", no reset effect needed). A callback
+  // ref focuses the backdrop on mount so Escape works without a click first.
+  const focusOnMount = useCallback((node: HTMLDivElement | null) => {
+    node?.focus();
+  }, []);
 
   const dismiss = () => {
     if (closing) return;
     setClosing(true);
     const reducedMotion =
       window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
-    timerRef.current = window.setTimeout(
+    window.setTimeout(
       () => releaseNotesPromptActions.close(),
       reducedMotion ? 0 : 400,
     );
@@ -50,7 +37,7 @@ export function ReleaseNotesPrompt() {
   const decline = () => {
     if (state !== "asking") return;
     setState("declined");
-    timerRef.current = window.setTimeout(dismiss, 1300);
+    window.setTimeout(dismiss, 1300);
   };
 
   const subscribe = async () => {
@@ -58,7 +45,7 @@ export function ReleaseNotesPrompt() {
     try {
       await subscribeToReleaseNotes();
       setState("confirmed");
-      timerRef.current = window.setTimeout(dismiss, 1300);
+      window.setTimeout(dismiss, 1300);
     } catch {
       showErrorToast("Couldn't subscribe to updates. Please try again.");
       dismiss();
@@ -80,7 +67,7 @@ export function ReleaseNotesPrompt() {
       data-closing={closing || undefined}
       onClick={handleBackdropClick}
       onKeyDown={handleKeyDown}
-      ref={backdropRef}
+      ref={focusOnMount}
       role="presentation"
       style={{ zIndex: Z_INDEX_MODAL }}
       tabIndex={-1}

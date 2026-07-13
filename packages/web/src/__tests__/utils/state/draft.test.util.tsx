@@ -69,7 +69,7 @@ export function setupDraftState(event: Schema_WebEvent) {
     draftActions.start({
       activity: "sidebarClick",
       event: event as Schema_Event,
-      eventType: Categories_Event.SOMEDAY_WEEK,
+      eventType: Categories_Event.TIMED,
     });
   });
 

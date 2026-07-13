@@ -11,12 +11,10 @@ import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 const putEvent = mock();
 const getAllEvents = mock();
-const updateEventOrders = mock();
 
 const fakeStore = {
   putEvent,
   getAllEvents,
-  updateEventOrders,
 } as unknown as OfflineDataStore;
 
 const repository = new LocalEventRepository(() => fakeStore);
@@ -25,7 +23,6 @@ describe("LocalEventRepository", () => {
   beforeEach(() => {
     putEvent.mockClear();
     getAllEvents.mockClear();
-    updateEventOrders.mockClear();
   });
 
   it("preserves the demo marker when replacing a seeded demo event", async () => {
@@ -41,19 +38,6 @@ describe("LocalEventRepository", () => {
     });
 
     expect(putEvent.mock.calls[0][0].isDemo).toBe(true);
-  });
-
-  it("delegates reorder to the store without reading or rewriting whole events", async () => {
-    const items = [
-      { eventId: "a".repeat(24) as EventId, sortOrder: 0 },
-      { eventId: "b".repeat(24) as EventId, sortOrder: 1 },
-    ];
-
-    await repository.reorder({ period: "week", items });
-
-    expect(updateEventOrders).toHaveBeenCalledWith(items);
-    expect(getAllEvents).not.toHaveBeenCalled();
-    expect(putEvent).not.toHaveBeenCalled();
   });
 
   it("throws when replacing an event that does not exist locally", async () => {

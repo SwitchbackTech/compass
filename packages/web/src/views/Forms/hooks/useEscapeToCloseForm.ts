@@ -1,4 +1,3 @@
-import { isSomedayEventActionMenuOpen } from "@web/common/utils/event/someday.event.util";
 import { isContextMenuOpen } from "@web/common/utils/form/form.util";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
 
@@ -30,7 +29,7 @@ export const useEscapeToCloseForm = (onClose: () => void) => {
   useAppShortcut(
     "Escape",
     (keyboardEvent) => {
-      if (isContextMenuOpen() || isSomedayEventActionMenuOpen()) return;
+      if (isContextMenuOpen()) return;
       if (isFloatingLayerOpen()) return;
 
       keyboardEvent.preventDefault();

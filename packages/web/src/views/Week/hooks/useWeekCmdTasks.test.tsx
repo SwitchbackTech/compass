@@ -2,12 +2,7 @@ import { act } from "@testing-library/react";
 import { type MouseEvent } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { renderHookWithStore } from "@web/__tests__/render-with-store";
-import {
-  initialViewState,
-  selectIsSidebarOpen,
-  useViewStore,
-  viewActions,
-} from "@web/events/stores/view.store";
+import { initialViewState, useViewStore } from "@web/events/stores/view.store";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
 mock.module("@web/auth/compass/session/session.util", () => ({
@@ -75,26 +70,18 @@ const getItem = (items: ReturnType<typeof useWeekCmdTasks>, id: string) => {
 };
 
 describe("useWeekCmdTasks", () => {
-  it.each([
-    "create-someday-week-event",
-    "create-someday-month-event",
-  ])("opens the sidebar when creating a %s while it's closed", async (id) => {
-    viewActions.setSidebarOpen(false);
+  it("exposes the timed and all-day create commands", () => {
     const { result } = renderWeekCmdTasks();
 
-    await fireClick(getItem(result.current, id).onClick);
-
-    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+    expect(getItem(result.current, "create-event")).toBeDefined();
+    expect(getItem(result.current, "create-allday-event")).toBeDefined();
   });
 
-  it("leaves the sidebar open (does not re-toggle) when already open", async () => {
-    viewActions.setSidebarOpen(true);
+  it("fires the deferred create callback once the row unmounts", async () => {
     const { result } = renderWeekCmdTasks();
 
-    await fireClick(
-      getItem(result.current, "create-someday-week-event").onClick,
-    );
+    await fireClick(getItem(result.current, "create-event").onClick);
 
-    expect(selectIsSidebarOpen(useViewStore.getState())).toBe(true);
+    expect(mockObserve).toHaveBeenCalled();
   });
 });

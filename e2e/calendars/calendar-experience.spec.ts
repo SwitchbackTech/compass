@@ -192,9 +192,8 @@ type CompassE2EWindow = Window & {
  * form/availability query touch. The calendars and event-list handlers
  * share `visibility` state so a `/calendars/select` PUT is reflected by
  * both on the next refetch, emulating server-side visibility filtering
- * (packet 08 step 4). The event-list handler only answers "range" queries -
- * a "someday" query correctly gets nothing back since every fixture event
- * here is timed.
+ * (packet 08 step 4). The event-list handler answers the "range" query with
+ * the visible fixture events.
  */
 async function setupCalendarExperiencePage(
   page: Page,
@@ -258,10 +257,9 @@ async function setupCalendarExperiencePage(
       return json({ calendars: buildCalendars(visibility) });
     }
     if (pathname.endsWith("/api/event") && method === "GET") {
-      const isSomedayQuery = url.searchParams.get("kind") === "someday";
-      const matching = isSomedayQuery
-        ? []
-        : events.filter((event) => visibility[event.calendarId] !== false);
+      const matching = events.filter(
+        (event) => visibility[event.calendarId] !== false,
+      );
       return json({ events: matching });
     }
     if (pathname.startsWith("/api/event") && method !== "GET") {

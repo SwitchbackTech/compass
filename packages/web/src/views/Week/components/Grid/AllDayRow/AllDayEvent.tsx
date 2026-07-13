@@ -2,7 +2,6 @@ import { type ForwardedRef, forwardRef, type MouseEvent, memo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
 import { getCalendarAllDayEventPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -54,8 +53,6 @@ const AllDayEventBase = (
     visibleDates,
   });
 
-  const shouldAcknowledgeCommit =
-    useSomedayCommitAcknowledgement(event._id) && !isPlaceholder;
   const shouldTrackCalendarHover = !isPlaceholder && Boolean(event._id);
   const handleEventMouseDown = (
     e: MouseEvent,
@@ -74,7 +71,6 @@ const AllDayEventBase = (
       calendarIdentity={calendarIdentity}
       event={event}
       interactionAttributes={interactionAttributes}
-      isCommitAcknowledged={shouldAcknowledgeCommit}
       isPlaceholder={isPlaceholder}
       onEventKeyDown={onKeyDown}
       onEventMouseDown={handleEventMouseDown}

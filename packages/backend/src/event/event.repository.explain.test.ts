@@ -17,7 +17,7 @@ import { type EventRecord } from "@backend/event/event.record";
  * (packages/scripts/src/migrations/2026.07.10T21.30.00.event-record-backfill.ts
  * and 2026.07.10T21.00.00.calendar-record-migration.ts), so this file
  * recreates that same index set locally. The filters below are hand-copied
- * from event.repository.ts's private `listRange`/`listSomeday` methods
+ * from event.repository.ts's private `listRange` method
  * (not exercised through the repository, since `.list()` awaits `.toArray()`
  * internally with no way to attach `.explain()`) -- if that filter shape
  * ever changes, update the matching filter here too, so index coverage gets
@@ -71,18 +71,6 @@ async function createEventIndexes(): Promise<void> {
     "schedule.kind": 1,
     "schedule.end": 1,
   });
-  await mongoService.event.createIndex(
-    {
-      calendarId: 1,
-      "schedule.period": 1,
-      "schedule.anchorDate": 1,
-      "schedule.sortOrder": 1,
-    },
-    {
-      name: "event_calendar_someday_order",
-      partialFilterExpression: { "schedule.kind": "someday" },
-    },
-  );
 }
 
 // Mirrors packages/scripts/src/migrations/2026.07.10T21.00.00.calendar-record-migration.ts.
@@ -145,20 +133,6 @@ async function seedRealisticDataset(): Promise<void> {
       buildEvent({
         _id: new ObjectId(),
         schedule: { kind: "allDay", start, end },
-      }),
-    );
-  }
-
-  for (let i = 0; i < 20; i++) {
-    events.push(
-      buildEvent({
-        _id: new ObjectId(),
-        schedule: {
-          kind: "someday",
-          period: "week",
-          anchorDate: `2026-07-${String(6 + (i % 3) * 7).padStart(2, "0")}`,
-          sortOrder: i,
-        },
       }),
     );
   }
@@ -256,23 +230,6 @@ describe("EventRepository query explains (packet 09 step 5)", () => {
       // real IXSCANs -- but worth a look next time these indexes are
       // tuned. See docs/development/performance-baselines.md.
       expectIndexed(stages, "calendarId_1_schedule.kind_1_schedule.start_1");
-    });
-  });
-
-  describe("list() someday variant (event.repository.ts::listSomeday)", () => {
-    it("uses an index for the period/anchorDate lookup", async () => {
-      const cursor = mongoService.event
-        .find({
-          calendarId: { $in: [calendarId] },
-          "schedule.kind": "someday",
-          "schedule.period": "week",
-          "schedule.anchorDate": "2026-07-06",
-        })
-        .sort({ "schedule.sortOrder": 1 });
-
-      const stages = await explainWinningPlan(cursor);
-
-      expectIndexed(stages, "event_calendar_someday_order");
     });
   });
 

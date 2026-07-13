@@ -1,6 +1,5 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
 import userEvent from "@testing-library/user-event";
-import dayjs from "@core/util/date/dayjs";
 import { cleanup, render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
@@ -31,7 +30,6 @@ const renderPanel = ({
   const onSubmit = mock();
   const value = {
     actions: {
-      convert: mock(),
       discard: mock(),
       duplicateEvent: mock(),
     },
@@ -50,10 +48,7 @@ const renderPanel = ({
 
   const result = render(
     <DraftContext.Provider value={value}>
-      <WeekSidebarEventDetails
-        viewEnd={dayjs("2026-05-30T23:59:59.999")}
-        viewStart={dayjs("2026-05-24T00:00:00.000")}
-      />
+      <WeekSidebarEventDetails />
     </DraftContext.Provider>,
   );
 

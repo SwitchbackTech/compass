@@ -376,13 +376,13 @@ blocks on the grid, with no event content and no way to interact with them.
 
 Revoking Compass's Google access removes every Google-sourced calendar and
 its events — not just the primary one — while the Compass-local calendar
-and anything created without Google (password-only events, Someday items)
+and anything created without Google (password-only events)
 is never touched.
 
 ### Steps
 
 1. Before connecting Google (or on a separate password-only account),
-   create at least one scheduled event and one Someday event on your
+   create at least one scheduled event on your
    Compass-local calendar.
 2. Connect Google Calendar (see Scenario 1) with multiple calendars
    available — at least one writable calendar and, if possible, a reader or
@@ -399,7 +399,7 @@ is never touched.
   primary one.
 - All events and availability blocks from every Google calendar are
   removed.
-- The Compass-local calendar, and the scheduled and Someday events you
+- The Compass-local calendar, and the scheduled events you
   created on it before ever connecting Google, remain exactly as they
   were — nothing about the account, priorities, or local data is deleted.
 - The toast and reconnect-prompt behavior matches Scenario 7.

@@ -81,8 +81,32 @@ full context; the founder does not.
 ## Autonomy boundaries
 
 - Auto-merge a PR only once **CI is green** (via the `ship` skill).
-- Notes-, standup-, and backlog-only changes commit directly to main as
-  `chore(team): …` — never a notes-only PR (CI ignores `team/**`, so there would be
-  no green gate to watch).
+- Notes-, standup-, and backlog-only changes still go through a PR (branch
+  protection blocks direct pushes) but merge it yourself, same turn —
+  `gh pr merge --squash --admin` immediately after `gh pr create`, since CI
+  ignores `team/**` and there's nothing to wait for. Never leave one of these
+  open for the founder to merge.
 - Respect the deny-list in `.claude/settings.json` (no force-push, no `rm -rf`, no `.env`
   reads/writes). If a task seems to need one of those, that's a push-notify, not a workaround.
+
+## Merging is a queue of one — never parallelize it
+
+Implementation can safely run in parallel (isolated worktrees don't collide).
+Merging onto `main` cannot — it's a single shared resource, and treating it as
+parallelizable is what produces PRs racing each other for a merge or a deploy
+slot (a CI-level concurrency queue on the deploy job stops two deploys from
+overlapping, but that doesn't stop two branches from conflicting with each
+other or with a `main` that moved mid-flight).
+
+- If several PRs are ready around the same time — during standup's
+  auto-execution (`.claude/skills/standup/SKILL.md` step 5) or otherwise —
+  merge them **one at a time**, and re-fetch/rebase each onto the current
+  `origin/main` tip immediately before its merge, not at whatever point it was
+  branched.
+- When merging on behalf of a role you're not currently acting as (e.g. the
+  standup orchestrator merging a fullstack PR), append the Work bullet to that
+  role's `team/<role>/notes/<date>.md` yourself — the note is the merger's
+  responsibility, not something to leave for a session that never runs.
+- A merge that hits a real conflict (not a trivial rebase) is a push-notify,
+  not something to force through — report it and keep the rest of the queue
+  moving.

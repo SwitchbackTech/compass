@@ -10,14 +10,13 @@ interface EventFormShellProps extends ComponentPropsWithoutRef<"form"> {
 }
 
 /**
- * Shared outer `<form>` for the timed and someday event forms. It owns the
- * panel's layout — padding, background, shadow, rounding, transition, and the
- * priority-tinted `--event-form-bg` — so the two forms stay consistent and
- * can't drift apart. Both forms render docked inside the sidebar, so the form
- * fills its container and the (resizable) sidebar width is the single source
- * of the form's size.
- * Content-agnostic: callers pass their fields as children and any form-specific
- * props (`name`, mouse handlers, an extra `className`).
+ * Outer `<form>` for the event form. It owns the panel's layout — padding,
+ * background, shadow, rounding, transition, and the priority-tinted
+ * `--event-form-bg`. The form renders docked inside the sidebar, so it fills
+ * its container and the (resizable) sidebar width is the single source of
+ * the form's size.
+ * Content-agnostic: callers pass their fields as children and any
+ * form-specific props (`name`, mouse handlers, an extra `className`).
  */
 export const EventFormShell = ({
   priority,

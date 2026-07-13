@@ -183,11 +183,6 @@ export const mapEventRecordToGoogle = (
     // and is never written back to Google.
     throw new Error("Cannot write busy-content event to Google");
   }
-  if (record.schedule.kind === "someday") {
-    // Programmer error: someday events live on the Compass-local calendar
-    // and never reach a Google-backed calendar's write path.
-    throw new Error("Cannot write a someday-scheduled event to Google");
-  }
 
   const scheduleFields: Pick<GoogleEventWriteInput, "start" | "end"> =
     record.schedule.kind === "timed"

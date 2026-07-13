@@ -2,7 +2,6 @@ import { type ObjectId } from "mongodb";
 import {
   type DeleteEventInput,
   type ReplaceEventInput,
-  type TransitionEventInput,
 } from "@core/types/event-command.contracts";
 import { eventMutationError } from "@backend/event/event.error";
 import { type EventRecord } from "@backend/event/event.record";
@@ -37,10 +36,7 @@ const assertSeriesCalendarConsistency = (
 
 const scheduleStartMs = (schedule: EventRecord["schedule"]): number => {
   if (schedule.kind === "timed") return schedule.start.getTime();
-  if (schedule.kind === "allDay") {
-    return new Date(`${schedule.start}T00:00:00.000Z`).getTime();
-  }
-  return 0;
+  return new Date(`${schedule.start}T00:00:00.000Z`).getTime();
 };
 
 /**
@@ -83,14 +79,6 @@ export type DeletePlan =
       kind: "deleteSplit";
       truncatedBase: EventRecord;
       deleteInstanceIds: ObjectId[];
-    };
-
-export type TransitionPlan =
-  | { kind: "schedule"; updated: EventRecord; deletedInstanceIds: ObjectId[] }
-  | {
-      kind: "unschedule";
-      updated: EventRecord;
-      deletedInstanceIds: ObjectId[];
     };
 
 const applyEditableFields = (
@@ -275,56 +263,5 @@ export function analyzeDelete(
     kind: "deleteSplit",
     truncatedBase,
     deleteInstanceIds: followingInstanceIds,
-  };
-}
-
-export function analyzeTransition(
-  target: EventRecord,
-  input: TransitionEventInput,
-  targetCalendarId: ObjectId | null,
-  now: Date,
-): TransitionPlan {
-  if (target.recurrence.kind === "occurrence") {
-    throw conflict(
-      'An occurrence cannot transition on its own; edit the series (scope "all").',
-    );
-  }
-
-  if (input.kind === "schedule") {
-    if (!targetCalendarId) {
-      throw conflict("Target calendar for schedule transition is required.");
-    }
-    return {
-      kind: "schedule",
-      updated: {
-        ...target,
-        calendarId: targetCalendarId,
-        schedule:
-          input.schedule.kind === "timed"
-            ? {
-                kind: "timed",
-                start: new Date(input.schedule.start),
-                end: new Date(input.schedule.end),
-                timeZone: input.schedule.timeZone,
-              }
-            : input.schedule,
-        externalReference: null,
-        updatedAt: now,
-      },
-      deletedInstanceIds: [],
-    };
-  }
-
-  return {
-    kind: "unschedule",
-    updated: {
-      ...target,
-      calendarId: targetCalendarId ?? target.calendarId,
-      schedule: input.schedule,
-      recurrence: { kind: "single" },
-      externalReference: null,
-      updatedAt: now,
-    },
-    deletedInstanceIds: [],
   };
 }

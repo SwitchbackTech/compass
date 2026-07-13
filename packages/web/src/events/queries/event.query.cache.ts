@@ -1,5 +1,5 @@
 import { type QueryClient, type QueryKey } from "@tanstack/react-query";
-import { type EventId, type SortOrder } from "@core/types/domain-primitives";
+import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { type RecurringEditProjection } from "@web/events/recurrence/projectRecurringEdit";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
@@ -41,7 +41,7 @@ export const isEventQueryKey = (
   const scope = queryKey[1];
   const metadata = queryKey[2];
   return (
-    (scope === "day" || scope === "week" || scope === "someday") &&
+    (scope === "day" || scope === "week") &&
     typeof metadata === "object" &&
     metadata !== null &&
     "source" in metadata
@@ -104,10 +104,9 @@ export function findSeriesEventsInCache(
 
 /**
  * Canonical "does this event belong in this cached entry" test, combining the
- * repository source, the scope (someday vs. timed/all-day), and the range/
- * period predicate. Used by every optimistic insert/upsert so a mutation
- * lands events in exactly the entries a subsequent read would return them
- * from.
+ * repository source and the range predicate. Used by every optimistic
+ * insert/upsert so a mutation lands events in exactly the entries a subsequent
+ * read would return them from.
  */
 export function eventBelongsToEntry(
   event: Event,
@@ -116,17 +115,6 @@ export function eventBelongsToEntry(
 ): boolean {
   if (entry.metadata.source !== source) return false;
 
-  if (event.schedule.kind === "someday") {
-    return (
-      entry.scope === "someday" &&
-      "period" in entry.metadata &&
-      entry.metadata.period === event.schedule.period &&
-      entry.metadata.anchorDate === event.schedule.anchorDate
-    );
-  }
-
-  if (entry.scope === "someday") return false;
-  if (!("start" in entry.metadata)) return false;
   return eventMatchesRange(event, entry.metadata.start, entry.metadata.end);
 }
 
@@ -294,41 +282,5 @@ export function removeEventsByCalendarFromQueries(
       ids: current.ids.filter((id) => !removedIds.has(id)),
       entities,
     };
-  });
-}
-
-export function reorderSomedayEventsInQueries(
-  queryClient: QueryClient,
-  items: { eventId: string; sortOrder: SortOrder }[],
-  source?: EventRepositorySource,
-) {
-  const orderById = new Map(
-    items.map(({ eventId, sortOrder }) => [eventId, sortOrder] as const),
-  );
-  forEachEventQuery(queryClient, { source, scope: "someday" }, (current) => {
-    const entities = { ...current.entities };
-    for (const [id, sortOrder] of orderById) {
-      const existing = entities[asEventId(id)];
-      if (existing?.schedule.kind === "someday") {
-        entities[asEventId(id)] = {
-          ...existing,
-          schedule: { ...existing.schedule, sortOrder },
-        };
-      }
-    }
-    const ids = [...current.ids].sort((left, right) => {
-      const leftSchedule = entities[left]?.schedule;
-      const rightSchedule = entities[right]?.schedule;
-      const leftOrder =
-        leftSchedule?.kind === "someday"
-          ? leftSchedule.sortOrder
-          : Number.MAX_SAFE_INTEGER;
-      const rightOrder =
-        rightSchedule?.kind === "someday"
-          ? rightSchedule.sortOrder
-          : Number.MAX_SAFE_INTEGER;
-      return leftOrder - rightOrder;
-    });
-    return { ...current, ids, entities };
   });
 }

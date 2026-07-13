@@ -29,17 +29,6 @@ export class EventDriver {
       const gcalAllDayEvents = mockGcalEvents(true, { count });
       const gcalTimedEvents = mockGcalEvents(false, { count });
 
-      const somedayEvent = Migration.OldEventSchema.parse({
-        user: user._id.toString(),
-        title: "Someday Event",
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
-        isSomeday: true,
-        isAllDay: false,
-        origin: Origin.COMPASS,
-        priority: Priorities.UNASSIGNED,
-      });
-
       const recurringEventIds = new Map<string, ObjectId>([
         [gcalAllDayEvents.gcalEvents.recurring.id, new ObjectId()],
         [gcalTimedEvents.gcalEvents.recurring.id, new ObjectId()],
@@ -55,7 +44,6 @@ export class EventDriver {
       ];
 
       return [
-        somedayEvent,
         ...gcalEvents.map((gcalEvent) => {
           const event = {
             _id: recurringEventIds.get(gcalEvent.id) ?? new ObjectId(),
@@ -65,7 +53,6 @@ export class EventDriver {
             startDate: gcalEvent.start?.dateTime ?? gcalEvent.start!.date!,
             endDate: gcalEvent.end?.dateTime ?? gcalEvent.end!.date!,
             isAllDay: !!gcalEvent.start?.date,
-            isSomeday: false,
             origin: Origin.GOOGLE,
             priority: Priorities.UNASSIGNED,
           };

@@ -66,7 +66,6 @@ export const useDraftConfirmation = ({
   const { discard, deleteEvent, submit } = actions;
   const { isInstance, isRecurrence } = actions;
   const { draft } = state;
-  const isSomeday = actions.isSomeday();
   const baseEventId =
     draft?.kind === "edit" && draft.source.recurrence.kind === "occurrence"
       ? draft.source.recurrence.seriesId
@@ -158,19 +157,15 @@ export const useDraftConfirmation = ({
   const onDelete = useCallback(async () => {
     const isRecurringEvent = isRecurrence();
 
-    if (isRecurringEvent && !isSomeday) {
+    if (isRecurringEvent) {
       setFinalDraft(null);
 
       return setRecurrenceUpdateScopeDialogOpen(true);
-    } else if (isRecurringEvent && isSomeday) {
-      deleteEvent(RecurringEventUpdateScope.ALL_EVENTS);
-
-      return discard();
     }
 
     deleteEvent(RecurringEventUpdateScope.THIS_EVENT);
     discard();
-  }, [isSomeday, deleteEvent, isRecurrence, discard]);
+  }, [deleteEvent, isRecurrence, discard]);
 
   return {
     isRecurrenceUpdateScopeDialogOpen,

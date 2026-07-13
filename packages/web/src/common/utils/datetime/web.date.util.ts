@@ -6,10 +6,13 @@ import {
   YMDHM_FORMAT,
 } from "@core/constants/date.constants";
 import {
-  type ScheduledSchedule,
-  ScheduledScheduleSchema,
+  type EventSchedule,
+  EventScheduleSchema,
 } from "@core/types/event.contracts";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import {
+  type Categories_Event,
+  type Schema_Event,
+} from "@core/types/event.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
@@ -47,24 +50,10 @@ export const getColorsByHour = (currentHour: number) => {
 };
 
 export const getDatesByCategory = (
-  category: Categories_Event,
+  _category: Categories_Event,
   weekStart: Dayjs,
-  weekEnd: Dayjs,
+  _weekEnd: Dayjs,
 ) => {
-  if (category === Categories_Event.SOMEDAY_WEEK) {
-    return {
-      startDate: weekStart.format(YEAR_MONTH_DAY_FORMAT),
-      endDate: weekEnd.format(YEAR_MONTH_DAY_FORMAT),
-    };
-  }
-
-  if (category === Categories_Event.SOMEDAY_MONTH) {
-    return {
-      startDate: weekStart.startOf("month").format(YEAR_MONTH_DAY_FORMAT),
-      endDate: weekStart.endOf("month").format(YEAR_MONTH_DAY_FORMAT),
-    };
-  }
-
   const { startDate, endDate } = _getNextWeekInSameMonth(weekStart);
 
   return {
@@ -186,7 +175,7 @@ export const getCalendarHeadingLabel = (
 export const getBrowserTimeZone = (): string =>
   Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-export const mapToBackend = (s: Schema_SelectedDates): ScheduledSchedule => {
+export const mapToBackend = (s: Schema_SelectedDates): EventSchedule => {
   if (s.isAllDay) {
     const startDate = dayjs(s.startDate).format(YEAR_MONTH_DAY_FORMAT);
     let endDate = dayjs(s.endDate).format(YEAR_MONTH_DAY_FORMAT);
@@ -197,7 +186,7 @@ export const mapToBackend = (s: Schema_SelectedDates): ScheduledSchedule => {
       endDate = dayjs(endDate).add(1, "day").format(YEAR_MONTH_DAY_FORMAT);
     }
 
-    return ScheduledScheduleSchema.parse({
+    return EventScheduleSchema.parse({
       kind: "allDay",
       start: startDate,
       end: endDate,
@@ -207,7 +196,7 @@ export const mapToBackend = (s: Schema_SelectedDates): ScheduledSchedule => {
   const timeZone = getBrowserTimeZone();
   const { startDate, endDate } = _addTimesToDates(s, timeZone);
 
-  return ScheduledScheduleSchema.parse({
+  return EventScheduleSchema.parse({
     kind: "timed",
     start: startDate,
     end: endDate,

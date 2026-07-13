@@ -2,11 +2,7 @@ import { Priorities } from "@core/constants/core.constants";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
-import {
-  presentEvent,
-  presentGridEvent,
-  presentSomedayEvent,
-} from "./event-view.adapter";
+import { presentGridEvent } from "./event-view.adapter";
 import { expect, test } from "bun:test";
 
 test("presents a timed event for the grid with its recurrence and priority", () => {
@@ -56,28 +52,4 @@ test("preserves the exclusive all-day end date", () => {
     end: "2026-07-14",
     recurrence: { kind: "occurrence" },
   });
-  expect(presentSomedayEvent(event)).toBeNull();
-});
-
-test("presents someday events with their persisted ordering", () => {
-  const event = createMockEvent({
-    priority: Priorities.SELF,
-    schedule: EventScheduleSchema.parse({
-      kind: "someday",
-      period: "month",
-      anchorDate: "2026-07-01",
-      sortOrder: 3,
-    }),
-  });
-
-  expect(presentSomedayEvent(event)).toMatchObject({
-    kind: "someday",
-    period: "month",
-    anchorDate: "2026-07-01",
-    sortOrder: 3,
-    priority: Priorities.SELF,
-    recurrence: { kind: "single" },
-  });
-  expect(presentGridEvent(event)).toBeNull();
-  expect(presentEvent(event)).toMatchObject({ sortOrder: 3 });
 });

@@ -7,9 +7,7 @@ import {
   EventListQuerySchema,
   EventListResponseSchema,
   EventMutationErrorSchema,
-  ReorderEventsInputSchema,
   ReplaceEventInputSchema,
-  TransitionEventInputSchema,
 } from "@core/types/event-command.contracts";
 
 const calendarId = () => faker.database.mongodbObjectId();
@@ -22,18 +20,6 @@ const timedSchedule = {
   end: "2026-07-14T10:00:00-06:00",
   timeZone: "America/Denver",
 };
-const allDaySchedule = {
-  kind: "allDay",
-  start: "2026-07-14",
-  end: "2026-07-15",
-};
-const somedaySchedule = {
-  kind: "someday",
-  period: "week",
-  anchorDate: "2026-07-14",
-  sortOrder: 0,
-};
-
 describe("Event Command Contracts", () => {
   describe("CreateEventInputSchema", () => {
     const base = () => ({
@@ -149,87 +135,6 @@ describe("Event Command Contracts", () => {
     });
   });
 
-  describe("ReorderEventsInputSchema", () => {
-    it("accepts unique ordered items", () => {
-      const input = {
-        period: "week",
-        items: [
-          { eventId: eventId(), sortOrder: 0 },
-          { eventId: eventId(), sortOrder: 1 },
-        ],
-      };
-
-      expect(ReorderEventsInputSchema.safeParse(input).success).toBe(true);
-    });
-
-    it("rejects duplicate event ids", () => {
-      const id = eventId();
-      const input = {
-        period: "week",
-        items: [
-          { eventId: id, sortOrder: 0 },
-          { eventId: id, sortOrder: 1 },
-        ],
-      };
-
-      expect(ReorderEventsInputSchema.safeParse(input).success).toBe(false);
-    });
-
-    it("rejects an empty items array", () => {
-      const input = { period: "week", items: [] };
-
-      expect(ReorderEventsInputSchema.safeParse(input).success).toBe(false);
-    });
-  });
-
-  describe("TransitionEventInputSchema", () => {
-    it("parses a schedule transition onto a timed target", () => {
-      const input = {
-        kind: "schedule",
-        targetCalendarId: calendarId(),
-        schedule: timedSchedule,
-      };
-
-      expect(TransitionEventInputSchema.safeParse(input).success).toBe(true);
-    });
-
-    it("parses a schedule transition onto an allDay target", () => {
-      const input = {
-        kind: "schedule",
-        targetCalendarId: calendarId(),
-        schedule: allDaySchedule,
-      };
-
-      expect(TransitionEventInputSchema.safeParse(input).success).toBe(true);
-    });
-
-    it("rejects a someday schedule on the schedule branch", () => {
-      const input = {
-        kind: "schedule",
-        targetCalendarId: calendarId(),
-        schedule: somedaySchedule,
-      };
-
-      expect(TransitionEventInputSchema.safeParse(input).success).toBe(false);
-    });
-
-    it("parses an unschedule transition with a someday schedule", () => {
-      const input = { kind: "unschedule", schedule: somedaySchedule };
-
-      expect(TransitionEventInputSchema.safeParse(input).success).toBe(true);
-    });
-
-    it("rejects unknown keys", () => {
-      const input = {
-        kind: "unschedule",
-        schedule: somedaySchedule,
-        extra: 1,
-      };
-
-      expect(TransitionEventInputSchema.safeParse(input).success).toBe(false);
-    });
-  });
-
   describe("EventListQuerySchema", () => {
     it("parses a range query", () => {
       const query = {
@@ -264,22 +169,11 @@ describe("Event Command Contracts", () => {
       expect(EventListQuerySchema.safeParse(query).success).toBe(false);
     });
 
-    it("parses a someday query with only period and anchorDate", () => {
+    it("rejects a someday query now that the kind is removed", () => {
       const query = {
         kind: "someday",
         period: "month",
         anchorDate: "2026-07-01",
-      };
-
-      expect(EventListQuerySchema.safeParse(query).success).toBe(true);
-    });
-
-    it("rejects a someday query with a cursor/limit-like key", () => {
-      const query = {
-        kind: "someday",
-        period: "month",
-        anchorDate: "2026-07-01",
-        limit: 9,
       };
 
       expect(EventListQuerySchema.safeParse(query).success).toBe(false);

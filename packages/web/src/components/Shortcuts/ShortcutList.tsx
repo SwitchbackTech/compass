@@ -7,10 +7,9 @@ export const ShortcutList = ({ shortcuts }: { shortcuts: Shortcut[] }) => {
   return (
     <ul className="space-y-1.5">
       {shortcuts.map((it) => (
-        // Key on combo + label: one key combo legitimately appears more than
-        // once in a section (e.g. Shift+Arrow does one thing to a calendar
-        // event and another to a Someday event), so the combo alone is not
-        // unique and collides as a React key.
+        // Key on combo + label: a key combo can legitimately appear more than
+        // once in a section, so the combo alone is not unique and collides as
+        // a React key.
         <li
           key={`${it.keys.join("-")}-${it.label}`}
           className="flex min-h-9 items-center justify-between gap-4 rounded-default py-1.5 text-[13px] text-text-lighter leading-tight"

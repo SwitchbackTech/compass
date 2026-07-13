@@ -4,11 +4,8 @@ import {
   type CreateEventInput,
   type EventListQuery,
   type RecurrenceScope,
-  type ReorderEventsInput,
   type ReplaceEventInput,
-  type TransitionEventInput,
 } from "@core/types/event-command.contracts";
-import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import {
   getOfflineDataStore,
   type OfflineDataStore,
@@ -112,38 +109,5 @@ export class LocalEventRepository implements EventRepository {
 
   async delete(id: EventId, _scope: RecurrenceScope): Promise<void> {
     await this.store.deleteEvent(id);
-  }
-
-  async reorder(input: ReorderEventsInput): Promise<void> {
-    await this.store.updateEventOrders(input.items);
-  }
-
-  async transition(id: EventId, input: TransitionEventInput): Promise<Event> {
-    const existingRecord = await this.getRecordById(id);
-    const existing = existingRecord.event;
-
-    const event: Event =
-      input.kind === "schedule"
-        ? {
-            ...existing,
-            calendarId: input.targetCalendarId,
-            schedule: input.schedule,
-            updatedAt: nowDateTime(),
-          }
-        : {
-            ...existing,
-            calendarId: getLocalCalendarSentinelId(),
-            schedule: input.schedule,
-            updatedAt: nowDateTime(),
-          };
-
-    const record: LocalEventRecord = {
-      version: 2,
-      id,
-      event,
-      isDemo: existingRecord.isDemo,
-    };
-    await this.store.putEvent(record);
-    return event;
   }
 }
