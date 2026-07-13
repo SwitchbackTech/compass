@@ -15,7 +15,7 @@ cp compass.example.yaml compass.yaml
 
 - Avoid defaulting to `bun test`; use the focused package test first.
 - Formatting is handled by the repo-local Codex Stop hook after each agent turn.
-- Use `bun lint` and relevant verification before push or handoff.
+- Use `bun lint` and relevant verification before pushing or ending a session.
 
 ## Commands
 
@@ -45,7 +45,7 @@ Validation defaults:
   that verification is complete.
 - Use `bun run verify` when you want the repo helper to choose checks from the
   git diff, but confirm its output before treating the task as done.
-- Use `bun run lint` before push or handoff when the work is not docs-only.
+- Use `bun run lint` before pushing when the work is not docs-only.
 
 ## Lookups
 

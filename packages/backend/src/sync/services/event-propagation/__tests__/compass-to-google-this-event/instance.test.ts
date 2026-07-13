@@ -19,7 +19,7 @@ import {
 
 /**
  * Scope "this" applied to a single series occurrence -- packet 05 step 4
- * closes the "03" gap documented in handoff/someday/05-calendar-aware-crud.md:
+ * closes the "03" gap documented in team/backlog/05-calendar-aware-crud.md:
  * a Compass-created series' materialized instances never get their own
  * externalReference (Google auto-expands them from the base's RRULE), so
  * resolving the Google-side instance id for a scope "this" edit/delete
