@@ -5,7 +5,6 @@ import {
   createRouter,
   isRedirect,
 } from "@tanstack/react-router";
-import dayjs from "@core/util/date/dayjs";
 import { ROOT_ROUTES } from "@web/common/constants/routes";
 import {
   loadDateParam,
@@ -51,7 +50,8 @@ function createTestRouter(initialEntries: string[]) {
   const weekIndexRoute = createRoute({
     getParentRoute: () => weekRoute,
     path: "/",
-    beforeLoad: () => redirectToToday(ROOT_ROUTES.WEEK_DATE),
+    // Bare /week renders the view (no redirect); useWeek derives the anchor.
+    component: () => null,
   });
   const weekDateRoute = createRoute({
     getParentRoute: () => weekRoute,
@@ -91,17 +91,6 @@ describe("router redirects", () => {
     await router.load();
 
     expect(router.state.location.pathname).toBe(`/day/${dateString}`);
-  });
-
-  it("redirects /week to the start of the current week", async () => {
-    const dateString = dayjs()
-      .startOf("week")
-      .format(dayjs.DateFormat.YEAR_MONTH_DAY_FORMAT);
-    const router = createTestRouter(["/week"]);
-
-    await router.load();
-
-    expect(router.state.location.pathname).toBe(`/week/${dateString}`);
   });
 
   it("preserves ?auth=login across the today redirect", async () => {

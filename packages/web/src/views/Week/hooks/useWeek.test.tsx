@@ -66,12 +66,28 @@ describe("useWeek", () => {
     ).not.toContain(today.format(DATE_FORMAT));
   });
 
-  it("falls back to today when no dateString param is present", () => {
-    const today = dayjs("2026-07-07", DATE_FORMAT);
+  it("defaults the anchor to the week start on multi-day widths when no dateString", () => {
+    const today = dayjs("2026-07-07", DATE_FORMAT); // Tuesday
 
     const { result } = renderHook(() => useWeek(today));
 
+    expect(result.current.component.startOfView.format(DATE_FORMAT)).toBe(
+      "2026-07-05", // Sunday, start of the week containing today
+    );
     expect(result.current.component.isCurrentWeek).toBe(true);
+  });
+
+  it("defaults the anchor to today at single-day (phone) width when no dateString", () => {
+    const today = dayjs("2026-07-07", DATE_FORMAT); // Tuesday
+
+    const { result } = renderHook(() => useWeek(today, 1));
+
+    expect(result.current.component.startOfView.format(DATE_FORMAT)).toBe(
+      "2026-07-07",
+    );
+    expect(
+      result.current.component.weekDays.map((d) => d.format(DATE_FORMAT)),
+    ).toEqual(["2026-07-07"]);
   });
 
   it("navigates to the incremented week on incrementWeek", () => {
