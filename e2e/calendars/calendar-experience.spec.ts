@@ -288,7 +288,10 @@ async function setupCalendarExperiencePage(
   // useSSEConnection.ts invalidates the calendars query when `authenticated`
   // flips; wait for that refetch to land before handing control to the test.
   await expect(
-    page.locator("#sidebar").getByRole("button", { name: /calendar$/ }).first(),
+    page
+      .locator("#sidebar")
+      .getByRole("button", { name: /calendar$/ })
+      .first(),
   ).toBeVisible({
     timeout: 10000,
   });
@@ -348,6 +351,54 @@ test("sidebar lists calendars, coalesces a visibility toggle, and shows card ide
   expect(harness.putCalls[1]).toEqual([
     { calendarId: CALENDAR_B_ID, isVisible: true },
   ]);
+});
+
+test("day view separates visible calendars into distinct columns", async ({
+  page,
+}) => {
+  await setupCalendarExperiencePage(page);
+
+  await page
+    .getByRole("button", { name: /select view, currently week/i })
+    .click();
+  await page.getByRole("option", { name: /^day/i }).click();
+
+  const dayAgenda = page.getByRole("region", { name: "Calendar agenda" });
+  const calendarHeaders = dayAgenda.getByRole("region", {
+    name: "Calendars",
+  });
+  const primaryHeader = calendarHeaders.getByText(CALENDAR_A_NAME);
+  const readerHeader = calendarHeaders.getByText(CALENDAR_B_NAME);
+  const primaryEvent = dayAgenda.getByRole("button", {
+    name: new RegExp(`${EVENT_A_TITLE}.*${CALENDAR_A_NAME} calendar`),
+  });
+  const readerEvent = dayAgenda.getByRole("button", {
+    name: new RegExp(`${EVENT_B_TITLE}.*${CALENDAR_B_NAME} calendar`),
+  });
+
+  await expect(primaryHeader).toBeVisible();
+  await expect(readerHeader).toBeVisible();
+  await expect(primaryHeader).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(readerHeader).toHaveCSS("color", "rgb(255, 255, 255)");
+  await expect(primaryEvent).toBeVisible();
+  await expect(readerEvent).toBeVisible();
+
+  const [primaryHeaderBox, readerHeaderBox, primaryEventBox, readerEventBox] =
+    await Promise.all([
+      primaryHeader.locator("..").boundingBox(),
+      readerHeader.locator("..").boundingBox(),
+      primaryEvent.boundingBox(),
+      readerEvent.boundingBox(),
+    ]);
+
+  expect(primaryHeaderBox).not.toBeNull();
+  expect(readerHeaderBox).not.toBeNull();
+  expect(primaryEventBox).not.toBeNull();
+  expect(readerEventBox).not.toBeNull();
+  expect(readerHeaderBox!.x).toBeGreaterThan(primaryHeaderBox!.x);
+  expect(readerEventBox!.x).toBeGreaterThan(primaryEventBox!.x);
+  expect(primaryEventBox!.width).toBeLessThanOrEqual(primaryHeaderBox!.width);
+  expect(readerEventBox!.width).toBeLessThanOrEqual(readerHeaderBox!.width);
 });
 
 test("a new event form offers only writable calendars and supports keyboard selection", async ({
