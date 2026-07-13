@@ -1,7 +1,6 @@
 import { type EventId } from "@core/types/domain-primitives";
 import { type EventListQuery } from "@core/types/event-command.contracts";
 import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
-import { type Task } from "@web/common/types/task.types";
 
 /** Bulk sortOrder patch item, matching ReorderEventsInput["items"]. */
 export interface LocalEventOrderPatch {
@@ -18,14 +17,26 @@ export interface MigrationRecord {
 }
 
 /**
- * Task stored with its associated date key.
+ * A task row as persisted in the legacy `tasks` table.
+ *
+ * The Tasks feature was removed (2026-07), but existing rows are retained in
+ * IndexedDB so users can recover them on their own. This minimal row type
+ * exists only so the Dexie schema-upgrade path (see legacy-primary-key.
+ * migration.ts) can read and re-insert those rows without data loss. Nothing
+ * in the app reads or writes tasks anymore.
  */
-export interface StoredTask extends Task {
+export interface StoredTask {
+  _id: string;
   dateKey: string;
+  title: string;
+  status: "todo" | "completed";
+  order: number;
+  createdAt: string;
+  user: string;
 }
 
 /**
- * Abstract store for structured offline event and task data.
+ * Abstract store for structured offline event data.
  *
  * This interface defines storage operations independently of the underlying
  * storage technology (IndexedDB, SQLite, etc.). Implementations handle
@@ -50,44 +61,6 @@ export interface OfflineDataStore {
 
   /** Close any active storage connection. */
   close?(): void;
-
-  // ─── Task Operations ───────────────────────────────────────────────────────
-
-  /**
-   * Get all tasks for a specific date.
-   */
-  getTasks(dateKey: string): Promise<Task[]>;
-
-  /**
-   * Get all tasks across all dates.
-   */
-  getAllTasks(): Promise<StoredTask[]>;
-
-  /**
-   * Save tasks for a specific date, replacing any existing tasks for that date.
-   */
-  putTasks(dateKey: string, tasks: Task[]): Promise<void>;
-
-  /**
-   * Save or update a single task for a specific date.
-   * Uses upsert semantics - inserts or updates by task _id.
-   */
-  putTask(dateKey: string, task: Task): Promise<void>;
-
-  /**
-   * Delete a single task by ID.
-   */
-  deleteTask(taskId: string): Promise<void>;
-
-  /**
-   * Move a task from one date to another.
-   */
-  moveTask(task: Task, fromDateKey: string, toDateKey: string): Promise<void>;
-
-  /**
-   * Clear all tasks from storage.
-   */
-  clearAllTasks(): Promise<void>;
 
   // ─── Event Operations ──────────────────────────────────────────────────────
 

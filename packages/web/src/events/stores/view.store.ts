@@ -15,9 +15,6 @@ interface ViewState {
   sidebar: {
     isOpen: boolean;
   };
-  taskList: {
-    isOpen: boolean;
-  };
 }
 
 export const initialViewState: ViewState = {
@@ -28,7 +25,6 @@ export const initialViewState: ViewState = {
   // Seed from the persisted preference so a collapsed sidebar never mounts
   // (and animates closed) on the first render after a refresh.
   sidebar: { isOpen: readSidebarOpen() },
-  taskList: { isOpen: true },
 };
 
 // Selectors passed to this hook must return primitives or stable references;
@@ -55,20 +51,9 @@ export const viewActions = {
       false,
       { type: "toggleSidebar" },
     ),
-  setTaskListOpen: (isOpen: boolean) =>
-    useViewStore.setState({ taskList: { isOpen } }, false, {
-      type: "setTaskListOpen",
-    }),
-  toggleTaskList: () =>
-    useViewStore.setState(
-      (state) => ({ taskList: { isOpen: !state.taskList.isOpen } }),
-      false,
-      { type: "toggleTaskList" },
-    ),
   updateDates: (dates: ViewState["dates"]) =>
     useViewStore.setState({ dates }, false, { type: "updateDates" }),
 };
 
 export const selectDatesInView = (state: ViewState) => state.dates;
 export const selectIsSidebarOpen = (state: ViewState) => state.sidebar.isOpen;
-export const selectIsTaskListOpen = (state: ViewState) => state.taskList.isOpen;
