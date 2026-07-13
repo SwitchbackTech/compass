@@ -39,7 +39,6 @@ export const EUROPE_TRIP: Schema_Event = {
   origin: Origin.COMPASS,
   title: "Europe Trip",
   description: "Italy, Germany",
-  isSomeday: true,
   priority: Priorities.SELF,
   startDate: "2025-12-10T00:00:00-00:00",
   endDate: "2025-12-10T00:00:00-00:00",
@@ -48,7 +47,6 @@ export const EUROPE_TRIP: Schema_Event = {
 export const LEARN_CHINESE: Schema_Event = {
   _id: new ObjectId().toString(),
   description: "",
-  isSomeday: true,
   origin: Origin.COMPASS,
   priority: Priorities.UNASSIGNED,
   title: "Learn Chinese",
@@ -90,7 +88,6 @@ export const MULTI_WEEK: Schema_Event = {
   description: "",
   priority: Priorities.WORK,
   isAllDay: true,
-  isSomeday: false,
   startDate: "2022-09-01T00:00:00-06:00",
   endDate: "2022-09-22T00:00:00-06:00",
 };
@@ -103,7 +100,6 @@ export const TY_TIM: Schema_Event = {
   description:
     "──────────\n\nTim S is inviting you to a scheduled Zoom meeting.\n\nJoin Zoom Meeting\nhttps://us02web.zoom.us/j/87324397243?pwd=ZmpuYitCelZYVll0aDdiVUNXejdzdz09\n\nMeeting ID: 873 2439 7243\nPasscode: 305275\nOne tap mobile\n+16465588656,,87324397243#,,,,*305275# US (New York)\n+13017158592,,87324397243#,,,,*305275# US (Washington DC)\n\nDial by your location\n        +1 646 558 8656 US (New York)\n        +1 301 715 8592 US (Washington DC)\n        +1 312 626 6799 US (Chicago)\n        +1 669 900 9128 US (San Jose)\n        +1 253 215 8782 US (Tacoma)\n        +1 346 248 7799 US (Houston)\nMeeting ID: 873 2439 7243\nPasscode: 305275\nFind your local number: https://us02web.zoom.us/u/kdbALZcOSa\n\n\n──────────",
   isAllDay: false,
-  isSomeday: false,
   startDate: "2022-03-01T12:15:00-06:00",
   endDate: "2022-03-01T12:45:00-06:00",
   priority: Priorities.WORK,

@@ -16,7 +16,7 @@ export const CALENDAR_VISIBILITY_FAILURE_MESSAGE =
 /**
  * Optimistic + coalesced calendar visibility toggle (packet 08 step 3).
  * Every call flips the calendars cache immediately, and on hide drops that
- * calendar's events from every cached event query so the grid/someday lists
+ * calendar's events from every cached event query so the grid lists
  * react without waiting on the network. Rapid toggles across calendars
  * accumulate in a ref and flush as a single `setVisibility` call after
  * `coalesceDelayMs` of quiet, so dragging through a calendar list doesn't

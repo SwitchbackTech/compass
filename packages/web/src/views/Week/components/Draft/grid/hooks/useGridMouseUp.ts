@@ -76,11 +76,6 @@ export const useGridMouseUp = () => {
       return;
     }
 
-    if (isDrafting && draftType === Categories_Event.SOMEDAY_WEEK) {
-      discard();
-      return;
-    }
-
     stopMotion();
 
     const { shouldSubmit, shouldOpenForm } = getNextAction(
@@ -111,28 +106,13 @@ export const useGridMouseUp = () => {
       if (!draft || !isDrafting) return;
       if (e.button !== 0) return;
 
-      // Only for SOMEDAY_WEEK in main grid, we need to stop propagation
-      if (
-        isDrafting &&
-        draftType === Categories_Event.SOMEDAY_WEEK &&
-        draft?.values.schedule.kind !== "allDay"
-      ) {
-        e.stopPropagation();
-      }
-
       if (draft?.values.schedule.kind === "allDay") {
         handleAllDayRowMouseUp();
       } else {
         handleMainGridMouseUp();
       }
     },
-    [
-      draft,
-      isDrafting,
-      draftType,
-      handleAllDayRowMouseUp,
-      handleMainGridMouseUp,
-    ],
+    [draft, isDrafting, handleAllDayRowMouseUp, handleMainGridMouseUp],
   );
 
   useEventListener("mouseup", onGridMouseUp, getElemById("root"));

@@ -2,7 +2,6 @@ import { type Event } from "@core/types/event.contracts";
 import {
   type EventPresentation,
   type GridEventPresentation,
-  type SomedayEventPresentation,
 } from "./event-view.types";
 
 const basePresentation = (event: Event) => ({
@@ -18,13 +17,5 @@ export function presentEvent(event: Event): EventPresentation {
 }
 
 export function presentGridEvent(event: Event): GridEventPresentation | null {
-  const presentation = presentEvent(event);
-  return presentation.kind === "someday" ? null : presentation;
-}
-
-export function presentSomedayEvent(
-  event: Event,
-): SomedayEventPresentation | null {
-  const presentation = presentEvent(event);
-  return presentation.kind === "someday" ? presentation : null;
+  return presentEvent(event);
 }

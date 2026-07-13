@@ -1,20 +1,16 @@
 import { z } from "zod/v4";
 import {
   CalendarIdSchema,
-  DateOnlySchema,
   DateTimeSchema,
   EventIdSchema,
   PrioritySchema,
   RRuleSchema,
-  SortOrderSchema,
 } from "@core/types/domain-primitives";
 import {
   BusyPeriodSchema,
   EditableRecurrenceSchema,
   EventScheduleSchema,
   EventSchema,
-  ScheduledScheduleSchema,
-  SomedayScheduleSchema,
 } from "@core/types/event.contracts";
 
 const EditableContentSchema = z.strictObject({
@@ -59,46 +55,12 @@ export const ReplaceEventInputSchema = z.strictObject({
 });
 export type ReplaceEventInput = z.infer<typeof ReplaceEventInputSchema>;
 
-// The only command that changes an event's calendar (A24). "schedule" moves a
-// someday event onto a writable calendar; "unschedule" moves a scheduled event
-// to the Compass-local calendar and deletes any provider copy. Occurrences are
-// rejected; a series transitions whole.
-export const TransitionEventInputSchema = z.discriminatedUnion("kind", [
-  z.strictObject({
-    kind: z.literal("schedule"),
-    targetCalendarId: CalendarIdSchema,
-    schedule: ScheduledScheduleSchema,
-  }),
-  z.strictObject({
-    kind: z.literal("unschedule"),
-    schedule: SomedayScheduleSchema,
-  }),
-]);
-export type TransitionEventInput = z.infer<typeof TransitionEventInputSchema>;
-
 export const DeleteEventInputSchema = z.strictObject({
   scope: RecurrenceScopeSchema,
 });
 export type DeleteEventInput = z.infer<typeof DeleteEventInputSchema>;
 
-const EventOrderSchema = z.strictObject({
-  eventId: EventIdSchema,
-  sortOrder: SortOrderSchema,
-});
-
-export const ReorderEventsInputSchema = z
-  .strictObject({
-    period: z.enum(["week", "month"]),
-    items: z.array(EventOrderSchema).min(1),
-  })
-  .refine(
-    ({ items }) =>
-      new Set(items.map(({ eventId }) => eventId)).size === items.length,
-    { message: "Event ids must be unique", path: ["items"] },
-  );
-export type ReorderEventsInput = z.infer<typeof ReorderEventsInputSchema>;
-
-const RangeEventListQuerySchema = z
+export const EventListQuerySchema = z
   .strictObject({
     kind: z.literal("range"),
     start: DateTimeSchema,
@@ -109,19 +71,6 @@ const RangeEventListQuerySchema = z
     message: "Range end must be after start",
     path: ["end"],
   });
-
-// No cursor or limit: the product caps someday lists at 9 per period (A35),
-// so the whole period is one bounded read.
-const SomedayEventListQuerySchema = z.strictObject({
-  kind: z.literal("someday"),
-  period: z.enum(["week", "month"]),
-  anchorDate: DateOnlySchema,
-});
-
-export const EventListQuerySchema = z.discriminatedUnion("kind", [
-  RangeEventListQuerySchema,
-  SomedayEventListQuerySchema,
-]);
 export type EventListQuery = z.infer<typeof EventListQuerySchema>;
 
 export const EventResponseSchema = z.strictObject({ event: EventSchema });

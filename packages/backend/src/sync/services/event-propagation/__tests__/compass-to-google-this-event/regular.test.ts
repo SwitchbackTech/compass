@@ -179,27 +179,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - standalone event", ()
     expect(deleteSpy).not.toHaveBeenCalled();
   });
 
-  it("does not call Google for a someday event (not writable)", async () => {
-    const { user } = await setupGoogleUser();
-    const calendar = await seedGoogleCalendar(user._id);
-    const createSpy = jest.spyOn(gcalService, "createEvent");
-
-    await eventService.create(user._id.toString(), {
-      calendarId: calendar._id.toHexString() as never,
-      content: { kind: "details", title: "Plan trip", description: "" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
-      recurrence: { kind: "single" },
-      priority: "unassigned",
-    });
-
-    expect(createSpy).not.toHaveBeenCalled();
-  });
-
   it("does not call Google for a busy-content record (not writable)", async () => {
     const { user } = await setupGoogleUser();
     const calendar = await seedGoogleCalendar(user._id);

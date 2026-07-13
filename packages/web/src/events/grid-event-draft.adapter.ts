@@ -233,7 +233,6 @@ export function gridEventDraftToSchemaEvent(
         : dayjs(schedule.end).format(),
     isAllDay: schedule.kind === "allDay",
     isBusy: draft.kind === "edit" && draft.source.content.kind === "busy",
-    isSomeday: false,
     priority: draft.values.priority ?? Priorities.UNASSIGNED,
     recurrence: legacyRecurrenceFromDraft(draft),
     startDate:

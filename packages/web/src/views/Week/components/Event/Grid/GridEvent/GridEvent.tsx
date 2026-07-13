@@ -11,7 +11,6 @@ import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
-import { useSomedayCommitAcknowledgement } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { CalendarTimedEventCard } from "@web/layout/calendar-grid/components/CalendarTimedEventCard";
 import { getCalendarTimedEventPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
 import {
@@ -72,12 +71,6 @@ const GridEventBase = (
   const event = _event;
   const isDeck = Boolean(deckLayout);
   const [isFocused, setIsFocused] = useState(false);
-  const shouldAcknowledgeCommit =
-    useSomedayCommitAcknowledgement(event._id) &&
-    !isDragging &&
-    !isResizing &&
-    !isPlaceholder &&
-    !isDraft;
 
   const visibleDates = (
     component.weekDays?.length
@@ -150,7 +143,6 @@ const GridEventBase = (
       event={event}
       onFocus={isDeck ? () => setIsFocused(true) : undefined}
       interactionAttributes={interactionAttributes}
-      isCommitAcknowledged={shouldAcknowledgeCommit}
       motionMode={motionMode}
       onEventKeyDown={onEventKeyDown}
       onEventMouseDown={handleEventMouseDown}

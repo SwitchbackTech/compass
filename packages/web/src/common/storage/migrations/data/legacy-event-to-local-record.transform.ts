@@ -16,6 +16,9 @@ const LEGACY_DEMO_EVENT_FIELD = "__compassDemoEvent";
 type LegacyLocalEvent = Event_Core & {
   [LEGACY_DEMO_EVENT_FIELD]?: true;
   order?: number;
+  // Historical flag on legacy rows; the "someday" kind has been removed, so
+  // rows still carrying it are dropped during migration.
+  isSomeday?: boolean;
 };
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -23,9 +26,6 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 function toDateOnly(value: string): string {
   return value.slice(0, 10);
 }
-
-const isValidLegacyOrder = (order: unknown): order is number =>
-  typeof order === "number" && Number.isInteger(order) && order >= 0;
 
 function resolveRecurrence(legacy: LegacyLocalEvent): EventRecurrence {
   const rec = legacy.recurrence;
@@ -47,36 +47,15 @@ function resolveRecurrence(legacy: LegacyLocalEvent): EventRecurrence {
 
 type ScheduleCandidate =
   | { kind: "timed"; start: string; end: string; timeZone: string }
-  | { kind: "allDay"; start: string; end: string }
-  | {
-      kind: "someday";
-      period: "week" | "month";
-      anchorDate: string;
-      sortOrder: number;
-    };
+  | { kind: "allDay"; start: string; end: string };
 
 function resolveSchedule(legacy: LegacyLocalEvent): ScheduleCandidate | null {
   const { startDate, endDate } = legacy;
   if (!startDate || !endDate) return null;
 
-  if (legacy.isSomeday) {
-    const startMs = Date.parse(startDate);
-    const endMs = Date.parse(endDate);
-    if (Number.isNaN(startMs) || Number.isNaN(endMs)) return null;
-
-    const diffDays = (endMs - startMs) / DAY_MS;
-    const period: "week" | "month" = diffDays > 7 ? "month" : "week";
-    const anchorDate = toDateOnly(startDate);
-
-    return {
-      kind: "someday",
-      period,
-      anchorDate,
-      // A deterministic append pass fixes up records missing an explicit
-      // legacy order after this first build; see assignMissingSortOrders.
-      sortOrder: isValidLegacyOrder(legacy.order) ? legacy.order : 0,
-    };
-  }
+  // The "someday" schedule kind has been removed; legacy someday rows are
+  // dropped rather than migrated.
+  if (legacy.isSomeday) return null;
 
   if (legacy.isAllDay) {
     let end = toDateOnly(endDate);
@@ -160,67 +139,17 @@ export function transformLegacyEventToLocalRecord(
 }
 
 /**
- * Transforms a batch of legacy rows, then deterministically assigns
- * `sortOrder` to someday events that had no valid legacy `order` — appended
- * after the bucket's max, ordered by legacy startDate then id, bucketed by
- * (period, anchorDate). Mirrors the scripts-side
- * `assignMissingSomedaySortOrders` transform used for the backend migration.
+ * Transforms a batch of legacy rows into `LocalEventRecord`s, dropping any row
+ * that cannot be interpreted (including legacy someday rows, which are no
+ * longer a supported schedule kind).
  */
 export function transformLegacyEvents(
   legacyEvents: LegacyLocalEvent[],
   sentinelCalendarId: CalendarId,
 ): LocalEventRecord[] {
-  const withLegacy = legacyEvents
-    .map((legacy) => ({
-      legacy,
-      record: transformLegacyEventToLocalRecord(legacy, sentinelCalendarId),
-    }))
-    .filter(
-      (item): item is { legacy: LegacyLocalEvent; record: LocalEventRecord } =>
-        item.record !== null,
-    );
-
-  const maxByBucket = new Map<string, number>();
-  const flaggedByBucket = new Map<
-    string,
-    { legacy: LegacyLocalEvent; record: LocalEventRecord }[]
-  >();
-
-  for (const item of withLegacy) {
-    const { schedule } = item.record.event;
-    if (schedule.kind !== "someday") continue;
-
-    const key = `${schedule.period}:${schedule.anchorDate}`;
-
-    if (isValidLegacyOrder(item.legacy.order)) {
-      maxByBucket.set(
-        key,
-        Math.max(maxByBucket.get(key) ?? -1, schedule.sortOrder),
-      );
-    } else {
-      const bucket = flaggedByBucket.get(key) ?? [];
-      bucket.push(item);
-      flaggedByBucket.set(key, bucket);
-    }
-  }
-
-  for (const [key, bucket] of flaggedByBucket) {
-    bucket.sort((a, b) => {
-      const dateCompare = (a.legacy.startDate ?? "").localeCompare(
-        b.legacy.startDate ?? "",
-      );
-      if (dateCompare !== 0) return dateCompare;
-      return a.record.id.localeCompare(b.record.id);
-    });
-
-    let next = (maxByBucket.get(key) ?? -1) + 1;
-    for (const item of bucket) {
-      const { schedule } = item.record.event;
-      if (schedule.kind !== "someday") continue;
-      schedule.sortOrder = next;
-      next += 1;
-    }
-  }
-
-  return withLegacy.map((item) => item.record);
+  return legacyEvents
+    .map((legacy) =>
+      transformLegacyEventToLocalRecord(legacy, sentinelCalendarId),
+    )
+    .filter((record): record is LocalEventRecord => record !== null);
 }

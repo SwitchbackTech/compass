@@ -5,9 +5,7 @@ import {
   type EventListQuery,
   EventListResponseSchema,
   EventResponseSchema,
-  type ReorderEventsInput,
   type ReplaceEventInput,
-  type TransitionEventInput,
 } from "@core/types/event-command.contracts";
 import { BaseApi } from "@web/api/base/base.api";
 
@@ -18,16 +16,10 @@ import { BaseApi } from "@web/api/base/base.api";
 function buildListQueryString(query: EventListQuery): string {
   const params = new URLSearchParams();
   params.set("kind", query.kind);
-
-  if (query.kind === "range") {
-    params.set("start", query.start);
-    params.set("end", query.end);
-    if (query.priorities.length > 0) {
-      params.set("priorities", query.priorities.join(","));
-    }
-  } else {
-    params.set("period", query.period);
-    params.set("anchorDate", query.anchorDate);
+  params.set("start", query.start);
+  params.set("end", query.end);
+  if (query.priorities.length > 0) {
+    params.set("priorities", query.priorities.join(","));
   }
 
   return params.toString();
@@ -58,21 +50,6 @@ const EventApi = {
 
   delete: (id: EventId, scope: "this" | "thisAndFollowing" | "all") => {
     return BaseApi.delete<void>(`/event/${id}?scope=${scope}`);
-  },
-
-  reorder: (input: ReorderEventsInput) => {
-    return BaseApi.put<void>(`/event/reorder`, input);
-  },
-
-  transition: async (
-    id: EventId,
-    input: TransitionEventInput,
-  ): Promise<Event> => {
-    const response = await BaseApi.post<unknown>(
-      `/event/${id}/transition`,
-      input,
-    );
-    return EventResponseSchema.parse(response.data).event;
   },
 };
 

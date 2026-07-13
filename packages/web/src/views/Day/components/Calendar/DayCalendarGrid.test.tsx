@@ -169,7 +169,6 @@ const createTimedEvent = (
 ): Schema_Event =>
   ({
     isAllDay: false,
-    isSomeday: false,
     recurrence: undefined,
     title: overrides._id,
     user: "user",
@@ -186,7 +185,6 @@ const createAllDayEvent = (
 ): Schema_Event =>
   ({
     isAllDay: true,
-    isSomeday: false,
     recurrence: undefined,
     title: overrides._id,
     user: "user",

@@ -6,9 +6,7 @@ import { type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
-  type ReorderEventsInput,
   type ReplaceEventInput,
-  type TransitionEventInput,
 } from "@core/types/event-command.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -27,12 +25,6 @@ const calendarKey = eventQueryKeys.week({
   end: "2026-07-08T00:00:00.000Z",
 });
 
-const somedayKey = eventQueryKeys.someday({
-  source: "local",
-  period: "week",
-  anchorDate: "2026-07-01",
-});
-
 const dayKey = eventQueryKeys.day({
   source: "local",
   start: "2026-07-02T00:00:00.000Z",
@@ -44,13 +36,6 @@ const timedSchedule = (start: string, end: string) => ({
   start: start as never,
   end: end as never,
   timeZone: "UTC" as never,
-});
-
-const somedaySchedule = (sortOrder = 0) => ({
-  kind: "someday" as const,
-  period: "week" as const,
-  anchorDate: "2026-07-01" as never,
-  sortOrder,
 });
 
 const event = (overrides: Partial<Event> = {}): Event =>
@@ -129,15 +114,6 @@ const setup = () => {
     delete: async (id: EventId, scope) => {
       calls.push({ method: "delete", value: { id, scope } });
       await pending.wait();
-    },
-    reorder: async (input: ReorderEventsInput) => {
-      calls.push({ method: "reorder", value: input });
-      await pending.wait();
-    },
-    transition: async (id: EventId, input: TransitionEventInput) => {
-      calls.push({ method: "transition", value: { id, input } });
-      await pending.wait();
-      return event({ id });
     },
   };
   const markedWrites: string[] = [];
@@ -600,22 +576,14 @@ describe("useEventMutations", () => {
     });
   });
 
-  test("removes calendar and Someday events optimistically", async () => {
+  test("removes calendar events optimistically", async () => {
     const context = setup();
     const calendarEvent = event();
     context.queryClient.setQueryData(calendarKey, normalized(calendarEvent));
-    const someday = event({ schedule: somedaySchedule() });
-    context.queryClient.setQueryData(somedayKey, normalized(someday));
 
     act(() =>
       context.hook.result.current.mutations.delete({
         id: calendarEvent.id,
-        scope: "this",
-      }),
-    );
-    act(() =>
-      context.hook.result.current.mutations.delete({
-        id: someday.id,
         scope: "this",
       }),
     );
@@ -625,72 +593,8 @@ describe("useEventMutations", () => {
         context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
           ?.ids,
       ).toEqual([]);
-      expect(
-        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
-          ?.ids,
-      ).toEqual([]);
     });
     context.pending.resolve();
-  });
-
-  test("moves events between calendar and Someday caches via transition", async () => {
-    const toSomeday = setup();
-    const scheduled = event();
-    toSomeday.queryClient.setQueryData(calendarKey, normalized(scheduled));
-    toSomeday.queryClient.setQueryData(somedayKey, normalized());
-
-    act(() =>
-      toSomeday.hook.result.current.mutations.transition({
-        id: scheduled.id,
-        input: { kind: "unschedule", schedule: somedaySchedule() },
-      }),
-    );
-
-    await waitFor(() => {
-      expect(
-        toSomeday.queryClient.getQueryData<NormalizedEventQueryData>(
-          calendarKey,
-        )?.ids,
-      ).toEqual([]);
-      expect(
-        toSomeday.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
-          ?.entities[scheduled.id]?.schedule.kind,
-      ).toBe("someday");
-    });
-    toSomeday.pending.resolve();
-
-    const toCalendar = setup();
-    const someday = event({ schedule: somedaySchedule() });
-    toCalendar.queryClient.setQueryData(calendarKey, normalized());
-    toCalendar.queryClient.setQueryData(somedayKey, normalized(someday));
-
-    act(() =>
-      toCalendar.hook.result.current.mutations.transition({
-        id: someday.id,
-        input: {
-          kind: "schedule",
-          targetCalendarId: someday.calendarId,
-          schedule: timedSchedule(
-            "2026-07-03T16:00:00.000Z",
-            "2026-07-03T17:00:00.000Z",
-          ),
-        },
-      }),
-    );
-
-    await waitFor(() => {
-      expect(
-        toCalendar.queryClient.getQueryData<NormalizedEventQueryData>(
-          somedayKey,
-        )?.ids,
-      ).toEqual([]);
-      expect(
-        toCalendar.queryClient.getQueryData<NormalizedEventQueryData>(
-          calendarKey,
-        )?.entities[someday.id]?.schedule.kind,
-      ).toBe("timed");
-    });
-    toCalendar.pending.resolve();
   });
 
   test("defers deletion until the in-flight create persists, then deletes server-side", async () => {
@@ -834,7 +738,7 @@ describe("useEventMutations", () => {
 
   test("does not persist deletion for an event absent from cache", async () => {
     const context = setup();
-    context.queryClient.setQueryData(somedayKey, normalized());
+    context.queryClient.setQueryData(calendarKey, normalized());
     const ghostId = event().id;
 
     act(() =>
@@ -905,208 +809,6 @@ describe("useEventMutations", () => {
         context.queryClient.getQueryData<NormalizedEventQueryData>(calendarKey)
           ?.ids,
       ).toEqual([]);
-    });
-    context.pending.resolve();
-  });
-
-  test("transition to an off-screen range persists without throwing", async () => {
-    const context = setup();
-    const someday = event({ schedule: somedaySchedule() });
-    context.queryClient.setQueryData(calendarKey, normalized());
-    context.queryClient.setQueryData(somedayKey, normalized(someday));
-
-    act(() =>
-      context.hook.result.current.mutations.transition({
-        id: someday.id,
-        input: {
-          kind: "schedule",
-          targetCalendarId: someday.calendarId,
-          // Target date is outside the cached 2026-07 week range.
-          schedule: timedSchedule(
-            "2026-08-20T16:00:00.000Z",
-            "2026-08-20T17:00:00.000Z",
-          ),
-        },
-      }),
-    );
-
-    await waitFor(() => {
-      expect(
-        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
-          ?.ids,
-      ).toEqual([]);
-    });
-    context.pending.resolve();
-
-    await waitFor(() => {
-      expect(context.calls.some(({ method }) => method === "transition")).toBe(
-        true,
-      );
-      expect(context.errors).toEqual([]);
-    });
-  });
-
-  test("marks the transitioning event pending", async () => {
-    const context = setup();
-    const original = event();
-    context.queryClient.setQueryData(calendarKey, normalized(original));
-    context.queryClient.setQueryData(somedayKey, normalized());
-
-    act(() =>
-      context.hook.result.current.mutations.transition({
-        id: original.id,
-        input: { kind: "unschedule", schedule: somedaySchedule() },
-      }),
-    );
-
-    await waitFor(() => {
-      expect(context.hook.result.current.hasPending).toBe(true);
-    });
-    context.pending.resolve();
-    await waitFor(() => {
-      expect(context.hook.result.current.hasPending).toBe(false);
-    });
-  });
-
-  test("counts an in-flight reorderSomeday toward the pending sync state", async () => {
-    const context = setup();
-    const first = event({ schedule: somedaySchedule(0) });
-    const second = event({ schedule: somedaySchedule(1) });
-    context.queryClient.setQueryData(somedayKey, normalized(first, second));
-
-    act(() =>
-      context.hook.result.current.mutations.reorderSomeday({
-        period: "week",
-        items: [
-          { eventId: first.id, sortOrder: 1 },
-          { eventId: second.id, sortOrder: 0 },
-        ],
-      }),
-    );
-
-    await waitFor(() => {
-      expect(context.calls).toHaveLength(1);
-      expect(context.calls[0]?.method).toBe("reorder");
-    });
-    expect(context.hook.result.current.hasPending).toBe(true);
-    context.pending.resolve();
-    await waitFor(() => {
-      expect(context.hook.result.current.hasPending).toBe(false);
-    });
-  });
-
-  test("transitions the source-scoped event, never a cross-source cache entry", async () => {
-    const context = setup();
-    const remoteCalendarKey = eventQueryKeys.week({
-      source: "remote",
-      start: "2026-07-01T00:00:00.000Z",
-      end: "2026-07-08T00:00:00.000Z",
-    });
-    // Same id in both sources with divergent fields; the active source is local.
-    const localVersion = event({
-      content: { kind: "details", title: "Local", description: "" },
-    });
-    const remoteVersion = event({
-      id: localVersion.id,
-      content: { kind: "details", title: "Remote", description: "" },
-    });
-    context.queryClient.setQueryData(calendarKey, normalized(localVersion));
-    context.queryClient.setQueryData(
-      remoteCalendarKey,
-      normalized(remoteVersion),
-    );
-    context.queryClient.setQueryData(somedayKey, normalized());
-
-    act(() =>
-      context.hook.result.current.mutations.transition({
-        id: localVersion.id,
-        input: { kind: "unschedule", schedule: somedaySchedule() },
-      }),
-    );
-
-    await waitFor(() => {
-      const transitionCall = context.calls.find(
-        ({ method }) => method === "transition",
-      );
-      expect(transitionCall).toBeDefined();
-    });
-    // The cache read for the "after" snapshot came from the local-source
-    // entry, never the remote one.
-    expect(
-      context.queryClient.getQueryData<NormalizedEventQueryData>(
-        remoteCalendarKey,
-      )?.entities[localVersion.id]?.content,
-    ).toMatchObject({ title: "Remote" });
-    context.pending.resolve();
-  });
-
-  test("persists the payload captured at mutate time despite later cache changes", async () => {
-    const context = setup();
-    const someday = event({
-      schedule: somedaySchedule(),
-      content: { kind: "details", title: "Original", description: "" },
-    });
-    context.queryClient.setQueryData(calendarKey, normalized());
-    context.queryClient.setQueryData(somedayKey, normalized(someday));
-
-    act(() =>
-      context.hook.result.current.mutations.transition({
-        id: someday.id,
-        input: {
-          kind: "schedule",
-          targetCalendarId: someday.calendarId,
-          schedule: timedSchedule(
-            "2026-07-03T16:00:00.000Z",
-            "2026-07-03T17:00:00.000Z",
-          ),
-        },
-      }),
-    );
-
-    // Simulate an SSE/refetch landing between mutate and settle.
-    act(() =>
-      context.queryClient.setQueryData(
-        somedayKey,
-        normalized(
-          event({
-            id: someday.id,
-            schedule: somedaySchedule(),
-            content: { kind: "details", title: "Changed", description: "" },
-          }),
-        ),
-      ),
-    );
-
-    await waitFor(() => {
-      const transitionCall = context.calls.find(
-        ({ method }) => method === "transition",
-      );
-      expect(transitionCall).toBeDefined();
-    });
-    context.pending.resolve();
-  });
-
-  test("reorders Someday events optimistically", async () => {
-    const context = setup();
-    const first = event({ schedule: somedaySchedule(0) });
-    const second = event({ schedule: somedaySchedule(1) });
-    context.queryClient.setQueryData(somedayKey, normalized(first, second));
-    const order: ReorderEventsInput = {
-      period: "week",
-      items: [
-        { eventId: first.id, sortOrder: 1 },
-        { eventId: second.id, sortOrder: 0 },
-      ],
-    };
-
-    act(() => context.hook.result.current.mutations.reorderSomeday(order));
-
-    await waitFor(() => {
-      expect(
-        context.queryClient.getQueryData<NormalizedEventQueryData>(somedayKey)
-          ?.ids,
-      ).toEqual([second.id, first.id]);
-      expect(context.calls).toEqual([{ method: "reorder", value: order }]);
     });
     context.pending.resolve();
   });
@@ -1202,59 +904,6 @@ describe("undo history recording", () => {
     expect(useUndoHistoryStore.getState().past).toEqual([
       { kind: "delete", event: standalone },
     ]);
-    context.pending.resolve();
-  });
-
-  test("records someday deletes with the pre-removal snapshot", () => {
-    const context = setup();
-    const someday = event({ schedule: somedaySchedule() });
-    context.queryClient.setQueryData(somedayKey, normalized(someday));
-
-    act(() =>
-      context.hook.result.current.mutations.delete({
-        id: someday.id,
-        scope: "this",
-      }),
-    );
-
-    expect(useUndoHistoryStore.getState().past).toEqual([
-      { kind: "delete", event: someday },
-    ]);
-    context.pending.resolve();
-  });
-
-  test("records transitions with before/after and skips recurring events", () => {
-    const context = setup();
-    const seriesId = event().id;
-    const recurring = occurrence(seriesId);
-    const standalone = event();
-    context.queryClient.setQueryData(
-      calendarKey,
-      normalized(standalone, recurring),
-    );
-    context.queryClient.setQueryData(somedayKey, normalized());
-
-    act(() =>
-      context.hook.result.current.mutations.transition({
-        id: recurring.id,
-        input: { kind: "unschedule", schedule: somedaySchedule() },
-      }),
-    );
-    expect(useUndoHistoryStore.getState().past).toHaveLength(0);
-
-    act(() =>
-      context.hook.result.current.mutations.transition({
-        id: standalone.id,
-        input: { kind: "unschedule", schedule: somedaySchedule() },
-      }),
-    );
-    const { past } = useUndoHistoryStore.getState();
-    expect(past).toHaveLength(1);
-    expect(past[0]).toMatchObject({
-      kind: "transition",
-      id: standalone.id,
-      before: { id: standalone.id },
-    });
     context.pending.resolve();
   });
 

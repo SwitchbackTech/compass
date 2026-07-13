@@ -8,8 +8,7 @@ export const eventQueryKeys = {
    * for a read scope regardless of source/params, e.g. `scope("week")` →
    * `["events", "week"]`.
    */
-  scope: (scope: "day" | "week" | "someday") =>
-    [...eventQueryKeys.all, scope] as const,
+  scope: (scope: "day" | "week") => [...eventQueryKeys.all, scope] as const,
   day: (args: {
     source: EventRepositorySource;
     start: string;
@@ -40,20 +39,6 @@ export const eventQueryKeys = {
         start: args.start,
         end: args.end,
         priorities: args.priorities ?? [],
-      },
-    ] as const,
-  someday: (args: {
-    source: EventRepositorySource;
-    period: "week" | "month";
-    anchorDate: string;
-  }) =>
-    [
-      ...eventQueryKeys.all,
-      "someday",
-      {
-        source: args.source,
-        period: args.period,
-        anchorDate: args.anchorDate,
       },
     ] as const,
 };

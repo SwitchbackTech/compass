@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { type Event } from "@core/types/event.contracts";
 import { CompassCoreEventSchema } from "@core/types/event.types";
 import { IDSchema } from "@core/types/type.utils";
 import { type SelectOption } from "@web/common/types/component.types";
@@ -23,7 +22,7 @@ export const GridEventSchema = WebCoreEventSchema.extend({
   hasFlipped: z.boolean().optional(),
   isOpen: z.boolean().optional(),
   row: z.number().optional(),
-  order: z.number().optional(), // allow carry over from Someday events
+  order: z.number().optional(),
   position: z.object({
     isOverlapping: z.boolean(),
     totalEventsInGroup: z.number().default(1),
@@ -35,14 +34,7 @@ export const GridEventSchema = WebCoreEventSchema.extend({
   }),
 });
 
-export const SomedayEventSchema = WebCoreEventSchema.extend({
-  isSomeday: z.literal(true),
-  order: z.number(),
-});
-
 export type Schema_WebEvent = z.infer<typeof WebCoreEventSchema>;
-
-export type Schema_SomedayEvent = z.infer<typeof SomedayEventSchema>;
 
 // calendarId is a plain type-level addition, not part of GridEventSchema
 // itself: CalendarIdSchema (domain-primitives.ts) is a zod/v4 schema, while
@@ -80,19 +72,6 @@ export interface Schema_SelectedDates {
   endTime: SelectOption<string>;
   isAllDay: boolean;
 }
-export interface Someday_EventsColumn {
-  columns: {
-    [key: string]: {
-      id: string;
-      eventIds: string[];
-    };
-  };
-  columnOrder: string[];
-  events: {
-    [key: string]: Event;
-  };
-}
-
 /**
  * Adds an _id property to an object shape
  * @template TSchema - The base type to add _id to.

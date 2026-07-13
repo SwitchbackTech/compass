@@ -56,7 +56,6 @@ const makeGridEvent = (
     priority: Priorities.WORK,
     origin: Origin.COMPASS,
     isAllDay: false,
-    isSomeday: false,
     user: "user-1",
     ...overrides,
   });

@@ -4,23 +4,15 @@ import { type EventRepositorySource } from "@web/events/repositories/event.repos
 
 export type NormalizedEventQueryData = NormalizedEvents;
 
-export type EventQueryScope = "day" | "week" | "someday";
+export type EventQueryScope = "day" | "week";
 
-// "day"/"week" entries key on an instant range (+ optional priority filter);
-// "someday" entries key on the exact (period, anchorDate) pair the backend
-// partitions on (A35 — no range, each period is one bounded read).
-export type EventQueryKeyMetadata =
-  | {
-      source: EventRepositorySource;
-      start: string;
-      end: string;
-      priorities: Priority[];
-    }
-  | {
-      source: EventRepositorySource;
-      period: "week" | "month";
-      anchorDate: string;
-    };
+// "day"/"week" entries key on an instant range (+ optional priority filter).
+export type EventQueryKeyMetadata = {
+  source: EventRepositorySource;
+  start: string;
+  end: string;
+  priorities: Priority[];
+};
 
 export type EventQueryKey = readonly [
   "events",

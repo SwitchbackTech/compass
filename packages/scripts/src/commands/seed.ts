@@ -62,7 +62,6 @@ async function seedEvents(userInput: string) {
     const eventOverrides = {
       user: userId,
       isAllDay: false,
-      isSomeday: false,
       startDate: dayjs().hour(10).minute(0).second(0).toISOString(),
       endDate: dayjs().hour(11).minute(0).second(0).toISOString(),
     };

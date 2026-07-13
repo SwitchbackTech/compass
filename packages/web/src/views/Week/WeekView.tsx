@@ -4,10 +4,8 @@ import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigati
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
-import { SidebarDraftProvider } from "@web/components/PlannerSidebar/draft/context/SidebarDraftProvider";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
-import { SomedayInteractionCoordinator } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/SomedayInteractionCoordinator";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
@@ -145,75 +143,62 @@ export const WeekView = () => {
       <Dedication />
 
       <DraftProvider dateCalcs={dateCalcs} weekProps={weekProps}>
-        <SidebarDraftProvider
-          onGoToDate={goToDateFromSidebar}
-          viewEnd={weekProps.component.endOfView}
-          viewStart={weekProps.component.startOfView}
-        >
-          <SomedayInteractionCoordinator
-            getLayoutSources={getWeekInteractionLayoutSources}
-            weekProps={weekProps}
+        <Shortcuts shortcutsProps={shortcutProps}>
+          <ContextMenuWrapper id="sidebar-context-menu">
+            <Draft measurements={measurements} weekProps={weekProps} />
+            <ResizableSidebarPanel isOpen={isSidebarOpen}>
+              <PlannerSidebar
+                calendarDate={calendarDate}
+                isShortcutsOpen={isShortcutsOpen}
+                onCloseShortcuts={closeShortcuts}
+                onToggleShortcuts={toggleShortcuts}
+                onSelectDate={goToDateFromSidebar}
+                onToggleSidebar={toggleSidebar}
+                shortcutSections={shortcutSections}
+                shortcutsViewLabel="Week"
+              />
+            </ResizableSidebarPanel>
+          </ContextMenuWrapper>
+          <div
+            id={ID_MAIN}
+            ref={mainRef}
+            className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
           >
-            <Shortcuts shortcutsProps={shortcutProps}>
-              <ContextMenuWrapper id="sidebar-context-menu">
-                <Draft measurements={measurements} weekProps={weekProps} />
-                <ResizableSidebarPanel isOpen={isSidebarOpen}>
-                  <PlannerSidebar
-                    calendarDate={calendarDate}
-                    isShortcutsOpen={isShortcutsOpen}
-                    onCloseShortcuts={closeShortcuts}
-                    onToggleShortcuts={toggleShortcuts}
-                    onSelectDate={goToDateFromSidebar}
-                    onToggleSidebar={toggleSidebar}
-                    shortcutSections={shortcutSections}
-                    shortcutsViewLabel="Week"
-                    viewEnd={weekProps.component.endOfView}
-                    viewStart={weekProps.component.startOfView}
-                  />
-                </ResizableSidebarPanel>
-              </ContextMenuWrapper>
+            <Header scrollUtil={scrollUtil} weekProps={weekProps} />
+
+            <WeekGridScrollArea>
               <div
-                id={ID_MAIN}
-                ref={mainRef}
-                className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pr-0 pb-0 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
+                ref={setTrackRef}
+                className="@container relative flex h-full w-full min-w-47.5 flex-col [container-name:week-grid-track]"
               >
-                <Header scrollUtil={scrollUtil} weekProps={weekProps} />
+                <DayLabels
+                  startOfView={weekProps.component.startOfView}
+                  today={today}
+                  week={weekProps.component.week}
+                  weekDays={weekProps.component.weekDays}
+                />
 
-                <WeekGridScrollArea>
-                  <div
-                    ref={setTrackRef}
-                    className="@container relative flex h-full w-full min-w-47.5 flex-col [container-name:week-grid-track]"
-                  >
-                    <DayLabels
-                      startOfView={weekProps.component.startOfView}
+                <WeekInteractionCoordinator
+                  getLayoutSources={getWeekInteractionLayoutSources}
+                  weekProps={weekProps}
+                >
+                  <ContextMenuWrapper id="grid-context-menu">
+                    <Grid
+                      dateCalcs={dateCalcs}
+                      gridRefs={gridRefs}
+                      measurements={measurements}
                       today={today}
-                      week={weekProps.component.week}
-                      weekDays={weekProps.component.weekDays}
-                    />
-
-                    <WeekInteractionCoordinator
-                      getLayoutSources={getWeekInteractionLayoutSources}
                       weekProps={weekProps}
-                    >
-                      <ContextMenuWrapper id="grid-context-menu">
-                        <Grid
-                          dateCalcs={dateCalcs}
-                          gridRefs={gridRefs}
-                          measurements={measurements}
-                          today={today}
-                          weekProps={weekProps}
-                        />
-                      </ContextMenuWrapper>
-                    </WeekInteractionCoordinator>
-                  </div>
-                </WeekGridScrollArea>
+                    />
+                  </ContextMenuWrapper>
+                </WeekInteractionCoordinator>
               </div>
-            </Shortcuts>
-          </SomedayInteractionCoordinator>
+            </WeekGridScrollArea>
+          </div>
+        </Shortcuts>
 
-          <RecurrenceScopeDialog />
-          <ConvertToStandaloneDialog />
-        </SidebarDraftProvider>
+        <RecurrenceScopeDialog />
+        <ConvertToStandaloneDialog />
       </DraftProvider>
     </div>
   );

@@ -54,20 +54,6 @@ test("builds an edit draft from a persisted scheduled event", () => {
   });
 });
 
-test("does not create a grid draft for someday events", () => {
-  expect(
-    editGridEventDraft({
-      ...timedEvent,
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-11",
-        sortOrder: 0,
-      } as never,
-    }),
-  ).toBeNull();
-});
-
 test("replaces only the draft schedule during a drag or resize", () => {
   const draft = createGridEventDraft({
     kind: "allDay",
@@ -91,7 +77,7 @@ test("keeps the schedule's own UTC offset instead of forcing Z", () => {
   // produces a "Z" (UTC) suffix, which made every grid-created/dragged event
   // display in UTC instead of local time for any non-UTC browser. dayjs's
   // default format() preserves the local offset instead, matching every
-  // other Schema_Event producer (draft.util.ts, someday.draft.util.ts, etc).
+  // other Schema_Event producer (draft.util.ts, etc).
   const draft = editGridEventDraft(timedEvent);
   if (!draft) throw new Error("Expected scheduled event draft");
 

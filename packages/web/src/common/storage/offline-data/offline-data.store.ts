@@ -3,12 +3,6 @@ import { type EventListQuery } from "@core/types/event-command.contracts";
 import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { type Task } from "@web/common/types/task.types";
 
-/** Bulk sortOrder patch item, matching ReorderEventsInput["items"]. */
-export interface LocalEventOrderPatch {
-  eventId: EventId;
-  sortOrder: number;
-}
-
 /**
  * Record of a completed migration.
  */
@@ -92,7 +86,7 @@ export interface OfflineDataStore {
   // ─── Event Operations ──────────────────────────────────────────────────────
 
   /**
-   * Get events matching a range or someday query (B_E).
+   * Get events matching a range query (B_E).
    */
   getEvents(query: EventListQuery): Promise<LocalEventRecord[]>;
 
@@ -115,13 +109,6 @@ export interface OfflineDataStore {
    * Delete an event by ID.
    */
   deleteEvent(eventId: EventId): Promise<void>;
-
-  /**
-   * Patch the `schedule.sortOrder` field on the given someday events,
-   * leaving every other field untouched. Ids not present in storage are
-   * ignored.
-   */
-  updateEventOrders(items: LocalEventOrderPatch[]): Promise<void>;
 
   /**
    * Clear all events from storage.

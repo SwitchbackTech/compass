@@ -1,7 +1,6 @@
 import {
   ID_CONTEXT_MENU_ITEMS,
   ID_EVENT_FORM,
-  ID_SOMEDAY_EVENT_FORM,
 } from "../../constants/web.constants";
 import {
   isComboboxInteraction,
@@ -60,24 +59,6 @@ describe("form.util", () => {
 
       expect(result).toBe(true);
       expect(mockGetElementsByName).toHaveBeenCalledWith(ID_EVENT_FORM);
-      // Note: Due to short-circuit evaluation, ID_SOMEDAY_EVENT_FORM won't be called
-      // when ID_EVENT_FORM returns a truthy result
-    });
-
-    it("should return true when someday event form is open", () => {
-      // Mock getElementsByName to return a single element for ID_SOMEDAY_EVENT_FORM
-      mockGetElementsByName.mockImplementation((name) => {
-        if (name === ID_SOMEDAY_EVENT_FORM) {
-          return [{ name: ID_SOMEDAY_EVENT_FORM }]; // Mock HTMLCollection with one element
-        }
-        return []; // Empty HTMLCollection for other names
-      });
-
-      const result = isEventFormOpen();
-
-      expect(result).toBe(true);
-      expect(mockGetElementsByName).toHaveBeenCalledWith(ID_EVENT_FORM);
-      expect(mockGetElementsByName).toHaveBeenCalledWith(ID_SOMEDAY_EVENT_FORM);
     });
 
     it("should return false when no forms are open", () => {
@@ -88,7 +69,6 @@ describe("form.util", () => {
 
       expect(result).toBe(false);
       expect(mockGetElementsByName).toHaveBeenCalledWith(ID_EVENT_FORM);
-      expect(mockGetElementsByName).toHaveBeenCalledWith(ID_SOMEDAY_EVENT_FORM);
     });
 
     it("should return false when forms exist but length is not 1", () => {
@@ -230,16 +210,6 @@ describe("form.util", () => {
     it("returns true when the target is inside the event form", () => {
       const form = document.createElement("form");
       form.setAttribute("name", ID_EVENT_FORM);
-      const button = document.createElement("button");
-      form.appendChild(button);
-      document.body.appendChild(form);
-
-      expect(isEventFormKeyboardTarget(createEvent(button))).toBe(true);
-    });
-
-    it("returns true when the target is inside the someday event form", () => {
-      const form = document.createElement("form");
-      form.setAttribute("name", ID_SOMEDAY_EVENT_FORM);
       const button = document.createElement("button");
       form.appendChild(button);
       document.body.appendChild(form);

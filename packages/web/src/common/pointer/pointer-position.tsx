@@ -5,8 +5,6 @@ import {
   useCallback,
 } from "react";
 import {
-  COLUMN_MONTH,
-  COLUMN_WEEK,
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
   ID_ROOT,
@@ -26,8 +24,6 @@ export interface PointerState {
   isOverGrid: boolean;
   isOverSidebar: boolean;
   isOverMainGrid: boolean;
-  isOverSomedayWeek: boolean;
-  isOverSomedayMonth: boolean;
   isOverAllDayRow: boolean;
 }
 
@@ -47,8 +43,6 @@ export const pointerStateStore = createExternalStore<PointerState>({
   isOverGrid: false,
   isOverSidebar: false,
   isOverMainGrid: false,
-  isOverSomedayWeek: false,
-  isOverSomedayMonth: false,
   isOverAllDayRow: false,
 });
 
@@ -84,14 +78,6 @@ export function isOverSidebar(element = getElementAtPointer()) {
   return !!element?.closest(`#${ID_SIDEBAR}`);
 }
 
-export function isOverSomedayWeek(element = getElementAtPointer()) {
-  return !!element?.closest(`#${COLUMN_WEEK}`);
-}
-
-export function isOverSomedayMonth(element = getElementAtPointer()) {
-  return !!element?.closest(`#${COLUMN_MONTH}`);
-}
-
 export function isOverAllDayRow(element = getElementAtPointer()) {
   return !!element?.closest(`#${ID_GRID_ALLDAY_ROW}`);
 }
@@ -109,8 +95,6 @@ export function PointerPositionProvider({ children }: PropsWithChildren) {
     ({ x, y, element, pointerdown, selectionStart, event }: DomMovement) => {
       cursorStore.set({ x, y });
       const overSidebar = isOverSidebar(element);
-      const overSomedayWeek = isOverSomedayWeek(element);
-      const overSomedayMonth = isOverSomedayMonth(element);
       const overAllDayRow = isOverAllDayRow(element);
       const overMainGrid = isOverMainGrid(element);
       const overCalendarGrid = isOverCalendarGrid(element);
@@ -120,8 +104,6 @@ export function PointerPositionProvider({ children }: PropsWithChildren) {
         pointerdown,
         selectionStart,
         isOverSidebar: overSidebar,
-        isOverSomedayWeek: overSomedayWeek,
-        isOverSomedayMonth: overSomedayMonth,
         isOverAllDayRow: overAllDayRow,
         isOverMainGrid: overMainGrid,
         isOverGrid: overCalendarGrid,

@@ -20,7 +20,6 @@ const existingDraft: Schema_Event = {
   _id: "existing-draft",
   endDate: "2026-05-21",
   isAllDay: true,
-  isSomeday: false,
   startDate: "2026-05-20",
   title: "Existing draft",
   user: "user",

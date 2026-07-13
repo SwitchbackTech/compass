@@ -5,9 +5,7 @@ import {
   type CreateEventInput,
   type DeleteEventInput,
   type EventListQuery,
-  type ReorderEventsInput,
   type ReplaceEventInput,
-  type TransitionEventInput,
 } from "@core/types/event-command.contracts";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import calendarService from "@backend/calendar/services/calendar.service";
@@ -19,12 +17,10 @@ import {
 import {
   generateDelete,
   generateReplace,
-  generateTransition,
 } from "@backend/event/classes/compass.event.generator";
 import {
   analyzeDelete,
   analyzeReplace,
-  analyzeTransition,
   type SeriesContext,
 } from "@backend/event/classes/compass.event.parser";
 import { eventMutationError } from "@backend/event/event.error";
@@ -90,9 +86,9 @@ class EventService {
    * Narrower than `ownedCalendarIds`: list reads only ever surface events on
    * calendars the user has left visible (packet 08 step 4). Hiding a
    * calendar is presentation-only (A8) -- it must not affect ownership, so
-   * mutation/lookup call sites (requireOwnedEvent, seriesContext, reorder,
-   * etc.) keep using the wider active-only `ownedCalendarIds` and stay able
-   * to edit/delete events on a calendar the user has hidden.
+   * mutation/lookup call sites (requireOwnedEvent, seriesContext, etc.)
+   * keep using the wider active-only `ownedCalendarIds` and stay able to
+   * edit/delete events on a calendar the user has hidden.
    */
   private async visibleCalendarIds(userId: string): Promise<ObjectId[]> {
     const calendars = await calendarService.list(userId);
@@ -256,11 +252,10 @@ class EventService {
     // carries the true original anchor; anything derived from `plan`/
     // `materialized` after this point already reflects the NEW schedule and
     // would search Google's events.instances at the wrong position (packet
-    // 05 step 4). Only occurrences need this -- a base/single/someday event
-    // resolves by its own externalReference, no instances lookup involved.
+    // 05 step 4). Only occurrences need this -- a base/single event resolves
+    // by its own externalReference, no instances lookup involved.
     const originalStartByEventId =
-      target.recurrence.kind === "occurrence" &&
-      target.schedule.kind !== "someday"
+      target.recurrence.kind === "occurrence"
         ? new Map([[target._id.toHexString(), getAnchorDate(target.schedule)]])
         : undefined;
 
@@ -310,80 +305,6 @@ class EventService {
     await notify(userId, deletedBefore, "deleted");
   };
 
-  transition = async (
-    userId: string,
-    eventId: string,
-    input: TransitionEventInput,
-  ): Promise<EventRecord> => {
-    const target = await this.requireOwnedEvent(userId, eventId);
-
-    let targetCalendarId: ObjectId | null = null;
-    if (input.kind === "schedule") {
-      const calendar = await this.requireWritableCalendar(
-        userId,
-        input.targetCalendarId,
-      );
-      targetCalendarId = calendar._id;
-    } else {
-      const local = await calendarService.getLocalCalendar(userId);
-      if (!local) {
-        throw eventMutationError(
-          "CALENDAR_NOT_FOUND",
-          "Local calendar not found",
-        );
-      }
-      targetCalendarId = local._id;
-    }
-
-    const plan = analyzeTransition(target, input, targetCalendarId, new Date());
-    const materialized = generateTransition(plan);
-
-    await this.withEventTransaction((session) =>
-      executeMutation(materialized, session),
-    );
-
-    // "schedule" needs a provider copy created on the target calendar;
-    // "unschedule" needs the old provider copy deleted (B7/B16). The old
-    // externalReference already lived on `target`, so the pre-transition
-    // record — not the moved one — is what carries the id to delete.
-    await CompassToGoogleEventPropagation.propagate(userId, {
-      upserted: plan.kind === "schedule" ? [materialized.primary] : [],
-      deletedBefore: plan.kind === "unschedule" ? [target] : [],
-    });
-    await notify(userId, [target, materialized.primary], "updated");
-
-    return materialized.primary;
-  };
-
-  reorder = async (
-    userId: string,
-    input: ReorderEventsInput,
-  ): Promise<void> => {
-    const ownedCalendarIds = await this.ownedCalendarIds(userId);
-    const ownedEvents = await eventRepository.findByIds(
-      input.items.map((i) => i.eventId),
-      ownedCalendarIds,
-    );
-    const ownedIds = new Set(ownedEvents.map((e) => e._id.toHexString()));
-    const allOwnedSomeday = input.items.every(({ eventId }) => {
-      if (!ownedIds.has(eventId)) return false;
-      const event = ownedEvents.find((e) => e._id.toHexString() === eventId);
-      return (
-        event?.schedule.kind === "someday" &&
-        event.schedule.period === input.period
-      );
-    });
-
-    if (!allOwnedSomeday) {
-      throw eventMutationError(
-        "EVENT_NOT_FOUND",
-        "Every reordered event must be a someday event owned by the user in the given period",
-      );
-    }
-
-    await eventRepository.reorder(input.items, ownedCalendarIds);
-  };
-
   deleteAllByUser = async (userId: string, session?: ClientSession) => {
     const ownedCalendarIds = await this.ownedCalendarIds(userId);
     return eventRepository.deleteByCalendarIds(ownedCalendarIds, session);
@@ -392,7 +313,7 @@ class EventService {
   /**
    * Deletes a user's events sourced from a provider's calendars (B9: Google
    * revoke prunes events whose owning calendar has source.provider ===
-   * "google"; local/someday events are untouched). The rest of the revoke
+   * "google"; local events are untouched). The rest of the revoke
    * flow (archiving the calendars with isActive: false, dropping watches,
    * clearing tokens) lives in userService.pruneGoogleData; this method only
    * covers the event rows.

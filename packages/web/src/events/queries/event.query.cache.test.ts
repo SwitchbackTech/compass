@@ -1,6 +1,5 @@
 import { QueryClient } from "@tanstack/react-query";
 import { CalendarIdSchema } from "@core/types/domain-primitives";
-import { SomedayScheduleSchema } from "@core/types/event.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
@@ -10,7 +9,6 @@ import {
   patchEventInQueries,
   removeEventFromQueries,
   removeEventsByCalendarFromQueries,
-  reorderSomedayEventsInQueries,
 } from "./event.query.cache";
 import { eventQueryKeys } from "./event.query.keys";
 import { type NormalizedEventQueryData } from "./event.query.types";
@@ -32,11 +30,6 @@ const keys = {
     source: "remote",
     start: "2026-07-01T00:00:00.000Z",
     end: "2026-07-08T00:00:00.000Z",
-  }),
-  someday: eventQueryKeys.someday({
-    source: "local",
-    period: "week",
-    anchorDate: "2026-07-01",
   }),
 };
 
@@ -117,38 +110,5 @@ describe("event query cache", () => {
     expect(
       client.getQueryData<NormalizedEventQueryData>(keys.localWeek),
     ).toEqual(normalized(kept));
-  });
-
-  test("reorders each Someday entry by schedule.sortOrder", () => {
-    const client = new QueryClient();
-    const first = createMockEvent({
-      schedule: SomedayScheduleSchema.parse({
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-01",
-        sortOrder: 0,
-      }),
-    });
-    const second = createMockEvent({
-      schedule: SomedayScheduleSchema.parse({
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-01",
-        sortOrder: 1,
-      }),
-    });
-    client.setQueryData(keys.someday, normalized(first, second));
-
-    reorderSomedayEventsInQueries(client, [
-      { eventId: first.id, sortOrder: 1 },
-      { eventId: second.id, sortOrder: 0 },
-    ]);
-
-    const result = client.getQueryData<NormalizedEventQueryData>(keys.someday);
-    expect(result?.ids).toEqual([second.id, first.id]);
-    const firstSchedule = result?.entities[first.id].schedule;
-    expect(firstSchedule?.kind === "someday" && firstSchedule.sortOrder).toBe(
-      1,
-    );
   });
 });

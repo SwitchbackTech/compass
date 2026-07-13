@@ -26,13 +26,7 @@ function createEventRecord(overrides: {
   priority?: Event["priority"];
   schedule:
     | { kind: "timed"; start: string; end: string; timeZone: string }
-    | { kind: "allDay"; start: string; end: string }
-    | {
-        kind: "someday";
-        period: "week" | "month";
-        anchorDate: string;
-        sortOrder: number;
-      };
+    | { kind: "allDay"; start: string; end: string };
 }): LocalEventRecord {
   const id = EventIdSchema.parse(createObjectIdString());
   const content: EventContent = {
@@ -78,7 +72,6 @@ function generateDemoData() {
   const today = now.toYearMonthDayString();
   const yesterday = now.subtract(1, "day").toYearMonthDayString();
   const tomorrow = now.add(1, "day").toYearMonthDayString();
-  const { week, month } = now.weekMonthRange();
   const modKey = getModifierKeyLabel();
   const timeZone = getBrowserTimeZone();
 
@@ -86,30 +79,6 @@ function generateDemoData() {
   // 15-minute-aligned, consistent with event creation in the app.
   const todayAt = (h: number, m = 0) =>
     now.clone().hour(h).minute(m).second(0).millisecond(0).format();
-
-  // ─── Someday Events ─────────────────────────────────────────────────────────
-  const somedayEvents: LocalEventRecord[] = [
-    createEventRecord({
-      title: "Learn a new shortcut",
-      description: "Click the keyboard icon in the bottom-left of this sidebar",
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: week.startDate,
-        sortOrder: 0,
-      },
-    }),
-    createEventRecord({
-      title: "Review quarterly goals",
-      description: "Or just go with the flow, goals are overrated.",
-      schedule: {
-        kind: "someday",
-        period: "month",
-        anchorDate: month.startDate,
-        sortOrder: 0,
-      },
-    }),
-  ];
 
   // ─── Regular Events (Today) ─────────────────────────────────────────────────
   const todayEvents: LocalEventRecord[] = [
@@ -223,7 +192,7 @@ function generateDemoData() {
   ];
 
   return {
-    events: [...somedayEvents, ...todayEvents],
+    events: [...todayEvents],
     tasks: {
       [today]: todayTasks,
       [yesterday]: yesterdayTasks,

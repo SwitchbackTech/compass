@@ -66,7 +66,6 @@ Wire format uses the `event:` field (uppercase identifiers). Backend and web bot
 | Constant                | Role                                              |
 | ----------------------- | ------------------------------------------------- |
 | `EVENT_CHANGED`         | Calendar grid data should be refetched            |
-| `SOMEDAY_EVENT_CHANGED` | Someday sidebar data should be refetched          |
 | `USER_METADATA`         | Replay / push SuperTokens + sync metadata         |
 | `IMPORT_GCAL_START`     | Full or repair import started                     |
 | `IMPORT_GCAL_END`       | Import finished (see payload contract below)      |
@@ -115,7 +114,7 @@ High-level path:
 4. Remote event writes hit backend event routes.
 5. `EventController` packages the change as a `CompassEvent`.
 6. `CompassToGoogleEventPropagation.processEvents()` loads the DB event, plans work, and applies persistence inside a retrying Mongo transaction, then runs Google side effects after commit (see [Event Propagation Transactions](../backend/event-propagation-transactions.md)).
-7. After the Google effects, the backend calls `sseServer` to publish notifications based on whether the change affected normal or someday events (`EVENT_CHANGED` vs `SOMEDAY_EVENT_CHANGED`).
+7. After the Google effects, the backend calls `sseServer` to publish an `EVENT_CHANGED` notification.
 
 Primary files:
 
@@ -134,7 +133,7 @@ High-level path:
 4. The service builds a Google Calendar client for the user.
 5. `GCalNotificationHandler` fetches incremental changes using the stored sync token.
 6. `GoogleToCompassEventPropagation` applies those changes to Compass data.
-7. The backend publishes `EVENT_CHANGED` (or someday equivalent) so clients refetch.
+7. The backend publishes `EVENT_CHANGED` so clients refetch.
 
 Primary files:
 
@@ -184,11 +183,11 @@ Files:
 The client:
 
 - opens `EventSource` when a session exists (`SessionProvider` + `SSEProvider`)
-- refetches events when `EVENT_CHANGED` / `SOMEDAY_EVENT_CHANGED` arrive (by invalidating the matching event query scopes)
+- refetches events when `EVENT_CHANGED` arrives (by invalidating the matching event query scopes)
 - tracks Google import status from `IMPORT_GCAL_*` and `USER_METADATA`
 - handles `GOOGLE_REVOKED` consistently with REST error payloads
 
-Refetches are driven by TanStack Query invalidation keyed to the SSE event names (`EVENT_CHANGED`, `SOMEDAY_EVENT_CHANGED`, `GOOGLE_REVOKED`); `USER_METADATA` payloads land in the userMetadata Zustand store.
+Refetches are driven by TanStack Query invalidation keyed to the SSE event names (`EVENT_CHANGED`, `GOOGLE_REVOKED`); `USER_METADATA` payloads land in the userMetadata Zustand store.
 
 ## Revoked Token And Reconnect Lifecycle
 

@@ -11,16 +11,11 @@ export const ID_GRID_EVENTS_ALLDAY = "allDayEvents";
 export const ID_GRID_EVENTS_TIMED = "timedEvents";
 export const ID_GRID_COLUMNS_TIMED = "timedColumns";
 export const ID_WEEK_GRID_SCROLLER = "weekGridScroller";
-export const ID_SOMEDAY_WEEK_COLUMN = "somedayWeekColumn";
 export const ID_GRID_MAIN = "mainGrid";
 export const ID_MAIN = "mainSection";
 export const ID_DATEPICKER_SIDEBAR = "sidebarDatePicker";
 export const ID_SIDEBAR = "sidebar";
-export const ID_SOMEDAY_DRAFT = "somedayDraft";
-export const ID_SOMEDAY_EVENTS = "ID_SOMEDAY_EVENTS";
-export const ID_SOMEDAY_EVENT_FORM = "Someday Event Form";
 export const ID_EVENT_FORM_ACTION_MENU = "event-action-menu";
-export const ID_SOMEDAY_EVENT_ACTION_MENU = "someday-event-action-menu";
 export const DATA_EVENT_ELEMENT_ID = "data-event-id";
 export const DATA_DRAFT_EVENT = "data-draft-event";
 export const DATA_NEW_DRAFT_EVENT = "data-new-draft-event";
@@ -30,9 +25,6 @@ export const DATA_CALENDAR_TIMED_GRID_ROW = "data-calendar-timed-grid-row";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
 export const CLASS_ALL_DAY_CALENDAR_EVENT = "all-day-calendar-event";
 export const CLASS_TIMED_CALENDAR_EVENT = "timed-calendar-event";
-export const CLASS_WEEK_SOMEDAY_EVENT = "week-someday-event";
-export const CLASS_MONTH_SOMEDAY_EVENT = "month-someday-event";
-export const SOMEDAY_EVENT_HEIGHT = 28;
 
 export enum ZIndex {
   // Below LAYER_1 (the default saved-event-card z-index) so a freeBusy

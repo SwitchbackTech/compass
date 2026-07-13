@@ -23,7 +23,7 @@ export function buildCalendarLookup(
  * Memoized id -> Calendar lookup, built once per calendars-query data
  * reference rather than rescanned per event/card render (packet 08 step 5).
  * Call this once in a list-rendering parent (e.g. MainGridEvents,
- * AllDayEvents, SomedayEventsContainer) and resolve/pass down per-card via
+ * AllDayEvents) and resolve/pass down per-card via
  * {@link resolveCalendarCardIdentity} - not from inside every card.
  */
 export function useCalendarLookup(): ReadonlyMap<CalendarId, Calendar> {

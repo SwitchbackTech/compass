@@ -271,8 +271,8 @@ class CalendarService {
   };
 
   /**
-   * The user's single Compass-local calendar (someday events + unscheduled
-   * conversions land here).
+   * The user's single Compass-local calendar: where password-only /
+   * locally-owned scheduled events (never backed by Google) live.
    */
   getLocalCalendar = async (userId: ObjectId | string) => {
     return mongoService.calendar.findOne({

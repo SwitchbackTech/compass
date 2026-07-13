@@ -34,9 +34,6 @@ export type TimeZone = z.infer<typeof TimeZoneSchema>;
 export const HexColorSchema = RGBHexSchema;
 export type HexColor = z.infer<typeof HexColorSchema>;
 
-export const SortOrderSchema = z.number().int().nonnegative().finite();
-export type SortOrder = z.infer<typeof SortOrderSchema>;
-
 export const PrioritySchema = z.enum(Priorities);
 export type Priority = z.infer<typeof PrioritySchema>;
 

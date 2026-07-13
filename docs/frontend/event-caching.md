@@ -17,17 +17,16 @@ The Zustand stores do **not** hold persisted events (only transient drafts/inter
 Every event cache entry is keyed by three parts (`event.query.keys.ts`):
 
 ```
-["events", scope, { source, startDate, endDate, someday }]
+["events", scope, { source, startDate, endDate }]
              │              │
              │              └─ "local" (IndexedDB) or "remote" (API)
-             └─ "day" | "week" | "someday"
+             └─ "day" | "week"
 ```
 
 ```
 QueryClient cache
 ├─ ["events","week",   {source:"local",  2026-07-01 … 07-08}] → { ids:[…], entities:{…} }
 ├─ ["events","day",    {source:"local",  2026-07-03 … 07-04}] → { ids:[…], entities:{…} }
-└─ ["events","someday",{source:"local",  2026-07-01 … 08-01}] → { ids, entities, pagination }
 ```
 
 Two consequences fall straight out of the key:
@@ -112,22 +111,15 @@ sides call the **same** predicate:
 ## What refreshes the cache
 
 - **Mutations** — invalidate `["events"]` on settle (see above).
-- **SSE** — background `EVENT_CHANGED` / `SOMEDAY_EVENT_CHANGED` invalidate the
+- **SSE** — background `EVENT_CHANGED` invalidates the
   relevant scope so it refetches. See [SSE Runtime](./frontend-runtime-flow.md#sse-runtime).
 - **Auth / source transitions** — refresh the repository source store and drop
   stale entries (e.g. Google revoked → fall back to `local`).
 
 ## Navigation: placeholder data + prefetch
 
-Two small TanStack features make prev/next navigation feel instant:
+A small TanStack feature makes prev/next navigation feel instant:
 
-- **Someday keeps the previous month's list visible** while a new month
-  fetches (`placeholderData: keepPreviousData` on `somedayEventsQueryOptions`).
-  Deliberately *not* applied to day/week: the calendar grid gates its entire
-  render on `query.isPending` and positions events by absolute date, so
-  keeping stale data visible there would transiently render the previous
-  range's events in the new range's grid columns. Extending this to the grid
-  needs those consumers rewired to treat `isPlaceholderData` as still-loading.
 - **The adjacent day/week is prefetched** as soon as the current one renders
   (`usePrefetchAdjacentEvents`, wired into `useWeek`/`useDayEvents`). It calls
   `queryClient.prefetchQuery` with the *same* options builder and date

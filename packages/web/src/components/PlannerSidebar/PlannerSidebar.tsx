@@ -7,7 +7,6 @@ import { PlannerCalendarList } from "./PlannerCalendarList/PlannerCalendarList";
 import { PlannerMonthPicker } from "./PlannerMonthPicker/PlannerMonthPicker";
 import { PlannerSidebarActions } from "./PlannerSidebarActions/PlannerSidebarActions";
 import { ShortcutsOverlay } from "./ShortcutsOverlay/ShortcutsOverlay";
-import { SomedayEventSections } from "./SomedayEventSections/SomedayEventSections";
 
 export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
   calendarDate: Dayjs;
@@ -19,9 +18,6 @@ export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
   onToggleSidebar?: () => void;
   shortcutSections: ShortcutOverlaySection[];
   shortcutsViewLabel?: string;
-  showSomedayEventSections?: boolean;
-  viewEnd: Dayjs;
-  viewStart: Dayjs;
 }
 
 type PlannerSidebarDependencies = {
@@ -30,7 +26,6 @@ type PlannerSidebarDependencies = {
   PlannerMonthPicker: typeof PlannerMonthPicker;
   PlannerSidebarActions: typeof PlannerSidebarActions;
   ShortcutsOverlay: typeof ShortcutsOverlay;
-  SomedayEventSections: typeof SomedayEventSections;
 };
 
 export function createPlannerSidebar({
@@ -39,7 +34,6 @@ export function createPlannerSidebar({
   PlannerMonthPicker: PlannerMonthPickerComponent,
   PlannerSidebarActions: PlannerSidebarActionsComponent,
   ShortcutsOverlay: ShortcutsOverlayComponent,
-  SomedayEventSections: SomedayEventSectionsComponent,
 }: PlannerSidebarDependencies) {
   return function PlannerSidebar({
     calendarDate,
@@ -51,9 +45,6 @@ export function createPlannerSidebar({
     onToggleSidebar,
     shortcutSections,
     shortcutsViewLabel,
-    showSomedayEventSections = true,
-    viewEnd,
-    viewStart,
     ...props
   }: PlannerSidebarProps) {
     return (
@@ -72,16 +63,6 @@ export function createPlannerSidebar({
           />
 
           <PlannerCalendarListComponent />
-
-          {showSomedayEventSections ? (
-            <section aria-label="Someday events">
-              <SomedayEventSectionsComponent
-                calendarDate={calendarDate}
-                viewEnd={viewEnd}
-                viewStart={viewStart}
-              />
-            </section>
-          ) : null}
         </div>
 
         <PlannerAccountSummaryComponent />
@@ -108,5 +89,4 @@ export const PlannerSidebar = createPlannerSidebar({
   PlannerMonthPicker,
   PlannerSidebarActions,
   ShortcutsOverlay,
-  SomedayEventSections,
 });

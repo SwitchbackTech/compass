@@ -40,9 +40,9 @@ Files:
   `buildCalendarDayColumns` stamps each column with its date.
 - `packages/web/src/views/Week/interaction/adapter/geometry/weekLayoutCache.ts` —
   builds the week's timed/all-day caches from `visibleDays: string[]`.
-- `packages/web/src/views/Week/interaction/WeekInteractionCoordinator.tsx` /
-  `SomedayInteractionCoordinator.tsx` — supply `getVisibleDays()` on the
-  runtime from `weekProps.component.weekDays`.
+- `packages/web/src/views/Week/interaction/WeekInteractionCoordinator.tsx` —
+  supplies `getVisibleDays()` on the runtime from
+  `weekProps.component.weekDays`.
 - `packages/web/src/layout/calendar-grid/interaction/model/TimedDragVisual.ts`,
   `AllDayDragVisual.ts` — visuals track `dayDate` / `initialDayDate` instead of
   a day-index-plus-offset pair.

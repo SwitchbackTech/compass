@@ -1,11 +1,8 @@
 import { ObjectId } from "bson";
 import { useCallback } from "react";
-import {
-  Priorities,
-  SOMEDAY_WEEK_LIMIT_MSG,
-} from "@core/constants/core.constants";
+import { Priorities } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { DateOnlySchema, EventIdSchema } from "@core/types/domain-primitives";
+import { EventIdSchema } from "@core/types/domain-primitives";
 import {
   Categories_Event,
   RecurringEventUpdateScope,
@@ -16,17 +13,11 @@ import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import { assembleWebEvent } from "@web/common/utils/event/event.util";
 import {
   getArrowKeyMovement,
   isTimedEventInsideOneDay,
 } from "@web/common/utils/event/event-nudge.util";
-import {
-  buildConvertToSomedayEvent,
-  getSomedayEventCategory,
-} from "@web/common/utils/event/someday.event.util";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import {
   type GridEventDraft,
   type GridScheduleDraft,
@@ -34,13 +25,11 @@ import {
 import {
   createGridEventDraft,
   duplicateGridEventDraft,
-  gridEventDraftToSchemaEvent,
   parseGridEventDraft,
   replaceGridDraftSchedule,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import {
   draftActions,
   selectDraft,
@@ -81,11 +70,6 @@ export const useDraftActions = (
 ) => {
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
-  const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
-    useSomedayEventViewModel(
-      weekProps.component.startOfView,
-      weekProps.component.endOfView,
-    );
   const draftFromStore = useDraftStore(selectDraft);
   const gridDraftFromStore = useDraftStore(selectGridDraft);
 
@@ -136,10 +120,6 @@ export const useDraftActions = (
     setResizeStatus(null);
     setDateBeingChanged("endDate");
   }, [setIsResizing, setResizeStatus, setDateBeingChanged]);
-
-  const isSomeday = useCallback((): boolean => {
-    return draftFromStore?.isSomeday ?? false;
-  }, [draftFromStore?.isSomeday]);
 
   const isInstance = useCallback((): boolean => {
     return ObjectId.isValid(draftFromStore?.recurrence?.eventId ?? "");
@@ -198,54 +178,6 @@ export const useDraftActions = (
       discard();
     },
     [draft, draftFromStore, discard, mutations],
-  );
-
-  const convert = useCallback(
-    (start: string, end: string) => {
-      if (isAtWeeklyLimit) {
-        showErrorToast(SOMEDAY_WEEK_LIMIT_MSG);
-        return;
-      }
-
-      if (draft) {
-        const schemaEvent = assembleWebEvent({
-          ...gridEventDraftToSchemaEvent(draft),
-          startDate: dayjs(draft.values.schedule.start).format(),
-          endDate: dayjs(draft.values.schedule.end).format(),
-        });
-        const somedayEvent = buildConvertToSomedayEvent(
-          schemaEvent,
-          { startDate: start, endDate: end },
-          somedayWeekCount,
-        );
-        const id = EventIdSchema.safeParse(somedayEvent._id);
-
-        if (id.success) {
-          const category = getSomedayEventCategory(somedayEvent);
-
-          mutations.transition({
-            id: id.data,
-            input: {
-              kind: "unschedule",
-              schedule: {
-                kind: "someday",
-                period:
-                  category === Categories_Event.SOMEDAY_MONTH
-                    ? "month"
-                    : "week",
-                anchorDate: DateOnlySchema.parse(
-                  somedayEvent.startDate!.slice(0, 10),
-                ),
-                sortOrder: somedayEvent.order ?? 0,
-              },
-            },
-          });
-        }
-      }
-
-      discard();
-    },
-    [discard, draft, isAtWeeklyLimit, mutations, somedayWeekCount],
   );
 
   const openForm = useCallback(() => {
@@ -780,23 +712,17 @@ export const useDraftActions = (
   ]);
 
   const handleChange = useCallback(async () => {
-    const isSomeday =
-      eventType === Categories_Event.SOMEDAY_WEEK ||
-      eventType === Categories_Event.SOMEDAY_MONTH;
     if (!isDrafting) return;
     if (activity === "eventRightClick") {
       return; // Prevents form and context menu from opening at same time
     }
-    if (!isSomeday && activity === "keyboardEdit") {
+    if (activity === "keyboardEdit") {
       setDraftSessionKey((key) => key + 1);
       if (gridDraftFromStore) setDraft(gridDraftFromStore);
       openForm();
       return;
     }
-    if (
-      !isSomeday &&
-      (activity === "createShortcut" || activity === "gridClick")
-    ) {
+    if (activity === "createShortcut" || activity === "gridClick") {
       await create();
       return;
     }
@@ -806,7 +732,6 @@ export const useDraftActions = (
       startResizing();
     }
   }, [
-    eventType,
     isDrafting,
     activity,
     create,
@@ -820,7 +745,6 @@ export const useDraftActions = (
   const actions = {
     closeForm,
     submit,
-    convert,
     deleteEvent,
     duplicateEvent,
     discard,
@@ -829,7 +753,6 @@ export const useDraftActions = (
     repositionDraftByKeyboard,
     reset,
     resize,
-    isSomeday,
     isInstance,
     isRecurrence,
     startDragging: () => {

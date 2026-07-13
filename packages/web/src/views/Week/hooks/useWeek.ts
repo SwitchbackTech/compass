@@ -5,7 +5,6 @@ import { ROOT_ROUTES, ROUTE_IDS } from "@web/common/constants/routes";
 import { toUTCOffset } from "@web/common/utils/datetime/web.date.util";
 import { weekEventsQueryOptions } from "@web/events/queries/event.query.options";
 import { usePrefetchAdjacentEvents } from "@web/events/queries/usePrefetchAdjacentEvents";
-import { useSomedayEventsQuery } from "@web/events/queries/useSomedayEventsQuery";
 import { useWeekEventsQuery } from "@web/events/queries/useWeekEventsQuery";
 import { viewActions } from "@web/events/stores/view.store";
 import { WEEK_DAY_COUNT } from "@web/views/Week/util/week-window.util";
@@ -28,10 +27,8 @@ export const useWeek = (
     shouldThrow: false,
   });
   // Bare /week has no dateString. Default to today when only one day is
-  // visible (phone width, where there is no someday sidebar), otherwise the
-  // week-aligned start so the desktop someday sidebar's week bucket stays
-  // aligned. Once navigation writes a dateString, that drives the anchor at
-  // every width.
+  // visible, otherwise the week-aligned start. Once navigation writes a
+  // dateString, that drives the anchor at every width.
   const defaultAnchorDate =
     visibleDayCount === 1 ? today : today.startOf("week");
   const anchorDateString =
@@ -67,7 +64,6 @@ export const useWeek = (
 
   // Changing the visible range re-keys the query; revisits use cached data.
   useWeekEventsQuery({ startOfView: start, endOfView: end });
-  useSomedayEventsQuery(start);
 
   // Warm the previous and next visible pages using the exact read-key format.
   const previousStart = useMemo(

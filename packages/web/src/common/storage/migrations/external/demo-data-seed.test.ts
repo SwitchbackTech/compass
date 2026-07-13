@@ -36,7 +36,7 @@ describe("demoDataSeedMigration", () => {
     expect(store.putTasks).toHaveBeenCalled();
 
     const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
-    expect(eventsCall).toHaveLength(7);
+    expect(eventsCall).toHaveLength(5);
     expect(eventsCall.every((record) => record.isDemo)).toBe(true);
 
     expect(store.putTasks).toHaveBeenCalledTimes(3);
@@ -129,19 +129,6 @@ describe("demoDataSeedMigration", () => {
     expect(priorities.has(Priorities.SELF)).toBe(true);
     expect(priorities.has(Priorities.RELATIONS)).toBe(true);
     expect(priorities.has(Priorities.UNASSIGNED)).toBe(true);
-  });
-
-  it("creates someday events for week and month", async () => {
-    const store = createMockOfflineDataStore();
-
-    await demoDataSeedMigration.migrate(store);
-
-    const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
-    const somedayEvents = eventsCall.filter(
-      ({ event }) => event.schedule.kind === "someday",
-    );
-
-    expect(somedayEvents).toHaveLength(2);
   });
 
   it("creates an all-day event for today", async () => {

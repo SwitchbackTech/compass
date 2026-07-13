@@ -52,12 +52,6 @@ export type SelectedDateRange = {
   kind: "timed" | "allDay";
 };
 
-export type SomedayColumnView = {
-  period: "week" | "month";
-  anchorDate: string;
-  eventIds: EventId[];
-};
-
 export type CalendarEventIndex = Record<CalendarId, EventId[]>;
 
 type EventPresentationBase = {
@@ -70,7 +64,6 @@ type EventPresentationBase = {
 
 type TimedSchedule = Extract<Event["schedule"], { kind: "timed" }>;
 type AllDaySchedule = Extract<Event["schedule"], { kind: "allDay" }>;
-type SomedaySchedule = Extract<Event["schedule"], { kind: "someday" }>;
 
 export type TimedGridEventPresentation = EventPresentationBase & {
   kind: "timed";
@@ -90,13 +83,4 @@ export type GridEventPresentation =
   | TimedGridEventPresentation
   | AllDayGridEventPresentation;
 
-export type SomedayEventPresentation = EventPresentationBase & {
-  kind: "someday";
-  period: SomedaySchedule["period"];
-  anchorDate: SomedaySchedule["anchorDate"];
-  sortOrder: SomedaySchedule["sortOrder"];
-};
-
-export type EventPresentation =
-  | GridEventPresentation
-  | SomedayEventPresentation;
+export type EventPresentation = GridEventPresentation;

@@ -31,9 +31,7 @@ export const precedingDeleteOk = (preceding: PrecedingEventWrites) =>
 
 // Every serialized mutation's variables carry an explicit `writeKey` — the id
 // (event id, or series id for an "all"/"thisAndFollowing"-scope replace) that
-// identifies which document this write serializes against. Reorder-someday
-// variables carry no `writeKey` (an array, batch-writing order fields, not
-// one event document), which keeps them out of per-event serialization.
+// identifies which document this write serializes against.
 type WriteKeyed = { writeKey?: string };
 
 const variablesEventId = (mutation: AnyMutation): string | undefined =>

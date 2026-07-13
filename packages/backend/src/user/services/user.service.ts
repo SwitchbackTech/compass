@@ -343,7 +343,7 @@ class UserService {
    * calendars (`isActive: false`, never deletes the rows so reactivation
    * reuses the same Compass id and visibility preference), drops watches
    * and Google sync records, and clears the stored refresh token.
-   * Local-calendar events (including all someday events) are untouched.
+   * Local-calendar events are untouched.
    */
   pruneGoogleData = async (userId: string): Promise<void> => {
     const _id = zObjectId.parse(userId);

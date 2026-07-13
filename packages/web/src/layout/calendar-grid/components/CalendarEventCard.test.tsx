@@ -39,19 +39,21 @@ const position = {
 };
 
 describe("CalendarEventCard", () => {
-  it("renders timed event details, interaction attributes, acknowledgement animation, and resize handles", () => {
+  it("renders timed event details, interaction attributes, and resize handles", () => {
     const onEventMouseDown = mock();
     const onScalerMouseDown = mock();
 
     render(
       <CalendarTimedEventCard
         displayMode="saved"
-        event={createEvent()}
+        event={createEvent({
+          startDate: "2099-01-15T09:00:00.000Z",
+          endDate: "2099-01-15T10:00:00.000Z",
+        })}
         interactionAttributes={{
           "data-week-interaction-event-id": "event-1",
           "data-week-interaction-event-type": "timed",
         }}
-        isCommitAcknowledged={true}
         motionMode="idle"
         onEventMouseDown={onEventMouseDown}
         onScalerMouseDown={onScalerMouseDown}
@@ -65,13 +67,10 @@ describe("CalendarEventCard", () => {
     expect(card).not.toHaveAttribute("aria-disabled");
     expect(card).toHaveAttribute("data-event-id", "event-1");
     expect(card).toHaveAttribute("data-week-interaction-event-id", "event-1");
-    expect(card).toHaveClass("animate-someday-commit-acknowledge");
     expect(screen.getByText("Planning block")).toBeInTheDocument();
 
     const timeLabel = screen.getByText("9 - 10 AM");
     expect(timeLabel).toHaveAttribute("data-calendar-event-time-label", "true");
-    expect(timeLabel).toHaveClass("animate-someday-commit-time-exit");
-    expect(timeLabel).toHaveAttribute("aria-hidden", "true");
 
     const handles = document.querySelectorAll(
       "[data-calendar-event-resize-handle]",
@@ -267,7 +266,6 @@ describe("CalendarEventCard", () => {
           "data-week-interaction-event-id": "event-2",
           "data-week-interaction-event-type": "all-day",
         }}
-        isCommitAcknowledged={true}
         isPlaceholder={false}
         onEventMouseDown={onEventMouseDown}
         onScalerMouseDown={onScalerMouseDown}
@@ -281,7 +279,6 @@ describe("CalendarEventCard", () => {
     expect(card).not.toHaveAttribute("aria-disabled");
     expect(card).toHaveAttribute("data-event-id", "event-1");
     expect(card).toHaveAttribute("data-week-interaction-event-type", "all-day");
-    expect(card).toHaveClass("animate-someday-commit-acknowledge");
     expect(screen.getByText("Conference")).toBeInTheDocument();
 
     const handles = document.querySelectorAll(

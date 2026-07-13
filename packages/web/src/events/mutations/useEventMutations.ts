@@ -6,12 +6,9 @@ import { type Event, type EventRecurrence } from "@core/types/event.contracts";
 import {
   type CreateEventInput,
   type RecurrenceScope,
-  type ReorderEventsInput,
   type ReplaceEventInput,
-  type TransitionEventInput,
 } from "@core/types/event-command.contracts";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import { getLocalCalendarSentinelId } from "@web/calendars/local-calendar.sentinel";
 import {
   buildCalendarLookup,
   isEventReadOnly,
@@ -25,7 +22,6 @@ import {
   findSeriesEventsInCache,
   insertEventIntoQueries,
   removeEventFromQueries,
-  reorderSomedayEventsInQueries,
   upsertEventAcrossQueries,
 } from "@web/events/queries/event.query.cache";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
@@ -50,7 +46,6 @@ import {
   isRecurringEvent,
   recordEventDeleteHistory,
   recordEventEditHistory,
-  recordEventTransitionHistory,
 } from "./event.mutation-history";
 
 const nowDateTime = () => DateTimeSchema.parse(new Date().toISOString());
@@ -89,29 +84,6 @@ function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {
   };
 }
 
-// Optimistic best-effort of the server's transition result. `unschedule`'s
-// real target is the user's server-assigned local calendar (unknown client
-// side); the sentinel id stands in until the settle-time refetch corrects it
-// (no per-mutation rollback — see the mutation architecture note below).
-function transitionedEvent(
-  existing: Event,
-  input: TransitionEventInput,
-): Event {
-  return input.kind === "schedule"
-    ? {
-        ...existing,
-        calendarId: input.targetCalendarId,
-        schedule: input.schedule,
-        updatedAt: nowDateTime(),
-      }
-    : {
-        ...existing,
-        calendarId: getLocalCalendarSentinelId(),
-        schedule: input.schedule,
-        updatedAt: nowDateTime(),
-      };
-}
-
 // A series-scope replace ("all"/"thisAndFollowing") serializes against the
 // series id, not the (arbitrary) instance id the edit was submitted through
 // — otherwise concurrent edits to different instances of the same series
@@ -140,19 +112,11 @@ type DeleteVariables = {
   writeKey: EventId;
   skipRepository: boolean;
 };
-type TransitionVariables = {
-  id: EventId;
-  input: TransitionEventInput;
-  writeKey: EventId;
-  after: Event | null;
-};
 
 export type EventMutations = {
   create: (input: CreateEventInput) => void;
   replace: (payload: { id: EventId; input: ReplaceEventInput }) => void;
   delete: (payload: { id: EventId; scope: RecurrenceScope }) => void;
-  transition: (payload: { id: EventId; input: TransitionEventInput }) => void;
-  reorderSomeday: (input: ReorderEventsInput) => void;
 };
 
 export type EventMutationDependencies = {
@@ -356,42 +320,6 @@ export function useEventMutations(
     ),
   );
 
-  const transitionMutation = useMutation(
-    buildMutation<TransitionVariables>(
-      "transition",
-      async (variables) => {
-        if (!variables.after) {
-          throw new Error(`Event ${variables.id} not found for transition`);
-        }
-        await writeAfterPreceding(
-          variables.writeKey,
-          variables,
-          precedingCreateOk,
-          () => repository.transition(variables.id, variables.input),
-        );
-      },
-      ({ id, after }) => {
-        if (!after) return;
-        removeEventFromQueries(queryClient, id, { source });
-        insertEventIntoQueries(queryClient, after, (entry) =>
-          eventBelongsToEntry(after, entry, source),
-        );
-      },
-    ),
-  );
-
-  const reorderSomedayMutation = useMutation(
-    buildMutation<ReorderEventsInput>(
-      "reorder-someday",
-      async (input) => {
-        await repository.reorder(input);
-        await markWrite();
-      },
-      (input) =>
-        reorderSomedayEventsInQueries(queryClient, input.items, source),
-    ),
-  );
-
   // Undo recording happens here at the `.mutate()` boundary: it's the one
   // place every caller funnels through and the cache still holds the
   // pre-mutation event. Replays from useUndoRedo set the restoring flag so
@@ -448,29 +376,6 @@ export function useEventMutations(
           skipRepository: !existing,
         });
       },
-      transition: (payload: { id: EventId; input: TransitionEventInput }) => {
-        const existing = findEventInCache(queryClient, payload.id, source);
-        if (isTargetReadOnly(existing)) {
-          console.warn(
-            `[useEventMutations] blocked transition on read-only event ${payload.id}`,
-          );
-          return;
-        }
-        const after = existing
-          ? transitionedEvent(existing, payload.input)
-          : null;
-        recordEventTransitionHistory({
-          id: payload.id,
-          before: existing,
-          after,
-        });
-        transitionMutation.mutate({
-          ...payload,
-          writeKey: payload.id,
-          after,
-        });
-      },
-      reorderSomeday: reorderSomedayMutation.mutate,
     }),
     [
       queryClient,
@@ -479,8 +384,6 @@ export function useEventMutations(
       createMutation.mutate,
       deleteMutation.mutate,
       replaceMutation.mutate,
-      transitionMutation.mutate,
-      reorderSomedayMutation.mutate,
     ],
   );
 }

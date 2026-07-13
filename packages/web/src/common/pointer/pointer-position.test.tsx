@@ -35,8 +35,6 @@ describe("PointerPositionProvider", () => {
       isOverGrid: false,
       isOverSidebar: false,
       isOverMainGrid: false,
-      isOverSomedayWeek: false,
-      isOverSomedayMonth: false,
       isOverAllDayRow: false,
     });
   });

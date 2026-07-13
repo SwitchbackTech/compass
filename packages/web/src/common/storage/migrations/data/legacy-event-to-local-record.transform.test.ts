@@ -12,9 +12,17 @@ const sentinelCalendarId = CalendarIdSchema.parse(createObjectIdString());
 
 const baseLegacy = (
   overrides: Partial<
-    Event_Core & { order?: number; __compassDemoEvent?: true }
+    Event_Core & {
+      order?: number;
+      __compassDemoEvent?: true;
+      isSomeday?: boolean;
+    }
   > = {},
-): Event_Core & { order?: number; __compassDemoEvent?: true } => ({
+): Event_Core & {
+  order?: number;
+  __compassDemoEvent?: true;
+  isSomeday?: boolean;
+} => ({
   _id: createObjectIdString(),
   title: "Legacy event",
   startDate: "2026-05-05T09:00:00.000-05:00",
@@ -85,7 +93,7 @@ describe("transformLegacyEventToLocalRecord", () => {
     } as unknown as NonNullable<typeof record>["event"]["schedule"]);
   });
 
-  it("derives a week-period someday schedule from a short span, with a valid legacy order preserved", () => {
+  it("drops legacy someday rows (schedule kind removed)", () => {
     const legacy = baseLegacy({
       isSomeday: true,
       startDate: "2026-05-04",
@@ -98,31 +106,7 @@ describe("transformLegacyEventToLocalRecord", () => {
       sentinelCalendarId,
     );
 
-    expect(record?.event.schedule).toEqual({
-      kind: "someday",
-      period: "week",
-      anchorDate: "2026-05-04",
-      sortOrder: 3,
-    } as unknown as NonNullable<typeof record>["event"]["schedule"]);
-  });
-
-  it("derives a month-period someday schedule from a long span", () => {
-    const legacy = baseLegacy({
-      isSomeday: true,
-      startDate: "2026-05-01",
-      endDate: "2026-05-31",
-    });
-
-    const record = transformLegacyEventToLocalRecord(
-      legacy,
-      sentinelCalendarId,
-    );
-
-    expect(record?.event.schedule).toMatchObject({
-      kind: "someday",
-      period: "month",
-      anchorDate: "2026-05-01",
-    });
+    expect(record).toBeNull();
   });
 
   it("defaults '' for missing title/description", () => {
@@ -163,44 +147,22 @@ describe("transformLegacyEventToLocalRecord", () => {
 });
 
 describe("transformLegacyEvents", () => {
-  it("appends deterministic sortOrder to someday events missing a legacy order, after the bucket max", () => {
-    // All three share the same anchorDate bucket ("week:2026-05-04") so the
-    // append pass has to reconcile one explicit order against two missing
-    // ones, ordered by legacy startDate.
-    const withOrder = baseLegacy({
+  it("excludes legacy someday rows from the transformed batch", () => {
+    const someday = baseLegacy({
       isSomeday: true,
       startDate: "2026-05-04T00:00:00.000Z",
       endDate: "2026-05-10T00:00:00.000Z",
       order: 5,
     });
-    const missingOrderEarlier = baseLegacy({
-      isSomeday: true,
-      startDate: "2026-05-04T01:00:00.000Z",
-      endDate: "2026-05-10T01:00:00.000Z",
-    });
-    const missingOrderLater = baseLegacy({
-      isSomeday: true,
-      startDate: "2026-05-04T02:00:00.000Z",
-      endDate: "2026-05-10T02:00:00.000Z",
-    });
+    const scheduled = baseLegacy();
 
     const records = transformLegacyEvents(
-      [withOrder, missingOrderEarlier, missingOrderLater],
+      [someday, scheduled],
       sentinelCalendarId,
     );
 
-    const byId = new Map(records.map((r) => [r.id, r]));
-    expect(byId.get(withOrder._id! as EventId)?.event.schedule).toMatchObject({
-      sortOrder: 5,
-    });
-    expect(
-      byId.get(missingOrderEarlier._id! as EventId)?.event.schedule,
-    ).toMatchObject({ sortOrder: 6 });
-    expect(
-      byId.get(missingOrderLater._id! as EventId)?.event.schedule,
-    ).toMatchObject({
-      sortOrder: 7,
-    });
+    expect(records).toHaveLength(1);
+    expect(records[0]?.id).toBe(scheduled._id as EventId);
   });
 
   it("drops unparseable rows without throwing", () => {

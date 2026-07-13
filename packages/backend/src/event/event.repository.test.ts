@@ -105,35 +105,6 @@ describe("EventRepository", () => {
       expect(ids).toContain(base._id.toHexString());
     });
 
-    it("filters someday events by period and anchorDate", async () => {
-      const someday = buildEvent({
-        schedule: {
-          kind: "someday",
-          period: "week",
-          anchorDate: "2026-07-13",
-          sortOrder: 0,
-        },
-      });
-      const otherPeriod = buildEvent({
-        schedule: {
-          kind: "someday",
-          period: "month",
-          anchorDate: "2026-07-01",
-          sortOrder: 0,
-        },
-      });
-      await eventRepository.insertMany([someday, otherPeriod]);
-
-      const results = await eventRepository.list(
-        { kind: "someday", period: "week", anchorDate: "2026-07-13" },
-        [calendarId],
-      );
-
-      expect(results.map((e) => e._id.toHexString())).toEqual([
-        someday._id.toHexString(),
-      ]);
-    });
-
     it("scopes reads to the owned calendar set only", async () => {
       const otherCalendarId = new ObjectId();
       const notOwned = buildEvent({ calendarId: otherCalendarId });
@@ -275,45 +246,6 @@ describe("EventRepository", () => {
       expect(ids).not.toContain(allDayWork._id.toHexString());
     });
 
-    it("excludes someday events from a range query", async () => {
-      const someday = buildEvent({
-        schedule: {
-          kind: "someday",
-          period: "week",
-          anchorDate: "2026-07-13",
-          sortOrder: 0,
-        },
-      });
-      await eventRepository.insertOne(someday);
-
-      const results = await eventRepository.list(
-        {
-          kind: "range",
-          start: "2026-07-14T00:00:00Z",
-          end: "2026-07-15T00:00:00Z",
-          priorities: [],
-        },
-        [calendarId],
-      );
-
-      expect(results).toHaveLength(0);
-    });
-
-    it("excludes timed/all-day events from a someday query", async () => {
-      const timed = buildEvent();
-      const allDay = buildEvent({
-        schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
-      });
-      await eventRepository.insertMany([timed, allDay]);
-
-      const results = await eventRepository.list(
-        { kind: "someday", period: "week", anchorDate: "2026-07-13" },
-        [calendarId],
-      );
-
-      expect(results).toHaveLength(0);
-    });
-
     it("treats different UTC-offset representations of the same instant identically", async () => {
       const event = buildEvent({
         schedule: {
@@ -350,32 +282,6 @@ describe("EventRepository", () => {
       expect(utcResults.map((e) => e._id.toHexString())).toContain(
         event._id.toHexString(),
       );
-    });
-  });
-
-  describe("reorder", () => {
-    it("only reorders someday events within the owned calendar set", async () => {
-      const someday = buildEvent({
-        schedule: {
-          kind: "someday",
-          period: "week",
-          anchorDate: "2026-07-13",
-          sortOrder: 0,
-        },
-      });
-      await eventRepository.insertOne(someday);
-
-      await eventRepository.reorder(
-        [{ eventId: someday._id.toHexString(), sortOrder: 5 }],
-        [calendarId],
-      );
-
-      const updated = await eventRepository.findById(someday._id, [calendarId]);
-      expect(
-        updated?.schedule.kind === "someday"
-          ? updated.schedule.sortOrder
-          : null,
-      ).toBe(5);
     });
   });
 

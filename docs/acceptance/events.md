@@ -8,14 +8,11 @@ Use this guide to validate:
 
 - creating timed events on the calendar grid
 - creating all-day events
-- creating Someday (Week) and Someday (Month) events
 - editing events via the form
 - changing event priority via the right-click context menu
 - deleting standalone events
 - dragging events to a new time slot
 - resizing events
-- moving events to the Someday sidebar by drag
-- scheduling Someday events onto the grid by drag
 - duplicating events (Cmd+D)
 - undoing an event deletion (Cmd+Z / Ctrl+Z)
 - failed-write optimistic rollback
@@ -35,7 +32,7 @@ Do not use this guide to validate:
 2. Start the backend if you need events to persist across page reloads.
 3. Log in with any account that does not need Google connected (password-only is fine).
 4. Navigate to the Week view (`/week`) or Day view (`/day`) depending on the scenario.
-5. Scenarios 16 and 17 need a read-only Google calendar (a `reader` or
+5. Scenarios 14 and 15 need a read-only Google calendar (a `reader` or
    `freeBusyReader` calendar) in addition to a writable one — see
    `google-sync.md` to connect Google and import one. Skip those two
    scenarios if only writable calendars are available.
@@ -44,7 +41,6 @@ Helpful notes:
 
 - All event interactions require a loaded calendar grid. If the grid is blank, reload and wait for events to fetch.
 - The right-click context menu on an event opens a small overlay. It closes if you click elsewhere.
-- The Someday sidebar must be open (toggle with `[`) for sidebar drag scenarios.
 - For rollback checks, reject one repository write and verify the optimistic Event returns exactly to its prior state.
 - Navigate away from and back to a recently viewed Week/Day range; cached Events should render immediately.
 - Validate both anonymous local writes and authenticated remote writes so query and mutation sources remain aligned.
@@ -94,49 +90,7 @@ Clicking the all-day row at the top of the week grid should open a new event for
 
 ---
 
-## Scenario 3: Create A Someday (Week) Event
-
-### UX
-
-The Someday sidebar holds unscheduled events not tied to a specific date. Users can create a Someday Week event from the sidebar or command palette. The sidebar enforces a limit of 9 Someday Week events at a time.
-
-### Steps
-
-1. Open the sidebar with `[` if it is not already open.
-2. Press `Shift+W` (or use the command palette → Create Week Event).
-3. Enter a title in the form and submit.
-4. Repeat until you have 9 Someday Week events.
-5. Attempt to create a 10th Someday Week event.
-
-### Expected Results
-
-- Each new event appears in the Week section of the Someday sidebar.
-- On the 10th attempt, an error message appears: "Sorry, you can only have 9 unscheduled events per week."
-- No 10th event is created.
-
----
-
-## Scenario 4: Create A Someday (Month) Event
-
-### UX
-
-Someday Month events appear in the Month section of the Someday sidebar. The same 9-event limit applies per month.
-
-### Steps
-
-1. Open the sidebar with `[`.
-2. Press `Shift+M` (or use the command palette → Create Month Event).
-3. Enter a title and submit.
-4. Confirm the event appears in the Month section of the sidebar (below the Week section).
-
-### Expected Results
-
-- The new event appears in the Month section of the Someday sidebar.
-- The event does not appear on the calendar grid.
-
----
-
-## Scenario 5: Edit An Event Via The Form
+## Scenario 3: Edit An Event Via The Form
 
 ### UX
 
@@ -158,7 +112,7 @@ Right-clicking an event and selecting Edit (or clicking the event directly) open
 
 ---
 
-## Scenario 6: Change Event Priority Via Right-Click Context Menu
+## Scenario 4: Change Event Priority Via Right-Click Context Menu
 
 ### UX
 
@@ -178,7 +132,7 @@ Right-clicking an event opens a context menu with a quick priority picker. This 
 
 ---
 
-## Scenario 7: Delete A Standalone Event
+## Scenario 5: Delete A Standalone Event
 
 ### UX
 
@@ -197,7 +151,7 @@ Deleting a standalone event (non-recurring) removes it immediately. No scope dia
 
 ---
 
-## Scenario 8: Drag An Event To A New Time Slot
+## Scenario 6: Drag An Event To A New Time Slot
 
 ### UX
 
@@ -220,7 +174,7 @@ Users can click-hold and drag an event block to a new time or date. The event sn
 
 ---
 
-## Scenario 9: Resize An Event
+## Scenario 7: Resize An Event
 
 ### UX
 
@@ -243,33 +197,7 @@ Hovering near the top or bottom edge of an event reveals a resize cursor. Draggi
 
 ---
 
-## Scenario 10: Schedule A Someday Event By Dragging To The Grid
-
-### UX
-
-Someday events can be dragged from the sidebar onto a specific day and time on the calendar grid, converting them into scheduled events.
-
-### Steps
-
-1. Open the sidebar with `[`.
-2. Locate a Someday event in the sidebar.
-3. Drag it from the sidebar and drop it onto a specific time slot on the calendar grid.
-
-### Expected Results
-
-- While the Someday event is over a timed grid slot, the preview uses the same
-  layout as a Timed Event: title at the top, time underneath.
-- The preview shows the tentative time while hovering, even if the target time
-  has already passed.
-- If the target time has already passed, the time disappears after drop the same
-  way it does on saved past Timed Events.
-- The event disappears from the sidebar.
-- The event appears on the grid at the dropped time.
-- The event is now a regular scheduled event and persists after a page reload.
-
----
-
-## Scenario 11: Duplicate An Event (Cmd+D)
+## Scenario 8: Duplicate An Event (Cmd+D)
 
 ### UX
 
@@ -289,7 +217,7 @@ With an event form open, pressing Cmd+D (Mac) or Ctrl+D (Windows) creates a copy
 
 ---
 
-## Scenario 12: Undo An Event Deletion (Cmd+Z / Ctrl+Z)
+## Scenario 9: Undo An Event Deletion (Cmd+Z / Ctrl+Z)
 
 ### UX
 
@@ -320,7 +248,7 @@ blocked.
 
 ---
 
-## Scenario 13: Create An Event On A Specific Calendar
+## Scenario 10: Create An Event On A Specific Calendar
 
 ### UX
 
@@ -351,11 +279,11 @@ operable.
 
 ---
 
-## Scenario 14: Duplicating An Event Defaults To Its Source Calendar
+## Scenario 11: Duplicating An Event Defaults To Its Source Calendar
 
 ### UX
 
-Cmd+D (see Scenario 11) creates a copy on the same calendar as the
+Cmd+D (see Scenario 8) creates a copy on the same calendar as the
 original, as long as that calendar is still writable.
 
 ### Steps
@@ -374,7 +302,7 @@ original, as long as that calendar is still writable.
 
 ---
 
-## Scenario 15: Editing Shows The Calendar As Read-Only Text
+## Scenario 12: Editing Shows The Calendar As Read-Only Text
 
 ### UX
 
@@ -395,7 +323,7 @@ form — moving an event to a different calendar is out of scope for v1 (A6).
 
 ---
 
-## Scenario 16: Read-Only Calendar Events Are Inspectable But Never Editable
+## Scenario 13: Read-Only Calendar Events Are Inspectable But Never Editable
 
 ### UX
 
@@ -410,8 +338,6 @@ action is unavailable.
 3. Close the form, then right-click the same event.
 4. Try to drag the event to a new time slot.
 5. Hover the event's edges, looking for a resize cursor.
-6. If the event is in the Someday sidebar, try to drag it to reorder it
-   among other Someday events.
 
 ### Expected Results
 
@@ -423,14 +349,13 @@ action is unavailable.
 - The event cannot be picked up and dragged to a new time or day; no drag
   preview appears.
 - No resize cursor or resize handle appears at the event's edges.
-- A read-only Someday event cannot be reordered by drag.
 - A direct left-click on the event may not reliably open the form (a known
   intermittent gap); `M` and the context menu's "View" are the reliable
   ways to inspect a read-only event.
 
 ---
 
-## Scenario 17: Busy Private Events Show No Details
+## Scenario 14: Busy Private Events Show No Details
 
 ### UX
 
@@ -450,7 +375,7 @@ title, description, or attendees.
 - The event displays with the title "Busy" on the grid and in its form,
   regardless of the event's real Google title.
 - No description, location, or attendee details are shown anywhere.
-- The event is read-only the same way Scenario 16 describes. (Busy content
+- The event is read-only the same way Scenario 13 describes. (Busy content
   forces read-only even on a calendar you can otherwise write to — the
   redaction is per-event, not just per-calendar.)
 
@@ -463,16 +388,14 @@ If time is limited, run these checks before shipping event-related changes:
 1. Clicking an empty grid slot opens a form with the correct start time pre-filled.
 2. Submitting a new event places it on the grid and it survives a page reload.
 3. All-day events appear in the all-day row, not the hourly grid.
-4. Someday Week and Month event creation is blocked at 9 events each with a clear error message.
-5. Editing an event updates the grid block immediately.
-6. Right-click priority change updates the event color without opening the full form.
-7. Deleting a standalone event shows no scope dialog.
-8. Dragging an event to a new slot moves it and persists after reload.
-9. Resizing an event updates the duration and persists after reload.
-10. Dragging to/from the Someday sidebar correctly converts events between scheduled and unscheduled states.
-11. Cmd+D duplicates an event with the same properties.
-12. Cmd+Z / Ctrl+Z after deletion restores the event.
-13. A new/duplicate event form offers only writable calendars, defaulting to
+4. Editing an event updates the grid block immediately.
+5. Right-click priority change updates the event color without opening the full form.
+6. Deleting a standalone event shows no scope dialog.
+7. Dragging an event to a new slot moves it and persists after reload.
+8. Resizing an event updates the duration and persists after reload.
+9. Cmd+D duplicates an event with the same properties.
+10. Cmd+Z / Ctrl+Z after deletion restores the event.
+11. A new/duplicate event form offers only writable calendars, defaulting to
     primary; an existing event's form shows its calendar as read-only text.
-14. Read-only calendar events can be inspected (`M` / context-menu "View")
-    but never dragged, resized, deleted, or reordered.
+12. Read-only calendar events can be inspected (`M` / context-menu "View")
+    but never dragged, resized, or deleted.

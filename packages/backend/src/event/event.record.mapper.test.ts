@@ -116,12 +116,7 @@ describe("mapCreateInput / mapEventRecord round trip", () => {
       id: clientId,
       calendarId: new ObjectId().toHexString(),
       content: { kind: "details", title: "Offline note", description: "" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
+      schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
       recurrence: { kind: "single" },
       priority: "unassigned",
     });
@@ -137,12 +132,7 @@ describe("mapCreateInput / mapEventRecord round trip", () => {
     const input = CreateEventInputSchema.parse({
       calendarId: new ObjectId().toHexString(),
       content: { kind: "details", title: "Offline note", description: "" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
+      schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
       recurrence: { kind: "single" },
       priority: "unassigned",
     });

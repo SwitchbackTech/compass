@@ -15,14 +15,10 @@ A Compass calendar item represented by the shared event contract.
 An event shown in the all-day row. Moves horizontally by day in the all-day row.
 _Avoid_: day event
 
-**Grid Event**: An timed event assigned to a concrete calendar slot in the grid. These are different from Someday events. Moves vertically by time slot and horizontally by day while it remains in the grid.
+**Grid Event**: An timed event assigned to a concrete calendar slot in the grid. Moves vertically by time slot and horizontally by day while it remains in the grid.
 
 **Draft Event**: A pending event shape used while the user edits, drags,
 resizes, or repositions before saving.
-
-**Someday Event**: An unscheduled event stored in the sidebar instead of the
-calendar grid. Someday events may be recurring or standalone. Can convert to either **Timed Event** or **All-Day Event**.
-_Avoid_: Someday task
 
 ### Recurring Events
 
@@ -63,8 +59,7 @@ but it can represent any selected date.
 _Avoid_: Today view, unless referring specifically to the current date
 
 **Planner Sidebar**:
-The calendar side panel that holds navigation, account context, and Someday
-Events.
+The calendar side panel that holds navigation and account context.
 _Avoid_: Planning sidebar
 
 ## Hosting
@@ -209,17 +204,6 @@ _Avoid_: hotkey — the term survives only inside the third-party
   its visible bounded position as the saved time.
 - A **Task** belongs to a **Date key** and stays local today, even when the user
   is authenticated.
-- A **Someday Event** is an **Event**, not a **Task**.
-- A **Someday Event** can move between **Planner Sidebar** sections without
-  becoming a **Grid Event**.
-- During **Planner Sidebar** sorting, sibling **Someday Events** make room for
-  the dragged event's preview position before the drop commits.
-- When a dragged **Someday Event** leaves the **Planner Sidebar** for a calendar
-  surface, the sidebar stops previewing a sidebar sort.
-- A full **Planner Sidebar** section is not a valid drop target for another
-  **Someday Event**.
-- A **Someday Event** is scheduled as a **Timed Event** or **All-Day Event**
-  based on the calendar surface where it is dropped.
 - A **Recurring Series** has exactly one **Base Event** and zero or more
   **Instance Events**.
 - An **Instance Event** belongs to exactly one **Base Event** through

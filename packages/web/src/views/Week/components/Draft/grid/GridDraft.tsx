@@ -1,7 +1,6 @@
 import { FloatingFocusManager } from "@floating-ui/react";
 import { type FC, type MouseEvent, useRef } from "react";
 import { Origin } from "@core/constants/core.constants";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -12,7 +11,7 @@ import {
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { type CalendarTimedDeckLayout } from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
 import { EventForm } from "@web/views/Forms/EventForm/EventForm";
-import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
+import { FloatingFormContainer } from "@web/views/Forms/FloatingFormContainer";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
@@ -46,13 +45,6 @@ export const GridDraft: FC<Props> = ({
     state;
   const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
     formProps;
-
-  const onConvert = () => {
-    const start = weekProps.component.startOfView.format(YEAR_MONTH_DAY_FORMAT);
-    const end = weekProps.component.endOfView.format(YEAR_MONTH_DAY_FORMAT);
-
-    actions.convert(start, end);
-  };
 
   const focusTitleInput = () => {
     titleInputRef.current?.focus();
@@ -184,7 +176,6 @@ export const GridDraft: FC<Props> = ({
             <EventForm
               draft={draft}
               onClose={discard}
-              onConvert={onConvert}
               onDelete={onDelete}
               onDuplicate={duplicateEvent}
               isDraft={draft.kind === "create"}

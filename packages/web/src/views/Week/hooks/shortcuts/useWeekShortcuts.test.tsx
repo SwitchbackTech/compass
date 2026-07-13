@@ -15,14 +15,7 @@ import {
 } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import {
-  COLUMN_MONTH,
-  COLUMN_WEEK,
-  DATA_EVENT_ELEMENT_ID,
-  ID_EVENT_FORM,
-  ID_SIDEBAR,
-} from "@web/common/constants/web.constants";
-import { getOfflineDataStore } from "@web/common/storage/offline-data/offline-data.store.registry";
+import { ID_EVENT_FORM, ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
@@ -65,8 +58,6 @@ const editableAllDayEvent = createMockEvent({
     end: "2026-05-21",
   }),
 });
-// Converted someday events are re-validated against SomedayEventSchema, so
-// this fixture needs a real ObjectId and the required core fields
 const leftmostEvent = createMockEvent({
   id: LEFTMOST_EVENT_ID,
   content: { kind: "details", title: "Leftmost event", description: "" },
@@ -175,11 +166,6 @@ const renderShortcuts = (options?: {
   if (options?.calendars) {
     queryClient.setQueryData(calendarQueryKeys.all, options.calendars);
   }
-  // The someday view model validates every entity; keep its query empty so the
-  // minimal grid fixtures above don't fail someday-schema parsing
-  queryClient.setQueryDefaults(["events", "someday"], {
-    initialData: toNormalizedEventQueryData([]),
-  });
   function wrapper({ children }: PropsWithChildren) {
     return (
       <QueryClientProvider client={queryClient}>
@@ -614,37 +600,13 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
     );
   });
 
-  it("converts the focused event to someday with Shift+ArrowLeft on the first visible day", async () => {
+  it("does not move the focused event off-screen with Shift+ArrowLeft on the first visible day", () => {
     const button = addCalendarTarget(leftmostEvent.id);
     button.focus();
 
-    // The transition mutation writes through the local (IndexedDB)
-    // repository, which reads the pre-mutation record independently of the
-    // query cache seeded below — mirroring production, where the cache is
-    // always populated from the repository.
-    await getOfflineDataStore().putEvent({
-      version: 2,
-      id: leftmostEvent.id,
-      event: leftmostEvent,
-      isDemo: false,
-    });
-
-    const { queryClient } = renderShortcuts({ includeLeftmostEvent: true });
+    renderShortcuts({ includeLeftmostEvent: true });
     pressKey("ArrowLeft", shiftKey);
 
-    await waitFor(() => {
-      expect(
-        queryClient
-          .getMutationCache()
-          .getAll()
-          .some(
-            (mutation) =>
-              mutation.options.mutationKey?.[2] === "transition" &&
-              (mutation.state.variables as { input?: { kind?: string } }).input
-                ?.kind === "unschedule",
-          ),
-      ).toBe(true);
-    });
     expect(confirmationOnSubmit).not.toHaveBeenCalled();
   });
 
@@ -681,47 +643,26 @@ describe("useWeekShortcuts shift+arrow event moves", () => {
   });
 });
 
-const addSidebarFixture = (options?: {
-  includeWeekItem?: boolean;
-  includeMonthItem?: boolean;
-}) => {
+const addSidebarFixture = (options?: { includeItem?: boolean }) => {
   const sidebar = document.createElement("aside");
   sidebar.id = ID_SIDEBAR;
 
-  const buildItem = () => {
-    const item = document.createElement("div");
-    item.setAttribute("role", "button");
-    item.setAttribute(DATA_EVENT_ELEMENT_ID, "someday-1");
-    item.tabIndex = 0;
-    return item;
-  };
-
-  const weekColumn = document.createElement("div");
-  weekColumn.id = COLUMN_WEEK;
-  const weekItem = options?.includeWeekItem ? buildItem() : null;
-  if (weekItem) weekColumn.appendChild(weekItem);
-  sidebar.appendChild(weekColumn);
-
-  const monthColumn = document.createElement("div");
-  monthColumn.id = COLUMN_MONTH;
-  const monthItem = options?.includeMonthItem ? buildItem() : null;
-  if (monthItem) monthColumn.appendChild(monthItem);
-  sidebar.appendChild(monthColumn);
+  const item = document.createElement("button");
+  item.setAttribute("aria-label", "Sidebar item");
+  const weekItem = options?.includeItem ? item : null;
+  if (weekItem) sidebar.appendChild(weekItem);
 
   const addButton = document.createElement("button");
   addButton.setAttribute("aria-label", "Add item to week");
   sidebar.appendChild(addButton);
 
   document.body.appendChild(sidebar);
-  return { addButton, monthItem, sidebar, weekItem };
+  return { addButton, sidebar, weekItem };
 };
 
 describe("useWeekShortcuts sidebar focus", () => {
-  it("focuses the first week someday event with U", async () => {
-    const { weekItem, monthItem } = addSidebarFixture({
-      includeWeekItem: true,
-      includeMonthItem: true,
-    });
+  it("focuses the first interactive sidebar item with U", async () => {
+    const { weekItem } = addSidebarFixture({ includeItem: true });
 
     renderShortcuts();
     pressKey("U");
@@ -729,34 +670,11 @@ describe("useWeekShortcuts sidebar focus", () => {
     await waitFor(() => {
       expect(document.activeElement).toBe(weekItem);
     });
-    expect(document.activeElement).not.toBe(monthItem);
-  });
-
-  it("falls back to the month someday event when the week list is empty", async () => {
-    const { monthItem } = addSidebarFixture({ includeMonthItem: true });
-
-    renderShortcuts();
-    pressKey("U");
-
-    await waitFor(() => {
-      expect(document.activeElement).toBe(monthItem);
-    });
-  });
-
-  it("falls back to the add button when there are no someday events", async () => {
-    const { addButton } = addSidebarFixture();
-
-    renderShortcuts();
-    pressKey("U");
-
-    await waitFor(() => {
-      expect(document.activeElement).toBe(addButton);
-    });
   });
 
   it("does not delete a grid event when Delete is pressed with sidebar focus", async () => {
     addCalendarTarget();
-    const { weekItem } = addSidebarFixture({ includeWeekItem: true });
+    const { weekItem } = addSidebarFixture({ includeItem: true });
     weekItem?.focus();
 
     const { queryClient } = renderShortcuts();

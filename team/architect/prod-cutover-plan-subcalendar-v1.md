@@ -131,8 +131,10 @@ Compose project), never against live prod.
    it into the scratch DB. Record source counts + category hashes.
 2. Take a fresh scratch backup (the rehearsal's rollback source).
 3. `bun run cli migrate up` ⇒ watch the logged counts (calendar rows reshaped, local
-   calendars created; backfill attempted/inserted/failed, timezone tally, someday
-   sort orders, `allDayOrder` audit). It must end with **verification passed**.
+   calendars created; backfill attempted/inserted/failed, `excludedSomeday` count,
+   timezone tally, `allDayOrder` audit). It must end with **verification passed**, and
+   the verifier's `excludedSomedayCount` must reconcile with the backfill's tally (a
+   divergence throws). Confirm `event_new` contains **no** someday records.
 4. Verify data, indexes, sync records; run app smoke tests.
 5. Rehearse the **write pause + rename** (stop backend → rerun migrate → `mongosh`
    rename → deploy tag → start).
@@ -176,8 +178,12 @@ Per the runbook, run at low traffic. Steps, in order:
 - Automated health check (from the Action) is green; no Discord failure alert.
 - `https://<prod>/version.json` == deployed tag.
 - Manual smoke as a real user: sign in, load a week with events, create + edit +
-  delete a timed / all-day / someday event, confirm sub-calendar sidebar + visibility
-  toggles, confirm a Google-side change reconciles.
+  delete a timed / all-day event, confirm the planner sidebar (month picker, calendar
+  list, visibility toggles) has no Someday sections, confirm a Google-side change
+  reconciles.
+- Confirm active `event` data is Someday-free: it is the renamed `event_new`, which
+  never held someday records; the excluded someday events survive only in
+  `event_legacy_v1` (the backup / rollback source).
 - Spot-check counts: `event` (new) vs `event_legacy_v1` categories match the
   verification summary; every user has one local calendar.
 - **Keep `event_legacy_v1`** — do not drop it in v1. It is the rollback source.

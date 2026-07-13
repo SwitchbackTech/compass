@@ -55,7 +55,7 @@ const WEEKDAY_MAP: Record<
 
 export const useRecurrence = (
   event: Partial<
-    Pick<Schema_Event, "startDate" | "endDate" | "recurrence" | "isSomeday">
+    Pick<Schema_Event, "startDate" | "endDate" | "recurrence">
   > | null,
   {
     setEvent,
@@ -63,10 +63,10 @@ export const useRecurrence = (
     setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
   },
 ) => {
-  const { recurrence, endDate: _endDate, isSomeday } = event ?? {};
-  // `||`, not `??`: an undated someday draft-in-progress can carry
-  // `startDate: ""` (not yet assigned a real date), which `??` wouldn't
-  // catch and `parseCompassEventDate` throws on below.
+  const { recurrence, endDate: _endDate } = event ?? {};
+  // `||`, not `??`: an undated draft-in-progress can carry `startDate: ""`
+  // (not yet assigned a real date), which `??` wouldn't catch and
+  // `parseCompassEventDate` throws on below.
   const startDate = event?.startDate || dayjs().toRFC3339OffsetString();
   const endDate = _endDate || dayjs().add(1, "hour").toRFC3339OffsetString();
   const _startDate = parseCompassEventDate(startDate);
@@ -140,9 +140,9 @@ export const useRecurrence = (
           endDate: endDate,
           recurrence: { rule: [] },
         },
-        { ...rruleOptions, count: isSomeday ? 6 : rruleOptions.count }, // default to 6 occurrences for someday events
+        rruleOptions,
       ),
-    [startDate, endDate, rruleOptions, isSomeday],
+    [startDate, endDate, rruleOptions],
   );
 
   const rule = useMemo(() => JSON.stringify(rrule.toRecurrence()), [rrule]);

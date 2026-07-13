@@ -6,7 +6,6 @@ import {
   EventIdSchema,
   PrioritySchema,
   RRuleSchema,
-  SortOrderSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
 
@@ -43,24 +42,9 @@ const AllDayScheduleSchema = z
     path: ["end"],
   });
 
-export const SomedayScheduleSchema = z.strictObject({
-  kind: z.literal("someday"),
-  period: z.enum(["week", "month"]),
-  anchorDate: DateOnlySchema,
-  sortOrder: SortOrderSchema,
-});
-export type SomedaySchedule = z.infer<typeof SomedayScheduleSchema>;
-
-export const ScheduledScheduleSchema = z.discriminatedUnion("kind", [
-  TimedScheduleSchema,
-  AllDayScheduleSchema,
-]);
-export type ScheduledSchedule = z.infer<typeof ScheduledScheduleSchema>;
-
 export const EventScheduleSchema = z.discriminatedUnion("kind", [
   TimedScheduleSchema,
   AllDayScheduleSchema,
-  SomedayScheduleSchema,
 ]);
 export type EventSchedule = z.infer<typeof EventScheduleSchema>;
 

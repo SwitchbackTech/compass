@@ -66,13 +66,11 @@ const renderDraftConfirmation = ({
   seriesEvents = [],
   isInstance = false,
   isRecurrence = false,
-  isSomeday = false,
 }: {
   draft: GridEventDraft;
   seriesEvents?: Event[];
   isInstance?: boolean;
   isRecurrence?: boolean;
-  isSomeday?: boolean;
 }) => {
   const discard = mock();
   const deleteEvent = mock();
@@ -92,7 +90,6 @@ const renderDraftConfirmation = ({
       deleteEvent,
       isInstance: () => isInstance,
       isRecurrence: () => isRecurrence,
-      isSomeday: () => isSomeday,
       submit,
     },
     state: {

@@ -50,9 +50,9 @@ export const UserMetadataMessageSchema = z.strictObject({
 export type UserMetadataMessage = z.infer<typeof UserMetadataMessageSchema>;
 
 // Completeness rule (A27): every backend publish site emits a member of this
-// union. The six current SSE names (EVENT_CHANGED, SOMEDAY_EVENT_CHANGED,
-// IMPORT_GCAL_START, IMPORT_GCAL_END, GOOGLE_REVOKED, USER_METADATA) each map
-// to a member or are explicitly retired; a contract test enforces the mapping.
+// union. The five current SSE names (EVENT_CHANGED, IMPORT_GCAL_START,
+// IMPORT_GCAL_END, GOOGLE_REVOKED, USER_METADATA) each map to a member or are
+// explicitly retired; a contract test enforces the mapping.
 export const ServerMessageSchema = z.discriminatedUnion("type", [
   EventChangeMessageSchema,
   CalendarChangeMessageSchema,

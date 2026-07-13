@@ -19,12 +19,6 @@ export type EventScheduleDraft =
       kind: "allDay";
       start: Date | null;
       end: Date | null;
-    }
-  | {
-      kind: "someday";
-      period: "week" | "month";
-      anchorDate: Date | null;
-      sortOrder: number | null;
     };
 
 export type NewEventRecurrenceDraft =

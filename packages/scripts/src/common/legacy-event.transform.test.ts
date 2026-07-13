@@ -2,7 +2,6 @@ import {
   type LegacyEventTransformContext,
   transformLegacyEvent,
 } from "@scripts/common/legacy-event.transform";
-import { assignMissingSomedaySortOrders } from "@scripts/common/legacy-event.transform.sort";
 import { ObjectId } from "mongodb";
 import { Priorities } from "@core/constants/core.constants";
 
@@ -84,7 +83,7 @@ describe("transformLegacyEvent", () => {
   });
 
   describe("schedule kind derivation and flag/date mismatches", () => {
-    it("classifies isSomeday true as someday regardless of date shapes", () => {
+    it("excludes isSomeday true regardless of date shapes", () => {
       const _id = new ObjectId();
       const result = transformLegacyEvent(
         {
@@ -95,8 +94,11 @@ describe("transformLegacyEvent", () => {
         },
         baseContext(),
       );
-      expect(result.ok).toBe(true);
-      if (result.ok) expect(result.record.schedule.kind).toBe("someday");
+      expect(result).toEqual({
+        ok: false,
+        excluded: true,
+        legacyId: _id.toHexString(),
+      });
     });
 
     it("infers allDay from date-only shapes when isAllDay is unset", () => {
@@ -302,44 +304,12 @@ describe("transformLegacyEvent", () => {
     });
   });
 
-  describe("someday events", () => {
-    it("keeps an explicit order of 0", () => {
-      const _id = new ObjectId();
-      const result = transformLegacyEvent(
-        {
-          _id,
-          isSomeday: true,
-          startDate: "2026-01-01",
-          endDate: "2026-01-01",
-          order: 0,
-        },
-        baseContext(),
-      );
-      expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.sortOrderAssigned).toBe(false);
-        if (result.record.schedule.kind === "someday") {
-          expect(result.record.schedule.sortOrder).toBe(0);
-        }
-      }
-    });
-
-    it("flags a missing order for later deterministic assignment", () => {
-      const _id = new ObjectId();
-      const result = transformLegacyEvent(
-        {
-          _id,
-          isSomeday: true,
-          startDate: "2026-01-01",
-          endDate: "2026-01-01",
-        },
-        baseContext(),
-      );
-      expect(result.ok).toBe(true);
-      if (result.ok) expect(result.sortOrderAssigned).toBe(true);
-    });
-
-    it("categorizes a <=7 day span as week", () => {
+  // The Someday feature was removed: legacy someday events are no longer
+  // migrated into a destination schedule. The transform reports them as an
+  // explicit `excluded` drop (distinct from a failure) so the backfill can
+  // count them while staying fail-closed on genuinely unexpected records.
+  describe("someday exclusion", () => {
+    it("excludes a week-ish span someday event", () => {
       const _id = new ObjectId();
       const result = transformLegacyEvent(
         {
@@ -351,13 +321,14 @@ describe("transformLegacyEvent", () => {
         },
         baseContext(),
       );
-      expect(result.ok).toBe(true);
-      if (result.ok && result.record.schedule.kind === "someday") {
-        expect(result.record.schedule.period).toBe("week");
-      }
+      expect(result).toEqual({
+        ok: false,
+        excluded: true,
+        legacyId: _id.toHexString(),
+      });
     });
 
-    it("categorizes a >7 day span as month", () => {
+    it("excludes a month-ish span someday event", () => {
       const _id = new ObjectId();
       const result = transformLegacyEvent(
         {
@@ -365,35 +336,17 @@ describe("transformLegacyEvent", () => {
           isSomeday: true,
           startDate: "2026-01-01",
           endDate: "2026-01-10",
-          order: 1,
         },
         baseContext(),
       );
-      expect(result.ok).toBe(true);
-      if (result.ok && result.record.schedule.kind === "someday") {
-        expect(result.record.schedule.period).toBe("month");
-      }
+      expect(result).toEqual({
+        ok: false,
+        excluded: true,
+        legacyId: _id.toHexString(),
+      });
     });
 
-    it("takes the date part of startDate when it carries a time component", () => {
-      const _id = new ObjectId();
-      const result = transformLegacyEvent(
-        {
-          _id,
-          isSomeday: true,
-          startDate: "2026-01-01T10:00:00-05:00",
-          endDate: "2026-01-02T10:00:00-05:00",
-          order: 1,
-        },
-        baseContext(),
-      );
-      expect(result.ok).toBe(true);
-      if (result.ok && result.record.schedule.kind === "someday") {
-        expect(result.record.schedule.anchorDate).toBe("2026-01-01");
-      }
-    });
-
-    it("always assigns the local calendar, even when gEventId is present", () => {
+    it("excludes a someday event even when a gEventId is present", () => {
       const _id = new ObjectId();
       const result = transformLegacyEvent(
         {
@@ -402,14 +355,38 @@ describe("transformLegacyEvent", () => {
           gEventId: "g-event-someday",
           startDate: "2026-01-01",
           endDate: "2026-01-01",
-          order: 1,
+        },
+        baseContext(),
+      );
+      expect(result).toEqual({
+        ok: false,
+        excluded: true,
+        legacyId: _id.toHexString(),
+      });
+    });
+
+    it("still migrates a normal timed event as ok:true", () => {
+      const _id = new ObjectId();
+      const result = transformLegacyEvent(
+        {
+          _id,
+          startDate: "2026-01-01T10:00:00-05:00",
+          endDate: "2026-01-01T11:00:00-05:00",
         },
         baseContext(),
       );
       expect(result.ok).toBe(true);
-      if (result.ok) {
-        expect(result.record.calendarId.equals(localCalendarId)).toBe(true);
-      }
+      if (result.ok) expect(result.record.schedule.kind).toBe("timed");
+    });
+
+    it("still migrates a normal all-day event as ok:true", () => {
+      const _id = new ObjectId();
+      const result = transformLegacyEvent(
+        { _id, startDate: "2026-01-01", endDate: "2026-01-03" },
+        baseContext(),
+      );
+      expect(result.ok).toBe(true);
+      if (result.ok) expect(result.record.schedule.kind).toBe("allDay");
     });
   });
 
@@ -723,124 +700,3 @@ describe("transformLegacyEvent", () => {
 // `transformLegacyEvent` only maps one legacy doc at a time and has no view
 // of sibling rows. The migration/backfill layer (phase B) is responsible for
 // deduping across the bounded batch scan.
-
-describe("assignMissingSomedaySortOrders", () => {
-  it("appends flagged records after the bucket's max, ordered by legacyStartDate then _id hex", () => {
-    // anchorDate is only the date part of startDate, so records sharing a
-    // bucket can still carry different (time-of-day) legacyStartDate values
-    // to order by.
-    const context = baseContext();
-    const kept = transformLegacyEvent(
-      {
-        _id: new ObjectId(),
-        isSomeday: true,
-        startDate: "2026-01-01",
-        endDate: "2026-01-01",
-        order: 5,
-      },
-      context,
-    );
-    const flaggedLater = transformLegacyEvent(
-      {
-        _id: new ObjectId(),
-        isSomeday: true,
-        startDate: "2026-01-01T20:00:00-05:00",
-        endDate: "2026-01-01T20:00:00-05:00",
-      },
-      context,
-    );
-    const flaggedEarlier = transformLegacyEvent(
-      {
-        _id: new ObjectId(),
-        isSomeday: true,
-        startDate: "2026-01-01T08:00:00-05:00",
-        endDate: "2026-01-01T08:00:00-05:00",
-      },
-      context,
-    );
-
-    expect(kept.ok && flaggedLater.ok && flaggedEarlier.ok).toBe(true);
-    if (!kept.ok || !flaggedLater.ok || !flaggedEarlier.ok) return;
-
-    const results = [kept, flaggedLater, flaggedEarlier];
-    assignMissingSomedaySortOrders(results);
-
-    const sortOrder = (r: typeof kept) =>
-      r.record.schedule.kind === "someday" ? r.record.schedule.sortOrder : -1;
-
-    expect(sortOrder(kept)).toBe(5);
-    expect(sortOrder(flaggedEarlier)).toBe(6);
-    expect(sortOrder(flaggedLater)).toBe(7);
-  });
-
-  it("does not renumber records that already carry an explicit sortOrder", () => {
-    const context = baseContext();
-    const a = transformLegacyEvent(
-      {
-        _id: new ObjectId(),
-        isSomeday: true,
-        startDate: "2026-01-01",
-        endDate: "2026-01-01",
-        order: 2,
-      },
-      context,
-    );
-    const b = transformLegacyEvent(
-      {
-        _id: new ObjectId(),
-        isSomeday: true,
-        startDate: "2026-01-02",
-        endDate: "2026-01-02",
-        order: 9,
-      },
-      context,
-    );
-
-    expect(a.ok && b.ok).toBe(true);
-    if (!a.ok || !b.ok) return;
-
-    assignMissingSomedaySortOrders([a, b]);
-
-    expect(
-      a.record.schedule.kind === "someday" && a.record.schedule.sortOrder,
-    ).toBe(2);
-    expect(
-      b.record.schedule.kind === "someday" && b.record.schedule.sortOrder,
-    ).toBe(9);
-  });
-
-  it("buckets separately per (calendarId, period, anchorDate)", () => {
-    const context = baseContext();
-    const weekBucket = transformLegacyEvent(
-      {
-        _id: new ObjectId(),
-        isSomeday: true,
-        startDate: "2026-01-01",
-        endDate: "2026-01-01",
-      },
-      context,
-    );
-    const monthBucket = transformLegacyEvent(
-      {
-        _id: new ObjectId(),
-        isSomeday: true,
-        startDate: "2026-01-01",
-        endDate: "2026-01-10",
-      },
-      context,
-    );
-
-    expect(weekBucket.ok && monthBucket.ok).toBe(true);
-    if (!weekBucket.ok || !monthBucket.ok) return;
-
-    assignMissingSomedaySortOrders([weekBucket, monthBucket]);
-
-    const sortOrder = (r: typeof weekBucket) =>
-      r.record.schedule.kind === "someday" ? r.record.schedule.sortOrder : -1;
-
-    // Both are the first (and only) flagged record in their own bucket, so
-    // each starts at 0, not offset by the other bucket's assignment.
-    expect(sortOrder(weekBucket)).toBe(0);
-    expect(sortOrder(monthBucket)).toBe(0);
-  });
-});

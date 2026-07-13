@@ -1,13 +1,8 @@
 import { render, screen } from "@testing-library/react";
-import { act } from "react";
 import { Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { gridHoverColorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  __resetSomedayCommitAcknowledgementState,
-  markSomedayCommitAcknowledgement,
-} from "@web/components/PlannerSidebar/SomedayEventSections/interaction/state/somedayCommitAcknowledgementState";
 import { FloatingDraftEvent } from "@web/interaction/dom/draft-event/FloatingDraftEvent";
 import { createCalendarInteractionDraftEventMount } from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
@@ -50,11 +45,11 @@ const startOfView = futureWeekStart;
 const endOfView = startOfView.add(7, "day");
 const futureTimedStart = futureWeekStart.add(1, "day").hour(9);
 const futureTimedEnd = futureTimedStart.add(1, "hour");
-const futureShortTimedEnd = futureTimedStart.add(30, "minute");
+const _futureShortTimedEnd = futureTimedStart.add(30, "minute");
 const futureFridayTimedStart = futureWeekStart.add(5, "day").hour(9);
 const futureFridayTimedEnd = futureFridayTimedStart.add(1, "hour");
 const pastTimedStart = pastWeekStart.add(1, "day").hour(9);
-const pastTimedEnd = pastTimedStart.add(1, "hour");
+const _pastTimedEnd = pastTimedStart.add(1, "hour");
 const measurements = {
   allDayRow: null,
   colWidths: Array(7).fill(100),
@@ -77,7 +72,7 @@ const weekProps = {
     weekDays: [...Array(7)].map((_, index) => startOfView.add(index, "day")),
   },
 } as WeekProps;
-const pastWeekProps = {
+const _pastWeekProps = {
   component: {
     endOfView: pastWeekStart.add(7, "day"),
     startOfView: pastWeekStart,
@@ -126,7 +121,7 @@ const createAllDayEvent = (
 
 const renderWithStore = (children: React.ReactNode) => render(children);
 
-const expectEventBgToUseHoverColor = (element: HTMLElement) => {
+const _expectEventBgToUseHoverColor = (element: HTMLElement) => {
   expect(element.style.getPropertyValue("--event-bg")).toBe(
     gridHoverColorByPriority[Priorities.UNASSIGNED],
   );
@@ -238,9 +233,6 @@ const RegisteredAllDayEventHarness = ({
 
 afterEach(() => {
   setSystemTime();
-  act(() => {
-    __resetSomedayCommitAcknowledgementState();
-  });
   weekEventRegistry.clear();
   document.body.innerHTML = "";
 });
@@ -380,42 +372,7 @@ describe("weekEventRegistry", () => {
     expect(weekEventRegistry.resolve("draft-event", "timed")).toBeNull();
   });
 
-  it("acknowledges a dropped timed event without moving the text", () => {
-    const event = createTimedEvent({
-      endDate: futureFridayTimedEnd.format(),
-      startDate: futureFridayTimedStart.format(),
-    });
-
-    markSomedayCommitAcknowledgement(event._id!);
-    renderWithStore(<RegisteredTimedEventHarness event={event} />);
-
-    const element = screen.getByRole("button", { name: /timed event/i });
-    const title = screen.getByText("Timed event");
-    const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
-
-    expect(element).toHaveClass("animate-someday-commit-acknowledge");
-    expectEventBgToUseHoverColor(element);
-    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
-    expect(timeLabel).not.toHaveClass("animate-someday-commit-time-fade");
-  });
-
-  it("settles short dropped timed events without text choreography", () => {
-    const event = createTimedEvent({
-      endDate: futureShortTimedEnd.format(),
-    });
-
-    markSomedayCommitAcknowledgement(event._id!);
-    renderWithStore(<RegisteredTimedEventHarness event={event} />);
-
-    const element = screen.getByRole("button", { name: /timed event/i });
-    const title = screen.getByText("Timed event");
-
-    expect(element).toHaveClass("animate-someday-commit-acknowledge");
-    expectEventBgToUseHoverColor(element);
-    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
-  });
-
-  it("renders a saved timed event with the Someday preview text style", () => {
+  it("renders a saved timed event with the preview text style", () => {
     const event = createTimedEvent({
       endDate: futureFridayTimedEnd.format(),
       startDate: futureFridayTimedStart.format(),
@@ -430,40 +387,6 @@ describe("weekEventRegistry", () => {
     expect(timeLabel.style.fontSize).toBe(GRID_EVENT_TIME_LABEL_FONT_SIZE);
     expect(timeLabel.style.opacity).toBe(GRID_EVENT_TIME_LABEL_OPACITY);
     expect(timeLabel.previousElementSibling).toBe(title);
-  });
-
-  it("slides the time out when a dropped timed event lands in the past", () => {
-    const event = createTimedEvent({
-      endDate: pastTimedEnd.format(),
-      startDate: pastTimedStart.format(),
-    });
-
-    markSomedayCommitAcknowledgement(event._id!);
-    renderWithStore(
-      <RegisteredTimedEventHarness
-        calendarWeekProps={pastWeekProps}
-        event={event}
-      />,
-    );
-
-    const timeLabel = screen.getByText(/9\s+-\s+10 AM/);
-
-    expect(timeLabel).toHaveAttribute("aria-hidden", "true");
-    expect(timeLabel).toHaveClass("animate-someday-commit-time-exit");
-  });
-
-  it("settles dropped all-day events without text choreography", () => {
-    const event = createAllDayEvent();
-
-    markSomedayCommitAcknowledgement(event._id!);
-    renderWithStore(<RegisteredAllDayEventHarness event={event} />);
-
-    const element = screen.getByRole("button", { name: /all-day event/i });
-    const title = screen.getByText("All-day event");
-
-    expect(element).toHaveClass("animate-someday-commit-acknowledge");
-    expectEventBgToUseHoverColor(element);
-    expect(title).not.toHaveClass("animate-someday-commit-title-rise");
   });
 });
 
