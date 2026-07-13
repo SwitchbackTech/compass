@@ -287,7 +287,9 @@ async function setupCalendarExperiencePage(
 
   // useSSEConnection.ts invalidates the calendars query when `authenticated`
   // flips; wait for that refetch to land before handing control to the test.
-  await expect(page.getByRole("switch").first()).toBeVisible({
+  await expect(
+    page.locator("#sidebar").getByRole("button", { name: /calendar$/ }).first(),
+  ).toBeVisible({
     timeout: 10000,
   });
 
@@ -322,12 +324,12 @@ test("sidebar lists calendars, coalesces a visibility toggle, and shows card ide
     }),
   ).toBeVisible();
 
-  const toggleB = sidebar.getByRole("switch", {
-    name: `Show ${CALENDAR_B_NAME} calendar`,
+  const toggleB = sidebar.getByRole("button", {
+    name: new RegExp(`^(Show|Hide) ${CALENDAR_B_NAME} calendar$`),
   });
 
   await toggleB.click();
-  await expect(toggleB).toHaveAttribute("aria-checked", "false");
+  await expect(toggleB).toHaveAttribute("aria-pressed", "false");
   await expect(grid.getByRole("button", { name: EVENT_B_TITLE })).toHaveCount(
     0,
   );
@@ -339,7 +341,7 @@ test("sidebar lists calendars, coalesces a visibility toggle, and shows card ide
   ]);
 
   await toggleB.click();
-  await expect(toggleB).toHaveAttribute("aria-checked", "true");
+  await expect(toggleB).toHaveAttribute("aria-pressed", "true");
   await expect(grid.getByRole("button", { name: EVENT_B_TITLE })).toBeVisible();
 
   await expect.poll(() => harness.putCalls.length).toBe(2);
