@@ -14,9 +14,9 @@ interface Props extends PropsWithChildren {
 
 /**
  * Width-collapsing wrapper for the left sidebar that is also user-resizable via
- * a drag handle or the keyboard (arrows/Home/End/Enter). Mirrors the task-list
- * divider: the panel and its divider share one collapse transition, and a live
- * drag disables that transition so the width tracks the pointer 1:1.
+ * a drag handle or the keyboard (arrows/Home/End/Enter). The panel and its
+ * divider share one collapse transition, and a live drag disables that
+ * transition so the width tracks the pointer 1:1.
  */
 export function ResizableSidebarPanel({ children, isOpen }: Props) {
   const transition = useCollapsiblePanel(isOpen);
@@ -38,8 +38,7 @@ export function ResizableSidebarPanel({ children, isOpen }: Props) {
         style={{ width: transition.isExpanded ? width : 0 }}
       >
         {/* The content holds its full width even while the wrapper collapses to
-            0, so overflow-hidden slides it out of view (mirrors how the task
-            list passes an explicit width to its child). */}
+            0, so overflow-hidden slides it out of view. */}
         <div className="h-full shrink-0" style={{ width }}>
           {children}
         </div>

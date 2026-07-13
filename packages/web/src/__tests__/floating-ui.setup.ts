@@ -1,6 +1,6 @@
 /**
- * Mocks @floating-ui/react so components like DraggableTask run the same
- * production code paths (refs.setReference, refs.setFloating, floatingStyles)
+ * Mocks @floating-ui/react so components like the floating event form run the
+ * same production code paths (refs.setReference, refs.setFloating, floatingStyles)
  * in tests without requiring real layout. We call the real useFloating and
  * only override refs and floatingStyles so other components (SelectView,
  * Tooltip) still receive a valid context. Individual test files may override
