@@ -71,10 +71,10 @@ export const CalendarAllDayRow: FC<CalendarAllDayRowProps> = ({
         } as CSSVariables
       }
     >
-      {visibleDates.map(({ date, key }) => (
+      {visibleDates.map(({ date, key, surfaceLabel }) => (
         <div
           className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l"
-          aria-label={date.format("dddd, MMMM D, YYYY")}
+          aria-label={surfaceLabel ?? date.format("dddd, MMMM D, YYYY")}
           key={key}
           role="columnheader"
         />

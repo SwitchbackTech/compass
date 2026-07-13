@@ -1,6 +1,14 @@
 import { type OpenChangeReason, type VirtualElement } from "@floating-ui/react";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import {
+  type MouseEvent as ReactMouseEvent,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+} from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type Calendar } from "@core/types/calendar.contracts";
+import { type CalendarId } from "@core/types/domain-primitives";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -17,6 +25,7 @@ import {
   hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
+import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import {
   createGridEventDraft,
@@ -51,6 +60,16 @@ import {
 } from "./DayCalendarEventLayers";
 import { useDayCalendarColumns } from "./useDayCalendarColumns";
 import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
+
+export const canCreateDraftOnCalendar = (
+  calendar: Calendar | null,
+  showError: (message: string) => unknown = showErrorToast,
+): boolean => {
+  if (!calendar || calendar.capabilities.canWrite) return true;
+
+  showError(`You can't edit the ${calendar.name} calendar.`);
+  return false;
+};
 
 const isDayInteractionMotionActive = () => false;
 
@@ -202,6 +221,8 @@ export function DayCalendarGrid() {
                   new Date(event.startDate),
                   new Date(event.endDate),
                 ),
+            undefined,
+            event.calendarId ?? null,
           );
       if (!draft) {
         return;
@@ -331,6 +352,43 @@ export function DayCalendarGrid() {
     draft,
     onOpenEvent: openEventFormForEvent,
   });
+  const getCalendarAtX = useCallback(
+    (clientX: number) =>
+      displayedCalendars[dateCalcs.getVisibleDateIndexByX(clientX)] ?? null,
+    [dateCalcs, displayedCalendars],
+  );
+  const createOnCalendarSurface = useCallback(
+    (
+      event: ReactMouseEvent<HTMLElement>,
+      createDraft: (
+        event: ReactMouseEvent<HTMLElement>,
+        calendarId: CalendarId | null,
+      ) => void,
+    ) => {
+      const calendar = getCalendarAtX(event.clientX);
+
+      if (!canCreateDraftOnCalendar(calendar)) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
+
+      createDraft(event, calendar?.id ?? null);
+    },
+    [getCalendarAtX],
+  );
+  const handleAllDayMouseDown = useCallback(
+    (event: ReactMouseEvent<HTMLElement>) => {
+      createOnCalendarSurface(event, onAllDayMouseDown);
+    },
+    [createOnCalendarSurface, onAllDayMouseDown],
+  );
+  const handleTimedMouseDown = useCallback(
+    (event: ReactMouseEvent<HTMLElement>) => {
+      createOnCalendarSurface(event, startTimedDraftCreation);
+    },
+    [createOnCalendarSurface, startTimedDraftCreation],
+  );
   const allDayEventsLayer = useMemo(
     () => (
       <DayCalendarAllDayEventsLayer
@@ -402,8 +460,8 @@ export function DayCalendarGrid() {
           allDayEventsLayer={allDayEventsLayer}
           allDayRowsCount={allDayRowsCount}
           gridRefs={gridRefs}
-          onAllDayMouseDown={onAllDayMouseDown}
-          onTimedMouseDown={startTimedDraftCreation}
+          onAllDayMouseDown={handleAllDayMouseDown}
+          onTimedMouseDown={handleTimedMouseDown}
           timedEventsLayer={timedEventsLayer}
           today={today}
           visibleDates={visibleDates}

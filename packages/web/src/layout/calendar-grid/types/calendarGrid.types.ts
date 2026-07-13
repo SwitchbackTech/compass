@@ -9,6 +9,7 @@ import { type Dayjs } from "@core/util/date/dayjs";
 export interface CalendarGridVisibleDate {
   date: Dayjs;
   key: string;
+  surfaceLabel?: string;
 }
 
 export interface CalendarGridMeasurement {
