@@ -46,12 +46,6 @@ const { PlannerCalendarList } = (await import(
   plannerCalendarListModuleUrl.href
 )) as typeof import("./PlannerCalendarList");
 
-// `toHaveAttribute`/`toHaveTextContent`/`toHaveFocus` (jest-dom) crash with
-// `ERR_INVALID_THIS` under bun:test when the assertion fails and jest-dom
-// tries to build its failure message, masking the real diff. Reading the DOM
-// directly and using bun's native `toBe`/`toMatch` sidesteps that.
-const ariaChecked = (el: HTMLElement) => el.getAttribute("aria-checked");
-
 const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   id: CalendarIdSchema.parse(createObjectIdString()),
   name: "Work",
@@ -113,7 +107,7 @@ describe("PlannerCalendarList", () => {
     });
   });
 
-  it("renders active calendars with switch roles, hides inactive calendars, and spells out primary/read-only context as text", () => {
+  it("renders active calendars with pressed buttons, hides inactive calendars, and spells out primary/read-only context as text", () => {
     const active = makeCalendar({ name: "Work" });
     const primary = makeCalendar({ name: "Personal", isPrimary: true });
     const readOnly = makeCalendar({
@@ -127,7 +121,7 @@ describe("PlannerCalendarList", () => {
 
     expect(screen.getByText("Work")).toBeInTheDocument();
     expect(
-      screen.getByRole("switch", { name: "Show Work calendar" }),
+      screen.getByRole("button", { name: "Hide Work calendar" }),
     ).toBeInTheDocument();
     expect(screen.getByText(/primary/)).toBeInTheDocument();
     expect(screen.getByText(/read-only/)).toBeInTheDocument();
@@ -140,10 +134,10 @@ describe("PlannerCalendarList", () => {
     renderCalendarList([local], { authenticated: false });
 
     expect(screen.getByText("Local")).toBeInTheDocument();
-    expect(screen.queryByRole("switch")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
-  it("flips aria-checked optimistically and coalesces rapid toggles into one final call", async () => {
+  it("flips aria-pressed optimistically and coalesces rapid toggles into one final call", async () => {
     const calendarA = makeCalendar({ name: "Calendar A" });
     const calendarB = makeCalendar({ name: "Calendar B" });
     // Method-aware: a successful flush invalidates the calendars query, which
@@ -177,21 +171,21 @@ describe("PlannerCalendarList", () => {
     const user = userEvent.setup();
     renderCalendarList([calendarA, calendarB], { coalesceDelayMs: 100 });
 
-    const switchA = screen.getByRole("switch", {
-      name: "Show Calendar A calendar",
+    const buttonA = screen.getByRole("button", {
+      name: "Hide Calendar A calendar",
     });
-    const switchB = screen.getByRole("switch", {
-      name: "Show Calendar B calendar",
+    const buttonB = screen.getByRole("button", {
+      name: "Hide Calendar B calendar",
     });
 
-    await user.click(switchA);
-    expect(ariaChecked(switchA)).toBe("false");
+    await user.click(buttonA);
+    expect(buttonA.getAttribute("aria-pressed")).toBe("false");
 
-    await user.click(switchB);
-    expect(ariaChecked(switchB)).toBe("false");
+    await user.click(buttonB);
+    expect(buttonB.getAttribute("aria-pressed")).toBe("false");
 
-    await user.click(switchA);
-    expect(ariaChecked(switchA)).toBe("true");
+    await user.click(buttonA);
+    expect(buttonA.getAttribute("aria-pressed")).toBe("true");
 
     await waitFor(() => {
       expect(putCalls).toHaveLength(1);
@@ -230,7 +224,7 @@ describe("PlannerCalendarList", () => {
     });
 
     await user.click(
-      screen.getByRole("switch", { name: "Show Hidden target calendar" }),
+      screen.getByRole("button", { name: "Hide Hidden target calendar" }),
     );
 
     const cached = queryClient.getQueryData<NormalizedEventQueryData>(weekKey);
@@ -239,7 +233,7 @@ describe("PlannerCalendarList", () => {
     expect(cached?.entities[keptEvent.id]).toBeDefined();
   });
 
-  it("rolls back the toggle and announces failure when the flush rejects", async () => {
+  it("rolls back the visibility button and announces failure when the flush rejects", async () => {
     const calendar = makeCalendar({ name: "Work" });
     BaseApi.defaults.adapter = mock(async () => {
       throw new Error("Simulated network failure");
@@ -248,12 +242,12 @@ describe("PlannerCalendarList", () => {
     const user = userEvent.setup();
     renderCalendarList([calendar], { coalesceDelayMs: 100 });
 
-    const toggle = screen.getByRole("switch", { name: "Show Work calendar" });
+    const toggle = screen.getByRole("button", { name: "Hide Work calendar" });
     await user.click(toggle);
-    expect(ariaChecked(toggle)).toBe("false");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
 
     await waitFor(() => {
-      expect(ariaChecked(toggle)).toBe("true");
+      expect(toggle.getAttribute("aria-pressed")).toBe("true");
     });
     expect(screen.getByRole("status").textContent ?? "").toMatch(
       /couldn.t update calendar visibility/i,
@@ -275,16 +269,16 @@ describe("PlannerCalendarList", () => {
     const user = userEvent.setup();
     renderCalendarList([calendar], { coalesceDelayMs: 100 });
 
-    const toggle = screen.getByRole("switch", { name: "Show Work calendar" });
+    const toggle = screen.getByRole("button", { name: "Hide Work calendar" });
 
     await user.tab();
     expect(document.activeElement).toBe(toggle);
 
     await user.keyboard("{Enter}");
-    expect(ariaChecked(toggle)).toBe("false");
+    expect(toggle.getAttribute("aria-pressed")).toBe("false");
 
     await user.keyboard(" ");
-    expect(ariaChecked(toggle)).toBe("true");
+    expect(toggle.getAttribute("aria-pressed")).toBe("true");
   });
 
   it("shows a loading state while calendars are pending", () => {

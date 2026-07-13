@@ -67,16 +67,19 @@ export const PlannerCalendarList: FC<Props> = ({ coalesceDelayMs }) => {
         <ul className="flex flex-col gap-1.5">
           {calendars.map((calendar) => {
             const contextLabel = calendarContextLabel(calendar);
-
-            return (
-              <li className="flex items-center gap-2" key={calendar.id}>
+            const calendarRow = (
+              <>
                 <span
                   aria-hidden
-                  className="size-2.5 shrink-0 rounded-full"
-                  style={{ backgroundColor: calendar.backgroundColor }}
+                  className="size-3.5 shrink-0 rounded-full border-2 transition-[background-color,border-color] motion-reduce:transition-none"
+                  style={{
+                    backgroundColor: calendar.isVisible
+                      ? calendar.backgroundColor
+                      : "transparent",
+                    borderColor: calendar.backgroundColor,
+                  }}
                 />
-
-                <span className="min-w-0 flex-1 truncate text-text-lighter text-xs">
+                <span className="min-w-0 flex-1 truncate">
                   {calendar.name}
                   {contextLabel ? (
                     <span className="text-text-light-inactive">
@@ -85,26 +88,28 @@ export const PlannerCalendarList: FC<Props> = ({ coalesceDelayMs }) => {
                     </span>
                   ) : null}
                 </span>
+              </>
+            );
 
+            return (
+              <li key={calendar.id}>
                 {authenticated ? (
                   <button
-                    aria-checked={calendar.isVisible}
-                    aria-label={`Show ${calendar.name} calendar`}
-                    className="c-focus-ring relative h-4 w-7 shrink-0 rounded-full bg-panel-badge-bg transition-colors data-[checked=true]:bg-accent-primary"
-                    data-checked={calendar.isVisible}
+                    aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${calendar.name} calendar`}
+                    aria-pressed={calendar.isVisible}
+                    className="c-focus-ring group flex w-full min-w-0 items-center gap-2 rounded px-1 py-0.5 text-left text-text-lighter text-xs hover:bg-panel-bg"
                     onClick={() =>
                       toggleCalendarVisibility(calendar.id, !calendar.isVisible)
                     }
-                    role="switch"
                     type="button"
                   >
-                    <span
-                      aria-hidden
-                      className="absolute top-0.5 left-0.5 size-3 rounded-full bg-text-lighter transition-transform data-[checked=true]:translate-x-3"
-                      data-checked={calendar.isVisible}
-                    />
+                    {calendarRow}
                   </button>
-                ) : null}
+                ) : (
+                  <div className="flex min-w-0 items-center gap-2 px-1 py-0.5 text-text-lighter text-xs">
+                    {calendarRow}
+                  </div>
+                )}
               </li>
             );
           })}
