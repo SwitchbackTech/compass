@@ -104,9 +104,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
       showPopperArrow={false}
       renderCustomHeader={(headerProps) => {
         const { customHeaderCount, monthDate } = headerProps;
-        const selectedMonth = dayjs(monthDate).format(
-          view === "sidebar" ? "MMMM YYYY" : "MMM YYYY",
-        );
+        const selectedMonth = dayjs(monthDate).format("MMM YYYY");
         const currentMonth = dayjs().format("MMM YYYY");
 
         return (
