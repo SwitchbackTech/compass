@@ -1,7 +1,5 @@
-import { FloatingFocusManager } from "@floating-ui/react";
-import { type FC, type MouseEvent, useRef } from "react";
+import { type FC, type MouseEvent } from "react";
 import { Origin } from "@core/constants/core.constants";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -9,10 +7,9 @@ import {
   getEventDragOffset,
   gridEventDefaultPosition,
 } from "@web/common/utils/event/event.util";
+import { focusEventFormTitle } from "@web/common/utils/form/form.util";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 import { type CalendarTimedDeckLayout } from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
-import { EventForm } from "@web/views/Forms/EventForm/EventForm";
-import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
 import { AllDayEventMemo } from "@web/views/Week/components/Grid/AllDayRow/AllDayEvent";
@@ -37,26 +34,10 @@ export const GridDraft: FC<Props> = ({
   recurringPreviews = [],
   weekProps,
 }) => {
-  const titleInputRef = useRef<HTMLInputElement>(null);
-  const { actions, setters, state, confirmation } = useDraftContext();
-  const { discard, duplicateEvent, startDragging } = actions;
-  const { setDraft, setDragOffset, setDateBeingChanged, setIsResizing } =
-    setters;
-  const { draft, dragOffset, isDragging, formProps, isFormOpen, isResizing } =
-    state;
-  const { context, getReferenceProps, getFloatingProps, x, y, refs, strategy } =
-    formProps;
-
-  const onConvert = () => {
-    const start = weekProps.component.startOfView.format(YEAR_MONTH_DAY_FORMAT);
-    const end = weekProps.component.endOfView.format(YEAR_MONTH_DAY_FORMAT);
-
-    actions.convert(start, end);
-  };
-
-  const focusTitleInput = () => {
-    titleInputRef.current?.focus();
-  };
+  const { actions, setters, state } = useDraftContext();
+  const { startDragging } = actions;
+  const { setDragOffset, setDateBeingChanged, setIsResizing } = setters;
+  const { draft, dragOffset, isDragging, isResizing } = state;
 
   // Schema_GridEvent-shaped projection of the canonical GridEventDraft, for
   // the still-unconverted renderer components (GridEvent/AllDayEventMemo)
@@ -81,7 +62,6 @@ export const GridDraft: FC<Props> = ({
     startDragging();
   };
 
-  const { onSubmit, onDelete } = confirmation;
   const motionMode = isResizing ? "resizing" : isDragging ? "dragging" : "idle";
 
   const { onMouseDown } = useGridEventMouseDown(
@@ -120,7 +100,7 @@ export const GridDraft: FC<Props> = ({
           isPlaceholder={false}
           key={`draft-${draftAsGridEvent._id}`}
           measurements={measurements}
-          onKeyDown={focusTitleInput}
+          onKeyDown={focusEventFormTitle}
           onMouseDown={(e: MouseEvent, event: Schema_GridEvent) => {
             e.preventDefault();
             onMouseDown(e, event);
@@ -135,9 +115,7 @@ export const GridDraft: FC<Props> = ({
             setDateBeingChanged(dateToChange);
             setIsResizing(true);
           }}
-          ref={refs.setReference}
           weekDays={weekProps.component.weekDays}
-          {...getReferenceProps()}
         />
       ) : (
         <GridEvent
@@ -151,7 +129,7 @@ export const GridDraft: FC<Props> = ({
             e.preventDefault();
             onMouseDown(e, event);
           }}
-          onEventKeyDown={focusTitleInput}
+          onEventKeyDown={focusEventFormTitle}
           onScalerMouseDown={(
             _event: Schema_GridEvent,
             e: MouseEvent,
@@ -162,41 +140,8 @@ export const GridDraft: FC<Props> = ({
             setDateBeingChanged(dateToChange);
             setIsResizing(true);
           }}
-          ref={refs.setReference}
           weekProps={weekProps}
-          {...getReferenceProps()}
         />
-      )}
-
-      {isFormOpen && (
-        <FloatingFocusManager
-          context={context}
-          modal={false}
-          closeOnFocusOut={false}
-        >
-          <FloatingFormContainer
-            ref={refs.setFloating}
-            strategy={strategy}
-            top={y ?? 0}
-            left={x ?? 0}
-            {...getFloatingProps()}
-          >
-            <EventForm
-              draft={draft}
-              onClose={discard}
-              onConvert={onConvert}
-              onDelete={onDelete}
-              onDuplicate={duplicateEvent}
-              isDraft={draft.kind === "create"}
-              isExistingEvent={draft.kind === "edit"}
-              onSubmit={(nextDraft) => {
-                if (nextDraft) void onSubmit(nextDraft);
-              }}
-              setDraft={setDraft}
-              titleInputRef={titleInputRef}
-            />
-          </FloatingFormContainer>
-        </FloatingFocusManager>
       )}
     </>
   );

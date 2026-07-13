@@ -1,7 +1,6 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
-import { Categories_Event } from "@core/types/event.types";
 import {
   cleanup,
   fireEvent,
@@ -12,14 +11,13 @@ import {
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { createCompassQueryClient } from "@web/api/query-client";
-import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
+import { SidebarEventDetails } from "@web/components/PlannerSidebar/EventDetails/SidebarEventDetails";
 import {
   createGridEventDraft,
   editGridEventDraft,
 } from "@web/events/grid-event-draft.adapter";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
-import { draftActions } from "@web/events/stores/draft.store";
-import { useEventForm } from "@web/views/Forms/hooks/useEventForm";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 import { afterEach, beforeEach, describe, expect, it } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -35,7 +33,20 @@ afterEach(() => {
   cleanup();
 });
 
-describe("FloatingEventForm", () => {
+describe("SidebarEventDetails", () => {
+  it("renders nothing while the draft store says the form is closed", () => {
+    const draft = createGridEventDraft({
+      kind: "allDay",
+      start: new Date("2026-05-20"),
+      end: new Date("2026-05-21"),
+    });
+    draftActions.startGridDraft({ activity: "gridClick", draft });
+
+    render(<SidebarEventDetails />);
+
+    expect(screen.queryByRole("form")).toBeNull();
+  });
+
   it("focuses the title when the form opens", async () => {
     const draft = createGridEventDraft({
       kind: "allDay",
@@ -45,23 +56,29 @@ describe("FloatingEventForm", () => {
     draftActions.startGridDraft({ activity: "gridClick", draft });
     draftActions.setFormOpen(true);
 
-    const Harness = () => {
-      const form = useEventForm(Categories_Event.ALLDAY, true, () => undefined);
-
-      return (
-        <>
-          <button ref={form.refs.setReference} type="button">
-            Draft event
-          </button>
-          <FloatingEventForm form={form} />
-        </>
-      );
-    };
-
-    render(<Harness />);
+    render(<SidebarEventDetails />);
 
     await waitFor(() =>
       expect(screen.getByPlaceholderText("Title")).toHaveFocus(),
+    );
+  });
+
+  it("closes the form on Escape", async () => {
+    const draft = createGridEventDraft({
+      kind: "allDay",
+      start: new Date("2026-05-20"),
+      end: new Date("2026-05-21"),
+    });
+    draftActions.startGridDraft({ activity: "gridClick", draft });
+    draftActions.setFormOpen(true);
+
+    render(<SidebarEventDetails />);
+
+    const titleField = await screen.findByPlaceholderText("Title");
+    fireEvent.keyDown(titleField, { key: "Escape" });
+
+    await waitFor(() =>
+      expect(useDraftStore.getState().status?.isFormOpen).toBe(false),
     );
   });
 
@@ -96,20 +113,7 @@ describe("FloatingEventForm", () => {
     draftActions.startGridDraft({ activity: "keyboardEdit", draft });
     draftActions.setFormOpen(true);
 
-    const Harness = () => {
-      const form = useEventForm(Categories_Event.TIMED, true, () => undefined);
-
-      return (
-        <>
-          <button ref={form.refs.setReference} type="button">
-            Existing event
-          </button>
-          <FloatingEventForm form={form} />
-        </>
-      );
-    };
-
-    render(<Harness />, { queryClient });
+    render(<SidebarEventDetails />, { queryClient });
 
     const titleField = await screen.findByPlaceholderText("Title");
     await waitFor(() => expect(titleField).toHaveFocus());
@@ -126,7 +130,7 @@ describe("FloatingEventForm", () => {
 
     // A delete mutation only fires on the real-delete branch
     // (`handleEventFormDelete` calling `onDelete`), never on the draft-close
-    // branch (`onClose` only) — so this pins FloatingEventForm computing
+    // branch (`onClose` only) — so this pins SidebarEventDetails computing
     // isDraft from whether the event already exists, not hardcoding it to
     // true for every opened event.
     await waitFor(() =>
@@ -175,11 +179,7 @@ describe("FloatingEventForm", () => {
     draftActions.startGridDraft({ activity: "keyboardEdit", draft });
     draftActions.setFormOpen(true);
 
-    const Harness = () => {
-      const form = useEventForm(Categories_Event.TIMED, true, () => undefined);
-      return <FloatingEventForm form={form} />;
-    };
-    render(<Harness />, { queryClient });
+    render(<SidebarEventDetails />, { queryClient });
 
     const titleField = await screen.findByPlaceholderText("Title");
     titleField.blur();

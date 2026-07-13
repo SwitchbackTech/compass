@@ -2,8 +2,6 @@ import { type CSSProperties } from "react";
 import {
   CLASS_TIMED_CALENDAR_EVENT,
   DATA_EVENT_ELEMENT_ID,
-  DATA_FULL_WIDTH,
-  DATA_OVERLAPPING,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
@@ -247,8 +245,6 @@ function updatePlacements(
     // Mutate DOM classes+styles here to prevent react re-renders
     node.classList.remove(...oldClasses);
     node.classList.add(...newClasses);
-    node.setAttribute(DATA_OVERLAPPING, String(placement.isOverlapping));
-    node.setAttribute(DATA_FULL_WIDTH, String(fullWidth));
     Object.assign(node.style, styles);
   });
 

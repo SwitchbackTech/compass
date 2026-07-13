@@ -52,6 +52,7 @@ import { RecurrenceSection } from "@web/views/Forms/EventForm/DateControlsSectio
 import { EventActionMenu } from "@web/views/Forms/EventForm/EventActionMenu";
 import { PrioritySection } from "@web/views/Forms/EventForm/PrioritySection";
 import { SaveSection } from "@web/views/Forms/EventForm/SaveSection";
+import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
 import { TitleActionsRow } from "@web/views/Forms/EventForm/TitleActionsRow";
 import {
   type GridEventFormProps,
@@ -507,6 +508,8 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
         enabled: true,
       },
     );
+
+    useEscapeToCloseForm(onClose);
 
     return (
       <EventFormShell

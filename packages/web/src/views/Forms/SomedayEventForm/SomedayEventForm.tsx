@@ -28,6 +28,7 @@ import {
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
+import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
 import { SomedayEventActionMenu } from "@web/views/Forms/SomedayEventForm/SomedayEventActionMenu";
 import { SomedayRecurrenceSection } from "@web/views/Forms/SomedayEventForm/SomedayRecurrenceSection/SomedayRecurrenceSection";
 import { useSomedayFormShortcuts } from "@web/views/Forms/SomedayEventForm/useSomedayFormShortcuts";
@@ -165,6 +166,8 @@ export const SomedayEventForm: React.FC<FormProps> = ({
     onDelete,
     onDuplicate: onDuplicateEvent,
   });
+
+  useEscapeToCloseForm(onClose);
 
   const stopPropagation = (e: MouseEvent) => {
     e.stopPropagation();

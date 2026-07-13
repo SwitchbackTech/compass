@@ -9,7 +9,11 @@ import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
 import { SomedayInteractionCoordinator } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/SomedayInteractionCoordinator";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
-import { draftActions } from "@web/events/stores/draft.store";
+import {
+  draftActions,
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,
   useViewStore,
@@ -35,10 +39,15 @@ import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerS
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
 import { useWeekCmdTasks } from "@web/views/Week/hooks/useWeekCmdTasks";
+import { WeekSidebarEventDetails } from "@web/views/Week/components/Draft/sidebar/WeekSidebarEventDetails";
 import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInteractionCoordinator";
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  // Event details live in the sidebar, so an open form reveals the sidebar
+  // even when the user keeps it collapsed; their persisted preference is
+  // untouched and the panel collapses again when the form closes.
+  const isEventDetailsOpen = useDraftStore(selectIsEventFormOpen);
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();
   }, []);
@@ -157,9 +166,17 @@ export const WeekView = () => {
             <Shortcuts shortcutsProps={shortcutProps}>
               <ContextMenuWrapper id="sidebar-context-menu">
                 <Draft measurements={measurements} weekProps={weekProps} />
-                <ResizableSidebarPanel isOpen={isSidebarOpen}>
+                <ResizableSidebarPanel
+                  isOpen={isSidebarOpen || isEventDetailsOpen}
+                >
                   <PlannerSidebar
                     calendarDate={calendarDate}
+                    eventDetails={
+                      <WeekSidebarEventDetails
+                        viewEnd={weekProps.component.endOfView}
+                        viewStart={weekProps.component.startOfView}
+                      />
+                    }
                     isShortcutsOpen={isShortcutsOpen}
                     onCloseShortcuts={closeShortcuts}
                     onToggleShortcuts={toggleShortcuts}

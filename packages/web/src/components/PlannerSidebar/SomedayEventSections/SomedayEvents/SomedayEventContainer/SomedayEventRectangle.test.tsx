@@ -2,18 +2,10 @@ import { render, screen } from "@testing-library/react";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import { Categories_Event } from "@core/types/event.types";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
-import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
 import { describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
 import { SomedayEventRectangle } from "./SomedayEventRectangle";
-
-// The component only reaches for the reference ref and reference props from the
-// floating-ui form hook, so a minimal stub is enough to render it in isolation.
-const formProps = {
-  refs: { setReference: () => {} },
-  getReferenceProps: () => ({}),
-} as unknown as Props_DraftForm;
 
 const createEvent = (overrides: Partial<Event> = {}): Event =>
   createMockEvent({
@@ -32,7 +24,6 @@ const renderRectangle = (event: Event) =>
     <SomedayEventRectangle
       category={Categories_Event.SOMEDAY_WEEK}
       event={event}
-      formProps={formProps}
       onMigrate={mock()}
     />,
   );

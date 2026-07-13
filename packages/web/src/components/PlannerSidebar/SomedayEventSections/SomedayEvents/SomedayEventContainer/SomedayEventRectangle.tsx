@@ -4,7 +4,6 @@ import { Categories_Event } from "@core/types/event.types";
 import { RepeatIcon } from "@web/components/Icons/Repeat";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
 import { eventToSchemaEvent } from "@web/events/someday-event-draft.adapter";
-import { type Props_DraftForm } from "@web/views/Week/components/Draft/context/DraftContext";
 
 const ACTIONS_CLASS_NAME =
   "pointer-events-none flex opacity-0 transition-opacity duration-150 group-hover:pointer-events-auto group-hover:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100";
@@ -16,25 +15,15 @@ interface Props {
   category: Categories_Event;
   event: Event;
   onMigrate: Actions_Sidebar["onMigrate"];
-  formProps: Props_DraftForm;
 }
 
-export const SomedayEventRectangle = ({
-  category,
-  event,
-  formProps,
-  onMigrate,
-}: Props) => {
+export const SomedayEventRectangle = ({ category, event, onMigrate }: Props) => {
   const target = category === Categories_Event.SOMEDAY_WEEK ? "week" : "month";
   const canMigrate = event.recurrence.kind === "single";
   const title = event.content.kind === "details" ? event.content.title : "";
 
   return (
-    <div
-      className="h-full"
-      ref={formProps.refs.setReference}
-      {...formProps.getReferenceProps()}
-    >
+    <div className="h-full">
       <div className="flex h-full items-center justify-between">
         <div
           className="flex min-w-0 flex-1 items-center gap-1.5"

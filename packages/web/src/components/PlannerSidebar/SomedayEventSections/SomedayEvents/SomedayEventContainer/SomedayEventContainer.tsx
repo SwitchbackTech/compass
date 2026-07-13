@@ -1,4 +1,3 @@
-import { FloatingFocusManager, FloatingPortal } from "@floating-ui/react";
 import { type Ref, useRef } from "react";
 import { toast } from "react-toastify";
 import { Priorities } from "@core/constants/core.constants";
@@ -26,10 +25,7 @@ import {
   scheduleSomedayEventTransition,
 } from "@web/events/someday-event-draft.adapter";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
-import { FloatingFormContainer } from "@web/views/Forms/SomedayEventForm/FloatingFormContainer";
 import { SomedayEventForm } from "@web/views/Forms/SomedayEventForm/SomedayEventForm";
-import { useDraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
-import { getSidebarOpenWidth } from "@web/views/Week/layout.constants";
 
 export interface Props {
   calendarIdentity?: CalendarCardIdentity | null;
@@ -61,17 +57,9 @@ export const SomedayEventContainer = ({
   setEvent,
   weekViewRange,
 }: Props) => {
-  const { state, actions, setters } = useSidebarContext();
+  const { state, actions } = useSidebarContext();
   const mutations = useEventMutations();
   const { data: calendars } = useCalendarsQuery();
-
-  const formProps = useDraftForm(
-    category,
-    state.isSomedayFormOpen && state.draft?.id === event.id,
-    actions.discard,
-    actions.reset,
-    setters.setIsSomedayFormOpen,
-  );
 
   const isFocusedRef = useRef(false);
 
@@ -186,54 +174,46 @@ export const SomedayEventContainer = ({
         interactionRef={interactionRef}
         priority={event.priority || Priorities.UNASSIGNED}
         onMigrate={actions.onMigrate}
-        formProps={formProps}
       />
 
       {state.isSomedayFormOpen && isDraftingThisEvent && (
-        <FloatingPortal>
-          <FloatingFocusManager context={formProps.context}>
-            <FloatingFormContainer
-              ref={formProps.refs.setFloating}
-              strategy={formProps.strategy}
-              top={formProps.y}
-              left={getSidebarOpenWidth()}
-            >
-              <SomedayEventForm
-                event={formEvent}
-                category={category}
-                isDraft={!formEvent._id}
-                isExistingEvent={!!formEvent._id}
-                onClose={() => {
-                  actions.closeForm();
-                  actions.close();
-                }}
-                onDelete={() => {
-                  // For recurring someday events, delete the entire series
-                  const isRecurring = event.recurrence.kind !== "single";
-                  const deleteScope = isRecurring
-                    ? RecurringEventUpdateScope.ALL_EVENTS
-                    : RecurringEventUpdateScope.THIS_EVENT;
-                  deleteEvent(deleteScope);
-                }}
-                onDuplicate={duplicateEvent}
-                onMigrate={actions.onMigrate}
-                onSubmit={onSubmit}
-                setEvent={(next) =>
-                  setEvent((previous) => {
-                    const resolved =
-                      typeof next === "function"
-                        ? next(previous ? eventToSchemaEvent(previous) : null)
-                        : next;
+        // Docked inline below the event's row so someday editing happens in
+        // the sidebar like every other event form.
+        <div className="my-1">
+          <SomedayEventForm
+            event={formEvent}
+            category={category}
+            isDraft={!formEvent._id}
+            isExistingEvent={!!formEvent._id}
+            onClose={() => {
+              actions.closeForm();
+              actions.close();
+            }}
+            onDelete={() => {
+              // For recurring someday events, delete the entire series
+              const isRecurring = event.recurrence.kind !== "single";
+              const deleteScope = isRecurring
+                ? RecurringEventUpdateScope.ALL_EVENTS
+                : RecurringEventUpdateScope.THIS_EVENT;
+              deleteEvent(deleteScope);
+            }}
+            onDuplicate={duplicateEvent}
+            onMigrate={actions.onMigrate}
+            onSubmit={onSubmit}
+            setEvent={(next) =>
+              setEvent((previous) => {
+                const resolved =
+                  typeof next === "function"
+                    ? next(previous ? eventToSchemaEvent(previous) : null)
+                    : next;
 
-                    return resolved
-                      ? schemaEventToLocalEvent(resolved, event.calendarId)
-                      : null;
-                  })
-                }
-              />
-            </FloatingFormContainer>
-          </FloatingFocusManager>
-        </FloatingPortal>
+                return resolved
+                  ? schemaEventToLocalEvent(resolved, event.calendarId)
+                  : null;
+              })
+            }
+          />
+        </div>
       )}
     </>
   );

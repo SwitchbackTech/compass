@@ -7,7 +7,6 @@ import {
   gridColorByPriority,
   gridHoverColorByPriority,
 } from "@web/common/styles/theme.util";
-import { type Props_DraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
 import { SomedayEvent } from "./SomedayEvent";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -16,13 +15,6 @@ const createEvent = (): Event =>
     priority: Priorities.WORK,
     content: { kind: "details", title: "Plan launch", description: "" },
   });
-
-const formProps = {
-  getReferenceProps: () => ({}),
-  refs: {
-    setReference: () => undefined,
-  },
-} as unknown as Props_DraftForm;
 
 const renderSomedayEvent = ({
   calendarIdentity,
@@ -36,7 +28,6 @@ const renderSomedayEvent = ({
       calendarIdentity={calendarIdentity}
       category={Categories_Event.SOMEDAY_WEEK}
       event={createEvent()}
-      formProps={formProps}
       interactionRef={() => undefined}
       onBlur={() => undefined}
       onClick={onClick}

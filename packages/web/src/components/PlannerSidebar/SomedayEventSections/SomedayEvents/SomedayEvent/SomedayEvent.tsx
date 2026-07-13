@@ -10,7 +10,6 @@ import {
 } from "@web/common/styles/theme.util";
 import { type Actions_Sidebar } from "@web/components/PlannerSidebar/draft/hooks/useSidebarActions";
 import { type SomedayInteractionCategory } from "@web/components/PlannerSidebar/SomedayEventSections/interaction/registry/somedayEventRegistry";
-import { type Props_DraftForm } from "@web/views/Week/components/Draft/hooks/state/useDraftForm";
 import { SomedayEventRectangle } from "../SomedayEventContainer/SomedayEventRectangle";
 import {
   SOMEDAY_EVENT_ROW_HEIGHT,
@@ -31,7 +30,6 @@ interface Props {
   onMigrate: Actions_Sidebar["onMigrate"];
   priority: Priorities;
   interactionRef: Ref<HTMLDivElement>;
-  formProps: Props_DraftForm;
 }
 export const SomedayEvent = ({
   calendarIdentity = null,
@@ -44,7 +42,6 @@ export const SomedayEvent = ({
   onMigrate,
   priority,
   interactionRef,
-  formProps,
 }: Props) => {
   const { isDrafting, isDragging } = status;
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -116,7 +113,6 @@ export const SomedayEvent = ({
         category={category}
         event={event}
         onMigrate={onMigrate}
-        formProps={formProps}
       />
     </div>
   );
