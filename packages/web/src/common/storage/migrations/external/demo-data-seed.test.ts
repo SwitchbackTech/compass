@@ -4,6 +4,7 @@
 import { Priorities } from "@core/constants/core.constants";
 import { EventSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
+import { createMockTask } from "@web/__tests__/utils/factories/task.factory";
 import { createMockOfflineDataStore } from "@web/__tests__/utils/storage/mock-offline-data-store.util";
 import { type LocalEventRecord } from "@web/common/storage/types/local-event.record";
 import { demoDataSeedMigration } from "./demo-data-seed";
@@ -32,10 +33,13 @@ describe("demoDataSeedMigration", () => {
     await demoDataSeedMigration.migrate(store);
 
     expect(store.putEvents).toHaveBeenCalled();
+    expect(store.putTasks).toHaveBeenCalled();
 
     const eventsCall = store.putEvents.mock.calls[0][0] as LocalEventRecord[];
-    expect(eventsCall).toHaveLength(9);
+    expect(eventsCall).toHaveLength(7);
     expect(eventsCall.every((record) => record.isDemo)).toBe(true);
+
+    expect(store.putTasks).toHaveBeenCalledTimes(3);
   });
 
   it("skips seeding when events already exist", async () => {
@@ -45,6 +49,19 @@ describe("demoDataSeedMigration", () => {
     await demoDataSeedMigration.migrate(store);
 
     expect(store.putEvents).not.toHaveBeenCalled();
+    expect(store.putTasks).not.toHaveBeenCalled();
+  });
+
+  it("skips seeding when tasks already exist", async () => {
+    const store = createMockOfflineDataStore();
+    store.getAllTasks.mockResolvedValue([
+      { ...createMockTask(), dateKey: "2025-01-15" },
+    ]);
+
+    await demoDataSeedMigration.migrate(store);
+
+    expect(store.putEvents).not.toHaveBeenCalled();
+    expect(store.putTasks).not.toHaveBeenCalled();
   });
 
   it("creates events with relative dates (not hardcoded)", async () => {
@@ -61,6 +78,43 @@ describe("demoDataSeedMigration", () => {
         event.schedule.start.startsWith(today),
     );
     expect(todayEvents.length).toBeGreaterThan(0);
+  });
+
+  it("creates tasks for today, yesterday, and tomorrow", async () => {
+    const store = createMockOfflineDataStore();
+
+    await demoDataSeedMigration.migrate(store);
+
+    const today = dayjs().toYearMonthDayString();
+    const yesterday = dayjs().subtract(1, "day").toYearMonthDayString();
+    const tomorrow = dayjs().add(1, "day").toYearMonthDayString();
+
+    const putTasksCalls = store.putTasks.mock.calls as Array<
+      [string, ReturnType<typeof createMockTask>[]]
+    >;
+    const dateKeys = putTasksCalls.map((call) => call[0]);
+
+    expect(dateKeys).toContain(today);
+    expect(dateKeys).toContain(yesterday);
+    expect(dateKeys).toContain(tomorrow);
+  });
+
+  it("creates yesterday tasks as completed", async () => {
+    const store = createMockOfflineDataStore();
+
+    await demoDataSeedMigration.migrate(store);
+
+    const yesterday = dayjs().subtract(1, "day").toYearMonthDayString();
+    const putTasksCalls = store.putTasks.mock.calls as Array<
+      [string, ReturnType<typeof createMockTask>[]]
+    >;
+    const yesterdayCall = putTasksCalls.find((call) => call[0] === yesterday);
+
+    if (!yesterdayCall) {
+      throw new Error("Expected yesterday tasks to be seeded");
+    }
+    const yesterdayTasks = yesterdayCall[1];
+    expect(yesterdayTasks.every((t) => t.status === "completed")).toBe(true);
   });
 
   it("creates events with all four priorities", async () => {

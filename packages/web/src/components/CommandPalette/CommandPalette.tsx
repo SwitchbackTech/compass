@@ -195,7 +195,7 @@ export const CommandPalette = ({
             value={search}
             placeholder={placeholder}
             aria-label="Command palette search"
-            className="w-full border-b border-border-primary bg-transparent px-4 py-3 text-text-light outline-none placeholder:text-text-lighter"
+            className="w-full border-border-primary border-b bg-transparent px-4 py-3 text-text-light outline-none placeholder:text-text-lighter"
             onChange={(event) => {
               setSearch(event.target.value);
               setActiveIndex(0);
@@ -210,7 +210,7 @@ export const CommandPalette = ({
             ) : (
               filteredSections.map((section) => (
                 <div key={section.id} className="mb-1">
-                  <div className="px-3 pt-2 pb-1 text-xs font-semibold uppercase tracking-wide text-text-lighter">
+                  <div className="px-3 pt-2 pb-1 font-semibold text-text-lighter text-xs uppercase tracking-wide">
                     {section.heading}
                   </div>
                   {section.items.map((item) => {

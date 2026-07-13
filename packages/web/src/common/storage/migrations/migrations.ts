@@ -1,6 +1,8 @@
 import { persistentBrowserStore } from "@web/common/storage/browser-key-value.store";
 import { type OfflineDataStore } from "../offline-data/offline-data.store";
+import { taskIdToUnderscoreIdMigration } from "./data/task-id-to-underscore-id";
 import { demoDataSeedMigration } from "./external/demo-data-seed";
+import { localStorageTasksMigration } from "./external/localstorage-tasks";
 import { type DataMigration, type ExternalMigration } from "./migration.types";
 
 // ─── Migration Registry ──────────────────────────────────────────────────────
@@ -10,13 +12,16 @@ import { type DataMigration, type ExternalMigration } from "./migration.types";
  * Data migrations transform existing data within storage.
  * Tracked via the offline data store's migration records.
  */
-export const dataMigrations: DataMigration[] = [];
+export const dataMigrations: DataMigration[] = [taskIdToUnderscoreIdMigration];
 
 /**
  * External migrations import data from outside storage.
  * Tracked via localStorage flags.
  */
-export const externalMigrations: ExternalMigration[] = [demoDataSeedMigration];
+export const externalMigrations: ExternalMigration[] = [
+  localStorageTasksMigration,
+  demoDataSeedMigration,
+];
 
 // ─── Migration Runners ───────────────────────────────────────────────────────
 
