@@ -15,6 +15,7 @@ import {
 } from "@web/layout/calendar-grid/types/calendarGrid.types";
 
 export interface CalendarEventPositionInput {
+  columnIndex?: number;
   isDraft: boolean;
   measurements: CalendarGridMeasurements;
   visibleDates: CalendarGridVisibleDate[];
@@ -26,7 +27,8 @@ export const getCalendarTimedEventPosition = (
 ): CalendarEventPosition => {
   const start = dayjs(event.startDate);
   const end = dayjs(event.endDate);
-  const dateIndex = getVisibleDateIndex(start, input.visibleDates);
+  const dateIndex =
+    input.columnIndex ?? getVisibleDateIndex(start, input.visibleDates);
   if (dateIndex === null) {
     return zeroPosition();
   }
@@ -56,6 +58,7 @@ export const getCalendarTimedEventPosition = (
 };
 
 export interface CalendarBusyPeriodPositionInput {
+  columnIndex?: number;
   measurements: CalendarGridMeasurements;
   visibleDates: CalendarGridVisibleDate[];
 }
@@ -78,7 +81,8 @@ export const getCalendarBusyPeriodPosition = (
 ): CalendarEventPosition => {
   const start = dayjs(segment.start);
   const end = dayjs(segment.end);
-  const dateIndex = getVisibleDateIndex(start, input.visibleDates);
+  const dateIndex =
+    input.columnIndex ?? getVisibleDateIndex(start, input.visibleDates);
   if (dateIndex === null) {
     return zeroPosition();
   }
@@ -108,8 +112,10 @@ export const getCalendarAllDayEventPosition = (
     return zeroPosition();
   }
 
-  const startIndex = getVisibleDateIndex(span.start, input.visibleDates);
-  const endIndex = getVisibleDateIndex(span.end, input.visibleDates);
+  const startIndex =
+    input.columnIndex ?? getVisibleDateIndex(span.start, input.visibleDates);
+  const endIndex =
+    input.columnIndex ?? getVisibleDateIndex(span.end, input.visibleDates);
   if (startIndex === null || endIndex === null) {
     return zeroPosition();
   }

@@ -1,6 +1,7 @@
 import userEvent from "@testing-library/user-event";
 import { act } from "react";
-import { EventIdSchema } from "@core/types/domain-primitives";
+import { type Calendar } from "@core/types/calendar.contracts";
+import { CalendarIdSchema, EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
 import { type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -13,6 +14,8 @@ import {
   within,
 } from "@web/__tests__/__mocks__/mock.render";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { createCompassQueryClient } from "@web/api/query-client";
+import { calendarQueryKeys } from "@web/calendars/calendar.query";
 import {
   DATA_CALENDAR_TIMED_GRID_ROW,
   ZIndex,
@@ -47,7 +50,7 @@ const measurements = {
     x: 0,
     y: 0,
   },
-  colWidths: [180],
+  colWidths: [180, 180],
   hourHeight: 60,
   mainGrid: {
     bottom: 780,
@@ -109,15 +112,47 @@ mock.module("@web/components/FloatingEventForm/FloatingEventForm", () => ({
 const { DayCalendarGrid } =
   require("./DayCalendarGrid") as typeof import("./DayCalendarGrid");
 
-const renderDayCalendarGrid = () => ({
-  user: userEvent.setup(),
-  ...render(
-    <>
-      <DayCalendarGrid />
-      <button type="button">Outside calendar</button>
-    </>,
-    { events: seededEvents },
-  ),
+const renderDayCalendarGrid = (calendars?: Calendar[]) => {
+  const queryClient = createCompassQueryClient();
+  if (calendars) {
+    queryClient.setQueryData(calendarQueryKeys.all, calendars);
+  }
+
+  return {
+    user: userEvent.setup(),
+    ...render(
+      <>
+        <DayCalendarGrid />
+        <button type="button">Outside calendar</button>
+      </>,
+      { events: seededEvents, queryClient },
+    ),
+  };
+};
+
+const makeCalendar = (
+  name: string,
+  overrides: Partial<Calendar> = {},
+): Calendar => ({
+  id: CalendarIdSchema.parse(createObjectIdString()),
+  name,
+  description: "",
+  timeZone: null,
+  foregroundColor: "#ffffff",
+  backgroundColor: "#2563eb",
+  provider: "google",
+  access: "owner",
+  capabilities: {
+    canReadAvailability: true,
+    canReadDetails: true,
+    canWrite: true,
+    canManage: true,
+    canWatchEvents: true,
+  },
+  isPrimary: false,
+  isVisible: true,
+  isActive: true,
+  ...overrides,
 });
 
 // `_id` in the overrides below is a readable test label, not the real id —
@@ -257,6 +292,78 @@ describe("DayCalendarGrid", () => {
 
     const timedGrid = getTimedGrid();
     expect(within(timedGrid).getAllByRole("columnheader")).toHaveLength(1);
+  });
+
+  it("renders enabled calendars as separate event columns", () => {
+    const primary = makeCalendar("Primary", { isPrimary: true });
+    const projects = makeCalendar("Projects");
+    const hidden = makeCalendar("Hidden", { isVisible: false });
+    seededEvents = [
+      createMockEvent({
+        calendarId: primary.id,
+        content: { kind: "details", title: "Primary event", description: "" },
+        schedule: EventScheduleSchema.parse({
+          kind: "timed",
+          start: "2026-05-20T09:00:00.000Z",
+          end: "2026-05-20T10:00:00.000Z",
+          timeZone: "UTC",
+        }),
+      }),
+      createMockEvent({
+        calendarId: projects.id,
+        content: { kind: "details", title: "Project event", description: "" },
+        schedule: EventScheduleSchema.parse({
+          kind: "timed",
+          start: "2026-05-20T09:00:00.000Z",
+          end: "2026-05-20T10:00:00.000Z",
+          timeZone: "UTC",
+        }),
+      }),
+      createMockEvent({
+        calendarId: hidden.id,
+        content: { kind: "details", title: "Hidden event", description: "" },
+        schedule: EventScheduleSchema.parse({
+          kind: "timed",
+          start: "2026-05-20T09:00:00.000Z",
+          end: "2026-05-20T10:00:00.000Z",
+          timeZone: "UTC",
+        }),
+      }),
+    ];
+
+    renderDayCalendarGrid([primary, projects, hidden]);
+
+    const headers = screen.getByRole("region", { name: "Calendars" });
+    expect(within(headers).getByText("Primary")).toBeInTheDocument();
+    expect(within(headers).getByText("Projects")).toBeInTheDocument();
+    expect(within(headers).queryByText("Hidden")).not.toBeInTheDocument();
+
+    const primaryEvent = screen.getByRole("button", {
+      name: /primary event/i,
+    });
+    const projectEvent = screen.getByRole("button", {
+      name: /project event/i,
+    });
+    expect(screen.queryByRole("button", { name: /hidden event/i })).toBeNull();
+    expect(parseFloat(projectEvent.style.left)).toBeGreaterThan(
+      parseFloat(primaryEvent.style.left),
+    );
+    expect(primaryEvent.style.width).toBe(projectEvent.style.width);
+  });
+
+  it("falls back to the primary calendar when every calendar is disabled", () => {
+    const primary = makeCalendar("Primary", {
+      isPrimary: true,
+      isVisible: false,
+    });
+    const disabled = makeCalendar("Disabled", { isVisible: false });
+
+    renderDayCalendarGrid([disabled, primary]);
+
+    const headers = screen.getByRole("region", { name: "Calendars" });
+    expect(within(headers).getByText("Primary")).toBeInTheDocument();
+    expect(within(headers).queryByText("Disabled")).not.toBeInTheDocument();
+    expect(within(getTimedGrid()).getAllByRole("columnheader")).toHaveLength(1);
   });
 
   it("renders all-day and timed regions without rendering tasks", () => {
