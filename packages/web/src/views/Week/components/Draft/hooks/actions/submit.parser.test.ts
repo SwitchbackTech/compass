@@ -1,8 +1,5 @@
 import { Origin, Priorities } from "@core/constants/core.constants";
-import {
-  type Schema_GridEvent,
-  type Schema_SomedayEvent,
-} from "@web/common/types/web.event.types";
+import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { describe, expect, it, mock } from "bun:test";
 
 const createMockGridPosition = (): Schema_GridEvent["position"] => ({
@@ -23,7 +20,6 @@ const createMockGridEvent = (
   startDate: "2024-01-15T10:00:00Z",
   endDate: "2024-01-15T11:00:00Z",
   isAllDay: false,
-  isSomeday: false,
   origin: Origin.COMPASS,
   priority: Priorities.UNASSIGNED,
   user: "test-user",
@@ -31,41 +27,14 @@ const createMockGridEvent = (
   ...overrides,
 });
 
-const createMockSomedayEvent = (
-  overrides: Partial<Schema_SomedayEvent> = {},
-): Schema_SomedayEvent => ({
-  _id: "test-someday-event-id",
-  title: "Test Someday Event",
-  startDate: "2024-01-15T10:00:00Z",
-  endDate: "2024-01-15T11:00:00Z",
-  isAllDay: false,
-  isSomeday: true,
-  origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
-  user: "test-user",
-  order: 1,
-  ...overrides,
-});
-
 const validateGridEvent = mock(
   (event: Schema_GridEvent): Schema_GridEvent => event,
-);
-const validateSomedayEvent = mock(
-  (event: Schema_SomedayEvent): Schema_SomedayEvent => event,
-);
-const validateSomedayEvents = mock(
-  (events: Schema_SomedayEvent[]): Schema_SomedayEvent[] => events,
 );
 mock.module("@web/common/validators/grid.event.validator", () => ({
   validateGridEvent,
 }));
 
-mock.module("@web/common/validators/someday.event.validator", () => ({
-  validateSomedayEvent,
-  validateSomedayEvents,
-}));
-
-const { OnSubmitParser, parseSomedayEventBeforeSubmit, prepEventBeforeSubmit } =
+const { OnSubmitParser, prepEventBeforeSubmit } =
   require("./submit.parser") as typeof import("./submit.parser");
 
 describe("submit.parser", () => {
@@ -91,87 +60,6 @@ describe("submit.parser", () => {
         expect(result.user).toBe(event.user);
         expect(result.origin).toBe(Origin.COMPASS);
       });
-
-      it("should parse a someday event correctly", () => {
-        const event = createMockSomedayEvent();
-        const parser = new OnSubmitParser(event as unknown as Schema_GridEvent);
-
-        const result = parser.parse();
-
-        expect(result).toBeDefined();
-        expect(result._id).toBe(event._id);
-        expect(result.user).toBe(event.user);
-        expect(result.origin).toBe(Origin.COMPASS);
-      });
-    });
-  });
-
-  describe("parseSomedayEventBeforeSubmit", () => {
-    it("should parse a someday event with all required fields", () => {
-      const draft = createMockSomedayEvent({
-        _id: "test-id",
-        startDate: "2024-01-15T10:00:00Z",
-        endDate: "2024-01-15T11:00:00Z",
-        priority: Priorities.WORK,
-      });
-      const userId = "test-user-id";
-
-      const result = parseSomedayEventBeforeSubmit(draft, userId);
-
-      expect(result._id).toBe("test-id");
-      expect(result.startDate).toBe("2024-01-15T10:00:00Z");
-      expect(result.endDate).toBe("2024-01-15T11:00:00Z");
-      expect(result.origin).toBe(Origin.COMPASS);
-      expect(result.user).toBe(userId);
-      expect(result.priority).toBe(Priorities.WORK);
-    });
-
-    it("should use UNASSIGNED priority when priority is not provided", () => {
-      const draft = createMockSomedayEvent({
-        priority: undefined,
-      });
-      const userId = "test-user-id";
-
-      const result = parseSomedayEventBeforeSubmit(draft, userId);
-
-      expect(result.priority).toBe(Priorities.UNASSIGNED);
-    });
-
-    it("should include recurrence when present", () => {
-      const recurrence = {
-        rule: ["FREQ=WEEKLY;COUNT=4"],
-        endDate: "2024-02-15T10:00:00Z",
-      };
-      const draft = createMockSomedayEvent({
-        recurrence,
-      });
-      const userId = "test-user-id";
-
-      const result = parseSomedayEventBeforeSubmit(draft, userId);
-
-      expect(result.recurrence).toEqual(recurrence);
-    });
-
-    it("should not include recurrence when not present", () => {
-      const draft = createMockSomedayEvent({
-        recurrence: undefined,
-      });
-      const userId = "test-user-id";
-
-      const result = parseSomedayEventBeforeSubmit(draft, userId);
-
-      expect(result.recurrence).toBeUndefined();
-    });
-
-    it("should handle null recurrence", () => {
-      const draft = createMockSomedayEvent({
-        recurrence: { rule: null },
-      });
-      const userId = "test-user-id";
-
-      const result = parseSomedayEventBeforeSubmit(draft, userId);
-
-      expect(result.recurrence).toEqual({ rule: null });
     });
   });
 
@@ -305,39 +193,6 @@ describe("submit.parser", () => {
   });
 
   describe("edge cases", () => {
-    it("should handle someday event with missing _id", () => {
-      const draft = createMockSomedayEvent({
-        _id: undefined,
-      });
-      const userId = "test-user-id";
-
-      // The function uses non-null assertion, so it will pass undefined
-      const result = parseSomedayEventBeforeSubmit(draft, userId);
-      expect(result._id).toBeUndefined();
-    });
-
-    it("should reject someday event with missing startDate", () => {
-      const draft = createMockSomedayEvent({
-        startDate: undefined,
-      });
-      const userId = "test-user-id";
-
-      expect(() => parseSomedayEventBeforeSubmit(draft, userId)).toThrow(
-        "Someday event requires startDate and endDate",
-      );
-    });
-
-    it("should reject someday event with missing endDate", () => {
-      const draft = createMockSomedayEvent({
-        endDate: undefined,
-      });
-      const userId = "test-user-id";
-
-      expect(() => parseSomedayEventBeforeSubmit(draft, userId)).toThrow(
-        "Someday event requires startDate and endDate",
-      );
-    });
-
     it("should handle grid event with missing _id", () => {
       const draft = createMockGridEvent({
         _id: undefined,

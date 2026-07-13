@@ -7,7 +7,6 @@ import {
   EventIdSchema,
   PrioritySchema,
   RRuleSchema,
-  SortOrderSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
 
@@ -93,21 +92,6 @@ describe("Domain Primitives", () => {
 
     it("rejects an invalid time zone", () => {
       expect(TimeZoneSchema.safeParse("Not/AZone").success).toBe(false);
-    });
-  });
-
-  describe("SortOrderSchema", () => {
-    it("accepts a non-negative integer", () => {
-      expect(SortOrderSchema.safeParse(0).success).toBe(true);
-      expect(SortOrderSchema.safeParse(5).success).toBe(true);
-    });
-
-    it("rejects a negative number", () => {
-      expect(SortOrderSchema.safeParse(-1).success).toBe(false);
-    });
-
-    it("rejects a float", () => {
-      expect(SortOrderSchema.safeParse(1.5).success).toBe(false);
     });
   });
 

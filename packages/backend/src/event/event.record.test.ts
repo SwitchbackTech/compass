@@ -37,16 +37,11 @@ describe("EventRecordSchema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("parses a someday occurrence event with a busy content", () => {
+  it("parses an all-day occurrence event with a busy content", () => {
     const result = EventRecordSchema.safeParse({
       ...baseFields(),
       content: { kind: "busy" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
+      schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
       recurrence: { kind: "occurrence", seriesId: new ObjectId() },
     });
     expect(result.success).toBe(true);
@@ -56,12 +51,7 @@ describe("EventRecordSchema", () => {
     const result = EventRecordSchema.safeParse({
       ...baseFields(),
       content: { kind: "busy" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
+      schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
       recurrence: { kind: "single" },
       extra: "nope",
     });
@@ -90,12 +80,7 @@ describe("EventRecordSchema", () => {
       _id: hex,
       calendarId: hex,
       content: { kind: "busy" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
+      schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
       recurrence: { kind: "single" },
     });
     expect(result.success).toBe(true);
@@ -109,12 +94,7 @@ describe("EventRecordSchema", () => {
     const valid = EventRecordSchema.safeParse({
       ...baseFields(),
       content: { kind: "busy" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
+      schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
       recurrence: { kind: "single" },
       externalReference: {
         provider: "google",
@@ -127,12 +107,7 @@ describe("EventRecordSchema", () => {
     const invalid = EventRecordSchema.safeParse({
       ...baseFields(),
       content: { kind: "busy" },
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
+      schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
       recurrence: { kind: "single" },
       externalReference: { provider: "google", eventId: "" },
     });

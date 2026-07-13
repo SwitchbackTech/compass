@@ -49,8 +49,6 @@ const getCreateShortcuts = (view: ShortcutMenuView): Shortcut[] =>
     : [
         { keys: ["c"], label: "Create timed event" },
         { keys: ["a"], label: "Create all-day event" },
-        { keys: ["Shift", "w"], label: "Create Someday week event" },
-        { keys: ["Shift", "m"], label: "Create Someday month event" },
       ];
 
 const getFocusShortcuts = (view: ShortcutMenuView): Shortcut[] =>
@@ -88,15 +86,6 @@ const getEditShortcuts = (view: ShortcutMenuView): Shortcut[] =>
         { keys: ["Shift", "ArrowRight"], label: "Move event to next day" },
         { keys: ["Shift", "ArrowUp"], label: "Move event 15 min earlier" },
         { keys: ["Shift", "ArrowDown"], label: "Move event 15 min later" },
-        { keys: ["Shift", "ArrowRight"], label: "Schedule someday event" },
-        {
-          keys: ["Shift", "ArrowUp"],
-          label: "Move someday event to week list",
-        },
-        {
-          keys: ["Shift", "ArrowDown"],
-          label: "Move someday event to month list",
-        },
       ];
 
 const getOtherShortcuts = (): Shortcut[] => [

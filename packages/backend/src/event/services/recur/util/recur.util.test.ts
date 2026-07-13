@@ -39,7 +39,9 @@ describe("materializeSeriesInstances", () => {
     });
 
     const starts = instances
-      .map((i) => (i.schedule.kind === "timed" ? i.schedule.start.getTime() : 0))
+      .map((i) =>
+        i.schedule.kind === "timed" ? i.schedule.start.getTime() : 0,
+      )
       .sort((a, b) => a - b);
     expect(base.schedule.kind).toBe("timed");
     expect(starts[0]).toBe(
@@ -90,20 +92,6 @@ describe("materializeSeriesInstances", () => {
     });
     const instances = materializeSeriesInstances(base, 5);
     expect(instances.length).toBeLessThanOrEqual(5);
-  });
-
-  it("does not materialize instances for a someday recurring series (recurrence surfaces only on the base)", () => {
-    const base = buildBase({
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
-      recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=4"] },
-    });
-
-    expect(materializeSeriesInstances(base)).toEqual([]);
   });
 
   it("does not carry a base's externalReference onto materialized instances", () => {

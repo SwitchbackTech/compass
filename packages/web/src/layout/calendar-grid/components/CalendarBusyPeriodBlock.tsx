@@ -15,7 +15,7 @@ interface CalendarBusyPeriodBlockProps {
  * attach to. `pointer-events-none` backs that structurally (clicks/right-
  * clicks pass through to whatever's underneath) rather than relying on the
  * absence of handlers alone. `role="img"` gives it a single accessible name
- * (mirrors AsciiPortrait.tsx / SomedayEventRectangle.tsx) without exposing
+ * (mirrors AsciiPortrait.tsx) without exposing
  * it as an interactive control - never `role="button"`.
  */
 export const CalendarBusyPeriodBlock = ({

@@ -368,18 +368,6 @@ describe("mapEventRecordToGoogle", () => {
     expect(() => mapEventRecordToGoogle(record)).toThrow();
   });
 
-  it("throws for a someday schedule", () => {
-    const record = buildRecord({
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
-    });
-    expect(() => mapEventRecordToGoogle(record)).toThrow();
-  });
-
   // Packet 05 tests list: "An events.patch update of a Google event with
   // attendees, location, and reminders preserves all three." GcalService
   // uses events.patch (merge-by-key) rather than events.update (whole-

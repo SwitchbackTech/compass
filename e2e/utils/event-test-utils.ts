@@ -1,13 +1,11 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-type SomedaySection = "week" | "month";
-
 const LOCAL_DB_NAME = "compass-local";
 
 // LocalEventRecord (B13) nests the event under `.event`; title lives at
 // `.event.content.title` (kind "details") and the schedule is a discriminated
-// union ("timed"/"allDay" use start/end, "someday" uses anchorDate) rather
-// than flat startDate/endDate columns on the row.
+// union ("timed"/"allDay" both use start/end) rather than flat
+// startDate/endDate columns on the row.
 export const getSavedEventsByTitle = (page: Page, title: string) =>
   page.evaluate(async (eventTitle) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -20,9 +18,7 @@ export const getSavedEventsByTitle = (page: Page, title: string) =>
     type LocalEventRecord = {
       event: {
         content: { kind: string; title?: string };
-        schedule:
-          | { kind: "timed" | "allDay"; start: string; end: string }
-          | { kind: "someday"; anchorDate: string };
+        schedule: { kind: "timed" | "allDay"; start: string; end: string };
       };
     };
 
@@ -45,14 +41,8 @@ export const getSavedEventsByTitle = (page: Page, title: string) =>
         )
         .map(({ event }) => ({
           title: event.content.title,
-          startDate:
-            event.schedule.kind === "someday"
-              ? event.schedule.anchorDate
-              : event.schedule.start,
-          endDate:
-            event.schedule.kind === "someday"
-              ? event.schedule.anchorDate
-              : event.schedule.end,
+          startDate: event.schedule.start,
+          endDate: event.schedule.end,
         }));
     } finally {
       db.close();
@@ -325,19 +315,6 @@ export const openAllDayEventFormWithMouse = async (page: Page) => {
   });
 };
 
-export const openSomedayEventFormWithMouse = async (
-  page: Page,
-  section: SomedaySection,
-) => {
-  await ensureSidebarOpen(page);
-  const addButtonName =
-    section === "week" ? "Add item to week" : "Add item to month";
-  await page
-    .locator("#sidebar")
-    .getByRole("button", { name: addButtonName })
-    .click();
-};
-
 export const openEventForEditingWithMouse = async (
   page: Page,
   eventTitle: string,
@@ -347,24 +324,6 @@ export const openEventForEditingWithMouse = async (
 
   await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
   await eventButton.click({ force: true });
-  await expect(titleInput).toHaveValue(eventTitle, { timeout: FORM_TIMEOUT });
-};
-
-export const openSomedayEventForEditingWithMouse = async (
-  page: Page,
-  eventTitle: string,
-) => {
-  await ensureSidebarOpen(page);
-
-  const titleInput = getFormTitleInput(page);
-  const eventButton = page
-    .locator("#sidebar")
-    .getByRole("button", { name: eventTitle })
-    .last();
-
-  await eventButton.waitFor({ state: "visible", timeout: FORM_TIMEOUT });
-  await eventButton.scrollIntoViewIfNeeded();
-  await eventButton.click();
   await expect(titleInput).toHaveValue(eventTitle, { timeout: FORM_TIMEOUT });
 };
 
@@ -388,22 +347,8 @@ export const expectAllDayEventVisible = async (page: Page, title: string) => {
   ).toBeVisible({ timeout: 8000 });
 };
 
-export const expectSomedayEventVisible = async (page: Page, title: string) => {
-  await ensureSidebarOpen(page);
-  await expect(
-    page.locator("#sidebar").getByRole("button", { name: title }),
-  ).toBeVisible({ timeout: 8000 });
-};
-
 export const expectTimedEventMissing = async (page: Page, title: string) => {
   await expect(
     page.locator("#mainGrid").getByRole("button", { name: title }),
-  ).toHaveCount(0, { timeout: 8000 });
-};
-
-export const expectSomedayEventMissing = async (page: Page, title: string) => {
-  await ensureSidebarOpen(page);
-  await expect(
-    page.locator("#sidebar").getByRole("button", { name: title }),
   ).toHaveCount(0, { timeout: 8000 });
 };

@@ -116,7 +116,6 @@ Files:
 
 - `packages/web/src/components/PlannerSidebar/PlannerSidebar.tsx`
 - `packages/web/src/components/PlannerSidebar/PlannerMonthPicker/PlannerMonthPicker.tsx`
-- `packages/web/src/components/PlannerSidebar/SomedayEventSections/SomedayEventSections.tsx`
 - `packages/web/src/components/PlannerSidebar/PlannerSidebarActions/PlannerSidebarActions.tsx`
 - `packages/web/src/components/PlannerSidebar/ShortcutsOverlay/ShortcutsOverlay.tsx`
 
@@ -132,7 +131,7 @@ Control mapping:
 - Open shortcuts opens an in-sidebar keyboard shortcuts overlay.
 - Command palette toggle (`modifier + K`) calls open/close palette actions from the settings Zustand store (`packages/web/src/settings/settings.store.ts`).
 - Refresh appears only when `useVersionCheck()` reports an available update.
-- The account row shows temporary-account or signed-in account context above the Someday sections.
+- The account row shows temporary-account or signed-in account context.
 - Background Google import state is not shown in the Planner Sidebar footer.
 
 Icon state constraints:
@@ -203,7 +202,7 @@ The summary below is the runtime sequence.
 
 Typical event **read** flow:
 
-1. a view hook mounts a `useXEventsQuery` hook (day/week/someday)
+1. a view hook mounts a `useXEventsQuery` hook (day/week)
 2. TanStack Query fetches via the pure query function against the repository
    for the reactive source (`event.repository.source.store.ts`)
 3. the normalized result remains in the source- and range-aware query entry;
@@ -221,7 +220,7 @@ Typical event **mutation** flow:
    `eventQueryKeys.all` so the refetch converges to canonical data
 5. pending Event IDs derive from TanStack Query mutation state; they never
    block interaction — the sidebar account summary shows a syncing spinner
-6. SSE events invalidate the relevant query scope (day/week/someday) to
+6. SSE events invalidate the relevant query scope (day/week) to
    refetch later; auth transitions refresh the source store and drop stale
    cache entries
 
@@ -307,7 +306,7 @@ Files:
 Responsibilities:
 
 - open/close `EventSource` to `GET /api/events/stream` based on auth state
-- refetch events when background event changes arrive (`EVENT_CHANGED`, `SOMEDAY_EVENT_CHANGED`)
+- refetch events when background event changes arrive (`EVENT_CHANGED`)
 - react to Google import progress and Google revocation events
 - apply `USER_METADATA` pushed on stream connect and when the backend refreshes metadata
 

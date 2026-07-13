@@ -71,10 +71,15 @@ Expected behavior:
   calendars were created. Any unconvertible calendar row aborts the whole
   transaction with a summary of `{ id, reason }` pairs — nothing is half
   migrated.
-- The backfill logs per-run counts: attempted, inserted, failed, the time-zone
-  derivation tally (`calendar` vs `utcFallback`), the number of someday sort
-  orders assigned, and the legacy `allDayOrder` audit count. Event titles and
-  descriptions never appear in logs.
+- The backfill logs per-run counts: attempted, inserted, failed, the number of
+  legacy someday events **excluded** (`excludedSomeday`), the time-zone
+  derivation tally (`calendar` vs `utcFallback`), and the legacy `allDayOrder`
+  audit count. Event titles and descriptions never appear in logs.
+- **Someday events are intentionally not migrated.** The Someday feature has
+  been removed; legacy `isSomeday` events have no destination schedule, so the
+  backfill counts them (`excludedSomeday`) and skips them rather than writing
+  them into `event_new`. They remain in the legacy `event` collection (your
+  backup / rollback source) until the cutover renames it aside.
 - The backfill is **fail-closed**: any transform failure, duplicate Google
   event id, or verification mismatch makes the migration throw with a compact
   summary. The legacy collection is untouched either way. Fix the reported
@@ -88,7 +93,13 @@ Expected behavior:
 Verification runs automatically at the end of the backfill and rechecks:
 
 - total and per-user event counts, and per-category counts
-  (timed / all-day / someday / series / occurrence);
+  (timed / all-day / series / occurrence);
+- the excluded-someday count (`excludedSomedayCount`) reported explicitly, and
+  reconciled against the backfill's own tally — the two must agree or the
+  migration throws;
+- the count reconciliation `legacyTransformable − excludedSomeday ==
+  destinationTotal` (someday events are the only deliberate, accounted-for
+  shortfall — any other gap fails closed);
 - no orphan `seriesId` or `calendarId` references;
 - no duplicate provider event ids per calendar;
 - a deterministic content hash of every behavior-bearing field, source vs
@@ -102,7 +113,12 @@ source of truth or unreachable: zero-duration timed Google events
 `invalid` and not model them), Google events owned by users with no calendar
 row (re-imported on that user's next sign-in), duplicate `gEventId` copies
 (keep the original, strip the bogus id), and events owned by deleted user
-accounts (unreachable). Take the backup first; it preserves everything.
+accounts (unreachable). Legacy **someday** events are a separate, deliberate
+exclusion (not a fail-close): they are counted, left in the legacy collection,
+and removed from active data by the cutover rename below. Take the backup
+first; it preserves everything, including someday events — that operational
+backup is the only recovery path for someday data (there is no export or
+recovery command).
 
 A successful run ends with the verification summary. If you need to re-check
 later without re-migrating, the same checks are exposed as
@@ -135,7 +151,13 @@ release window.
 5. Smoke-test: sign in, load a week with events, create and delete a test
    event.
 
-Keep `event_legacy_v1` — it is the rollback source. Do not drop it in v1.
+After the rename, the active `event` collection is the former `event_new`,
+which never held someday records — so active Mongo data is Someday-free the
+moment the cutover completes. The excluded someday events live only in
+`event_legacy_v1`.
+
+Keep `event_legacy_v1` — it is the rollback source (and the only remaining copy
+of the someday events). Do not drop it in v1.
 
 ## Rollback after cutover
 

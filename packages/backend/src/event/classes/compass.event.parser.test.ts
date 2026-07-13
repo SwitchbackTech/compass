@@ -2,7 +2,6 @@ import { ObjectId } from "mongodb";
 import {
   analyzeDelete,
   analyzeReplace,
-  analyzeTransition,
 } from "@backend/event/classes/compass.event.parser";
 import { type EventRecord } from "@backend/event/event.record";
 
@@ -272,89 +271,6 @@ describe("analyzeDelete", () => {
         base,
         { base, instances: [driftedInstance] },
         { scope: "all" },
-      ),
-    ).toThrow();
-  });
-});
-
-describe("analyzeTransition", () => {
-  it("schedule: moves an event onto the target calendar", () => {
-    const target = buildEvent({
-      schedule: {
-        kind: "someday",
-        period: "week",
-        anchorDate: "2026-07-13",
-        sortOrder: 0,
-      },
-    });
-    const targetCalendarId = new ObjectId();
-
-    const plan = analyzeTransition(
-      target,
-      {
-        kind: "schedule",
-        targetCalendarId: targetCalendarId.toHexString() as never,
-        schedule: {
-          kind: "timed",
-          start: "2026-07-14T15:00:00-06:00",
-          end: "2026-07-14T16:00:00-06:00",
-          timeZone: "America/Denver",
-        },
-      },
-      targetCalendarId,
-      now,
-    );
-
-    expect(plan.kind).toBe("schedule");
-    expect(plan.updated.calendarId).toEqual(targetCalendarId);
-    expect(plan.updated.externalReference).toBeNull();
-  });
-
-  it("unschedule: moves an event to the local calendar as a someday event", () => {
-    const target = buildEvent();
-    const localCalendarId = new ObjectId();
-
-    const plan = analyzeTransition(
-      target,
-      {
-        kind: "unschedule",
-        schedule: {
-          kind: "someday",
-          period: "week",
-          anchorDate: "2026-07-13",
-          sortOrder: 0,
-        },
-      },
-      localCalendarId,
-      now,
-    );
-
-    expect(plan.kind).toBe("unschedule");
-    expect(plan.updated.calendarId).toEqual(localCalendarId);
-    expect(plan.updated.schedule.kind).toBe("someday");
-    expect(plan.updated.recurrence).toEqual({ kind: "single" });
-  });
-
-  it("rejects transitioning a bare occurrence", () => {
-    const seriesId = new ObjectId();
-    const occurrence = buildEvent({
-      recurrence: { kind: "occurrence", seriesId },
-    });
-
-    expect(() =>
-      analyzeTransition(
-        occurrence,
-        {
-          kind: "unschedule",
-          schedule: {
-            kind: "someday",
-            period: "week",
-            anchorDate: "2026-07-13",
-            sortOrder: 0,
-          },
-        },
-        new ObjectId(),
-        now,
       ),
     ).toThrow();
   });

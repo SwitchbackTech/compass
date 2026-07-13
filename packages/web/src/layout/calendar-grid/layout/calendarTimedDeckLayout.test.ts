@@ -25,7 +25,6 @@ const createTimedEvent = (
   },
 ): Schema_GridEvent => ({
   isAllDay: false,
-  isSomeday: false,
   origin: Origin.COMPASS,
   priority: Priorities.UNASSIGNED,
   recurrence: undefined,

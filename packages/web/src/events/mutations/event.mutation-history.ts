@@ -63,19 +63,3 @@ export function recordEventDeleteHistory({
   showDeletedToast(undoable);
   return existing;
 }
-
-export function recordEventTransitionHistory({
-  id,
-  before,
-  after,
-}: {
-  id: string;
-  before: Event | null;
-  after: Event | null;
-}): void {
-  if (isRestoringHistory() || !before || !after || isRecurringEvent(before)) {
-    return;
-  }
-
-  undoHistoryActions.record({ kind: "transition", id, before, after });
-}

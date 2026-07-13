@@ -86,7 +86,7 @@ describe("compassToGoogleBackfill", () => {
     );
   });
 
-  it("ignores someday events, occurrences, and events that already have a provider reference", async () => {
+  it("ignores occurrences and events that already have a provider reference", async () => {
     const user = await UserDriver.createUser();
     const userId = user._id.toString();
     const calendar = buildGoogleCalendar(user._id);
@@ -94,14 +94,6 @@ describe("compassToGoogleBackfill", () => {
     const seriesId = new ObjectId();
 
     await mongoService.event.insertMany([
-      buildEvent(calendar._id, {
-        schedule: {
-          kind: "someday",
-          period: "week",
-          anchorDate: "2026-01-12",
-          sortOrder: 0,
-        },
-      }),
       buildEvent(calendar._id, {
         externalReference: {
           provider: "google",

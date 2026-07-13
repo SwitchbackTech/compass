@@ -3,11 +3,7 @@ import {
   type EventMigrationVerifyDeps,
   verifyEventMigration,
 } from "@scripts/common/event-migration.verify";
-import {
-  type LegacyEventTransformResult,
-  transformLegacyEvent,
-} from "@scripts/common/legacy-event.transform";
-import { assignMissingSomedaySortOrders } from "@scripts/common/legacy-event.transform.sort";
+import { transformLegacyEvent } from "@scripts/common/legacy-event.transform";
 import { zodToMongoSchema } from "@scripts/common/zod-to-mongo-schema";
 import {
   type AnyBulkWriteOperation,
@@ -38,7 +34,6 @@ const legacyIndexNames = (collectionName: string): string[] => [
   `${collectionName}_calendar_startDate_index`,
   `${collectionName}_calendar_endDate_index`,
   `${collectionName}_calendar_startDate_endDate_index`,
-  `${collectionName}_calendar_isSomeday_index`,
   `${collectionName}_calendar_metadata__gRecurringEventId_index`,
   `${collectionName}_calendar_metadata__gEventId_unique`,
 ];
@@ -71,7 +66,10 @@ export default class Migration implements RunnableMigration<MigrationContext> {
     const failures: Failure[] = [];
     let attempted = 0;
     let inserted = 0;
-    let sortOrdersAssigned = 0;
+    // Legacy someday events are intentionally not migrated (the Someday feature
+    // was removed). They are counted here and reported so the exclusion is an
+    // explicit, audited outcome rather than a silent drop.
+    let excludedSomeday = 0;
     const timeZoneTally: Record<"calendar" | "utcFallback" | "none", number> = {
       calendar: 0,
       utcFallback: 0,
@@ -168,10 +166,6 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       };
 
       const pending: PendingOp[] = [];
-      const somedayResults: Extract<
-        LegacyEventTransformResult,
-        { ok: true }
-      >[] = [];
 
       const eventCursor = mongoService.event.find(
         { user: userIdHex } as Document,
@@ -183,16 +177,15 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         const result = transformLegacyEvent(legacyEvent, context);
 
         if (!result.ok) {
+          if ("excluded" in result) {
+            excludedSomeday += 1;
+            continue;
+          }
           failures.push({ legacyId: result.legacyId, reason: result.reason });
           continue;
         }
 
         timeZoneTally[result.timeZoneSource ?? "none"] += 1;
-
-        if (result.record.schedule.kind === "someday") {
-          somedayResults.push(result);
-          continue;
-        }
 
         pending.push({
           legacyId: result.record._id.toHexString(),
@@ -209,31 +202,6 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       }
 
       await flush(pending);
-
-      if (somedayResults.length > 0) {
-        // Someday lists are product-capped tiny per user, so holding them
-        // in memory for the whole scan (required for deterministic ordering
-        // within a bucket) stays bounded.
-        assignMissingSomedaySortOrders(somedayResults);
-        sortOrdersAssigned += somedayResults.filter(
-          (r) => r.sortOrderAssigned,
-        ).length;
-
-        const somedayPending: PendingOp[] = somedayResults.map((r) => ({
-          legacyId: r.record._id.toHexString(),
-          op: {
-            replaceOne: {
-              filter: { _id: r.record._id },
-              replacement: r.record,
-              upsert: true,
-            },
-          },
-        }));
-
-        while (somedayPending.length > 0) {
-          await flush(somedayPending.splice(0, MONGO_BATCH_SIZE));
-        }
-      }
     }
 
     // Audit legacy allDayOrder usage (retired field, no production reader)
@@ -244,7 +212,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
     logger.info(
       `Event backfill scan complete: attempted=${attempted} inserted=${inserted} ` +
-        `failed=${failures.length} sortOrdersAssigned=${sortOrdersAssigned} ` +
+        `failed=${failures.length} excludedSomeday=${excludedSomeday} ` +
         `timeZoneSource=${JSON.stringify(timeZoneTally)} legacyAllDayOrderCount=${allDayOrderCount}`,
     );
 
@@ -277,6 +245,16 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         `Event backfill verification failed: ${JSON.stringify(
           verification.mismatches,
         )}`,
+      );
+    }
+
+    // Independent re-scan must agree with the backfill's own exclusion tally;
+    // a divergence means the two paths disagree on what "someday" is and the
+    // cutover must not proceed.
+    if (verification.summary.excludedSomedayCount !== excludedSomeday) {
+      throw new Error(
+        `Event backfill verification excluded-someday mismatch: ` +
+          `backfill=${excludedSomeday} verify=${verification.summary.excludedSomedayCount}`,
       );
     }
 
@@ -336,18 +314,6 @@ export default class Migration implements RunnableMigration<MigrationContext> {
       "schedule.kind": 1,
       "schedule.end": 1,
     });
-    await destination.createIndex(
-      {
-        calendarId: 1,
-        "schedule.period": 1,
-        "schedule.anchorDate": 1,
-        "schedule.sortOrder": 1,
-      },
-      {
-        name: "event_calendar_someday_order",
-        partialFilterExpression: { "schedule.kind": "someday" },
-      },
-    );
     await destination.createIndex(
       { "recurrence.seriesId": 1 },
       {

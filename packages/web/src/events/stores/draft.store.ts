@@ -291,7 +291,3 @@ export const selectIsDrafting = (state: State_DraftEvent) =>
 
 export const selectIsDraftingExisting = (state: State_DraftEvent) =>
   state.event?._id !== undefined;
-
-export const selectIsDraftingSomeday = (state: State_DraftEvent) =>
-  state.status?.eventType === Categories_Event.SOMEDAY_WEEK ||
-  state.status?.eventType === Categories_Event.SOMEDAY_MONTH;

@@ -110,7 +110,6 @@ const createSchemaGridEvent = (
   description: "",
   endDate: "2026-05-26T15:00:00.000Z",
   isAllDay: false,
-  isSomeday: false,
   origin: Origin.COMPASS,
   position: gridEventDefaultPosition,
   priority: Priorities.UNASSIGNED,

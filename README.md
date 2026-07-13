@@ -20,7 +20,6 @@ It'll be around for the long-term:
 ### The Unique Stuff
 
 - **Day Mode**: See your tasks and events side-by-side
-- **Someday Lists**: Organize future tasks without cluttering your schedule
 - **One-Click Adjustments**: Move events forwards or back effortlessly
 
 ### The Essentials

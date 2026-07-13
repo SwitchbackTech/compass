@@ -96,7 +96,6 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
       calendar: new ObjectId(),
       title: faker.lorem.words(3),
       description: faker.lorem.sentence(),
-      isSomeday: faker.datatype.boolean(),
       startDate: faker.date.future(),
       endDate: faker.date.future(),
       origin: Origin.COMPASS,
@@ -156,16 +155,6 @@ describe("2025.10.18T19.43.00.new-events-collection", () => {
 
       await expect(
         newEventCollection().insertOne(eventWithoutEndDate),
-      ).rejects.toThrow(/Document failed validation/);
-    });
-
-    it("rejects events with missing isSomeday field", async () => {
-      const eventWithoutIsSomeday = generateEvent();
-
-      delete (eventWithoutIsSomeday as Partial<Schema_Event>).isSomeday;
-
-      await expect(
-        newEventCollection().insertOne(eventWithoutIsSomeday),
       ).rejects.toThrow(/Document failed validation/);
     });
 

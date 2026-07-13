@@ -1,18 +1,12 @@
-import {
-  Origin,
-  SOMEDAY_MONTHLY_LIMIT,
-  SOMEDAY_WEEKLY_LIMIT,
-} from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
 import { type Schema_Event } from "@core/types/event.types";
-import { COLUMN_MONTH, COLUMN_WEEK } from "@web/common/constants/web.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
   type EventWithDates,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
-import { categorizeSomedayEvents } from "@web/common/utils/event/someday.event.util";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { type NormalizedEventQueryData } from "./event.query.types";
 
@@ -28,13 +22,9 @@ export const BUSY_EVENT_TITLE = "Busy";
 
 // The grid renderer (assembleGridEvent) still consumes the legacy
 // Schema_Event shape. This mirrors the mapping event.legacy-bridge.ts uses,
-// scoped to scheduled (timed/allDay) events only — this file never sees
-// someday events, so the someday-anchorDate branch there doesn't apply here.
+// scoped to scheduled (timed/allDay) events.
 const scheduledEventToSchemaEvent = (event: Event): Schema_Event => {
   const { schedule } = event;
-  if (schedule.kind === "someday") {
-    throw new Error("scheduledEventToSchemaEvent: someday event");
-  }
   return {
     _id: event.id,
     title:
@@ -44,7 +34,6 @@ const scheduledEventToSchemaEvent = (event: Event): Schema_Event => {
     origin: Origin.COMPASS,
     priority: event.priority,
     isAllDay: schedule.kind === "allDay",
-    isSomeday: false,
     startDate: schedule.start,
     endDate: schedule.end,
     recurrence:
@@ -187,31 +176,3 @@ export const deriveCalendarEventViewModel = (
   viewModelCache.set(data, result);
   return result;
 };
-
-/**
- * `week`/`month` are the two independently-cached someday query results for
- * the visible period's week and month buckets (kind: "someday"). Each bucket
- * is already scoped server-side to exactly one (period, anchorDate) pair
- * (A35), so categorization is just per-bucket sortOrder — see
- * {@link categorizeSomedayEvents}.
- */
-export function deriveSomedayEventViewModel(
-  week: NormalizedEventQueryData | undefined,
-  month: NormalizedEventQueryData | undefined,
-) {
-  const categorized = categorizeSomedayEvents(week, month);
-  const weekCount = categorized.columns[COLUMN_WEEK].eventIds.length;
-  const monthCount = categorized.columns[COLUMN_MONTH].eventIds.length;
-  return {
-    events: categorized.events,
-    orderedEvents: [
-      ...categorized.columns[COLUMN_WEEK].eventIds,
-      ...categorized.columns[COLUMN_MONTH].eventIds,
-    ].flatMap((id) => (categorized.events[id] ? [categorized.events[id]] : [])),
-    categorized,
-    weekCount,
-    monthCount,
-    isAtWeeklyLimit: weekCount >= SOMEDAY_WEEKLY_LIMIT,
-    isAtMonthlyLimit: monthCount >= SOMEDAY_MONTHLY_LIMIT,
-  };
-}

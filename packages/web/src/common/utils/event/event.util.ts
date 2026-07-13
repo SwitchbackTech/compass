@@ -75,29 +75,16 @@ export const assembleDefaultEvent = async (
       const defaultAllday: Schema_Event = {
         ...baseEvent,
         isAllDay: true,
-        isSomeday: false,
         startDate,
         endDate: endDate ?? startDate,
       };
       return defaultAllday;
-    }
-    case Categories_Event.SOMEDAY_WEEK:
-    case Categories_Event.SOMEDAY_MONTH: {
-      const defaultSomeday: Schema_Event = {
-        ...baseEvent,
-        isAllDay: false,
-        isSomeday: true,
-        origin: Origin.COMPASS,
-        ...(startDate && endDate ? { startDate, endDate } : {}),
-      };
-      return defaultSomeday;
     }
     case Categories_Event.TIMED: {
       const defaultTimed: Schema_GridEvent = {
         ...baseEvent,
         _id: baseEvent._id!,
         isAllDay: false,
-        isSomeday: false,
         startDate: startDate!,
         endDate: endDate!,
         position: gridEventDefaultPosition,
@@ -142,9 +129,6 @@ export const getCategory = (event: Schema_Event) => {
   if (event?.isAllDay) {
     return Categories_Event.ALLDAY;
   }
-  if (event?.isSomeday) {
-    return Categories_Event.SOMEDAY_WEEK;
-  }
   return Categories_Event.TIMED;
 };
 
@@ -165,9 +149,8 @@ export const getCalendarEventElementFromGrid = (
 };
 
 /**
- * Refocuses an event's element after React replaces it, e.g. when migrating a
- * someday event moves it to another list. Retries across animation frames
- * until the new element appears, then focuses it.
+ * Refocuses an event's element after React replaces it. Retries across
+ * animation frames until the new element appears, then focuses it.
  */
 export const refocusEventElement = (eventId: string) => {
   const selector = `[${DATA_EVENT_ELEMENT_ID}="${eventId}"]`;
@@ -253,7 +236,6 @@ const _assembleBaseEvent = (
     endDate: event.endDate,
     user: userId,
     isAllDay: event.isAllDay ?? false,
-    isSomeday: event.isSomeday ?? false,
     origin: event.origin ?? Origin.COMPASS,
     priority: event.priority ?? Priorities.UNASSIGNED,
   };

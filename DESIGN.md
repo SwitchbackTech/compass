@@ -120,7 +120,7 @@ Controls are quiet, borderless, and hover-revealing: they sit flush on their sur
 
 ### Navigation / Planner Sidebar
 
-- **Style:** A translucent panel (`panel-bg`) layered over the canvas by lightness, holding navigation, account context, and Someday Events. Text is `panel-text` (`#fafafa`). Custom thin scrollbars are transparent until hover (`compass-scroll`).
+- **Style:** A translucent panel (`panel-bg`) layered over the canvas by lightness, holding navigation and account context. Text is `panel-text` (`#fafafa`). Custom thin scrollbars are transparent until hover (`compass-scroll`).
 
 ### Calendar Grid (signature surface)
 

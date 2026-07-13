@@ -47,9 +47,6 @@ export default class Migration implements RunnableMigration<MigrationContext> {
 
     for await (const base of baseCursor) {
       if (base.recurrence.kind !== "series") continue;
-      // Someday series never materialize per-occurrence documents (recurrence
-      // there is surfaced only on the base for sidebar context display).
-      if (base.schedule.kind === "someday") continue;
 
       seriesScanned += 1;
       const baseAnchorMs = anchorMs(base);

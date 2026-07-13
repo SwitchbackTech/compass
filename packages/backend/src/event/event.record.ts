@@ -3,7 +3,6 @@ import {
   DateOnlySchema,
   PrioritySchema,
   RRuleSchema,
-  SortOrderSchema,
   TimeZoneSchema,
 } from "@core/types/domain-primitives";
 import { EventContentSchema } from "@core/types/event.contracts";
@@ -38,17 +37,9 @@ const AllDayScheduleRecordSchema = z
     path: ["end"],
   });
 
-const SomedayScheduleRecordSchema = z.strictObject({
-  kind: z.literal("someday"),
-  period: z.enum(["week", "month"]),
-  anchorDate: DateOnlySchema,
-  sortOrder: SortOrderSchema,
-});
-
 export const EventScheduleRecordSchema = z.discriminatedUnion("kind", [
   TimedScheduleRecordSchema,
   AllDayScheduleRecordSchema,
-  SomedayScheduleRecordSchema,
 ]);
 export type EventScheduleRecord = z.infer<typeof EventScheduleRecordSchema>;
 

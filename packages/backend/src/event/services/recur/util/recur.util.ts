@@ -20,18 +20,12 @@ const shiftSchedule = (
     };
   }
 
-  if (schedule.kind === "allDay") {
-    const offsetDays = Math.round(offsetMs / (24 * 60 * 60 * 1000));
-    return {
-      kind: "allDay",
-      start: shiftDateOnly(schedule.start, offsetDays),
-      end: shiftDateOnly(schedule.end, offsetDays),
-    };
-  }
-
-  // someday events do not materialize recurring instances (recurrence lives
-  // only on the base for the sidebar's context display).
-  return schedule;
+  const offsetDays = Math.round(offsetMs / (24 * 60 * 60 * 1000));
+  return {
+    kind: "allDay",
+    start: shiftDateOnly(schedule.start, offsetDays),
+    end: shiftDateOnly(schedule.end, offsetDays),
+  };
 };
 
 const shiftDateOnly = (dateOnly: DateOnly, offsetDays: number): DateOnly => {
@@ -49,10 +43,7 @@ const shiftDateOnly = (dateOnly: DateOnly, offsetDays: number): DateOnly => {
  */
 export const getAnchorDate = (schedule: EventScheduleRecord): Date => {
   if (schedule.kind === "timed") return schedule.start;
-  if (schedule.kind === "allDay") {
-    return new Date(`${schedule.start}T00:00:00.000Z`);
-  }
-  return new Date(`${schedule.anchorDate}T00:00:00.000Z`);
+  return new Date(`${schedule.start}T00:00:00.000Z`);
 };
 
 /**
@@ -68,14 +59,6 @@ export const materializeSeriesInstances = (
   maxInstances: number = GCAL_MAX_RECURRENCES,
 ): EventRecord[] => {
   if (base.recurrence.kind !== "series") return [];
-
-  // Someday events have no per-occurrence instant (schedule is a
-  // period/anchorDate/sortOrder bucket, not a date). shiftSchedule cannot
-  // shift them, so materializing instances here would create duplicate
-  // documents with the identical schedule as the base. Recurrence for
-  // someday events is surfaced only on the base (sidebar context display);
-  // it never fans out into separate instance rows.
-  if (base.schedule.kind === "someday") return [];
 
   const anchor = getAnchorDate(base.schedule);
   const rule = rrulestr(base.recurrence.rules.join("\n"), {

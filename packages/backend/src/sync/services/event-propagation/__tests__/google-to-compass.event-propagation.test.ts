@@ -347,8 +347,7 @@ describe("GoogleToCompassEventPropagation", () => {
         resolveSeriesObjectId: () => seriesId,
         now: new Date(),
       });
-      if (mapped.kind !== "mapped")
-        throw new Error("expected mapped instance");
+      if (mapped.kind !== "mapped") throw new Error("expected mapped instance");
       const unlinked = {
         ...mapped.event,
         _id: new ObjectId(),
@@ -366,9 +365,9 @@ describe("GoogleToCompassEventPropagation", () => {
         seeded.push(await seedUnlinkedOccurrence(gInstance, base._id));
       }
 
-      (
-        gcalService.getBaseRecurringEventInstances as jest.Mock
-      ).mockReturnValue(asAsyncPage(gInstances));
+      (gcalService.getBaseRecurringEventInstances as jest.Mock).mockReturnValue(
+        asAsyncPage(gInstances),
+      );
       const propagation = new GoogleToCompassEventPropagation(
         context,
         calendar,
@@ -381,9 +380,9 @@ describe("GoogleToCompassEventPropagation", () => {
         .find({ "recurrence.kind": "occurrence" })
         .toArray();
       expect(occurrenceRecords).toHaveLength(gInstances.length);
-      expect(
-        occurrenceRecords.every((r) => r.externalReference !== null),
-      ).toBe(true);
+      expect(occurrenceRecords.every((r) => r.externalReference !== null)).toBe(
+        true,
+      );
 
       const adoptedIds = new Set(
         occurrenceRecords.map((r) => r._id.toHexString()),

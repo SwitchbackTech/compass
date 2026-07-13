@@ -31,14 +31,18 @@ export type LegacyEventTransformResult =
       ok: true;
       record: EventRecord;
       timeZoneSource: "calendar" | "utcFallback" | null;
-      sortOrderAssigned: boolean;
-      // Carried through only so assignMissingSomedaySortOrders can order
-      // flagged records deterministically; not part of the persisted record.
-      legacyStartDate: string | null;
     }
-  | { ok: false; legacyId: string | null; reason: LegacyEventTransformReason };
+  | { ok: false; legacyId: string | null; reason: LegacyEventTransformReason }
+  // Legacy someday events are intentionally excluded from the sub-calendar
+  // backfill: the Someday feature was removed, so these records are counted
+  // and dropped rather than migrated. Distinct from a failure so the backfill
+  // stays fail-closed on genuinely unexpected records.
+  | { ok: false; excluded: true; legacyId: string };
 
-type FailResult = Extract<LegacyEventTransformResult, { ok: false }>;
+type FailResult = Extract<
+  LegacyEventTransformResult,
+  { ok: false; reason: LegacyEventTransformReason }
+>;
 
 const LegacyRecurrenceRawSchema = z.object({
   rule: z.array(z.string()).nullable().optional(),
@@ -65,8 +69,6 @@ const LegacyEventRawSchema = z.object({
 });
 
 type LegacyEventRaw = z.infer<typeof LegacyEventRawSchema>;
-
-const DAY_MS = 24 * 60 * 60 * 1000;
 
 type DateShape = "dateOnly" | "offset" | "invalid";
 
@@ -196,8 +198,6 @@ const finalize = (
   candidate: unknown,
   legacyId: string,
   timeZoneSource: "calendar" | "utcFallback" | null,
-  sortOrderAssigned: boolean,
-  legacyStartDate: string | null,
 ): LegacyEventTransformResult => {
   const parsed = EventRecordSchema.safeParse(candidate);
   if (!parsed.success) return fail(legacyId, "invalidShape");
@@ -205,8 +205,6 @@ const finalize = (
     ok: true,
     record: parsed.data,
     timeZoneSource,
-    sortOrderAssigned,
-    legacyStartDate,
   };
 };
 
@@ -254,7 +252,7 @@ const buildTimed = (
     updatedAt: resolveUpdatedAt(data.updatedAt),
   };
 
-  return finalize(candidate, legacyId, timeZoneSource, false, null);
+  return finalize(candidate, legacyId, timeZoneSource);
 };
 
 const buildAllDay = (
@@ -288,54 +286,7 @@ const buildAllDay = (
     updatedAt: resolveUpdatedAt(data.updatedAt),
   };
 
-  return finalize(candidate, legacyId, null, false, null);
-};
-
-const buildSomeday = (
-  data: LegacyEventRaw,
-  _id: ObjectId,
-  legacyId: string,
-  context: LegacyEventTransformContext,
-): LegacyEventTransformResult => {
-  const startMs = Date.parse(data.startDate);
-  const endMs = Date.parse(data.endDate);
-  if (Number.isNaN(startMs) || Number.isNaN(endMs)) {
-    return fail(legacyId, "invalidDates");
-  }
-
-  // Someday dates are usually date-only, but tolerate a time component by
-  // taking the date part of startDate for the anchor.
-  const anchorDate = data.startDate.slice(0, 10);
-  if (shapeOf(anchorDate) !== "dateOnly") return fail(legacyId, "invalidDates");
-
-  const diffDays = (endMs - startMs) / DAY_MS;
-  const period: "week" | "month" = diffDays > 7 ? "month" : "week";
-
-  const orderValid =
-    typeof data.order === "number" &&
-    Number.isInteger(data.order) &&
-    Number.isFinite(data.order) &&
-    data.order >= 0;
-  const sortOrder = orderValid ? (data.order as number) : 0;
-  const sortOrderAssigned = !orderValid;
-
-  const recurrenceResult = resolveRecurrence(data, legacyId, context);
-  if (!recurrenceResult.ok) return recurrenceResult;
-
-  const candidate = {
-    _id,
-    // Rule 1: someday events always belong to the Compass-local calendar.
-    calendarId: context.localCalendarId,
-    content: buildContent(data),
-    schedule: { kind: "someday" as const, period, anchorDate, sortOrder },
-    recurrence: recurrenceResult.recurrence,
-    priority: resolvePriority(data.priority),
-    externalReference: resolveExternalReference(data),
-    createdAt: _id.getTimestamp(),
-    updatedAt: resolveUpdatedAt(data.updatedAt),
-  };
-
-  return finalize(candidate, legacyId, null, sortOrderAssigned, data.startDate);
+  return finalize(candidate, legacyId, null);
 };
 
 export const transformLegacyEvent = (
@@ -351,8 +302,11 @@ export const transformLegacyEvent = (
   if (_id === null) return fail(rawId, "invalidShape");
   const legacyId = _id.toHexString();
 
+  // Legacy someday events are not migrated into the sub-calendar model; they
+  // are excluded (and counted by callers) instead. The Someday feature was
+  // removed, so there is no destination schedule for them.
   if (data.isSomeday === true) {
-    return buildSomeday(data, _id, legacyId, context);
+    return { ok: false, excluded: true, legacyId };
   }
 
   const startShape = shapeOf(data.startDate);

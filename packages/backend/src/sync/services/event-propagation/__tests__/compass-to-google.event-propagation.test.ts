@@ -19,8 +19,8 @@ import { CompassToGoogleEventPropagation } from "@backend/sync/services/event-pr
  * The transaction envelope (B7) -- ported from the deleted
  * compass-to-google.event-propagation.test.ts (8 tests). The OLD file tested
  * private static methods (getNotificationType, notifyClients, applyChange,
- * executeGoogleEffect) and the removed EVENT_CHANGED/SOMEDAY_EVENT_CHANGED
- * SSE constants -- none of that exists anymore (SSE notification is
+ * executeGoogleEffect) and the removed EVENT_CHANGED SSE constants -- none
+ * of that exists anymore (SSE notification is
  * eventService's `notify()` publishing `eventsChanged`, covered separately).
  * What's ported is the INTENT: Google effects run strictly after the Mongo
  * transaction commits, a mid-transaction Mongo failure means propagate()

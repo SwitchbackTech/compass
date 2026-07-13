@@ -2,12 +2,10 @@ import { ObjectId } from "mongodb";
 import {
   generateDelete,
   generateReplace,
-  generateTransition,
 } from "@backend/event/classes/compass.event.generator";
 import {
   type DeletePlan,
   type ReplacePlan,
-  type TransitionPlan,
 } from "@backend/event/classes/compass.event.parser";
 import { type EventRecord } from "@backend/event/event.record";
 
@@ -176,26 +174,6 @@ describe("generateDelete", () => {
       upsert: [truncatedBase],
       deleteSeriesId: null,
       primary: null,
-    });
-  });
-});
-
-describe("generateTransition", () => {
-  it("upserts the updated event and deletes any provided instance ids", () => {
-    const updated = buildEvent({ calendarId: new ObjectId() });
-    const deletedInstanceIds = [new ObjectId()];
-    const plan: TransitionPlan = {
-      kind: "schedule",
-      updated,
-      deletedInstanceIds,
-    };
-
-    const result = generateTransition(plan);
-
-    expect(result).toEqual({
-      upsert: [updated],
-      deleteIds: deletedInstanceIds,
-      primary: updated,
     });
   });
 });

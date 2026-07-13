@@ -17,7 +17,6 @@ describe("useRecurrence hook", () => {
       endDate: new Date(Date.now() + 3600000).toISOString(),
       priority: Priorities.UNASSIGNED,
       origin: Origin.COMPASS,
-      isSomeday: false,
       user: "user1",
     });
 

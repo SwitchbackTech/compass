@@ -1,9 +1,7 @@
 import { faker } from "@faker-js/faker";
-import { ObjectId } from "bson";
 import { rest } from "msw";
 import {
   CLIMB,
-  EUROPE_TRIP,
   GROCERIES,
   MARCH_1,
   MULTI_WEEK,
@@ -17,28 +15,7 @@ export const globalHandlers = [
   rest.get("http://localhost/version.json", (_req, res, ctx) => {
     return res(ctx.json({ version: "dev" }));
   }),
-  rest.get(`${ENV_WEB.API_BASEURL}/event`, (req, res, ctx) => {
-    const getSomedayEvents = req.url.searchParams.get("someday");
-    if (getSomedayEvents) {
-      return res(
-        ctx.json([
-          {
-            _id: new ObjectId().toString(),
-            description: "somesomesome",
-            isSomeday: true,
-            origin: "compass",
-            priority: "unassigned",
-            title: "Takeover world",
-            startDate: "2025-06-09",
-            endDate: "2025-06-09",
-            user: "testUser",
-            order: 1,
-          },
-          EUROPE_TRIP,
-        ]),
-      );
-    }
-
+  rest.get(`${ENV_WEB.API_BASEURL}/event`, (_req, res, ctx) => {
     const events = [
       CLIMB,
       MARCH_1,

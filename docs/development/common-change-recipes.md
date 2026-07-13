@@ -38,7 +38,7 @@ Do not edit recurring behavior from one layer only.
 
 - **Changing only the executor without updating the parser plan builders** — the executor reads the `steps` array that the parser produces. If the plan builder for a given transition key is wrong, the executor will silently do the wrong thing even if the executor logic looks correct. Always trace from `PLAN_BUILDERS` in `compass.event.parser.ts` to confirm `steps` and `googleEffect` match the intended behavior.
 - **Missing a database migration for existing recurring events** — existing user data will not be retroactively updated by code changes alone. If you modify how recurring series are stored or processed, add a migration to `packages/scripts/src/migrations`.
-- **Testing only the happy-path transition** — someday and cancellation transitions follow different planner paths. A test that only covers the primary create/update flow can pass while someday transitions break silently.
+- **Testing only the happy-path transition** — cancellation transitions follow a different planner path. A test that only covers the primary create/update flow can pass while cancellation transitions break silently.
 
 ## Triage A Recurrence Sync Regression
 

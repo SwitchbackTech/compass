@@ -2,7 +2,6 @@ import { type ObjectId } from "mongodb";
 import {
   type DeletePlan,
   type ReplacePlan,
-  type TransitionPlan,
 } from "@backend/event/classes/compass.event.parser";
 import { type EventRecord } from "@backend/event/event.record";
 import { materializeSeriesInstances } from "@backend/event/services/recur/util/recur.util";
@@ -18,8 +17,8 @@ const materializeIfSeries = (base: EventRecord): EventRecord[] =>
   base.recurrence.kind === "series" ? materializeSeriesInstances(base) : [];
 
 /**
- * Expands a replace/delete/transition plan into concrete records to persist.
- * Pure: any RRULE expansion for a (re)created series happens here.
+ * Expands a replace/delete plan into concrete records to persist. Pure: any
+ * RRULE expansion for a (re)created series happens here.
  */
 export function generateReplace(plan: ReplacePlan): MaterializedMutation {
   switch (plan.kind) {
@@ -73,12 +72,4 @@ export function generateDelete(plan: DeletePlan): {
         primary: null,
       };
   }
-}
-
-export function generateTransition(plan: TransitionPlan): MaterializedMutation {
-  return {
-    upsert: [plan.updated],
-    deleteIds: plan.deletedInstanceIds,
-    primary: plan.updated,
-  };
 }

@@ -1,32 +1,24 @@
 import { useCallback, useEffect, useRef } from "react";
-import { SOMEDAY_WEEK_LIMIT_MSG } from "@core/constants/core.constants";
-import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type EventId, EventIdSchema } from "@core/types/domain-primitives";
-import { Categories_Event } from "@core/types/event.types";
+import { type EventId } from "@core/types/domain-primitives";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   isEventReadOnly,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   createAlldayDraft,
   createTimedDraft,
 } from "@web/common/utils/draft/draft.util";
-import { refocusEventElement } from "@web/common/utils/event/event.util";
 import { getArrowKeyMovement } from "@web/common/utils/event/event-nudge.util";
 import { nudgeEventFromKeyboard } from "@web/common/utils/event/event-nudge-shortcut.util";
-import { buildConvertToSomedayEvent } from "@web/common/utils/event/someday.event.util";
 import {
   isDeleteTextEditingTarget,
   isEditableKeyboardTarget,
   isEventFormKeyboardTarget,
   isEventFormOpen,
 } from "@web/common/utils/form/form.util";
-import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-import { useSidebarContext } from "@web/components/PlannerSidebar/draft/context/useSidebarContext";
-import { focusFirstSomedaySidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
+import { focusFirstSidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
 import { type GridScheduleDraft } from "@web/events/event-draft.types";
 import {
   editGridEventDraft,
@@ -34,9 +26,7 @@ import {
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
-import { useSomedayEventViewModel } from "@web/events/queries/useSomedayEventsQuery";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
-import { unscheduleSomedayEventTransition } from "@web/events/someday-event-draft.adapter";
 import { draftActions } from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,
@@ -84,7 +74,6 @@ export const useWeekShortcuts = ({
 }: ShortcutProps) => {
   const mutations = useEventMutations();
   const { delete: deleteEvent } = mutations;
-  const context = useSidebarContext(true);
   // Read-only (unwritable calendar or busy content) events can be inspected
   // (the "M" edit shortcut still opens the read-only form) but never
   // mutated - delete and nudge/move below gate on this before touching the
@@ -94,8 +83,6 @@ export const useWeekShortcuts = ({
     actions: { repositionDraftByKeyboard },
     confirmation,
   } = useDraftContext();
-  const { isAtWeeklyLimit, weekCount: somedayWeekCount } =
-    useSomedayEventViewModel(startOfView, endOfView);
 
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
   const { allDayEvents, entities, timedEvents } = useWeekEventViewModel({
@@ -111,20 +98,6 @@ export const useWeekShortcuts = ({
     allDayEventsRef.current = allDayEvents;
     timedEventsRef.current = timedEvents;
   }, [allDayEvents, timedEvents]);
-
-  const _createSomedayDraft = useCallback(
-    (
-      category: Categories_Event.SOMEDAY_WEEK | Categories_Event.SOMEDAY_MONTH,
-    ) => {
-      void context?.actions.createSomedayDraft(category, "createShortcut");
-
-      // If sidebar is closed, open it first
-      if (!isSidebarOpen) {
-        viewActions.toggleSidebar();
-      }
-    },
-    [context, isSidebarOpen],
-  );
 
   const _discardDraft = useCallback(() => {
     if (isEventFormOpen()) {
@@ -166,23 +139,15 @@ export const useWeekShortcuts = ({
     void createTimedDraft(isCurrentWeek, startOfView, "createShortcut");
   }, [isCurrentWeek, startOfView]);
 
-  const createSomedayMonthDraft = useCallback(() => {
-    _createSomedayDraft(Categories_Event.SOMEDAY_MONTH);
-  }, [_createSomedayDraft]);
-
-  const createSomedayWeekDraft = useCallback(() => {
-    _createSomedayDraft(Categories_Event.SOMEDAY_WEEK);
-  }, [_createSomedayDraft]);
-
   const focusSidebar = useCallback(() => {
     if (!isSidebarOpen) {
       viewActions.toggleSidebar();
       // The sidebar renders conditionally; focus after the open commits
-      requestAnimationFrame(() => focusFirstSomedaySidebarItem());
+      requestAnimationFrame(() => focusFirstSidebarItem());
       return;
     }
 
-    focusFirstSomedaySidebarItem();
+    focusFirstSidebarItem();
   }, [isSidebarOpen]);
 
   const focusFirstCalendarEvent = useCallback(() => {
@@ -248,7 +213,7 @@ export const useWeekShortcuts = ({
       }
 
       // Focus inside the sidebar (e.g. via the "u" shortcut) means the user
-      // is acting on someday events, not grid events
+      // is acting on the sidebar, not grid events
       if (document.activeElement?.closest(`#${ID_SIDEBAR}`)) {
         return;
       }
@@ -274,52 +239,6 @@ export const useWeekShortcuts = ({
       deleteEventAndDiscardDraft(deleteEvent, resolvedTarget.event);
     },
     [calendarLookup, deleteEvent, getTargetedCalendarEvent],
-  );
-
-  const convertFocusedEventToSomeday = useCallback(
-    (event: Schema_GridEvent) => {
-      if (isAtWeeklyLimit) {
-        showErrorToast(SOMEDAY_WEEK_LIMIT_MSG);
-        return;
-      }
-
-      const somedayEvent = buildConvertToSomedayEvent(
-        event,
-        {
-          startDate: startOfView.format(YEAR_MONTH_DAY_FORMAT),
-          endDate: endOfView.format(YEAR_MONTH_DAY_FORMAT),
-        },
-        somedayWeekCount,
-      );
-
-      // This shortcut always drops into the SOMEDAY_WEEK column (only the
-      // weekly limit is checked above), so period is always "week".
-      const id = EventIdSchema.safeParse(somedayEvent._id);
-      const input = somedayEvent.startDate
-        ? unscheduleSomedayEventTransition({
-            period: "week",
-            anchorDate: somedayEvent.startDate,
-            sortOrder: somedayEvent.order ?? 0,
-          })
-        : null;
-
-      if (id.success && input) {
-        mutations.transition({ id: id.data, input });
-      }
-
-      if (!isSidebarOpen) {
-        viewActions.toggleSidebar();
-      }
-      refocusEventElement(somedayEvent._id);
-    },
-    [
-      endOfView,
-      isAtWeeklyLimit,
-      isSidebarOpen,
-      mutations,
-      somedayWeekCount,
-      startOfView,
-    ],
   );
 
   const moveFocusedCalendarEvent = useCallback(
@@ -349,8 +268,6 @@ export const useWeekShortcuts = ({
       const start = dayjs(event.startDate);
 
       if (movement.days === -1 && !start.isAfter(weekDays[0], "day")) {
-        keyboardEvent.preventDefault();
-        convertFocusedEventToSomeday(event);
         return;
       }
 
@@ -391,7 +308,6 @@ export const useWeekShortcuts = ({
     [
       calendarLookup,
       confirmation,
-      convertFocusedEventToSomeday,
       entities,
       findCalendarEventForTarget,
       weekDays,
@@ -448,6 +364,4 @@ export const useWeekShortcuts = ({
   useAppShortcut("Shift+ArrowDown", moveFocusedCalendarEvent);
   useAppShortcut("Shift+ArrowLeft", moveFocusedCalendarEvent);
   useAppShortcut("Shift+ArrowRight", moveFocusedCalendarEvent);
-  useAppShortcutUp("Shift+M", createSomedayMonthDraft);
-  useAppShortcutUp("Shift+W", createSomedayWeekDraft);
 };

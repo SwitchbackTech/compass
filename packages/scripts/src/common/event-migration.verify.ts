@@ -1,8 +1,4 @@
 import { transformLegacyEvent } from "@scripts/common/legacy-event.transform";
-import {
-  assignMissingSomedaySortOrders,
-  type SomedaySortAssignmentInput,
-} from "@scripts/common/legacy-event.transform.sort";
 import { type Collection, type Document, type ObjectId } from "mongodb";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
@@ -25,9 +21,13 @@ export type EventMigrationVerifyDeps = {
 export type EventMigrationVerifySummary = {
   legacyTotal: number;
   destinationTotal: number;
+  // Legacy someday events are intentionally excluded from the migration (the
+  // Someday feature was removed). Reported explicitly so the exclusion is an
+  // audited, expected outcome rather than an unaccounted-for shortfall.
+  excludedSomedayCount: number;
   categoryCounts: {
-    legacy: Record<"timed" | "allDay" | "someday", number>;
-    destination: Record<"timed" | "allDay" | "someday", number>;
+    legacy: Record<"timed" | "allDay", number>;
+    destination: Record<"timed" | "allDay", number>;
   };
   seriesCount: number;
   occurrenceCount: number;
@@ -41,13 +41,9 @@ export type EventMigrationVerifyResult =
       summary: EventMigrationVerifySummary;
     };
 
-const emptyCategoryCounts = (): Record<
-  "timed" | "allDay" | "someday",
-  number
-> => ({
+const emptyCategoryCounts = (): Record<"timed" | "allDay", number> => ({
   timed: 0,
   allDay: 0,
-  someday: 0,
 });
 
 // Behavior-bearing projection: fields the migration is contractually
@@ -118,12 +114,7 @@ export const verifyEventMigration = async (
     { batchSize: MONGO_BATCH_SIZE },
   );
   let transformFailures = 0;
-  // Someday records are hashed after the scan: the backfill assigns missing
-  // sortOrders post-transform (assignMissingSomedaySortOrders), so the
-  // verification must replicate that assignment or every assigned order
-  // mismatches the destination. Buffering is bounded: someday lists are
-  // product-capped per user period.
-  const somedayResults: SomedaySortAssignmentInput[] = [];
+  let excludedSomedayCount = 0;
   for await (const legacyDoc of legacyCursor) {
     const userKey = legacyUserOf(legacyDoc);
     const localCalendarId = userKey
@@ -148,27 +139,19 @@ export const verifyEventMigration = async (
     });
 
     if (!result.ok) {
-      transformFailures += 1;
+      // Excluded someday records are an expected, audited drop -- counted
+      // separately so they never look like a transform failure or a
+      // destination shortfall.
+      if ("excluded" in result) {
+        excludedSomedayCount += 1;
+      } else {
+        transformFailures += 1;
+      }
       continue;
     }
 
     legacyCategoryCounts[result.record.schedule.kind] += 1;
-
-    if (result.record.schedule.kind === "someday") {
-      somedayResults.push({
-        record: result.record,
-        sortOrderAssigned: result.sortOrderAssigned,
-        legacyStartDate: result.legacyStartDate,
-      });
-      continue;
-    }
-
     legacyHash.add(projectionOf(result.record));
-  }
-
-  assignMissingSomedaySortOrders(somedayResults);
-  for (const { record } of somedayResults) {
-    legacyHash.add(projectionOf(record));
   }
 
   if (transformFailures > 0) {
@@ -249,13 +232,20 @@ export const verifyEventMigration = async (
     );
   }
 
-  if (legacyTotal - transformFailures !== destinationTotal) {
+  // Fail closed: every legacy record must be accounted for as migrated,
+  // excluded (someday), or a surfaced failure. A shortfall that is not fully
+  // explained by the excluded-someday count is an unexpected data problem.
+  if (
+    legacyTotal - transformFailures - excludedSomedayCount !==
+    destinationTotal
+  ) {
     mismatches.push(
-      `count mismatch: legacy transformable=${legacyTotal - transformFailures} destination=${destinationTotal}`,
+      `count mismatch: legacy transformable=${legacyTotal - transformFailures - excludedSomedayCount} ` +
+        `(excludedSomeday=${excludedSomedayCount}) destination=${destinationTotal}`,
     );
   }
 
-  (["timed", "allDay", "someday"] as const).forEach((kind) => {
+  (["timed", "allDay"] as const).forEach((kind) => {
     if (legacyCategoryCounts[kind] !== destinationCategoryCounts[kind]) {
       mismatches.push(
         `category "${kind}" mismatch: legacy=${legacyCategoryCounts[kind]} destination=${destinationCategoryCounts[kind]}`,
@@ -274,6 +264,7 @@ export const verifyEventMigration = async (
   const summary: EventMigrationVerifySummary = {
     legacyTotal,
     destinationTotal,
+    excludedSomedayCount,
     categoryCounts: {
       legacy: legacyCategoryCounts,
       destination: destinationCategoryCounts,

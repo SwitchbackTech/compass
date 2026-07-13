@@ -24,9 +24,6 @@ Compass-to-Google event propagation classifies event shape using `Categories_Rec
 - `STANDALONE`
 - `RECURRENCE_BASE`
 - `RECURRENCE_INSTANCE`
-- `STANDALONE_SOMEDAY`
-- `RECURRENCE_BASE_SOMEDAY`
-- `RECURRENCE_INSTANCE_SOMEDAY`
 
 The Compass-to-Google path treats recurrence handling as a transition problem:
 
@@ -97,15 +94,6 @@ Useful heuristics during Google sync:
 
 This is why Compass-to-Google event propagation keys off persisted state plus event properties instead of trying to reconstruct a single high-level Google UI action.
 
-## Someday And Provider Semantics
-
-`isSomeday` changes who is treated as the provider of record:
-
-- normal events usually persist with Google provider data and may mirror to Google
-- someday events persist as Compass-owned events and skip Google side effects
-
-Transitions between someday and non-someday states are still analyzed as recurrence transitions. The plan decides whether Google should receive `create`, `update`, `delete`, or `none`.
-
 ## Google Sync Boundary
 
 The recurrence planner does not call Google directly.
@@ -170,14 +158,14 @@ Use this sequence when recurring edits behave unexpectedly:
 
 ## What To Verify When Changing Recurrence Logic
 
-- transition classification for base, instance, standalone, and someday shapes
+- transition classification for base, instance, and standalone shapes
 - `RecurringEventUpdateScope` expansion in `CompassEventFactory`
 - RRULE split behavior for:
   - no split
   - `UNTIL`-only truncation
   - full series recreation
-- Google side effects for someday/non-someday transitions
-- SSE notifications for calendar vs someday changes
+- Google side effects for recurrence transitions
+- SSE notifications for calendar changes
 
 Good test anchors:
 

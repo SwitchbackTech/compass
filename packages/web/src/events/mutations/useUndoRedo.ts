@@ -46,11 +46,10 @@ const refocusAfterReplay = (eventId: string) => {
 };
 
 /**
- * Replays undo history through the regular event mutations. Edits and
- * transitions are symmetric `replace` replays of the full before/after
- * snapshots (the optimistic upsert handles someday<->calendar membership);
- * deletes are undone by recreating the snapshot under its original id (A25),
- * which resurrects the same provider-linked event server-side.
+ * Replays undo history through the regular event mutations. Edits are
+ * symmetric `replace` replays of the full before/after snapshots; deletes are
+ * undone by recreating the snapshot under its original id (A25), which
+ * resurrects the same provider-linked event server-side.
  */
 export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
   const mutations = useEventMutations(dependencies);

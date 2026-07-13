@@ -127,7 +127,6 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
   ({
     draft,
     onClose: _onClose,
-    onConvert,
     onDelete,
     onSubmit,
     onDuplicate,
@@ -549,12 +548,8 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
           actions={
             <EventActionMenu
               bgColor={darken(priorityColor)}
-              isDraft={isDraft}
               isExistingEvent={isExistingEvent}
               isReadOnly={isReadOnly}
-              onConvert={() => {
-                onConvert?.();
-              }}
               onDuplicate={onDuplicateEvent}
               onDelete={onDeleteEvent}
             />

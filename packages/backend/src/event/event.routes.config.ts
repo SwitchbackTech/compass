@@ -20,21 +20,11 @@ export class EventRoutes extends CommonRoutesConfig {
       .get(eventController.readAll)
       .post(eventController.create);
 
-    this.app
-      .route(`/api/event/reorder`)
-      .all(verifySession())
-      .put(eventController.reorder);
-
     // Development only: bulk-delete a user's events.
     this.app
       .route(`/api/event/delete-all/:userId`)
       .all([verifySession(), authMiddleware.verifyIsDev])
       .delete(eventController.deleteAllByUser);
-
-    this.app
-      .route(`/api/event/:id/transition`)
-      .all(verifySession())
-      .post(eventController.transition);
 
     this.app
       .route(`/api/event/:id`)

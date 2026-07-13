@@ -15,7 +15,6 @@ import {
   isPrimaryKeyUpgradeError,
 } from "./legacy-primary-key.migration";
 import {
-  type LocalEventOrderPatch,
   type MigrationRecord,
   type OfflineDataStore,
   type StoredTask,
@@ -53,8 +52,8 @@ class CompassDB extends Dexie {
     });
 
     // Version 4 (B13): events store LocalEventRecord ({ version, id, event,
-    // isDemo }), keyed by "id", indexed on the nested schedule so range/
-    // someday reads can eventually use the index instead of a full scan.
+    // isDemo }), keyed by "id", indexed on the nested schedule so range
+    // reads can eventually use the index instead of a full scan.
     // The primary key rename from "_id" to "id" is not an in-place Dexie
     // upgrade (see isPrimaryKeyUpgradeError); rows are migrated in
     // migrateFromLegacySchema below.
@@ -64,6 +63,27 @@ class CompassDB extends Dexie {
       tasks: "_id, dateKey, status, order",
       _migrations: "id",
     });
+
+    // Version 5: the "someday" schedule kind was removed. Purge any local
+    // records that still carry it so the events table only ever holds
+    // timed/allDay schedules (the read/write paths no longer handle someday).
+    this.version(5)
+      .stores({
+        events:
+          "id, event.schedule.kind, event.schedule.start, event.schedule.end",
+        tasks: "_id, dateKey, status, order",
+        _migrations: "id",
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table<LocalEventRecord, string>("events")
+          .filter(
+            (record) =>
+              (record.event?.schedule as { kind?: string } | undefined)
+                ?.kind === "someday",
+          )
+          .delete();
+      });
   }
 }
 
@@ -212,15 +232,6 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
   async getEvents(query: EventListQuery): Promise<LocalEventRecord[]> {
     const all = await this.db.events.toArray();
 
-    if (query.kind === "someday") {
-      return all.filter(
-        ({ event }) =>
-          event.schedule.kind === "someday" &&
-          event.schedule.period === query.period &&
-          event.schedule.anchorDate === query.anchorDate,
-      );
-    }
-
     const start = Date.parse(query.start);
     const end = Date.parse(query.end);
     const allDayStart = query.start.slice(0, 10);
@@ -267,22 +278,6 @@ export class IndexedDbOfflineDataStore implements OfflineDataStore {
 
   async deleteEvent(eventId: EventId): Promise<void> {
     await this.db.events.delete(eventId);
-  }
-
-  async updateEventOrders(items: LocalEventOrderPatch[]): Promise<void> {
-    await this.db.transaction("rw", this.db.events, async () => {
-      for (const { eventId, sortOrder } of items) {
-        const existing = await this.db.events.get(eventId);
-        if (!existing || existing.event.schedule.kind !== "someday") continue;
-
-        await this.db.events.update(eventId, {
-          event: {
-            ...existing.event,
-            schedule: { ...existing.event.schedule, sortOrder },
-          },
-        });
-      }
-    });
   }
 
   async clearAllEvents(): Promise<void> {

@@ -1,9 +1,8 @@
-import { keepPreviousData, queryOptions } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 import { type EventRepositorySource } from "@web/events/repositories/event.repository.factory";
 import { getEventRepositoryBySource } from "@web/events/repositories/event.repository.util";
 import { fetchDayEvents } from "./day.event.query";
 import { eventQueryKeys } from "./event.query.keys";
-import { fetchSomedayEvents } from "./someday.event.query";
 import { fetchWeekEvents } from "./week.event.query";
 
 /**
@@ -22,12 +21,6 @@ export type EventsQueryArgs = {
   source: EventRepositorySource;
   startDate: string;
   endDate: string;
-};
-
-export type SomedayEventsQueryArgs = {
-  source: EventRepositorySource;
-  period: "week" | "month";
-  anchorDate: string;
 };
 
 export function dayEventsQueryOptions({
@@ -59,33 +52,5 @@ export function weekEventsQueryOptions({
         getEventRepositoryBySource(source),
       ),
     ...EVENT_QUERY_CACHE_OPTIONS,
-  });
-}
-
-export function somedayEventsQueryOptions({
-  source,
-  period,
-  anchorDate,
-}: SomedayEventsQueryArgs) {
-  return queryOptions({
-    queryKey: eventQueryKeys.someday({ source, period, anchorDate }),
-    queryFn: () =>
-      fetchSomedayEvents(
-        { period, anchorDate },
-        getEventRepositoryBySource(source),
-      ),
-    ...EVENT_QUERY_CACHE_OPTIONS,
-    // Keep the previous bucket's Someday list visible while a new anchorDate
-    // fetches, instead of a momentary empty list. Safe here because the
-    // sidebar renders straight from the derived list with no isPending gate.
-    //
-    // Deliberately NOT applied to day/week options: the calendar grid gates
-    // its entire render on `query.isPending` and positions events by absolute
-    // date (see MainGridEvents/AllDayEvents/DayCalendarGrid), so keeping stale
-    // data visible there would transiently render the previous range's events
-    // in the new range's grid columns. Extending this to the grid needs those
-    // consumers rewired to treat `isPlaceholderData` as still-loading — a
-    // separate, larger change.
-    placeholderData: keepPreviousData,
   });
 }

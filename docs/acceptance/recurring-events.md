@@ -28,7 +28,6 @@ Helpful notes:
 
 - The "Apply Changes To" scope dialog appears any time you edit or delete an instance or base event of a recurring series.
 - If you are changing the recurrence rule itself (for example removing recurrence entirely), the "This Event" option is removed from the scope dialog — only "This and Following Events" and "All Events" are available.
-- Someday recurring events skip the scope dialog entirely and default to "All Events" for any mutation.
 - Recurring events synced with Google Calendar will push scope changes back to Google automatically.
 
 ---

@@ -73,7 +73,6 @@ against staging/production.
 | --- | --- |
 | `list()` timed-range branch | `calendarId_1_schedule.kind_1_schedule.start_1` |
 | `list()` all-day-range branch | `calendarId_1_schedule.kind_1_schedule.start_1` * |
-| `list()` someday branch | `event_calendar_someday_order` |
 | Calendar `{userId, source.provider, source.calendarId}` lookup | `calendar_userId_sourceCalendarId_unique` |
 
 \* Finding, not a regression: the all-day branch ranges on both
