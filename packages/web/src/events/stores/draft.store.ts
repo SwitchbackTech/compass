@@ -253,14 +253,20 @@ export const draftActions = {
       { type: "setGridDraft" },
     ),
 
+  // No-op when already at the requested value: Week's draft effects call this
+  // redundantly, and a fresh `status` object each time would re-render every
+  // `selectDraftStatus` subscriber.
   setFormOpen: (isFormOpen: boolean) =>
     useDraftStore.setState(
-      (state) => ({
-        status: {
-          ...(state.status ?? initialDraftStatus),
-          isFormOpen,
-        },
-      }),
+      (state) =>
+        Boolean(state.status?.isFormOpen) === isFormOpen
+          ? {}
+          : {
+              status: {
+                ...(state.status ?? initialDraftStatus),
+                isFormOpen,
+              },
+            },
       false,
       { type: "setFormOpen" },
     ),

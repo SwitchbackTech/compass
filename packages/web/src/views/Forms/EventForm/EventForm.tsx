@@ -58,6 +58,7 @@ import {
   type SetEventFormField,
 } from "@web/views/Forms/EventForm/types";
 import { EventFormShell } from "@web/views/Forms/EventFormShell";
+import { useEscapeToCloseForm } from "@web/views/Forms/hooks/useEscapeToCloseForm";
 
 const EVENT_FORM_PLAIN_HOTKEY_OPTIONS = {
   enabled: true,
@@ -507,6 +508,8 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
       },
     );
 
+    useEscapeToCloseForm(onClose);
+
     return (
       <EventFormShell
         {...props}
@@ -531,7 +534,9 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
               Component="input"
               className={classNames(
                 INPUT_RESET_CLASSNAME,
-                "bg-transparent font-semibold text-2xl transition-all duration-300",
+                // w-full: an input's intrinsic size-attribute width would
+                // overflow the sidebar-width form and force horizontal scroll
+                "w-full bg-transparent font-semibold text-2xl transition-all duration-300",
               )}
               autoFocus
               disabled={isReadOnly}

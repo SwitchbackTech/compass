@@ -32,7 +32,6 @@ import {
 } from "@web/events/stores/draft.store";
 import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { type CalendarGridMeasurements } from "@web/layout/calendar-grid/types/calendarGrid.types";
-import { type EventFormProps } from "@web/views/Forms/hooks/useEventForm";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
@@ -95,19 +94,19 @@ mock.module("@web/layout/calendar-grid/hooks/useCalendarGridLayout", () => ({
   },
 }));
 
-let latestEventForm: EventFormProps | null = null;
+// Stand-in for the sidebar-docked event details panel: DayCalendarGrid no
+// longer renders any form itself — it only toggles the draft store — so the
+// harness mounts this store-driven probe where PlannerSidebar would mount
+// SidebarEventDetails.
+const EventFormProbe = () => {
+  const isFormOpen = useDraftStore(selectIsEventFormOpen);
 
-mock.module("@web/components/FloatingEventForm/FloatingEventForm", () => ({
-  FloatingEventForm: ({ form }: { form: EventFormProps }) => {
-    latestEventForm = form;
-
-    return getIsFormOpen() ? (
-      <dialog aria-label="Event form" open>
-        <input aria-label="Event Title" autoFocus />
-      </dialog>
-    ) : null;
-  },
-}));
+  return isFormOpen ? (
+    <dialog aria-label="Event form" open>
+      <input aria-label="Event Title" autoFocus />
+    </dialog>
+  ) : null;
+};
 
 const { canCreateDraftOnCalendar, DayCalendarGrid } =
   require("./DayCalendarGrid") as typeof import("./DayCalendarGrid");
@@ -123,6 +122,7 @@ const renderDayCalendarGrid = (calendars?: Calendar[]) => {
     ...render(
       <>
         <DayCalendarGrid />
+        <EventFormProbe />
         <button type="button">Outside calendar</button>
       </>,
       { events: seededEvents, queryClient },
@@ -255,24 +255,8 @@ const setDraftEvent = (event: Schema_Event) => {
   draftActions.startGridClick(event);
 };
 
-const expectFormAnchoredTo = (card: HTMLElement, cardRect: DOMRect) => {
-  const positionReference = latestEventForm?.refs.reference.current;
-  const domReference = latestEventForm?.refs.domReference.current;
-
-  expect(domReference).toBe(card);
-  expect(positionReference).toBeDefined();
-  expect(positionReference).not.toBeInstanceOf(Element);
-  expect(positionReference?.getBoundingClientRect()).toEqual(cardRect);
-  expect(
-    positionReference && "contextElement" in positionReference
-      ? positionReference.contextElement
-      : undefined,
-  ).toBe(card);
-};
-
 beforeEach(() => {
   seededEvents = [];
-  latestEventForm = null;
 });
 
 afterEach(() => {
@@ -501,53 +485,45 @@ describe("DayCalendarGrid", () => {
     ).toBe(event._id ?? null);
   });
 
-  it("anchors the event form through a virtual element that tracks the Day card", async () => {
+  it("opens the event form from a Day card keyboard interaction", async () => {
     const event = createTimedEvent({
-      _id: "virtual-reference",
+      _id: "keyboard-open",
       endDate: "2026-05-20T10:00:00.000",
       startDate: "2026-05-20T09:00:00.000",
-      title: "Virtual reference",
+      title: "Keyboard open",
     });
-    const cardRect = new DOMRect(20, 40, 160, 60);
 
     setDayEvents([event]);
     const { user } = renderDayCalendarGrid();
 
-    const card = screen.getByRole("button", { name: /virtual reference/i });
-    card.getBoundingClientRect = () => cardRect;
-
+    const card = screen.getByRole("button", { name: /keyboard open/i });
     card.focus();
     await user.keyboard("{Enter}");
 
     await waitFor(() => {
       expect(getDraft()?._id).toBe(event._id ?? undefined);
     });
-
-    expectFormAnchoredTo(card, cardRect);
+    expect(getIsFormOpen()).toBe(true);
   });
 
-  it("anchors the event form opened by a Day card pointer interaction", async () => {
+  it("opens the event form from a Day card pointer interaction", async () => {
     const event = createTimedEvent({
-      _id: "pointer-reference",
+      _id: "pointer-open",
       endDate: "2026-05-20T10:00:00.000",
       startDate: "2026-05-20T09:00:00.000",
-      title: "Pointer reference",
+      title: "Pointer open",
     });
-    const cardRect = new DOMRect(20, 40, 160, 60);
 
     setDayEvents([event]);
     const { user } = renderDayCalendarGrid();
 
-    const card = screen.getByRole("button", { name: /pointer reference/i });
-    card.getBoundingClientRect = () => cardRect;
-
+    const card = screen.getByRole("button", { name: /pointer open/i });
     await user.click(card);
 
     await waitFor(() => {
       expect(getDraft()?._id).toBe(event._id ?? undefined);
     });
-
-    expectFormAnchoredTo(card, cardRect);
+    expect(getIsFormOpen()).toBe(true);
   });
 
   it("opens the shared event action menu from a Day timed event right-click", async () => {
@@ -614,7 +590,10 @@ describe("DayCalendarGrid", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("dismisses the event form when pressing outside the calendar", async () => {
+  it("keeps the event form open when pressing outside the calendar", async () => {
+    // The form is docked in the sidebar now, so pressing unrelated UI (e.g.
+    // inside the sidebar) must NOT nuke an in-progress edit; only calendar
+    // presses and Escape dismiss it.
     const event = createTimedEvent({
       _id: "outside-press",
       endDate: "2026-05-20T10:00:00.000",
@@ -629,18 +608,9 @@ describe("DayCalendarGrid", () => {
     );
     expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
 
-    await user.pointer({
-      keys: "[MouseLeft>]",
-      target: screen.getByRole("button", { name: "Outside calendar" }),
-    });
+    await user.click(screen.getByRole("button", { name: "Outside calendar" }));
 
-    await waitFor(() => {
-      expect(
-        screen.queryByRole("dialog", { name: "Event form" }),
-      ).not.toBeInTheDocument();
-    });
-
-    await user.pointer({ keys: "[/MouseLeft]" });
+    expect(screen.getByRole("dialog", { name: "Event form" })).toBeVisible();
   });
 
   it("opens the form for a new all-day draft", async () => {

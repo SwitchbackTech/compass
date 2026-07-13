@@ -29,7 +29,10 @@ test("aligns the mid-drag visual and drops on the hovered day at a reduced day c
   await fillTitleAndSaveEventForm(page, title);
   await expectTimedEventVisible(page, title);
 
-  const columns = await getDayColumnBoxes(page);
+  // The event form docks in the sidebar, which reveals while the form is
+  // open and collapses again on save; wait out that width transition so the
+  // column geometry below is the settled layout, not a mid-animation frame.
+  const columns = await getStableDayColumnBoxes(page);
   expect(columns.length).toBeGreaterThan(1);
   expect(columns.length).toBeLessThan(7);
 
@@ -93,3 +96,21 @@ const getDayColumnBoxes = async (page: Page) =>
       .filter((rect) => rect.width > 0)
       .map((rect) => ({ left: rect.left, right: rect.right })),
   );
+
+// Polls until two consecutive reads of the column geometry agree, so a
+// caller mid-transition (e.g. the sidebar reveal/collapse around the event
+// form) doesn't measure a frame that's still animating.
+const getStableDayColumnBoxes = async (page: Page) => {
+  let previous = JSON.stringify(await getDayColumnBoxes(page));
+
+  await expect
+    .poll(async () => {
+      const next = JSON.stringify(await getDayColumnBoxes(page));
+      const isStable = next === previous;
+      previous = next;
+      return isStable;
+    })
+    .toBe(true);
+
+  return getDayColumnBoxes(page);
+};

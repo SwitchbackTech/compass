@@ -1,4 +1,3 @@
-import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import {
   CALENDAR_DECK_INDENT,
   CALENDAR_DECK_MIN_WIDTH,
@@ -77,13 +76,3 @@ export const WEEK_GRID_TRACK_MIN_WIDTH =
   GRID_MARGIN_LEFT + EVENT_WIDTH_MINIMUM * 7;
 
 export const SIDEBAR_MONTH_HEIGHT = 275;
-export const SIDEBAR_OPEN_WIDTH = 285;
-
-export function getSidebarOpenWidth() {
-  if (typeof document === "undefined") return SIDEBAR_OPEN_WIDTH;
-
-  return (
-    document.getElementById(ID_SIDEBAR)?.getBoundingClientRect().width ??
-    SIDEBAR_OPEN_WIDTH
-  );
-}

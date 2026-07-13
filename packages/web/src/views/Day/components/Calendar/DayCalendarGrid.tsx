@@ -1,4 +1,3 @@
-import { type OpenChangeReason, type VirtualElement } from "@floating-ui/react";
 import {
   type MouseEvent as ReactMouseEvent,
   useCallback,
@@ -21,12 +20,10 @@ import {
   addId,
   assembleDefaultEvent,
   assembleGridEvent,
-  getCalendarEventElementFromGrid,
   hasEventDates,
 } from "@web/common/utils/event/event.util";
 import { getCurrentMinute } from "@web/common/utils/grid/grid.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
-import { FloatingEventForm } from "@web/components/FloatingEventForm/FloatingEventForm";
 import {
   createGridEventDraft,
   editGridEventDraft,
@@ -36,7 +33,6 @@ import { useDayEventViewModel } from "@web/events/queries/useDayEventsQuery";
 import {
   draftActions,
   selectDraft,
-  selectIsEventFormOpen,
   useDraftStore,
 } from "@web/events/stores/draft.store";
 import { CALENDAR_TIMED_VISIBLE_HOURS } from "@web/layout/calendar-grid/calendarGrid.constants";
@@ -48,10 +44,6 @@ import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
 import { DayInteractionCoordinator } from "@web/views/Day/interaction/DayInteractionCoordinator";
-import {
-  type EventFormProps,
-  useEventForm,
-} from "@web/views/Forms/hooks/useEventForm";
 import { DayCalendarBusyPeriodsLayer } from "./DayCalendarBusyPeriods";
 import { DayCalendarColumnHeaders } from "./DayCalendarColumnHeaders";
 import { useDayCalendarContextMenu } from "./DayCalendarContextMenu";
@@ -73,18 +65,6 @@ export const canCreateDraftOnCalendar = (
 };
 
 const isDayInteractionMotionActive = () => false;
-
-const createEventFormAnchor = (eventId: string): VirtualElement => {
-  const getEventElement = () => getCalendarEventElementFromGrid(eventId);
-
-  return {
-    getBoundingClientRect: () =>
-      getEventElement()?.getBoundingClientRect() ?? new DOMRect(),
-    get contextElement() {
-      return getEventElement() ?? undefined;
-    },
-  };
-};
 
 export function DayCalendarGrid() {
   const dateInView = useDateInView();
@@ -114,27 +94,6 @@ export function DayCalendarGrid() {
   );
   useDayEventNudgeShortcuts({ timedEvents: displayedTimedEvents });
   const draft = useDraftStore(selectDraft);
-  const isFormOpen = useDraftStore(selectIsEventFormOpen);
-  const draftCategory = draft?.isAllDay
-    ? Categories_Event.ALLDAY
-    : Categories_Event.TIMED;
-  const handleFormOpenChange = useCallback(
-    (open: boolean, _event: Event, reason?: OpenChangeReason) => {
-      const dismissed = reason === "escape-key" || reason === "outside-press";
-
-      if (!open && dismissed) {
-        draftActions.discard();
-      }
-    },
-    [],
-  );
-  const form: EventFormProps = useEventForm(
-    draftCategory,
-    isFormOpen,
-    handleFormOpenChange,
-  );
-  const setFormPositionReference = form.refs.setPositionReference;
-  const setFormReference = form.refs.setReference;
 
   const getDayInteractionLayoutSources = useCallback(
     () => ({
@@ -199,10 +158,6 @@ export function DayCalendarGrid() {
         return;
       }
 
-      const eventElement = getCalendarEventElementFromGrid(event._id);
-      setFormReference(eventElement);
-      setFormPositionReference(createEventFormAnchor(event._id));
-
       const sourceEvent = dayEvents.find(
         (candidate) => candidate.id === event._id,
       );
@@ -229,7 +184,7 @@ export function DayCalendarGrid() {
       draftActions.startGridDraft({ activity: "gridClick", draft });
       draftActions.setFormOpen(true);
     },
-    [dayEvents, setFormPositionReference, setFormReference],
+    [dayEvents],
   );
 
   // timedEvents/allDayEvents are the same Schema_GridEvent objects the grid
@@ -466,7 +421,6 @@ export function DayCalendarGrid() {
         />
       </DayInteractionCoordinator>
       {contextMenu}
-      <FloatingEventForm form={form} />
     </section>
   );
 }

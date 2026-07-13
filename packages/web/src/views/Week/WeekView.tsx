@@ -7,7 +7,11 @@ import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuW
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
-import { draftActions } from "@web/events/stores/draft.store";
+import {
+  draftActions,
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,
   useViewStore,
@@ -19,6 +23,7 @@ import { RecurrenceScopeDialog } from "@web/views/Forms/EventForm/RecurrenceScop
 import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 import { DraftProvider } from "@web/views/Week/components/Draft/context/DraftProvider";
 import { Draft } from "@web/views/Week/components/Draft/Draft";
+import { WeekSidebarEventDetails } from "@web/views/Week/components/Draft/sidebar/WeekSidebarEventDetails";
 import { Grid } from "@web/views/Week/components/Grid/Grid";
 import { WeekGridScrollArea } from "@web/views/Week/components/Grid/WeekGridScrollArea";
 import { DayLabels } from "@web/views/Week/components/Header/DayLabels";
@@ -37,6 +42,10 @@ import { WeekInteractionCoordinator } from "@web/views/Week/interaction/WeekInte
 
 export const WeekView = () => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  // Event details live in the sidebar, so an open form reveals the sidebar
+  // even when the user keeps it collapsed; their persisted preference is
+  // untouched and the panel collapses again when the form closes.
+  const isEventDetailsOpen = useDraftStore(selectIsEventFormOpen);
   const toggleSidebar = useCallback(() => {
     viewActions.toggleSidebar();
   }, []);
@@ -146,9 +155,10 @@ export const WeekView = () => {
         <Shortcuts shortcutsProps={shortcutProps}>
           <ContextMenuWrapper id="sidebar-context-menu">
             <Draft measurements={measurements} weekProps={weekProps} />
-            <ResizableSidebarPanel isOpen={isSidebarOpen}>
+            <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
               <PlannerSidebar
                 calendarDate={calendarDate}
+                eventDetails={<WeekSidebarEventDetails />}
                 isShortcutsOpen={isShortcutsOpen}
                 onCloseShortcuts={closeShortcuts}
                 onToggleShortcuts={toggleShortcuts}

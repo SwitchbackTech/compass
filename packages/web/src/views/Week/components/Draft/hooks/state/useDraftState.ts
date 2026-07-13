@@ -1,5 +1,6 @@
 import { type Dispatch, type SetStateAction, useState } from "react";
 import { type GridEventDraft } from "@web/events/event-draft.types";
+import { draftActions, useDraftStore } from "@web/events/stores/draft.store";
 
 export interface Status_Drag {
   durationMin: number;
@@ -59,7 +60,14 @@ export const useDraftState = () => {
   const [dateBeingChanged, setDateBeingChanged] = useState<
     "startDate" | "endDate" | null
   >("endDate");
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  // Form-open lives in the draft store (not local state) so the shared
+  // PlannerSidebar can swap its body for the event-details panel from any
+  // view. Week reads/writes it through the same shape as the old useState
+  // pair.
+  const isFormOpen = useDraftStore((state) =>
+    Boolean(state.status?.isFormOpen),
+  );
+  const setIsFormOpen = draftActions.setFormOpen;
   const [isFormOpenBeforeDragging, setIsFormOpenBeforeDragging] = useState<
     boolean | null
   >(null);

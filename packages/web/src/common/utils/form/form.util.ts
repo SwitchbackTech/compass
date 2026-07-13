@@ -13,6 +13,17 @@ export const isContextMenuOpen = () => {
 
 const EVENT_FORM_SELECTOR = `form[name="${ID_EVENT_FORM}"]`;
 
+// The grid draft card and the sidebar-docked form live in separate component
+// trees, so "typing on the focused card focuses the form's title" hops via
+// the DOM instead of a shared ref.
+export const focusEventFormTitle = () => {
+  document
+    .querySelector<HTMLInputElement>(
+      `form[name="${ID_EVENT_FORM}"] input[name="Event Title"]`,
+    )
+    ?.focus();
+};
+
 const getKeyboardTarget = (
   keyboardEvent: Pick<KeyboardEvent, "target">,
 ): HTMLElement | null => {

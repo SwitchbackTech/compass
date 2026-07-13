@@ -19,8 +19,6 @@ export const ID_EVENT_FORM_ACTION_MENU = "event-action-menu";
 export const DATA_EVENT_ELEMENT_ID = "data-event-id";
 export const DATA_DRAFT_EVENT = "data-draft-event";
 export const DATA_NEW_DRAFT_EVENT = "data-new-draft-event";
-export const DATA_OVERLAPPING = "data-overlapping";
-export const DATA_FULL_WIDTH = "data-full-width";
 export const DATA_CALENDAR_TIMED_GRID_ROW = "data-calendar-timed-grid-row";
 export const ID_CONTEXT_MENU_ITEMS = "context-menu-items";
 export const CLASS_ALL_DAY_CALENDAR_EVENT = "all-day-calendar-event";
@@ -40,8 +38,7 @@ export enum ZIndex {
   MAX = 20,
 }
 
-export const Z_INDEX_FLOATING_FORM = ZIndex.MAX + ZIndex.LAYER_1;
-export const Z_INDEX_FLOATING_MENU = Z_INDEX_FLOATING_FORM + 1;
+export const Z_INDEX_FLOATING_MENU = ZIndex.MAX + ZIndex.LAYER_2;
 export const Z_INDEX_MODAL = Z_INDEX_FLOATING_MENU + ZIndex.LAYER_1;
 // Tooltips are transient and anchored to their trigger, so they should float
 // above every persistent layer (floating form/menu/modal).

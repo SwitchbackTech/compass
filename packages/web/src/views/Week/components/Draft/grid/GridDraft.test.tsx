@@ -1,6 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { type PropsWithChildren, type Ref, useState } from "react";
+import { render, screen } from "@testing-library/react";
 import { Origin, Priorities } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
@@ -10,62 +8,8 @@ import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
 import { CALENDAR_DECK_MIN_WIDTH } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { DraftContext } from "@web/views/Week/components/Draft/context/DraftContext";
 import { type WeekProps } from "@web/views/Week/hooks/useWeek";
+import { GridDraft } from "./GridDraft";
 import { afterEach, describe, expect, it, mock } from "bun:test";
-
-mock.module("@floating-ui/react", () => ({
-  FloatingFocusManager: ({
-    children,
-    closeOnFocusOut,
-    modal,
-  }: PropsWithChildren<{ closeOnFocusOut?: boolean; modal?: boolean }>) => {
-    const [isMounted, setIsMounted] = useState(true);
-
-    return (
-      <div
-        data-modal={String(modal)}
-        data-testid="grid-draft-focus-manager"
-        onFocusCapture={(event) => {
-          if (closeOnFocusOut === false) return;
-          if (event.target !== event.currentTarget) {
-            setIsMounted(false);
-          }
-        }}
-      >
-        {isMounted ? children : null}
-      </div>
-    );
-  },
-}));
-
-mock.module("@web/views/Forms/EventForm/EventForm", () => ({
-  EventForm: ({
-    draft: formDraft,
-    onSubmit,
-    titleInputRef,
-  }: {
-    draft: GridEventDraft;
-    onSubmit?: (draft: GridEventDraft) => void;
-    titleInputRef?: Ref<HTMLInputElement>;
-  }) => (
-    <>
-      <input
-        aria-label="Draft title"
-        onKeyDown={(event) => {
-          if (event.key === "Enter") {
-            event.preventDefault();
-            onSubmit?.(formDraft);
-          }
-        }}
-        ref={titleInputRef}
-      />
-      <button type="button" aria-label="Nested action menu item">
-        Nested action
-      </button>
-    </>
-  ),
-}));
-
-const { GridDraft } = require("./GridDraft") as typeof import("./GridDraft");
 
 // The interactive draft GridDraft.tsx reads from context — always a
 // not-yet-saved "create" GridEventDraft in these fixtures (none of these
@@ -130,26 +74,6 @@ const createWeekProps = (): WeekProps =>
     },
   }) as WeekProps;
 
-const createFormProps = () => {
-  const reference = { current: null as HTMLElement | null };
-
-  return {
-    context: {},
-    getFloatingProps: () => ({}),
-    getReferenceProps: () => ({}),
-    refs: {
-      reference,
-      setFloating: mock(),
-      setReference: (node: HTMLElement | null) => {
-        reference.current = node;
-      },
-    },
-    strategy: "fixed",
-    x: 0,
-    y: 0,
-  };
-};
-
 const renderGridDraft = ({
   activeAllDayDraftEvent = null,
   deckLayout = null,
@@ -161,19 +85,17 @@ const renderGridDraft = ({
   draft?: GridEventDraft;
   recurringPreviews?: Schema_GridEvent[];
 } = {}) => {
-  const repositionDraftByKeyboard = mock(() => true);
-  const onSubmit = mock();
   const value = {
     actions: {
       convert: mock(),
       discard: mock(),
       duplicateEvent: mock(),
-      repositionDraftByKeyboard,
+      repositionDraftByKeyboard: mock(() => true),
       startDragging: mock(),
     },
     confirmation: {
       onDelete: mock(),
-      onSubmit,
+      onSubmit: mock(),
     },
     setters: {
       setDateBeingChanged: mock(),
@@ -184,14 +106,13 @@ const renderGridDraft = ({
     state: {
       draft,
       dragOffset: { x: 0, y: 0 },
-      formProps: createFormProps(),
       isDragging: false,
       isFormOpen: true,
       isResizing: false,
     },
   } as never;
 
-  const result = render(
+  return render(
     <DraftContext.Provider value={value}>
       <GridDraft
         activeAllDayDraftEvent={activeAllDayDraftEvent}
@@ -207,15 +128,13 @@ const renderGridDraft = ({
       />
     </DraftContext.Provider>,
   );
-
-  return { ...result, onSubmit, repositionDraftByKeyboard };
 };
 
 afterEach(() => {
   document.body.innerHTML = "";
 });
 
-describe("GridDraft keyboard focus", () => {
+describe("GridDraft", () => {
   it("positions all-day drafts in the all-day row", () => {
     renderGridDraft({
       draft: createDraft({
@@ -261,25 +180,6 @@ describe("GridDraft keyboard focus", () => {
     });
   });
 
-  it("keeps the floating form mounted when focus moves into nested menus", async () => {
-    renderGridDraft();
-
-    expect(screen.getByTestId("grid-draft-focus-manager")).toHaveAttribute(
-      "data-modal",
-      "false",
-    );
-
-    fireEvent.focus(
-      screen.getByRole("button", { name: "Nested action menu item" }),
-    );
-
-    await waitFor(() => {
-      expect(
-        screen.getByRole("textbox", { name: "Draft title" }),
-      ).toBeVisible();
-    });
-  });
-
   it("keeps an active overlapping saved draft at its stacked width and stack order", () => {
     const deckLayout = { groupSize: 2, order: 0 };
 
@@ -315,27 +215,5 @@ describe("GridDraft keyboard focus", () => {
     expect(
       screen.getAllByRole("button", { name: /Timed event: Planning/ }),
     ).toHaveLength(3);
-  });
-
-  it("submits the draft from title Enter without focusing the draft block", async () => {
-    const user = userEvent.setup();
-    const { onSubmit } = renderGridDraft();
-
-    const titleInput = screen.getByRole("textbox", { name: "Draft title" });
-    titleInput.focus();
-
-    await user.keyboard("{Enter}");
-
-    const draftBlock = screen.getByRole("button", {
-      name: /Timed event: Planning/,
-    });
-
-    expect(onSubmit).toHaveBeenCalledTimes(1);
-    expect(onSubmit.mock.calls[0]?.[0]).toEqual(
-      expect.objectContaining({
-        values: expect.objectContaining({ title: "Planning" }),
-      }),
-    );
-    expect(document.activeElement).not.toBe(draftBlock);
   });
 });

@@ -7,10 +7,15 @@ import {
   compassEventEmitter,
 } from "@web/common/utils/dom/event-emitter.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
+import { SidebarEventDetails } from "@web/components/PlannerSidebar/EventDetails/SidebarEventDetails";
 import { PlannerSidebar } from "@web/components/PlannerSidebar/PlannerSidebar";
 import { ResizableSidebarPanel } from "@web/components/PlannerSidebar/ResizableSidebarPanel";
 import { usePlannerShortcuts } from "@web/components/PlannerSidebar/usePlannerShortcuts";
 import { focusFirstSidebarItem } from "@web/components/PlannerSidebar/util/sidebarFocus.util";
+import {
+  selectIsEventFormOpen,
+  useDraftStore,
+} from "@web/events/stores/draft.store";
 import {
   selectIsSidebarOpen,
   useViewStore,
@@ -32,6 +37,10 @@ import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
 export const DayViewContent = memo(() => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  // Event details live in the sidebar, so an open form reveals the sidebar
+  // even when the user keeps it collapsed; their persisted preference is
+  // untouched and the panel collapses again when the form closes.
+  const isEventDetailsOpen = useDraftStore(selectIsEventFormOpen);
   const mainRef = useRef<HTMLDivElement | null>(null);
 
   const dateInView = useDateInView();
@@ -124,9 +133,10 @@ export const DayViewContent = memo(() => {
       />
       <Dedication />
 
-      <ResizableSidebarPanel isOpen={isSidebarOpen}>
+      <ResizableSidebarPanel isOpen={isSidebarOpen || isEventDetailsOpen}>
         <PlannerSidebar
           calendarDate={dateInView}
+          eventDetails={<SidebarEventDetails />}
           isShortcutsOpen={isShortcutsOpen}
           onCloseShortcuts={closeShortcuts}
           onToggleShortcuts={toggleShortcuts}
