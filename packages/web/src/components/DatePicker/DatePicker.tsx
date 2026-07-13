@@ -118,7 +118,7 @@ export const DatePicker: React.FC<Props> = (datePickerProps) => {
           >
             <div
               className={classNames(
-                "flex w-24.25 items-start",
+                "mr-2 flex items-start",
                 monthContainerClassName,
               )}
             >
