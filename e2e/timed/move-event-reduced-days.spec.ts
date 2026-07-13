@@ -97,6 +97,9 @@ const getDayColumnBoxes = async (page: Page) =>
       .map((rect) => ({ left: rect.left, right: rect.right })),
   );
 
+// Polls until two consecutive reads of the column geometry agree, so a
+// caller mid-transition (e.g. the sidebar reveal/collapse around the event
+// form) doesn't measure a frame that's still animating.
 const getStableDayColumnBoxes = async (page: Page) => {
   let previous = JSON.stringify(await getDayColumnBoxes(page));
 
