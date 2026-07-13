@@ -113,5 +113,8 @@ form and re-collapses on close (persisted pref untouched,
       DATA_FULL_WIDTH/DATA_OVERLAPPING, getSidebarOpenWidth)
 - [x] Tests updated (1315 pass), type-check green
 - [x] Preview verification (week + day + someday flows)
-- [ ] e2e smoke specs
+- [x] e2e: smoke specs green; `move-event-reduced-days` needed a
+      layout-settle wait (the sidebar now reveals/collapses around the form
+      at reduced widths — intended behavior, test measured mid-transition);
+      full-suite run kicked off before ship
 - [ ] /simplify, /ship
