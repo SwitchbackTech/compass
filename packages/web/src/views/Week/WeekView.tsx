@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef } from "react";
 import { ID_MAIN } from "@web/common/constants/web.constants";
+import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { CommandPalette } from "@web/components/CommandPalette/CommandPalette";
 import { ContextMenuWrapper } from "@web/components/ContextMenu/GridContextMenuWrapper";
@@ -30,7 +31,6 @@ import { useGridLayout } from "@web/views/Week/hooks/grid/useGridLayout";
 import { useScroll } from "@web/views/Week/hooks/grid/useScroll";
 import { useVisibleDayCount } from "@web/views/Week/hooks/grid/useVisibleDayCount";
 import { useDayShiftTransition } from "@web/views/Week/hooks/useDayShiftTransition";
-import { useHorizontalWeekNavigation } from "@web/views/Week/hooks/useHorizontalWeekNavigation";
 import { usePlannerSidebarCalendarDate } from "@web/views/Week/hooks/usePlannerSidebarCalendarDate";
 import { useToday } from "@web/views/Week/hooks/useToday";
 import { useWeek } from "@web/views/Week/hooks/useWeek";
@@ -62,7 +62,7 @@ export const WeekView = () => {
     },
     [trackRef],
   );
-  useHorizontalWeekNavigation({
+  useHorizontalNavigation({
     containerRef: mainRef,
     onNext: weekProps.util.incrementWeek,
     onPrevious: weekProps.util.decrementWeek,

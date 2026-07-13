@@ -1,6 +1,7 @@
-import { memo, useCallback, useMemo } from "react";
+import { memo, useCallback, useMemo, useRef } from "react";
 import dayjs from "@core/util/date/dayjs";
 import { ID_MAIN } from "@web/common/constants/web.constants";
+import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import {
   CompassDOMEvents,
   compassEventEmitter,
@@ -31,6 +32,7 @@ import { Dedication } from "@web/views/Week/components/Dedication/Dedication";
 
 export const DayViewContent = memo(() => {
   const isSidebarOpen = useViewStore(selectIsSidebarOpen);
+  const mainRef = useRef<HTMLDivElement | null>(null);
 
   const dateInView = useDateInView();
   const isViewingToday = dateInView.isSame(dayjs(), "day");
@@ -41,6 +43,11 @@ export const DayViewContent = memo(() => {
     navigateToPreviousDay,
     navigateToToday,
   } = useDateNavigation();
+  useHorizontalNavigation({
+    containerRef: mainRef,
+    onNext: navigateToNextDay,
+    onPrevious: navigateToPreviousDay,
+  });
   useDayEvents(dateInView);
 
   const plannerViewStart = dateInView.startOf("week");
@@ -138,6 +145,7 @@ export const DayViewContent = memo(() => {
 
       <div
         id={ID_MAIN}
+        ref={mainRef}
         className="flex h-screen flex-1 flex-col overflow-hidden bg-bg-primary pt-5 pl-8 transition-[width] duration-200 ease-out motion-reduce:transition-none"
       >
         <Header />

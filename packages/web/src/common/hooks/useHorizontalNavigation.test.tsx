@@ -1,6 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { type FC, useRef } from "react";
-import { useHorizontalWeekNavigation } from "@web/views/Week/hooks/useHorizontalWeekNavigation";
+import { useHorizontalNavigation } from "@web/common/hooks/useHorizontalNavigation";
 import { describe, expect, it, mock } from "bun:test";
 
 const Harness: FC<{
@@ -8,17 +8,17 @@ const Harness: FC<{
   onPrevious: () => void;
 }> = ({ onNext, onPrevious }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  useHorizontalWeekNavigation({ containerRef, onNext, onPrevious });
+  useHorizontalNavigation({ containerRef, onNext, onPrevious });
 
-  return <div ref={containerRef} data-testid="calendar" />;
+  return <section ref={containerRef} aria-label="Calendar" />;
 };
 
-describe("useHorizontalWeekNavigation", () => {
+describe("useHorizontalNavigation", () => {
   it("navigates once when a horizontal gesture crosses the threshold", () => {
     const onNext = mock();
     render(<Harness onNext={onNext} onPrevious={mock()} />);
 
-    const calendar = screen.getByTestId("calendar");
+    const calendar = screen.getByRole("region", { name: "Calendar" });
     fireEvent.wheel(calendar, { deltaX: 35, deltaY: 2 });
     fireEvent.wheel(calendar, { deltaX: 35, deltaY: 2 });
     fireEvent.wheel(calendar, { deltaX: 100, deltaY: 2 });
@@ -30,7 +30,7 @@ describe("useHorizontalWeekNavigation", () => {
     const onPrevious = mock();
     render(<Harness onNext={mock()} onPrevious={onPrevious} />);
 
-    fireEvent.wheel(screen.getByTestId("calendar"), {
+    fireEvent.wheel(screen.getByRole("region", { name: "Calendar" }), {
       deltaX: -70,
       deltaY: 0,
     });
@@ -43,7 +43,7 @@ describe("useHorizontalWeekNavigation", () => {
     const onPrevious = mock();
     render(<Harness onNext={onNext} onPrevious={onPrevious} />);
 
-    const calendar = screen.getByTestId("calendar");
+    const calendar = screen.getByRole("region", { name: "Calendar" });
     fireEvent.wheel(calendar, { deltaX: 20, deltaY: 80 });
     fireEvent.wheel(calendar, { ctrlKey: true, deltaX: 80, deltaY: 0 });
 
@@ -55,7 +55,7 @@ describe("useHorizontalWeekNavigation", () => {
     const onNext = mock();
     render(<Harness onNext={onNext} onPrevious={mock()} />);
 
-    const calendar = screen.getByTestId("calendar");
+    const calendar = screen.getByRole("region", { name: "Calendar" });
     const scrollArea = document.createElement("div");
     Object.defineProperties(scrollArea, {
       clientWidth: { value: 100 },
