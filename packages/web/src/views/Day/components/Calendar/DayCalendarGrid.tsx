@@ -7,6 +7,7 @@ import {
   useRef,
 } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type Calendar } from "@core/types/calendar.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
@@ -59,6 +60,16 @@ import {
 } from "./DayCalendarEventLayers";
 import { useDayCalendarColumns } from "./useDayCalendarColumns";
 import { useDayTimedDraftCreation } from "./useDayTimedDraftCreation";
+
+export const canCreateDraftOnCalendar = (
+  calendar: Calendar | null,
+  showError: (message: string) => unknown = showErrorToast,
+): boolean => {
+  if (!calendar || calendar.capabilities.canWrite) return true;
+
+  showError(`You can't edit the ${calendar.name} calendar.`);
+  return false;
+};
 
 const isDayInteractionMotionActive = () => false;
 
@@ -356,10 +367,9 @@ export function DayCalendarGrid() {
     ) => {
       const calendar = getCalendarAtX(event.clientX);
 
-      if (calendar && !calendar.capabilities.canWrite) {
+      if (!canCreateDraftOnCalendar(calendar)) {
         event.preventDefault();
         event.stopPropagation();
-        showErrorToast(`You can't edit the ${calendar.name} calendar.`);
         return;
       }
 

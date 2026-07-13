@@ -33,38 +33,11 @@ import {
 import { CALENDAR_TIMED_EVENT_FAN_INDENT } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { type CalendarGridMeasurements } from "@web/layout/calendar-grid/types/calendarGrid.types";
 import { type EventFormProps } from "@web/views/Forms/hooks/useEventForm";
-import {
-  afterAll,
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  mock,
-} from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
 let seededEvents: Event[] = [];
 const originalScroll = HTMLElement.prototype.scroll;
-const actualErrorToastUtil = await import(
-  "@web/common/utils/toast/error-toast.util"
-);
-const mockShowErrorToast = mock();
-let isErrorToastMocked = true;
-
-mock.module("@web/common/utils/toast/error-toast.util", () => ({
-  ...actualErrorToastUtil,
-  showErrorToast: (
-    ...args: Parameters<typeof actualErrorToastUtil.showErrorToast>
-  ) =>
-    isErrorToastMocked
-      ? mockShowErrorToast(...args)
-      : actualErrorToastUtil.showErrorToast(...args),
-}));
-
-afterAll(() => {
-  isErrorToastMocked = false;
-});
 
 const measurements = {
   allDayRow: {
@@ -136,7 +109,7 @@ mock.module("@web/components/FloatingEventForm/FloatingEventForm", () => ({
   },
 }));
 
-const { DayCalendarGrid } =
+const { canCreateDraftOnCalendar, DayCalendarGrid } =
   require("./DayCalendarGrid") as typeof import("./DayCalendarGrid");
 
 const renderDayCalendarGrid = (calendars?: Calendar[]) => {
@@ -302,7 +275,6 @@ const expectFormAnchoredTo = (card: HTMLElement, cardRect: DOMRect) => {
 beforeEach(() => {
   seededEvents = [];
   latestEventForm = null;
-  mockShowErrorToast.mockClear();
 });
 
 afterEach(() => {
@@ -841,13 +813,14 @@ describe("DayCalendarGrid", () => {
       },
     ]);
 
-    await waitFor(() => {
-      expect(mockShowErrorToast).toHaveBeenCalledWith(
-        "You can't edit the Holidays calendar.",
-      );
-    });
     expect(getDraft()).toBeNull();
     expect(screen.queryByRole("dialog", { name: "Event form" })).toBeNull();
+
+    const showError = mock();
+    expect(canCreateDraftOnCalendar(holidays, showError)).toBeFalse();
+    expect(showError).toHaveBeenCalledWith(
+      "You can't edit the Holidays calendar.",
+    );
   });
 
   it("places a new all-day draft below existing all-day events", async () => {
