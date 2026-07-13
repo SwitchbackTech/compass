@@ -29,6 +29,7 @@ import {
 
 interface DayEventCardProps {
   calendarIdentity?: CalendarCardIdentity | null;
+  columnIndex: number;
   event: Schema_GridEvent;
   isActiveDraft: boolean;
   isPlaceholder: boolean;
@@ -44,6 +45,7 @@ interface DayTimedEventCardProps extends DayEventCardProps {
 
 export const DayAllDayCalendarEvent = ({
   calendarIdentity = null,
+  columnIndex,
   event,
   isActiveDraft,
   isPlaceholder,
@@ -82,6 +84,7 @@ export const DayAllDayCalendarEvent = ({
     : undefined;
 
   const position = getCalendarAllDayEventPosition(event, {
+    columnIndex,
     isDraft: isPlaceholder,
     measurements,
     visibleDates,
@@ -116,6 +119,7 @@ export const DayAllDayCalendarEvent = ({
 
 export const DayTimedCalendarEvent = ({
   calendarIdentity = null,
+  columnIndex,
   deckLayout,
   event,
   isActiveDraft,
@@ -165,6 +169,7 @@ export const DayTimedCalendarEvent = ({
   })();
   const shouldFloatAboveDeck = isActiveDraft && !isDeck;
   const position = getDayTimedEventPosition({
+    columnIndex,
     deckLayout,
     event,
     isPlaceholder,
@@ -203,12 +208,14 @@ export const DayTimedCalendarEvent = ({
 };
 
 const getDayTimedEventPosition = ({
+  columnIndex,
   deckLayout,
   event,
   isPlaceholder,
   measurements,
   visibleDates,
 }: {
+  columnIndex: number;
   deckLayout: CalendarTimedDeckLayout | null;
   event: Schema_GridEvent;
   isPlaceholder: boolean;
@@ -216,6 +223,7 @@ const getDayTimedEventPosition = ({
   visibleDates: CalendarGridVisibleDate[];
 }) => {
   const position = getCalendarTimedEventPosition(event, {
+    columnIndex,
     isDraft: isPlaceholder,
     measurements,
     visibleDates,

@@ -28,6 +28,7 @@ import {
 } from "./dayCalendarDraft.util";
 
 interface DayEventsProps {
+  getCalendarColumnIndex: (event: Schema_GridEvent) => number;
   draft: Schema_Event | null;
   events: Schema_GridEvent[];
   measurements: CalendarGridMeasurements;
@@ -38,6 +39,7 @@ interface DayEventsProps {
 export const DayCalendarAllDayEventsLayer = ({
   draft,
   events: allDayEvents,
+  getCalendarColumnIndex,
   measurements,
   onOpenEvent,
   visibleDates,
@@ -75,6 +77,7 @@ export const DayCalendarAllDayEventsLayer = ({
             calendarLookup,
             event.calendarId,
           )}
+          columnIndex={getCalendarColumnIndex(event)}
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
           isPlaceholder={isDraftOnlyEvent(event, draft, savedEventIds)}
@@ -83,7 +86,7 @@ export const DayCalendarAllDayEventsLayer = ({
             event.calendarId,
             event.isBusy ?? false,
           )}
-          key={event._id}
+          key={event._id ?? "all-day-draft"}
           measurements={measurements}
           onOpenEvent={onOpenEvent}
           visibleDates={visibleDates}
@@ -96,6 +99,7 @@ export const DayCalendarAllDayEventsLayer = ({
 export const DayCalendarTimedEventsLayer = ({
   draft,
   events: timedEvents,
+  getCalendarColumnIndex,
   measurements,
   onOpenEvent,
   visibleDates,
@@ -116,10 +120,16 @@ export const DayCalendarTimedEventsLayer = ({
       }),
     [draft, timedEvents, visibleDates],
   );
-  const timedEventItems = useMemo(
-    () => createCalendarTimedEventLayout(renderedEvents),
-    [renderedEvents],
-  );
+  const timedEventItems = useMemo(() => {
+    const eventsByColumn = new Map<number, Schema_GridEvent[]>();
+    for (const event of renderedEvents) {
+      const columnIndex = getCalendarColumnIndex(event);
+      const columnEvents = eventsByColumn.get(columnIndex) ?? [];
+      columnEvents.push(event);
+      eventsByColumn.set(columnIndex, columnEvents);
+    }
+    return [...eventsByColumn.values()].flatMap(createCalendarTimedEventLayout);
+  }, [getCalendarColumnIndex, renderedEvents]);
 
   return (
     <div id={ID_GRID_EVENTS_TIMED}>
@@ -129,6 +139,7 @@ export const DayCalendarTimedEventsLayer = ({
             calendarLookup,
             event.calendarId,
           )}
+          columnIndex={getCalendarColumnIndex(event)}
           deckLayout={deckLayout}
           event={event}
           isActiveDraft={isActiveDraftEvent(event, draft, savedEventIds)}
@@ -138,7 +149,7 @@ export const DayCalendarTimedEventsLayer = ({
             event.calendarId,
             event.isBusy ?? false,
           )}
-          key={event._id}
+          key={event._id ?? "timed-draft"}
           measurements={measurements}
           onOpenEvent={onOpenEvent}
           visibleDates={visibleDates}

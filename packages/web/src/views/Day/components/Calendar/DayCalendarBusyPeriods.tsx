@@ -14,6 +14,7 @@ import {
 const ID_GRID_BUSY_PERIODS = "busyPeriods";
 
 interface Props {
+  calendarColumnIndexById?: ReadonlyMap<string, number>;
   dateInView: Dayjs;
   measurements: CalendarGridMeasurements;
   visibleDates: CalendarGridVisibleDate[];
@@ -29,6 +30,7 @@ interface Props {
  * availability query is loading/errored/disabled.
  */
 export const DayCalendarBusyPeriodsLayer = ({
+  calendarColumnIndexById,
   dateInView,
   measurements,
   visibleDates,
@@ -51,7 +53,11 @@ export const DayCalendarBusyPeriodsLayer = ({
   return (
     <div id={ID_GRID_BUSY_PERIODS}>
       {segments.map((segment) => {
+        const columnIndex = calendarColumnIndexById?.get(segment.calendarId);
+        if (calendarColumnIndexById && columnIndex === undefined) return null;
+
         const position = getCalendarBusyPeriodPosition(segment, {
+          columnIndex,
           measurements,
           visibleDates,
         });
