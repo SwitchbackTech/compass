@@ -3,7 +3,10 @@ name: Test
 on:
   push:
     paths-ignore:
+      - ".gitignore"
       - "team/**"
+      - "**/*.md"
+      - "docs/**"
 
 permissions:
   contents: read
