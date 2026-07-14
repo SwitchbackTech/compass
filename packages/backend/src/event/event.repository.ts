@@ -146,6 +146,24 @@ class EventRepository {
     );
   }
 
+  async findByExternalReferences(
+    calendarId: ObjectId,
+    externalEventIds: string[],
+    session?: ClientSession,
+  ): Promise<EventRecord[]> {
+    if (externalEventIds.length === 0) return [];
+
+    return mongoService.event
+      .find(
+        {
+          calendarId,
+          "externalReference.eventId": { $in: externalEventIds },
+        },
+        { session },
+      )
+      .toArray();
+  }
+
   async deleteByExternalReference(
     calendarId: ObjectId,
     externalEventId: string,

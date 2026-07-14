@@ -281,6 +281,37 @@ describe("EventRepository", () => {
       expect(foundOnB?._id.toHexString()).toBe(eventOnB._id.toHexString());
       expect(foundOnA?._id.toHexString()).not.toBe(foundOnB?._id.toHexString());
     });
+
+    it("finds a batch without crossing calendar ownership", async () => {
+      const calendarA = new ObjectId();
+      const calendarB = new ObjectId();
+      const eventOnA = buildEvent({
+        calendarId: calendarA,
+        externalReference: {
+          provider: "google",
+          eventId: "event-a",
+          recurringEventId: null,
+        },
+      });
+      const eventOnB = buildEvent({
+        calendarId: calendarB,
+        externalReference: {
+          provider: "google",
+          eventId: "event-b",
+          recurringEventId: null,
+        },
+      });
+      await eventRepository.insertMany([eventOnA, eventOnB]);
+
+      const found = await eventRepository.findByExternalReferences(calendarA, [
+        "event-a",
+        "event-b",
+      ]);
+
+      expect(found.map((event) => event._id.toHexString())).toEqual([
+        eventOnA._id.toHexString(),
+      ]);
+    });
   });
 
   describe("deleteBySeriesId", () => {
