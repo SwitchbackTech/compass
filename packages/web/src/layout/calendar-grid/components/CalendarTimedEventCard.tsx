@@ -14,7 +14,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { brighten, darken } from "@web/common/styles/color.utils";
+import { brighten, darken, isDark } from "@web/common/styles/color.utils";
 import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
@@ -112,12 +112,18 @@ const CalendarTimedEventCardBase = (
 
   const baseColor = EVENT_COLOR;
   const draftColor = darken(baseColor, 18);
+  // A `brightness()` filter would scale the title text toward black right
+  // along with the fill, which is what let past events fall below the 4.5:1
+  // contrast minimum. Darkening only the fill keeps the (fixed) title color's
+  // contrast ratio intact.
+  const pastColor = darken(baseColor, 5);
   const hoverColor = EVENT_HOVER_COLOR;
   const selectedBoxShadow = "0 0 0 1px rgba(255,255,255,0.55)";
 
   const bgColor = (() => {
     if (isDraft) return draftColor;
     if (isResizing || isDragging) return brighten(baseColor);
+    if (isInPast) return pastColor;
     return baseColor;
   })();
   const eventBoxShadow = isSelected
@@ -126,8 +132,19 @@ const CalendarTimedEventCardBase = (
       : selectedBoxShadow
     : boxShadow;
 
+  // isInPast is excluded here (falls through to bgColor, i.e. pastColor) so
+  // a past event stays dimmed on hover instead of snapping to full brightness.
   const hoverBgColor =
-    !isDraft && !isPlaceholder && !isResizing ? hoverColor : bgColor;
+    !isDraft && !isPlaceholder && !isResizing && !isInPast
+      ? hoverColor
+      : bgColor;
+  // The fill is neutral and its lightness swings widely across states (the
+  // draft overlay in particular darkens far more than the others), so the
+  // title needs a text color chosen per-state rather than one fixed value to
+  // keep 4.5:1+ contrast against every fill.
+  const titleColorClassName = isDark(bgColor)
+    ? "text-text-lighter"
+    : "text-text-dark";
 
   const eventStyle = {
     "--event-bg": bgColor,
@@ -139,11 +156,7 @@ const CalendarTimedEventCardBase = (
     width: position.width || 0,
     zIndex: position.zIndex ?? ZIndex.LAYER_1,
     boxShadow: eventBoxShadow,
-    filter: isDraft
-      ? "drop-shadow(2px 4px 4px black)"
-      : isInPast
-        ? "brightness(0.7)"
-        : "brightness(1)",
+    filter: isDraft ? "drop-shadow(2px 4px 4px black)" : undefined,
   } as CSSProperties;
 
   const titleStyle: CSSProperties = {
@@ -244,7 +257,9 @@ const CalendarTimedEventCardBase = (
         />
       )}
       <div className="flex flex-col flex-wrap items-start">
-        <span style={titleStyle}>{event.title}</span>
+        <span className={titleColorClassName} style={titleStyle}>
+          {event.title}
+        </span>
         {!event.isAllDay && (
           <>
             {(isDraft || !isInPast) &&
@@ -283,7 +298,7 @@ const CalendarTimedEventCardBase = (
           </>
         )}
       </div>
-      {showRepeatIcon && <GridEventRepeatIcon baseColor={baseColor} />}
+      {showRepeatIcon && <GridEventRepeatIcon baseColor={bgColor} />}
     </div>
   );
 };

@@ -56,10 +56,14 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
   return (
     <section
       aria-label="Timed events grid"
-      className="c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px]"
+      // c-scroll sets `:focus-visible { outline: none }`; restore a visible
+      // indicator now that this is a real Tab stop (see tabIndex below), or
+      // keyboard users get a focusable-but-invisible region.
+      className="c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px] focus-visible:outline focus-visible:outline-1 focus-visible:outline-[var(--compass-color-accent-primary)] focus-visible:[outline-offset:-1px]"
       id={timedGridId}
       ref={timedGridRef}
-      tabIndex={-1}
+      // biome-ignore lint/a11y/noNoninteractiveTabindex: WCAG 2.1.1 requires a scrollable region to be keyboard-focusable (axe's scrollable-region-focusable rule); tabIndex={-1} previously made a mouse click the only way in.
+      tabIndex={0}
     >
       <CalendarTimeColumn />
       <div

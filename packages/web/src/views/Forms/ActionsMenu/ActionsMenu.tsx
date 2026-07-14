@@ -112,20 +112,21 @@ export const ActionsMenu: React.FC<ActionsMenuProps> = ({
 
   return (
     <>
-      <div
-        className="inline-flex"
-        ref={refs.setReference}
-        {...getReferenceProps({
-          onClick: (e: MouseEvent<HTMLDivElement>) => {
-            // Prevent default behaviour (like focusing inputs) and stop bubbling to parent form
-            e.preventDefault();
-            e.stopPropagation();
-            // Only set the flag for actual mouse clicks (detail > 0 indicates mouse click)
-            openedByMouseRef.current = e.detail > 0;
-          },
-        })}
-      >
+      {/* floating-ui's reference element only needs a DOM node to anchor
+      position tracking to; the interactive/ARIA props below go on the
+      button itself so a plain div doesn't end up with button-only
+      attributes like aria-expanded. */}
+      <div className="inline-flex" ref={refs.setReference}>
         <IconButton
+          {...getReferenceProps({
+            onClick: (e: MouseEvent<HTMLButtonElement>) => {
+              // Prevent default behaviour (like focusing inputs) and stop bubbling to parent form
+              e.preventDefault();
+              e.stopPropagation();
+              // Only set the flag for actual mouse clicks (detail > 0 indicates mouse click)
+              openedByMouseRef.current = e.detail > 0;
+            },
+          })}
           id={triggerId}
           aria-label="Open actions menu"
           aria-haspopup="menu"

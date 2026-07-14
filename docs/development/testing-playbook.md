@@ -355,6 +355,59 @@ a region only when the test intentionally owns that region and document why.
 Treat `violations` as failures and review `incomplete` results: incomplete means
 axe could not make a reliable automated decision and requires human judgment.
 
+#### Shared Helper
+
+`e2e/utils/axe-assertion.ts` exports `expectNoAxeViolations(page, options?)`.
+It runs one `AxeBuilder` scan tagged to Compass's WCAG target
+(`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa` - the full WCAG 2.2 AA
+set; WCAG 2.2 only added AA-level success criteria, so there is no `wcag22a`
+tag). That tag set was confirmed against the installed axe-core version, not
+assumed:
+
+```bash
+grep -o 'wcag2[0-9a]*' node_modules/axe-core/axe.js | sort -u
+```
+
+Re-run that after bumping axe-core to confirm the tags are still current.
+
+Options:
+
+- `include`: CSS selector to scope the scan to a region (omit for whole-page).
+- `checkpoint`: short label included in failure/log output.
+- `knownIncomplete`: an array of `{ ruleId, reason }`. Any `incomplete` result
+  whose rule id is listed here is reported as an explained, expected result
+  for that checkpoint. This is not a blanket allowlist - it does nothing for
+  other rules or other checkpoints. Everything in `incomplete` that isn't
+  listed is still printed (never silently dropped), just not failed.
+
+**Incomplete-result policy:** `violations` always fail the test. `incomplete`
+never fails the test - axe itself couldn't decide, so treating it as a hard
+failure would make the suite fail on things no one can fix from the report
+alone. Every incomplete result is printed for review, either as "known" (with
+its documented reason) or as an unexplained result to look at. The two
+`knownIncomplete` entries in use today (both on the actions-menu checkpoint,
+see `e2e/accessibility/app-a11y.spec.ts`) are `aria-valid-attr-value` and
+`aria-hidden-focus`, both inherent to how `@floating-ui/react` portals menu
+content and traps focus around it, not app markup - see the reasons recorded
+at the call site. Unexplained `incomplete` results seen in this suite today
+are `color-contrast` (axe cannot compute a background across an
+absolutely-positioned overlap or a CSS gradient, and cannot reliably sample
+single-character date-cell text) - these are exactly the states the
+datepicker's targeted contrast test and manual review already cover.
+
+#### Representative Checkpoints
+
+`e2e/accessibility/app-a11y.spec.ts` covers:
+
+- the week view (main authenticated calendar surface)
+- the timed event form open (sidebar form, a hidden-until-activated region)
+- the all-day event form open (a distinct field set from the timed form)
+- the event actions menu open (a floating, portaled menu)
+- the invalid-date validation error toast (an error state)
+
+`e2e/accessibility/datepicker-a11y.spec.ts` covers the sidebar date navigation
+region and keeps its own targeted per-date contrast regression (below).
+
 #### When To Add A Targeted Regression Test
 
 Keep focused browser assertions when the failure depends on a state or visual
@@ -400,7 +453,10 @@ For a major UI change, verify the affected flow with:
 - reduced-motion and forced-colors/high-contrast settings when relevant
 - a free browser audit such as Accessibility Insights for Web
 
-Record the states reviewed in the PR. Automated checks passing means no tested
+Record the states reviewed in the PR - `.github/PULL_REQUEST_TEMPLATE.md` has a
+short accessibility checklist for exactly the judgment calls automation can't
+make (keyboard reach, dynamic content exercised, zoom/reflow, screen-reader
+names, reduced-motion/forced-colors). Automated checks passing means no tested
 automated violation was found; it does not mean the page conforms to every WCAG
 success criterion.
 
@@ -417,7 +473,25 @@ success criterion.
 
 Browser-based accessibility checks are appropriate for CI and pre-push
 verification. Keep commit hooks limited to fast static checks so normal commits
-do not need to start a browser.
+do not need to start a browser. There is no Husky/git-hook setup in this repo;
+run `bun run verify web` yourself before pushing web/JSX/CSS changes, and rely
+on `test-unit.yml` (lint, type-check) and `test-e2e.yml` (`bun run test:e2e`,
+which includes `e2e/accessibility`) in CI as the enforcement backstop. Both
+workflows trigger on any push/PR that isn't docs-only, so web changes are
+always covered.
+
+#### Biome Rule Levels
+
+`biome.json`'s `linter.rules.a11y` splits into two groups. Rules with no
+standing `biome-ignore` anywhere in the repo are `"error"`, so a new violation
+fails `bun run lint` and CI immediately. Rules that have narrow, pointer-only
+exceptions already in the codebase (`noNoninteractiveTabindex`,
+`noRedundantRoles`, `noStaticElementInteractions`, `useAriaPropsSupportedByRole`,
+`useSemanticElements` - grep for `biome-ignore lint/a11y/<rule>` to find them)
+stay at `"warn"`: promoting a rule to `"error"` while it still has documented
+exceptions would make "error" mean something less than zero exceptions. Before
+promoting a currently-`"warn"` rule, confirm it has no existing
+`biome-ignore` for that rule.
 
 References:
 

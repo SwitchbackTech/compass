@@ -131,6 +131,7 @@ export const TimePickers: FC<Props> = ({
   return (
     <div className="flex items-center">
       <TimePicker
+        aria-label="Start time"
         inputId="startTimePicker"
         isMenuOpen={isStartMenuOpen}
         onChange={onStartSelected}
@@ -141,6 +142,7 @@ export const TimePickers: FC<Props> = ({
       />
       -
       <TimePicker
+        aria-label="End time"
         inputId="endTimePicker"
         isMenuOpen={isEndMenuOpen}
         onChange={onEndSelected}

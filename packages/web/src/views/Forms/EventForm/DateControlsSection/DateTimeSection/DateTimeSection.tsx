@@ -48,7 +48,7 @@ export const DateTimeSection: FC<Props> = ({
   endTime,
 }) => {
   return (
-    <div className="flex items-center gap-2" role="tablist">
+    <div className="flex items-center gap-2">
       {category === Categories_Event.ALLDAY && (
         <DatePickers
           displayEndDate={displayEndDate}
