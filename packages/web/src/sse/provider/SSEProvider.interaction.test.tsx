@@ -1,5 +1,4 @@
 import { render, waitFor } from "@testing-library/react";
-import { EventEmitter2 } from "eventemitter2";
 import { act } from "react";
 import { type ServerMessage } from "@core/types/server-message.contracts";
 import { type UserMetadata } from "@core/types/user.types";
@@ -19,15 +18,34 @@ const mockHandleGoogleRevoked = mock();
 const mockInvalidateEventQueries = mock();
 const mockShowErrorToast = mock();
 const refreshUserMetadata = mock().mockResolvedValue(undefined);
-const sseEmitter = new EventEmitter2({ maxListeners: 20 });
+
+// Mirrors sse.client's listener-set convention: subscribers key by the
+// message's own `type` and receive the already-parsed ServerMessage (B10).
+const listenersByType = new Map<
+  ServerMessage["type"],
+  Set<(message: ServerMessage) => void>
+>();
+function onServerMessage<T extends ServerMessage["type"]>(
+  type: T,
+  handler: (message: Extract<ServerMessage, { type: T }>) => void,
+): () => void {
+  let listeners = listenersByType.get(type);
+  if (!listeners) {
+    listeners = new Set();
+    listenersByType.set(type, listeners);
+  }
+  const listener = (message: ServerMessage) => handler(message as never);
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
 
 const useGcalSSE = createUseGcalSSE({
   handleGoogleRevoked: mockHandleGoogleRevoked,
   invalidateEventQueries: mockInvalidateEventQueries,
+  onServerMessage,
   refreshUserMetadata,
   setUserMetadata: userMetadataActions.set,
   showErrorToast: mockShowErrorToast,
-  sseEmitter,
 });
 
 const HookHost = () => {
@@ -35,10 +53,10 @@ const HookHost = () => {
   return null;
 };
 
-// Mirrors sse.client's emit convention: listeners subscribe by the message's
-// own `type` and receive the already-parsed ServerMessage (B10).
 const fireMessage = (message: ServerMessage) => {
-  sseEmitter.emit(message.type, message);
+  for (const listener of listenersByType.get(message.type) ?? []) {
+    listener(message);
+  }
 };
 
 const fireUserMetadata = (metadata: UserMetadata) => {
@@ -50,7 +68,7 @@ const fireUserMetadata = (metadata: UserMetadata) => {
 
 describe("useGcalSSE", () => {
   beforeEach(() => {
-    sseEmitter.removeAllListeners();
+    listenersByType.clear();
     mockHandleGoogleRevoked.mockClear();
     mockInvalidateEventQueries.mockClear();
     mockShowErrorToast.mockClear();

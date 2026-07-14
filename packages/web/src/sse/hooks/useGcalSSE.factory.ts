@@ -1,4 +1,3 @@
-import { type EventEmitter2 } from "eventemitter2";
 import { useCallback, useEffect } from "react";
 import { type Id } from "react-toastify";
 import {
@@ -14,17 +13,18 @@ import {
   setSyncingSyncIndicatorOverride,
 } from "@web/auth/google/state/google.sync.state";
 import { GOOGLE_REPAIR_FAILED_TOAST_ID } from "@web/common/constants/toast.constants";
+import { type OnServerMessage } from "@web/sse/client/sse.client";
 
 export type GcalSSEDependencies = {
   handleGoogleRevoked: () => void;
   invalidateEventQueries: () => void;
+  onServerMessage: OnServerMessage;
   refreshUserMetadata: () => Promise<unknown> | unknown;
   setUserMetadata: (metadata: UserMetadata) => void;
   showErrorToast: (
     message: string | undefined,
     options: { toastId: Id },
   ) => void;
-  sseEmitter: EventEmitter2;
 };
 
 export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
@@ -82,17 +82,23 @@ export const createUseGcalSSE = (dependencies: GcalSSEDependencies) => {
     );
 
     useEffect(() => {
-      dependencies.sseEmitter.on("syncStatusChanged", onSyncStatusChanged);
-      dependencies.sseEmitter.on("importCompleted", onImportCompleted);
-      dependencies.sseEmitter.on("userMetadataChanged", onUserMetadataChanged);
+      const unsubscribeSyncStatus = dependencies.onServerMessage(
+        "syncStatusChanged",
+        onSyncStatusChanged,
+      );
+      const unsubscribeImportCompleted = dependencies.onServerMessage(
+        "importCompleted",
+        onImportCompleted,
+      );
+      const unsubscribeUserMetadata = dependencies.onServerMessage(
+        "userMetadataChanged",
+        onUserMetadataChanged,
+      );
 
       return () => {
-        dependencies.sseEmitter.off("syncStatusChanged", onSyncStatusChanged);
-        dependencies.sseEmitter.off("importCompleted", onImportCompleted);
-        dependencies.sseEmitter.off(
-          "userMetadataChanged",
-          onUserMetadataChanged,
-        );
+        unsubscribeSyncStatus();
+        unsubscribeImportCompleted();
+        unsubscribeUserMetadata();
       };
     }, [onSyncStatusChanged, onImportCompleted, onUserMetadataChanged]);
   };

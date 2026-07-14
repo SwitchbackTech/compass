@@ -10,10 +10,10 @@ import {
 } from "@web/__tests__/__mocks__/mock.render";
 import { toNormalizedEventQueryData } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { eventQueryKeys } from "@web/events/queries/event.query.keys";
 import { dayCalendarEventRegistry } from "@web/views/Day/interaction/registry/dayCalendarEventRegistry";

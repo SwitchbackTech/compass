@@ -1,9 +1,6 @@
 import { NotePencilIcon, PlusIcon } from "@phosphor-icons/react";
-import {
-  CompassDOMEvents,
-  compassEventEmitter,
-} from "@web/common/utils/dom/event-emitter.util";
 import { type CommandItem } from "@web/components/CommandPalette/command-palette.types";
+import { emitDayViewCommand } from "@web/views/Day/day-view-bus";
 import {
   openEventFormCreateEvent,
   openEventFormEditEvent,
@@ -27,9 +24,7 @@ export const getDayCmdTasks = (): CommandItem[] => [
     icon: PlusIcon,
     shortcut: "a",
     onClick: () =>
-      queueMicrotask(() =>
-        compassEventEmitter.emit(CompassDOMEvents.CREATE_ALLDAY_DRAFT),
-      ),
+      queueMicrotask(() => emitDayViewCommand("CREATE_ALLDAY_DRAFT")),
   },
   {
     id: "edit-event",

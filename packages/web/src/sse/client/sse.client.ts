@@ -1,4 +1,3 @@
-import { EventEmitter2 } from "eventemitter2";
 import { SSE_MESSAGE_EVENT } from "@core/constants/sse.constants";
 import {
   type ServerMessage,
@@ -10,11 +9,21 @@ import { ENV_WEB } from "@web/common/constants/env.constants";
 // ServerMessageSchema member. This module is the single parse point: every
 // consumer subscribes here by the message's own `type` and receives the
 // already-validated ServerMessage, never the raw EventSource payload.
-export const sseEmitter = new EventEmitter2({
-  wildcard: false,
-  maxListeners: 20,
-  verboseMemoryLeak: true,
-});
+const listenersByType = new Map<
+  ServerMessage["type"],
+  Set<(message: ServerMessage) => void>
+>();
+
+function getListeners(
+  type: ServerMessage["type"],
+): Set<(message: ServerMessage) => void> {
+  let listeners = listenersByType.get(type);
+  if (!listeners) {
+    listeners = new Set();
+    listenersByType.set(type, listeners);
+  }
+  return listeners;
+}
 
 let es: EventSource | null = null;
 let forwardingHandler: ((e: MessageEvent) => void) | null = null;
@@ -41,7 +50,9 @@ export const openStream = (): EventSource => {
       return;
     }
 
-    sseEmitter.emit(parsed.data.type, parsed.data);
+    for (const listener of getListeners(parsed.data.type)) {
+      listener(parsed.data);
+    }
   };
   es.addEventListener(SSE_MESSAGE_EVENT, forwardingHandler);
   return es;
@@ -65,6 +76,9 @@ export function onServerMessage<T extends ServerMessage["type"]>(
   handler: (message: Extract<ServerMessage, { type: T }>) => void,
 ): () => void {
   const listener = (message: ServerMessage) => handler(message as never);
-  sseEmitter.on(type, listener);
-  return () => sseEmitter.off(type, listener);
+  const listeners = getListeners(type);
+  listeners.add(listener);
+  return () => listeners.delete(listener);
 }
+
+export type OnServerMessage = typeof onServerMessage;

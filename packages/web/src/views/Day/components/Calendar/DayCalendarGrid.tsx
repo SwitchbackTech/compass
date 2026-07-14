@@ -11,10 +11,6 @@ import { type CalendarId } from "@core/types/domain-primitives";
 import { Categories_Event, type Schema_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import {
-  CompassDOMEvents,
-  compassEventEmitter,
-} from "@web/common/utils/dom/event-emitter.util";
 import { getDraftTimes } from "@web/common/utils/draft/draft.util";
 import {
   addId,
@@ -38,6 +34,7 @@ import { CalendarGrid } from "@web/layout/calendar-grid/components/CalendarGrid"
 import { useAllDayDraftCreation } from "@web/layout/calendar-grid/hooks/useAllDayDraftCreation";
 import { useCalendarDateCalcs } from "@web/layout/calendar-grid/hooks/useCalendarDateCalcs";
 import { useCalendarGridLayout } from "@web/layout/calendar-grid/hooks/useCalendarGridLayout";
+import { onDayViewCommand } from "@web/views/Day/day-view-bus";
 import { dayEventQueryRange } from "@web/views/Day/hooks/events/useDayEvents";
 import { useDateInView } from "@web/views/Day/hooks/navigation/useDateInView";
 import { useDayEventNudgeShortcuts } from "@web/views/Day/hooks/shortcuts/useDayEventNudgeShortcuts";
@@ -228,24 +225,18 @@ export function DayCalendarGrid() {
       createTimedDraftRef.current();
     };
 
-    compassEventEmitter.on(
-      CompassDOMEvents.CREATE_ALLDAY_DRAFT,
+    const unsubscribeCreateAllDayDraft = onDayViewCommand(
+      "CREATE_ALLDAY_DRAFT",
       handleCreateAllDayDraft,
     );
-    compassEventEmitter.on(
-      CompassDOMEvents.CREATE_TIMED_DRAFT,
+    const unsubscribeCreateTimedDraft = onDayViewCommand(
+      "CREATE_TIMED_DRAFT",
       handleCreateTimedDraft,
     );
 
     return () => {
-      compassEventEmitter.off(
-        CompassDOMEvents.CREATE_ALLDAY_DRAFT,
-        handleCreateAllDayDraft,
-      );
-      compassEventEmitter.off(
-        CompassDOMEvents.CREATE_TIMED_DRAFT,
-        handleCreateTimedDraft,
-      );
+      unsubscribeCreateAllDayDraft();
+      unsubscribeCreateTimedDraft();
     };
   }, []);
   const onAllDayMouseDown = useAllDayDraftCreation({

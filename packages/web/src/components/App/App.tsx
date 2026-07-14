@@ -1,5 +1,4 @@
 import React from "react";
-import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import {
   CompassOptionalProviders,
   CompassRequiredProviders,
@@ -7,8 +6,6 @@ import {
 import { CompassRouterProvider } from "@web/routers";
 
 export const App = () => {
-  useSetupMovementEvents();
-
   return (
     <React.StrictMode>
       <CompassOptionalProviders>

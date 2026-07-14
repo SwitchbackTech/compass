@@ -84,12 +84,10 @@ mock.module("@web/auth/compass/session/Session", () => ({
 
       return () => eventListeners.delete(listener);
     },
-    emit: (_action: string, payload: unknown) =>
+    emit: (payload: unknown) =>
       eventListeners.forEach((listener) =>
         listener(payload as { action: string }),
       ),
-    on: mock(),
-    off: mock(),
     signOut: mock().mockResolvedValue(undefined),
   },
 }));
@@ -99,9 +97,7 @@ const { session } = require("@web/auth/compass/session/Session") as {
   session: {
     doesSessionExist: ReturnType<typeof mock>;
     onAnyEvent: (listener: (event: { action: string }) => void) => () => void;
-    emit: (action: string, payload: unknown) => void;
-    on: ReturnType<typeof mock>;
-    off: ReturnType<typeof mock>;
+    emit: (payload: unknown) => void;
   };
 };
 
@@ -151,7 +147,7 @@ describe("SessionProvider sessionInit", () => {
     sessionInit();
 
     // Simulate SESSION_CREATED event
-    session.emit("SESSION_CREATED", { action: "SESSION_CREATED" });
+    session.emit({ action: "SESSION_CREATED" });
 
     await waitFor(() => {
       expect(markUserAsAuthenticated).toHaveBeenCalledWith("test@example.com");
@@ -163,7 +159,7 @@ describe("SessionProvider sessionInit", () => {
 
     // Simulate SIGN_OUT event; user metadata should be cleared
     userMetadataActions.set({ google: { connectionState: "HEALTHY" } });
-    session.emit("SIGN_OUT", { action: "SIGN_OUT" });
+    session.emit({ action: "SIGN_OUT" });
 
     expect(useUserMetadataStore.getState()).toEqual(initialUserMetadataState);
     expect(closeStream).toHaveBeenCalledTimes(2);
@@ -185,7 +181,7 @@ describe("SessionProvider sessionInit", () => {
 
     sessionInit();
     act(() => {
-      session.emit("SESSION_CREATED", { action: "SESSION_CREATED" });
+      session.emit({ action: "SESSION_CREATED" });
     });
 
     expect(result.current.authenticated).toBe(true);

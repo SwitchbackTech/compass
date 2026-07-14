@@ -1,17 +1,8 @@
-import { EventEmitter2, type ListenerFn } from "eventemitter2";
 import SuperTokensSession from "supertokens-web-js/recipe/session";
 import { type Event } from "supertokens-website/lib/build/types";
 
 class Session {
-  #emitter: EventEmitter2 = new EventEmitter2({
-    wildcard: true,
-    delimiter: ".",
-    newListener: false,
-    removeListener: false,
-    maxListeners: 10,
-    verboseMemoryLeak: false,
-    ignoreErrors: false,
-  });
+  #listeners = new Set<(event: Event) => void>();
 
   doesSessionExist = SuperTokensSession.doesSessionExist;
   getUserId = SuperTokensSession.getUserId;
@@ -29,29 +20,17 @@ class Session {
     SuperTokensSession.getAccessTokenPayloadSecurely;
 
   /**
-   * Subscribe to every emitted session event (wildcard listener).
+   * Subscribe to every emitted session event.
    * Returns an unsubscribe function.
    */
   onAnyEvent(listener: (event: Event) => void): () => void {
-    this.#emitter.addListener("*", listener as ListenerFn);
+    this.#listeners.add(listener);
 
-    return () => this.#emitter.removeListener("*", listener as ListenerFn);
+    return () => this.#listeners.delete(listener);
   }
 
-  emit(event: Event["action"], payload: Event) {
-    this.#emitter.emit(event, payload);
-  }
-
-  on(event: Event["action"], listener: ListenerFn): void {
-    this.#emitter.on(event, listener);
-  }
-
-  once(event: Event["action"], listener: ListenerFn): void {
-    this.#emitter.once(event, listener);
-  }
-
-  off(event: Event["action"], listener: ListenerFn): void {
-    this.#emitter.off(event, listener);
+  emit(payload: Event) {
+    for (const listener of this.#listeners) listener(payload);
   }
 }
 

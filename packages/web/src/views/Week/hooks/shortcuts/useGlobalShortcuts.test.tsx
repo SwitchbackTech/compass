@@ -1,8 +1,8 @@
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { STORAGE_KEYS } from "@web/common/constants/storage.constants";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
 import {
   selectIsSidebarOpen,
   useViewStore,

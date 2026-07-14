@@ -1,6 +1,5 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { render, waitFor } from "@testing-library/react";
-import { type EventEmitter2 } from "eventemitter2";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 
@@ -20,23 +19,23 @@ mock.module("@web/auth/compass/user/util/user-metadata.util", () => ({
   refreshUserMetadata: mock().mockResolvedValue(undefined),
 }));
 mock.module("../client/sse.client", () => {
-  const eventEmitterModule = require("eventemitter2") as {
-    EventEmitter2: new (options?: { maxListeners?: number }) => EventEmitter2;
-  };
-  const { EventEmitter2 } = eventEmitterModule;
-  const sseEmitter = new EventEmitter2({ maxListeners: 20 });
+  const listenersByType = new Map<string, Set<(message: unknown) => void>>();
   const onServerMessage = (
     type: string,
     handler: (message: unknown) => void,
   ) => {
-    sseEmitter.on(type, handler);
-    return () => sseEmitter.off(type, handler);
+    let listeners = listenersByType.get(type);
+    if (!listeners) {
+      listeners = new Set();
+      listenersByType.set(type, listeners);
+    }
+    listeners.add(handler);
+    return () => listeners.delete(handler);
   };
   return {
     openStream,
     closeStream,
     getStream,
-    sseEmitter,
     onServerMessage,
   };
 });

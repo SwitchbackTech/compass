@@ -19,7 +19,6 @@ import {
 } from "@web/__tests__/utils/state/seed-stores";
 import { createCompassQueryClient } from "@web/api/query-client";
 import { ID_ROOT } from "@web/common/constants/web.constants";
-import { useSetupMovementEvents } from "@web/common/pointer/useMovementEvent";
 import { CompassRequiredProviders } from "@web/components/CompassProvider/CompassProvider";
 import { mock } from "bun:test";
 
@@ -51,8 +50,6 @@ function TestProvidersWrapper({
   queryClient,
   router,
 }: PropsWithChildren<TestProvidersProps>) {
-  useSetupMovementEvents();
-
   if (!router) {
     return (
       <div id={ID_ROOT} data-testid={ID_ROOT}>

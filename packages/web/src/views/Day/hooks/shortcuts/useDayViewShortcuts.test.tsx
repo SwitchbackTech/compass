@@ -1,7 +1,7 @@
 import { HotkeyManager, HotkeysProvider } from "@tanstack/react-hotkeys";
 import { cleanup, renderHook, waitFor } from "@testing-library/react";
 import { type PropsWithChildren } from "react";
-import { pressKey } from "@web/common/utils/dom/event-emitter.util";
+import { pressKey } from "@web/__tests__/utils/keyboard.test.util";
 import { useDayViewShortcuts } from "./useDayViewShortcuts";
 import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 
