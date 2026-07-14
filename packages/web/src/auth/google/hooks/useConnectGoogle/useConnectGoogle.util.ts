@@ -1,21 +1,12 @@
 import { CloudArrowUpIcon } from "@phosphor-icons/react";
+import { type SyncStatus } from "@web/calendars/sync-status.types";
 import {
   type CommandActionIcon,
-  type GoogleAccountSummaryStatus,
   type GoogleUiConfig,
   type GoogleUiState,
 } from "./useConnectGoogle.types";
 
 const COMMAND_ICON: CommandActionIcon = CloudArrowUpIcon;
-
-const SYNCING_COMMAND_LABEL: Record<
-  "checking" | "repairing" | "IMPORTING",
-  string
-> = {
-  checking: "Checking your Google Calendar…",
-  repairing: "Syncing your Google Calendar…",
-  IMPORTING: "Syncing your Google Calendar…",
-};
 
 export const getGoogleConnectionConfig = (
   state: GoogleUiState,
@@ -26,13 +17,8 @@ export const getGoogleConnectionConfig = (
     case "checking":
     case "repairing":
     case "IMPORTING":
-      return {
-        commandAction: {
-          label: SYNCING_COMMAND_LABEL[state],
-          icon: COMMAND_ICON,
-          isDisabled: true,
-        },
-      };
+    case "HEALTHY":
+      return { commandAction: null };
     case "NOT_CONNECTED":
       return {
         commandAction: {
@@ -60,49 +46,21 @@ export const getGoogleConnectionConfig = (
           onSelect: onRepairGoogle,
         },
       };
-    case "HEALTHY":
-      return {
-        commandAction: {
-          label: "Google Calendar Connected",
-          icon: COMMAND_ICON,
-          isDisabled: true,
-        },
-      };
   }
 };
 
-export const getGoogleAccountSummaryStatus = (
-  state: GoogleUiState,
-  {
-    onRepairGoogle,
-    onOpenGoogleAuth,
-  }: { onRepairGoogle: () => void; onOpenGoogleAuth: () => void },
-): GoogleAccountSummaryStatus => {
+export const getGoogleSyncStatus = (state: GoogleUiState): SyncStatus => {
   switch (state) {
     case "HEALTHY":
-      return {
-        variant: "healthy",
-        tooltip: "Up-to-date",
-      };
+      return { variant: "healthy", text: "Calendar up-to-date" };
     case "IMPORTING":
     case "repairing":
     case "checking":
-      return {
-        variant: "syncing",
-        tooltip: "Syncing…",
-      };
+      return { variant: "syncing", text: "Syncing calendar…" };
     case "ATTENTION":
-      return {
-        variant: "warning",
-        tooltip: "Your Google Calendar is out of date",
-        action: { label: "Sync now", onClick: onRepairGoogle },
-      };
+      return { variant: "warning", text: "Calendar is out of date" };
     case "RECONNECT_REQUIRED":
-      return {
-        variant: "error",
-        tooltip: "Google Calendar needs reconnecting",
-        action: { label: "Reconnect", onClick: onOpenGoogleAuth },
-      };
+      return { variant: "error", text: "Calendar needs reconnecting" };
     case "NOT_CONNECTED":
       return null;
   }
