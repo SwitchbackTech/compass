@@ -9,6 +9,13 @@ import { mapGoogleEvent } from "@backend/event/google-event.adapter";
 import { getAnchorDate } from "@backend/event/services/recur/util/recur.util";
 
 /**
+ * Default number of Google events to request per page when importing/syncing.
+ * Shared by the event-apply path here and the import/sync services that drive
+ * it, so a future tuning pass changes one number instead of six call sites.
+ */
+export const DEFAULT_GCAL_EVENTS_PER_PAGE = 1000;
+
+/**
  * The instant Google considers this event's fixed position in a recurrence
  * pattern (stays fixed even after the instance's own start/end are edited).
  * Present on both live instances and cancellation notifications, so it is
@@ -106,7 +113,7 @@ export class GoogleEventSync {
 
   async apply(
     events: gSchema$Event[],
-    perPage = 1000,
+    perPage = DEFAULT_GCAL_EVENTS_PER_PAGE,
     session?: ClientSession,
   ): Promise<GoogleEventSyncResult> {
     const seriesMap = new Map<string, ObjectId>();

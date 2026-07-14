@@ -13,6 +13,7 @@ import {
 } from "@backend/common/services/gcal/gcal.context";
 import { isInvalidGoogleToken } from "@backend/common/services/gcal/gcal.utils";
 import { createConcurrencyLimiter } from "@backend/common/util/concurrency-limiter.util";
+import { DEFAULT_GCAL_EVENTS_PER_PAGE } from "@backend/event/google-event-sync.service";
 import { sseServer } from "@backend/servers/sse/sse.server";
 import compassToGoogleBackfill from "@backend/sync/services/event-propagation/compass-to-google/compass-to-google-backfill";
 import { pruneGoogleDataAndNotifyRevoked } from "@backend/sync/services/google-sync/google-sync.revoked";
@@ -101,7 +102,7 @@ const toErrorMessage = (err: unknown): string =>
 async function importLatestGoogleCalendarChanges(
   userId: string,
   context?: GoogleRequestContext,
-  perPage = 1000,
+  perPage = DEFAULT_GCAL_EVENTS_PER_PAGE,
 ) {
   if (!tryBeginGoogleSync(userId)) {
     logger.info(

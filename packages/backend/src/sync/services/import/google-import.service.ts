@@ -9,7 +9,10 @@ import {
   type GoogleRequestContext,
 } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
-import { GoogleEventSync } from "@backend/event/google-event-sync.service";
+import {
+  DEFAULT_GCAL_EVENTS_PER_PAGE,
+  GoogleEventSync,
+} from "@backend/event/google-event-sync.service";
 import {
   getGCalEventsSyncPageToken,
   getSync,
@@ -79,7 +82,7 @@ export class SyncImport {
   async importAllEvents(
     userId: string,
     calendar: CalendarRecord,
-    perPage = 1000,
+    perPage = DEFAULT_GCAL_EVENTS_PER_PAGE,
   ): Promise<ImportStats & { nextSyncToken: string }> {
     if (calendar.source.provider !== "google") {
       throw error(
@@ -166,7 +169,7 @@ export class SyncImport {
   async importLatestEvents(
     userId: string,
     calendar: CalendarRecord,
-    perPage = 1000,
+    perPage = DEFAULT_GCAL_EVENTS_PER_PAGE,
   ): Promise<ImportStats> {
     if (calendar.source.provider !== "google") {
       throw error(
@@ -203,7 +206,7 @@ export class SyncImport {
     userId: string,
     calendar: CalendarRecord,
     initialSyncToken: string,
-    perPage = 1000,
+    perPage = DEFAULT_GCAL_EVENTS_PER_PAGE,
   ): Promise<ImportStats> {
     if (calendar.source.provider !== "google") {
       throw error(
