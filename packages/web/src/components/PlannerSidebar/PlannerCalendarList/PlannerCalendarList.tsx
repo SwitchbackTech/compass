@@ -3,6 +3,7 @@ import { type Calendar } from "@core/types/calendar.contracts";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { useCalendarVisibility } from "@web/calendars/useCalendarVisibility";
+import { PlannerCalendarListHeader } from "./PlannerCalendarListHeader";
 
 // Primary calendars first, then alphabetical by name; the local calendar
 // (offline/anonymous synthesized calendar, or the server's own local
@@ -20,9 +21,14 @@ function sortCalendars(calendars: Calendar[]): Calendar[] {
 interface Props {
   /** Test seam only: production callers rely on useCalendarVisibility's default. */
   coalesceDelayMs?: number;
+  /** Test seam only: lets list tests stub the account header's auth/sync hooks. */
+  Header?: FC;
 }
 
-export const PlannerCalendarList: FC<Props> = ({ coalesceDelayMs }) => {
+export const PlannerCalendarList: FC<Props> = ({
+  coalesceDelayMs,
+  Header = PlannerCalendarListHeader,
+}) => {
   const { authenticated } = useSession();
   const { data, isPending, isError, refetch } = useCalendarsQuery();
   const { toggleCalendarVisibility, failureAnnouncement } =
@@ -34,9 +40,7 @@ export const PlannerCalendarList: FC<Props> = ({ coalesceDelayMs }) => {
 
   return (
     <section aria-label="Calendars">
-      <h2 className="mb-2 min-w-0 truncate font-semibold text-sm text-text-lighter leading-none">
-        Calendars
-      </h2>
+      <Header />
 
       {isPending ? (
         <p className="text-text-light-inactive text-xs">Loading calendars…</p>
@@ -56,6 +60,14 @@ export const PlannerCalendarList: FC<Props> = ({ coalesceDelayMs }) => {
       ) : (
         <ul className="flex flex-col gap-1.5">
           {calendars.map((calendar) => {
+            // The header already shows the primary calendar's name (the account
+            // email), so its row reads "primary" instead. The anonymous local
+            // sentinel is also isPrimary, but a lone "primary" row under a
+            // "Temporary account" header reads wrong - keep its own name.
+            const displayName =
+              calendar.isPrimary && calendar.provider !== "local"
+                ? "primary"
+                : calendar.name;
             const calendarRow = (
               <>
                 <span
@@ -68,9 +80,7 @@ export const PlannerCalendarList: FC<Props> = ({ coalesceDelayMs }) => {
                     borderColor: calendar.backgroundColor,
                   }}
                 />
-                <span className="min-w-0 flex-1 truncate">
-                  {calendar.name}
-                </span>
+                <span className="min-w-0 flex-1 truncate">{displayName}</span>
               </>
             );
 
@@ -78,7 +88,7 @@ export const PlannerCalendarList: FC<Props> = ({ coalesceDelayMs }) => {
               <li key={calendar.id}>
                 {authenticated ? (
                   <button
-                    aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${calendar.name} calendar`}
+                    aria-label={`${calendar.isVisible ? "Hide" : "Show"} ${displayName} calendar`}
                     aria-pressed={calendar.isVisible}
                     className="c-focus-ring group flex w-full min-w-0 items-center gap-2 rounded px-1 py-0.5 text-left text-text-lighter text-xs hover:bg-panel-bg"
                     onClick={() =>

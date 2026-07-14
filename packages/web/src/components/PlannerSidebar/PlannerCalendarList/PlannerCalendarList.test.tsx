@@ -46,6 +46,11 @@ const { PlannerCalendarList } = (await import(
   plannerCalendarListModuleUrl.href
 )) as typeof import("./PlannerCalendarList");
 
+// The real header renders the account email / temporary-account CTA via its
+// own auth+sync hooks (covered in PlannerCalendarListHeader.test.tsx); stub it
+// here so list tests don't need those hooks mocked.
+const StubHeader = () => <h2>Calendars</h2>;
+
 const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
   id: CalendarIdSchema.parse(createObjectIdString()),
   name: "Work",
@@ -78,7 +83,10 @@ const renderCalendarList = (
   queryClient.setQueryData(calendarQueryKeys.all, calendars);
 
   const utils = render(
-    <PlannerCalendarList coalesceDelayMs={coalesceDelayMs} />,
+    <PlannerCalendarList
+      coalesceDelayMs={coalesceDelayMs}
+      Header={StubHeader}
+    />,
     {
       wrapper,
     },
@@ -126,12 +134,31 @@ describe("PlannerCalendarList", () => {
     expect(screen.queryByText("Archived")).not.toBeInTheDocument();
   });
 
-  it("hides the visibility toggle for anonymous sessions", () => {
-    const local = makeCalendar({ name: "Local", provider: "local" });
+  it("relabels the primary provider calendar as 'primary' since the header already shows its name", () => {
+    const primary = makeCalendar({ name: "ahab@pequod.com", isPrimary: true });
+
+    renderCalendarList([primary]);
+
+    expect(
+      screen.getByRole("button", { name: "Hide primary calendar" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("primary")).toBeInTheDocument();
+    expect(screen.queryByText("ahab@pequod.com")).not.toBeInTheDocument();
+  });
+
+  it("hides the visibility toggle for anonymous sessions and keeps the local sentinel's own name", () => {
+    // The anonymous synthesized local calendar is isPrimary, but must not be
+    // relabeled "primary" - the header shows "Temporary account", not its name.
+    const local = makeCalendar({
+      name: "Local",
+      provider: "local",
+      isPrimary: true,
+    });
 
     renderCalendarList([local], { authenticated: false });
 
     expect(screen.getByText("Local")).toBeInTheDocument();
+    expect(screen.queryByText("primary")).not.toBeInTheDocument();
     expect(screen.queryByRole("button")).not.toBeInTheDocument();
   });
 
@@ -283,7 +310,7 @@ describe("PlannerCalendarList", () => {
     BaseApi.defaults.adapter = () => new Promise(() => {});
     const { wrapper } = createStoreWrapper();
 
-    render(<PlannerCalendarList />, { wrapper });
+    render(<PlannerCalendarList Header={StubHeader} />, { wrapper });
 
     expect(screen.getByText(/loading calendars/i)).toBeInTheDocument();
   });
@@ -310,7 +337,7 @@ describe("PlannerCalendarList", () => {
       };
     };
     const { wrapper } = createStoreWrapper();
-    render(<PlannerCalendarList />, { wrapper });
+    render(<PlannerCalendarList Header={StubHeader} />, { wrapper });
 
     await waitFor(() => {
       expect(screen.getByText(/couldn.t load calendars/i)).toBeInTheDocument();

@@ -21,24 +21,33 @@ const TEMPORARY_ACCOUNT_MESSAGE = "Sign up to save your changes";
 const TOOLTIP_ACTION_BUTTON_CLASSNAME =
   "c-focus-ring self-start rounded-xs bg-accent-primary px-2 py-1 font-medium text-s text-text-dark hover:brightness-110";
 
-// Shared by every account-label trigger (button or span) so the sidebar's
+const HEADING_CLASSNAME =
+  "mb-2 flex min-w-0 font-semibold text-sm leading-none";
+
+// Shared by every account-label trigger (button or span) so the header's
 // email/temporary-account text stays keyboard-focusable and reset the same way.
 const TRIGGER_FOCUS_CLASSNAME =
-  "min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary";
+  "min-w-0 truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-primary";
 const TRIGGER_BUTTON_RESET_CLASSNAME =
-  "appearance-none border-0 bg-transparent p-0 text-left";
+  "appearance-none border-0 bg-transparent p-0 text-left font-semibold";
 
-export const PlannerAccountSummary: FC = () => {
+/**
+ * The calendar list's heading is the account identity (email, or the
+ * temporary-account label when anonymous) rather than a generic "Calendars"
+ * title, and carries the sync status treatment (wave shimmer while syncing,
+ * warning/error colors) plus the sign-up-to-save CTA for anonymous users.
+ */
+export const PlannerCalendarListHeader: FC = () => {
   const { email } = useUser();
 
   if (!email) {
-    return <TemporaryAccountSummary />;
+    return <TemporaryAccountHeader />;
   }
 
-  return <AuthenticatedAccountSummary email={email} />;
+  return <AuthenticatedAccountHeader email={email} />;
 };
 
-const TemporaryAccountSummary: FC = () => {
+const TemporaryAccountHeader: FC = () => {
   const { openModal } = useAuthModal();
   const isDirty = useSyncExternalStore(
     subscribeToAuthState,
@@ -51,15 +60,14 @@ const TemporaryAccountSummary: FC = () => {
   }, [openModal]);
 
   return (
-    <div className="flex w-full min-w-0 shrink-0 items-center border-border-primary border-t px-4 py-2">
+    <h2 className={HEADING_CLASSNAME}>
       <Tooltip interactive>
         <TooltipTrigger asChild>
           <button
             className={classNames(
               TRIGGER_FOCUS_CLASSNAME,
               TRIGGER_BUTTON_RESET_CLASSNAME,
-              "truncate font-normal text-xs leading-tight",
-              isDirty ? "c-sync-text-wave" : "text-text-light",
+              isDirty ? "c-sync-text-wave" : "text-text-lighter",
             )}
             onClick={handleOpenSignUp}
             type="button"
@@ -78,7 +86,7 @@ const TemporaryAccountSummary: FC = () => {
           </button>
         </TooltipContent>
       </Tooltip>
-    </div>
+    </h2>
   );
 };
 
@@ -109,12 +117,12 @@ const SYNC_STATUS_VARIANT_CLASSNAME: Record<
   string
 > = {
   syncing: "c-sync-text-wave",
-  healthy: "text-text-light",
+  healthy: "text-text-lighter",
   warning: "text-status-warning",
   error: "text-status-error",
 };
 
-const AuthenticatedAccountSummary: FC<{ email: string }> = ({ email }) => {
+const AuthenticatedAccountHeader: FC<{ email: string }> = ({ email }) => {
   const { state, onRepairGoogle, onOpenGoogleAuth } = useConnectGoogle();
   const hasPendingEventMutations = useHasPendingEventMutations();
   const accountLabel = email;
@@ -127,64 +135,71 @@ const AuthenticatedAccountSummary: FC<{ email: string }> = ({ email }) => {
     hasPendingEventMutations,
   );
 
-  const emailClassName = classNames(
-    "truncate font-normal text-xs leading-tight",
-    syncStatus
-      ? SYNC_STATUS_VARIANT_CLASSNAME[syncStatus.variant]
-      : "text-text-light",
-  );
+  const emailClassName = syncStatus
+    ? SYNC_STATUS_VARIANT_CLASSNAME[syncStatus.variant]
+    : "text-text-lighter";
 
   return (
-    <div className="flex w-full min-w-0 shrink-0 items-center border-border-primary border-t px-4 py-2 text-text-light">
+    <>
+      <h2 className={HEADING_CLASSNAME}>
+        {syncStatus ? (
+          <Tooltip interactive={!!syncStatus.action}>
+            <TooltipTrigger asChild>
+              {syncStatus.action ? (
+                <button
+                  className={classNames(
+                    emailClassName,
+                    TRIGGER_FOCUS_CLASSNAME,
+                    TRIGGER_BUTTON_RESET_CLASSNAME,
+                  )}
+                  onClick={syncStatus.action.onClick}
+                  translate="no"
+                  type="button"
+                >
+                  {accountLabel}
+                </button>
+              ) : (
+                <span
+                  className={classNames(
+                    emailClassName,
+                    TRIGGER_FOCUS_CLASSNAME,
+                  )}
+                  // biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so useFocus can reveal the status tooltip via keyboard; there is no action to trigger here.
+                  tabIndex={0}
+                  translate="no"
+                >
+                  {accountLabel}
+                </span>
+              )}
+            </TooltipTrigger>
+            <TooltipContent className="flex max-w-55 flex-col gap-1.5">
+              <span>{syncStatus.tooltip}</span>
+              {syncStatus.action ? (
+                <button
+                  className={TOOLTIP_ACTION_BUTTON_CLASSNAME}
+                  onClick={syncStatus.action.onClick}
+                  type="button"
+                >
+                  {syncStatus.action.label}
+                </button>
+              ) : null}
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <span
+            className={classNames(emailClassName, "min-w-0 truncate")}
+            translate="no"
+          >
+            {accountLabel}
+          </span>
+        )}
+      </h2>
       {syncStatus ? (
-        <Tooltip interactive={!!syncStatus.action}>
-          <TooltipTrigger asChild>
-            {syncStatus.action ? (
-              <button
-                className={classNames(
-                  emailClassName,
-                  TRIGGER_FOCUS_CLASSNAME,
-                  TRIGGER_BUTTON_RESET_CLASSNAME,
-                )}
-                onClick={syncStatus.action.onClick}
-                translate="no"
-                type="button"
-              >
-                {accountLabel}
-              </button>
-            ) : (
-              <span
-                className={classNames(emailClassName, TRIGGER_FOCUS_CLASSNAME)}
-                // biome-ignore lint/a11y/noNoninteractiveTabindex: focusable so useFocus can reveal the status tooltip via keyboard; there is no action to trigger here.
-                tabIndex={0}
-                translate="no"
-              >
-                {accountLabel}
-              </span>
-            )}
-          </TooltipTrigger>
-          <TooltipContent className="flex max-w-55 flex-col gap-1.5">
-            <span>{syncStatus.tooltip}</span>
-            {syncStatus.action ? (
-              <button
-                className={TOOLTIP_ACTION_BUTTON_CLASSNAME}
-                onClick={syncStatus.action.onClick}
-                type="button"
-              >
-                {syncStatus.action.label}
-              </button>
-            ) : null}
-          </TooltipContent>
-        </Tooltip>
-      ) : (
-        <span className={emailClassName} translate="no">
-          {accountLabel}
-        </span>
-      )}
-      {syncStatus ? (
-        // `status` doesn't derive its accessible name from text content per the
-        // ARIA spec, so an explicit aria-label is required for the name to be
-        // announced/queryable (e.g. by role+name in tests).
+        // Outside the h2 so the status copy doesn't pollute the heading's
+        // accessible name. `status` doesn't derive its accessible name from
+        // text content per the ARIA spec, so an explicit aria-label is
+        // required for the name to be announced/queryable (e.g. by role+name
+        // in tests).
         <span
           aria-label={syncStatus.tooltip}
           aria-live="polite"
@@ -194,6 +209,6 @@ const AuthenticatedAccountSummary: FC<{ email: string }> = ({ email }) => {
           {syncStatus.tooltip}
         </span>
       ) : null}
-    </div>
+    </>
   );
 };
