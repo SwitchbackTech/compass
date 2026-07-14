@@ -4,7 +4,6 @@ import { isBackendUnavailable as getIsBackendUnavailable } from "@web/api/util/b
 import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { useSession } from "@web/auth/compass/session/useSession";
 import { EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
-import { ConditionalRender } from "@web/components/ConditionalRender/ConditionalRender";
 import { EndsOnDate } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/EndsOnDate";
 import { RecurrenceIntervalSelect } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceIntervalSelect";
 import { RecurrenceToggle } from "@web/views/Forms/EventForm/DateControlsSection/RecurrenceSection/components/RecurrenceToggle";
@@ -50,27 +49,33 @@ export function createRecurrenceSection({
           toggleRecurrence={toggleRecurrence}
         />
 
-        <ConditionalRender condition={hasRecurrence && !isRecurrenceDisabled}>
-          <RecurrenceIntervalSelect
-            bgColor={bgColor}
-            initialValue={interval}
-            frequency={freq}
-            onChange={setInterval}
-            onFreqSelect={setFreq}
-            min={1}
-            max={12}
-          />
+        {hasRecurrence && !isRecurrenceDisabled && (
+          <>
+            <RecurrenceIntervalSelect
+              bgColor={bgColor}
+              initialValue={interval}
+              frequency={freq}
+              onChange={setInterval}
+              onFreqSelect={setFreq}
+              min={1}
+              max={12}
+            />
 
-          <WeekDays bgColor={bgColor} value={weekDays} onChange={setWeekDays} />
+            <WeekDays
+              bgColor={bgColor}
+              value={weekDays}
+              onChange={setWeekDays}
+            />
 
-          <EndsOnDate
-            bgColor={bgColor}
-            inputColor={EVENT_HOVER_COLOR}
-            until={until}
-            minDate={event.endDate}
-            setUntil={setUntil}
-          />
-        </ConditionalRender>
+            <EndsOnDate
+              bgColor={bgColor}
+              inputColor={EVENT_HOVER_COLOR}
+              until={until}
+              minDate={event.endDate}
+              setUntil={setUntil}
+            />
+          </>
+        )}
       </div>
     );
   };
