@@ -53,6 +53,9 @@ describe("CalendarGrid", () => {
   it("keeps explicit event layers on their surfaces", () => {
     renderGrid(1);
 
+    expect(screen.getByRole("region", { name: "All-day events" })).toHaveClass(
+      "bg-bg-primary",
+    );
     expect(
       screen.getByRole("region", { name: "All-day events" }),
     ).toContainElement(screen.getByTestId("all-day-events-layer"));
