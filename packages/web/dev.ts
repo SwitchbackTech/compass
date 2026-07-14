@@ -64,6 +64,13 @@ async function build() {
     for (const message of result.logs) console.error(message);
     return false;
   }
+
+  // Copy unhashed so the og:image meta tag can reference a stable URL.
+  await Bun.write(
+    path.join(OUTDIR, "og-image.png"),
+    Bun.file(path.resolve(import.meta.dir, "src/assets/png/og-image.png")),
+  );
+
   return true;
 }
 // biome-ignore lint/suspicious/noConsole: Preserve dev-server progress output.
