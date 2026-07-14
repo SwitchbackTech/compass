@@ -1,5 +1,5 @@
-import { ChevronLeftIcon } from "@web/views/Day/components/Icons/ChevronLeftIcon";
-import { ChevronRightIcon } from "@web/views/Day/components/Icons/ChevronRightIcon";
+import { ChevronLeftIcon } from "@web/components/Icons/ChevronLeftIcon";
+import { ChevronRightIcon } from "@web/components/Icons/ChevronRightIcon";
 
 export const ArrowButton = ({
   direction,

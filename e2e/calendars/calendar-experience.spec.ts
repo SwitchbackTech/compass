@@ -235,6 +235,19 @@ async function setupCalendarExperiencePage(
         body: JSON.stringify(body),
       });
 
+    if (pathname.endsWith("/api/user/profile")) {
+      // The calendar list header shows the profile email; the catch-all `{}`
+      // below would leave it null and render the anonymous header instead.
+      return json({
+        userId: "e2e-user",
+        email: "e2e@example.com",
+        firstName: "E2E",
+        lastName: "User",
+        name: "E2E User",
+        locale: "en",
+        picture: "",
+      });
+    }
     if (pathname.endsWith("/api/user/metadata")) {
       return json({ google: { connectionState: "HEALTHY" } });
     }
@@ -304,9 +317,15 @@ test("sidebar lists calendars, coalesces a visibility toggle, and shows card ide
   const sidebar = page.locator("#sidebar");
   const grid = page.locator("#mainGrid");
 
+  // The list header is the account email; the primary calendar's own name
+  // (which duplicates it) is replaced by a "primary" row.
   await expect(
-    sidebar.getByText(CALENDAR_A_NAME, { exact: true }),
+    sidebar.getByRole("heading", { name: "e2e@example.com" }),
   ).toBeVisible();
+  await expect(sidebar.getByText("primary", { exact: true })).toBeVisible();
+  await expect(sidebar.getByText(CALENDAR_A_NAME, { exact: true })).toHaveCount(
+    0,
+  );
   await expect(
     sidebar.getByText(CALENDAR_B_NAME, { exact: true }),
   ).toBeVisible();
