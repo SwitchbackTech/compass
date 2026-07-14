@@ -13,7 +13,7 @@ import {
   DATA_EVENT_ELEMENT_ID,
   ZIndex,
 } from "@web/common/constants/web.constants";
-import { darken } from "@web/common/styles/color.utils";
+import { darken, isDark } from "@web/common/styles/color.utils";
 import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { SpaceCharacter } from "@web/components/SpaceCharacter";
@@ -67,7 +67,15 @@ const CalendarAllDayEventCardBase = (
   // contrast minimum. Darkening only the fill keeps the (fixed) title color's
   // contrast ratio intact.
   const bgColor = isInPast ? darken(baseColor, 5) : baseColor;
-  const hoverBgColor = !isPlaceholder ? hoverColor : bgColor;
+  // isInPast is excluded here (falls through to bgColor) so a past event
+  // stays dimmed on hover instead of snapping to full brightness.
+  const hoverBgColor = !isPlaceholder && !isInPast ? hoverColor : bgColor;
+  // The fill only ever gets darkened for past events, never lightened, but
+  // check dynamically (matching CalendarTimedEventCard) rather than assuming
+  // a fixed dark title color stays safe if the fill or darken amount changes.
+  const titleColorClassName = isDark(bgColor)
+    ? "text-text-lighter"
+    : "text-text-dark";
 
   const eventStyle = {
     "--event-bg": bgColor,
@@ -150,12 +158,17 @@ const CalendarAllDayEventCardBase = (
           "pr-3.5": showRepeatIcon,
         })}
       >
-        <span className="relative min-w-0 truncate text-text-dark text-xs">
+        <span
+          className={cn(
+            "relative min-w-0 truncate text-xs",
+            titleColorClassName,
+          )}
+        >
           {event.title}
           <SpaceCharacter />
         </span>
       </div>
-      {showRepeatIcon && <GridEventRepeatIcon baseColor={baseColor} />}
+      {showRepeatIcon && <GridEventRepeatIcon baseColor={bgColor} />}
       {/* biome-ignore lint/a11y/noStaticElementInteractions: Resize handles are pointer-only drag targets hidden from assistive tech. */}
       <div
         aria-hidden="true"

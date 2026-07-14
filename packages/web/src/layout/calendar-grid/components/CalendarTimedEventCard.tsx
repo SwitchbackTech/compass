@@ -132,8 +132,12 @@ const CalendarTimedEventCardBase = (
       : selectedBoxShadow
     : boxShadow;
 
+  // isInPast is excluded here (falls through to bgColor, i.e. pastColor) so
+  // a past event stays dimmed on hover instead of snapping to full brightness.
   const hoverBgColor =
-    !isDraft && !isPlaceholder && !isResizing ? hoverColor : bgColor;
+    !isDraft && !isPlaceholder && !isResizing && !isInPast
+      ? hoverColor
+      : bgColor;
   // The fill is neutral and its lightness swings widely across states (the
   // draft overlay in particular darkens far more than the others), so the
   // title needs a text color chosen per-state rather than one fixed value to
@@ -294,7 +298,7 @@ const CalendarTimedEventCardBase = (
           </>
         )}
       </div>
-      {showRepeatIcon && <GridEventRepeatIcon baseColor={baseColor} />}
+      {showRepeatIcon && <GridEventRepeatIcon baseColor={bgColor} />}
     </div>
   );
 };
