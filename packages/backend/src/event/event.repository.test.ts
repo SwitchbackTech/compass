@@ -314,6 +314,46 @@ describe("EventRepository", () => {
     });
   });
 
+  describe("findUnlinkedOccurrences", () => {
+    it("finds timed and all-day anchors only within the requested series", async () => {
+      const seriesId = new ObjectId();
+      const otherSeriesId = new ObjectId();
+      const timed = buildEvent({
+        recurrence: { kind: "occurrence", seriesId },
+      });
+      const allDay = buildEvent({
+        schedule: { kind: "allDay", start: "2026-07-15", end: "2026-07-16" },
+        recurrence: { kind: "occurrence", seriesId },
+      });
+      const otherSeries = buildEvent({
+        recurrence: { kind: "occurrence", seriesId: otherSeriesId },
+      });
+      const alreadyLinked = buildEvent({
+        recurrence: { kind: "occurrence", seriesId },
+        externalReference: {
+          provider: "google",
+          eventId: "linked",
+          recurringEventId: "series",
+        },
+      });
+      await eventRepository.insertMany([
+        timed,
+        allDay,
+        otherSeries,
+        alreadyLinked,
+      ]);
+
+      const found = await eventRepository.findUnlinkedOccurrences(seriesId, [
+        new Date("2026-07-14T15:00:00.000Z"),
+        new Date("2026-07-15T00:00:00.000Z"),
+      ]);
+
+      expect(found.map((event) => event._id.toHexString()).sort()).toEqual(
+        [timed._id.toHexString(), allDay._id.toHexString()].sort(),
+      );
+    });
+  });
+
   describe("deleteBySeriesId", () => {
     it("deletes the base and every occurrence", async () => {
       const base = buildEvent({

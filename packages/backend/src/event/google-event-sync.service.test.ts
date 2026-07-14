@@ -2,6 +2,7 @@ import { ObjectId } from "mongodb";
 import { type gSchema$Event } from "@core/types/gcal";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
+import gcalService from "@backend/common/services/gcal/gcal.service";
 import { type EventRecord } from "@backend/event/event.record";
 import { eventRepository } from "@backend/event/event.repository";
 import { GoogleEventSync } from "@backend/event/google-event-sync.service";
@@ -39,6 +40,27 @@ const googleEvent = (id: string): gSchema$Event => ({
     timeZone: "America/Denver",
   },
 });
+
+const googleInstance = (
+  recurringEventId: string,
+  index: number,
+): gSchema$Event => {
+  const start = new Date("2026-01-01T15:00:00.000Z");
+  start.setUTCDate(start.getUTCDate() + index);
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  return {
+    id: `${recurringEventId}-${index}`,
+    recurringEventId,
+    originalStartTime: { dateTime: start.toISOString() },
+    summary: `Occurrence ${index}`,
+    start: { dateTime: start.toISOString(), timeZone: "America/Denver" },
+    end: { dateTime: end.toISOString(), timeZone: "America/Denver" },
+  };
+};
+
+const asInstancePages = async function* (...pages: gSchema$Event[][]) {
+  for (const items of pages) yield { items };
+};
 
 describe("GoogleEventSync", () => {
   afterEach(() => jest.restoreAllMocks());
@@ -95,6 +117,94 @@ describe("GoogleEventSync", () => {
       "cancelled",
       undefined,
     );
+  });
+
+  it("writes a page of recurring instances in one batch", async () => {
+    const base = {
+      ...googleEvent("series"),
+      recurrence: ["RRULE:FREQ=DAILY;COUNT=2500"],
+    };
+    const instances = Array.from({ length: 2500 }, (_, index) =>
+      googleInstance("series", index),
+    );
+    const findSpy = jest
+      .spyOn(eventRepository, "findByExternalReference")
+      .mockResolvedValue(null);
+    jest
+      .spyOn(eventRepository, "findByExternalReferences")
+      .mockResolvedValue([]);
+    const unlinkedSpy = jest
+      .spyOn(eventRepository, "findUnlinkedOccurrences")
+      .mockResolvedValue([]);
+    const insertSpy = jest
+      .spyOn(eventRepository, "insertOne")
+      .mockImplementation(async (record) => record);
+    const bulkSpy = jest
+      .spyOn(eventRepository, "bulkReplace")
+      .mockResolvedValue();
+    jest
+      .spyOn(gcalService, "getBaseRecurringEventInstances")
+      .mockReturnValue(asInstancePages(instances));
+    const sync = new GoogleEventSync({} as GoogleRequestContext, calendar);
+
+    const result = await sync.apply([base], 2500);
+
+    expect(result).toMatchObject({ processed: 2501, saved: 2501 });
+    expect(findSpy).toHaveBeenCalledTimes(1);
+    expect(insertSpy).toHaveBeenCalledTimes(1);
+    expect(unlinkedSpy).toHaveBeenCalledTimes(1);
+    expect(bulkSpy).toHaveBeenCalledTimes(1);
+    expect(bulkSpy.mock.calls[0]![0]).toHaveLength(2500);
+  });
+
+  it("adopts unlinked local occurrences during a batched import", async () => {
+    const base = {
+      ...googleEvent("series"),
+      recurrence: ["RRULE:FREQ=DAILY;COUNT=1"],
+    };
+    const instance = googleInstance("series", 0);
+    const unlinked: EventRecord = {
+      _id: new ObjectId(),
+      calendarId: calendar._id,
+      content: { kind: "details", title: "local", description: "" },
+      schedule: {
+        kind: "timed",
+        start: new Date(instance.originalStartTime!.dateTime!),
+        end: new Date(instance.end!.dateTime!),
+        timeZone: "America/Denver",
+      },
+      recurrence: { kind: "occurrence", seriesId: new ObjectId() },
+      externalReference: null,
+      createdAt: new Date("2025-01-01T00:00:00.000Z"),
+      updatedAt: null,
+    };
+    jest
+      .spyOn(eventRepository, "findByExternalReference")
+      .mockResolvedValue(null);
+    jest
+      .spyOn(eventRepository, "findByExternalReferences")
+      .mockResolvedValue([]);
+    jest
+      .spyOn(eventRepository, "findUnlinkedOccurrences")
+      .mockResolvedValue([unlinked]);
+    jest
+      .spyOn(eventRepository, "insertOne")
+      .mockImplementation(async (record) => record);
+    const bulkSpy = jest
+      .spyOn(eventRepository, "bulkReplace")
+      .mockResolvedValue();
+    jest
+      .spyOn(gcalService, "getBaseRecurringEventInstances")
+      .mockReturnValue(asInstancePages([instance]));
+    const sync = new GoogleEventSync({} as GoogleRequestContext, calendar);
+
+    await sync.apply([base]);
+
+    expect(bulkSpy.mock.calls[0]![0][0]).toMatchObject({
+      _id: unlinked._id,
+      createdAt: unlinked.createdAt,
+      externalReference: { eventId: instance.id },
+    });
   });
 
   it("preserves database identity when replacing an existing event", async () => {
