@@ -11,12 +11,13 @@ import { ArrowCounterClockwiseIcon } from "@phosphor-icons/react";
 import { useNavigate } from "@tanstack/react-router";
 import { useCallback, useRef, useState } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
+import { type SyncStatusVariant } from "@web/calendars/sync-status.types";
 import { eventCommandPaletteItems } from "@web/common/constants/event.cmd.constants";
 import { moreCommandPaletteItems } from "@web/common/constants/more.cmd.constants";
 import { getNavigationCommandItems } from "@web/common/constants/navigation.cmd.constants";
 import { Z_INDEX_MODAL } from "@web/common/constants/web.constants";
 import { useAuthCmdItems } from "@web/components/CommandPalette/hooks/useAuthCmdItems";
-import { useGoogleCmdItems } from "@web/components/CommandPalette/hooks/useGoogleCmdItems";
+import { useCalendarSyncCmdItems } from "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems";
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
@@ -31,6 +32,13 @@ import {
   type ViewName,
 } from "@web/shortcuts/shortcuts.constants";
 import { type CommandSection } from "./command-palette.types";
+
+const SYNC_STATUS_VARIANT_CLASSNAME: Record<SyncStatusVariant, string> = {
+  syncing: "c-sync-text-wave",
+  healthy: "text-text-lighter",
+  warning: "text-status-warning",
+  error: "text-status-error",
+};
 
 interface CommandPaletteProps {
   currentView: ViewName;
@@ -70,7 +78,7 @@ export const CommandPalette = ({
 }: CommandPaletteProps) => {
   const open = useSettingsStore(selectIsCmdPaletteOpen);
   const navigate = useNavigate();
-  const googleCmdItems = useGoogleCmdItems();
+  const { items: calendarCmdItems, syncStatus } = useCalendarSyncCmdItems();
   const subscribeCmdItems = useSubscribeCmdItems();
   const authCmdItems = useAuthCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
@@ -130,7 +138,7 @@ export const CommandPalette = ({
       id: "settings",
       heading: "Settings",
       items: [
-        ...googleCmdItems,
+        ...calendarCmdItems,
         ...subscribeCmdItems,
         ...authCmdItems,
         ...logoutCmdItems,
@@ -180,6 +188,14 @@ export const CommandPalette = ({
           ref={refs.setFloating}
           className="mt-[15vh] h-fit w-[640px] max-w-[90vw] overflow-hidden rounded-xl border border-border-primary bg-bg-secondary shadow-[0_16px_48px_var(--color-shadow-default)]"
         >
+          {syncStatus ? (
+            <div
+              role="status"
+              className={`px-4 pt-3 text-xs ${SYNC_STATUS_VARIANT_CLASSNAME[syncStatus.variant]}`}
+            >
+              {syncStatus.text}
+            </div>
+          ) : null}
           <input
             {...getReferenceProps({
               onKeyDown(event) {

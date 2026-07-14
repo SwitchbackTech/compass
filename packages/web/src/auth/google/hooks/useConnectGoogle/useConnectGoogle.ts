@@ -107,7 +107,5 @@ export const useConnectGoogle = (): UseConnectGoogleResult => {
     ...getGoogleConnectionConfig(state, onOpenGoogleAuth, onRepairGoogle),
     isAvailable,
     state,
-    onRepairGoogle,
-    onOpenGoogleAuth,
   };
 };

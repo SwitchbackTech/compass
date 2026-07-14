@@ -4,6 +4,7 @@ import { fireEvent, screen, waitFor } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
 import { renderWithStore } from "@web/__tests__/render-with-store";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
+import { type SyncStatus } from "@web/calendars/sync-status.types";
 import { onViewCommand } from "@web/common/utils/dom/view-command-bus";
 import {
   undoHistoryActions,
@@ -41,22 +42,29 @@ afterAll(() => {
 // The other Settings-section hooks (auth/logout/subscribe) hang off session
 // state that other suites mock globally (bun's mock.module leaks across
 // files), so their items are order-dependent and we don't assert on them
-// here — each has its own dedicated test. We stub only useGoogleCmdItems (no
-// other importer, no dedicated test) to give the Settings section one
+// here — each has its own dedicated test. We stub only useCalendarSyncCmdItems
+// (no other importer, no dedicated test) to give the Settings section one
 // deterministic item and to skip its real async /config fetch. We
 // deliberately do NOT stub useSubscribeCmdItems: even a restorable stub would
 // still evaluate (and permanently cache) the real module the first time,
 // binding its `UserApi` import ahead of useSubscribeCmdItems.test.ts's own
 // mock and breaking that file's assertions instead.
-mock.module("@web/components/CommandPalette/hooks/useGoogleCmdItems", () => ({
-  useGoogleCmdItems: () => [
-    {
-      id: "connect-google-calendar",
-      label: "Connect Google Calendar",
-      icon: PlusIcon,
-    },
-  ],
-}));
+let mockSyncStatus: SyncStatus = null;
+mock.module(
+  "@web/components/CommandPalette/hooks/useCalendarSyncCmdItems",
+  () => ({
+    useCalendarSyncCmdItems: () => ({
+      items: [
+        {
+          id: "connect-google-calendar",
+          label: "Connect Google Calendar",
+          icon: PlusIcon,
+        },
+      ],
+      syncStatus: mockSyncStatus,
+    }),
+  }),
+);
 
 const { CommandPalette, filterSections } = await import("./CommandPalette");
 
@@ -93,6 +101,7 @@ describe("CommandPalette", () => {
     mockNavigate.mockClear();
     onGoToToday.mockClear();
     onShowShortcuts.mockClear();
+    mockSyncStatus = null;
   });
 
   it("renders all sections with items and focuses the input on mount", () => {
@@ -266,6 +275,37 @@ describe("CommandPalette", () => {
     fireEvent.click(row as HTMLButtonElement);
     expect(onShowShortcuts).toHaveBeenCalledTimes(1);
     expect(isOpen()).toBe(false);
+  });
+
+  it("renders no sync status line when there is no sync status", () => {
+    renderPalette();
+    expect(screen.queryByRole("status")).not.toBeInTheDocument();
+  });
+
+  it("renders the sync status line above the input with the variant color", () => {
+    mockSyncStatus = {
+      variant: "warning",
+      text: "Calendar is out of date",
+    };
+    renderPalette();
+
+    const status = screen.getByRole("status");
+    expect(status).toHaveTextContent("Calendar is out of date");
+    expect(status).toHaveClass("text-status-warning");
+    expect(status).not.toHaveAttribute("role", "option");
+
+    // Survives an unrelated search that empties the list.
+    fireEvent.change(getInput(), { target: { value: "zzzzz" } });
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Calendar is out of date",
+    );
+  });
+
+  it("shows the shimmer class for a syncing status", () => {
+    mockSyncStatus = { variant: "syncing", text: "Syncing calendar…" };
+    renderPalette();
+
+    expect(screen.getByRole("status")).toHaveClass("c-sync-text-wave");
   });
 });
 

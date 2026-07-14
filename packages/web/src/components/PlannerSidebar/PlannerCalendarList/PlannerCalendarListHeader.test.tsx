@@ -1,21 +1,17 @@
 import "@testing-library/jest-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { type GoogleUiState } from "@web/auth/google/hooks/useConnectGoogle/useConnectGoogle.types";
 import { afterAll, beforeEach, describe, expect, it, mock } from "bun:test";
 
 const mockOpenModal = mock();
-const mockOnRepairGoogle = mock();
-const mockOnOpenGoogleAuth = mock();
 let mockEmail: string | undefined;
 let mockGoogleState: GoogleUiState = "NOT_CONNECTED";
 let mockIsAnonymousDirty = false;
 const mockUseConnectGoogle = mock(() => ({
   state: mockGoogleState,
-  onRepairGoogle: mockOnRepairGoogle,
-  onOpenGoogleAuth: mockOnOpenGoogleAuth,
 }));
 
 mock.module("@web/auth/compass/state/auth.state.util", () => ({
@@ -93,8 +89,6 @@ describe("PlannerCalendarListHeader", () => {
     mockGoogleState = "NOT_CONNECTED";
     mockIsAnonymousDirty = false;
     mockOpenModal.mockClear();
-    mockOnRepairGoogle.mockClear();
-    mockOnOpenGoogleAuth.mockClear();
     mockUseConnectGoogle.mockClear();
   });
 
@@ -151,11 +145,12 @@ describe("PlannerCalendarListHeader", () => {
     const email = screen.getByText("ahab@pequod.com");
     expect(email.tagName).toBe("SPAN");
     expect(email).not.toHaveAttribute("tabindex");
+    expect(email).toHaveClass("text-text-lighter");
     expect(screen.queryByRole("status")).toBeNull();
     expect(screen.queryByRole("button")).toBeNull();
   });
 
-  it("shows the healthy variant and 'Up-to-date' tooltip on hover", async () => {
+  it("renders a plain, neutral email heading with no tooltip when healthy", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
@@ -163,20 +158,20 @@ describe("PlannerCalendarListHeader", () => {
     renderHeader();
 
     const email = screen.getByText("ahab@pequod.com");
+    expect(email.tagName).toBe("SPAN");
     expect(email).toHaveClass("text-text-lighter");
-    expect(screen.getByRole("status")).toHaveTextContent("Up-to-date");
+    expect(email).not.toHaveClass("c-sync-text-wave");
+    expect(screen.queryByRole("status")).toBeNull();
 
     await user.hover(email);
-    await waitFor(() => {
-      expect(screen.getByRole("tooltip")).toHaveTextContent("Up-to-date");
-    });
+    expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
   it.each([
     "IMPORTING",
     "repairing",
     "checking",
-  ] as const)("shows the wave shimmer class and 'Syncing…' copy for %s", async (state) => {
+  ] as const)("shows the wave shimmer and a generic syncing status for %s, with no tooltip", async (state) => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = state;
@@ -185,100 +180,74 @@ describe("PlannerCalendarListHeader", () => {
 
     const email = screen.getByText("ahab@pequod.com");
     expect(email).toHaveClass("c-sync-text-wave");
+    expect(screen.getByRole("status")).toHaveTextContent("Syncing…");
 
     await user.hover(email);
-    await waitFor(() => {
-      expect(screen.getByRole("tooltip")).toHaveTextContent("Syncing…");
-    });
+    expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
-  it("shows a warning treatment and lets 'Sync now' trigger onRepairGoogle, without saying 'repair'", async () => {
+  it("shows no warning color or tooltip/action when out of date, and clicking does nothing", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "ATTENTION";
 
     renderHeader();
 
-    const trigger = screen.getByText("ahab@pequod.com");
-    expect(trigger).toHaveClass("text-status-warning");
-    expect(trigger.tagName).toBe("BUTTON");
+    const email = screen.getByText("ahab@pequod.com");
+    expect(email.tagName).toBe("SPAN");
+    expect(email).toHaveClass("text-text-lighter");
+    expect(email).not.toHaveClass("text-status-warning");
+    expect(screen.queryByRole("status")).toBeNull();
 
-    await user.hover(trigger);
-    const tooltip = await screen.findByRole("tooltip");
-    expect(tooltip.textContent?.toLowerCase()).not.toContain("repair");
+    await user.hover(email);
+    expect(screen.queryByRole("tooltip")).toBeNull();
 
-    const syncNowButton = await screen.findByRole("button", {
-      name: "Sync now",
-    });
-    await user.click(syncNowButton);
-    expect(mockOnRepairGoogle).toHaveBeenCalledTimes(1);
+    await user.click(email);
+    expect(screen.queryByRole("button")).toBeNull();
   });
 
-  it("clicking the email itself also triggers the warning action (keyboard path)", async () => {
-    const user = userEvent.setup();
-    mockEmail = "ahab@pequod.com";
-    mockGoogleState = "ATTENTION";
-
-    renderHeader();
-
-    await user.click(screen.getByText("ahab@pequod.com"));
-    expect(mockOnRepairGoogle).toHaveBeenCalledTimes(1);
-  });
-
-  it("shows an error treatment and lets 'Reconnect' trigger onOpenGoogleAuth", async () => {
+  it("shows no error color or tooltip/action when reconnect is required", async () => {
     const user = userEvent.setup();
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "RECONNECT_REQUIRED";
 
     renderHeader();
 
-    const trigger = screen.getByText("ahab@pequod.com");
-    expect(trigger).toHaveClass("text-status-error");
+    const email = screen.getByText("ahab@pequod.com");
+    expect(email).toHaveClass("text-text-lighter");
+    expect(email).not.toHaveClass("text-status-error");
+    expect(screen.queryByRole("status")).toBeNull();
 
-    await user.hover(trigger);
-    const reconnectButton = await screen.findByRole("button", {
-      name: "Reconnect",
-    });
-    await user.click(reconnectButton);
-    expect(mockOnOpenGoogleAuth).toHaveBeenCalledTimes(1);
+    await user.hover(email);
+    expect(screen.queryByRole("tooltip")).toBeNull();
   });
 
-  it("shows a syncing-changes indicator instead of the healthy state while an event mutation is pending", () => {
+  it("shows the shimmer and syncing status while an event mutation is pending", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "HEALTHY";
 
     renderHeader({ pendingEventIds: ["event-1"] });
 
-    expect(screen.getByText("Syncing changes…")).toBeTruthy();
-    expect(screen.queryByText("Up-to-date")).toBeNull();
+    const email = screen.getByText("ahab@pequod.com");
+    expect(email).toHaveClass("c-sync-text-wave");
+    expect(screen.getByRole("status")).toHaveTextContent("Syncing…");
   });
 
-  it("shows the syncing-changes indicator for pending mutations even without Google", () => {
+  it("shows the shimmer for pending mutations even without Google", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "NOT_CONNECTED";
 
     renderHeader({ pendingEventIds: ["event-1"] });
 
-    expect(screen.getByText("Syncing changes…")).toBeTruthy();
+    expect(screen.getByText("ahab@pequod.com")).toHaveClass("c-sync-text-wave");
   });
 
-  it("keeps actionable Google states visible over pending event mutations", () => {
+  it("shows the shimmer for pending mutations even when reconnect is required", () => {
     mockEmail = "ahab@pequod.com";
     mockGoogleState = "RECONNECT_REQUIRED";
 
     renderHeader({ pendingEventIds: ["event-1"] });
 
-    expect(screen.getByRole("status")).toHaveTextContent("needs reconnecting");
-    expect(screen.queryByText("Syncing changes…")).toBeNull();
-  });
-
-  it("keeps Google's own syncing label over pending event mutations", () => {
-    mockEmail = "ahab@pequod.com";
-    mockGoogleState = "IMPORTING";
-
-    renderHeader({ pendingEventIds: ["event-1"] });
-
-    expect(screen.getByText("Syncing…")).toBeTruthy();
-    expect(screen.queryByText("Syncing changes…")).toBeNull();
+    expect(screen.getByText("ahab@pequod.com")).toHaveClass("c-sync-text-wave");
   });
 });

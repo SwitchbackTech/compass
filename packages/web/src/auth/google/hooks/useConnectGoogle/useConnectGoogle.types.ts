@@ -5,24 +5,15 @@ export type GoogleUiState = "checking" | "repairing" | GoogleConnectionState;
 
 export type CommandActionIcon = Icon;
 
-export type GoogleAccountSummaryStatus = {
-  variant: "syncing" | "healthy" | "warning" | "error";
-  tooltip: string;
-  action?: { label: string; onClick: () => void };
-} | null;
-
 export type GoogleUiConfig = {
   commandAction: {
     label: string;
     icon: CommandActionIcon;
-    isDisabled: boolean;
-    onSelect?: () => void;
-  };
+    onSelect: () => void;
+  } | null;
 };
 
 export type UseConnectGoogleResult = GoogleUiConfig & {
   isAvailable: boolean;
   state: GoogleUiState;
-  onRepairGoogle: () => void;
-  onOpenGoogleAuth: () => void;
 };
