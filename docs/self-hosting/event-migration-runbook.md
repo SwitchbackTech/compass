@@ -1,5 +1,11 @@
 # Event migration runbook (sub-calendar v1)
 
+> For Compass-operated staging and the eventual coordinated production release,
+> use the
+> [Google sub-calendar big-bang deployment runbook](../../team/architect/google-subcalendar-big-bang-runbook.md).
+> It splits pre-rename migrations from post-cutover repairs; an unbounded
+> pre-rename `migrate up` is no longer safe.
+
 How to run, verify, and — later — cut over the calendar-owned event migration
 from plan packet `02`. Read the whole page before touching production.
 
@@ -192,18 +198,11 @@ promptly or not at all.
   the new schema — no production code reads it.
 - Dev databases use the `_dev.` collection prefix; the commands above show
   production names.
-- `priority-data-cleanup` (`2026.07.14T10.00.00`) is unrelated to this
-  runbook's two migrations and does not require the staging-first rollout
-  above — it's independent storage hygiene, not a schema cutover. The
-  priority-tagging feature was removed (events, contracts, and UI); this
-  migration `$unset`s the now-dead `priority` field from legacy `event`
-  documents and drops the orphaned standalone `priority` collection from the
-  old priority-CRUD feature. Safe to run anytime, in any order relative to
-  the calendar/event-record migrations — it does not touch `event_new`, the
-  `calendar` collection, or any validator. `event_new` needs no equivalent
-  cleanup: it's fully rebuilt from legacy `event` on every backfill rerun, so
-  it stops carrying `priority` automatically the next time
-  `event-record-backfill` runs (its transform no longer reads the field).
-  Like the other migrations here, its `down()` is a non-destructive no-op —
-  the removed field and dropped collection are not recoverable without a
-  backup.
+- Priority removal now has an ordered pair of post-cutover migrations.
+  `event-priority-schema-repair` (`2026.07.14T09.59.00`) reapplies the current
+  strict `EventRecordSchema` to the active final `event` collection and removes
+  stale `priority` fields. It must run before `priority-data-cleanup`
+  (`2026.07.14T10.00.00`), which also drops the orphaned standalone `priority`
+  collection. Run this pair only after `event_new` has become the active
+  `event`; before the rename, `event` is legacy-shaped. Both `down()` methods
+  are non-destructive no-ops, so rollback is from backup.
