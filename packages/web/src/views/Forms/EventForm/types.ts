@@ -1,5 +1,5 @@
 import { type Dispatch, type Ref, type SetStateAction } from "react";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 
@@ -20,6 +20,6 @@ export interface GridEventFormProps {
 
 type EventField = "title" | "description" | "startDate" | "endDate";
 export type SetEventFormField = (
-  field: Partial<LegacyEvent>,
-  value?: LegacyEvent[EventField],
+  field: Partial<CompassEvent>,
+  value?: CompassEvent[EventField],
 ) => void;

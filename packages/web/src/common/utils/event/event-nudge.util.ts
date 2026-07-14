@@ -1,5 +1,5 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { CALENDAR_GRID_TIME_STEP } from "@web/layout/calendar-grid/calendarGrid.constants";
 
@@ -33,7 +33,7 @@ export const isTimedEventInsideOneDay = (start: Dayjs, end: Dayjs) => {
 };
 
 export const nudgeEventDates = (
-  event: Pick<LegacyEvent, "startDate" | "endDate" | "isAllDay">,
+  event: Pick<CompassEvent, "startDate" | "endDate" | "isAllDay">,
   movement: EventNudgeMovement,
 ): { startDate: string; endDate: string } | null => {
   if (!event.startDate || !event.endDate) return null;

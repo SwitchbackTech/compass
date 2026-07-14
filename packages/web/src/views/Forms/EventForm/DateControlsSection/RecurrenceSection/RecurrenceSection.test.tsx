@@ -2,7 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useCallback, useState } from "react";
 import { Origin } from "@core/constants/core.constants";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { createRecurrenceSection } from "./RecurrenceSection";
@@ -34,7 +34,7 @@ function renderRecurrenceSection({
   });
 
   function Harness() {
-    const [event, setEvent] = useState<LegacyEvent | null>(baseEvent());
+    const [event, setEvent] = useState<CompassEvent | null>(baseEvent());
     const handleSetEvent = useCallback<typeof setEvent>((nextEvent) => {
       setEventSpy(nextEvent);
       setEvent(nextEvent);

@@ -1,8 +1,8 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { type PropsWithChildren, useState } from "react";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   cleanup,
@@ -44,16 +44,16 @@ import "@testing-library/jest-dom";
 import { Categories_Event } from "@web/common/types/web.event.types";
 
 let pendingEventIds: string[] = [];
-let seededWeekEvents: LegacyEvent[] = [];
+let seededWeekEvents: CompassEvent[] = [];
 
 // DateTimeSchema requires an explicit offset; several fixtures below already
 // carry one ("Z"), but normalize defensively.
 const withOffset = (dateTime: string) =>
   /[Zz]|[+-]\d\d:\d\d$/.test(dateTime) ? dateTime : `${dateTime}Z`;
 
-// The query cache (unlike draft.store.ts, still legacy LegacyEvent-shaped
+// The query cache (unlike draft.store.ts, still legacy CompassEvent-shaped
 // per its own TODO) requires strict-contract `Event`s.
-const toStrictEvent = (event: LegacyEvent): Event =>
+const toStrictEvent = (event: CompassEvent): Event =>
   createMockEvent({
     id: EventIdSchema.parse(event._id!),
     content: {
@@ -129,8 +129,8 @@ const measurements = {
 // Seed the event query cache (read when the local Provider mounts its
 // QueryClient) and the draft Zustand store.
 const seedGrid = (
-  events: LegacyEvent[] = [],
-  draftEvent: LegacyEvent | null = null,
+  events: CompassEvent[] = [],
+  draftEvent: CompassEvent | null = null,
 ) => {
   seededWeekEvents = events;
 
@@ -188,7 +188,9 @@ const createWeekProps = () => ({
 // cache (toStrictEvent above) requires a real ObjectId, so every fixture
 // gets a generated one; tests that need to assert on "which event" read
 // `event._id` back off the returned fixture, never a literal.
-const createSavedEvent = (overrides: Partial<LegacyEvent> = {}): LegacyEvent =>
+const createSavedEvent = (
+  overrides: Partial<CompassEvent> = {},
+): CompassEvent =>
   ({
     endDate: "2024-01-15T10:00:00.000Z",
     isAllDay: false,
@@ -197,7 +199,7 @@ const createSavedEvent = (overrides: Partial<LegacyEvent> = {}): LegacyEvent =>
     title: "Saved event",
     ...overrides,
     _id: createObjectIdString(),
-  }) as LegacyEvent;
+  }) as CompassEvent;
 
 const renderMainGrid = () => {
   seedGrid();
@@ -279,7 +281,7 @@ const renderGridRegions = () => {
   return view;
 };
 
-const renderWeekGrid = (events: LegacyEvent[] = []) => {
+const renderWeekGrid = (events: CompassEvent[] = []) => {
   seedGrid(events);
   const dateCalcs = createDateCalcs();
 

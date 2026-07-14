@@ -1,11 +1,11 @@
 import { mar13To19 } from "@core/__mocks__/v1/events/events.allday.3";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { randomUUID } from "node:crypto";
 
 const createId = () => randomUUID();
 
-const assignsRowNumberToEachEvent = (events: LegacyEvent[]) => {
+const assignsRowNumberToEachEvent = (events: CompassEvent[]) => {
   let res = true;
   if (events.length === 0) return false;
   for (const e of events) {
@@ -18,12 +18,12 @@ const assignsRowNumberToEachEvent = (events: LegacyEvent[]) => {
 };
 
 const hasNumericRow = (
-  event: LegacyEvent,
-): event is LegacyEvent & { row: number } => {
+  event: CompassEvent,
+): event is CompassEvent & { row: number } => {
   return "row" in event && typeof event.row === "number";
 };
 
-const noEventsOnSameRow = (events: LegacyEvent[]) => {
+const noEventsOnSameRow = (events: CompassEvent[]) => {
   const rows = events.filter(hasNumericRow).map((event) => event.row);
   const noDuplicates = new Set(rows).size === rows.length;
   return noDuplicates;

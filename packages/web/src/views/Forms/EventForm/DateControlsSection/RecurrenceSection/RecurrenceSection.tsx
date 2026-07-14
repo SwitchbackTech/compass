@@ -1,5 +1,5 @@
 import { type Dispatch, type SetStateAction } from "react";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { isBackendUnavailable as getIsBackendUnavailable } from "@web/api/util/backend-unavailable-error.util";
 import { type CompassSession } from "@web/auth/compass/session/session.types";
 import { useSession } from "@web/auth/compass/session/useSession";
@@ -12,8 +12,8 @@ import { useRecurrence } from "@web/views/Forms/EventForm/DateControlsSection/Re
 
 export interface RecurrenceSectionProps {
   bgColor: string;
-  event: LegacyEvent;
-  setEvent: Dispatch<SetStateAction<LegacyEvent | null>>;
+  event: CompassEvent;
+  setEvent: Dispatch<SetStateAction<CompassEvent | null>>;
 }
 
 interface RecurrenceSectionDependencies {

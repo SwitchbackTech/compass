@@ -94,7 +94,7 @@ bun run test:backend
 
 Add `bun run test:core` if a shared type or mapper changed.
 
-### CLI, migration, or seeder change
+### CLI or migration change
 
 Run:
 

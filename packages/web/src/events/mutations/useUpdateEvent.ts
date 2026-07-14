@@ -28,7 +28,7 @@ import { draftActions } from "@web/events/stores/draft.store";
 // never edits its recurrence rule.
 //
 // draftActions.setEvent still writes into the draft store's legacy
-// `event: LegacyEvent` projection: Day's grid rendering layers read the
+// `event: CompassEvent` projection: Day's grid rendering layers read the
 // in-progress drag/resize position via `selectDraft`, and GridEventDraft has
 // no field for that live pixel geometry (packet-03-phase-3c's documented
 // out-of-scope local drag-geometry state).

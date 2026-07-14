@@ -5,7 +5,7 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { act, type PropsWithChildren, useMemo } from "react";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
 import {
   Categories_Event,
@@ -71,7 +71,7 @@ export function setupDraftState(event: WebEvent) {
   act(() => {
     draftActions.start({
       activity: "sidebarClick",
-      event: event as LegacyEvent,
+      event: event as CompassEvent,
       eventType: Categories_Event.TIMED,
     });
   });

@@ -2,8 +2,8 @@ import { gcalEvents } from "@core/__mocks__/v1/events/gcal/gcal.event";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { timed } from "@core/__mocks__/v1/events/gcal/gcal.timed";
 import { Origin } from "@core/constants/core.constants";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type gSchema$Event } from "@core/types/gcal";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import { MapEvent } from "./map.event";
 
 describe("toCompass", () => {
@@ -29,7 +29,7 @@ describe("toCompass", () => {
         Origin.GOOGLE,
       );
 
-      const hasCancelledEvent = events.some((e: LegacyEvent) => {
+      const hasCancelledEvent = events.some((e: CompassEvent) => {
         return (e as gSchema$Event).status === "cancelled";
       });
 

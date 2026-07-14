@@ -1,8 +1,10 @@
-import { Origin } from "../constants/core.constants";
-import { type LegacyEvent } from "../types/legacy-event.contracts";
-import { validateEvent } from "./event.validator";
+import { Origin } from "@core/constants/core.constants";
+import {
+  type CompassEvent,
+  ValidatedCompassEventSchema,
+} from "@core/types/compass-event.contracts";
 
-describe("validateEvent", () => {
+describe("ValidatedCompassEventSchema", () => {
   it("strips unexpected properties", () => {
     const event = {
       startDate: "2023-01-01",
@@ -12,18 +14,19 @@ describe("validateEvent", () => {
       unexpectedProperty: "unexpectedValue",
     };
 
-    const parsedEvent = validateEvent(event);
+    const parsedEvent = ValidatedCompassEventSchema.parse(event);
     expect(parsedEvent).not.toHaveProperty("unexpectedProperty");
   });
+
   it("validates a correct event", () => {
-    const event: LegacyEvent = {
+    const event: CompassEvent = {
       startDate: "2023-01-01",
       endDate: "2023-01-02",
       origin: Origin.COMPASS,
       user: "user123",
     };
 
-    const parsedEvent = validateEvent(event);
+    const parsedEvent = ValidatedCompassEventSchema.parse(event);
     expect(parsedEvent).toEqual(event);
   });
 
@@ -34,7 +37,7 @@ describe("validateEvent", () => {
       origin: Origin.GOOGLE,
     };
 
-    expect(() => validateEvent(event)).toThrow();
+    expect(() => ValidatedCompassEventSchema.parse(event)).toThrow();
   });
 
   it("invalidates when types are incorrect", () => {
@@ -43,30 +46,30 @@ describe("validateEvent", () => {
       endDate: "2023-01-02",
       origin: "INVALID_ORIGIN",
       user: 123,
-    } as unknown as LegacyEvent;
+    } as unknown as CompassEvent;
 
-    expect(() => validateEvent(event)).toThrow();
+    expect(() => ValidatedCompassEventSchema.parse(event)).toThrow();
   });
 
   it("invalidates when date format is invalid", () => {
-    const event: LegacyEvent = {
+    const event: CompassEvent = {
       startDate: "01-01-2023", // wrong format
       endDate: "2023-02-21",
       origin: Origin.GOOGLE_IMPORT,
       user: "user123",
     };
 
-    expect(() => validateEvent(event)).toThrow();
+    expect(() => ValidatedCompassEventSchema.parse(event)).toThrow();
   });
-});
 
-it("invalidates when datetime format is invalid", () => {
-  const event: LegacyEvent = {
-    startDate: "2023-01-01T05:00:00", //missing offset
-    endDate: "2023-01-02T15:00:00+02:00",
-    origin: Origin.COMPASS,
-    user: "user123",
-  };
+  it("invalidates when datetime format is invalid", () => {
+    const event: CompassEvent = {
+      startDate: "2023-01-01T05:00:00", // missing offset
+      endDate: "2023-01-02T15:00:00+02:00",
+      origin: Origin.COMPASS,
+      user: "user123",
+    };
 
-  expect(() => validateEvent(event)).toThrow();
+    expect(() => ValidatedCompassEventSchema.parse(event)).toThrow();
+  });
 });

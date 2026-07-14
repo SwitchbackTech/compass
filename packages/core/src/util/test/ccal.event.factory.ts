@@ -3,17 +3,17 @@ import { ObjectId } from "bson";
 import { Origin } from "@core/constants/core.constants";
 import {
   type BaseEvent,
+  type CompassEvent,
   type InstanceEvent,
-  type LegacyEvent,
   type StandaloneEvent,
-} from "@core/types/legacy-event.contracts";
+} from "@core/types/compass-event.contracts";
 import { type WithId } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
 import { CompassEventRRule } from "../event/compass.event.rrule";
 
 export const createMockStandaloneEvent = (
-  overrides: Partial<Omit<LegacyEvent, "endDate">> = {},
+  overrides: Partial<Omit<CompassEvent, "endDate">> = {},
   allDayEvent = false,
   dateDiff: Omit<
     Partial<
@@ -133,7 +133,7 @@ export const generateCompassEventDates = ({
   unit?: dayjs.ManipulateType;
   allDay?: boolean;
   timezone?: string;
-} = {}): Pick<LegacyEvent, "startDate" | "endDate"> => {
+} = {}): Pick<CompassEvent, "startDate" | "endDate"> => {
   const timeZone = dayjs.tz.guess();
   const start = dayjs.tz(date ?? faker.date.future(), timeZone);
   const end = start.add(value, unit);

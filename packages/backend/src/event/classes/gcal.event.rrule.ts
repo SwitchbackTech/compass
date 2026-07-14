@@ -3,12 +3,12 @@ import { type Options, RRule, type RRuleStrOptions, rrulestr } from "rrule";
 import { type ParsedOptions } from "rrule/dist/esm/types";
 import { GCAL_MAX_RECURRENCES } from "@core/constants/core.constants";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
+import { type InstanceEvent } from "@core/types/compass-event.contracts";
 import {
   type gSchema$Event,
   type gSchema$EventBase,
   type gSchema$EventInstance,
 } from "@core/types/gcal";
-import { type InstanceEvent } from "@core/types/legacy-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { diffRRuleOptions } from "@core/util/event/event.util";
 import {

@@ -3,12 +3,12 @@ import { ObjectId, type WithoutId } from "mongodb";
 import { type Options } from "rrule";
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import {
   type gSchema$Event,
   type gSchema$EventBase,
   type gSchema$EventInstance,
 } from "@core/types/gcal";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import { type WithId } from "@core/types/type.utils";
 import { isBase } from "@core/util/event/event.util";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";
@@ -23,7 +23,7 @@ export interface State_AfterGcalImport {
     recurring: gSchema$EventBase;
     instances: gSchema$EventInstance[];
   };
-  compassEvents: WithId<LegacyEvent>[];
+  compassEvents: WithId<CompassEvent>[];
 }
 /**
  * simulateGoogleCalendarEventCreation
@@ -63,11 +63,11 @@ export const simulateDbAfterGcalImport = async (
 
   await mongoService.db
     .collection(Collections.EVENT)
-    .insertMany(compassEvents as unknown as WithoutId<LegacyEvent>[]);
+    .insertMany(compassEvents as unknown as WithoutId<CompassEvent>[]);
 
   const compassEventsInDb = (await mongoService.event
     .find({})
-    .toArray()) as unknown as WithId<LegacyEvent>[];
+    .toArray()) as unknown as WithId<CompassEvent>[];
   return {
     gcalEvents,
     compassEvents: compassEventsInDb,

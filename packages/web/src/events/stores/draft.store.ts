@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { IS_DEV } from "@web/common/constants/env.constants";
 import {
   Categories_Event,
@@ -45,18 +45,18 @@ export interface State_DraftEvent {
    * Temporary projection for Day, forms, sidebar, and legacy Week draft
    * interactions. Do not add another store while those consumers migrate.
    */
-  event: LegacyEvent | null;
+  event: CompassEvent | null;
 }
 
 export interface Payload_DraftEvent {
   activity: Activity_DraftEvent;
-  event: LegacyEvent | null;
+  event: CompassEvent | null;
   eventType: Categories_Event;
 }
 
 export interface Payload_Draft_Resize {
   category: Categories_Event;
-  event: LegacyEvent;
+  event: CompassEvent;
   dateToChange: "startDate" | "endDate";
 }
 
@@ -79,7 +79,7 @@ export const initialDraftState: State_DraftEvent = {
   event: null,
 };
 
-const getEventType = (event: LegacyEvent) =>
+const getEventType = (event: CompassEvent) =>
   event.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED;
 
 // Selectors passed to this hook must return primitives or stable references;
@@ -144,7 +144,7 @@ export const draftActions = {
       { type: "startDnd" },
     ),
 
-  startGridClick: (event: LegacyEvent) =>
+  startGridClick: (event: CompassEvent) =>
     useDraftStore.setState(
       {
         gridDraft: null,
@@ -160,7 +160,7 @@ export const draftActions = {
       { type: "startGridClick" },
     ),
 
-  setEvent: (event: LegacyEvent | null) =>
+  setEvent: (event: CompassEvent | null) =>
     useDraftStore.setState(
       (state) => {
         if (!event) {

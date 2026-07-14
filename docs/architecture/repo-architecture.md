@@ -59,7 +59,7 @@ The CLI and database maintenance package. It owns:
 
 - build commands
 - delete flows
-- database migrations and seeders
+- database migrations
 
 Entry point:
 

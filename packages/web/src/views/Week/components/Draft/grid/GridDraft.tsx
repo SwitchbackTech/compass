@@ -1,6 +1,6 @@
 import { type FC, type MouseEvent } from "react";
 import { Origin } from "@core/constants/core.constants";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
   Categories_Event,
@@ -46,7 +46,7 @@ export const GridDraft: FC<Props> = ({
   // the still-unconverted renderer components (GridEvent/AllDayEventMemo)
   // and the forms cluster (EventForm/RecurrenceSection) — see
   // grid-event-draft.adapter.ts's gridEventDraftToSchemaEvent doc comment.
-  const draftSchemaEvent: LegacyEvent | null = draft
+  const draftSchemaEvent: CompassEvent | null = draft
     ? gridEventDraftToSchemaEvent(draft)
     : null;
   const draftAsGridEvent: GridEventEntity | null = draftSchemaEvent

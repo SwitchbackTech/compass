@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { DirtyParser } from "@web/common/utils/parse/dirty.parser";
 import {
@@ -52,7 +52,7 @@ export function RecurrenceScopeDialog() {
 }
 
 interface RecurringEventUpdateScopeDialogContentProps {
-  draft: LegacyEvent | null;
+  draft: CompassEvent | null;
   onUpdateScopeChange: (applyTo: RecurringEventUpdateScope) => void;
   recurrenceChanged?: boolean;
   setRecurrenceUpdateScopeDialogOpen: (isOpen: boolean) => void;

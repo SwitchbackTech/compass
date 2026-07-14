@@ -1,7 +1,7 @@
 import { ObjectId } from "bson";
+import { type ValidatedCompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId, EventIdSchema } from "@core/types/domain-primitives";
 import { type EventRecurrence } from "@core/types/event.contracts";
-import { type ValidatedLegacyEvent } from "@core/types/legacy-event.contracts";
 import {
   type LocalEventRecord,
   LocalEventRecordSchema,
@@ -12,7 +12,7 @@ import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 /** Web-side mirror of `__compassDemoEvent` on legacy local-store rows. */
 const LEGACY_DEMO_EVENT_FIELD = "__compassDemoEvent";
 
-type LegacyLocalEvent = ValidatedLegacyEvent & {
+type LegacyLocalEvent = ValidatedCompassEvent & {
   [LEGACY_DEMO_EVENT_FIELD]?: true;
   order?: number;
   // Historical flag on legacy rows; the "someday" kind has been removed, so

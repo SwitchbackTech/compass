@@ -109,7 +109,7 @@ Use this document to find the first files to inspect for common Compass changes.
 - Build command: `packages/scripts/src/commands/build.ts`
 - Delete command: `packages/scripts/src/commands/delete.ts`
 - Migration command: `packages/scripts/src/commands/migrate.ts`
-- Seeders/migrations: `packages/scripts/src/migrations`, `packages/scripts/src/seeders`
+- Migrations: `packages/scripts/src/migrations`
 
 ## Test Anchors
 

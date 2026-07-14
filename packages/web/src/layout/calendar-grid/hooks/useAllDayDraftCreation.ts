@@ -1,7 +1,7 @@
 import { type MouseEvent as ReactMouseEvent } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
@@ -17,7 +17,7 @@ import {
 
 interface UseAllDayDraftCreationOptions {
   getStartDate: (clientX: number, clientY: number) => string;
-  onCreateDraft?: (event: LegacyEvent) => void;
+  onCreateDraft?: (event: CompassEvent) => void;
   onCreateGridDraft?: (draft: GridEventDraft) => void;
 }
 

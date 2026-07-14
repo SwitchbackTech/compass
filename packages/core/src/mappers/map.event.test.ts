@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { MapEvent } from "@core/mappers/map.event";
-import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import {
   createMockBaseEvent,
   createMockInstance,
@@ -12,7 +12,7 @@ describe("MapEvent.removeProviderData", () => {
     const event = createMockBaseEvent({ _id, gEventId: _id });
     const result = MapEvent.removeProviderData(event);
 
-    expect((result as LegacyEvent).gEventId).toBeUndefined();
+    expect((result as CompassEvent).gEventId).toBeUndefined();
   });
 
   it("removes gEventId, gRecurringEventId and recurrence eventId from an instance event", () => {
@@ -20,8 +20,8 @@ describe("MapEvent.removeProviderData", () => {
     const event = createMockInstance(_id, _id);
     const result = MapEvent.removeProviderData(event);
 
-    expect((result as LegacyEvent).gEventId).toBeUndefined();
-    expect((result as LegacyEvent).gRecurringEventId).toBeUndefined();
-    expect((result as LegacyEvent).recurrence?.eventId).toBeUndefined();
+    expect((result as CompassEvent).gEventId).toBeUndefined();
+    expect((result as CompassEvent).gRecurringEventId).toBeUndefined();
+    expect((result as CompassEvent).recurrence?.eventId).toBeUndefined();
   });
 });

@@ -28,10 +28,6 @@ export default class CompassCLI {
       case cmd === "migrate":
         await runMigrator(MigratorType.MIGRATION);
         break;
-      case cmd === "seed": {
-        await runMigrator(MigratorType.SEEDER);
-        break;
-      }
       default:
         this.validator.exitHelpfully(
           "root",
@@ -56,14 +52,6 @@ export default class CompassCLI {
       .helpOption(false)
       .allowUnknownOption(true)
       .description("run database schema migrations");
-
-    program
-      .enablePositionalOptions(true)
-      .passThroughOptions(true)
-      .command("seed")
-      .helpOption(false)
-      .allowUnknownOption(true)
-      .description("run seed migrations to populate the database with data");
 
     return program;
   }

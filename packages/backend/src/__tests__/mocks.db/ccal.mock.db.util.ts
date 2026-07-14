@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
 import {
   type BaseEvent,
+  type CompassEvent,
   type InstanceEvent,
-  type LegacyEvent,
-} from "@core/types/legacy-event.contracts";
+} from "@core/types/compass-event.contracts";
 import {
   createMockBaseEvent,
   createMockInstance,
@@ -49,7 +49,7 @@ export const createRecurrenceSeries = async (
   };
 };
 
-const withObjectId = (event: LegacyEvent) => {
+const withObjectId = (event: CompassEvent) => {
   return {
     ...event,
     _id: event._id ? new ObjectId(event._id) : new ObjectId(),
