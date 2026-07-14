@@ -497,6 +497,11 @@
     color: var(--date-picker-hover-text);
   }
 
+  & .react-datepicker__day:focus-visible {
+    outline: 2px solid var(--compass-color-accent-primary);
+    outline-offset: 1px;
+  }
+
   & .react-datepicker__day-names {
     display: flex;
     width: 100%;

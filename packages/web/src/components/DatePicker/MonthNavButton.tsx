@@ -19,6 +19,7 @@ export const MonthNavButton = ({
 }: MonthNavButtonProps) => (
   <button
     aria-label={ariaLabel}
+    className="c-focus-ring"
     onClick={onClick}
     onMouseEnter={(e) => {
       if (isSidebarStyle) return;
