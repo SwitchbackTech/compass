@@ -91,7 +91,7 @@ test("aligns the mid-drag visual and drops on the hovered day at a reduced day c
 
 const getDayColumnBoxes = async (page: Page) =>
   page.evaluate(() =>
-    [...document.querySelectorAll("#timedColumns > [role='columnheader']")]
+    [...document.querySelectorAll("#timedColumns th")]
       .map((node) => node.getBoundingClientRect())
       .filter((rect) => rect.width > 0)
       .map((rect) => ({ left: rect.left, right: rect.right })),
