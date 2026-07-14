@@ -40,8 +40,10 @@ export const updateCalendarDraftEventTimeLabel = (
 };
 
 export const createCalendarInteractionDraftEventMount = ({
+  cursor,
   source,
 }: {
+  cursor?: string;
   source: HTMLElement;
 }): FloatingDraftEventMount => {
   const rect = source.getBoundingClientRect();
@@ -58,6 +60,7 @@ export const createCalendarInteractionDraftEventMount = ({
 
   return {
     clone,
+    cursor,
     rect: {
       height: rect.height,
       left: rect.left,
