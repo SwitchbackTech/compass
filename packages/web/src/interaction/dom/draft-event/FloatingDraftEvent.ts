@@ -1,14 +1,18 @@
 import { ZIndex } from "@web/common/constants/web.constants";
 import { type CalendarInteractionPoint } from "../../CalendarInteractionSession";
+import { lockGlobalCursor } from "../cursor/globalCursorLock";
 
 export class FloatingDraftEvent {
   #node: HTMLElement | null = null;
+  #releaseCursor: (() => void) | null = null;
 
   mount({
     clone,
+    cursor,
     rect,
   }: {
     clone: HTMLElement;
+    cursor?: string;
     rect: {
       height: number;
       left: number;
@@ -32,6 +36,10 @@ export class FloatingDraftEvent {
 
     document.body.append(clone);
     this.#node = clone;
+
+    if (cursor) {
+      this.#releaseCursor = lockGlobalCursor(cursor);
+    }
   }
 
   update({
@@ -66,6 +74,9 @@ export class FloatingDraftEvent {
   }
 
   unmount() {
+    this.#releaseCursor?.();
+    this.#releaseCursor = null;
+
     this.#node?.remove();
     this.#node = null;
   }
