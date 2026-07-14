@@ -139,35 +139,25 @@ export const useWeekShortcuts = ({
     void createTimedDraft(isCurrentWeek, startOfView, "createShortcut");
   }, [isCurrentWeek, startOfView]);
 
-  const createAllDayDraftEventRef = useRef(createAllDayDraftEvent);
-  const createTimedDraftEventRef = useRef(createTimedDraftEvent);
-
-  useEffect(() => {
-    createAllDayDraftEventRef.current = createAllDayDraftEvent;
-  }, [createAllDayDraftEvent]);
-
-  useEffect(() => {
-    createTimedDraftEventRef.current = createTimedDraftEvent;
-  }, [createTimedDraftEvent]);
-
   // The command palette's create-event rows emit these same commands
   // (event.cmd.constants.ts) so the "C"/"A" keys and the palette rows run
-  // identical code.
+  // identical code. Resubscribes only when the week in view changes (these
+  // callbacks are memoized on startOfView/endOfView/isCurrentWeek).
   useEffect(() => {
     const unsubscribeCreateAllDayDraft = onViewCommand(
       "CREATE_ALLDAY_DRAFT",
-      () => createAllDayDraftEventRef.current(),
+      createAllDayDraftEvent,
     );
     const unsubscribeCreateTimedDraft = onViewCommand(
       "CREATE_TIMED_DRAFT",
-      () => createTimedDraftEventRef.current(),
+      createTimedDraftEvent,
     );
 
     return () => {
       unsubscribeCreateAllDayDraft();
       unsubscribeCreateTimedDraft();
     };
-  }, []);
+  }, [createAllDayDraftEvent, createTimedDraftEvent]);
 
   const focusSidebar = useCallback(() => {
     if (!isSidebarOpen) {

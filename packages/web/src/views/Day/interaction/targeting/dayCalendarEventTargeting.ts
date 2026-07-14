@@ -29,9 +29,6 @@ export const clearHoveredDayCalendarEventTarget =
 export const getFocusedDayCalendarEventTarget =
   dayCalendarEventTargeting.getFocusedCalendarEventTarget;
 
-export const getHoveredDayCalendarEventTarget =
-  dayCalendarEventTargeting.getHoveredCalendarEventTarget;
-
 export const getFirstVisibleDayCalendarEventTarget =
   dayCalendarEventTargeting.getFirstVisibleCalendarEventTarget;
 
