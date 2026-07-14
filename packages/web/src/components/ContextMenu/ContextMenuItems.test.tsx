@@ -63,9 +63,7 @@ const renderWithTheme = (
 ) => {
   const queryClient = new QueryClient();
   seedPendingEventMutations(queryClient, pendingEventIds);
-  if (calendars) {
-    queryClient.setQueryData(calendarQueryKeys.all, calendars);
-  }
+  queryClient.setQueryData(calendarQueryKeys.all, calendars ?? []);
 
   return render(
     <DraftContext.Provider

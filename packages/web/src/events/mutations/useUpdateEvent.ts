@@ -11,7 +11,10 @@ import {
   parseGridEventDraft,
   timedGridSchedule,
 } from "@web/events/grid-event-draft.adapter";
-import { useEventMutations } from "@web/events/mutations/useEventMutations";
+import {
+  type EventMutationDependencies,
+  useEventMutations,
+} from "@web/events/mutations/useEventMutations";
 import {
   findEventInCache,
   removeEventFromQueries,
@@ -32,9 +35,9 @@ import { draftActions } from "@web/events/stores/draft.store";
 // in-progress drag/resize position via `selectDraft`, and GridEventDraft has
 // no field for that live pixel geometry (packet-03-phase-3c's documented
 // out-of-scope local drag-geometry state).
-export function useUpdateEvent() {
+export function useUpdateEvent(dependencies: EventMutationDependencies = {}) {
   const queryClient = useQueryClient();
-  const { replace } = useEventMutations();
+  const { replace } = useEventMutations(dependencies);
 
   const update = useCallback(
     (

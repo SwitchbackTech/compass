@@ -5,7 +5,7 @@ const SCROLL_SPEED = 10;
 const EDGE_THRESHOLD = 50;
 
 export const useDragEventSmartScroll = (
-  mainGridRef: MutableRefObject<HTMLDivElement | null>,
+  mainGridRef: MutableRefObject<HTMLElement | null>,
 ) => {
   const { state } = useDraftContext();
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });

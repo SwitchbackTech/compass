@@ -6,7 +6,7 @@ import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout
 
 export const useDateCalcs = (
   measurements: Measurements_Grid,
-  mainGridRef: MutableRefObject<HTMLDivElement | null>,
+  mainGridRef: MutableRefObject<HTMLElement | null>,
   weekDays: Dayjs[],
 ) => {
   const calendarDateCalcs = useCalendarDateCalcs(

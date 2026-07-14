@@ -117,9 +117,9 @@ const getWeekColumnLayout = async (page: Page, daysInView: number) =>
         .filter((rect) => rect.height > 20);
 
     return {
-      allDayColumns: getColumns("#allDayColumns > div"),
+      allDayColumns: getColumns("#allDayColumns th"),
       dayLabels,
-      timedColumns: getColumns("#timedColumns > div"),
+      timedColumns: getColumns("#timedColumns th"),
     };
   }, daysInView);
 

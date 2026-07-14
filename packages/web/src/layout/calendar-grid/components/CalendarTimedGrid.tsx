@@ -35,7 +35,7 @@ interface CalendarTimedGridProps {
   today: Dayjs;
   timedColumnsRef: RefCallback<HTMLDivElement>;
   timedGridId?: string;
-  timedGridRef: RefCallback<HTMLDivElement>;
+  timedGridRef: RefCallback<HTMLElement>;
   visibleDates: CalendarGridVisibleDate[];
 }
 
@@ -54,12 +54,11 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
   );
 
   return (
-    <div
+    <section
       aria-label="Timed events grid"
       className="c-scroll relative min-h-0 w-full flex-1 overflow-y-auto overflow-x-hidden [--scrollbar-width:0px]"
       id={timedGridId}
       ref={timedGridRef}
-      role="region"
       tabIndex={-1}
     >
       <CalendarTimeColumn />
@@ -83,15 +82,21 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
             key={visibleDates[columnIndex]?.key}
           />
         ))}
-        {visibleDates.map(({ date, key, surfaceLabel }) => (
-          <div
-            className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l data-[past=true]:bg-bg-secondary"
-            data-past={date.isBefore(today, "day")}
-            aria-label={surfaceLabel ?? date.format("dddd, MMMM D, YYYY")}
-            key={key}
-            role="columnheader"
-          />
-        ))}
+        <table className="contents">
+          <thead className="contents">
+            <tr className="contents">
+              {visibleDates.map(({ date, key, surfaceLabel }) => (
+                <th
+                  className="relative box-border block h-full min-w-[var(--calendar-column-min-width)] border-grid-line-primary border-l data-[past=true]:bg-bg-secondary"
+                  data-past={date.isBefore(today, "day")}
+                  aria-label={surfaceLabel ?? date.format("dddd, MMMM D, YYYY")}
+                  key={key}
+                  scope="col"
+                />
+              ))}
+            </tr>
+          </thead>
+        </table>
       </div>
 
       <div
@@ -114,7 +119,7 @@ export const CalendarTimedGrid: FC<CalendarTimedGridProps> = ({
       </div>
 
       {eventsLayer}
-    </div>
+    </section>
   );
 };
 

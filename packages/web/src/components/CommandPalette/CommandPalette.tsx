@@ -21,6 +21,7 @@ import { useCalendarSyncCmdItems } from "@web/components/CommandPalette/hooks/us
 import { useLogoutCmdItems } from "@web/components/CommandPalette/hooks/useLogoutCmdItems";
 import { useSubscribeCmdItems } from "@web/components/CommandPalette/hooks/useSubscribeCmdItems";
 import { ShortcutKeys } from "@web/components/Shortcuts/ShortcutKeys";
+import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUndoRedo } from "@web/events/mutations/useUndoRedo";
 import {
   selectIsCmdPaletteOpen,
@@ -46,6 +47,7 @@ interface CommandPaletteProps {
   onGoToToday: () => void;
   onShowShortcuts: () => void;
   placeholder: string;
+  mutationDependencies?: EventMutationDependencies;
 }
 
 /**
@@ -75,6 +77,7 @@ export const CommandPalette = ({
   onGoToToday,
   onShowShortcuts,
   placeholder,
+  mutationDependencies,
 }: CommandPaletteProps) => {
   const open = useSettingsStore(selectIsCmdPaletteOpen);
   const navigate = useNavigate();
@@ -82,7 +85,7 @@ export const CommandPalette = ({
   const subscribeCmdItems = useSubscribeCmdItems();
   const authCmdItems = useAuthCmdItems();
   const logoutCmdItems = useLogoutCmdItems();
-  const { undo, canUndo } = useUndoRedo();
+  const { undo, canUndo } = useUndoRedo(mutationDependencies);
 
   const [search, setSearch] = useState("");
   const [activeIndex, setActiveIndex] = useState<number | null>(0);

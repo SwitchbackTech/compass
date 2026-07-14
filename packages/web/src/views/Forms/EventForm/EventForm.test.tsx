@@ -1,7 +1,7 @@
 import { HotkeyManager, resolveModifier } from "@tanstack/react-hotkeys";
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { createRef, type SetStateAction, useState } from "react";
+import { act, createRef, type SetStateAction, useState } from "react";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { renderWithStore } from "@web/__tests__/render-with-store";
@@ -230,7 +230,7 @@ describe("EventForm", () => {
     );
 
     const titleField = screen.getByPlaceholderText("Title");
-    titleField.focus();
+    act(() => titleField.focus());
 
     dispatchModD(titleField);
 
@@ -282,7 +282,7 @@ describe("EventForm", () => {
     );
 
     const titleField = screen.getByPlaceholderText("Title");
-    titleField.focus();
+    act(() => titleField.focus());
 
     const event = dispatchDelete(titleField);
 
@@ -309,7 +309,7 @@ describe("EventForm", () => {
     );
 
     const descriptionField = screen.getByPlaceholderText("Description");
-    descriptionField.focus();
+    act(() => descriptionField.focus());
 
     const event = dispatchDelete(descriptionField);
 
@@ -336,7 +336,7 @@ describe("EventForm", () => {
     );
 
     const form = screen.getByRole("form");
-    form.focus();
+    act(() => form.focus());
 
     const event = dispatchDelete(form);
 
@@ -522,7 +522,7 @@ describe("EventForm", () => {
     renderWithStore(<Harness />);
 
     const titleField = screen.getByPlaceholderText("Title");
-    titleField.focus();
+    act(() => titleField.focus());
 
     await user.type(titleField, "Plan");
     await user.keyboard("{Enter}");
@@ -553,7 +553,7 @@ describe("EventForm", () => {
     );
 
     const titleField = screen.getByPlaceholderText("Title");
-    titleField.focus();
+    act(() => titleField.focus());
 
     await user.keyboard("{Enter}");
 

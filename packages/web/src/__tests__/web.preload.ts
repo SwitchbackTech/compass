@@ -16,10 +16,6 @@ import "@core/__tests__/core.test.init";
 import "@core/__tests__/core.test.start";
 import "./web.test.init";
 import { mockNodeModules } from "./__mocks__/mock.setup";
-import {
-  appendTailwindCss,
-  getTailwindCss,
-} from "./__mocks__/mock.tailwindcss";
 import { server } from "./__mocks__/server/mock.server";
 
 const requireMatchers = createRequire(import.meta.path);
@@ -189,11 +185,13 @@ function getPointerEvent(mouseEvent: typeof globalThis.MouseEvent) {
   return PointerEvent;
 }
 
-const css = await getTailwindCss();
-appendTailwindCss(window.document, css);
+// Tailwind v4 emits valid browser CSS that jsdom 26 cannot parse. The web
+// tests assert DOM behavior and inline layout values, so injecting the full
+// generated stylesheet only adds parser noise without increasing coverage.
 
 window.HTMLElement.prototype.scroll = () => {};
 window.HTMLElement.prototype.scrollIntoView = () => {};
+window.scrollTo = () => {};
 window.document.elementFromPoint = () => null;
 window.PointerEvent = getPointerEvent(window.MouseEvent);
 

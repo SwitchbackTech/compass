@@ -93,11 +93,5 @@ export const useDraftEffects = (
         hasMoved: dragStatus?.hasMoved,
       }));
     }
-  }, [
-    isDragging,
-    setDragStatus,
-    draft?.values.schedule.end,
-    draft,
-    setIsFormOpen,
-  ]);
+  }, [isDragging, setDragStatus, draft, setIsFormOpen]);
 };

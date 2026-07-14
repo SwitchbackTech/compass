@@ -10,6 +10,7 @@ import { deriveCalendarEventViewModel } from "./event.view-model";
 type WeekEventsQueryArgs = {
   startOfView: Dayjs;
   endOfView: Dayjs;
+  reportError?: (error: Error) => void;
 };
 
 function useWeekEventsQueryInternal({
@@ -29,12 +30,13 @@ function useWeekEventsQueryInternal({
  */
 export function useWeekEventsQuery(args: WeekEventsQueryArgs) {
   const query = useWeekEventsQueryInternal(args);
+  const reportError = args.reportError ?? handleError;
   const { error } = query;
 
   useEffect(() => {
     if (!error) return;
-    handleError(error as Error);
-  }, [error]);
+    reportError(error as Error);
+  }, [error, reportError]);
 
   return query;
 }

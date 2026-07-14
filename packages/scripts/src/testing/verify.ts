@@ -127,12 +127,25 @@ function runLint(): boolean {
 
 function runA11y(): boolean {
   console.log("\n→ test:a11y");
+  // Playwright's Bun web server reports a color-env conflict when the parent
+  // process forces ANSI colors, and Node 26 reports its known module-loader
+  // deprecation. These are upstream runtime diagnostics, not test failures;
+  // remove only those two messages from this verification subprocess.
+  const nodeOptions = [process.env["NODE_OPTIONS"], "--disable-warning=DEP0205"]
+    .filter(Boolean)
+    .join(" ");
+  const {
+    FORCE_COLOR: _forceColor,
+    NO_COLOR: _noColor,
+    ...processEnvWithoutColorOverrides
+  } = process.env;
   const result = bunRuntime.spawnSync({
     cmd: ["bun", "run", "test:a11y"],
     cwd: process.cwd(),
     env: {
-      ...process.env,
+      ...processEnvWithoutColorOverrides,
       TZ: process.env["TZ"] ?? "Etc/UTC",
+      NODE_OPTIONS: nodeOptions,
     },
     stderr: "inherit",
     stdin: "inherit",

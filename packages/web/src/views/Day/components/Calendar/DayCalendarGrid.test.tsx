@@ -418,10 +418,10 @@ describe("DayCalendarGrid", () => {
 
     expect(initialBackZIndex).toBeLessThan(ZIndex.MAX);
 
-    back.focus();
+    act(() => back.focus());
     expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
 
-    back.blur();
+    act(() => back.blur());
     expect(Number(back.style.zIndex)).toBe(initialBackZIndex);
   });
 

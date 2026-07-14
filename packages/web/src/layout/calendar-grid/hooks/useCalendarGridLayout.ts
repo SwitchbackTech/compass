@@ -52,12 +52,12 @@ export const useCalendarGridLayout = ({
     useState<CalendarGridMeasurement | null>(null);
 
   const allDayColumnsRef = useRef<HTMLDivElement | null>(null);
-  const mainGridRef = useRef<HTMLDivElement | null>(null);
+  const mainGridRef = useRef<HTMLElement | null>(null);
   const timedColumnsRef = useRef<HTMLDivElement | null>(null);
   const observersRef = useRef(new Map<string, ResizeObserver>());
 
   const updateAllDayRowMeasurement = useCallback(
-    (node: HTMLDivElement) => {
+    (node: HTMLElement) => {
       if (isInteractionMotionActive()) {
         return;
       }
@@ -93,7 +93,7 @@ export const useCalendarGridLayout = ({
   );
 
   const updateMainGridMeasurement = useCallback(
-    (node: HTMLDivElement) => {
+    (node: HTMLElement) => {
       if (isInteractionMotionActive()) {
         return;
       }
@@ -111,10 +111,10 @@ export const useCalendarGridLayout = ({
   );
 
   const observeElement = useCallback(
-    (
+    <T extends HTMLElement>(
       key: string,
-      node: HTMLDivElement | null,
-      measure: (node: HTMLDivElement) => void,
+      node: T | null,
+      measure: (node: T) => void,
     ) => {
       observersRef.current.get(key)?.disconnect();
       observersRef.current.delete(key);
@@ -137,7 +137,7 @@ export const useCalendarGridLayout = ({
   );
 
   const allDayRowRef = useCallback(
-    (node: HTMLDivElement | null) => {
+    (node: HTMLElement | null) => {
       observeElement("allDayRow", node, updateAllDayRowMeasurement);
     },
     [observeElement, updateAllDayRowMeasurement],
@@ -152,7 +152,7 @@ export const useCalendarGridLayout = ({
   );
 
   const mainGridElementRef = useCallback(
-    (node: HTMLDivElement | null) => {
+    (node: HTMLElement | null) => {
       mainGridRef.current = node;
       observeElement("mainGrid", node, updateMainGridMeasurement);
     },

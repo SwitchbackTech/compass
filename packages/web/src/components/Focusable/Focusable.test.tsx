@@ -33,7 +33,7 @@ describe("Focusable", () => {
     expect(document.activeElement).toBe(input);
     expect(underline(container)).not.toBeNull();
 
-    input.blur();
+    await user.click(document.body);
     expect(underline(container)).not.toBeNull();
   });
 

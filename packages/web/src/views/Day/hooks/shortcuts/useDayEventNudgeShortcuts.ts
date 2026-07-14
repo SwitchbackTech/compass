@@ -1,6 +1,7 @@
 import { type GridEvent } from "@web/common/types/web.event.types";
 import { nudgeEventFromKeyboard } from "@web/common/utils/event/event-nudge-shortcut.util";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
+import { type EventMutationDependencies } from "@web/events/mutations/useEventMutations";
 import { useUpdateEvent } from "@web/events/mutations/useUpdateEvent";
 import { draftActions } from "@web/events/stores/draft.store";
 import { useAppShortcut } from "@web/shortcuts/useAppShortcut";
@@ -12,10 +13,12 @@ import { getFocusedDayCalendarEventTarget } from "@web/views/Day/interaction/tar
  */
 export function useDayEventNudgeShortcuts({
   timedEvents,
+  dependencies = {},
 }: {
+  dependencies?: EventMutationDependencies;
   timedEvents: GridEvent[];
 }) {
-  const updateEvent = useUpdateEvent();
+  const updateEvent = useUpdateEvent(dependencies);
 
   // TanStack Hotkeys syncs callbacks on every render, so this closure always
   // sees the latest timedEvents (no refs needed)

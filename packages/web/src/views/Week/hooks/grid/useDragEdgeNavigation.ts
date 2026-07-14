@@ -12,7 +12,7 @@ import {
 import { type WeekProps } from "../useWeek";
 
 export const useDragEdgeNavigation = (
-  mainGridRef: MutableRefObject<HTMLDivElement | null>,
+  mainGridRef: MutableRefObject<HTMLElement | null>,
   weekProps: WeekProps,
 ) => {
   const { state: draftState } = useDraftContext();

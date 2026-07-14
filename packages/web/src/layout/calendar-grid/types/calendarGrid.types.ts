@@ -33,9 +33,9 @@ export interface CalendarGridMeasurements {
 export interface CalendarGridRefs {
   allDayColumnsRef: MutableRefObject<HTMLDivElement | null>;
   allDayRef: RefCallback<HTMLDivElement>;
-  allDayRowRef: RefCallback<HTMLDivElement>;
-  mainGridElementRef: RefCallback<HTMLDivElement>;
-  mainGridRef: MutableRefObject<HTMLDivElement | null>;
+  allDayRowRef: RefCallback<HTMLElement>;
+  mainGridElementRef: RefCallback<HTMLElement>;
+  mainGridRef: MutableRefObject<HTMLElement | null>;
   timedColumnsElementRef: RefCallback<HTMLDivElement>;
   timedColumnsRef: MutableRefObject<HTMLDivElement | null>;
 }
