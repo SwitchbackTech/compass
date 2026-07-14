@@ -54,10 +54,6 @@ mock.module("@web/views/Forms/EventForm/EventActionMenu", () => ({
   ),
 }));
 
-mock.module("@web/views/Forms/EventForm/PrioritySection", () => ({
-  PrioritySection: () => null,
-}));
-
 mock.module("@web/views/Forms/EventForm/SaveSection", () => ({
   SaveSection: () => null,
 }));

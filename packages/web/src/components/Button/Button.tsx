@@ -1,9 +1,8 @@
 import classNames from "classnames";
 import { forwardRef, type HTMLAttributes, type PropsWithChildren } from "react";
-import { Priorities, type Priority } from "@core/constants/core.constants";
-import { brighten, darken } from "@web/common/styles/color.utils";
+import { darken } from "@web/common/styles/color.utils";
 import { type CSSVariables } from "@web/common/styles/css.types";
-import { colorByPriority } from "@web/common/styles/theme.util";
+import { EVENT_COLOR } from "@web/common/styles/theme.util";
 
 export const Btn = forwardRef<
   HTMLDivElement,
@@ -21,43 +20,8 @@ export const Btn = forwardRef<
 
 Btn.displayName = "Btn";
 
-export interface PriorityButtonProps
+interface SaveButtonProps
   extends Omit<HTMLAttributes<HTMLDivElement>, "color"> {
-  color?: string;
-  bordered?: boolean;
-  border?: string;
-}
-
-export const PriorityButton = forwardRef<
-  HTMLDivElement,
-  PropsWithChildren<PriorityButtonProps>
->(({ border, bordered, className, color, style, ...props }, ref) => {
-  const buttonStyle: CSSVariables = {
-    ...style,
-    "--priority-button-color": color,
-    "--priority-button-hover-color": color ? brighten(color) : undefined,
-    border:
-      border ??
-      (bordered ? "2px solid var(--color-border-primary-dark)" : undefined),
-  };
-
-  return (
-    <Btn
-      {...props}
-      className={classNames(
-        "min-w-[158px] px-2 text-text-dark transition-[background-color,color,box-shadow,transform] duration-500 hover:bg-bg-primary hover:text-(--priority-button-hover-color)",
-        className,
-      )}
-      ref={ref}
-      style={buttonStyle}
-    />
-  );
-});
-
-PriorityButton.displayName = "PriorityButton";
-
-interface SaveButtonProps extends PriorityButtonProps {
-  priority: Priority;
   minWidth: number;
   disabled?: boolean;
 }
@@ -65,26 +29,22 @@ interface SaveButtonProps extends PriorityButtonProps {
 export const SaveButton = forwardRef<
   HTMLDivElement,
   PropsWithChildren<SaveButtonProps>
->(({ className, disabled, minWidth, priority, style, ...props }, ref) => {
-  const background = darken(colorByPriority[priority]);
-  const hoverColor =
-    priority === Priorities.UNASSIGNED
-      ? "var(--color-text-light)"
-      : brighten(colorByPriority[priority]);
+>(({ className, disabled, minWidth, style, ...props }, ref) => {
+  const background = darken(EVENT_COLOR);
   const buttonStyle: CSSVariables = {
     ...style,
-    "--priority-button-hover-color": hoverColor,
-    "--elevated-shadow-color": darken(colorByPriority[priority], 25),
+    "--save-button-hover-color": "var(--color-text-light)",
+    "--elevated-shadow-color": darken(EVENT_COLOR, 25),
     background,
     minWidth,
   };
 
   return (
-    <PriorityButton
+    <Btn
       {...props}
       aria-disabled={disabled || undefined}
       className={classNames(
-        "c-button-elevated text-text-dark focus:border-2 focus:border-border-primary-dark",
+        "c-button-elevated min-w-[158px] px-2 text-text-dark transition-[background-color,color,box-shadow,transform] duration-500 hover:bg-bg-primary hover:text-(--save-button-hover-color) focus:border-2 focus:border-border-primary-dark",
         disabled && "pointer-events-none opacity-50",
         className,
       )}

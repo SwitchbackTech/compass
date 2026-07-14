@@ -278,7 +278,7 @@ describe("mapGoogleEvent", () => {
     expect(result.event.recurrence).toEqual({ kind: "single" });
   });
 
-  it("sets priority to unassigned and derives createdAt/updatedAt from the payload", () => {
+  it("derives createdAt/updatedAt from the payload", () => {
     const result = mapGoogleEvent(
       {
         ...timedEvent(),
@@ -288,7 +288,6 @@ describe("mapGoogleEvent", () => {
       baseContext(),
     );
     if (result.kind !== "mapped") throw new Error("expected mapped");
-    expect(result.event.priority).toBe("unassigned");
     expect(result.event.createdAt).toEqual(
       new Date("2026-07-01T00:00:00.000Z"),
     );
@@ -318,7 +317,6 @@ describe("mapEventRecordToGoogle", () => {
       timeZone: "America/Denver",
     },
     recurrence: { kind: "single" },
-    priority: "work",
     externalReference: null,
     createdAt: new Date(),
     updatedAt: null,

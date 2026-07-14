@@ -19,11 +19,11 @@ import { draftActions } from "@web/events/stores/draft.store";
 
 // The persisted-write half builds a GridEventDraft from the cached strict
 // `Event` plus the incoming Schema_GridEvent's changed fields (schedule/
-// priority/title/description), matching
+// title/description), matching
 // WeekInteractionCoordinator.commitStrictSavedMutation (#2029), instead of
 // hand-rolling a ReplaceEventInput via zod. Recurrence always stays
-// "preserve" here — this hook only ever moves/resizes/re-prioritizes an
-// existing event, never edits its recurrence rule.
+// "preserve" here — this hook only ever moves/resizes an existing event,
+// never edits its recurrence rule.
 //
 // draftActions.setEvent still writes into the draft store's legacy
 // `event: Schema_Event` projection: Day's grid rendering layers read the
@@ -81,7 +81,6 @@ export function useUpdateEvent() {
                 dayjs(event.startDate).toDate(),
                 dayjs(event.endDate).toDate(),
               ),
-          priority: event.priority ?? sourceDraft.values.priority,
         },
       };
 

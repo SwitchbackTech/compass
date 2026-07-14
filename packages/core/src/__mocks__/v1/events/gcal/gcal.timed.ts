@@ -35,7 +35,6 @@ export const timed = [
     extendedProperties: {
       private: {
         origin: "compass",
-        priority: "work",
       },
     },
     reminders: {
@@ -119,7 +118,6 @@ export const timed = [
     extendedProperties: {
       private: {
         origin: "googleimport",
-        priority: "relationships",
       },
     },
 

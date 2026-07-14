@@ -1,8 +1,4 @@
-import {
-  type CalendarId,
-  type EventId,
-  type Priority,
-} from "@core/types/domain-primitives";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import {
   type BusyPeriod,
   type Event,
@@ -58,7 +54,6 @@ type EventPresentationBase = {
   eventId: EventId;
   calendarId: CalendarId;
   content: EventContent;
-  priority: Priority;
   recurrence: EventRecurrence;
 };
 

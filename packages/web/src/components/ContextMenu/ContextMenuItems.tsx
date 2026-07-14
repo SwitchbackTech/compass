@@ -1,15 +1,11 @@
 import { Copy, PenNib, Trash } from "@phosphor-icons/react";
 import type React from "react";
-import { Priorities } from "@core/constants/core.constants";
 import {
   isEventReadOnly,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_CONTEXT_MENU_ITEMS } from "@web/common/constants/web.constants";
-import { type CSSVariables } from "@web/common/styles/css.types";
-import { colorByPriority } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
-import { type GridEventDraft } from "@web/events/event-draft.types";
 import { selectGridDraft, useDraftStore } from "@web/events/stores/draft.store";
 import { useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";
 
@@ -24,7 +20,6 @@ export interface ContextMenuItemsActions {
   delete: () => void;
   duplicate: () => void;
   edit: () => void;
-  editPriority: (priority: Priorities) => void;
 }
 
 interface ContextMenuItemsProps {
@@ -43,39 +38,14 @@ export function ContextMenuItemsView({
 }: ContextMenuItemsViewProps) {
   const calendarLookup = useCalendarLookup();
   // Read-only (unwritable calendar or busy content) events can be inspected
-  // ("View" below opens the read-only form) but never mutated - priority
-  // edits and Delete are hidden entirely rather than merely disabled, since
-  // there's nothing useful to click through to (packet 08 step 8).
+  // ("View" below opens the read-only form) but never mutated - Delete is
+  // hidden entirely rather than merely disabled, since there's nothing
+  // useful to click through to (packet 08 step 8).
   const isReadOnly = isEventReadOnly(
     calendarLookup,
     event.calendarId,
     event.isBusy ?? false,
   );
-  const priorities = [
-    {
-      id: "work",
-      value: Priorities.WORK,
-      label: "Work",
-      color: colorByPriority[Priorities.WORK],
-    },
-    {
-      id: "self",
-      value: Priorities.SELF,
-      label: "Self",
-      color: colorByPriority[Priorities.SELF],
-    },
-    {
-      id: "relations",
-      value: Priorities.RELATIONS,
-      label: "Relations",
-      color: colorByPriority[Priorities.RELATIONS],
-    },
-  ];
-
-  const handleEditPriority = (priority: Priorities) => {
-    actions.editPriority(priority);
-    close();
-  };
 
   const menuActions: ContextMenuAction[] = [
     {
@@ -104,32 +74,6 @@ export function ContextMenuItemsView({
 
   return (
     <div id={ID_CONTEXT_MENU_ITEMS}>
-      {!isReadOnly && (
-        <div className="flex justify-center gap-2.5 p-2.5">
-          {priorities.map((priority) => (
-            <div
-              className="group relative flex flex-col items-center"
-              key={priority.id}
-            >
-              <button
-                aria-label={`Set priority to ${priority.label}`}
-                aria-pressed={event.priority === priority.value}
-                className="c-context-priority-circle"
-                data-selected={event.priority === priority.value}
-                type="button"
-                onClick={() => handleEditPriority(priority.value)}
-                style={
-                  {
-                    "--priority-color": priority.color,
-                    cursor: "pointer",
-                  } as CSSVariables
-                }
-              />
-              <span className="c-context-tooltip">{priority.label}</span>
-            </div>
-          ))}
-        </div>
-      )}
       {menuActions.map((item) => (
         <button
           className="c-context-menu-item"
@@ -150,7 +94,7 @@ export function ContextMenuItemsView({
 
 export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
   const { actions, setters, confirmation } = useDraftContext();
-  const { openForm, duplicateEvent, submit } = actions;
+  const { openForm, duplicateEvent } = actions;
   const { setDraft } = setters;
   // The right-click flow (GridContextMenuWrapper.tsx) already builds a
   // GridEventDraft via editGridEventDraft and pushes it into the store, so
@@ -164,16 +108,6 @@ export function ContextMenuItems({ event, close }: ContextMenuItemsProps) {
     edit: () => {
       if (gridDraft) setDraft(gridDraft);
       openForm();
-    },
-    editPriority: (priority) => {
-      if (!gridDraft) return;
-
-      const updated: GridEventDraft = {
-        ...gridDraft,
-        values: { ...gridDraft.values, priority },
-      } as GridEventDraft;
-
-      void submit(updated);
     },
   };
 

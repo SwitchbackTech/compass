@@ -1,7 +1,7 @@
 import { gcalEvents } from "@core/__mocks__/v1/events/gcal/gcal.event";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { timed } from "@core/__mocks__/v1/events/gcal/gcal.timed";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import { type gSchema$Event } from "@core/types/gcal";
 import { MapEvent } from "./map.event";
@@ -53,65 +53,6 @@ describe("toCompass", () => {
       });
     });
   });
-  describe("priority", () => {
-    it("sets priority to unassigned by default", () => {
-      const gEvent = (gcalEvents.items as gSchema$Event[]).find(
-        (ge) => ge.summary === "No extendedProperties",
-      );
-      if (!gEvent) {
-        throw new Error("Test event not found");
-      }
-
-      const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS)[0];
-      if (!cEvent) {
-        throw new Error("Failed to map event");
-      }
-
-      expect(cEvent.priority).toBe(Priorities.UNASSIGNED);
-    });
-
-    it("gets priority from private extended properties", () => {
-      const regularGcalEvent = (gcalEvents.items as gSchema$Event[]).find(
-        (ge) => ge.summary === "Meeting with Stan",
-      );
-      if (!regularGcalEvent) {
-        throw new Error("Test event not found");
-      }
-
-      const cEvent = MapEvent.toCompass(
-        "user99",
-        [regularGcalEvent],
-        Origin.GOOGLE_IMPORT,
-      )[0];
-      if (!cEvent) {
-        throw new Error("Failed to map event");
-      }
-
-      expect(cEvent.priority).toBe("work");
-    });
-
-    it("sets priority to unassigned if a priority exists but doesn't match enum", () => {
-      const gEvent = (gcalEvents.items as gSchema$Event[]).find(
-        (ge) => ge.summary === "Meeting with Stan",
-      );
-      if (!gEvent) {
-        throw new Error("Test event not found");
-      }
-      gEvent.extendedProperties = {
-        private: {
-          priority: "not-a-priority",
-        },
-      };
-
-      const cEvent = MapEvent.toCompass("user1", [gEvent], Origin.COMPASS)[0];
-      if (!cEvent) {
-        throw new Error("Failed to map event");
-      }
-
-      expect(cEvent.priority).toBe(Priorities.UNASSIGNED);
-    });
-  });
-
   describe("title", () => {
     const baseGEvent: gSchema$Event = {
       kind: "calendar#event",

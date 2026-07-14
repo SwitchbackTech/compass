@@ -50,7 +50,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
         timeZone: "America/Denver" as never,
       },
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=5"] },
-      priority: "unassigned",
     });
     const instances = await mongoService.event
       .find({ "recurrence.seriesId": created._id })
@@ -138,7 +137,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
         timeZone: "America/Denver" as never,
       },
       recurrence: { kind: "preserve" },
-      priority: "unassigned",
       scope: "this",
     });
 
@@ -226,7 +224,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
         timeZone: "America/Denver" as never,
       },
       recurrence: { kind: "preserve" },
-      priority: "unassigned",
       scope: "this",
     });
 
@@ -245,7 +242,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
         timeZone: "America/Denver" as never,
       },
       recurrence: { kind: "preserve" },
-      priority: "unassigned",
       scope: "this",
     });
 
@@ -290,7 +286,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
           timeZone: "America/Denver" as never,
         },
         recurrence: { kind: "preserve" },
-        priority: "unassigned",
         scope: "this",
       },
     );
@@ -327,7 +322,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
           timeZone: "America/Denver" as never,
         },
         recurrence: { kind: "preserve" },
-        priority: "unassigned",
         scope: "this",
       }),
     ).resolves.toMatchObject({ content: { title: "Weekly sync (one-off)" } });
@@ -359,7 +353,6 @@ describe("CompassToGoogleEventPropagation - scope 'this' - series occurrence", (
           timeZone: "America/Denver" as never,
         },
         recurrence: { kind: "preserve" },
-        priority: "unassigned",
         scope: "this",
       }),
     ).rejects.toMatchObject({ mutationCode: "RECURRENCE_CONFLICT" });

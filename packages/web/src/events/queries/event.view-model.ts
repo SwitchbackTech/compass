@@ -32,7 +32,6 @@ const scheduledEventToSchemaEvent = (event: Event): Schema_Event => {
     description:
       event.content.kind === "details" ? event.content.description : "",
     origin: Origin.COMPASS,
-    priority: event.priority,
     isAllDay: schedule.kind === "allDay",
     startDate: schedule.start,
     endDate: schedule.end,

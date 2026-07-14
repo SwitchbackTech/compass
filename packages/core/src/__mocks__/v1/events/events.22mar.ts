@@ -1,5 +1,4 @@
 import { ObjectId } from "bson";
-import { Priorities } from "@core/constants/core.constants";
 import { type Schema_Event, type WithMongoId } from "@core/types/event.types";
 
 const allDayEventsThatShouldMatch: Array<
@@ -37,7 +36,6 @@ const allDayEventsThatShouldMatch: Array<
       isAllDay: true,
       startDate: "2022-03-10",
       endDate: "2022-03-13",
-      priority: Priorities.WORK,
     },
   ];
 
@@ -51,7 +49,6 @@ const allDayEventsThatShouldNotMatch: Array<
     isAllDay: true,
     startDate: "2022-02-28",
     endDate: "2022-03-05",
-    priority: Priorities.WORK,
   },
   {
     _id: new ObjectId(),
@@ -60,7 +57,6 @@ const allDayEventsThatShouldNotMatch: Array<
     isAllDay: true,
     startDate: "2022-03-05",
     endDate: "2022-03-06",
-    priority: Priorities.WORK,
   },
   {
     _id: new ObjectId(),
@@ -69,7 +65,6 @@ const allDayEventsThatShouldNotMatch: Array<
     isAllDay: true,
     startDate: "2022-03-13",
     endDate: "2022-03-14",
-    priority: Priorities.WORK,
   },
   {
     _id: new ObjectId(),
@@ -78,7 +73,6 @@ const allDayEventsThatShouldNotMatch: Array<
     isAllDay: true,
     startDate: "2022-03-13",
     endDate: "2022-03-17",
-    priority: Priorities.WORK,
   },
 ];
 

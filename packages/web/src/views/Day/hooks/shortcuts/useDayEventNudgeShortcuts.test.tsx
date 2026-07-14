@@ -1,5 +1,5 @@
 import { HotkeyManager } from "@tanstack/react-hotkeys";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
@@ -31,7 +31,6 @@ const timedEvent: Schema_GridEvent = {
   isAllDay: false,
   origin: Origin.COMPASS,
   position: gridEventDefaultPosition,
-  priority: Priorities.UNASSIGNED,
   startDate: "2026-05-20T09:00:00.000",
   title: "Timed event",
   user: "user-1",

@@ -6,10 +6,9 @@ import {
   useRole,
 } from "@floating-ui/react";
 import React from "react";
-import { Priorities } from "@core/constants/core.constants";
 import { darken } from "@web/common/styles/color.utils";
 import { type CSSVariables } from "@web/common/styles/css.types";
-import { hoverColorByPriority } from "@web/common/styles/theme.util";
+import { EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import {
   ContextMenuItems,
@@ -44,8 +43,7 @@ export const ContextMenu = React.forwardRef<HTMLUListElement, ContextMenuProps>(
 
     if (!event) return null;
 
-    const priority = event.priority || Priorities.UNASSIGNED;
-    const bgColor = hoverColorByPriority[priority];
+    const bgColor = EVENT_HOVER_COLOR;
 
     return (
       <ul

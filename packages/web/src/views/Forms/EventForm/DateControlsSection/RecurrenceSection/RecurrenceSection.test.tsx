@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useCallback, useState } from "react";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
@@ -15,7 +15,6 @@ const baseEvent = (): Schema_GridEvent =>
     description: "",
     startDate: "2026-04-24T14:00:00.000Z",
     endDate: "2026-04-24T15:00:00.000Z",
-    priority: Priorities.UNASSIGNED,
     origin: Origin.COMPASS,
     user: "user-1",
   });

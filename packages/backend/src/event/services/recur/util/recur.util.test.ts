@@ -16,7 +16,6 @@ const buildBase = (overrides: Partial<EventRecord> = {}): EventRecord => ({
     timeZone: "America/Denver",
   },
   recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=4"] },
-  priority: "unassigned",
   externalReference: null,
   createdAt: new Date("2026-07-10T00:00:00.000Z"),
   updatedAt: null,

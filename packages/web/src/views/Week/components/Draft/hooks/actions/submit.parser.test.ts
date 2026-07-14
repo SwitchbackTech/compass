@@ -1,4 +1,4 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { describe, expect, it, mock } from "bun:test";
 
@@ -21,7 +21,6 @@ const createMockGridEvent = (
   endDate: "2024-01-15T11:00:00Z",
   isAllDay: false,
   origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
   user: "test-user",
   position: createMockGridPosition(),
   ...overrides,
@@ -67,7 +66,6 @@ describe("submit.parser", () => {
     it("should prepare a grid event with all required fields", () => {
       const draft = createMockGridEvent({
         origin: Origin.GOOGLE,
-        priority: Priorities.SELF,
       });
       const userId = "test-user-id";
 
@@ -76,7 +74,6 @@ describe("submit.parser", () => {
       expect(result._id).toBe(draft._id);
       expect(result.user).toBe(userId);
       expect(result.origin).toBe(Origin.GOOGLE);
-      expect(result.priority).toBe(Priorities.SELF);
     });
 
     it("should use COMPASS origin when origin is not provided", () => {

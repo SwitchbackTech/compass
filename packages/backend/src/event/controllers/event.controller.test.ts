@@ -29,7 +29,6 @@ describe("EventController readAll", () => {
       query: {
         start: "2024-01-15T00:00:00.000Z",
         end: "2024-01-16T00:00:00.000Z",
-        priorities: "",
       },
       session: { getUserId: () => userId },
     } as unknown as SessionRequest;

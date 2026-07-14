@@ -101,7 +101,6 @@ describe("useUndoRedo", () => {
             timeZone: "UTC" as never,
           },
           recurrence: { kind: "preserve" },
-          priority: original.priority,
           scope: "this",
         },
       }),

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { type ReactElement } from "react";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import {
   type Calendar,
   getCalendarCapabilities,
@@ -53,7 +53,6 @@ const makeGridEvent = (
     description: "",
     startDate: "2026-07-13T09:00:00.000-05:00",
     endDate: "2026-07-13T10:00:00.000-05:00",
-    priority: Priorities.WORK,
     origin: Origin.COMPASS,
     isAllDay: false,
     user: "user-1",

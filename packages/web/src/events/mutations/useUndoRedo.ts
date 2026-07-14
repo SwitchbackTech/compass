@@ -69,7 +69,6 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
           content: snapshot.content,
           schedule: snapshot.schedule,
           recurrence: { kind: "single" },
-          priority: snapshot.priority,
           scope: "this",
         },
       });
@@ -94,7 +93,6 @@ export function useUndoRedo(dependencies: EventMutationDependencies = {}) {
             event.recurrence.kind === "series"
               ? { kind: "series", rules: event.recurrence.rules }
               : { kind: "single" },
-          priority: event.priority,
         });
       } else {
         replaySnapshot(entry.id as EventId, entry.before);

@@ -401,7 +401,7 @@ is never touched.
   removed.
 - The Compass-local calendar, and the scheduled events you
   created on it before ever connecting Google, remain exactly as they
-  were — nothing about the account, priorities, or local data is deleted.
+  were — nothing about the account or local data is deleted.
 - The toast and reconnect-prompt behavior matches Scenario 7.
 
 ---

@@ -18,7 +18,6 @@ const buildRecord = (overrides: Partial<EventRecord> = {}): EventRecord => ({
     timeZone: "America/Denver",
   },
   recurrence: { kind: "single" },
-  priority: "unassigned",
   externalReference: null,
   createdAt: new Date("2026-07-10T18:00:00.000Z"),
   updatedAt: null,
@@ -90,7 +89,6 @@ describe("mapCreateInput / mapEventRecord round trip", () => {
         timeZone: "America/Denver",
       },
       recurrence: { kind: "single" },
-      priority: "work",
     });
 
     const record = mapCreateInput(input, { now });
@@ -118,7 +116,6 @@ describe("mapCreateInput / mapEventRecord round trip", () => {
       content: { kind: "details", title: "Offline note", description: "" },
       schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     const record = mapCreateInput(input, { now });
@@ -134,7 +131,6 @@ describe("mapCreateInput / mapEventRecord round trip", () => {
       content: { kind: "details", title: "Offline note", description: "" },
       schedule: { kind: "allDay", start: "2026-07-13", end: "2026-07-14" },
       recurrence: { kind: "single" },
-      priority: "unassigned",
     });
 
     const record = mapCreateInput(input, { now });

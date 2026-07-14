@@ -1,8 +1,4 @@
-import {
-  type CalendarId,
-  type EventId,
-  type Priority,
-} from "@core/types/domain-primitives";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 
@@ -33,7 +29,6 @@ type SharedEventFormValues = {
   title: string;
   description: string;
   schedule: EventScheduleDraft;
-  priority: Priority | null;
 };
 
 // A new draft can only use "single" or "series" and has no irrelevant

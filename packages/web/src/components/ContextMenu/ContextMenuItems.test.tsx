@@ -39,8 +39,8 @@ const createMockGridEvent = (
 
 // GridContextMenuWrapper.tsx (the real right-click flow, unconverted here)
 // already pushes a GridEventDraft into the store's `gridDraft` field before
-// ContextMenuItems mounts; seed the same field directly so edit/editPriority
-// have a canonical draft to read.
+// ContextMenuItems mounts; seed the same field directly so edit has a
+// canonical draft to read.
 const seedGridDraftForEvent = (event: Schema_GridEvent) => {
   const strictEvent = createMockEvent({
     content: {
@@ -207,28 +207,6 @@ describe("ContextMenuItems", () => {
     expect(deleteButton).not.toBeDisabled();
     expect(deleteButton).not.toHaveStyle({ cursor: "wait" });
   });
-
-  it("changes priority via the priority buttons", async () => {
-    const user = userEvent.setup();
-    const event = createMockGridEvent({
-      _id: "event-1",
-      title: "Normal Event",
-    });
-    seedGridDraftForEvent(event);
-
-    renderWithTheme(<ContextMenuItems event={event} close={mockClose} />);
-
-    await user.click(
-      screen.getByRole("button", { name: "Set priority to Work" }),
-    );
-
-    expect(mockSubmit).toHaveBeenCalledWith(
-      expect.objectContaining({
-        values: expect.objectContaining({ priority: "work" }),
-      }),
-    );
-    expect(mockClose).toHaveBeenCalled();
-  });
 });
 
 // packet 08 step 8: read-only (unwritable calendar or busy content) events
@@ -257,7 +235,7 @@ describe("ContextMenuItems read-only gate", () => {
     useDraftStore.setState({ gridDraft: null });
   });
 
-  it("shows View (not Edit), hides priority and Delete, but keeps Duplicate for a read-only-calendar event", () => {
+  it("shows View (not Edit), hides Delete, but keeps Duplicate for a read-only-calendar event", () => {
     const readOnlyCalendar = makeCalendar();
     const event = createMockGridEvent({
       _id: "read-only-event-1",
@@ -278,9 +256,6 @@ describe("ContextMenuItems read-only gate", () => {
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("button", { name: "Delete" }),
-    ).not.toBeInTheDocument();
-    expect(
-      screen.queryByRole("button", { name: /Set priority to/ }),
     ).not.toBeInTheDocument();
   });
 
@@ -306,7 +281,7 @@ describe("ContextMenuItems read-only gate", () => {
     ).not.toBeInTheDocument();
   });
 
-  it("keeps the full menu (Edit, priority, Delete) for a writable-calendar event", () => {
+  it("keeps the full menu (Edit, Delete) for a writable-calendar event", () => {
     const writableCalendar = makeCalendar({
       access: "owner",
       capabilities: getCalendarCapabilities("owner"),
@@ -323,8 +298,5 @@ describe("ContextMenuItems read-only gate", () => {
 
     expect(screen.getByRole("button", { name: "Edit" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
-    expect(
-      screen.getByRole("button", { name: "Set priority to Work" }),
-    ).toBeInTheDocument();
   });
 });

@@ -1,5 +1,5 @@
 import z from "zod/v4";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { CalendarProvider } from "@core/types/event.types";
 import { StringV4Schema, zObjectId } from "@core/types/type.utils";
 
@@ -53,7 +53,6 @@ export const EventSchema = z.object({
   startDate: z.date(),
   endDate: z.date(),
   origin: z.enum(Origin).default(Origin.COMPASS),
-  priority: z.enum(Priorities).default(Priorities.UNASSIGNED),
   createdAt: z.date().default(() => new Date()),
   updatedAt: z.date().nullable().optional(),
   recurrence: RecurrenceSchema.nullable().optional(),

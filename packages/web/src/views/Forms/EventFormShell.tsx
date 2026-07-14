@@ -1,25 +1,21 @@
 import classNames from "classnames";
 import { type ComponentPropsWithoutRef, type ReactNode } from "react";
-import { type Priorities } from "@core/constants/core.constants";
 import { type CSSVariables } from "@web/common/styles/css.types";
-import { hoverColorByPriority } from "@web/common/styles/theme.util";
+import { EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
 
 interface EventFormShellProps extends ComponentPropsWithoutRef<"form"> {
-  priority: Priorities;
   children: ReactNode;
 }
 
 /**
  * Outer `<form>` for the event form. It owns the panel's layout — padding,
- * background, shadow, rounding, transition, and the priority-tinted
- * `--event-form-bg`. The form renders docked inside the sidebar, so it fills
- * its container and the (resizable) sidebar width is the single source of
- * the form's size.
+ * background, shadow, rounding, transition, and the `--event-form-bg`. The
+ * form renders docked inside the sidebar, so it fills its container and the
+ * (resizable) sidebar width is the single source of the form's size.
  * Content-agnostic: callers pass their fields as children and any
  * form-specific props (`name`, mouse handlers, an extra `className`).
  */
 export const EventFormShell = ({
-  priority,
   className,
   style,
   children,
@@ -36,7 +32,7 @@ export const EventFormShell = ({
     style={
       {
         ...style,
-        "--event-form-bg": hoverColorByPriority[priority],
+        "--event-form-bg": EVENT_HOVER_COLOR,
       } as CSSVariables
     }
   >

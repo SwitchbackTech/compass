@@ -99,7 +99,6 @@ const buildEvent = (overrides: Partial<EventRecord> = {}): EventRecord => ({
     timeZone: "America/Denver",
   },
   recurrence: { kind: "single" },
-  priority: "unassigned",
   externalReference: null,
   createdAt: new Date(),
   updatedAt: null,

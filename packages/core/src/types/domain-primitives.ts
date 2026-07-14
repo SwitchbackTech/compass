@@ -1,5 +1,4 @@
 import { z } from "zod/v4";
-import { Priorities } from "@core/constants/core.constants";
 import {
   RGBHexSchema,
   TimezoneSchema,
@@ -33,9 +32,6 @@ export type TimeZone = z.infer<typeof TimeZoneSchema>;
 
 export const HexColorSchema = RGBHexSchema;
 export type HexColor = z.infer<typeof HexColorSchema>;
-
-export const PrioritySchema = z.enum(Priorities);
-export type Priority = z.infer<typeof PrioritySchema>;
 
 export const RRuleSchema = z.array(z.string().trim().min(1)).min(1).readonly();
 export type RRule = z.infer<typeof RRuleSchema>;

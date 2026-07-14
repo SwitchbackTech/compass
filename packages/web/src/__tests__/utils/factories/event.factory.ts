@@ -1,4 +1,3 @@
-import { Priorities } from "@core/constants/core.constants";
 import {
   type CalendarId,
   CalendarIdSchema,
@@ -28,7 +27,6 @@ export function createMockEvent(overrides: Partial<Event> = {}): Event {
     content: { kind: "details", title: "Test Event", description: "" },
     schedule: DEFAULT_TIMED_SCHEDULE,
     recurrence: { kind: "single" },
-    priority: Priorities.UNASSIGNED,
     createdAt: DateTimeSchema.parse("2026-05-01T00:00:00.000Z"),
     updatedAt: null,
     ...overrides,

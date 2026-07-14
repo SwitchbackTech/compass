@@ -67,7 +67,6 @@ export class DirtyParser {
       "description",
       "startDate",
       "endDate",
-      "priority",
       "recurrence",
     ] as const;
 
@@ -103,7 +102,6 @@ export class DirtyParser {
 
     if (values.title !== orig.title) return true;
     if (values.description !== orig.description) return true;
-    if (values.priority !== orig.priority) return true;
     if (values.calendarId !== orig.calendarId) return true;
     if (values.schedule.kind !== orig.schedule.kind) return true;
     if (values.schedule.start.getTime() !== orig.schedule.start.getTime()) {

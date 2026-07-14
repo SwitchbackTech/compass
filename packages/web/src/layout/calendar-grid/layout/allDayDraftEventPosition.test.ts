@@ -1,4 +1,4 @@
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { type Schema_GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { positionAllDayDraftEvent } from "./allDayDraftEventPosition";
@@ -12,7 +12,6 @@ const createAllDayEvent = (
   isAllDay: true,
   origin: Origin.COMPASS,
   position: gridEventDefaultPosition,
-  priority: Priorities.UNASSIGNED,
   startDate: "2026-05-25",
   title: "All-day event",
   user: "user-1",

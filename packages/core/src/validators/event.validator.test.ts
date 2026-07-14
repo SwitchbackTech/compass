@@ -1,4 +1,4 @@
-import { Origin, Priorities } from "../constants/core.constants";
+import { Origin } from "../constants/core.constants";
 import { type Schema_Event } from "../types/event.types";
 import { validateEvent } from "./event.validator";
 
@@ -8,7 +8,6 @@ describe("validateEvent", () => {
       startDate: "2023-01-01",
       endDate: "2023-01-02",
       origin: Origin.COMPASS,
-      priority: Priorities.RELATIONS,
       user: "user123",
       unexpectedProperty: "unexpectedValue",
     };
@@ -21,7 +20,6 @@ describe("validateEvent", () => {
       startDate: "2023-01-01",
       endDate: "2023-01-02",
       origin: Origin.COMPASS,
-      priority: Priorities.RELATIONS,
       user: "user123",
     };
 
@@ -44,7 +42,6 @@ describe("validateEvent", () => {
       startDate: 20230101,
       endDate: "2023-01-02",
       origin: "INVALID_ORIGIN",
-      priority: "INVALID_PRIORITY",
       user: 123,
     } as unknown as Schema_Event;
 
@@ -56,7 +53,6 @@ describe("validateEvent", () => {
       startDate: "01-01-2023", // wrong format
       endDate: "2023-02-21",
       origin: Origin.GOOGLE_IMPORT,
-      priority: Priorities.WORK,
       user: "user123",
     };
 
@@ -69,7 +65,6 @@ it("invalidates when datetime format is invalid", () => {
     startDate: "2023-01-01T05:00:00", //missing offset
     endDate: "2023-01-02T15:00:00+02:00",
     origin: Origin.COMPASS,
-    priority: Priorities.RELATIONS,
     user: "user123",
   };
 

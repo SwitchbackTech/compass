@@ -1,5 +1,5 @@
 import { ObjectId } from "bson";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { type Schema_Event } from "@core/types/event.types";
 
 /**
@@ -15,7 +15,6 @@ export const CHILL_ALL_DAY: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "chill all day",
   description: "just chillin",
-  priority: Priorities.RELATIONS,
   isAllDay: true,
   startDate: "2022-09-23",
   endDate: "2022-09-24",
@@ -27,7 +26,6 @@ export const CLIMB: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "Climb",
   description: "",
-  priority: Priorities.WORK,
   isAllDay: false,
   startDate: "2022-03-01T17:00:00-06:00",
   endDate: "2022-03-01T19:00:00-06:00",
@@ -39,7 +37,6 @@ export const EUROPE_TRIP: Schema_Event = {
   origin: Origin.COMPASS,
   title: "Europe Trip",
   description: "Italy, Germany",
-  priority: Priorities.SELF,
   startDate: "2025-12-10T00:00:00-00:00",
   endDate: "2025-12-10T00:00:00-00:00",
   order: 2,
@@ -48,7 +45,6 @@ export const LEARN_CHINESE: Schema_Event = {
   _id: new ObjectId().toString(),
   description: "",
   origin: Origin.COMPASS,
-  priority: Priorities.UNASSIGNED,
   title: "Learn Chinese",
   user: USER,
   startDate: "2025-06-09",
@@ -62,7 +58,6 @@ export const MARCH_1: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "Mar 1",
   description: "",
-  priority: Priorities.WORK,
   isAllDay: true,
   startDate: "2022-03-01",
   endDate: "2022-03-02",
@@ -74,7 +69,6 @@ export const GROCERIES: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "groceries",
   description: "foo",
-  priority: Priorities.RELATIONS,
   isAllDay: false,
   startDate: "2022-02-21T11:45:00-06:00",
   endDate: "2022-02-21T12:45:00-06:00",
@@ -86,7 +80,6 @@ export const MULTI_WEEK: Schema_Event = {
   origin: Origin.GOOGLE_IMPORT,
   title: "multiweek event",
   description: "",
-  priority: Priorities.WORK,
   isAllDay: true,
   startDate: "2022-09-01T00:00:00-06:00",
   endDate: "2022-09-22T00:00:00-06:00",
@@ -102,5 +95,4 @@ export const TY_TIM: Schema_Event = {
   isAllDay: false,
   startDate: "2022-03-01T12:15:00-06:00",
   endDate: "2022-03-01T12:45:00-06:00",
-  priority: Priorities.WORK,
 };

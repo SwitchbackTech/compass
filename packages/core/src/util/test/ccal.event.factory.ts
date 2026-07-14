@@ -1,6 +1,6 @@
 import { faker } from "@faker-js/faker";
 import { ObjectId } from "bson";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import {
   type Schema_Event,
   type Schema_Event_Recur_Base,
@@ -32,7 +32,6 @@ export const createMockStandaloneEvent = (
     _id: new ObjectId().toString(),
     title: faker.lorem.sentence(),
     description: faker.lorem.paragraph(),
-    priority: faker.helpers.arrayElement(Object.values(Priorities)),
     user: new ObjectId().toString(),
     origin: Origin.COMPASS,
     updatedAt: now,
@@ -94,7 +93,6 @@ export const createMockInstance = (
     },
     user: "test-user-id",
     origin: Origin.GOOGLE,
-    priority: Priorities.WORK,
     isAllDay: false,
     updatedAt: now,
     gEventId,

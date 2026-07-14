@@ -1,10 +1,6 @@
 import { type ObjectId } from "bson";
 import { z } from "zod";
-import {
-  Origin,
-  Priorities,
-  type Priority,
-} from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { IDSchema } from "@core/types/type.utils";
 
 /**
@@ -53,7 +49,6 @@ export interface Schema_Event {
   gRecurringEventId?: string;
   order?: number;
   origin?: Origin;
-  priority?: Priority;
   recurrence?: {
     rule?: string[] | null;
     eventId?: string;
@@ -86,7 +81,6 @@ export interface Schema_Event_Core extends Schema_Event {
   startDate: string;
   endDate: string;
   origin: Origin;
-  priority: Priority;
   user: string;
 }
 
@@ -115,7 +109,6 @@ export const CoreEventSchema = z.object({
   gEventId: z.string().optional(),
   gRecurringEventId: z.string().optional(),
   origin: z.nativeEnum(Origin),
-  priority: z.nativeEnum(Priorities),
   recurrence: Recurrence.optional(),
   startDate: eventDateSchema,
   title: z.string().optional(),
@@ -130,7 +123,6 @@ export const CompassEventRecurrence = z.object({
 
 export const EventUpdateSchema = z.object({
   description: z.string().nullable().optional(),
-  priority: z.nativeEnum(Priorities).optional(),
   recurrence: z.union([
     CompassEventRecurrence.extend({ rule: z.null() }),
     CompassEventRecurrence,

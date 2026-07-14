@@ -40,7 +40,6 @@ export const mapEventRecord = (record: EventRecord): Event => ({
           seriesId: record.recurrence.seriesId.toHexString() as EventId,
         }
       : record.recurrence,
-  priority: record.priority,
   createdAt: record.createdAt.toISOString() as DateTime,
   updatedAt: record.updatedAt
     ? (record.updatedAt.toISOString() as DateTime)
@@ -70,7 +69,6 @@ export const mapCreateInput = (
     content: input.content,
     schedule,
     recurrence: input.recurrence,
-    priority: input.priority,
     externalReference: null,
     createdAt: context.now,
     updatedAt: null,

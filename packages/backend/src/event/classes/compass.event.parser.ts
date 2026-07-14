@@ -83,7 +83,7 @@ export type DeletePlan =
 
 const applyEditableFields = (
   event: EventRecord,
-  input: Pick<ReplaceEventInput, "content" | "schedule" | "priority">,
+  input: Pick<ReplaceEventInput, "content" | "schedule">,
   now: Date,
 ): EventRecord => ({
   ...event,
@@ -97,7 +97,6 @@ const applyEditableFields = (
           timeZone: input.schedule.timeZone,
         }
       : input.schedule,
-  priority: input.priority,
   updatedAt: now,
 });
 

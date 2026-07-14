@@ -53,7 +53,7 @@ When creating an event, enabling the Repeat toggle reveals recurrence options. S
 ### Expected Results
 
 - The event appears on every Monday and Wednesday going forward in the calendar.
-- Each instance is visually identical (same title, priority, and time).
+- Each instance is visually identical (same title and time).
 - The series persists after a page reload.
 
 ---

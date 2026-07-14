@@ -1,6 +1,5 @@
 import type React from "react";
 import { useCallback } from "react";
-import { type Priority } from "@core/constants/core.constants";
 import { Btn, SaveButton } from "@web/components/Button/Button";
 import { TooltipWrapper } from "@web/components/Tooltip/TooltipWrapper";
 
@@ -9,7 +8,6 @@ interface Props {
   cancelText?: string;
   onSubmit: () => void;
   onCancel?: () => void;
-  priority?: Priority;
 }
 
 export const SaveSection: React.FC<Props> = ({
@@ -17,7 +15,6 @@ export const SaveSection: React.FC<Props> = ({
   cancelText = "Cancel",
   onSubmit: _onSubmit,
   onCancel,
-  priority,
 }) => {
   const onSave = useCallback(() => _onSubmit(), [_onSubmit]);
 
@@ -39,7 +36,6 @@ export const SaveSection: React.FC<Props> = ({
       <TooltipWrapper onClick={onSave} shortcut={["Mod", "Enter"]}>
         <SaveButton
           minWidth={110}
-          priority={priority!}
           role="button"
           tabIndex={0}
           aria-keyshortcuts="Meta+Enter"

@@ -2,7 +2,7 @@ import { confirm, input } from "@inquirer/prompts";
 import { type MigrationContext } from "@scripts/common/cli.types";
 import { ObjectId } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
-import { NodeEnv, Priorities } from "@core/constants/core.constants";
+import { NodeEnv } from "@core/constants/core.constants";
 import {
   type CalendarId,
   type DateTime,
@@ -48,7 +48,6 @@ export default class Seeder implements RunnableMigration<MigrationContext> {
         timeZone: (calendar.timeZone ?? "UTC") as TimeZone,
       },
       recurrence: { kind: "single" },
-      priority: Priorities.UNASSIGNED,
     };
   }
 

@@ -101,7 +101,6 @@ export default class Migration implements RunnableMigration<MigrationContext> {
               content: base.content,
               schedule: base.schedule,
               recurrence: { kind: "occurrence", seriesId: base._id },
-              priority: base.priority,
               externalReference: null,
               createdAt: base.createdAt,
               updatedAt: base.updatedAt,

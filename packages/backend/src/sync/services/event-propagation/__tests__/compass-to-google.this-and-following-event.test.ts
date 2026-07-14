@@ -43,7 +43,6 @@ describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
       kind: "series" as const,
       rules: ["RRULE:FREQ=WEEKLY;COUNT=5"] as never,
     },
-    priority: "unassigned" as const,
   });
 
   const seedSyncedSeries = async (userId: string, calendarId: string) => {
@@ -86,7 +85,6 @@ describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
           timeZone: "America/Denver" as never,
         },
         recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=3"] },
-        priority: "unassigned",
         scope: "thisAndFollowing",
       },
     );
@@ -207,7 +205,6 @@ describe("CompassToGoogleEventPropagation - scope 'thisAndFollowing'", () => {
           timeZone: "America/Denver" as never,
         },
         recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=2"] },
-        priority: "unassigned",
         scope: "thisAndFollowing",
       },
     );

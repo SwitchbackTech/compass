@@ -43,7 +43,6 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
       timeZone: "America/Denver" as never,
     },
     recurrence: { kind: "single" as const },
-    priority: "unassigned" as const,
   });
 
   it("runs the Google effect only after the Mongo write is durably committed", async () => {
@@ -185,7 +184,6 @@ describe("CompassToGoogleEventPropagation - transaction envelope", () => {
         timeZone: "America/Denver" as never,
       },
       recurrence: { kind: "single" as const },
-      priority: "unassigned" as const,
       externalReference: {
         provider: "google" as const,
         eventId: "some-gcal-id",

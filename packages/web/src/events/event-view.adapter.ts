@@ -8,7 +8,6 @@ const basePresentation = (event: Event) => ({
   eventId: event.id,
   calendarId: event.calendarId,
   content: event.content,
-  priority: event.priority,
   recurrence: event.recurrence,
 });
 

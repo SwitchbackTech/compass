@@ -44,7 +44,6 @@ describe("CompassToGoogleEventPropagation - scope 'all' - full series", () => {
       kind: "series" as const,
       rules: ["RRULE:FREQ=WEEKLY;COUNT=5"] as never,
     },
-    priority: "unassigned" as const,
   });
 
   const seedSyncedSeries = async (userId: string, calendarId: string) => {
@@ -68,7 +67,6 @@ describe("CompassToGoogleEventPropagation - scope 'all' - full series", () => {
       content: { kind: "details", title: "Weekly sync", description: "" },
       schedule: seriesInput(calendar._id.toHexString()).schedule,
       recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY;COUNT=2"] },
-      priority: "unassigned",
       scope: "all",
     });
 
@@ -161,7 +159,6 @@ describe("CompassToGoogleEventPropagation - scope 'all' - full series", () => {
       content: { kind: "details", title: "Renamed", description: "" },
       schedule: seriesInput(calendar._id.toHexString()).schedule,
       recurrence: { kind: "preserve" },
-      priority: "unassigned",
       scope: "all",
     });
 

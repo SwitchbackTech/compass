@@ -1,4 +1,3 @@
-import { Priorities } from "@core/constants/core.constants";
 import {
   type Calendar,
   getCalendarCapabilities,
@@ -25,7 +24,6 @@ const timedEvent = {
     timeZone: "America/Denver",
   },
   recurrence: { kind: "single" as const },
-  priority: Priorities.WORK,
   createdAt: "2026-07-01T00:00:00.000Z",
   updatedAt: null,
 } as unknown as Event;

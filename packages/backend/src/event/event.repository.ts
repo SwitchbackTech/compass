@@ -100,15 +100,12 @@ class EventRepository {
     ownedCalendarIds: ObjectId[],
     session?: ClientSession,
   ): Promise<EventRecord[]> {
-    const { start, end, priorities } = query;
+    const { start, end } = query;
     const calendarFilter = { calendarId: { $in: ownedCalendarIds } };
-    const priorityFilter =
-      priorities.length > 0 ? { priority: { $in: priorities } } : {};
 
     // Branch 1: timed events, stored as BSON Dates, overlapping [start, end).
     const timedFilter: Filter<EventRecord> = {
       ...calendarFilter,
-      ...priorityFilter,
       "schedule.kind": "timed",
       "schedule.start": { $lt: new Date(end) },
       "schedule.end": { $gt: new Date(start) },
@@ -122,7 +119,6 @@ class EventRepository {
     const allDayEnd = end.slice(0, 10);
     const allDayFilter: Filter<EventRecord> = {
       ...calendarFilter,
-      ...priorityFilter,
       "schedule.kind": "allDay",
       "schedule.start": { $lt: allDayEnd },
       "schedule.end": { $gt: allDayStart },

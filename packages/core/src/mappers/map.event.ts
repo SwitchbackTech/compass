@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 
 import mergeWith from "lodash.mergewith";
-import { Origin, Priorities } from "@core/constants/core.constants";
+import { Origin } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import {
   CalendarProvider,
@@ -97,7 +97,6 @@ export namespace MapEvent {
           // capture where event came from to later decide how to
           // sync changes between compass and integrations
           origin: event.origin || Origin.UNSURE,
-          priority: event.priority || Priorities.UNASSIGNED,
         },
       },
     };
@@ -212,7 +211,6 @@ export const gEventToCompassEvent = (
   const { id: gEventId, description } = event;
   const title = event.summary!;
   const isAllDay = !!event.start && "date" in event.start;
-  const priority = getPriority(event);
   const startDate = isAllDay ? event.start?.date : event.start?.dateTime;
   const endDate = isAllDay ? event.end?.date : event.end?.dateTime;
 
@@ -228,7 +226,6 @@ export const gEventToCompassEvent = (
     isAllDay,
     startDate: startDate!,
     endDate: endDate!,
-    priority,
     updatedAt: new Date(),
   };
 
@@ -244,23 +241,6 @@ export const gEventToCompassEvent = (
   const validatedCompassEvent = validateEvent(compassEvent);
 
   return validatedCompassEvent;
-};
-
-const getPriority = (gEvent: gSchema$Event): Priorities => {
-  const priorityExists =
-    gEvent.extendedProperties?.private?.["priority"] !== undefined &&
-    gEvent.extendedProperties?.private?.["priority"] !== null;
-  if (priorityExists) {
-    const priority = gEvent.extendedProperties?.private?.["priority"];
-    if (
-      priority &&
-      Object.values(Priorities).includes(priority as Priorities)
-    ) {
-      return priority as Priorities;
-    }
-    return Priorities.UNASSIGNED;
-  }
-  return Priorities.UNASSIGNED;
 };
 
 const getRecurrence = (gEvent: gSchema$Event) => {

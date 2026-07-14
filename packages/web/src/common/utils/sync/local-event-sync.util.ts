@@ -37,7 +37,6 @@ function toCreateInput(
       record.event.recurrence.kind === "series"
         ? { kind: "series", rules: record.event.recurrence.rules }
         : { kind: "single" },
-    priority: record.event.priority,
     // Local storage only ever holds "details" content (never a synthesized
     // "busy" block), so this narrowing cast is safe.
     content: record.event.content as CreateEventInput["content"],

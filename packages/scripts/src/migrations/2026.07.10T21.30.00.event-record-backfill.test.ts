@@ -12,7 +12,6 @@ import {
   ObjectId,
 } from "mongodb";
 import { MongoDBStorage, Umzug } from "umzug";
-import { Priorities } from "@core/constants/core.constants";
 import { Logger } from "@core/logger/winston.logger";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";
 import {
@@ -104,7 +103,6 @@ describe("2026.07.10T21.30.00.event-record-backfill", () => {
     endDate: new Date("2026-01-01T11:00:00.000Z").toISOString(),
     isAllDay: false,
     isSomeday: false,
-    priority: Priorities.UNASSIGNED,
     updatedAt: new Date(),
     ...overrides,
   });

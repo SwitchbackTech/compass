@@ -1,5 +1,4 @@
 import { type Dispatch, type Ref, type SetStateAction } from "react";
-import { type Priority } from "@core/constants/core.constants";
 import {
   type Categories_Event,
   type Schema_Event,
@@ -17,17 +16,11 @@ export interface GridEventFormProps {
   onDelete: () => void;
   onDuplicate?: (draft: GridEventDraft) => void;
   onSubmit: (draft: GridEventDraft | null) => void;
-  priority?: Priority;
   setDraft: Dispatch<SetStateAction<GridEventDraft | null>>;
   titleInputRef?: Ref<HTMLInputElement>;
 }
 
-type EventField =
-  | "title"
-  | "description"
-  | "startDate"
-  | "endDate"
-  | "priority";
+type EventField = "title" | "description" | "startDate" | "endDate";
 export type SetEventFormField = (
   field: Partial<Schema_Event>,
   value?: Schema_Event[EventField],

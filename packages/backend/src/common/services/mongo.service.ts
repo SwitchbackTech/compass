@@ -9,7 +9,6 @@ import {
   ObjectId,
 } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { type Schema_Priority } from "@core/types/priority.types";
 import { type Schema_Sync } from "@core/types/sync.types";
 import { type Schema_User } from "@core/types/user.types";
 import { type Schema_Watch } from "@core/types/watch.types";
@@ -25,7 +24,6 @@ interface InternalClient {
   client: MongoClient;
   calendar: Collection<CalendarRecord>;
   event: Collection<EventRecord>;
-  priority: Collection<Omit<Schema_Priority, "_id">>;
   sync: Collection<Schema_Sync>;
   user: Collection<Schema_User>;
   watch: Collection<Schema_Watch>;
@@ -54,15 +52,6 @@ class MongoService {
    */
   get event(): InternalClient["event"] {
     return this.#accessInternalCollectionProps("event");
-  }
-
-  /**
-   * priority
-   *
-   * mongo collection
-   */
-  get priority(): InternalClient["priority"] {
-    return this.#accessInternalCollectionProps("priority");
   }
 
   /**
@@ -119,9 +108,6 @@ class MongoService {
       client,
       calendar: db.collection<CalendarRecord>(Collections.CALENDAR),
       event: db.collection<EventRecord>(Collections.EVENT),
-      priority: db.collection<Omit<Schema_Priority, "_id">>(
-        Collections.PRIORITY,
-      ),
       sync: db.collection<Schema_Sync>(Collections.SYNC),
       user: db.collection<Schema_User>(Collections.USER),
       watch: db.collection<Schema_Watch>(Collections.WATCH),

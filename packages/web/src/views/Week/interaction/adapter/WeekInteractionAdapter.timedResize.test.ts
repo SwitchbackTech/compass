@@ -26,7 +26,6 @@ const createTimedEvent = (
       top: 900,
       width: 100,
     },
-    priority: "none",
     startDate: "2026-05-19T09:00:00.000",
     title: "Timed event",
     user: "user-1",

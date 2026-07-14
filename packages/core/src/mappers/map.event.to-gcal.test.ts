@@ -1,5 +1,5 @@
 import { type gSchema$Event } from "@core/types/gcal";
-import { Origin, Priorities } from "../constants/core.constants";
+import { Origin } from "../constants/core.constants";
 import { MapEvent } from "./map.event";
 
 describe("toGcal", () => {
@@ -52,33 +52,6 @@ describe("toGcal", () => {
     });
   });
 
-  it("saves priority as private extended property", () => {
-    const gcalEvent = MapEvent.toGcal({
-      _id: "yupm",
-      user: "user1",
-      title: "Jan 1 2021",
-      isAllDay: true,
-      startDate: "2021-01-01",
-      endDate: "2021-01-02",
-      priority: Priorities.WORK,
-    });
-    expect(gcalEvent.extendedProperties?.private?.["priority"]).toBe(
-      Priorities.WORK,
-    );
-  });
-  it("sets priority to unassigned as private extended properties when none provided", () => {
-    const gcalEvent = MapEvent.toGcal({
-      _id: "yupm",
-      user: "user1",
-      title: "Jan 1 2021",
-      isAllDay: true,
-      startDate: "2021-01-01",
-      endDate: "2021-01-02",
-    });
-    expect(gcalEvent.extendedProperties?.private?.["priority"]).toBe(
-      Priorities.UNASSIGNED,
-    );
-  });
   it("set origin to unsure as private extended properties when none provided", () => {
     const gcalEvent = MapEvent.toGcal({
       _id: "yupm",

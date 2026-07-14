@@ -60,7 +60,6 @@ function optimisticEventFromCreate(input: CreateEventInput): Event {
     content: input.content,
     schedule: input.schedule,
     recurrence: input.recurrence as EventRecurrence,
-    priority: input.priority,
     createdAt: nowDateTime(),
     updatedAt: null,
   };
@@ -79,7 +78,6 @@ function mergeReplaceInput(existing: Event, input: ReplaceEventInput): Event {
     content: input.content,
     schedule: input.schedule,
     recurrence,
-    priority: input.priority,
     updatedAt: nowDateTime(),
   };
 }

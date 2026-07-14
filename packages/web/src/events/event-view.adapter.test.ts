@@ -1,11 +1,10 @@
-import { Priorities } from "@core/constants/core.constants";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { EventScheduleSchema } from "@core/types/event.contracts";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { presentGridEvent } from "./event-view.adapter";
 import { expect, test } from "bun:test";
 
-test("presents a timed event for the grid with its recurrence and priority", () => {
+test("presents a timed event for the grid with its recurrence", () => {
   const schedule = EventScheduleSchema.parse({
     kind: "timed",
     start: "2026-07-11T09:00:00.000-06:00",
@@ -14,7 +13,6 @@ test("presents a timed event for the grid with its recurrence and priority", () 
   });
   if (schedule.kind !== "timed") throw new Error("expected timed schedule");
   const event = createMockEvent({
-    priority: Priorities.WORK,
     recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
     schedule,
   });
@@ -23,7 +21,6 @@ test("presents a timed event for the grid with its recurrence and priority", () 
     eventId: event.id,
     calendarId: event.calendarId,
     content: event.content,
-    priority: Priorities.WORK,
     recurrence: { kind: "series", rules: ["RRULE:FREQ=WEEKLY"] },
     kind: "timed",
     start: schedule.start,

@@ -4,7 +4,7 @@
 
 **Creative North Star: "The Dark Calendar Canvas, One Accent"**
 
-Compass is a near-black blue canvas where the only truly saturated color is a single sky-blue accent (`#57c1ff`). Everything structural, the grid lines, panels, borders, and most text, lives in a narrow blue-gray band against a deep `#0d1017` background. Color enters the screen only where it carries meaning: the accent marks selection and primary actions, and a small set of muted priority colors (work, relations, self, unassigned) tints the event blocks themselves. The interface is dim and low-contrast at rest so the user's events and current task are the brightest things on screen.
+Compass is a near-black blue canvas where the only truly saturated color is a single sky-blue accent (`#57c1ff`). Everything structural, the grid lines, panels, borders, and most text, lives in a narrow blue-gray band against a deep `#0d1017` background. Color enters the screen only where it carries meaning: the accent marks selection and primary actions, and a single muted slate tints the event blocks themselves. The interface is dim and low-contrast at rest so the user's events and current task are the brightest things on screen.
 
 This is a planning tool for people who want the calendar to get out of the way. Density is welcome where it serves the task (a full week of events, a packed sidebar), but chrome is kept quiet: no borders until you interact, no decorative fills, no second accent competing for attention. The one deliberately human note is handwriting: the Caveat script font is a personal touch at the margin of an otherwise precise instrument.
 
@@ -14,13 +14,13 @@ What this system rejects: the cluttered toolbars and nested menus of Google/Outl
 
 - Deep blue-black surface (`#0d1017`), built up by tonal layering, not boxes.
 - Exactly one bright accent (`#57c1ff`); meaning, not decoration.
-- Muted priority colors are the only other saturation, and only on events.
+- A single flat muted event color is the only other saturation, and only on events.
 - Quiet, borderless controls that reveal themselves on hover/focus.
 - One UI typeface (Rubik), with Caveat handwriting as a single human accent.
 
 ## 2. Colors
 
-A monochrome blue-gray system on a near-black base, punctuated by one sky-blue accent and a muted priority palette reserved for event content.
+A monochrome blue-gray system on a near-black base, punctuated by one sky-blue accent and a single muted neutral reserved for event content.
 
 ### Primary
 
@@ -28,13 +28,11 @@ A monochrome blue-gray system on a near-black base, punctuated by one sky-blue a
 
 ### Secondary
 
-- **Soft Cyan** (`#aed3e0`, `hsl(196 45 78)`): The light end of the accent gradient (`accent-primary → soft-cyan`) and the Work priority tint. A calmer companion to the sky accent, never used as a competing focal point.
+- **Soft Cyan** (`#aed3e0`, `hsl(196 45 78)`): The light end of the accent gradient (`accent-primary → soft-cyan`). A calmer companion to the sky accent, never used as a competing focal point.
 
-### Tertiary (priority palette, events only)
+### Tertiary (Event Fill)
 
-- **Relations Teal** (`#86d0bb`, `hsl(163 44 67)`): The Relations priority color on event blocks.
-- **Self Blue-Gray** (`#9fb0bf`, `hsl(205 36 62)`): The Self priority color.
-- **Unassigned Slate** (`#8293a1`, `hsl(207 14 57)`): The default/unassigned priority color.
+- **Event Fill / Slate** (`#8293a1`, `hsl(207 14 57)`): The single flat color used everywhere an event is represented — event card fill, the save button, tags, and the event form background. No other event color exists; every event looks the same regardless of category.
 
 ### Neutral
 
@@ -53,7 +51,7 @@ A monochrome blue-gray system on a near-black base, punctuated by one sky-blue a
 
 **The One Accent Rule.** Exactly one saturated accent (`#57c1ff`) on any screen, reserved for selection, primary action, and info. If a second saturated hue appears anywhere outside an event block or a status signal, it is wrong.
 
-**The Color-Means-Something Rule.** Saturation is forbidden as decoration. The accent means "selected / primary / info"; priority colors mean "this event's category"; status colors mean "this state." Structural chrome stays in the blue-gray band.
+**The Color-Means-Something Rule.** Saturation is forbidden as decoration. The accent means "selected / primary / info"; the event fill color marks something as an event block; status colors mean "this state." Structural chrome stays in the blue-gray band.
 
 ## 3. Typography
 
@@ -101,9 +99,9 @@ Controls are quiet, borderless, and hover-revealing: they sit flush on their sur
 
 ### Buttons
 
-- **Shape:** Small radius (`2px` for priority buttons, `4px` default).
-- **Priority button:** Background is the priority color (darkened at rest); `text-dark` (`#0d1017`) label; `min-width` ~158px; `padding: 0 8px`. Disabled drops to `opacity: 0.5` and `pointer-events: none`.
-- **Hover:** Background shifts to `bg-primary` and the label color brightens toward the priority color (`brighten()`); ~0.5s color transition. This hover-reveal is the signature button behavior.
+- **Shape:** Small radius (`2px` for the event save button, `4px` default).
+- **Save button:** Background is the event fill color (darkened at rest); `text-dark` (`#0d1017`) label; `min-width` ~158px; `padding: 0 8px`. Disabled drops to `opacity: 0.5` and `pointer-events: none`.
+- **Hover:** Background shifts to `bg-primary` and the label color brightens toward the event fill color (`brighten()`); ~0.5s color transition. This hover-reveal is the signature button behavior.
 - **Focus:** A `2px solid` dark border (`border-primary-dark`) appears on focus, the one place a border is added intentionally.
 
 ### Inputs / Fields
@@ -113,10 +111,10 @@ Controls are quiet, borderless, and hover-revealing: they sit flush on their sur
 - **Hover:** Background shifts to `border-primary`; the field reveals itself rather than carrying a permanent box.
 - **Focus:** `outline: none` globally; focus is conveyed by context (selection state, surrounding chrome), consistent with the quiet-control philosophy.
 
-### Tags / Priority Chips
+### Tags
 
-- **Style:** Filled with the muted priority color (Work soft-cyan, Relations teal, Self blue-gray, Unassigned slate); `text-dark` label.
-- **State:** Hover brightens the fill via `brighten()`. Used to categorize events; never as decorative accents elsewhere.
+- **Style:** Filled with the flat event fill slate (`#8293a1`); `text-dark` label.
+- **State:** Hover brightens the fill via `brighten()`. Used to mark event-related content; never as decorative accents elsewhere.
 
 ### Navigation / Planner Sidebar
 
@@ -125,7 +123,7 @@ Controls are quiet, borderless, and hover-revealing: they sit flush on their sur
 ### Calendar Grid (signature surface)
 
 - **Grid lines:** `grid-line-primary` hairlines (`hsl(219 18 34 / 20%)`) structure the Timed Grid without visual weight.
-- **Events:** Priority-colored blocks are the brightest content on the canvas. A selected event uses `event-selected` (`#abb9c4`). During drag/resize, a Draft Event carries a state shadow while the source element either dims (`dim-source`) or hides (`hide-source`).
+- **Events:** Event blocks are the brightest content on the canvas. A selected event uses `event-selected` (`#abb9c4`). During drag/resize, a Draft Event carries a state shadow while the source element either dims (`dim-source`) or hides (`hide-source`).
 
 ### Command Palette
 
@@ -142,7 +140,7 @@ Controls are quiet, borderless, and hover-revealing: they sit flush on their sur
 - **Do** keep exactly one saturated accent (`#57c1ff`) per screen, for selection, primary action, and info only.
 - **Do** build depth by stepping surface lightness (`#0d1017` → `#11151c` → translucent panels), per the Layer-By-Light Rule.
 - **Do** leave controls borderless at rest and reveal them via background/color shift on hover and focus.
-- **Do** reserve priority colors (Work/Relations/Self/Unassigned) for event blocks and tags, not chrome.
+- **Do** reserve the flat event fill color for event blocks and tags, not chrome.
 - **Do** carry all UI in Rubik, using weight (400/500/700) and the fixed rem scale for hierarchy.
 - **Do** confine Caveat handwriting to the Dedication.
 - **Do** hold body/label text to WCAG AA contrast against the dark surfaces; bump muted blue-grays toward `fg-primary` when contrast is close.

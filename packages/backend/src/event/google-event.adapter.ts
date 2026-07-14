@@ -1,5 +1,4 @@
 import { ObjectId } from "mongodb";
-import { Priorities } from "@core/constants/core.constants";
 import { type DateOnly, type TimeZone } from "@core/types/domain-primitives";
 import { type EventContent } from "@core/types/event.contracts";
 import {
@@ -162,7 +161,6 @@ export const mapGoogleEvent = (
     content: mapContent(event),
     schedule: scheduleResult.schedule,
     recurrence: recurrenceResult.recurrence,
-    priority: Priorities.UNASSIGNED,
     externalReference: {
       provider: "google",
       eventId: event.id,
