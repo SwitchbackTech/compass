@@ -566,10 +566,6 @@
 
 @utility c-scroll {
   @layer components {
-    :focus-visible {
-      outline: none;
-    }
-
     /* scrollbar styling */
     /* biome-ignore lint/style/noDescendingSpecificity: Keep the scrollbar pseudo-elements grouped inside this utility. */
     &::-webkit-scrollbar {
