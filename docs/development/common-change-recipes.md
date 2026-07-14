@@ -101,7 +101,7 @@ Use this for overlays mounted in both `WeekView` and `DayViewContent` (for examp
 
 Common pitfall: calling `dialog.close()` directly in an event handler will skip the CSS exit transition and can produce abrupt UI changes.
 
-## Add A Migration Or Seeder
+## Add A Migration
 
 For database migrations:
 

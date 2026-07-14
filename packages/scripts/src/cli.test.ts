@@ -61,16 +61,6 @@ describe("CompassCLI", () => {
     expect(mockRunMigrator).toHaveBeenCalledWith(MigratorType.MIGRATION);
   });
 
-  it("runs seed command and does not throw", async () => {
-    mockGetCliOptions.mockReturnValue({});
-
-    const cli = new CompassCLI(["node", "cli", "seed"]);
-
-    await cli.run();
-
-    expect(mockRunMigrator).toHaveBeenCalledWith(MigratorType.SEEDER);
-  });
-
   it("calls exitHelpfully for unsupported command", async () => {
     mockGetCliOptions.mockReturnValue({});
 

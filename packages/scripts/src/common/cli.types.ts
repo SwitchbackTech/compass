@@ -15,7 +15,6 @@ export type Options_Cli = Options_Cli_Root & Options_Cli_Delete;
 export type Environment_Cli = "local" | "staging" | "production";
 
 export enum MigratorType {
-  SEEDER = "Seeder",
   MIGRATION = "Migration",
 }
 

@@ -14,7 +14,7 @@ export class CliValidator {
     this.program = program;
   }
 
-  public exitHelpfully(cmd: "root" | "delete" | "seed", msg?: string) {
+  public exitHelpfully(cmd: "root" | "delete", msg?: string) {
     msg && log.error(msg);
 
     if (cmd === "root") {
