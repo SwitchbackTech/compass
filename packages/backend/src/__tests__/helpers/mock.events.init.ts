@@ -3,12 +3,12 @@ import { ObjectId, type WithoutId } from "mongodb";
 import { type Options } from "rrule";
 import { Origin } from "@core/constants/core.constants";
 import { MapEvent } from "@core/mappers/map.event";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import {
   type gSchema$Event,
   type gSchema$EventBase,
   type gSchema$EventInstance,
 } from "@core/types/gcal";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type WithId } from "@core/types/type.utils";
 import { isBase } from "@core/util/event/event.util";
 import { mockGcalEvents } from "@backend/__tests__/mocks.gcal/factories/gcal.event.factory";

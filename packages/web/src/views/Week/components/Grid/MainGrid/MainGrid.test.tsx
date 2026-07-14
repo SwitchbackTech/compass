@@ -1,8 +1,8 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { type PropsWithChildren, useState } from "react";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   cleanup,
@@ -188,7 +188,9 @@ const createWeekProps = () => ({
 // cache (toStrictEvent above) requires a real ObjectId, so every fixture
 // gets a generated one; tests that need to assert on "which event" read
 // `event._id` back off the returned fixture, never a literal.
-const createSavedEvent = (overrides: Partial<CompassEvent> = {}): CompassEvent =>
+const createSavedEvent = (
+  overrides: Partial<CompassEvent> = {},
+): CompassEvent =>
   ({
     endDate: "2024-01-15T10:00:00.000Z",
     isAllDay: false,

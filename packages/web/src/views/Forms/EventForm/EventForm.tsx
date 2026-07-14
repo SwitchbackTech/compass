@@ -12,8 +12,8 @@ import {
   useRef,
   useState,
 } from "react";
-import { type CalendarId } from "@core/types/domain-primitives";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
+import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import {
   isEventReadOnly,

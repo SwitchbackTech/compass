@@ -74,6 +74,4 @@ export const ValidatedCompassEventSchema = z.object({
   updatedAt: z.union([z.date(), z.iso.datetime()]).optional(),
   user: z.string(),
 });
-export type ValidatedCompassEvent = z.infer<
-  typeof ValidatedCompassEventSchema
->;
+export type ValidatedCompassEvent = z.infer<typeof ValidatedCompassEventSchema>;

@@ -1,7 +1,7 @@
 import { useCallback } from "react";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type EventId } from "@core/types/domain-primitives";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { useEventMutations } from "@web/events/mutations/useEventMutations";
 import { useEventById } from "@web/events/queries/useEventById";
 import { draftActions } from "@web/events/stores/draft.store";

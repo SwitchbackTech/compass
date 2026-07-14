@@ -4,7 +4,6 @@ import mergeWith from "lodash.mergewith";
 import { Origin } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
 import { CalendarProvider } from "@core/types/calendar.types";
-import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
 import {
   type BaseEvent,
   type CompassEvent,
@@ -13,6 +12,7 @@ import {
   type ValidatedCompassEvent,
   ValidatedCompassEventSchema,
 } from "@core/types/compass-event.contracts";
+import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
 import {
   type WithId,
   type WithObjectId,

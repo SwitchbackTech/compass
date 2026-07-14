@@ -2,8 +2,8 @@ import { type RRule } from "rrule";
 import { type ParsedOptions } from "rrule/dist/esm/types";
 import {
   type BaseEvent,
-  type InstanceEvent,
   type CompassEvent,
+  type InstanceEvent,
 } from "@core/types/compass-event.contracts";
 import { type UserMetadata } from "@core/types/user.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";

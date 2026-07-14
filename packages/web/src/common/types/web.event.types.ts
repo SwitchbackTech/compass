@@ -1,6 +1,6 @@
 import { z } from "zod/v4";
-import { CalendarIdSchema } from "@core/types/domain-primitives";
 import { ValidatedCompassEventSchema } from "@core/types/compass-event.contracts";
+import { CalendarIdSchema } from "@core/types/domain-primitives";
 import { type SelectOption } from "@web/common/types/component.types";
 
 /** Event category, based on its display type */

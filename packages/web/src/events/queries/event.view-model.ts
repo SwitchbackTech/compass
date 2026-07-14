@@ -1,6 +1,6 @@
 import { Origin } from "@core/constants/core.constants";
-import { type Event } from "@core/types/event.contracts";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
+import { type Event } from "@core/types/event.contracts";
 import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,

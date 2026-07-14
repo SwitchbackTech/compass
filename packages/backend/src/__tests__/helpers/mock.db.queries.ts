@@ -25,7 +25,9 @@ export const getEventsInDb = async (
 ) => {
   return (await mongoService.event
     .find(filter)
-    .toArray()) as unknown as WithObjectId<Omit<ValidatedCompassEvent, "_id">>[];
+    .toArray()) as unknown as WithObjectId<
+    Omit<ValidatedCompassEvent, "_id">
+  >[];
 };
 
 export const isEventCollectionEmpty = async (

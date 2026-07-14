@@ -1,8 +1,8 @@
 import { ObjectId } from "mongodb";
 import {
   type BaseEvent,
-  type InstanceEvent,
   type CompassEvent,
+  type InstanceEvent,
 } from "@core/types/compass-event.contracts";
 import {
   createMockBaseEvent,

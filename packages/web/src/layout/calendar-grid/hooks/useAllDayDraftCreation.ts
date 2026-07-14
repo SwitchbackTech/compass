@@ -1,7 +1,7 @@
 import { type MouseEvent as ReactMouseEvent } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type CalendarId } from "@core/types/domain-primitives";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
+import { type CalendarId } from "@core/types/domain-primitives";
 import dayjs from "@core/util/date/dayjs";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";

@@ -4,8 +4,8 @@ import {
   useEffect,
   useRef,
 } from "react";
-import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type CompassEvent } from "@core/types/compass-event.contracts";
+import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import {
   Categories_Event,
   type GridEvent,

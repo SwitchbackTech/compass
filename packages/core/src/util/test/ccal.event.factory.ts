@@ -3,8 +3,8 @@ import { ObjectId } from "bson";
 import { Origin } from "@core/constants/core.constants";
 import {
   type BaseEvent,
-  type InstanceEvent,
   type CompassEvent,
+  type InstanceEvent,
   type StandaloneEvent,
 } from "@core/types/compass-event.contracts";
 import { type WithId } from "@core/types/type.utils";

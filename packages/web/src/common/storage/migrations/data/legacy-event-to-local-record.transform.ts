@@ -1,7 +1,7 @@
 import { ObjectId } from "bson";
+import { type ValidatedCompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId, EventIdSchema } from "@core/types/domain-primitives";
 import { type EventRecurrence } from "@core/types/event.contracts";
-import { type ValidatedCompassEvent } from "@core/types/compass-event.contracts";
 import {
   type LocalEventRecord,
   LocalEventRecordSchema,

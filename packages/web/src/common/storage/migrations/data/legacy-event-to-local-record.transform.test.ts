@@ -1,6 +1,6 @@
 import { Origin } from "@core/constants/core.constants";
-import { CalendarIdSchema, type EventId } from "@core/types/domain-primitives";
 import { type ValidatedCompassEvent } from "@core/types/compass-event.contracts";
+import { CalendarIdSchema, type EventId } from "@core/types/domain-primitives";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   transformLegacyEvents,

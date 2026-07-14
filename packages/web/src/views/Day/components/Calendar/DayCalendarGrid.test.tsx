@@ -1,9 +1,9 @@
 import userEvent from "@testing-library/user-event";
 import { act } from "react";
 import { type Calendar } from "@core/types/calendar.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { CalendarIdSchema, EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   cleanup,

@@ -5,11 +5,11 @@ import {
   YMDHAM_FORMAT,
   YMDHM_FORMAT,
 } from "@core/constants/date.constants";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import {
   type EventSchedule,
   EventScheduleSchema,
 } from "@core/types/event.contracts";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";

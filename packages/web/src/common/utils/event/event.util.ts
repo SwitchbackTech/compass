@@ -245,7 +245,10 @@ export function compareEventsById(prev: CompassEvent, next: CompassEvent) {
   return prev._id?.localeCompare(next._id ?? "") ?? 0;
 }
 
-export function compareEventsByStartDate(prev: CompassEvent, next: CompassEvent) {
+export function compareEventsByStartDate(
+  prev: CompassEvent,
+  next: CompassEvent,
+) {
   const prevStart = dayjs(prev.startDate);
   const nextStart = dayjs(next.startDate);
   const before = prevStart.isBefore(nextStart);

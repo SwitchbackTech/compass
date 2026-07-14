@@ -1,8 +1,8 @@
 import { type Calendar } from "@core/types/calendar.contracts";
+import { type CompassEvent } from "@core/types/compass-event.contracts";
 import { type CalendarId, type EventId } from "@core/types/domain-primitives";
 import { type Event } from "@core/types/event.contracts";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
-import { type CompassEvent } from "@core/types/compass-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { getBrowserTimeZone } from "@web/common/utils/datetime/web.date.util";
 import {
