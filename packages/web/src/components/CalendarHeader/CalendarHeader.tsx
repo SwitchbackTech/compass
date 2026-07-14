@@ -49,9 +49,13 @@ export const CalendarHeader: FC<Props> = ({
           onClick={() => viewActions.toggleSidebar()}
           shortcut="["
         >
-          <span className="flex h-6 w-6 items-center justify-center">
+          <button
+            type="button"
+            aria-label="Open sidebar"
+            className="c-focus-ring flex h-6 w-6 cursor-pointer items-center justify-center"
+          >
             <SidebarIcon color={theme.color.text.lightInactive} size={21} />
-          </span>
+          </button>
         </TooltipWrapper>
       ) : null}
 
