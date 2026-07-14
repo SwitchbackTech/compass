@@ -1,10 +1,10 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { act } from "react";
 import { type Event } from "@core/types/event.contracts";
-import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { createStoreWrapper } from "@web/__tests__/render-with-store";
 import { createInitialState } from "@web/__tests__/utils/state/store.test.util";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import {
   createGridEventDraft,

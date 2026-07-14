@@ -1,4 +1,4 @@
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { refocusEventElement } from "@web/common/utils/event/event.util";
 import {
   getArrowKeyMovement,
@@ -12,9 +12,9 @@ export function nudgeEventFromKeyboard({
   onNudge,
 }: {
   afterNudge?: () => void;
-  event: Schema_GridEvent;
+  event: GridEvent;
   keyboardEvent: KeyboardEvent;
-  onNudge: (event: Schema_GridEvent) => void;
+  onNudge: (event: GridEvent) => void;
 }): boolean {
   if (!event._id) return false;
 

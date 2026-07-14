@@ -11,7 +11,7 @@ import {
   useMemo,
   useState,
 } from "react";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { getCalendarEventIdFromElement } from "@web/common/utils/event/event.util";
 import { ContextMenu } from "@web/components/ContextMenu/ContextMenu";
 import { type ContextMenuItemsActions } from "@web/components/ContextMenu/ContextMenuItems";
@@ -22,11 +22,12 @@ export const useDayCalendarContextMenu = ({
   getDayEventById,
   onOpenEvent,
 }: {
-  getDayEventById: (eventId: string) => Schema_GridEvent | null;
-  onOpenEvent: (event: Schema_GridEvent) => void;
+  getDayEventById: (eventId: string) => GridEvent | null;
+  onOpenEvent: (event: GridEvent) => void;
 }) => {
-  const [contextMenuEvent, setContextMenuEvent] =
-    useState<Schema_GridEvent | null>(null);
+  const [contextMenuEvent, setContextMenuEvent] = useState<GridEvent | null>(
+    null,
+  );
   const [isOpen, setIsOpen] = useState(false);
   const contextMenuEventId = contextMenuEvent?._id ?? "";
   const duplicateContextMenuEvent = useDuplicateEvent(contextMenuEventId);

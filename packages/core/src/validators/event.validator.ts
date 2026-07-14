@@ -1,10 +1,10 @@
 import {
-  CoreEventSchema,
-  type Event_Core,
-  type Schema_Event,
-} from "@core/types/event.types";
+  type LegacyEvent,
+  type ValidatedLegacyEvent,
+  ValidatedLegacyEventSchema,
+} from "@core/types/legacy-event.contracts";
 
-export const validateEvent = (event: Schema_Event): Event_Core => {
-  const result = CoreEventSchema.parse(event);
+export const validateEvent = (event: LegacyEvent): ValidatedLegacyEvent => {
+  const result = ValidatedLegacyEventSchema.parse(event);
   return result;
 };

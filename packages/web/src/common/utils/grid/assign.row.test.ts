@@ -1,11 +1,11 @@
 import { mar13To19 } from "@core/__mocks__/v1/events/events.allday.3";
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import { assignEventsToRow } from "@web/common/utils/grid/assign.row";
 import { randomUUID } from "node:crypto";
 
 const createId = () => randomUUID();
 
-const assignsRowNumberToEachEvent = (events: Schema_Event[]) => {
+const assignsRowNumberToEachEvent = (events: LegacyEvent[]) => {
   let res = true;
   if (events.length === 0) return false;
   for (const e of events) {
@@ -18,12 +18,12 @@ const assignsRowNumberToEachEvent = (events: Schema_Event[]) => {
 };
 
 const hasNumericRow = (
-  event: Schema_Event,
-): event is Schema_Event & { row: number } => {
+  event: LegacyEvent,
+): event is LegacyEvent & { row: number } => {
   return "row" in event && typeof event.row === "number";
 };
 
-const noEventsOnSameRow = (events: Schema_Event[]) => {
+const noEventsOnSameRow = (events: LegacyEvent[]) => {
   const rows = events.filter(hasNumericRow).map((event) => event.row);
   const noDuplicates = new Set(rows).size === rows.length;
   return noDuplicates;

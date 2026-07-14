@@ -1,7 +1,7 @@
 import { Origin } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { dayCalendarEventRegistry } from "../registry/dayCalendarEventRegistry";
 import {
@@ -28,7 +28,7 @@ const allDaySourceRect = {
   width: 320,
 };
 
-const timedEvent: Schema_GridEvent = {
+const timedEvent: GridEvent = {
   _id: "timed-event",
   endDate: "2026-05-18T10:00:00.000",
   isAllDay: false,
@@ -39,7 +39,7 @@ const timedEvent: Schema_GridEvent = {
   user: "user-1",
 };
 
-const allDayEvent: Schema_GridEvent = {
+const allDayEvent: GridEvent = {
   _id: "all-day-event",
   endDate: "2026-05-21",
   isAllDay: true,
@@ -51,7 +51,7 @@ const allDayEvent: Schema_GridEvent = {
   user: "user-1",
 };
 
-const multiDayAllDayEvent: Schema_GridEvent = {
+const multiDayAllDayEvent: GridEvent = {
   ...allDayEvent,
   _id: "multi-day-all-day-event",
   endDate: "2026-05-22",
@@ -205,10 +205,7 @@ const createAdapter = ({
   return { adapter, flushFrame, flushTimer, mainGridElement };
 };
 
-const registerEvent = (
-  event: Schema_GridEvent,
-  eventType: "all-day" | "timed",
-) => {
+const registerEvent = (event: GridEvent, eventType: "all-day" | "timed") => {
   const rect = event.isAllDay ? allDaySourceRect : timedSourceRect;
   const source = elementWithRect(rect.left, rect.top, rect.width, rect.height);
   const child = document.createElement("span");

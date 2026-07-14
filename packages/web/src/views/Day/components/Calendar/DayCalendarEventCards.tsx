@@ -2,7 +2,7 @@ import { type MouseEvent, useCallback, useMemo, useRef, useState } from "react";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
 import { CalendarTimedEventCard } from "@web/layout/calendar-grid/components/CalendarTimedEventCard";
 import {
@@ -30,12 +30,12 @@ import {
 interface DayEventCardProps {
   calendarIdentity?: CalendarCardIdentity | null;
   columnIndex: number;
-  event: Schema_GridEvent;
+  event: GridEvent;
   isActiveDraft: boolean;
   isPlaceholder: boolean;
   isReadOnly: boolean;
   measurements: CalendarGridMeasurements;
-  onOpenEvent: (event: Schema_GridEvent) => void;
+  onOpenEvent: (event: GridEvent) => void;
   visibleDates: CalendarGridVisibleDate[];
 }
 
@@ -79,7 +79,7 @@ export const DayAllDayCalendarEvent = ({
   // mutated. Wiring the click straight to the same "open" action the
   // keyboard path uses bypasses the engine entirely for this card.
   const onEventMouseDown = isReadOnly
-    ? (_mouseEvent: MouseEvent, clickedEvent: Schema_GridEvent) =>
+    ? (_mouseEvent: MouseEvent, clickedEvent: GridEvent) =>
         onOpenEvent(clickedEvent)
     : undefined;
 
@@ -156,7 +156,7 @@ export const DayTimedCalendarEvent = ({
   // mutated. Wiring the click straight to the same "open" action the
   // keyboard path uses bypasses the engine entirely for this card.
   const onEventMouseDown = isReadOnly
-    ? (clickedEvent: Schema_GridEvent) => onOpenEvent(clickedEvent)
+    ? (clickedEvent: GridEvent) => onOpenEvent(clickedEvent)
     : undefined;
   const deckBoxShadow = (() => {
     if (!isDeck) return undefined;
@@ -217,7 +217,7 @@ const getDayTimedEventPosition = ({
 }: {
   columnIndex: number;
   deckLayout: CalendarTimedDeckLayout | null;
-  event: Schema_GridEvent;
+  event: GridEvent;
   isPlaceholder: boolean;
   measurements: CalendarGridMeasurements;
   visibleDates: CalendarGridVisibleDate[];

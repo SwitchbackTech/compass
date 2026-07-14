@@ -1,5 +1,5 @@
-import { RecurringEventUpdateScope } from "@core/types/event.types";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
+import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 
 export function toRecurrenceScope(
   scope?: RecurringEventUpdateScope,

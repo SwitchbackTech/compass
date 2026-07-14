@@ -1,5 +1,5 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { arraysAreEqual } from "@web/__tests__/utils/web.test.util";
 import {
@@ -21,7 +21,7 @@ import {
 } from "bun:test";
 
 describe("computeRelativeEventDateRange", () => {
-  const baseEvent: Schema_Event = {
+  const baseEvent: LegacyEvent = {
     _id: "test-id",
     startDate: "2024-03-19", // A Tuesday
     endDate: "2024-03-20",
@@ -119,7 +119,7 @@ describe("computeRelativeEventDateRange", () => {
 });
 
 describe("computeCurrentEventDateRange", () => {
-  const baseEvent: Schema_Event = {
+  const baseEvent: LegacyEvent = {
     _id: "test-id",
     startDate: "2024-03-19", // A Tuesday
     endDate: "2024-03-20",

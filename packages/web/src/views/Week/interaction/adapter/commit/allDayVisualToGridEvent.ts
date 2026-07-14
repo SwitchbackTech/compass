@@ -1,6 +1,6 @@
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { type AllDayDragVisual } from "@web/layout/calendar-grid/interaction/model/AllDayDragVisual";
 import { type AllDayResizeVisual } from "@web/layout/calendar-grid/interaction/model/AllDayResizeVisual";
 
@@ -8,9 +8,9 @@ export const hasAllDayDragVisualMoved = (visual: AllDayDragVisual) =>
   visual.dayDate !== visual.initialDayDate;
 
 export const allDayDragVisualToGridEvent = (
-  event: Schema_GridEvent,
+  event: GridEvent,
   visual: AllDayDragVisual,
-): Schema_GridEvent => {
+): GridEvent => {
   // Delta (not absolute) semantics: multi-day spans are clamped to the
   // rendered window, so the initial column date is the clamped visible start,
   // not necessarily the event's own start date. The date diff also absorbs
@@ -36,9 +36,9 @@ export const hasAllDayResizeVisualChanged = (visual: AllDayResizeVisual) =>
   visual.endDayIndex !== visual.initialEndDayIndex;
 
 export const allDayResizeVisualToGridEvent = (
-  event: Schema_GridEvent,
+  event: GridEvent,
   visual: AllDayResizeVisual,
-): Schema_GridEvent => {
+): GridEvent => {
   if (!hasAllDayResizeVisualChanged(visual)) {
     return event;
   }
@@ -55,7 +55,7 @@ export const allDayResizeVisualToGridEvent = (
   };
 };
 
-const getExclusiveEndDateBaseline = (event: Schema_GridEvent) => {
+const getExclusiveEndDateBaseline = (event: GridEvent) => {
   const startDate = dayjs(event.startDate).startOf("day");
   const endDate = dayjs(event.endDate).startOf("day");
 

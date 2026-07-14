@@ -1,5 +1,5 @@
-import { Categories_Event } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { useDraftStore } from "@web/events/stores/draft.store";
 import { afterAll, describe, expect, it, mock, setSystemTime } from "bun:test";
 

@@ -2,16 +2,16 @@ import { ObjectId } from "bson";
 import { useCallback } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { EventIdSchema } from "@core/types/domain-primitives";
-import {
-  Categories_Event,
-  RecurringEventUpdateScope,
-} from "@core/types/event.types";
 import { type RecurrenceScope } from "@core/types/event-command.contracts";
 import { devAlert } from "@core/util/app.util";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
 import { getDefaultTargetCalendar } from "@web/calendars/calendar.util";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
+import {
+  Categories_Event,
+  RecurringEventUpdateScope,
+} from "@web/common/types/web.event.types";
 import {
   getArrowKeyMovement,
   isTimedEventInsideOneDay,
@@ -504,11 +504,11 @@ export const useDraftActions = (
         _dateBeingChanged === "startDate" ? "endDate" : "startDate";
 
       // String mirrors of the draft's live schedule, formatted exactly as
-      // the legacy Schema_GridEvent draft stored them (all-day: day-only
+      // the legacy GridEvent draft stored them (all-day: day-only
       // YEAR_MONTH_DAY_FORMAT strings; timed: full offset strings). The flip
       // math below is unchanged dayjs-string arithmetic ported verbatim from
       // before the GridEventDraft conversion, reading/writing through this
-      // mirror instead of native Schema_GridEvent fields.
+      // mirror instead of native GridEvent fields.
       const formatDraftDate = (date: Date) =>
         isAllDay
           ? dayjs(date).format(YEAR_MONTH_DAY_FORMAT)
@@ -665,7 +665,7 @@ export const useDraftActions = (
       // Rare fallback: a "gridClick" activity started via
       // draftActions.startGridClick (a source event not yet in the query
       // cache), which has no GridEventDraft to hand off. Build a default
-      // from the legacy Schema_Event mirror's dates instead.
+      // from the legacy LegacyEvent mirror's dates instead.
       const startDate = draftFromStore?.startDate;
       const endDate = draftFromStore?.endDate;
       const isAllDay = eventType === Categories_Event.ALLDAY;

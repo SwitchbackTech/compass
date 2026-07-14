@@ -1,5 +1,5 @@
 import { Origin } from "../constants/core.constants";
-import { type Schema_Event } from "../types/event.types";
+import { type LegacyEvent } from "../types/legacy-event.contracts";
 import { validateEvent } from "./event.validator";
 
 describe("validateEvent", () => {
@@ -16,7 +16,7 @@ describe("validateEvent", () => {
     expect(parsedEvent).not.toHaveProperty("unexpectedProperty");
   });
   it("validates a correct event", () => {
-    const event: Schema_Event = {
+    const event: LegacyEvent = {
       startDate: "2023-01-01",
       endDate: "2023-01-02",
       origin: Origin.COMPASS,
@@ -43,13 +43,13 @@ describe("validateEvent", () => {
       endDate: "2023-01-02",
       origin: "INVALID_ORIGIN",
       user: 123,
-    } as unknown as Schema_Event;
+    } as unknown as LegacyEvent;
 
     expect(() => validateEvent(event)).toThrow();
   });
 
   it("invalidates when date format is invalid", () => {
-    const event: Schema_Event = {
+    const event: LegacyEvent = {
       startDate: "01-01-2023", // wrong format
       endDate: "2023-02-21",
       origin: Origin.GOOGLE_IMPORT,
@@ -61,7 +61,7 @@ describe("validateEvent", () => {
 });
 
 it("invalidates when datetime format is invalid", () => {
-  const event: Schema_Event = {
+  const event: LegacyEvent = {
     startDate: "2023-01-01T05:00:00", //missing offset
     endDate: "2023-01-02T15:00:00+02:00",
     origin: Origin.COMPASS,

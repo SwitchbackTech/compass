@@ -1,8 +1,8 @@
 import { Origin } from "@core/constants/core.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { describe, expect, it, mock } from "bun:test";
 
-const createMockGridPosition = (): Schema_GridEvent["position"] => ({
+const createMockGridPosition = (): GridEvent["position"] => ({
   isOverlapping: false,
   totalEventsInGroup: 1,
   widthMultiplier: 1,
@@ -13,8 +13,8 @@ const createMockGridPosition = (): Schema_GridEvent["position"] => ({
 });
 
 const createMockGridEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent => ({
+  overrides: Partial<GridEvent> = {},
+): GridEvent => ({
   _id: "test-grid-event-id",
   title: "Test Grid Event",
   startDate: "2024-01-15T10:00:00Z",
@@ -26,9 +26,7 @@ const createMockGridEvent = (
   ...overrides,
 });
 
-const validateGridEvent = mock(
-  (event: Schema_GridEvent): Schema_GridEvent => event,
-);
+const validateGridEvent = mock((event: GridEvent): GridEvent => event);
 mock.module("@web/common/validators/grid.event.validator", () => ({
   validateGridEvent,
 }));
@@ -69,7 +67,7 @@ describe("submit.parser", () => {
       });
       const userId = "test-user-id";
 
-      const result = prepEventBeforeSubmit(draft, userId) as Schema_GridEvent;
+      const result = prepEventBeforeSubmit(draft, userId) as GridEvent;
 
       expect(result._id).toBe(draft._id);
       expect(result.user).toBe(userId);
@@ -161,7 +159,7 @@ describe("submit.parser", () => {
       const userId = "test-user-id";
 
       const result = prepEventBeforeSubmit(draft, userId) as unknown as {
-        position: Schema_GridEvent["position"];
+        position: GridEvent["position"];
       };
 
       expect(result.position).toEqual(position);

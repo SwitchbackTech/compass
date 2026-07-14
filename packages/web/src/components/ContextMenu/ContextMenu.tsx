@@ -9,7 +9,7 @@ import React from "react";
 import { darken } from "@web/common/styles/color.utils";
 import { type CSSVariables } from "@web/common/styles/css.types";
 import { EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   ContextMenuItems,
   type ContextMenuItemsActions,
@@ -18,7 +18,7 @@ import {
 
 interface ContextMenuProps {
   actions?: ContextMenuItemsActions;
-  event?: Schema_GridEvent;
+  event?: GridEvent;
   onOutsideClick: () => void;
   close: () => void;
   style: React.CSSProperties;

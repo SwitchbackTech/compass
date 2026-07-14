@@ -71,3 +71,9 @@ export const ExpirationDateSchema = zod4
   );
 
 export const StringV4Schema = zod4.string().nonempty();
+
+/** Adds a string _id (Compass-side id) to an object shape */
+export type WithId<T> = T & { _id: string };
+/** Adds a Mongo ObjectId _id to an object shape (like mongodb's WithId, importable in ui code) */
+export type WithObjectId<T> = T & { _id: ObjectId };
+export type WithoutId<T> = Omit<T, "_id">;

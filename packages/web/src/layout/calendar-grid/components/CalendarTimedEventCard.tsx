@@ -16,7 +16,7 @@ import {
 } from "@web/common/constants/web.constants";
 import { brighten, darken } from "@web/common/styles/color.utils";
 import { EVENT_COLOR, EVENT_HOVER_COLOR } from "@web/common/styles/theme.util";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { getTimesLabel } from "@web/common/utils/datetime/web.date.util";
 import { getLineClamp } from "@web/common/utils/grid/grid.util";
 import {
@@ -47,18 +47,18 @@ interface CalendarTimedEventCardProps {
   /** Resolved by a list-level useCalendarLookup call, not fetched here. */
   calendarIdentity?: CalendarCardIdentity | null;
   displayMode: "draft" | "placeholder" | "saved";
-  event: Schema_GridEvent;
+  event: GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
   isSelected?: boolean;
   motionMode: "dragging" | "idle" | "resizing";
   onBlur?: () => void;
-  onEventKeyDown?: (event: Schema_GridEvent) => void;
-  onEventMouseDown?: (event: Schema_GridEvent, e: MouseEvent) => void;
+  onEventKeyDown?: (event: GridEvent) => void;
+  onEventMouseDown?: (event: GridEvent, e: MouseEvent) => void;
   onFocus?: () => void;
   onMouseEnter?: (e: MouseEvent<HTMLDivElement>) => void;
   onMouseLeave?: (e: MouseEvent<HTMLDivElement>) => void;
   onScalerMouseDown?: (
-    event: Schema_GridEvent,
+    event: GridEvent,
     e: MouseEvent,
     dateToChange: "startDate" | "endDate",
   ) => void;

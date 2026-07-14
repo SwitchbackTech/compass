@@ -5,7 +5,7 @@ import CalendarUpdateMigration from "@scripts/migrations/2025.10.14T12.24.01.upd
 import Migration from "@scripts/migrations/2025.10.16T12.26.00.migrate-calendarlist-to-calendar";
 import { ObjectId } from "mongodb";
 import { Logger } from "@core/logger/winston.logger";
-import { CalendarProvider } from "@core/types/event.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import { CalendarDriver } from "@backend/__tests__/drivers/calendar.driver";
 import {
   cleanupCollections,

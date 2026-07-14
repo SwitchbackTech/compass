@@ -1,6 +1,6 @@
 import { Origin } from "@core/constants/core.constants";
 import { CalendarIdSchema, type EventId } from "@core/types/domain-primitives";
-import { type Event_Core } from "@core/types/event.types";
+import { type ValidatedLegacyEvent } from "@core/types/legacy-event.contracts";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import {
   transformLegacyEvents,
@@ -12,13 +12,13 @@ const sentinelCalendarId = CalendarIdSchema.parse(createObjectIdString());
 
 const baseLegacy = (
   overrides: Partial<
-    Event_Core & {
+    ValidatedLegacyEvent & {
       order?: number;
       __compassDemoEvent?: true;
       isSomeday?: boolean;
     }
   > = {},
-): Event_Core & {
+): ValidatedLegacyEvent & {
   order?: number;
   __compassDemoEvent?: true;
   isSomeday?: boolean;

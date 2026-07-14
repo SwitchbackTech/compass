@@ -9,15 +9,15 @@ import {
   type EventSchedule,
   EventScheduleSchema,
 } from "@core/types/event.contracts";
-import {
-  type Categories_Event,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { ACCEPTED_TIMES } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
 import { type Option_Time } from "@web/common/types/util.types";
-import { type Schema_SelectedDates } from "@web/common/types/web.event.types";
+import {
+  type Categories_Event,
+  type SelectedDates,
+} from "@web/common/types/web.event.types";
 import { roundToNext } from "@web/common/utils/round/round.util";
 import { GRID_TIME_STEP } from "@web/views/Week/layout.constants";
 
@@ -175,7 +175,7 @@ export const getCalendarHeadingLabel = (
 export const getBrowserTimeZone = (): string =>
   Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-export const mapToBackend = (s: Schema_SelectedDates): EventSchedule => {
+export const mapToBackend = (s: SelectedDates): EventSchedule => {
   if (s.isAllDay) {
     const startDate = dayjs(s.startDate).format(YEAR_MONTH_DAY_FORMAT);
     let endDate = dayjs(s.endDate).format(YEAR_MONTH_DAY_FORMAT);
@@ -213,7 +213,7 @@ export const toUTCOffset = (date: string | Dayjs | Date) => {
   } else return date.format(); // then already a DayJs object
 };
 
-const _addTimesToDates = (dt: Schema_SelectedDates, timeZone: string) => {
+const _addTimesToDates = (dt: SelectedDates, timeZone: string) => {
   const start = getDayjsByTimeValue(dt.startTime.value);
   const startDate = dayjs
     .tz(dt.startDate, timeZone)
@@ -295,12 +295,12 @@ export const computeCurrentEventDateRange = (
   to: {
     duration: "week" | "month";
   },
-  event: Schema_Event,
+  event: LegacyEvent,
   weekViewRange: {
     startDate: string;
     endDate: string;
   },
-): Schema_Event => {
+): LegacyEvent => {
   const reference = dayjs(weekViewRange.startDate);
 
   let start: Dayjs;
@@ -327,8 +327,8 @@ export const computeRelativeEventDateRange = (
     direction: "prev" | "next";
     duration: "week" | "month";
   },
-  event: Schema_Event,
-): Schema_Event => {
+  event: LegacyEvent,
+): LegacyEvent => {
   const reference = dayjs(event.startDate);
 
   let start: Dayjs;

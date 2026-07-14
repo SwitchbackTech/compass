@@ -1,10 +1,8 @@
 import dayjs from "@core/util/date/dayjs";
 import { theme } from "@web/common/styles/theme";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 
-export const adjustOverlappingEvents = (
-  events: Schema_GridEvent[],
-): Schema_GridEvent[] => {
+export const adjustOverlappingEvents = (events: GridEvent[]): GridEvent[] => {
   const adjustedEvents = deepCopyEvents(events);
   adjustedEvents.sort((a, b) => dayjs(a.startDate).diff(dayjs(b.startDate)));
 
@@ -25,10 +23,10 @@ export const adjustOverlappingEvents = (
 };
 
 const findOverlaps = (
-  event: Schema_GridEvent,
-  adjustedEvents: Schema_GridEvent[],
-  accumulatedEvents = new Set<Schema_GridEvent>(),
-): Set<Schema_GridEvent> => {
+  event: GridEvent,
+  adjustedEvents: GridEvent[],
+  accumulatedEvents = new Set<GridEvent>(),
+): Set<GridEvent> => {
   const directOverlaps = adjustedEvents.filter(
     (otherEvent) =>
       otherEvent !== event &&
@@ -45,7 +43,7 @@ const findOverlaps = (
   return accumulatedEvents;
 };
 
-const adjustEventGroup = (eventGroup: Schema_GridEvent[]) => {
+const adjustEventGroup = (eventGroup: GridEvent[]) => {
   eventGroup.sort((a, b) => dayjs(a.startDate).diff(dayjs(b.startDate)));
 
   if (eventsHaveExactSameTimes(eventGroup)) {
@@ -65,7 +63,7 @@ const adjustEventGroup = (eventGroup: Schema_GridEvent[]) => {
 };
 
 export const getOverlappingStyles = (
-  event: Schema_GridEvent,
+  event: GridEvent,
   gridWidth: number,
   textWidth: number,
 ) => {
@@ -95,7 +93,7 @@ const roundToTwoDecimals = (value: number): number => {
   return Math.round(value * 100) / 100;
 };
 
-const eventsHaveExactSameTimes = (eventGroup: Schema_GridEvent[]): boolean => {
+const eventsHaveExactSameTimes = (eventGroup: GridEvent[]): boolean => {
   return eventGroup.every(
     (event) =>
       dayjs(event.startDate).isSame(eventGroup[0].startDate) &&
@@ -103,13 +101,13 @@ const eventsHaveExactSameTimes = (eventGroup: Schema_GridEvent[]): boolean => {
   );
 };
 
-const sortEventsByTitle = (eventGroup: Schema_GridEvent[]) => {
+const sortEventsByTitle = (eventGroup: GridEvent[]) => {
   eventGroup.sort((a, b) =>
     a.title && b.title ? a.title.localeCompare(b.title) : 0,
   );
 };
 
-const deepCopyEvents = (events: Schema_GridEvent[]): Schema_GridEvent[] => {
+const deepCopyEvents = (events: GridEvent[]): GridEvent[] => {
   return events.map((event) => ({
     ...event,
     position: { ...event.position },

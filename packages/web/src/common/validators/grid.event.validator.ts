@@ -1,10 +1,10 @@
 import {
+  type GridEvent,
   GridEventSchema,
-  type Schema_GridEvent,
-  type Schema_WebEvent,
+  type WebEvent,
 } from "@web/common/types/web.event.types";
 
-export const validateGridEvent = (event: Schema_WebEvent): Schema_GridEvent => {
+export const validateGridEvent = (event: WebEvent): GridEvent => {
   const result = GridEventSchema.parse(event);
 
   return result;

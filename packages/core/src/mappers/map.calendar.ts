@@ -1,9 +1,9 @@
 import { ObjectId } from "bson";
 import {
+  CalendarProvider,
   CompassCalendarSchema,
   GoogleCalendarMetadataSchema,
 } from "@core/types/calendar.types";
-import { CalendarProvider } from "@core/types/event.types";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 import dayjs from "@core/util/date/dayjs";
 

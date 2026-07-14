@@ -1,5 +1,5 @@
 import { Origin } from "@core/constants/core.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import {
   CALENDAR_DECK_INDENT,
@@ -18,12 +18,12 @@ import {
 } from "./calendarTimedDeckLayout";
 
 const createTimedEvent = (
-  overrides: Partial<Schema_GridEvent> & {
+  overrides: Partial<GridEvent> & {
     _id: string;
     startDate: string;
     endDate: string;
   },
-): Schema_GridEvent => ({
+): GridEvent => ({
   isAllDay: false,
   origin: Origin.COMPASS,
   recurrence: undefined,

@@ -1,9 +1,11 @@
 import { useQueryClient } from "@tanstack/react-query";
 import fastDeepEqual from "fast-deep-equal/es6";
 import { useCallback } from "react";
-import { type RecurringEventUpdateScope } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  type GridEvent,
+  type RecurringEventUpdateScope,
+} from "@web/common/types/web.event.types";
 import {
   editGridEventDraft,
   parseGridEventDraft,
@@ -18,7 +20,7 @@ import { toRecurrenceScope } from "@web/events/recurrence/recurrence-scope";
 import { draftActions } from "@web/events/stores/draft.store";
 
 // The persisted-write half builds a GridEventDraft from the cached strict
-// `Event` plus the incoming Schema_GridEvent's changed fields (schedule/
+// `Event` plus the incoming GridEvent's changed fields (schedule/
 // title/description), matching
 // WeekInteractionCoordinator.commitStrictSavedMutation (#2029), instead of
 // hand-rolling a ReplaceEventInput via zod. Recurrence always stays
@@ -26,7 +28,7 @@ import { draftActions } from "@web/events/stores/draft.store";
 // never edits its recurrence rule.
 //
 // draftActions.setEvent still writes into the draft store's legacy
-// `event: Schema_Event` projection: Day's grid rendering layers read the
+// `event: LegacyEvent` projection: Day's grid rendering layers read the
 // in-progress drag/resize position via `selectDraft`, and GridEventDraft has
 // no field for that live pixel geometry (packet-03-phase-3c's documented
 // out-of-scope local drag-geometry state).
@@ -37,7 +39,7 @@ export function useUpdateEvent() {
   const update = useCallback(
     (
       payload: {
-        event: Schema_GridEvent;
+        event: GridEvent;
         shouldRemove?: boolean;
         applyTo?: RecurringEventUpdateScope;
       },

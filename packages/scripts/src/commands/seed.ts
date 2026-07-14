@@ -1,7 +1,7 @@
 import { getApiBaseUrl, log } from "@scripts/common/cli.utils";
 import pkg from "inquirer";
 import { ObjectId } from "mongodb";
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { createMockStandaloneEvent } from "@core/util/test/ccal.event.factory";
 import compassAuthService from "@backend/auth/services/compass/compass.auth.service";
@@ -11,7 +11,7 @@ import { findCompassUserBy } from "@backend/user/queries/user.queries";
 const { prompt } = pkg;
 
 async function createEvent(
-  events: Schema_Event[],
+  events: LegacyEvent[],
   baseUrl: string,
   accessToken: string,
 ) {
@@ -66,7 +66,7 @@ async function seedEvents(userInput: string) {
       endDate: dayjs().hour(11).minute(0).second(0).toISOString(),
     };
     const event = createMockStandaloneEvent(eventOverrides);
-    const events: Schema_Event[] = [event];
+    const events: LegacyEvent[] = [event];
 
     await createEvent(events, baseUrl, accessToken);
 

@@ -9,7 +9,7 @@ import {
   useState,
 } from "react";
 import { Frequency, type Options, RRule, type Weekday } from "rrule";
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { parseCompassEventDate } from "@core/util/event/event.util";
@@ -55,12 +55,12 @@ const WEEKDAY_MAP: Record<
 
 export const useRecurrence = (
   event: Partial<
-    Pick<Schema_Event, "startDate" | "endDate" | "recurrence">
+    Pick<LegacyEvent, "startDate" | "endDate" | "recurrence">
   > | null,
   {
     setEvent,
   }: {
-    setEvent: Dispatch<SetStateAction<Schema_Event | null>>;
+    setEvent: Dispatch<SetStateAction<LegacyEvent | null>>;
   },
 ) => {
   const { recurrence, endDate: _endDate } = event ?? {};
@@ -148,7 +148,7 @@ export const useRecurrence = (
   const rule = useMemo(() => JSON.stringify(rrule.toRecurrence()), [rrule]);
 
   const toggleRecurrence = useCallback(() => {
-    setEvent((gridEvent): Schema_Event | null => {
+    setEvent((gridEvent): LegacyEvent | null => {
       if (!gridEvent) return gridEvent;
 
       const { recurrence, ...event } = gridEvent;
@@ -177,7 +177,7 @@ export const useRecurrence = (
     const nextRule = JSON.parse(rule);
     if (fastDeepEqual(currentRule, nextRule)) return;
 
-    setEvent((gridEvent): Schema_Event | null => {
+    setEvent((gridEvent): LegacyEvent | null => {
       if (!gridEvent) return gridEvent;
 
       if (fastDeepEqual(gridEvent.recurrence?.rule, nextRule)) {

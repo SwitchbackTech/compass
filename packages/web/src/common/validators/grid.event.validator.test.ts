@@ -1,6 +1,6 @@
 import { ObjectId } from "bson";
 import { Origin } from "@core/constants/core.constants";
-import { type Schema_GridEvent } from "../types/web.event.types";
+import { type GridEvent } from "../types/web.event.types";
 import { validateGridEvent } from "./grid.event.validator";
 
 describe("validateGridEvent", () => {
@@ -28,7 +28,7 @@ describe("validateGridEvent", () => {
   });
 
   it("validates a correct event", () => {
-    const event: Omit<Schema_GridEvent, "recurrence"> = {
+    const event: Omit<GridEvent, "recurrence"> = {
       _id: new ObjectId().toString(),
       endDate: "2023-01-02",
       hasFlipped: true,
@@ -53,7 +53,7 @@ describe("validateGridEvent", () => {
   });
 
   it("invalidates when types are incorrect", () => {
-    const event: Omit<Partial<Schema_GridEvent>, "recurrence"> = {
+    const event: Omit<Partial<GridEvent>, "recurrence"> = {
       startDate: "2022-10-22",
       endDate: "2023-01-02",
       origin: Origin.UNSURE,
@@ -70,6 +70,6 @@ describe("validateGridEvent", () => {
       },
     };
 
-    expect(() => validateGridEvent(event as Schema_GridEvent)).toThrow();
+    expect(() => validateGridEvent(event as GridEvent)).toThrow();
   });
 });

@@ -4,11 +4,9 @@ import { RRule } from "rrule";
 import { recurring } from "@core/__mocks__/v1/events/gcal/gcal.recurring";
 import { GCAL_MAX_RECURRENCES, Origin } from "@core/constants/core.constants";
 import { gEventToCompassEvent } from "@core/mappers/map.event";
-import {
-  CalendarProvider,
-  type Schema_Event_Recur_Base,
-  type WithMongoId,
-} from "@core/types/event.types";
+import { CalendarProvider } from "@core/types/calendar.types";
+import { type BaseEvent } from "@core/types/legacy-event.contracts";
+import { type WithObjectId } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import {
@@ -411,8 +409,8 @@ describe("CompassEventRRule: ", () => {
         return event;
       });
 
-      const baseEvent = compassEvents.find(isBase) as WithMongoId<
-        Omit<Schema_Event_Recur_Base, "_id">
+      const baseEvent = compassEvents.find(isBase) as WithObjectId<
+        Omit<BaseEvent, "_id">
       >;
 
       expect(baseEvent).toBeDefined();

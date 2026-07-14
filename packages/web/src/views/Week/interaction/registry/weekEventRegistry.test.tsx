@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
 import { FloatingDraftEvent } from "@web/interaction/dom/draft-event/FloatingDraftEvent";
 import { createCalendarInteractionDraftEventMount } from "@web/layout/calendar-grid/interaction/calendarInteractionDom";
 import { GridEvent } from "@web/views/Week/components/Event/Grid/GridEvent/GridEvent";
@@ -89,8 +89,8 @@ const position = {
 };
 
 const createTimedEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent =>
+  overrides: Partial<GridEventEntity> = {},
+): GridEventEntity =>
   ({
     _id: "timed-event",
     endDate: futureTimedEnd.format(),
@@ -100,11 +100,11 @@ const createTimedEvent = (
     startDate: futureTimedStart.format(),
     title: "Timed event",
     ...overrides,
-  }) as Schema_GridEvent;
+  }) as GridEventEntity;
 
 const createAllDayEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent =>
+  overrides: Partial<GridEventEntity> = {},
+): GridEventEntity =>
   ({
     _id: "all-day-event",
     endDate: futureWeekStart.add(2, "day").format(),
@@ -115,7 +115,7 @@ const createAllDayEvent = (
     startDate: futureWeekStart.add(1, "day").format(),
     title: "All-day event",
     ...overrides,
-  }) as Schema_GridEvent;
+  }) as GridEventEntity;
 
 const renderWithStore = (children: React.ReactNode) => render(children);
 
@@ -158,7 +158,7 @@ const RegisteredTimedEventHarness = ({
 }: {
   calendarWeekProps?: WeekProps;
   displayMode?: "draft" | "placeholder" | "saved";
-  event: Schema_GridEvent;
+  event: GridEventEntity;
 }) => {
   const isEnabled = Boolean(event._id) && displayMode === "saved";
   const ref = useWeekEventRegistrationRef({
@@ -192,7 +192,7 @@ const RegisteredAllDayEventHarness = ({
   event,
   isPlaceholder = false,
 }: {
-  event: Schema_GridEvent;
+  event: GridEventEntity;
   isPlaceholder?: boolean;
 }) => {
   const isEnabled = Boolean(event._id) && !isPlaceholder;

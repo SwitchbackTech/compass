@@ -1,10 +1,17 @@
 import { z } from "zod/v4";
-import { CalendarProvider } from "@core/types/event.types";
 import {
   RGBHexSchema,
   TimezoneSchema,
   zObjectId,
 } from "@core/types/type.utils";
+
+// NOTE: distinct from calendar.contracts.ts's `CalendarProvider` type
+// (z.enum(["local", "google"])) — this is the legacy value set, retained
+// until the legacy calendar model is retired.
+export enum CalendarProvider {
+  GOOGLE = "google",
+  COMPASS = "compass",
+}
 
 export const GoogleCalendarMetadataSchema = z.object({
   id: z.string(),

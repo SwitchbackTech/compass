@@ -11,7 +11,7 @@ import { render, screen } from "@web/__tests__/__mocks__/mock.render";
 import { seedPendingEventMutations } from "@web/__tests__/utils/event-query-test-data";
 import { createMockEvent } from "@web/__tests__/utils/factories/event.factory";
 import { calendarQueryKeys } from "@web/calendars/calendar.query";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { editGridEventDraft } from "@web/events/grid-event-draft.adapter";
@@ -26,22 +26,20 @@ const mockSetDraft = mock();
 const mockSubmit = mock();
 const mockOnDelete = mock();
 
-const createMockGridEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent => {
+const createMockGridEvent = (overrides: Partial<GridEvent> = {}): GridEvent => {
   const standaloneEvent = createMockStandaloneEvent();
   return {
     ...standaloneEvent,
     position: gridEventDefaultPosition,
     ...overrides,
-  } as Schema_GridEvent;
+  } as GridEvent;
 };
 
 // GridContextMenuWrapper.tsx (the real right-click flow, unconverted here)
 // already pushes a GridEventDraft into the store's `gridDraft` field before
 // ContextMenuItems mounts; seed the same field directly so edit has a
 // canonical draft to read.
-const seedGridDraftForEvent = (event: Schema_GridEvent) => {
+const seedGridDraftForEvent = (event: GridEvent) => {
   const strictEvent = createMockEvent({
     content: {
       kind: "details",

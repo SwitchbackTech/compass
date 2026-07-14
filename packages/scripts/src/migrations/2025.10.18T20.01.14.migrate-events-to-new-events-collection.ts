@@ -1,14 +1,14 @@
 import { type MigrationContext } from "@scripts/common/cli.types";
+import {
+  type EventNew,
+  EventNewSchema,
+  GoogleEventMetadataSchema,
+} from "@scripts/common/event-new.types";
 import { type AnyBulkWriteOperation, ObjectId } from "mongodb";
 import { type MigrationParams, type RunnableMigration } from "umzug";
 import { z } from "zod/v4";
 import { Origin } from "@core/constants/core.constants";
-import { CalendarProvider } from "@core/types/event.types";
-import {
-  EventSchema,
-  GoogleEventMetadataSchema,
-  type Schema_Event,
-} from "@core/types/event_new.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import { zObjectId } from "@core/types/type.utils";
 import { parseCompassEventDate } from "@core/util/event/event.util";
 import { MONGO_BATCH_SIZE } from "@backend/common/constants/backend.constants";
@@ -44,12 +44,12 @@ export default class Migration implements RunnableMigration<MigrationContext> {
   async up(params: MigrationParams<MigrationContext>): Promise<void> {
     const { logger } = params.context;
     const collectionName = `${mongoService.event.collectionName}_new`;
-    const collection = mongoService.db.collection<Schema_Event>(collectionName);
+    const collection = mongoService.db.collection<EventNew>(collectionName);
 
     await collection.deleteMany();
 
     const cursor = mongoService.event.find({}, { batchSize: MONGO_BATCH_SIZE });
-    const operations: AnyBulkWriteOperation<Schema_Event>[] = [];
+    const operations: AnyBulkWriteOperation<EventNew>[] = [];
     const calendars = new Map<string, ObjectId>();
     const rrules = new Map<string, string[]>();
 
@@ -115,7 +115,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
           let rule = rrules.get(eventId);
           if (!rule) {
             // Deviation (packet-03): frozen historical migration still reads the
-            // pre-cutover Schema_Event shape; raw collection access avoids
+            // pre-cutover LegacyEvent shape; raw collection access avoids
             // fighting the now EventRecord-typed mongoService.event proxy.
             const baseEvent = await mongoService.db
               .collection(Collections.EVENT)
@@ -144,7 +144,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
         }
       }
 
-      const event = EventSchema.parse({
+      const event = EventNewSchema.parse({
         ...eventDetails,
         startDate,
         endDate,
@@ -165,7 +165,7 @@ export default class Migration implements RunnableMigration<MigrationContext> {
   async down(params: MigrationParams<MigrationContext>): Promise<void> {
     const { logger } = params.context;
     const collectionName = `${mongoService.event.collectionName}_new`;
-    const collection = mongoService.db.collection<Schema_Event>(collectionName);
+    const collection = mongoService.db.collection<EventNew>(collectionName);
 
     await collection.deleteMany();
 

@@ -1,4 +1,4 @@
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   type CalendarInteractionCancellationTargets,
   type CalendarInteractionEngineSchedulerOptions,
@@ -28,8 +28,8 @@ export interface WeekInteractionAdapterOptions {
 }
 
 export interface WeekInteractionRuntime {
-  getAllDayEventById?: (eventId: string) => Schema_GridEvent | null;
-  getTimedEventById(eventId: string): Schema_GridEvent | null;
+  getAllDayEventById?: (eventId: string) => GridEvent | null;
+  getTimedEventById(eventId: string): GridEvent | null;
   /**
    * Local YYYY-MM-DD dates of the rendered day columns, in window order.
    * Sourced from the same React render that painted the columns so drag
@@ -37,8 +37,8 @@ export interface WeekInteractionRuntime {
    */
   getVisibleDays(): string[];
   isFormOpen?: () => boolean;
-  onClickAllDayEvent?: (event: Schema_GridEvent) => void;
-  onClickTimedEvent: (event: Schema_GridEvent) => void;
+  onClickAllDayEvent?: (event: GridEvent) => void;
+  onClickTimedEvent: (event: GridEvent) => void;
   onCommitAllDayDrag?: (result: WeekAllDayDragCommitResult) => void;
   onCommitAllDayResize?: (result: WeekAllDayResizeCommitResult) => void;
   onCommitTimedDrag: (result: WeekTimedDragCommitResult) => void;
@@ -48,7 +48,7 @@ export interface WeekInteractionRuntime {
 }
 
 export interface WeekAllDayDragCommitResult {
-  event: Schema_GridEvent;
+  event: GridEvent;
   eventId: string;
   hadFormOpenBeforeInteraction: boolean;
   hasMoved: boolean;
@@ -56,14 +56,14 @@ export interface WeekAllDayDragCommitResult {
 }
 
 export interface WeekAllDayDragTarget {
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: WeekInteractionRegisteredTarget;
   type: "allDayDrag";
 }
 
 export interface WeekAllDayResizeCommitResult {
-  event: Schema_GridEvent;
+  event: GridEvent;
   eventId: string;
   hadFormOpenBeforeInteraction: boolean;
   hasMoved: boolean;
@@ -72,14 +72,14 @@ export interface WeekAllDayResizeCommitResult {
 
 export interface WeekAllDayResizeTarget {
   edge: AllDayResizeEdge;
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: WeekInteractionRegisteredTarget;
   type: "allDayResize";
 }
 
 export interface WeekTimedDragCommitResult {
-  event: Schema_GridEvent;
+  event: GridEvent;
   eventId: string;
   hadFormOpenBeforeInteraction: boolean;
   hasMoved: boolean;
@@ -87,14 +87,14 @@ export interface WeekTimedDragCommitResult {
 }
 
 export interface WeekTimedDragTarget {
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: WeekInteractionRegisteredTarget;
   type: "timedDrag";
 }
 
 export interface WeekTimedResizeCommitResult {
-  event: Schema_GridEvent;
+  event: GridEvent;
   eventId: string;
   hadFormOpenBeforeInteraction: boolean;
   hasMoved: boolean;
@@ -103,7 +103,7 @@ export interface WeekTimedResizeCommitResult {
 
 export interface WeekTimedResizeTarget {
   edge: TimedResizeEdge;
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: WeekInteractionRegisteredTarget;
   type: "timedResize";
@@ -130,7 +130,7 @@ export type WeekInteractionCommitResult =
 export type WeekEdgeNavigableVisual = AllDayDragVisual | TimedDragVisual;
 
 export type WeekResolvedEventTarget = {
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: WeekInteractionRegisteredTarget;
 };

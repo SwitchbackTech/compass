@@ -1,8 +1,9 @@
 import { ObjectId } from "bson";
-import { type Schema_Event, type WithMongoId } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type WithObjectId } from "@core/types/type.utils";
 
 const allDayEventsThatShouldMatch: Array<
-  WithMongoId<Omit<Schema_Event, "_id">>
+  WithObjectId<Omit<LegacyEvent, "_id">>
 > =
   // ordered by start date
   [
@@ -40,7 +41,7 @@ const allDayEventsThatShouldMatch: Array<
   ];
 
 const allDayEventsThatShouldNotMatch: Array<
-  WithMongoId<Omit<Schema_Event, "_id">>
+  WithObjectId<Omit<LegacyEvent, "_id">>
 > = [
   {
     _id: new ObjectId(),
@@ -76,7 +77,7 @@ const allDayEventsThatShouldNotMatch: Array<
   },
 ];
 
-export const mockEventSetMar22: Array<Omit<Schema_Event, "_id">> = [
+export const mockEventSetMar22: Array<Omit<LegacyEvent, "_id">> = [
   ...allDayEventsThatShouldMatch,
   ...allDayEventsThatShouldNotMatch,
 ];

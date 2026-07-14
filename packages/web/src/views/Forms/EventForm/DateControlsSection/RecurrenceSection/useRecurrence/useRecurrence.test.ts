@@ -2,13 +2,13 @@ import { renderHook } from "@testing-library/react";
 import { act } from "react";
 import { Frequency } from "rrule";
 import { Origin } from "@core/constants/core.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { useRecurrence } from "./useRecurrence";
 import { describe, expect, it, mock } from "bun:test";
 
 describe("useRecurrence hook", () => {
-  const baseEvent = (): Schema_GridEvent =>
+  const baseEvent = (): GridEvent =>
     assembleGridEvent({
       _id: "1",
       title: "Test Event",
