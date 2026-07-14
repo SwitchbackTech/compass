@@ -3,6 +3,7 @@ import { type gSchema$Event } from "@core/types/gcal";
 import { type CalendarRecord } from "@backend/calendar/calendar.record";
 import { type GoogleRequestContext } from "@backend/common/services/gcal/gcal.context";
 import gcalService from "@backend/common/services/gcal/gcal.service";
+import { type EventRecord } from "@backend/event/event.record";
 import { eventRepository } from "@backend/event/event.repository";
 import { mapGoogleEvent } from "@backend/event/google-event.adapter";
 import { getAnchorDate } from "@backend/event/services/recur/util/recur.util";
@@ -60,6 +61,11 @@ const merge = (
   affectedEventIds: [...a.affectedEventIds, ...b.affectedEventIds],
 });
 
+const isStandalone = (event: gSchema$Event): boolean =>
+  event.status !== "cancelled" &&
+  !event.recurringEventId &&
+  (!event.recurrence || event.recurrence.length === 0);
+
 /**
  * Applies a batch of Google Calendar events onto the owning CalendarRecord's
  * events, per B8 (match strictly by (calendarId, externalReference.eventId),
@@ -101,14 +107,85 @@ export class GoogleEventSync {
     const seriesMap = new Map<string, ObjectId>();
     await this.preloadSeriesMap(events, seriesMap, session);
 
-    let result = emptyResult();
+    const standalone: gSchema$Event[] = [];
+    const remaining: gSchema$Event[] = [];
     for (const event of events) {
+      (isStandalone(event) ? standalone : remaining).push(event);
+    }
+    let result = await this.applyStandalone(standalone, session);
+
+    for (const event of remaining) {
       result = merge(
         result,
         await this.applyOne(event, seriesMap, perPage, session, true),
       );
     }
     return result;
+  }
+
+  private async applyStandalone(
+    events: gSchema$Event[],
+    session?: ClientSession,
+  ): Promise<GoogleEventSyncResult> {
+    if (events.length === 0) return emptyResult();
+
+    const records: EventRecord[] = [];
+    let ignored = 0;
+    let invalid = 0;
+    const now = new Date();
+
+    for (const event of events) {
+      const mapped = mapGoogleEvent(event, {
+        calendarId: this.calendar._id,
+        calendarTimeZone: this.calendar.timeZone,
+        resolveSeriesObjectId: () => undefined,
+        now,
+      });
+
+      if (mapped.kind === "ignored") {
+        ignored += 1;
+      } else if (mapped.kind === "invalid") {
+        invalid += 1;
+      } else if (mapped.kind === "mapped") {
+        records.push(mapped.event);
+      }
+    }
+
+    const providerIds = records.flatMap((record) =>
+      record.externalReference ? [record.externalReference.eventId] : [],
+    );
+    const existing = await eventRepository.findByExternalReferences(
+      this.calendar._id,
+      providerIds,
+      session,
+    );
+    const existingByProviderId = new Map(
+      existing.flatMap((record) =>
+        record.externalReference
+          ? [[record.externalReference.eventId, record] as const]
+          : [],
+      ),
+    );
+    const replacements = records.map((record) => {
+      const providerId = record.externalReference?.eventId;
+      const match = providerId
+        ? existingByProviderId.get(providerId)
+        : undefined;
+      return match
+        ? { ...record, _id: match._id, createdAt: match.createdAt }
+        : record;
+    });
+
+    await eventRepository.bulkReplace(replacements, session);
+
+    return {
+      processed: events.length,
+      saved: replacements.length,
+      deleted: 0,
+      ignored,
+      invalid,
+      affectedEventIds: replacements.map((record) => record._id.toHexString()),
+    };
   }
 
   private async preloadSeriesMap(
@@ -123,14 +200,16 @@ export class GoogleEventSync {
           .filter((id): id is string => !!id),
       ),
     ].filter((id) => !seriesMap.has(id));
+    if (gRecurringEventIds.length === 0) return;
 
-    for (const gRecurringEventId of gRecurringEventIds) {
-      const existing = await eventRepository.findByExternalReference(
-        this.calendar._id,
-        gRecurringEventId,
-        session,
-      );
-      if (existing) seriesMap.set(gRecurringEventId, existing._id);
+    const existingSeries = await eventRepository.findByExternalReferences(
+      this.calendar._id,
+      gRecurringEventIds,
+      session,
+    );
+    for (const existing of existingSeries) {
+      const providerId = existing.externalReference?.eventId;
+      if (providerId) seriesMap.set(providerId, existing._id);
     }
   }
 
