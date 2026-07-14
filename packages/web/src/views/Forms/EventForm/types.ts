@@ -1,8 +1,6 @@
 import { type Dispatch, type Ref, type SetStateAction } from "react";
-import {
-  type Categories_Event,
-  type Schema_Event,
-} from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 
 // EventForm's props: the grid draft forms (Day + Week) both converge on the
@@ -22,6 +20,6 @@ export interface GridEventFormProps {
 
 type EventField = "title" | "description" | "startDate" | "endDate";
 export type SetEventFormField = (
-  field: Partial<Schema_Event>,
-  value?: Schema_Event[EventField],
+  field: Partial<LegacyEvent>,
+  value?: LegacyEvent[EventField],
 ) => void;

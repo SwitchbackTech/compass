@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import {
   isEventReadOnly,
   resolveCalendarCardIdentity,
@@ -9,7 +9,7 @@ import {
   ID_GRID_EVENTS_ALLDAY,
   ID_GRID_EVENTS_TIMED,
 } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { CALENDAR_GRID_MARGIN_LEFT } from "@web/layout/calendar-grid/calendarGrid.constants";
 import { createCalendarTimedEventLayout } from "@web/layout/calendar-grid/layout/calendarTimedDeckLayout";
 import {
@@ -28,11 +28,11 @@ import {
 } from "./dayCalendarDraft.util";
 
 interface DayEventsProps {
-  getCalendarColumnIndex: (event: Schema_GridEvent) => number;
-  draft: Schema_Event | null;
-  events: Schema_GridEvent[];
+  getCalendarColumnIndex: (event: GridEvent) => number;
+  draft: LegacyEvent | null;
+  events: GridEvent[];
   measurements: CalendarGridMeasurements;
-  onOpenEvent: (event: Schema_GridEvent) => void;
+  onOpenEvent: (event: GridEvent) => void;
   visibleDates: CalendarGridVisibleDate[];
 }
 
@@ -121,7 +121,7 @@ export const DayCalendarTimedEventsLayer = ({
     [draft, timedEvents, visibleDates],
   );
   const timedEventItems = useMemo(() => {
-    const eventsByColumn = new Map<number, Schema_GridEvent[]>();
+    const eventsByColumn = new Map<number, GridEvent[]>();
     for (const event of renderedEvents) {
       const columnIndex = getCalendarColumnIndex(event);
       const columnEvents = eventsByColumn.get(columnIndex) ?? [];

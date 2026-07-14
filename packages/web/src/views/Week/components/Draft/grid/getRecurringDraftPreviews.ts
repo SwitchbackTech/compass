@@ -4,7 +4,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
 import { getCompassEventDateFormat } from "@core/util/event/event.util";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 
 /**
  * Expand a recurring timed draft into read-only preview occurrences that fall
@@ -23,10 +23,10 @@ import { type Schema_GridEvent } from "@web/common/types/web.event.types";
  * separately by the all-day row).
  */
 export const getRecurringDraftPreviews = (
-  draft: Schema_GridEvent | null,
+  draft: GridEvent | null,
   startOfView: Dayjs,
   endOfView: Dayjs,
-): Schema_GridEvent[] => {
+): GridEvent[] => {
   const rule = draft?.recurrence?.rule;
 
   if (

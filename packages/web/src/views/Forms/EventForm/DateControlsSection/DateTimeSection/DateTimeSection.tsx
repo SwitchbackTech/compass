@@ -1,6 +1,6 @@
 import { type FC } from "react";
-import { Categories_Event } from "@core/types/event.types";
 import { type SelectOption } from "@web/common/types/component.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { DatePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/DatePickers/DatePickers";
 import { TimePickers } from "@web/views/Forms/EventForm/DateControlsSection/DateTimeSection/TimePicker/TimePickers";

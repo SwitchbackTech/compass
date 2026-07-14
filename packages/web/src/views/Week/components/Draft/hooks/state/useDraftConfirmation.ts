@@ -1,9 +1,9 @@
 import { ObjectId } from "bson";
 import { useCallback, useState } from "react";
 import { type Event } from "@core/types/event.contracts";
-import { RecurringEventUpdateScope } from "@core/types/event.types";
 import dayjs from "@core/util/date/dayjs";
 import { CompassEventRRule } from "@core/util/event/compass.event.rrule";
+import { RecurringEventUpdateScope } from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { useEventById } from "@web/events/queries/useEventById";
 import { type useDraftContext } from "@web/views/Week/components/Draft/context/useDraftContext";

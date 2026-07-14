@@ -1,5 +1,5 @@
 import { type Dayjs } from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   type CalendarInteractionCancellationTargets,
   type CalendarInteractionEngineSchedulerOptions,
@@ -30,11 +30,11 @@ export interface DayInteractionAdapterOptions {
 }
 
 export interface DayInteractionRuntime {
-  getAllDayEventById?: (eventId: string) => Schema_GridEvent | null;
-  getTimedEventById(eventId: string): Schema_GridEvent | null;
+  getAllDayEventById?: (eventId: string) => GridEvent | null;
+  getTimedEventById(eventId: string): GridEvent | null;
   isFormOpen?: () => boolean;
-  onClickAllDayEvent?: (event: Schema_GridEvent) => void;
-  onClickTimedEvent: (event: Schema_GridEvent) => void;
+  onClickAllDayEvent?: (event: GridEvent) => void;
+  onClickTimedEvent: (event: GridEvent) => void;
   onCommitAllDayDrag?: (result: DayAllDayDragCommitResult) => void;
   onCommitAllDayResize?: (result: DayAllDayResizeCommitResult) => void;
   onCommitTimedDrag: (result: DayTimedDragCommitResult) => void;
@@ -43,7 +43,7 @@ export interface DayInteractionRuntime {
 }
 
 export interface DayAllDayDragCommitResult {
-  event: Schema_GridEvent;
+  event: GridEvent;
   eventId: string;
   hadFormOpenBeforeInteraction: boolean;
   hasMoved: boolean;
@@ -51,14 +51,14 @@ export interface DayAllDayDragCommitResult {
 }
 
 export interface DayAllDayDragTarget {
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: DayInteractionRegisteredTarget;
   type: "allDayDrag";
 }
 
 export interface DayAllDayResizeCommitResult {
-  event: Schema_GridEvent;
+  event: GridEvent;
   eventId: string;
   hadFormOpenBeforeInteraction: boolean;
   hasMoved: boolean;
@@ -67,14 +67,14 @@ export interface DayAllDayResizeCommitResult {
 
 export interface DayAllDayResizeTarget {
   edge: AllDayResizeEdge;
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: DayInteractionRegisteredTarget;
   type: "allDayResize";
 }
 
 export interface DayTimedDragCommitResult {
-  event: Schema_GridEvent;
+  event: GridEvent;
   eventId: string;
   hadFormOpenBeforeInteraction: boolean;
   hasMoved: boolean;
@@ -82,14 +82,14 @@ export interface DayTimedDragCommitResult {
 }
 
 export interface DayTimedDragTarget {
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: DayInteractionRegisteredTarget;
   type: "timedDrag";
 }
 
 export interface DayTimedResizeCommitResult {
-  event: Schema_GridEvent;
+  event: GridEvent;
   eventId: string;
   hadFormOpenBeforeInteraction: boolean;
   hasMoved: boolean;
@@ -98,7 +98,7 @@ export interface DayTimedResizeCommitResult {
 
 export interface DayTimedResizeTarget {
   edge: TimedResizeEdge;
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: DayInteractionRegisteredTarget;
   type: "timedResize";
@@ -123,7 +123,7 @@ export type DayInteractionCommitResult =
   | DayTimedResizeCommitResult;
 
 export type DayResolvedEventTarget = {
-  event: Schema_GridEvent;
+  event: GridEvent;
   hadFormOpenBeforeInteraction: boolean;
   registered: DayInteractionRegisteredTarget;
 };

@@ -1,7 +1,7 @@
 import { type FC, type PropsWithChildren, useMemo, useRef } from "react";
 import { type Event } from "@core/types/event.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { type GridScheduleDraft } from "@web/events/event-draft.types";
 import {
   editGridEventDraft,
@@ -74,7 +74,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
 
   layoutSourcesRef.current = getLayoutSources;
 
-  const openClickedGridEvent = (event: Schema_GridEvent) => {
+  const openClickedGridEvent = (event: GridEvent) => {
     const sourceEvent = event._id ? eventsById.get(event._id) : undefined;
     const draft = sourceEvent ? editGridEventDraft(sourceEvent) : null;
 
@@ -92,10 +92,10 @@ export const WeekInteractionCoordinator: FC<Props> = ({
 
   // Rebuilds the GridEventDraft for a saved event after the modern
   // pointer-capture engine (WeekInteractionAdapter) commits a drag/resize —
-  // it operates on Schema_GridEvent geometry, so this re-derives the strict
+  // it operates on GridEvent geometry, so this re-derives the strict
   // draft from the query cache's source Event plus the engine's resulting
   // dates.
-  const gridEventDraftFromSavedResult = (event: Schema_GridEvent) => {
+  const gridEventDraftFromSavedResult = (event: GridEvent) => {
     const sourceEvent = event._id ? eventsById.get(event._id) : undefined;
     const draft = sourceEvent ? editGridEventDraft(sourceEvent, "this") : null;
 
@@ -120,7 +120,7 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   // event carries `recurrence`) still need the scope-confirmation dialog,
   // which lives in useDraftConfirmation (out of scope here) — those keep
   // going through the legacy confirmation.onSubmit path below.
-  const commitStrictSavedMutation = (event: Schema_GridEvent) => {
+  const commitStrictSavedMutation = (event: GridEvent) => {
     const draft = gridEventDraftFromSavedResult(event);
     if (!draft) return;
 
@@ -197,8 +197,8 @@ export const WeekInteractionCoordinator: FC<Props> = ({
   );
 };
 
-const mapEventsById = (events: Schema_GridEvent[]) => {
-  const eventsById = new Map<string, Schema_GridEvent>();
+const mapEventsById = (events: GridEvent[]) => {
+  const eventsById = new Map<string, GridEvent>();
 
   for (const event of events) {
     if (event._id) {

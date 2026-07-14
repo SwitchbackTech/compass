@@ -1,15 +1,13 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { EVENT_COLOR } from "@web/common/styles/theme.util";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
 
 import { CalendarAllDayEventCard } from "./CalendarAllDayEventCard";
 import { CalendarTimedEventCard } from "./CalendarTimedEventCard";
 
-const createEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent =>
+const createEvent = (overrides: Partial<GridEvent> = {}): GridEvent =>
   ({
     _id: "event-1",
     endDate: "2024-01-15T10:00:00.000Z",
@@ -27,7 +25,7 @@ const createEvent = (
     startDate: "2024-01-15T09:00:00.000Z",
     title: "Planning block",
     ...overrides,
-  }) as Schema_GridEvent;
+  }) as GridEvent;
 
 const position = {
   height: 60,

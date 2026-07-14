@@ -1,7 +1,7 @@
 import { type ForwardedRef, forwardRef, type MouseEvent, memo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
 import { getCalendarAllDayEventPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
 import { type Measurements_Grid } from "@web/views/Week/hooks/grid/useGridLayout";
@@ -13,15 +13,15 @@ import {
 
 interface Props {
   calendarIdentity?: CalendarCardIdentity | null;
-  event: Schema_GridEvent;
+  event: GridEvent;
   interactionAttributes?: Record<string, string | undefined>;
   isPlaceholder: boolean;
   measurements: Measurements_Grid;
   weekDays: WeekProps["component"]["weekDays"];
-  onMouseDown?: (e: MouseEvent, event: Schema_GridEvent) => void;
-  onKeyDown?: (event: Schema_GridEvent) => void;
+  onMouseDown?: (e: MouseEvent, event: GridEvent) => void;
+  onKeyDown?: (event: GridEvent) => void;
   onScalerMouseDown?: (
-    event: Schema_GridEvent,
+    event: GridEvent,
     e: MouseEvent,
     dateToChange: "startDate" | "endDate",
   ) => void;
@@ -54,10 +54,7 @@ const AllDayEventBase = (
   });
 
   const shouldTrackCalendarHover = !isPlaceholder && Boolean(event._id);
-  const handleEventMouseDown = (
-    e: MouseEvent,
-    selectedEvent: Schema_GridEvent,
-  ) => {
+  const handleEventMouseDown = (e: MouseEvent, selectedEvent: GridEvent) => {
     if (!onMouseDown) {
       e.stopPropagation();
       return;

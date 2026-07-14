@@ -70,12 +70,12 @@ test("replaces only the draft schedule during a drag or resize", () => {
 
 test("keeps the schedule's own UTC offset instead of forcing Z", () => {
   // _getTimeLabel (web.date.util.ts) reads the offset embedded in
-  // Schema_Event.startDate/endDate to decide what time to display - it does
+  // LegacyEvent.startDate/endDate to decide what time to display - it does
   // not localize to the browser's timezone. Date#toISOString() always
   // produces a "Z" (UTC) suffix, which made every grid-created/dragged event
   // display in UTC instead of local time for any non-UTC browser. dayjs's
   // default format() preserves the local offset instead, matching every
-  // other Schema_Event producer (draft.util.ts, etc).
+  // other LegacyEvent producer (draft.util.ts, etc).
   const draft = editGridEventDraft(timedEvent);
   if (!draft) throw new Error("Expected scheduled event draft");
 

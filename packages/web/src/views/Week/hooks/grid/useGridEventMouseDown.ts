@@ -1,11 +1,13 @@
 import { type MouseEvent as ReactMouseEvent, useRef } from "react";
-import { Categories_Event } from "@core/types/event.types";
 import {
   ID_GRID_ALLDAY_ROW,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  type GridEvent,
+} from "@web/common/types/web.event.types";
 import { isEventFormOpen } from "@web/common/utils/form/form.util";
 import { getElemById } from "@web/common/utils/grid/grid.util";
 
@@ -30,8 +32,8 @@ type HandleDragHandlers = {
  */
 export const useGridEventMouseDown = (
   eventType: Categories_Event.TIMED | Categories_Event.ALLDAY,
-  onClick: (event: Schema_GridEvent) => void,
-  onDrag: (event: Schema_GridEvent, moveEvent: PartialMouseEvent) => void,
+  onClick: (event: GridEvent) => void,
+  onDrag: (event: GridEvent, moveEvent: PartialMouseEvent) => void,
   delay: number = GRID_EVENT_MOUSE_HOLD_DELAY,
 ) => {
   const timeoutId = useRef<NodeJS.Timeout | null>(null);
@@ -66,7 +68,7 @@ export const useGridEventMouseDown = (
   };
 
   const handleDrag = (
-    event: Schema_GridEvent,
+    event: GridEvent,
     element: HTMLElement,
     currentEvent: MouseEvent,
     handlers: HandleDragHandlers,
@@ -88,7 +90,7 @@ export const useGridEventMouseDown = (
     });
   };
 
-  const onMouseDown = (e: ReactMouseEvent, event: Schema_GridEvent) => {
+  const onMouseDown = (e: ReactMouseEvent, event: GridEvent) => {
     e.stopPropagation();
     targetRef.current = e.currentTarget;
     const element = getElemById(elementId);

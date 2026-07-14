@@ -1,7 +1,7 @@
 import { faker } from "@faker-js/faker";
 import * as supertokensNode from "supertokens-node";
 import SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
-import { CalendarProvider } from "@core/types/event.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import { EmailDriver } from "@backend/__tests__/drivers/email.driver";
 import { GoogleSyncDriver } from "@backend/__tests__/drivers/google-sync.driver";
 import { UserDriver } from "@backend/__tests__/drivers/user.driver";

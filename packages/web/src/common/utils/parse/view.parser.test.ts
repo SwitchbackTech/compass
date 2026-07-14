@@ -1,13 +1,11 @@
 import { ObjectId } from "bson";
 import { Origin } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_WebEvent } from "@web/common/types/web.event.types";
+import { type WebEvent } from "@web/common/types/web.event.types";
 import { EventInViewParser } from "./view.parser";
 
 describe("EventInViewParser", () => {
-  const createMockEvent = (
-    overrides: Partial<Schema_WebEvent> = {},
-  ): Schema_WebEvent => ({
+  const createMockEvent = (overrides: Partial<WebEvent> = {}): WebEvent => ({
     _id: new ObjectId().toString(),
     title: "Test Event",
     startDate: "2024-01-15T10:00:00Z",

@@ -2,7 +2,7 @@ import {
   ID_GRID_COLUMNS_TIMED,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { createWeekInteractionAdapter } from "@web/views/Week/interaction/adapter/WeekInteractionAdapter";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
 import {
@@ -11,9 +11,7 @@ import {
 } from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-const createTimedEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent =>
+const createTimedEvent = (overrides: Partial<GridEvent> = {}): GridEvent =>
   ({
     _id: "timed-event",
     endDate: "2026-05-19T10:00:00.000",
@@ -30,7 +28,7 @@ const createTimedEvent = (
     title: "Timed event",
     user: "user-1",
     ...overrides,
-  }) as Schema_GridEvent;
+  }) as GridEvent;
 
 const setRect = (
   element: HTMLElement,

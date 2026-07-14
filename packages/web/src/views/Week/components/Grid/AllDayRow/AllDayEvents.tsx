@@ -1,5 +1,4 @@
 import { type MouseEvent, useMemo } from "react";
-import { Categories_Event } from "@core/types/event.types";
 import {
   type CalendarCardIdentity,
   isEventReadOnly,
@@ -7,7 +6,10 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_ALLDAY } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  type GridEvent,
+} from "@web/common/types/web.event.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
   draftActions,
@@ -50,7 +52,7 @@ export const AllDayEvents = ({
   // registry.
   const visibleAllDayEvents = useMemo(
     () =>
-      allDayEvents.filter((event: Schema_GridEvent) =>
+      allDayEvents.filter((event: GridEvent) =>
         isAllDayEventInVisibleDays(event, weekDays),
       ),
     [allDayEvents, weekDays],
@@ -84,7 +86,7 @@ export const AllDayEvents = ({
   // keyboardEdit draft is subsequently repositioned by arrow keys, and
   // gridEventDraftToSchemaEvent has no grid-layout `position` to give it.
   // See packet-03-phase-3c scoping note.
-  const handleKeyDown = (event: Schema_GridEvent) => {
+  const handleKeyDown = (event: GridEvent) => {
     draftActions.start({
       activity: "keyboardEdit",
       event,
@@ -135,11 +137,11 @@ export const AllDayEvents = ({
 
 interface AllDayEventItemProps {
   calendarIdentity: CalendarCardIdentity | null;
-  event: Schema_GridEvent;
+  event: GridEvent;
   isPlaceholder: boolean;
   isReadOnly: boolean;
   measurements: Measurements_Grid;
-  onKeyDown: (event: Schema_GridEvent) => void;
+  onKeyDown: (event: GridEvent) => void;
   weekDays: WeekProps["component"]["weekDays"];
 }
 
@@ -179,8 +181,7 @@ const AllDayEventItem = ({
   // mutated. Wiring the click straight to the same "open" action the
   // keyboard path uses bypasses the engine entirely for this card.
   const onMouseDown = isReadOnly
-    ? (_e: MouseEvent, clickedEvent: Schema_GridEvent) =>
-        onKeyDown(clickedEvent)
+    ? (_e: MouseEvent, clickedEvent: GridEvent) => onKeyDown(clickedEvent)
     : undefined;
 
   return (

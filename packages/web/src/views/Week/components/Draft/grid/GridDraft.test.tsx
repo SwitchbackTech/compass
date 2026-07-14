@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import { Origin } from "@core/constants/core.constants";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { createGridEventDraft } from "@web/events/grid-event-draft.adapter";
@@ -44,13 +44,13 @@ const createDraft = (
   return { ...draft, values: { ...draft.values, title } };
 };
 
-// activeAllDayDraftEvent/recurringPreviews are still Schema_GridEvent-shaped
+// activeAllDayDraftEvent/recurringPreviews are still GridEvent-shaped
 // props (out of this phase's scope — the wider grid *renderer* conversion),
-// so they need their own Schema_GridEvent-shaped fixture, independent of the
+// so they need their own GridEvent-shaped fixture, independent of the
 // interactive GridEventDraft above.
 const createSchemaGridEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent => ({
+  overrides: Partial<GridEvent> = {},
+): GridEvent => ({
   description: "",
   endDate: "2026-05-26T15:00:00.000Z",
   isAllDay: false,
@@ -79,10 +79,10 @@ const renderGridDraft = ({
   draft = createDraft(),
   recurringPreviews = [],
 }: {
-  activeAllDayDraftEvent?: Schema_GridEvent | null;
+  activeAllDayDraftEvent?: GridEvent | null;
   deckLayout?: { groupSize: number; order: number } | null;
   draft?: GridEventDraft;
-  recurringPreviews?: Schema_GridEvent[];
+  recurringPreviews?: GridEvent[];
 } = {}) => {
   const value = {
     actions: {

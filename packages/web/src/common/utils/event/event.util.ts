@@ -2,10 +2,10 @@ import { Origin } from "@core/constants/core.constants";
 import { YEAR_MONTH_DAY_COMPACT_FORMAT } from "@core/constants/date.constants";
 import { Status } from "@core/errors/status.codes";
 import {
-  Categories_Event,
-  type Schema_Event,
-  type Schema_Event_Recur_Base,
-} from "@core/types/event.types";
+  type BaseEvent,
+  type LegacyEvent,
+} from "@core/types/legacy-event.contracts";
+import { type WithId } from "@core/types/type.utils";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import { isBackendUnavailableError } from "@web/api/util/backend-unavailable-error.util";
 import { getUserId } from "@web/auth/compass/session/session.util";
@@ -16,14 +16,14 @@ import {
 } from "@web/common/constants/web.constants";
 import { type PartialMouseEvent } from "@web/common/types/util.types";
 import {
-  type Schema_GridEvent,
-  type Schema_WebEvent,
-  type WithId,
+  Categories_Event,
+  type GridEvent,
+  type WebEvent,
 } from "@web/common/types/web.event.types";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { showErrorToast } from "@web/common/utils/toast/error-toast.util";
 
-export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
+export const gridEventDefaultPosition: GridEvent["position"] = {
   isOverlapping: false,
   totalEventsInGroup: 1,
   widthMultiplier: 1,
@@ -33,43 +33,43 @@ export const gridEventDefaultPosition: Schema_GridEvent["position"] = {
   dragOffset: { x: 0, y: 0 },
 };
 
-export const addId = (event: Schema_GridEvent): WithId<Schema_GridEvent> => {
+export const addId = (event: GridEvent): WithId<GridEvent> => {
   const _event = {
     ...event,
     _id: createObjectIdString(),
-  } as WithId<Schema_GridEvent>;
+  } as WithId<GridEvent>;
 
   return _event;
 };
 
-export type EventWithDates = Schema_Event & {
+export type EventWithDates = LegacyEvent & {
   startDate: string;
   endDate: string;
 };
 
-export const hasEventDates = (event: Schema_Event): event is EventWithDates =>
+export const hasEventDates = (event: LegacyEvent): event is EventWithDates =>
   typeof event.startDate === "string" && typeof event.endDate === "string";
 
-export const assembleWebEvent = (event: EventWithDates): Schema_WebEvent => ({
+export const assembleWebEvent = (event: EventWithDates): WebEvent => ({
   ...event,
   startDate: event.startDate,
   endDate: event.endDate,
   origin: event.origin ?? Origin.COMPASS,
   user: event.user ?? "",
-  recurrence: event.recurrence as Schema_WebEvent["recurrence"],
+  recurrence: event.recurrence as WebEvent["recurrence"],
 });
 
 export const assembleDefaultEvent = async (
   draftType?: Categories_Event | null,
   startDate?: string,
   endDate?: string,
-): Promise<Schema_Event | Schema_GridEvent> => {
+): Promise<LegacyEvent | GridEvent> => {
   const userId = await getUserId();
   const baseEvent = _assembleBaseEvent(userId, {});
 
   switch (draftType) {
     case Categories_Event.ALLDAY: {
-      const defaultAllday: Schema_Event = {
+      const defaultAllday: LegacyEvent = {
         ...baseEvent,
         isAllDay: true,
         startDate,
@@ -78,7 +78,7 @@ export const assembleDefaultEvent = async (
       return defaultAllday;
     }
     case Categories_Event.TIMED: {
-      const defaultTimed: Schema_GridEvent = {
+      const defaultTimed: GridEvent = {
         ...baseEvent,
         _id: baseEvent._id!,
         isAllDay: false,
@@ -87,8 +87,7 @@ export const assembleDefaultEvent = async (
         position: gridEventDefaultPosition,
         origin: baseEvent.origin ?? Origin.COMPASS,
         user: baseEvent.user!,
-        recurrence:
-          baseEvent.recurrence as Schema_Event_Recur_Base["recurrence"],
+        recurrence: baseEvent.recurrence as BaseEvent["recurrence"],
       };
       return defaultTimed;
     }
@@ -97,8 +96,8 @@ export const assembleDefaultEvent = async (
   }
 };
 
-export const assembleGridEvent = (event: EventWithDates): Schema_GridEvent => {
-  const gridEvent: Schema_GridEvent = {
+export const assembleGridEvent = (event: EventWithDates): GridEvent => {
+  const gridEvent: GridEvent = {
     ...assembleWebEvent(event),
     position: gridEventDefaultPosition,
     _id: event._id!,
@@ -108,9 +107,9 @@ export const assembleGridEvent = (event: EventWithDates): Schema_GridEvent => {
 };
 
 export const getEventDragOffset = (
-  event?: Schema_GridEvent,
+  event?: GridEvent,
   e?: PartialMouseEvent,
-): Schema_GridEvent["position"]["dragOffset"] => {
+): GridEvent["position"]["dragOffset"] => {
   if (!event || !e) return { x: 0, y: 0 };
 
   const target = e.currentTarget as HTMLElement;
@@ -121,7 +120,7 @@ export const getEventDragOffset = (
   };
 };
 
-export const getCategory = (event: Schema_Event) => {
+export const getCategory = (event: LegacyEvent) => {
   if (event?.isAllDay) {
     return Categories_Event.ALLDAY;
   }
@@ -222,8 +221,8 @@ export const isEventInRange = (
 
 const _assembleBaseEvent = (
   userId: string,
-  event: Partial<Schema_Event>,
-): Schema_Event => {
+  event: Partial<LegacyEvent>,
+): LegacyEvent => {
   const baseEvent = {
     _id: event._id,
     title: event.title ?? "",
@@ -238,18 +237,15 @@ const _assembleBaseEvent = (
   return baseEvent;
 };
 
-export function compareEventsByTitle(a: Schema_Event, b: Schema_Event) {
+export function compareEventsByTitle(a: LegacyEvent, b: LegacyEvent) {
   return (a.title ?? "").localeCompare(b.title ?? "");
 }
 
-export function compareEventsById(prev: Schema_Event, next: Schema_Event) {
+export function compareEventsById(prev: LegacyEvent, next: LegacyEvent) {
   return prev._id?.localeCompare(next._id ?? "") ?? 0;
 }
 
-export function compareEventsByStartDate(
-  prev: Schema_Event,
-  next: Schema_Event,
-) {
+export function compareEventsByStartDate(prev: LegacyEvent, next: LegacyEvent) {
   const prevStart = dayjs(prev.startDate);
   const nextStart = dayjs(next.startDate);
   const before = prevStart.isBefore(nextStart);

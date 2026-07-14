@@ -2,15 +2,13 @@ import {
   ID_ALLDAY_COLUMNS,
   ID_GRID_MAIN,
 } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { createWeekInteractionAdapter } from "@web/views/Week/interaction/adapter/WeekInteractionAdapter";
 import { weekEventRegistry } from "@web/views/Week/interaction/registry/weekEventRegistry";
 import { resetWeekInteractionEdgeNavigationState } from "@web/views/Week/interaction/state/weekInteractionEdgeNavigationState";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 
-const createAllDayEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent =>
+const createAllDayEvent = (overrides: Partial<GridEvent> = {}): GridEvent =>
   ({
     _id: "all-day-event",
     endDate: "2026-05-14",
@@ -28,7 +26,7 @@ const createAllDayEvent = (
     title: "All-day event",
     user: "user-1",
     ...overrides,
-  }) as Schema_GridEvent;
+  }) as GridEvent;
 
 const setRect = (
   element: HTMLElement,
@@ -108,7 +106,7 @@ const createHarness = ({
     width: 90,
   },
 }: {
-  eventOverrides?: Partial<Schema_GridEvent>;
+  eventOverrides?: Partial<GridEvent>;
   sourceRect?: Pick<DOMRect, "height" | "left" | "top" | "width">;
 } = {}) => {
   document.body.innerHTML = "";

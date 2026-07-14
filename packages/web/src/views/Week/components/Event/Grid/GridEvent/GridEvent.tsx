@@ -9,7 +9,7 @@ import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type CalendarCardIdentity } from "@web/calendars/useCalendarLookup";
 import { ZIndex } from "@web/common/constants/web.constants";
 import { theme } from "@web/common/styles/theme";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent as GridEventEntity } from "@web/common/types/web.event.types";
 import { isRightClick } from "@web/common/utils/mouse/mouse.util";
 import { CalendarTimedEventCard } from "@web/layout/calendar-grid/components/CalendarTimedEventCard";
 import { getCalendarTimedEventPosition } from "@web/layout/calendar-grid/layout/calendarEventPosition";
@@ -29,14 +29,14 @@ interface Props {
   calendarIdentity?: CalendarCardIdentity | null;
   deckLayout?: CalendarTimedDeckLayout | null;
   displayMode: GridEventDisplayMode;
-  event: Schema_GridEvent;
+  event: GridEventEntity;
   interactionAttributes?: Record<string, string | undefined>;
   measurements: Measurements_Grid;
   motionMode?: GridEventMotionMode;
-  onEventMouseDown?: (event: Schema_GridEvent, e: MouseEvent) => void;
-  onEventKeyDown?: (event: Schema_GridEvent) => void;
+  onEventMouseDown?: (event: GridEventEntity, e: MouseEvent) => void;
+  onEventKeyDown?: (event: GridEventEntity) => void;
   onScalerMouseDown?: (
-    event: Schema_GridEvent,
+    event: GridEventEntity,
     e: MouseEvent,
     dateToChange: "startDate" | "endDate",
   ) => void;
@@ -114,7 +114,7 @@ const GridEventBase = (
   })();
   const shouldTrackCalendarHover = !isPlaceholder && Boolean(event._id);
   const handleEventMouseDown = (
-    selectedEvent: Schema_GridEvent,
+    selectedEvent: GridEventEntity,
     e: MouseEvent,
   ) => {
     if (isWeekInteractionMotionActive()) {

@@ -2,7 +2,7 @@ import { useCallback, useMemo } from "react";
 import { YEAR_MONTH_DAY_FORMAT } from "@core/constants/date.constants";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { useCalendarsQuery } from "@web/calendars/calendar.query";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { getDayViewCalendars } from "./dayCalendarColumns.util";
 
 export const useDayCalendarColumns = ({
@@ -10,9 +10,9 @@ export const useDayCalendarColumns = ({
   dateInView,
   timedEvents,
 }: {
-  allDayEvents: Schema_GridEvent[];
+  allDayEvents: GridEvent[];
   dateInView: Dayjs;
-  timedEvents: Schema_GridEvent[];
+  timedEvents: GridEvent[];
 }) => {
   const { data: calendars = [] } = useCalendarsQuery();
   const displayedCalendars = useMemo(
@@ -42,14 +42,14 @@ export const useDayCalendarColumns = ({
       : [{ date: dateInView, key: dateInView.format(YEAR_MONTH_DAY_FORMAT) }];
   }, [dateInView, displayedCalendars]);
   const getCalendarColumnIndex = useCallback(
-    (event: Schema_GridEvent) =>
+    (event: GridEvent) =>
       (event.calendarId
         ? calendarColumnIndexById.get(event.calendarId)
         : undefined) ?? 0,
     [calendarColumnIndexById],
   );
   const isDisplayedEvent = useCallback(
-    (event: Schema_GridEvent) =>
+    (event: GridEvent) =>
       !event.calendarId ||
       !calendarIds.has(event.calendarId) ||
       calendarColumnIndexById.has(event.calendarId),

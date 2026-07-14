@@ -3,18 +3,20 @@
 import mergeWith from "lodash.mergewith";
 import { Origin } from "@core/constants/core.constants";
 import { BaseError } from "@core/errors/errors.base";
-import {
-  CalendarProvider,
-  type Event_Core,
-  type Schema_Event,
-  type Schema_Event_Recur_Base,
-  type Schema_Event_Recur_Instance,
-  type Schema_Event_Regular,
-  type WithCompassId,
-  type WithMongoId,
-  type WithoutCompassId,
-} from "@core/types/event.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import { type gSchema$Event, type WithGcalId } from "@core/types/gcal";
+import {
+  type BaseEvent,
+  type InstanceEvent,
+  type LegacyEvent,
+  type StandaloneEvent,
+  type ValidatedLegacyEvent,
+} from "@core/types/legacy-event.contracts";
+import {
+  type WithId,
+  type WithObjectId,
+  type WithoutId,
+} from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 import {
   isAllDay,
@@ -29,7 +31,7 @@ export namespace MapEvent {
     userId: string,
     events: gSchema$Event[],
     origin?: Origin,
-  ): Event_Core[] => {
+  ): ValidatedLegacyEvent[] => {
     const mapped = events
       .filter((event) => !isCancelledGCalEvent(event))
       .map((e: gSchema$Event) => gEventToCompassEvent(e, userId, origin));
@@ -38,9 +40,9 @@ export namespace MapEvent {
   };
 
   export const removeProviderData = (
-    event: WithMongoId<Omit<Schema_Event, "_id">> | Schema_Event,
+    event: WithObjectId<Omit<LegacyEvent, "_id">> | LegacyEvent,
   ): Omit<
-    WithMongoId<Omit<Schema_Event, "_id">> | Schema_Event,
+    WithObjectId<Omit<LegacyEvent, "_id">> | LegacyEvent,
     "gEventId" | "gRecurringEventId"
   > => {
     const {
@@ -58,9 +60,9 @@ export namespace MapEvent {
   };
 
   export const removeIdentifyingData = (
-    event: WithMongoId<Omit<Schema_Event, "_id">> | Schema_Event,
+    event: WithObjectId<Omit<LegacyEvent, "_id">> | LegacyEvent,
   ): Omit<
-    Schema_Event,
+    LegacyEvent,
     | "_id"
     | "gEventId"
     | "gRecurringEventId"
@@ -79,7 +81,7 @@ export namespace MapEvent {
   };
 
   export const toGcal = (
-    event: Schema_Event,
+    event: LegacyEvent,
     { status = "confirmed" }: Pick<gSchema$Event, "status"> = {},
   ): gSchema$Event => {
     const timeZone = dayjs.tz.guess();
@@ -112,9 +114,9 @@ export namespace MapEvent {
   };
 
   export const toGcalInstanceProviderData = (
-    instance: Omit<Schema_Event_Recur_Instance, "_id">,
-    base?: Omit<Schema_Event_Recur_Base, "_id">,
-  ): Pick<Schema_Event, "gEventId" | "gRecurringEventId"> => {
+    instance: Omit<InstanceEvent, "_id">,
+    base?: Omit<BaseEvent, "_id">,
+  ): Pick<LegacyEvent, "gEventId" | "gRecurringEventId"> => {
     const { gEventId: _gEventId } = instance;
     const { gRecurringEventId: _gRecurringEventId = base?.gEventId } = instance;
     const gRecurringEventId = _gRecurringEventId ?? instance.recurrence.eventId;
@@ -128,11 +130,9 @@ export namespace MapEvent {
 
   export const toGcalSingleProviderData = (
     base:
-      | WithMongoId<Omit<Schema_Event_Recur_Base | Schema_Event_Regular, "_id">>
-      | WithCompassId<
-          Omit<Schema_Event_Recur_Base | Schema_Event_Regular, "_id">
-        >,
-  ): Pick<Schema_Event, "gEventId"> => {
+      | WithObjectId<Omit<BaseEvent | StandaloneEvent, "_id">>
+      | WithId<Omit<BaseEvent | StandaloneEvent, "_id">>,
+  ): Pick<LegacyEvent, "gEventId"> => {
     const gEventId = base.gEventId ?? base._id.toString();
 
     return { gEventId };
@@ -140,12 +140,12 @@ export namespace MapEvent {
 
   export const toProviderData = (
     event:
-      | WithMongoId<Omit<Schema_Event, "_id" | "recurrence">>
-      | WithCompassId<Omit<Schema_Event, "_id" | "recurrence">>,
+      | WithObjectId<Omit<LegacyEvent, "_id" | "recurrence">>
+      | WithId<Omit<LegacyEvent, "_id" | "recurrence">>,
     provider?: CalendarProvider,
     base?:
-      | WithMongoId<Omit<Schema_Event_Recur_Base, "_id">>
-      | WithCompassId<Omit<Schema_Event_Recur_Base, "_id">>,
+      | WithObjectId<Omit<BaseEvent, "_id">>
+      | WithId<Omit<BaseEvent, "_id">>,
   ) => {
     const isCInstance = isInstance(event);
 
@@ -153,7 +153,7 @@ export namespace MapEvent {
       case CalendarProvider.GOOGLE: {
         return isCInstance
           ? MapEvent.toGcalInstanceProviderData(
-              event as WithMongoId<Omit<Schema_Event_Recur_Instance, "_id">>,
+              event as WithObjectId<Omit<InstanceEvent, "_id">>,
               base,
             )
           : MapEvent.toGcalSingleProviderData(event);
@@ -183,7 +183,7 @@ export const gEventToCompassEvent = (
   gEvent: gSchema$Event,
   userId: string,
   origin?: Origin,
-): WithoutCompassId<Event_Core> => {
+): WithoutId<ValidatedLegacyEvent> => {
   if (!gEvent.id) {
     throw new BaseError(
       "Bad Google Event Id",
@@ -217,7 +217,7 @@ export const gEventToCompassEvent = (
   const _origin =
     event.extendedProperties?.private?.["origin"] ?? origin ?? Origin.GOOGLE;
 
-  const compassEvent: Schema_Event = {
+  const compassEvent: LegacyEvent = {
     gEventId,
     user: userId,
     origin: _origin as Origin,

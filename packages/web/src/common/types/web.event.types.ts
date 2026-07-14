@@ -1,28 +1,36 @@
-import { z } from "zod";
-import { type CalendarId } from "@core/types/domain-primitives";
-import { CompassCoreEventSchema } from "@core/types/event.types";
-import { IDSchema } from "@core/types/type.utils";
+import { z } from "zod/v4";
+import { CalendarIdSchema } from "@core/types/domain-primitives";
+import { ValidatedLegacyEventSchema } from "@core/types/legacy-event.contracts";
 import { type SelectOption } from "@web/common/types/component.types";
 
-const WebEventRecurrence = z.union([
-  z.undefined(),
-  z.object({
-    rule: z.union([z.array(z.string()), z.null()]).optional(),
-    eventId: z.string().optional(),
-  }),
-]);
+/** Event category, based on its display type */
+export enum Categories_Event {
+  ALLDAY = "allday",
+  TIMED = "timed",
+}
 
-const WebCoreEventSchema = CompassCoreEventSchema.extend({
-  _id: IDSchema.optional(),
-  recurrence: WebEventRecurrence,
+/** Scope of application for changes made to recurring event instances */
+export enum RecurringEventUpdateScope {
+  THIS_EVENT = "This Event",
+  THIS_AND_FOLLOWING_EVENTS = "This and Following Events",
+  ALL_EVENTS = "All Events",
+}
+
+const WebEventSchema = ValidatedLegacyEventSchema.extend({
+  recurrence: z
+    .object({
+      rule: z.array(z.string()).nullable().optional(),
+      eventId: z.string().optional(),
+    })
+    .optional(),
   order: z.number().optional(),
 });
+export type WebEvent = z.infer<typeof WebEventSchema>;
 
-export const GridEventSchema = WebCoreEventSchema.extend({
+export const GridEventSchema = WebEventSchema.extend({
   hasFlipped: z.boolean().optional(),
   isOpen: z.boolean().optional(),
   row: z.number().optional(),
-  order: z.number().optional(),
   position: z.object({
     isOverlapping: z.boolean(),
     totalEventsInGroup: z.number().default(1),
@@ -32,48 +40,24 @@ export const GridEventSchema = WebCoreEventSchema.extend({
     initialX: z.number().nullable(),
     initialY: z.number().nullable(),
   }),
+  // Real schema fields now that the whole chain is zod/v4 (calendarId used to
+  // be a type-only intersection because a v4 field schema inside a v3 object
+  // crashed at parse time). Populated by event.view-model.ts's
+  // gridEventsFrom and grid-event-draft.adapter.ts's
+  // gridEventDraftToSchemaEvent. Optional so the legacy bridge doesn't have
+  // to guarantee it in every branch - card rendering degrades gracefully
+  // (no accent/label suffix) when it's missing. isBusy backs the read-only
+  // gate (packet 08 step 8) - see isEventReadOnly in
+  // calendars/useCalendarLookup.ts.
+  calendarId: CalendarIdSchema.optional(),
+  isBusy: z.boolean().optional(),
 });
+export type GridEvent = z.infer<typeof GridEventSchema>;
 
-export type Schema_WebEvent = z.infer<typeof WebCoreEventSchema>;
-
-// calendarId is a plain type-level addition, not part of GridEventSchema
-// itself: CalendarIdSchema (domain-primitives.ts) is a zod/v4 schema, while
-// this file's schemas are all zod v3 ("zod") - z.object.extend() with a v4
-// field schema mixed into a v3 shape crashes at parse time ("_parse is not a
-// function"). calendarId is populated out-of-band (event.view-model.ts's
-// gridEventsFrom, grid-event-draft.adapter.ts's gridEventDraftToSchemaEvent)
-// rather than through GridEventSchema.parse, so it never needed to be a
-// schema-validated field - only a typed one. Optional (rather than required,
-// matching the strict core `Event` contract) so the legacy bridge doesn't
-// have to guarantee it in every branch - card rendering degrades gracefully
-// (no accent/label suffix) when it's missing.
-//
-// isBusy mirrors calendarId's out-of-band-join treatment for the same
-// reason: the legacy core `Schema_Event` (event.types.ts) has no concept of
-// content.kind, so it can't survive the Event -> Schema_Event -> Schema_GridEvent
-// bridge as a real field. It backs the read-only gate (packet 08 step 8) -
-// see isEventReadOnly in calendars/useCalendarLookup.ts. Defaults to
-// false/missing when unpopulated (e.g. a legacy caller that hand-builds a
-// Schema_GridEvent) - fail-open, matching isEventReadOnly's own
-// missing-data handling.
-export type Schema_GridEvent = z.infer<typeof GridEventSchema> & {
-  calendarId?: CalendarId;
-  isBusy?: boolean;
-};
-
-export interface Schema_OptimisticEvent extends Schema_GridEvent {
-  _id: string; // We guarantee that we have an _id for optimistic events, unlike `Schema_Event`
-}
-
-export interface Schema_SelectedDates {
+export interface SelectedDates {
   startDate: Date;
   startTime: SelectOption<string>;
   endDate: Date;
   endTime: SelectOption<string>;
   isAllDay: boolean;
 }
-/**
- * Adds an _id property to an object shape
- * @template TSchema - The base type to add _id to.
- */
-export type WithId<TSchema> = TSchema & { _id: string };

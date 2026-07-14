@@ -1,6 +1,6 @@
-import { type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
   type EventWithDates,
@@ -15,8 +15,8 @@ export const addVisibleDraftEvent = ({
   isAllDay,
   visibleDates,
 }: {
-  draft: Schema_Event | null;
-  events: Schema_GridEvent[];
+  draft: LegacyEvent | null;
+  events: GridEvent[];
   isAllDay: boolean;
   visibleDates: CalendarGridVisibleDate[];
 }) => {
@@ -50,12 +50,12 @@ export const addVisibleDraftEvent = ({
   return nextEvents;
 };
 
-export const getCalendarEventIdSet = (events: Schema_GridEvent[]) =>
+export const getCalendarEventIdSet = (events: GridEvent[]) =>
   new Set(events.map((event) => event._id).filter(isString));
 
 export const isDraftOnlyEvent = (
-  event: Schema_GridEvent,
-  draft: Schema_Event | null,
+  event: GridEvent,
+  draft: LegacyEvent | null,
   savedEventIds: Set<string>,
 ) =>
   Boolean(
@@ -63,8 +63,8 @@ export const isDraftOnlyEvent = (
   );
 
 export const isActiveDraftEvent = (
-  event: Schema_GridEvent,
-  draft: Schema_Event | null,
+  event: GridEvent,
+  draft: LegacyEvent | null,
   savedEventIds: Set<string>,
 ) =>
   Boolean(

@@ -1,5 +1,5 @@
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   CALENDAR_DRAFT_PADDING_BOTTOM,
   CALENDAR_EVENT_ALLDAY_HEIGHT,
@@ -22,7 +22,7 @@ export interface CalendarEventPositionInput {
 }
 
 export const getCalendarTimedEventPosition = (
-  event: Schema_GridEvent,
+  event: GridEvent,
   input: CalendarEventPositionInput,
 ): CalendarEventPosition => {
   const start = dayjs(event.startDate);
@@ -104,7 +104,7 @@ export const getCalendarBusyPeriodPosition = (
 };
 
 export const getCalendarAllDayEventPosition = (
-  event: Schema_GridEvent,
+  event: GridEvent,
   input: CalendarEventPositionInput,
 ): CalendarEventPosition => {
   const span = getVisibleAllDaySpan(event, input.visibleDates);
@@ -134,7 +134,7 @@ export const getCalendarAllDayEventPosition = (
 };
 
 const getVisibleAllDaySpan = (
-  event: Schema_GridEvent,
+  event: GridEvent,
   visibleDates: CalendarGridVisibleDate[],
 ) => {
   const visibleStart = visibleDates[0]?.date.startOf("day");

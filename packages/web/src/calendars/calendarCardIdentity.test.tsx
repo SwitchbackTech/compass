@@ -12,7 +12,7 @@ import {
   resolveCalendarCardIdentity,
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { createObjectIdString } from "@web/common/utils/id/object-id.util";
 import { CalendarAllDayEventCard } from "@web/layout/calendar-grid/components/CalendarAllDayEventCard";
@@ -44,9 +44,7 @@ const makeCalendar = (overrides: Partial<Calendar> = {}): Calendar => ({
 
 const POSITION = { top: 0, left: 0, width: 100, height: 60 };
 
-const makeGridEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent =>
+const makeGridEvent = (overrides: Partial<GridEvent> = {}): GridEvent =>
   assembleGridEvent({
     _id: createObjectIdString(),
     title: "Team sync",
@@ -62,7 +60,7 @@ const makeGridEvent = (
 // Local test-only harness: mirrors how a list component (MainGridEvents,
 // AllDayEvents) resolves calendarIdentity via the shared hook/helper and
 // passes it down as a prop - not new production code.
-function TimedCardWithResolvedIdentity({ event }: { event: Schema_GridEvent }) {
+function TimedCardWithResolvedIdentity({ event }: { event: GridEvent }) {
   const lookup = useCalendarLookup();
   const calendarIdentity = resolveCalendarCardIdentity(
     lookup,
@@ -80,11 +78,7 @@ function TimedCardWithResolvedIdentity({ event }: { event: Schema_GridEvent }) {
   );
 }
 
-function AllDayCardWithResolvedIdentity({
-  event,
-}: {
-  event: Schema_GridEvent;
-}) {
+function AllDayCardWithResolvedIdentity({ event }: { event: GridEvent }) {
   const lookup = useCalendarLookup();
   const calendarIdentity = resolveCalendarCardIdentity(
     lookup,

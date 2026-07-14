@@ -1,12 +1,17 @@
 import { type Filter } from "mongodb";
-import { type Event_Core, type Schema_Event } from "@core/types/event.types";
+import {
+  type LegacyEvent,
+  type ValidatedLegacyEvent,
+} from "@core/types/legacy-event.contracts";
+import { type WithObjectId } from "@core/types/type.utils";
 import mongoService from "@backend/common/services/mongo.service";
-import { type Event_API } from "@backend/common/types/backend.event.types";
 
 export const getCategorizedEventsInDb = async (
-  filter?: Filter<Omit<Schema_Event, "_id">>,
+  filter?: Filter<Omit<LegacyEvent, "_id">>,
 ) => {
-  const allEvents = (await getEventsInDb(filter)) as unknown as Event_Core[];
+  const allEvents = (await getEventsInDb(
+    filter,
+  )) as unknown as ValidatedLegacyEvent[];
   const baseEvents = allEvents.filter((e) => e.recurrence?.rule !== undefined);
   const instanceEvents = allEvents.filter(
     (e) => e.recurrence?.eventId !== undefined,
@@ -16,15 +21,15 @@ export const getCategorizedEventsInDb = async (
 };
 
 export const getEventsInDb = async (
-  filter: Filter<Omit<Schema_Event, "_id">> = {},
+  filter: Filter<Omit<LegacyEvent, "_id">> = {},
 ) => {
   return (await mongoService.event
     .find(filter)
-    .toArray()) as unknown as Event_API[];
+    .toArray()) as unknown as WithObjectId<Omit<ValidatedLegacyEvent, "_id">>[];
 };
 
 export const isEventCollectionEmpty = async (
-  filter: Filter<Omit<Schema_Event, "_id">> = {},
+  filter: Filter<Omit<LegacyEvent, "_id">> = {},
 ) => {
   return (await mongoService.event.find(filter).toArray()).length === 0;
 };

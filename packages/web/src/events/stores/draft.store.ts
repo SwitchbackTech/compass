@@ -1,8 +1,11 @@
 import { create } from "zustand";
 import { devtools } from "zustand/middleware";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import { IS_DEV } from "@web/common/constants/env.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  type GridEvent,
+} from "@web/common/types/web.event.types";
 import { type GridEventDraft } from "@web/events/event-draft.types";
 import { gridEventDraftToSchemaEvent } from "@web/events/grid-event-draft.adapter";
 
@@ -42,23 +45,23 @@ export interface State_DraftEvent {
    * Temporary projection for Day, forms, sidebar, and legacy Week draft
    * interactions. Do not add another store while those consumers migrate.
    */
-  event: Schema_Event | null;
+  event: LegacyEvent | null;
 }
 
 export interface Payload_DraftEvent {
   activity: Activity_DraftEvent;
-  event: Schema_Event | null;
+  event: LegacyEvent | null;
   eventType: Categories_Event;
 }
 
 export interface Payload_Draft_Resize {
   category: Categories_Event;
-  event: Schema_Event;
+  event: LegacyEvent;
   dateToChange: "startDate" | "endDate";
 }
 
 export interface Payload_Draft_Swap {
-  event: Schema_GridEvent;
+  event: GridEvent;
   category: Categories_Event;
 }
 
@@ -76,7 +79,7 @@ export const initialDraftState: State_DraftEvent = {
   event: null,
 };
 
-const getEventType = (event: Schema_Event) =>
+const getEventType = (event: LegacyEvent) =>
   event.isAllDay ? Categories_Event.ALLDAY : Categories_Event.TIMED;
 
 // Selectors passed to this hook must return primitives or stable references;
@@ -141,7 +144,7 @@ export const draftActions = {
       { type: "startDnd" },
     ),
 
-  startGridClick: (event: Schema_Event) =>
+  startGridClick: (event: LegacyEvent) =>
     useDraftStore.setState(
       {
         gridDraft: null,
@@ -157,7 +160,7 @@ export const draftActions = {
       { type: "startGridClick" },
     ),
 
-  setEvent: (event: Schema_Event | null) =>
+  setEvent: (event: LegacyEvent | null) =>
     useDraftStore.setState(
       (state) => {
         if (!event) {

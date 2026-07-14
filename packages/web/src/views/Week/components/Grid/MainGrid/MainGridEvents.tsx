@@ -1,5 +1,4 @@
 import { useMemo } from "react";
-import { Categories_Event } from "@core/types/event.types";
 import {
   type CalendarCardIdentity,
   isEventReadOnly,
@@ -7,7 +6,10 @@ import {
   useCalendarLookup,
 } from "@web/calendars/useCalendarLookup";
 import { ID_GRID_EVENTS_TIMED } from "@web/common/constants/web.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  type GridEvent,
+} from "@web/common/types/web.event.types";
 import { useWeekEventViewModel } from "@web/events/queries/useWeekEventsQuery";
 import {
   draftActions,
@@ -84,7 +86,7 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
   // keyboardEdit draft is subsequently repositioned by arrow keys, and
   // gridEventDraftToSchemaEvent has no grid-layout `position` to give it.
   // See packet-03-phase-3c scoping note.
-  const handleKeyDown = (event: Schema_GridEvent) => {
+  const handleKeyDown = (event: GridEvent) => {
     draftActions.start({
       activity: "keyboardEdit",
       event,
@@ -134,11 +136,11 @@ export const MainGridEvents = ({ measurements, weekProps }: Props) => {
 interface MainGridEventItemProps {
   calendarIdentity: CalendarCardIdentity | null;
   deckLayout: CalendarTimedDeckLayout | null;
-  event: Schema_GridEvent;
+  event: GridEvent;
   isPlaceholder: boolean;
   isReadOnly: boolean;
   measurements: Measurements_Grid;
-  onEventKeyDown: (event: Schema_GridEvent) => void;
+  onEventKeyDown: (event: GridEvent) => void;
   weekProps: WeekProps;
 }
 
@@ -181,7 +183,7 @@ const MainGridEventItem = ({
   // keyboard path uses bypasses the engine entirely for this card, so it
   // never becomes a drag/resize target no matter how the pointer moves.
   const onEventMouseDown = isReadOnly
-    ? (clickedEvent: Schema_GridEvent) => onEventKeyDown(clickedEvent)
+    ? (clickedEvent: GridEvent) => onEventKeyDown(clickedEvent)
     : undefined;
 
   return (

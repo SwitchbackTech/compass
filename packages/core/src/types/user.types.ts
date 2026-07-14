@@ -1,5 +1,5 @@
 import type SupertokensUserMetadata from "supertokens-node/recipe/usermetadata";
-import { type WithCompassId } from "./event.types";
+import { type WithId } from "./type.utils";
 
 export interface Schema_User {
   email: string;
@@ -47,7 +47,7 @@ export interface UserMetadata extends SupertokensUserMetadata.JSONObject {
 
 export interface UserProfile
   extends Pick<
-    WithCompassId<Schema_User>,
+    WithId<Schema_User>,
     "firstName" | "lastName" | "name" | "email" | "locale"
   > {
   picture: string;

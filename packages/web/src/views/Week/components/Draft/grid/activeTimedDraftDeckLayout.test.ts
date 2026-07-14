@@ -1,12 +1,10 @@
 import { Origin } from "@core/constants/core.constants";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import { gridEventDefaultPosition } from "@web/common/utils/event/event.util";
 import { getActiveTimedDraftDeckLayout } from "./activeTimedDraftDeckLayout";
 import { describe, expect, it } from "bun:test";
 
-const createTimedEvent = (
-  overrides: Partial<Schema_GridEvent> = {},
-): Schema_GridEvent => ({
+const createTimedEvent = (overrides: Partial<GridEvent> = {}): GridEvent => ({
   description: "",
   endDate: "2026-05-26T10:00:00.000Z",
   isAllDay: false,

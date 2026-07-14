@@ -2,18 +2,18 @@ import { faker } from "@faker-js/faker";
 import { ObjectId } from "bson";
 import { Origin } from "@core/constants/core.constants";
 import {
-  type Schema_Event,
-  type Schema_Event_Recur_Base,
-  type Schema_Event_Recur_Instance,
-  type Schema_Event_Regular,
-  type WithCompassId,
-} from "@core/types/event.types";
+  type BaseEvent,
+  type InstanceEvent,
+  type LegacyEvent,
+  type StandaloneEvent,
+} from "@core/types/legacy-event.contracts";
+import { type WithId } from "@core/types/type.utils";
 import dayjs from "@core/util/date/dayjs";
 import { isAllDay, parseCompassEventDate } from "@core/util/event/event.util";
 import { CompassEventRRule } from "../event/compass.event.rrule";
 
 export const createMockStandaloneEvent = (
-  overrides: Partial<Omit<Schema_Event, "endDate">> = {},
+  overrides: Partial<Omit<LegacyEvent, "endDate">> = {},
   allDayEvent = false,
   dateDiff: Omit<
     Partial<
@@ -21,7 +21,7 @@ export const createMockStandaloneEvent = (
     >,
     "date" | "allDay"
   > = {},
-): WithCompassId<Schema_Event_Regular> => {
+): WithId<StandaloneEvent> => {
   const { startDate } = overrides;
   const now = new Date();
   const allDay = allDayEvent || isAllDay(overrides) || overrides.isAllDay;
@@ -47,10 +47,10 @@ export const createMockStandaloneEvent = (
  * @returns A base recurring event.
  */
 export const createMockBaseEvent = (
-  overrides: Partial<Omit<Schema_Event_Recur_Base, "endDate">> = {},
+  overrides: Partial<Omit<BaseEvent, "endDate">> = {},
   allDayEvent = false,
   dateDiff: Parameters<typeof createMockStandaloneEvent>[2] = {},
-): WithCompassId<Schema_Event_Recur_Base> => {
+): WithId<BaseEvent> => {
   const regularEvent = createMockStandaloneEvent(
     overrides,
     allDayEvent,
@@ -72,8 +72,8 @@ export const createMockBaseEvent = (
 export const createMockInstance = (
   baseEventId: string,
   gBaseId: string,
-  overrides: Partial<Schema_Event_Recur_Instance> = {},
-): WithCompassId<Schema_Event_Recur_Instance> => {
+  overrides: Partial<InstanceEvent> = {},
+): WithId<InstanceEvent> => {
   const now = new Date();
   const tz = faker.location.timeZone();
   // Generate times dynamically but in the right tz
@@ -110,10 +110,10 @@ export const createMockInstance = (
  * @returns An array of event instances.
  */
 export const createMockInstances = (
-  baseEvent: Schema_Event_Recur_Base,
+  baseEvent: BaseEvent,
   count: number,
-  overrides: Partial<Schema_Event_Recur_Instance> = {},
-): WithCompassId<Schema_Event_Recur_Instance>[] => {
+  overrides: Partial<InstanceEvent> = {},
+): WithId<InstanceEvent>[] => {
   const _id = new ObjectId(baseEvent._id);
   const rrule = new CompassEventRRule({ ...baseEvent, _id }, { count });
 
@@ -133,7 +133,7 @@ export const generateCompassEventDates = ({
   unit?: dayjs.ManipulateType;
   allDay?: boolean;
   timezone?: string;
-} = {}): Pick<Schema_Event, "startDate" | "endDate"> => {
+} = {}): Pick<LegacyEvent, "startDate" | "endDate"> => {
   const timeZone = dayjs.tz.guess();
   const start = dayjs.tz(date ?? faker.date.future(), timeZone);
   const end = start.add(value, unit);

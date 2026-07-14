@@ -5,9 +5,12 @@ import {
   RouterProvider,
 } from "@tanstack/react-router";
 import { act, type PropsWithChildren, useMemo } from "react";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import { renderHook } from "@web/__tests__/__mocks__/mock.render";
-import { type Schema_WebEvent } from "@web/common/types/web.event.types";
+import {
+  Categories_Event,
+  type WebEvent,
+} from "@web/common/types/web.event.types";
 import { assembleGridEvent } from "@web/common/utils/event/event.util";
 import { draftActions } from "@web/events/stores/draft.store";
 import { useDraftActions } from "@web/views/Week/components/Draft/hooks/actions/useDraftActions";
@@ -34,7 +37,7 @@ function TestRouterWrapper({ children }: PropsWithChildren) {
   return <RouterProvider router={router} />;
 }
 
-export function setupDraftState(event: Schema_WebEvent) {
+export function setupDraftState(event: WebEvent) {
   const draft = assembleGridEvent(event);
 
   const state = {
@@ -68,7 +71,7 @@ export function setupDraftState(event: Schema_WebEvent) {
   act(() => {
     draftActions.start({
       activity: "sidebarClick",
-      event: event as Schema_Event,
+      event: event as LegacyEvent,
       eventType: Categories_Event.TIMED,
     });
   });

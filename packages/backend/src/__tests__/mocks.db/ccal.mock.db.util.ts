@@ -1,9 +1,9 @@
 import { ObjectId } from "mongodb";
 import {
-  type Schema_Event,
-  type Schema_Event_Recur_Base,
-  type Schema_Event_Recur_Instance,
-} from "@core/types/event.types";
+  type BaseEvent,
+  type InstanceEvent,
+  type LegacyEvent,
+} from "@core/types/legacy-event.contracts";
 import {
   createMockBaseEvent,
   createMockInstance,
@@ -11,8 +11,8 @@ import {
 import mongoService from "@backend/common/services/mongo.service";
 
 export const createRecurrenceSeries = async (
-  baseOverrides: Partial<Schema_Event_Recur_Base>,
-  instanceOverrides?: Partial<Schema_Event_Recur_Instance>,
+  baseOverrides: Partial<BaseEvent>,
+  instanceOverrides?: Partial<InstanceEvent>,
 ) => {
   // Create a recurring event with instances
   const baseEvent = createMockBaseEvent({
@@ -49,7 +49,7 @@ export const createRecurrenceSeries = async (
   };
 };
 
-const withObjectId = (event: Schema_Event) => {
+const withObjectId = (event: LegacyEvent) => {
   return {
     ...event,
     _id: event._id ? new ObjectId(event._id) : new ObjectId(),

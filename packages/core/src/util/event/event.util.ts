@@ -1,35 +1,23 @@
 import { type RRule } from "rrule";
 import { type ParsedOptions } from "rrule/dist/esm/types";
 import {
-  type Recurrence,
-  type Schema_Event,
-  type Schema_Event_Recur_Base,
-  type Schema_Event_Recur_Instance,
-} from "@core/types/event.types";
+  type BaseEvent,
+  type InstanceEvent,
+  type LegacyEvent,
+} from "@core/types/legacy-event.contracts";
 import { type UserMetadata } from "@core/types/user.types";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
-import { type Event_API } from "@backend/common/types/backend.event.types";
 
 /** Event utilities for Compass events */
 
-export const categorizeEvents = (events: Array<Schema_Event | Event_API>) => {
-  const baseEvents = events.filter(isBase) as Schema_Event_Recur_Base[];
-  const instances = events.filter(isInstance) as Schema_Event_Recur_Instance[];
+export const categorizeEvents = (events: Array<LegacyEvent>) => {
+  const baseEvents = events.filter(isBase) as BaseEvent[];
+  const instances = events.filter(isInstance) as InstanceEvent[];
   const standaloneEvents = events.filter(isRegularEvent);
   return { baseEvents, instances, standaloneEvents };
 };
 
-export const categorizeRecurringEvents = (events: Recurrence[]) => {
-  const baseEvent = events.find(isBase) as Schema_Event_Recur_Base;
-  const instances = events.filter(
-    (e) => e !== baseEvent,
-  ) as Schema_Event_Recur_Instance[];
-  return { baseEvent, instances };
-};
-
-export const isAllDay = (
-  event: Pick<Schema_Event | Event_API, "startDate" | "endDate">,
-) =>
+export const isAllDay = (event: Pick<LegacyEvent, "startDate" | "endDate">) =>
   event !== undefined &&
   // 'YYYY-MM-DD' has 10 chars
   event.startDate?.length === 10 &&
@@ -40,9 +28,7 @@ export const isAllDay = (
  * @param event
  * @returns
  */
-export const isBase = (
-  event: Pick<Schema_Event | Event_API, "recurrence">,
-): boolean => {
+export const isBase = (event: Pick<LegacyEvent, "recurrence">): boolean => {
   return (
     "recurrence" in event &&
     event.recurrence !== undefined &&
@@ -57,7 +43,7 @@ export const isBase = (
  * @returns
  */
 export const isInstance = (
-  event: Pick<Schema_Event | Event_API, "recurrence" | "gRecurringEventId">,
+  event: Pick<LegacyEvent, "recurrence" | "gRecurringEventId">,
 ): boolean => {
   return (
     "recurrence" in event &&
@@ -68,7 +54,7 @@ export const isInstance = (
 };
 
 export const isRegularEvent = (
-  event: Pick<Schema_Event | Event_API, "recurrence">,
+  event: Pick<LegacyEvent, "recurrence">,
 ): boolean => !isInstance(event) && !isBase(event);
 
 /**
@@ -76,28 +62,9 @@ export const isRegularEvent = (
  * (has a series `eventId`) or a base with recurrence rules.
  */
 export const isRecurringEvent = (
-  event: Pick<Schema_Event | Event_API, "recurrence">,
+  event: Pick<LegacyEvent, "recurrence">,
 ): boolean =>
   Boolean(event.recurrence?.eventId || event.recurrence?.rule?.length);
-
-/**
- * Filters the base events
- * @param e - The events array
- * @returns The base events
- */
-export const filterBaseEvents = (
-  e: Array<Schema_Event | Event_API>,
-): Schema_Event_Recur_Base[] => {
-  return e.filter(isBase) as Schema_Event_Recur_Base[];
-};
-
-/**
- * Filters the recurring events (base or instance)
- * @param e - The events array
- * @returns The recurring events (base or instance)
- */
-export const filterExistingInstances = (e: Array<Schema_Event | Event_API>) =>
-  e.filter(isInstance) as Schema_Event_Recur_Instance[];
 
 export const shouldImportGCal = (metadata: UserMetadata): boolean => {
   const sync = metadata.sync;
@@ -126,7 +93,7 @@ export const shouldDoIncrementalGCalSync = (
 };
 
 export const getCompassEventDateFormat = (
-  date: Exclude<Schema_Event["startDate"], undefined>,
+  date: Exclude<LegacyEvent["startDate"], undefined>,
 ): string => {
   const allday = isAllDay({ startDate: date, endDate: date });
   const { YEAR_MONTH_DAY_FORMAT, RFC3339_OFFSET } = dayjs.DateFormat;
@@ -136,7 +103,7 @@ export const getCompassEventDateFormat = (
 };
 
 export const parseCompassEventDate = (
-  date: Exclude<Schema_Event["startDate"], undefined>,
+  date: Exclude<LegacyEvent["startDate"], undefined>,
 ): Dayjs => {
   if (!date) throw new Error("`date` or `dateTime` must be defined");
 

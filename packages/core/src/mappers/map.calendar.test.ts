@@ -1,7 +1,7 @@
 import { ObjectId } from "bson";
 import { createMockCalendarListEntry } from "@core/__tests__/helpers/gcal.factory";
 import { MapCalendar } from "@core/mappers/map.calendar";
-import { CalendarProvider } from "@core/types/event.types";
+import { CalendarProvider } from "@core/types/calendar.types";
 import { type gSchema$CalendarListEntry } from "@core/types/gcal";
 
 describe("MapCalendar.gcalToCompass", () => {

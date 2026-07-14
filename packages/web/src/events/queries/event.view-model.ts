@@ -1,7 +1,7 @@
 import { Origin } from "@core/constants/core.constants";
 import { type Event } from "@core/types/event.contracts";
-import { type Schema_Event } from "@core/types/event.types";
-import { type Schema_GridEvent } from "@web/common/types/web.event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
+import { type GridEvent } from "@web/common/types/web.event.types";
 import {
   assembleGridEvent,
   type EventWithDates,
@@ -21,9 +21,9 @@ import { type NormalizedEventQueryData } from "./event.query.types";
 export const BUSY_EVENT_TITLE = "Busy";
 
 // The grid renderer (assembleGridEvent) still consumes the legacy
-// Schema_Event shape. This mirrors the mapping event.legacy-bridge.ts uses,
+// LegacyEvent shape. This mirrors the mapping event.legacy-bridge.ts uses,
 // scoped to scheduled (timed/allDay) events.
-const scheduledEventToSchemaEvent = (event: Event): Schema_Event => {
+const scheduledEventToSchemaEvent = (event: Event): LegacyEvent => {
   const { schedule } = event;
   return {
     _id: event.id,
@@ -49,7 +49,7 @@ const eventsFrom = (data?: NormalizedEventQueryData): Event[] =>
   data?.ids.flatMap((id) => (data.entities[id] ? [data.entities[id]] : [])) ??
   [];
 
-// assembleGridEvent/hasEventDates still operate on the legacy Schema_Event
+// assembleGridEvent/hasEventDates still operate on the legacy LegacyEvent
 // shape; bridged via scheduledEventToSchemaEvent above. A cache entry with a
 // missing/malformed `schedule` is a bug upstream (normalizeEventList/query
 // seeding), not a case to silently swallow — but it must not crash this
@@ -68,18 +68,18 @@ const isValidScheduledEvent = (event: Event): boolean => {
   return isValid;
 };
 
-// Re-attaches calendarId + isBusy onto the Schema_GridEvent produced by the
-// Event -> Schema_Event -> Schema_GridEvent bridge above. scheduledEventToSchemaEvent
-// returns the legacy, hand-written core `Schema_Event` shape (event.types.ts),
+// Re-attaches calendarId + isBusy onto the GridEvent produced by the
+// Event -> LegacyEvent -> GridEvent bridge above. scheduledEventToSchemaEvent
+// returns the legacy, hand-written core `LegacyEvent` shape (event.types.ts),
 // which has neither field, so the bridge itself can't carry them through
 // without widening that shared type (used by 10+ unrelated consumers). Joining
 // back by event id after assembleGridEvent keeps the bridge untouched and scopes
-// the new fields to Schema_GridEvent only (packet 08 steps 5 and 8). isBusy
+// the new fields to GridEvent only (packet 08 steps 5 and 8). isBusy
 // backs the read-only gate - see isEventReadOnly in calendars/useCalendarLookup.ts.
 const withCalendarMetadata = (
   events: Event[],
-  gridEvents: Schema_GridEvent[],
-): Schema_GridEvent[] => {
+  gridEvents: GridEvent[],
+): GridEvent[] => {
   const metadataByEventId = new Map<
     string,
     { calendarId: Event["calendarId"]; isBusy: boolean }
@@ -123,7 +123,7 @@ const timedEventsFrom = (events: Event[]) => gridEventsFrom(events, "timed");
 const allDayEventsFrom = (events: Event[]) =>
   assignEventsToRow(gridEventsFrom(events, "allDay")).allDayEvents;
 
-const rowCountFrom = (events: Schema_GridEvent[]) => {
+const rowCountFrom = (events: GridEvent[]) => {
   const rows = events
     .map(({ row }) => row)
     .filter((row): row is number => row !== undefined);
@@ -133,8 +133,8 @@ const rowCountFrom = (events: Schema_GridEvent[]) => {
 type CalendarEventViewModel = {
   entities: NormalizedEventQueryData["entities"];
   events: Event[];
-  timedEvents: Schema_GridEvent[];
-  allDayEvents: Schema_GridEvent[];
+  timedEvents: GridEvent[];
+  allDayEvents: GridEvent[];
   rowCount: number;
 };
 

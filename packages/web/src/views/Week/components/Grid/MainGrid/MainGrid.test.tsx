@@ -2,7 +2,7 @@ import { QueryClientProvider } from "@tanstack/react-query";
 import { type PropsWithChildren, useState } from "react";
 import { EventIdSchema } from "@core/types/domain-primitives";
 import { type Event, EventScheduleSchema } from "@core/types/event.contracts";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs, { type Dayjs } from "@core/util/date/dayjs";
 import {
   cleanup,
@@ -41,18 +41,19 @@ import {
 } from "@web/views/Week/layout.constants";
 import { afterEach, describe, expect, it, mock } from "bun:test";
 import "@testing-library/jest-dom";
+import { Categories_Event } from "@web/common/types/web.event.types";
 
 let pendingEventIds: string[] = [];
-let seededWeekEvents: Schema_Event[] = [];
+let seededWeekEvents: LegacyEvent[] = [];
 
 // DateTimeSchema requires an explicit offset; several fixtures below already
 // carry one ("Z"), but normalize defensively.
 const withOffset = (dateTime: string) =>
   /[Zz]|[+-]\d\d:\d\d$/.test(dateTime) ? dateTime : `${dateTime}Z`;
 
-// The query cache (unlike draft.store.ts, still legacy Schema_Event-shaped
+// The query cache (unlike draft.store.ts, still legacy LegacyEvent-shaped
 // per its own TODO) requires strict-contract `Event`s.
-const toStrictEvent = (event: Schema_Event): Event =>
+const toStrictEvent = (event: LegacyEvent): Event =>
   createMockEvent({
     id: EventIdSchema.parse(event._id!),
     content: {
@@ -128,8 +129,8 @@ const measurements = {
 // Seed the event query cache (read when the local Provider mounts its
 // QueryClient) and the draft Zustand store.
 const seedGrid = (
-  events: Schema_Event[] = [],
-  draftEvent: Schema_Event | null = null,
+  events: LegacyEvent[] = [],
+  draftEvent: LegacyEvent | null = null,
 ) => {
   seededWeekEvents = events;
 
@@ -187,9 +188,7 @@ const createWeekProps = () => ({
 // cache (toStrictEvent above) requires a real ObjectId, so every fixture
 // gets a generated one; tests that need to assert on "which event" read
 // `event._id` back off the returned fixture, never a literal.
-const createSavedEvent = (
-  overrides: Partial<Schema_Event> = {},
-): Schema_Event =>
+const createSavedEvent = (overrides: Partial<LegacyEvent> = {}): LegacyEvent =>
   ({
     endDate: "2024-01-15T10:00:00.000Z",
     isAllDay: false,
@@ -198,7 +197,7 @@ const createSavedEvent = (
     title: "Saved event",
     ...overrides,
     _id: createObjectIdString(),
-  }) as Schema_Event;
+  }) as LegacyEvent;
 
 const renderMainGrid = () => {
   seedGrid();
@@ -280,7 +279,7 @@ const renderGridRegions = () => {
   return view;
 };
 
-const renderWeekGrid = (events: Schema_Event[] = []) => {
+const renderWeekGrid = (events: LegacyEvent[] = []) => {
   seedGrid(events);
   const dateCalcs = createDateCalcs();
 

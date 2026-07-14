@@ -13,7 +13,7 @@ import {
   useState,
 } from "react";
 import { type CalendarId } from "@core/types/domain-primitives";
-import { Categories_Event, type Schema_Event } from "@core/types/event.types";
+import { type LegacyEvent } from "@core/types/legacy-event.contracts";
 import dayjs from "@core/util/date/dayjs";
 import {
   isEventReadOnly,
@@ -22,6 +22,7 @@ import {
 import { ID_EVENT_FORM } from "@web/common/constants/web.constants";
 import { EVENT_COLOR } from "@web/common/styles/theme.util";
 import { type SelectOption } from "@web/common/types/component.types";
+import { Categories_Event } from "@web/common/types/web.event.types";
 import { mapToBackend } from "@web/common/utils/datetime/web.date.util";
 import {
   isComboboxInteraction,
@@ -142,9 +143,9 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
     isExistingEvent,
     ...props
   }) => {
-    // Schema_Event-shaped projection of the canonical draft, for the
+    // LegacyEvent-shaped projection of the canonical draft, for the
     // still-unconverted DatePickers field-patch API and RecurrenceSection's
-    // Schema_Event contract — see grid-event-draft.adapter.ts's
+    // LegacyEvent contract — see grid-event-draft.adapter.ts's
     // gridEventDraftToSchemaEvent doc comment.
     const event = useMemo(() => gridEventDraftToSchemaEvent(draft), [draft]);
     const { title } = event;
@@ -278,12 +279,12 @@ export const EventForm: React.FC<Omit<GridEventFormProps, "category">> = memo(
       [setLatestDraft],
     );
 
-    // Schema_Event-shaped writer for the still-unconverted DatePickers
+    // LegacyEvent-shaped writer for the still-unconverted DatePickers
     // field-patch API and RecurrenceSection's setEvent contract: merges the
-    // patch onto the current draft's Schema_Event projection, then
+    // patch onto the current draft's LegacyEvent projection, then
     // reapplies it onto the canonical GridEventDraft.
     const setLatestEvent = useCallback(
-      (nextEvent: SetStateAction<Schema_Event | null>) => {
+      (nextEvent: SetStateAction<LegacyEvent | null>) => {
         const currentEvent = gridEventDraftToSchemaEvent(
           latestDraftRef.current,
         );
