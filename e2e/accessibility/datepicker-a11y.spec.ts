@@ -136,13 +136,23 @@ const getRenderedContrast = (locator: Locator) =>
         current = current.parentElement;
       }
 
-      return ancestors
+      const inheritedBackground = ancestors
         .reverse()
         .map((ancestor) => parseRgb(getComputedStyle(ancestor).backgroundColor))
         .reduce<Rgba>(
           (background, foreground) => blend(foreground, background),
           { a: 1, b: 255, g: 255, r: 255 },
         );
+      const beforeStyle = getComputedStyle(element, "::before");
+
+      if (beforeStyle.content !== "none") {
+        return blend(
+          parseRgb(beforeStyle.backgroundColor),
+          inheritedBackground,
+        );
+      }
+
+      return inheritedBackground;
     };
 
     const style = getComputedStyle(element);

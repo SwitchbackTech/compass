@@ -723,7 +723,7 @@
  * after c-date-picker, it wins on source order, so the !important hacks the
  * @utility form needed are no longer required.
  */
-.c-month-picker {
+.c-month-picker .c-date-picker {
   & .react-datepicker__month-container,
   & .react-datepicker__month {
     overflow: visible;
@@ -732,14 +732,18 @@
     position: relative;
     isolation: isolate;
     background: transparent;
-    color: var(--compass-color-text-lighter);
+    color: var(--date-picker-selected-text);
+  }
+  & .react-datepicker__day--selected:hover {
+    background: transparent;
+    color: var(--date-picker-selected-text);
   }
   & .react-datepicker__day--selected::before {
     position: absolute;
     inset: -2px;
     z-index: -1;
     border-radius: var(--radius-default);
-    background: var(--compass-color-accent-primary-shadow);
+    background: var(--date-picker-selected-bg);
     content: "";
   }
   & .react-datepicker__week:has(.react-datepicker__day--selected) {
