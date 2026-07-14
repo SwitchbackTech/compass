@@ -66,6 +66,11 @@ const isStandalone = (event: gSchema$Event): boolean =>
   !event.recurringEventId &&
   (!event.recurrence || event.recurrence.length === 0);
 
+type MappedOccurrence = {
+  record: EventRecord;
+  anchor: Date;
+};
+
 /**
  * Applies a batch of Google Calendar events onto the owning CalendarRecord's
  * events, per B8 (match strictly by (calendarId, externalReference.eventId),
@@ -312,23 +317,22 @@ export class GoogleEventSync {
 
     if (expandSeries && record.recurrence.kind === "series" && event.id) {
       seriesMap.set(event.id, record._id);
-      const instances = await this.fetchInstances(event.id, perPage);
-      for (const instance of instances) {
-        result = merge(
-          result,
-          await this.applyOne(instance, seriesMap, perPage, session, false),
-        );
-      }
+      result = merge(
+        result,
+        await this.applyInstances(event.id, seriesMap, perPage, session),
+      );
     }
 
     return result;
   }
 
-  private async fetchInstances(
+  private async applyInstances(
     gEventId: string,
+    seriesMap: Map<string, ObjectId>,
     perPage: number,
-  ): Promise<gSchema$Event[]> {
-    const instances: gSchema$Event[] = [];
+    session?: ClientSession,
+  ): Promise<GoogleEventSyncResult> {
+    let result = emptyResult();
     const response = gcalService.getBaseRecurringEventInstances({
       context: this.context,
       calendarId: this.gCalendarId,
@@ -337,9 +341,115 @@ export class GoogleEventSync {
     });
 
     for await (const { items = [] } of response) {
-      instances.push(...items);
+      result = merge(
+        result,
+        await this.applyInstancePage(items, seriesMap, perPage, session),
+      );
     }
 
-    return instances;
+    return result;
+  }
+
+  private async applyInstancePage(
+    events: gSchema$Event[],
+    seriesMap: Map<string, ObjectId>,
+    perPage: number,
+    session?: ClientSession,
+  ): Promise<GoogleEventSyncResult> {
+    const occurrences: MappedOccurrence[] = [];
+    let result = emptyResult();
+    const now = new Date();
+
+    for (const event of events) {
+      const mapped = mapGoogleEvent(event, {
+        calendarId: this.calendar._id,
+        calendarTimeZone: this.calendar.timeZone,
+        resolveSeriesObjectId: (id) => seriesMap.get(id),
+        now,
+      });
+
+      if (mapped.kind === "ignored") {
+        result.processed += 1;
+        result.ignored += 1;
+      } else if (mapped.kind === "invalid") {
+        result.processed += 1;
+        result.invalid += 1;
+      } else if (
+        mapped.kind === "mapped" &&
+        mapped.event.recurrence.kind === "occurrence"
+      ) {
+        occurrences.push({
+          record: mapped.event,
+          anchor:
+            getInstanceAnchor(event) ?? getAnchorDate(mapped.event.schedule),
+        });
+      } else {
+        result = merge(
+          result,
+          await this.applyOne(event, seriesMap, perPage, session, false),
+        );
+      }
+    }
+
+    return merge(result, await this.replaceOccurrences(occurrences, session));
+  }
+
+  private async replaceOccurrences(
+    occurrences: MappedOccurrence[],
+    session?: ClientSession,
+  ): Promise<GoogleEventSyncResult> {
+    if (occurrences.length === 0) return emptyResult();
+
+    const providerIds = occurrences.map(
+      ({ record }) => record.externalReference!.eventId,
+    );
+    const existing = await eventRepository.findByExternalReferences(
+      this.calendar._id,
+      providerIds,
+      session,
+    );
+    const existingByProviderId = new Map(
+      existing.map((record) => [record.externalReference!.eventId, record]),
+    );
+
+    const unmatched = occurrences.filter(
+      ({ record }) =>
+        !existingByProviderId.has(record.externalReference!.eventId),
+    );
+    const seriesId = occurrences[0]!.record.recurrence;
+    const unlinked =
+      seriesId.kind === "occurrence"
+        ? await eventRepository.findUnlinkedOccurrences(
+            seriesId.seriesId,
+            unmatched.map(({ anchor }) => anchor),
+            session,
+          )
+        : [];
+    const unlinkedByAnchor = new Map(
+      unlinked.map((record) => [
+        getAnchorDate(record.schedule).toISOString(),
+        record,
+      ]),
+    );
+
+    const replacements = occurrences.map(({ record, anchor }) => {
+      const providerId = record.externalReference!.eventId;
+      const match =
+        existingByProviderId.get(providerId) ??
+        unlinkedByAnchor.get(anchor.toISOString());
+      return match
+        ? { ...record, _id: match._id, createdAt: match.createdAt }
+        : record;
+    });
+    await eventRepository.bulkReplace(replacements, session);
+
+    return {
+      processed: occurrences.length,
+      saved: replacements.length,
+      deleted: 0,
+      ignored: 0,
+      invalid: 0,
+      affectedEventIds: replacements.map((record) => record._id.toHexString()),
+    };
   }
 }
