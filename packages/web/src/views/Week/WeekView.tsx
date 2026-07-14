@@ -159,6 +159,7 @@ export const WeekView = () => {
               <PlannerSidebar
                 calendarDate={calendarDate}
                 eventDetails={<WeekSidebarEventDetails />}
+                isEventDetailsOpen={isEventDetailsOpen}
                 isShortcutsOpen={isShortcutsOpen}
                 onCloseShortcuts={closeShortcuts}
                 onToggleShortcuts={toggleShortcuts}

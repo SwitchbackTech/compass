@@ -2,10 +2,6 @@ import { type HTMLAttributes, type ReactNode } from "react";
 import { type Dayjs } from "@core/util/date/dayjs";
 import { ID_SIDEBAR } from "@web/common/constants/web.constants";
 import { type ShortcutOverlaySection } from "@web/components/Shortcuts/ShortcutOverlay/ShortcutsOverlay";
-import {
-  selectIsEventFormOpen,
-  useDraftStore,
-} from "@web/events/stores/draft.store";
 import { PlannerCalendarList } from "./PlannerCalendarList/PlannerCalendarList";
 import { PlannerMonthPicker } from "./PlannerMonthPicker/PlannerMonthPicker";
 import { PlannerSidebarActions } from "./PlannerSidebarActions/PlannerSidebarActions";
@@ -19,6 +15,7 @@ export interface PlannerSidebarProps extends HTMLAttributes<HTMLDivElement> {
    * editing always happens in the sidebar.
    */
   eventDetails?: ReactNode;
+  isEventDetailsOpen?: boolean;
   monthsShown?: number;
   isShortcutsOpen: boolean;
   onCloseShortcuts: () => void;
@@ -45,6 +42,7 @@ export function createPlannerSidebar({
   return function PlannerSidebar({
     calendarDate,
     eventDetails,
+    isEventDetailsOpen = false,
     monthsShown = 1,
     isShortcutsOpen,
     onCloseShortcuts,
@@ -55,8 +53,7 @@ export function createPlannerSidebar({
     shortcutsViewLabel,
     ...props
   }: PlannerSidebarProps) {
-    const isGridFormOpen = useDraftStore(selectIsEventFormOpen);
-    const showEventDetails = Boolean(eventDetails) && isGridFormOpen;
+    const showEventDetails = Boolean(eventDetails) && isEventDetailsOpen;
 
     return (
       <aside
