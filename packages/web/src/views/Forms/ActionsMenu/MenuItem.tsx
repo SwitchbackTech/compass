@@ -87,7 +87,7 @@ const MenuItem: React.FC<MenuItemProps> = ({
       role="menuitem"
       tabIndex={tabIndex}
       type={type}
-      className="flex w-full cursor-pointer items-center gap-2 border-0 bg-(--actions-menu-item-bg) px-2 py-1 text-left text-m text-text-dark outline-none hover:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)] focus-visible:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)]"
+      className="c-focus-ring flex w-full cursor-pointer items-center gap-2 border-0 bg-(--actions-menu-item-bg) px-2 py-1 text-left text-m text-text-dark hover:[text-shadow:0_0_0.5px_var(--compass-color-text-dark),0_0_0.5px_var(--compass-color-text-dark)]"
       style={{ backgroundColor: bgColor }}
     >
       {children}

@@ -213,7 +213,7 @@ export const CommandPalette = ({
             value={search}
             placeholder={placeholder}
             aria-label="Command palette search"
-            className="w-full border-border-primary border-b bg-transparent px-4 py-3 text-text-light outline-none placeholder:text-text-lighter"
+            className="w-full border-border-primary border-b bg-transparent px-4 py-3 text-text-light outline-none placeholder:text-text-lighter focus-visible:border-accent-primary"
             onChange={(event) => {
               setSearch(event.target.value);
               setActiveIndex(0);
@@ -236,7 +236,9 @@ export const CommandPalette = ({
                     const index = itemIndex;
                     const isActive = activeIndex === index;
                     const rowClassName = `flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-text-light ${
-                      isActive ? "bg-panel-badge-bg" : ""
+                      isActive
+                        ? "bg-panel-badge-bg ring-1 ring-accent-primary ring-inset"
+                        : ""
                     } ${item.disabled ? "cursor-default opacity-50" : ""}`;
 
                     const commonProps = getItemProps({
